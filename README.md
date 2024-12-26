@@ -26,5 +26,5 @@ Wikipedia).
   time, but I could easily adjust the number and kinds of instructions this
   way
 
-4. I already have an integer divider that takes generics (in
+3. I already have an integer divider that takes generics (in
   libcheesevoyage)

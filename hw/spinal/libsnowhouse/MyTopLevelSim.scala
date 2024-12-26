@@ -1,4 +1,4 @@
-package projectname
+package libsnowhouse
 
 import spinal.core._
 import spinal.core.sim._

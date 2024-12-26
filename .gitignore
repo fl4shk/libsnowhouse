@@ -45,3 +45,4 @@ bin/
 simWorkspace/
 tmp/
 null
+.nvim
