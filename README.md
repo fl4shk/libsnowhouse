@@ -22,9 +22,9 @@ Wikipedia).
   * SIMD instructions/registers.
     * Block loads/stores into/out of SIMD registers?
 
-1. Probably it'd be the case that stalling is implemented the same way each
+3. Probably it'd be the case that stalling is implemented the same way each
   time, but I could easily adjust the number and kinds of instructions this
   way
 
-1. I already have an integer divider that takes generics (in
+4. I already have an integer divider that takes generics (in
   libcheesevoyage)
