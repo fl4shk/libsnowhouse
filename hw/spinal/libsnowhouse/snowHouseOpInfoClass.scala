@@ -48,7 +48,8 @@ object SrcKind {
   //                                        // general purpose register (to
   //                                        // double the normal size of a
   //                                        // general purpose register)
-  case object RegPc extends SrcKind
+  case object Pc extends SrcKind
+  //case object PcPlusSimm extends SrcKind
   case object Mem extends SrcKind   // data read from mem by a load
                                     // instruction
   case object ZImm                  // Zero-extended
@@ -62,11 +63,18 @@ object DstKind {
   case object Gpr extends DstKind
   // TODO: support `MultiGpr`
   //case object MultiGpr extends DstKind 
-  case object RegPc extends DstKind
+  case object Pc extends DstKind
   case object Mem extends DstKind   // data written to mem by a store
                                     // instruction
 }
 
+//sealed trait SrcModOpKind
+//object SrcModOpKind {
+//  //case object Dont extends SrcModOpKind  // don't use sub-op
+//  ////case object Alu extends SrcModOpKind   // use the ALU op
+//  case object Add extends SrcModOpKind  // add source operands
+//  case object Sub extends SrcModOpKind  // subtract source operands
+//}
 //sealed trait AddrCalcKind
 //object AddrCalcKind {
 //  //--------
@@ -268,9 +276,9 @@ object OpSelect {
 sealed trait CpyOpKind
 object CpyOpKind {
   //--------
-  case object Cpy extends CpyOpKind
-  //case object Jump extends CpyOpKind
-  //case object Branch extends CpyOpKind 
+  case object Cpy extends CpyOpKind // copy ("move"/"load immediate")
+  case object Jmp extends CpyOpKind // jump
+  case object Br extends CpyOpKind  // branch relative
   //--------
 }
 //--------
