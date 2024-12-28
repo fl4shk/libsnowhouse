@@ -11,7 +11,7 @@ import libcheesevoyage.general._
 import libcheesevoyage.math._
 import libcheesevoyage.bus.lcvStall._
 
-case class RegFileConfig(
+case class SnowHouseRegFileConfig(
   mainWidth: Int,
   wordCountArr: Seq[Int],
   modRdPortCnt: Int,
@@ -29,9 +29,10 @@ case class SnowHouseConfig(
   //gprFileDepth: Int,
   //sprFileDepth: Int,
   instrMainWidth: Int,
-  shRegFileCfg: RegFileConfig,
-  ldKindSet: LinkedHashSet[LoadOpKind],
-  stKindSet: LinkedHashSet[StoreOpKind],
+  shRegFileCfg: SnowHouseRegFileConfig,
+  //ldKindSet: LinkedHashSet[LoadOpKind],
+  //stKindSet: LinkedHashSet[StoreOpKind],
+  opInfoMap: LinkedHashMap[Any, OpInfo],
 ) {
   def mainWidth = shRegFileCfg.mainWidth
   def regFileWordCountArr = shRegFileCfg.wordCountArr

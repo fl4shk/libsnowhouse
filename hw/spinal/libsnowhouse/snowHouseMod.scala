@@ -56,7 +56,7 @@ object SnowHouseToVerilog extends App {
   Config.spinal.generateVerilog(SnowHouse(
     cfg=SnowHouseConfig(
       instrMainWidth=32,
-      shRegFileCfg=RegFileConfig(
+      shRegFileCfg=SnowHouseRegFileConfig(
         mainWidth=32,
         wordCountArr=(
           Array.fill(1)(16)
@@ -64,8 +64,12 @@ object SnowHouseToVerilog extends App {
         modRdPortCnt=3,
         pipeName="SnowHouseToVerilog",
       ),
-      ldKindSet=LinkedHashSet[LoadOpKind](),
-      stKindSet=LinkedHashSet[StoreOpKind](),
+      opInfoMap={
+        val opInfoMap = LinkedHashMap[Any, OpInfo]()
+        opInfoMap
+      },
+      //ldKindSet=LinkedHashSet[LoadOpKind](),
+      //stKindSet=LinkedHashSet[StoreOpKind](),
     )
   ))
 }

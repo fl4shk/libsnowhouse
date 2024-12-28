@@ -50,11 +50,11 @@ object SrcKind {
   //                                        // general purpose register)
   case object Pc extends SrcKind
   //case object PcPlusSimm extends SrcKind
-  case object Mem extends SrcKind   // data read from mem by a load
-                                    // instruction
-  case object ZImm                  // Zero-extended
+  //case object Mem extends SrcKind   // data read from mem by a load
+  //                                  // instruction
+  case object ZImm extends SrcKind  // Zero-extended
                                     // (or cfg.mainWidth bits) immediate
-  case object SImm                  // Sign-extended immediate
+  case object SImm extends SrcKind  // Sign-extended immediate
 }
 
 // kinds of destination operands of instruction
@@ -64,9 +64,69 @@ object DstKind {
   // TODO: support `MultiGpr`
   //case object MultiGpr extends DstKind 
   case object Pc extends DstKind
-  case object Mem extends DstKind   // data written to mem by a store
-                                    // instruction
+  //case object Mem extends DstKind   // data written to mem by a store
+  //                                  // instruction
+  case object AluFlags extends DstKind
 }
+//--------
+sealed trait ModifySrcDstKind
+object ModifySrcDstKind {
+  case object NoModify extends ModifySrcDstKind
+  case object Mem extends ModifySrcDstKind
+}
+case class AddrCalcKindOptions(
+  minNum: Int,
+  maxNum: Option[Int],
+  lslAmount: Option[Int],
+)
+sealed trait AddrCalcKind {
+  //def limits: (Int, Option[Int]) // min, max
+  //def lslAmount: Option[Int]     // how much to left shift by
+  def options: AddrCalcKindOptions
+}
+object AddrCalcKind {
+  case object AddReduce extends AddrCalcKind {
+    //def limits: (Int, Option[Int]) = (1, None)
+    //def lslAmount: Option[Int] = None
+    private[libsnowhouse] val _options = AddrCalcKindOptions(
+      minNum=1,
+      maxNum=None,
+      lslAmount=None,
+    )
+    def options: AddrCalcKindOptions = _options
+  }
+  case object LslFor16ThenMaybeAdd extends AddrCalcKind {
+    //def limits: (Int, Option[Int]) = (1, None)
+    //def lslAmount: Option[Int] = Some(1)
+    private[libsnowhouse] val _options = AddrCalcKindOptions(
+      minNum=1,
+      maxNum=None,
+      lslAmount=Some(1),
+    )
+    def options: AddrCalcKindOptions = _options
+  }
+  case object LslFor32ThenMaybeAdd extends AddrCalcKind {
+    //def limits: (Int, Option[Int]) = (1, None)
+    //def lslAmount: Option[Int] = Some(2)
+    private[libsnowhouse] val _options = AddrCalcKindOptions(
+      minNum=1,
+      maxNum=None,
+      lslAmount=Some(2),
+    )
+    def options: AddrCalcKindOptions = _options
+  }
+  case object LslFor64ThenMaybeAdd extends AddrCalcKind {
+    //def limits: (Int, Option[Int]) = (1, None)
+    //def lslAmount: Option[Int] = Some(3)
+    private[libsnowhouse] val _options = AddrCalcKindOptions(
+      minNum=1,
+      maxNum=None,
+      lslAmount=Some(3),
+    )
+    def options: AddrCalcKindOptions = _options
+  }
+}
+//--------
 
 //sealed trait SrcModOpKind
 //object SrcModOpKind {
@@ -75,34 +135,20 @@ object DstKind {
 //  case object Add extends SrcModOpKind  // add source operands
 //  case object Sub extends SrcModOpKind  // subtract source operands
 //}
-//sealed trait AddrCalcKind
-//object AddrCalcKind {
-//  //--------
-//  case object OnlyOne extends AddrCalcKind
-//  case object AddTwo extends AddrCalcKind
-//  //--------
-//}
-
-//case class OpInfo(
-//) {
-//}
-//trait OpInfo { 
-//  def isAlu: Boolean
-//}
-//trait OpInfo {
-//}
 
 class OpInfo(
-  val dst: DstKind,
+  val dstArr: Seq[DstKind],
   val srcArr: Seq[SrcKind],
   val select: OpSelect,
-  val cond: CondKind=CondKind.Always
+  val cond: CondKind=CondKind.Always,
+  val modify: ModifySrcDstKind=ModifySrcDstKind.NoModify,
+  val addrCalc: AddrCalcKind=AddrCalcKind.AddReduce,
   //var aluOp: Option[AluOpKind]=None,
   //val opCond: AluOpKind | LoadOpKind | StoreOpKind,
   //var cond: Option[CondKind]=None,
 ) {
   //--------
-  //private[libsnowhouse] var _dst: DstKind = null
+  //private[libsnowhouse] var _dst: Seq[DstKind] = null
   //private[libsnowhouse] var _srcArr: Seq[SrcKind] = null
   //private[libsnowhouse] var _select: OpSelect = null
   private[libsnowhouse] var _cpyOp: CpyOpKind = null
@@ -112,7 +158,7 @@ class OpInfo(
   private[libsnowhouse] var _storeOp: StoreOpKind = null
   //private[libsnowhouse] var _cond: CondOpKind = null
   //--------
-  //def dst: DstKind = _dst
+  //def dstArr: Seq[DstKind] = _dst
   //def srcArr: Seq[SrcKind] = _srcArr
   //def select: OpSelect = _select
   def cpyOp: Option[CpyOpKind] = (
@@ -185,13 +231,13 @@ class OpInfo(
 }
 object OpInfo {
   def mkCpy(
-    dst: DstKind,
+    dstArr: Seq[DstKind],
     srcArr: Seq[SrcKind],
     cpyOp: CpyOpKind,
     cond: CondKind=CondKind.Always,
   ): OpInfo = {
     val ret = new OpInfo(
-      dst=dst,
+      dstArr=dstArr,
       srcArr=srcArr,
       select=OpSelect.Cpy,
       cond=cond
@@ -200,13 +246,13 @@ object OpInfo {
     ret
   }
   def mkAlu(
-    dst: DstKind,
+    dstArr: Seq[DstKind],
     srcArr: Seq[SrcKind],
     aluOp: AluOpKind,
     cond: CondKind=CondKind.Always,
   ): OpInfo = {
     val ret = new OpInfo(
-      dst=dst,
+      dstArr=dstArr,
       srcArr=srcArr,
       select=OpSelect.Alu,
       cond=cond
@@ -215,13 +261,13 @@ object OpInfo {
     ret
   }
   def mkMultiCycle(
-    dst: DstKind,
+    dstArr: Seq[DstKind],
     srcArr: Seq[SrcKind],
     multiCycleOp: MultiCycleOpKind,
     cond: CondKind=CondKind.Always,
   ): OpInfo = {
     val ret = new OpInfo(
-      dst=dst,
+      dstArr=dstArr,
       srcArr=srcArr,
       select=OpSelect.MultiCycle,
       cond=cond
@@ -230,31 +276,37 @@ object OpInfo {
     ret
   }
   def mkLoad(
-    dst: DstKind,
+    dstArr: Seq[DstKind],
     srcArr: Seq[SrcKind],
     loadOp: LoadOpKind,
     cond: CondKind=CondKind.Always,
+    addrCalc: AddrCalcKind=AddrCalcKind.AddReduce,
   ): OpInfo = {
     val ret = new OpInfo(
-      dst=dst,
+      dstArr=dstArr,
       srcArr=srcArr,
       select=OpSelect.Load,
-      cond=cond
+      cond=cond,
+      modify=ModifySrcDstKind.Mem,
+      addrCalc=addrCalc,
     )
     ret._loadOp = loadOp
     ret
   }
   def mkStore(
-    dst: DstKind,
+    dstArr: Seq[DstKind],
     srcArr: Seq[SrcKind],
     storeOp: StoreOpKind,
     cond: CondKind=CondKind.Always,
+    addrCalc: AddrCalcKind=AddrCalcKind.AddReduce,
   ): OpInfo = {
     val ret = new OpInfo(
-      dst=dst,
+      dstArr=dstArr,
       srcArr=srcArr,
       select=OpSelect.Store,
-      cond=cond
+      cond=cond,
+      modify=ModifySrcDstKind.Mem,
+      addrCalc=addrCalc,
     )
     ret._storeOp = storeOp
     ret
@@ -262,8 +314,11 @@ object OpInfo {
 }
 sealed trait OpSelect
 object OpSelect {
+  // This is to guarantee we `match` properly and have the Scala compiler
+  // definitely check that we covered every kind
   //--------
-  case object Cpy extends OpSelect // "move"/"load immediate" operation
+  // "jump"/"branch"/"move"/"load immediate" operation
+  case object Cpy extends OpSelect 
   case object Alu extends OpSelect // just an ALU operation
   case object MultiCycle extends OpSelect
   case object Load extends OpSelect
@@ -273,52 +328,130 @@ object OpSelect {
   //--------
 }
 //--------
-sealed trait CpyOpKind
+case class OpKindLimits(
+  minD: Int,
+  maxD: Int,
+  minS: Int,
+  maxS: Int,
+) {
+}
+sealed trait OpKindBase {
+  //def minNumDsts: Int
+  //def maxNumDsts: Int
+  //def minNumSrcs: Int
+  //def maxNumSrcs: Int
+  def limits: OpKindLimits
+}
+//--------
+sealed trait CpyOpKind extends OpKindBase
 object CpyOpKind {
   //--------
-  case object Cpy extends CpyOpKind // copy ("move"/"load immediate")
-  case object Jmp extends CpyOpKind // jump
-  case object Br extends CpyOpKind  // branch relative
+  case object Cpy extends CpyOpKind {
+    // copy ("move"/"load immediate")
+    def limits = OpKindLimits(minD=1, maxD=2, minS=1, maxS=1)
+  }
+  // NOTE: `Jmp` and `Br` these are special so that the implementation will 
+  // use separate adders from the ALU
+  case object Jmp extends CpyOpKind {
+    // jump
+    def limits = OpKindLimits(
+      minD=1,
+      maxD=2, // for "jump and link"
+      minS=1,
+      maxS=3, // for "compare and jump" (in one instruction)
+    )
+  }
+  case object Br extends CpyOpKind {
+    // branch relative
+    def limits = OpKindLimits(
+      minD=1,
+      maxD=2, // for "branch and link"
+      minS=1,
+      maxS=3, // for "compare and branch" (in one instruction)
+    )
+  }
   //--------
 }
 //--------
 // ALU-type instructions evaluated entirely in the EX pipeline stage
 // (besides forwarding!)
-sealed trait AluOpKind
+sealed trait AluOpKind extends OpKindBase
 object AluOpKind {
   //--------
-  case object Add extends AluOpKind
-  case object Adc extends AluOpKind
-  case object Sub extends AluOpKind
-  case object Sbc extends AluOpKind
+  case object Add extends AluOpKind {
+    def limits = OpKindLimits(minD=1, maxD=1, minS=2, maxS=2)
+  }
+  case object Adc extends AluOpKind {
+    def limits = OpKindLimits(minD=1, maxD=1, minS=2, maxS=2)
+  }
+  case object Sub extends AluOpKind {
+    def limits = OpKindLimits(minD=1, maxD=1, minS=2, maxS=2)
+  }
+  case object Sbc extends AluOpKind {
+    def limits = OpKindLimits(minD=1, maxD=1, minS=2, maxS=2)
+  }
   //--------
   //case object Cpy extends AluOpKind // "move"/"load immediate" instruction
-  case object Lsl extends AluOpKind
-  case object Lsr extends AluOpKind
-  case object Asr extends AluOpKind
-  case object And extends AluOpKind
-  case object Orr extends AluOpKind
-  case object Xor extends AluOpKind
+  case object Lsl extends AluOpKind {
+    def limits = OpKindLimits(minD=1, maxD=1, minS=2, maxS=2)
+  }
+  case object Lsr extends AluOpKind {
+    def limits = OpKindLimits(minD=1, maxD=1, minS=2, maxS=2)
+  }
+  case object Asr extends AluOpKind {
+    def limits = OpKindLimits(minD=1, maxD=1, minS=2, maxS=2)
+  }
+  case object And extends AluOpKind {
+    def limits = OpKindLimits(minD=1, maxD=1, minS=2, maxS=2)
+  }
+  case object Or extends AluOpKind {
+    def limits = OpKindLimits(minD=1, maxD=1, minS=2, maxS=2)
+  }
+  case object Xor extends AluOpKind {
+    def limits = OpKindLimits(minD=1, maxD=1, minS=2, maxS=2)
+  }
   //--------
-  case object Cmp extends AluOpKind
-  case object CmpBc extends AluOpKind // see the `flare_cpu` git repo's
-                                      // `docs/flare_cpu` for more info
+  case object Cmp extends AluOpKind {
+    def limits = OpKindLimits(minD=1, maxD=1, minS=2, maxS=2)
+  }
+  case object CmpBc extends AluOpKind {
+    // see the `flare_cpu` git repo's `docs/flare_cpu` for more info
+    def limits = OpKindLimits(minD=1, maxD=1, minS=2, maxS=2)
+  }
+                                      
+  case object Sltu extends AluOpKind {
+    def limits = OpKindLimits(minD=1, maxD=1, minS=2, maxS=2)
+  }
+  case object Slts extends AluOpKind {
+    def limits = OpKindLimits(minD=1, maxD=1, minS=2, maxS=2)
+  }
   //--------
-  // TODO: support these other branch condition kinds
-  //case object Sltu extends AluOpKind
-  //case object Slts extends AluOpKind
   //--------
 }
-sealed trait MultiCycleOpKind
+sealed trait MultiCycleOpKind extends OpKindBase
 object MultiCycleOpKind {
   //--------
-  case object Mul extends MultiCycleOpKind
-  case object Udiv extends MultiCycleOpKind
-  case object Umod extends MultiCycleOpKind
-  case object Udivmod extends MultiCycleOpKind
-  case object Sdiv extends MultiCycleOpKind
-  case object Smod extends MultiCycleOpKind
-  case object Sdivmod extends MultiCycleOpKind
+  case object Mul extends MultiCycleOpKind {
+    def limits = OpKindLimits(minD=1, maxD=2, minS=2, maxS=4)
+  }
+  case object Udiv extends MultiCycleOpKind {
+    def limits = OpKindLimits(minD=1, maxD=2, minS=2, maxS=4)
+  }
+  case object Umod extends MultiCycleOpKind {
+    def limits = OpKindLimits(minD=1, maxD=2, minS=2, maxS=4)
+  }
+  case object Udivmod extends MultiCycleOpKind {
+    def limits = OpKindLimits(minD=2, maxD=4, minS=2, maxS=4)
+  }
+  case object Sdiv extends MultiCycleOpKind {
+    def limits = OpKindLimits(minD=1, maxD=2, minS=2, maxS=4)
+  }
+  case object Smod extends MultiCycleOpKind {
+    def limits = OpKindLimits(minD=1, maxD=2, minS=2, maxS=4)
+  }
+  case object Sdivmod extends MultiCycleOpKind {
+    def limits = OpKindLimits(minD=2, maxD=4, minS=2, maxS=4)
+  }
   //--------
   //case object Umull extends MultiCycleOpKind
   //case object Smull extends MultiCycleOpKind
@@ -327,28 +460,50 @@ object MultiCycleOpKind {
 
 // Load-type instructions evaluated within both the EX and MEM pipeline
 // stages
-sealed trait LoadOpKind
+sealed trait LoadOpKind extends OpKindBase
 object LoadOpKind {
   //--------
-  case object LdU8 extends LoadOpKind
-  case object LdS8 extends LoadOpKind
-  case object LdU16 extends LoadOpKind
-  case object LdS16 extends LoadOpKind
-  case object LdU32 extends LoadOpKind
-  case object LdS32 extends LoadOpKind
-  case object Ld64 extends LoadOpKind
+  case object LdU8 extends LoadOpKind {
+    def limits = OpKindLimits(minD=1, maxD=1, minS=2, maxS=3)
+  }
+  case object LdS8 extends LoadOpKind {
+    def limits = OpKindLimits(minD=1, maxD=1, minS=2, maxS=3)
+  }
+  case object LdU16 extends LoadOpKind {
+    def limits = OpKindLimits(minD=1, maxD=1, minS=2, maxS=3)
+  }
+  case object LdS16 extends LoadOpKind {
+    def limits = OpKindLimits(minD=1, maxD=1, minS=2, maxS=3)
+  }
+  case object LdU32 extends LoadOpKind {
+    def limits = OpKindLimits(minD=1, maxD=1, minS=2, maxS=3)
+  }
+  case object LdS32 extends LoadOpKind {
+    def limits = OpKindLimits(minD=1, maxD=1, minS=2, maxS=3)
+  }
+  case object Ld64 extends LoadOpKind {
+    def limits = OpKindLimits(minD=1, maxD=1, minS=2, maxS=3)
+  }
   //--------
 }
 
 // Store-type instructions evaluated within both the EX and MEM pipeline
 // stages
-sealed trait StoreOpKind
+sealed trait StoreOpKind extends OpKindBase
 object StoreOpKind {
   //--------
-  case object St8 extends StoreOpKind
-  case object St16 extends StoreOpKind
-  case object St32 extends StoreOpKind
-  case object St64 extends StoreOpKind
+  case object St8 extends StoreOpKind {
+    def limits = OpKindLimits(minD=1, maxD=1, minS=2, maxS=3)
+  }
+  case object St16 extends StoreOpKind {
+    def limits = OpKindLimits(minD=1, maxD=1, minS=2, maxS=3)
+  }
+  case object St32 extends StoreOpKind {
+    def limits = OpKindLimits(minD=1, maxD=1, minS=2, maxS=3)
+  }
+  case object St64 extends StoreOpKind {
+    def limits = OpKindLimits(minD=1, maxD=1, minS=2, maxS=3)
+  }
   //--------
 }
 
@@ -358,11 +513,19 @@ object StoreOpKind {
 
 // various kinds of conditions (most well known for conditional branches,
 // but also potentially useful for conditional moves)
-sealed trait CondKind
+sealed trait CondKind {
+  //def minNumSrcs: Int
+  //def maxNumSrcs: Int
+  //def numDsts: Int
+}
 object CondKind {
   //--------
-  case object Link extends CondKind   // do it and Link
-  case object Always extends CondKind // do it Always 
+  case object Link extends CondKind {   // do it and Link
+    //def numSrcs: Int = 1
+  }
+  case object Always extends CondKind { // do it Always 
+    //def 
+  }
   //case object Never extends CondKind
   case object Eq extends CondKind     // do it if EQual
   case object Ne extends CondKind     // do it if Not Equal
@@ -387,6 +550,6 @@ object CondKind {
                                       // Signed
   //--------
   // TODO: support these other branch condition kinds
-  //case object Nz extends BranchOpCondKind // non-zero 
-  //case object Z extends BranchOpCondKind  // zero
+  case object Z extends CondKind  // zero
+  case object Nz extends CondKind // non-zero 
 }
