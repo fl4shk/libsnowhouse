@@ -25,15 +25,40 @@ case class SnowHouseRegFileConfig(
 //  shRegFileCfg: SnowHouseRegFileConfig,
 //) {
 //}
-case class SnowHouseConfig(
+case class SnowHousePsDecodeArgs[
+  EncInstrT <: Data
+](
+) {
+  var opInfoMap: LinkedHashMap[Any, OpInfo] = null
+  var io: SnowHouseIo[EncInstrT] = null
+  var cId: CtrlLink = null
+  var optFormal: Boolean = false
+}
+abstract class SnowHousePsDecode[
+  EncInstrT <: Data
+](
+) extends Area {
+  var args: Option[SnowHousePsDecodeArgs[EncInstrT]]=None
+  def decInstr: UInt
+}
+case class SnowHouseConfig[
+  EncInstrT <: Data,
+](
+  encInstrType: HardType[EncInstrT],
   //gprFileDepth: Int,
   //sprFileDepth: Int,
   instrMainWidth: Int,
   shRegFileCfg: SnowHouseRegFileConfig,
-  //ldKindSet: LinkedHashSet[LoadOpKind],
-  //stKindSet: LinkedHashSet[StoreOpKind],
   opInfoMap: LinkedHashMap[Any, OpInfo],
+  //decodeFunc: (
+  //  SnowHouseIo[EncInstrT], // io
+  //  CtrlLink,               // cId
+  //  UInt,                   // output the decoded instruction
+  //) => Area,                
+  psDecode: SnowHousePsDecode[EncInstrT],
+  optFormal: Boolean,
 ) {
+  //def optFormal: Boolean = psDecode.optFormal
   def mainWidth = shRegFileCfg.mainWidth
   def regFileWordCountArr = shRegFileCfg.wordCountArr
   def regFileModRdPortCnt = shRegFileCfg.modRdPortCnt

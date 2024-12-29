@@ -61,7 +61,144 @@ case class SampleCpuEncInstr(
   val rcIdx = UInt(SampleCpuInstrEnc.gprIdxWidth bits)
   val simm16 = UInt(SampleCpuInstrEnc.simmWidth bits)
 }
-object SampleCpuParams {
+case class SampleCpuPsDecode(
+) extends SnowHousePsDecode[SampleCpuEncInstr] {
+  private val _decInstr: UInt = U"32'd0"
+  def decInstr: UInt = _decInstr
+}
+object SampleCpuOpInfoMap {
+  val opInfoMap = LinkedHashMap[Any, OpInfo]()
+  //--------
+  opInfoMap += (
+    SampleCpuOp.AddRaRbRc -> OpInfo.mkAlu(
+      dstArr=Array[DstKind](DstKind.Gpr),
+      srcArr=Array[SrcKind](SrcKind.Gpr, SrcKind.Gpr),
+      aluOp=AluOpKind.Add,
+    )
+  )
+  opInfoMap += (
+    SampleCpuOp.SubRaRbRc -> OpInfo.mkAlu(
+      dstArr=Array[DstKind](DstKind.Gpr),
+      srcArr=Array[SrcKind](SrcKind.Gpr, SrcKind.Gpr),
+      aluOp=AluOpKind.Sub,
+    )
+  )
+  opInfoMap += (
+    SampleCpuOp.SltuRaRbRc -> OpInfo.mkAlu(
+      dstArr=Array[DstKind](DstKind.Gpr),
+      srcArr=Array[SrcKind](SrcKind.Gpr, SrcKind.Gpr),
+      aluOp=AluOpKind.Sltu,
+    )
+  )
+  //opInfoMap += (
+  //  SampleCpuOp.SltsRaRbRc -> OpInfo.mkAlu(
+  //    dstArr=Array[DstKind](DstKind.Gpr),
+  //    srcArr=Array[SrcKind](SrcKind.Gpr, SrcKind.Gpr),
+  //    aluOp=AluOpKind.Slts,
+  //  )
+  //)
+  //--------
+  opInfoMap += (
+    SampleCpuOp.AndRaRbRc -> OpInfo.mkAlu(
+      dstArr=Array[DstKind](DstKind.Gpr),
+      srcArr=Array[SrcKind](SrcKind.Gpr, SrcKind.Gpr),
+      aluOp=AluOpKind.And,
+    )
+  )
+  opInfoMap += (
+    SampleCpuOp.OrrRaRbRc -> OpInfo.mkAlu(
+      dstArr=Array[DstKind](DstKind.Gpr),
+      srcArr=Array[SrcKind](SrcKind.Gpr, SrcKind.Gpr),
+      aluOp=AluOpKind.Or,
+    )
+  )
+  opInfoMap += (
+    SampleCpuOp.XorRaRbRc -> OpInfo.mkAlu(
+      dstArr=Array[DstKind](DstKind.Gpr),
+      srcArr=Array[SrcKind](SrcKind.Gpr, SrcKind.Gpr),
+      aluOp=AluOpKind.Xor,
+    )
+  )
+  //--------
+  opInfoMap += (
+    SampleCpuOp.LslRaRbRc -> OpInfo.mkAlu(
+      dstArr=Array[DstKind](DstKind.Gpr),
+      srcArr=Array[SrcKind](SrcKind.Gpr, SrcKind.Gpr),
+      aluOp=AluOpKind.Lsl,
+    )
+  )
+  opInfoMap += (
+    SampleCpuOp.LsrRaRbRc -> OpInfo.mkAlu(
+      dstArr=Array[DstKind](DstKind.Gpr),
+      srcArr=Array[SrcKind](SrcKind.Gpr, SrcKind.Gpr),
+      aluOp=AluOpKind.Lsr,
+    )
+  )
+  opInfoMap += (
+    SampleCpuOp.AsrRaRbRc -> OpInfo.mkAlu(
+      dstArr=Array[DstKind](DstKind.Gpr),
+      srcArr=Array[SrcKind](SrcKind.Gpr, SrcKind.Gpr),
+      aluOp=AluOpKind.Asr,
+    )
+  )
+  //--------
+  opInfoMap += (
+    SampleCpuOp.BzRaSimm -> OpInfo.mkCpy(
+      dstArr=Array[DstKind](DstKind.Pc),
+      srcArr=Array[SrcKind](SrcKind.Gpr, SrcKind.SImm),
+      cpyOp=CpyOpKind.Br,
+      cond=CondKind.Z,
+    )
+  )
+  opInfoMap += (
+    SampleCpuOp.BnzRaSimm -> OpInfo.mkCpy(
+      dstArr=Array[DstKind](DstKind.Pc),
+      srcArr=Array[SrcKind](SrcKind.Gpr, SrcKind.SImm),
+      cpyOp=CpyOpKind.Br,
+      cond=CondKind.Nz,
+    )
+  )
+  opInfoMap += (
+    SampleCpuOp.JmpRa -> OpInfo.mkCpy(
+      dstArr=Array[DstKind](DstKind.Pc),
+      srcArr=Array[SrcKind](SrcKind.Gpr),
+      cpyOp=CpyOpKind.Jmp,
+    )
+  )
+  //--------
+  opInfoMap += (
+    SampleCpuOp.LdrRaRbSimm -> OpInfo.mkLoad(
+      dstArr=Array[DstKind](DstKind.Gpr),
+      srcArr=Array[SrcKind](SrcKind.Gpr, SrcKind.SImm),
+      loadOp=LoadOpKind.LdU32,
+    )
+  )
+  opInfoMap += (
+    SampleCpuOp.StrRaRbSimm -> OpInfo.mkStore(
+      dstArr=Array[DstKind](DstKind.Gpr),
+      srcArr=Array[SrcKind](SrcKind.Gpr, SrcKind.SImm),
+      storeOp=StoreOpKind.St32,
+    )
+  )
+  opInfoMap += (
+    SampleCpuOp.CpyuiRaSimm -> OpInfo.mkCpy(
+      dstArr=Array[DstKind](DstKind.Gpr),
+      srcArr=Array[SrcKind](SrcKind.SImm),
+      cpyOp=CpyOpKind.Cpyui,
+    )
+  )
+  opInfoMap += (
+    SampleCpuOp.CpyiRaSimm -> OpInfo.mkCpy(
+      dstArr=Array[DstKind](DstKind.Gpr),
+      srcArr=Array[SrcKind](SrcKind.SImm),
+      cpyOp=CpyOpKind.Cpy,
+    )
+  )
+  //--------
+}
+case class SampleCpuParams(
+  optFormal: Boolean
+) {
   //--------
   val instrMainWidth = 32
   val mainWidth = 32
@@ -69,8 +206,8 @@ object SampleCpuParams {
   val modRdPortCnt = 3
   val pipeName="SnowHouseSampleCpu"
   //--------
-  //--------
   val cfg = SnowHouseConfig(
+    encInstrType=SampleCpuEncInstr(),
     instrMainWidth=instrMainWidth,
     shRegFileCfg=SnowHouseRegFileConfig(
       mainWidth=mainWidth,
@@ -80,137 +217,16 @@ object SampleCpuParams {
       modRdPortCnt=modRdPortCnt,
       pipeName=pipeName,
     ),
-    opInfoMap={
-      val opInfoMap = LinkedHashMap[Any, OpInfo]()
-      //--------
-      opInfoMap += (
-        SampleCpuOp.AddRaRbRc -> OpInfo.mkAlu(
-          dstArr=Array[DstKind](DstKind.Gpr),
-          srcArr=Array[SrcKind](SrcKind.Gpr, SrcKind.Gpr),
-          aluOp=AluOpKind.Add,
-        )
-      )
-      opInfoMap += (
-        SampleCpuOp.SubRaRbRc -> OpInfo.mkAlu(
-          dstArr=Array[DstKind](DstKind.Gpr),
-          srcArr=Array[SrcKind](SrcKind.Gpr, SrcKind.Gpr),
-          aluOp=AluOpKind.Sub,
-        )
-      )
-      opInfoMap += (
-        SampleCpuOp.SltuRaRbRc -> OpInfo.mkAlu(
-          dstArr=Array[DstKind](DstKind.Gpr),
-          srcArr=Array[SrcKind](SrcKind.Gpr, SrcKind.Gpr),
-          aluOp=AluOpKind.Sltu,
-        )
-      )
-      //opInfoMap += (
-      //  SampleCpuOp.SltsRaRbRc -> OpInfo.mkAlu(
-      //    dstArr=Array[DstKind](DstKind.Gpr),
-      //    srcArr=Array[SrcKind](SrcKind.Gpr, SrcKind.Gpr),
-      //    aluOp=AluOpKind.Slts,
-      //  )
-      //)
-      //--------
-      opInfoMap += (
-        SampleCpuOp.AndRaRbRc -> OpInfo.mkAlu(
-          dstArr=Array[DstKind](DstKind.Gpr),
-          srcArr=Array[SrcKind](SrcKind.Gpr, SrcKind.Gpr),
-          aluOp=AluOpKind.And,
-        )
-      )
-      opInfoMap += (
-        SampleCpuOp.OrrRaRbRc -> OpInfo.mkAlu(
-          dstArr=Array[DstKind](DstKind.Gpr),
-          srcArr=Array[SrcKind](SrcKind.Gpr, SrcKind.Gpr),
-          aluOp=AluOpKind.Or,
-        )
-      )
-      opInfoMap += (
-        SampleCpuOp.XorRaRbRc -> OpInfo.mkAlu(
-          dstArr=Array[DstKind](DstKind.Gpr),
-          srcArr=Array[SrcKind](SrcKind.Gpr, SrcKind.Gpr),
-          aluOp=AluOpKind.Xor,
-        )
-      )
-      //--------
-      opInfoMap += (
-        SampleCpuOp.LslRaRbRc -> OpInfo.mkAlu(
-          dstArr=Array[DstKind](DstKind.Gpr),
-          srcArr=Array[SrcKind](SrcKind.Gpr, SrcKind.Gpr),
-          aluOp=AluOpKind.Lsl,
-        )
-      )
-      opInfoMap += (
-        SampleCpuOp.LsrRaRbRc -> OpInfo.mkAlu(
-          dstArr=Array[DstKind](DstKind.Gpr),
-          srcArr=Array[SrcKind](SrcKind.Gpr, SrcKind.Gpr),
-          aluOp=AluOpKind.Lsr,
-        )
-      )
-      opInfoMap += (
-        SampleCpuOp.AsrRaRbRc -> OpInfo.mkAlu(
-          dstArr=Array[DstKind](DstKind.Gpr),
-          srcArr=Array[SrcKind](SrcKind.Gpr, SrcKind.Gpr),
-          aluOp=AluOpKind.Asr,
-        )
-      )
-      //--------
-      opInfoMap += (
-        SampleCpuOp.BzRaSimm -> OpInfo.mkCpy(
-          dstArr=Array[DstKind](DstKind.Pc),
-          srcArr=Array[SrcKind](SrcKind.Gpr, SrcKind.SImm),
-          cpyOp=CpyOpKind.Br,
-          cond=CondKind.Z,
-        )
-      )
-      opInfoMap += (
-        SampleCpuOp.BnzRaSimm -> OpInfo.mkCpy(
-          dstArr=Array[DstKind](DstKind.Pc),
-          srcArr=Array[SrcKind](SrcKind.Gpr, SrcKind.SImm),
-          cpyOp=CpyOpKind.Br,
-          cond=CondKind.Nz,
-        )
-      )
-      opInfoMap += (
-        SampleCpuOp.JmpRa -> OpInfo.mkCpy(
-          dstArr=Array[DstKind](DstKind.Pc),
-          srcArr=Array[SrcKind](SrcKind.Gpr),
-          cpyOp=CpyOpKind.Jmp,
-        )
-      )
-      //--------
-      opInfoMap += (
-        SampleCpuOp.LdrRaRbSimm -> OpInfo.mkLoad(
-          dstArr=Array[DstKind](DstKind.Gpr),
-          srcArr=Array[SrcKind](SrcKind.Gpr, SrcKind.SImm),
-          loadOp=LoadOpKind.LdU32,
-        )
-      )
-      opInfoMap += (
-        SampleCpuOp.StrRaRbSimm -> OpInfo.mkStore(
-          dstArr=Array[DstKind](DstKind.Gpr),
-          srcArr=Array[SrcKind](SrcKind.Gpr, SrcKind.SImm),
-          storeOp=StoreOpKind.St32,
-        )
-      )
-      opInfoMap += (
-        SampleCpuOp.CpyuiRaSimm -> OpInfo.mkCpy(
-          dstArr=Array[DstKind](DstKind.Gpr),
-          srcArr=Array[SrcKind](SrcKind.SImm),
-          cpyOp=CpyOpKind.Cpyui,
-        )
-      )
-      opInfoMap += (
-        SampleCpuOp.CpyiRaSimm -> OpInfo.mkCpy(
-          dstArr=Array[DstKind](DstKind.Gpr),
-          srcArr=Array[SrcKind](SrcKind.SImm),
-          cpyOp=CpyOpKind.Cpy,
-        )
-      )
-      //--------
-      opInfoMap
-    },
+    opInfoMap=SampleCpuOpInfoMap.opInfoMap,
+    psDecode=SampleCpuPsDecode(),
+    //decodeFunc=(
+    //  io: SnowHouseIo[SampleCpuEncInstr],
+    //  cId: CtrlLink,
+    //  decInstr: UInt,
+    //) => new Area {
+    //  //decInstr := U"${mainWidth}'d0"
+    //},
+    optFormal=optFormal,
   )
   //--------
 }
@@ -243,12 +259,16 @@ object SnowHouseSampleCpuTestProgram extends App {
   for ((encoded, idx) <- outpArr.view.zipWithIndex) {
     printf(
       //s"encoded ${idx}: ${encoded}"
-      "%X: %X\n", idx << 2, (encoded.toLong & 0xffffffff).toInt
+      "%X: %X\n",
+      idx << 2,
+      (encoded.toLong & 0xffffffff).toInt
     )
   }
 }
 object SnowHouseSampleCpuToVerilog extends App {
   Config.spinal.generateVerilog(SnowHouse(
-    cfg=SampleCpuParams.cfg
+    cfg=SampleCpuParams(
+      optFormal=true
+    ).cfg
   ))
 }

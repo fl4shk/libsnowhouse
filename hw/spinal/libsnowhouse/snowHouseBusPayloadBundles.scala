@@ -12,14 +12,18 @@ import libcheesevoyage.math._
 import libcheesevoyage.bus.lcvStall._
 
 //--------
-case class IbusHostPayload(
-  cfg: SnowHouseConfig,
+case class IbusHostPayload[
+  EncInstrT <: Data
+](
+  cfg: SnowHouseConfig[EncInstrT],
 ) extends Bundle {
   val addr = UInt(cfg.mainWidth bits)
   //val data = UInt(cfg.mainWidth bits)
 }
-case class IbusDevPayload(
-  cfg: SnowHouseConfig,
+case class IbusDevPayload[
+  EncInstrT <: Data
+](
+  cfg: SnowHouseConfig[EncInstrT],
 ) extends Bundle {
   val instr = UInt(cfg.instrMainWidth bits)
 }
@@ -36,15 +40,19 @@ extends SpinalEnum(defaultEncoding=binarySequential) {
 //  val
 //    sz
 //}
-case class DbusHostPayload(
-  cfg: SnowHouseConfig,
+case class DbusHostPayload[
+  EncInstrT <: Data
+](
+  cfg: SnowHouseConfig[EncInstrT],
 ) extends Bundle {
   val addr = UInt(cfg.mainWidth bits)
   val data = UInt(cfg.mainWidth bits)
   val accKind = DbusHostMemAccKind()
 }
-case class DbusDevPayload(
-  cfg: SnowHouseConfig,
+case class DbusDevPayload[
+  EncInstrT <: Data
+](
+  cfg: SnowHouseConfig[EncInstrT],
 ) extends Bundle {
   val data = UInt(cfg.mainWidth bits)
 }

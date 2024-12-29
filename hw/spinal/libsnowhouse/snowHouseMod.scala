@@ -15,8 +15,10 @@ import libcheesevoyage.bus.lcvStall._
 
 
 //--------
-case class SnowHouseIo(
-  cfg: SnowHouseConfig
+case class SnowHouseIo[
+  EncInstrT <: Data
+](
+  cfg: SnowHouseConfig[EncInstrT]
 ) extends Bundle {
   //val icache = 
   // instruction bus
@@ -29,27 +31,25 @@ case class SnowHouseIo(
     devPayloadType=Some(HardType(DbusDevPayload(cfg=cfg))),
   ))
 }
-case class SnowHouse
-//[
-//  GprWordT <: Data
-//]
-(
+case class SnowHouse[
+  EncInstrT <: Data
+](
   //gprWordType: HardType[GprWordT],
-  cfg: SnowHouseConfig,
+  cfg: SnowHouseConfig[EncInstrT],
 ) extends Component {
   //--------
-  val io = SnowHouseIo(cfg=cfg)
+  val io = SnowHouseIo[EncInstrT](cfg=cfg)
   //--------
   val linkArr = PipeHelper.mkLinkArr()
   cfg.regFileCfg.linkArr = Some(linkArr)
   //--------
-  io.ibus.nextValid := False
-  io.ibus.hostData.addr := 3
+  //io.ibus.nextValid := True
+  //io.ibus.hostData.addr := 3
 
-  io.dbus.nextValid := False
-  io.dbus.hostData.addr := 8
-  io.dbus.hostData.data := 0x10c
-  io.dbus.hostData.accKind := DbusHostMemAccKind.Load
+  //io.dbus.nextValid := False
+  //io.dbus.hostData.addr := 8
+  //io.dbus.hostData.data := 0x10c
+  //io.dbus.hostData.accKind := DbusHostMemAccKind.Load
 }
 
 //object SnowHouseToVerilog extends App {

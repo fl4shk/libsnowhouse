@@ -782,7 +782,7 @@ case class Gpr(
     s"${index}",
   )
   assert(
-    index < SampleCpuParams.numGprs,
+    index < SampleCpuInstrEnc.numGprs,
     s"${index}",
   )
 }
