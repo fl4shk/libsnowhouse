@@ -218,17 +218,21 @@ object SampleCpuParams {
 object SnowHouseSampleCpuTestProgram extends App {
   import SnowHouseRegs._
   val program = ArrayBuffer[AsmStmt]()
+  import libsnowhouse.Label._
+  val tempData: Int = 0x17000
   program ++= Array[AsmStmt](
     //--------
-    Label("loop"),
+    Lb"loop",
     add(r0, r1, r2),
-    cpyi(r2, 0x7000),
-    bz(r0, "loop"),
+    cpyui(r2, tempData >> 16),
+    cpyi(r2, tempData & 0xffff),
+    bz(r0, LbR"loop"),
     //--------
-    cpyi(r12, 0x0),
-    Label("infin"),
+    cpyi(r12, LbR"infin"),
+    Lb"infin",
     //--------
-    bz(r12, "infin"),
+    bz(r12, LbR"infin"),
+    Db32(0x3f),
     //--------
   )
   val outpArr = ArrayBuffer[BigInt]()

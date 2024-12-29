@@ -877,6 +877,23 @@ class Instruction(
   }
 }
 object Label {
+  implicit class LiteralBuilder(private val sc: StringContext) {
+    def Lb(args: Any*): AsmStmt = {
+      //var name = sc.parts.flatMap(s => s.toString)
+      var name: String = ""
+      for (partStr <- sc.parts.view) {
+        name = name + partStr.toString
+      }
+      apply(name=name)
+    }
+    def LbR(args: Any*): SampleCpuExpr.LabRef = {
+      var name: String = ""
+      for (partStr <- sc.parts.view) {
+        name = name + partStr.toString
+      }
+      LabRef(name=name)
+    }
+  }
   def apply(
     name: String
   ) = {
@@ -921,6 +938,13 @@ case class AsmStmt(
   db32: Option[Db32],
 ) {
 }
+object LabRef {
+  def apply(
+    name: String 
+  ) = {
+    new SampleCpuExpr.LabRef(name=name)
+  }
+}
 object SampleCpuExpr {
   //trait SampleCpuAsmAst extends SampleCpuAsmAst {
   //}
@@ -935,7 +959,7 @@ object SampleCpuExpr {
   //val tempLabel = Label(
   //  name="asdf"
   //)
-  implicit class LabRef(
+  class LabRef(
     val name: String,
   ) extends SampleCpuExpr {
     private[libsnowhouse] var _value: ExprInt = null
@@ -1083,7 +1107,7 @@ case class SampleCpuAssembler(
     _stmtNum = idx
     //--------
     var foundInstr: Boolean = false
-    var foundLabel: Boolean = true
+    var foundLabel: Boolean = false
     //--------
     stmt.instr match {
       case Some(instr) => {
@@ -1138,8 +1162,8 @@ case class SampleCpuAssembler(
   _pc = 0
   for ((stmt, idx) <- stmtArr.view.zipWithIndex) {
     _stmtNum = idx
-    var foundInstr: Boolean = false
-    var foundLabel: Boolean = true
+    //var foundInstr: Boolean = false
+    //var foundLabel: Boolean = false
     stmt.instr match {
       case Some(instr) => {
         outpArr += instr.encode(this)
