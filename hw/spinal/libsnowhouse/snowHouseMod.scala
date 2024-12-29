@@ -52,24 +52,24 @@ case class SnowHouse
   io.dbus.hostData.accKind := DbusHostMemAccKind.Load
 }
 
-object SnowHouseToVerilog extends App {
-  Config.spinal.generateVerilog(SnowHouse(
-    cfg=SnowHouseConfig(
-      instrMainWidth=32,
-      shRegFileCfg=SnowHouseRegFileConfig(
-        mainWidth=32,
-        wordCountArr=(
-          Array.fill(1)(16)
-        ),
-        modRdPortCnt=3,
-        pipeName="SnowHouseToVerilog",
-      ),
-      opInfoMap={
-        val opInfoMap = LinkedHashMap[Any, OpInfo]()
-        opInfoMap
-      },
-      //ldKindSet=LinkedHashSet[LoadOpKind](),
-      //stKindSet=LinkedHashSet[StoreOpKind](),
-    )
-  ))
-}
+//object SnowHouseToVerilog extends App {
+//  Config.spinal.generateVerilog(SnowHouse(
+//    cfg=SnowHouseConfig(
+//      instrMainWidth=32,
+//      shRegFileCfg=SnowHouseRegFileConfig(
+//        mainWidth=32,
+//        wordCountArr=(
+//          Array.fill(1)(16)
+//        ),
+//        modRdPortCnt=3,
+//        pipeName="SnowHouseToVerilog",
+//      ),
+//      opInfoMap={
+//        val opInfoMap = LinkedHashMap[Any, OpInfo]()
+//        opInfoMap
+//      },
+//      //ldKindSet=LinkedHashSet[LoadOpKind](),
+//      //stKindSet=LinkedHashSet[StoreOpKind](),
+//    )
+//  ))
+//}

@@ -348,27 +348,39 @@ object CpyOpKind {
   //--------
   case object Cpy extends CpyOpKind {
     // copy ("move"/"load immediate")
-    def limits = OpKindLimits(minD=1, maxD=2, minS=1, maxS=1)
+    private[libsnowhouse] val _limits = OpKindLimits(
+      minD=1, maxD=2, minS=1, maxS=2
+    )
+    def limits = _limits
+  }
+  case object Cpyui extends CpyOpKind {
+    // copy upper immediate ("load upper immediate")
+    private[libsnowhouse] val _limits = OpKindLimits(
+      minD=1, maxD=2, minS=1, maxS=2
+    )
+    def limits = _limits
   }
   // NOTE: `Jmp` and `Br` these are special so that the implementation will 
   // use separate adders from the ALU
   case object Jmp extends CpyOpKind {
     // jump
-    def limits = OpKindLimits(
+    private[libsnowhouse] val _limits = OpKindLimits(
       minD=1,
       maxD=2, // for "jump and link"
       minS=1,
       maxS=3, // for "compare and jump" (in one instruction)
     )
+    def limits = _limits
   }
   case object Br extends CpyOpKind {
     // branch relative
-    def limits = OpKindLimits(
+    private[libsnowhouse] val _limits = OpKindLimits(
       minD=1,
       maxD=2, // for "branch and link"
       minS=1,
       maxS=3, // for "compare and branch" (in one instruction)
     )
+    def limits = _limits
   }
   //--------
 }
@@ -379,51 +391,93 @@ sealed trait AluOpKind extends OpKindBase
 object AluOpKind {
   //--------
   case object Add extends AluOpKind {
-    def limits = OpKindLimits(minD=1, maxD=1, minS=2, maxS=2)
+    private[libsnowhouse] val _limits = OpKindLimits(
+      minD=1, maxD=1, minS=2, maxS=2
+    )
+    def limits = _limits
   }
   case object Adc extends AluOpKind {
-    def limits = OpKindLimits(minD=1, maxD=1, minS=2, maxS=2)
+    private[libsnowhouse] val _limits = OpKindLimits(
+      minD=1, maxD=1, minS=2, maxS=2
+    )
+    def limits = _limits
   }
   case object Sub extends AluOpKind {
-    def limits = OpKindLimits(minD=1, maxD=1, minS=2, maxS=2)
+    private[libsnowhouse] val _limits = OpKindLimits(
+      minD=1, maxD=1, minS=2, maxS=2
+    )
+    def limits = _limits
   }
   case object Sbc extends AluOpKind {
-    def limits = OpKindLimits(minD=1, maxD=1, minS=2, maxS=2)
+    private[libsnowhouse] val _limits = OpKindLimits(
+      minD=1, maxD=1, minS=2, maxS=2
+    )
+    def limits = _limits
   }
   //--------
   //case object Cpy extends AluOpKind // "move"/"load immediate" instruction
   case object Lsl extends AluOpKind {
-    def limits = OpKindLimits(minD=1, maxD=1, minS=2, maxS=2)
+    private[libsnowhouse] val _limits = OpKindLimits(
+      minD=1, maxD=1, minS=2, maxS=2
+    )
+    def limits = _limits
   }
   case object Lsr extends AluOpKind {
-    def limits = OpKindLimits(minD=1, maxD=1, minS=2, maxS=2)
+    private[libsnowhouse] val _limits = OpKindLimits(
+      minD=1, maxD=1, minS=2, maxS=2
+    )
+    def limits = _limits
   }
   case object Asr extends AluOpKind {
-    def limits = OpKindLimits(minD=1, maxD=1, minS=2, maxS=2)
+    private[libsnowhouse] val _limits = OpKindLimits(
+      minD=1, maxD=1, minS=2, maxS=2
+    )
+    def limits = _limits
   }
   case object And extends AluOpKind {
-    def limits = OpKindLimits(minD=1, maxD=1, minS=2, maxS=2)
+    private[libsnowhouse] val _limits = OpKindLimits(
+      minD=1, maxD=1, minS=2, maxS=2
+    )
+    def limits = _limits
   }
   case object Or extends AluOpKind {
-    def limits = OpKindLimits(minD=1, maxD=1, minS=2, maxS=2)
+    private[libsnowhouse] val _limits = OpKindLimits(
+      minD=1, maxD=1, minS=2, maxS=2
+    )
+    def limits = _limits
   }
   case object Xor extends AluOpKind {
-    def limits = OpKindLimits(minD=1, maxD=1, minS=2, maxS=2)
+    private[libsnowhouse] val _limits = OpKindLimits(
+      minD=1, maxD=1, minS=2, maxS=2
+    )
+    def limits = _limits
   }
   //--------
   case object Cmp extends AluOpKind {
-    def limits = OpKindLimits(minD=1, maxD=1, minS=2, maxS=2)
+    private[libsnowhouse] val _limits = OpKindLimits(
+      minD=1, maxD=1, minS=2, maxS=2
+    )
+    def limits = _limits
   }
   case object CmpBc extends AluOpKind {
     // see the `flare_cpu` git repo's `docs/flare_cpu` for more info
-    def limits = OpKindLimits(minD=1, maxD=1, minS=2, maxS=2)
+    private[libsnowhouse] val _limits = OpKindLimits(
+      minD=1, maxD=1, minS=2, maxS=2
+    )
+    def limits = _limits
   }
                                       
   case object Sltu extends AluOpKind {
-    def limits = OpKindLimits(minD=1, maxD=1, minS=2, maxS=2)
+    private[libsnowhouse] val _limits = OpKindLimits(
+      minD=1, maxD=1, minS=2, maxS=2
+    )
+    def limits = _limits
   }
   case object Slts extends AluOpKind {
-    def limits = OpKindLimits(minD=1, maxD=1, minS=2, maxS=2)
+    private[libsnowhouse] val _limits = OpKindLimits(
+      minD=1, maxD=1, minS=2, maxS=2
+    )
+    def limits = _limits
   }
   //--------
   //--------
@@ -432,25 +486,46 @@ sealed trait MultiCycleOpKind extends OpKindBase
 object MultiCycleOpKind {
   //--------
   case object Mul extends MultiCycleOpKind {
-    def limits = OpKindLimits(minD=1, maxD=2, minS=2, maxS=4)
+    private[libsnowhouse] val _limits = OpKindLimits(
+      minD=1, maxD=2, minS=2, maxS=4
+    )
+    def limits = _limits
   }
   case object Udiv extends MultiCycleOpKind {
-    def limits = OpKindLimits(minD=1, maxD=2, minS=2, maxS=4)
+    private[libsnowhouse] val _limits = OpKindLimits(
+      minD=1, maxD=2, minS=2, maxS=4
+    )
+    def limits = _limits
   }
   case object Umod extends MultiCycleOpKind {
-    def limits = OpKindLimits(minD=1, maxD=2, minS=2, maxS=4)
+    private[libsnowhouse] val _limits = OpKindLimits(
+      minD=1, maxD=2, minS=2, maxS=4
+    )
+    def limits = _limits
   }
   case object Udivmod extends MultiCycleOpKind {
-    def limits = OpKindLimits(minD=2, maxD=4, minS=2, maxS=4)
+    private[libsnowhouse] val _limits = OpKindLimits(
+      minD=2, maxD=4, minS=2, maxS=4
+    )
+    def limits = _limits
   }
   case object Sdiv extends MultiCycleOpKind {
-    def limits = OpKindLimits(minD=1, maxD=2, minS=2, maxS=4)
+    private[libsnowhouse] val _limits = OpKindLimits(
+      minD=1, maxD=2, minS=2, maxS=4
+    )
+    def limits = _limits
   }
   case object Smod extends MultiCycleOpKind {
-    def limits = OpKindLimits(minD=1, maxD=2, minS=2, maxS=4)
+    private[libsnowhouse] val _limits = OpKindLimits(
+      minD=1, maxD=2, minS=2, maxS=4
+    )
+    def limits = _limits
   }
   case object Sdivmod extends MultiCycleOpKind {
-    def limits = OpKindLimits(minD=2, maxD=4, minS=2, maxS=4)
+    private[libsnowhouse] val _limits = OpKindLimits(
+      minD=2, maxD=4, minS=2, maxS=4
+    )
+    def limits = _limits
   }
   //--------
   //case object Umull extends MultiCycleOpKind
@@ -464,25 +539,46 @@ sealed trait LoadOpKind extends OpKindBase
 object LoadOpKind {
   //--------
   case object LdU8 extends LoadOpKind {
-    def limits = OpKindLimits(minD=1, maxD=1, minS=2, maxS=3)
+    private[libsnowhouse] val _limits = OpKindLimits(
+      minD=1, maxD=1, minS=2, maxS=3
+    )
+    def limits = _limits
   }
   case object LdS8 extends LoadOpKind {
-    def limits = OpKindLimits(minD=1, maxD=1, minS=2, maxS=3)
+    private[libsnowhouse] val _limits = OpKindLimits(
+      minD=1, maxD=1, minS=2, maxS=3
+    )
+    def limits = _limits
   }
   case object LdU16 extends LoadOpKind {
-    def limits = OpKindLimits(minD=1, maxD=1, minS=2, maxS=3)
+    private[libsnowhouse] val _limits = OpKindLimits(
+      minD=1, maxD=1, minS=2, maxS=3
+    )
+    def limits = _limits
   }
   case object LdS16 extends LoadOpKind {
-    def limits = OpKindLimits(minD=1, maxD=1, minS=2, maxS=3)
+    private[libsnowhouse] val _limits = OpKindLimits(
+      minD=1, maxD=1, minS=2, maxS=3
+    )
+    def limits = _limits
   }
   case object LdU32 extends LoadOpKind {
-    def limits = OpKindLimits(minD=1, maxD=1, minS=2, maxS=3)
+    private[libsnowhouse] val _limits = OpKindLimits(
+      minD=1, maxD=1, minS=2, maxS=3
+    )
+    def limits = _limits
   }
   case object LdS32 extends LoadOpKind {
-    def limits = OpKindLimits(minD=1, maxD=1, minS=2, maxS=3)
+    private[libsnowhouse] val _limits = OpKindLimits(
+      minD=1, maxD=1, minS=2, maxS=3
+    )
+    def limits = _limits
   }
   case object Ld64 extends LoadOpKind {
-    def limits = OpKindLimits(minD=1, maxD=1, minS=2, maxS=3)
+    private[libsnowhouse] val _limits = OpKindLimits(
+      minD=1, maxD=1, minS=2, maxS=3
+    )
+    def limits = _limits
   }
   //--------
 }
@@ -493,16 +589,28 @@ sealed trait StoreOpKind extends OpKindBase
 object StoreOpKind {
   //--------
   case object St8 extends StoreOpKind {
-    def limits = OpKindLimits(minD=1, maxD=1, minS=2, maxS=3)
+    private[libsnowhouse] val _limits = OpKindLimits(
+      minD=1, maxD=1, minS=2, maxS=3
+    )
+    def limits = _limits
   }
   case object St16 extends StoreOpKind {
-    def limits = OpKindLimits(minD=1, maxD=1, minS=2, maxS=3)
+    private[libsnowhouse] val _limits = OpKindLimits(
+      minD=1, maxD=1, minS=2, maxS=3
+    )
+    def limits = _limits
   }
   case object St32 extends StoreOpKind {
-    def limits = OpKindLimits(minD=1, maxD=1, minS=2, maxS=3)
+    private[libsnowhouse] val _limits = OpKindLimits(
+      minD=1, maxD=1, minS=2, maxS=3
+    )
+    def limits = _limits
   }
   case object St64 extends StoreOpKind {
-    def limits = OpKindLimits(minD=1, maxD=1, minS=2, maxS=3)
+    private[libsnowhouse] val _limits = OpKindLimits(
+      minD=1, maxD=1, minS=2, maxS=3
+    )
+    def limits = _limits
   }
   //--------
 }

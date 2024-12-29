@@ -12,38 +12,45 @@ import libcheesevoyage.math._
 import libcheesevoyage.bus.lcvStall._
 
 object SampleCpuInstrEnc {
-  val numOps = 16
-  val opWidth = log2Up(numOps)
-  val numGprs = 16
-  val gprIdxWidth = log2Up(numGprs)
-  val simmWidth = 16
+  val numOps: Int = 16
+  val opWidth: Int = log2Up(numOps)
+  val numGprs: Int = 16
+  val gprIdxWidth: Int = log2Up(numGprs)
+  val simmWidth: Int = 16
 }
 object SampleCpuOp {
+  //private var _opCnt: Int = 0
   def mkOp(
-    opAsInt: Int
-  ): (UInt, Int) = {
-    (U(s"${SampleCpuInstrEnc.opWidth}'d${opAsInt}"), opAsInt)
+    opAsInt: Int,
+    name: String,
+  ): (/*UInt,*/ Int, String) = {
+    //_opCnt += 1
+    (
+      //U(s"${SampleCpuInstrEnc.opWidth}'d${opAsInt}"),
+      opAsInt,
+      name,
+    )
   }
   //--------
-  def AddRaRbRc = mkOp(0)
-  def SubRaRbRc = mkOp(1)
-  def SltuRaRbRc = mkOp(2)
-  def SltsRaRbRc = mkOp(3)
+  def AddRaRbRc = mkOp(0, "AddRaRbRc") // 0
+  def SubRaRbRc = mkOp(1, "SubRaRbRc") // 1
+  def SltuRaRbRc = mkOp(2, "SltuRaRbRc") // 2
+  //def SltsRaRbRc = mkOp() // 3
   //--------
-  def AndRaRbRc = mkOp(4)
-  def OrrRaRbRc = mkOp(5)
-  def XorRaRbRc = mkOp(6)
-  def LslRaRbRc = mkOp(7)
+  def AndRaRbRc = mkOp(3, "AndRaRbRc") // 3
+  def OrrRaRbRc = mkOp(4, "OrrRaRbRc") // 4
+  def XorRaRbRc = mkOp(5, "XorRaRbRc") // 5
+  def LslRaRbRc = mkOp(6, "LslRaRbRc") // 6
+  def LsrRaRbRc = mkOp(7, "LsrRaRbRc") // 7
+  def AsrRaRbRc = mkOp(8, "AsrRaRbRc") // 8
   //--------
-  def LsrRaRbRc = mkOp(8)
-  def AsrRaRbRc = mkOp(9)
-  //--------
-  def BzRaSimm = mkOp(10)
-  def BnzRaSimm = mkOp(11)
-  def JmpRa = mkOp(12)
-  def LdrRaRbSimm = mkOp(13)
-  def StrRaRbSimm = mkOp(14)
-  def CpyiRaSimm = mkOp(15)
+  def BzRaSimm = mkOp(9, "BzRaSimm") // 9
+  def BnzRaSimm = mkOp(10, "BnzRaSimm") // 10
+  def JmpRa = mkOp(11, "JmpRa") // 11
+  def LdrRaRbSimm = mkOp(12, "LdrRaRbSimm") // 12
+  def StrRaRbSimm = mkOp(13, "StrRaRbSimm") // 13
+  def CpyuiRaSimm = mkOp(14, "CpyuiRaSimm") // 14
+  def CpyiRaSimm = mkOp(15, "CpyiRaSimm") // 15
   //--------
 }
 case class SampleCpuEncInstr(
@@ -68,7 +75,7 @@ object SampleCpuParams {
     shRegFileCfg=SnowHouseRegFileConfig(
       mainWidth=mainWidth,
       wordCountArr=(
-        Array.fill(1)(numGprs)
+        Array.fill(1)(numGprs.toInt)
       ),
       modRdPortCnt=modRdPortCnt,
       pipeName=pipeName,
@@ -97,13 +104,13 @@ object SampleCpuParams {
           aluOp=AluOpKind.Sltu,
         )
       )
-      opInfoMap += (
-        SampleCpuOp.SltsRaRbRc -> OpInfo.mkAlu(
-          dstArr=Array[DstKind](DstKind.Gpr),
-          srcArr=Array[SrcKind](SrcKind.Gpr, SrcKind.Gpr),
-          aluOp=AluOpKind.Slts,
-        )
-      )
+      //opInfoMap += (
+      //  SampleCpuOp.SltsRaRbRc -> OpInfo.mkAlu(
+      //    dstArr=Array[DstKind](DstKind.Gpr),
+      //    srcArr=Array[SrcKind](SrcKind.Gpr, SrcKind.Gpr),
+      //    aluOp=AluOpKind.Slts,
+      //  )
+      //)
       //--------
       opInfoMap += (
         SampleCpuOp.AndRaRbRc -> OpInfo.mkAlu(
@@ -188,6 +195,13 @@ object SampleCpuParams {
         )
       )
       opInfoMap += (
+        SampleCpuOp.CpyuiRaSimm -> OpInfo.mkCpy(
+          dstArr=Array[DstKind](DstKind.Gpr),
+          srcArr=Array[SrcKind](SrcKind.SImm),
+          cpyOp=CpyOpKind.Cpyui,
+        )
+      )
+      opInfoMap += (
         SampleCpuOp.CpyiRaSimm -> OpInfo.mkCpy(
           dstArr=Array[DstKind](DstKind.Gpr),
           srcArr=Array[SrcKind](SrcKind.SImm),
@@ -199,4 +213,38 @@ object SampleCpuParams {
     },
   )
   //--------
+}
+
+object SnowHouseSampleCpuTestProgram extends App {
+  import SnowHouseRegs._
+  val program = ArrayBuffer[AsmStmt]()
+  program ++= Array[AsmStmt](
+    //--------
+    Label("loop"),
+    add(r0, r1, r2),
+    cpyi(r2, 0x7000),
+    bz(r0, "loop"),
+    //--------
+    cpyi(r12, 0x0),
+    Label("infin"),
+    //--------
+    bz(r12, "infin"),
+    //--------
+  )
+  val outpArr = ArrayBuffer[BigInt]()
+  val assembler = SampleCpuAssembler(
+    stmtArr=program,
+    outpArr=outpArr,
+  )
+  for ((encoded, idx) <- outpArr.view.zipWithIndex) {
+    printf(
+      //s"encoded ${idx}: ${encoded}"
+      "%X: %X\n", idx << 2, (encoded.toLong & 0xffffffff).toInt
+    )
+  }
+}
+object SnowHouseSampleCpuToVerilog extends App {
+  Config.spinal.generateVerilog(SnowHouse(
+    cfg=SampleCpuParams.cfg
+  ))
 }
