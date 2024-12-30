@@ -55,7 +55,7 @@ object SrcKind {
   case object ZImm extends SrcKind  // Zero-extended
                                     // (or cfg.mainWidth bits) immediate
   case object SImm extends SrcKind  // Sign-extended immediate
-  //case object AluFlags extends SrcKind  // 
+  case object AluFlags extends SrcKind  // 
 }
 
 // kinds of destination operands of instruction
@@ -141,6 +141,35 @@ class OpInfo(
   //val opCond: AluOpKind | LoadOpKind | StoreOpKind,
   //var cond: Option[CondKind]=None,
 ) {
+  def findArgs(opKind: OpKindBase): Option[OpKindValidArgs] = {
+    //opKind.validArgsSet.find(validArgs => (
+    //  this.dstArr.size == validArgs.dstSize 
+    //  && this.srcArr.size == validArgs.srcSize
+    //))
+    opKind.validArgsSet.find(validArgs => {
+      if (
+        dstArr.size == validArgs.dst.size
+        && srcArr.size == validArgs.src.size
+      ) {
+        var found: Boolean = true
+        for ((dst: DstKind, dstIdx: Int) <- dstArr.view.zipWithIndex) {
+          if (!validArgs.dst(dstIdx).contains(dst)) {
+            found = false
+          }
+        }
+        if (found) {
+          for ((src, srcIdx) <- srcArr.view.zipWithIndex) {
+            if (!validArgs.src(srcIdx).contains(src)) {
+              found = false
+            }
+          }
+        }
+        found
+      } else {
+        false
+      }
+    })
+  }
   //--------
   //private[libsnowhouse] var _dst: Seq[DstKind] = null
   //private[libsnowhouse] var _srcArr: Seq[SrcKind] = null
@@ -325,23 +354,36 @@ object OpSelect {
   //--------
 }
 //--------
-case class OpKindNumArgs(
+case class OpKindValidArgs(
   //minD: Int,
   //maxD: Int,
   //minS: Int,
   //maxS: Int,
-  dst: Int,
-  src: Int,
+  //--------
+  //dstSize: Int,
+  //srcSize: Int,
+  dst: Seq[HashSet[DstKind]],
+  src: Seq[HashSet[SrcKind]],
+  //--------
   //optExtraDstKind: Option[DstKind]=None,
   //optExtraSrcKind: Option[SrcKind]=None,
 ) {
+  val dstSize = dst.size
+  val srcSize = src.size
+  //def eq(that: OpKindNumArgs): Boolean = (
+  //  dst == that.dst
+  //  && src == that.dst
+  //)
+  //def notEq(that: OpKindNumArgs): Boolean = (
+  //  !(this eq that) 
+  //)
 }
 sealed trait OpKindBase {
   //def minNumDsts: Int
   //def maxNumDsts: Int
   //def minNumSrcs: Int
   //def maxNumSrcs: Int
-  def numArgsSet: LinkedHashSet[OpKindNumArgs]
+  def validArgsSet: LinkedHashSet[OpKindValidArgs]
 }
 //--------
 sealed trait CpyOpKind extends OpKindBase
@@ -349,50 +391,117 @@ object CpyOpKind {
   //--------
   case object Cpy extends CpyOpKind {
     // copy ("move"/"load immediate")
-    private[libsnowhouse] val _numArgsSet = LinkedHashSet[OpKindNumArgs](
-      OpKindNumArgs(dst=1, src=1), // word
-      OpKindNumArgs(dst=2, src=2), // two-word
+    private[libsnowhouse] val _validArgsSet = LinkedHashSet[OpKindValidArgs](
+      OpKindValidArgs(
+        //dstSize=1,
+        //srcSize=1
+        dst=Array[HashSet[DstKind]](
+          HashSet(DstKind.Gpr),
+        ),
+        src=Array[HashSet[SrcKind]](
+          HashSet(SrcKind.Gpr),
+        ),
+      ), // word
+      OpKindValidArgs(
+        //dstSize=2, srcSize=2
+        dst=Array[HashSet[DstKind]](
+          HashSet(DstKind.Gpr),
+          HashSet(DstKind.Gpr),
+        ),
+        src=Array[HashSet[SrcKind]](
+          HashSet(SrcKind.Gpr),
+          HashSet(SrcKind.Gpr),
+        ),
+      ), // two-word
     )
-    def numArgsSet = _numArgsSet
+    def validArgsSet = _validArgsSet
   }
   case object Cpyui extends CpyOpKind {
     // copy upper immediate ("load upper immediate")
-    private[libsnowhouse] val _numArgsSet = LinkedHashSet[OpKindNumArgs](
+    private[libsnowhouse] val _validArgsSet = LinkedHashSet[OpKindValidArgs](
       //minD=1, maxD=2, minS=1, maxS=2
-      OpKindNumArgs(dst=1, src=1), // word
-      OpKindNumArgs(dst=2, src=2), // two-word
+      OpKindValidArgs(
+        //dstSize=1, srcSize=1
+        dst=Array[HashSet[DstKind]](
+        ),
+        src=Array[HashSet[SrcKind]](
+        ),
+      ), // word
+      OpKindValidArgs(
+        //dstSize=2, srcSize=2
+        dst=Array[HashSet[DstKind]](
+        ),
+        src=Array[HashSet[SrcKind]](
+        ),
+      ), // two-word
     )
-    def numArgsSet = _numArgsSet
+    def validArgsSet = _validArgsSet
   }
   // NOTE: `Jmp` and `Br` these are special so that the implementation will 
   // use separate adders from the ALU
   case object Jmp extends CpyOpKind {
     // jump
-    private[libsnowhouse] val _numArgsSet = LinkedHashSet[OpKindNumArgs](
+    private[libsnowhouse] val _validArgsSet = LinkedHashSet[OpKindValidArgs](
       //minD=1,
       //maxD=2, // for "jump and link"
       //minS=1,
       //maxS=3, // for "compare and jump" (in one instruction)
-      OpKindNumArgs(dst=1, src=1),
-      OpKindNumArgs(dst=2, src=1),  // for "jump and link"
-      OpKindNumArgs(dst=1, src=3),  // for "compare and jump"
+      OpKindValidArgs(
+        //dstSize=1, srcSize=1
+        dst=Array[HashSet[DstKind]](
+        ),
+        src=Array[HashSet[SrcKind]](
+        ),
+      ),
+      OpKindValidArgs(
+        //dstSize=2, srcSize=1
+        dst=Array[HashSet[DstKind]](
+        ),
+        src=Array[HashSet[SrcKind]](
+        ),
+      ),  // for "jump and link"
+      OpKindValidArgs(
+        //dstSize=1, srcSize=3
+        dst=Array[HashSet[DstKind]](
+        ),
+        src=Array[HashSet[SrcKind]](
+        ),
+      ),  // for "compare and jump"
                                     // (in one instruction)
     )
-    def numArgsSet = _numArgsSet
+    def validArgsSet = _validArgsSet
   }
   case object Br extends CpyOpKind {
     // branch relative
-    private[libsnowhouse] val _numArgsSet = LinkedHashSet[OpKindNumArgs](
+    private[libsnowhouse] val _validArgsSet = LinkedHashSet[OpKindValidArgs](
       //minD=1,
       //maxD=2, // for "branch and link"
       //minS=1,
       //maxS=3, // for "compare and branch" (in one instruction)
-      OpKindNumArgs(dst=1, src=1),
-      OpKindNumArgs(dst=2, src=1),  // for "branch and link"
-      OpKindNumArgs(dst=1, src=3),  // for "compare and branch"
+      OpKindValidArgs(
+        //dstSize=1, srcSize=1
+        dst=Array[HashSet[DstKind]](
+        ),
+        src=Array[HashSet[SrcKind]](
+        ),
+      ),
+      OpKindValidArgs(
+        //dstSize=2, srcSize=1
+        dst=Array[HashSet[DstKind]](
+        ),
+        src=Array[HashSet[SrcKind]](
+        ),
+      ),  // for "branch and link"
+      OpKindValidArgs(
+        //dstSize=1, srcSize=3
+        dst=Array[HashSet[DstKind]](
+        ),
+        src=Array[HashSet[SrcKind]](
+        ),
+      ),  // for "compare and branch"
                                     // (in one instruction)
     )
-    def numArgsSet = _numArgsSet
+    def validArgsSet = _validArgsSet
   }
   //--------
 }
@@ -403,79 +512,130 @@ sealed trait AluOpKind extends OpKindBase
 object AluOpKind {
   //--------
   case object Add extends AluOpKind {
-    private[libsnowhouse] val _numArgsSet = LinkedHashSet[OpKindNumArgs](
+    private[libsnowhouse] val _validArgsSet = LinkedHashSet[OpKindValidArgs](
       //minD=1, maxD=1, minS=2, maxS=2
-      OpKindNumArgs(dst=1, src=2),  // word
+      OpKindValidArgs(
+        //dstSize=1, srcSize=2
+        dst=Array[HashSet[DstKind]](
+        ),
+        src=Array[HashSet[SrcKind]](
+        ),
+      ),  // word
       //OpKindNumArgs(dst=2, src=4),  // two-word
-      OpKindNumArgs(                // word, with flags
-        dst=2,
-        src=2,
+      OpKindValidArgs(                // word, with flags
+        //dstSize=2, srcSize=2,
+        dst=Array[HashSet[DstKind]](
+        ),
+        src=Array[HashSet[SrcKind]](
+        ),
       ),
       //OpKindNumArgs(                // two-word, with flags
       //  dst=2,
       //  src=4,
       //),
     )
-    def numArgsSet = _numArgsSet
+    def validArgsSet = _validArgsSet
   }
   case object Adc extends AluOpKind {
-    private[libsnowhouse] val _numArgsSet = LinkedHashSet[OpKindNumArgs](
+    private[libsnowhouse] val _validArgsSet = LinkedHashSet[OpKindValidArgs](
       //minD=1, maxD=1, minS=2, maxS=2
-      OpKindNumArgs(dst=1, src=2),  // word
-      //OpKindNumArgs(dst=2, src=4),  // two-word
-      OpKindNumArgs(                // word, with flags
-        dst=2,
-        src=2,
+      OpKindValidArgs(
+        //dstSize=1, srcSize=3
+        dst=Array[HashSet[DstKind]](
+        ),
+        src=Array[HashSet[SrcKind]](
+        ),
+      ),  // word, with input and output flags
+      //OpKindNumArgs(dst=2, src=5),  // two-word
+      OpKindValidArgs(                // word, with output flags
+        //dstSize=2,
+        //srcSize=3,
+        dst=Array[HashSet[DstKind]](
+        ),
+        src=Array[HashSet[SrcKind]](
+        ),
       ),
       //OpKindNumArgs(                // two-word, with flags
       //  dst=2,
-      //  src=4,
+      //  src=5,
       //),
     )
-    def numArgsSet = _numArgsSet
+    def validArgsSet = _validArgsSet
   }
   case object Sub extends AluOpKind {
-    private[libsnowhouse] val _numArgsSet = LinkedHashSet[OpKindNumArgs](
+    private[libsnowhouse] val _validArgsSet = LinkedHashSet[OpKindValidArgs](
       //minD=1, maxD=1, minS=2, maxS=2
-      OpKindNumArgs(dst=1, src=2),  // word `Sub` or `Cmp`
+      OpKindValidArgs(
+        //dstSize=1, srcSize=2
+        dst=Array[HashSet[DstKind]](
+        ),
+        src=Array[HashSet[SrcKind]](
+        ),
+      ),  // word `Sub` or `Cmp`
       //OpKindNumArgs(dst=2, src=4),  // two-word
-      OpKindNumArgs(                // word, with flags
-        dst=2,
-        src=2,
+      OpKindValidArgs(                // word, with flags
+        //dstSize=2,
+        //srcSize=2,
+        dst=Array[HashSet[DstKind]](
+          HashSet(DstKind.Gpr),
+          HashSet(DstKind.AluFlags)
+        ),
+        src=Array[HashSet[SrcKind]](
+        ),
       ),
       //OpKindNumArgs(                // two-word, with flags
       //  dst=2,
       //  src=4,
       //),
     )
-    def numArgsSet = _numArgsSet
+    def validArgsSet = _validArgsSet
   }
   case object Sbc extends AluOpKind {
-    private[libsnowhouse] val _numArgsSet = LinkedHashSet[OpKindNumArgs](
+    private[libsnowhouse] val _validArgsSet = LinkedHashSet[OpKindValidArgs](
       //minD=1, maxD=1, minS=2, maxS=2
-      OpKindNumArgs(dst=1, src=2),  // word
-      //OpKindNumArgs(dst=2, src=4),  // two-word
-      OpKindNumArgs(                // word, with flags
-        dst=2,
-        src=2,
+      OpKindValidArgs(
+        //dstSize=1, srcSize=3
+        dst=Array[HashSet[DstKind]](
+        ),
+        src=Array[HashSet[SrcKind]](
+        ),
+      ),  // word, with input and output flags
+      //OpKindNumArgs(dst=2, src=5),  // two-word
+      OpKindValidArgs(                // word, with output flags
+        //dstSize=2,
+        //srcSize=3,
+        dst=Array[HashSet[DstKind]](
+        ),
+        src=Array[HashSet[SrcKind]](
+        ),
       ),
       //OpKindNumArgs(                // two-word, with flags
       //  dst=2,
-      //  src=4,
+      //  src=5,
       //),
     )
-    def numArgsSet = _numArgsSet
+    def validArgsSet = _validArgsSet
   }
   //--------
   //case object Cpy extends AluOpKind // "move"/"load immediate" instruction
   case object Lsl extends AluOpKind {
-    private[libsnowhouse] val _numArgsSet = LinkedHashSet[OpKindNumArgs](
+    private[libsnowhouse] val _validArgsSet = LinkedHashSet[OpKindValidArgs](
       //minD=1, maxD=1, minS=2, maxS=2
-      OpKindNumArgs(dst=1, src=2),  // word
+      OpKindValidArgs(
+        //dstSize=1, srcSize=2
+        dst=Array[HashSet[DstKind]](
+        ),
+        src=Array[HashSet[SrcKind]](
+        ),
+      ),  // word
       //OpKindNumArgs(dst=2, src=4),  // two-word
-      OpKindNumArgs(                // word, with flags
-        dst=2,
-        src=2,
+      OpKindValidArgs(                // word, with flags
+        //dstSize=2,
+        //srcSize=2,
+        dst=Array[HashSet[DstKind]](
+        ),
+        src=Array[HashSet[SrcKind]](
+        ),
       ),
       //OpKindNumArgs(                // two-word, with flags
       //  dst=2,
@@ -483,16 +643,26 @@ object AluOpKind {
       //  optExtraDstKind=Some(DstKind.AluFlags),
       //),
     )
-    def numArgsSet = _numArgsSet
+    def validArgsSet = _validArgsSet
   }
   case object Lsr extends AluOpKind {
-    private[libsnowhouse] val _numArgsSet = LinkedHashSet[OpKindNumArgs](
+    private[libsnowhouse] val _validArgsSet = LinkedHashSet[OpKindValidArgs](
       //minD=1, maxD=1, minS=2, maxS=2
-      OpKindNumArgs(dst=1, src=2),  // word
+      OpKindValidArgs(
+        //dstSize=1, srcSize=2
+        dst=Array[HashSet[DstKind]](
+        ),
+        src=Array[HashSet[SrcKind]](
+        ),
+      ),  // word
       //OpKindNumArgs(dst=2, src=4),  // two-word
-      OpKindNumArgs(                // word, with flags
-        dst=2,
-        src=2,
+      OpKindValidArgs(                // word, with flags
+        //dstSize=2,
+        //srcSize=2,
+        dst=Array[HashSet[DstKind]](
+        ),
+        src=Array[HashSet[SrcKind]](
+        ),
       ),
       //OpKindNumArgs(                // two-word, with flags
       //  dst=2,
@@ -500,85 +670,139 @@ object AluOpKind {
       //  optExtraDstKind=Some(DstKind.AluFlags),
       //),
     )
-    def numArgsSet = _numArgsSet
+    def validArgsSet = _validArgsSet
   }
   case object Asr extends AluOpKind {
-    private[libsnowhouse] val _numArgsSet = LinkedHashSet[OpKindNumArgs](
+    private[libsnowhouse] val _validArgsSet = LinkedHashSet[OpKindValidArgs](
       //minD=1, maxD=1, minS=2, maxS=2
-      OpKindNumArgs(dst=1, src=2),  // word
+      OpKindValidArgs(
+        //dstSize=1, srcSize=2
+        dst=Array[HashSet[DstKind]](
+        ),
+        src=Array[HashSet[SrcKind]](
+        ),
+      ),  // word
       //OpKindNumArgs(dst=2, src=4),  // two-word
-      OpKindNumArgs(                // word, with flags
-        dst=2,
-        src=2,
+      OpKindValidArgs(                // word, with flags
+        //dstSize=2,
+        //srcSize=2,
+        dst=Array[HashSet[DstKind]](
+        ),
+        src=Array[HashSet[SrcKind]](
+        ),
       ),
     )
-    def numArgsSet = _numArgsSet
+    def validArgsSet = _validArgsSet
   }
   case object And extends AluOpKind {
-    private[libsnowhouse] val _numArgsSet = LinkedHashSet[OpKindNumArgs](
+    private[libsnowhouse] val _validArgsSet = LinkedHashSet[OpKindValidArgs](
       //minD=1, maxD=1, minS=2, maxS=2
-      OpKindNumArgs(dst=1, src=2),  // word
+      OpKindValidArgs(
+        //dstSize=1, srcSize=2
+        dst=Array[HashSet[DstKind]](
+        ),
+        src=Array[HashSet[SrcKind]](
+        ),
+      ),  // word
       //OpKindNumArgs(dst=2, src=4),  // two-word
-      OpKindNumArgs(                // word, with flags
-        dst=2,
-        src=2,
+      OpKindValidArgs(                // word, with flags
+        //dstSize=2,
+        //srcSize=2,
+        dst=Array[HashSet[DstKind]](
+        ),
+        src=Array[HashSet[SrcKind]](
+        ),
       ),
     )
-    def numArgsSet = _numArgsSet
+    def validArgsSet = _validArgsSet
   }
   case object Or extends AluOpKind {
-    private[libsnowhouse] val _numArgsSet = LinkedHashSet[OpKindNumArgs](
+    private[libsnowhouse] val _validArgsSet = LinkedHashSet[OpKindValidArgs](
       //minD=1, maxD=1, minS=2, maxS=2
-      OpKindNumArgs(dst=1, src=2),  // word
+      OpKindValidArgs(
+        //dstSize=1, srcSize=2
+        dst=Array[HashSet[DstKind]](
+        ),
+        src=Array[HashSet[SrcKind]](
+        ),
+      ),  // word
       //OpKindNumArgs(dst=2, src=4),  // two-word
-      OpKindNumArgs(                // word, with flags
-        dst=2,
-        src=2,
+      OpKindValidArgs(                // word, with flags
+        //dstSize=2,
+        //srcSize=2,
+        dst=Array[HashSet[DstKind]](
+        ),
+        src=Array[HashSet[SrcKind]](
+        ),
       ),
     )
-    def numArgsSet = _numArgsSet
+    def validArgsSet = _validArgsSet
   }
   case object Xor extends AluOpKind {
-    private[libsnowhouse] val _numArgsSet = LinkedHashSet[OpKindNumArgs](
+    private[libsnowhouse] val _validArgsSet = LinkedHashSet[OpKindValidArgs](
       //minD=1, maxD=1, minS=2, maxS=2
-      OpKindNumArgs(dst=1, src=2),  // word
+      OpKindValidArgs(
+        //dstSize=1, srcSize=2
+        dst=Array[HashSet[DstKind]](
+        ),
+        src=Array[HashSet[SrcKind]](
+        ),
+      ),  // word
       //OpKindNumArgs(dst=2, src=4),  // two-word
-      OpKindNumArgs(                // word, with flags
-        dst=2,
-        src=2,
+      OpKindValidArgs(                // word, with flags
+        //dstSize=2,
+        //srcSize=2,
+        dst=Array[HashSet[DstKind]](
+        ),
+        src=Array[HashSet[SrcKind]](
+        ),
       ),
     )
-    def numArgsSet = _numArgsSet
+    def validArgsSet = _validArgsSet
   }
   //--------
   //case object Cmp extends AluOpKind {
-  //  private[libsnowhouse] val _numArgsSet = LinkedHashSet[OpKindNumArgs](
+  //  private[libsnowhouse] val _validArgsSet = LinkedHashSet[OpKindNumArgs](
   //    //minD=1, maxD=1, minS=2, maxS=2
   //  )
-  //  def numArgsSet = _numArgsSet
+  //  def validArgsSet = _validArgsSet
   //}
-  case object CmpBc extends AluOpKind {
-    // see the `flare_cpu` git repo's `docs/flare_cpu` for more info
-    private[libsnowhouse] val _numArgsSet = LinkedHashSet[OpKindNumArgs](
-      //minD=1, maxD=1, minS=2, maxS=2
-      OpKindNumArgs(dst=1, src=2),  // word
-    )
-    def numArgsSet = _numArgsSet
-  }
+  //--------
+  // TODO: support CmpBc
+  //case object CmpBc extends AluOpKind {
+  //  // see the `flare_cpu` git repo's `docs/flare_cpu` for more info
+  //  private[libsnowhouse] val _validArgsSet = LinkedHashSet[OpKindNumArgs](
+  //    //minD=1, maxD=1, minS=2, maxS=2
+  //    OpKindNumArgs(dst=1, src=2),  // word
+  //  )
+  //  def validArgsSet = _validArgsSet
+  //}
                                       
   case object Sltu extends AluOpKind {
-    private[libsnowhouse] val _numArgsSet = LinkedHashSet[OpKindNumArgs](
+    private[libsnowhouse] val _validArgsSet = LinkedHashSet[OpKindValidArgs](
       //minD=1, maxD=1, minS=2, maxS=2
-      OpKindNumArgs(dst=1, src=2)   // word
+      OpKindValidArgs(
+        //dstSize=1, srcSize=2
+        dst=Array[HashSet[DstKind]](
+        ),
+        src=Array[HashSet[SrcKind]](
+        ),
+      )   // word
     )
-    def numArgsSet = _numArgsSet
+    def validArgsSet = _validArgsSet
   }
   case object Slts extends AluOpKind {
-    private[libsnowhouse] val _numArgsSet = LinkedHashSet[OpKindNumArgs](
+    private[libsnowhouse] val _validArgsSet = LinkedHashSet[OpKindValidArgs](
       //minD=1, maxD=1, minS=2, maxS=2
-      OpKindNumArgs(dst=1, src=2)   // word
+      OpKindValidArgs(
+        //dstSize=1, srcSize=2
+        dst=Array[HashSet[DstKind]](
+        ),
+        src=Array[HashSet[SrcKind]](
+        ),
+      )   // word
     )
-    def numArgsSet = _numArgsSet
+    def validArgsSet = _validArgsSet
   }
   //--------
   //--------
@@ -588,82 +812,188 @@ object MultiCycleOpKind {
   //--------
   case object Umul extends MultiCycleOpKind {
     // `Umul` also represents non-full-product multiplies
-    private[libsnowhouse] val _numArgsSet = LinkedHashSet[OpKindNumArgs](
+    private[libsnowhouse] val _validArgsSet = LinkedHashSet[
+      OpKindValidArgs
+    ](
       //minD=1, maxD=2, minS=2, maxS=4
-      OpKindNumArgs(dst=1, src=2), // word, non-full-product
-      OpKindNumArgs(dst=2, src=2), // word, unsigned full-product
+      OpKindValidArgs(
+        //dstSize=1, srcSize=2
+        dst=Array[HashSet[DstKind]](
+        ),
+        src=Array[HashSet[SrcKind]](
+        ),
+      ), // word, non-full-product
+      OpKindValidArgs(
+        //dstSize=2, srcSize=2
+        dst=Array[HashSet[DstKind]](
+        ),
+        src=Array[HashSet[SrcKind]](
+        ),
+      ), // word, unsigned full-product
     )
-    def numArgsSet = _numArgsSet
+    def validArgsSet = _validArgsSet
   }
   case object Smul extends MultiCycleOpKind {
-    private[libsnowhouse] val _numArgsSet = LinkedHashSet[OpKindNumArgs](
+    private[libsnowhouse] val _validArgsSet = LinkedHashSet[
+      OpKindValidArgs
+    ](
       //minD=1, maxD=2, minS=2, maxS=4
-      OpKindNumArgs(dst=2, src=2), // word, signed full product
+      OpKindValidArgs(
+        //dstSize=2, srcSize=2
+        dst=Array[HashSet[DstKind]](
+        ),
+        src=Array[HashSet[SrcKind]](
+        ),
+      ), // word, signed full product
     )
-    def numArgsSet = _numArgsSet
+    def validArgsSet = _validArgsSet
   }
   case object Udiv extends MultiCycleOpKind {
-    private[libsnowhouse] val _numArgsSet = LinkedHashSet[OpKindNumArgs](
+    private[libsnowhouse] val _validArgsSet = LinkedHashSet[
+      OpKindValidArgs
+    ](
       //minD=1, maxD=2, minS=2, maxS=4
-      OpKindNumArgs(dst=1, src=2),  // word
-      OpKindNumArgs(dst=2, src=4),  // dual-word
+      OpKindValidArgs(
+        //dstSize=1, srcSize=2
+        dst=Array[HashSet[DstKind]](
+        ),
+        src=Array[HashSet[SrcKind]](
+        ),
+      ),  // word
+      OpKindValidArgs(
+        //dstSize=2, srcSize=4
+        dst=Array[HashSet[DstKind]](
+        ),
+        src=Array[HashSet[SrcKind]](
+        ),
+      ),  // dual-word
     )
-    def numArgsSet = _numArgsSet
+    def validArgsSet = _validArgsSet
   }
   case object Sdiv extends MultiCycleOpKind {
-    private[libsnowhouse] val _numArgsSet = LinkedHashSet[OpKindNumArgs](
+    private[libsnowhouse] val _validArgsSet = LinkedHashSet[
+      OpKindValidArgs
+    ](
       //minD=1, maxD=2, minS=2, maxS=4
-      OpKindNumArgs(dst=1, src=2),  // word
-      OpKindNumArgs(dst=2, src=4),  // dual-word
+      OpKindValidArgs(
+        //dstSize=1, srcSize=2
+        dst=Array[HashSet[DstKind]](
+        ),
+        src=Array[HashSet[SrcKind]](
+        ),
+      ),  // word
+      OpKindValidArgs(
+        //dstSize=2, srcSize=4
+        dst=Array[HashSet[DstKind]](
+        ),
+        src=Array[HashSet[SrcKind]](
+        ),
+      ),  // dual-word
     )
-    def numArgsSet = _numArgsSet
+    def validArgsSet = _validArgsSet
   }
   case object Umod extends MultiCycleOpKind {
-    private[libsnowhouse] val _numArgsSet = LinkedHashSet[OpKindNumArgs](
+    private[libsnowhouse] val _validArgsSet = LinkedHashSet[
+      OpKindValidArgs
+    ](
       //minD=1, maxD=2, minS=2, maxS=4
-      OpKindNumArgs(dst=1, src=2),  // word
-      OpKindNumArgs(dst=2, src=4),  // dual-word
+      OpKindValidArgs(
+        //dstSize=1, srcSize=2
+        dst=Array[HashSet[DstKind]](
+        ),
+        src=Array[HashSet[SrcKind]](
+        ),
+      ),  // word
+      OpKindValidArgs(
+        //dstSize=2, srcSize=4
+        dst=Array[HashSet[DstKind]](
+        ),
+        src=Array[HashSet[SrcKind]](
+        ),
+      ),  // dual-word
     )
-    def numArgsSet = _numArgsSet
+    def validArgsSet = _validArgsSet
   }
   case object Smod extends MultiCycleOpKind {
-    private[libsnowhouse] val _numArgsSet = LinkedHashSet[OpKindNumArgs](
+    private[libsnowhouse] val _validArgsSet = LinkedHashSet[
+      OpKindValidArgs
+    ](
       //minD=1, maxD=2, minS=2, maxS=4
-      OpKindNumArgs(dst=1, src=2),  // word
-      OpKindNumArgs(dst=2, src=4),  // dual-word
+      OpKindValidArgs(
+        //dstSize=1, srcSize=2
+        dst=Array[HashSet[DstKind]](
+        ),
+        src=Array[HashSet[SrcKind]](
+        ),
+      ),  // word
+      OpKindValidArgs(
+        //dstSize=2, srcSize=4
+        dst=Array[HashSet[DstKind]](
+        ),
+        src=Array[HashSet[SrcKind]](
+        ),
+      ),  // dual-word
     )
-    def numArgsSet = _numArgsSet
+    def validArgsSet = _validArgsSet
   }
   case object Udivmod extends MultiCycleOpKind {
-    private[libsnowhouse] val _numArgsSet = LinkedHashSet[OpKindNumArgs](
+    private[libsnowhouse] val _validArgsSet = LinkedHashSet[
+      OpKindValidArgs
+    ](
       //minD=2, maxD=4, minS=2, maxS=4
-      OpKindNumArgs(dst=2, src=2),  // word
-      OpKindNumArgs(dst=4, src=4),  // dual-word
+      OpKindValidArgs(
+        //dstSize=2, srcSize=2
+        dst=Array[HashSet[DstKind]](
+        ),
+        src=Array[HashSet[SrcKind]](
+        ),
+      ),  // word
+      OpKindValidArgs(
+        //dstSize=4, srcSize=4
+        dst=Array[HashSet[DstKind]](
+        ),
+        src=Array[HashSet[SrcKind]](
+        ),
+      ),  // dual-word
     )
-    def numArgsSet = _numArgsSet
+    def validArgsSet = _validArgsSet
   }
   case object Sdivmod extends MultiCycleOpKind {
-    private[libsnowhouse] val _numArgsSet = LinkedHashSet[OpKindNumArgs](
+    private[libsnowhouse] val _validArgsSet = LinkedHashSet[
+      OpKindValidArgs
+    ](
       //minD=2, maxD=4, minS=2, maxS=4
-      OpKindNumArgs(dst=2, src=2),  // word
-      OpKindNumArgs(dst=4, src=4),  // dual-word
+      OpKindValidArgs(
+        //dstSize=2, srcSize=2
+        dst=Array[HashSet[DstKind]](
+        ),
+        src=Array[HashSet[SrcKind]](
+        ),
+      ),  // word
+      OpKindValidArgs(
+        //dstSize=4, srcSize=4
+        dst=Array[HashSet[DstKind]](
+        ),
+        src=Array[HashSet[SrcKind]](
+        ),
+      ),  // dual-word
     )
-    def numArgsSet = _numArgsSet
+    def validArgsSet = _validArgsSet
   }
   //--------
   //case object Lumul extends MultiCycleOpKind {
   //  // unsigned full product
-  //  private[libsnowhouse] val _numArgsSet = Array[OpKindLimits](
+  //  private[libsnowhouse] val _validArgsSet = Array[OpKindLimits](
   //    minD=2, maxD=2, minS=2, maxS=2
   //  )
-  //  def numArgsSet = _numArgsSet
+  //  def validArgsSet = _validArgsSet
   //}
   //case object Lsmul extends MultiCycleOpKind {
   //  // signed full product
-  //  private[libsnowhouse] val _numArgsSet = Array[OpKindLimits](
+  //  private[libsnowhouse] val _validArgsSet = Array[OpKindLimits](
   //    minD=2, maxD=2, minS=2, maxS=2
   //  )
-  //  def numArgsSet = _numArgsSet
+  //  def validArgsSet = _validArgsSet
   //}
   //case object Lsmul extends MultiCycleOpKind
   //--------
@@ -675,68 +1005,180 @@ sealed trait LoadOpKind extends OpKindBase
 object LoadOpKind {
   //--------
   case object LdU8 extends LoadOpKind {
-    private[libsnowhouse] val _numArgsSet = LinkedHashSet[OpKindNumArgs](
+    private[libsnowhouse] val _validArgsSet = LinkedHashSet[
+      OpKindValidArgs
+    ](
       //minD=1, maxD=1, minS=2, maxS=3
-      OpKindNumArgs(dst=1, src=1),
-      OpKindNumArgs(dst=1, src=2),
+      OpKindValidArgs(
+        //dstSize=1, srcSize=1
+        dst=Array[HashSet[DstKind]](
+        ),
+        src=Array[HashSet[SrcKind]](
+        ),
+      ),
+      OpKindValidArgs(
+        //dstSize=1, srcSize=2
+        dst=Array[HashSet[DstKind]](
+        ),
+        src=Array[HashSet[SrcKind]](
+        ),
+      ),
     )
-    def numArgsSet = _numArgsSet
+    def validArgsSet = _validArgsSet
   }
   case object LdS8 extends LoadOpKind {
-    private[libsnowhouse] val _numArgsSet = LinkedHashSet[OpKindNumArgs](
+    private[libsnowhouse] val _validArgsSet = LinkedHashSet[
+      OpKindValidArgs
+    ](
       //minD=1, maxD=1, minS=2, maxS=3
-      OpKindNumArgs(dst=1, src=1),
-      OpKindNumArgs(dst=1, src=2),
+      OpKindValidArgs(
+        //dstSize=1, srcSize=1
+        dst=Array[HashSet[DstKind]](
+        ),
+        src=Array[HashSet[SrcKind]](
+        ),
+      ),
+      OpKindValidArgs(
+        //dstSize=1, srcSize=2
+        dst=Array[HashSet[DstKind]](
+        ),
+        src=Array[HashSet[SrcKind]](
+        ),
+      ),
     )
-    def numArgsSet = _numArgsSet
+    def validArgsSet = _validArgsSet
   }
   case object LdU16 extends LoadOpKind {
-    private[libsnowhouse] val _numArgsSet = LinkedHashSet[OpKindNumArgs](
+    private[libsnowhouse] val _validArgsSet = LinkedHashSet[
+      OpKindValidArgs
+    ](
       //minD=1, maxD=1, minS=2, maxS=3
-      OpKindNumArgs(dst=1, src=1),
-      OpKindNumArgs(dst=1, src=2),
+      OpKindValidArgs(
+        //dstSize=1, srcSize=1
+        dst=Array[HashSet[DstKind]](
+        ),
+        src=Array[HashSet[SrcKind]](
+        ),
+      ),
+      OpKindValidArgs(
+        //dstSize=1, srcSize=2
+        dst=Array[HashSet[DstKind]](
+        ),
+        src=Array[HashSet[SrcKind]](
+        ),
+      ),
     )
-    def numArgsSet = _numArgsSet
+    def validArgsSet = _validArgsSet
   }
   case object LdS16 extends LoadOpKind {
-    private[libsnowhouse] val _numArgsSet = LinkedHashSet[OpKindNumArgs](
+    private[libsnowhouse] val _validArgsSet = LinkedHashSet[
+      OpKindValidArgs
+    ](
       //minD=1, maxD=1, minS=2, maxS=3
-      OpKindNumArgs(dst=1, src=1),
-      OpKindNumArgs(dst=1, src=2),
+      OpKindValidArgs(
+        //dstSize=1, srcSize=1
+        dst=Array[HashSet[DstKind]](
+        ),
+        src=Array[HashSet[SrcKind]](
+        ),
+      ),
+      OpKindValidArgs(
+        //dstSize=1, srcSize=2
+        dst=Array[HashSet[DstKind]](
+        ),
+        src=Array[HashSet[SrcKind]](
+        ),
+      ),
     )
-    def numArgsSet = _numArgsSet
+    def validArgsSet = _validArgsSet
   }
   case object LdU32 extends LoadOpKind {
-    private[libsnowhouse] val _numArgsSet = LinkedHashSet[OpKindNumArgs](
+    private[libsnowhouse] val _validArgsSet = LinkedHashSet[
+      OpKindValidArgs
+    ](
       //minD=1, maxD=1, minS=2, maxS=3
-      OpKindNumArgs(dst=1, src=1),
-      OpKindNumArgs(dst=1, src=2),
+      OpKindValidArgs(
+        //dstSize=1, srcSize=1
+        dst=Array[HashSet[DstKind]](
+        ),
+        src=Array[HashSet[SrcKind]](
+        ),
+      ),
+      OpKindValidArgs(
+        //dstSize=1, srcSize=2
+        dst=Array[HashSet[DstKind]](
+        ),
+        src=Array[HashSet[SrcKind]](
+        ),
+      ),
     )
-    def numArgsSet = _numArgsSet
+    def validArgsSet = _validArgsSet
   }
   case object LdS32 extends LoadOpKind {
-    private[libsnowhouse] val _numArgsSet = LinkedHashSet[OpKindNumArgs](
+    private[libsnowhouse] val _validArgsSet = LinkedHashSet[
+      OpKindValidArgs
+    ](
       //minD=1, maxD=1, minS=2, maxS=3
-      OpKindNumArgs(dst=1, src=1),
-      OpKindNumArgs(dst=1, src=2),
+      OpKindValidArgs(
+        //dstSize=1, srcSize=1
+        dst=Array[HashSet[DstKind]](
+        ),
+        src=Array[HashSet[SrcKind]](
+        ),
+      ),
+      OpKindValidArgs(
+        //dstSize=1, srcSize=2
+        dst=Array[HashSet[DstKind]](
+        ),
+        src=Array[HashSet[SrcKind]](
+        ),
+      ),
     )
-    def numArgsSet = _numArgsSet
+    def validArgsSet = _validArgsSet
   }
   case object LdU64 extends LoadOpKind {
-    private[libsnowhouse] val _numArgsSet = LinkedHashSet[OpKindNumArgs](
+    private[libsnowhouse] val _validArgsSet = LinkedHashSet[
+      OpKindValidArgs
+    ](
       //minD=1, maxD=1, minS=2, maxS=3
-      OpKindNumArgs(dst=1, src=1),
-      OpKindNumArgs(dst=1, src=2),
+      OpKindValidArgs(
+        //dstSize=1, srcSize=1
+        dst=Array[HashSet[DstKind]](
+        ),
+        src=Array[HashSet[SrcKind]](
+        ),
+      ),
+      OpKindValidArgs(
+        //dstSize=1, srcSize=2
+        dst=Array[HashSet[DstKind]](
+        ),
+        src=Array[HashSet[SrcKind]](
+        ),
+      ),
     )
-    def numArgsSet = _numArgsSet
+    def validArgsSet = _validArgsSet
   }
   case object LdS64 extends LoadOpKind {
-    private[libsnowhouse] val _numArgsSet = LinkedHashSet[OpKindNumArgs](
+    private[libsnowhouse] val _validArgsSet = LinkedHashSet[
+      OpKindValidArgs
+    ](
       //minD=1, maxD=1, minS=2, maxS=3
-      OpKindNumArgs(dst=1, src=1),
-      OpKindNumArgs(dst=1, src=2),
+      OpKindValidArgs(
+        //dstSize=1, srcSize=1
+        dst=Array[HashSet[DstKind]](
+        ),
+        src=Array[HashSet[SrcKind]](
+        ),
+      ),
+      OpKindValidArgs(
+        //dstSize=1, srcSize=2
+        dst=Array[HashSet[DstKind]](
+        ),
+        src=Array[HashSet[SrcKind]](
+        ),
+      ),
     )
-    def numArgsSet = _numArgsSet
+    def validArgsSet = _validArgsSet
   }
   //--------
 }
@@ -747,36 +1189,92 @@ sealed trait StoreOpKind extends OpKindBase
 object StoreOpKind {
   //--------
   case object St8 extends StoreOpKind {
-    private[libsnowhouse] val _numArgsSet = LinkedHashSet[OpKindNumArgs](
+    private[libsnowhouse] val _validArgsSet = LinkedHashSet[
+      OpKindValidArgs
+    ](
       //minD=1, maxD=1, minS=2, maxS=3
-      OpKindNumArgs(dst=1, src=1),
-      OpKindNumArgs(dst=1, src=2),
+      OpKindValidArgs(
+        //dstSize=1, srcSize=1
+        dst=Array[HashSet[DstKind]](
+        ),
+        src=Array[HashSet[SrcKind]](
+        ),
+      ),
+      OpKindValidArgs(
+        //dstSize=1, srcSize=2
+        dst=Array[HashSet[DstKind]](
+        ),
+        src=Array[HashSet[SrcKind]](
+        ),
+      ),
     )
-    def numArgsSet = _numArgsSet
+    def validArgsSet = _validArgsSet
   }
   case object St16 extends StoreOpKind {
-    private[libsnowhouse] val _numArgsSet = LinkedHashSet[OpKindNumArgs](
+    private[libsnowhouse] val _validArgsSet = LinkedHashSet[
+      OpKindValidArgs
+    ](
       //minD=1, maxD=1, minS=2, maxS=3
-      OpKindNumArgs(dst=1, src=1),
-      OpKindNumArgs(dst=1, src=2),
+      OpKindValidArgs(
+        //dstSize=1, srcSize=1
+        dst=Array[HashSet[DstKind]](
+        ),
+        src=Array[HashSet[SrcKind]](
+        ),
+      ),
+      OpKindValidArgs(
+        //dstSize=1, srcSize=2
+        dst=Array[HashSet[DstKind]](
+        ),
+        src=Array[HashSet[SrcKind]](
+        ),
+      ),
     )
-    def numArgsSet = _numArgsSet
+    def validArgsSet = _validArgsSet
   }
   case object St32 extends StoreOpKind {
-    private[libsnowhouse] val _numArgsSet = LinkedHashSet[OpKindNumArgs](
+    private[libsnowhouse] val _validArgsSet = LinkedHashSet[
+      OpKindValidArgs
+    ](
       //minD=1, maxD=1, minS=2, maxS=3
-      OpKindNumArgs(dst=1, src=1),
-      OpKindNumArgs(dst=1, src=2),
+      OpKindValidArgs(
+        //dstSize=1, srcSize=1
+        dst=Array[HashSet[DstKind]](
+        ),
+        src=Array[HashSet[SrcKind]](
+        ),
+      ),
+      OpKindValidArgs(
+        //dstSize=1, srcSize=2
+        dst=Array[HashSet[DstKind]](
+        ),
+        src=Array[HashSet[SrcKind]](
+        ),
+      ),
     )
-    def numArgsSet = _numArgsSet
+    def validArgsSet = _validArgsSet
   }
   case object St64 extends StoreOpKind {
-    private[libsnowhouse] val _numArgsSet = LinkedHashSet[OpKindNumArgs](
+    private[libsnowhouse] val _validArgsSet = LinkedHashSet[
+      OpKindValidArgs
+    ](
       //minD=1, maxD=1, minS=2, maxS=3
-      OpKindNumArgs(dst=1, src=1),
-      OpKindNumArgs(dst=1, src=2),
+      OpKindValidArgs(
+        //dstSize=1, srcSize=1
+        dst=Array[HashSet[DstKind]](
+        ),
+        src=Array[HashSet[SrcKind]](
+        ),
+      ),
+      OpKindValidArgs(
+        //dstSize=1, srcSize=2
+        dst=Array[HashSet[DstKind]](
+        ),
+        src=Array[HashSet[SrcKind]](
+        ),
+      ),
     )
-    def numArgsSet = _numArgsSet
+    def validArgsSet = _validArgsSet
   }
   //--------
 }
