@@ -167,7 +167,7 @@ object SampleCpuOpInfoMap {
   opInfoMap += (
     SampleCpuOp.BzRaSimm -> OpInfo.mkCpy(
       dstArr=Array[DstKind](DstKind.Pc),
-      srcArr=Array[SrcKind](SrcKind.Gpr, SrcKind.SImm),
+      srcArr=Array[SrcKind](SrcKind.Gpr, SrcKind.Imm(Some(true))),
       cpyOp=CpyOpKind.Br,
       cond=CondKind.Z,
     )
@@ -175,7 +175,7 @@ object SampleCpuOpInfoMap {
   opInfoMap += (
     SampleCpuOp.BnzRaSimm -> OpInfo.mkCpy(
       dstArr=Array[DstKind](DstKind.Pc),
-      srcArr=Array[SrcKind](SrcKind.Gpr, SrcKind.SImm),
+      srcArr=Array[SrcKind](SrcKind.Gpr, SrcKind.Imm(Some(true))),
       cpyOp=CpyOpKind.Br,
       cond=CondKind.Nz,
     )
@@ -191,28 +191,30 @@ object SampleCpuOpInfoMap {
   opInfoMap += (
     SampleCpuOp.LdrRaRbSimm -> OpInfo.mkLoad(
       dstArr=Array[DstKind](DstKind.Gpr),
-      srcArr=Array[SrcKind](SrcKind.Gpr, SrcKind.SImm),
-      loadOp=LoadOpKind.LdU32,
+      srcArr=Array[SrcKind](SrcKind.Gpr, SrcKind.Imm(Some(true))),
+      //loadOp=LoadOpKind.LdU32,
+      modify=ModifySrcDstKind.Mem32(isSigned=None, isStore=Some(false)),
     )
   )
   opInfoMap += (
     SampleCpuOp.StrRaRbSimm -> OpInfo.mkStore(
       dstArr=Array[DstKind](DstKind.Gpr),
-      srcArr=Array[SrcKind](SrcKind.Gpr, SrcKind.SImm),
-      storeOp=StoreOpKind.St32,
+      srcArr=Array[SrcKind](SrcKind.Gpr, SrcKind.Imm(Some(true))),
+      //storeOp=StoreOpKind.St32,
+      modify=ModifySrcDstKind.Mem32(isSigned=None, isStore=Some(true)),
     )
   )
   opInfoMap += (
     SampleCpuOp.CpyuiRaSimm -> OpInfo.mkCpy(
       dstArr=Array[DstKind](DstKind.Gpr),
-      srcArr=Array[SrcKind](SrcKind.SImm),
+      srcArr=Array[SrcKind](SrcKind.Imm(Some(true))),
       cpyOp=CpyOpKind.Cpyui,
     )
   )
   opInfoMap += (
     SampleCpuOp.CpyiRaSimm -> OpInfo.mkCpy(
       dstArr=Array[DstKind](DstKind.Gpr),
-      srcArr=Array[SrcKind](SrcKind.SImm),
+      srcArr=Array[SrcKind](SrcKind.Imm(Some(true))),
       cpyOp=CpyOpKind.Cpy,
     )
   )

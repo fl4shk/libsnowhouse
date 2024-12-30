@@ -57,7 +57,7 @@ case class SnowHouseConfig[
     opInfo.select match {
       case OpSelect.Cpy => {
         assert(
-          opInfo.findArgs(opInfo.cpyOp.get) != None,
+          opInfo.findValidArgs(opInfo.cpyOp.get) != None,
           s"Error: unsupported combination or "
           + s"number of destination/source operands: "
           + s"opInfo(${opInfo}), instructionIndex:${idx}"
@@ -105,7 +105,7 @@ case class SnowHouseConfig[
       }
       case OpSelect.Alu => {
         assert(
-          opInfo.findArgs(opInfo.aluOp.get) != None,
+          opInfo.findValidArgs(opInfo.aluOp.get) != None,
           s"Error: unsupported combination or "
           + s"number of destination/source operands: "
           + s"opInfo(${opInfo}), instructionIndex:${idx}"
@@ -160,7 +160,7 @@ case class SnowHouseConfig[
       }
       case OpSelect.MultiCycle => {
         assert(
-          opInfo.findArgs(opInfo.multiCycleOp.get) != None,
+          opInfo.findValidArgs(opInfo.multiCycleOp.get) != None,
           s"Error: unsupported combination or "
           + s"number of destination/source operands: "
           + s"opInfo(${opInfo}), instructionIndex:${idx}"
@@ -173,34 +173,34 @@ case class SnowHouseConfig[
         //)
         multiCycleOpInfoMap += (idx -> opInfo)
       }
-      case OpSelect.Load => {
-        assert(
-          opInfo.findArgs(opInfo.loadOp.get) != None,
-          s"Error: unsupported combination or "
-          + s"number of destination/source operands: "
-          + s"opInfo(${opInfo}), instructionIndex:${idx}"
-        )
-        //assert(
-        //  opInfo.dstArr.find(_ == DstKind.Pc) == None,
-        //  s"Error: unsupported PC as destination of a load instruction: "
-        //  + s"opInfo(${opInfo}), instructionIndex:${idx}"
-        //)
-        loadOpInfoMap += (idx -> opInfo)
-      }
-      case OpSelect.Store => {
-        assert(
-          opInfo.findArgs(opInfo.storeOp.get) != None,
-          s"Error: unsupported combination or "
-          + s"number of destination/source operands: "
-          + s"opInfo(${opInfo}), instructionIndex:${idx}"
-        )
-        //assert(
-        //  opInfo.dstArr.find(_ == DstKind.Pc) == None,
-        //  s"Error: unsupported PC as destination of a store instruction: "
-        //  + s"opInfo(${opInfo}), instructionIndex:${idx}"
-        //)
-        storeOpInfoMap += (idx -> opInfo)
-      }
+      //case OpSelect.Load => {
+      //  assert(
+      //    opInfo.findValidArgs(opInfo.loadOp.get) != None,
+      //    s"Error: unsupported combination or "
+      //    + s"number of destination/source operands: "
+      //    + s"opInfo(${opInfo}), instructionIndex:${idx}"
+      //  )
+      //  //assert(
+      //  //  opInfo.dstArr.find(_ == DstKind.Pc) == None,
+      //  //  s"Error: unsupported PC as destination of a load instruction: "
+      //  //  + s"opInfo(${opInfo}), instructionIndex:${idx}"
+      //  //)
+      //  loadOpInfoMap += (idx -> opInfo)
+      //}
+      //case OpSelect.Store => {
+      //  assert(
+      //    opInfo.findValidArgs(opInfo.storeOp.get) != None,
+      //    s"Error: unsupported combination or "
+      //    + s"number of destination/source operands: "
+      //    + s"opInfo(${opInfo}), instructionIndex:${idx}"
+      //  )
+      //  //assert(
+      //  //  opInfo.dstArr.find(_ == DstKind.Pc) == None,
+      //  //  s"Error: unsupported PC as destination of a store instruction: "
+      //  //  + s"opInfo(${opInfo}), instructionIndex:${idx}"
+      //  //)
+      //  storeOpInfoMap += (idx -> opInfo)
+      //}
     }
   }
   val havePsExStall = (
