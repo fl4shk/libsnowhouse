@@ -13,7 +13,6 @@ import libcheesevoyage.bus.lcvStall._
 
 //sealed trait SnowHouseInstrSourceKind
 
-
 //--------
 case class SnowHouseIo[
   EncInstrT <: Data

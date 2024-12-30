@@ -55,6 +55,7 @@ object SrcKind {
   case object ZImm extends SrcKind  // Zero-extended
                                     // (or cfg.mainWidth bits) immediate
   case object SImm extends SrcKind  // Sign-extended immediate
+  //case object AluFlags extends SrcKind  // 
 }
 
 // kinds of destination operands of instruction
@@ -86,8 +87,6 @@ sealed trait AddrCalcKind {
 }
 object AddrCalcKind {
   case object AddReduce extends AddrCalcKind {
-    //def limits: (Int, Option[Int]) = (1, None)
-    //def lslAmount: Option[Int] = None
     private[libsnowhouse] val _options = AddrCalcKindOptions(
       minNum=1,
       maxNum=None,
@@ -96,8 +95,6 @@ object AddrCalcKind {
     def options: AddrCalcKindOptions = _options
   }
   case object LslFor16ThenMaybeAdd extends AddrCalcKind {
-    //def limits: (Int, Option[Int]) = (1, None)
-    //def lslAmount: Option[Int] = Some(1)
     private[libsnowhouse] val _options = AddrCalcKindOptions(
       minNum=1,
       maxNum=None,
@@ -106,8 +103,6 @@ object AddrCalcKind {
     def options: AddrCalcKindOptions = _options
   }
   case object LslFor32ThenMaybeAdd extends AddrCalcKind {
-    //def limits: (Int, Option[Int]) = (1, None)
-    //def lslAmount: Option[Int] = Some(2)
     private[libsnowhouse] val _options = AddrCalcKindOptions(
       minNum=1,
       maxNum=None,
@@ -116,8 +111,6 @@ object AddrCalcKind {
     def options: AddrCalcKindOptions = _options
   }
   case object LslFor64ThenMaybeAdd extends AddrCalcKind {
-    //def limits: (Int, Option[Int]) = (1, None)
-    //def lslAmount: Option[Int] = Some(3)
     private[libsnowhouse] val _options = AddrCalcKindOptions(
       minNum=1,
       maxNum=None,
@@ -135,6 +128,7 @@ object AddrCalcKind {
 //  case object Add extends SrcModOpKind  // add source operands
 //  case object Sub extends SrcModOpKind  // subtract source operands
 //}
+//trait MultiCycleOp
 
 class OpInfo(
   val dstArr: Seq[DstKind],
@@ -154,6 +148,7 @@ class OpInfo(
   private[libsnowhouse] var _cpyOp: CpyOpKind = null
   private[libsnowhouse] var _aluOp: AluOpKind = null
   private[libsnowhouse] var _multiCycleOp: MultiCycleOpKind = null
+  //private[libsnowhouse] var _multiCycleArea: Area = null
   private[libsnowhouse] var _loadOp: LoadOpKind = null
   private[libsnowhouse] var _storeOp: StoreOpKind = null
   //private[libsnowhouse] var _cond: CondOpKind = null
@@ -265,12 +260,14 @@ object OpInfo {
     srcArr: Seq[SrcKind],
     multiCycleOp: MultiCycleOpKind,
     cond: CondKind=CondKind.Always,
+    //multiCycleArea: Area,
   ): OpInfo = {
     val ret = new OpInfo(
       dstArr=dstArr,
       srcArr=srcArr,
       select=OpSelect.MultiCycle,
-      cond=cond
+      cond=cond,
+      //multiCycleArea=Some(multiCycleArea),
     )
     ret._multiCycleOp = multiCycleOp
     ret
@@ -328,11 +325,15 @@ object OpSelect {
   //--------
 }
 //--------
-case class OpKindLimits(
-  minD: Int,
-  maxD: Int,
-  minS: Int,
-  maxS: Int,
+case class OpKindNumArgs(
+  //minD: Int,
+  //maxD: Int,
+  //minS: Int,
+  //maxS: Int,
+  dst: Int,
+  src: Int,
+  //optExtraDstKind: Option[DstKind]=None,
+  //optExtraSrcKind: Option[SrcKind]=None,
 ) {
 }
 sealed trait OpKindBase {
@@ -340,7 +341,7 @@ sealed trait OpKindBase {
   //def maxNumDsts: Int
   //def minNumSrcs: Int
   //def maxNumSrcs: Int
-  def limits: OpKindLimits
+  def numArgsSet: LinkedHashSet[OpKindNumArgs]
 }
 //--------
 sealed trait CpyOpKind extends OpKindBase
@@ -348,39 +349,50 @@ object CpyOpKind {
   //--------
   case object Cpy extends CpyOpKind {
     // copy ("move"/"load immediate")
-    private[libsnowhouse] val _limits = OpKindLimits(
-      minD=1, maxD=2, minS=1, maxS=2
+    private[libsnowhouse] val _numArgsSet = LinkedHashSet[OpKindNumArgs](
+      OpKindNumArgs(dst=1, src=1), // word
+      OpKindNumArgs(dst=2, src=2), // two-word
     )
-    def limits = _limits
+    def numArgsSet = _numArgsSet
   }
   case object Cpyui extends CpyOpKind {
     // copy upper immediate ("load upper immediate")
-    private[libsnowhouse] val _limits = OpKindLimits(
-      minD=1, maxD=2, minS=1, maxS=2
+    private[libsnowhouse] val _numArgsSet = LinkedHashSet[OpKindNumArgs](
+      //minD=1, maxD=2, minS=1, maxS=2
+      OpKindNumArgs(dst=1, src=1), // word
+      OpKindNumArgs(dst=2, src=2), // two-word
     )
-    def limits = _limits
+    def numArgsSet = _numArgsSet
   }
   // NOTE: `Jmp` and `Br` these are special so that the implementation will 
   // use separate adders from the ALU
   case object Jmp extends CpyOpKind {
     // jump
-    private[libsnowhouse] val _limits = OpKindLimits(
-      minD=1,
-      maxD=2, // for "jump and link"
-      minS=1,
-      maxS=3, // for "compare and jump" (in one instruction)
+    private[libsnowhouse] val _numArgsSet = LinkedHashSet[OpKindNumArgs](
+      //minD=1,
+      //maxD=2, // for "jump and link"
+      //minS=1,
+      //maxS=3, // for "compare and jump" (in one instruction)
+      OpKindNumArgs(dst=1, src=1),
+      OpKindNumArgs(dst=2, src=1),  // for "jump and link"
+      OpKindNumArgs(dst=1, src=3),  // for "compare and jump"
+                                    // (in one instruction)
     )
-    def limits = _limits
+    def numArgsSet = _numArgsSet
   }
   case object Br extends CpyOpKind {
     // branch relative
-    private[libsnowhouse] val _limits = OpKindLimits(
-      minD=1,
-      maxD=2, // for "branch and link"
-      minS=1,
-      maxS=3, // for "compare and branch" (in one instruction)
+    private[libsnowhouse] val _numArgsSet = LinkedHashSet[OpKindNumArgs](
+      //minD=1,
+      //maxD=2, // for "branch and link"
+      //minS=1,
+      //maxS=3, // for "compare and branch" (in one instruction)
+      OpKindNumArgs(dst=1, src=1),
+      OpKindNumArgs(dst=2, src=1),  // for "branch and link"
+      OpKindNumArgs(dst=1, src=3),  // for "compare and branch"
+                                    // (in one instruction)
     )
-    def limits = _limits
+    def numArgsSet = _numArgsSet
   }
   //--------
 }
@@ -391,93 +403,182 @@ sealed trait AluOpKind extends OpKindBase
 object AluOpKind {
   //--------
   case object Add extends AluOpKind {
-    private[libsnowhouse] val _limits = OpKindLimits(
-      minD=1, maxD=1, minS=2, maxS=2
+    private[libsnowhouse] val _numArgsSet = LinkedHashSet[OpKindNumArgs](
+      //minD=1, maxD=1, minS=2, maxS=2
+      OpKindNumArgs(dst=1, src=2),  // word
+      //OpKindNumArgs(dst=2, src=4),  // two-word
+      OpKindNumArgs(                // word, with flags
+        dst=2,
+        src=2,
+      ),
+      //OpKindNumArgs(                // two-word, with flags
+      //  dst=2,
+      //  src=4,
+      //),
     )
-    def limits = _limits
+    def numArgsSet = _numArgsSet
   }
   case object Adc extends AluOpKind {
-    private[libsnowhouse] val _limits = OpKindLimits(
-      minD=1, maxD=1, minS=2, maxS=2
+    private[libsnowhouse] val _numArgsSet = LinkedHashSet[OpKindNumArgs](
+      //minD=1, maxD=1, minS=2, maxS=2
+      OpKindNumArgs(dst=1, src=2),  // word
+      //OpKindNumArgs(dst=2, src=4),  // two-word
+      OpKindNumArgs(                // word, with flags
+        dst=2,
+        src=2,
+      ),
+      //OpKindNumArgs(                // two-word, with flags
+      //  dst=2,
+      //  src=4,
+      //),
     )
-    def limits = _limits
+    def numArgsSet = _numArgsSet
   }
   case object Sub extends AluOpKind {
-    private[libsnowhouse] val _limits = OpKindLimits(
-      minD=1, maxD=1, minS=2, maxS=2
+    private[libsnowhouse] val _numArgsSet = LinkedHashSet[OpKindNumArgs](
+      //minD=1, maxD=1, minS=2, maxS=2
+      OpKindNumArgs(dst=1, src=2),  // word `Sub` or `Cmp`
+      //OpKindNumArgs(dst=2, src=4),  // two-word
+      OpKindNumArgs(                // word, with flags
+        dst=2,
+        src=2,
+      ),
+      //OpKindNumArgs(                // two-word, with flags
+      //  dst=2,
+      //  src=4,
+      //),
     )
-    def limits = _limits
+    def numArgsSet = _numArgsSet
   }
   case object Sbc extends AluOpKind {
-    private[libsnowhouse] val _limits = OpKindLimits(
-      minD=1, maxD=1, minS=2, maxS=2
+    private[libsnowhouse] val _numArgsSet = LinkedHashSet[OpKindNumArgs](
+      //minD=1, maxD=1, minS=2, maxS=2
+      OpKindNumArgs(dst=1, src=2),  // word
+      //OpKindNumArgs(dst=2, src=4),  // two-word
+      OpKindNumArgs(                // word, with flags
+        dst=2,
+        src=2,
+      ),
+      //OpKindNumArgs(                // two-word, with flags
+      //  dst=2,
+      //  src=4,
+      //),
     )
-    def limits = _limits
+    def numArgsSet = _numArgsSet
   }
   //--------
   //case object Cpy extends AluOpKind // "move"/"load immediate" instruction
   case object Lsl extends AluOpKind {
-    private[libsnowhouse] val _limits = OpKindLimits(
-      minD=1, maxD=1, minS=2, maxS=2
+    private[libsnowhouse] val _numArgsSet = LinkedHashSet[OpKindNumArgs](
+      //minD=1, maxD=1, minS=2, maxS=2
+      OpKindNumArgs(dst=1, src=2),  // word
+      //OpKindNumArgs(dst=2, src=4),  // two-word
+      OpKindNumArgs(                // word, with flags
+        dst=2,
+        src=2,
+      ),
+      //OpKindNumArgs(                // two-word, with flags
+      //  dst=2,
+      //  src=4,
+      //  optExtraDstKind=Some(DstKind.AluFlags),
+      //),
     )
-    def limits = _limits
+    def numArgsSet = _numArgsSet
   }
   case object Lsr extends AluOpKind {
-    private[libsnowhouse] val _limits = OpKindLimits(
-      minD=1, maxD=1, minS=2, maxS=2
+    private[libsnowhouse] val _numArgsSet = LinkedHashSet[OpKindNumArgs](
+      //minD=1, maxD=1, minS=2, maxS=2
+      OpKindNumArgs(dst=1, src=2),  // word
+      //OpKindNumArgs(dst=2, src=4),  // two-word
+      OpKindNumArgs(                // word, with flags
+        dst=2,
+        src=2,
+      ),
+      //OpKindNumArgs(                // two-word, with flags
+      //  dst=2,
+      //  src=4,
+      //  optExtraDstKind=Some(DstKind.AluFlags),
+      //),
     )
-    def limits = _limits
+    def numArgsSet = _numArgsSet
   }
   case object Asr extends AluOpKind {
-    private[libsnowhouse] val _limits = OpKindLimits(
-      minD=1, maxD=1, minS=2, maxS=2
+    private[libsnowhouse] val _numArgsSet = LinkedHashSet[OpKindNumArgs](
+      //minD=1, maxD=1, minS=2, maxS=2
+      OpKindNumArgs(dst=1, src=2),  // word
+      //OpKindNumArgs(dst=2, src=4),  // two-word
+      OpKindNumArgs(                // word, with flags
+        dst=2,
+        src=2,
+      ),
     )
-    def limits = _limits
+    def numArgsSet = _numArgsSet
   }
   case object And extends AluOpKind {
-    private[libsnowhouse] val _limits = OpKindLimits(
-      minD=1, maxD=1, minS=2, maxS=2
+    private[libsnowhouse] val _numArgsSet = LinkedHashSet[OpKindNumArgs](
+      //minD=1, maxD=1, minS=2, maxS=2
+      OpKindNumArgs(dst=1, src=2),  // word
+      //OpKindNumArgs(dst=2, src=4),  // two-word
+      OpKindNumArgs(                // word, with flags
+        dst=2,
+        src=2,
+      ),
     )
-    def limits = _limits
+    def numArgsSet = _numArgsSet
   }
   case object Or extends AluOpKind {
-    private[libsnowhouse] val _limits = OpKindLimits(
-      minD=1, maxD=1, minS=2, maxS=2
+    private[libsnowhouse] val _numArgsSet = LinkedHashSet[OpKindNumArgs](
+      //minD=1, maxD=1, minS=2, maxS=2
+      OpKindNumArgs(dst=1, src=2),  // word
+      //OpKindNumArgs(dst=2, src=4),  // two-word
+      OpKindNumArgs(                // word, with flags
+        dst=2,
+        src=2,
+      ),
     )
-    def limits = _limits
+    def numArgsSet = _numArgsSet
   }
   case object Xor extends AluOpKind {
-    private[libsnowhouse] val _limits = OpKindLimits(
-      minD=1, maxD=1, minS=2, maxS=2
+    private[libsnowhouse] val _numArgsSet = LinkedHashSet[OpKindNumArgs](
+      //minD=1, maxD=1, minS=2, maxS=2
+      OpKindNumArgs(dst=1, src=2),  // word
+      //OpKindNumArgs(dst=2, src=4),  // two-word
+      OpKindNumArgs(                // word, with flags
+        dst=2,
+        src=2,
+      ),
     )
-    def limits = _limits
+    def numArgsSet = _numArgsSet
   }
   //--------
-  case object Cmp extends AluOpKind {
-    private[libsnowhouse] val _limits = OpKindLimits(
-      minD=1, maxD=1, minS=2, maxS=2
-    )
-    def limits = _limits
-  }
+  //case object Cmp extends AluOpKind {
+  //  private[libsnowhouse] val _numArgsSet = LinkedHashSet[OpKindNumArgs](
+  //    //minD=1, maxD=1, minS=2, maxS=2
+  //  )
+  //  def numArgsSet = _numArgsSet
+  //}
   case object CmpBc extends AluOpKind {
     // see the `flare_cpu` git repo's `docs/flare_cpu` for more info
-    private[libsnowhouse] val _limits = OpKindLimits(
-      minD=1, maxD=1, minS=2, maxS=2
+    private[libsnowhouse] val _numArgsSet = LinkedHashSet[OpKindNumArgs](
+      //minD=1, maxD=1, minS=2, maxS=2
+      OpKindNumArgs(dst=1, src=2),  // word
     )
-    def limits = _limits
+    def numArgsSet = _numArgsSet
   }
                                       
   case object Sltu extends AluOpKind {
-    private[libsnowhouse] val _limits = OpKindLimits(
-      minD=1, maxD=1, minS=2, maxS=2
+    private[libsnowhouse] val _numArgsSet = LinkedHashSet[OpKindNumArgs](
+      //minD=1, maxD=1, minS=2, maxS=2
+      OpKindNumArgs(dst=1, src=2)   // word
     )
-    def limits = _limits
+    def numArgsSet = _numArgsSet
   }
   case object Slts extends AluOpKind {
-    private[libsnowhouse] val _limits = OpKindLimits(
-      minD=1, maxD=1, minS=2, maxS=2
+    private[libsnowhouse] val _numArgsSet = LinkedHashSet[OpKindNumArgs](
+      //minD=1, maxD=1, minS=2, maxS=2
+      OpKindNumArgs(dst=1, src=2)   // word
     )
-    def limits = _limits
+    def numArgsSet = _numArgsSet
   }
   //--------
   //--------
@@ -485,51 +586,86 @@ object AluOpKind {
 sealed trait MultiCycleOpKind extends OpKindBase
 object MultiCycleOpKind {
   //--------
-  case object Mul extends MultiCycleOpKind {
-    private[libsnowhouse] val _limits = OpKindLimits(
-      minD=1, maxD=2, minS=2, maxS=4
+  case object Umul extends MultiCycleOpKind {
+    // `Umul` also represents non-full-product multiplies
+    private[libsnowhouse] val _numArgsSet = LinkedHashSet[OpKindNumArgs](
+      //minD=1, maxD=2, minS=2, maxS=4
+      OpKindNumArgs(dst=1, src=2), // word, non-full-product
+      OpKindNumArgs(dst=2, src=2), // word, unsigned full-product
     )
-    def limits = _limits
+    def numArgsSet = _numArgsSet
+  }
+  case object Smul extends MultiCycleOpKind {
+    private[libsnowhouse] val _numArgsSet = LinkedHashSet[OpKindNumArgs](
+      //minD=1, maxD=2, minS=2, maxS=4
+      OpKindNumArgs(dst=2, src=2), // word, signed full product
+    )
+    def numArgsSet = _numArgsSet
   }
   case object Udiv extends MultiCycleOpKind {
-    private[libsnowhouse] val _limits = OpKindLimits(
-      minD=1, maxD=2, minS=2, maxS=4
+    private[libsnowhouse] val _numArgsSet = LinkedHashSet[OpKindNumArgs](
+      //minD=1, maxD=2, minS=2, maxS=4
+      OpKindNumArgs(dst=1, src=2),  // word
+      OpKindNumArgs(dst=2, src=4),  // dual-word
     )
-    def limits = _limits
-  }
-  case object Umod extends MultiCycleOpKind {
-    private[libsnowhouse] val _limits = OpKindLimits(
-      minD=1, maxD=2, minS=2, maxS=4
-    )
-    def limits = _limits
-  }
-  case object Udivmod extends MultiCycleOpKind {
-    private[libsnowhouse] val _limits = OpKindLimits(
-      minD=2, maxD=4, minS=2, maxS=4
-    )
-    def limits = _limits
+    def numArgsSet = _numArgsSet
   }
   case object Sdiv extends MultiCycleOpKind {
-    private[libsnowhouse] val _limits = OpKindLimits(
-      minD=1, maxD=2, minS=2, maxS=4
+    private[libsnowhouse] val _numArgsSet = LinkedHashSet[OpKindNumArgs](
+      //minD=1, maxD=2, minS=2, maxS=4
+      OpKindNumArgs(dst=1, src=2),  // word
+      OpKindNumArgs(dst=2, src=4),  // dual-word
     )
-    def limits = _limits
+    def numArgsSet = _numArgsSet
+  }
+  case object Umod extends MultiCycleOpKind {
+    private[libsnowhouse] val _numArgsSet = LinkedHashSet[OpKindNumArgs](
+      //minD=1, maxD=2, minS=2, maxS=4
+      OpKindNumArgs(dst=1, src=2),  // word
+      OpKindNumArgs(dst=2, src=4),  // dual-word
+    )
+    def numArgsSet = _numArgsSet
   }
   case object Smod extends MultiCycleOpKind {
-    private[libsnowhouse] val _limits = OpKindLimits(
-      minD=1, maxD=2, minS=2, maxS=4
+    private[libsnowhouse] val _numArgsSet = LinkedHashSet[OpKindNumArgs](
+      //minD=1, maxD=2, minS=2, maxS=4
+      OpKindNumArgs(dst=1, src=2),  // word
+      OpKindNumArgs(dst=2, src=4),  // dual-word
     )
-    def limits = _limits
+    def numArgsSet = _numArgsSet
+  }
+  case object Udivmod extends MultiCycleOpKind {
+    private[libsnowhouse] val _numArgsSet = LinkedHashSet[OpKindNumArgs](
+      //minD=2, maxD=4, minS=2, maxS=4
+      OpKindNumArgs(dst=2, src=2),  // word
+      OpKindNumArgs(dst=4, src=4),  // dual-word
+    )
+    def numArgsSet = _numArgsSet
   }
   case object Sdivmod extends MultiCycleOpKind {
-    private[libsnowhouse] val _limits = OpKindLimits(
-      minD=2, maxD=4, minS=2, maxS=4
+    private[libsnowhouse] val _numArgsSet = LinkedHashSet[OpKindNumArgs](
+      //minD=2, maxD=4, minS=2, maxS=4
+      OpKindNumArgs(dst=2, src=2),  // word
+      OpKindNumArgs(dst=4, src=4),  // dual-word
     )
-    def limits = _limits
+    def numArgsSet = _numArgsSet
   }
   //--------
-  //case object Umull extends MultiCycleOpKind
-  //case object Smull extends MultiCycleOpKind
+  //case object Lumul extends MultiCycleOpKind {
+  //  // unsigned full product
+  //  private[libsnowhouse] val _numArgsSet = Array[OpKindLimits](
+  //    minD=2, maxD=2, minS=2, maxS=2
+  //  )
+  //  def numArgsSet = _numArgsSet
+  //}
+  //case object Lsmul extends MultiCycleOpKind {
+  //  // signed full product
+  //  private[libsnowhouse] val _numArgsSet = Array[OpKindLimits](
+  //    minD=2, maxD=2, minS=2, maxS=2
+  //  )
+  //  def numArgsSet = _numArgsSet
+  //}
+  //case object Lsmul extends MultiCycleOpKind
   //--------
 }
 
@@ -539,46 +675,68 @@ sealed trait LoadOpKind extends OpKindBase
 object LoadOpKind {
   //--------
   case object LdU8 extends LoadOpKind {
-    private[libsnowhouse] val _limits = OpKindLimits(
-      minD=1, maxD=1, minS=2, maxS=3
+    private[libsnowhouse] val _numArgsSet = LinkedHashSet[OpKindNumArgs](
+      //minD=1, maxD=1, minS=2, maxS=3
+      OpKindNumArgs(dst=1, src=1),
+      OpKindNumArgs(dst=1, src=2),
     )
-    def limits = _limits
+    def numArgsSet = _numArgsSet
   }
   case object LdS8 extends LoadOpKind {
-    private[libsnowhouse] val _limits = OpKindLimits(
-      minD=1, maxD=1, minS=2, maxS=3
+    private[libsnowhouse] val _numArgsSet = LinkedHashSet[OpKindNumArgs](
+      //minD=1, maxD=1, minS=2, maxS=3
+      OpKindNumArgs(dst=1, src=1),
+      OpKindNumArgs(dst=1, src=2),
     )
-    def limits = _limits
+    def numArgsSet = _numArgsSet
   }
   case object LdU16 extends LoadOpKind {
-    private[libsnowhouse] val _limits = OpKindLimits(
-      minD=1, maxD=1, minS=2, maxS=3
+    private[libsnowhouse] val _numArgsSet = LinkedHashSet[OpKindNumArgs](
+      //minD=1, maxD=1, minS=2, maxS=3
+      OpKindNumArgs(dst=1, src=1),
+      OpKindNumArgs(dst=1, src=2),
     )
-    def limits = _limits
+    def numArgsSet = _numArgsSet
   }
   case object LdS16 extends LoadOpKind {
-    private[libsnowhouse] val _limits = OpKindLimits(
-      minD=1, maxD=1, minS=2, maxS=3
+    private[libsnowhouse] val _numArgsSet = LinkedHashSet[OpKindNumArgs](
+      //minD=1, maxD=1, minS=2, maxS=3
+      OpKindNumArgs(dst=1, src=1),
+      OpKindNumArgs(dst=1, src=2),
     )
-    def limits = _limits
+    def numArgsSet = _numArgsSet
   }
   case object LdU32 extends LoadOpKind {
-    private[libsnowhouse] val _limits = OpKindLimits(
-      minD=1, maxD=1, minS=2, maxS=3
+    private[libsnowhouse] val _numArgsSet = LinkedHashSet[OpKindNumArgs](
+      //minD=1, maxD=1, minS=2, maxS=3
+      OpKindNumArgs(dst=1, src=1),
+      OpKindNumArgs(dst=1, src=2),
     )
-    def limits = _limits
+    def numArgsSet = _numArgsSet
   }
   case object LdS32 extends LoadOpKind {
-    private[libsnowhouse] val _limits = OpKindLimits(
-      minD=1, maxD=1, minS=2, maxS=3
+    private[libsnowhouse] val _numArgsSet = LinkedHashSet[OpKindNumArgs](
+      //minD=1, maxD=1, minS=2, maxS=3
+      OpKindNumArgs(dst=1, src=1),
+      OpKindNumArgs(dst=1, src=2),
     )
-    def limits = _limits
+    def numArgsSet = _numArgsSet
   }
-  case object Ld64 extends LoadOpKind {
-    private[libsnowhouse] val _limits = OpKindLimits(
-      minD=1, maxD=1, minS=2, maxS=3
+  case object LdU64 extends LoadOpKind {
+    private[libsnowhouse] val _numArgsSet = LinkedHashSet[OpKindNumArgs](
+      //minD=1, maxD=1, minS=2, maxS=3
+      OpKindNumArgs(dst=1, src=1),
+      OpKindNumArgs(dst=1, src=2),
     )
-    def limits = _limits
+    def numArgsSet = _numArgsSet
+  }
+  case object LdS64 extends LoadOpKind {
+    private[libsnowhouse] val _numArgsSet = LinkedHashSet[OpKindNumArgs](
+      //minD=1, maxD=1, minS=2, maxS=3
+      OpKindNumArgs(dst=1, src=1),
+      OpKindNumArgs(dst=1, src=2),
+    )
+    def numArgsSet = _numArgsSet
   }
   //--------
 }
@@ -589,28 +747,36 @@ sealed trait StoreOpKind extends OpKindBase
 object StoreOpKind {
   //--------
   case object St8 extends StoreOpKind {
-    private[libsnowhouse] val _limits = OpKindLimits(
-      minD=1, maxD=1, minS=2, maxS=3
+    private[libsnowhouse] val _numArgsSet = LinkedHashSet[OpKindNumArgs](
+      //minD=1, maxD=1, minS=2, maxS=3
+      OpKindNumArgs(dst=1, src=1),
+      OpKindNumArgs(dst=1, src=2),
     )
-    def limits = _limits
+    def numArgsSet = _numArgsSet
   }
   case object St16 extends StoreOpKind {
-    private[libsnowhouse] val _limits = OpKindLimits(
-      minD=1, maxD=1, minS=2, maxS=3
+    private[libsnowhouse] val _numArgsSet = LinkedHashSet[OpKindNumArgs](
+      //minD=1, maxD=1, minS=2, maxS=3
+      OpKindNumArgs(dst=1, src=1),
+      OpKindNumArgs(dst=1, src=2),
     )
-    def limits = _limits
+    def numArgsSet = _numArgsSet
   }
   case object St32 extends StoreOpKind {
-    private[libsnowhouse] val _limits = OpKindLimits(
-      minD=1, maxD=1, minS=2, maxS=3
+    private[libsnowhouse] val _numArgsSet = LinkedHashSet[OpKindNumArgs](
+      //minD=1, maxD=1, minS=2, maxS=3
+      OpKindNumArgs(dst=1, src=1),
+      OpKindNumArgs(dst=1, src=2),
     )
-    def limits = _limits
+    def numArgsSet = _numArgsSet
   }
   case object St64 extends StoreOpKind {
-    private[libsnowhouse] val _limits = OpKindLimits(
-      minD=1, maxD=1, minS=2, maxS=3
+    private[libsnowhouse] val _numArgsSet = LinkedHashSet[OpKindNumArgs](
+      //minD=1, maxD=1, minS=2, maxS=3
+      OpKindNumArgs(dst=1, src=1),
+      OpKindNumArgs(dst=1, src=2),
     )
-    def limits = _limits
+    def numArgsSet = _numArgsSet
   }
   //--------
 }

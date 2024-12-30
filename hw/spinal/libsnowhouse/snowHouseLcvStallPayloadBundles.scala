@@ -35,6 +35,12 @@ extends SpinalEnum(defaultEncoding=binarySequential) {
     Store
     = newElement();
 }
+case class MultiCycleHostPayload[
+  EncInstrT <: Data
+](
+  cfg: SnowHouseConfig[EncInstrT],
+) extends Bundle {
+}
 //object DbusHostMemAccSz
 //extends SpinalEnum(defaultEncoding=binarySequential) {
 //  val

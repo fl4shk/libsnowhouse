@@ -65,8 +65,30 @@ case class SampleCpuPsDecode(
 ) extends SnowHousePsDecode[SampleCpuEncInstr] {
   private val _decInstr: UInt = U"32'd0"
   def decInstr: UInt = _decInstr
+  args match {
+    case Some(args) => {
+      //--------
+      def opInfoMap = args.opInfoMap
+      def io = args.io
+      def cId = args.link
+      def payload = args.payload
+      def optFormal = args.optFormal
+      //--------
+      //assert(opInfoMap != null)
+      //assert(io != null)
+      //assert(cId != null)
+      //--------
+      when (cId.up.isFiring) {
+      }
+      //--------
+    }
+    case None => {
+      assert(false)
+    }
+  }
 }
 object SampleCpuOpInfoMap {
+  //--------
   val opInfoMap = LinkedHashMap[Any, OpInfo]()
   //--------
   opInfoMap += (
