@@ -62,18 +62,19 @@ case class SampleCpuEncInstr(
   val rcIdx = UInt(SampleCpuInstrEnc.gprIdxWidth bits)
   val simm16 = UInt(SampleCpuInstrEnc.simmWidth bits)
 }
-case class SampleCpuPsDecode(
-) extends SnowHousePsDecode[SampleCpuEncInstr] {
+case class SampleCpuPipeStageInstrDecode(
+) extends SnowHousePipeStageInstrDecode[SampleCpuEncInstr] {
   private val _decInstr: UInt = U"32'd0"
   def decInstr: UInt = _decInstr
   args match {
     case Some(args) => {
       //--------
-      def opInfoMap = args.opInfoMap
-      def io = args.io
-      def cId = args.link
-      def payload = args.payload
-      def optFormal = args.optFormal
+      def cfg = super.cfg
+      def opInfoMap = super.opInfoMap
+      def io = super.io
+      def cId = super.cId
+      def payload = super.payload
+      def optFormal = super.optFormal
       //--------
       //assert(opInfoMap != null)
       //assert(io != null)
@@ -251,7 +252,7 @@ case class SampleCpuParams(
       optHowToSlice=None,
     ),
     opInfoMap=SampleCpuOpInfoMap.opInfoMap,
-    psDecode=SampleCpuPsDecode(),
+    psDecode=SampleCpuPipeStageInstrDecode(),
     //decodeFunc=(
     //  io: SnowHouseIo[SampleCpuEncInstr],
     //  cId: CtrlLink,

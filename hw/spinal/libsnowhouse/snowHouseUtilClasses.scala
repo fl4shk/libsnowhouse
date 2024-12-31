@@ -16,17 +16,68 @@ case class SnowHouseRegFileConfig(
   wordCountArr: Seq[Int],
   modRdPortCnt: Int,
   pipeName: String,
-  optHowToSlice: Option[Seq[LinkedHashSet[Int]]],
+  private val optHowToSlice: Option[Seq[LinkedHashSet[Int]]],
   //linkArr: Option[ArrayBuffer[Link]]=None,
 ) {
+  assert(
+    wordCountArr.size > 0,
+    s"wordCountArr.size (${wordCountArr.size}) must be greater than zero"
+  )
+  for ((wordCount, wordCountIdx) <- wordCountArr.view.zipWithIndex) {
+    assert(
+      wordCount > 0,
+      s"wordCount (value:${wordCount} index:${wordCountIdx}) "
+      + s"must be greater than zero"
+    )
+  }
   val modStageCnt: Int = 1
-  val myHowToSlice: (Boolean, Seq[LinkedHashSet[Int]]) = (
+  val howToSlice: Seq[LinkedHashSet[Int]] = (
     optHowToSlice match {
       case Some(howToSlice) => {
-        (true, howToSlice)
+        //var cnt: Int = 0
+        assert(
+          howToSlice.size == wordCountArr.size,
+          s"howToSlice.size (${howToSlice.size}) "
+          + s"is not equal to wordCountArr.size (${wordCountArr.size})"
+        )
+        val wordCountSum: Int = {
+          var tempSum: Int = 0
+          for (wordCount <- wordCountArr.view) {
+            tempSum += wordCount
+          }
+          tempSum
+        }
+        val foundSet = LinkedHashSet[Int]()
+        for (sliceHowSet <- howToSlice.view) {
+          for (sliceHow: Int <- sliceHowSet.view) {
+            assert (
+              sliceHow >= 0
+              && sliceHow < wordCountSum,
+              s"sliceHow of ${sliceHow} is outside valid range of "
+              + s"(0 inclusive, ${wordCountSum} exclusive)"
+            )
+            assert(
+              !foundSet.contains(sliceHow),
+              s"duplicate sliceHow: ${sliceHow}"
+            )
+            foundSet += sliceHow
+          }
+        }
+        howToSlice
       }
       case None => {
-        (false, null)
+        //(false, null)
+        val howToSlice = ArrayBuffer[LinkedHashSet[Int]]()
+        var cnt: Int = 0
+        for (wordCount <- wordCountArr.view) {
+          val tempSet = LinkedHashSet[Int]()
+          for (tempCnt <- 0 until wordCount) {
+            tempSet += cnt
+            cnt += 1
+          }
+          howToSlice += tempSet
+        }
+        howToSlice
       }
     }
   )
@@ -50,10 +101,11 @@ case class SnowHouseConfig[
   //  CtrlLink,               // cId
   //  UInt,                   // output the decoded instruction
   //) => Area,                
-  psDecode: SnowHousePsDecode[EncInstrT],
+  psDecode: SnowHousePipeStageInstrDecode[EncInstrT],
   optFormal: Boolean,
   maxNumGprsPerInstr: Int,
   modOpCntWidth: Int=8,
+  instrCntWidth: Int=8,
 ) {
   //--------
   //psDecode.args = Some(SnowHousePipeStageArgs[EncInstrT](
@@ -300,6 +352,18 @@ case class SnowHouseConfig[
   //def optFormal: Boolean = psDecode.optFormal
 }
 
+//object SnowHouseFormalInstrCnt {
+//  def cntWidth = 8
+//}
+case class SnowHouseFormalInstrCnt[
+  EncInstrT <: Data
+](
+  cfg: SnowHouseConfig[EncInstrT],
+) extends Bundle {
+  val any = UInt(cfg.instrCntWidth bits)
+  val fwd = UInt(cfg.instrCntWidth bits)
+  val jmp = UInt(cfg.instrCntWidth bits)
+}
 case class SnowHouseRegFileModType[
   EncInstrT <: Data
 ](
