@@ -160,30 +160,47 @@ object AddrCalcKind {
     )
     def options: AddrCalcKindOptions = _options
   }
-  case object LslFor16ThenMaybeAdd extends AddrCalcKind {
+  private[libsnowhouse] case class LslThenMaybeAdd(
+    lslAmount: Int,
+  ) extends AddrCalcKind {
     private[libsnowhouse] val _options = AddrCalcKindOptions(
       minNum=1,
       maxNum=None,
-      lslAmount=Some(1),
+      lslAmount=Some(lslAmount),
     )
     def options: AddrCalcKindOptions = _options
   }
-  case object LslFor32ThenMaybeAdd extends AddrCalcKind {
-    private[libsnowhouse] val _options = AddrCalcKindOptions(
-      minNum=1,
-      maxNum=None,
-      lslAmount=Some(2),
+  def LslFor16ThenMaybeAdd() = (
+    LslThenMaybeAdd(
+      lslAmount=1
     )
-    def options: AddrCalcKindOptions = _options
-  }
-  case object LslFor64ThenMaybeAdd extends AddrCalcKind {
-    private[libsnowhouse] val _options = AddrCalcKindOptions(
-      minNum=1,
-      maxNum=None,
-      lslAmount=Some(3),
+  )
+  def LslFor32ThenMaybeAdd() = (
+    LslThenMaybeAdd(
+      lslAmount=2
     )
-    def options: AddrCalcKindOptions = _options
-  }
+  )
+  def LslFor64ThenMaybeAdd() = (
+    LslThenMaybeAdd(
+      lslAmount=3
+    )
+  )
+  //case object LslFor32ThenMaybeAdd extends AddrCalcKind {
+  //  private[libsnowhouse] val _options = AddrCalcKindOptions(
+  //    minNum=1,
+  //    maxNum=None,
+  //    lslAmount=Some(2),
+  //  )
+  //  def options: AddrCalcKindOptions = _options
+  //}
+  //case object LslFor64ThenMaybeAdd extends AddrCalcKind {
+  //  private[libsnowhouse] val _options = AddrCalcKindOptions(
+  //    minNum=1,
+  //    maxNum=None,
+  //    lslAmount=Some(3),
+  //  )
+  //  def options: AddrCalcKindOptions = _options
+  //}
 }
 //--------
 

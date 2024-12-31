@@ -110,6 +110,33 @@ extends SpinalEnum(defaultEncoding=binarySequential) {
     Sz32,
     Sz64
     = newElement()
+  def fromWordSize[
+    EncInstrT <: Data
+  ](
+    cfg: SnowHouseConfig[EncInstrT]
+  ): DbusHostMemAccessSubKind.E = {
+    cfg.mainWidth match {
+      case 8 => {
+        DbusHostMemAccessSubKind.Sz8
+      }
+      case 16 => {
+        DbusHostMemAccessSubKind.Sz16
+      }
+      case 32 => {
+        DbusHostMemAccessSubKind.Sz32
+      }
+      case 64 => {
+        DbusHostMemAccessSubKind.Sz64
+      }
+      case _ => {
+        assert(
+          false,
+          s"not yet implemented"
+        )
+        DbusHostMemAccessSubKind.Sz8
+      }
+    }
+  }
 }
 case class DbusHostPayload[
   EncInstrT <: Data

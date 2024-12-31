@@ -104,7 +104,7 @@ case class SnowHouseConfig[
   psDecode: SnowHousePipeStageInstrDecode[EncInstrT],
   optFormal: Boolean,
   maxNumGprsPerInstr: Int,
-  modOpCntWidth: Int=8,
+  //modOpCntWidth: Int=8,
   instrCntWidth: Int=8,
 ) {
   //--------
@@ -372,7 +372,9 @@ case class SnowHouseRegFileModType[
   def myHaveFormalFwd = (
     cfg.optFormal
   )
-  val opCnt = UInt(cfg.modOpCntWidth bits)
+  val instrCnt = SnowHouseFormalInstrCnt(cfg=cfg)
+  //val opCnt = UInt(cfg.instrCntWidth bits)
+  def opCnt = instrCnt.any
   val op = UInt(log2Up(cfg.opInfoMap.size) bits)
   val gprIdxVec = Vec.fill(cfg.maxNumGprsPerInstr)(
     UInt(log2Up(cfg.numGprs) bits)

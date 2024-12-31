@@ -70,10 +70,10 @@ case class SnowHousePipeStageInstrFetch[
   psExSetPc: Flow[UInt],
 ) extends Area {
   //val io = SnowHousePipeStageInstrFetchIo(cfg=cfg)
-  val cfg = args.cfg
-  val io = args.io
-  val cIf = args.link
-  val pIf = args.payload
+  def cfg = args.cfg
+  def io = args.io
+  def cIf = args.link
+  def pIf = args.payload
   //--------
   val up = cIf.up
   val down = cIf.down
@@ -82,8 +82,10 @@ case class SnowHousePipeStageInstrFetch[
   val myInstrCnt = SnowHouseFormalInstrCnt(cfg=cfg)
   up(pIf) := upModExt
   upModExt := (
-    RegNext(upModExt)
-    init(upModExt.getZero)
+    RegNext(
+      next=upModExt,
+      init=upModExt.getZero
+    )
   )
   def nextRegPc = upModExt.regPc
   val rSavedExSetPc = (
@@ -97,8 +99,8 @@ case class SnowHousePipeStageInstrFetch[
   val rPrevRegPc = (
     RegNextWhen(
       //upModExt.regPc,
-      nextRegPc,
-      up.isFiring,
+      next=nextRegPc,
+      cond=up.isFiring,
     )
     init(nextRegPc.getZero)
   )
@@ -138,10 +140,6 @@ case class SnowHousePipeStageInstrFetch[
     }
   }
   //--------
-  //when (exSetPc.fire) {
-  //  upModExt.regPc := exSetPc.payload + (cfg.instrMainWidth / 8)
-  //}
-  //--------
   io.ibus.nextValid := True
   io.ibus.hostData.addr := upModExt.regPc
   //--------
@@ -157,7 +155,6 @@ case class SnowHousePipeStageInstrFetch[
         next=io.ibus.hostData.addr,
         init=io.ibus.hostData.addr.getZero,
       )
-      //init(io.ibus.hostData.addr.getZero)
     )
   }
   def doHaltItEtc(): Unit = {
@@ -249,11 +246,16 @@ case class SnowHousePipeStageExecuteSetOutpModMemWordIo[
   cfg: SnowHouseConfig[EncInstrT],
 ) extends Bundle {
   val currOp = in(UInt(log2Up(cfg.opInfoMap.size) bits))
-  val rdMemWord = in(Vec.fill(2)( // temporary size of `2`
+  val doIt = in(Bool())
+  val rdMemWord = in(Vec.fill(3)( // temporary size of `3`
     UInt(cfg.mainWidth bits)
   ))
+  val regPcPlusImm = in(UInt(cfg.mainWidth bits))
   val modMemWordValid = out(Bool())
   val modMemWord = out(UInt(cfg.mainWidth bits))
+  val psExSetPc = out(Flow(UInt(cfg.mainWidth bits)))
+  val dbusHostPayload = DbusHostPayload(cfg=cfg)
+  def jmpAddrIdx = 2
 }
 case class SnowHousePipeStageExecuteSetOutpModMemWord[
   EncInstrT <: Data
@@ -276,11 +278,35 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord[
   )
   //when (someCond) {
   io.modMemWordValid := (
-    True
+    io.doIt //True
   )
+  io.psExSetPc := io.psExSetPc.getZero
+  //io.psExSetPc.valid := (
+  //  //RegNext(
+  //  //  next=io.psExSetPc.valid,
+  //  //  init=io.psExSetPc.valid.getZero,
+  //  //)
+  //  //io.doIt
+  //  False
+  //)
+  //io.psExSetPc.payload := (
+  //  //RegNext(
+  //  //  next=io.psExSetPc.payload,
+  //  //  init=io.psExSetPc.payload.getZero,
+  //  //)
+  //  io.psExSetPc.payload.getZero
+  //)
   switch (io.currOp) {
     //--------
     for (((_, opInfo), opInfoIdx) <- cfg.opInfoMap.view.zipWithIndex) {
+      assert(
+        opInfo.dstArr.size == 1,
+        s"not yet implemented"
+      )
+      assert(
+        opInfo.srcArr.size == 1 || opInfo.srcArr.size == 2,
+        s"not yet implemented"
+      )
       is (U"${io.currOp.getWidth}'d${opInfoIdx}") {
         opInfo.select match {
           case OpSelect.Cpy => {
@@ -290,15 +316,63 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord[
                   opInfo.cond == CondKind.Always,
                   s"not yet implemented"
                 )
-                //assert(
-                //  opInfo.memAccess == MemAccessKind.NoMemAccess,
-                //  s"not yet implemented"
-                //)
-                //assert(
-                //  opInfo.addrCalc == AddrCalcKind.AddReduce,
-                //  s"not yet implemented"
-                //)
-                io.modMemWord := io.rdMemWord(0)
+                opInfo.memAccess match {
+                  case MemAccessKind.NoMemAccess => {
+                    io.modMemWord := io.rdMemWord(0)
+                  }
+                  case mem: MemAccessKind.Mem => {
+                    assert(
+                      mem.isSigned == None,
+                      s"not yet implemented"
+                    )
+                    mem.isStore match {
+                      case Some(isStore) => {
+                        io.dbusHostPayload.addr := (
+                          (
+                            opInfo.addrCalc match {
+                              case AddrCalcKind.AddReduce => {
+                                io.rdMemWord(1) + io.rdMemWord(2)
+                              }
+                              case kind: AddrCalcKind.LslThenMaybeAdd => (
+                                (
+                                  io.rdMemWord(1)
+                                  << kind.options.lslAmount.get
+                                )
+                              )
+                            }
+                          ) + (
+                            opInfo.srcArr.size match {
+                              case 1 => {
+                                U"${cfg.mainWidth}'d0"
+                              }
+                              case 2 => {
+                                io.rdMemWord(2)
+                              }
+                              case _ => {
+                                assert(false)
+                                U"s${cfg.mainWidth}'d0"
+                              }
+                            }
+                          )
+                        )
+                        if (!isStore) {
+                          io.dbusHostPayload.data := (
+                            io.dbusHostPayload.data.getZero
+                          )
+                        } else { // if (isStore)
+                          io.dbusHostPayload.data := io.rdMemWord(0)
+                        }
+                      }
+                      case None => {
+                        assert(
+                          false,
+                          s"not yet implemented"
+                        )
+                      }
+                    }
+                    io.modMemWord := 0x0
+                  }
+                }
               }
               case CpyOpKind.Cpyui => {
                 assert(
@@ -316,7 +390,7 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord[
                 io.modMemWord(
                   cfg.mainWidth - 1 downto (cfg.mainWidth >> 1)
                 ) := (
-                  io.rdMemWord(0)((cfg.mainWidth >> 1) - 1 downto 0)
+                  io.rdMemWord(1)((cfg.mainWidth >> 1) - 1 downto 0)
                 )
               }
               case CpyOpKind.Jmp => {
@@ -332,12 +406,24 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord[
                   opInfo.addrCalc == AddrCalcKind.AddReduce,
                   s"not yet implemented"
                 )
+                io.psExSetPc.valid := io.doIt
+                io.psExSetPc.payload := io.rdMemWord(io.jmpAddrIdx)
               }
               case CpyOpKind.Br => {
                 opInfo.cond match {
                   case CondKind.Z => {
+                    io.psExSetPc.valid := (
+                      io.doIt
+                      && io.rdMemWord(0) === 0
+                    )
+                    io.psExSetPc.payload := io.rdMemWord(io.regPcPlusImm)
                   }
                   case CondKind.Nz => {
+                    io.psExSetPc.valid := (
+                      io.doIt
+                      && io.rdMemWord(0) =/= 0
+                    )
+                    io.psExSetPc.payload := io.rdMemWord(io.regPcPlusImm)
                   }
                   case _ => {
                     assert(
@@ -365,7 +451,7 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord[
             opInfo.aluOp.get match {
               case AluOpKind.Add => {
                 io.modMemWord := (
-                  io.rdMemWord(0) + io.rdMemWord(1)
+                  io.rdMemWord(1) + io.rdMemWord(2)
                 )
               }
               case AluOpKind.Adc => {
@@ -376,7 +462,7 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord[
               }
               case AluOpKind.Sub => {
                 io.modMemWord := (
-                  io.rdMemWord(0) - io.rdMemWord(1)
+                  io.rdMemWord(1) - io.rdMemWord(2)
                 )
               }
               case AluOpKind.Sbc => {
@@ -387,44 +473,44 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord[
               }
               case AluOpKind.Lsl => {
                 io.modMemWord := (
-                  (io.rdMemWord(0) << io.rdMemWord(1)).resized
+                  (io.rdMemWord(1) << io.rdMemWord(2)).resized
                 )
               }
               case AluOpKind.Lsr => {
                 io.modMemWord := (
-                  (io.rdMemWord(0) >> io.rdMemWord(1)).resized
+                  (io.rdMemWord(1) >> io.rdMemWord(2)).resized
                 )
               }
               case AluOpKind.Asr => {
                 io.modMemWord := (
-                  io.rdMemWord(0).asSInt >> io.rdMemWord(1)
+                  io.rdMemWord(1).asSInt >> io.rdMemWord(2)
                 ).asUInt.resized
               }
               case AluOpKind.And => {
                 io.modMemWord := (
-                  io.rdMemWord(0) & io.rdMemWord(1)
+                  io.rdMemWord(1) & io.rdMemWord(2)
                 )
               }
               case AluOpKind.Or => {
                 io.modMemWord := (
-                  io.rdMemWord(0) | io.rdMemWord(1)
+                  io.rdMemWord(1) | io.rdMemWord(2)
                 )
               }
               case AluOpKind.Xor => {
                 io.modMemWord := (
-                  io.rdMemWord(0) ^ io.rdMemWord(1)
+                  io.rdMemWord(1) ^ io.rdMemWord(2)
                 )
               }
               case AluOpKind.Sltu => {
                 io.modMemWord := Cat(
                   U"${cfg.mainWidth - 1}'d0",
-                  io.rdMemWord(0) < io.rdMemWord(1),
+                  io.rdMemWord(1) < io.rdMemWord(2),
                 ).asUInt
               }
               case AluOpKind.Slts => {
                 io.modMemWord := Cat(
                   U"${cfg.mainWidth - 1}'d0",
-                  io.rdMemWord(0).asSInt < io.rdMemWord(1).asSInt,
+                  io.rdMemWord(1).asSInt < io.rdMemWord(2).asSInt,
                 ).asUInt
               }
             }
