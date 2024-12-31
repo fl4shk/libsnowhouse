@@ -566,14 +566,29 @@ object lsr {
     )
   }
 }
-object asr {
+//object asr {
+//  def apply(
+//    rA: Gpr,
+//    rB: Gpr,
+//    rC: Gpr,
+//  ) = {
+//    Instruction(
+//      op=SampleCpuOp.AsrRaRbRc,
+//      rA=rA,
+//      rB=rB,
+//      rC=rC,
+//      simm16=0,
+//    )
+//  }
+//}
+object mul {
   def apply(
     rA: Gpr,
     rB: Gpr,
-    rC: Gpr,
+    rC: Gpr
   ) = {
     Instruction(
-      op=SampleCpuOp.AsrRaRbRc,
+      op=SampleCpuOp.MulRaRbRc,
       rA=rA,
       rB=rB,
       rC=rC,

@@ -42,7 +42,8 @@ object SampleCpuOp {
   def XorRaRbRc = mkOp(5, "XorRaRbRc") // 5
   def LslRaRbRc = mkOp(6, "LslRaRbRc") // 6
   def LsrRaRbRc = mkOp(7, "LsrRaRbRc") // 7
-  def AsrRaRbRc = mkOp(8, "AsrRaRbRc") // 8
+  //def AsrRaRbRc = mkOp(8, "AsrRaRbRc") // 8
+  def MulRaRbRc = mkOp(8, "MulRaRbRc") // 8
   //--------
   def BzRaSimm = mkOp(9, "BzRaSimm") // 9
   def BnzRaSimm = mkOp(10, "BnzRaSimm") // 10
@@ -156,11 +157,18 @@ object SampleCpuOpInfoMap {
       aluOp=AluOpKind.Lsr,
     )
   )
+  //opInfoMap += (
+  //  SampleCpuOp.AsrRaRbRc -> OpInfo.mkAlu(
+  //    dstArr=Array[DstKind](DstKind.Gpr),
+  //    srcArr=Array[SrcKind](SrcKind.Gpr, SrcKind.Gpr),
+  //    aluOp=AluOpKind.Asr,
+  //  )
+  //)
   opInfoMap += (
-    SampleCpuOp.AsrRaRbRc -> OpInfo.mkAlu(
+    SampleCpuOp.MulRaRbRc -> OpInfo.mkMultiCycle(
       dstArr=Array[DstKind](DstKind.Gpr),
       srcArr=Array[SrcKind](SrcKind.Gpr, SrcKind.Gpr),
-      aluOp=AluOpKind.Asr,
+      multiCycleOp=MultiCycleOpKind.Umul,
     )
   )
   //--------
@@ -189,19 +197,19 @@ object SampleCpuOpInfoMap {
   )
   //--------
   opInfoMap += (
-    SampleCpuOp.LdrRaRbSimm -> OpInfo.mkLoad(
+    SampleCpuOp.LdrRaRbSimm -> OpInfo.mkLdSt(
       dstArr=Array[DstKind](DstKind.Gpr),
       srcArr=Array[SrcKind](SrcKind.Gpr, SrcKind.Imm(Some(true))),
       //loadOp=LoadOpKind.LdU32,
-      modify=ModifySrcDstKind.Mem32(isSigned=None, isStore=Some(false)),
+      modify=MemAccessKind.Mem32(isSigned=None, isStore=Some(false)),
     )
   )
   opInfoMap += (
-    SampleCpuOp.StrRaRbSimm -> OpInfo.mkStore(
+    SampleCpuOp.StrRaRbSimm -> OpInfo.mkLdSt(
       dstArr=Array[DstKind](DstKind.Gpr),
       srcArr=Array[SrcKind](SrcKind.Gpr, SrcKind.Imm(Some(true))),
       //storeOp=StoreOpKind.St32,
-      modify=ModifySrcDstKind.Mem32(isSigned=None, isStore=Some(true)),
+      modify=MemAccessKind.Mem32(isSigned=None, isStore=Some(true)),
     )
   )
   opInfoMap += (
@@ -240,6 +248,7 @@ case class SampleCpuParams(
       ),
       modRdPortCnt=modRdPortCnt,
       pipeName=pipeName,
+      optHowToSlice=None,
     ),
     opInfoMap=SampleCpuOpInfoMap.opInfoMap,
     psDecode=SampleCpuPsDecode(),
@@ -251,6 +260,7 @@ case class SampleCpuParams(
     //  //decInstr := U"${mainWidth}'d0"
     //},
     optFormal=optFormal,
+    maxNumGprsPerInstr=3,
   )
   //--------
 }

@@ -16,9 +16,20 @@ case class SnowHouseRegFileConfig(
   wordCountArr: Seq[Int],
   modRdPortCnt: Int,
   pipeName: String,
+  optHowToSlice: Option[Seq[LinkedHashSet[Int]]],
   //linkArr: Option[ArrayBuffer[Link]]=None,
 ) {
   val modStageCnt: Int = 1
+  val myHowToSlice: (Boolean, Seq[LinkedHashSet[Int]]) = (
+    optHowToSlice match {
+      case Some(howToSlice) => {
+        (true, howToSlice)
+      }
+      case None => {
+        (false, null)
+      }
+    }
+  )
 }
 
 //case class SnowHouseRegFileSliceInfo(
@@ -41,8 +52,47 @@ case class SnowHouseConfig[
   //) => Area,                
   psDecode: SnowHousePsDecode[EncInstrT],
   optFormal: Boolean,
+  maxNumGprsPerInstr: Int,
   modOpCntWidth: Int=8,
 ) {
+  //--------
+  //psDecode.args = Some(SnowHousePipeStageArgs[EncInstrT](
+  //  cfg=this,
+  //  opInfoMap=opInfoMap,
+  //))
+  def mainWidth = shRegFileCfg.mainWidth
+  def regFileWordCountArr = shRegFileCfg.wordCountArr
+  def regFileModRdPortCnt = shRegFileCfg.modRdPortCnt
+  def regFileModStageCnt = shRegFileCfg.modStageCnt
+  def regFilePipeName = shRegFileCfg.pipeName
+  val regFileCfg = PipeMemRmwConfig[UInt, Bool](
+    wordType=UInt(mainWidth bits),
+    wordCountArr=regFileWordCountArr,
+    hazardCmpType=Bool(),
+    modRdPortCnt=regFileModRdPortCnt,
+    modStageCnt=regFileModStageCnt,
+    pipeName=regFilePipeName,
+    //linkArr=linkArr
+    optDualRd=(
+      false
+    ),
+    initBigInt={
+      val myInitBigInt = ArrayBuffer[ArrayBuffer[BigInt]]()
+      for ((wordCount, jdx) <- regFileWordCountArr.view.zipWithIndex) {
+        val tempArr = ArrayBuffer[BigInt]()
+        for (idx <- 0 until wordCount) {
+          val toAdd: Int = 0x0
+          tempArr += toAdd
+        }
+        myInitBigInt += tempArr
+      }
+      Some(myInitBigInt)
+    },
+    optModHazardKind=PipeMemRmw.ModHazardKind.Fwd,
+    optFormal=optFormal,
+  )
+  regFileCfg.linkArr = None
+  def numGprs = regFileCfg.wordCountSum
   //--------
   val pureCpyOpInfoMap = LinkedHashMap[Int, OpInfo]()
   val pureCpyuiOpInfoMap = LinkedHashMap[Int, OpInfo]()
@@ -50,10 +100,45 @@ case class SnowHouseConfig[
   val pureBrOpInfoMap = LinkedHashMap[Int, OpInfo]()
   val aluOpInfoMap = LinkedHashMap[Int, OpInfo]()
   val multiCycleOpInfoMap = LinkedHashMap[Int, OpInfo]()
-  val loadOpInfoMap = LinkedHashMap[Int, OpInfo]()
-  val storeOpInfoMap = LinkedHashMap[Int, OpInfo]()
+  //val loadOpInfoMap = LinkedHashMap[Int, OpInfo]()
+  //val storeOpInfoMap = LinkedHashMap[Int, OpInfo]()
+  ////val atomicRmwOpInfoMap = LinkedHashMap[Int, OpInfo]()
+  val memAccOpInfoMap = LinkedHashMap[Int, OpInfo]()
   //--------
   for (((_, opInfo), idx) <- opInfoMap.view.zipWithIndex) {
+    opInfo.memAccess match {
+      case MemAccessKind.NoMemAccess => {
+      }
+      case MemAccessKind.Mem(isSigned, isStore, accSize) => {
+        isStore match {
+          case Some(isStore) => {
+            //if (!isStore) {
+            //  loadOpInfoMap += (idx -> opInfo)
+            //} else { // if (isStore)
+            //  storeOpInfoMap += (idx -> opInfo)
+            //}
+            memAccOpInfoMap += (idx -> opInfo)
+          }
+          case None => {
+            assert(
+              false,
+              s"Atomic operations are not yet supported"
+            )
+            false
+          }
+        }
+        //accSize match {
+        //  case MemAccessSize.Sz8 => {
+        //  }
+        //  case MemAccessSize.Sz16 => {
+        //  }
+        //  case MemAccessSize.Sz32 => {
+        //  }
+        //  case MemAccessSize.Sz64 => {
+        //  }
+        //}
+      }
+    }
     opInfo.select match {
       case OpSelect.Cpy => {
         assert(
@@ -207,42 +292,12 @@ case class SnowHouseConfig[
     multiCycleOpInfoMap.size > 0
   )
   val havePsMemStall = (
-    loadOpInfoMap.size > 0
-    || storeOpInfoMap.size > 0
+    memAccOpInfoMap.size > 0
+    //loadOpInfoMap.size > 0
+    //|| storeOpInfoMap.size > 0
+    ////|| atomicRmwOpInfoMap.size > 0
   )
   //def optFormal: Boolean = psDecode.optFormal
-  def mainWidth = shRegFileCfg.mainWidth
-  def regFileWordCountArr = shRegFileCfg.wordCountArr
-  def regFileModRdPortCnt = shRegFileCfg.modRdPortCnt
-  def regFileModStageCnt = shRegFileCfg.modStageCnt
-  def regFilePipeName = shRegFileCfg.pipeName
-  val regFileCfg = PipeMemRmwConfig[UInt, Bool](
-    wordType=UInt(mainWidth bits),
-    wordCountArr=regFileWordCountArr,
-    hazardCmpType=Bool(),
-    modRdPortCnt=regFileModRdPortCnt,
-    modStageCnt=regFileModStageCnt,
-    pipeName=regFilePipeName,
-    //linkArr=linkArr
-    optDualRd=(
-      false
-    ),
-    initBigInt={
-      val myInitBigInt = ArrayBuffer[ArrayBuffer[BigInt]]()
-      for ((wordCount, jdx) <- regFileWordCountArr.view.zipWithIndex) {
-        val tempArr = ArrayBuffer[BigInt]()
-        for (idx <- 0 until wordCount) {
-          val toAdd: Int = 0x0
-          tempArr += toAdd
-        }
-        myInitBigInt += tempArr
-      }
-      Some(myInitBigInt)
-    },
-    optModHazardKind=PipeMemRmw.ModHazardKind.Fwd,
-    optFormal=optFormal,
-  )
-  regFileCfg.linkArr = None
 }
 
 case class SnowHouseRegFileModType[
@@ -250,11 +305,21 @@ case class SnowHouseRegFileModType[
 ](
   cfg: SnowHouseConfig[EncInstrT],
 ) extends Bundle with PipeMemRmwPayloadBase[UInt, Bool] {
-  val opCnt = UInt(cfg.modOpCntWidth bits)
-  val op = UInt(log2Up(cfg.opInfoMap.size) bits)
   def myHaveFormalFwd = (
     cfg.optFormal
   )
+  val opCnt = UInt(cfg.modOpCntWidth bits)
+  val op = UInt(log2Up(cfg.opInfoMap.size) bits)
+  val gprIdxVec = Vec.fill(cfg.maxNumGprsPerInstr)(
+    UInt(log2Up(cfg.numGprs) bits)
+  )
+  val gprRdMemWordVec = Vec.fill(cfg.regFileModRdPortCnt)(
+    UInt(cfg.mainWidth bits)
+  )
+  val regPc = UInt(cfg.mainWidth bits)
+  val regPcPlusImm = UInt(cfg.mainWidth bits)
+  val imm = UInt(cfg.mainWidth bits)
+  //val op = UInt(log2Up(cfg.opInfoMap.size) bits)
   def mkOneExt(ydx: Int) = (
     PipeMemRmwPayloadExt(
       cfg=cfg.regFileCfg,

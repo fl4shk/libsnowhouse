@@ -73,25 +73,65 @@ object DstKind {
   case object AluFlags extends DstKind
 }
 //--------
-sealed trait ModifySrcDstKind
-object ModifySrcDstKind {
-  case object NoModify extends ModifySrcDstKind
-  case class Mem8(
+sealed trait MemAccessKind
+object MemAccessKind {
+  case object NoMemAccess extends MemAccessKind
+  sealed trait SubKind
+  object SubKind {
+    case object Sz8 extends SubKind
+    case object Sz16 extends SubKind
+    case object Sz32 extends SubKind
+    case object Sz64 extends SubKind
+  }
+  case class Mem(
     isSigned: Option[Boolean],  // `None` means this is word-size
     isStore: Option[Boolean],   // `None` means this is atomic
-  ) extends ModifySrcDstKind
-  case class Mem16(
-    isSigned: Option[Boolean],  // `None` means this is word-size
-    isStore: Option[Boolean],   // `None` means this is atomic
-  ) extends ModifySrcDstKind
-  case class Mem32(
-    isSigned: Option[Boolean],  // `None` means this is word-size
-    isStore: Option[Boolean],   // `None` means this is atomic
-  ) extends ModifySrcDstKind
-  case class Mem64(
-    isSigned: Option[Boolean],  // `None` means this is word-size
-    isStore: Option[Boolean],   // `None` means this is atomic
-  ) extends ModifySrcDstKind
+    subKind: SubKind,
+  ) extends MemAccessKind
+  def Mem8(
+    isSigned: Option[Boolean],
+    isStore: Option[Boolean],
+  ) = Mem(
+    isSigned=isSigned,
+    isStore=isStore,
+    subKind=SubKind.Sz8,
+  )
+  def Mem16(
+    isSigned: Option[Boolean],
+    isStore: Option[Boolean],
+  ) = Mem(
+    isSigned=isSigned,
+    isStore=isStore,
+    subKind=SubKind.Sz16,
+  )
+  def Mem32(
+    isSigned: Option[Boolean],
+    isStore: Option[Boolean],
+  ) = Mem(
+    isSigned=isSigned,
+    isStore=isStore,
+    subKind=SubKind.Sz32,
+  )
+  def Mem64(
+    isSigned: Option[Boolean],
+    isStore: Option[Boolean],
+  ) = Mem(
+    isSigned=isSigned,
+    isStore=isStore,
+    subKind=SubKind.Sz64,
+  )
+  //case class Mem16(
+  //  isSigned: Option[Boolean],  // `None` means this is word-size
+  //  isStore: Option[Boolean],   // `None` means this is atomic
+  //) extends MemAccessKind
+  //case class Mem32(
+  //  isSigned: Option[Boolean],  // `None` means this is word-size
+  //  isStore: Option[Boolean],   // `None` means this is atomic
+  //) extends MemAccessKind
+  //case class Mem64(
+  //  isSigned: Option[Boolean],  // `None` means this is word-size
+  //  isStore: Option[Boolean],   // `None` means this is atomic
+  //) extends MemAccessKind
   //case object MemU8 extends ModifySrcDstKind
   //case object MemS8 extends ModifySrcDstKind
   //case object MemU16 extends ModifySrcDstKind
@@ -161,7 +201,7 @@ class OpInfo(
   val srcArr: Seq[SrcKind],
   val select: OpSelect,
   val cond: CondKind=CondKind.Always,
-  val modify: ModifySrcDstKind=ModifySrcDstKind.NoModify,
+  val memAccess: MemAccessKind=MemAccessKind.NoMemAccess,
   val addrCalc: AddrCalcKind=AddrCalcKind.AddReduce,
   //var aluOp: Option[AluOpKind]=None,
   //val opCond: AluOpKind | LoadOpKind | StoreOpKind,
@@ -190,7 +230,7 @@ class OpInfo(
             }
           }
         }
-        //if (modify != validArgs.modify) {
+        //if (memAccess != validArgs.memAccess) {
         //  found = false
         //}
         //if (addrCalc != validArgs.addrCalc) {
@@ -333,11 +373,11 @@ object OpInfo {
     ret._multiCycleOp = multiCycleOp
     ret
   }
-  def mkLoad(
+  def mkLdSt(
     dstArr: Seq[DstKind],
     srcArr: Seq[SrcKind],
     //loadOp: LoadOpKind,
-    modify: ModifySrcDstKind,
+    modify: MemAccessKind,
     cond: CondKind=CondKind.Always,
     addrCalc: AddrCalcKind=AddrCalcKind.AddReduce,
   ): OpInfo = {
@@ -349,8 +389,8 @@ object OpInfo {
         OpSelect.Cpy
       ),
       cond=cond,
-      modify={
-        assert(modify != ModifySrcDstKind.NoModify)
+      memAccess={
+        assert(modify != MemAccessKind.NoMemAccess)
         //ModifySrcDstKind.Mem
         modify
       },
@@ -359,32 +399,32 @@ object OpInfo {
     //ret._loadOp = loadOp
     ret
   }
-  def mkStore(
-    dstArr: Seq[DstKind],
-    srcArr: Seq[SrcKind],
-    //storeOp: StoreOpKind,
-    modify: ModifySrcDstKind,
-    cond: CondKind=CondKind.Always,
-    addrCalc: AddrCalcKind=AddrCalcKind.AddReduce,
-  ): OpInfo = {
-    val ret = new OpInfo(
-      dstArr=dstArr,
-      srcArr=srcArr,
-      select=(
-        //OpSelect.Store
-        OpSelect.Cpy
-      ),
-      cond=cond,
-      modify={
-        assert(modify != ModifySrcDstKind.NoModify)
-        //ModifySrcDstKind.Mem
-        modify
-      },
-      addrCalc=addrCalc,
-    )
-    //ret._storeOp = storeOp
-    ret
-  }
+  //def mkStore(
+  //  dstArr: Seq[DstKind],
+  //  srcArr: Seq[SrcKind],
+  //  //storeOp: StoreOpKind,
+  //  modify: MemAccessKind,
+  //  cond: CondKind=CondKind.Always,
+  //  addrCalc: AddrCalcKind=AddrCalcKind.AddReduce,
+  //): OpInfo = {
+  //  val ret = new OpInfo(
+  //    dstArr=dstArr,
+  //    srcArr=srcArr,
+  //    select=(
+  //      //OpSelect.Store
+  //      OpSelect.Cpy
+  //    ),
+  //    cond=cond,
+  //    memAccess={
+  //      assert(modify != MemAccessKind.NoMemAccess)
+  //      //ModifySrcDstKind.Mem
+  //      modify
+  //    },
+  //    addrCalc=addrCalc,
+  //  )
+  //  //ret._storeOp = storeOp
+  //  ret
+  //}
 }
 sealed trait OpSelect
 object OpSelect {

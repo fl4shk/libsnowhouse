@@ -21,14 +21,54 @@ case class SnowHouseIo[
 ) extends Bundle {
   //val icache = 
   // instruction bus
-  val ibus = master(new LcvStallIo(
+  val ibus = new LcvStallIo(
     hostPayloadType=Some(HardType(IbusHostPayload(cfg=cfg))),
     devPayloadType=Some(HardType(IbusDevPayload(cfg=cfg))),
-  ))
-  val dbus = master(new LcvStallIo(
+  )
+  val haveMultiCycleBusVec = (
+    cfg.opInfoMap.find(_._2.select == OpSelect.MultiCycle) != None
+  )
+  val multiCycleBusVec = (
+    haveMultiCycleBusVec
+  ) generate (
+    Vec[LcvStallIo[
+      MultiCycleHostPayload[EncInstrT],
+      MultiCycleDevPayload[EncInstrT],
+    ]]{
+      val tempArr = ArrayBuffer[
+        LcvStallIo[
+          MultiCycleHostPayload[EncInstrT],
+          MultiCycleDevPayload[EncInstrT],
+        ]
+      ]()
+      for (((_, opInfo), idx) <- cfg.opInfoMap.view.zipWithIndex) {
+        if (opInfo.select == OpSelect.MultiCycle) {
+          tempArr += new LcvStallIo(
+            hostPayloadType=(
+              Some(HardType(MultiCycleHostPayload(cfg=cfg, opInfo=opInfo)))
+            ),
+            devPayloadType=(
+              Some(HardType(MultiCycleDevPayload(cfg=cfg, opInfo=opInfo)))
+            ),
+          )
+        }
+      }
+      tempArr
+    }
+  )
+  val dbus = new LcvStallIo(
     hostPayloadType=Some(HardType(DbusHostPayload(cfg=cfg))),
     devPayloadType=Some(HardType(DbusDevPayload(cfg=cfg))),
-  ))
+  )
+  master(
+    ibus,
+    dbus,
+  )
+  if (haveMultiCycleBusVec) {
+    for (idx <- 0 until multiCycleBusVec.size) {
+      master(multiCycleBusVec(idx))
+    }
+  }
 }
 case class SnowHouse[
   EncInstrT <: Data

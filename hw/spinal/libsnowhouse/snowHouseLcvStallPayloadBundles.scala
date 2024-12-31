@@ -28,24 +28,89 @@ case class IbusDevPayload[
   val instr = UInt(cfg.instrMainWidth bits)
 }
 //--------
-object DbusHostMemAccKind
+//object MultiCycleOpEnum
+//extends SpinalEnum(defaultEncoding=native) {
+//  val
+//    Umul,
+//    Smul,
+//    Udiv,
+//    Sdiv,
+//    Umod,
+//    Smod,
+//    Udivmod,
+//    Sdivmod
+//    = newElement()
+//}
+case class MultiCycleHostPayload[
+  EncInstrT <: Data
+](
+  cfg: SnowHouseConfig[EncInstrT],
+  opInfo: OpInfo,
+) extends Bundle {
+  assert(
+    cfg.opInfoMap.find(_._2 == opInfo) != None
+  )
+  assert(
+    opInfo.select == OpSelect.MultiCycle
+  )
+  val srcVec = Vec.fill(opInfo.srcArr.size)(
+    UInt(cfg.mainWidth bits)
+  )
+  //opInfo.multiCycleOp.get match {
+  //  case MultiCycleOpKind.Umul => {
+  //  }
+  //  case MultiCycleOpKind.Smul => {
+  //  }
+  //  case MultiCycleOpKind.Udiv => {
+  //  }
+  //  case MultiCycleOpKind.Sdiv => {
+  //  }
+  //  case MultiCycleOpKind.Umod => {
+  //  }
+  //  case MultiCycleOpKind.Smod => {
+  //  }
+  //  case MultiCycleOpKind.Udivmod => {
+  //  }
+  //  case MultiCycleOpKind.Sdivmod => {
+  //  }
+  //  case _ => {
+  //    assert(false)
+  //  }
+  //}
+}
+case class MultiCycleDevPayload[
+  EncInstrT <: Data
+](
+  cfg: SnowHouseConfig[EncInstrT],
+  opInfo: OpInfo,
+) extends Bundle {
+  assert(
+    cfg.opInfoMap.find(_._2 == opInfo) != None
+  )
+  assert(
+    opInfo.select == OpSelect.MultiCycle
+  )
+  val dstVec = Vec.fill(opInfo.dstArr.size)(
+    UInt(cfg.mainWidth bits)
+  )
+}
+//--------
+object DbusHostMemAccessKind
 extends SpinalEnum(defaultEncoding=binarySequential) {
   val
     Load,
     Store
     = newElement();
 }
-case class MultiCycleHostPayload[
-  EncInstrT <: Data
-](
-  cfg: SnowHouseConfig[EncInstrT],
-) extends Bundle {
+object DbusHostMemAccessSubKind
+extends SpinalEnum(defaultEncoding=binarySequential) {
+  val
+    Sz8,
+    Sz16,
+    Sz32,
+    Sz64
+    = newElement()
 }
-//object DbusHostMemAccSz
-//extends SpinalEnum(defaultEncoding=binarySequential) {
-//  val
-//    sz
-//}
 case class DbusHostPayload[
   EncInstrT <: Data
 ](
@@ -53,7 +118,9 @@ case class DbusHostPayload[
 ) extends Bundle {
   val addr = UInt(cfg.mainWidth bits)
   val data = UInt(cfg.mainWidth bits)
-  val accKind = DbusHostMemAccKind()
+  val accKind = DbusHostMemAccessKind()
+  val subKind = DbusHostMemAccessSubKind()
+  val lock = Bool() // for atomics
 }
 case class DbusDevPayload[
   EncInstrT <: Data
