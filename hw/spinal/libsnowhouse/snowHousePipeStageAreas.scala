@@ -330,14 +330,12 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord[
                         io.dbusHostPayload.addr := (
                           (
                             opInfo.addrCalc match {
-                              case AddrCalcKind.AddReduce => {
-                                io.rdMemWord(1) + io.rdMemWord(2)
-                              }
+                              case AddrCalcKind.AddReduce => (
+                                io.rdMemWord(1)
+                              )
                               case kind: AddrCalcKind.LslThenMaybeAdd => (
-                                (
-                                  io.rdMemWord(1)
-                                  << kind.options.lslAmount.get
-                                )
+                                io.rdMemWord(1)
+                                << kind.options.lslAmount.get
                               )
                             }
                           ) + (
