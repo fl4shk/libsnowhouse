@@ -252,7 +252,9 @@ case class SnowHousePipeStageExecuteSetOutpModMemWordIo[
   ))
   val regPcPlusImm = in(UInt(cfg.mainWidth bits))
   val modMemWordValid = out(Bool())
-  val modMemWord = out(UInt(cfg.mainWidth bits))
+  val modMemWord = out(Vec.fill(1)( // temporary size of `1`
+    UInt(cfg.mainWidth bits)
+  ))
   val psExSetPc = out(Flow(UInt(cfg.mainWidth bits)))
   val dbusHostPayload = DbusHostPayload(cfg=cfg)
   def jmpAddrIdx = 2
@@ -296,16 +298,23 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord[
   //  //)
   //  io.psExSetPc.payload.getZero
   //)
+  if (cfg.optFormal) {
+    if ((1 << io.currOp.getWidth) != cfg.opInfoMap.size) {
+      assert(io.currOp < cfg.opInfoMap.size)
+    }
+  }
   switch (io.currOp) {
     //--------
     for (((_, opInfo), opInfoIdx) <- cfg.opInfoMap.view.zipWithIndex) {
       assert(
         opInfo.dstArr.size == 1,
-        s"not yet implemented"
+        s"not yet implemented: "
+        + s"opInfo(${opInfo}) index:${opInfoIdx}"
       )
       assert(
         opInfo.srcArr.size == 1 || opInfo.srcArr.size == 2,
-        s"not yet implemented"
+        s"not yet implemented: "
+        + s"opInfo(${opInfo}) index:${opInfoIdx}"
       )
       is (U"${io.currOp.getWidth}'d${opInfoIdx}") {
         opInfo.select match {
@@ -314,16 +323,33 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord[
               case CpyOpKind.Cpy => {
                 assert(
                   opInfo.cond == CondKind.Always,
-                  s"not yet implemented"
+                  s"not yet implemented: "
+                  + s"opInfo(${opInfo}) index:${opInfoIdx}"
                 )
                 opInfo.memAccess match {
                   case MemAccessKind.NoMemAccess => {
-                    io.modMemWord := io.rdMemWord(0)
+                    //assert(
+                    //  opInfo.dstArr.size == 1,
+                    //  s"invalid opInfo.dstArr.size"
+                    //  + s"opInfo(${opInfo}) index:${opInfoIdx}"
+                    //)
+                    //assert(
+                    //  opInfo.srcArr.size == 1,
+                    //  s"invalid opInfo.srcArr.size"
+                    //  + s"opInfo(${opInfo}) index:${opInfoIdx}"
+                    //)
+                    io.modMemWord(0) := io.rdMemWord(0)
                   }
                   case mem: MemAccessKind.Mem => {
+                    //assert(
+                    //  opInfo.dstArr.size == 1,
+                    //  s"invalid opInfo.dstArr.size: "
+                    //  + s"opInfo(${opInfo}) index:${opInfoIdx}"
+                    //)
                     assert(
                       mem.isSigned == None,
-                      s"not yet implemented"
+                      s"not yet implemented: "
+                      + s"opInfo(${opInfo}) index:${opInfoIdx}"
                     )
                     mem.isStore match {
                       case Some(isStore) => {
@@ -347,7 +373,10 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord[
                                 io.rdMemWord(2)
                               }
                               case _ => {
-                                assert(false)
+                                assert(
+                                  false,
+                                  s"opInfo(${opInfo}) index:${opInfoIdx}"
+                                )
                                 U"s${cfg.mainWidth}'d0"
                               }
                             }
@@ -364,28 +393,43 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord[
                       case None => {
                         assert(
                           false,
-                          s"not yet implemented"
+                          s"not yet implemented: "
+                          + s"opInfo(${opInfo}) index:${opInfoIdx}"
                         )
                       }
                     }
-                    io.modMemWord := 0x0
+                    io.modMemWordValid := False
+                    io.modMemWord(0) := 0x0
                   }
                 }
               }
               case CpyOpKind.Cpyui => {
                 assert(
+                  opInfo.dstArr.size == 1,
+                  s"not yet implemented: "
+                  + s"opInfo(${opInfo}) index:${opInfoIdx}"
+                )
+                assert(
+                  opInfo.srcArr.size == 1,
+                  s"not yet implemented: "
+                  + s"opInfo(${opInfo}) index:${opInfoIdx}"
+                )
+                assert(
                   opInfo.cond == CondKind.Always,
-                  s"not yet implemented"
+                  s"not yet implemented: "
+                  + s"opInfo(${opInfo}) index:${opInfoIdx}"
                 )
                 assert(
                   opInfo.memAccess == MemAccessKind.NoMemAccess,
-                  s"not yet implemented"
+                  s"not yet implemented: "
+                  + s"opInfo(${opInfo}) index:${opInfoIdx}"
                 )
                 assert(
                   opInfo.addrCalc == AddrCalcKind.AddReduce,
-                  s"not yet implemented"
+                  s"not yet implemented: "
+                  + s"opInfo(${opInfo}) index:${opInfoIdx}"
                 )
-                io.modMemWord(
+                io.modMemWord(0)(
                   cfg.mainWidth - 1 downto (cfg.mainWidth >> 1)
                 ) := (
                   io.rdMemWord(1)((cfg.mainWidth >> 1) - 1 downto 0)
@@ -393,16 +437,29 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord[
               }
               case CpyOpKind.Jmp => {
                 assert(
+                  opInfo.dstArr.size == 1,
+                  s"not yet implemented: "
+                  + s"opInfo(${opInfo}) index:${opInfoIdx}"
+                )
+                assert(
+                  opInfo.srcArr.size == 1,
+                  s"not yet implemented: "
+                  + s"opInfo(${opInfo}) index:${opInfoIdx}"
+                )
+                assert(
                   opInfo.cond == CondKind.Always,
-                  s"not yet implemented"
+                  s"not yet implemented: "
+                  + s"opInfo(${opInfo}) index:${opInfoIdx}"
                 )
                 assert(
                   opInfo.memAccess == MemAccessKind.NoMemAccess,
-                  s"not yet implemented"
+                  s"not yet implemented: "
+                  + s"opInfo(${opInfo}) index:${opInfoIdx}"
                 )
                 assert(
                   opInfo.addrCalc == AddrCalcKind.AddReduce,
-                  s"not yet implemented"
+                  s"not yet implemented: "
+                  + s"opInfo(${opInfo}) index:${opInfoIdx}"
                 )
                 io.psExSetPc.valid := io.doIt
                 io.psExSetPc.payload := io.rdMemWord(io.jmpAddrIdx)
@@ -410,18 +467,44 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord[
               case CpyOpKind.Br => {
                 opInfo.cond match {
                   case CondKind.Z => {
+                    assert(
+                      opInfo.dstArr.size == 1,
+                      s"not yet implemented: "
+                      + s"opInfo(${opInfo}) index:${opInfoIdx}"
+                    )
+                    assert(
+                      opInfo.srcArr.size == 1,
+                      s"not yet implemented: "
+                      + s"opInfo(${opInfo}) index:${opInfoIdx}"
+                    )
                     io.psExSetPc.valid := (
                       io.doIt
                       && io.rdMemWord(0) === 0
                     )
-                    io.psExSetPc.payload := io.rdMemWord(io.regPcPlusImm)
+                    io.psExSetPc.payload := (
+                      io.regPcPlusImm
+                      //io.rdMemWord(io.regPcPlusImm)
+                    )
                   }
                   case CondKind.Nz => {
+                    assert(
+                      opInfo.dstArr.size == 1,
+                      s"not yet implemented: "
+                      + s"opInfo(${opInfo}) index:${opInfoIdx}"
+                    )
+                    assert(
+                      opInfo.srcArr.size == 1,
+                      s"not yet implemented: "
+                      + s"opInfo(${opInfo}) index:${opInfoIdx}"
+                    )
                     io.psExSetPc.valid := (
                       io.doIt
                       && io.rdMemWord(0) =/= 0
                     )
-                    io.psExSetPc.payload := io.rdMemWord(io.regPcPlusImm)
+                    io.psExSetPc.payload := (
+                      io.regPcPlusImm
+                      //io.rdMemWord(io.regPcPlusImm)
+                    )
                   }
                   case _ => {
                     assert(
@@ -436,77 +519,196 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord[
           case OpSelect.Alu => {
             assert(
               opInfo.cond == CondKind.Always,
-              s"not yet implemented"
+              s"not yet implemented: "
+              + s"opInfo(${opInfo}) index:${opInfoIdx}"
             )
             assert(
               opInfo.memAccess == MemAccessKind.NoMemAccess,
-              s"not yet implemented"
+              s"not yet implemented: "
+              + s"opInfo(${opInfo}) index:${opInfoIdx}"
             )
             assert(
               opInfo.addrCalc == AddrCalcKind.AddReduce,
-              s"not yet implemented"
+              s"not yet implemented: "
+              + s"opInfo(${opInfo}) index:${opInfoIdx}"
             )
             opInfo.aluOp.get match {
               case AluOpKind.Add => {
-                io.modMemWord := (
+                //assert(
+                //  opInfo.dstArr.size == 1,
+                //  s"not yet implemented: "
+                //  + s"opInfo(${opInfo}) index:${opInfoIdx}"
+                //)
+                //assert(
+                //  opInfo.srcArr.size == 2,
+                //  s"not yet implemented: "
+                //  + s"opInfo(${opInfo}) index:${opInfoIdx}"
+                //)
+                io.modMemWord(0) := (
                   io.rdMemWord(1) + io.rdMemWord(2)
                 )
               }
               case AluOpKind.Adc => {
+                //assert(
+                //  opInfo.dstArr.size == 1,
+                //  s"not yet implemented"
+                //)
+                //assert(
+                //  opInfo.srcArr.size == 2,
+                //  s"not yet implemented"
+                //)
                 assert(
                   false,
-                  "not yet implemented"
+                  s"not yet implemented: "
+                  + s"opInfo(${opInfo}) index:${opInfoIdx}"
                 )
               }
               case AluOpKind.Sub => {
-                io.modMemWord := (
+                //assert(
+                //  opInfo.dstArr.size == 1,
+                //  s"not yet implemented: "
+                //  + s"opInfo(${opInfo}) index:${opInfoIdx}"
+                //)
+                //assert(
+                //  opInfo.srcArr.size == 2,
+                //  s"not yet implemented: "
+                //  + s"opInfo(${opInfo}) index:${opInfoIdx}"
+                //)
+                io.modMemWord(0) := (
                   io.rdMemWord(1) - io.rdMemWord(2)
                 )
               }
               case AluOpKind.Sbc => {
                 assert(
                   false,
-                  "not yet implemented"
+                  s"not yet implemented: "
+                  + s"opInfo(${opInfo}) index:${opInfoIdx}"
                 )
               }
               case AluOpKind.Lsl => {
-                io.modMemWord := (
-                  (io.rdMemWord(1) << io.rdMemWord(2)).resized
+                //assert(
+                //  opInfo.dstArr.size == 1,
+                //  s"not yet implemented: "
+                //  + s"opInfo(${opInfo}) index:${opInfoIdx}"
+                //)
+                //assert(
+                //  opInfo.srcArr.size == 2,
+                //  s"not yet implemented: "
+                //  + s"opInfo(${opInfo}) index:${opInfoIdx}"
+                //)
+                io.modMemWord(0) := (
+                  (io.rdMemWord(1) << io.rdMemWord(2))(
+                    io.modMemWord(0).bitsRange
+                  )
                 )
               }
               case AluOpKind.Lsr => {
-                io.modMemWord := (
-                  (io.rdMemWord(1) >> io.rdMemWord(2)).resized
+                //assert(
+                //  opInfo.dstArr.size == 1,
+                //  s"not yet implemented: "
+                //  + s"opInfo(${opInfo}) index:${opInfoIdx}"
+                //)
+                //assert(
+                //  opInfo.srcArr.size == 2,
+                //  s"not yet implemented: "
+                //  + s"opInfo(${opInfo}) index:${opInfoIdx}"
+                //)
+                io.modMemWord(0) := (
+                  (io.rdMemWord(1) >> io.rdMemWord(2))(
+                    io.modMemWord(0).bitsRange
+                  )
                 )
               }
               case AluOpKind.Asr => {
-                io.modMemWord := (
+                //assert(
+                //  opInfo.dstArr.size == 1,
+                //  s"not yet implemented: "
+                //  + s"opInfo(${opInfo}) index:${opInfoIdx}"
+                //)
+                //assert(
+                //  opInfo.srcArr.size == 2,
+                //  s"not yet implemented: "
+                //  + s"opInfo(${opInfo}) index:${opInfoIdx}"
+                //)
+                io.modMemWord(0) := (
                   io.rdMemWord(1).asSInt >> io.rdMemWord(2)
-                ).asUInt.resized
+                ).asUInt(
+                  io.modMemWord(0).bitsRange
+                )
               }
               case AluOpKind.And => {
-                io.modMemWord := (
+                //assert(
+                //  opInfo.dstArr.size == 1,
+                //  s"not yet implemented: "
+                //  + s"opInfo(${opInfo}) index:${opInfoIdx}"
+                //)
+                //assert(
+                //  opInfo.srcArr.size == 2,
+                //  s"not yet implemented: "
+                //  + s"opInfo(${opInfo}) index:${opInfoIdx}"
+                //)
+                io.modMemWord(0) := (
                   io.rdMemWord(1) & io.rdMemWord(2)
                 )
               }
               case AluOpKind.Or => {
-                io.modMemWord := (
+                //assert(
+                //  opInfo.dstArr.size == 1,
+                //  s"not yet implemented: "
+                //  + s"opInfo(${opInfo}) index:${opInfoIdx}"
+                //)
+                //assert(
+                //  opInfo.srcArr.size == 2,
+                //  s"not yet implemented: "
+                //  + s"opInfo(${opInfo}) index:${opInfoIdx}"
+                //)
+                io.modMemWord(0) := (
                   io.rdMemWord(1) | io.rdMemWord(2)
                 )
               }
               case AluOpKind.Xor => {
-                io.modMemWord := (
+                //assert(
+                //  opInfo.dstArr.size == 1,
+                //  s"not yet implemented: "
+                //  + s"opInfo(${opInfo}) index:${opInfoIdx}"
+                //)
+                //assert(
+                //  opInfo.srcArr.size == 2,
+                //  s"not yet implemented: "
+                //  + s"opInfo(${opInfo}) index:${opInfoIdx}"
+                //)
+                io.modMemWord(0) := (
                   io.rdMemWord(1) ^ io.rdMemWord(2)
                 )
               }
               case AluOpKind.Sltu => {
-                io.modMemWord := Cat(
+                //assert(
+                //  opInfo.dstArr.size == 1,
+                //  s"not yet implemented: "
+                //  + s"opInfo(${opInfo}) index:${opInfoIdx}"
+                //)
+                //assert(
+                //  opInfo.srcArr.size == 2,
+                //  s"not yet implemented: "
+                //  + s"opInfo(${opInfo}) index:${opInfoIdx}"
+                //)
+                io.modMemWord(0) := Cat(
                   U"${cfg.mainWidth - 1}'d0",
                   io.rdMemWord(1) < io.rdMemWord(2),
                 ).asUInt
               }
               case AluOpKind.Slts => {
-                io.modMemWord := Cat(
+                //assert(
+                //  opInfo.dstArr.size == 1,
+                //  s"not yet implemented: "
+                //  + s"opInfo(${opInfo}) index:${opInfoIdx}"
+                //)
+                //assert(
+                //  opInfo.srcArr.size == 2,
+                //  s"not yet implemented: "
+                //  + s"opInfo(${opInfo}) index:${opInfoIdx}"
+                //)
+                io.modMemWord(0) := Cat(
                   U"${cfg.mainWidth - 1}'d0",
                   io.rdMemWord(1).asSInt < io.rdMemWord(2).asSInt,
                 ).asUInt
@@ -516,22 +718,50 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord[
           case OpSelect.MultiCycle => {
             assert(
               opInfo.cond == CondKind.Always,
-              s"not yet implemented"
+              s"not yet implemented: "
+              + s"opInfo(${opInfo}) index:${opInfoIdx}"
             )
             assert(
               opInfo.memAccess == MemAccessKind.NoMemAccess,
-              s"not yet implemented"
+              s"not yet implemented: "
+              + s"opInfo(${opInfo}) index:${opInfoIdx}"
             )
             assert(
               opInfo.addrCalc == AddrCalcKind.AddReduce,
-              s"not yet implemented"
+              s"not yet implemented: "
+              + s"opInfo(${opInfo}) index:${opInfoIdx}"
             )
+            opInfo.multiCycleOp.get match {
+              case MultiCycleOpKind.Umul => {
+                //assert(
+                //  opInfo.dstArr.size == 1,
+                //  s"not yet implemented: "
+                //  + s"opInfo(${opInfo}) index:${opInfoIdx}"
+                //)
+                //assert(
+                //  opInfo.srcArr.size == 2,
+                //  s"not yet implemented: "
+                //  + s"opInfo(${opInfo}) index:${opInfoIdx}"
+                //)
+                io.modMemWord(0) := (
+                  (io.rdMemWord(1) * io.rdMemWord(2))(
+                    io.modMemWord(0).bitsRange
+                  )
+                )
+              }
+              case _ => {
+                assert(
+                  false,
+                  s"not yet implemented"
+                )
+              }
+            }
           }
         }
       }
     }
     default {
-      assert(False)
+      //assert(False)
     }
     //is (PipeMemRmwSimDut.ModOp.AddRaRb) {
     //  io.modMemWord := (

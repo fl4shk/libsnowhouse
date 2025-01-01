@@ -49,7 +49,9 @@ object SrcKind {
   //                                        // double the normal size of a
   //                                        // general purpose register)
   case object Pc extends SrcKind
-  //case object PcPlusSimm extends SrcKind
+  //case class PcPlusImm(
+  //  isSImm: Option[Boolean],
+  //) extends SrcKind
   //case object Mem extends SrcKind   // data read from mem by a load
   //                                  // instruction
   //case object ZImm extends SrcKind  // Zero-extended
