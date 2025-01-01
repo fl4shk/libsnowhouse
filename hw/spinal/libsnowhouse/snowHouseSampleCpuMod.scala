@@ -202,7 +202,7 @@ object SampleCpuOpInfoMap {
       dstArr=Array[DstKind](DstKind.Gpr),
       srcArr=Array[SrcKind](SrcKind.Gpr, SrcKind.Imm(Some(true))),
       //loadOp=LoadOpKind.LdU32,
-      modify=MemAccessKind.Mem32(isSigned=None, isStore=Some(false)),
+      modify=MemAccessKind.Mem32(isSigned=false, isStore=Some(false)),
     )
   )
   opInfoMap += (
@@ -210,7 +210,7 @@ object SampleCpuOpInfoMap {
       dstArr=Array[DstKind](DstKind.Gpr),
       srcArr=Array[SrcKind](SrcKind.Gpr, SrcKind.Imm(Some(true))),
       //storeOp=StoreOpKind.St32,
-      modify=MemAccessKind.Mem32(isSigned=None, isStore=Some(true)),
+      modify=MemAccessKind.Mem32(isSigned=false, isStore=Some(true)),
     )
   )
   opInfoMap += (

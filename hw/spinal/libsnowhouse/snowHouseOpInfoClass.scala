@@ -86,12 +86,12 @@ object MemAccessKind {
     case object Sz64 extends SubKind
   }
   case class Mem(
-    isSigned: Option[Boolean],  // `None` means this is word-size
+    isSigned: Boolean,
     isStore: Option[Boolean],   // `None` means this is atomic
     subKind: SubKind,
   ) extends MemAccessKind
   def Mem8(
-    isSigned: Option[Boolean],
+    isSigned: Boolean,
     isStore: Option[Boolean],
   ) = Mem(
     isSigned=isSigned,
@@ -99,7 +99,7 @@ object MemAccessKind {
     subKind=SubKind.Sz8,
   )
   def Mem16(
-    isSigned: Option[Boolean],
+    isSigned: Boolean,
     isStore: Option[Boolean],
   ) = Mem(
     isSigned=isSigned,
@@ -107,7 +107,7 @@ object MemAccessKind {
     subKind=SubKind.Sz16,
   )
   def Mem32(
-    isSigned: Option[Boolean],
+    isSigned: Boolean,
     isStore: Option[Boolean],
   ) = Mem(
     isSigned=isSigned,
@@ -115,7 +115,7 @@ object MemAccessKind {
     subKind=SubKind.Sz32,
   )
   def Mem64(
-    isSigned: Option[Boolean],
+    isSigned: Boolean,
     isStore: Option[Boolean],
   ) = Mem(
     isSigned=isSigned,
