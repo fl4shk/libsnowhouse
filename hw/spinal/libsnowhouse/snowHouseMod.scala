@@ -79,6 +79,7 @@ case class SnowHouse
   //--------
   val io = SnowHouseIo(cfg=cfg)
   //--------
+  val psIdHaltIt = Bool()
   val psExSetPc = Flow(SnowHousePsExSetPcPayload(cfg=cfg))
   //--------
   val linkArr = PipeHelper.mkLinkArr()
@@ -186,6 +187,17 @@ case class SnowHouse
   //  }
   //)
   //linkArr += s2mIf
+  val pipeStageIf = SnowHousePipeStageInstrFetch(
+    args=SnowHousePipeStageArgs(
+      cfg=cfg,
+      io=io,
+      link=cIf,
+      payload=pIf,
+      regFile=regFile,
+    ),
+    psIdHaltIt=psIdHaltIt,
+    psExSetPc=psExSetPc,
+  )
 
   val cId = CtrlLink(
     up={
@@ -197,15 +209,19 @@ case class SnowHouse
     }
   )
   linkArr += cId
-  val pId = Payload(SnowHouseRegFileModType(cfg=cfg))
+  //val pId = Payload(SnowHouseRegFileModType(cfg=cfg))
   val pipeStageId = cfg.mkPipeStageInstrDecode(
     SnowHousePipeStageArgs(
       cfg=cfg,
       io=io,
       link=cId,
-      payload=pId,
+      payload=(
+        //pId
+        regFile.io.frontPayload
+      ),
       regFile=regFile,
     ),
+    psIdHaltIt,
   )
   //--------
   //val pEx = Payload(SnowHouseRegFileModType(cfg=cfg))

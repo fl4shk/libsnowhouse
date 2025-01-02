@@ -41,7 +41,7 @@ case class SnowHousePipeStageArgs(
     PipeMemRmwDualRdTypeDisabled[UInt, Bool],
   ]
 ) {
-  def opInfoMap = cfg.opInfoMap
+  //def opInfoMap = cfg.opInfoMap
 }
 //case class SnowHousePipeStagePayload[
 //  EncInstrT <: Data
@@ -86,6 +86,8 @@ case class SnowHousePipeStageInstrFetch(
   val up = cIf.up
   val down = cIf.down
   //--------
+  //val psIdHaltIt = Bool()
+  //val psExSetPc = Flow(SnowHousePsExSetPcPayload(cfg=cfg))
   val upModExt = SnowHouseRegFileModType(cfg=cfg)
   //val myInstrCnt = SnowHouseFormalInstrCnt(cfg=cfg)
   def myInstrCnt = upModExt.instrCnt
@@ -243,19 +245,21 @@ abstract class SnowHousePipeStageInstrDecode(
   //val cfg: SnowHouseConfig,
   //var args: Option[SnowHousePipeStageArgs]=None,
   val args: SnowHousePipeStageArgs,
+  val psIdHaltIt: Bool,
 ) extends Area {
   //--------
   //def decInstr: UInt
   def cfg = args.cfg
-  def opInfoMap = args.opInfoMap
+  //def opInfoMap = args.opInfoMap
+  def opInfoMap = cfg.opInfoMap
   def io = args.io
   def cId = args.link
   def payload = args.payload
   def optFormal = cfg.optFormal
   //--------
-  def doDecode(): Area
+  //def doDecode(): Area
   //--------
-  val psIdHaltIt = Bool()
+  //val psIdHaltIt = Bool()
   val decInstr = UInt(log2Up(opInfoMap.size) bits)
   //--------
 }
@@ -266,7 +270,7 @@ case class SnowHousePipeStageExecuteSetOutpModMemWordIo(
   //println(
   //  s"currOp.getWidth: ${currOp.getWidth}"
   //)
-  val doIt = /*in*/(Bool())
+  //val doIt = /*in*/(Bool())
   val rdMemWord = /*in*/(Vec.fill(3)( // temporary size of `3`
     UInt(cfg.mainWidth bits)
   ))
@@ -279,6 +283,17 @@ case class SnowHousePipeStageExecuteSetOutpModMemWordIo(
     //UInt(cfg.mainWidth bits)
     SnowHousePsExSetPcPayload(cfg=cfg)
   ))
+  //val isCpyAlu = /*out*/Bool()
+  //val isMemAccess = /*out*/Bool()
+  //val isMultiCycle = /*out*/Bool()
+  private val _opIsCpyAluIdx = 0
+  private val _opIsMemAccessIdx = 1
+  private val _opIsMultiCycleIdx = 2
+  val opIsLim = 3
+  val opIs = /*out*/UInt(opIsLim bits)
+  def opIsCpyAlu = opIs(_opIsCpyAluIdx)
+  def opIsMemAccess = opIs(_opIsMemAccessIdx)
+  def opIsMultiCycle = opIs(_opIsMultiCycleIdx)
   //val dbusHostPayload = /*out*/(DbusHostPayload(cfg=cfg))
   def jmpAddrIdx = 2
   def brCondIdx = Array[Int](0, 1)
@@ -305,7 +320,8 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
   )
   //when (someCond) {
   io.modMemWordValid := (
-    io.doIt //True
+    //io.doIt //True
+    True
   )
   io.psExSetPc := io.psExSetPc.getZero
   modIo.dbus.hostData := (
@@ -520,7 +536,7 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
                   s"not yet implemented: "
                   + s"opInfo(${opInfo}) index:${opInfoIdx}"
                 )
-                io.psExSetPc.valid := io.doIt
+                io.psExSetPc.valid := True//io.doIt
                 io.psExSetPc.nextPc := io.rdMemWord(io.jmpAddrIdx)
               }
               case CpyOpKind.Br => {
@@ -537,7 +553,8 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
                     //  + s"opInfo(${opInfo}) index:${opInfoIdx}"
                     //)
                     io.psExSetPc.valid := (
-                      io.doIt
+                      //io.doIt
+                      True
                     )
                     io.psExSetPc.nextPc := (
                       io.regPcPlusImm
@@ -560,8 +577,9 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
                     //  + s"opInfo(${opInfo}) index:${opInfoIdx}"
                     //)
                     io.psExSetPc.valid := (
-                      io.doIt
-                      && io.rdMemWord(0) === 0
+                      //io.doIt
+                      //&&
+                      io.rdMemWord(0) === 0
                     )
                     io.psExSetPc.nextPc := (
                       io.regPcPlusImm
@@ -580,8 +598,9 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
                     //  + s"opInfo(${opInfo}) index:${opInfoIdx}"
                     //)
                     io.psExSetPc.valid := (
-                      io.doIt
-                      && io.rdMemWord(0) =/= 0
+                      //io.doIt
+                      //&&
+                      io.rdMemWord(0) =/= 0
                     )
                     io.psExSetPc.nextPc := (
                       io.regPcPlusImm
@@ -640,9 +659,10 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
               }
               case AluOpKind.Lsl => {
                 io.modMemWord(0) := (
-                  (io.rdMemWord(1) << io.rdMemWord(2)(
-                    log2Up(cfg.mainWidth) - 1 downto 0
-                  ))(
+                  (
+                    io.rdMemWord(1)
+                    << io.rdMemWord(2)(log2Up(cfg.mainWidth) - 1 downto 0)
+                  )(
                     io.modMemWord(0).bitsRange
                   )
                 )
@@ -1090,27 +1110,38 @@ case class SnowHousePipeStageExecute(
   //  )
   //)
   //--------
-  //def handleCurrFire(
-  //  someRdMemWord: UInt=myRdMemWord,
-  //): Unit = {
-  //  //outp.myExt(0).valid := True
-  //  nextPrevTxnWasHazard := False
-  //  setOutpModMemWord(
-  //    someRdMemWord=someRdMemWord
-  //  )
-  //  outp.myExt(0).valid := (
-  //    outp.myExt(0).modMemWordValid
-  //  )
-  //}
-  //def handleDuplicateIt(
-  //  someModMemWordValid: Bool=False,
-  //): Unit = {
-  //  outp.myExt(0).valid := False
-  //  outp.myExt(0).modMemWordValid := (
-  //    someModMemWordValid
-  //  )
-  //  cMid0Front.duplicateIt()
-  //}
+  def handleCurrFire(
+    //someRdMemWord: UInt//=myRdMemWord,
+  ): Unit = {
+    //outp.myExt(0).valid := True
+    nextPrevTxnWasHazard := False
+    // TODO: update code to support `setOutpModMemWord.io... :=`
+    //setOutpModMemWord(
+    //  someRdMemWord=someRdMemWord
+    //)
+    //switch (
+    //  outp.myExt(ydx)
+    //) {
+    //}
+    //setOutpModMemWord.io.doIt := True
+    for (ydx <- 0 until cfg.regFileCfg.memArrSize) {
+      outp.myExt(ydx).valid := (
+        outp.myExt(ydx).modMemWordValid
+      )
+    }
+  }
+  def handleDuplicateIt(
+    //someModMemWordValid: Bool=False,
+  ): Unit = {
+    for (ydx <- 0 until cfg.regFileCfg.memArrSize) {
+      outp.myExt(ydx).valid := False
+      outp.myExt(ydx).modMemWordValid := (
+        //someModMemWordValid
+        False
+      )
+    }
+    cMid0Front.duplicateIt()
+  }
   when (doCheckHazard) {
     when (myDoHaveHazard) {
       currDuplicateIt := True
@@ -1120,7 +1151,10 @@ case class SnowHousePipeStageExecute(
         (
           ///outp.myExt(0).memAddr(0)
           //=== tempModFrontPayload.myExt(0).memAddr(0)
-          myDoHaveHazardAddrCheckVec.reduce(_ || _)
+          //myDoHaveHazardAddrCheckVec.reduce(_ || _)
+          myDoHaveHazardAddrCheckVec.foldLeft(False)(
+            (left, right) => (left || right)
+          )
         ) && (
           cMid0Front.up.isFiring
         )
@@ -1132,56 +1166,114 @@ case class SnowHousePipeStageExecute(
   }
   //--------
   when (cMid0Front.up.isFiring) {
-    // TODO: re-add this
-    //handleCurrFire()
+    handleCurrFire(
+      /*U(s"${cfg.mainWidth}'d0")*/
+    )
   }
-  switch (myCurrOp) {
-    // TODO: convert this
-    //is (PipeMemRmwSimDut.ModOp.AddRaRb) {
-    //  if (cfg.optFormal) {
-    //    when (cMid0Front.up.isValid) {
-    //      when (!doCheckHazard) {
-    //        assert(!currDuplicateIt)
-    //      }
-    //    }
-    //  }
-    //}
-    //is (PipeMemRmwSimDut.ModOp.LdrRaRb) {
-    //  when (cMid0Front.up.isFiring) {
-    //    nextPrevTxnWasHazard := True
-    //    psMemStallHost.nextValid := True
-    //  }
-    //}
-    //is (PipeMemRmwSimDut.ModOp.MulRaRb) {
-    //  if (PipeMemRmwSimDut.haveModOpMul) {
-    //    //--------
-    //    when (cMid0Front.up.isValid) {
-    //      when (doCheckHazard) {
-    //        when (!currDuplicateIt) {
-    //          psExStallHost.nextValid := (
-    //            True
-    //          )
-    //        }
-    //      } otherwise { // when (!doCheckHazard)
-    //        psExStallHost.nextValid := (
-    //          True
-    //        )
-    //      }
-    //      //--------
-    //    }
-    //    when (savedPsExStallHost.myDuplicateIt) {
-    //      currDuplicateIt := True
-    //    }
-    //    if (cfg.optFormal) {
-    //      when (!doCheckHazard) {
-    //        when (!savedPsExStallHost.myDuplicateIt) {
-    //          assert(!currDuplicateIt)
-    //        }
-    //      }
-    //    }
-    //  }
-    //}
+  switch (setOutpModMemWord.io.opIs) {
+    is (M"-01") {
+      // Alu/Cpy, but no mem access
+      if (cfg.optFormal) {
+        when (cMid0Front.up.isValid) {
+          when (!doCheckHazard) {
+            assert(!currDuplicateIt)
+          }
+        }
+      }
+    }
+    is (M"-11") {
+      // Alu/Cpy, but with mem access 
+      when (cMid0Front.up.isFiring) {
+        nextPrevTxnWasHazard := True
+        psMemStallHost.nextValid := True
+      }
+    }
+    is (M"1--") {
+      // MultiCycle, which bans memory access
+      when (cMid0Front.up.isValid) {
+        when (doCheckHazard) {
+          when (!currDuplicateIt) {
+            psExStallHost.nextValid := (
+              True
+            )
+          }
+        } otherwise { // when (!doCheckHazard)
+          psExStallHost.nextValid := (
+            True
+          )
+        }
+        //--------
+      }
+      when (savedPsExStallHost.myDuplicateIt) {
+        currDuplicateIt := True
+      }
+      if (cfg.optFormal) {
+        when (!doCheckHazard) {
+          when (!savedPsExStallHost.myDuplicateIt) {
+            assert(!currDuplicateIt)
+          }
+        }
+      }
+    }
+    default {
+    }
   }
+  when (psExStallHost.fire) {
+    psExStallHost.nextValid := False
+  }
+  when (rPrevTxnWasHazard) {
+    assert(PipeMemRmwSimDut.modRdPortCnt == 1)
+    doCheckHazard := True
+  } otherwise {
+    doCheckHazard := False
+  }
+  //switch (myCurrOp) {
+  //  // TODO: convert this
+  //  //is (PipeMemRmwSimDut.ModOp.AddRaRb) {
+  //  //  if (cfg.optFormal) {
+  //  //    when (cMid0Front.up.isValid) {
+  //  //      when (!doCheckHazard) {
+  //  //        assert(!currDuplicateIt)
+  //  //      }
+  //  //    }
+  //  //  }
+  //  //}
+  //  //is (PipeMemRmwSimDut.ModOp.LdrRaRb) {
+  //  //  when (cMid0Front.up.isFiring) {
+  //  //    nextPrevTxnWasHazard := True
+  //  //    psMemStallHost.nextValid := True
+  //  //  }
+  //  //}
+  //  //is (PipeMemRmwSimDut.ModOp.MulRaRb) {
+  //  //  if (PipeMemRmwSimDut.haveModOpMul) {
+  //  //    //--------
+  //  //    when (cMid0Front.up.isValid) {
+  //  //      when (doCheckHazard) {
+  //  //        when (!currDuplicateIt) {
+  //  //          psExStallHost.nextValid := (
+  //  //            True
+  //  //          )
+  //  //        }
+  //  //      } otherwise { // when (!doCheckHazard)
+  //  //        psExStallHost.nextValid := (
+  //  //          True
+  //  //        )
+  //  //      }
+  //  //      //--------
+  //  //    }
+  //  //    when (savedPsExStallHost.myDuplicateIt) {
+  //  //      currDuplicateIt := True
+  //  //    }
+  //  //    if (cfg.optFormal) {
+  //  //      when (!doCheckHazard) {
+  //  //        when (!savedPsExStallHost.myDuplicateIt) {
+  //  //          assert(!currDuplicateIt)
+  //  //        }
+  //  //      }
+  //  //    }
+  //  //  }
+  //  //}
+  //}
   // TODO: convert this
   //if (PipeMemRmwSimDut.haveModOpMul) {
   //  when (psExStallHost.fire) {
@@ -1190,6 +1282,6 @@ case class SnowHousePipeStageExecute(
   //}
   when (currDuplicateIt) {
     // TODO: add this
-    //handleDuplicateIt()
+    handleDuplicateIt()
   }
 }

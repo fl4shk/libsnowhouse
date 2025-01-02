@@ -65,12 +65,21 @@ case class SampleCpuEncInstr(
   val simm16 = UInt(SampleCpuInstrEnc.simmWidth bits)
 }
 case class SampleCpuPipeStageInstrDecode(
-  //psIdHaltIt: Bool,
   //args: 
   override val args: SnowHousePipeStageArgs,
-) extends SnowHousePipeStageInstrDecode(args=args) {
-  def doDecode() = new Area {
-  }
+  override val psIdHaltIt: Bool,
+) extends SnowHousePipeStageInstrDecode(
+  args=args,
+  psIdHaltIt=psIdHaltIt,
+) {
+  //def doDecode() = new Area {
+  //}
+  //def cfg = super.cfg
+  //def opInfoMap = super.opInfoMap
+  //def io = super.io
+  //def cId = super.cId
+  //def payload = super.payload
+  //def optFormal = super.optFormal
   //private val _decInstr: UInt = U"32'd0"
   //def decInstr: UInt = _decInstr
   //args match {
@@ -262,9 +271,13 @@ case class SampleCpuParams(
     //psDecode=SampleCpuPipeStageInstrDecode(),
     mkPipeStageInstrDecode=(
       (
-        args
+        args,
+        psIdHaltIt,
       ) => (
-        SampleCpuPipeStageInstrDecode(args=args)
+        SampleCpuPipeStageInstrDecode(
+          args=args,
+          psIdHaltIt=psIdHaltIt,
+        )
       )
     ),
     //decodeFunc=(

@@ -102,7 +102,8 @@ case class SnowHouseConfig(
   //--------
   //psDecode: SnowHousePipeStageInstrDecode,
   mkPipeStageInstrDecode: (
-    SnowHousePipeStageArgs, //args
+    SnowHousePipeStageArgs, // args
+    Bool,                   // psIdHaltIt
   ) => SnowHousePipeStageInstrDecode,
   //--------
   optFormal: Boolean,
