@@ -27,14 +27,21 @@ import libcheesevoyage.bus.lcvStall._
 case class SnowHousePipeStageArgs(
   //encInstrType: HardType,
   cfg: SnowHouseConfig,
-  opInfoMap: LinkedHashMap[Any, OpInfo],
+  //opInfoMap: LinkedHashMap[Any, OpInfo],
   io: SnowHouseIo,
   link: CtrlLink,
   //prevLink: Option[CtrlLink],
   //nextLink: Option[CtrlLink],
   payload: Payload[SnowHouseRegFileModType],
   //optFormal: Boolean,
+  regFile: PipeMemRmw[
+    UInt,
+    Bool,
+    SnowHouseRegFileModType,
+    PipeMemRmwDualRdTypeDisabled[UInt, Bool],
+  ]
 ) {
+  def opInfoMap = cfg.opInfoMap
 }
 //case class SnowHousePipeStagePayload[
 //  EncInstrT <: Data
@@ -233,15 +240,24 @@ case class SnowHousePipeStageInstrFetch(
   //--------
 }
 abstract class SnowHousePipeStageInstrDecode(
-  var args: Option[SnowHousePipeStageArgs]=None
+  //val cfg: SnowHouseConfig,
+  //var args: Option[SnowHousePipeStageArgs]=None,
+  val args: SnowHousePipeStageArgs,
 ) extends Area {
+  //--------
   //def decInstr: UInt
-  def cfg = args.get.cfg
-  def opInfoMap = args.get.opInfoMap
-  def io = args.get.io
-  def cId = args.get.link
-  def payload = args.get.payload
+  def cfg = args.cfg
+  def opInfoMap = args.opInfoMap
+  def io = args.io
+  def cId = args.link
+  def payload = args.payload
   def optFormal = cfg.optFormal
+  //--------
+  def doDecode(): Area
+  //--------
+  val psIdHaltIt = Bool()
+  val decInstr = UInt(log2Up(opInfoMap.size) bits)
+  //--------
 }
 case class SnowHousePipeStageExecuteSetOutpModMemWordIo(
   cfg: SnowHouseConfig,
@@ -260,12 +276,16 @@ case class SnowHousePipeStageExecuteSetOutpModMemWordIo(
     //UInt(cfg.mainWidth bits)
     SnowHousePsExSetPcPayload(cfg=cfg)
   ))
-  val dbusHostPayload = /*out*/(DbusHostPayload(cfg=cfg))
+  //val dbusHostPayload = /*out*/(DbusHostPayload(cfg=cfg))
   def jmpAddrIdx = 2
+  def brCondIdx = Array[Int](0, 1)
 }
 case class SnowHousePipeStageExecuteSetOutpModMemWord(
-  cfg: SnowHouseConfig,
+  //cfg: SnowHouseConfig,
+  args: SnowHousePipeStageArgs,
 ) extends Area {
+  def cfg = args.cfg
+  val modIo = args.io
   val io = SnowHousePipeStageExecuteSetOutpModMemWordIo(cfg=cfg)
   //val io.currOp = UInt(log2Up(cfg.opInfoMap.size) bits)
   io.modMemWordValid := (
@@ -285,10 +305,10 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
     io.doIt //True
   )
   io.psExSetPc := io.psExSetPc.getZero
-  io.dbusHostPayload := (
+  modIo.dbus.hostData := (
     RegNext(
-      next=io.dbusHostPayload,
-      init=io.dbusHostPayload.getZero,
+      next=modIo.dbus.hostData,
+      init=modIo.dbus.hostData.getZero,
     )
   )
   //io.psExSetPc.valid := (
@@ -338,12 +358,12 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
                   case MemAccessKind.NoMemAccess => {
                     assert(
                       opInfo.dstArr.size == 1,
-                      s"invalid opInfo.dstArr.size"
+                      s"invalid opInfo.dstArr.size: "
                       + s"opInfo(${opInfo}) index:${opInfoIdx}"
                     )
                     assert(
                       opInfo.srcArr.size == 1,
-                      s"invalid opInfo.srcArr.size"
+                      s"invalid opInfo.srcArr.size: "
                       + s"opInfo(${opInfo}) index:${opInfoIdx}"
                     )
                     io.modMemWord(0) := io.rdMemWord(0)
@@ -361,7 +381,7 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
                     //)
                     mem.isStore match {
                       case Some(isStore) => {
-                        io.dbusHostPayload.subKind := (
+                        modIo.dbus.hostData.subKind := (
                           //DbusHostMemAccessSubKind.fromWordSize(cfg=cfg)
                           mem.subKind match {
                             case MemAccessKind.SubKind.Sz8 => {
@@ -378,7 +398,7 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
                             }
                           }
                         )
-                        io.dbusHostPayload.addr := (
+                        modIo.dbus.hostData.addr := (
                           (
                             opInfo.addrCalc match {
                               case AddrCalcKind.AddReduce => (
@@ -409,21 +429,21 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
                           )
                         )
                         if (!isStore) {
-                          io.dbusHostPayload.accKind := (
+                          modIo.dbus.hostData.accKind := (
                             if (!mem.isSigned) (
                               DbusHostMemAccessKind.LoadU
                             ) else (
                               DbusHostMemAccessKind.LoadS
                             )
                           )
-                          io.dbusHostPayload.data := (
-                            io.dbusHostPayload.data.getZero
+                          modIo.dbus.hostData.data := (
+                            modIo.dbus.hostData.data.getZero
                           )
                         } else { // if (isStore)
-                          io.dbusHostPayload.accKind := (
+                          modIo.dbus.hostData.accKind := (
                             DbusHostMemAccessKind.Store
                           )
-                          io.dbusHostPayload.data := io.rdMemWord(0)
+                          modIo.dbus.hostData.data := io.rdMemWord(0)
                         }
                       }
                       case None => {
@@ -502,17 +522,40 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
               }
               case CpyOpKind.Br => {
                 opInfo.cond match {
+                  case CondKind.Always => {
+                    //assert(
+                    //  opInfo.dstArr.size == 1,
+                    //  s"not yet implemented: "
+                    //  + s"opInfo(${opInfo}) index:${opInfoIdx}"
+                    //)
+                    //assert(
+                    //  opInfo.srcArr.size == 1,
+                    //  s"not yet implemented: "
+                    //  + s"opInfo(${opInfo}) index:${opInfoIdx}"
+                    //)
+                    io.psExSetPc.valid := (
+                      io.doIt
+                    )
+                    io.psExSetPc.nextPc := (
+                      io.regPcPlusImm
+                    )
+                  }
+                  case CondKind.Link => {
+                    assert(
+                      opInfo.dstArr.size == 2,
+                    )
+                  }
                   case CondKind.Z => {
-                    assert(
-                      opInfo.dstArr.size == 1,
-                      s"not yet implemented: "
-                      + s"opInfo(${opInfo}) index:${opInfoIdx}"
-                    )
-                    assert(
-                      opInfo.srcArr.size == 1,
-                      s"not yet implemented: "
-                      + s"opInfo(${opInfo}) index:${opInfoIdx}"
-                    )
+                    //assert(
+                    //  opInfo.dstArr.size == 1,
+                    //  s"not yet implemented: "
+                    //  + s"opInfo(${opInfo}) index:${opInfoIdx}"
+                    //)
+                    //assert(
+                    //  opInfo.srcArr.size == 1,
+                    //  s"not yet implemented: "
+                    //  + s"opInfo(${opInfo}) index:${opInfoIdx}"
+                    //)
                     io.psExSetPc.valid := (
                       io.doIt
                       && io.rdMemWord(0) === 0
@@ -523,16 +566,16 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
                     )
                   }
                   case CondKind.Nz => {
-                    assert(
-                      opInfo.dstArr.size == 1,
-                      s"not yet implemented: "
-                      + s"opInfo(${opInfo}) index:${opInfoIdx}"
-                    )
-                    assert(
-                      opInfo.srcArr.size == 1,
-                      s"not yet implemented: "
-                      + s"opInfo(${opInfo}) index:${opInfoIdx}"
-                    )
+                    //assert(
+                    //  opInfo.dstArr.size == 1,
+                    //  s"not yet implemented: "
+                    //  + s"opInfo(${opInfo}) index:${opInfoIdx}"
+                    //)
+                    //assert(
+                    //  opInfo.srcArr.size == 1,
+                    //  s"not yet implemented: "
+                    //  + s"opInfo(${opInfo}) index:${opInfoIdx}"
+                    //)
                     io.psExSetPc.valid := (
                       io.doIt
                       && io.rdMemWord(0) =/= 0
@@ -728,13 +771,17 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
 }
 
 case class SnowHousePipeStageExecute(
-  cfg: SnowHouseConfig,
-  io: SnowHouseIo,
+  //cfg: SnowHouseConfig,
+  //io: SnowHouseIo,
+  args: SnowHousePipeStageArgs,
   psExSetPc: Flow[SnowHousePsExSetPcPayload],
   doModInModFrontParams: PipeMemRmwDoModInModFrontFuncParams[
     UInt, Bool, SnowHouseRegFileModType
   ],
 ) extends Area {
+  //--------
+  def cfg = args.cfg
+  def io = args.io
   //--------
   def nextPrevTxnWasHazard = (
     doModInModFrontParams.nextPrevTxnWasHazardVec(0)
@@ -1030,7 +1077,8 @@ case class SnowHousePipeStageExecute(
     )
   )
   val setOutpModMemWord = SnowHousePipeStageExecuteSetOutpModMemWord(
-    cfg=cfg
+    //cfg=cfg
+    args=args
   )
   setOutpModMemWord.io.currOp := myCurrOp
   psExSetPc := setOutpModMemWord.io.psExSetPc

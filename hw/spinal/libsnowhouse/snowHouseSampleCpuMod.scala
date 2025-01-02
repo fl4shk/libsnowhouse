@@ -19,39 +19,41 @@ object SampleCpuInstrEnc {
   val simmWidth: Int = 16
 }
 object SampleCpuOp {
-  //private var _opCnt: Int = 0
+  private var _opCnt: Int = 0
   def mkOp(
-    opAsInt: Int,
+    //opAsInt: Int,
     name: String,
   ): (/*UInt,*/ Int, String) = {
-    //_opCnt += 1
-    (
+    val ret = (
       //U(s"${SampleCpuInstrEnc.opWidth}'d${opAsInt}"),
-      opAsInt,
+      //opAsInt,
+      _opCnt,
       name,
     )
+    _opCnt += 1
+    ret
   }
   //--------
-  def AddRaRbRc = mkOp(0, "AddRaRbRc") // 0
-  def SubRaRbRc = mkOp(1, "SubRaRbRc") // 1
-  def SltuRaRbRc = mkOp(2, "SltuRaRbRc") // 2
-  //def SltsRaRbRc = mkOp() // 3
+  val AddRaRbRc = mkOp("AddRaRbRc")     // 0
+  val SubRaRbRc = mkOp("SubRaRbRc")     // 1
+  val SltuRaRbRc = mkOp("SltuRaRbRc")   // 2
+  //val SltsRaRbRc = mkOp()             // 3
   //--------
-  def AndRaRbRc = mkOp(3, "AndRaRbRc") // 3
-  def OrrRaRbRc = mkOp(4, "OrrRaRbRc") // 4
-  def XorRaRbRc = mkOp(5, "XorRaRbRc") // 5
-  def LslRaRbRc = mkOp(6, "LslRaRbRc") // 6
-  def LsrRaRbRc = mkOp(7, "LsrRaRbRc") // 7
-  //def AsrRaRbRc = mkOp(8, "AsrRaRbRc") // 8
-  def MulRaRbRc = mkOp(8, "MulRaRbRc") // 8
+  val AndRaRbRc = mkOp("AndRaRbRc")     // 3
+  val OrrRaRbRc = mkOp("OrrRaRbRc")     // 4
+  val XorRaRbRc = mkOp("XorRaRbRc")     // 5
+  val LslRaRbRc = mkOp("LslRaRbRc")     // 6
+  val LsrRaRbRc = mkOp("LsrRaRbRc")     // 7
+  //val AsrRaRbRc = mkOp("AsrRaRbRc")   // 8
+  val MulRaRbRc = mkOp("MulRaRbRc")     // 8
   //--------
-  def BzRaSimm = mkOp(9, "BzRaSimm") // 9
-  def BnzRaSimm = mkOp(10, "BnzRaSimm") // 10
-  def JmpRa = mkOp(11, "JmpRa") // 11
-  def LdrRaRbSimm = mkOp(12, "LdrRaRbSimm") // 12
-  def StrRaRbSimm = mkOp(13, "StrRaRbSimm") // 13
-  def CpyuiRaSimm = mkOp(14, "CpyuiRaSimm") // 14
-  def CpyiRaSimm = mkOp(15, "CpyiRaSimm") // 15
+  val BzRaSimm = mkOp("BzRaSimm")       // 9
+  val BnzRaSimm = mkOp("BnzRaSimm")     // 10
+  val JmpRa = mkOp("JmpRa")             // 11
+  val LdrRaRbSimm = mkOp("LdrRaRbSimm") // 12
+  val StrRaRbSimm = mkOp("StrRaRbSimm") // 13
+  val CpyuiRaSimm = mkOp("CpyuiRaSimm") // 14
+  val CpyiRaSimm = mkOp("CpyiRaSimm")   // 15
   //--------
 }
 case class SampleCpuEncInstr(
@@ -63,31 +65,36 @@ case class SampleCpuEncInstr(
   val simm16 = UInt(SampleCpuInstrEnc.simmWidth bits)
 }
 case class SampleCpuPipeStageInstrDecode(
-) extends SnowHousePipeStageInstrDecode {
-  private val _decInstr: UInt = U"32'd0"
-  def decInstr: UInt = _decInstr
-  args match {
-    case Some(args) => {
-      //--------
-      def cfg = super.cfg
-      def opInfoMap = super.opInfoMap
-      def io = super.io
-      def cId = super.cId
-      def payload = super.payload
-      def optFormal = super.optFormal
-      //--------
-      //assert(opInfoMap != null)
-      //assert(io != null)
-      //assert(cId != null)
-      //--------
-      when (cId.up.isFiring) {
-      }
-      //--------
-    }
-    case None => {
-      assert(false)
-    }
+  //psIdHaltIt: Bool,
+  //args: 
+  override val args: SnowHousePipeStageArgs,
+) extends SnowHousePipeStageInstrDecode(args=args) {
+  def doDecode() = new Area {
   }
+  //private val _decInstr: UInt = U"32'd0"
+  //def decInstr: UInt = _decInstr
+  //args match {
+  //  case Some(args) => {
+  //    //--------
+  //    def cfg = super.cfg
+  //    def opInfoMap = super.opInfoMap
+  //    def io = super.io
+  //    def cId = super.cId
+  //    def payload = super.payload
+  //    def optFormal = super.optFormal
+  //    //--------
+  //    //assert(opInfoMap != null)
+  //    //assert(io != null)
+  //    //assert(cId != null)
+  //    //--------
+  //    when (cId.up.isFiring) {
+  //    }
+  //    //--------
+  //  }
+  //  case None => {
+  //    assert(false)
+  //  }
+  //}
 }
 object SampleCpuOpInfoMap {
   //--------
@@ -252,7 +259,14 @@ case class SampleCpuParams(
       optHowToSlice=None,
     ),
     opInfoMap=SampleCpuOpInfoMap.opInfoMap,
-    psDecode=SampleCpuPipeStageInstrDecode(),
+    //psDecode=SampleCpuPipeStageInstrDecode(),
+    mkPipeStageInstrDecode=(
+      (
+        args
+      ) => (
+        SampleCpuPipeStageInstrDecode(args=args)
+      )
+    ),
     //decodeFunc=(
     //  io: SnowHouseIo[SampleCpuEncInstr],
     //  cId: CtrlLink,

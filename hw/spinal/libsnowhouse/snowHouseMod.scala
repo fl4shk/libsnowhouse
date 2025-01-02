@@ -68,7 +68,11 @@ case class SnowHouseIo(
     }
   }
 }
-case class SnowHouse(
+case class SnowHouse
+//[
+//  PipeStageInstrDecode <: SnowHousePipeStageInstrDecode
+//]
+(
   //gprWordType: HardType[GprWordT],
   cfg: SnowHouseConfig,
 ) extends Component {
@@ -77,6 +81,148 @@ case class SnowHouse(
   //--------
   val linkArr = PipeHelper.mkLinkArr()
   cfg.regFileCfg.linkArr = Some(linkArr)
+  val regFile = new PipeMemRmw[
+    UInt,
+    Bool,
+    SnowHouseRegFileModType,
+    PipeMemRmwDualRdTypeDisabled[UInt, Bool],
+  ](
+    cfg=cfg.regFileCfg,
+    modType=SnowHouseRegFileModType(cfg=cfg),
+    dualRdType=PipeMemRmwDualRdTypeDisabled[UInt, Bool](),
+  )(
+    doModInFrontFunc=Some(
+      (
+        outp,
+        inp,
+        cFront,
+        //ydx,
+      ) => new Area {
+        //GenerationFlags.formal {
+          if (cfg.optFormal) {
+            when (pastValidAfterReset) {
+              when (
+                cFront.up.isValid
+                && past(cFront.up.isFiring)
+              ) {
+                assert(inp.opCnt === past(inp.opCnt) + 1)
+              }
+            }
+            //assume(
+            //  inp.op.asBits.asUInt
+            //  //< PipeMemRmwSimDut.ModOp.MUL_RA_RB.asBits.asUInt
+            //  //< PipeMemRmwSimDut.postMaxModOp.asBits.asUInt
+            //)
+            inp.formalAssumes()
+            when (pastValidAfterReset) {
+              for ((tempExt, tempIdx) <- inp.myExt.zipWithIndex) {
+                assert(stable(tempExt.hazardCmp))
+                assert(stable(tempExt.modMemWord))
+                assert(
+                  stable(tempExt.rdMemWord)
+                  //=== inp.myExt.rdMemWord.getZero
+                )
+                assert(
+                  tempExt.rdMemWord
+                  === tempExt.rdMemWord.getZero
+                )
+                assert(
+                  stable(tempExt.hazardCmp)
+                  //=== inp.myExt.hazardCmp.getZero
+                )
+                assert(stable(tempExt.modMemWordValid))
+              }
+            }
+          }
+        //}
+      }
+    ),
+    doModInModFrontFunc=Some(
+      (
+        doModInModFrontParams
+      ) => mkPipeStageExecute(
+        doModInModFrontParams=doModInModFrontParams
+      )
+    )
+  )
+  //--------
+  val psExSetPc = Flow(SnowHousePsExSetPcPayload(cfg=cfg))
+  val pIf = Payload(SnowHouseRegFileModType(cfg=cfg))
+
+  val cIf = CtrlLink(
+    up={
+      val node = Node()
+      node.setName("cIf_up")
+      node
+    },
+    down={
+      val node = Node()
+      node.setName("cIf_down")
+      node
+    }
+  )
+  linkArr += cIf
+  cIf.up.valid := True
+  val sIf = StageLink(
+    up={
+      cIf.down
+    },
+    down={
+      val node = Node()
+      node.setName("sIf_down")
+      node
+    }
+  )
+  linkArr += sIf
+  //val s2mIf = S2MLink(
+  //  up={
+  //    sIf.down
+  //  },
+  //  down={
+  //    val node = Node()
+  //    node.setName("s2mIf_down")
+  //    node
+  //  }
+  //)
+  //linkArr += s2mIf
+
+  val cId = CtrlLink(
+    up={
+      sIf.down
+      //s2mIf.down
+    },
+    down={
+      regFile.io.front
+    }
+  )
+  linkArr += cId
+  val pId = Payload(SnowHouseRegFileModType(cfg=cfg))
+  val pipeStageId = cfg.mkPipeStageInstrDecode(
+    SnowHousePipeStageArgs(
+      cfg=cfg,
+      io=io,
+      link=cId,
+      payload=pId,
+      regFile=regFile,
+    ),
+  )
+  //--------
+  //val pEx = Payload(SnowHouseRegFileModType(cfg=cfg))
+  def mkPipeStageExecute(
+    doModInModFrontParams: PipeMemRmwDoModInModFrontFuncParams[
+      UInt, Bool, SnowHouseRegFileModType
+    ]
+  ): SnowHousePipeStageExecute = SnowHousePipeStageExecute(
+    args=SnowHousePipeStageArgs(
+      cfg=cfg,
+      io=io,
+      link=null,
+      payload=null,
+      regFile=regFile,
+    ),
+    psExSetPc=psExSetPc,
+    doModInModFrontParams=doModInModFrontParams,
+  )
   //--------
   //io.ibus.nextValid := True
   //io.ibus.hostData.addr := 3

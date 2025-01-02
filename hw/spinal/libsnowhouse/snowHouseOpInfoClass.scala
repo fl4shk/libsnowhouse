@@ -255,6 +255,11 @@ class OpInfo(
         //if (addrCalc != validArgs.addrCalc) {
         //  found = false
         //}
+        //if (found) {
+        //  if (validArgs.cond.size == 0) {
+        //    
+        //  }
+        //}
         found
       } else {
         false
@@ -471,6 +476,7 @@ case class OpKindValidArgs(
   //srcSize: Int,
   dst: Seq[HashSet[DstKind]],
   src: Seq[HashSet[SrcKind]],
+  cond: HashSet[CondKind], // size of zero indicates "not implemented yet"
   //modifyDst: ModifySrcDstKind=ModifySrcDstKind.NoModify,
   //modifySrc: ModifySrcDstKind=ModifySrcDstKind.NoModify,
   //modify: ModifySrcDstKind=ModifySrcDstKind.NoModify,
@@ -495,6 +501,38 @@ sealed trait OpKindBase {
   //def minNumSrcs: Int
   //def maxNumSrcs: Int
   def validArgsSet: LinkedHashSet[OpKindValidArgs]
+  def anyNumSrcCondSet = HashSet[CondKind](
+    CondKind.Always,
+    CondKind.Link,
+  )
+  def requireCmpTwoSrcCondSet = HashSet[CondKind](
+    //CondKind.Always,
+    //CondKind.Link,
+    CondKind.Eq,      // do it if EQual
+    CondKind.Ne,      // do it if Not Equal
+    //--------
+    CondKind.Mi,      // do it if MInus
+    CondKind.Pl,      // do it if PLus
+    CondKind.Vs,      // do it if oVerflow Set
+    CondKind.Vc,      // do it if oVerflow Clear
+    //--------
+    CondKind.Geu,     // do it if Greater than or Equal,
+                                        // Unsigned
+    CondKind.Ltu,     // do it if Less Than, Unsigned
+    CondKind.Gtu,     // do it if Greater Than, Unsigned
+    CondKind.Leu,     // do it if Less than or Equal,
+                                        // Unsigned
+    //--------
+    CondKind.Ges,     // do it if Greater than or Equal,
+                                        // Signed
+    CondKind.Lts,     // do it if Less Than, Signed
+    CondKind.Gts,     // do it if Greater Than, Signed
+    CondKind.Les,     // do it if Less than or Equal,
+  )
+  def requireCmpOneSrcCondSet = HashSet[CondKind](
+    CondKind.Z,
+    CondKind.Nz,
+  )
 }
 //--------
 sealed trait CpyOpKind extends OpKindBase
@@ -522,6 +560,7 @@ object CpyOpKind {
             SrcKind.AluFlags,
           ),
         ),
+        cond=HashSet[CondKind](),
       ),
       OpKindValidArgs(
         // two-word
@@ -534,6 +573,7 @@ object CpyOpKind {
           HashSet(SrcKind.Gpr),
           HashSet(SrcKind.Gpr),
         ),
+        cond=HashSet[CondKind](),
       ),
     )
     def validArgsSet = _validArgsSet
@@ -553,6 +593,7 @@ object CpyOpKind {
         src=Array[HashSet[SrcKind]](
           HashSet(SrcKind.Imm(None)),
         ),
+        cond=HashSet[CondKind](),
       ),
       //OpKindValidArgs(
       //  // two-word
@@ -584,28 +625,32 @@ object CpyOpKind {
         src=Array[HashSet[SrcKind]](
           HashSet(SrcKind.Gpr),
         ),
+        cond=HashSet[CondKind](
+          CondKind.Always
+        ),
       ),
-      OpKindValidArgs(
-        //dstSize=2, srcSize=1
-        dst=Array[HashSet[DstKind]](
-          HashSet(DstKind.Pc),
-          HashSet(DstKind.Gpr),
-        ),
-        src=Array[HashSet[SrcKind]](
-          HashSet(SrcKind.Gpr, SrcKind.Imm(Some(false)))
-        ),
-      ),  // for "jump and link"
-      OpKindValidArgs(
-        //dstSize=1, srcSize=3
-        dst=Array[HashSet[DstKind]](
-          HashSet(DstKind.Pc),
-        ),
-        src=Array[HashSet[SrcKind]](
-          HashSet(SrcKind.Gpr),
-          HashSet(SrcKind.Gpr),
-          HashSet(SrcKind.Gpr, SrcKind.Imm(Some(false))),
-        ),
-      ),  // for "compare and jump"
+      // TODO: add these back later
+      //OpKindValidArgs( // for "jump and link"
+      //  //dstSize=2, srcSize=1
+      //  dst=Array[HashSet[DstKind]](
+      //    HashSet(DstKind.Pc),
+      //    HashSet(DstKind.Gpr),
+      //  ),
+      //  src=Array[HashSet[SrcKind]](
+      //    HashSet(SrcKind.Gpr, SrcKind.Imm(Some(false)))
+      //  ),
+      //),
+      //OpKindValidArgs( // for "compare and jump"
+      //  //dstSize=1, srcSize=3
+      //  dst=Array[HashSet[DstKind]](
+      //    HashSet(DstKind.Pc),
+      //  ),
+      //  src=Array[HashSet[SrcKind]](
+      //    HashSet(SrcKind.Gpr),
+      //    HashSet(SrcKind.Gpr),
+      //    HashSet(SrcKind.Gpr, SrcKind.Imm(Some(false))),
+      //  ),
+      //),
                                     // (in one instruction)
     )
     def validArgsSet = _validArgsSet
@@ -627,31 +672,43 @@ object CpyOpKind {
         src=Array[HashSet[SrcKind]](
           HashSet(SrcKind.Imm(None))
         ),
-      ),
-      OpKindValidArgs(
-        // for "branch and link"
-        //dstSize=2, srcSize=1
-        dst=Array[HashSet[DstKind]](
-          HashSet(DstKind.Pc),
-          HashSet(DstKind.Gpr),
-        ),
-        src=Array[HashSet[SrcKind]](
-          HashSet(SrcKind.Imm(None)),
+        cond=(
+          //HashSet[CondKind](
+          //  CondKind.Always
+          //)
+          //++ 
+          requireCmpOneSrcCondSet
         ),
       ),
-      OpKindValidArgs(
-        // for "compare and branch"
-        //dstSize=1, srcSize=3
-        dst=Array[HashSet[DstKind]](
-          HashSet(DstKind.Pc),
-        ),
-        src=Array[HashSet[SrcKind]](
-          HashSet(SrcKind.Gpr),
-          HashSet(SrcKind.Gpr),
-          HashSet(SrcKind.Imm(None)),
-        ),
-      ),
-                                    // (in one instruction)
+      //OpKindValidArgs(
+      //  // for "branch and link"
+      //  //dstSize=2, srcSize=1
+      //  dst=Array[HashSet[DstKind]](
+      //    HashSet(DstKind.Pc),
+      //    HashSet(DstKind.Gpr),
+      //  ),
+      //  src=Array[HashSet[SrcKind]](
+      //    HashSet(SrcKind.Imm(None)),
+      //  ),
+      //  cond=HashSet[CondKind](
+      //    CondKind.Link
+      //  ),
+      //),
+      //OpKindValidArgs(
+      //  // for "compare and branch" (in one instruction)
+      //  //dstSize=1, srcSize=3
+      //  dst=Array[HashSet[DstKind]](
+      //    HashSet(DstKind.Pc),
+      //  ),
+      //  src=Array[HashSet[SrcKind]](
+      //    HashSet(SrcKind.Gpr),
+      //    HashSet(SrcKind.Gpr),
+      //    HashSet(SrcKind.Imm(None)),
+      //  ),
+      //  cond=(
+      //    requireCmpTwoSrcCondSet
+      //  )
+      //),
     )
     def validArgsSet = _validArgsSet
   }
@@ -669,6 +726,7 @@ object AluOpKind {
     ](
       //minD=1, maxD=1, minS=2, maxS=2
       OpKindValidArgs(
+        // word
         //dstSize=1, srcSize=2
         dst=Array[HashSet[DstKind]](
           HashSet(DstKind.Gpr)
@@ -677,9 +735,13 @@ object AluOpKind {
           HashSet(SrcKind.Gpr, SrcKind.Pc),
           HashSet(SrcKind.Gpr, SrcKind.Pc, SrcKind.Imm(None)),
         ),
-      ),  // word
+        cond=HashSet[CondKind](
+          CondKind.Always
+        ),
+      ),
       //OpKindNumArgs(dst=2, src=4),  // two-word
-      OpKindValidArgs(                // word, with output flags
+      OpKindValidArgs(
+        // word, with output flags
         //dstSize=2, srcSize=2,
         dst=Array[HashSet[DstKind]](
           HashSet(DstKind.Gpr),
@@ -688,6 +750,9 @@ object AluOpKind {
         src=Array[HashSet[SrcKind]](
           HashSet(SrcKind.Gpr, SrcKind.Pc),
           HashSet(SrcKind.Gpr, SrcKind.Pc, SrcKind.Imm(None)),
+        ),
+        cond=HashSet[CondKind](
+          //CondKind.Always
         ),
       ),
       //OpKindNumArgs(                // two-word, with flags
@@ -712,6 +777,9 @@ object AluOpKind {
           HashSet(SrcKind.Gpr, SrcKind.Pc, SrcKind.Imm(None)),
           HashSet(SrcKind.AluFlags),
         ),
+        cond=HashSet[CondKind](
+          //CondKind.Always
+        )
       ),  // word, with input and output flags
       //OpKindNumArgs(dst=2, src=5),  // two-word
       OpKindValidArgs(                // word, with input and output flags
@@ -726,6 +794,9 @@ object AluOpKind {
           HashSet(SrcKind.Gpr, SrcKind.Pc, SrcKind.Imm(None)),
           HashSet(SrcKind.AluFlags),
         ),
+        cond=HashSet[CondKind](
+          //CondKind.Always
+        )
       ),
       //OpKindNumArgs(                // two-word, with flags
       //  dst=2,
@@ -735,26 +806,52 @@ object AluOpKind {
     def validArgsSet = _validArgsSet
   }
   case object Sub extends AluOpKind {
+    private[libsnowhouse] val _subCmpSrc = (
+      Array[HashSet[SrcKind]](
+        HashSet(SrcKind.Gpr, SrcKind.Pc),
+        HashSet(SrcKind.Gpr, SrcKind.Pc, SrcKind.Imm(None)),
+      ),
+    )
+    private[libsnowhouse] val _subCmpCond = (
+      HashSet[CondKind](
+        CondKind.Always
+      )
+    )
     private[libsnowhouse] val _validArgsSet = LinkedHashSet[
       OpKindValidArgs
     ](
       //minD=1, maxD=1, minS=2, maxS=2
       OpKindValidArgs(
+        // word `Sub` or `Cmp`
         //dstSize=1, srcSize=2
         dst=Array[HashSet[DstKind]](
           HashSet(
             DstKind.Gpr,
-            DstKind.AluFlags
-              // `DstKind.AluFlags` means this is a `Cmp` instruction
+            //DstKind.AluFlags
+            //  // `DstKind.AluFlags` means this is a `Cmp` instruction
           ),
         ),
-        src=Array[HashSet[SrcKind]](
-          HashSet(SrcKind.Gpr, SrcKind.Pc),
-          HashSet(SrcKind.Gpr, SrcKind.Pc, SrcKind.Imm(None)),
+        src=_subCmpSrc,
+        cond=_subCmpCond,
+      ),
+      OpKindValidArgs(
+        // word `Sub` or `Cmp`
+        //dstSize=1, srcSize=2
+        dst=Array[HashSet[DstKind]](
+          HashSet(
+            //DstKind.Gpr,
+            DstKind.AluFlags
+            //  // `DstKind.AluFlags` means this is a `Cmp` instruction
+          ),
         ),
-      ),  // word `Sub` or `Cmp`
+        src=_subCmpSrc,
+        cond=HashSet[CondKind](
+          //CondKind.Always
+        ),
+      ),
       //OpKindNumArgs(dst=2, src=4),  // two-word
-      OpKindValidArgs(                // word, with output flags
+      OpKindValidArgs(
+        // word, with output flags
         //dstSize=2,
         //srcSize=2,
         dst=Array[HashSet[DstKind]](
@@ -764,6 +861,9 @@ object AluOpKind {
         src=Array[HashSet[SrcKind]](
           HashSet(SrcKind.Gpr, SrcKind.Pc),
           HashSet(SrcKind.Gpr, SrcKind.Pc, SrcKind.Imm(None)),
+        ),
+        cond=HashSet[CondKind](
+          //CondKind.Always
         ),
       ),
       //OpKindNumArgs(                // two-word, with flags
@@ -779,6 +879,7 @@ object AluOpKind {
     ](
       //minD=1, maxD=1, minS=2, maxS=2
       OpKindValidArgs(
+        // word, with input and output flags
         //dstSize=1, srcSize=3
         dst=Array[HashSet[DstKind]](
           HashSet(DstKind.Gpr),
@@ -788,9 +889,13 @@ object AluOpKind {
           HashSet(SrcKind.Gpr, SrcKind.Pc, SrcKind.Imm(None)),
           HashSet(SrcKind.AluFlags),
         ),
-      ),  // word, with input and output flags
+        cond=HashSet[CondKind](
+          //CondKind.Always
+        ),
+      ),
       //OpKindNumArgs(dst=2, src=5),  // two-word
-      OpKindValidArgs(                // word, with output flags
+      OpKindValidArgs(
+        // word, with output flags
         //dstSize=2,
         //srcSize=3,
         dst=Array[HashSet[DstKind]](
@@ -801,6 +906,9 @@ object AluOpKind {
           HashSet(SrcKind.Gpr, SrcKind.Pc),
           HashSet(SrcKind.Gpr, SrcKind.Pc, SrcKind.Imm(None)),
           HashSet(SrcKind.AluFlags),
+        ),
+        cond=HashSet[CondKind](
+          //CondKind.Always
         ),
       ),
       //OpKindNumArgs(                // two-word, with flags
@@ -818,6 +926,7 @@ object AluOpKind {
     ](
       //minD=1, maxD=1, minS=2, maxS=2
       OpKindValidArgs(
+        // word
         //dstSize=1, srcSize=2
         dst=Array[HashSet[DstKind]](
           HashSet(DstKind.Gpr),
@@ -826,9 +935,13 @@ object AluOpKind {
           HashSet(SrcKind.Gpr, SrcKind.Pc),
           HashSet(SrcKind.Gpr, SrcKind.Pc, SrcKind.Imm(Some(false))),
         ),
-      ),  // word
+        cond=HashSet[CondKind](
+          CondKind.Always
+        ),
+      ),
       //OpKindNumArgs(dst=2, src=4),  // two-word
-      OpKindValidArgs(                // word, with output flags
+      OpKindValidArgs(
+        // word, with output flags
         //dstSize=2,
         //srcSize=2,
         dst=Array[HashSet[DstKind]](
@@ -838,6 +951,9 @@ object AluOpKind {
         src=Array[HashSet[SrcKind]](
           HashSet(SrcKind.Gpr, SrcKind.Pc),
           HashSet(SrcKind.Gpr, SrcKind.Pc, SrcKind.Imm(Some(false))),
+        ),
+        cond=HashSet[CondKind](
+          //CondKind.Always
         ),
       ),
       //OpKindNumArgs(                // two-word, with flags
@@ -854,6 +970,7 @@ object AluOpKind {
     ](
       //minD=1, maxD=1, minS=2, maxS=2
       OpKindValidArgs(
+        // word
         //dstSize=1, srcSize=2
         dst=Array[HashSet[DstKind]](
           HashSet(DstKind.Gpr),
@@ -862,9 +979,13 @@ object AluOpKind {
           HashSet(SrcKind.Gpr, SrcKind.Pc),
           HashSet(SrcKind.Gpr, SrcKind.Pc, SrcKind.Imm(Some(false))),
         ),
-      ),  // word
+        cond=HashSet[CondKind](
+          CondKind.Always
+        ),
+      ),
       //OpKindNumArgs(dst=2, src=4),  // two-word
-      OpKindValidArgs(                // word, with output flags
+      OpKindValidArgs(
+        // word, with output flags
         //dstSize=2,
         //srcSize=2,
         dst=Array[HashSet[DstKind]](
@@ -874,6 +995,9 @@ object AluOpKind {
         src=Array[HashSet[SrcKind]](
           HashSet(SrcKind.Gpr, SrcKind.Pc),
           HashSet(SrcKind.Gpr, SrcKind.Pc, SrcKind.Imm(Some(false))),
+        ),
+        cond=HashSet[CondKind](
+          //CondKind.Always
         ),
       ),
       //OpKindNumArgs(                // two-word, with flags
@@ -898,9 +1022,13 @@ object AluOpKind {
           HashSet(SrcKind.Gpr, SrcKind.Pc),
           HashSet(SrcKind.Gpr, SrcKind.Pc, SrcKind.Imm(Some(false))),
         ),
+        cond=HashSet[CondKind](
+          CondKind.Always
+        ),
       ),  // word
       //OpKindNumArgs(dst=2, src=4),  // two-word
-      OpKindValidArgs(                // word, with output flags
+      OpKindValidArgs(
+        // word, with output flags
         //dstSize=2,
         //srcSize=2,
         dst=Array[HashSet[DstKind]](
@@ -910,6 +1038,9 @@ object AluOpKind {
         src=Array[HashSet[SrcKind]](
           HashSet(SrcKind.Gpr, SrcKind.Pc),
           HashSet(SrcKind.Gpr, SrcKind.Pc, SrcKind.Imm(Some(false))),
+        ),
+        cond=HashSet[CondKind](
+          //CondKind.Always
         ),
       ),
     )
@@ -921,6 +1052,7 @@ object AluOpKind {
     ](
       //minD=1, maxD=1, minS=2, maxS=2
       OpKindValidArgs(
+        // word
         //dstSize=1, srcSize=2
         dst=Array[HashSet[DstKind]](
           HashSet(DstKind.Gpr),
@@ -929,9 +1061,13 @@ object AluOpKind {
           HashSet(SrcKind.Gpr, SrcKind.Pc),
           HashSet(SrcKind.Gpr, SrcKind.Pc, SrcKind.Imm(None)),
         ),
-      ),  // word
+        cond=HashSet[CondKind](
+          CondKind.Always
+        ),
+      ),
       //OpKindNumArgs(dst=2, src=4),  // two-word
-      OpKindValidArgs(                // word, with flags
+      OpKindValidArgs(
+        // word, with flags
         //dstSize=2,
         //srcSize=2,
         dst=Array[HashSet[DstKind]](
@@ -941,6 +1077,9 @@ object AluOpKind {
         src=Array[HashSet[SrcKind]](
           HashSet(SrcKind.Gpr, SrcKind.Pc),
           HashSet(SrcKind.Gpr, SrcKind.Pc, SrcKind.Imm(None)),
+        ),
+        cond=HashSet[CondKind](
+          //CondKind.Always
         ),
       ),
     )
@@ -952,6 +1091,7 @@ object AluOpKind {
     ](
       //minD=1, maxD=1, minS=2, maxS=2
       OpKindValidArgs(
+        // word
         //dstSize=1, srcSize=2
         dst=Array[HashSet[DstKind]](
           HashSet(DstKind.Gpr),
@@ -960,9 +1100,13 @@ object AluOpKind {
           HashSet(SrcKind.Gpr, SrcKind.Pc),
           HashSet(SrcKind.Gpr, SrcKind.Pc, SrcKind.Imm(None)),
         ),
-      ),  // word
+        cond=HashSet[CondKind](
+          CondKind.Always
+        ),
+      ),
       //OpKindNumArgs(dst=2, src=4),  // two-word
-      OpKindValidArgs(                // word, with flags
+      OpKindValidArgs(
+        // word, with flags
         //dstSize=2,
         //srcSize=2,
         dst=Array[HashSet[DstKind]](
@@ -972,6 +1116,9 @@ object AluOpKind {
         src=Array[HashSet[SrcKind]](
           HashSet(SrcKind.Gpr, SrcKind.Pc),
           HashSet(SrcKind.Gpr, SrcKind.Pc, SrcKind.Imm(None)),
+        ),
+        cond=HashSet[CondKind](
+          //CondKind.Always
         ),
       ),
     )
@@ -983,6 +1130,7 @@ object AluOpKind {
     ](
       //minD=1, maxD=1, minS=2, maxS=2
       OpKindValidArgs(
+        // word
         //dstSize=1, srcSize=2
         dst=Array[HashSet[DstKind]](
           HashSet(DstKind.Gpr),
@@ -991,7 +1139,10 @@ object AluOpKind {
           HashSet(SrcKind.Gpr, SrcKind.Pc),
           HashSet(SrcKind.Gpr, SrcKind.Pc, SrcKind.Imm(None)),
         ),
-      ),  // word
+        cond=HashSet[CondKind](
+          CondKind.Always
+        ),
+      ),
       //OpKindNumArgs(dst=2, src=4),  // two-word
       OpKindValidArgs(                // word, with flags
         //dstSize=2,
@@ -1003,6 +1154,9 @@ object AluOpKind {
         src=Array[HashSet[SrcKind]](
           HashSet(SrcKind.Gpr, SrcKind.Pc),
           HashSet(SrcKind.Gpr, SrcKind.Pc, SrcKind.Imm(None)),
+        ),
+        cond=HashSet[CondKind](
+          //CondKind.Always
         ),
       ),
     )
@@ -1036,6 +1190,7 @@ object AluOpKind {
     ](
       //minD=1, maxD=1, minS=2, maxS=2
       OpKindValidArgs(
+        // word
         //dstSize=1, srcSize=2
         dst=Array[HashSet[DstKind]](
           HashSet(DstKind.Gpr),
@@ -1044,7 +1199,10 @@ object AluOpKind {
           HashSet(SrcKind.Gpr, SrcKind.Pc),
           HashSet(SrcKind.Gpr, SrcKind.Pc, SrcKind.Imm(None)),
         ),
-      )   // word
+        cond=HashSet[CondKind](
+          CondKind.Always
+        ),
+      )
     )
     def validArgsSet = _validArgsSet
   }
@@ -1054,6 +1212,7 @@ object AluOpKind {
     ](
       //minD=1, maxD=1, minS=2, maxS=2
       OpKindValidArgs(
+        // word
         //dstSize=1, srcSize=2
         dst=Array[HashSet[DstKind]](
           HashSet(DstKind.Gpr),
@@ -1062,7 +1221,10 @@ object AluOpKind {
           HashSet(SrcKind.Gpr, SrcKind.Pc),
           HashSet(SrcKind.Gpr, SrcKind.Pc, SrcKind.Imm(None)),
         ),
-      )   // word
+        cond=HashSet[CondKind](
+          CondKind.Always
+        ),
+      )
     )
     def validArgsSet = _validArgsSet
   }
@@ -1088,6 +1250,9 @@ object MultiCycleOpKind {
           HashSet(SrcKind.Gpr, SrcKind.Pc),
           HashSet(SrcKind.Gpr, SrcKind.Pc, SrcKind.Imm(None)),
         ),
+        cond=HashSet[CondKind](
+          CondKind.Always
+        ),
       ),
       OpKindValidArgs(
         // word, unsigned full-product
@@ -1101,6 +1266,9 @@ object MultiCycleOpKind {
           HashSet(SrcKind.Gpr, SrcKind.Pc),
           HashSet(SrcKind.Gpr, SrcKind.Pc),
           HashSet(SrcKind.Gpr, SrcKind.Pc),
+        ),
+        cond=HashSet[CondKind](
+          //CondKind.Always
         ),
       ),
     )
@@ -1124,6 +1292,9 @@ object MultiCycleOpKind {
           HashSet(SrcKind.Gpr, SrcKind.Pc),
           HashSet(SrcKind.Gpr, SrcKind.Pc),
         ),
+        cond=HashSet[CondKind](
+          //CondKind.Always
+        ),
       ),
     )
     def validArgsSet = _validArgsSet
@@ -1143,6 +1314,9 @@ object MultiCycleOpKind {
           HashSet(SrcKind.Gpr, SrcKind.Pc),
           HashSet(SrcKind.Gpr, SrcKind.Pc, SrcKind.Imm(None)),
         ),
+        cond=HashSet[CondKind](
+          //CondKind.Always
+        ),
       ),
       OpKindValidArgs(
         // dual-word
@@ -1156,6 +1330,9 @@ object MultiCycleOpKind {
           HashSet(SrcKind.Gpr, SrcKind.Pc),
           HashSet(SrcKind.Gpr, SrcKind.Pc),
           HashSet(SrcKind.Gpr, SrcKind.Pc),
+        ),
+        cond=HashSet[CondKind](
+          //CondKind.Always
         ),
       ),
     )
@@ -1176,6 +1353,9 @@ object MultiCycleOpKind {
           HashSet(SrcKind.Gpr, SrcKind.Pc),
           HashSet(SrcKind.Gpr, SrcKind.Pc, SrcKind.Imm(None)),
         ),
+        cond=HashSet[CondKind](
+          //CondKind.Always
+        ),
       ),
       OpKindValidArgs(
         // dual-word
@@ -1189,6 +1369,9 @@ object MultiCycleOpKind {
           HashSet(SrcKind.Gpr, SrcKind.Pc),
           HashSet(SrcKind.Gpr, SrcKind.Pc),
           HashSet(SrcKind.Gpr, SrcKind.Pc),
+        ),
+        cond=HashSet[CondKind](
+          //CondKind.Always
         ),
       ),
     )
@@ -1209,6 +1392,9 @@ object MultiCycleOpKind {
           HashSet(SrcKind.Gpr, SrcKind.Pc),
           HashSet(SrcKind.Gpr, SrcKind.Pc, SrcKind.Imm(None)),
         ),
+        cond=HashSet[CondKind](
+          //CondKind.Always
+        ),
       ),
       OpKindValidArgs(
         // two-word
@@ -1222,6 +1408,9 @@ object MultiCycleOpKind {
           HashSet(SrcKind.Gpr, SrcKind.Pc),
           HashSet(SrcKind.Gpr, SrcKind.Pc),
           HashSet(SrcKind.Gpr, SrcKind.Pc),
+        ),
+        cond=HashSet[CondKind](
+          //CondKind.Always
         ),
       ),
     )
@@ -1242,6 +1431,9 @@ object MultiCycleOpKind {
           HashSet(SrcKind.Gpr, SrcKind.Pc),
           HashSet(SrcKind.Gpr, SrcKind.Pc, SrcKind.Imm(None)),
         ),
+        cond=HashSet[CondKind](
+          //CondKind.Always
+        ),
       ),
       OpKindValidArgs(
         // two-word
@@ -1255,6 +1447,9 @@ object MultiCycleOpKind {
           HashSet(SrcKind.Gpr, SrcKind.Pc),
           HashSet(SrcKind.Gpr, SrcKind.Pc),
           HashSet(SrcKind.Gpr, SrcKind.Pc),
+        ),
+        cond=HashSet[CondKind](
+          //CondKind.Always
         ),
       ),
     )
@@ -1275,8 +1470,12 @@ object MultiCycleOpKind {
           HashSet(SrcKind.Gpr),
           HashSet(SrcKind.Gpr),
         ),
+        cond=HashSet[CondKind](
+          //CondKind.Always
+        ),
       ),
       OpKindValidArgs(
+        // dual-word
         //dstSize=4, srcSize=4
         dst=Array[HashSet[DstKind]](
           HashSet(DstKind.Gpr),
@@ -1290,7 +1489,10 @@ object MultiCycleOpKind {
           HashSet(SrcKind.Gpr),
           HashSet(SrcKind.Gpr),
         ),
-      ),  // dual-word
+        cond=HashSet[CondKind](
+          //CondKind.Always
+        ),
+      ),
     )
     def validArgsSet = _validArgsSet
   }
@@ -1309,8 +1511,12 @@ object MultiCycleOpKind {
           HashSet(SrcKind.Gpr),
           HashSet(SrcKind.Gpr),
         ),
+        cond=HashSet[CondKind](
+          //CondKind.Always
+        ),
       ),  // word
       OpKindValidArgs(
+        // dual-word
         //dstSize=4, srcSize=4
         dst=Array[HashSet[DstKind]](
           HashSet(DstKind.Gpr),
@@ -1324,7 +1530,10 @@ object MultiCycleOpKind {
           HashSet(SrcKind.Gpr),
           HashSet(SrcKind.Gpr),
         ),
-      ),  // dual-word
+        cond=HashSet[CondKind](
+          //CondKind.Always
+        ),
+      ),
     )
     def validArgsSet = _validArgsSet
   }

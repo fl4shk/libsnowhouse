@@ -99,7 +99,12 @@ case class SnowHouseConfig(
   //  CtrlLink,               // cId
   //  UInt,                   // output the decoded instruction
   //) => Area,                
-  psDecode: SnowHousePipeStageInstrDecode,
+  //--------
+  //psDecode: SnowHousePipeStageInstrDecode,
+  mkPipeStageInstrDecode: (
+    SnowHousePipeStageArgs, //args
+  ) => SnowHousePipeStageInstrDecode,
+  //--------
   optFormal: Boolean,
   maxNumGprsPerInstr: Int,
   //modOpCntWidth: Int=8,
@@ -148,6 +153,7 @@ case class SnowHouseConfig(
   val pureCpyuiOpInfoMap = LinkedHashMap[Int, OpInfo]()
   val pureJmpOpInfoMap = LinkedHashMap[Int, OpInfo]()
   val pureBrOpInfoMap = LinkedHashMap[Int, OpInfo]()
+  //val cpyOpInfoMap = LinkedHashMap[Int, OpInfo]()
   val aluOpInfoMap = LinkedHashMap[Int, OpInfo]()
   val multiCycleOpInfoMap = LinkedHashMap[Int, OpInfo]()
   //val loadOpInfoMap = LinkedHashMap[Int, OpInfo]()
@@ -172,7 +178,8 @@ case class SnowHouseConfig(
           case None => {
             assert(
               false,
-              s"Atomic operations are not yet supported"
+              s"Error: Atomic operations are not yet implemented: "
+              + s"opInfo(${opInfo}), instructionIndex:${idx}"
             )
             false
           }
@@ -189,153 +196,100 @@ case class SnowHouseConfig(
         //}
       }
     }
+    def checkValidArgs[OpKind](op: Option[OpKindBase]): Unit = {
+      opInfo.findValidArgs(op.get) match {
+        case Some(validArgs) => {
+          assert(
+            //validArgs.cond.contains(opInfo.cond),
+            validArgs.cond.size > 0,
+            s"Error: This `OpKindBase` is not yet implemented: "
+            + s"opInfo(${opInfo}), instructionIndex:${idx}"
+          )
+          assert(
+            validArgs.cond.contains(opInfo.cond),
+            s"Error: unsupported condition: "
+            + s"opInfo(${opInfo}), instructionIndex:${idx}"
+          )
+        }
+        case None => {
+          assert(
+            false,
+            s"Error: unsupported combination or "
+            + s"number of destination/source operands: "
+            + s"opInfo(${opInfo}), instructionIndex:${idx}"
+          )
+        }
+      }
+    }
     opInfo.select match {
       case OpSelect.Cpy => {
-        assert(
-          opInfo.findValidArgs(opInfo.cpyOp.get) != None,
-          s"Error: unsupported combination or "
-          + s"number of destination/source operands: "
-          + s"opInfo(${opInfo}), instructionIndex:${idx}"
-        )
-        //opInfo.cpyOp.get match {
-        //  case CpyOpKind.Cpy => {
-        //    assert(
-        //      opInfo.dstArr.find(_ == DstKind.Pc) == None,
-        //      s"Error: unsupported PC as destination of a CpyOpKind.Cpy "
-        //      + s"instruction: "
-        //      + s"opInfo(${opInfo}), instructionIndex:${idx}"
-        //    )
-        //    pureCpyOpInfoMap += (idx -> opInfo)
+        checkValidArgs(opInfo.cpyOp)
+        //opInfo.findValidArgs(opInfo.cpyOp.get) match {
+        //  case Some(validArgs) => {
         //  }
-        //  case CpyOpKind.Cpyui => {
+        //  case None => {
         //    assert(
-        //      opInfo.dstArr.find(_ == DstKind.Pc) == None,
-        //      s"Error: unsupported PC as destination of a CpyOpKind.Cpyui "
-        //      + s"instruction: "
+        //      false,
+        //      s"Error: unsupported combination or "
+        //      + s"number of destination/source operands: "
         //      + s"opInfo(${opInfo}), instructionIndex:${idx}"
         //    )
-        //    pureCpyuiOpInfoMap += (idx -> opInfo)
-        //  }
-        //  case CpyOpKind.Jmp => { // non-relative jumps
-        //    assert(
-        //      opInfo.dstArr.find(_ == DstKind.Pc) != None,
-        //      s"Error: unsupported lack of PC as (any) destination of a "
-        //      + s"CpyOpKind.Jmp "
-        //      + s"instruction: "
-        //      + s"opInfo(${opInfo}), instructionIndex:${idx}"
-        //    )
-        //    pureJmpOpInfoMap += (idx -> opInfo)
-        //  }
-        //  case CpyOpKind.Br => { // relative branches
-        //    assert(
-        //      opInfo.dstArr.find(_ == DstKind.Pc) != None,
-        //      s"Error: unsupported lack of PC as (any) destination of a "
-        //      + s"CpyOpKind.Br "
-        //      + s"instruction: "
-        //      + s"opInfo(${opInfo}), instructionIndex:${idx}"
-        //    )
-        //    pureBrOpInfoMap += (idx -> opInfo)
         //  }
         //}
+        opInfo.cpyOp.get match {
+          case CpyOpKind.Cpy => {
+            //assert(
+            //  opInfo.dstArr.find(_ == DstKind.Pc) == None,
+            //  s"Error: unsupported PC as destination of a CpyOpKind.Cpy "
+            //  + s"instruction: "
+            //  + s"opInfo(${opInfo}), instructionIndex:${idx}"
+            //)
+            pureCpyOpInfoMap += (idx -> opInfo)
+          }
+          case CpyOpKind.Cpyui => {
+            //assert(
+            //  opInfo.dstArr.find(_ == DstKind.Pc) == None,
+            //  s"Error: unsupported PC as destination of a CpyOpKind.Cpyui "
+            //  + s"instruction: "
+            //  + s"opInfo(${opInfo}), instructionIndex:${idx}"
+            //)
+            pureCpyuiOpInfoMap += (idx -> opInfo)
+          }
+          case CpyOpKind.Jmp => { // non-relative jumps
+            //assert(
+            //  opInfo.dstArr.find(_ == DstKind.Pc) != None,
+            //  s"Error: unsupported lack of PC as (any) destination of a "
+            //  + s"CpyOpKind.Jmp "
+            //  + s"instruction: "
+            //  + s"opInfo(${opInfo}), instructionIndex:${idx}"
+            //)
+            pureJmpOpInfoMap += (idx -> opInfo)
+          }
+          case CpyOpKind.Br => { // relative branches
+            pureBrOpInfoMap += (idx -> opInfo)
+          }
+        }
       }
       case OpSelect.Alu => {
-        assert(
-          opInfo.findValidArgs(opInfo.aluOp.get) != None,
-          s"Error: unsupported combination or "
-          + s"number of destination/source operands: "
-          + s"opInfo(${opInfo}), instructionIndex:${idx}"
-        )
+        checkValidArgs(opInfo.aluOp)
         //assert(
-        //  opInfo.dstArr.find(_ == DstKind.Pc) == None,
-        //  s"Error: unsupported PC as destination of an ALU "
-        //  + s"instruction (though this may be supported later!): "
+        //  opInfo.findValidArgs(opInfo.aluOp.get) != None,
+        //  s"Error: unsupported combination or "
+        //  + s"number of destination/source operands: "
         //  + s"opInfo(${opInfo}), instructionIndex:${idx}"
         //)
-        //opInfo.aluOp.get match {
-        //  case (
-        //    AluOpKind.Add 
-        //    | AluOpKind.Lsl | AluOpKind.Lsr | AluOpKind.Asr
-        //    | AluOpKind.And | AluOpKind.Or | AluOpKind.Xor
-        //  ) => {
-        //    assert(
-        //      opInfo.srcArr.find(_ == SrcKind.AluFlags) == None,
-        //      s"Error: unsupported `AluOpKind` with source operand that is "
-        //      + s"`SrcKind.AluFlags`: "
-        //      + s"opInfo(${opInfo}), instructionIndex:${idx}"
-        //    )
-        //  }
-        //  case (
-        //    AluOpKind.Adc
-        //    | AluOpKind.Sbc
-        //  ) => {
-        //    assert(
-        //      opInfo.srcArr.find(_ == SrcKind.AluFlags) != None,
-        //      s"Error: unsupported `AluOpKind` without any source operand "
-        //      + s"that is `SrcKind.AluFlags`: "
-        //      + s"opInfo(${opInfo}), instructionIndex:${idx}"
-        //    )
-        //  }
-        //  //case AluOpKind.CmpBc => {
-        //  //}
-        //  case AluOpKind.Sub => {
-        //  }
-        //  case (
-        //    AluOpKind.Sltu | AluOpKind.Slts
-        //  ) => {
-        //    assert(
-        //      opInfo.dstArr.find(_ == DstKind.AluFlags) == None,
-        //      s"Error: unsupported instruction with AluOpKind that uses "
-        //      + s"ALU flags. Consider using an `AluOpKind.Sub` that "
-        //      + s"becomes a `Cmp` instruction instead: "
-        //      + s"opInfo(${opInfo}), instructionIndex:${idx}"
-        //    )
-        //  }
-        //}
         aluOpInfoMap += (idx -> opInfo)
       }
       case OpSelect.MultiCycle => {
-        assert(
-          opInfo.findValidArgs(opInfo.multiCycleOp.get) != None,
-          s"Error: unsupported combination or "
-          + s"number of destination/source operands: "
-          + s"opInfo(${opInfo}), instructionIndex:${idx}"
-        )
+        checkValidArgs(opInfo.multiCycleOp)
         //assert(
-        //  opInfo.dstArr.find(_ == DstKind.Pc) == None,
-        //  s"Error: unsupported PC as destination of a multi-cycle "
-        //  + s"instruction: "
+        //  opInfo.findValidArgs(opInfo.multiCycleOp.get) != None,
+        //  s"Error: unsupported combination or "
+        //  + s"number of destination/source operands: "
         //  + s"opInfo(${opInfo}), instructionIndex:${idx}"
         //)
         multiCycleOpInfoMap += (idx -> opInfo)
       }
-      //case OpSelect.Load => {
-      //  assert(
-      //    opInfo.findValidArgs(opInfo.loadOp.get) != None,
-      //    s"Error: unsupported combination or "
-      //    + s"number of destination/source operands: "
-      //    + s"opInfo(${opInfo}), instructionIndex:${idx}"
-      //  )
-      //  //assert(
-      //  //  opInfo.dstArr.find(_ == DstKind.Pc) == None,
-      //  //  s"Error: unsupported PC as destination of a load instruction: "
-      //  //  + s"opInfo(${opInfo}), instructionIndex:${idx}"
-      //  //)
-      //  loadOpInfoMap += (idx -> opInfo)
-      //}
-      //case OpSelect.Store => {
-      //  assert(
-      //    opInfo.findValidArgs(opInfo.storeOp.get) != None,
-      //    s"Error: unsupported combination or "
-      //    + s"number of destination/source operands: "
-      //    + s"opInfo(${opInfo}), instructionIndex:${idx}"
-      //  )
-      //  //assert(
-      //  //  opInfo.dstArr.find(_ == DstKind.Pc) == None,
-      //  //  s"Error: unsupported PC as destination of a store instruction: "
-      //  //  + s"opInfo(${opInfo}), instructionIndex:${idx}"
-      //  //)
-      //  storeOpInfoMap += (idx -> opInfo)
-      //}
     }
   }
   val havePsExStall = (
@@ -353,7 +307,7 @@ case class SnowHouseConfig(
 //object SnowHouseFormalInstrCnt {
 //  def cntWidth = 8
 //}
-case class SnowHouseFormalInstrCnt(
+case class SnowHouseInstrCnt(
   cfg: SnowHouseConfig,
 ) extends Bundle {
   val any = UInt(cfg.instrCntWidth bits)
@@ -366,10 +320,27 @@ case class SnowHouseRegFileModType(
   def myHaveFormalFwd = (
     cfg.optFormal
   )
-  val instrCnt = SnowHouseFormalInstrCnt(cfg=cfg)
+  val instrCnt = SnowHouseInstrCnt(cfg=cfg)
   //val opCnt = UInt(cfg.instrCntWidth bits)
   def opCnt = instrCnt.any
   val op = UInt(log2Up(cfg.opInfoMap.size) bits)
+  def formalAssumes() = new Area {
+    if (cfg.optFormal) {
+      if ((1 << op.getWidth) != cfg.opInfoMap.size) {
+        assert(
+          // if I did my math right, this `assert` should never fire...
+          (1 << op.getWidth) > cfg.opInfoMap.size,
+          s"Eek! "
+          + s"${op.getWidth} ${1 << op.getWidth} ${cfg.opInfoMap.size}"
+        )
+        assume(
+          //Cat(False, op).asUInt
+          op//.resized
+          < U"${op.getWidth}'d${cfg.opInfoMap.size}"
+        )
+      }
+    }
+  }
   val gprIdxVec = Vec.fill(cfg.maxNumGprsPerInstr)(
     UInt(log2Up(cfg.numGprs) bits)
   )
