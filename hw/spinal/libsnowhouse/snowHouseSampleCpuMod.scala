@@ -63,7 +63,7 @@ case class SampleCpuEncInstr(
   val simm16 = UInt(SampleCpuInstrEnc.simmWidth bits)
 }
 case class SampleCpuPipeStageInstrDecode(
-) extends SnowHousePipeStageInstrDecode[SampleCpuEncInstr] {
+) extends SnowHousePipeStageInstrDecode {
   private val _decInstr: UInt = U"32'd0"
   def decInstr: UInt = _decInstr
   args match {
@@ -240,7 +240,7 @@ case class SampleCpuParams(
   val pipeName="SnowHouseSampleCpu"
   //--------
   val cfg = SnowHouseConfig(
-    encInstrType=SampleCpuEncInstr(),
+    //encInstrType=SampleCpuEncInstr(),
     instrMainWidth=instrMainWidth,
     shRegFileCfg=SnowHouseRegFileConfig(
       mainWidth=mainWidth,

@@ -87,28 +87,26 @@ case class SnowHouseRegFileConfig(
 //  shRegFileCfg: SnowHouseRegFileConfig,
 //) {
 //}
-case class SnowHouseConfig[
-  EncInstrT <: Data,
-](
-  encInstrType: HardType[EncInstrT],
+case class SnowHouseConfig(
+  //encInstrType: HardType,
   //gprFileDepth: Int,
   //sprFileDepth: Int,
   instrMainWidth: Int,
   shRegFileCfg: SnowHouseRegFileConfig,
   opInfoMap: LinkedHashMap[Any, OpInfo],
   //decodeFunc: (
-  //  SnowHouseIo[EncInstrT], // io
+  //  SnowHouseIo, // io
   //  CtrlLink,               // cId
   //  UInt,                   // output the decoded instruction
   //) => Area,                
-  psDecode: SnowHousePipeStageInstrDecode[EncInstrT],
+  psDecode: SnowHousePipeStageInstrDecode,
   optFormal: Boolean,
   maxNumGprsPerInstr: Int,
   //modOpCntWidth: Int=8,
   instrCntWidth: Int=8,
 ) {
   //--------
-  //psDecode.args = Some(SnowHousePipeStageArgs[EncInstrT](
+  //psDecode.args = Some(SnowHousePipeStageArgs(
   //  cfg=this,
   //  opInfoMap=opInfoMap,
   //))
@@ -355,19 +353,15 @@ case class SnowHouseConfig[
 //object SnowHouseFormalInstrCnt {
 //  def cntWidth = 8
 //}
-case class SnowHouseFormalInstrCnt[
-  EncInstrT <: Data
-](
-  cfg: SnowHouseConfig[EncInstrT],
+case class SnowHouseFormalInstrCnt(
+  cfg: SnowHouseConfig,
 ) extends Bundle {
   val any = UInt(cfg.instrCntWidth bits)
   val fwd = UInt(cfg.instrCntWidth bits)
   val jmp = UInt(cfg.instrCntWidth bits)
 }
-case class SnowHouseRegFileModType[
-  EncInstrT <: Data
-](
-  cfg: SnowHouseConfig[EncInstrT],
+case class SnowHouseRegFileModType(
+  cfg: SnowHouseConfig,
 ) extends Bundle with PipeMemRmwPayloadBase[UInt, Bool] {
   def myHaveFormalFwd = (
     cfg.optFormal

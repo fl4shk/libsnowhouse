@@ -1,5 +1,4 @@
 package libsnowhouse
-
 import scala.collection.immutable
 import scala.collection.mutable._
 import spinal.core._

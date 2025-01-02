@@ -14,10 +14,8 @@ import libcheesevoyage.bus.lcvStall._
 //sealed trait SnowHouseInstrSourceKind
 
 //--------
-case class SnowHouseIo[
-  EncInstrT <: Data
-](
-  cfg: SnowHouseConfig[EncInstrT]
+case class SnowHouseIo(
+  cfg: SnowHouseConfig
 ) extends Bundle {
   //val icache = 
   // instruction bus
@@ -32,13 +30,13 @@ case class SnowHouseIo[
     haveMultiCycleBusVec
   ) generate (
     Vec[LcvStallIo[
-      MultiCycleHostPayload[EncInstrT],
-      MultiCycleDevPayload[EncInstrT],
+      MultiCycleHostPayload,
+      MultiCycleDevPayload,
     ]]{
       val tempArr = ArrayBuffer[
         LcvStallIo[
-          MultiCycleHostPayload[EncInstrT],
-          MultiCycleDevPayload[EncInstrT],
+          MultiCycleHostPayload,
+          MultiCycleDevPayload,
         ]
       ]()
       for (((_, opInfo), idx) <- cfg.opInfoMap.view.zipWithIndex) {
@@ -70,14 +68,12 @@ case class SnowHouseIo[
     }
   }
 }
-case class SnowHouse[
-  EncInstrT <: Data
-](
+case class SnowHouse(
   //gprWordType: HardType[GprWordT],
-  cfg: SnowHouseConfig[EncInstrT],
+  cfg: SnowHouseConfig,
 ) extends Component {
   //--------
-  val io = SnowHouseIo[EncInstrT](cfg=cfg)
+  val io = SnowHouseIo(cfg=cfg)
   //--------
   val linkArr = PipeHelper.mkLinkArr()
   cfg.regFileCfg.linkArr = Some(linkArr)

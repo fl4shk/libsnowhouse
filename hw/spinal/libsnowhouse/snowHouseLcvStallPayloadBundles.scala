@@ -12,18 +12,14 @@ import libcheesevoyage.math._
 import libcheesevoyage.bus.lcvStall._
 
 //--------
-case class IbusHostPayload[
-  EncInstrT <: Data
-](
-  cfg: SnowHouseConfig[EncInstrT],
+case class IbusHostPayload(
+  cfg: SnowHouseConfig,
 ) extends Bundle {
   val addr = UInt(cfg.mainWidth bits)
   //val data = UInt(cfg.mainWidth bits)
 }
-case class IbusDevPayload[
-  EncInstrT <: Data
-](
-  cfg: SnowHouseConfig[EncInstrT],
+case class IbusDevPayload(
+  cfg: SnowHouseConfig,
 ) extends Bundle {
   val instr = UInt(cfg.instrMainWidth bits)
 }
@@ -41,10 +37,8 @@ case class IbusDevPayload[
 //    Sdivmod
 //    = newElement()
 //}
-case class MultiCycleHostPayload[
-  EncInstrT <: Data
-](
-  cfg: SnowHouseConfig[EncInstrT],
+case class MultiCycleHostPayload(
+  cfg: SnowHouseConfig,
   opInfo: OpInfo,
 ) extends Bundle {
   assert(
@@ -78,10 +72,8 @@ case class MultiCycleHostPayload[
   //  }
   //}
 }
-case class MultiCycleDevPayload[
-  EncInstrT <: Data
-](
-  cfg: SnowHouseConfig[EncInstrT],
+case class MultiCycleDevPayload(
+  cfg: SnowHouseConfig,
   opInfo: OpInfo,
 ) extends Bundle {
   assert(
@@ -115,7 +107,7 @@ extends SpinalEnum(defaultEncoding=binarySequential) {
   //def fromWordSize[
   //  EncInstrT <: Data
   //](
-  //  cfg: SnowHouseConfig[EncInstrT]
+  //  cfg: SnowHouseConfig
   //): DbusHostMemAccessSubKind.E = {
   //  cfg.mainWidth match {
   //    case 8 => {
@@ -140,10 +132,8 @@ extends SpinalEnum(defaultEncoding=binarySequential) {
   //  }
   //}
 }
-case class DbusHostPayload[
-  EncInstrT <: Data
-](
-  cfg: SnowHouseConfig[EncInstrT],
+case class DbusHostPayload(
+  cfg: SnowHouseConfig,
 ) extends Bundle {
   val addr = UInt(cfg.mainWidth bits)
   val data = UInt(cfg.mainWidth bits)
@@ -151,10 +141,8 @@ case class DbusHostPayload[
   val subKind = DbusHostMemAccessSubKind()
   val lock = Bool() // for atomics
 }
-case class DbusDevPayload[
-  EncInstrT <: Data
-](
-  cfg: SnowHouseConfig[EncInstrT],
+case class DbusDevPayload(
+  cfg: SnowHouseConfig,
 ) extends Bundle {
   val data = UInt(cfg.mainWidth bits)
 }
