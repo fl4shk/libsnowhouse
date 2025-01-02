@@ -286,12 +286,14 @@ case class SnowHousePipeStageExecuteSetOutpModMemWordIo(
   //val isCpyAlu = /*out*/Bool()
   //val isMemAccess = /*out*/Bool()
   //val isMultiCycle = /*out*/Bool()
-  private val _opIsCpyAluIdx = 0
+  private val _opIsCpyNonJmpAluIdx = 0
   private val _opIsMemAccessIdx = 1
-  private val _opIsMultiCycleIdx = 2
-  val opIsLim = 3
+  private val _opIsJmpIdx = 2
+  private val _opIsMultiCycleIdx = 3
+  val opIsLim = 4
   val opIs = /*out*/UInt(opIsLim bits)
-  def opIsCpyAlu = opIs(_opIsCpyAluIdx)
+  def opIsCpyNonJmpAlu = opIs(_opIsCpyNonJmpAluIdx)
+  def opIsJmp = opIs(_opIsJmpIdx)
   def opIsMemAccess = opIs(_opIsMemAccessIdx)
   def opIsMultiCycle = opIs(_opIsMultiCycleIdx)
   //val dbusHostPayload = /*out*/(DbusHostPayload(cfg=cfg))
@@ -350,6 +352,7 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
       assert((1 << io.currOp.getWidth) < cfg.opInfoMap.size)
     }
   }
+  io.opIs := 0x0
   switch (io.currOp) {
     //--------
     for (((_, opInfo), opInfoIdx) <- cfg.opInfoMap.view.zipWithIndex) {
@@ -368,6 +371,7 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
           case OpSelect.Cpy => {
             opInfo.cpyOp.get match {
               case CpyOpKind.Cpy => {
+                io.opIsCpyNonJmpAlu := True
                 assert(
                   opInfo.cond == CondKind.Always,
                   s"not yet implemented: "
@@ -388,6 +392,7 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
                     io.modMemWord(0) := io.rdMemWord(0)
                   }
                   case mem: MemAccessKind.Mem => {
+                    io.opIsMemAccess := True
                     //assert(
                     //  opInfo.dstArr.size == 1,
                     //  s"invalid opInfo.dstArr.size: "
@@ -479,6 +484,7 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
                 }
               }
               case CpyOpKind.Cpyui => {
+                io.opIsCpyNonJmpAlu := True
                 assert(
                   opInfo.dstArr.size == 1,
                   s"not yet implemented: "
@@ -511,6 +517,7 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
                 )
               }
               case CpyOpKind.Jmp => {
+                io.opIsJmp := True
                 assert(
                   opInfo.dstArr.size == 1,
                   s"not yet implemented: "
@@ -540,6 +547,7 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
                 io.psExSetPc.nextPc := io.rdMemWord(io.jmpAddrIdx)
               }
               case CpyOpKind.Br => {
+                io.opIsJmp := True
                 opInfo.cond match {
                   case CondKind.Always => {
                     //assert(
@@ -617,6 +625,7 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
             }
           }
           case OpSelect.Alu => {
+            io.opIsCpyNonJmpAlu := True
             assert(
               opInfo.cond == CondKind.Always,
               s"not yet implemented: "
@@ -711,6 +720,7 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
             }
           }
           case OpSelect.MultiCycle => {
+            io.opIsMultiCycle := True
             assert(
               opInfo.cond == CondKind.Always,
               s"not yet implemented: "
@@ -1110,6 +1120,58 @@ case class SnowHousePipeStageExecute(
   //  )
   //)
   //--------
+    //setOutpModMemWord.io.rdMemWord(zdx) := (
+    //)
+  if (cfg.regFileWordCountArr.size == 0) {
+    assert(
+      false,
+      s"${cfg.regFileWordCountArr.size}"
+    )
+  }
+  else if (cfg.regFileWordCountArr.size == 1) {
+    for (
+      (tempRdMemWord, zdx) <- setOutpModMemWord.io.rdMemWord.zipWithIndex
+    ) {
+      tempRdMemWord := myRdMemWord(
+        ydx=0,
+        modIdx=zdx,
+      )
+    }
+  } else if (cfg.regFileWordCountArr.size > 1) {
+    for ((tempExt, ydx) <- outp.myExt.zipWithIndex) {
+      for (
+        (tempRdMemWord, zdx) <- setOutpModMemWord.io.rdMemWord.zipWithIndex
+      ) {
+        if (ydx == 0) {
+          // prevent multiple drivers
+          tempRdMemWord := 0x0
+        }
+        switch (tempExt.memAddr(zdx)) {
+          val howToSlice = cfg.shRegFileCfg.howToSlice
+          assert(
+            howToSlice.size == outp.myExt.size,
+            s"${howToSlice.size} ${outp.myExt.size}"
+          )
+          for ((howTo, howToIdx) <- howToSlice(ydx).view.zipWithIndex) {
+            is (howTo) {
+              tempRdMemWord := (
+                myRdMemWord(
+                  ydx=ydx,
+                  modIdx=zdx,
+                )
+              )
+              println(
+                s"debug: "
+                + s"howTo(${howTo} ${howToIdx}) "
+                + s"ydx:${ydx} "
+                + s"zdx:${zdx}"
+              )
+            }
+          }
+        }
+      }
+    }
+  }
   def handleCurrFire(
     //someRdMemWord: UInt//=myRdMemWord,
   ): Unit = {
@@ -1171,8 +1233,8 @@ case class SnowHousePipeStageExecute(
     )
   }
   switch (setOutpModMemWord.io.opIs) {
-    is (M"-01") {
-      // Alu/Cpy, but no mem access
+    is (M"--11") {
+      // Cpy (non-Jmp, non-Br)/Alu, but NO mem access
       if (cfg.optFormal) {
         when (cMid0Front.up.isValid) {
           when (!doCheckHazard) {
@@ -1181,15 +1243,18 @@ case class SnowHousePipeStageExecute(
         }
       }
     }
-    is (M"-11") {
-      // Alu/Cpy, but with mem access 
+    is (M"--11") {
+      // Cpy (non-Jmp, non-Br)/Alu, but WITH mem access
       when (cMid0Front.up.isFiring) {
         nextPrevTxnWasHazard := True
         psMemStallHost.nextValid := True
       }
     }
-    is (M"1--") {
-      // MultiCycle, which bans memory access
+    is (M"-1--") {
+      // Cpy (Jmp or Br), with NO mem access
+    }
+    is (M"1---") {
+      // MultiCycle, with NO mem access
       when (cMid0Front.up.isValid) {
         when (doCheckHazard) {
           when (!currDuplicateIt) {
@@ -1281,7 +1346,6 @@ case class SnowHousePipeStageExecute(
   //  }
   //}
   when (currDuplicateIt) {
-    // TODO: add this
     handleDuplicateIt()
   }
 }

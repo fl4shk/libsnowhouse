@@ -72,7 +72,8 @@ case class SnowHouseRegFileConfig(
         for (wordCount <- wordCountArr.view) {
           val tempSet = LinkedHashSet[Int]()
           for (tempCnt <- 0 until wordCount) {
-            tempSet += cnt
+            tempSet += wordCount - 1 - cnt
+            //tempSet += cnt
             cnt += 1
           }
           howToSlice += tempSet

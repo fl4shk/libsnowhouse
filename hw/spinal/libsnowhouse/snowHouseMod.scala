@@ -176,17 +176,17 @@ case class SnowHouse
     }
   )
   linkArr += sIf
-  //val s2mIf = S2MLink(
-  //  up={
-  //    sIf.down
-  //  },
-  //  down={
-  //    val node = Node()
-  //    node.setName("s2mIf_down")
-  //    node
-  //  }
-  //)
-  //linkArr += s2mIf
+  val s2mIf = S2MLink(
+    up={
+      sIf.down
+    },
+    down={
+      val node = Node()
+      node.setName("s2mIf_down")
+      node
+    }
+  )
+  linkArr += s2mIf
   val pipeStageIf = SnowHousePipeStageInstrFetch(
     args=SnowHousePipeStageArgs(
       cfg=cfg,
@@ -201,8 +201,8 @@ case class SnowHouse
 
   val cId = CtrlLink(
     up={
-      sIf.down
-      //s2mIf.down
+      //sIf.down
+      s2mIf.down
     },
     down={
       regFile.io.front
