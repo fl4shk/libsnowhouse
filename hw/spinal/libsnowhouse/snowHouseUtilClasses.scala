@@ -197,26 +197,36 @@ case class SnowHouseConfig(
       }
     }
     def checkValidArgs[OpKind](op: Option[OpKindBase]): Unit = {
-      opInfo.findValidArgs(op.get) match {
-        case Some(validArgs) => {
-          assert(
-            //validArgs.cond.contains(opInfo.cond),
-            validArgs.cond.size > 0,
-            s"Error: This `OpKindBase` is not yet implemented: "
-            + s"opInfo(${opInfo}), instructionIndex:${idx}"
-          )
-          assert(
-            validArgs.cond.contains(opInfo.cond),
-            s"Error: unsupported condition: "
-            + s"opInfo(${opInfo}), instructionIndex:${idx}"
-          )
+      op match {
+        case Some(myGet) => {
+          opInfo.findValidArgs(myGet) match {
+            case Some(validArgs) => {
+              assert(
+                //validArgs.cond.contains(opInfo.cond),
+                validArgs.cond.size > 0,
+                s"Error: This `OpKindBase` is not yet implemented: "
+                + s"opInfo(${opInfo}), instructionIndex:${idx}"
+              )
+              assert(
+                validArgs.cond.contains(opInfo.cond),
+                s"Error: unsupported condition: "
+                + s"opInfo(${opInfo}), instructionIndex:${idx}"
+              )
+            }
+            case None => {
+              assert(
+                false,
+                s"Error: unsupported combination or "
+                + s"number of destination/source operands: "
+                + s"opInfo(${opInfo}), instructionIndex:${idx}"
+              )
+            }
+          }
         }
         case None => {
           assert(
             false,
-            s"Error: unsupported combination or "
-            + s"number of destination/source operands: "
-            + s"opInfo(${opInfo}), instructionIndex:${idx}"
+            s"debug: ${opInfo.select} ${idx}"
           )
         }
       }

@@ -263,6 +263,9 @@ case class SnowHousePipeStageExecuteSetOutpModMemWordIo(
   cfg: SnowHouseConfig,
 ) extends Area {
   val currOp = /*in*/(UInt(log2Up(cfg.opInfoMap.size) bits))
+  //println(
+  //  s"currOp.getWidth: ${currOp.getWidth}"
+  //)
   val doIt = /*in*/(Bool())
   val rdMemWord = /*in*/(Vec.fill(3)( // temporary size of `3`
     UInt(cfg.mainWidth bits)
@@ -288,12 +291,12 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
   val modIo = args.io
   val io = SnowHousePipeStageExecuteSetOutpModMemWordIo(cfg=cfg)
   //val io.currOp = UInt(log2Up(cfg.opInfoMap.size) bits)
-  io.modMemWordValid := (
-    RegNext(
-      next=io.modMemWordValid,
-      init=io.modMemWordValid.getZero,
-    )
-  )
+  //io.modMemWordValid := (
+  //  RegNext(
+  //    next=io.modMemWordValid,
+  //    init=io.modMemWordValid.getZero,
+  //  )
+  //)
   io.modMemWord := (
     RegNext(
       next=io.modMemWord,
@@ -328,7 +331,7 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
   //)
   if (cfg.optFormal) {
     if ((1 << io.currOp.getWidth) != cfg.opInfoMap.size) {
-      assert(io.currOp < cfg.opInfoMap.size)
+      assert((1 << io.currOp.getWidth) < cfg.opInfoMap.size)
     }
   }
   switch (io.currOp) {
@@ -344,7 +347,7 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
         s"not yet implemented: "
         + s"opInfo(${opInfo}) index:${opInfoIdx}"
       )
-      is (U"${io.currOp.getWidth}'d${opInfoIdx}") {
+      is (U(s"${io.currOp.getWidth}'d${opInfoIdx}")) {
         opInfo.select match {
           case OpSelect.Cpy => {
             opInfo.cpyOp.get match {
@@ -412,7 +415,7 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
                           ) + (
                             opInfo.srcArr.size match {
                               case 1 => {
-                                U"${cfg.mainWidth}'d0"
+                                U(s"${cfg.mainWidth}'d0")
                               }
                               case 2 => {
                                 io.rdMemWord(2)
@@ -637,7 +640,9 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
               }
               case AluOpKind.Lsl => {
                 io.modMemWord(0) := (
-                  (io.rdMemWord(1) << io.rdMemWord(2))(
+                  (io.rdMemWord(1) << io.rdMemWord(2)(
+                    log2Up(cfg.mainWidth) - 1 downto 0
+                  ))(
                     io.modMemWord(0).bitsRange
                   )
                 )
@@ -673,13 +678,13 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
               }
               case AluOpKind.Sltu => {
                 io.modMemWord(0) := Cat(
-                  U"${cfg.mainWidth - 1}'d0",
+                  U(s"${cfg.mainWidth - 1}'d0"),
                   io.rdMemWord(1) < io.rdMemWord(2),
                 ).asUInt
               }
               case AluOpKind.Slts => {
                 io.modMemWord(0) := Cat(
-                  U"${cfg.mainWidth - 1}'d0",
+                  U(s"${cfg.mainWidth - 1}'d0"),
                   io.rdMemWord(1).asSInt < io.rdMemWord(2).asSInt,
                 ).asUInt
               }
@@ -814,7 +819,7 @@ case class SnowHousePipeStageExecute(
   myCurrOp := (
     RegNext(
       next=myCurrOp,
-      init=U"${myCurrOp.getWidth}'d0"
+      init=U(s"${myCurrOp.getWidth}'d0")
     )
   )
   if (cfg.optFormal) {
@@ -959,39 +964,16 @@ case class SnowHousePipeStageExecute(
       init=doCheckHazard.getZero,
     )
   )
-  val myDoHaveHazardAddrCheckVec = Vec[Bool]{
+  val myDoHaveHazardAddrCheckVec = Vec[Bool]({
     //val temp = ArrayBuffer[Vec[Bool]]()
     assert(
       outp.myExt.size == cfg.regFileCfg.memArrSize
     )
     val temp = ArrayBuffer[Bool]()
-    //for (
-    //  ydx
-    //  <- 0 until cfg.regFileCfg.memArrSize
-    //  //outp.myExt.size
-    //) {
-    //  temp += {
-    //    val innerTemp = ArrayBuffer[Bool]()
-    //    for (
-    //      zdx 
-    //      <- 0 until cfg.regFileModRdPortCnt
-    //      //outp.myExt(ydx).memAddr.size
-    //    ) {
-    //      assert(
-    //        outp.myExt(ydx).memAddr.size
-    //        == cfg.regFileModRdPortCnt
-    //      )
-    //      innerTemp += (
-    //        outp.myExt(ydx).memAddr(zdx)
-    //        === tempModFrontPayload.myExt(ydx).memAddr(zdx)
-    //      )
-    //    }
-    //    Vec[Bool]{innerTemp}
-    //  }
-    //}
     for (ydx <- 0 until cfg.regFileCfg.memArrSize) {
+      //println(s"begin: ${ydx} ${temp.size}")
       temp += {
-        val toReduce = ArrayBuffer[Bool]()
+        val toFold = ArrayBuffer[Bool]()
         for (
           zdx 
           <- 0 until cfg.regFileModRdPortCnt
@@ -1001,17 +983,20 @@ case class SnowHousePipeStageExecute(
             outp.myExt(ydx).memAddr.size
             == cfg.regFileModRdPortCnt
           )
-          toReduce += (
+          toFold += (
             outp.myExt(ydx).memAddr(zdx)
             === tempModFrontPayload.myExt(ydx).memAddr(zdx)
           )
         }
-        toReduce.reduce(_ || _)
+        //toReduce.reduce(_ || _)
+        toFold.foldLeft(False)((left, right) => (left || right))
       }
+      //println(s"end: ${ydx} ${temp.size}")
     }
     temp
-  }
-  val myDoHaveHazardValidCheckVec = Vec[Bool]{
+  },
+  Bool())
+  val myDoHaveHazardValidCheckVec = Vec[Bool]({
     //(
     //  !tempModFrontPayload.myExt(0).modMemWordValid
     //)
@@ -1021,10 +1006,16 @@ case class SnowHousePipeStageExecute(
       <- 0 until cfg.regFileCfg.memArrSize
       //tempModFrontPayload.myExt.size
     ) {
-      !tempModFrontPayload.myExt(ydx).modMemWordValid
+      //println(s"begin: ${ydx} ${temp.size}")
+      temp += (
+        !tempModFrontPayload.myExt(ydx).modMemWordValid
+      )
+      //println(s"end: ${ydx} ${temp.size}")
     }
     temp
-  }
+  },
+  Bool()
+  )
   //--------
   //val myDoHaveHazardV2d = Vec[Vec[Bool]]{
   //  val temp = ArrayBuffer[Vec[Bool]]()
@@ -1055,7 +1046,9 @@ case class SnowHousePipeStageExecute(
       val tempArr = ArrayBuffer[Bool]()
       assert(
         myDoHaveHazardAddrCheckVec.size
-        == myDoHaveHazardValidCheckVec.size
+        == myDoHaveHazardValidCheckVec.size,
+        s"${myDoHaveHazardAddrCheckVec.size} "
+        + s"${myDoHaveHazardValidCheckVec.size}"
       )
       for (ydx <- 0 until cfg.regFileCfg.memArrSize) {
         tempArr += (
@@ -1063,17 +1056,18 @@ case class SnowHousePipeStageExecute(
           && myDoHaveHazardValidCheckVec(ydx)
         )
       }
-      tempArr//.reduce(_ || _)
+      tempArr
     }
   )
   val myDoHaveHazard = KeepAttribute(
-    myDoHaveHazardVec.reduce(_ || _)
+    //myDoHaveHazardVec.reduce(_ || _)
+    myDoHaveHazardVec.foldLeft(False)((left, right) => (left || right))
   )
   val rTempPrevOp = (
     RegNextWhen(
       next=myCurrOp,
       cond=cMid0Front.up.isFiring,
-      init=U"${myCurrOp.getWidth}'d0"
+      init=U(s"${myCurrOp.getWidth}'d0")
     )
   )
   val setOutpModMemWord = SnowHousePipeStageExecuteSetOutpModMemWord(

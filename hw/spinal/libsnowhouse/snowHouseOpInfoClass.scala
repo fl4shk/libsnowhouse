@@ -420,6 +420,7 @@ object OpInfo {
       },
       addrCalc=addrCalc,
     )
+    ret._cpyOp = CpyOpKind.Cpy
     //ret._loadOp = loadOp
     ret
   }
@@ -545,10 +546,37 @@ object CpyOpKind {
     ](
       OpKindValidArgs(
         // word
-        //dstSize=1,
-        //srcSize=1
         dst=Array[HashSet[DstKind]](
-          HashSet(DstKind.Gpr, DstKind.AluFlags),
+          HashSet(
+            DstKind.Gpr, //DstKind.AluFlags
+          ),
+        ),
+        src=Array[HashSet[SrcKind]](
+          HashSet(
+            SrcKind.Gpr,
+            SrcKind.Pc,
+          ),
+          HashSet(
+            SrcKind.Gpr,
+            SrcKind.Pc,
+            //SrcKind.ZImm,
+            //SrcKind.SImm,
+            SrcKind.Imm(None),
+            SrcKind.Imm(Some(true)),
+            SrcKind.Imm(Some(false)),
+            //SrcKind.AluFlags,
+          ),
+        ),
+        cond=HashSet[CondKind](
+          CondKind.Always
+        ),
+      ),
+      OpKindValidArgs(
+        // word
+        dst=Array[HashSet[DstKind]](
+          HashSet(
+            DstKind.Gpr, //DstKind.AluFlags
+          ),
         ),
         src=Array[HashSet[SrcKind]](
           HashSet(
@@ -557,10 +585,14 @@ object CpyOpKind {
             //SrcKind.ZImm,
             //SrcKind.SImm,
             SrcKind.Imm(None),
-            SrcKind.AluFlags,
+            SrcKind.Imm(Some(true)),
+            SrcKind.Imm(Some(false)),
+            //SrcKind.AluFlags,
           ),
         ),
-        cond=HashSet[CondKind](),
+        cond=HashSet[CondKind](
+          CondKind.Always
+        ),
       ),
       OpKindValidArgs(
         // two-word
@@ -573,7 +605,8 @@ object CpyOpKind {
           HashSet(SrcKind.Gpr),
           HashSet(SrcKind.Gpr),
         ),
-        cond=HashSet[CondKind](),
+        cond=HashSet[CondKind](
+        ),
       ),
     )
     def validArgsSet = _validArgsSet
@@ -591,9 +624,15 @@ object CpyOpKind {
           HashSet(DstKind.Gpr, DstKind.AluFlags),
         ),
         src=Array[HashSet[SrcKind]](
-          HashSet(SrcKind.Imm(None)),
+          HashSet(
+            SrcKind.Imm(None),
+            SrcKind.Imm(Some(true)),
+            SrcKind.Imm(Some(false)),
+          ),
         ),
-        cond=HashSet[CondKind](),
+        cond=HashSet[CondKind](
+          CondKind.Always
+        ),
       ),
       //OpKindValidArgs(
       //  // two-word
@@ -670,7 +709,12 @@ object CpyOpKind {
           HashSet(DstKind.Pc)
         ),
         src=Array[HashSet[SrcKind]](
-          HashSet(SrcKind.Imm(None))
+          HashSet(SrcKind.Gpr),
+          HashSet(
+            SrcKind.Imm(None),
+            SrcKind.Imm(Some(false)),
+            SrcKind.Imm(Some(true))
+          )
         ),
         cond=(
           //HashSet[CondKind](
