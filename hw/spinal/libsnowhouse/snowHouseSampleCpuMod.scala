@@ -70,49 +70,55 @@ case class SampleCpuEncInstr(
   val rcIdx = UInt(SampleCpuInstrEnc.gprIdxWidth bits)
   val simm16 = UInt(SampleCpuInstrEnc.simmWidth bits)
 }
-case class SampleCpuPipeStageInstrDecode(
-  //args: 
-  override val args: SnowHousePipeStageArgs,
-  override val psIdHaltIt: Bool,
-  override val psExSetPc: Flow[SnowHousePsExSetPcPayload],
-) extends SnowHousePipeStageInstrDecode(
-  args=args,
-  psIdHaltIt=psIdHaltIt,
-  psExSetPc=psExSetPc,
-) {
-  //def doDecode() = new Area {
-  //}
-  //def cfg = super.cfg
-  //def opInfoMap = super.opInfoMap
-  //def io = super.io
-  //def cId = super.cId
-  //def payload = super.payload
-  //def optFormal = super.optFormal
-  //private val _decInstr: UInt = U"32'd0"
-  //def decInstr: UInt = _decInstr
-  //args match {
-  //  case Some(args) => {
-  //    //--------
-  //    def cfg = super.cfg
-  //    def opInfoMap = super.opInfoMap
-  //    def io = super.io
-  //    def cId = super.cId
-  //    def payload = super.payload
-  //    def optFormal = super.optFormal
-  //    //--------
-  //    //assert(opInfoMap != null)
-  //    //assert(io != null)
-  //    //assert(cId != null)
-  //    //--------
-  //    when (cId.up.isFiring) {
-  //    }
-  //    //--------
-  //  }
-  //  case None => {
-  //    assert(false)
-  //  }
-  //}
+object SampleCpuPipeStageInstrDecode {
+  def apply(
+    psId: SnowHousePipeStageInstrDecode
+  ) = new Area {
+  }
 }
+//case class SampleCpuPipeStageInstrDecode(
+//  //args: 
+//  override val args: SnowHousePipeStageArgs,
+//  override val psIdHaltIt: Bool,
+//  override val psExSetPc: Flow[SnowHousePsExSetPcPayload],
+//) extends SnowHousePipeStageInstrDecode(
+//  args=args,
+//  psIdHaltIt=psIdHaltIt,
+//  psExSetPc=psExSetPc,
+//) {
+//  def doDecode() = new Area {
+//  }
+//  //def cfg = super.cfg
+//  //def opInfoMap = super.opInfoMap
+//  //def io = super.io
+//  //def cId = super.cId
+//  //def payload = super.payload
+//  //def optFormal = super.optFormal
+//  //private val _decInstr: UInt = U"32'd0"
+//  //def decInstr: UInt = _decInstr
+//  //args match {
+//  //  case Some(args) => {
+//  //    //--------
+//  //    def cfg = super.cfg
+//  //    def opInfoMap = super.opInfoMap
+//  //    def io = super.io
+//  //    def cId = super.cId
+//  //    def payload = super.payload
+//  //    def optFormal = super.optFormal
+//  //    //--------
+//  //    //assert(opInfoMap != null)
+//  //    //assert(io != null)
+//  //    //assert(cId != null)
+//  //    //--------
+//  //    when (cId.up.isFiring) {
+//  //    }
+//  //    //--------
+//  //  }
+//  //  case None => {
+//  //    assert(false)
+//  //  }
+//  //}
+//}
 object SampleCpuOpInfoMap {
   //--------
   val opInfoMap = LinkedHashMap[Any, OpInfo]()
@@ -333,19 +339,20 @@ case class SampleCpuParams(
     ),
     opInfoMap=SampleCpuOpInfoMap.opInfoMap,
     //psDecode=SampleCpuPipeStageInstrDecode(),
-    mkPipeStageInstrDecode=(
-      (
-        args,
-        psIdHaltIt,
-        psExSetPc,
-      ) => (
-        SampleCpuPipeStageInstrDecode(
-          args=args,
-          psIdHaltIt=psIdHaltIt,
-          psExSetPc=psExSetPc,
-        )
-      )
-    ),
+    //mkPipeStageInstrDecode=(
+    //  (
+    //    args,
+    //    psIdHaltIt,
+    //    psExSetPc,
+    //  ) => (
+    //    SampleCpuPipeStageInstrDecode(
+    //      args=args,
+    //      psIdHaltIt=psIdHaltIt,
+    //      psExSetPc=psExSetPc,
+    //    )
+    //  )
+    //),
+    doInstrDecodeFunc=SampleCpuPipeStageInstrDecode.apply,
     //decodeFunc=(
     //  io: SnowHouseIo[SampleCpuEncInstr],
     //  cId: CtrlLink,

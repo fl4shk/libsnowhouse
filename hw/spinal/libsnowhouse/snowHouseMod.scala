@@ -26,34 +26,34 @@ case class SnowHouseIo(
   val haveMultiCycleBusVec = (
     cfg.opInfoMap.find(_._2.select == OpSelect.MultiCycle) != None
   )
-  //val multiCycleBusVec = (
-  //  haveMultiCycleBusVec
-  //) generate (
-  //  Vec[LcvStallIo[
-  //    MultiCycleHostPayload,
-  //    MultiCycleDevPayload,
-  //  ]]{
-  //    val tempArr = ArrayBuffer[
-  //      LcvStallIo[
-  //        MultiCycleHostPayload,
-  //        MultiCycleDevPayload,
-  //      ]
-  //    ]()
-  //    for (((_, opInfo), idx) <- cfg.opInfoMap.view.zipWithIndex) {
-  //      if (opInfo.select == OpSelect.MultiCycle) {
-  //        tempArr += new LcvStallIo(
-  //          hostPayloadType=(
-  //            Some(HardType(MultiCycleHostPayload(cfg=cfg, opInfo=opInfo)))
-  //          ),
-  //          devPayloadType=(
-  //            Some(HardType(MultiCycleDevPayload(cfg=cfg, opInfo=opInfo)))
-  //          ),
-  //        )
-  //      }
-  //    }
-  //    tempArr
-  //  }
-  //)
+  val multiCycleBusVec = (
+    haveMultiCycleBusVec
+  ) generate (
+    Vec[LcvStallIo[
+      MultiCycleHostPayload,
+      MultiCycleDevPayload,
+    ]]{
+      val tempArr = ArrayBuffer[
+        LcvStallIo[
+          MultiCycleHostPayload,
+          MultiCycleDevPayload,
+        ]
+      ]()
+      for (((_, opInfo), idx) <- cfg.opInfoMap.view.zipWithIndex) {
+        if (opInfo.select == OpSelect.MultiCycle) {
+          tempArr += new LcvStallIo(
+            hostPayloadType=(
+              Some(HardType(MultiCycleHostPayload(cfg=cfg, opInfo=opInfo)))
+            ),
+            devPayloadType=(
+              Some(HardType(MultiCycleDevPayload(cfg=cfg, opInfo=opInfo)))
+            ),
+          )
+        }
+      }
+      tempArr
+    }
+  )
   val dbus = new LcvStallIo(
     hostPayloadType=Some(HardType(DbusHostPayload(cfg=cfg))),
     devPayloadType=Some(HardType(DbusDevPayload(cfg=cfg))),
@@ -62,11 +62,11 @@ case class SnowHouseIo(
     ibus,
     dbus,
   )
-  //if (haveMultiCycleBusVec) {
-  //  for (idx <- 0 until multiCycleBusVec.size) {
-  //    master(multiCycleBusVec(idx))
-  //  }
-  //}
+  if (haveMultiCycleBusVec) {
+    for (idx <- 0 until multiCycleBusVec.size) {
+      master(multiCycleBusVec(idx))
+    }
+  }
 }
 case class SnowHouse
 //[
@@ -211,7 +211,7 @@ case class SnowHouse
   )
   linkArr += cId
   //val pId = Payload(SnowHouseRegFileModType(cfg=cfg))
-  val pipeStageId = cfg.mkPipeStageInstrDecode(
+  val pipeStageId = SnowHousePipeStageInstrDecode(
     SnowHousePipeStageArgs(
       cfg=cfg,
       io=io,
@@ -225,6 +225,7 @@ case class SnowHouse
     ),
     psIdHaltIt,
     psExSetPc,
+    doDecodeFunc=cfg.doInstrDecodeFunc,
   )
   //--------
   //val pEx = Payload(SnowHouseRegFileModType(cfg=cfg))

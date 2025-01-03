@@ -108,11 +108,12 @@ case class SnowHouseConfig(
   //) => Area,                
   //--------
   //psDecode: SnowHousePipeStageInstrDecode,
-  mkPipeStageInstrDecode: (
-    SnowHousePipeStageArgs,           // args
-    Bool,                             // psIdHaltIt
-    Flow[SnowHousePsExSetPcPayload],  // psExSetPc
-  ) => SnowHousePipeStageInstrDecode,
+  //mkPipeStageInstrDecode: (
+  //  SnowHousePipeStageArgs,           // args
+  //  Bool,                             // psIdHaltIt
+  //  Flow[SnowHousePsExSetPcPayload],  // psExSetPc
+  //) => SnowHousePipeStageInstrDecode,
+  doInstrDecodeFunc: (SnowHousePipeStageInstrDecode) => Area,
   //--------
   optFormal: Boolean,
   //maxNumGprsPerInstr: Int,
@@ -353,6 +354,16 @@ case class SnowHouseDecodeExt(
   private val _opIsMultiCycleIdx = 3
   val opIsLim = 4
   val opIs = /*out*/(UInt(opIsLim bits))
+  val memAccessLdStKind = Bool()
+  def memAccessIsLoad = (
+    !memAccessLdStKind
+  )
+  def memAccessIsStore = (
+    !memAccessLdStKind
+  )
+  // TODO: add support for atomic operations
+  // (probably just read-modify-write)
+  //val memAccessIsAtomic = Bool()
   //--------
   def opIsMemAccess = opIs(_opIsMemAccessIdx)
   def opIsCpyNonJmpAlu = opIs(_opIsCpyNonJmpAluIdx)
