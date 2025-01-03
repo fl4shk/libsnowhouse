@@ -306,17 +306,25 @@ abstract class SnowHousePipeStageInstrDecode(
   for ((gprIdx, zdx) <- upPayload.gprIdxVec.view.zipWithIndex) {
     switch (gprIdx) {
       val howToSlice = cfg.shRegFileCfg.howToSlice
-      var cnt: Int = 0
+      var outerCnt: Int = 0
       for ((howToSet, howToSetIdx) <- howToSlice.view.zipWithIndex) {
+        var cnt: Int = 0
         for ((howTo, howToIdx) <- howToSet.view.zipWithIndex) {
-          is (cnt) {
+          is (
+            //outerCnt
+            howTo
+          ) {
             println(
               s"debug: "
-              + s"cnt:${cnt} zdx:${zdx} "
-              + s"howTo:${howTo} howToIdx:${howToIdx}"
+              + s"outerCnt:${outerCnt} cnt:${cnt}; zdx:${zdx} "
+              + s"howTo:${howTo} howToIdx:${howToIdx} "
+              + s"howToSetIdx:${howToSetIdx}"
             )
             val mapElem = upGprIdxToMemAddrIdxMap(zdx)
-            mapElem.howTo := howTo
+            mapElem.idx := (
+              //howTo
+              cnt
+            )
             if (mapElem.haveHowToSetIdx) {
               mapElem.howToSetIdx := howToSetIdx
             }
@@ -326,11 +334,12 @@ abstract class SnowHousePipeStageInstrDecode(
             //)
           }
           cnt += 1
+          outerCnt += 1
         }
       }
       assert(
-        cnt == cfg.numGprs,
-        s"eek! cnt:${cnt} != cfg.numGprs:${cfg.numGprs}"
+        outerCnt == cfg.numGprs,
+        s"eek! cnt:${outerCnt} != cfg.numGprs:${cfg.numGprs}"
       )
     }
   }
@@ -1239,52 +1248,89 @@ case class SnowHousePipeStageExecute(
       //tempRdMemWord := myRdMemWord(ydx=ydx, modIdx=zdx)
     }
   } else { // if (cfg.regFileWordCountArr.size > 1)
-    for ((tempExt, ydx) <- outp.myExt.zipWithIndex) {
-      for (
-        (tempRdMemWord, zdx) <- setOutpModMemWord.io.rdMemWord.zipWithIndex
-      ) {
-        if (ydx == 0) {
-          // prevent multiple drivers
-          tempRdMemWord := 0x0
-        }
-        switch (
-          //tempExt.memAddr(zdx)
-          outp.gprIdxVec(zdx)
-        ) {
-          val howToSlice = cfg.shRegFileCfg.howToSlice
-          assert(
-            howToSlice.size == outp.myExt.size,
-            s"${howToSlice.size} ${outp.myExt.size}"
-          )
-          for ((howTo, howToIdx) <- howToSlice(ydx).view.zipWithIndex) {
-            is (howTo) {
-              doFinishSetOutpModMemWord(ydx=ydx, zdx=zdx)
-              //if (zdx == PipeMemRmw.modWrIdx) {
-              //  tempExt.modMemWord := (
-              //    // TODO: support multiple `modMemWord`s
-              //    setOutpModMemWord.io.modMemWord(0)
-              //  )
-              //  tempExt.modMemWordValid := (
-              //    setOutpModMemWord.io.modMemWordValid
-              //  )
-              //}
-              //tempRdMemWord := (
-              //  myRdMemWord(
-              //    ydx=ydx,
-              //    modIdx=zdx,
-              //  )
-              //)
-              println(
-                s"debug: "
-                + s"howTo(${howTo} ${howToIdx}) "
-                + s"ydx:${ydx} "
-                + s"zdx:${zdx}"
-              )
-            }
+    for (
+      (tempRdMemWord, zdx) <- setOutpModMemWord.io.rdMemWord.zipWithIndex
+    ) {
+      val mapElem = outp.gprIdxToMemAddrIdxMap(zdx)
+      ////if (ydx == 0) {
+      //  // prevent multiple drivers
+      //  tempRdMemWord := 0x0
+      //}
+      assert(mapElem.haveHowToSetIdx)
+      switch (mapElem.howToSetIdx) {
+        for (ydx <- 0 until cfg.regFileCfg.memArrSize) {
+          is (ydx) {
+            //switch (mapElem.howTo) {
+            //  for (howToIdx <- 0 until (1 << mapElem.howTo.getWidth)) {
+            //    is (howToIdx) {
+            //      println(
+            //        s"debug: switch (mapElem.howToSetIdx): "
+            //        + s"zdx:${zdx}; "
+            //        + s"howToIdx:${howToIdx} howToSetIdx:${ydx} "
+            //      )
+            //    }
+            //  }
+            //}
+            doFinishSetOutpModMemWord(
+              ydx=ydx,
+              zdx=zdx,
+            )
           }
         }
       }
     }
+    //for ((tempExt, ydx) <- outp.myExt.zipWithIndex) {
+    //  for (
+    //    (tempRdMemWord, zdx) <- setOutpModMemWord.io.rdMemWord.zipWithIndex
+    //  ) {
+    //    if (ydx == 0) {
+    //      // prevent multiple drivers
+    //      tempRdMemWord := 0x0
+    //    }
+    //    val mapElem = outp.gprIdxToMemAddrIdxMap(zdx)
+    //    assert(
+    //      mapElem.haveHowToSetIdx
+    //    )
+    //    //switch (mapElem.howToSetIdx) {
+    //    //}
+    //    //switch (
+    //    //  //tempExt.memAddr(zdx)
+    //    //  outp.gprIdxVec(zdx)
+    //    //) {
+    //    //  val howToSlice = cfg.shRegFileCfg.howToSlice
+    //    //  assert(
+    //    //    howToSlice.size == outp.myExt.size,
+    //    //    s"${howToSlice.size} ${outp.myExt.size}"
+    //    //  )
+    //    //  for ((howTo, howToIdx) <- howToSlice(ydx).view.zipWithIndex) {
+    //    //    is (howTo) {
+    //    //      doFinishSetOutpModMemWord(ydx=ydx, zdx=zdx)
+    //    //      //if (zdx == PipeMemRmw.modWrIdx) {
+    //    //      //  tempExt.modMemWord := (
+    //    //      //    // TODO: support multiple `modMemWord`s
+    //    //      //    setOutpModMemWord.io.modMemWord(0)
+    //    //      //  )
+    //    //      //  tempExt.modMemWordValid := (
+    //    //      //    setOutpModMemWord.io.modMemWordValid
+    //    //      //  )
+    //    //      //}
+    //    //      //tempRdMemWord := (
+    //    //      //  myRdMemWord(
+    //    //      //    ydx=ydx,
+    //    //      //    modIdx=zdx,
+    //    //      //  )
+    //    //      //)
+    //    //      println(
+    //    //        s"debug: "
+    //    //        + s"howTo(${howTo} ${howToIdx}) "
+    //    //        + s"ydx:${ydx} "
+    //    //        + s"zdx:${zdx}"
+    //    //      )
+    //    //    }
+    //    //  }
+    //    //}
+    //  }
+    //}
   }
   def handleCurrFire(
     //someRdMemWord: UInt//=myRdMemWord,

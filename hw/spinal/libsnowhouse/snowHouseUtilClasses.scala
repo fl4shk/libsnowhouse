@@ -39,11 +39,11 @@ case class SnowHouseRegFileConfig(
   val modStageCnt: Int = 1
   val howToSlice: Seq[LinkedHashSet[Int]] = (
     optHowToSlice match {
-      case Some(howToSlice) => {
+      case Some(optHowToSlice) => {
         //var cnt: Int = 0
         assert(
-          howToSlice.size == wordCountArr.size,
-          s"howToSlice.size (${howToSlice.size}) "
+          optHowToSlice.size == wordCountArr.size,
+          s"howToSlice.size (${optHowToSlice.size}) "
           + s"is not equal to wordCountArr.size (${wordCountArr.size})"
         )
         val wordCountSum: Int = {
@@ -54,7 +54,7 @@ case class SnowHouseRegFileConfig(
           tempSum
         }
         val foundSet = LinkedHashSet[Int]()
-        for (sliceHowSet <- howToSlice.view) {
+        for (sliceHowSet <- optHowToSlice.view) {
           for (sliceHow: Int <- sliceHowSet.view) {
             assert (
               sliceHow >= 0
@@ -69,7 +69,7 @@ case class SnowHouseRegFileConfig(
             foundSet += sliceHow
           }
         }
-        howToSlice
+        optHowToSlice
       }
       case None => {
         //(false, null)
@@ -363,7 +363,7 @@ case class SnowHouseDecodeExt(
 case class SnowHouseGprIdxToMemAddrIdxMapElem(
   cfg: SnowHouseConfig
 ) extends Bundle {
-  val howTo = UInt(log2Up(cfg.numGprs) bits)
+  val idx = UInt(log2Up(cfg.numGprs) bits)
   val haveHowToSetIdx = (
     cfg.shRegFileCfg.howToSlice.size > 1
   )
@@ -450,7 +450,11 @@ case class SnowHouseRegFileModType(
     ydx: Int,
     memArrIdx: Int,
   ): Unit = {
-    myExt(ydx) := inpExt
+    myExt(ydx).pipeFlags := inpExt.pipeFlags
+    myExt(ydx).main.nonMemAddr := inpExt.main.nonMemAddr
+    for ((myMemAddr, zdx) <- myExt(ydx).main.memAddr.view.zipWithIndex) {
+      myMemAddr := inpExt.main.memAddr(zdx).resized
+    }
   }
   def getPipeMemRmwExt(
     outpExt: PipeMemRmwPayloadExt[UInt, Bool],
@@ -458,7 +462,15 @@ case class SnowHouseRegFileModType(
     ydx: Int,
     memArrIdx: Int,
   ): Unit = {
-    outpExt := myExt(ydx)
+    //outpExt := myExt(ydx)
+    outpExt.pipeFlags := myExt(ydx).pipeFlags
+    outpExt.main.nonMemAddr := myExt(ydx).main.nonMemAddr
+    for ((myMemAddr, zdx) <- myExt(ydx).main.memAddr.view.zipWithIndex) {
+      outpExt.main.memAddr(zdx) := myMemAddr.resized
+      //(
+      //  outpExt.main.memAddr(zdx).bitsRange
+      //)
+    }
   }
   def formalSetPipeMemRmwFwd(
     inpFwd: PipeMemRmwFwd[UInt, Bool],

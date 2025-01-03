@@ -269,11 +269,67 @@ case class SampleCpuParams(
     shRegFileCfg=SnowHouseRegFileConfig(
       mainWidth=mainWidth,
       wordCountArr=(
-        Array.fill(1)(numGprs.toInt)
+        //Array.fill(2)(
+        //  numGprs >> 1
+        //)
+        Array[Int](
+          4,
+          12,
+        )
       ),
       modRdPortCnt=modRdPortCnt,
       pipeName=pipeName,
-      optHowToSlice=None,
+      optHowToSlice=(
+        //None
+        Some({
+          val tempArr = ArrayBuffer[LinkedHashSet[Int]]()
+          for (jdx <- 0 until 2) {
+            tempArr += {
+              val tempSet = LinkedHashSet[Int]()
+              if (jdx == 0) {
+                //for (idx <- 0 until 4) {
+                //  tempSet += idx
+                //}
+                tempSet ++= LinkedHashSet[Int](
+                  0,
+                  2,
+                  4,
+                  6,
+                )
+              } else { // if (jdx == 1)
+                tempSet ++= LinkedHashSet[Int](
+                  1,
+                  3,
+                  5,
+                  7,
+                  8,
+                  9,
+                  10,
+                  11,
+                  12,
+                  13,
+                  14,
+                  15,
+                )
+              }
+              //for (idx <- 0 until (numGprs >> 1)) {
+              //  tempSet += {
+              //    val temp = (
+              //      (2 * idx) + jdx
+              //    )
+              //    println(
+              //      s"debug: "
+              //      + s"temp:${temp} idx:${idx} jdx:${jdx}"
+              //    )
+              //    temp
+              //  }
+              //}
+              tempSet
+            }
+          }
+          tempArr
+        })
+      ),
     ),
     opInfoMap=SampleCpuOpInfoMap.opInfoMap,
     //psDecode=SampleCpuPipeStageInstrDecode(),
