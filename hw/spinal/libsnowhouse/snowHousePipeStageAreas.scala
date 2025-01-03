@@ -1232,62 +1232,122 @@ case class SnowHousePipeStageExecute(
       /*U(s"${cfg.mainWidth}'d0")*/
     )
   }
-  switch (setOutpModMemWord.io.opIs) {
-    is (M"--11") {
-      // Cpy (non-Jmp, non-Br)/Alu, but NO mem access
-      if (cfg.optFormal) {
-        when (cMid0Front.up.isValid) {
-          when (!doCheckHazard) {
-            assert(!currDuplicateIt)
+  object PcChangeState
+  extends SpinalEnum(defaultEncoding=binarySequential) {
+    val
+      Idle,
+      WaitTwoInstrs
+      = newElement()
+  }
+  val nextPcChangeState = PcChangeState()
+  val rPcChangeState = (
+    RegNext(next=nextPcChangeState)
+    init(PcChangeState.Idle)
+  )
+  nextPcChangeState := rPcChangeState
+  //if (cfg.optFormal) {
+  //  assume(
+  //    nextPcChangeState.asBits.asUInt
+  //    <= PcChangeState.SecondInstr.asBits.asUInt
+  //  )
+  //  assume(
+  //    nextPcChangeState.asBits.asUInt
+  //    <= PcChangeState.SecondInstr.asBits.asUInt
+  //  )
+  //}
+  //val rPcChangeState = Reg(UInt(2
+  //next
+  val rSavedJmpCnt = {
+    val temp = Reg(
+      SnowHouseInstrCnt(cfg=cfg)
+    )
+    temp.init(temp.getZero)
+    //temp.jmpState.allowOverride
+    temp
+  }
+  switch (rPcChangeState) {
+    is (PcChangeState.Idle) {
+      switch (setOutpModMemWord.io.opIs) {
+        is (M"--01") {
+          // Cpy (non-Jmp, non-Br)/Alu, but NO mem access
+          if (cfg.optFormal) {
+            when (cMid0Front.up.isValid) {
+              when (!doCheckHazard) {
+                assert(!currDuplicateIt)
+              }
+            }
           }
+        }
+        is (M"--11") {
+          // Cpy (non-Jmp, non-Br)/Alu, but WITH mem access
+          when (cMid0Front.up.isFiring) {
+            nextPrevTxnWasHazard := True
+            psMemStallHost.nextValid := True
+          }
+        }
+        is (M"-1--") {
+          // Cpy (Jmp or Br), with NO mem access
+          when (cMid0Front.up.isFiring) {
+            nextPcChangeState := PcChangeState.WaitTwoInstrs
+            rSavedJmpCnt := outp.instrCnt
+            outp.instrCnt.shouldIgnoreInstr := True
+          }
+        }
+        is (M"1---") {
+          // MultiCycle, with NO mem access
+          when (cMid0Front.up.isValid) {
+            when (doCheckHazard) {
+              when (!currDuplicateIt) {
+                psExStallHost.nextValid := (
+                  True
+                )
+              }
+            } otherwise { // when (!doCheckHazard)
+              psExStallHost.nextValid := (
+                True
+              )
+            }
+            //--------
+          }
+          when (savedPsExStallHost.myDuplicateIt) {
+            currDuplicateIt := True
+          }
+          if (cfg.optFormal) {
+            when (!doCheckHazard) {
+              when (!savedPsExStallHost.myDuplicateIt) {
+                assert(!currDuplicateIt)
+              }
+            }
+          }
+        }
+        default {
         }
       }
     }
-    is (M"--11") {
-      // Cpy (non-Jmp, non-Br)/Alu, but WITH mem access
+    is (PcChangeState.WaitTwoInstrs) {
+      //when (cMid0Front.up.isFiring) {
+      //}
+      outp.instrCnt.shouldIgnoreInstr := True
       when (cMid0Front.up.isFiring) {
-        nextPrevTxnWasHazard := True
-        psMemStallHost.nextValid := True
-      }
-    }
-    is (M"-1--") {
-      // Cpy (Jmp or Br), with NO mem access
-    }
-    is (M"1---") {
-      // MultiCycle, with NO mem access
-      when (cMid0Front.up.isValid) {
-        when (doCheckHazard) {
-          when (!currDuplicateIt) {
-            psExStallHost.nextValid := (
-              True
-            )
-          }
-        } otherwise { // when (!doCheckHazard)
-          psExStallHost.nextValid := (
-            True
-          )
-        }
-        //--------
-      }
-      when (savedPsExStallHost.myDuplicateIt) {
-        currDuplicateIt := True
-      }
-      if (cfg.optFormal) {
-        when (!doCheckHazard) {
-          when (!savedPsExStallHost.myDuplicateIt) {
-            assert(!currDuplicateIt)
-          }
+        when (outp.instrCnt.any === rSavedJmpCnt.any + 2) {
+          outp.instrCnt.shouldIgnoreInstr := False
+          nextPcChangeState := PcChangeState.Idle
         }
       }
     }
-    default {
-    }
+    //is (PcChangeState.SecondInstr) {
+    //}
+    //default {
+    //  //assert(
+    //  //  False
+    //  //)
+    //}
   }
   when (psExStallHost.fire) {
     psExStallHost.nextValid := False
   }
   when (rPrevTxnWasHazard) {
-    assert(PipeMemRmwSimDut.modRdPortCnt == 1)
+    //assert(cfg.regFileModRdPortCnt == 1)
     doCheckHazard := True
   } otherwise {
     doCheckHazard := False
