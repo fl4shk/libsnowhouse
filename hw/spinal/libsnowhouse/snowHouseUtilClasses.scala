@@ -333,6 +333,22 @@ case class SnowHouseInstrCnt(
   val shouldIgnoreInstr = Bool()
   //def shouldIgnoreInstr = (pcChangeState === True)
 }
+case class SnowHouseDecodeExt(
+  cfg: SnowHouseConfig
+) extends Bundle {
+  //--------
+  private val _opIsMemAccessIdx = 0
+  private val _opIsCpyNonJmpAluIdx = 1
+  private val _opIsJmpIdx = 2
+  private val _opIsMultiCycleIdx = 3
+  val opIsLim = 4
+  val opIs = /*out*/(UInt(opIsLim bits))
+  //--------
+  def opIsMemAccess = opIs(_opIsMemAccessIdx)
+  def opIsCpyNonJmpAlu = opIs(_opIsCpyNonJmpAluIdx)
+  def opIsJmp = opIs(_opIsJmpIdx)
+  def opIsMultiCycle = opIs(_opIsMultiCycleIdx)
+}
 case class SnowHouseRegFileModType(
   cfg: SnowHouseConfig,
 ) extends Bundle with PipeMemRmwPayloadBase[UInt, Bool] {

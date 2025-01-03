@@ -261,6 +261,7 @@ abstract class SnowHousePipeStageInstrDecode(
   def cId = args.link
   def payload = args.currPayload
   def optFormal = cfg.optFormal
+  def regFile = args.regFile
   //--------
   //def doDecode(): Area
   //--------
@@ -270,6 +271,17 @@ abstract class SnowHousePipeStageInstrDecode(
   val up = cId.up
   val down = cId.down
   //--------
+  val upPayload = SnowHouseRegFileModType(cfg=cfg)
+  //up(pId) := upModExt
+  upPayload := (
+    RegNext(upPayload)
+    init(upPayload.getZero)
+  )
+  upPayload.allowOverride
+  when (up.isValid) {
+    upPayload.regPc := cId.up(pIf).regPc
+    upPayload.instrCnt := cId.up(pIf).instrCnt
+  }
 }
 case class SnowHousePipeStageExecuteSetOutpModMemWordIo(
   cfg: SnowHouseConfig,
@@ -294,16 +306,15 @@ case class SnowHousePipeStageExecuteSetOutpModMemWordIo(
   //val isCpyAlu = /*out*/Bool()
   //val isMemAccess = /*out*/Bool()
   //val isMultiCycle = /*out*/Bool()
-  private val _opIsCpyNonJmpAluIdx = 0
-  private val _opIsMemAccessIdx = 1
-  private val _opIsJmpIdx = 2
-  private val _opIsMultiCycleIdx = 3
-  val opIsLim = 4
-  val opIs = /*out*/UInt(opIsLim bits)
-  def opIsCpyNonJmpAlu = opIs(_opIsCpyNonJmpAluIdx)
-  def opIsJmp = opIs(_opIsJmpIdx)
-  def opIsMemAccess = opIs(_opIsMemAccessIdx)
-  def opIsMultiCycle = opIs(_opIsMultiCycleIdx)
+  val decodeExt = /*out*/(
+    SnowHouseDecodeExt(cfg=cfg)
+  )
+  def opIs = decodeExt.opIs
+  def opIsMemAccess = decodeExt.opIsMemAccess
+  def opIsCpyNonJmpAlu = decodeExt.opIsCpyNonJmpAlu
+  def opIsJmp = decodeExt.opIsJmp
+  def opIsMultiCycle = decodeExt.opIsMultiCycle
+  //--------
   //val dbusHostPayload = /*out*/(DbusHostPayload(cfg=cfg))
   def jmpAddrIdx = 2
   def brCondIdx = Array[Int](0, 1)
@@ -361,6 +372,10 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
     }
   }
   io.opIs := 0x0
+  io.opIsJmp.allowOverride
+  io.opIsJmp := (
+    io.psExSetPc.fire
+  )
   switch (io.currOp) {
     //--------
     for (((_, opInfo), opInfoIdx) <- cfg.opInfoMap.view.zipWithIndex) {
@@ -525,7 +540,6 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
                 )
               }
               case CpyOpKind.Jmp => {
-                io.opIsJmp := True
                 assert(
                   opInfo.dstArr.size == 1,
                   s"not yet implemented: "
@@ -555,9 +569,9 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
                 io.psExSetPc.nextPc := io.rdMemWord(io.jmpAddrIdx)
               }
               case CpyOpKind.Br => {
-                io.opIsJmp := True
                 opInfo.cond match {
                   case CondKind.Always => {
+                    //io.opIsJmp := True
                     //assert(
                     //  opInfo.dstArr.size == 1,
                     //  s"not yet implemented: "
@@ -576,11 +590,12 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
                       io.regPcPlusImm
                     )
                   }
-                  case CondKind.Link => {
-                    assert(
-                      opInfo.dstArr.size == 2,
-                    )
-                  }
+                  //case CondKind.Link => {
+                  //  io.opIsJmp := True
+                  //  assert(
+                  //    opInfo.dstArr.size == 2,
+                  //  )
+                  //}
                   case CondKind.Z => {
                     //assert(
                     //  opInfo.dstArr.size == 1,
@@ -1307,8 +1322,20 @@ case class SnowHousePipeStageExecute(
   }
   switch (rPcChangeState) {
     is (PcChangeState.Idle) {
+      outp.instrCnt.shouldIgnoreInstr := False
+      if (cfg.optFormal) {
+        when (pastValidAfterReset) {
+          when (past(rPcChangeState) === PcChangeState.WaitTwoInstrs) {
+            assert(past(cMid0Front.up.isFiring))
+          } otherwise {
+          }
+          //when (past(cMid0Front.up.isFiring)) {
+          //}
+        }
+      }
       switch (setOutpModMemWord.io.opIs) {
-        is (M"--01") {
+        // TODO: support mem access in more kinds of instructions
+        is (M"--10") {
           // Cpy (non-Jmp, non-Br)/Alu, but NO mem access
           if (cfg.optFormal) {
             when (cMid0Front.up.isValid) {
@@ -1330,7 +1357,7 @@ case class SnowHousePipeStageExecute(
           when (cMid0Front.up.isFiring) {
             nextPcChangeState := PcChangeState.WaitTwoInstrs
             rSavedJmpCnt := outp.instrCnt
-            outp.instrCnt.shouldIgnoreInstr := True
+            //outp.instrCnt.shouldIgnoreInstr := True
           }
         }
         is (M"1---") {
@@ -1365,12 +1392,28 @@ case class SnowHousePipeStageExecute(
       }
     }
     is (PcChangeState.WaitTwoInstrs) {
-      //when (cMid0Front.up.isFiring) {
-      //}
+      if (cfg.optFormal) {
+        when (pastValidAfterReset) {
+          when (past(rPcChangeState) === PcChangeState.Idle) {
+            assert(past(cMid0Front.up.isFiring))
+            assert(rSavedJmpCnt === past(outp.instrCnt))
+            assert(!past(outp.instrCnt.shouldIgnoreInstr))
+            assert(past(setOutpModMemWord.io.opIsJmp))
+          } otherwise {
+            assert(stable(rSavedJmpCnt))
+            //assert(stable(outp.instrCnt.shouldIgnoreInstr))
+          }
+          //when (past(cMid0Front.up.isFiring)) {
+          //}
+        }
+      }
+      //outp.instrCnt.shouldIgnoreInstr := True
       outp.instrCnt.shouldIgnoreInstr := True
       when (cMid0Front.up.isFiring) {
         when (outp.instrCnt.any === rSavedJmpCnt.any + 2) {
-          outp.instrCnt.shouldIgnoreInstr := False
+          // with wrapping arithmetic,
+          // it's okay if we overflow with the + 2!
+          //outp.instrCnt.shouldIgnoreInstr := False
           nextPcChangeState := PcChangeState.Idle
         }
       }
