@@ -249,6 +249,7 @@ abstract class SnowHousePipeStageInstrDecode(
   //var args: Option[SnowHousePipeStageArgs]=None,
   val args: SnowHousePipeStageArgs,
   val psIdHaltIt: Bool,
+  val psExSetPc: Flow[SnowHousePsExSetPcPayload],
 ) extends Area {
   //--------
   //def decInstr: UInt
@@ -282,6 +283,58 @@ abstract class SnowHousePipeStageInstrDecode(
     upPayload.regPc := cId.up(pIf).regPc
     upPayload.instrCnt := cId.up(pIf).instrCnt
   }
+  //val upGprIdxToRegFileMemAddrMap = (
+  //  upPayload.gprIdxToRegFileMemAddrMap
+  //)
+  //for (
+  //  (mapElem, mapIdx) <- upGprIdxToRegFileMemAddrMap.view.zipWithIndex
+  //) {
+  //  //mapElem := (
+  //  //  upPayload.gprIdxVec(mapIdx)
+  //  //)
+  //  val howToSlice = cfg.shRegFileCfg.howToSlice
+  //  for ((howToSet, outerIdx) <- howToSlice.view.zipWithIndex) {
+  //  }
+  //}
+  val upGprIdxToMemAddrIdxMap = upPayload.gprIdxToMemAddrIdxMap
+  //for ((mapElem, ydx) <- upGprIdxToMemAddrIdxMap.view.zipWithIndex) {
+  //  switch (mapElem) {
+  //    val howToSlice = cfg.shRegFileCfg.howToS
+  //    for ((howTo, howToIdx) <- howToSlice
+  //  }
+  //}
+  for ((gprIdx, zdx) <- upPayload.gprIdxVec.view.zipWithIndex) {
+    switch (gprIdx) {
+      val howToSlice = cfg.shRegFileCfg.howToSlice
+      var cnt: Int = 0
+      for ((howToSet, howToSetIdx) <- howToSlice.view.zipWithIndex) {
+        for ((howTo, howToIdx) <- howToSet.view.zipWithIndex) {
+          is (cnt) {
+            println(
+              s"debug: "
+              + s"cnt:${cnt} zdx:${zdx} "
+              + s"howTo:${howTo} howToIdx:${howToIdx}"
+            )
+            val mapElem = upGprIdxToMemAddrIdxMap(zdx)
+            mapElem.howTo := howTo
+            if (mapElem.haveHowToSetIdx) {
+              mapElem.howToSetIdx := howToSetIdx
+            }
+            //:= (
+            //  howToSetIdx
+            //  //howToIdx
+            //)
+          }
+          cnt += 1
+        }
+      }
+      assert(
+        cnt == cfg.numGprs,
+        s"eek! cnt:${cnt} != cfg.numGprs:${cfg.numGprs}"
+      )
+    }
+  }
+  //--------
 }
 case class SnowHousePipeStageExecuteSetOutpModMemWordIo(
   cfg: SnowHouseConfig,

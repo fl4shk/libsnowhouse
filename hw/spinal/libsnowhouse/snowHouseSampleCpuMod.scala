@@ -74,9 +74,11 @@ case class SampleCpuPipeStageInstrDecode(
   //args: 
   override val args: SnowHousePipeStageArgs,
   override val psIdHaltIt: Bool,
+  override val psExSetPc: Flow[SnowHousePsExSetPcPayload],
 ) extends SnowHousePipeStageInstrDecode(
   args=args,
   psIdHaltIt=psIdHaltIt,
+  psExSetPc=psExSetPc,
 ) {
   //def doDecode() = new Area {
   //}
@@ -279,10 +281,12 @@ case class SampleCpuParams(
       (
         args,
         psIdHaltIt,
+        psExSetPc,
       ) => (
         SampleCpuPipeStageInstrDecode(
           args=args,
           psIdHaltIt=psIdHaltIt,
+          psExSetPc=psExSetPc,
         )
       )
     ),
@@ -294,7 +298,7 @@ case class SampleCpuParams(
     //  //decInstr := U"${mainWidth}'d0"
     //},
     optFormal=optFormal,
-    maxNumGprsPerInstr=3,
+    //maxNumGprsPerInstr=3,
   )
   //--------
 }

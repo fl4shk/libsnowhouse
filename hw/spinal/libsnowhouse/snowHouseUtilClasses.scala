@@ -30,6 +30,12 @@ case class SnowHouseRegFileConfig(
       + s"must be greater than zero"
     )
   }
+  assert(
+    modRdPortCnt >= 2
+    && modRdPortCnt <= 3,
+    s"modRdPortCnt (${modRdPortCnt}) must be >= 2 and <= 3 "
+    + s"(different number of GPRs per instruction not yet supported)"
+  )
   val modStageCnt: Int = 1
   val howToSlice: Seq[LinkedHashSet[Int]] = (
     optHowToSlice match {
@@ -103,15 +109,19 @@ case class SnowHouseConfig(
   //--------
   //psDecode: SnowHousePipeStageInstrDecode,
   mkPipeStageInstrDecode: (
-    SnowHousePipeStageArgs, // args
-    Bool,                   // psIdHaltIt
+    SnowHousePipeStageArgs,           // args
+    Bool,                             // psIdHaltIt
+    Flow[SnowHousePsExSetPcPayload],  // psExSetPc
   ) => SnowHousePipeStageInstrDecode,
   //--------
   optFormal: Boolean,
-  maxNumGprsPerInstr: Int,
+  //maxNumGprsPerInstr: Int,
   //modOpCntWidth: Int=8,
   instrCntWidth: Int=8,
 ) {
+  // TODO: support more than 3 general purpose registers per instruction
+  // (probably going up to 4 or 5 or something at max?)
+  val maxNumGprsPerInstr = regFileModRdPortCnt
   assert(
     //4 >= (1 << instrCntWidth),
     instrCntWidth >= 4,
@@ -348,6 +358,23 @@ case class SnowHouseDecodeExt(
   def opIsCpyNonJmpAlu = opIs(_opIsCpyNonJmpAluIdx)
   def opIsJmp = opIs(_opIsJmpIdx)
   def opIsMultiCycle = opIs(_opIsMultiCycleIdx)
+  //--------
+}
+case class SnowHouseGprIdxToMemAddrIdxMapElem(
+  cfg: SnowHouseConfig
+) extends Bundle {
+  val howTo = UInt(log2Up(cfg.numGprs) bits)
+  val haveHowToSetIdx = (
+    cfg.shRegFileCfg.howToSlice.size > 1
+  )
+  val howToSetIdx = (
+    haveHowToSetIdx
+  ) generate (
+    UInt(
+      (log2Up(cfg.shRegFileCfg.howToSlice.size).max(1))
+      bits
+    )
+  )
 }
 case class SnowHouseRegFileModType(
   cfg: SnowHouseConfig,
@@ -376,9 +403,25 @@ case class SnowHouseRegFileModType(
       }
     }
   }
+  val myExt = Vec[PipeMemRmwPayloadExt[UInt, Bool]]{
+    val myArr = ArrayBuffer[PipeMemRmwPayloadExt[UInt, Bool]]()
+    for (ydx <- 0 until cfg.regFileCfg.memArrSize) {
+      myArr += mkOneExt(ydx=ydx)
+    }
+    myArr
+  }
+  // `gprIdxVec` is to be driven by the class derived from
+  // `SnowHousePipeStageInstrDecode`
   val gprIdxVec = Vec.fill(cfg.maxNumGprsPerInstr)(
     UInt(log2Up(cfg.numGprs) bits)
   )
+  val gprIdxToMemAddrIdxMap = Vec[SnowHouseGprIdxToMemAddrIdxMapElem]({
+    val myArr = ArrayBuffer[SnowHouseGprIdxToMemAddrIdxMapElem]()
+    for (zdx <- 0 until cfg.maxNumGprsPerInstr) {
+      myArr += SnowHouseGprIdxToMemAddrIdxMapElem(cfg=cfg)
+    }
+    myArr
+  })
   val gprRdMemWordVec = Vec.fill(cfg.regFileModRdPortCnt)(
     UInt(cfg.mainWidth bits)
   )
@@ -395,13 +438,6 @@ case class SnowHouseRegFileModType(
   //val myExt = Vec.fill(cfg.regFileCfg.memArrSize)(
   //  mkOneExt()
   //)
-  val myExt = Vec[PipeMemRmwPayloadExt[UInt, Bool]]{
-    val tempArr = ArrayBuffer[PipeMemRmwPayloadExt[UInt, Bool]]()
-    for (ydx <- 0 until cfg.regFileCfg.memArrSize) {
-      tempArr += mkOneExt(ydx=ydx)
-    }
-    tempArr
-  }
   val myFwd = (
     myHaveFormalFwd
   ) generate (

@@ -224,6 +224,7 @@ case class SnowHouse
       regFile=regFile,
     ),
     psIdHaltIt,
+    psExSetPc,
   )
   //--------
   //val pEx = Payload(SnowHouseRegFileModType(cfg=cfg))
