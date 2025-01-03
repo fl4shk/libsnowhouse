@@ -35,7 +35,7 @@ case class SnowHousePipeStageArgs(
   prevPayload: Payload[SnowHousePipePayload],
   currPayload: Payload[SnowHousePipePayload],
   //optFormal: Boolean,
-  regFile: PipeMemRmw[
+  var regFile: PipeMemRmw[
     UInt,
     Bool,
     SnowHousePipePayload,
@@ -510,6 +510,7 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
     }
   }
   io.opIs := 0x0
+  io.decodeExt.memAccessLdStKind := False
   io.opIsJmp.allowOverride
   io.opIsJmp := (
     io.psExSetPc.fire
@@ -614,6 +615,9 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
                           )
                         )
                         if (!isStore) {
+                          io.decodeExt.memAccessLdStKind := (
+                            io.decodeExt._memAccessLdStKindLoad
+                          )
                           modIo.dbus.hostData.accKind := (
                             if (!mem.isSigned) (
                               DbusHostMemAccessKind.LoadU
@@ -625,6 +629,9 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
                             modIo.dbus.hostData.data.getZero
                           )
                         } else { // if (isStore)
+                          io.decodeExt.memAccessLdStKind := (
+                            io.decodeExt._memAccessLdStKindStore
+                          )
                           modIo.dbus.hostData.accKind := (
                             DbusHostMemAccessKind.Store
                           )
@@ -802,83 +809,95 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
               s"not yet implemented: "
               + s"opInfo(${opInfo}) index:${opInfoIdx}"
             )
-            opInfo.aluOp.get match {
-              case AluOpKind.Add => {
-                io.modMemWord(0) := (
-                  io.rdMemWord(1) + io.rdMemWord(2)
-                )
-              }
+            // TODO: support ALU flags
+            val binop: BinopResult = opInfo.aluOp.get match {
+              //case AluOpKind.Add => {
+              //  io.modMemWord(0) := (
+              //    io.rdMemWord(1) + io.rdMemWord(2)
+              //  )
+              //}
               case AluOpKind.Adc => {
                 assert(
                   false,
                   s"not yet implemented: "
                   + s"opInfo(${opInfo}) index:${opInfoIdx}"
                 )
+                BinopResult(cfg=cfg)
               }
-              case AluOpKind.Sub => {
-                io.modMemWord(0) := (
-                  io.rdMemWord(1) - io.rdMemWord(2)
-                )
-              }
+              //case AluOpKind.Sub => {
+              //  io.modMemWord(0) := (
+              //    io.rdMemWord(1) - io.rdMemWord(2)
+              //  )
+              //}
               case AluOpKind.Sbc => {
                 assert(
                   false,
                   s"not yet implemented: "
                   + s"opInfo(${opInfo}) index:${opInfoIdx}"
                 )
+                BinopResult(cfg=cfg)
               }
-              case AluOpKind.Lsl => {
-                io.modMemWord(0) := (
-                  (
-                    io.rdMemWord(1)
-                    << io.rdMemWord(2)(log2Up(cfg.mainWidth) - 1 downto 0)
-                  )(
-                    io.modMemWord(0).bitsRange
-                  )
+              //case AluOpKind.Lsl => {
+              //  io.modMemWord(0) := (
+              //    (
+              //      io.rdMemWord(1)
+              //      << io.rdMemWord(2)(log2Up(cfg.mainWidth) - 1 downto 0)
+              //    )(
+              //      io.modMemWord(0).bitsRange
+              //    )
+              //  )
+              //}
+              //case AluOpKind.Lsr => {
+              //  io.modMemWord(0) := (
+              //    (io.rdMemWord(1) >> io.rdMemWord(2))(
+              //      io.modMemWord(0).bitsRange
+              //    )
+              //  )
+              //}
+              //case AluOpKind.Asr => {
+              //  io.modMemWord(0) := (
+              //    io.rdMemWord(1).asSInt >> io.rdMemWord(2)
+              //  ).asUInt(
+              //    io.modMemWord(0).bitsRange
+              //  )
+              //}
+              //case AluOpKind.And => {
+              //  io.modMemWord(0) := (
+              //    io.rdMemWord(1) & io.rdMemWord(2)
+              //  )
+              //}
+              //case AluOpKind.Or => {
+              //  io.modMemWord(0) := (
+              //    io.rdMemWord(1) | io.rdMemWord(2)
+              //  )
+              //}
+              //case AluOpKind.Xor => {
+              //  io.modMemWord(0) := (
+              //    io.rdMemWord(1) ^ io.rdMemWord(2)
+              //  )
+              //}
+              //case AluOpKind.Sltu => {
+              //  io.modMemWord(0) := Cat(
+              //    U(s"${cfg.mainWidth - 1}'d0"),
+              //    io.rdMemWord(1) < io.rdMemWord(2),
+              //  ).asUInt
+              //}
+              //case AluOpKind.Slts => {
+              //  io.modMemWord(0) := Cat(
+              //    U(s"${cfg.mainWidth - 1}'d0"),
+              //    io.rdMemWord(1).asSInt < io.rdMemWord(2).asSInt,
+              //  ).asUInt
+              //}
+              case op => {
+                op.binopFunc(
+                  cfg=cfg,
+                  left=io.rdMemWord(1),
+                  right=io.rdMemWord(2),
+                  carry=False,
                 )
-              }
-              case AluOpKind.Lsr => {
-                io.modMemWord(0) := (
-                  (io.rdMemWord(1) >> io.rdMemWord(2))(
-                    io.modMemWord(0).bitsRange
-                  )
-                )
-              }
-              case AluOpKind.Asr => {
-                io.modMemWord(0) := (
-                  io.rdMemWord(1).asSInt >> io.rdMemWord(2)
-                ).asUInt(
-                  io.modMemWord(0).bitsRange
-                )
-              }
-              case AluOpKind.And => {
-                io.modMemWord(0) := (
-                  io.rdMemWord(1) & io.rdMemWord(2)
-                )
-              }
-              case AluOpKind.Or => {
-                io.modMemWord(0) := (
-                  io.rdMemWord(1) | io.rdMemWord(2)
-                )
-              }
-              case AluOpKind.Xor => {
-                io.modMemWord(0) := (
-                  io.rdMemWord(1) ^ io.rdMemWord(2)
-                )
-              }
-              case AluOpKind.Sltu => {
-                io.modMemWord(0) := Cat(
-                  U(s"${cfg.mainWidth - 1}'d0"),
-                  io.rdMemWord(1) < io.rdMemWord(2),
-                ).asUInt
-              }
-              case AluOpKind.Slts => {
-                io.modMemWord(0) := Cat(
-                  U(s"${cfg.mainWidth - 1}'d0"),
-                  io.rdMemWord(1).asSInt < io.rdMemWord(2).asSInt,
-                ).asUInt
               }
             }
+            io.modMemWord(0) := binop.main
           }
           case OpSelect.MultiCycle => {
             io.opIsMultiCycle := True
@@ -972,7 +991,10 @@ case class SnowHousePipeStageExecute(
   args: SnowHousePipeStageArgs,
   psExSetPc: Flow[SnowHousePsExSetPcPayload],
   doModInModFrontParams: PipeMemRmwDoModInModFrontFuncParams[
-    UInt, Bool, SnowHousePipePayload
+    UInt,
+    Bool,
+    SnowHousePipePayload,
+    PipeMemRmwDualRdTypeDisabled[UInt, Bool],
   ],
 ) extends Area {
   //--------
@@ -991,10 +1013,10 @@ case class SnowHousePipeStageExecute(
   def outp = doModInModFrontParams.outp//Vec(ydx)
   def inp = doModInModFrontParams.inp//Vec(ydx)
   def cMid0Front = doModInModFrontParams.cMid0Front
-  def modFront = doModInModFrontParams.modFront
   def tempModFrontPayload = (
     doModInModFrontParams.tempModFrontPayload//Vec(ydxr
   )
+  //def regFile = args.regFile
   //assume(
   //  inp.op
   //  //< PipeMemRmwSimDut.ModOp.MUL_RA_RB.asBits.asUInt
@@ -1720,4 +1742,294 @@ case class SnowHousePipeStageExecute(
     }
     cMid0Front.duplicateIt()
   }
+}
+case class SnowHousePipeStageExecuteFormal(
+  args: SnowHousePipeStageArgs,
+  //psEx: SnowHousePipeStageExecute,
+  //regFile: PipeMemRmw[
+  //  UInt,
+  //  Bool,
+  //  SnowHousePipePayload,
+  //  PipeMemRmwDualRdTypeDisabled[UInt, Bool],
+  //],
+) extends Area {
+  def cfg = args.cfg
+  def regFile = args.regFile
+  def front = regFile.io.front
+  def frontPayload = regFile.io.frontPayload
+  def modFront = regFile.io.modFront
+  //def modFront = doModInModFrontParams.modFront
+  def modFrontPayload = regFile.io.modFrontPayload
+  def modBack = regFile.io.modBack
+  def modBackPayload = regFile.io.modBackPayload
+  def back = regFile.io.back
+  def backPayload = regFile.io.backPayload
+  def tempModFrontPayload = (
+    //doModInModFrontParams.tempModFrontPayload//Vec(ydxr
+    regFile.io.tempModFrontPayload
+  )
+  //--------
+  val myHaveCurrWrite = Vec[Bool]({
+    val tempArr = ArrayBuffer[Bool]()
+    for (ydx <- 0 until regFile.mod.back.myWriteEnable.size) {
+      tempArr += (
+        pastValidAfterReset
+        && modBack.isFiring
+        && regFile.mod.back.myWriteEnable(ydx)
+      )
+    }
+    tempArr
+  })
+  val tempLeft = (
+    regFile.mod.back.myWriteData
+  )
+  val tempHadFrontIsFiring: (Bool, Bool) = (
+    RegNextWhen[Bool](
+      next=True,
+      cond=front.isFiring,
+      init=False,
+    ),
+    null
+  )
+  val tempHadMid0FrontUpIsValid: (Bool, Bool) = (
+    {
+      val cond = (
+        regFile.cMid0FrontArea.up.isValid
+        && (
+          tempHadFrontIsFiring._1
+          || front.isFiring
+        )
+      )
+      RegNextWhen(
+        next=True,
+        cond=cond,
+        init=False,
+      )
+    },
+    null
+  )
+  val tempHadMid0FrontDownIsValid: (Bool, UInt) = (
+    {
+      val cond = (
+        regFile.cMid0FrontArea.down.isValid
+        && (
+          tempHadFrontIsFiring._1
+          || front.isFiring
+        ) && (
+          tempHadMid0FrontUpIsValid._1
+          || regFile.cMid0FrontArea.up.isValid
+        )
+      )
+      RegNextWhen(
+        next=True,
+        cond=cond,
+        init=False
+      )
+    },
+    null
+  )
+  val tempHadMid0FrontDownIsFiring: (Bool, UInt) = (
+    {
+      val cond = (
+        regFile.cMid0FrontArea.down.isFiring
+        && (
+          tempHadFrontIsFiring._1
+          || front.isFiring
+        ) && (
+          tempHadMid0FrontUpIsValid._1
+          || regFile.cMid0FrontArea.up.isValid
+        )
+      )
+      RegNextWhen(
+        next=True,
+        cond=cond,
+        init=False
+      )
+    },
+    null
+  )
+  val tempHadModFrontIsValid: (Bool, Bool) = (
+    {
+      val cond = (
+        modFront.isValid
+        && (
+          tempHadFrontIsFiring._1
+          || front.isFiring
+        ) && (
+          tempHadMid0FrontUpIsValid._1
+          || regFile.cMid0FrontArea.up.isValid
+        )
+      )
+      RegNextWhen(
+        next=True,
+        cond=cond,
+        init=False
+      )
+    },
+    null
+  )
+  if (cfg.optFormal) {
+    when (!tempHadModFrontIsValid._1) {
+      for (ydx <- 0 until cfg.regFileCfg.memArrSize) {
+        val wordCount = cfg.regFileWordCountArr(ydx)
+        for (zdx <- 0 until cfg.regFileModRdPortCnt) {
+          assume(
+            (
+              regFile.modMem(ydx)(zdx).readAsync(
+                address=U(s"${log2Up(wordCount)}'d${zdx}")
+              )
+            ) === (
+              0x0
+            )
+          )
+        }
+      }
+    }
+  }
+  val tempHadModBackIsFiring: (Bool, Bool) = (
+    {
+      val cond = (
+        modBack.isFiring
+        && (
+          tempHadFrontIsFiring._1
+          || front.isFiring
+        ) && (
+          tempHadMid0FrontUpIsValid._1
+          || regFile.cMid0FrontArea.up.isValid
+        ) && (
+          tempHadModFrontIsValid._1
+          || modFront.isValid
+        )
+      )
+      RegNextWhen(
+        next=True,
+        cond=cond,
+        init=False
+      )
+    },
+    null
+  )
+  val tempHadModBackIsValid: (Bool, Bool) = (
+    {
+      val cond = (
+        modBack.isValid
+        && (
+          tempHadFrontIsFiring._1
+          || front.isFiring
+        ) && (
+          tempHadMid0FrontUpIsValid._1
+          || regFile.cMid0FrontArea.up.isValid
+        ) && (
+          tempHadModFrontIsValid._1
+          || modFront.isValid
+        )
+      )
+      RegNextWhen(
+        next=True,
+        cond=cond,
+        init=False
+      )
+    },
+    null
+  )
+  val tempHadBackIsFiring: (Bool, Bool) = (
+    {
+      val cond = (
+        back.isFiring
+        //&& tempHadFrontIsFiring._1
+        //&& tempHadMid0FrontUpIsValid._1
+        //&& tempHadModFrontIsValid._1
+        //&& tempHadModBackIsFiring._1
+        && (
+          tempHadFrontIsFiring._1
+          || front.isFiring
+        ) && (
+          tempHadMid0FrontUpIsValid._1
+          || regFile.cMid0FrontArea.up.isValid
+        ) && (
+          tempHadModFrontIsValid._1
+          || modFront.isValid
+        ) && (
+          tempHadModBackIsValid._1
+          || modBack.isValid
+        )
+      )
+      RegNextWhen(
+        next=True,
+        cond=cond,
+        init=False
+      )
+    },
+    null
+  )
+  val tempHadBackIsValid: (Bool, Bool) = (
+    {
+      val cond = (
+        back.isValid
+        && (
+          tempHadFrontIsFiring._1
+          || front.isFiring
+        ) && (
+          tempHadMid0FrontUpIsValid._1
+          || regFile.cMid0FrontArea.up.isValid
+        ) && (
+          tempHadModFrontIsValid._1
+          || modFront.isValid
+        ) && (
+          tempHadModBackIsValid._1
+          || modBack.isValid
+        ) && (
+          tempHadModBackIsFiring._1
+          || modBack.isFiring
+        )
+      )
+      RegNextWhen(
+        next=True,
+        cond=cond,
+        init=False
+      )
+    },
+    null
+  )
+  val myHaveSeenPipeToModFrontFire = (
+    KeepAttribute(
+      tempHadFrontIsFiring._1
+      && tempHadMid0FrontUpIsValid._1
+      && tempHadModFrontIsValid._1
+    )
+    .setName(s"myHaveSeenPipeToModFrontFire")
+  )
+  val myHaveSeenPipeToWrite = Vec[Bool]({
+    val tempArr = ArrayBuffer[Bool]()
+    for (tempHaveCurrWrite <- myHaveCurrWrite.view) {
+      tempArr += (
+        myHaveSeenPipeToModFrontFire
+        && tempHaveCurrWrite
+      )
+    }
+    tempArr
+  })
+  def getMyHistHaveSeenPipeToWriteVecCond(
+    ydx: Int,
+    idx: Int,
+  ) = (
+    myHaveSeenPipeToWrite(ydx)
+    && (
+      regFile.mod.back.myWriteAddr(ydx) === idx
+    )
+  )
+  def tempHistHaveSeenPipeToWriteV2dOuterDim = (
+    //3
+    4
+  )
+  //val tempHaveSeenPipeToWriteV2dFindFirst_0 = (
+  //  KeepAttribute(
+  //    Vec.fill(tempHistHaveSeenPipeToWriteV2dOuterDim)(
+  //      Vec.fill(wordCount)(
+  //        Bool()
+  //      )
+  //    )
+  //  )
+  //  .setName(s"tempHaveSeenPipeToWriteV2dFindFirst_0")
+  //)
 }

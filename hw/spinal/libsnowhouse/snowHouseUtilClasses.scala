@@ -355,11 +355,13 @@ case class SnowHouseDecodeExt(
   val opIsLim = 4
   val opIs = /*out*/(UInt(opIsLim bits))
   val memAccessLdStKind = Bool()
+  private[libsnowhouse] val _memAccessLdStKindLoad = False
+  private[libsnowhouse] val _memAccessLdStKindStore = True
   def memAccessIsLoad = (
-    !memAccessLdStKind
+    memAccessLdStKind === _memAccessLdStKindLoad
   )
   def memAccessIsStore = (
-    memAccessLdStKind
+    memAccessLdStKind === _memAccessLdStKindStore
   )
   // TODO: add support for atomic operations
   // (probably just read-modify-write)

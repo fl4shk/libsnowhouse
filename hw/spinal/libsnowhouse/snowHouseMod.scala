@@ -141,11 +141,15 @@ case class SnowHouse
       }
     ),
     doModInModFrontFunc=Some(
-      (
-        doModInModFrontParams
-      ) => mkPipeStageExecute(
-        doModInModFrontParams=doModInModFrontParams
-      )
+      //(
+      //  doModInModFrontParams,
+      //  myRegFile1,
+      //) => 
+      mkPipeStageExecute
+      //(
+      //  doModInModFrontParams=doModInModFrontParams,
+      //  myRegFile=myRegFile1,
+      //)
     )
   )
   //--------
@@ -231,8 +235,17 @@ case class SnowHouse
   //val pEx = Payload(SnowHouseRegFileModType(cfg=cfg))
   def mkPipeStageExecute(
     doModInModFrontParams: PipeMemRmwDoModInModFrontFuncParams[
-      UInt, Bool, SnowHousePipePayload
-    ]
+      UInt,
+      Bool,
+      SnowHousePipePayload,
+      PipeMemRmwDualRdTypeDisabled[UInt, Bool],
+    ],
+    //myRegFile: PipeMemRmw[
+    //  UInt,
+    //  Bool,
+    //  SnowHousePipePayload,
+    //  PipeMemRmwDualRdTypeDisabled[UInt, Bool],
+    //],
   ): SnowHousePipeStageExecute = SnowHousePipeStageExecute(
     args=SnowHousePipeStageArgs(
       cfg=cfg,
@@ -240,12 +253,27 @@ case class SnowHouse
       link=null,
       prevPayload=null,
       currPayload=null,
-      regFile=regFile,
+      regFile=null,
     ),
     psExSetPc=psExSetPc,
     doModInModFrontParams=doModInModFrontParams,
   )
   //--------
+  val pipeStageExFormal = (
+    //cfg.optFormal
+    true
+  ) generate (
+    SnowHousePipeStageExecuteFormal(
+      args=SnowHousePipeStageArgs(
+        cfg=cfg,
+        io=io,
+        link=null,
+        prevPayload=null,
+        currPayload=null,
+        regFile=regFile,
+      ),
+    )
+  )
   //io.ibus.nextValid := True
   //io.ibus.hostData.addr := 3
 
