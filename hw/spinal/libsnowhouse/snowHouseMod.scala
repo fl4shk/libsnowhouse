@@ -87,11 +87,11 @@ case class SnowHouse
   val regFile = new PipeMemRmw[
     UInt,
     Bool,
-    SnowHouseRegFileModType,
+    SnowHousePipePayload,
     PipeMemRmwDualRdTypeDisabled[UInt, Bool],
   ](
     cfg=cfg.regFileCfg,
-    modType=SnowHouseRegFileModType(cfg=cfg),
+    modType=SnowHousePipePayload(cfg=cfg),
     dualRdType=PipeMemRmwDualRdTypeDisabled[UInt, Bool](),
   )(
     doModInFrontFunc=Some(
@@ -149,7 +149,7 @@ case class SnowHouse
     )
   )
   //--------
-  val pIf = Payload(SnowHouseRegFileModType(cfg=cfg))
+  val pIf = Payload(SnowHousePipePayload(cfg=cfg))
 
   val cIf = CtrlLink(
     up={
@@ -230,7 +230,7 @@ case class SnowHouse
   //val pEx = Payload(SnowHouseRegFileModType(cfg=cfg))
   def mkPipeStageExecute(
     doModInModFrontParams: PipeMemRmwDoModInModFrontFuncParams[
-      UInt, Bool, SnowHouseRegFileModType
+      UInt, Bool, SnowHousePipePayload
     ]
   ): SnowHousePipeStageExecute = SnowHousePipeStageExecute(
     args=SnowHousePipeStageArgs(

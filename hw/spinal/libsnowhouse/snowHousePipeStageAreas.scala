@@ -32,13 +32,13 @@ case class SnowHousePipeStageArgs(
   link: CtrlLink,
   //prevLink: Option[CtrlLink],
   //nextLink: Option[CtrlLink],
-  prevPayload: Payload[SnowHouseRegFileModType],
-  currPayload: Payload[SnowHouseRegFileModType],
+  prevPayload: Payload[SnowHousePipePayload],
+  currPayload: Payload[SnowHousePipePayload],
   //optFormal: Boolean,
   regFile: PipeMemRmw[
     UInt,
     Bool,
-    SnowHouseRegFileModType,
+    SnowHousePipePayload,
     PipeMemRmwDualRdTypeDisabled[UInt, Bool],
   ]
 ) {
@@ -89,7 +89,7 @@ case class SnowHousePipeStageInstrFetch(
   //--------
   //val psIdHaltIt = Bool()
   //val psExSetPc = Flow(SnowHousePsExSetPcPayload(cfg=cfg))
-  val upModExt = SnowHouseRegFileModType(cfg=cfg)
+  val upModExt = SnowHousePipePayload(cfg=cfg)
   //val myInstrCnt = SnowHouseFormalInstrCnt(cfg=cfg)
   def myInstrCnt = upModExt.instrCnt
   up(pIf) := upModExt
@@ -267,22 +267,62 @@ abstract class SnowHousePipeStageInstrDecode(
   //def doDecode(): Area
   //--------
   //val psIdHaltIt = Bool()
-  val decInstr = UInt(log2Up(opInfoMap.size) bits)
+  def myDoHaltIt(): Unit = {
+    //psIdHaltIt := True
+    cId.haltIt()
+      // this `haltIt()` call prevents `up.isFiring` and prevents
+      // deassertion of `rDidHandleG7SubDecode`
+  }
+  //val decInstr = UInt(log2Up(opInfoMap.size) bits)
   //--------
   val up = cId.up
   val down = cId.down
   //--------
-  val upPayload = SnowHouseRegFileModType(cfg=cfg)
+  val upPayload = SnowHousePipePayload(cfg=cfg)
   //up(pId) := upModExt
+  up(pId) := upPayload
+  val rSetUpPayloadState = Reg(Bool(), init=False)
   upPayload := (
-    RegNext(upPayload)
+    RegNext(
+      next=upPayload,
+      init=upPayload.getZero,
+    )
     init(upPayload.getZero)
   )
   upPayload.allowOverride
   when (up.isValid) {
-    upPayload.regPc := cId.up(pIf).regPc
-    upPayload.instrCnt := cId.up(pIf).instrCnt
+    //upPayload.regPc := cId.up(pIf).regPc
+    //upPayload.instrCnt := cId.up(pIf).instrCnt
+    when (!rSetUpPayloadState) {
+      upPayload := up(pIf)
+      rSetUpPayloadState := True
+    }
+    when (up.isFiring) {
+      //up(pId) := upPayload
+      rSetUpPayloadState := False
+    }
   }
+  if (optFormal) {
+    when (pastValidAfterReset) {
+      when (past(up.isFiring) init(False)) {
+        assert(!rSetUpPayloadState)
+      }
+      when (!(past(up.isValid) init(False))) {
+        assert(stable(rSetUpPayloadState))
+      }
+      when (rSetUpPayloadState) {
+        assert(up.isValid)
+      }
+      //when (rose(rSetUpPayloadState)) {
+      //  assert(
+      //    upPayload.
+      //  )
+      //}
+    }
+  }
+  upPayload.regPcPlusImm := (
+    upPayload.regPc + upPayload.imm
+  )
   //val upGprIdxToRegFileMemAddrMap = (
   //  upPayload.gprIdxToRegFileMemAddrMap
   //)
@@ -308,7 +348,7 @@ abstract class SnowHousePipeStageInstrDecode(
       val howToSlice = cfg.shRegFileCfg.howToSlice
       var outerCnt: Int = 0
       for ((howToSet, howToSetIdx) <- howToSlice.view.zipWithIndex) {
-        var cnt: Int = 0
+        //var cnt: Int = 0
         for ((howTo, howToIdx) <- howToSet.view.zipWithIndex) {
           is (
             //outerCnt
@@ -316,24 +356,29 @@ abstract class SnowHousePipeStageInstrDecode(
           ) {
             println(
               s"debug: "
-              + s"outerCnt:${outerCnt} cnt:${cnt}; zdx:${zdx} "
+              + s"outerCnt:${outerCnt}"
+              + s"; "
+              //+ s"cnt:${cnt}; "
+              + s"zdx:${zdx} "
               + s"howTo:${howTo} howToIdx:${howToIdx} "
               + s"howToSetIdx:${howToSetIdx}"
             )
             val mapElem = upGprIdxToMemAddrIdxMap(zdx)
             mapElem.idx := (
               //howTo
-              cnt
+              //cnt
+              howToIdx
             )
             if (mapElem.haveHowToSetIdx) {
               mapElem.howToSetIdx := howToSetIdx
             }
+            upPayload.myExt(howToSetIdx).memAddr(zdx) := howToIdx
             //:= (
             //  howToSetIdx
             //  //howToIdx
             //)
           }
-          cnt += 1
+          //cnt += 1
           outerCnt += 1
         }
       }
@@ -896,7 +941,7 @@ case class SnowHousePipeStageExecute(
   args: SnowHousePipeStageArgs,
   psExSetPc: Flow[SnowHousePsExSetPcPayload],
   doModInModFrontParams: PipeMemRmwDoModInModFrontFuncParams[
-    UInt, Bool, SnowHouseRegFileModType
+    UInt, Bool, SnowHousePipePayload
   ],
 ) extends Area {
   //--------
@@ -1545,7 +1590,6 @@ case class SnowHousePipeStageExecute(
     doCheckHazard := False
   }
   //switch (myCurrOp) {
-  //  // TODO: convert this
   //  //is (PipeMemRmwSimDut.ModOp.AddRaRb) {
   //  //  if (cfg.optFormal) {
   //  //    when (cMid0Front.up.isValid) {

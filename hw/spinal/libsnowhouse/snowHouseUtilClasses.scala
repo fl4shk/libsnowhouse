@@ -376,12 +376,13 @@ case class SnowHouseGprIdxToMemAddrIdxMapElem(
     )
   )
 }
-case class SnowHouseRegFileModType(
+case class SnowHousePipePayload(
   cfg: SnowHouseConfig,
 ) extends Bundle with PipeMemRmwPayloadBase[UInt, Bool] {
   def myHaveFormalFwd = (
     cfg.optFormal
   )
+  val decodeExt = SnowHouseDecodeExt(cfg=cfg)
   val instrCnt = SnowHouseInstrCnt(cfg=cfg)
   //val opCnt = UInt(cfg.instrCntWidth bits)
   def opCnt = instrCnt.any
