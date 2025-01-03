@@ -32,7 +32,8 @@ case class SnowHousePipeStageArgs(
   link: CtrlLink,
   //prevLink: Option[CtrlLink],
   //nextLink: Option[CtrlLink],
-  payload: Payload[SnowHouseRegFileModType],
+  prevPayload: Payload[SnowHouseRegFileModType],
+  currPayload: Payload[SnowHouseRegFileModType],
   //optFormal: Boolean,
   regFile: PipeMemRmw[
     UInt,
@@ -81,7 +82,7 @@ case class SnowHousePipeStageInstrFetch(
   def cfg = args.cfg
   def io = args.io
   def cIf = args.link
-  def pIf = args.payload
+  def pIf = args.currPayload
   //--------
   val up = cIf.up
   val down = cIf.down
@@ -99,13 +100,15 @@ case class SnowHousePipeStageInstrFetch(
     )
   )
   def nextRegPc = upModExt.regPc
-  val rSavedExSetPc = (
-    Reg(Flow(
+  val rSavedExSetPc = {
+    val temp = Reg(Flow(
       //UInt(cfg.mainWidth bits)
       SnowHousePsExSetPcPayload(cfg=cfg)
     ))
-  )
-  rSavedExSetPc.init(rSavedExSetPc.getZero)
+    temp.init(temp.getZero)
+    temp
+  }
+  //rSavedExSetPc.init(rSavedExSetPc.getZero)
 
   when (psExSetPc.fire) {
     rSavedExSetPc := psExSetPc
@@ -251,16 +254,21 @@ abstract class SnowHousePipeStageInstrDecode(
   //def decInstr: UInt
   def cfg = args.cfg
   //def opInfoMap = args.opInfoMap
+  def pIf = args.prevPayload
+  def pId = args.currPayload
   def opInfoMap = cfg.opInfoMap
   def io = args.io
   def cId = args.link
-  def payload = args.payload
+  def payload = args.currPayload
   def optFormal = cfg.optFormal
   //--------
   //def doDecode(): Area
   //--------
   //val psIdHaltIt = Bool()
   val decInstr = UInt(log2Up(opInfoMap.size) bits)
+  //--------
+  val up = cId.up
+  val down = cId.down
   //--------
 }
 case class SnowHousePipeStageExecuteSetOutpModMemWordIo(

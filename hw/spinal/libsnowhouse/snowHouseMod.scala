@@ -192,7 +192,8 @@ case class SnowHouse
       cfg=cfg,
       io=io,
       link=cIf,
-      payload=pIf,
+      prevPayload=null,
+      currPayload=pIf,
       regFile=regFile,
     ),
     psIdHaltIt=psIdHaltIt,
@@ -215,7 +216,8 @@ case class SnowHouse
       cfg=cfg,
       io=io,
       link=cId,
-      payload=(
+      prevPayload=pIf,
+      currPayload=(
         //pId
         regFile.io.frontPayload
       ),
@@ -234,7 +236,8 @@ case class SnowHouse
       cfg=cfg,
       io=io,
       link=null,
-      payload=null,
+      prevPayload=null,
+      currPayload=null,
       regFile=regFile,
     ),
     psExSetPc=psExSetPc,
