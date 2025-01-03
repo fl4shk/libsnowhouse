@@ -359,7 +359,7 @@ case class SnowHouseDecodeExt(
     !memAccessLdStKind
   )
   def memAccessIsStore = (
-    !memAccessLdStKind
+    memAccessLdStKind
   )
   // TODO: add support for atomic operations
   // (probably just read-modify-write)
