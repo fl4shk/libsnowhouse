@@ -1017,57 +1017,60 @@ case class SnowHousePipeStageExecute(
       init=doCheckHazard.getZero,
     )
   )
-  val myDoHaveHazardAddrCheckVec = Vec[Bool]({
-    //val temp = ArrayBuffer[Vec[Bool]]()
-    assert(
-      outp.myExt.size == cfg.regFileCfg.memArrSize
-    )
-    val temp = ArrayBuffer[Bool]()
-    for (ydx <- 0 until cfg.regFileCfg.memArrSize) {
-      //println(s"begin: ${ydx} ${temp.size}")
-      temp += {
-        val toFold = ArrayBuffer[Bool]()
-        for (
-          zdx 
-          <- 0 until cfg.regFileModRdPortCnt
-          //outp.myExt(ydx).memAddr.size
-        ) {
-          assert(
-            outp.myExt(ydx).memAddr.size
-            == cfg.regFileModRdPortCnt
-          )
-          toFold += (
-            outp.myExt(ydx).memAddr(zdx)
-            === tempModFrontPayload.myExt(ydx).memAddr(zdx)
-          )
-        }
-        //toReduce.reduce(_ || _)
-        toFold.foldLeft(False)((left, right) => (left || right))
-      }
-      //println(s"end: ${ydx} ${temp.size}")
-    }
-    temp
-  },
-  Bool())
-  val myDoHaveHazardValidCheckVec = Vec[Bool]({
-    //(
-    //  !tempModFrontPayload.myExt(0).modMemWordValid
-    //)
-    val temp = ArrayBuffer[Bool]()
-    for (
-      ydx
-      <- 0 until cfg.regFileCfg.memArrSize
-      //tempModFrontPayload.myExt.size
-    ) {
-      //println(s"begin: ${ydx} ${temp.size}")
-      temp += (
-        !tempModFrontPayload.myExt(ydx).modMemWordValid
+  val myDoHaveHazardAddrCheckVec = Vec[Bool](
+    {
+      //val temp = ArrayBuffer[Vec[Bool]]()
+      assert(
+        outp.myExt.size == cfg.regFileCfg.memArrSize
       )
-      //println(s"end: ${ydx} ${temp.size}")
-    }
-    temp
-  },
-  Bool()
+      val temp = ArrayBuffer[Bool]()
+      for (ydx <- 0 until cfg.regFileCfg.memArrSize) {
+        //println(s"begin: ${ydx} ${temp.size}")
+        temp += {
+          val toFold = ArrayBuffer[Bool]()
+          for (
+            zdx 
+            <- 0 until cfg.regFileModRdPortCnt
+            //outp.myExt(ydx).memAddr.size
+          ) {
+            assert(
+              outp.myExt(ydx).memAddr.size
+              == cfg.regFileModRdPortCnt
+            )
+            toFold += (
+              outp.myExt(ydx).memAddr(zdx)
+              === tempModFrontPayload.myExt(ydx).memAddr(zdx)
+            )
+          }
+          //toReduce.reduce(_ || _)
+          toFold.foldLeft(False)((left, right) => (left || right))
+        }
+        //println(s"end: ${ydx} ${temp.size}")
+      }
+      temp
+    },
+    Bool()
+  )
+  val myDoHaveHazardValidCheckVec = Vec[Bool](
+    {
+      //(
+      //  !tempModFrontPayload.myExt(0).modMemWordValid
+      //)
+      val temp = ArrayBuffer[Bool]()
+      for (
+        ydx
+        <- 0 until cfg.regFileCfg.memArrSize
+        //tempModFrontPayload.myExt.size
+      ) {
+        //println(s"begin: ${ydx} ${temp.size}")
+        temp += (
+          !tempModFrontPayload.myExt(ydx).modMemWordValid
+        )
+        //println(s"end: ${ydx} ${temp.size}")
+      }
+      temp
+    },
+    Bool()
   )
   //--------
   //val myDoHaveHazardV2d = Vec[Vec[Bool]]{
@@ -1180,7 +1183,7 @@ case class SnowHousePipeStageExecute(
         //tempRdMemWord=tempRdMemWord,
         zdx=zdx
       )
-      tempRdMemWord := myRdMemWord(ydx=ydx, modIdx=zdx)
+      //tempRdMemWord := myRdMemWord(ydx=ydx, modIdx=zdx)
     }
   } else { // if (cfg.regFileWordCountArr.size > 1)
     for ((tempExt, ydx) <- outp.myExt.zipWithIndex) {
@@ -1191,7 +1194,10 @@ case class SnowHousePipeStageExecute(
           // prevent multiple drivers
           tempRdMemWord := 0x0
         }
-        switch (tempExt.memAddr(zdx)) {
+        switch (
+          //tempExt.memAddr(zdx)
+          outp.gprIdxVec(zdx)
+        ) {
           val howToSlice = cfg.shRegFileCfg.howToSlice
           assert(
             howToSlice.size == outp.myExt.size,
@@ -1336,7 +1342,8 @@ case class SnowHousePipeStageExecute(
       switch (setOutpModMemWord.io.opIs) {
         // TODO: support mem access in more kinds of instructions
         is (M"--10") {
-          // Cpy (non-Jmp, non-Br)/Alu, but NO mem access
+          // instruction is of type Cpy (non-Jmp, non-Br)/Alu,
+          // but NO mem access
           if (cfg.optFormal) {
             when (cMid0Front.up.isValid) {
               when (!doCheckHazard) {
@@ -1346,14 +1353,16 @@ case class SnowHousePipeStageExecute(
           }
         }
         is (M"--11") {
-          // Cpy (non-Jmp, non-Br)/Alu, but WITH mem access
+          // instruction is of type Cpy (non-Jmp, non-Br)/Alu,
+          // but WITH mem access
           when (cMid0Front.up.isFiring) {
             nextPrevTxnWasHazard := True
             psMemStallHost.nextValid := True
           }
         }
         is (M"-1--") {
-          // Cpy (Jmp or Br), with NO mem access
+          // instruction is of type Cpy (TAKEN Jmp or Br),
+          // but with NO mem access
           when (cMid0Front.up.isFiring) {
             nextPcChangeState := PcChangeState.WaitTwoInstrs
             rSavedJmpCnt := outp.instrCnt
@@ -1361,7 +1370,8 @@ case class SnowHousePipeStageExecute(
           }
         }
         is (M"1---") {
-          // MultiCycle, with NO mem access
+          // instruction is of type MultiCycle,
+          // but with NO mem access
           when (cMid0Front.up.isValid) {
             when (doCheckHazard) {
               when (!currDuplicateIt) {
