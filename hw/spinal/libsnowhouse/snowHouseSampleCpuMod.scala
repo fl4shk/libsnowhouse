@@ -74,6 +74,22 @@ object SampleCpuPipeStageInstrDecode {
   def apply(
     psId: SnowHousePipeStageInstrDecode
   ) = new Area {
+    def upPayload = psId.upPayload
+    def io = psId.io
+    val encInstr = SampleCpuEncInstr()
+    encInstr.assignFromBits(io.ibus.devData.instr.asBits)
+    upPayload.op := encInstr.op
+    upPayload.gprIdxVec(0) := encInstr.raIdx
+    upPayload.gprIdxVec(1) := encInstr.rbIdx
+    upPayload.gprIdxVec(2) := encInstr.rcIdx
+    upPayload.imm := Cat(
+      Mux[UInt](
+        encInstr.simm16.msb,
+        U"16'hffff",
+        U"16'h0000",
+      ),
+      encInstr.simm16.asSInt
+    ).asUInt
   }
 }
 //case class SampleCpuPipeStageInstrDecode(

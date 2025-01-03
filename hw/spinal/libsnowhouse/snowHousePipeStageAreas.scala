@@ -390,6 +390,35 @@ case class SnowHousePipeStageInstrDecode(
     }
   }
   //--------
+  if (cfg.optFormal) {
+    when (pastValidAfterReset()) {
+      when (!io.ibus.ready) {
+        assert(!up.isFiring)
+      }
+      when (
+        !past(up.isFiring)
+        && io.ibus.ready
+      ) {
+        //assert(stable(io.ibus.ready))
+        assume(stable(io.ibus.ready))
+      }
+      when (past(io.ibus.nextValid)) {
+        when (io.ibus.ready) {
+          //cover(
+          //  up.isValid
+          //)
+          cover(up.isFiring)
+          assert(
+            //up.isFiring
+            up.isValid
+          )
+          when (!io.ibus.nextValid) {
+            assume(!(RegNext(next=io.ibus.ready, init=False)))
+          }
+        }
+      }
+    }
+  }
   val myDecodeArea = doDecodeFunc(this)
 }
 case class SnowHousePipeStageExecuteSetOutpModMemWordIo(
