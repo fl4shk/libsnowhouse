@@ -55,6 +55,12 @@ object SampleCpuOp {
   val CpyuiRaSimm = mkOp("CpyuiRaSimm") // 14
   val CpyiRaSimm = mkOp("CpyiRaSimm")   // 15
   //--------
+  val OpLim = _opCnt
+  assert(
+    OpLim == 16,
+    s"eek! "
+    + s"${OpLim} != 16"
+  )
 }
 case class SampleCpuEncInstr(
 ) extends PackedBundle {

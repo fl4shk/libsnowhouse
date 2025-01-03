@@ -1120,24 +1120,46 @@ case class SnowHousePipeStageExecute(
   //  )
   //)
   //--------
-    //setOutpModMemWord.io.rdMemWord(zdx) := (
-    //)
+  //setOutpModMemWord.io.rdMemWord(zdx) := (
+  //)
+  //--------
+  def doFinishSetOutpModMemWord(
+    ydx: Int,
+    zdx: Int,
+  ): Unit = {
+    if (zdx == PipeMemRmw.modWrIdx) {
+      val tempExt = outp.myExt(ydx)
+      tempExt.modMemWord := (
+        // TODO: support multiple output `modMemWord`s
+        setOutpModMemWord.io.modMemWord(0)
+      )
+      tempExt.modMemWordValid := (
+        setOutpModMemWord.io.modMemWordValid
+      )
+    }
+    val tempRdMemWord = setOutpModMemWord.io.rdMemWord(zdx)
+    tempRdMemWord := myRdMemWord(ydx=ydx, modIdx=zdx)
+  }
   if (cfg.regFileWordCountArr.size == 0) {
     assert(
       false,
-      s"${cfg.regFileWordCountArr.size}"
+      s"cfg.regFileWordCountArr.size(${cfg.regFileWordCountArr.size}) "
+      + s"must be greater than 0"
     )
-  }
-  else if (cfg.regFileWordCountArr.size == 1) {
+  } else if (cfg.regFileWordCountArr.size == 1) {
     for (
       (tempRdMemWord, zdx) <- setOutpModMemWord.io.rdMemWord.zipWithIndex
     ) {
-      tempRdMemWord := myRdMemWord(
-        ydx=0,
-        modIdx=zdx,
+      val ydx = 0
+      doFinishSetOutpModMemWord(
+        //tempExt=outp.myExt(ydx),
+        ydx=ydx,
+        //tempRdMemWord=tempRdMemWord,
+        zdx=zdx
       )
+      tempRdMemWord := myRdMemWord(ydx=ydx, modIdx=zdx)
     }
-  } else if (cfg.regFileWordCountArr.size > 1) {
+  } else { // if (cfg.regFileWordCountArr.size > 1)
     for ((tempExt, ydx) <- outp.myExt.zipWithIndex) {
       for (
         (tempRdMemWord, zdx) <- setOutpModMemWord.io.rdMemWord.zipWithIndex
@@ -1154,12 +1176,22 @@ case class SnowHousePipeStageExecute(
           )
           for ((howTo, howToIdx) <- howToSlice(ydx).view.zipWithIndex) {
             is (howTo) {
-              tempRdMemWord := (
-                myRdMemWord(
-                  ydx=ydx,
-                  modIdx=zdx,
-                )
-              )
+              doFinishSetOutpModMemWord(ydx=ydx, zdx=zdx)
+              //if (zdx == PipeMemRmw.modWrIdx) {
+              //  tempExt.modMemWord := (
+              //    // TODO: support multiple `modMemWord`s
+              //    setOutpModMemWord.io.modMemWord(0)
+              //  )
+              //  tempExt.modMemWordValid := (
+              //    setOutpModMemWord.io.modMemWordValid
+              //  )
+              //}
+              //tempRdMemWord := (
+              //  myRdMemWord(
+              //    ydx=ydx,
+              //    modIdx=zdx,
+              //  )
+              //)
               println(
                 s"debug: "
                 + s"howTo(${howTo} ${howToIdx}) "

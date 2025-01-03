@@ -112,6 +112,11 @@ case class SnowHouseConfig(
   //modOpCntWidth: Int=8,
   instrCntWidth: Int=8,
 ) {
+  assert(
+    //4 >= (1 << instrCntWidth),
+    instrCntWidth >= 4,
+    s"instrCntWidth (${instrCntWidth}) must be at least 4"
+  )
   //--------
   //psDecode.args = Some(SnowHousePipeStageArgs(
   //  cfg=this,
