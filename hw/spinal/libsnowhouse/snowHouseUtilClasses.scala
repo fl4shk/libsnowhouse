@@ -141,6 +141,23 @@ case class SnowHouseConfig(
   //  cfg=this,
   //  opInfoMap=opInfoMap,
   //))
+  def mkLcvStallHost[
+    HostDataT <: Data,
+    DevDataT <: Data,
+  ](
+    stallIo: Option[LcvStallIo[
+      HostDataT,
+      DevDataT,
+    ]]
+  ) = {
+    LcvStallHost[
+      HostDataT,
+      DevDataT,
+    ](
+      stallIo=stallIo,
+      optFormalJustHost=optFormal,
+    )
+  }
   def mainWidth = shRegFileCfg.mainWidth
   def regFileWordCountArr = shRegFileCfg.wordCountArr
   def regFileModRdPortCnt = shRegFileCfg.modRdPortCnt

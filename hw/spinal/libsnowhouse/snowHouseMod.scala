@@ -81,6 +81,13 @@ case class SnowHouse
   //--------
   val psIdHaltIt = Bool()
   val psExSetPc = Flow(SnowHousePsExSetPcPayload(cfg=cfg))
+  val psMemStallHost = (
+    cfg.mkLcvStallHost(
+      stallIo=(
+        Some(io.dbus)
+      ),
+    )
+  )
   //--------
   val linkArr = PipeHelper.mkLinkArr()
   cfg.regFileCfg.linkArr = Some(linkArr)
@@ -256,14 +263,15 @@ case class SnowHouse
       regFile=null,
     ),
     psExSetPc=psExSetPc,
+    psMemStallHost=psMemStallHost,
     doModInModFrontParams=doModInModFrontParams,
   )
   //--------
-  val pipeStageWbFormal = (
-    cfg.optFormal
-    //true
+  val pipeStageWb = (
+    //cfg.optFormal
+    true
   ) generate (
-    SnowHousePipeStageWriteBackFormal(
+    SnowHousePipeStageWriteBack(
       args=SnowHousePipeStageArgs(
         cfg=cfg,
         io=io,
