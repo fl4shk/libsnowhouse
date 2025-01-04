@@ -215,6 +215,13 @@ object AddrCalcKind {
 //}
 //trait MultiCycleOp
 
+private[libsnowhouse] case class OpInfoValidArgsTuple(
+  validArgs: OpKindValidArgs,
+  setIdx: Int,
+  //dstIdx: Int,
+  //srcIdx: Int,
+) {
+}
 class OpInfo(
   val dstArr: Seq[DstKind],
   val srcArr: Seq[SrcKind],
@@ -226,45 +233,56 @@ class OpInfo(
   //val opCond: AluOpKind | LoadOpKind | StoreOpKind,
   //var cond: Option[CondKind]=None,
 ) {
-  def findValidArgs(opKind: OpKindBase): Option[OpKindValidArgs] = {
+  def findValidArgs(opKind: OpKindBase): Option[OpInfoValidArgsTuple] = {
     //opKind.validArgsSet.find(validArgs => (
     //  this.dstArr.size == validArgs.dstSize 
     //  && this.srcArr.size == validArgs.srcSize
     //))
-    opKind.validArgsSet.find(validArgs => {
+    //opKind.validArgsSet.find(validArgs => 
+    for ((validArgs, setIdx) <- opKind.validArgsSet.view.zipWithIndex) {
       if (
-        dstArr.size == validArgs.dst.size
-        && srcArr.size == validArgs.src.size
-      ) {
-        var found: Boolean = true
-        for ((dst: DstKind, dstIdx: Int) <- dstArr.view.zipWithIndex) {
-          if (!validArgs.dst(dstIdx).contains(dst)) {
-            found = false
-          }
-        }
-        if (found) {
-          for ((src, srcIdx) <- srcArr.view.zipWithIndex) {
-            if (!validArgs.src(srcIdx).contains(src)) {
+        if (
+          dstArr.size == validArgs.dst.size
+          && srcArr.size == validArgs.src.size
+        ) {
+          var found: Boolean = true
+          for ((dst: DstKind, dstIdx: Int) <- dstArr.view.zipWithIndex) {
+            if (!validArgs.dst(dstIdx).contains(dst)) {
               found = false
             }
           }
+          if (found) {
+            for ((src, srcIdx) <- srcArr.view.zipWithIndex) {
+              if (!validArgs.src(srcIdx).contains(src)) {
+                found = false
+              }
+            }
+          }
+          //if (memAccess != validArgs.memAccess) {
+          //  found = false
+          //}
+          //if (addrCalc != validArgs.addrCalc) {
+          //  found = false
+          //}
+          //if (found) {
+          //  if (validArgs.cond.size == 0) {
+          //    
+          //  }
+          //}
+          found
+        } else {
+          false
         }
-        //if (memAccess != validArgs.memAccess) {
-        //  found = false
-        //}
-        //if (addrCalc != validArgs.addrCalc) {
-        //  found = false
-        //}
-        //if (found) {
-        //  if (validArgs.cond.size == 0) {
-        //    
-        //  }
-        //}
-        found
-      } else {
-        false
+      ) {
+        return Some(
+          OpInfoValidArgsTuple(validArgs=validArgs, setIdx=setIdx)
+        )
       }
-    })
+      //else {
+      //}
+    }
+    return None
+    //)
   }
   //--------
   //private[libsnowhouse] var _dst: Seq[DstKind] = null
@@ -761,7 +779,7 @@ object CpyOpKind {
 //--------
 // ALU-type instructions evaluated entirely in the EX pipeline stage
 // (besides forwarding!)
-case class BinopResult(
+case class InstrResult(
   cfg: SnowHouseConfig
 ) extends Area {
   val main = UInt(cfg.mainWidth bits)
@@ -777,7 +795,7 @@ sealed trait AluOpKind extends OpKindBase {
     left: UInt,
     right: UInt,
     carry: Bool,
-  ): BinopResult
+  ): InstrResult
 }
 object AluOpKind {
   //--------
@@ -826,7 +844,7 @@ object AluOpKind {
       cfg: SnowHouseConfig, left: UInt, right: UInt, carry: Bool
     ) = {
       //Some(left + right)
-      val ret = BinopResult(cfg=cfg)
+      val ret = InstrResult(cfg=cfg)
       val tempSum = UInt((cfg.mainWidth + 1) bits)
       val tempLeft = Cat(False, left).asUInt
       val tempRight = Cat(False, right).asUInt
@@ -887,7 +905,7 @@ object AluOpKind {
       cfg: SnowHouseConfig, left: UInt, right: UInt, carry: Bool
     ) = {
       //Some(left + right)
-      val ret = BinopResult(cfg=cfg)
+      val ret = InstrResult(cfg=cfg)
       val tempSum = UInt((cfg.mainWidth + 1) bits)
       val tempLeft = Cat(False, left).asUInt
       val tempRight = Cat(False, right).asUInt
@@ -972,7 +990,7 @@ object AluOpKind {
       cfg: SnowHouseConfig, left: UInt, right: UInt, carry: Bool
     ) = {
       //Some(left + right)
-      val ret = BinopResult(cfg=cfg)
+      val ret = InstrResult(cfg=cfg)
       val tempSum = UInt((cfg.mainWidth + 1) bits)
       val tempLeft = Cat(False, left).asUInt
       val tempRight = Cat(False, right).asUInt
@@ -1034,7 +1052,7 @@ object AluOpKind {
       cfg: SnowHouseConfig, left: UInt, right: UInt, carry: Bool
     ) = {
       //Some(left + right)
-      val ret = BinopResult(cfg=cfg)
+      val ret = InstrResult(cfg=cfg)
       val tempSum = UInt((cfg.mainWidth + 1) bits)
       val tempLeft = Cat(False, left).asUInt
       val tempRight = Cat(False, right).asUInt
@@ -1096,7 +1114,7 @@ object AluOpKind {
     def binopFunc(
       cfg: SnowHouseConfig, left: UInt, right: UInt, carry: Bool
     ) = {
-      val ret = BinopResult(cfg=cfg)
+      val ret = InstrResult(cfg=cfg)
       ret.main := (
         left << right(log2Up(cfg.mainWidth) downto 0)
       )(ret.main.bitsRange)
@@ -1150,7 +1168,7 @@ object AluOpKind {
     def binopFunc(
       cfg: SnowHouseConfig, left: UInt, right: UInt, carry: Bool
     ) = {
-      val ret = BinopResult(cfg=cfg)
+      val ret = InstrResult(cfg=cfg)
       ret.main := (
         left >> right//(log2Up(cfg.mainWidth) downto 0)
       )//.resized
@@ -1198,7 +1216,7 @@ object AluOpKind {
     def binopFunc(
       cfg: SnowHouseConfig, left: UInt, right: UInt, carry: Bool
     ) = {
-      val ret = BinopResult(cfg=cfg)
+      val ret = InstrResult(cfg=cfg)
       ret.main := (
         left.asSInt >> right//(log2Up(cfg.mainWidth) downto 0)
       ).asUInt//.resized
@@ -1247,7 +1265,7 @@ object AluOpKind {
     def binopFunc(
       cfg: SnowHouseConfig, left: UInt, right: UInt, carry: Bool
     ) = {
-      val ret = BinopResult(cfg=cfg)
+      val ret = InstrResult(cfg=cfg)
       ret.main := (
         left & right
       )
@@ -1296,7 +1314,7 @@ object AluOpKind {
     def binopFunc(
       cfg: SnowHouseConfig, left: UInt, right: UInt, carry: Bool
     ) = {
-      val ret = BinopResult(cfg=cfg)
+      val ret = InstrResult(cfg=cfg)
       ret.main := (
         left | right
       )
@@ -1344,7 +1362,7 @@ object AluOpKind {
     def binopFunc(
       cfg: SnowHouseConfig, left: UInt, right: UInt, carry: Bool
     ) = {
-      val ret = BinopResult(cfg=cfg)
+      val ret = InstrResult(cfg=cfg)
       ret.main := (
         left ^ right
       )
@@ -1398,7 +1416,7 @@ object AluOpKind {
     def binopFunc(
       cfg: SnowHouseConfig, left: UInt, right: UInt, carry: Bool
     ) = {
-      val ret = BinopResult(cfg=cfg)
+      val ret = InstrResult(cfg=cfg)
       when (left < right) {
         ret.main := 1
       } otherwise {
@@ -1432,7 +1450,7 @@ object AluOpKind {
     def binopFunc(
       cfg: SnowHouseConfig, left: UInt, right: UInt, carry: Bool
     ) = {
-      val ret = BinopResult(cfg=cfg)
+      val ret = InstrResult(cfg=cfg)
       when (left.asSInt < right.asSInt) {
         ret.main := 1
       } otherwise {

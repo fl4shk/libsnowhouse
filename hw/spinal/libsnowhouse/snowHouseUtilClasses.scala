@@ -118,15 +118,23 @@ case class SnowHouseConfig(
   optFormal: Boolean,
   //maxNumGprsPerInstr: Int,
   //modOpCntWidth: Int=8,
-  instrCntWidth: Int=8,
+  instrCntWidth: Int=(
+    //8
+    //4
+    3
+  ),
 ) {
+  assert(
+    (instrMainWidth / 8) * 8 == instrMainWidth,
+    s"instrMainWidth must be a multiple of 8"
+  )
   // TODO: support more than 3 general purpose registers per instruction
   // (probably going up to 4 or 5 or something at max?)
   val maxNumGprsPerInstr = regFileModRdPortCnt
   assert(
     //4 >= (1 << instrCntWidth),
-    instrCntWidth >= 4,
-    s"instrCntWidth (${instrCntWidth}) must be at least 4"
+    instrCntWidth >= 3,
+    s"instrCntWidth (${instrCntWidth}) must be at least 3"
   )
   //--------
   //psDecode.args = Some(SnowHousePipeStageArgs(
@@ -218,7 +226,7 @@ case class SnowHouseConfig(
       op match {
         case Some(myGet) => {
           opInfo.findValidArgs(myGet) match {
-            case Some(validArgs) => {
+            case Some(OpInfoValidArgsTuple(validArgs, setIdx)) => {
               assert(
                 //validArgs.cond.contains(opInfo.cond),
                 validArgs.cond.size > 0,
@@ -457,6 +465,11 @@ case class SnowHousePipePayload(
   //    UInt(cfg.mainWidth bits)
   //  )
   //)
+  val formalPsExSetPc = (
+    cfg.optFormal
+  ) generate (
+    Flow(SnowHousePsExSetPcPayload(cfg=cfg))
+  )
   val formalPsExSetOutpModMemWordIo = (
     cfg.optFormal
   ) generate (
