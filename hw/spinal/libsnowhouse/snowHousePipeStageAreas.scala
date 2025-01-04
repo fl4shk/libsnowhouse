@@ -2390,28 +2390,52 @@ case class SnowHousePipeStageExecuteFormal(
           )
         )
       )
-      val myTempRight = Vec[Vec[UInt]]({
-        val tempArr = ArrayBuffer[Vec[UInt]]()
-        for (zdx <- 0 until cfg.regFileModRdPortCnt) {
-          tempArr += (
-            Vec[UInt]({
-              val myArr = new ArrayBuffer[UInt]()
-              myArr += (
-                myPrevWriteData(ydx)(
-                  /*past*/(regFile.mod.back.myWriteAddr(ydx)(
+      //val myTempRight = Vec[Vec[UInt]]({
+      //  val tempArr = ArrayBuffer[Vec[UInt]]()
+      //  for (zdx <- 0 until cfg.regFileModRdPortCnt) {
+      //    tempArr += (
+      //      Vec[UInt]({
+      //        val myArr = new ArrayBuffer[UInt]()
+      //        myArr += (
+      //          myPrevWriteData(ydx)(
+      //            /*past*/(regFile.mod.back.myWriteAddr(ydx)(
+      //              log2Up(wordCount) - 1 downto 0
+      //            ))
+      //          )
+      //        )
+      //        myArr += (
+      //          modBack(modBackPayload).myExt(ydx).rdMemWord(
+      //            zdx
+      //          )
+      //        )
+      //        myArr
+      //      })
+      //    )
+      //  }
+      //  tempArr
+      //})
+      val myTempRight = (
+        KeepAttribute(
+          Vec[UInt]({
+            val myArr = new ArrayBuffer[UInt]()
+            myArr += (
+              myPrevWriteData(ydx)(
+                /*past*/(
+                  regFile.mod.back.myWriteAddr(ydx)(
                     log2Up(wordCount) - 1 downto 0
-                  ))
+                  )
                 )
               )
-              myArr += (
-                modBack(modBackPayload).myExt(ydx).rdMemWord(zdx)
-              )
-              myArr
-            })
-          )
-        }
-        tempArr
-      })
+            )
+            myArr += (
+              modBack(modBackPayload).myExt(ydx)
+              .rdMemWord(PipeMemRmw.modWrIdx)
+            )
+            myArr
+          })
+        )
+        .setName(s"${regFile.pipeName}_myTempRight")
+      )
     }
   }
 }
