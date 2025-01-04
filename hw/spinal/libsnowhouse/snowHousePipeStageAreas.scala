@@ -2303,4 +2303,115 @@ case class SnowHousePipeStageExecuteFormal(
       )
     }
   )
+  when (pastValidAfterReset) {
+    val tempCond = (
+      (
+        //myHaveCurrWrite
+        //past(myHaveSeenPipeToWrite)
+        //past(myHaveSeenPipeToModFrontFire)
+        //&&
+        ///*past*/(modBack.isValid)
+        //&& /*past*/(pipeMem.mod.back.myWriteEnable(0))
+        myHaveCurrWrite
+      )
+    )
+    for ((wordCount, ydx) <- regFile.wordCountArr.view.zipWithIndex) {
+      when (past(tempCond(ydx))) {
+        for (idx <- 0 until wordCount) {
+          when (
+            //getMyHistHaveSeenPipeToWriteVecCond(idx=idx)
+            past(regFile.mod.back.myWriteAddr(ydx)) === idx
+          ) {
+            myHadWriteAt(ydx)(idx) := (
+              past(True) init(False)
+            )
+            myPrevWriteData(ydx)(idx) := (
+              past(regFile.mod.back.myWriteData(ydx))
+            )
+          }
+        }
+      }
+      //val tempCond1 = Vec[Bool]({
+      //  val tempArr = ArrayBuffer[Bool]()
+      //  for (zdx <- 0 until cfg.regFileModRdPortCnt) {
+      //    tempArr += (
+      //      //modBack.isValid
+      //      //&& 
+      //      /*past*/(regFile.mod.back.myWriteEnable(ydx))
+      //      && (
+      //        myHadWriteAt(ydx)(
+      //        /*past*/(regFile.mod.back.myWriteAddr(ydx))
+      //        )
+      //      ) && (
+      //        tempHaveSeenPipeToWriteV2dFindFirst_0(0)(ydx)(
+      //          regFile.mod.back.myWriteAddr(ydx)
+      //        )
+      //      ) && (
+      //        tempHaveSeenPipeToWriteV2dFindFirst_0(1)(ydx)(
+      //          regFile.mod.back.myWriteAddr(ydx)
+      //        )
+      //      ) && (
+      //        tempHaveSeenPipeToWriteV2dFindFirst_0(2)(ydx)(
+      //          regFile.mod.back.myWriteAddr(ydx)
+      //        )
+      //      )
+      //    )
+      //  }
+      //  tempArr
+      //})
+      val tempCond1 = (
+        //modBack.isValid
+        //&& 
+        /*past*/(regFile.mod.back.myWriteEnable(ydx))
+        && (
+          myHadWriteAt(ydx)(
+          /*past*/(regFile.mod.back.myWriteAddr(ydx)(
+            //log2Up(myHadWriteAt(ydx).size) - 1 downto 0
+            log2Up(wordCount) - 1 downto 0
+          ))
+          )
+        ) && (
+          tempHaveSeenPipeToWriteV2dFindFirst_0(0)(ydx)(
+            regFile.mod.back.myWriteAddr(ydx)(
+              log2Up(wordCount) - 1 downto 0
+            )
+          )
+        ) && (
+          tempHaveSeenPipeToWriteV2dFindFirst_0(1)(ydx)(
+            regFile.mod.back.myWriteAddr(ydx)(
+              log2Up(wordCount) - 1 downto 0
+            )
+          )
+        ) && (
+          tempHaveSeenPipeToWriteV2dFindFirst_0(2)(ydx)(
+            regFile.mod.back.myWriteAddr(ydx)(
+              log2Up(wordCount) - 1 downto 0
+            )
+          )
+        )
+      )
+      val myTempRight = Vec[Vec[UInt]]({
+        val tempArr = ArrayBuffer[Vec[UInt]]()
+        for (zdx <- 0 until cfg.regFileModRdPortCnt) {
+          tempArr += (
+            Vec[UInt]({
+              val myArr = new ArrayBuffer[UInt]()
+              myArr += (
+                myPrevWriteData(ydx)(
+                  /*past*/(regFile.mod.back.myWriteAddr(ydx)(
+                    log2Up(wordCount) - 1 downto 0
+                  ))
+                )
+              )
+              myArr += (
+                modBack(modBackPayload).myExt(ydx).rdMemWord(zdx)
+              )
+              myArr
+            })
+          )
+        }
+        tempArr
+      })
+    }
+  }
 }
