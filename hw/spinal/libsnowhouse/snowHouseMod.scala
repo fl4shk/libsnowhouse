@@ -260,8 +260,8 @@ case class SnowHouse
   )
   //--------
   val pipeStageWbFormal = (
-    //cfg.optFormal
-    true
+    cfg.optFormal
+    //true
   ) generate (
     SnowHousePipeStageWriteBackFormal(
       args=SnowHousePipeStageArgs(

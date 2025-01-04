@@ -1382,6 +1382,9 @@ case class SnowHousePipeStageExecute(
   setOutpModMemWord.io.imm := outp.imm
   outp.decodeExt := setOutpModMemWord.io.decodeExt
   psExSetPc := setOutpModMemWord.io.psExSetPc
+  if (cfg.optFormal) {
+    outp.formalPsExSetPc := psExSetPc
+  }
   //setOutpModMemWord.io.doIt
   //}
   //--------
@@ -2549,17 +2552,12 @@ case class SnowHousePipeStageWriteBackFormal(
                   //)
                   assert(flow3.formalPsExSetPc.fire)
                   assert(
-                    flow2.regPc
-                    === (
-                      flow3.regPc + (cfg.instrMainWidth / 8)
-                    )
+                    flow2.regPc === flow3.regPc + (cfg.instrMainWidth / 8)
                   )
                   assert(
-                    flow1.regPc
-                    === (
-                      flow2.regPc + (cfg.instrMainWidth / 8)
-                    )
+                    flow1.regPc === flow2.regPc + (cfg.instrMainWidth / 8)
                   )
+                  assert(flow0.regPc === flow3.formalPsExSetPc.nextPc)
                   //assert(
                   //  flow2.regPc
                   //  === 

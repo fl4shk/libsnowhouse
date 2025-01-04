@@ -419,7 +419,10 @@ object SnowHouseSampleCpuTestProgram extends App {
 object SnowHouseSampleCpuToVerilog extends App {
   Config.spinal.generateVerilog(SnowHouse(
     cfg=SampleCpuParams(
-      optFormal=true
+      optFormal=(
+        true
+        //false
+      )
     ).cfg
   ))
 }
