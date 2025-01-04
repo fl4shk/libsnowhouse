@@ -445,6 +445,23 @@ case class SnowHousePipePayload(
   val gprRdMemWordVec = Vec.fill(cfg.regFileModRdPortCnt)(
     UInt(cfg.mainWidth bits)
   )
+  // TODO: add support for writing multiple GPRs
+  //def formalGprModMemWordSize = (
+  //  //8 
+  //  1
+  //)
+  //val formalGprModMemWord = (
+  //  cfg.optFormal
+  //) generate (
+  //  Vec.fill(formalGprModMemWordSize)(
+  //    UInt(cfg.mainWidth bits)
+  //  )
+  //)
+  val formalPsExSetOutpModMemWordIo = (
+    cfg.optFormal
+  ) generate (
+    SnowHousePipeStageExecuteSetOutpModMemWordIo(cfg=cfg)
+  )
   val regPc = UInt(cfg.mainWidth bits)
   val regPcPlusImm = UInt(cfg.mainWidth bits)
   val imm = UInt(cfg.mainWidth bits)

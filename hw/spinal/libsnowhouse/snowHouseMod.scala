@@ -259,11 +259,11 @@ case class SnowHouse
     doModInModFrontParams=doModInModFrontParams,
   )
   //--------
-  val pipeStageExFormal = (
+  val pipeStageWbFormal = (
     //cfg.optFormal
     true
   ) generate (
-    SnowHousePipeStageExecuteFormal(
+    SnowHousePipeStageWriteBackFormal(
       args=SnowHousePipeStageArgs(
         cfg=cfg,
         io=io,

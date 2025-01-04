@@ -423,7 +423,7 @@ case class SnowHousePipeStageInstrDecode(
 }
 case class SnowHousePipeStageExecuteSetOutpModMemWordIo(
   cfg: SnowHouseConfig,
-) extends Area {
+) extends Bundle {
   val currOp = /*in*/(UInt(log2Up(cfg.opInfoMap.size) bits))
   //println(
   //  s"currOp.getWidth: ${currOp.getWidth}"
@@ -433,6 +433,43 @@ case class SnowHousePipeStageExecuteSetOutpModMemWordIo(
     UInt(cfg.mainWidth bits)
   ))
   val regPcPlusImm = /*in*/(UInt(cfg.mainWidth bits))
+  val imm = /*in*/(UInt(cfg.mainWidth bits))
+  def selRdMemWord(
+    opInfo: OpInfo,
+    idx: Int,
+  ): UInt = {
+    if (idx == 0) {
+      opInfo.dstArr(idx) match {
+        case DstKind.Gpr => {
+          rdMemWord(idx)
+        }
+        case _ => {
+          assert(
+            false,
+            s"not yet implemented"
+          )
+          U(s"${cfg.mainWidth}'d0")
+        }
+      }
+    } else {
+      val tempIdx = idx - 1
+      opInfo.srcArr(tempIdx) match {
+        case SrcKind.Gpr => {
+          rdMemWord(tempIdx)
+        }
+        case SrcKind.Imm(isSImm) => {
+          imm
+        }
+        case _ => {
+          assert(
+            false,
+            s"not yet implemented"
+          )
+          U(s"${cfg.mainWidth}'d0")
+        }
+      }
+    }
+  }
   val modMemWordValid = /*out*/(Bool())
   val modMemWord = /*out*/(Vec.fill(1)( // TODO: temporary size of `1`
     UInt(cfg.mainWidth bits)
@@ -522,6 +559,11 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
   switch (io.currOp) {
     //--------
     for (((_, opInfo), opInfoIdx) <- cfg.opInfoMap.view.zipWithIndex) {
+      def selRdMemWord(
+        srcArrIdx: Int
+      ): UInt = {
+        io.selRdMemWord(opInfo=opInfo, idx=srcArrIdx)
+      }
       assert(
         opInfo.dstArr.size == 1,
         s"not yet implemented: "
@@ -555,7 +597,7 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
                       s"invalid opInfo.srcArr.size: "
                       + s"opInfo(${opInfo}) index:${opInfoIdx}"
                     )
-                    io.modMemWord(0) := io.rdMemWord(1)
+                    io.modMemWord(0) := selRdMemWord(1)
                   }
                   case mem: MemAccessKind.Mem => {
                     io.opIsMemAccess := True
@@ -592,10 +634,10 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
                           (
                             opInfo.addrCalc match {
                               case AddrCalcKind.AddReduce => (
-                                io.rdMemWord(1)
+                                selRdMemWord(1)
                               )
                               case kind: AddrCalcKind.LslThenMaybeAdd => (
-                                io.rdMemWord(1)
+                                selRdMemWord(1)
                                 << kind.options.lslAmount.get
                               )
                             }
@@ -605,7 +647,7 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
                                 U(s"${cfg.mainWidth}'d0")
                               }
                               case 2 => {
-                                io.rdMemWord(2)
+                                selRdMemWord(2)
                               }
                               case _ => {
                                 assert(
@@ -649,7 +691,7 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
                           modIo.dbus.hostData.accKind := (
                             tempMemAccessKind
                           )
-                          modIo.dbus.hostData.data := io.rdMemWord(0)
+                          modIo.dbus.hostData.data := selRdMemWord(0)
                         }
                       }
                       case None => {
@@ -695,7 +737,7 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
                 io.modMemWord(0)(
                   cfg.mainWidth - 1 downto (cfg.mainWidth >> 1)
                 ) := (
-                  io.rdMemWord(1)((cfg.mainWidth >> 1) - 1 downto 0)
+                  selRdMemWord(1)((cfg.mainWidth >> 1) - 1 downto 0)
                 )
               }
               case CpyOpKind.Jmp => {
@@ -817,7 +859,7 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
             val binop: BinopResult = opInfo.aluOp.get match {
               //case AluOpKind.Add => {
               //  io.modMemWord(0) := (
-              //    io.rdMemWord(1) + io.rdMemWord(2)
+              //    selRdMemWord(1) + selRdMemWord(2)
               //  )
               //}
               case AluOpKind.Adc => {
@@ -830,7 +872,7 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
               }
               //case AluOpKind.Sub => {
               //  io.modMemWord(0) := (
-              //    io.rdMemWord(1) - io.rdMemWord(2)
+              //    selRdMemWord(1) - selRdMemWord(2)
               //  )
               //}
               case AluOpKind.Sbc => {
@@ -844,8 +886,8 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
               //case AluOpKind.Lsl => {
               //  io.modMemWord(0) := (
               //    (
-              //      io.rdMemWord(1)
-              //      << io.rdMemWord(2)(log2Up(cfg.mainWidth) - 1 downto 0)
+              //      selRdMemWord(1)
+              //      << selRdMemWord(2)(log2Up(cfg.mainWidth) - 1 downto 0)
               //    )(
               //      io.modMemWord(0).bitsRange
               //    )
@@ -853,50 +895,50 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
               //}
               //case AluOpKind.Lsr => {
               //  io.modMemWord(0) := (
-              //    (io.rdMemWord(1) >> io.rdMemWord(2))(
+              //    (selRdMemWord(1) >> selRdMemWord(2))(
               //      io.modMemWord(0).bitsRange
               //    )
               //  )
               //}
               //case AluOpKind.Asr => {
               //  io.modMemWord(0) := (
-              //    io.rdMemWord(1).asSInt >> io.rdMemWord(2)
+              //    selRdMemWord(1).asSInt >> selRdMemWord(2)
               //  ).asUInt(
               //    io.modMemWord(0).bitsRange
               //  )
               //}
               //case AluOpKind.And => {
               //  io.modMemWord(0) := (
-              //    io.rdMemWord(1) & io.rdMemWord(2)
+              //    selRdMemWord(1) & selRdMemWord(2)
               //  )
               //}
               //case AluOpKind.Or => {
               //  io.modMemWord(0) := (
-              //    io.rdMemWord(1) | io.rdMemWord(2)
+              //    selRdMemWord(1) | selRdMemWord(2)
               //  )
               //}
               //case AluOpKind.Xor => {
               //  io.modMemWord(0) := (
-              //    io.rdMemWord(1) ^ io.rdMemWord(2)
+              //    selRdMemWord(1) ^ selRdMemWord(2)
               //  )
               //}
               //case AluOpKind.Sltu => {
               //  io.modMemWord(0) := Cat(
               //    U(s"${cfg.mainWidth - 1}'d0"),
-              //    io.rdMemWord(1) < io.rdMemWord(2),
+              //    selRdMemWord(1) < selRdMemWord(2),
               //  ).asUInt
               //}
               //case AluOpKind.Slts => {
               //  io.modMemWord(0) := Cat(
               //    U(s"${cfg.mainWidth - 1}'d0"),
-              //    io.rdMemWord(1).asSInt < io.rdMemWord(2).asSInt,
+              //    selRdMemWord(1).asSInt < selRdMemWord(2).asSInt,
               //  ).asUInt
               //}
               case op => {
                 op.binopFunc(
                   cfg=cfg,
-                  left=io.rdMemWord(1),
-                  right=io.rdMemWord(2),
+                  left=selRdMemWord(1),
+                  right=selRdMemWord(2),
                   carry=False,
                 )
               }
@@ -933,7 +975,7 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
                 //  + s"opInfo(${opInfo}) index:${opInfoIdx}"
                 //)
                 io.modMemWord(0) := (
-                  (io.rdMemWord(1) * io.rdMemWord(2))(
+                  (selRdMemWord(1) * selRdMemWord(2))(
                     io.modMemWord(0).bitsRange
                   )
                 )
@@ -1746,8 +1788,11 @@ case class SnowHousePipeStageExecute(
     }
     cMid0Front.duplicateIt()
   }
+  if (cfg.optFormal) {
+    outp.formalPsExSetOutpModMemWordIo := setOutpModMemWord.io
+  }
 }
-case class SnowHousePipeStageExecuteFormal(
+case class SnowHousePipeStageWriteBackFormal(
   args: SnowHousePipeStageArgs,
   //psEx: SnowHousePipeStageExecute,
   //regFile: PipeMemRmw[
@@ -2360,35 +2405,38 @@ case class SnowHousePipeStageExecuteFormal(
       //  tempArr
       //})
       val tempCond1 = (
-        //modBack.isValid
-        //&& 
-        /*past*/(regFile.mod.back.myWriteEnable(ydx))
-        && (
-          myHadWriteAt(ydx)(
-          /*past*/(regFile.mod.back.myWriteAddr(ydx)(
-            //log2Up(myHadWriteAt(ydx).size) - 1 downto 0
-            log2Up(wordCount) - 1 downto 0
-          ))
-          )
-        ) && (
-          tempHaveSeenPipeToWriteV2dFindFirst_0(0)(ydx)(
-            regFile.mod.back.myWriteAddr(ydx)(
+        KeepAttribute(
+          //modBack.isValid
+          //&& 
+          /*past*/(regFile.mod.back.myWriteEnable(ydx))
+          && (
+            myHadWriteAt(ydx)(
+            /*past*/(regFile.mod.back.myWriteAddr(ydx)(
+              //log2Up(myHadWriteAt(ydx).size) - 1 downto 0
               log2Up(wordCount) - 1 downto 0
+            ))
             )
-          )
-        ) && (
-          tempHaveSeenPipeToWriteV2dFindFirst_0(1)(ydx)(
-            regFile.mod.back.myWriteAddr(ydx)(
-              log2Up(wordCount) - 1 downto 0
+          ) && (
+            tempHaveSeenPipeToWriteV2dFindFirst_0(0)(ydx)(
+              regFile.mod.back.myWriteAddr(ydx)(
+                log2Up(wordCount) - 1 downto 0
+              )
             )
-          )
-        ) && (
-          tempHaveSeenPipeToWriteV2dFindFirst_0(2)(ydx)(
-            regFile.mod.back.myWriteAddr(ydx)(
-              log2Up(wordCount) - 1 downto 0
+          ) && (
+            tempHaveSeenPipeToWriteV2dFindFirst_0(1)(ydx)(
+              regFile.mod.back.myWriteAddr(ydx)(
+                log2Up(wordCount) - 1 downto 0
+              )
+            )
+          ) && (
+            tempHaveSeenPipeToWriteV2dFindFirst_0(2)(ydx)(
+              regFile.mod.back.myWriteAddr(ydx)(
+                log2Up(wordCount) - 1 downto 0
+              )
             )
           )
         )
+        .setName(s"tempCond1_${ydx}")
       )
       //val myTempRight = Vec[Vec[UInt]]({
       //  val tempArr = ArrayBuffer[Vec[UInt]]()
@@ -2418,15 +2466,15 @@ case class SnowHousePipeStageExecuteFormal(
         KeepAttribute(
           Vec[UInt]({
             val myArr = new ArrayBuffer[UInt]()
-            myArr += (
-              myPrevWriteData(ydx)(
-                /*past*/(
-                  regFile.mod.back.myWriteAddr(ydx)(
-                    log2Up(wordCount) - 1 downto 0
-                  )
-                )
-              )
-            )
+            //myArr += (
+            //  myPrevWriteData(ydx)(
+            //    /*past*/(
+            //      regFile.mod.back.myWriteAddr(ydx)(
+            //        log2Up(wordCount) - 1 downto 0
+            //      )
+            //    )
+            //  )
+            //)
             myArr += (
               modBack(modBackPayload).myExt(ydx)
               .rdMemWord(PipeMemRmw.modWrIdx)
@@ -2434,8 +2482,24 @@ case class SnowHousePipeStageExecuteFormal(
             myArr
           })
         )
-        .setName(s"${regFile.pipeName}_myTempRight")
+        .setName(s"${regFile.pipeName}_myTempRight_${ydx}")
       )
+      for ((right, rightIdx) <- myTempRight.view.zipWithIndex) {
+        switch (modBack(modBackPayload).op) {
+          for (
+            ((_, opInfo), opInfoIdx) <- cfg.opInfoMap.view.zipWithIndex
+          ) {
+            is (opInfoIdx) {
+              //opInfo
+            }
+          }
+        }
+        if ((1 << log2Up(cfg.opInfoMap.size)) != cfg.opInfoMap.size) {
+          assume(
+            modBack(modBackPayload).op < cfg.opInfoMap.size
+          )
+        }
+      }
     }
   }
 }
