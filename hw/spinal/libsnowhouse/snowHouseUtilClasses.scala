@@ -344,6 +344,13 @@ case class SnowHouseInstrCnt(
   val shouldIgnoreInstr = Bool()
   //def shouldIgnoreInstr = (pcChangeState === True)
 }
+object SnowHouseDecodeExtLdStKind
+extends SpinalEnum(defaultEncoding=binarySequential) {
+  val
+    Load,
+    Store
+    = newElement()
+}
 case class SnowHouseDecodeExt(
   cfg: SnowHouseConfig
 ) extends Bundle {
@@ -354,15 +361,14 @@ case class SnowHouseDecodeExt(
   private val _opIsMultiCycleIdx = 3
   val opIsLim = 4
   val opIs = /*out*/(UInt(opIsLim bits))
-  val memAccessLdStKind = Bool()
-  private[libsnowhouse] val _memAccessLdStKindLoad = False
-  private[libsnowhouse] val _memAccessLdStKindStore = True
-  def memAccessIsLoad = (
-    memAccessLdStKind === _memAccessLdStKindLoad
-  )
-  def memAccessIsStore = (
-    memAccessLdStKind === _memAccessLdStKindStore
-  )
+  //val memAccessLdStKind = SnowHouseDecodeExtLdStKind() //Bool()
+  //def memAccessIsLoad = (
+  //  memAccessLdStKind === SnowHouseDecodeExtLdStKind.Load
+  //)
+  //def memAccessIsStore = (
+  //  memAccessLdStKind === SnowHouseDecodeExtLdStKind.Store
+  //)
+  val memAccessKind = SnowHouseMemAccessKind()
   // TODO: add support for atomic operations
   // (probably just read-modify-write)
   //val memAccessIsAtomic = Bool()

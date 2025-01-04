@@ -765,11 +765,11 @@ case class BinopResult(
   cfg: SnowHouseConfig
 ) extends Area {
   val main = UInt(cfg.mainWidth bits)
-  // TODO: support other flags
-  //val N = Bool()
+  val N: Bool = main.msb
+  // TODO: support the Zero and oVerflow flags
   //val V = Bool()
   val C = Bool()
-  //val Z = Bool()
+  //val Z: Bool = main =/= 0
 }
 sealed trait AluOpKind extends OpKindBase {
   def binopFunc(
@@ -1152,8 +1152,8 @@ object AluOpKind {
     ) = {
       val ret = BinopResult(cfg=cfg)
       ret.main := (
-        left >> right(log2Up(cfg.mainWidth) downto 0)
-      ).resized
+        left >> right//(log2Up(cfg.mainWidth) downto 0)
+      )//.resized
       ret.C := False
       ret
     }
@@ -1200,8 +1200,8 @@ object AluOpKind {
     ) = {
       val ret = BinopResult(cfg=cfg)
       ret.main := (
-        left.asSInt >> right(log2Up(cfg.mainWidth) downto 0)
-      ).asUInt.resized
+        left.asSInt >> right//(log2Up(cfg.mainWidth) downto 0)
+      ).asUInt//.resized
       ret.C := False
       ret
     }

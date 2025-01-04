@@ -87,7 +87,7 @@ case class MultiCycleDevPayload(
   )
 }
 //--------
-object DbusHostMemAccessKind
+object SnowHouseMemAccessKind
 extends SpinalEnum(defaultEncoding=binarySequential) {
   val
     LoadU,      // unsigned
@@ -96,7 +96,7 @@ extends SpinalEnum(defaultEncoding=binarySequential) {
     //AtomicRmw
     = newElement();
 }
-object DbusHostMemAccessSubKind
+object SnowHouseMemAccessSubKind
 extends SpinalEnum(defaultEncoding=binarySequential) {
   val
     Sz8,
@@ -137,8 +137,8 @@ case class DbusHostPayload(
 ) extends Bundle {
   val addr = UInt(cfg.mainWidth bits)
   val data = UInt(cfg.mainWidth bits)
-  val accKind = DbusHostMemAccessKind()
-  val subKind = DbusHostMemAccessSubKind()
+  val accKind = SnowHouseMemAccessKind()
+  val subKind = SnowHouseMemAccessSubKind()
   val lock = Bool() // for atomics
 }
 case class DbusDevPayload(
