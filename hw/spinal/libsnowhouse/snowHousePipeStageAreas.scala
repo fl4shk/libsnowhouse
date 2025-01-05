@@ -91,7 +91,6 @@ case class SnowHousePipeStageInstrFetch(
   //val psExSetPc = Flow(SnowHousePsExSetPcPayload(cfg=cfg))
   val upModExt = SnowHousePipePayload(cfg=cfg)
   //val myInstrCnt = SnowHouseFormalInstrCnt(cfg=cfg)
-  def myInstrCnt = upModExt.instrCnt
   up(pIf) := upModExt
   upModExt := (
     RegNext(
@@ -99,6 +98,7 @@ case class SnowHousePipeStageInstrFetch(
       init=upModExt.getZero
     )
   )
+  def myInstrCnt = upModExt.instrCnt
   def nextRegPc = upModExt.regPc
   val rSavedExSetPc = {
     val temp = Reg(Flow(
@@ -432,7 +432,7 @@ case class SnowHousePipeStageExecuteSetOutpModMemWordIo(
   val rdMemWord = /*in*/(Vec.fill(3)( // TODO: temporary size of `3`
     UInt(cfg.mainWidth bits)
   ))
-  val regPc = /*in*/(UInt(cfg.mainWidth bits))
+  //val regPc = /*in*/(UInt(cfg.mainWidth bits))
   val regPcPlusImm = /*in*/(UInt(cfg.mainWidth bits))
   val imm = /*in*/(UInt(cfg.mainWidth bits))
   def selRdMemWord(
