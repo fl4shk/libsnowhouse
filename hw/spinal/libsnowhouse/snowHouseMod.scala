@@ -282,6 +282,20 @@ case class SnowHouse
       ),
     )
   )
+  val pipeStageMem = (
+    SnowHousePipeStageMem(
+      args=SnowHousePipeStageArgs(
+        cfg=cfg,
+        io=io,
+        link=null,
+        prevPayload=null,
+        currPayload=null,
+        regFile=regFile,
+      ),
+      psWb=pipeStageWb,
+      psMemStallHost=psMemStallHost,
+    )
+  )
   //io.ibus.nextValid := True
   //io.ibus.hostData.addr := 3
 
