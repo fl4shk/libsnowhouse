@@ -426,7 +426,7 @@ sealed trait SampleCpuExpr {
   //--------
 }
 //--------
-object SnowHouseRegs {
+object SampleCpuRegs {
   val r0 = Gpr(0)
   val r1 = Gpr(1)
   val r2 = Gpr(2)
@@ -605,8 +605,8 @@ object bz {
     Instruction(
       op=SampleCpuOp.BzRaSimm,
       rA=rA,
-      rB=SnowHouseRegs.r0,
-      rC=SnowHouseRegs.r0,
+      rB=SampleCpuRegs.r0,
+      rC=SampleCpuRegs.r0,
       simm16=(
         simm16 - SampleCpuExpr.Dot - 4
       ),
@@ -637,8 +637,8 @@ object bnz {
     Instruction(
       op=SampleCpuOp.BnzRaSimm,
       rA=rA,
-      rB=SnowHouseRegs.r0,
-      rC=SnowHouseRegs.r0,
+      rB=SampleCpuRegs.r0,
+      rC=SampleCpuRegs.r0,
       simm16=(
         //simm16,
         simm16 - SampleCpuExpr.Dot - 4
@@ -667,8 +667,8 @@ object jmp {
     Instruction(
       op=SampleCpuOp.JmpRa,
       rA=rA,
-      rB=SnowHouseRegs.r0,
-      rC=SnowHouseRegs.r0,
+      rB=SampleCpuRegs.r0,
+      rC=SampleCpuRegs.r0,
       simm16=0,
     )
   }
@@ -683,7 +683,7 @@ object ldr {
       op=SampleCpuOp.LdrRaRbSimm,
       rA=rA,
       rB=rB,
-      rC=SnowHouseRegs.r0,
+      rC=SampleCpuRegs.r0,
       simm16=simm16,
     )
   }
@@ -711,7 +711,7 @@ object str {
       op=SampleCpuOp.StrRaRbSimm,
       rA=rA,
       rB=rB,
-      rC=SnowHouseRegs.r0,
+      rC=SampleCpuRegs.r0,
       simm16=simm16,
     )
   }
@@ -737,8 +737,8 @@ object cpyui {
     Instruction(
       op=SampleCpuOp.CpyuiRaSimm,
       rA=rA,
-      rB=SnowHouseRegs.r0,
-      rC=SnowHouseRegs.r0,
+      rB=SampleCpuRegs.r0,
+      rC=SampleCpuRegs.r0,
       simm16=simm16
     )
   }
@@ -763,8 +763,8 @@ object cpyi {
     Instruction(
       op=SampleCpuOp.CpyiRaSimm,
       rA=rA,
-      rB=SnowHouseRegs.r0,
-      rC=SnowHouseRegs.r0,
+      rB=SampleCpuRegs.r0,
+      rC=SampleCpuRegs.r0,
       simm16=simm16
     )
   }
@@ -830,8 +830,8 @@ class Instruction(
   val rC: Gpr,
   val simm16: SampleCpuExpr,
 ) {
-  def encode(assembler: SampleCpuAssembler): Int = {
-    var ret: Int = 0
+  def encode(assembler: SampleCpuAssembler): Long = {
+    var ret: Long = 0
     //--------
     ret = ret | op._1
     //printf(

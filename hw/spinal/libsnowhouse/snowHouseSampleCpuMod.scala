@@ -3,6 +3,7 @@ package libsnowhouse
 import scala.collection.immutable
 import scala.collection.mutable._
 import spinal.core._
+import spinal.core.sim._
 import spinal.core.formal._
 import spinal.lib._
 import spinal.lib.misc.pipeline._
@@ -64,11 +65,11 @@ object SampleCpuOp {
 }
 case class SampleCpuEncInstr(
 ) extends PackedBundle {
-  val op = UInt(SampleCpuInstrEnc.opWidth bits)
-  val raIdx = UInt(SampleCpuInstrEnc.gprIdxWidth bits)
-  val rbIdx = UInt(SampleCpuInstrEnc.gprIdxWidth bits)
-  val rcIdx = UInt(SampleCpuInstrEnc.gprIdxWidth bits)
   val simm16 = UInt(SampleCpuInstrEnc.simmWidth bits)
+  val rcIdx = UInt(SampleCpuInstrEnc.gprIdxWidth bits)
+  val rbIdx = UInt(SampleCpuInstrEnc.gprIdxWidth bits)
+  val raIdx = UInt(SampleCpuInstrEnc.gprIdxWidth bits)
+  val op = UInt(SampleCpuInstrEnc.opWidth bits)
 }
 object SampleCpuPipeStageInstrDecode {
   def apply(
@@ -275,8 +276,8 @@ object SampleCpuOpInfoMap {
   )
   //--------
 }
-case class SampleCpuParams(
-  optFormal: Boolean
+case class SampleCpuConfig(
+  optFormal: Boolean,
 ) {
   //--------
   val instrMainWidth = 32
@@ -288,7 +289,7 @@ case class SampleCpuParams(
   val modRdPortCnt = 3
   val pipeName="SnowHouseSampleCpu"
   //--------
-  val cfg = SnowHouseConfig(
+  val shCfg = SnowHouseConfig(
     //encInstrType=SampleCpuEncInstr(),
     instrMainWidth=instrMainWidth,
     shRegFileCfg=SnowHouseRegFileConfig(
@@ -388,51 +389,147 @@ case class SampleCpuParams(
     //maxNumGprsPerInstr=3,
   )
   //--------
+  val program = ArrayBuffer[AsmStmt]()
 }
 
-object SnowHouseSampleCpuTestProgram extends App {
-  import SnowHouseRegs._
-  val program = ArrayBuffer[AsmStmt]()
+case class SnowHouseSampleCpuProgram(
+  cfg: SampleCpuConfig
+) {
+  val outpArr = ArrayBuffer[BigInt]()
+  val assembler = SampleCpuAssembler(
+    stmtArr=cfg.program,
+    outpArr=outpArr,
+  )
+  def doPrint(): Unit = {
+    for ((encoded, idx) <- outpArr.view.zipWithIndex) {
+      printf(
+        //s"encoded ${idx}: ${encoded}"
+        "%X: %X\n",
+        idx << 2,
+        (encoded.toLong & 0xffffffff).toInt
+      )
+    }
+  }
+}
+case class SnowHouseSampleCpuTestProgram(
+  cfg: SampleCpuConfig,
+) {
+  import SampleCpuRegs._
+  //val program = ArrayBuffer[AsmStmt]()
+  //val cfg = SampleCpuConfig(
+  //  optFormal=false,
+  //  program=program,
+  //)
+  //def program = cfg.program
   import libsnowhouse.Label._
   val tempData: Int = 0x17000
-  program ++= Array[AsmStmt](
+  cfg.program ++= Array[AsmStmt](
+    //--------
+    cpyi(r0, 0x0),        // r0 = 0
+    cpyi(r1, 0x8),        // r1 = 8
+    cpyi(r2, 0x1),        // r2 = 1
+    cpyi(r3, 0x1000),     // r3 = 0x1000
+    cpyi(r4, 0x4),        // r4 = 4
+    //cpyi(r5, 0x0),
     //--------
     Lb"loop",
-    add(r0, r1, r2),
-    cpyui(r2, tempData >> 16),
-    cpyi(r2, tempData & 0xffff),
-    bz(r0, LbR"loop"),
+    //add(r0, r1, r2),
+    //cpyui(r2, tempData >> 16),
+    //cpyi(r2, tempData & 0xffff),
+    ldr(r5, r3, 0x0),     // r5 = [r3 + 0]
+    add(r5, r5, r2),      // r5 += 1
+    str(r5, r3, 0x4),     // [r3 + 4] = r5
+    add(r3, r3, r4),      // r3 += 4
+    sub(r1, r1, r2),      // r1 -= 1 
+    bnz(r1, LbR"loop"),   // if (r1 != 0) goto LbR"loop"
     //--------
-    cpyi(r12, LbR"infin"),
+    cpyi(r12, 0x0),
     Lb"infin",
     //--------
     bz(r12, LbR"infin"),
-    Db32(0x3f),
+    //Db32(0x3f),
     //--------
   )
-  val outpArr = ArrayBuffer[BigInt]()
-  val assembler = SampleCpuAssembler(
-    stmtArr=program,
-    outpArr=outpArr,
+  val program = SnowHouseSampleCpuProgram(cfg=cfg)
+  //val outpArr = ArrayBuffer[BigInt]()
+  //val assembler = SampleCpuAssembler(
+  //  stmtArr=program,
+  //  outpArr=outpArr,
+  //)
+}
+case class SampleCpuWithDualRamIo(
+  program: SnowHouseSampleCpuProgram,
+) extends Bundle {
+  def cfg = program.cfg
+}
+case class SampleCpuWithDualRam(
+  program: SnowHouseSampleCpuProgram,
+) extends Component {
+  val io = SampleCpuWithDualRamIo(program=program)
+  def cfg = program.cfg
+  val cpu = SnowHouse(cfg=cfg.shCfg)
+  val dualRam = SnowHouseSampleInstrDataDualRam(
+    cfg=cfg.shCfg,
+    instrInitBigInt=program.outpArr,
+    dataInitBigInt=(
+      Array.fill(1 << 16)(BigInt(0))
+    ),
   )
-  for ((encoded, idx) <- outpArr.view.zipWithIndex) {
-    printf(
-      //s"encoded ${idx}: ${encoded}"
-      "%X: %X\n",
-      idx << 2,
-      (encoded.toLong & 0xffffffff).toInt
+  cpu.io.ibus <> dualRam.io.ibus
+  cpu.io.dbus <> dualRam.io.dbus
+}
+object SnowHouseSampleCpuWithDualRamSim extends App {
+  //Config.spinal.generateVerilog({
+  //  val cfg = SampleCpuConfig(
+  //    optFormal=(
+  //      //true
+  //      false
+  //    )
+  //  )
+  //  SnowHouse(
+  //    cfg=cfg.shCfg
+  //  )
+  //})
+  val cfg = SampleCpuConfig(
+    optFormal=(
+      //true
+      false
     )
-  }
+  )
+  val testProgram = SnowHouseSampleCpuTestProgram(cfg=cfg)
+  SimConfig.withVcdWave.compile(
+    SampleCpuWithDualRam(program=testProgram.program)
+  ).doSim{dut => {
+    dut.clockDomain.forkStimulus(10)
+    for (i <- 0 until 256) {
+      dut.clockDomain.waitSampling()
+      //for (gprIdx <- 0 until cfg.numGprs) {
+      //  printf(
+      //    "r%i=%x ",
+      //    gprIdx,
+      //    dut.cpu.regFile.modMem(0)(0).readAsync(
+      //      address=gprIdx
+      //    ).toInt
+      //  )
+      //  if (gprIdx % 4 == 3) {
+      //    printf("\n")
+      //  }
+      //}
+    }
+  }}
 }
 object SnowHouseSampleCpuToVerilog extends App {
-  Config.spinal.generateVerilog(SnowHouse(
-    cfg=SampleCpuParams(
+  Config.spinal.generateVerilog({
+    val cfg = SampleCpuConfig(
       optFormal=(
-        true
-        //false
+        //true
+        false
       )
-    ).cfg
-  ))
+    )
+    SnowHouse(
+      cfg=cfg.shCfg
+    )
+  })
 }
 object SnowHouseSampleCpuFormal extends App {
   //--------
@@ -446,12 +543,12 @@ object SnowHouseSampleCpuFormal extends App {
   case class SnowHouseSampleCpuFormalDut1() extends Component {
     val dut = FormalDut(
       SnowHouse(
-        cfg=SampleCpuParams(
+        cfg=SampleCpuConfig(
           optFormal=(
             true
             //false
           )
-        ).cfg
+        ).shCfg
       )
     )
 

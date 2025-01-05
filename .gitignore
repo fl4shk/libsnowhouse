@@ -46,3 +46,4 @@ simWorkspace/
 tmp/
 null
 .nvim
+gtkwave

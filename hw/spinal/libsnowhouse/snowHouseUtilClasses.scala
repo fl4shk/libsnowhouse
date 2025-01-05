@@ -4,6 +4,7 @@ import scala.collection.immutable
 import scala.collection.mutable._
 import spinal.core._
 import spinal.core.formal._
+import spinal.core.sim._
 import spinal.lib._
 import spinal.lib.misc.pipeline._
 
@@ -427,11 +428,11 @@ case class SnowHousePipePayload(
   def myHaveFormalFwd = (
     cfg.optFormal
   )
-  val decodeExt = SnowHouseDecodeExt(cfg=cfg)
-  val instrCnt = SnowHouseInstrCnt(cfg=cfg)
+  val decodeExt = SnowHouseDecodeExt(cfg=cfg) //simPublic()
+  val instrCnt = SnowHouseInstrCnt(cfg=cfg) //simPublic()
   //val opCnt = UInt(cfg.instrCntWidth bits)
   def opCnt = instrCnt.any
-  val op = UInt(log2Up(cfg.opInfoMap.size) bits)
+  val op = UInt(log2Up(cfg.opInfoMap.size) bits) //simPublic()
   def formalAssumes() = new Area {
     if (cfg.optFormal) {
       if ((1 << op.getWidth) != cfg.opInfoMap.size) {
@@ -455,12 +456,12 @@ case class SnowHousePipePayload(
       myArr += mkOneExt(ydx=ydx)
     }
     myArr
-  }
+  } //simPublic()
   // `gprIdxVec` is to be driven by the class derived from
   // `SnowHousePipeStageInstrDecode`
   val gprIdxVec = Vec.fill(cfg.maxNumGprsPerInstr)(
     UInt(log2Up(cfg.numGprs) bits)
-  )
+  ) //simPublic()
   val gprIdxToMemAddrIdxMap = Vec[SnowHouseGprIdxToMemAddrIdxMapElem]({
     val myArr = ArrayBuffer[SnowHouseGprIdxToMemAddrIdxMapElem]()
     for (zdx <- 0 until cfg.maxNumGprsPerInstr) {
@@ -468,8 +469,12 @@ case class SnowHousePipePayload(
     }
     myArr
   })
-  val gprRdMemWordVec = Vec.fill(cfg.regFileModRdPortCnt)(
-    UInt(cfg.mainWidth bits)
+  val gprRdMemWordVec = (
+    !cfg.optFormal
+  ) generate (
+    Vec.fill(cfg.regFileModRdPortCnt)(
+      UInt(cfg.mainWidth bits)
+    )
   )
   // TODO: add support for writing multiple GPRs
   //def formalGprModMemWordSize = (
@@ -483,19 +488,22 @@ case class SnowHousePipePayload(
   //    UInt(cfg.mainWidth bits)
   //  )
   //)
-  val formalPsExSetPc = (
-    cfg.optFormal
+  val psExSetPc = (
+    //cfg.optFormal
+    true
   ) generate (
-    Flow(SnowHousePsExSetPcPayload(cfg=cfg))
+    Flow(SnowHousePsExSetPcPayload(cfg=cfg)) //simPublic()
   )
-  val formalPsExSetOutpModMemWordIo = (
-    cfg.optFormal
+  val psExSetOutpModMemWordIo = (
+    //cfg.optFormal
+    true
   ) generate (
-    SnowHousePipeStageExecuteSetOutpModMemWordIo(cfg=cfg)
+    SnowHousePipeStageExecuteSetOutpModMemWordIo(cfg=cfg) //simPublic()
   )
-  val regPc = UInt(cfg.mainWidth bits)
-  val regPcPlusImm = UInt(cfg.mainWidth bits)
-  val imm = UInt(cfg.mainWidth bits)
+  //psExSetOutpModMemWordIo.simPublic()
+  val regPc = UInt(cfg.mainWidth bits)//.simPublic()
+  val regPcPlusImm = UInt(cfg.mainWidth bits)//.simPublic()
+  val imm = UInt(cfg.mainWidth bits)//.simPublic()
   //val op = UInt(log2Up(cfg.opInfoMap.size) bits)
   def mkOneExt(ydx: Int) = (
     PipeMemRmwPayloadExt(

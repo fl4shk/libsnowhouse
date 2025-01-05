@@ -12,16 +12,105 @@ import libcheesevoyage.math._
 import libcheesevoyage.bus.lcvStall._
 
 //sealed trait SnowHouseInstrSourceKind
+//case class SnowHouseInstrRamIo(
+//  cfg: SnowHouseConfig
+//) extends Component {
+//}
+case class SnowHouseSampleInstrDataDualRamIo(
+  cfg: SnowHouseConfig,
+) extends Bundle {
+  val ibus = new LcvStallIo[IbusHostPayload, IbusDevPayload ](
+    hostPayloadType=Some(IbusHostPayload(cfg=cfg)),
+    devPayloadType=Some(IbusDevPayload(cfg=cfg)),
+  )
+  val dbus = new LcvStallIo[DbusHostPayload, DbusDevPayload](
+    hostPayloadType=Some(DbusHostPayload(cfg=cfg)),
+    devPayloadType=Some(DbusDevPayload(cfg=cfg)),
+  )
+  slave(
+    ibus,
+    dbus,
+  )
+}
+case class SnowHouseSampleInstrDataDualRam(
+  cfg: SnowHouseConfig,
+  //isInstr: Boolean,
+  instrInitBigInt: Seq[BigInt],
+  dataInitBigInt: Seq[BigInt],
+) extends Component {
+  //val io = slave(new LcvStallIo[HostPayloadT, DevPayloadT](
+  //  hostPayloadType=Some(hostPayloadType()),
+  //  devPayloadType=Some(devPayloadType()),
+  //))
+  val io = SnowHouseSampleInstrDataDualRamIo(cfg=cfg)
+  //--------
+  val instrRamDepth = instrInitBigInt.size
+  val instrRam = FpgacpuRamSimpleDualPort(
+    wordType=UInt(cfg.instrMainWidth bits),
+    depth=instrRamDepth,
+    initBigInt=Some(instrInitBigInt),
+  )
+  //--------
+  io.ibus.ready := io.ibus.rValid
+  //--------
+  instrRam.io.rdEn := io.ibus.nextValid
+  instrRam.io.rdAddr := (
+    (io.ibus.hostData.addr >> 2).resized
+  )
+  io.ibus.devData.instr := instrRam.io.rdData.asUInt
+  instrRam.io.wrEn := False
+  instrRam.io.wrAddr := instrRam.io.wrAddr.getZero
+  instrRam.io.wrData := instrRam.io.wrData.getZero
+  //--------
+  val dataRamDepth = dataInitBigInt.size
+  val dataRam = FpgacpuRamSimpleDualPort(
+    wordType=UInt(cfg.mainWidth bits),
+    depth=dataRamDepth,
+    initBigInt=Some(dataInitBigInt),
+  )
+  io.dbus.ready := io.dbus.rValid
+  io.dbus.devData.data := io.dbus.hostData.data.getZero
 
+  dataRam.io.rdEn := False
+  dataRam.io.rdAddr := dataRam.io.wrAddr.getZero
+  dataRam.io.wrEn := False
+  dataRam.io.wrAddr := dataRam.io.wrAddr.getZero
+  dataRam.io.wrData := dataRam.io.wrData.getZero
+  switch (io.dbus.hostData.accKind) {
+    is (SnowHouseMemAccessKind.LoadU) {
+      dataRam.io.rdEn := io.dbus.nextValid
+      dataRam.io.rdAddr := (
+        (io.dbus.hostData.addr >> 2).resized
+      )
+      io.dbus.devData.data := dataRam.io.rdData.asUInt
+    }
+    is (SnowHouseMemAccessKind.LoadS) {
+      dataRam.io.rdEn := io.dbus.nextValid
+      dataRam.io.rdAddr := (
+        (io.dbus.hostData.addr >> 2).resized
+      )
+      io.dbus.devData.data := dataRam.io.rdData.asUInt
+    }
+    is (SnowHouseMemAccessKind.Store) {
+      // TODO: possibly update this to work better?
+      dataRam.io.wrEn := io.dbus.nextValid
+      dataRam.io.wrAddr := (
+        (io.dbus.hostData.addr >> 2).resized
+      )
+      dataRam.io.wrData := io.dbus.hostData.data.asBits
+    }
+  }
+  
+}
 //--------
 case class SnowHouseIo(
   cfg: SnowHouseConfig
 ) extends Bundle {
   //val icache = 
   // instruction bus
-  val ibus = new LcvStallIo(
-    hostPayloadType=Some(HardType(IbusHostPayload(cfg=cfg))),
-    devPayloadType=Some(HardType(IbusDevPayload(cfg=cfg))),
+  val ibus = new LcvStallIo[IbusHostPayload, IbusDevPayload ](
+    hostPayloadType=Some(IbusHostPayload(cfg=cfg)),
+    devPayloadType=Some(IbusDevPayload(cfg=cfg)),
   )
   val haveMultiCycleBusVec = (
     cfg.opInfoMap.find(_._2.select == OpSelect.MultiCycle) != None
@@ -43,10 +132,10 @@ case class SnowHouseIo(
         if (opInfo.select == OpSelect.MultiCycle) {
           tempArr += new LcvStallIo(
             hostPayloadType=(
-              Some(HardType(MultiCycleHostPayload(cfg=cfg, opInfo=opInfo)))
+              Some(MultiCycleHostPayload(cfg=cfg, opInfo=opInfo))
             ),
             devPayloadType=(
-              Some(HardType(MultiCycleDevPayload(cfg=cfg, opInfo=opInfo)))
+              Some(MultiCycleDevPayload(cfg=cfg, opInfo=opInfo))
             ),
           )
         }
@@ -54,9 +143,9 @@ case class SnowHouseIo(
       tempArr
     }
   )
-  val dbus = new LcvStallIo(
-    hostPayloadType=Some(HardType(DbusHostPayload(cfg=cfg))),
-    devPayloadType=Some(HardType(DbusDevPayload(cfg=cfg))),
+  val dbus = new LcvStallIo[DbusHostPayload, DbusDevPayload](
+    hostPayloadType=Some(DbusHostPayload(cfg=cfg)),
+    devPayloadType=Some(DbusDevPayload(cfg=cfg)),
   )
   master(
     ibus,
@@ -80,7 +169,12 @@ case class SnowHouse
   val io = SnowHouseIo(cfg=cfg)
   //--------
   val psIdHaltIt = Bool()
-  val psExSetPc = Flow(SnowHousePsExSetPcPayload(cfg=cfg))
+  val psExSetPc = (
+    KeepAttribute(
+      Flow(SnowHousePsExSetPcPayload(cfg=cfg))
+    )
+    .setName(s"SnowHouse_psExSetPc")
+  )
   val psMemStallHost = (
     cfg.mkLcvStallHost(
       stallIo=(
@@ -296,14 +390,7 @@ case class SnowHouse
       psMemStallHost=psMemStallHost,
     )
   )
-  //io.ibus.nextValid := True
-  //io.ibus.hostData.addr := 3
-
-  //io.dbus.nextValid := False
-  //io.dbus.hostData.addr := 8
-  //io.dbus.hostData.data := 0x10c
-  //io.dbus.hostData.accKind := DbusHostMemAccKind.Load
-  //--------
+  regFile.io.back.ready := True
   Builder(linkArr)
   //--------
 }
