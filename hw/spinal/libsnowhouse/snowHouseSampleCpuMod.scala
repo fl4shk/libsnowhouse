@@ -429,7 +429,7 @@ case class SnowHouseSampleCpuTestProgram(
     cpyi(r1, 0x8),        // r1 = 8
     cpyi(r2, 0x1),        // r2 = 1
     cpyi(r3, 0x1000),     // r3 = 0x1000
-    cpyi(r4, 0x4),        // r4 = 4
+    cpyi(r4, 0x8),        // r4 = 4
     //cpyi(r5, 0x0),
     //--------
     Lb"loop",
