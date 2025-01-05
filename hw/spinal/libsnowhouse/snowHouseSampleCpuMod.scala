@@ -426,3 +426,72 @@ object SnowHouseSampleCpuToVerilog extends App {
     ).cfg
   ))
 }
+object SnowHouseSampleCpuFormal extends App {
+  //--------
+  //--------
+  def myProveNumCycles = (
+    //8
+    10
+    //15
+    //16
+  )
+  case class SnowHouseSampleCpuFormalDutWithBranches() extends Component {
+    val dut = FormalDut(
+      SnowHouse(
+        cfg=SampleCpuParams(
+          optFormal=(
+            true
+            //false
+          )
+        ).cfg
+      )
+    )
+
+    assumeInitial(clockDomain.isResetActive)
+    anyseq(dut.io.ibus.devData)
+    anyseq(dut.io.ibus.ready)
+    if (dut.io.haveMultiCycleBusVec) {
+      for (
+        (multiCycleBus, busIdx)
+        <- dut.io.multiCycleBusVec.view.zipWithIndex
+      ) {
+        anyseq(multiCycleBus.devData)
+        anyseq(multiCycleBus.ready)
+      }
+    }
+    anyseq(dut.io.dbus.devData)
+    anyseq(dut.io.dbus.ready)
+  }
+  //--------
+  new SpinalFormalConfig(
+    _spinalConfig=SpinalConfig(
+      defaultConfigForClockDomains=ClockDomainConfig(
+        resetActiveLevel=HIGH,
+        resetKind=SYNC,
+      ),
+      formalAsserts=true,
+    ),
+    _keepDebugInfo=true,
+  )
+    .withBMC(
+      //20
+      //15
+      //16
+      myProveNumCycles
+    )
+    //.withProve(
+    //  //20
+    //  //40
+    //  //10
+    //  myProveNumCycles
+    //)
+    //.withCover(
+    //  //myProveNumCycles
+    //  //20
+    //  //60
+    //  //20
+    //  15
+    //)
+    .doVerify(SnowHouseSampleCpuFormalDutWithBranches())
+  //--------
+}
