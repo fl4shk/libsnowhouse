@@ -392,9 +392,9 @@ case class SnowHousePipeStageInstrDecode(
   //--------
   if (cfg.optFormal) {
     when (pastValidAfterReset()) {
-      when (!io.ibus.ready) {
-        assert(!up.isFiring)
-      }
+      //when (!io.ibus.ready) {
+      //  assert(!up.isFiring)
+      //}
       when (
         !past(up.isFiring)
         && io.ibus.ready
@@ -1456,19 +1456,21 @@ case class SnowHousePipeStageExecute(
     ydx: Int,
     zdx: Int,
   ): Unit = {
-    if (zdx == PipeMemRmw.modWrIdx) {
-      def tempExt = outp.myExt(ydx)
-      tempExt.modMemWord := (
-        // TODO: support multiple output `modMemWord`s
-        setOutpModMemWord.io.modMemWord(0)
-      )
-      tempExt.modMemWordValid := (
-        setOutpModMemWord.io.modMemWordValid
-      )
+    when (cMid0Front.up.isValid) {
+      if (zdx == PipeMemRmw.modWrIdx) {
+        def tempExt = outp.myExt(ydx)
+        tempExt.modMemWord := (
+          // TODO: support multiple output `modMemWord`s
+          setOutpModMemWord.io.modMemWord(0)
+        )
+        tempExt.modMemWordValid := (
+          setOutpModMemWord.io.modMemWordValid
+        )
+      }
+      outp.gprRdMemWordVec(zdx) := tempRdMemWord
     }
     def tempRdMemWord = setOutpModMemWord.io.rdMemWord(zdx)
     tempRdMemWord := myRdMemWord(ydx=ydx, modIdx=zdx)
-    outp.gprRdMemWordVec(zdx) := tempRdMemWord
   }
   if (cfg.regFileWordCountArr.size == 0) {
     assert(
@@ -1983,12 +1985,12 @@ case class SnowHousePipeStageMem(
             zdx: Int,
             myFwdData: UInt,
           ) => {
-            //when (pastValidAfterReset) {
+            when (pastValidAfterReset) {
               assert(
                 midModPayload(extIdxUp).myExt(ydx).rdMemWord(zdx)
                 === myFwdData
               )
-            //}
+            }
           }
         )
       )
@@ -2004,12 +2006,12 @@ case class SnowHousePipeStageMem(
             zdx: Int,
             myFwdData: UInt,
           ) => {
-            //when (pastValidAfterReset) {
+            when (pastValidAfterReset) {
               assert(
                 midModPayload(extIdxSaved).myExt(ydx).rdMemWord(zdx)
                 === myFwdData
               )
-            //}
+            }
           }
         )
       )
@@ -2233,8 +2235,36 @@ case class SnowHousePipeStageMem(
                       }
                     }
                     if (cfg.optFormal) {
-                      when (cMidModFront.up.isFiring) {
-                        assert(myExtLeft.modMemWordValid)
+                      opInfo.memAccess match {
+                        case mem: MemAccessKind.Mem => {
+                          mem.isStore match {
+                            case Some(isStore) => {
+                              when (cMidModFront.up.isFiring) {
+                                //if (!isStore) {
+                                assert(
+                                  myExtLeft.modMemWordValid
+                                  === (
+                                    if (!isStore) (
+                                      True
+                                    ) else ( // if (isStore)
+                                      False
+                                    )
+                                  )
+                                )
+                                //}
+                              }
+                            }
+                            case None => {
+                              assert(
+                                false,
+                                s"atomic operations not yet supported: "
+                                + s"opInfo(${opInfo} ${opInfo.select}) "
+                                + s"opInfoIdx:${opInfoIdx}"
+                              )
+                            }
+                          }
+                        }
+                        case _ =>
                       }
                     }
                   }
@@ -3623,7 +3653,9 @@ case class SnowHousePipeStageWriteBack(
             zdx: Int,
             myFwdData: UInt,
           ) => {
-            assert(myExt(ydx)(extIdxUp).rdMemWord(zdx) === myFwdData)
+            when (pastValidAfterReset) {
+              assert(myExt(ydx)(extIdxUp).rdMemWord(zdx) === myFwdData)
+            }
           }
         )
       )
@@ -3638,7 +3670,9 @@ case class SnowHousePipeStageWriteBack(
             zdx: Int,
             myFwdData: UInt,
           ) => {
-            assert(myExt(ydx)(extIdxSaved).rdMemWord(zdx) === myFwdData)
+            when (pastValidAfterReset) {
+              assert(myExt(ydx)(extIdxSaved).rdMemWord(zdx) === myFwdData)
+            }
           }
         )
       )

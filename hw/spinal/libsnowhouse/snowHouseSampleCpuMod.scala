@@ -280,7 +280,10 @@ case class SampleCpuParams(
 ) {
   //--------
   val instrMainWidth = 32
-  val mainWidth = 32
+  val mainWidth = (
+    32
+    //16
+  )
   val numGprs = SampleCpuInstrEnc.numGprs
   val modRdPortCnt = 3
   val pipeName="SnowHouseSampleCpu"
@@ -291,13 +294,14 @@ case class SampleCpuParams(
     shRegFileCfg=SnowHouseRegFileConfig(
       mainWidth=mainWidth,
       wordCountArr=(
+        Array.fill(1)(numGprs)
         //Array.fill(2)(
         //  numGprs >> 1
         //)
-        Array[Int](
-          4,
-          12,
-        )
+        //Array[Int](
+        //  4,
+        //  12,
+        //)
       ),
       modRdPortCnt=modRdPortCnt,
       pipeName=pipeName,
@@ -305,50 +309,54 @@ case class SampleCpuParams(
         //None
         Some({
           val tempArr = ArrayBuffer[LinkedHashSet[Int]]()
-          for (jdx <- 0 until 2) {
-            tempArr += {
-              val tempSet = LinkedHashSet[Int]()
-              if (jdx == 0) {
-                //for (idx <- 0 until 4) {
-                //  tempSet += idx
-                //}
-                tempSet ++= LinkedHashSet[Int](
-                  0,
-                  2,
-                  4,
-                  6,
-                )
-              } else { // if (jdx == 1)
-                tempSet ++= LinkedHashSet[Int](
-                  1,
-                  3,
-                  5,
-                  7,
-                  8,
-                  9,
-                  10,
-                  11,
-                  12,
-                  13,
-                  14,
-                  15,
-                )
-              }
-              //for (idx <- 0 until (numGprs >> 1)) {
-              //  tempSet += {
-              //    val temp = (
-              //      (2 * idx) + jdx
-              //    )
-              //    println(
-              //      s"debug: "
-              //      + s"temp:${temp} idx:${idx} jdx:${jdx}"
-              //    )
-              //    temp
-              //  }
-              //}
-              tempSet
-            }
+          tempArr += LinkedHashSet[Int]()
+          for (idx <- 0 until numGprs) {
+            tempArr.last += idx
           }
+          //for (jdx <- 0 until 2) {
+          //  tempArr += {
+          //    val tempSet = LinkedHashSet[Int]()
+          //    if (jdx == 0) {
+          //      //for (idx <- 0 until 4) {
+          //      //  tempSet += idx
+          //      //}
+          //      tempSet ++= LinkedHashSet[Int](
+          //        0,
+          //        2,
+          //        4,
+          //        6,
+          //      )
+          //    } else { // if (jdx == 1)
+          //      tempSet ++= LinkedHashSet[Int](
+          //        1,
+          //        3,
+          //        5,
+          //        7,
+          //        8,
+          //        9,
+          //        10,
+          //        11,
+          //        12,
+          //        13,
+          //        14,
+          //        15,
+          //      )
+          //    }
+          //    //for (idx <- 0 until (numGprs >> 1)) {
+          //    //  tempSet += {
+          //    //    val temp = (
+          //    //      (2 * idx) + jdx
+          //    //    )
+          //    //    println(
+          //    //      s"debug: "
+          //    //      + s"temp:${temp} idx:${idx} jdx:${jdx}"
+          //    //    )
+          //    //    temp
+          //    //  }
+          //    //}
+          //    tempSet
+          //  }
+          //}
           tempArr
         })
       ),
@@ -435,7 +443,7 @@ object SnowHouseSampleCpuFormal extends App {
     //15
     //16
   )
-  case class SnowHouseSampleCpuFormalDutWithBranches() extends Component {
+  case class SnowHouseSampleCpuFormalDut1() extends Component {
     val dut = FormalDut(
       SnowHouse(
         cfg=SampleCpuParams(
@@ -492,6 +500,6 @@ object SnowHouseSampleCpuFormal extends App {
     //  //20
     //  15
     //)
-    .doVerify(SnowHouseSampleCpuFormalDutWithBranches())
+    .doVerify(SnowHouseSampleCpuFormalDut1())
   //--------
 }
