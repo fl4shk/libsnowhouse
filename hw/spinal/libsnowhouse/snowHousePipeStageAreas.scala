@@ -121,7 +121,7 @@ case class SnowHousePipeStageInstrFetch(
     )
     init(nextRegPc.getZero)
   )
-  val rPrevInstrCnt = (cfg.optFormal) generate (
+  val rPrevInstrCnt = /*(cfg.optFormal) generate*/ (
     RegNextWhen(
       next=myInstrCnt,
       cond=up.isFiring,
@@ -133,27 +133,27 @@ case class SnowHousePipeStageInstrFetch(
   when (up.isFiring) {
     //--------
     rSavedExSetPc := rSavedExSetPc.getZero
-    if (cfg.optFormal) {
+    //if (cfg.optFormal) {
       myInstrCnt.any := rPrevInstrCnt.any + 1
-    }
+    //}
     //--------
     when (psExSetPc.fire) {
       nextRegPc := psExSetPc.nextPc //+ (cfg.instrMainWidth / 8)
-      if (cfg.optFormal) {
+      //if (cfg.optFormal) {
         myInstrCnt.jmp := rPrevInstrCnt.jmp + 1
-      }
+      //}
     } elsewhen (rSavedExSetPc.fire) {
       nextRegPc := (
         rSavedExSetPc.nextPc //+ (cfg.instrMainWidth / 8)
       )
-      if (cfg.optFormal) {
+      //if (cfg.optFormal) {
         myInstrCnt.jmp := rPrevInstrCnt.jmp + 1
-      }
+      //}
     } otherwise {
       nextRegPc := rPrevRegPc + (cfg.instrMainWidth / 8)
-      if (cfg.optFormal) {
+      //if (cfg.optFormal) {
         myInstrCnt.fwd := rPrevInstrCnt.fwd + 1
-      }
+      //}
     }
   }
   //--------
