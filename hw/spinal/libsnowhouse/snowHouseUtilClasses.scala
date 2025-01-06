@@ -96,6 +96,7 @@ case class SnowHouseRegFileConfig(
 //) {
 //}
 case class SnowHouseConfig(
+  haveZeroReg: Option[Int],
   //encInstrType: HardType,
   //gprFileDepth: Int,
   //sprFileDepth: Int,
@@ -125,6 +126,19 @@ case class SnowHouseConfig(
     3
   ),
 ) {
+  val myZeroRegIdx: Int = (
+    haveZeroReg match {
+      case Some(regIdx) => {
+        regIdx
+      }
+      case None => {
+        -1
+      }
+    }
+  )
+  val myHaveZeroReg = (
+    myZeroRegIdx >= 0
+  )
   assert(
     (instrMainWidth / 8) * 8 == instrMainWidth,
     s"instrMainWidth must be a multiple of 8"
@@ -300,7 +314,7 @@ case class SnowHouseConfig(
             //)
             pureCpyOpInfoMap += (idx -> opInfo)
           }
-          case CpyOpKind.Cpyui => {
+          case CpyOpKind.Cpyu => {
             //assert(
             //  opInfo.dstArr.find(_ == DstKind.Pc) == None,
             //  s"Error: unsupported PC as destination of a CpyOpKind.Cpyui "

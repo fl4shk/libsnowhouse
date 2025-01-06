@@ -443,6 +443,7 @@ object SampleCpuRegs {
   val lr = Gpr(13)
   val fp = Gpr(14)
   val sp = Gpr(15)
+  val pc = RegPc()
 }
 //--------
 object add {
@@ -456,7 +457,33 @@ object add {
       rA=rA,
       rB=rB,
       rC=rC,
-      simm16=0,
+      imm16=0,
+    )
+  }
+  def apply(
+    rA: Gpr,
+    rB: Gpr,
+    imm16: SampleCpuExpr,
+  ) = {
+    Instruction(
+      op=SampleCpuOp.AddRaRbSimm16,
+      rA=rA,
+      rB=rB,
+      rC=SampleCpuRegs.r0,
+      imm16=imm16,
+    )
+  }
+  def apply(
+    rA: Gpr,
+    pc: RegPc,
+    imm16: SampleCpuExpr
+  ) = {
+    Instruction(
+      op=SampleCpuOp.AddRaPcSimm16,
+      rA=rA,
+      rB=SampleCpuRegs.r0,
+      rC=SampleCpuRegs.r0,
+      imm16=imm16,
     )
   }
 }
@@ -471,7 +498,21 @@ object sub {
       rA=rA,
       rB=rB,
       rC=rC,
-      simm16=0,
+      imm16=0,
+    )
+  }
+  def apply(
+    rA: Gpr,
+    rB: Gpr,
+    //rC: Gpr,
+    imm16: SampleCpuExpr
+  ) = {
+    Instruction(
+      op=SampleCpuOp.SubRaRbSimm16,
+      rA=rA,
+      rB=rB,
+      rC=SampleCpuRegs.r0,
+      imm16=imm16,
     )
   }
 }
@@ -486,9 +527,52 @@ object sltu {
       rA=rA,
       rB=rB,
       rC=rC,
-      simm16=0,
+      imm16=SampleCpuOp.SltuRaRbRc._2,
     )
   }
+  //def apply(
+  //  rA: Gpr,
+  //  rB: Gpr,
+  //  //rC: Gpr,
+  //  imm16: SampleCpuExpr
+  //) = {
+  //  Instruction(
+  //    op=SampleCpuOp.Slt,
+  //    rA=rA,
+  //    rB=rB,
+  //    rC=SampleCpuRegs.r0,
+  //    imm16=imm16,
+  //  )
+  //}
+}
+object slts {
+  def apply(
+    rA: Gpr,
+    rB: Gpr,
+    rC: Gpr,
+  ) = {
+    Instruction(
+      op=SampleCpuOp.SltsRaRbRc,
+      rA=rA,
+      rB=rB,
+      rC=rC,
+      imm16=SampleCpuOp.SltsRaRbRc._2,
+    )
+  }
+  //def apply(
+  //  rA: Gpr,
+  //  rB: Gpr,
+  //  //rC: Gpr,
+  //  imm16: SampleCpuExpr
+  //) = {
+  //  Instruction(
+  //    op=SampleCpuOp.Slt,
+  //    rA=rA,
+  //    rB=rB,
+  //    rC=SampleCpuRegs.r0,
+  //    imm16=imm16,
+  //  )
+  //}
 }
 object and {
   def apply(
@@ -501,9 +585,23 @@ object and {
       rA=rA,
       rB=rB,
       rC=rC,
-      simm16=0,
+      imm16=0,
     )
   }
+  //def apply(
+  //  rA: Gpr,
+  //  rB: Gpr,
+  //  //rC: Gpr,
+  //  imm16: SampleCpuExpr
+  //) = {
+  //  Instruction(
+  //    op=SampleCpuOp.And,
+  //    rA=rA,
+  //    rB=rB,
+  //    rC=SampleCpuRegs.r0,
+  //    imm16=imm16,
+  //  )
+  //}
 }
 object orr {
   def apply(
@@ -516,7 +614,21 @@ object orr {
       rA=rA,
       rB=rB,
       rC=rC,
-      simm16=0,
+      imm16=0,
+    )
+  }
+  def apply(
+    rA: Gpr,
+    rB: Gpr,
+    //rC: Gpr,
+    imm16: SampleCpuExpr
+  ) = {
+    Instruction(
+      op=SampleCpuOp.OrrRaRbSimm16,
+      rA=rA,
+      rB=rB,
+      rC=SampleCpuRegs.r0,
+      imm16=imm16,
     )
   }
 }
@@ -531,7 +643,21 @@ object xor {
       rA=rA,
       rB=rB,
       rC=rC,
-      simm16=0,
+      imm16=0,
+    )
+  }
+  def apply(
+    rA: Gpr,
+    rB: Gpr,
+    //rC: Gpr,
+    imm16: SampleCpuExpr
+  ) = {
+    Instruction(
+      op=SampleCpuOp.XorRaRbSimm16,
+      rA=rA,
+      rB=rB,
+      rC=SampleCpuRegs.r0,
+      imm16=imm16,
     )
   }
 }
@@ -546,9 +672,23 @@ object lsl {
       rA=rA,
       rB=rB,
       rC=rC,
-      simm16=0,
+      imm16=SampleCpuOp.LslRaRbRc._2,
     )
   }
+  //def apply(
+  //  rA: Gpr,
+  //  rB: Gpr,
+  //  //rC: Gpr,
+  //  imm16: SampleCpuExpr
+  //) = {
+  //  Instruction(
+  //    op=SampleCpuOp.Shift,
+  //    rA=rA,
+  //    rB=rB,
+  //    rC=SampleCpuRegs.r0,
+  //    imm16=imm16,
+  //  )
+  //}
 }
 object lsr {
   def apply(
@@ -561,25 +701,25 @@ object lsr {
       rA=rA,
       rB=rB,
       rC=rC,
-      simm16=0,
+      imm16=SampleCpuOp.LsrRaRbRc._2,
     )
   }
 }
-//object asr {
-//  def apply(
-//    rA: Gpr,
-//    rB: Gpr,
-//    rC: Gpr,
-//  ) = {
-//    Instruction(
-//      op=SampleCpuOp.AsrRaRbRc,
-//      rA=rA,
-//      rB=rB,
-//      rC=rC,
-//      simm16=0,
-//    )
-//  }
-//}
+object asr {
+  def apply(
+    rA: Gpr,
+    rB: Gpr,
+    rC: Gpr,
+  ) = {
+    Instruction(
+      op=SampleCpuOp.AsrRaRbRc,
+      rA=rA,
+      rB=rB,
+      rC=rC,
+      imm16=SampleCpuOp.AsrRaRbRc._2,
+    )
+  }
+}
 object mul {
   def apply(
     rA: Gpr,
@@ -591,24 +731,38 @@ object mul {
       rA=rA,
       rB=rB,
       rC=rC,
-      simm16=0,
+      imm16=SampleCpuOp.MulRaRbRc._2,
     )
   }
+  //def apply(
+  //  rA: Gpr,
+  //  rB: Gpr,
+  //  //rC: Gpr,
+  //  imm16: SampleCpuExpr
+  //) = {
+  //  Instruction(
+  //    op=SampleCpuOp.MulRaRbRc,
+  //    rA=rA,
+  //    rB=rB,
+  //    rC=SampleCpuRegs.r0,
+  //    imm16=imm16,
+  //  )
+  //}
 }
 object bz {
   def apply(
     rA: Gpr,
     //rB: SampleCpuAsmAst.Gpr,
     //rC: SampleCpuAsmAst.Gpr,
-    simm16: SampleCpuExpr,
+    imm16: SampleCpuExpr,
   ) = {
     Instruction(
       op=SampleCpuOp.BzRaSimm,
       rA=rA,
       rB=SampleCpuRegs.r0,
-      rC=SampleCpuRegs.r0,
-      simm16=(
-        simm16 - SampleCpuExpr.Dot - 4
+      rC=Gpr(SampleCpuOp.BzRaSimm._2),
+      imm16=(
+        imm16 - SampleCpuExpr.Dot - 4
       ),
     )
   }
@@ -616,14 +770,14 @@ object bz {
   //  rA: Gpr,
   //  //rB: SampleCpuAsmAst.Gpr,
   //  //rC: SampleCpuAsmAst.Gpr,
-  //  simm16: Int,
+  //  imm16: Int,
   //) = {
   //  Instruction(
   //    op=SampleCpuOp.BzRaSimm,
   //    rA=rA,
   //    rB=SnowHouseRegs.r0,
   //    rC=SnowHouseRegs.r0,
-  //    simm16=SampleCpuExpr.ExprInt(simm16),
+  //    imm16=SampleCpuExpr.ExprInt(imm16),
   //  )
   //}
 }
@@ -632,16 +786,16 @@ object bnz {
     rA: Gpr,
     //rB: SampleCpuAsmAst.Gpr,
     //rC: SampleCpuAsmAst.Gpr,
-    simm16: SampleCpuExpr,
+    imm16: SampleCpuExpr,
   ) = {
     Instruction(
       op=SampleCpuOp.BnzRaSimm,
       rA=rA,
       rB=SampleCpuRegs.r0,
-      rC=SampleCpuRegs.r0,
-      simm16=(
-        //simm16,
-        simm16 - SampleCpuExpr.Dot - 4
+      rC=Gpr(SampleCpuOp.BnzRaSimm._2),
+      imm16=(
+        //imm16,
+        imm16 - SampleCpuExpr.Dot - 4
       ),
     )
   }
@@ -649,14 +803,14 @@ object bnz {
   //  rA: Gpr,
   //  //rB: SampleCpuAsmAst.Gpr,
   //  //rC: SampleCpuAsmAst.Gpr,
-  //  simm16: Int,
+  //  imm16: Int,
   //) = {
   //  Instruction(
   //    op=SampleCpuOp.BnzRaSimm,
   //    rA=rA,
   //    rB=SnowHouseRegs.r0,
   //    rC=SnowHouseRegs.r0,
-  //    simm16=SampleCpuExpr.ExprInt(simm16),
+  //    imm16=SampleCpuExpr.ExprInt(imm16),
   //  )
   //}
 }
@@ -668,8 +822,8 @@ object jmp {
       op=SampleCpuOp.JmpRa,
       rA=rA,
       rB=SampleCpuRegs.r0,
-      rC=SampleCpuRegs.r0,
-      simm16=0,
+      rC=Gpr(SampleCpuOp.JmpRa._2),
+      imm16=0x0,
     )
   }
 }
@@ -677,27 +831,41 @@ object ldr {
   def apply(
     rA: Gpr,
     rB: Gpr,
-    simm16: SampleCpuExpr,
+    rC: Gpr,
+    //imm16: SampleCpuExpr,
   ) = {
     Instruction(
-      op=SampleCpuOp.LdrRaRbSimm,
+      op=SampleCpuOp.LdrRaRbRc,
+      rA=rA,
+      rB=rB,
+      rC=rC,
+      imm16=0x0,
+    )
+  }
+  def apply(
+    rA: Gpr,
+    rB: Gpr,
+    imm16: SampleCpuExpr,
+  ) = {
+    Instruction(
+      op=SampleCpuOp.LdrRaRbSimm16,
       rA=rA,
       rB=rB,
       rC=SampleCpuRegs.r0,
-      simm16=simm16,
+      imm16=imm16,
     )
   }
   //def apply(
   //  rA: Gpr,
   //  rB: Gpr,
-  //  simm16: Int
+  //  imm16: Int
   //) = {
   //  Instruction(
   //    op=SampleCpuOp.LdrRaRbSimm,
   //    rA=rA,
   //    rB=rB,
   //    rC=SnowHouseRegs.r0,
-  //    simm16=SampleCpuExpr.ExprInt(simm16),
+  //    imm16=SampleCpuExpr.ExprInt(imm16),
   //  )
   //}
 }
@@ -705,85 +873,136 @@ object str {
   def apply(
     rA: Gpr,
     rB: Gpr,
-    simm16: SampleCpuExpr,
+    rC: Gpr,
+    //imm16: SampleCpuExpr,
   ) = {
     Instruction(
-      op=SampleCpuOp.StrRaRbSimm,
+      op=SampleCpuOp.StrRaRbRc,
+      rA=rA,
+      rB=rB,
+      rC=rC,
+      imm16=0x0,
+    )
+  }
+  def apply(
+    rA: Gpr,
+    rB: Gpr,
+    imm16: SampleCpuExpr,
+  ) = {
+    Instruction(
+      op=SampleCpuOp.StrRaRbSimm16,
       rA=rA,
       rB=rB,
       rC=SampleCpuRegs.r0,
-      simm16=simm16,
+      imm16=imm16,
     )
   }
   //def apply(
   //  rA: Gpr,
   //  rB: Gpr,
-  //  simm16: Int
+  //  imm16: Int
   //) = {
   //  Instruction(
   //    op=SampleCpuOp.StrRaRbSimm,
   //    rA=rA,
   //    rB=rB,
   //    rC=SnowHouseRegs.r0,
-  //    simm16=SampleCpuExpr.ExprInt(simm16),
+  //    imm16=SampleCpuExpr.ExprInt(imm16),
   //  )
   //}
 }
-object cpyui {
+object cpy {
   def apply(
     rA: Gpr,
-    simm16: SampleCpuExpr,
+    rB: Gpr,
   ) = {
     Instruction(
-      op=SampleCpuOp.CpyuiRaSimm,
+      op=SampleCpuOp.CpyRaRb,
+      rA=rA,
+      rB=rB,
+      rC=Gpr(SampleCpuOp.CpyRaRb._2),
+      imm16=0x0,
+    )
+  }
+  def apply(
+    rA: Gpr,
+    imm16: SampleCpuExpr,
+  ) = {
+    Instruction(
+      op=SampleCpuOp.CpyRaSimm16,
       rA=rA,
       rB=SampleCpuRegs.r0,
-      rC=SampleCpuRegs.r0,
-      simm16=simm16
+      rC=Gpr(SampleCpuOp.CpyRaSimm16._2),
+      imm16=imm16
     )
   }
   //def apply(
   //  rA: Gpr,
-  //  simm16: Int
-  //) = {
-  //  Instruction(
-  //    op=SampleCpuOp.CpyuiRaSimm,
-  //    rA=rA,
-  //    rB=SnowHouseRegs.r0,
-  //    rC=SnowHouseRegs.r0,
-  //    simm16=SampleCpuExpr.ExprInt(simm16),
-  //  )
-  //}
-}
-object cpyi {
-  def apply(
-    rA: Gpr,
-    simm16: SampleCpuExpr,
-  ) = {
-    Instruction(
-      op=SampleCpuOp.CpyiRaSimm,
-      rA=rA,
-      rB=SampleCpuRegs.r0,
-      rC=SampleCpuRegs.r0,
-      simm16=simm16
-    )
-  }
-  //def apply(
-  //  rA: Gpr,
-  //  simm16: Int
+  //  imm16: Int
   //) = {
   //  Instruction(
   //    op=SampleCpuOp.CpyiRaSimm,
   //    rA=rA,
   //    rB=SnowHouseRegs.r0,
   //    rC=SnowHouseRegs.r0,
-  //    simm16=SampleCpuExpr.ExprInt(simm16),
+  //    imm16=SampleCpuExpr.ExprInt(imm16),
   //  )
   //}
 }
+object cpyu {
+  def apply(
+    rA: Gpr,
+    rB: Gpr,
+  ) = {
+    Instruction(
+      op=SampleCpuOp.CpyuRaRb,
+      rA=rA,
+      rB=rB,
+      rC=Gpr(SampleCpuOp.CpyuRaRb._2),
+      imm16=0x0
+    )
+  }
+  def apply(
+    rA: Gpr,
+    imm16: SampleCpuExpr,
+  ) = {
+    Instruction(
+      op=SampleCpuOp.CpyuRaSimm16,
+      rA=rA,
+      rB=SampleCpuRegs.r0,
+      rC=Gpr(SampleCpuOp.CpyuRaSimm16._2),
+      imm16=imm16
+    )
+  }
+  //def apply(
+  //  rA: Gpr,
+  //  imm16: Int
+  //) = {
+  //  Instruction(
+  //    op=SampleCpuOp.CpyuiRaSimm,
+  //    rA=rA,
+  //    rB=SnowHouseRegs.r0,
+  //    rC=SnowHouseRegs.r0,
+  //    imm16=SampleCpuExpr.ExprInt(imm16),
+  //  )
+  //}
+}
+//object cpy {
+//  def apply(
+//    rA: Gpr,
+//    rB: Gpr,
+//  ) = {
+//    Instruction(
+//      op=SampleCpuOp.Cpy
+//    )
+//  }
+//}
 //object MyTest {
 //  val asdf = bnz(r0, 3)
 //}
+case class RegPc(
+) {
+}
 case class Gpr(
   val index: Int=0
 ) /*extends SampleCpuAsmAst*/ {
@@ -802,11 +1021,11 @@ case class Gpr(
 }
 object Instruction {
   def apply(
-    op: (/*UInt,*/ Int, String),
+    op: (/*UInt,*/ Int, Int, String),
     rA: Gpr,
     rB: Gpr,
     rC: Gpr,
-    simm16: SampleCpuExpr,
+    imm16: SampleCpuExpr,
   ) = {
     AsmStmt(
       instr=Some(
@@ -815,7 +1034,7 @@ object Instruction {
           rA=rA,
           rB=rB,
           rC=rC,
-          simm16=simm16,
+          imm16=imm16,
         )
       ),
       label=None,
@@ -824,11 +1043,11 @@ object Instruction {
   }
 }
 class Instruction(
-  val op: (/*UInt,*/ Int, String),
+  val op: (/*UInt,*/ Int, Int, String),
   val rA: Gpr,
   val rB: Gpr,
   val rC: Gpr,
-  val simm16: SampleCpuExpr,
+  val imm16: SampleCpuExpr,
 ) {
   def encode(assembler: SampleCpuAssembler): Long = {
     var ret: Long = 0
@@ -861,17 +1080,17 @@ class Instruction(
     //--------
     ret = ret << SampleCpuInstrEnc.simmWidth
     ret = ret | {
-      val temp = simm16.evaluate(assembler=assembler)
+      val temp = imm16.evaluate(assembler=assembler)
       assert(
         temp.toShort.toInt == temp.toInt,
         (
           s"Statement_Number=${assembler._stmtNum}: "
           + "\""
-          + s"${op._2} r${rA.index}, r${rB.index}, r${rC.index}, "
-          + s"simm16:${temp}"
+          + s"${op._3} r${rA.index}, r${rB.index}, r${rC.index}, "
+          + s"imm16:${temp}"
           + "\": "
           + s"(at pc ${assembler._pc}) "
-          + s"simm16:${temp} out of range of signed 16-bit immediate"
+          + s"imm16:${temp} out of range of signed 16-bit immediate"
         )
       )
       temp.toShort.toInt & 0xffff
@@ -924,26 +1143,26 @@ class Label(
 }
 object Db32 {
   def apply(
-    simm16: SampleCpuExpr,
+    imm16: SampleCpuExpr,
   ): AsmStmt = {
     AsmStmt(
       instr=None,
       label=None,
-      db32=Some(new Db32(simm16=simm16))
+      db32=Some(new Db32(imm16=imm16))
     )
   }
   //def apply(
-  //  simm16: Int,
+  //  imm16: Int,
   //): AsmStmt = {
   //  AsmStmt(  
   //    instr=None,
   //    label=None,
-  //    db32=Some(new Db32(simm16=SampleCpuExpr.ExprInt(simm16)))
+  //    db32=Some(new Db32(imm16=SampleCpuExpr.ExprInt(imm16)))
   //  )
   //}
 }
 class Db32(
-  val simm16: SampleCpuExpr
+  val imm16: SampleCpuExpr
 ) {
 }
 case class AsmStmt(
@@ -1194,7 +1413,7 @@ case class SampleCpuAssembler(
     }
     stmt.db32 match {
       case Some(db32) => {
-        outpArr += db32.simm16.evaluate(this)
+        outpArr += db32.imm16.evaluate(this)
         _pc += 4
       }
       case None => {

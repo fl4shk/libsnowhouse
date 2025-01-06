@@ -58,7 +58,7 @@ object SrcKind {
   //                                  // (or cfg.mainWidth bits) immediate
   //case object SImm extends SrcKind  // Sign-extended immediate
   case class Imm(
-    isSImm: Option[Boolean], // `None` means "either unsigned or signed"
+    //isSImm: Option[Boolean], // `None` means "either unsigned or signed"
   ) extends SrcKind
   case object AluFlags extends SrcKind  // 
 }
@@ -579,9 +579,9 @@ object CpyOpKind {
             SrcKind.Pc,
             //SrcKind.ZImm,
             //SrcKind.SImm,
-            SrcKind.Imm(None),
-            SrcKind.Imm(Some(true)),
-            SrcKind.Imm(Some(false)),
+            SrcKind.Imm(/*None*/),
+            //SrcKind.Imm(Some(true)),
+            //SrcKind.Imm(Some(false)),
             //SrcKind.AluFlags,
           ),
         ),
@@ -602,9 +602,9 @@ object CpyOpKind {
             SrcKind.Pc,
             //SrcKind.ZImm,
             //SrcKind.SImm,
-            SrcKind.Imm(None),
-            SrcKind.Imm(Some(true)),
-            SrcKind.Imm(Some(false)),
+            SrcKind.Imm(/*None*/),
+            //SrcKind.Imm(Some(true)),
+            //SrcKind.Imm(Some(false)),
             //SrcKind.AluFlags,
           ),
         ),
@@ -629,7 +629,9 @@ object CpyOpKind {
     )
     def validArgsSet = _validArgsSet
   }
-  case object Cpyui extends CpyOpKind {
+  case object Cpyu extends CpyOpKind {
+    // copy upper
+    // alternatively,
     // copy upper immediate ("load upper immediate")
     private[libsnowhouse] val _validArgsSet = LinkedHashSet[
       OpKindValidArgs
@@ -643,9 +645,10 @@ object CpyOpKind {
         ),
         src=Array[HashSet[SrcKind]](
           HashSet(
-            SrcKind.Imm(None),
-            SrcKind.Imm(Some(true)),
-            SrcKind.Imm(Some(false)),
+            SrcKind.Gpr,
+            SrcKind.Imm(/*None*/),
+            //SrcKind.Imm(Some(true)),
+            //SrcKind.Imm(Some(false)),
           ),
         ),
         cond=HashSet[CondKind](
@@ -729,9 +732,9 @@ object CpyOpKind {
         src=Array[HashSet[SrcKind]](
           HashSet(SrcKind.Gpr),
           HashSet(
-            SrcKind.Imm(None),
-            SrcKind.Imm(Some(false)),
-            SrcKind.Imm(Some(true))
+            SrcKind.Imm(/*None*/),
+            //SrcKind.Imm(Some(false)),
+            //SrcKind.Imm(Some(true))
           )
         ),
         cond=(
@@ -812,7 +815,7 @@ object AluOpKind {
         ),
         src=Array[HashSet[SrcKind]](
           HashSet(SrcKind.Gpr, SrcKind.Pc),
-          HashSet(SrcKind.Gpr, SrcKind.Pc, SrcKind.Imm(None)),
+          HashSet(SrcKind.Gpr, SrcKind.Pc, SrcKind.Imm(/*None*/)),
         ),
         cond=HashSet[CondKind](
           CondKind.Always
@@ -828,7 +831,7 @@ object AluOpKind {
         ),
         src=Array[HashSet[SrcKind]](
           HashSet(SrcKind.Gpr, SrcKind.Pc),
-          HashSet(SrcKind.Gpr, SrcKind.Pc, SrcKind.Imm(None)),
+          HashSet(SrcKind.Gpr, SrcKind.Pc, SrcKind.Imm(/*None*/)),
         ),
         cond=HashSet[CondKind](
           //CondKind.Always
@@ -870,7 +873,7 @@ object AluOpKind {
         ),
         src=Array[HashSet[SrcKind]](
           HashSet(SrcKind.Gpr, SrcKind.Pc),
-          HashSet(SrcKind.Gpr, SrcKind.Pc, SrcKind.Imm(None)),
+          HashSet(SrcKind.Gpr, SrcKind.Pc, SrcKind.Imm(/*None*/)),
           HashSet(SrcKind.AluFlags),
         ),
         cond=HashSet[CondKind](
@@ -887,7 +890,7 @@ object AluOpKind {
         ),
         src=Array[HashSet[SrcKind]](
           HashSet(SrcKind.Gpr, SrcKind.Pc),
-          HashSet(SrcKind.Gpr, SrcKind.Pc, SrcKind.Imm(None)),
+          HashSet(SrcKind.Gpr, SrcKind.Pc, SrcKind.Imm(/*None*/)),
           HashSet(SrcKind.AluFlags),
         ),
         cond=HashSet[CondKind](
@@ -920,7 +923,7 @@ object AluOpKind {
     private[libsnowhouse] val _subCmpSrc = (
       Array[HashSet[SrcKind]](
         HashSet(SrcKind.Gpr, SrcKind.Pc),
-        HashSet(SrcKind.Gpr, SrcKind.Pc, SrcKind.Imm(None)),
+        HashSet(SrcKind.Gpr, SrcKind.Pc, SrcKind.Imm(/*None*/)),
       ),
     )
     private[libsnowhouse] val _subCmpCond = (
@@ -971,7 +974,7 @@ object AluOpKind {
         ),
         src=Array[HashSet[SrcKind]](
           HashSet(SrcKind.Gpr, SrcKind.Pc),
-          HashSet(SrcKind.Gpr, SrcKind.Pc, SrcKind.Imm(None)),
+          HashSet(SrcKind.Gpr, SrcKind.Pc, SrcKind.Imm(/*None*/)),
         ),
         cond=HashSet[CondKind](
           //CondKind.Always
@@ -1017,7 +1020,7 @@ object AluOpKind {
         ),
         src=Array[HashSet[SrcKind]](
           HashSet(SrcKind.Gpr, SrcKind.Pc),
-          HashSet(SrcKind.Gpr, SrcKind.Pc, SrcKind.Imm(None)),
+          HashSet(SrcKind.Gpr, SrcKind.Pc, SrcKind.Imm(/*None*/)),
           HashSet(SrcKind.AluFlags),
         ),
         cond=HashSet[CondKind](
@@ -1035,7 +1038,7 @@ object AluOpKind {
         ),
         src=Array[HashSet[SrcKind]](
           HashSet(SrcKind.Gpr, SrcKind.Pc),
-          HashSet(SrcKind.Gpr, SrcKind.Pc, SrcKind.Imm(None)),
+          HashSet(SrcKind.Gpr, SrcKind.Pc, SrcKind.Imm(/*None*/)),
           HashSet(SrcKind.AluFlags),
         ),
         cond=HashSet[CondKind](
@@ -1081,7 +1084,7 @@ object AluOpKind {
         ),
         src=Array[HashSet[SrcKind]](
           HashSet(SrcKind.Gpr, SrcKind.Pc),
-          HashSet(SrcKind.Gpr, SrcKind.Pc, SrcKind.Imm(Some(false))),
+          HashSet(SrcKind.Gpr, SrcKind.Pc, SrcKind.Imm(/*Some(false)*/)),
         ),
         cond=HashSet[CondKind](
           CondKind.Always
@@ -1098,7 +1101,7 @@ object AluOpKind {
         ),
         src=Array[HashSet[SrcKind]](
           HashSet(SrcKind.Gpr, SrcKind.Pc),
-          HashSet(SrcKind.Gpr, SrcKind.Pc, SrcKind.Imm(Some(false))),
+          HashSet(SrcKind.Gpr, SrcKind.Pc, SrcKind.Imm(/*Some(false)*/)),
         ),
         cond=HashSet[CondKind](
           //CondKind.Always
@@ -1135,7 +1138,7 @@ object AluOpKind {
         ),
         src=Array[HashSet[SrcKind]](
           HashSet(SrcKind.Gpr, SrcKind.Pc),
-          HashSet(SrcKind.Gpr, SrcKind.Pc, SrcKind.Imm(Some(false))),
+          HashSet(SrcKind.Gpr, SrcKind.Pc, SrcKind.Imm(/*Some(false)*/)),
         ),
         cond=HashSet[CondKind](
           CondKind.Always
@@ -1152,7 +1155,7 @@ object AluOpKind {
         ),
         src=Array[HashSet[SrcKind]](
           HashSet(SrcKind.Gpr, SrcKind.Pc),
-          HashSet(SrcKind.Gpr, SrcKind.Pc, SrcKind.Imm(Some(false))),
+          HashSet(SrcKind.Gpr, SrcKind.Pc, SrcKind.Imm(/*Some(false)*/)),
         ),
         cond=HashSet[CondKind](
           //CondKind.Always
@@ -1188,7 +1191,7 @@ object AluOpKind {
         ),
         src=Array[HashSet[SrcKind]](
           HashSet(SrcKind.Gpr, SrcKind.Pc),
-          HashSet(SrcKind.Gpr, SrcKind.Pc, SrcKind.Imm(Some(false))),
+          HashSet(SrcKind.Gpr, SrcKind.Pc, SrcKind.Imm(/*Some(false)*/)),
         ),
         cond=HashSet[CondKind](
           CondKind.Always
@@ -1205,7 +1208,7 @@ object AluOpKind {
         ),
         src=Array[HashSet[SrcKind]](
           HashSet(SrcKind.Gpr, SrcKind.Pc),
-          HashSet(SrcKind.Gpr, SrcKind.Pc, SrcKind.Imm(Some(false))),
+          HashSet(SrcKind.Gpr, SrcKind.Pc, SrcKind.Imm(/*Some(false)*/)),
         ),
         cond=HashSet[CondKind](
           //CondKind.Always
@@ -1237,7 +1240,7 @@ object AluOpKind {
         ),
         src=Array[HashSet[SrcKind]](
           HashSet(SrcKind.Gpr, SrcKind.Pc),
-          HashSet(SrcKind.Gpr, SrcKind.Pc, SrcKind.Imm(None)),
+          HashSet(SrcKind.Gpr, SrcKind.Pc, SrcKind.Imm(/*None*/)),
         ),
         cond=HashSet[CondKind](
           CondKind.Always
@@ -1254,7 +1257,7 @@ object AluOpKind {
         ),
         src=Array[HashSet[SrcKind]](
           HashSet(SrcKind.Gpr, SrcKind.Pc),
-          HashSet(SrcKind.Gpr, SrcKind.Pc, SrcKind.Imm(None)),
+          HashSet(SrcKind.Gpr, SrcKind.Pc, SrcKind.Imm(/*None*/)),
         ),
         cond=HashSet[CondKind](
           //CondKind.Always
@@ -1286,7 +1289,7 @@ object AluOpKind {
         ),
         src=Array[HashSet[SrcKind]](
           HashSet(SrcKind.Gpr, SrcKind.Pc),
-          HashSet(SrcKind.Gpr, SrcKind.Pc, SrcKind.Imm(None)),
+          HashSet(SrcKind.Gpr, SrcKind.Pc, SrcKind.Imm(/*None*/)),
         ),
         cond=HashSet[CondKind](
           CondKind.Always
@@ -1303,7 +1306,7 @@ object AluOpKind {
         ),
         src=Array[HashSet[SrcKind]](
           HashSet(SrcKind.Gpr, SrcKind.Pc),
-          HashSet(SrcKind.Gpr, SrcKind.Pc, SrcKind.Imm(None)),
+          HashSet(SrcKind.Gpr, SrcKind.Pc, SrcKind.Imm(/*None*/)),
         ),
         cond=HashSet[CondKind](
           //CondKind.Always
@@ -1335,7 +1338,7 @@ object AluOpKind {
         ),
         src=Array[HashSet[SrcKind]](
           HashSet(SrcKind.Gpr, SrcKind.Pc),
-          HashSet(SrcKind.Gpr, SrcKind.Pc, SrcKind.Imm(None)),
+          HashSet(SrcKind.Gpr, SrcKind.Pc, SrcKind.Imm(/*None*/)),
         ),
         cond=HashSet[CondKind](
           CondKind.Always
@@ -1351,7 +1354,7 @@ object AluOpKind {
         ),
         src=Array[HashSet[SrcKind]](
           HashSet(SrcKind.Gpr, SrcKind.Pc),
-          HashSet(SrcKind.Gpr, SrcKind.Pc, SrcKind.Imm(None)),
+          HashSet(SrcKind.Gpr, SrcKind.Pc, SrcKind.Imm(/*None*/)),
         ),
         cond=HashSet[CondKind](
           //CondKind.Always
@@ -1405,7 +1408,7 @@ object AluOpKind {
         ),
         src=Array[HashSet[SrcKind]](
           HashSet(SrcKind.Gpr, SrcKind.Pc),
-          HashSet(SrcKind.Gpr, SrcKind.Pc, SrcKind.Imm(None)),
+          HashSet(SrcKind.Gpr, SrcKind.Pc, SrcKind.Imm(/*None*/)),
         ),
         cond=HashSet[CondKind](
           CondKind.Always
@@ -1439,7 +1442,7 @@ object AluOpKind {
         ),
         src=Array[HashSet[SrcKind]](
           HashSet(SrcKind.Gpr, SrcKind.Pc),
-          HashSet(SrcKind.Gpr, SrcKind.Pc, SrcKind.Imm(None)),
+          HashSet(SrcKind.Gpr, SrcKind.Pc, SrcKind.Imm(/*None*/)),
         ),
         cond=HashSet[CondKind](
           CondKind.Always
@@ -1480,7 +1483,7 @@ object MultiCycleOpKind {
         ),
         src=Array[HashSet[SrcKind]](
           HashSet(SrcKind.Gpr, SrcKind.Pc),
-          HashSet(SrcKind.Gpr, SrcKind.Pc, SrcKind.Imm(None)),
+          HashSet(SrcKind.Gpr, SrcKind.Pc, SrcKind.Imm(/*None*/)),
         ),
         cond=HashSet[CondKind](
           CondKind.Always
@@ -1544,7 +1547,7 @@ object MultiCycleOpKind {
         ),
         src=Array[HashSet[SrcKind]](
           HashSet(SrcKind.Gpr, SrcKind.Pc),
-          HashSet(SrcKind.Gpr, SrcKind.Pc, SrcKind.Imm(None)),
+          HashSet(SrcKind.Gpr, SrcKind.Pc, SrcKind.Imm(/*None*/)),
         ),
         cond=HashSet[CondKind](
           //CondKind.Always
@@ -1583,7 +1586,7 @@ object MultiCycleOpKind {
         ),
         src=Array[HashSet[SrcKind]](
           HashSet(SrcKind.Gpr, SrcKind.Pc),
-          HashSet(SrcKind.Gpr, SrcKind.Pc, SrcKind.Imm(None)),
+          HashSet(SrcKind.Gpr, SrcKind.Pc, SrcKind.Imm(/*None*/)),
         ),
         cond=HashSet[CondKind](
           //CondKind.Always
@@ -1622,7 +1625,7 @@ object MultiCycleOpKind {
         ),
         src=Array[HashSet[SrcKind]](
           HashSet(SrcKind.Gpr, SrcKind.Pc),
-          HashSet(SrcKind.Gpr, SrcKind.Pc, SrcKind.Imm(None)),
+          HashSet(SrcKind.Gpr, SrcKind.Pc, SrcKind.Imm(/*None*/)),
         ),
         cond=HashSet[CondKind](
           //CondKind.Always
@@ -1661,7 +1664,7 @@ object MultiCycleOpKind {
         ),
         src=Array[HashSet[SrcKind]](
           HashSet(SrcKind.Gpr, SrcKind.Pc),
-          HashSet(SrcKind.Gpr, SrcKind.Pc, SrcKind.Imm(None)),
+          HashSet(SrcKind.Gpr, SrcKind.Pc, SrcKind.Imm(/*None*/)),
         ),
         cond=HashSet[CondKind](
           //CondKind.Always

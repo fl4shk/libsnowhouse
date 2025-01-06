@@ -448,10 +448,18 @@ case class SnowHousePipeStageExecuteSetOutpModMemWordIo(
   //  s"currOp.getWidth: ${currOp.getWidth}"
   //)
   //val doIt = /*in*/(Bool())
-  val rdMemWord = /*in*/(Vec.fill(3)( // TODO: temporary size of `3`
+  val tempVecSize = 3 // TODO: temporary size of `3`
+  val gprIsZeroVec = (
+    cfg.myHaveZeroReg
+  ) generate (
+    Vec.fill(tempVecSize)(
+      Bool()
+    )
+  )
+  val rdMemWord = /*in*/(Vec.fill(tempVecSize)(
     UInt(cfg.mainWidth bits)
   ))
-  //val regPc = /*in*/(UInt(cfg.mainWidth bits))
+  val regPc = /*in*/(UInt(cfg.mainWidth bits))
   val regPcPlusImm = /*in*/(UInt(cfg.mainWidth bits))
   val imm = /*in*/(UInt(cfg.mainWidth bits))
   val pcChangeState = /*in*/(PcChangeState())
@@ -487,7 +495,10 @@ case class SnowHousePipeStageExecuteSetOutpModMemWordIo(
           case SrcKind.Gpr => {
             rdMemWord(idx)
           }
-          case SrcKind.Imm(isSImm) => {
+          case SrcKind.Pc => {
+            regPc
+          }
+          case SrcKind.Imm(/*isSImm*/) => {
             imm
           }
           case _ => {
@@ -569,7 +580,8 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
   //when (someCond) {
   io.modMemWordValid := (
     //io.doIt //True
-    True
+    //True
+    io.gprIsZeroVec(0) // TODO: support more register writes
   )
   io.psExSetPc := io.psExSetPc.getZero
   modIo.dbus.hostData := (
@@ -786,7 +798,7 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
                       }
                     }
                   }
-                  case CpyOpKind.Cpyui => {
+                  case CpyOpKind.Cpyu => {
                     io.opIsCpyNonJmpAlu := True
                     assert(
                       opInfo.dstArr.size == 1,
@@ -1442,6 +1454,7 @@ case class SnowHousePipeStageExecute(
     args=args
   )
   setOutpModMemWord.io.currOp := myCurrOp
+  setOutpModMemWord.io.regPc := outp.regPc
   setOutpModMemWord.io.regPcPlusImm := outp.regPcPlusImm
   setOutpModMemWord.io.imm := outp.imm
   outp.decodeExt := setOutpModMemWord.io.decodeExt
@@ -1463,6 +1476,11 @@ case class SnowHousePipeStageExecute(
         )
       }
     }
+  }
+  for ((gprIdx, idx) <- outp.gprIdxVec.view.zipWithIndex) {
+    setOutpModMemWord.io.gprIsZeroVec(idx) := (
+      gprIdx === cfg.myZeroRegIdx
+    )
   }
   //setOutpModMemWord.io.doIt
   //}
@@ -2539,7 +2557,7 @@ case class SnowHousePipeStageMem(
                           )
                         }
                       }
-                      case CpyOpKind.Cpyui => {
+                      case CpyOpKind.Cpyu => {
                         when (myExtLeft.modMemWordValid) {
                           assert(
                             myExtLeft.modMemWord(
@@ -3014,7 +3032,7 @@ case class SnowHousePipeStageMem(
                               )
                             }
                           }
-                          case CpyOpKind.Cpyui => {
+                          case CpyOpKind.Cpyu => {
                             when (myExtLeft.modMemWordValid) {
                               assert(
                                 myExtLeft.modMemWord(
@@ -4218,7 +4236,7 @@ case class SnowHousePipeStageWriteBack(
                           }
                           result
                         }
-                        case CpyOpKind.Cpyui => {
+                        case CpyOpKind.Cpyu => {
                           val result = InstrResult(cfg=cfg)
                           result.main.allowOverride
                           result.main := myGpr0

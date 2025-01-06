@@ -20,52 +20,121 @@ object SampleCpuInstrEnc {
   val simmWidth: Int = 16
 }
 object SampleCpuOp {
+  //private var _rawOpCnt: Int = 0
   private var _opCnt: Int = 0
   def mkOp(
     //opAsInt: Int,
+    //lim: Int,
     name: String,
-  ): (/*UInt,*/ Int, String) = {
+    kind: Int,
+    update: Boolean,
+    //kindLim: Int,
+  ): (/*UInt,*/ Int, Int, String) = {
     val ret = (
       //U(s"${SampleCpuInstrEnc.opWidth}'d${opAsInt}"),
       //opAsInt,
+      //(
+      //  _rawOpCnt
+      //  /// SampleCpuInstrEnc.numGprs
+      //  >> 1
+      //),
       _opCnt,
+      kind,
       name,
     )
-    _opCnt += 1
+    if (update) {
+      _opCnt += 1
+    }
+    //_rawOpCnt += 1
     ret
   }
   //--------
-  val AddRaRbRc = mkOp("AddRaRbRc")     // 0
-  val SubRaRbRc = mkOp("SubRaRbRc")     // 1
-  val SltuRaRbRc = mkOp("SltuRaRbRc")   // 2
-  //val SltsRaRbRc = mkOp()             // 3
+  val AddRaRbRc = mkOp("AddRaRbRc", AddKindRc, false)             // 0, 0
+  val AddRaRbSimm16 = mkOp("AddRaRbSimm16", AddKindSimm16, true)  // 0, 1
+  def AddKindRc = 0x0
+  def AddKindSimm16 = 0x1
+
+  val SubRaRbRc = mkOp("SubRaRbRc", SubKindRc, false)           // 1, 0
+  val SubRaRbSimm16 = mkOp("SubRaRbSimm16", SubKindRc, true)    // 1, 1
+  def SubKindRc = 0x0
+  //def SubKindSimm16 = 0x1
+
+  val SltuRaRbRc = mkOp("SltuRaRbRc", SltKindSltuRc, false)       // 2, 0
+  val SltsRaRbRc = mkOp("SltsRaRbRc", SltKindSltsRc, true)        // 2, 1
+  def SltKindSltuRc = 0x0
+  def SltKindSltsRc = 0x1
   //--------
-  val AndRaRbRc = mkOp("AndRaRbRc")     // 3
-  val OrrRaRbRc = mkOp("OrrRaRbRc")     // 4
-  val XorRaRbRc = mkOp("XorRaRbRc")     // 5
-  val LslRaRbRc = mkOp("LslRaRbRc")     // 6
-  val LsrRaRbRc = mkOp("LsrRaRbRc")     // 7
-  //val AsrRaRbRc = mkOp("AsrRaRbRc")   // 8
-  val MulRaRbRc = mkOp("MulRaRbRc")     // 8
+  val XorRaRbRc = mkOp("XorRaRbRc", XorKindRc, false)             // 3, 0
+  val XorRaRbSimm16 = mkOp("XorRaRbSimm16", XorKindSimm16, true)  // 3, 1
+  def XorKindRc = 0x0
+  def XorKindSimm16 = 0x1
+
+  val OrrRaRbRc = mkOp("OrrRaRbRc", OrrKindRc, false)             // 4, 0
+  val OrrRaRbSimm16 = mkOp("OrrRaRbSimm16", OrrKindSimm16, true)  // 4, 1
+  def OrrKindRc = 0x0
+  def OrrKindSimm16 = 0x1
+
+  // `AndRaRbRc` is moved down here to help with synthesis/routing of
+  // executing/decoding instructions
+  val AndRaRbRc = mkOp("AndRaRbRc", AndKindRc, true)              // 5, 0
+  def AndKindRc = 0x0
+
+  val LslRaRbRc = mkOp("LslRaRbRc", ShiftKindLslRc, false)  // 6, 0
+  val LsrRaRbRc = mkOp("LsrRaRbRc", ShiftKindLsrRc, false)  // 6, 1
+  val AsrRaRbRc = mkOp("AsrRaRbRc", ShiftKindAsrRc, true)   // 6, 2
+  def ShiftKindLslRc = 0x0
+  def ShiftKindLsrRc = 0x1
+  def ShiftKindAsrRc = 0x2
+
+  val AddRaPcSimm16 = mkOp("AddRaPcSimm16", AddPcKindMain, true)  // 7, 0
+  def AddPcKindMain = 0x0
+  //val Asr = mkOp("Asr")               // 8
+  val MulRaRbRc = mkOp("MulRaRbRc", MulitCycleKindMulRc, true)  // 8, 0
+  def MulitCycleKindMulRc = 0x0
+  //def MultiCycleKindUdivRc = 0x1
+  //def MultiCycleKindSdivRc = 0x2
+  //def MultiCycleKindUmodRc = 0x3
+  //def MultiCycleKindSmodRc = 0x3
+
+  val LdrRaRbRc = mkOp("LdrRaRbRc", LdstKindRc, false)            // 9, 0
+  val LdrRaRbSimm16 = mkOp("LdrRaRbSimm16", LdstKindSimm16, true) // 9, 1
+
+  val StrRaRbRc = mkOp("StrRaRbRc", LdstKindRc, false)            // 10, 0
+  val StrRaRbSimm16 = mkOp("StrRaRbSimm16", LdstKindRc, true)     // 10, 1
+  def LdstKindRc = 0x0
+  def LdstKindSimm16 = 0x1
   //--------
-  val BzRaSimm = mkOp("BzRaSimm")       // 9
-  val BnzRaSimm = mkOp("BnzRaSimm")     // 10
-  val JmpRa = mkOp("JmpRa")             // 11
-  val LdrRaRbSimm = mkOp("LdrRaRbSimm") // 12
-  val StrRaRbSimm = mkOp("StrRaRbSimm") // 13
-  val CpyuiRaSimm = mkOp("CpyuiRaSimm") // 14
-  val CpyiRaSimm = mkOp("CpyiRaSimm")   // 15
+  val BzRaSimm = mkOp("BzRaSimm", JmpKindBz, false)             // 11, 0
+  val BnzRaSimm = mkOp("BnzRaSimm", JmpKindBnz, false)          // 11, 1
+  val JmpRa = mkOp("JmpRa", JmpKindJmpRa, false)                // 11, 2
+  val JmpReserved = mkOp("JmpReserved", JmpKindReserved, true)  // 11, 3
+  def JmpKindBz = 0x0
+  def JmpKindBnz = 0x1
+  def JmpKindJmpRa = 0x2
+  def JmpKindReserved = 0x3
+
+  val CpyRaRb = mkOp("CpyRaRb", CpyKindCpyRb, false)              // 12, 0
+  val CpyRaSimm16 = mkOp("CpyRaSimm16", CpyKindCpySimm16, false)  // 12, 1
+  val CpyuRaRb = mkOp("CpyuRaRb", CpyKindCpyuRb, false)           // 12, 2
+  val CpyuRaSimm16 = mkOp(                                        // 12, 3
+    "CpyuRaSimm16", CpyKindCpyuSimm16, true
+  )
+  //val OldCpy = mkOp("OldCpy")           // 15
+  def CpyKindCpyRb = 0x0
+  def CpyKindCpySimm16 = 0x1
+  def CpyKindCpyuRb = 0x2
+  def CpyKindCpyuSimm16 = 0x3
   //--------
   val OpLim = _opCnt
   assert(
-    OpLim == 16,
+    OpLim == 13,
     s"eek! "
-    + s"${OpLim} != 16"
+    + s"${OpLim} != 13"
   )
 }
 case class SampleCpuEncInstr(
 ) extends PackedBundle {
-  val simm16 = UInt(SampleCpuInstrEnc.simmWidth bits)
+  val imm16 = UInt(SampleCpuInstrEnc.simmWidth bits)
   val rcIdx = UInt(SampleCpuInstrEnc.gprIdxWidth bits)
   val rbIdx = UInt(SampleCpuInstrEnc.gprIdxWidth bits)
   val raIdx = UInt(SampleCpuInstrEnc.gprIdxWidth bits)
@@ -75,22 +144,170 @@ object SampleCpuPipeStageInstrDecode {
   def apply(
     psId: SnowHousePipeStageInstrDecode
   ) = new Area {
+    import SampleCpuOp._
     def upPayload = psId.upPayload
     def io = psId.io
+    def cfg = psId.cfg
     val encInstr = SampleCpuEncInstr()
     encInstr.assignFromBits(io.ibus.devData.instr.asBits)
-    upPayload.op := encInstr.op
     upPayload.gprIdxVec(0) := encInstr.raIdx
     upPayload.gprIdxVec(1) := encInstr.rbIdx
     upPayload.gprIdxVec(2) := encInstr.rcIdx
-    upPayload.imm := Cat(
+    val tempImm = Cat(
       Mux[UInt](
-        encInstr.simm16.msb,
+        encInstr.imm16.msb,
         U"16'hffff",
         U"16'h0000",
       ),
-      encInstr.simm16.asSInt
+      encInstr.imm16.asSInt
     ).asUInt
+    upPayload.imm := tempImm
+    def setOp(
+      someOp: (Int, Int, String)
+    ): Unit = {
+      for (
+        ((tuple, opInfo), opInfoIdx) <- cfg.opInfoMap.view.zipWithIndex
+      ) {
+        if (someOp == tuple) {
+          println(
+            s"tuple: ${tuple}"
+          )
+          upPayload.op := opInfoIdx
+          return
+        }
+      }
+      assert(
+        false,
+        s"eek! ${someOp}"
+      )
+    }
+    def doDefault(): Unit = {
+      // just do a NOP
+      //upPayload.op := AddRaRbRc._1
+      setOp(AddRaRbRc)
+      upPayload.gprIdxVec.foreach{gprIdx => {
+        gprIdx := 0x0
+      }}
+      upPayload.imm := 0x0
+    }
+    switch (encInstr.op) {
+      is (AddRaRbRc._1) {
+        when (encInstr.rcIdx =/= 0x0) {
+          setOp(AddRaRbRc)
+        } otherwise {
+          setOp(AddRaRbSimm16)
+        }
+      }
+      is (SubRaRbRc._1) {
+        when (encInstr.rcIdx =/= 0x0) {
+          setOp(SubRaRbRc)
+        } otherwise {
+          setOp(SubRaRbSimm16)
+        }
+      }
+      is (SltuRaRbRc._1) {
+        switch (encInstr.imm16(0 downto 0)) {
+          is (SltuRaRbRc._2) {
+            setOp(SltuRaRbRc)
+          }
+          is (SltsRaRbRc._2) {
+            setOp(SltsRaRbRc)
+          }
+        }
+      }
+      is (XorRaRbRc._1) {
+        when (encInstr.rcIdx =/= 0x0) {
+          setOp(XorRaRbRc)
+        } otherwise {
+          setOp(XorRaRbSimm16)
+        }
+      }
+      is (OrrRaRbRc._1) {
+        //when (tempImm =/= 0x0) {
+        //} otherwise {
+        //}
+        when (encInstr.rcIdx =/= 0x0) {
+          setOp(OrrRaRbRc)
+        } otherwise {
+          setOp(OrrRaRbSimm16)
+        }
+      }
+      is (AndRaRbRc._1) {
+        setOp(AndRaRbRc)
+      }
+      is (LslRaRbRc._1) {
+        switch (encInstr.imm16(1 downto 0)) {
+          is (LslRaRbRc._2) {
+            setOp(LslRaRbRc)
+          }
+          is (LsrRaRbRc._2) {
+            setOp(LsrRaRbRc)
+          }
+          is (AsrRaRbRc._2) {
+            setOp(AsrRaRbRc)
+          }
+          default {
+            doDefault()
+          }
+        }
+      }
+      is (AddRaPcSimm16._1) {
+        setOp(AddRaPcSimm16)
+      }
+      is (MulRaRbRc._1) {
+        setOp(MulRaRbRc)
+      }
+      is (LdrRaRbRc._1) {
+        when (encInstr.rcIdx =/= 0x0) {
+          setOp(LdrRaRbRc)
+        } otherwise {
+          setOp(LdrRaRbSimm16)
+        }
+      }
+      is (StrRaRbRc._1) {
+        when (encInstr.rcIdx =/= 0x0) {
+          setOp(StrRaRbRc)
+        } otherwise {
+          setOp(StrRaRbSimm16)
+        }
+      }
+      is (BzRaSimm._1) {
+        switch (encInstr.rcIdx(1 downto 0)) {
+          is (BzRaSimm._2) {
+            setOp(BzRaSimm)
+          }
+          is (BnzRaSimm._2) {
+            setOp(BnzRaSimm)
+          }
+          is (JmpRa._2) {
+            setOp(JmpRa)
+          }
+          default {
+            doDefault()
+          }
+        }
+      }
+      is (CpyRaRb._1) {
+        switch (encInstr.rcIdx(1 downto 0)) {
+          is (CpyRaRb._2) {
+            setOp(CpyRaRb)
+          }
+          is (CpyRaSimm16._2) {
+            setOp(CpyRaSimm16)
+          }
+          is (CpyuRaRb._2) {
+            setOp(CpyuRaRb)
+          }
+          is (CpyuRaSimm16._2) {
+            setOp(CpyuRaSimm16)
+          }
+        }
+      }
+      default {
+        doDefault()
+      }
+    }
+    //upPayload.op := encInstr.op
   }
 }
 //case class SampleCpuPipeStageInstrDecode(
@@ -141,6 +358,7 @@ object SampleCpuOpInfoMap {
   val opInfoMap = LinkedHashMap[Any, OpInfo]()
   //--------
   opInfoMap += (
+    // add rA, rB, rC
     SampleCpuOp.AddRaRbRc -> OpInfo.mkAlu(
       dstArr=Array[DstKind](DstKind.Gpr),
       srcArr=Array[SrcKind](SrcKind.Gpr, SrcKind.Gpr),
@@ -148,6 +366,16 @@ object SampleCpuOpInfoMap {
     )
   )
   opInfoMap += (
+    // add rA, rB, simm16
+    SampleCpuOp.AddRaRbSimm16 -> OpInfo.mkAlu(
+      dstArr=Array[DstKind](DstKind.Gpr),
+      srcArr=Array[SrcKind](SrcKind.Gpr, SrcKind.Imm(/*Some(true)*/)),
+      aluOp=AluOpKind.Add,
+    )
+  )
+  //--------
+  opInfoMap += (
+    // sub rA, rB, rC
     SampleCpuOp.SubRaRbRc -> OpInfo.mkAlu(
       dstArr=Array[DstKind](DstKind.Gpr),
       srcArr=Array[SrcKind](SrcKind.Gpr, SrcKind.Gpr),
@@ -155,10 +383,28 @@ object SampleCpuOpInfoMap {
     )
   )
   opInfoMap += (
+    // sub rA, rB, simm16
+    SampleCpuOp.SubRaRbSimm16 -> OpInfo.mkAlu(
+      dstArr=Array[DstKind](DstKind.Gpr),
+      srcArr=Array[SrcKind](SrcKind.Gpr, SrcKind.Imm(/*Some(true)*/)),
+      aluOp=AluOpKind.Add,
+    )
+  )
+  //--------
+  opInfoMap += (
+    // sltu rA, rB, rC
     SampleCpuOp.SltuRaRbRc -> OpInfo.mkAlu(
       dstArr=Array[DstKind](DstKind.Gpr),
       srcArr=Array[SrcKind](SrcKind.Gpr, SrcKind.Gpr),
       aluOp=AluOpKind.Sltu,
+    )
+  )
+  opInfoMap += (
+    // slts rA, rB, rC
+    SampleCpuOp.SltsRaRbRc -> OpInfo.mkAlu(
+      dstArr=Array[DstKind](DstKind.Gpr),
+      srcArr=Array[SrcKind](SrcKind.Gpr, SrcKind.Gpr),
+      aluOp=AluOpKind.Slts,
     )
   )
   //opInfoMap += (
@@ -170,12 +416,20 @@ object SampleCpuOpInfoMap {
   //)
   //--------
   opInfoMap += (
-    SampleCpuOp.AndRaRbRc -> OpInfo.mkAlu(
+    SampleCpuOp.XorRaRbRc -> OpInfo.mkAlu(
       dstArr=Array[DstKind](DstKind.Gpr),
       srcArr=Array[SrcKind](SrcKind.Gpr, SrcKind.Gpr),
-      aluOp=AluOpKind.And,
+      aluOp=AluOpKind.Xor,
     )
   )
+  opInfoMap += (
+    SampleCpuOp.XorRaRbSimm16 -> OpInfo.mkAlu(
+      dstArr=Array[DstKind](DstKind.Gpr),
+      srcArr=Array[SrcKind](SrcKind.Gpr, SrcKind.Imm(/*Some(true)*/)),
+      aluOp=AluOpKind.Xor,
+    )
+  )
+  //--------
   opInfoMap += (
     SampleCpuOp.OrrRaRbRc -> OpInfo.mkAlu(
       dstArr=Array[DstKind](DstKind.Gpr),
@@ -184,14 +438,31 @@ object SampleCpuOpInfoMap {
     )
   )
   opInfoMap += (
-    SampleCpuOp.XorRaRbRc -> OpInfo.mkAlu(
+    SampleCpuOp.OrrRaRbSimm16 -> OpInfo.mkAlu(
       dstArr=Array[DstKind](DstKind.Gpr),
-      srcArr=Array[SrcKind](SrcKind.Gpr, SrcKind.Gpr),
-      aluOp=AluOpKind.Xor,
+      srcArr=Array[SrcKind](SrcKind.Gpr, SrcKind.Imm(/*Some(true)*/)),
+      aluOp=AluOpKind.Or,
     )
   )
   //--------
   opInfoMap += (
+    // and rA, rB, rC
+    SampleCpuOp.AndRaRbRc -> OpInfo.mkAlu(
+      dstArr=Array[DstKind](DstKind.Gpr),
+      srcArr=Array[SrcKind](SrcKind.Gpr, SrcKind.Gpr),
+      aluOp=AluOpKind.And,
+    )
+  )
+  //opInfoMap += (
+  //  SampleCpuOp.And -> OpInfo.mkAlu(
+  //    dstArr=Array[DstKind](DstKind.Gpr),
+  //    srcArr=Array[SrcKind](SrcKind.Gpr, SrcKind.Gpr),
+  //    aluOp=AluOpKind.And,
+  //  )
+  //)
+  //--------
+  opInfoMap += (
+    // lsl rA, rB, rC
     SampleCpuOp.LslRaRbRc -> OpInfo.mkAlu(
       dstArr=Array[DstKind](DstKind.Gpr),
       srcArr=Array[SrcKind](SrcKind.Gpr, SrcKind.Gpr),
@@ -199,20 +470,31 @@ object SampleCpuOpInfoMap {
     )
   )
   opInfoMap += (
+    // lsr rA, rB, rC
     SampleCpuOp.LsrRaRbRc -> OpInfo.mkAlu(
       dstArr=Array[DstKind](DstKind.Gpr),
       srcArr=Array[SrcKind](SrcKind.Gpr, SrcKind.Gpr),
       aluOp=AluOpKind.Lsr,
     )
   )
-  //opInfoMap += (
-  //  SampleCpuOp.AsrRaRbRc -> OpInfo.mkAlu(
-  //    dstArr=Array[DstKind](DstKind.Gpr),
-  //    srcArr=Array[SrcKind](SrcKind.Gpr, SrcKind.Gpr),
-  //    aluOp=AluOpKind.Asr,
-  //  )
-  //)
   opInfoMap += (
+    // asr rA, rB, rC
+    SampleCpuOp.AsrRaRbRc -> OpInfo.mkAlu(
+      dstArr=Array[DstKind](DstKind.Gpr),
+      srcArr=Array[SrcKind](SrcKind.Gpr, SrcKind.Gpr),
+      aluOp=AluOpKind.Asr,
+    )
+  )
+  opInfoMap += (
+    // add rA, pc, simm16
+    SampleCpuOp.AddRaPcSimm16 -> OpInfo.mkAlu(
+      dstArr=Array[DstKind](DstKind.Gpr),
+      srcArr=Array[SrcKind](SrcKind.Pc, SrcKind.Imm(/*Some(true)*/)),
+      aluOp=AluOpKind.Add,
+    )
+  )
+  opInfoMap += (
+    // mul rA, rB, rC
     SampleCpuOp.MulRaRbRc -> OpInfo.mkMultiCycle(
       dstArr=Array[DstKind](DstKind.Gpr),
       srcArr=Array[SrcKind](SrcKind.Gpr, SrcKind.Gpr),
@@ -221,9 +503,42 @@ object SampleCpuOpInfoMap {
   )
   //--------
   opInfoMap += (
+    SampleCpuOp.LdrRaRbRc -> OpInfo.mkLdSt(
+      dstArr=Array[DstKind](DstKind.Gpr),
+      srcArr=Array[SrcKind](SrcKind.Gpr, SrcKind.Gpr),
+      //loadOp=LoadOpKind.LdU32,
+      modify=MemAccessKind.Mem32(isSigned=false, isStore=Some(false)),
+    )
+  )
+  opInfoMap += (
+    SampleCpuOp.LdrRaRbSimm16 -> OpInfo.mkLdSt(
+      dstArr=Array[DstKind](DstKind.Gpr),
+      srcArr=Array[SrcKind](SrcKind.Gpr, SrcKind.Imm(/*Some(true)*/)),
+      //loadOp=LoadOpKind.LdU32,
+      modify=MemAccessKind.Mem32(isSigned=false, isStore=Some(false)),
+    )
+  )
+  opInfoMap += (
+    SampleCpuOp.StrRaRbRc -> OpInfo.mkLdSt(
+      dstArr=Array[DstKind](DstKind.Gpr),
+      srcArr=Array[SrcKind](SrcKind.Gpr, SrcKind.Gpr),
+      //storeOp=StoreOpKind.St32,
+      modify=MemAccessKind.Mem32(isSigned=false, isStore=Some(true)),
+    )
+  )
+  opInfoMap += (
+    SampleCpuOp.StrRaRbSimm16 -> OpInfo.mkLdSt(
+      dstArr=Array[DstKind](DstKind.Gpr),
+      srcArr=Array[SrcKind](SrcKind.Gpr, SrcKind.Imm(/*Some(true)*/)),
+      //storeOp=StoreOpKind.St32,
+      modify=MemAccessKind.Mem32(isSigned=false, isStore=Some(true)),
+    )
+  )
+  //--------
+  opInfoMap += (
     SampleCpuOp.BzRaSimm -> OpInfo.mkCpy(
       dstArr=Array[DstKind](DstKind.Pc),
-      srcArr=Array[SrcKind](SrcKind.Gpr, SrcKind.Imm(Some(true))),
+      srcArr=Array[SrcKind](SrcKind.Gpr, SrcKind.Imm(/*Some(true)*/)),
       cpyOp=CpyOpKind.Br,
       cond=CondKind.Z,
     )
@@ -231,7 +546,7 @@ object SampleCpuOpInfoMap {
   opInfoMap += (
     SampleCpuOp.BnzRaSimm -> OpInfo.mkCpy(
       dstArr=Array[DstKind](DstKind.Pc),
-      srcArr=Array[SrcKind](SrcKind.Gpr, SrcKind.Imm(Some(true))),
+      srcArr=Array[SrcKind](SrcKind.Gpr, SrcKind.Imm(/*Some(true)*/)),
       cpyOp=CpyOpKind.Br,
       cond=CondKind.Nz,
     )
@@ -243,35 +558,40 @@ object SampleCpuOpInfoMap {
       cpyOp=CpyOpKind.Jmp,
     )
   )
+  opInfoMap += (
+    SampleCpuOp.JmpReserved -> OpInfo.mkCpy(
+      dstArr=Array[DstKind](DstKind.Pc),
+      srcArr=Array[SrcKind](SrcKind.Gpr),
+      cpyOp=CpyOpKind.Jmp,
+    )
+  )
   //--------
   opInfoMap += (
-    SampleCpuOp.LdrRaRbSimm -> OpInfo.mkLdSt(
+    SampleCpuOp.CpyRaRb -> OpInfo.mkCpy(
       dstArr=Array[DstKind](DstKind.Gpr),
-      srcArr=Array[SrcKind](SrcKind.Gpr, SrcKind.Imm(Some(true))),
-      //loadOp=LoadOpKind.LdU32,
-      modify=MemAccessKind.Mem32(isSigned=false, isStore=Some(false)),
-    )
-  )
-  opInfoMap += (
-    SampleCpuOp.StrRaRbSimm -> OpInfo.mkLdSt(
-      dstArr=Array[DstKind](DstKind.Gpr),
-      srcArr=Array[SrcKind](SrcKind.Gpr, SrcKind.Imm(Some(true))),
-      //storeOp=StoreOpKind.St32,
-      modify=MemAccessKind.Mem32(isSigned=false, isStore=Some(true)),
-    )
-  )
-  opInfoMap += (
-    SampleCpuOp.CpyuiRaSimm -> OpInfo.mkCpy(
-      dstArr=Array[DstKind](DstKind.Gpr),
-      srcArr=Array[SrcKind](SrcKind.Imm(Some(true))),
-      cpyOp=CpyOpKind.Cpyui,
-    )
-  )
-  opInfoMap += (
-    SampleCpuOp.CpyiRaSimm -> OpInfo.mkCpy(
-      dstArr=Array[DstKind](DstKind.Gpr),
-      srcArr=Array[SrcKind](SrcKind.Imm(Some(true))),
+      srcArr=Array[SrcKind](SrcKind.Gpr),
       cpyOp=CpyOpKind.Cpy,
+    )
+  )
+  opInfoMap += (
+    SampleCpuOp.CpyRaSimm16 -> OpInfo.mkCpy(
+      dstArr=Array[DstKind](DstKind.Gpr),
+      srcArr=Array[SrcKind](SrcKind.Imm(/*Some(true)*/)),
+      cpyOp=CpyOpKind.Cpy,
+    )
+  )
+  opInfoMap += (
+    SampleCpuOp.CpyuRaRb -> OpInfo.mkCpy(
+      dstArr=Array[DstKind](DstKind.Gpr),
+      srcArr=Array[SrcKind](SrcKind.Gpr),
+      cpyOp=CpyOpKind.Cpyu,
+    )
+  )
+  opInfoMap += (
+    SampleCpuOp.CpyuRaSimm16 -> OpInfo.mkCpy(
+      dstArr=Array[DstKind](DstKind.Gpr),
+      srcArr=Array[SrcKind](SrcKind.Imm(/*Some(true)*/)),
+      cpyOp=CpyOpKind.Cpyu,
     )
   )
   //--------
@@ -290,6 +610,7 @@ case class SampleCpuConfig(
   val pipeName="SnowHouseSampleCpu"
   //--------
   val shCfg = SnowHouseConfig(
+    haveZeroReg=Some(0),
     //encInstrType=SampleCpuEncInstr(),
     instrMainWidth=instrMainWidth,
     shRegFileCfg=SnowHouseRegFileConfig(
@@ -425,25 +746,25 @@ case class SnowHouseSampleCpuTestProgram(
   val tempData: Int = 0x17000
   cfg.program ++= Array[AsmStmt](
     //--------
-    cpyi(r0, 0x0),        // 0: r0 = 0
-    cpyi(r1, 0x8),        // 4: r1 = 8
-    cpyi(r2, 0x1),        // 8: r2 = 1
-    cpyi(r3, 0x1000),     // c: r3 = 0x1000
-    cpyi(r4, 0x8),        // 10: r4 = 4
-    //cpyi(r5, 0x0),
+    ////cpy(r0, 0x0),        // 0: r0 = 0
+    //cpy(r1, 0x8),        // 4: r1 = 8
+    //cpy(r2, 0x1),        // 8: r2 = 1
+    cpy(r3, 0x1000),     // c: r3 = 0x1000
+    //cpy(r4, 0x8),        // 10: r4 = 4
+    ////cpy(r5, 0x0),
     //--------
     Lb"loop",
     //add(r0, r1, r2),
-    //cpyui(r2, tempData >> 16),
-    //cpyi(r2, tempData & 0xffff),
+    //cpyu(r2, tempData >> 16),
+    //cpy(r2, tempData & 0xffff),
     ldr(r5, r3, 0x0),     // 14: r5 = [r3 + 0]
-    add(r5, r5, r2),      // 18: r5 += 1
+    add(r5, r5, 0x4),      // 18: r5 += 1
     str(r5, r3, 0x4),     // 1c: [r3 + 4] = r5
-    add(r3, r3, r4),      // 20: r3 += 4
-    sub(r1, r1, r2),      // 24: r1 -= 1 
+    add(r3, r3, 0x8),      // 20: r3 += 4
+    sub(r1, r1, 0x1),      // 24: r1 -= 1 
     bnz(r1, LbR"loop"),   // 28: if (r1 != 0) goto LbR"loop"
     //--------
-    cpyi(r12, 0x0),       // 2c
+    cpy(r12, 0x0),       // 2c
     Lb"infin",
     //--------
     bz(r12, LbR"infin"),  // 30
