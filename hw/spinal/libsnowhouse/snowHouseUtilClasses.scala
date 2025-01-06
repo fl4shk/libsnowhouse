@@ -476,6 +476,9 @@ case class SnowHousePipePayload(
   val gprIdxVec = Vec.fill(cfg.maxNumGprsPerInstr)(
     UInt(log2Up(cfg.numGprs) bits)
   ) //simPublic()
+  val gprIsZeroVec = Vec.fill(cfg.maxNumGprsPerInstr)(
+    Bool()
+  )
   val gprIdxToMemAddrIdxMap = Vec[SnowHouseGprIdxToMemAddrIdxMapElem]({
     val myArr = ArrayBuffer[SnowHouseGprIdxToMemAddrIdxMapElem]()
     for (zdx <- 0 until cfg.maxNumGprsPerInstr) {
@@ -483,13 +486,13 @@ case class SnowHousePipePayload(
     }
     myArr
   })
-  val gprRdMemWordVec = (
-    !cfg.optFormal
-  ) generate (
-    Vec.fill(cfg.regFileModRdPortCnt)(
-      UInt(cfg.mainWidth bits)
-    )
-  )
+  //val gprRdMemWordVec = (
+  //  !cfg.optFormal
+  //) generate (
+  //  Vec.fill(cfg.regFileModRdPortCnt)(
+  //    UInt(cfg.mainWidth bits)
+  //  )
+  //)
   // TODO: add support for writing multiple GPRs
   //def formalGprModMemWordSize = (
   //  //8 

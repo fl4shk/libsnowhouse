@@ -581,7 +581,7 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
   io.modMemWordValid := (
     //io.doIt //True
     //True
-    !io.gprIsZeroVec(0) // TODO: support more register writes
+    !io.gprIsZeroVec(0) // TODO: support more register simultaneous writes
   )
   io.psExSetPc := io.psExSetPc.getZero
   modIo.dbus.hostData := (
@@ -1480,7 +1480,8 @@ case class SnowHousePipeStageExecute(
   if (cfg.myHaveZeroReg) {
     for ((gprIdx, idx) <- outp.gprIdxVec.view.zipWithIndex) {
       setOutpModMemWord.io.gprIsZeroVec(idx) := (
-        gprIdx === cfg.myZeroRegIdx
+        //gprIdx === cfg.myZeroRegIdx
+        outp.gprIsZeroVec(idx)
       )
     }
   }
@@ -1516,9 +1517,9 @@ case class SnowHousePipeStageExecute(
           setOutpModMemWord.io.modMemWordValid
         )
       }
-      if (!cfg.optFormal) {
-        outp.gprRdMemWordVec(zdx) := tempRdMemWord
-      }
+      //if (!cfg.optFormal) {
+      //  outp.gprRdMemWordVec(zdx) := tempRdMemWord
+      //}
     }
     def tempRdMemWord = setOutpModMemWord.io.rdMemWord(zdx)
     tempRdMemWord := myRdMemWord(ydx=ydx, modIdx=zdx)
@@ -1688,7 +1689,7 @@ case class SnowHousePipeStageExecute(
     }
   }
   when (doCheckHazard && myDoHaveHazard) {
-    when (RegNext(cMid0Front.down.isFiring)) {
+    when (cMid0Front.down.isFiring) {
       currDuplicateIt := False
     }
   }
@@ -2300,7 +2301,7 @@ case class SnowHousePipeStageMem(
                     } otherwise {
                       if (cfg.optFormal) {
                         when (!myShouldIgnoreInstr) {
-                          assert(!savedPsMemStallHost.myDuplicateIt)
+                          //assert(!savedPsMemStallHost.myDuplicateIt)
                         }
                       }
                     }
@@ -2703,11 +2704,17 @@ case class SnowHousePipeStageMem(
         someExt.modMemWordValid := (
           //False
           midModPayload(extIdxUp).decodeExt.memAccessKind
-          === SnowHouseMemAccessKind.Store
+          =/= SnowHouseMemAccessKind.Store
         )
       }
     )
-    when (savedPsMemStallHost.myDuplicateIt) {
+    when (
+      savedPsMemStallHost.myDuplicateIt
+      && (
+        modFront(modFrontPayload).instrCnt.any
+        === midModPayload(extIdxUp).instrCnt.any + 1
+      )
+    ) {
       //--------
       cMidModFront.duplicateIt()
       //--------

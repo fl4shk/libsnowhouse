@@ -508,11 +508,11 @@ object sub {
     imm16: SampleCpuExpr
   ) = {
     Instruction(
-      op=SampleCpuOp.SubRaRbSimm16,
+      op=SampleCpuOp.AddRaRbSimm16,
       rA=rA,
       rB=rB,
       rC=SampleCpuRegs.r0,
-      imm16=imm16,
+      imm16=(-imm16),
     )
   }
 }
@@ -916,25 +916,35 @@ object cpy {
     rA: Gpr,
     rB: Gpr,
   ) = {
-    Instruction(
-      op=SampleCpuOp.CpyRaRb,
+    add(
       rA=rA,
       rB=rB,
-      rC=Gpr(SampleCpuOp.CpyRaRb._2),
-      imm16=0x0,
+      rC=SampleCpuRegs.r0,
     )
+    //Instruction(
+    //  op=SampleCpuOp.AddRaRbRc,
+    //  rA=rA,
+    //  rB=rB,
+    //  rC=Gpr(SampleCpuOp.CpyRaRb._2),
+    //  imm16=0x0,
+    //)
   }
   def apply(
     rA: Gpr,
     imm16: SampleCpuExpr,
   ) = {
-    Instruction(
-      op=SampleCpuOp.CpyRaSimm16,
+    add(
       rA=rA,
       rB=SampleCpuRegs.r0,
-      rC=Gpr(SampleCpuOp.CpyRaSimm16._2),
-      imm16=imm16
+      imm16=imm16,
     )
+    //Instruction(
+    //  op=SampleCpuOp.CpyRaSimm16,
+    //  rA=rA,
+    //  rB=SampleCpuRegs.r0,
+    //  rC=Gpr(SampleCpuOp.CpyRaSimm16._2),
+    //  imm16=imm16
+    //)
   }
   //def apply(
   //  rA: Gpr,

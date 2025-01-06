@@ -68,17 +68,17 @@ case class SnowHouseSampleInstrDataDualRam(
     depth=dataRamDepth,
     initBigInt=Some(dataInitBigInt),
   )
-  io.dbus.ready := io.dbus.rValid
-  //io.dbus.ready := False
-  //val rDbusReadyCnt = Reg(UInt(8 bits)) init(2)
-  //when (io.dbus.rValid) {
-  //  when (rDbusReadyCnt > 0) {
-  //    rDbusReadyCnt := rDbusReadyCnt - 1
-  //  } otherwise {
-  //    rDbusReadyCnt := 2
-  //    io.dbus.ready := True
-  //  }
-  //}
+  //io.dbus.ready := io.dbus.rValid
+  io.dbus.ready := False
+  val rDbusReadyCnt = Reg(UInt(8 bits)) init(2)
+  when (io.dbus.rValid) {
+    when (rDbusReadyCnt > 0) {
+      rDbusReadyCnt := rDbusReadyCnt - 1
+    } otherwise {
+      rDbusReadyCnt := 2
+      io.dbus.ready := True
+    }
+  }
   io.dbus.devData.data := io.dbus.hostData.data.getZero
 
   dataRam.io.rdEn := False
