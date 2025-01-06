@@ -307,6 +307,7 @@ case class SnowHousePipeStageInstrDecode(
     //upPayload.instrCnt := cId.up(pIf).instrCnt
     when (!rSetUpPayloadState) {
       upPayload := up(pIf)
+      val myDecodeArea = doDecodeFunc(this)
       rSetUpPayloadState := True
     }
     when (up.isFiring) {
@@ -430,7 +431,7 @@ case class SnowHousePipeStageInstrDecode(
       }
     }
   }
-  val myDecodeArea = doDecodeFunc(this)
+  //val myDecodeArea = doDecodeFunc(this)
 }
 private[libsnowhouse] object PcChangeState
 extends SpinalEnum(defaultEncoding=binarySequential) {
@@ -1770,6 +1771,9 @@ case class SnowHousePipeStageExecute(
           when (cMid0Front.up.isFiring) {
             nextPcChangeState := PcChangeState.WaitTwoInstrs
             rSavedJmpCnt := outp.instrCnt
+            for (ydx <- 0 until cfg.regFileCfg.memArrSize) {
+              outp.myExt(ydx).modMemWordValid := False
+            }
             //outp.instrCnt.shouldIgnoreInstr := True
           }
         }
@@ -2676,7 +2680,11 @@ case class SnowHousePipeStageMem(
     //--------
     midModPayload(extIdxUp).myExt.foreach(
       someExt => {
-        someExt.modMemWordValid := False
+        someExt.modMemWordValid := (
+          //False
+          midModPayload(extIdxUp).decodeExt.memAccessKind
+          === SnowHouseMemAccessKind.Store
+        )
       }
     )
     when (savedPsMemStallHost.myDuplicateIt) {
@@ -2797,6 +2805,7 @@ case class SnowHousePipeStageMem(
           }
         }
         is (SnowHouseMemAccessKind.Store) {
+          myCurrExt.modMemWordValid := True
         }
       }
       if (cfg.optFormal) {

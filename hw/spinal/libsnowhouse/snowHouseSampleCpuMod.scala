@@ -425,28 +425,28 @@ case class SnowHouseSampleCpuTestProgram(
   val tempData: Int = 0x17000
   cfg.program ++= Array[AsmStmt](
     //--------
-    cpyi(r0, 0x0),        // r0 = 0
-    cpyi(r1, 0x8),        // r1 = 8
-    cpyi(r2, 0x1),        // r2 = 1
-    cpyi(r3, 0x1000),     // r3 = 0x1000
-    cpyi(r4, 0x8),        // r4 = 4
+    cpyi(r0, 0x0),        // 0: r0 = 0
+    cpyi(r1, 0x8),        // 4: r1 = 8
+    cpyi(r2, 0x1),        // 8: r2 = 1
+    cpyi(r3, 0x1000),     // c: r3 = 0x1000
+    cpyi(r4, 0x8),        // 10: r4 = 4
     //cpyi(r5, 0x0),
     //--------
     Lb"loop",
     //add(r0, r1, r2),
     //cpyui(r2, tempData >> 16),
     //cpyi(r2, tempData & 0xffff),
-    ldr(r5, r3, 0x0),     // r5 = [r3 + 0]
-    add(r5, r5, r2),      // r5 += 1
-    str(r5, r3, 0x4),     // [r3 + 4] = r5
-    add(r3, r3, r4),      // r3 += 4
-    sub(r1, r1, r2),      // r1 -= 1 
-    bnz(r1, LbR"loop"),   // if (r1 != 0) goto LbR"loop"
+    ldr(r5, r3, 0x0),     // 14: r5 = [r3 + 0]
+    add(r5, r5, r2),      // 18: r5 += 1
+    str(r5, r3, 0x4),     // 1c: [r3 + 4] = r5
+    add(r3, r3, r4),      // 20: r3 += 4
+    sub(r1, r1, r2),      // 24: r1 -= 1 
+    bnz(r1, LbR"loop"),   // 28: if (r1 != 0) goto LbR"loop"
     //--------
-    cpyi(r12, 0x0),
+    cpyi(r12, 0x0),       // 2c
     Lb"infin",
     //--------
-    bz(r12, LbR"infin"),
+    bz(r12, LbR"infin"),  // 30
     //Db32(0x3f),
     //--------
   )
