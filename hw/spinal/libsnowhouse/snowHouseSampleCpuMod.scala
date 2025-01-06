@@ -148,7 +148,12 @@ object SampleCpuPipeStageInstrDecode {
     def upPayload = psId.upPayload
     def io = psId.io
     def cfg = psId.cfg
-    val encInstr = SampleCpuEncInstr()
+    val encInstr = (
+      KeepAttribute(
+        SampleCpuEncInstr()
+      )
+      .setName("InstrDecode_encInstr")
+    )
     encInstr.assignFromBits(io.ibus.devData.instr.asBits)
     upPayload.gprIdxVec(0) := encInstr.raIdx
     upPayload.gprIdxVec(1) := encInstr.rbIdx
@@ -170,7 +175,7 @@ object SampleCpuPipeStageInstrDecode {
       ) {
         if (someOp == tuple) {
           println(
-            s"tuple: ${tuple}"
+            s"tuple: ${tuple} ${opInfoIdx}"
           )
           upPayload.op := opInfoIdx
           return
@@ -387,7 +392,7 @@ object SampleCpuOpInfoMap {
     SampleCpuOp.SubRaRbSimm16 -> OpInfo.mkAlu(
       dstArr=Array[DstKind](DstKind.Gpr),
       srcArr=Array[SrcKind](SrcKind.Gpr, SrcKind.Imm(/*Some(true)*/)),
-      aluOp=AluOpKind.Add,
+      aluOp=AluOpKind.Sub,
     )
   )
   //--------
@@ -746,11 +751,11 @@ case class SnowHouseSampleCpuTestProgram(
   val tempData: Int = 0x17000
   cfg.program ++= Array[AsmStmt](
     //--------
-    ////cpy(r0, 0x0),        // 0: r0 = 0
-    //cpy(r1, 0x8),        // 4: r1 = 8
-    //cpy(r2, 0x1),        // 8: r2 = 1
+    cpy(r0, 0x0),        // 0: r0 = 0
+    cpy(r1, 0x8),        // 4: r1 = 8
+    cpy(r2, 0x1),        // 8: r2 = 1
     cpy(r3, 0x1000),     // c: r3 = 0x1000
-    //cpy(r4, 0x8),        // 10: r4 = 4
+    cpy(r4, 0x8),        // 10: r4 = 4
     ////cpy(r5, 0x0),
     //--------
     Lb"loop",

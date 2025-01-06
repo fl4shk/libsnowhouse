@@ -367,15 +367,15 @@ case class SnowHousePipeStageInstrDecode(
             //outerCnt
             howTo
           ) {
-            println(
-              s"debug: "
-              + s"outerCnt:${outerCnt}"
-              + s"; "
-              //+ s"cnt:${cnt}; "
-              + s"zdx:${zdx} "
-              + s"howTo:${howTo} howToIdx:${howToIdx} "
-              + s"howToSetIdx:${howToSetIdx}"
-            )
+            //println(
+            //  s"debug: "
+            //  + s"outerCnt:${outerCnt}"
+            //  + s"; "
+            //  //+ s"cnt:${cnt}; "
+            //  + s"zdx:${zdx} "
+            //  + s"howTo:${howTo} howToIdx:${howToIdx} "
+            //  + s"howToSetIdx:${howToSetIdx}"
+            //)
             val mapElem = upGprIdxToMemAddrIdxMap(zdx)
             mapElem.idx := (
               //howTo
@@ -581,7 +581,7 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
   io.modMemWordValid := (
     //io.doIt //True
     //True
-    io.gprIsZeroVec(0) // TODO: support more register writes
+    !io.gprIsZeroVec(0) // TODO: support more register writes
   )
   io.psExSetPc := io.psExSetPc.getZero
   modIo.dbus.hostData := (
@@ -1477,10 +1477,12 @@ case class SnowHousePipeStageExecute(
       }
     }
   }
-  for ((gprIdx, idx) <- outp.gprIdxVec.view.zipWithIndex) {
-    setOutpModMemWord.io.gprIsZeroVec(idx) := (
-      gprIdx === cfg.myZeroRegIdx
-    )
+  if (cfg.myHaveZeroReg) {
+    for ((gprIdx, idx) <- outp.gprIdxVec.view.zipWithIndex) {
+      setOutpModMemWord.io.gprIsZeroVec(idx) := (
+        gprIdx === cfg.myZeroRegIdx
+      )
+    }
   }
   //setOutpModMemWord.io.doIt
   //}
