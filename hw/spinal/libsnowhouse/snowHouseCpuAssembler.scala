@@ -81,7 +81,7 @@ sealed trait SnowHouseCpuExpr {
   def ^(that: SnowHouseCpuExpr) = {
     SnowHouseCpuExpr.ExprBitXor(left=this, right=that)
   }
-  def ~ = {
+  def unary_~ = {
     SnowHouseCpuExpr.ExprBitInvert(child=this)
   }
   //--------
