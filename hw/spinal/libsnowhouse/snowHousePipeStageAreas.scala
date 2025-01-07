@@ -442,20 +442,53 @@ case class SnowHousePipeStageInstrDecode(
     }
   }
   //val myDecodeArea = doDecodeFunc(this)
-  when (io.ibus.rValid && io.ibus.ready) {
-    val myDecodeArea = doDecodeFunc(this)
-  } otherwise {
-    //cId.haltIt()
-    when (
-      //nextSetUpPayloadState
-      up.isValid
-      //&& rSetUpPayloadState
-      && !down.isFiring
-    ) {
-      cId.duplicateIt()
+  val nextDoDecodeState = Bool()
+  val rDoDecodeState = RegNext(
+    next=nextDoDecodeState,
+    init=nextDoDecodeState.getZero,
+  )
+  nextDoDecodeState := rDoDecodeState
+  //when (!rDoDecodeState) {
+  //}
+  //when (
+  //  io.ibus.rValid
+  //  && io.ibus.ready
+  //  //&& down.isReady
+  //) {
+  //  //when (down.isReady) {
+  //  when (!rSetUpPayloadState) {
+  //    val myDecodeArea = doDecodeFunc(this)
+  //  }
+  //  //}
+  //} otherwise {
+  //  //cId.haltIt()
+  //  when (
+  //    //nextSetUpPayloadState
+  //    up.isValid
+  //    //&& rSetUpPayloadState
+  //    && !down.isFiring
+  //  ) {
+  //    cId.duplicateIt()
+  //  }
+  //  //cId.terminateIt()
+  //}
+  val tempInstr = UInt(cfg.instrMainWidth bits)
+  tempInstr := (
+    RegNext(
+      next=tempInstr,
+      init=tempInstr.getZero,
+    )
+  )
+  when (!rDoDecodeState) {
+    when (io.ibus.rValid && io.ibus.ready) {
+      tempInstr := io.ibus.devData.instr
+      nextDoDecodeState := True
     }
-    //cId.terminateIt()
   }
+  when (up.isFiring) {
+    nextDoDecodeState := False
+  }
+  val myDecodeArea = doDecodeFunc(this)
 }
 private[libsnowhouse] object PcChangeState
 extends SpinalEnum(defaultEncoding=binarySequential) {
@@ -618,7 +651,7 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
     )
   )
   //when (someCond) {
-  io.modMemWordValid := (
+  val myModMemWordValid = (
     //io.doIt //True
     if (cfg.myHaveZeroReg) (
       // TODO: support more register simultaneous writes
@@ -626,6 +659,9 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
     ) else (
       True
     )
+  )
+  io.modMemWordValid := (
+    myModMemWordValid
   )
   io.psExSetPc := io.psExSetPc.getZero
   modIo.dbus.hostData := (
@@ -910,6 +946,9 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
                       s"not yet implemented: "
                       + s"opInfo(${opInfo}) index:${opInfoIdx}"
                     )
+                    if (opInfo.dstArr.size == 1) (
+                      io.modMemWordValid := False
+                    )
                     io.modMemWord(0) := io.regPcPlusInstrSize
                     io.psExSetPc.valid := True
                     io.psExSetPc.nextPc := (
@@ -918,6 +957,9 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
                     )
                   }
                   case CpyOpKind.Br => {
+                    if (opInfo.dstArr.size == 1) (
+                      io.modMemWordValid := False
+                    )
                     opInfo.cond match {
                       case CondKind.Always => {
                         //io.opIsJmp := True
@@ -943,7 +985,7 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
                       //  )
                       //}
                       case CondKind.Eq => {
-                        io.modMemWordValid := False
+                        //io.modMemWordValid := False
                         io.psExSetPc.valid := (
                           io.rdMemWord(io.brCondIdx(0))
                           === io.rdMemWord(io.brCondIdx(1))
@@ -953,7 +995,7 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
                         )
                       }
                       case CondKind.Ne => {
-                        io.modMemWordValid := False
+                        //io.modMemWordValid := False
                         io.psExSetPc.valid := (
                           io.rdMemWord(io.brCondIdx(0))
                           =/= io.rdMemWord(io.brCondIdx(1))
@@ -973,7 +1015,7 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
                         //  s"not yet implemented: "
                         //  + s"opInfo(${opInfo}) index:${opInfoIdx}"
                         //)
-                        io.modMemWordValid := False
+                        //io.modMemWordValid := False
                         io.psExSetPc.valid := (
                           io.rdMemWord(io.brCondIdx(0)) === 0
                         )
@@ -992,7 +1034,7 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
                         //  s"not yet implemented: "
                         //  + s"opInfo(${opInfo}) index:${opInfoIdx}"
                         //)
-                        io.modMemWordValid := False
+                        //io.modMemWordValid := False
                         io.psExSetPc.valid := (
                           io.rdMemWord(io.brCondIdx(0)) =/= 0
                         )

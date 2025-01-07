@@ -273,7 +273,10 @@ object SnowHouseCpuPipeStageInstrDecode {
       )
       .setName("InstrDecode_encInstr")
     )
-    encInstr.assignFromBits(io.ibus.devData.instr.asBits)
+    encInstr.assignFromBits(
+      //io.ibus.devData.instr.asBits
+      psId.tempInstr.asBits
+    )
     val nextMultiCycleState = Bool()
     val rMultiCycleState = (
       KeepAttribute(
@@ -1067,8 +1070,10 @@ case class SnowHouseCpuTestProgram(
     jmp(lr),                  // 0x58
     //--------
     Lb"multiply",
-    //mul(r7, r6, r1),
-    jmp(lr),                  // 0x5c
+    mul(r7, r6, r1),          // 0x5c
+    jmp(lr),                  // 0x60
+    cpy(r0, r0),
+    cpy(r0, r0),
   )
   val program = SnowHouseCpuProgram(cfg=cfg)
   //val outpArr = ArrayBuffer[BigInt]()
