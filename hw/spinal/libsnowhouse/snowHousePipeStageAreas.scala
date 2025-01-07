@@ -2746,8 +2746,13 @@ case class SnowHousePipeStageMem(
       someExt => {
         someExt.modMemWordValid := (
           //False
-          midModPayload(extIdxUp).decodeExt.memAccessKind
-          =/= SnowHouseMemAccessKind.Store
+          (
+            midModPayload(extIdxUp).decodeExt.memAccessKind
+            =/= SnowHouseMemAccessKind.Store
+          ) && (
+            // TODO: support more destination GPRs
+            !midModPayload(extIdxUp).gprIsZeroVec(0)
+          )
         )
       }
     )
@@ -2793,7 +2798,10 @@ case class SnowHousePipeStageMem(
       )
       switch (myDecodeExt.memAccessKind) {
         is (SnowHouseMemAccessKind.LoadU) {
-          myCurrExt.modMemWordValid := True
+          myCurrExt.modMemWordValid := (
+            // TODO: support more destination GPRs
+            !midModPayload(extIdxUp).gprIsZeroVec(0)
+          )
           switch (myDecodeExt.memAccessSubKind) {
             is (SnowHouseMemAccessSubKind.Sz8) {
               if (cfg.mainWidth >= 8) {
@@ -2826,7 +2834,11 @@ case class SnowHousePipeStageMem(
           }
         }
         is (SnowHouseMemAccessKind.LoadS) {
-          myCurrExt.modMemWordValid := True
+          myCurrExt.modMemWordValid := (
+            //True
+            // TODO: support more destination GPRs
+            !midModPayload(extIdxUp).gprIsZeroVec(0)
+          )
           switch (myDecodeExt.memAccessSubKind) {
             is (SnowHouseMemAccessSubKind.Sz8) {
               if (cfg.mainWidth >= 8) {
