@@ -762,6 +762,7 @@ case class SnowHouseCpuTestProgram(
   cfg.program ++= Array[AsmStmt](
     //--------
     cpy(r0, 0x0),         // 0: r0 = 0
+    cpy(r0, 0x0),
     cpy(r1, 0x8),         // 4: r1 = 8
     cpy(r2, 0x1),         // 8: r2 = 1
     cpy(r3, 0x1000),      // c: r3 = 0x1000

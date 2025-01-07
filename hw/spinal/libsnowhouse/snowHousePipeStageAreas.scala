@@ -283,11 +283,10 @@ case class SnowHousePipeStageInstrDecode(
   //def doDecode(): Area
   //--------
   //val psIdHaltIt = Bool()
-  def myDoHaltIt(): Unit = {
+  def myDoStalltIt(): Unit = {
     //psIdHaltIt := True
-    cId.haltIt()
-      // this `haltIt()` call prevents `up.isFiring` and prevents
-      // deassertion of `rDidHandleG7SubDecode`
+    //cId.haltIt()
+    cId.terminateIt()
   }
   //val decInstr = UInt(log2Up(opInfoMap.size) bits)
   //--------
@@ -297,7 +296,9 @@ case class SnowHousePipeStageInstrDecode(
   val upPayload = SnowHousePipePayload(cfg=cfg)
   //up(pId) := upModExt
   up(pId) := upPayload
-  val rSetUpPayloadState = Reg(Bool(), init=False)
+  val nextSetUpPayloadState = Bool()
+  val rSetUpPayloadState = RegNext(nextSetUpPayloadState, init=False)
+  nextSetUpPayloadState := rSetUpPayloadState
   upPayload := (
     RegNext(
       next=upPayload,
@@ -310,15 +311,15 @@ case class SnowHousePipeStageInstrDecode(
     //upPayload.regPc := cId.up(pIf).regPc
     //upPayload.instrCnt := cId.up(pIf).instrCnt
     when (!rSetUpPayloadState) {
-      when (io.ibus.rValid && io.ibus.ready) {
+      //when (io.ibus.rValid && io.ibus.ready) {
         upPayload := up(pIf)
-        val myDecodeArea = doDecodeFunc(this)
-        rSetUpPayloadState := True
-      }
+        //val myDecodeArea = doDecodeFunc(this)
+        nextSetUpPayloadState := True
+      //}
     }
     when (up.isFiring) {
       //up(pId) := upPayload
-      rSetUpPayloadState := False
+      nextSetUpPayloadState := False
     }
   }
   if (optFormal) {
@@ -438,6 +439,20 @@ case class SnowHousePipeStageInstrDecode(
     }
   }
   //val myDecodeArea = doDecodeFunc(this)
+  when (io.ibus.rValid && io.ibus.ready) {
+    val myDecodeArea = doDecodeFunc(this)
+  } otherwise {
+    //cId.haltIt()
+    when (
+      //nextSetUpPayloadState
+      up.isValid
+      //&& rSetUpPayloadState
+      && !down.isFiring
+    ) {
+      cId.duplicateIt()
+    }
+    //cId.terminateIt()
+  }
 }
 private[libsnowhouse] object PcChangeState
 extends SpinalEnum(defaultEncoding=binarySequential) {
