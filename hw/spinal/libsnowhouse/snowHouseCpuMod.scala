@@ -106,12 +106,12 @@ object SnowHouseCpuOp {
   def LdstKindRc = 0x0
   def LdstKindSimm16 = 0x1
   //--------
-  val BzRaSimm = mkOp("BzRaSimm", JmpKindBz, false)             // 11, 0
-  val BnzRaSimm = mkOp("BnzRaSimm", JmpKindBnz, false)          // 11, 1
+  val BeqRaRbSimm = mkOp("BeqRaRbSimm", JmpKindBeq, false)      // 11, 0
+  val BneRaRbSimm = mkOp("BneRaRbSimm", JmpKindBne, false)      // 11, 1
   val JmpRa = mkOp("JmpRa", JmpKindJmpRa, false)                // 11, 2
   val JmpReserved = mkOp("JmpReserved", JmpKindReserved, true)  // 11, 3
-  def JmpKindBz = 0x0
-  def JmpKindBnz = 0x1
+  def JmpKindBeq = 0x0
+  def JmpKindBne = 0x1
   def JmpKindJmpRa = 0x2
   def JmpKindReserved = 0x3
 
@@ -281,13 +281,13 @@ object SnowHouseCpuPipeStageInstrDecode {
           setOp(StrRaRbSimm16)
         }
       }
-      is (BzRaSimm._1) {
+      is (BeqRaRbSimm._1) {
         switch (encInstr.rcIdx(1 downto 0)) {
-          is (BzRaSimm._2) {
-            setOp(BzRaSimm)
+          is (BeqRaRbSimm._2) {
+            setOp(BeqRaRbSimm)
           }
-          is (BnzRaSimm._2) {
-            setOp(BnzRaSimm)
+          is (BneRaRbSimm._2) {
+            setOp(BneRaRbSimm)
           }
           is (JmpRa._2) {
             setOp(JmpRa)
@@ -551,19 +551,23 @@ object SnowHouseCpuOpInfoMap {
   )
   //--------
   opInfoMap += (
-    SnowHouseCpuOp.BzRaSimm -> OpInfo.mkCpy(
+    SnowHouseCpuOp.BeqRaRbSimm -> OpInfo.mkCpy(
       dstArr=Array[DstKind](DstKind.Pc),
-      srcArr=Array[SrcKind](SrcKind.Gpr, SrcKind.Imm(/*Some(true)*/)),
+      srcArr=Array[SrcKind](
+        SrcKind.Gpr, SrcKind.Gpr, SrcKind.Imm(/*Some(true)*/)
+      ),
       cpyOp=CpyOpKind.Br,
-      cond=CondKind.Z,
+      cond=CondKind.Eq,
     )
   )
   opInfoMap += (
-    SnowHouseCpuOp.BnzRaSimm -> OpInfo.mkCpy(
+    SnowHouseCpuOp.BneRaRbSimm -> OpInfo.mkCpy(
       dstArr=Array[DstKind](DstKind.Pc),
-      srcArr=Array[SrcKind](SrcKind.Gpr, SrcKind.Imm(/*Some(true)*/)),
+      srcArr=Array[SrcKind](
+        SrcKind.Gpr, SrcKind.Gpr, SrcKind.Imm(/*Some(true)*/)
+      ),
       cpyOp=CpyOpKind.Br,
-      cond=CondKind.Nz,
+      cond=CondKind.Ne
     )
   )
   opInfoMap += (
@@ -762,30 +766,33 @@ case class SnowHouseCpuTestProgram(
   cfg.program ++= Array[AsmStmt](
     //--------
     cpy(r0, 0x0),         // 0: r0 = 0
-    cpy(r0, 0x0),
-    cpy(r1, 0x8),         // 4: r1 = 8
-    cpy(r2, 0x1),         // 8: r2 = 1
-    cpy(r3, 0x1000),      // c: r3 = 0x1000
-    cpy(r4, 0x8),         // 10: r4 = 4
+                          // instruction fetcher has trouble
+                          // reading first instruction, so put
+                          // in a dummy
+    cpy(r0, 0x0),         // 4: r0 = 0
+    cpy(r1, 0x8),         // 0x8: r1 = 8
+    cpy(r2, 0x1),         // 0xc: r2 = 1
+    cpy(r3, 0x1000),      // 0x10: r3 = 0x1000
+    cpy(r4, 0x8),         // 0x14: r4 = 4
     ////cpy(r5, 0x0),
-    cpy(r5, 0x20),        // 14: r5 = 0x20
-    str(r5, r0, r3),      // 18: [r0 + r3] = r5
+    cpy(r5, 0x20),        // 0x18: r5 = 0x20
+    str(r5, r0, r3),      // 0x1c: [r0 + r3] = r5
     //--------
     Lb"loop",
     //add(r0, r1, r2),
     //cpyu(r2, tempData >> 16),
     //cpy(r2, tempData & 0xffff),
-    ldr(r5, r3, 0x0),     // 1c:
-    add(r5, r5, 0x1),     // 20:
-    str(r5, r3, 0x4),     // 24:
-    add(r3, r3, 0x4),     // 28: r3 += 4
-    sub(r1, r1, 0x1),     // 2c: r1 -= 1 
-    bnz(r1, LbR"loop"),   // 30: if (r1 != 0) goto LbR"loop"
+    ldr(r5, r3, 0x0),     // 0x20:
+    add(r5, r5, 0x1),     // 0x24:
+    str(r5, r3, 0x4),     // 0x28:
+    add(r3, r3, 0x4),     // 0x2c: r3 += 4
+    sub(r1, r1, 0x1),     // 0x30: r1 -= 1 
+    bnz(r1, LbR"loop"),   // 0x34: if (r1 != 0) goto LbR"loop"
     //--------
-    cpy(r12, 0x0),        // 34
+    cpy(r12, 0x0),        // 0x38
     Lb"infin",
     //--------
-    bz(r12, LbR"infin"),  // 38
+    bz(r12, LbR"infin"),  // 0x3c
     //Db32(0x3f),
     //--------
   )

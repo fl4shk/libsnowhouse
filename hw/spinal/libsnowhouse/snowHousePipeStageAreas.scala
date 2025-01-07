@@ -661,7 +661,9 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
             + s"opInfo(${opInfo}) index:${opInfoIdx}"
           )
           assert(
-            opInfo.srcArr.size == 1 || opInfo.srcArr.size == 2,
+            opInfo.srcArr.size == 1
+            || opInfo.srcArr.size == 2
+            || opInfo.srcArr.size == 3,
             s"not yet implemented: "
             + s"opInfo(${opInfo}) index:${opInfoIdx}"
           )
@@ -913,6 +915,24 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
                       //    opInfo.dstArr.size == 2,
                       //  )
                       //}
+                      case CondKind.Eq => {
+                        io.psExSetPc.valid := (
+                          io.rdMemWord(io.brCondIdx(0))
+                          === io.rdMemWord(io.brCondIdx(1))
+                        )
+                        io.psExSetPc.nextPc := (
+                          io.regPcPlusImm
+                        )
+                      }
+                      case CondKind.Ne => {
+                        io.psExSetPc.valid := (
+                          io.rdMemWord(io.brCondIdx(0))
+                          =/= io.rdMemWord(io.brCondIdx(1))
+                        )
+                        io.psExSetPc.nextPc := (
+                          io.regPcPlusImm
+                        )
+                      }
                       case CondKind.Z => {
                         //assert(
                         //  opInfo.dstArr.size == 1,
@@ -4021,6 +4041,20 @@ case class SnowHousePipeStageWriteBack(
                       case CondKind.Always => {
                         handlePcChange(
                           cond=True
+                        )
+                      }
+                      case CondKind.Eq => {
+                        handlePcChange(
+                          cond=(
+                            jmpSelRdMemWord(0) === jmpSelRdMemWord(1)
+                          )
+                        )
+                      }
+                      case CondKind.Ne => {
+                        handlePcChange(
+                          cond=(
+                            jmpSelRdMemWord(0) =/= jmpSelRdMemWord(1)
+                          )
                         )
                       }
                       case CondKind.Z => {

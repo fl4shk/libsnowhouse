@@ -749,6 +749,24 @@ object mul {
   //  )
   //}
 }
+object beq {
+  def apply(
+    rA: Gpr,
+    rB: Gpr,
+    //rC: SnowHouseCpuAsmAst.Gpr,
+    imm16: SnowHouseCpuExpr,
+  ) = {
+    Instruction(
+      op=SnowHouseCpuOp.BeqRaRbSimm,
+      rA=rA,
+      rB=rB,
+      rC=Gpr(SnowHouseCpuOp.BeqRaRbSimm._2),
+      imm16=(
+        imm16 - SnowHouseCpuExpr.Dot - 4
+      ),
+    )
+  }
+}
 object bz {
   def apply(
     rA: Gpr,
@@ -756,15 +774,20 @@ object bz {
     //rC: SnowHouseCpuAsmAst.Gpr,
     imm16: SnowHouseCpuExpr,
   ) = {
-    Instruction(
-      op=SnowHouseCpuOp.BzRaSimm,
+    beq(
       rA=rA,
       rB=SnowHouseCpuRegs.r0,
-      rC=Gpr(SnowHouseCpuOp.BzRaSimm._2),
-      imm16=(
-        imm16 - SnowHouseCpuExpr.Dot - 4
-      ),
+      imm16=imm16,
     )
+    //Instruction(
+    //  op=SnowHouseCpuOp.BeqRaRbSimm,
+    //  rA=rA,
+    //  rB=SnowHouseCpuRegs.r0,
+    //  rC=Gpr(SnowHouseCpuOp.BeqRaRbSimm._2),
+    //  imm16=(
+    //    imm16 - SnowHouseCpuExpr.Dot - 4
+    //  ),
+    //)
   }
   //def apply(
   //  rA: Gpr,
@@ -781,6 +804,24 @@ object bz {
   //  )
   //}
 }
+object bne {
+  def apply(
+    rA: Gpr,
+    rB: Gpr,
+    //rC: SnowHouseCpuAsmAst.Gpr,
+    imm16: SnowHouseCpuExpr,
+  ) = {
+    Instruction(
+      op=SnowHouseCpuOp.BneRaRbSimm,
+      rA=rA,
+      rB=rB,
+      rC=Gpr(SnowHouseCpuOp.BneRaRbSimm._2),
+      imm16=(
+        imm16 - SnowHouseCpuExpr.Dot - 4
+      ),
+    )
+  }
+}
 object bnz {
   def apply(
     rA: Gpr,
@@ -788,16 +829,21 @@ object bnz {
     //rC: SnowHouseCpuAsmAst.Gpr,
     imm16: SnowHouseCpuExpr,
   ) = {
-    Instruction(
-      op=SnowHouseCpuOp.BnzRaSimm,
+    bne(
       rA=rA,
       rB=SnowHouseCpuRegs.r0,
-      rC=Gpr(SnowHouseCpuOp.BnzRaSimm._2),
-      imm16=(
-        //imm16,
-        imm16 - SnowHouseCpuExpr.Dot - 4
-      ),
+      imm16=imm16,
     )
+    //Instruction(
+    //  op=SnowHouseCpuOp.BneRaRbSimm,
+    //  rA=rA,
+    //  rB=SnowHouseCpuRegs.r0,
+    //  rC=Gpr(SnowHouseCpuOp.BneRaRbSimm._2),
+    //  imm16=(
+    //    //imm16,
+    //    imm16 - SnowHouseCpuExpr.Dot - 4
+    //  ),
+    //)
   }
   //def apply(
   //  rA: Gpr,

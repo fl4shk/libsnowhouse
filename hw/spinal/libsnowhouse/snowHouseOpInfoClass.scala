@@ -529,11 +529,11 @@ sealed trait OpKindBase {
     //CondKind.Link,
     CondKind.Eq,      // do it if EQual
     CondKind.Ne,      // do it if Not Equal
-    //--------
-    CondKind.Mi,      // do it if MInus
-    CondKind.Pl,      // do it if PLus
-    CondKind.Vs,      // do it if oVerflow Set
-    CondKind.Vc,      // do it if oVerflow Clear
+    ////--------
+    //CondKind.Mi,      // do it if MInus
+    //CondKind.Pl,      // do it if PLus
+    //CondKind.Vs,      // do it if oVerflow Set
+    //CondKind.Vc,      // do it if oVerflow Clear
     //--------
     CondKind.Geu,     // do it if Greater than or Equal,
                                         // Unsigned
@@ -759,21 +759,21 @@ object CpyOpKind {
       //    CondKind.Link
       //  ),
       //),
-      //OpKindValidArgs(
-      //  // for "compare and branch" (in one instruction)
-      //  //dstSize=1, srcSize=3
-      //  dst=Array[HashSet[DstKind]](
-      //    HashSet(DstKind.Pc),
-      //  ),
-      //  src=Array[HashSet[SrcKind]](
-      //    HashSet(SrcKind.Gpr),
-      //    HashSet(SrcKind.Gpr),
-      //    HashSet(SrcKind.Imm(None)),
-      //  ),
-      //  cond=(
-      //    requireCmpTwoSrcCondSet
-      //  )
-      //),
+      OpKindValidArgs(
+        // for "compare and branch" (in one instruction)
+        //dstSize=1, srcSize=3
+        dst=Array[HashSet[DstKind]](
+          HashSet(DstKind.Pc),
+        ),
+        src=Array[HashSet[SrcKind]](
+          HashSet(SrcKind.Gpr),
+          HashSet(SrcKind.Gpr),
+          HashSet(SrcKind.Imm(/*None*/)),
+        ),
+        cond=(
+          requireCmpTwoSrcCondSet
+        )
+      ),
     )
     def validArgsSet = _validArgsSet
   }
