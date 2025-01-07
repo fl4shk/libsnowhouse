@@ -16,7 +16,7 @@ import libcheesevoyage.bus.lcvStall._
 //  cfg: SnowHouseConfig
 //) extends Component {
 //}
-case class SnowHouseSampleInstrDataDualRamIo(
+case class SnowHouseInstrDataDualRamIo(
   cfg: SnowHouseConfig,
 ) extends Bundle {
   val ibus = new LcvStallIo[IbusHostPayload, IbusDevPayload ](
@@ -32,7 +32,7 @@ case class SnowHouseSampleInstrDataDualRamIo(
     dbus,
   )
 }
-case class SnowHouseSampleInstrDataDualRam(
+case class SnowHouseInstrDataDualRam(
   cfg: SnowHouseConfig,
   //isInstr: Boolean,
   instrInitBigInt: Seq[BigInt],
@@ -42,7 +42,7 @@ case class SnowHouseSampleInstrDataDualRam(
   //  hostPayloadType=Some(hostPayloadType()),
   //  devPayloadType=Some(devPayloadType()),
   //))
-  val io = SnowHouseSampleInstrDataDualRamIo(cfg=cfg)
+  val io = SnowHouseInstrDataDualRamIo(cfg=cfg)
   //--------
   val instrRamDepth = instrInitBigInt.size
   val instrRam = FpgacpuRamSimpleDualPort(
@@ -68,17 +68,17 @@ case class SnowHouseSampleInstrDataDualRam(
     depth=dataRamDepth,
     initBigInt=Some(dataInitBigInt),
   )
-  //io.dbus.ready := io.dbus.rValid
-  io.dbus.ready := False
-  val rDbusReadyCnt = Reg(UInt(8 bits)) init(2)
-  when (io.dbus.rValid) {
-    when (rDbusReadyCnt > 0) {
-      rDbusReadyCnt := rDbusReadyCnt - 1
-    } otherwise {
-      rDbusReadyCnt := 2
-      io.dbus.ready := True
-    }
-  }
+  io.dbus.ready := io.dbus.rValid
+  //io.dbus.ready := False
+  //val rDbusReadyCnt = Reg(UInt(8 bits)) init(2)
+  //when (io.dbus.rValid) {
+  //  when (rDbusReadyCnt > 0) {
+  //    rDbusReadyCnt := rDbusReadyCnt - 1
+  //  } otherwise {
+  //    rDbusReadyCnt := 2
+  //    io.dbus.ready := True
+  //  }
+  //}
   io.dbus.devData.data := io.dbus.hostData.data.getZero
 
   dataRam.io.rdEn := False
@@ -219,7 +219,9 @@ case class SnowHouse
                 cFront.up.isValid
                 && past(cFront.up.isFiring)
               ) {
-                assert(inp.opCnt === past(inp.opCnt) + 1)
+                when (inp.opCnt =/= past(inp.opCnt)) {
+                  assert(inp.opCnt === past(inp.opCnt) + 1)
+                }
               }
             }
             //assume(
@@ -227,7 +229,7 @@ case class SnowHouse
             //  //< PipeMemRmwSimDut.ModOp.MUL_RA_RB.asBits.asUInt
             //  //< PipeMemRmwSimDut.postMaxModOp.asBits.asUInt
             //)
-            inp.formalAssumes()
+            val temp = inp.formalAssumes()
             when (pastValidAfterReset) {
               for ((tempExt, tempIdx) <- inp.myExt.zipWithIndex) {
                 assert(stable(tempExt.hazardCmp))

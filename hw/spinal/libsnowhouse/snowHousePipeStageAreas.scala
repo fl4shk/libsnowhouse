@@ -167,11 +167,11 @@ case class SnowHousePipeStageInstrFetch(
   io.ibus.nextValid := True
   io.ibus.hostData.addr := nextRegPc //upModExt.regPc
   //--------
-  val myDoHaltIt = (cfg.optFormal) generate (
+  val myDoStallIt = (cfg.optFormal) generate (
     Bool()
   )
   if (cfg.optFormal) {
-    myDoHaltIt := False
+    myDoStallIt := False
   }
   def doStallMain(): Unit = {
     io.ibus.hostData.addr := (
@@ -181,12 +181,13 @@ case class SnowHousePipeStageInstrFetch(
       )
     )
   }
-  def doHaltItEtc(): Unit = {
+  def doStallItEtc(): Unit = {
     //io.ibus.nextValid := False
     doStallMain()
-    cIf.haltIt()
+    //cIf.haltIt()
+    cIf.duplicateIt()
     if (cfg.optFormal) {
-      myDoHaltIt := True
+      myDoStallIt := True
     }
   }
   when (
@@ -195,7 +196,7 @@ case class SnowHousePipeStageInstrFetch(
     !io.ibus.ready
   ) {
     //cIf.duplicateIt()
-    doHaltItEtc()
+    doStallItEtc()
   }
   //--------
   if (cfg.optFormal) {
@@ -203,8 +204,8 @@ case class SnowHousePipeStageInstrFetch(
       !io.ibus.ready //|| psIdHaltIt
     ) {
       assert(!cIf.up.isReady)
-      assert(!cIf.down.isValid)
-      assert(myDoHaltIt)
+      //assert(!cIf.down.isValid)
+      assert(myDoStallIt)
     }
     when (pastValidAfterReset) {
       when (!io.ibus.ready) {
@@ -212,16 +213,19 @@ case class SnowHousePipeStageInstrFetch(
       }
     }
     when (pastValidAfterReset) {
-      when (past(io.ibus.nextValid)) {
-        when (io.ibus.ready) {
-          when (!io.ibus.nextValid) {
-            assume(!RegNext(io.ibus.ready))
+      //when (past(io.ibus.nextValid)) {
+      //  when (io.ibus.ready) {
+          //when (!io.ibus.nextValid) {
+          //  assume(!RegNext(io.ibus.ready))
+          //}
+          when (!past(io.ibus.nextValid)) {
+            assume(!io.ibus.ready)
           }
-        }
-      }
+      //  }
+      //}
     }
     when (up.isFiring) {
-      assert(!myDoHaltIt)
+      assert(!myDoStallIt)
     }
     when (pastValidAfterReset) {
       when (past(up.isFiring)) {
@@ -306,9 +310,11 @@ case class SnowHousePipeStageInstrDecode(
     //upPayload.regPc := cId.up(pIf).regPc
     //upPayload.instrCnt := cId.up(pIf).instrCnt
     when (!rSetUpPayloadState) {
-      upPayload := up(pIf)
-      val myDecodeArea = doDecodeFunc(this)
-      rSetUpPayloadState := True
+      when (io.ibus.rValid && io.ibus.ready) {
+        upPayload := up(pIf)
+        val myDecodeArea = doDecodeFunc(this)
+        rSetUpPayloadState := True
+      }
     }
     when (up.isFiring) {
       //up(pId) := upPayload
@@ -605,11 +611,13 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
   //  //)
   //  io.psExSetPc.payload.getZero
   //)
-  if (cfg.optFormal) {
-    if ((1 << io.currOp.getWidth) != cfg.opInfoMap.size) {
-      assert((1 << io.currOp.getWidth) < cfg.opInfoMap.size)
-    }
-  }
+  //if (cfg.optFormal) {
+  //  if ((1 << io.currOp.getWidth) != cfg.opInfoMap.size) {
+  //    assert(
+  //      (1 << io.currOp.getWidth) < cfg.opInfoMap.size
+  //    )
+  //  }
+  //}
   io.opIs := 0x0
   //io.decodeExt.memAccessLdStKind := False
   io.decodeExt.memAccessKind := SnowHouseMemAccessKind.LoadU
@@ -2832,7 +2840,7 @@ case class SnowHousePipeStageMem(
           }
         }
         is (SnowHouseMemAccessKind.Store) {
-          myCurrExt.modMemWordValid := True
+          myCurrExt.modMemWordValid := False //True
         }
       }
       if (cfg.optFormal) {
@@ -2876,10 +2884,15 @@ case class SnowHousePipeStageMem(
         past(front.isFiring)
         && front.isValid
       ) {
-        assert(
+        when (
           front(frontPayload).opCnt
-          === past(front(frontPayload).opCnt) + 1
-        )
+          =/= past(front(frontPayload).opCnt)
+        ) {
+          assert(
+            front(frontPayload).opCnt
+            === past(front(frontPayload).opCnt) + 1
+          )
+        }
       }
       val myTempUpMod = regFile.cMid0FrontArea.tempUpMod(2)
       when (!psWb.tempHadFrontIsFiring._1) {

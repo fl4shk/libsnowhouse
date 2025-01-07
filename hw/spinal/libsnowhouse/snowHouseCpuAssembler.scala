@@ -10,10 +10,10 @@ import libcheesevoyage.general._
 import libcheesevoyage.math._
 import libcheesevoyage.bus.lcvStall._
 
-//trait SampleCpuAsmExpr {
+//trait SnowHouseCpuAsmExpr {
 //}
 //--------
-object SampleCpuAsmAstFuncs {
+object SnowHouseCpuAsmAstFuncs {
   def zeroExtend(
     toExtend: Int
   ): Long = {
@@ -21,107 +21,107 @@ object SampleCpuAsmAstFuncs {
     temp
   }
 }
-sealed trait SampleCpuExpr {
+sealed trait SnowHouseCpuExpr {
   private[libsnowhouse] var _isSigned: Boolean = false
   //private[libsnowhouse] var _pc: Option[Int] = None
   //--------
   def asUInt = {
-    SampleCpuExpr.ExprAsUInt(child=this)
+    SnowHouseCpuExpr.ExprAsUInt(child=this)
   }
   def asSInt = {
-    SampleCpuExpr.ExprAsSInt(child=this)
+    SnowHouseCpuExpr.ExprAsSInt(child=this)
   }
   //--------
-  def +(that: SampleCpuExpr) = {
-    SampleCpuExpr.ExprPlus(left=this, right=that)
+  def +(that: SnowHouseCpuExpr) = {
+    SnowHouseCpuExpr.ExprPlus(left=this, right=that)
   }
-  def -(that: SampleCpuExpr) = {
-    SampleCpuExpr.ExprMinus(left=this, right=that)
+  def -(that: SnowHouseCpuExpr) = {
+    SnowHouseCpuExpr.ExprMinus(left=this, right=that)
   }
   //--------
   def unary_- = {
-    SampleCpuExpr.ExprUnopMinus(child=this)
+    SnowHouseCpuExpr.ExprUnopMinus(child=this)
   }
   //--------
-  def *(that: SampleCpuExpr) = {
-    SampleCpuExpr.ExprMul(left=this, right=that)
+  def *(that: SnowHouseCpuExpr) = {
+    SnowHouseCpuExpr.ExprMul(left=this, right=that)
   }
-  def /(that: SampleCpuExpr) = {
-    SampleCpuExpr.ExprDiv(left=this, right=that)
+  def /(that: SnowHouseCpuExpr) = {
+    SnowHouseCpuExpr.ExprDiv(left=this, right=that)
   }
-  def %(that: SampleCpuExpr) = {
-    SampleCpuExpr.ExprMod(left=this, right=that)
-  }
-  //--------
-  def ===(that: SampleCpuExpr) = {
-    SampleCpuExpr.ExprCmpEq(left=this, right=that)
-  }
-  def =/=(that: SampleCpuExpr) = {
-    SampleCpuExpr.ExprCmpNe(left=this, right=that)
-  }
-  def <(that: SampleCpuExpr) = {
-    SampleCpuExpr.ExprCmpLt(left=this, right=that)
-  }
-  def >=(that: SampleCpuExpr) = {
-    SampleCpuExpr.ExprCmpGe(left=this, right=that)
-  }
-  def >(that: SampleCpuExpr) = {
-    SampleCpuExpr.ExprCmpGt(left=this, right=that)
-  }
-  def <=(that: SampleCpuExpr) = {
-    SampleCpuExpr.ExprCmpLe(left=this, right=that)
+  def %(that: SnowHouseCpuExpr) = {
+    SnowHouseCpuExpr.ExprMod(left=this, right=that)
   }
   //--------
-  def &(that: SampleCpuExpr) = {
-    SampleCpuExpr.ExprBitAnd(left=this, right=that)
+  def ===(that: SnowHouseCpuExpr) = {
+    SnowHouseCpuExpr.ExprCmpEq(left=this, right=that)
   }
-  def |(that: SampleCpuExpr) = {
-    SampleCpuExpr.ExprBitOr(left=this, right=that)
+  def =/=(that: SnowHouseCpuExpr) = {
+    SnowHouseCpuExpr.ExprCmpNe(left=this, right=that)
   }
-  def ^(that: SampleCpuExpr) = {
-    SampleCpuExpr.ExprBitXor(left=this, right=that)
+  def <(that: SnowHouseCpuExpr) = {
+    SnowHouseCpuExpr.ExprCmpLt(left=this, right=that)
+  }
+  def >=(that: SnowHouseCpuExpr) = {
+    SnowHouseCpuExpr.ExprCmpGe(left=this, right=that)
+  }
+  def >(that: SnowHouseCpuExpr) = {
+    SnowHouseCpuExpr.ExprCmpGt(left=this, right=that)
+  }
+  def <=(that: SnowHouseCpuExpr) = {
+    SnowHouseCpuExpr.ExprCmpLe(left=this, right=that)
+  }
+  //--------
+  def &(that: SnowHouseCpuExpr) = {
+    SnowHouseCpuExpr.ExprBitAnd(left=this, right=that)
+  }
+  def |(that: SnowHouseCpuExpr) = {
+    SnowHouseCpuExpr.ExprBitOr(left=this, right=that)
+  }
+  def ^(that: SnowHouseCpuExpr) = {
+    SnowHouseCpuExpr.ExprBitXor(left=this, right=that)
   }
   def ~ = {
-    SampleCpuExpr.ExprBitInvert(child=this)
+    SnowHouseCpuExpr.ExprBitInvert(child=this)
   }
   //--------
-  def <<(that: SampleCpuExpr) = {
-    SampleCpuExpr.ExprBitLshift(left=this, right=that)
+  def <<(that: SnowHouseCpuExpr) = {
+    SnowHouseCpuExpr.ExprBitLshift(left=this, right=that)
   }
-  def >>(that: SampleCpuExpr) = {
+  def >>(that: SnowHouseCpuExpr) = {
     //if (!this._isSigned) (
-    SampleCpuExpr.ExprBitRshift(left=this, right=that)
+    SnowHouseCpuExpr.ExprBitRshift(left=this, right=that)
     //) else (
-    //  SampleCpuAsmAst.ExprBitAsr(left=this, right=that)
+    //  SnowHouseCpuAsmAst.ExprBitAsr(left=this, right=that)
     //)
   }
-  //def >>>(that: SampleCpuAsmAst) = {
+  //def >>>(that: SnowHouseCpuAsmAst) = {
   //  ExprBitAsr(left=this, right=that)
   //}
   //--------
-  def &&(that: SampleCpuExpr) = {
-    SampleCpuExpr.ExprLogicAnd(left=this, right=that)
+  def &&(that: SnowHouseCpuExpr) = {
+    SnowHouseCpuExpr.ExprLogicAnd(left=this, right=that)
   }
-  def ||(that: SampleCpuExpr) = {
-    SampleCpuExpr.ExprLogicOr(left=this, right=that)
+  def ||(that: SnowHouseCpuExpr) = {
+    SnowHouseCpuExpr.ExprLogicOr(left=this, right=that)
   }
 
-  def unary_! : SampleCpuExpr = {
-    SampleCpuExpr.ExprLogicInvert(child=this)
+  def unary_! : SnowHouseCpuExpr = {
+    SnowHouseCpuExpr.ExprLogicInvert(child=this)
   }
   //--------
   def evaluate(
-    assembler: SampleCpuAssembler
+    assembler: SnowHouseCpuAssembler
   ): Int = {
     this match {
-      //case SampleCpuAsmAst.Gpr(
+      //case SnowHouseCpuAsmAst.Gpr(
       //  index: Int
       //) => {
       //  assert(false)
       //  0
       //}
       //--------
-      case label: SampleCpuExpr.LabRef => {
+      case label: SnowHouseCpuExpr.LabRef => {
         assembler._labelMap.get(label.name) match {
           case Some((label, value)) => {
             value
@@ -144,7 +144,7 @@ sealed trait SampleCpuExpr {
         //  }
         //}
       }
-      case SampleCpuExpr.Dot => {
+      case SnowHouseCpuExpr.Dot => {
         assembler._pc
         //dot._pc match {
         //  case Some(pc) => {
@@ -156,77 +156,77 @@ sealed trait SampleCpuExpr {
         //  }
         //}
       }
-      case exprInt: SampleCpuExpr.ExprInt => {
+      case exprInt: SnowHouseCpuExpr.ExprInt => {
         exprInt.value
       }
       //--------
-      case SampleCpuExpr.ExprAsUInt(
-        child: SampleCpuExpr,
+      case SnowHouseCpuExpr.ExprAsUInt(
+        child: SnowHouseCpuExpr,
       ) => {
         child._isSigned = false
         child.evaluate(assembler)
       }
-      case SampleCpuExpr.ExprAsSInt(
-        child: SampleCpuExpr,
+      case SnowHouseCpuExpr.ExprAsSInt(
+        child: SnowHouseCpuExpr,
       ) => {
         child._isSigned = true
         child.evaluate(assembler)
       }
-      case SampleCpuExpr.ExprPlus( // left + right
-        left: SampleCpuExpr,
-        right: SampleCpuExpr,
+      case SnowHouseCpuExpr.ExprPlus( // left + right
+        left: SnowHouseCpuExpr,
+        right: SnowHouseCpuExpr,
       ) => {
         left.evaluate(assembler) + right.evaluate(assembler)
       }
-      case SampleCpuExpr.ExprMinus( // left - right
-        left: SampleCpuExpr,
-        right: SampleCpuExpr,
+      case SnowHouseCpuExpr.ExprMinus( // left - right
+        left: SnowHouseCpuExpr,
+        right: SnowHouseCpuExpr,
       ) => {
         left.evaluate(assembler) - right.evaluate(assembler)
       }
       //--------
-      case SampleCpuExpr.ExprUnopMinus( // -value
-        child: SampleCpuExpr,
+      case SnowHouseCpuExpr.ExprUnopMinus( // -value
+        child: SnowHouseCpuExpr,
       ) => {
         -child.evaluate(assembler)
       }
       //--------
-      case SampleCpuExpr.ExprMul( // *
-        left: SampleCpuExpr,
-        right: SampleCpuExpr,
+      case SnowHouseCpuExpr.ExprMul( // *
+        left: SnowHouseCpuExpr,
+        right: SnowHouseCpuExpr,
       ) => {
         left.evaluate(assembler) * right.evaluate(assembler)
       }
-      case SampleCpuExpr.ExprDiv( // /
-        left: SampleCpuExpr,
-        right: SampleCpuExpr,
+      case SnowHouseCpuExpr.ExprDiv( // /
+        left: SnowHouseCpuExpr,
+        right: SnowHouseCpuExpr,
       ) => {
         if (!left._isSigned && !right._isSigned) (
           (
-            SampleCpuAsmAstFuncs.zeroExtend(left.evaluate(assembler))
-            / SampleCpuAsmAstFuncs.zeroExtend(right.evaluate(assembler))
+            SnowHouseCpuAsmAstFuncs.zeroExtend(left.evaluate(assembler))
+            / SnowHouseCpuAsmAstFuncs.zeroExtend(right.evaluate(assembler))
           ).toInt
         ) else (
           left.evaluate(assembler) / right.evaluate(assembler)
         )
       }
-      case SampleCpuExpr.ExprMod( // %
-        left: SampleCpuExpr,
-        right: SampleCpuExpr,
+      case SnowHouseCpuExpr.ExprMod( // %
+        left: SnowHouseCpuExpr,
+        right: SnowHouseCpuExpr,
       ) => {
         if (!left._isSigned && !right._isSigned) (
           (
-            SampleCpuAsmAstFuncs.zeroExtend(left.evaluate(assembler))
-            % SampleCpuAsmAstFuncs.zeroExtend(right.evaluate(assembler))
+            SnowHouseCpuAsmAstFuncs.zeroExtend(left.evaluate(assembler))
+            % SnowHouseCpuAsmAstFuncs.zeroExtend(right.evaluate(assembler))
           ).toInt
         ) else (
           left.evaluate(assembler) % right.evaluate(assembler)
         )
       }
       //--------
-      case SampleCpuExpr.ExprCmpEq( // ===
-        left: SampleCpuExpr,
-        right: SampleCpuExpr,
+      case SnowHouseCpuExpr.ExprCmpEq( // ===
+        left: SnowHouseCpuExpr,
+        right: SnowHouseCpuExpr,
       ) => {
         if (left.evaluate(assembler) == right.evaluate(assembler)) (
           1
@@ -234,9 +234,9 @@ sealed trait SampleCpuExpr {
           0
         )
       }
-      case SampleCpuExpr.ExprCmpNe( // =/=
-        left: SampleCpuExpr,
-        right: SampleCpuExpr,
+      case SnowHouseCpuExpr.ExprCmpNe( // =/=
+        left: SnowHouseCpuExpr,
+        right: SnowHouseCpuExpr,
       ) => {
         if (left.evaluate(assembler) != right.evaluate(assembler)) (
           1
@@ -244,14 +244,14 @@ sealed trait SampleCpuExpr {
           0
         )
       }
-      case SampleCpuExpr.ExprCmpLt( // <
-        left: SampleCpuExpr,
-        right: SampleCpuExpr,
+      case SnowHouseCpuExpr.ExprCmpLt( // <
+        left: SnowHouseCpuExpr,
+        right: SnowHouseCpuExpr,
       ) => {
         if (!left._isSigned && !right._isSigned) (
           if (
-            SampleCpuAsmAstFuncs.zeroExtend(left.evaluate(assembler))
-            < SampleCpuAsmAstFuncs.zeroExtend(right.evaluate(assembler))
+            SnowHouseCpuAsmAstFuncs.zeroExtend(left.evaluate(assembler))
+            < SnowHouseCpuAsmAstFuncs.zeroExtend(right.evaluate(assembler))
           ) (
             1
           ) else (
@@ -265,14 +265,14 @@ sealed trait SampleCpuExpr {
           )
         )
       }
-      case SampleCpuExpr.ExprCmpGe( // >=
-        left: SampleCpuExpr,
-        right: SampleCpuExpr,
+      case SnowHouseCpuExpr.ExprCmpGe( // >=
+        left: SnowHouseCpuExpr,
+        right: SnowHouseCpuExpr,
       ) => {
         if (!left._isSigned && !right._isSigned) (
           if (
-            SampleCpuAsmAstFuncs.zeroExtend(left.evaluate(assembler))
-            >= SampleCpuAsmAstFuncs.zeroExtend(right.evaluate(assembler))
+            SnowHouseCpuAsmAstFuncs.zeroExtend(left.evaluate(assembler))
+            >= SnowHouseCpuAsmAstFuncs.zeroExtend(right.evaluate(assembler))
           ) (
             1
           ) else (
@@ -286,14 +286,14 @@ sealed trait SampleCpuExpr {
           )
         )
       }
-      case SampleCpuExpr.ExprCmpGt( // >
-        left: SampleCpuExpr,
-        right: SampleCpuExpr,
+      case SnowHouseCpuExpr.ExprCmpGt( // >
+        left: SnowHouseCpuExpr,
+        right: SnowHouseCpuExpr,
       ) => {
         if (!left._isSigned && !right._isSigned) (
           if (
-            SampleCpuAsmAstFuncs.zeroExtend(left.evaluate(assembler))
-            > SampleCpuAsmAstFuncs.zeroExtend(right.evaluate(assembler))
+            SnowHouseCpuAsmAstFuncs.zeroExtend(left.evaluate(assembler))
+            > SnowHouseCpuAsmAstFuncs.zeroExtend(right.evaluate(assembler))
           ) (
             1
           ) else (
@@ -307,14 +307,14 @@ sealed trait SampleCpuExpr {
           )
         )
       }
-      case SampleCpuExpr.ExprCmpLe( // <=
-        left: SampleCpuExpr,
-        right: SampleCpuExpr,
+      case SnowHouseCpuExpr.ExprCmpLe( // <=
+        left: SnowHouseCpuExpr,
+        right: SnowHouseCpuExpr,
       ) => {
         if (!left._isSigned && !right._isSigned) (
           if (
-            SampleCpuAsmAstFuncs.zeroExtend(left.evaluate(assembler))
-            <= SampleCpuAsmAstFuncs.zeroExtend(right.evaluate(assembler))
+            SnowHouseCpuAsmAstFuncs.zeroExtend(left.evaluate(assembler))
+            <= SnowHouseCpuAsmAstFuncs.zeroExtend(right.evaluate(assembler))
           ) (
             1
           ) else (
@@ -329,60 +329,60 @@ sealed trait SampleCpuExpr {
         )
       }
       //--------
-      case SampleCpuExpr.ExprBitAnd( // &
-        left: SampleCpuExpr,
-        right: SampleCpuExpr,
+      case SnowHouseCpuExpr.ExprBitAnd( // &
+        left: SnowHouseCpuExpr,
+        right: SnowHouseCpuExpr,
       ) => {
         left.evaluate(assembler) & right.evaluate(assembler)
       }
-      case SampleCpuExpr.ExprBitOr( // |
-        left: SampleCpuExpr,
-        right: SampleCpuExpr,
+      case SnowHouseCpuExpr.ExprBitOr( // |
+        left: SnowHouseCpuExpr,
+        right: SnowHouseCpuExpr,
       ) => {
         left.evaluate(assembler) | right.evaluate(assembler)
       }
-      case SampleCpuExpr.ExprBitXor( // ^
-        left: SampleCpuExpr,
-        right: SampleCpuExpr,
+      case SnowHouseCpuExpr.ExprBitXor( // ^
+        left: SnowHouseCpuExpr,
+        right: SnowHouseCpuExpr,
       ) => {
         left.evaluate(assembler) ^ right.evaluate(assembler)
       }
-      case SampleCpuExpr.ExprBitInvert( // ~
-        child: SampleCpuExpr,
+      case SnowHouseCpuExpr.ExprBitInvert( // ~
+        child: SnowHouseCpuExpr,
       ) => {
         ~child.evaluate(assembler)
       }
       //--------
-      case SampleCpuExpr.ExprBitLshift( // <<
-        left: SampleCpuExpr,
-        right: SampleCpuExpr,
+      case SnowHouseCpuExpr.ExprBitLshift( // <<
+        left: SnowHouseCpuExpr,
+        right: SnowHouseCpuExpr,
       ) => {
         left.evaluate(assembler) << right.evaluate(assembler)
       }
-      case SampleCpuExpr.ExprBitRshift( // >>
-        left: SampleCpuExpr,
-        right: SampleCpuExpr,
+      case SnowHouseCpuExpr.ExprBitRshift( // >>
+        left: SnowHouseCpuExpr,
+        right: SnowHouseCpuExpr,
       ) => {
         if (!left._isSigned) (
           (
-            SampleCpuAsmAstFuncs.zeroExtend(left.evaluate(assembler))
+            SnowHouseCpuAsmAstFuncs.zeroExtend(left.evaluate(assembler))
             >> right.evaluate(assembler).toLong
           ).toInt
         ) else (
           left.evaluate(assembler) >> right.evaluate(assembler)
         )
       }
-      //case SampleCpuAsmAst.ExprBitAsr( // >>>
-      //  left: SampleCpuAsmAst,
-      //  right: SampleCpuAsmAst,
+      //case SnowHouseCpuAsmAst.ExprBitAsr( // >>>
+      //  left: SnowHouseCpuAsmAst,
+      //  right: SnowHouseCpuAsmAst,
       //) => {
       //  //val temp: Long = left.evaluate(assembler)
       //  left.evaluate(assembler) >> right.evaluate(assembler)
       //}
       //--------
-      case SampleCpuExpr.ExprLogicAnd( // &&
-        left: SampleCpuExpr,
-        right: SampleCpuExpr,
+      case SnowHouseCpuExpr.ExprLogicAnd( // &&
+        left: SnowHouseCpuExpr,
+        right: SnowHouseCpuExpr,
       ) => {
         if (
           (left.evaluate(assembler) != 0)
@@ -393,9 +393,9 @@ sealed trait SampleCpuExpr {
           0
         )
       }
-      case SampleCpuExpr.ExprLogicOr( // ||
-        left: SampleCpuExpr,
-        right: SampleCpuExpr,
+      case SnowHouseCpuExpr.ExprLogicOr( // ||
+        left: SnowHouseCpuExpr,
+        right: SnowHouseCpuExpr,
       ) => {
         if (
           (left.evaluate(assembler) != 0)
@@ -406,8 +406,8 @@ sealed trait SampleCpuExpr {
           0
         )
       }
-      case SampleCpuExpr.ExprLogicInvert( // !
-        child: SampleCpuExpr,
+      case SnowHouseCpuExpr.ExprLogicInvert( // !
+        child: SnowHouseCpuExpr,
       ) => {
         if (!(child.evaluate(assembler) != 0)) (
           1
@@ -426,7 +426,7 @@ sealed trait SampleCpuExpr {
   //--------
 }
 //--------
-object SampleCpuRegs {
+object SnowHouseCpuRegs {
   val r0 = Gpr(0)
   val r1 = Gpr(1)
   val r2 = Gpr(2)
@@ -453,7 +453,7 @@ object add {
     rC: Gpr,
   ) = {
     Instruction(
-      op=SampleCpuOp.AddRaRbRc,
+      op=SnowHouseCpuOp.AddRaRbRc,
       rA=rA,
       rB=rB,
       rC=rC,
@@ -463,26 +463,26 @@ object add {
   def apply(
     rA: Gpr,
     rB: Gpr,
-    imm16: SampleCpuExpr,
+    imm16: SnowHouseCpuExpr,
   ) = {
     Instruction(
-      op=SampleCpuOp.AddRaRbSimm16,
+      op=SnowHouseCpuOp.AddRaRbSimm16,
       rA=rA,
       rB=rB,
-      rC=SampleCpuRegs.r0,
+      rC=SnowHouseCpuRegs.r0,
       imm16=imm16,
     )
   }
   def apply(
     rA: Gpr,
     pc: RegPc,
-    imm16: SampleCpuExpr
+    imm16: SnowHouseCpuExpr
   ) = {
     Instruction(
-      op=SampleCpuOp.AddRaPcSimm16,
+      op=SnowHouseCpuOp.AddRaPcSimm16,
       rA=rA,
-      rB=SampleCpuRegs.r0,
-      rC=SampleCpuRegs.r0,
+      rB=SnowHouseCpuRegs.r0,
+      rC=SnowHouseCpuRegs.r0,
       imm16=imm16,
     )
   }
@@ -494,7 +494,7 @@ object sub {
     rC: Gpr,
   ) = {
     Instruction(
-      op=SampleCpuOp.SubRaRbRc,
+      op=SnowHouseCpuOp.SubRaRbRc,
       rA=rA,
       rB=rB,
       rC=rC,
@@ -505,13 +505,13 @@ object sub {
     rA: Gpr,
     rB: Gpr,
     //rC: Gpr,
-    imm16: SampleCpuExpr
+    imm16: SnowHouseCpuExpr
   ) = {
     Instruction(
-      op=SampleCpuOp.AddRaRbSimm16,
+      op=SnowHouseCpuOp.AddRaRbSimm16,
       rA=rA,
       rB=rB,
-      rC=SampleCpuRegs.r0,
+      rC=SnowHouseCpuRegs.r0,
       imm16=(-imm16),
     )
   }
@@ -523,24 +523,24 @@ object sltu {
     rC: Gpr,
   ) = {
     Instruction(
-      op=SampleCpuOp.SltuRaRbRc,
+      op=SnowHouseCpuOp.SltuRaRbRc,
       rA=rA,
       rB=rB,
       rC=rC,
-      imm16=SampleCpuOp.SltuRaRbRc._2,
+      imm16=SnowHouseCpuOp.SltuRaRbRc._2,
     )
   }
   //def apply(
   //  rA: Gpr,
   //  rB: Gpr,
   //  //rC: Gpr,
-  //  imm16: SampleCpuExpr
+  //  imm16: SnowHouseCpuExpr
   //) = {
   //  Instruction(
-  //    op=SampleCpuOp.Slt,
+  //    op=SnowHouseCpuOp.Slt,
   //    rA=rA,
   //    rB=rB,
-  //    rC=SampleCpuRegs.r0,
+  //    rC=SnowHouseCpuRegs.r0,
   //    imm16=imm16,
   //  )
   //}
@@ -552,24 +552,24 @@ object slts {
     rC: Gpr,
   ) = {
     Instruction(
-      op=SampleCpuOp.SltsRaRbRc,
+      op=SnowHouseCpuOp.SltsRaRbRc,
       rA=rA,
       rB=rB,
       rC=rC,
-      imm16=SampleCpuOp.SltsRaRbRc._2,
+      imm16=SnowHouseCpuOp.SltsRaRbRc._2,
     )
   }
   //def apply(
   //  rA: Gpr,
   //  rB: Gpr,
   //  //rC: Gpr,
-  //  imm16: SampleCpuExpr
+  //  imm16: SnowHouseCpuExpr
   //) = {
   //  Instruction(
-  //    op=SampleCpuOp.Slt,
+  //    op=SnowHouseCpuOp.Slt,
   //    rA=rA,
   //    rB=rB,
-  //    rC=SampleCpuRegs.r0,
+  //    rC=SnowHouseCpuRegs.r0,
   //    imm16=imm16,
   //  )
   //}
@@ -581,7 +581,7 @@ object and {
     rC: Gpr,
   ) = {
     Instruction(
-      op=SampleCpuOp.AndRaRbRc,
+      op=SnowHouseCpuOp.AndRaRbRc,
       rA=rA,
       rB=rB,
       rC=rC,
@@ -592,13 +592,13 @@ object and {
   //  rA: Gpr,
   //  rB: Gpr,
   //  //rC: Gpr,
-  //  imm16: SampleCpuExpr
+  //  imm16: SnowHouseCpuExpr
   //) = {
   //  Instruction(
-  //    op=SampleCpuOp.And,
+  //    op=SnowHouseCpuOp.And,
   //    rA=rA,
   //    rB=rB,
-  //    rC=SampleCpuRegs.r0,
+  //    rC=SnowHouseCpuRegs.r0,
   //    imm16=imm16,
   //  )
   //}
@@ -610,7 +610,7 @@ object orr {
     rC: Gpr,
   ) = {
     Instruction(
-      op=SampleCpuOp.OrrRaRbRc,
+      op=SnowHouseCpuOp.OrrRaRbRc,
       rA=rA,
       rB=rB,
       rC=rC,
@@ -621,13 +621,13 @@ object orr {
     rA: Gpr,
     rB: Gpr,
     //rC: Gpr,
-    imm16: SampleCpuExpr
+    imm16: SnowHouseCpuExpr
   ) = {
     Instruction(
-      op=SampleCpuOp.OrrRaRbSimm16,
+      op=SnowHouseCpuOp.OrrRaRbSimm16,
       rA=rA,
       rB=rB,
-      rC=SampleCpuRegs.r0,
+      rC=SnowHouseCpuRegs.r0,
       imm16=imm16,
     )
   }
@@ -639,7 +639,7 @@ object xor {
     rC: Gpr,
   ) = {
     Instruction(
-      op=SampleCpuOp.XorRaRbRc,
+      op=SnowHouseCpuOp.XorRaRbRc,
       rA=rA,
       rB=rB,
       rC=rC,
@@ -650,13 +650,13 @@ object xor {
     rA: Gpr,
     rB: Gpr,
     //rC: Gpr,
-    imm16: SampleCpuExpr
+    imm16: SnowHouseCpuExpr
   ) = {
     Instruction(
-      op=SampleCpuOp.XorRaRbSimm16,
+      op=SnowHouseCpuOp.XorRaRbSimm16,
       rA=rA,
       rB=rB,
-      rC=SampleCpuRegs.r0,
+      rC=SnowHouseCpuRegs.r0,
       imm16=imm16,
     )
   }
@@ -668,24 +668,24 @@ object lsl {
     rC: Gpr,
   ) = {
     Instruction(
-      op=SampleCpuOp.LslRaRbRc,
+      op=SnowHouseCpuOp.LslRaRbRc,
       rA=rA,
       rB=rB,
       rC=rC,
-      imm16=SampleCpuOp.LslRaRbRc._2,
+      imm16=SnowHouseCpuOp.LslRaRbRc._2,
     )
   }
   //def apply(
   //  rA: Gpr,
   //  rB: Gpr,
   //  //rC: Gpr,
-  //  imm16: SampleCpuExpr
+  //  imm16: SnowHouseCpuExpr
   //) = {
   //  Instruction(
-  //    op=SampleCpuOp.Shift,
+  //    op=SnowHouseCpuOp.Shift,
   //    rA=rA,
   //    rB=rB,
-  //    rC=SampleCpuRegs.r0,
+  //    rC=SnowHouseCpuRegs.r0,
   //    imm16=imm16,
   //  )
   //}
@@ -697,11 +697,11 @@ object lsr {
     rC: Gpr,
   ) = {
     Instruction(
-      op=SampleCpuOp.LsrRaRbRc,
+      op=SnowHouseCpuOp.LsrRaRbRc,
       rA=rA,
       rB=rB,
       rC=rC,
-      imm16=SampleCpuOp.LsrRaRbRc._2,
+      imm16=SnowHouseCpuOp.LsrRaRbRc._2,
     )
   }
 }
@@ -712,11 +712,11 @@ object asr {
     rC: Gpr,
   ) = {
     Instruction(
-      op=SampleCpuOp.AsrRaRbRc,
+      op=SnowHouseCpuOp.AsrRaRbRc,
       rA=rA,
       rB=rB,
       rC=rC,
-      imm16=SampleCpuOp.AsrRaRbRc._2,
+      imm16=SnowHouseCpuOp.AsrRaRbRc._2,
     )
   }
 }
@@ -727,24 +727,24 @@ object mul {
     rC: Gpr
   ) = {
     Instruction(
-      op=SampleCpuOp.MulRaRbRc,
+      op=SnowHouseCpuOp.MulRaRbRc,
       rA=rA,
       rB=rB,
       rC=rC,
-      imm16=SampleCpuOp.MulRaRbRc._2,
+      imm16=SnowHouseCpuOp.MulRaRbRc._2,
     )
   }
   //def apply(
   //  rA: Gpr,
   //  rB: Gpr,
   //  //rC: Gpr,
-  //  imm16: SampleCpuExpr
+  //  imm16: SnowHouseCpuExpr
   //) = {
   //  Instruction(
-  //    op=SampleCpuOp.MulRaRbRc,
+  //    op=SnowHouseCpuOp.MulRaRbRc,
   //    rA=rA,
   //    rB=rB,
-  //    rC=SampleCpuRegs.r0,
+  //    rC=SnowHouseCpuRegs.r0,
   //    imm16=imm16,
   //  )
   //}
@@ -752,65 +752,65 @@ object mul {
 object bz {
   def apply(
     rA: Gpr,
-    //rB: SampleCpuAsmAst.Gpr,
-    //rC: SampleCpuAsmAst.Gpr,
-    imm16: SampleCpuExpr,
+    //rB: SnowHouseCpuAsmAst.Gpr,
+    //rC: SnowHouseCpuAsmAst.Gpr,
+    imm16: SnowHouseCpuExpr,
   ) = {
     Instruction(
-      op=SampleCpuOp.BzRaSimm,
+      op=SnowHouseCpuOp.BzRaSimm,
       rA=rA,
-      rB=SampleCpuRegs.r0,
-      rC=Gpr(SampleCpuOp.BzRaSimm._2),
+      rB=SnowHouseCpuRegs.r0,
+      rC=Gpr(SnowHouseCpuOp.BzRaSimm._2),
       imm16=(
-        imm16 - SampleCpuExpr.Dot - 4
+        imm16 - SnowHouseCpuExpr.Dot - 4
       ),
     )
   }
   //def apply(
   //  rA: Gpr,
-  //  //rB: SampleCpuAsmAst.Gpr,
-  //  //rC: SampleCpuAsmAst.Gpr,
+  //  //rB: SnowHouseCpuAsmAst.Gpr,
+  //  //rC: SnowHouseCpuAsmAst.Gpr,
   //  imm16: Int,
   //) = {
   //  Instruction(
-  //    op=SampleCpuOp.BzRaSimm,
+  //    op=SnowHouseCpuOp.BzRaSimm,
   //    rA=rA,
   //    rB=SnowHouseRegs.r0,
   //    rC=SnowHouseRegs.r0,
-  //    imm16=SampleCpuExpr.ExprInt(imm16),
+  //    imm16=SnowHouseCpuExpr.ExprInt(imm16),
   //  )
   //}
 }
 object bnz {
   def apply(
     rA: Gpr,
-    //rB: SampleCpuAsmAst.Gpr,
-    //rC: SampleCpuAsmAst.Gpr,
-    imm16: SampleCpuExpr,
+    //rB: SnowHouseCpuAsmAst.Gpr,
+    //rC: SnowHouseCpuAsmAst.Gpr,
+    imm16: SnowHouseCpuExpr,
   ) = {
     Instruction(
-      op=SampleCpuOp.BnzRaSimm,
+      op=SnowHouseCpuOp.BnzRaSimm,
       rA=rA,
-      rB=SampleCpuRegs.r0,
-      rC=Gpr(SampleCpuOp.BnzRaSimm._2),
+      rB=SnowHouseCpuRegs.r0,
+      rC=Gpr(SnowHouseCpuOp.BnzRaSimm._2),
       imm16=(
         //imm16,
-        imm16 - SampleCpuExpr.Dot - 4
+        imm16 - SnowHouseCpuExpr.Dot - 4
       ),
     )
   }
   //def apply(
   //  rA: Gpr,
-  //  //rB: SampleCpuAsmAst.Gpr,
-  //  //rC: SampleCpuAsmAst.Gpr,
+  //  //rB: SnowHouseCpuAsmAst.Gpr,
+  //  //rC: SnowHouseCpuAsmAst.Gpr,
   //  imm16: Int,
   //) = {
   //  Instruction(
-  //    op=SampleCpuOp.BnzRaSimm,
+  //    op=SnowHouseCpuOp.BnzRaSimm,
   //    rA=rA,
   //    rB=SnowHouseRegs.r0,
   //    rC=SnowHouseRegs.r0,
-  //    imm16=SampleCpuExpr.ExprInt(imm16),
+  //    imm16=SnowHouseCpuExpr.ExprInt(imm16),
   //  )
   //}
 }
@@ -819,10 +819,10 @@ object jmp {
     rA: Gpr
   ) = {
     Instruction(
-      op=SampleCpuOp.JmpRa,
+      op=SnowHouseCpuOp.JmpRa,
       rA=rA,
-      rB=SampleCpuRegs.r0,
-      rC=Gpr(SampleCpuOp.JmpRa._2),
+      rB=SnowHouseCpuRegs.r0,
+      rC=Gpr(SnowHouseCpuOp.JmpRa._2),
       imm16=0x0,
     )
   }
@@ -832,10 +832,10 @@ object ldr {
     rA: Gpr,
     rB: Gpr,
     rC: Gpr,
-    //imm16: SampleCpuExpr,
+    //imm16: SnowHouseCpuExpr,
   ) = {
     Instruction(
-      op=SampleCpuOp.LdrRaRbRc,
+      op=SnowHouseCpuOp.LdrRaRbRc,
       rA=rA,
       rB=rB,
       rC=rC,
@@ -845,13 +845,13 @@ object ldr {
   def apply(
     rA: Gpr,
     rB: Gpr,
-    imm16: SampleCpuExpr,
+    imm16: SnowHouseCpuExpr,
   ) = {
     Instruction(
-      op=SampleCpuOp.LdrRaRbSimm16,
+      op=SnowHouseCpuOp.LdrRaRbSimm16,
       rA=rA,
       rB=rB,
-      rC=SampleCpuRegs.r0,
+      rC=SnowHouseCpuRegs.r0,
       imm16=imm16,
     )
   }
@@ -861,11 +861,11 @@ object ldr {
   //  imm16: Int
   //) = {
   //  Instruction(
-  //    op=SampleCpuOp.LdrRaRbSimm,
+  //    op=SnowHouseCpuOp.LdrRaRbSimm,
   //    rA=rA,
   //    rB=rB,
   //    rC=SnowHouseRegs.r0,
-  //    imm16=SampleCpuExpr.ExprInt(imm16),
+  //    imm16=SnowHouseCpuExpr.ExprInt(imm16),
   //  )
   //}
 }
@@ -874,10 +874,10 @@ object str {
     rA: Gpr,
     rB: Gpr,
     rC: Gpr,
-    //imm16: SampleCpuExpr,
+    //imm16: SnowHouseCpuExpr,
   ) = {
     Instruction(
-      op=SampleCpuOp.StrRaRbRc,
+      op=SnowHouseCpuOp.StrRaRbRc,
       rA=rA,
       rB=rB,
       rC=rC,
@@ -887,13 +887,13 @@ object str {
   def apply(
     rA: Gpr,
     rB: Gpr,
-    imm16: SampleCpuExpr,
+    imm16: SnowHouseCpuExpr,
   ) = {
     Instruction(
-      op=SampleCpuOp.StrRaRbSimm16,
+      op=SnowHouseCpuOp.StrRaRbSimm16,
       rA=rA,
       rB=rB,
-      rC=SampleCpuRegs.r0,
+      rC=SnowHouseCpuRegs.r0,
       imm16=imm16,
     )
   }
@@ -903,11 +903,11 @@ object str {
   //  imm16: Int
   //) = {
   //  Instruction(
-  //    op=SampleCpuOp.StrRaRbSimm,
+  //    op=SnowHouseCpuOp.StrRaRbSimm,
   //    rA=rA,
   //    rB=rB,
   //    rC=SnowHouseRegs.r0,
-  //    imm16=SampleCpuExpr.ExprInt(imm16),
+  //    imm16=SnowHouseCpuExpr.ExprInt(imm16),
   //  )
   //}
 }
@@ -919,30 +919,30 @@ object cpy {
     add(
       rA=rA,
       rB=rB,
-      rC=SampleCpuRegs.r0,
+      rC=SnowHouseCpuRegs.r0,
     )
     //Instruction(
-    //  op=SampleCpuOp.AddRaRbRc,
+    //  op=SnowHouseCpuOp.AddRaRbRc,
     //  rA=rA,
     //  rB=rB,
-    //  rC=Gpr(SampleCpuOp.CpyRaRb._2),
+    //  rC=Gpr(SnowHouseCpuOp.CpyRaRb._2),
     //  imm16=0x0,
     //)
   }
   def apply(
     rA: Gpr,
-    imm16: SampleCpuExpr,
+    imm16: SnowHouseCpuExpr,
   ) = {
     add(
       rA=rA,
-      rB=SampleCpuRegs.r0,
+      rB=SnowHouseCpuRegs.r0,
       imm16=imm16,
     )
     //Instruction(
-    //  op=SampleCpuOp.CpyRaSimm16,
+    //  op=SnowHouseCpuOp.CpyRaSimm16,
     //  rA=rA,
-    //  rB=SampleCpuRegs.r0,
-    //  rC=Gpr(SampleCpuOp.CpyRaSimm16._2),
+    //  rB=SnowHouseCpuRegs.r0,
+    //  rC=Gpr(SnowHouseCpuOp.CpyRaSimm16._2),
     //  imm16=imm16
     //)
   }
@@ -951,11 +951,11 @@ object cpy {
   //  imm16: Int
   //) = {
   //  Instruction(
-  //    op=SampleCpuOp.CpyiRaSimm,
+  //    op=SnowHouseCpuOp.CpyiRaSimm,
   //    rA=rA,
   //    rB=SnowHouseRegs.r0,
   //    rC=SnowHouseRegs.r0,
-  //    imm16=SampleCpuExpr.ExprInt(imm16),
+  //    imm16=SnowHouseCpuExpr.ExprInt(imm16),
   //  )
   //}
 }
@@ -965,22 +965,22 @@ object cpyu {
     rB: Gpr,
   ) = {
     Instruction(
-      op=SampleCpuOp.CpyuRaRb,
+      op=SnowHouseCpuOp.CpyuRaRb,
       rA=rA,
       rB=rB,
-      rC=Gpr(SampleCpuOp.CpyuRaRb._2),
+      rC=Gpr(SnowHouseCpuOp.CpyuRaRb._2),
       imm16=0x0
     )
   }
   def apply(
     rA: Gpr,
-    imm16: SampleCpuExpr,
+    imm16: SnowHouseCpuExpr,
   ) = {
     Instruction(
-      op=SampleCpuOp.CpyuRaSimm16,
+      op=SnowHouseCpuOp.CpyuRaSimm16,
       rA=rA,
-      rB=SampleCpuRegs.r0,
-      rC=Gpr(SampleCpuOp.CpyuRaSimm16._2),
+      rB=SnowHouseCpuRegs.r0,
+      rC=Gpr(SnowHouseCpuOp.CpyuRaSimm16._2),
       imm16=imm16
     )
   }
@@ -989,11 +989,11 @@ object cpyu {
   //  imm16: Int
   //) = {
   //  Instruction(
-  //    op=SampleCpuOp.CpyuiRaSimm,
+  //    op=SnowHouseCpuOp.CpyuiRaSimm,
   //    rA=rA,
   //    rB=SnowHouseRegs.r0,
   //    rC=SnowHouseRegs.r0,
-  //    imm16=SampleCpuExpr.ExprInt(imm16),
+  //    imm16=SnowHouseCpuExpr.ExprInt(imm16),
   //  )
   //}
 }
@@ -1003,7 +1003,7 @@ object cpyu {
 //    rB: Gpr,
 //  ) = {
 //    Instruction(
-//      op=SampleCpuOp.Cpy
+//      op=SnowHouseCpuOp.Cpy
 //    )
 //  }
 //}
@@ -1015,17 +1015,17 @@ case class RegPc(
 }
 case class Gpr(
   val index: Int=0
-) /*extends SampleCpuAsmAst*/ {
+) /*extends SnowHouseCpuAsmAst*/ {
   //println(
-  //  s"${index} ${SampleCpuParams.numGprs}: "
-  //  + s"${index < SampleCpuParams.numGprs}"
+  //  s"${index} ${SnowHouseCpuParams.numGprs}: "
+  //  + s"${index < SnowHouseCpuParams.numGprs}"
   //)
   assert(
     index >= 0,
     s"${index}",
   )
   assert(
-    index < SampleCpuInstrEnc.numGprs,
+    index < SnowHouseCpuInstrEnc.numGprs,
     s"${index}",
   )
 }
@@ -1035,7 +1035,7 @@ object Instruction {
     rA: Gpr,
     rB: Gpr,
     rC: Gpr,
-    imm16: SampleCpuExpr,
+    imm16: SnowHouseCpuExpr,
   ) = {
     AsmStmt(
       instr=Some(
@@ -1057,9 +1057,9 @@ class Instruction(
   val rA: Gpr,
   val rB: Gpr,
   val rC: Gpr,
-  val imm16: SampleCpuExpr,
+  val imm16: SnowHouseCpuExpr,
 ) {
-  def encode(assembler: SampleCpuAssembler): Long = {
+  def encode(assembler: SnowHouseCpuAssembler): Long = {
     var ret: Long = 0
     //--------
     ret = ret | op._1
@@ -1067,28 +1067,28 @@ class Instruction(
     //  "%X\n", ret
     //)
     //--------
-    ret = ret << SampleCpuInstrEnc.gprIdxWidth
+    ret = ret << SnowHouseCpuInstrEnc.gprIdxWidth
     ret = ret | rA.index
     //printf(
     //  "%X\n", ret
     //)
     //--------
-    ret = ret << SampleCpuInstrEnc.gprIdxWidth
+    ret = ret << SnowHouseCpuInstrEnc.gprIdxWidth
     ret = ret | rB.index
     //printf(
     //  "%X\n", ret
     //)
     //--------
-    ret = ret << SampleCpuInstrEnc.gprIdxWidth
+    ret = ret << SnowHouseCpuInstrEnc.gprIdxWidth
     ret = ret | rC.index
     //printf(
     //  "%X\n", ret
     //)
     //println(
-    //  s"${SampleCpuInstrEnc.opWidth} ${SampleCpuInstrEnc.gprIdxWidth}"
+    //  s"${SnowHouseCpuInstrEnc.opWidth} ${SnowHouseCpuInstrEnc.gprIdxWidth}"
     //)
     //--------
-    ret = ret << SampleCpuInstrEnc.simmWidth
+    ret = ret << SnowHouseCpuInstrEnc.simmWidth
     ret = ret | {
       val temp = imm16.evaluate(assembler=assembler)
       assert(
@@ -1129,7 +1129,7 @@ object Label {
       }
       apply(name=name)
     }
-    def LbR(args: Any*): SampleCpuExpr.LabRef = {
+    def LbR(args: Any*): SnowHouseCpuExpr.LabRef = {
       var name: String = ""
       for (partStr <- sc.parts.view) {
         name = name + partStr.toString
@@ -1153,7 +1153,7 @@ class Label(
 }
 object Db32 {
   def apply(
-    imm16: SampleCpuExpr,
+    imm16: SnowHouseCpuExpr,
   ): AsmStmt = {
     AsmStmt(
       instr=None,
@@ -1167,12 +1167,12 @@ object Db32 {
   //  AsmStmt(  
   //    instr=None,
   //    label=None,
-  //    db32=Some(new Db32(imm16=SampleCpuExpr.ExprInt(imm16)))
+  //    db32=Some(new Db32(imm16=SnowHouseCpuExpr.ExprInt(imm16)))
   //  )
   //}
 }
 class Db32(
-  val imm16: SampleCpuExpr
+  val imm16: SnowHouseCpuExpr
 ) {
 }
 case class AsmStmt(
@@ -1185,11 +1185,11 @@ object LabRef {
   def apply(
     name: String 
   ) = {
-    new SampleCpuExpr.LabRef(name=name)
+    new SnowHouseCpuExpr.LabRef(name=name)
   }
 }
-object SampleCpuExpr {
-  //trait SampleCpuAsmAst extends SampleCpuAsmAst {
+object SnowHouseCpuExpr {
+  //trait SnowHouseCpuAsmAst extends SnowHouseCpuAsmAst {
   //}
   //--------
   //def r0 = new Gpr(0)
@@ -1197,141 +1197,141 @@ object SampleCpuExpr {
   //  rA: Gpr,
   //  rB: Gpr,
   //  rC: Gpr
-  //) extends SampleCpuAsmAst {
+  //) extends SnowHouseCpuAsmAst {
   //}
   //val tempLabel = Label(
   //  name="asdf"
   //)
   class LabRef(
     val name: String,
-  ) extends SampleCpuExpr {
+  ) extends SnowHouseCpuExpr {
     private[libsnowhouse] var _value: ExprInt = null
   }
   //implicit def toExprInt(value: Int) = ExprInt(value=value)
   case object Dot // the current pc
-  extends SampleCpuExpr {
+  extends SnowHouseCpuExpr {
     //private[libsnowhouse] var _pc: Int = 0x0
   }
   implicit class ExprInt(
     val value: Int,
-  ) extends SampleCpuExpr {
+  ) extends SnowHouseCpuExpr {
   }
   //--------
   case class ExprAsUInt(
-    val child: SampleCpuExpr
-  ) extends SampleCpuExpr
+    val child: SnowHouseCpuExpr
+  ) extends SnowHouseCpuExpr
   case class ExprAsSInt(
-    val child: SampleCpuExpr
-  ) extends SampleCpuExpr
+    val child: SnowHouseCpuExpr
+  ) extends SnowHouseCpuExpr
   //--------
   case class ExprPlus( // left + right
-    left: SampleCpuExpr,
-    right: SampleCpuExpr,
-  ) extends SampleCpuExpr
+    left: SnowHouseCpuExpr,
+    right: SnowHouseCpuExpr,
+  ) extends SnowHouseCpuExpr
   case class ExprMinus( // left - right
-    left: SampleCpuExpr,
-    right: SampleCpuExpr,
-  ) extends SampleCpuExpr
+    left: SnowHouseCpuExpr,
+    right: SnowHouseCpuExpr,
+  ) extends SnowHouseCpuExpr
   //--------
   case class ExprUnopMinus( // -value
-    child: SampleCpuExpr,
-  ) extends SampleCpuExpr
+    child: SnowHouseCpuExpr,
+  ) extends SnowHouseCpuExpr
   //--------
   case class ExprMul( // *
-    left: SampleCpuExpr,
-    right: SampleCpuExpr,
-  ) extends SampleCpuExpr
+    left: SnowHouseCpuExpr,
+    right: SnowHouseCpuExpr,
+  ) extends SnowHouseCpuExpr
   case class ExprDiv( // /
-    left: SampleCpuExpr,
-    right: SampleCpuExpr,
-  ) extends SampleCpuExpr
+    left: SnowHouseCpuExpr,
+    right: SnowHouseCpuExpr,
+  ) extends SnowHouseCpuExpr
   case class ExprMod( // %
-    left: SampleCpuExpr,
-    right: SampleCpuExpr,
-  ) extends SampleCpuExpr
+    left: SnowHouseCpuExpr,
+    right: SnowHouseCpuExpr,
+  ) extends SnowHouseCpuExpr
   //--------
   case class ExprCmpEq( // ===
-    left: SampleCpuExpr,
-    right: SampleCpuExpr,
-  ) extends SampleCpuExpr
+    left: SnowHouseCpuExpr,
+    right: SnowHouseCpuExpr,
+  ) extends SnowHouseCpuExpr
   case class ExprCmpNe( // =/=
-    left: SampleCpuExpr,
-    right: SampleCpuExpr,
-  ) extends SampleCpuExpr
+    left: SnowHouseCpuExpr,
+    right: SnowHouseCpuExpr,
+  ) extends SnowHouseCpuExpr
   case class ExprCmpLt( // <
-    left: SampleCpuExpr,
-    right: SampleCpuExpr,
-  ) extends SampleCpuExpr
+    left: SnowHouseCpuExpr,
+    right: SnowHouseCpuExpr,
+  ) extends SnowHouseCpuExpr
   case class ExprCmpGe( // >=
-    left: SampleCpuExpr,
-    right: SampleCpuExpr,
-  ) extends SampleCpuExpr
+    left: SnowHouseCpuExpr,
+    right: SnowHouseCpuExpr,
+  ) extends SnowHouseCpuExpr
   case class ExprCmpGt( // >
-    left: SampleCpuExpr,
-    right: SampleCpuExpr,
-  ) extends SampleCpuExpr
+    left: SnowHouseCpuExpr,
+    right: SnowHouseCpuExpr,
+  ) extends SnowHouseCpuExpr
   case class ExprCmpLe( // <=
-    left: SampleCpuExpr,
-    right: SampleCpuExpr,
-  ) extends SampleCpuExpr
+    left: SnowHouseCpuExpr,
+    right: SnowHouseCpuExpr,
+  ) extends SnowHouseCpuExpr
   //--------
   case class ExprBitAnd( // &
-    left: SampleCpuExpr,
-    right: SampleCpuExpr,
-  ) extends SampleCpuExpr
+    left: SnowHouseCpuExpr,
+    right: SnowHouseCpuExpr,
+  ) extends SnowHouseCpuExpr
   case class ExprBitOr( // |
-    left: SampleCpuExpr,
-    right: SampleCpuExpr,
-  ) extends SampleCpuExpr
+    left: SnowHouseCpuExpr,
+    right: SnowHouseCpuExpr,
+  ) extends SnowHouseCpuExpr
   case class ExprBitXor( // ^
-    left: SampleCpuExpr,
-    right: SampleCpuExpr,
-  ) extends SampleCpuExpr
+    left: SnowHouseCpuExpr,
+    right: SnowHouseCpuExpr,
+  ) extends SnowHouseCpuExpr
   case class ExprBitInvert( // ~
-    child: SampleCpuExpr,
-  ) extends SampleCpuExpr
+    child: SnowHouseCpuExpr,
+  ) extends SnowHouseCpuExpr
   //--------
   case class ExprBitLshift( // <<
-    left: SampleCpuExpr,
-    right: SampleCpuExpr,
-  ) extends SampleCpuExpr
+    left: SnowHouseCpuExpr,
+    right: SnowHouseCpuExpr,
+  ) extends SnowHouseCpuExpr
   case class ExprBitRshift( // >>
-    left: SampleCpuExpr,
-    right: SampleCpuExpr,
-  ) extends SampleCpuExpr
+    left: SnowHouseCpuExpr,
+    right: SnowHouseCpuExpr,
+  ) extends SnowHouseCpuExpr
   //case class ExprBitAsr( // >>>
-  //  left: SampleCpuAsmAst,
-  //  right: SampleCpuAsmAst,
-  //) extends SampleCpuAsmAst
+  //  left: SnowHouseCpuAsmAst,
+  //  right: SnowHouseCpuAsmAst,
+  //) extends SnowHouseCpuAsmAst
   //--------
   case class ExprLogicAnd( // &&
-    left: SampleCpuExpr,
-    right: SampleCpuExpr,
-  ) extends SampleCpuExpr
+    left: SnowHouseCpuExpr,
+    right: SnowHouseCpuExpr,
+  ) extends SnowHouseCpuExpr
   case class ExprLogicOr( // ||
-    left: SampleCpuExpr,
-    right: SampleCpuExpr,
-  ) extends SampleCpuExpr
+    left: SnowHouseCpuExpr,
+    right: SnowHouseCpuExpr,
+  ) extends SnowHouseCpuExpr
   case class ExprLogicInvert( // !
-    child: SampleCpuExpr,
-  ) extends SampleCpuExpr
+    child: SnowHouseCpuExpr,
+  ) extends SnowHouseCpuExpr
   //--------
 }
-//class SampleCpuAssembler(
+//class SnowHouseCpuAssembler(
 //  val instrArr: Seq[
 //)
-//class SampleCpuAsmAst(
+//class SnowHouseCpuAsmAst(
 //) {
-//  val children = ArrayBuffer[SampleCpuAsmAst]()
+//  val children = ArrayBuffer[SnowHouseCpuAsmAst]()
 //  def addChild(
-//    newChild: SampleCpuAsmAst,
+//    newChild: SnowHouseCpuAsmAst,
 //  ): Unit = {
 //    assert(newChild != null)
 //    children += newChild
 //  }
 //}
 //--------
-case class SampleCpuAssembler(
+case class SnowHouseCpuAssembler(
   val stmtArr: Seq[AsmStmt],
   val outpArr: ArrayBuffer[BigInt],
 ) {

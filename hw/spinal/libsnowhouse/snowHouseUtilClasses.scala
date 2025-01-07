@@ -459,7 +459,7 @@ case class SnowHousePipePayload(
         assume(
           //Cat(False, op).asUInt
           op//.resized
-          < U"${op.getWidth}'d${cfg.opInfoMap.size}"
+          < U(s"${op.getWidth}'d${cfg.opInfoMap.size}")
         )
       }
     }
