@@ -145,13 +145,13 @@ case class SnowHousePipeStageInstrFetch(
     //}
     //--------
     when (psExSetPc.fire) {
-      nextRegPc := psExSetPc.nextPc //+ (cfg.instrMainWidth / 8)
+      nextRegPc := psExSetPc.nextPc - (cfg.instrMainWidth / 8)
       //if (cfg.optFormal) {
         myInstrCnt.jmp := rPrevInstrCnt.jmp + 1
       //}
     } elsewhen (rSavedExSetPc.fire) {
       nextRegPc := (
-        rSavedExSetPc.nextPc //+ (cfg.instrMainWidth / 8)
+        rSavedExSetPc.nextPc - (cfg.instrMainWidth / 8)
       )
       //if (cfg.optFormal) {
         myInstrCnt.jmp := rPrevInstrCnt.jmp + 1
@@ -340,8 +340,11 @@ case class SnowHousePipeStageInstrDecode(
       //}
     }
   }
+  upPayload.regPcPlusInstrSize := (
+    upPayload.regPc + (cfg.instrMainWidth / 8)
+  )
   upPayload.regPcPlusImm := (
-    upPayload.regPc + upPayload.imm
+    upPayload.regPc + upPayload.imm //- (cfg.instrMainWidth / 8)
   )
   //val upGprIdxToRegFileMemAddrMap = (
   //  upPayload.gprIdxToRegFileMemAddrMap
@@ -481,6 +484,7 @@ case class SnowHousePipeStageExecuteSetOutpModMemWordIo(
     UInt(cfg.mainWidth bits)
   ))
   val regPc = /*in*/(UInt(cfg.mainWidth bits))
+  val regPcPlusInstrSize = /*in*/(UInt(cfg.mainWidth bits))
   val regPcPlusImm = /*in*/(UInt(cfg.mainWidth bits))
   val imm = /*in*/(UInt(cfg.mainWidth bits))
   val pcChangeState = /*in*/(PcChangeState())
@@ -491,8 +495,12 @@ case class SnowHousePipeStageExecuteSetOutpModMemWordIo(
     //return rdMemWord(idx)
     def innerFunc(
       idx: Int,
+      isPostPcDst: Boolean,
     ) = {
-      if (idx == 0) {
+      if (
+        idx == 0
+        || isPostPcDst
+      ) {
         opInfo.dstArr(idx) match {
           case DstKind.Gpr => {
             rdMemWord(idx)
@@ -538,16 +546,26 @@ case class SnowHousePipeStageExecuteSetOutpModMemWordIo(
     opInfo.select match {
       case OpSelect.Cpy => {
         opInfo.cpyOp.get match {
-          case CpyOpKind.Jmp | CpyOpKind.Br => {
-            return innerFunc(idx=idx + 1)
+          case CpyOpKind.Br => {
+            //assert(
+            //  opInfo._validArgsTuple != null,
+            //  s"select:${opInfo.select} "
+            //  + s"dst:(${opInfo.dstArr}) src:(${opInfo.srcArr})"
+            //)
+            for ((dst, dstIdx) <- opInfo.dstArr.view.zipWithIndex) {
+              if (dst == DstKind.Gpr) {
+                return innerFunc(idx=idx + 1, isPostPcDst=true)
+              }
+            }
+            return innerFunc(idx=idx, isPostPcDst=false)
           }
           case _ => {
-            return innerFunc(idx=idx)
+            return innerFunc(idx=idx, isPostPcDst=false)
           }
         }
       }
       case _ => {
-        return innerFunc(idx=idx)
+        return innerFunc(idx=idx, isPostPcDst=false)
       }
     }
   }
@@ -574,7 +592,8 @@ case class SnowHousePipeStageExecuteSetOutpModMemWordIo(
   //val dbusHostPayload = /*out*/(DbusHostPayload(cfg=cfg))
   def jmpAddrIdx = (
     //2
-    0
+    //0
+    1
   )
   def brCondIdx = Array[Int](0, 1)
 }
@@ -601,8 +620,12 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
   //when (someCond) {
   io.modMemWordValid := (
     //io.doIt //True
-    //True
-    !io.gprIsZeroVec(0) // TODO: support more register simultaneous writes
+    if (cfg.myHaveZeroReg) (
+      // TODO: support more register simultaneous writes
+      !io.gprIsZeroVec(0)
+    ) else (
+      True
+    )
   )
   io.psExSetPc := io.psExSetPc.getZero
   modIo.dbus.hostData := (
@@ -639,11 +662,8 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
   io.decodeExt.memAccessSubKind := SnowHouseMemAccessSubKind.Sz8
   io.opIsJmp.allowOverride
   io.opIsJmp := (
-    (
-      io.pcChangeState === PcChangeState.Idle
-    ) && (
-      io.psExSetPc.fire
-    )
+    io.pcChangeState === PcChangeState.Idle
+    && io.psExSetPc.fire
   )
   switch (io.pcChangeState) {
     is (PcChangeState.Idle) {
@@ -656,7 +676,7 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
             io.selRdMemWord(opInfo=opInfo, idx=srcArrIdx)
           }
           assert(
-            opInfo.dstArr.size == 1,
+            opInfo.dstArr.size == 1 || opInfo.dstArr.size == 2,
             s"not yet implemented: "
             + s"opInfo(${opInfo}) index:${opInfoIdx}"
           )
@@ -865,7 +885,8 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
                   }
                   case CpyOpKind.Jmp => {
                     assert(
-                      opInfo.dstArr.size == 1,
+                      opInfo.dstArr.size == 1
+                      || opInfo.dstArr.size == 2,
                       s"not yet implemented: "
                       + s"opInfo(${opInfo}) index:${opInfoIdx}"
                     )
@@ -889,8 +910,12 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
                       s"not yet implemented: "
                       + s"opInfo(${opInfo}) index:${opInfoIdx}"
                     )
+                    io.modMemWord(0) := io.regPcPlusInstrSize
                     io.psExSetPc.valid := True
-                    io.psExSetPc.nextPc := io.rdMemWord(io.jmpAddrIdx)
+                    io.psExSetPc.nextPc := (
+                      io.rdMemWord(io.jmpAddrIdx)
+                      //- (cfg.instrMainWidth / 8)
+                    )
                   }
                   case CpyOpKind.Br => {
                     opInfo.cond match {
@@ -908,6 +933,7 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
                         //)
                         io.psExSetPc.valid := True
                         io.psExSetPc.nextPc := io.regPcPlusImm
+                        io.modMemWord(0) := io.regPcPlusInstrSize
                       }
                       //case CondKind.Link => {
                       //  io.opIsJmp := True
@@ -1498,6 +1524,7 @@ case class SnowHousePipeStageExecute(
   )
   setOutpModMemWord.io.currOp := myCurrOp
   setOutpModMemWord.io.regPc := outp.regPc
+  setOutpModMemWord.io.regPcPlusInstrSize := outp.regPcPlusInstrSize
   setOutpModMemWord.io.regPcPlusImm := outp.regPcPlusImm
   setOutpModMemWord.io.imm := outp.imm
   outp.decodeExt := setOutpModMemWord.io.decodeExt
@@ -1835,9 +1862,9 @@ case class SnowHousePipeStageExecute(
           when (cMid0Front.up.isFiring) {
             nextPcChangeState := PcChangeState.WaitTwoInstrs
             rSavedJmpCnt := outp.instrCnt
-            for (ydx <- 0 until cfg.regFileCfg.memArrSize) {
-              outp.myExt(ydx).modMemWordValid := False
-            }
+            //for (ydx <- 0 until cfg.regFileCfg.memArrSize) {
+            //  outp.myExt(ydx).modMemWordValid := False
+            //}
             //outp.instrCnt.shouldIgnoreInstr := True
           }
         }

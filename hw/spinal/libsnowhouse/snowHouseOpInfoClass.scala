@@ -274,8 +274,11 @@ class OpInfo(
           false
         }
       ) {
-        return Some(
+        _validArgsTuple = (
           OpInfoValidArgsTuple(validArgs=validArgs, setIdx=setIdx)
+        )
+        return Some(
+          _validArgsTuple
         )
       }
       //else {
@@ -284,6 +287,7 @@ class OpInfo(
     return None
     //)
   }
+  private[libsnowhouse] var _validArgsTuple: OpInfoValidArgsTuple = null
   //--------
   //private[libsnowhouse] var _dst: Seq[DstKind] = null
   //private[libsnowhouse] var _srcArr: Seq[SrcKind] = null
@@ -522,7 +526,7 @@ sealed trait OpKindBase {
   def validArgsSet: LinkedHashSet[OpKindValidArgs]
   def anyNumSrcCondSet = HashSet[CondKind](
     CondKind.Always,
-    CondKind.Link,
+    //CondKind.Link,
   )
   def requireCmpTwoSrcCondSet = HashSet[CondKind](
     //CondKind.Always,
@@ -666,8 +670,8 @@ object CpyOpKind {
     )
     def validArgsSet = _validArgsSet
   }
-  // NOTE: `Jmp` and `Br` these are special so that the implementation will 
-  // use separate adders from the ALU
+  // NOTE: `Jmp` and `Br` these are special so that the implementation
+  // will use separate adders from the ALU (and so there's more fmax)  
   case object Jmp extends CpyOpKind {
     // jump
     private[libsnowhouse] val _validArgsSet = LinkedHashSet[
@@ -690,16 +694,20 @@ object CpyOpKind {
         ),
       ),
       // TODO: add these back later
-      //OpKindValidArgs( // for "jump and link"
-      //  //dstSize=2, srcSize=1
-      //  dst=Array[HashSet[DstKind]](
-      //    HashSet(DstKind.Pc),
-      //    HashSet(DstKind.Gpr),
-      //  ),
-      //  src=Array[HashSet[SrcKind]](
-      //    HashSet(SrcKind.Gpr, SrcKind.Imm(Some(false)))
-      //  ),
-      //),
+      OpKindValidArgs( // for "jump and link"
+        //dstSize=2, srcSize=1
+        dst=Array[HashSet[DstKind]](
+          HashSet(DstKind.Pc),
+          HashSet(DstKind.Gpr),
+        ),
+        src=Array[HashSet[SrcKind]](
+          HashSet(SrcKind.Gpr/*, SrcKind.Imm(Some(false))*/)
+        ),
+        cond=HashSet[CondKind](
+          //CondKind.Link
+          CondKind.Always
+        ),
+      ),
       //OpKindValidArgs( // for "compare and jump"
       //  //dstSize=1, srcSize=3
       //  dst=Array[HashSet[DstKind]](
@@ -745,20 +753,21 @@ object CpyOpKind {
           requireCmpOneSrcCondSet
         ),
       ),
-      //OpKindValidArgs(
-      //  // for "branch and link"
-      //  //dstSize=2, srcSize=1
-      //  dst=Array[HashSet[DstKind]](
-      //    HashSet(DstKind.Pc),
-      //    HashSet(DstKind.Gpr),
-      //  ),
-      //  src=Array[HashSet[SrcKind]](
-      //    HashSet(SrcKind.Imm(None)),
-      //  ),
-      //  cond=HashSet[CondKind](
-      //    CondKind.Link
-      //  ),
-      //),
+      OpKindValidArgs(
+        // for "branch and link"
+        //dstSize=2, srcSize=1
+        dst=Array[HashSet[DstKind]](
+          HashSet(DstKind.Pc),
+          HashSet(DstKind.Gpr),
+        ),
+        src=Array[HashSet[SrcKind]](
+          HashSet(SrcKind.Imm(/*None*/)),
+        ),
+        cond=HashSet[CondKind](
+          //CondKind.Link
+          CondKind.Always
+        ),
+      ),
       OpKindValidArgs(
         // for "compare and branch" (in one instruction)
         //dstSize=1, srcSize=3
@@ -2124,9 +2133,9 @@ sealed trait CondKind {
 }
 object CondKind {
   //--------
-  case object Link extends CondKind {   // do it and Link
-    //def numSrcs: Int = 1
-  }
+  //case object Link extends CondKind {   // do it and Link
+  //  //def numSrcs: Int = 1
+  //}
   case object Always extends CondKind { // do it Always 
     //def 
   }
