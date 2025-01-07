@@ -1029,7 +1029,7 @@ case class SnowHouseCpuTestProgram(
                               // instruction fetcher has trouble
                               // reading first instruction, so put
                               // in a dummy
-    cpy(r0, 0x0),             // 4: r0 = 0
+    cpy(r0, 0x0),             // 0x4: r0 = 0
     cpy(r1, 0x8),             // 0x8: r1 = 8
     cpy(r2, 0x1),             // 0xc: r2 = 1
     pre(0xabcd),              // 0x10
@@ -1039,31 +1039,36 @@ case class SnowHouseCpuTestProgram(
     cpy(r5, LbR"increment"),  // 0x1c
     cpy(r6, 0x20),            // 0x20: r6 = 0x20
     str(r6, r0, r3),          // 0x24: [r0 + r3] = r6
+    ldr(r6, r0, r3),          // 0x28
+    mul(r7, r6, r1),          // 0x2c
     //--------
     Lb"loop",
     //add(r0, r1, r2),
     //cpyu(r2, tempData >> 16),
     //cpy(r2, tempData & 0xffff),
-    ldr(r6, r3, 0x0),         // 0x28:
+    ldr(r6, r3, 0x0),         // 0x30:
     //add(r6, r6, 0x1),       
     //jl(r5),
-    bl(LbR"increment"),       // 0x2c:
-    str(r6, r3, 0x4),         // 0x30:
-    add(r3, r3, 0x4),         // 0x34: r3 += 4
-    sub(r1, r1, 0x1),         // 0x38: r1 -= 1 
-    bnz(r1, LbR"loop"),       // 0x3c: if (r1 != 0) goto LbR"loop"
+    bl(LbR"increment"),       // 0x34:
+    str(r6, r3, 0x4),         // 0x38:
+    add(r3, r3, 0x4),         // 0x3c: r3 += 4
+    sub(r1, r1, 0x1),         // 0x40: r1 -= 1 
+    bl(LbR"multiply"),        // 0x44
+    bnz(r1, LbR"loop"),       // 0x48: if (r1 != 0) goto LbR"loop"
     //--------
-    cpy(r12, 0x0),            // 0x40
+    cpy(r12, 0x0),            // 0x4c
     Lb"infin",
-    //--------
-    bz(r12, LbR"infin"),      // 0x44
+    bz(r12, LbR"infin"),      // 0x50
     //Db32(0x3f),
     //--------
     Lb"increment",
+    add(r6, r6, 0x1),         // 0x54
+    //add(r6, r6, r0),
+    jmp(lr),                  // 0x58
     //--------
-    add(r6, r6, 0x1),         // 0x48
-    //add(r6, r6, r0),          // 0x?
-    jmp(lr),                  // 0x4c
+    Lb"multiply",
+    //mul(r7, r6, r1),
+    jmp(lr),                  // 0x5c
   )
   val program = SnowHouseCpuProgram(cfg=cfg)
   //val outpArr = ArrayBuffer[BigInt]()
@@ -1092,6 +1097,14 @@ case class SnowHouseCpuWithDualRam(
   )
   cpu.io.ibus <> dualRam.io.ibus
   cpu.io.dbus <> dualRam.io.dbus
+  if (cpu.io.haveMultiCycleBusVec) {
+    for (
+      (multiCycleBus, busIdx) <- cpu.io.multiCycleBusVec.view.zipWithIndex
+    ) {
+      //cpu.io.multiCycleBusVec
+      multiCycleBus.ready := multiCycleBus.rValid
+    }
+  }
 }
 object SnowHouseCpuWithDualRamSim extends App {
   //Config.spinal.generateVerilog({

@@ -931,6 +931,7 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
                         //  s"not yet implemented: "
                         //  + s"opInfo(${opInfo}) index:${opInfoIdx}"
                         //)
+                        //io.modMemWordValid := False
                         io.psExSetPc.valid := True
                         io.psExSetPc.nextPc := io.regPcPlusImm
                         io.modMemWord(0) := io.regPcPlusInstrSize
@@ -942,6 +943,7 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
                       //  )
                       //}
                       case CondKind.Eq => {
+                        io.modMemWordValid := False
                         io.psExSetPc.valid := (
                           io.rdMemWord(io.brCondIdx(0))
                           === io.rdMemWord(io.brCondIdx(1))
@@ -951,6 +953,7 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
                         )
                       }
                       case CondKind.Ne => {
+                        io.modMemWordValid := False
                         io.psExSetPc.valid := (
                           io.rdMemWord(io.brCondIdx(0))
                           =/= io.rdMemWord(io.brCondIdx(1))
@@ -970,6 +973,7 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
                         //  s"not yet implemented: "
                         //  + s"opInfo(${opInfo}) index:${opInfoIdx}"
                         //)
+                        io.modMemWordValid := False
                         io.psExSetPc.valid := (
                           io.rdMemWord(io.brCondIdx(0)) === 0
                         )
@@ -988,6 +992,7 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
                         //  s"not yet implemented: "
                         //  + s"opInfo(${opInfo}) index:${opInfoIdx}"
                         //)
+                        io.modMemWordValid := False
                         io.psExSetPc.valid := (
                           io.rdMemWord(io.brCondIdx(0)) =/= 0
                         )
@@ -1879,15 +1884,18 @@ case class SnowHousePipeStageExecute(
                 )
               }
             } otherwise { // when (!doCheckHazard)
+              when (savedPsExStallHost.myDuplicateIt) {
+                currDuplicateIt := True
+              }
               psExStallHost.nextValid := (
                 True
               )
             }
             //--------
           }
-          when (savedPsExStallHost.myDuplicateIt) {
-            currDuplicateIt := True
-          }
+          //when (savedPsExStallHost.myDuplicateIt) {
+          //  currDuplicateIt := True
+          //}
           if (cfg.optFormal) {
             when (!doCheckHazard) {
               when (!savedPsExStallHost.myDuplicateIt) {

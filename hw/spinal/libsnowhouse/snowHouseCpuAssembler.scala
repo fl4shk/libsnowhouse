@@ -850,6 +850,9 @@ object bne {
     imm: SnowHouseCpuExpr,
   ) = {
     if (rA.index == rB.index && rA.index != 0x0) {
+      println(
+        s"rA.index != 0: ${rA.index} ${rB.index}"
+      )
       InstructionAsmStmt(
         op=SnowHouseCpuOp.BneRaRbSimm,
         rA=SnowHouseCpuRegs.r0,
@@ -860,6 +863,9 @@ object bne {
         ),
       )
     } else {
+      println(
+        s"other: ${rA.index} ${rB.index}"
+      )
       InstructionAsmStmt(
         op=SnowHouseCpuOp.BneRaRbSimm,
         rA=rA,
