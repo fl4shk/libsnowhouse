@@ -145,13 +145,13 @@ case class SnowHousePipeStageInstrFetch(
     //}
     //--------
     when (psExSetPc.fire) {
-      nextRegPc := psExSetPc.nextPc - (cfg.instrMainWidth / 8)
+      nextRegPc := psExSetPc.nextPc //- (cfg.instrMainWidth / 8)
       //if (cfg.optFormal) {
         myInstrCnt.jmp := rPrevInstrCnt.jmp + 1
       //}
     } elsewhen (rSavedExSetPc.fire) {
       nextRegPc := (
-        rSavedExSetPc.nextPc - (cfg.instrMainWidth / 8)
+        rSavedExSetPc.nextPc //- (cfg.instrMainWidth / 8)
       )
       //if (cfg.optFormal) {
         myInstrCnt.jmp := rPrevInstrCnt.jmp + 1
@@ -472,6 +472,8 @@ case class SnowHousePipeStageInstrDecode(
   //  }
   //  //cId.terminateIt()
   //}
+  val shouldBubble = Bool()
+  shouldBubble := False
   val tempInstr = UInt(cfg.instrMainWidth bits)
   tempInstr := (
     RegNext(
@@ -479,14 +481,20 @@ case class SnowHousePipeStageInstrDecode(
       init=tempInstr.getZero,
     )
   )
-  when (!rDoDecodeState) {
-    when (io.ibus.rValid && io.ibus.ready) {
-      tempInstr := io.ibus.devData.instr
-      nextDoDecodeState := True
+  when (up.isValid) {
+    when (!rDoDecodeState) {
+      when (io.ibus.rValid && io.ibus.ready) {
+        tempInstr := io.ibus.devData.instr
+        nextDoDecodeState := True
+      } otherwise {
+        shouldBubble := True
+        //cId.duplicateIt()
+        //cId.haltIt()
+      }
     }
-  }
-  when (up.isFiring) {
-    nextDoDecodeState := False
+    when (up.isFiring) {
+      nextDoDecodeState := False
+    }
   }
   val myDecodeArea = doDecodeFunc(this)
 }
@@ -949,11 +957,14 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
                     if (opInfo.dstArr.size == 1) (
                       io.modMemWordValid := False
                     )
-                    io.modMemWord(0) := io.regPcPlusInstrSize
+                    io.modMemWord(0) := (
+                      //io.regPcPlusInstrSize
+                      io.regPc + ((cfg.instrMainWidth / 8) * 2)
+                    )
                     io.psExSetPc.valid := True
                     io.psExSetPc.nextPc := (
                       io.rdMemWord(io.jmpAddrIdx)
-                      //- (cfg.instrMainWidth / 8)
+                      - ((cfg.instrMainWidth / 8) * 2)
                     )
                   }
                   case CpyOpKind.Br => {
@@ -976,7 +987,10 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
                         //io.modMemWordValid := False
                         io.psExSetPc.valid := True
                         io.psExSetPc.nextPc := io.regPcPlusImm
-                        io.modMemWord(0) := io.regPcPlusInstrSize
+                        io.modMemWord(0) := (
+                          //io.regPcPlusInstrSize
+                          io.regPc + ((cfg.instrMainWidth / 8) * 2)
+                        )
                       }
                       //case CondKind.Link => {
                       //  io.opIsJmp := True
@@ -1436,12 +1450,30 @@ case class SnowHousePipeStageExecute(
     )
   )
   //--------
-  val currDuplicateIt = (
+  def stallKindMem = 0
+  def stallKindMultiCycle = 1
+  def stallKindLim = 2
+
+  //val currDuplicateIt = (
+  //  KeepAttribute(
+  //    Vec.fill(2)(
+  //      Bool()
+  //    )
+  //  )
+  //)
+  //currDuplicateIt.foreach(current => {
+  //  current := False
+  //})
+  val myDoStall = (
     KeepAttribute(
-      Bool()
+      Vec.fill(stallKindLim)(
+        Bool()
+      )
     )
   )
-  currDuplicateIt := False
+  myDoStall.foreach(item => {
+    item := False
+  })
   //--------
   val doCheckHazard = (
     Bool()
@@ -1784,9 +1816,19 @@ case class SnowHousePipeStageExecute(
   //  }
   //  cMid0Front.duplicateIt()
   //}
+  val nextSavedStall = Bool()
+  val rSavedStall = (
+    KeepAttribute(
+      RegNext(
+        next=nextSavedStall,
+        init=nextSavedStall.getZero
+      )
+    )
+  )
+  nextSavedStall := rSavedStall
   when (doCheckHazard) {
     when (myDoHaveHazard) {
-      currDuplicateIt := True
+      myDoStall(stallKindMem) := True
     }
     if (cfg.optFormal) {
       cover(
@@ -1807,9 +1849,13 @@ case class SnowHousePipeStageExecute(
   }
   when (doCheckHazard && myDoHaveHazard) {
     when (cMid0Front.down.isFiring) {
-      currDuplicateIt := False
+      myDoStall(stallKindMem) := False
+      //nextSavedStall := True
     }
   }
+  //when (cMid0Front.up.isFiring) {
+  //  nextSavedStall := False
+  //}
   when (psMemStallHost.fire) {
     psMemStallHost.nextValid := False
   }
@@ -1861,6 +1907,19 @@ case class SnowHousePipeStageExecute(
   //}
   //val rPcChangeState = Reg(UInt(2
   //next
+  val rSavedStallCnt = {
+    RegNextWhen(
+      next=outp.instrCnt,
+      cond=cMid0Front.up.isFiring,
+      init=outp.instrCnt.getZero,
+    )
+    //val temp = Reg(
+    //  SnowHouseInstrCnt(cfg=cfg)
+    //)
+    //temp.init(temp.getZero)
+    ////temp.jmpState.allowOverride
+    //temp
+  }
   val rSavedJmpCnt = {
     val temp = Reg(
       SnowHouseInstrCnt(cfg=cfg)
@@ -1869,6 +1928,21 @@ case class SnowHousePipeStageExecute(
     //temp.jmpState.allowOverride
     temp
   }
+  //val doWriteSavedStall = (
+  //  KeepAttribute(
+  //    Bool()
+  //  )
+  //)
+  //doWriteSavedStall := False
+  //when (
+  //  cMid0Front.up.valid//isFiring
+  //  && (
+  //    outp.instrCnt.any === rSavedStallCnt.any + 1
+  //  )
+  //) {
+  //  //nextSavedStall := False
+  //  doWriteSavedStall := True
+  //}
   switch (rPcChangeState) {
     is (PcChangeState.Idle) {
       outp.instrCnt.shouldIgnoreInstr := False
@@ -1890,7 +1964,8 @@ case class SnowHousePipeStageExecute(
           if (cfg.optFormal) {
             when (cMid0Front.up.isValid) {
               when (!doCheckHazard) {
-                assert(!currDuplicateIt)
+                assert(!myDoStall(stallKindMem))
+                assert(!myDoStall(stallKindMultiCycle))
               }
             }
           }
@@ -1918,34 +1993,107 @@ case class SnowHousePipeStageExecute(
         is (M"1---") {
           // instruction is of type MultiCycle,
           // but with NO mem access
-          when (cMid0Front.up.isValid) {
-            when (doCheckHazard) {
-              when (!currDuplicateIt) {
-                psExStallHost.nextValid := (
-                  True
-                )
-              }
-            } otherwise { // when (!doCheckHazard)
-              when (savedPsExStallHost.myDuplicateIt) {
-                currDuplicateIt := True
-              }
-              psExStallHost.nextValid := (
-                True
-              )
-            }
-            //--------
-          }
-          //when (savedPsExStallHost.myDuplicateIt) {
-          //  currDuplicateIt := True
+          //when (cMid0Front.up.isValid) {
+          //  when (doCheckHazard) {
+          //    when (!currDuplicateIt) {
+          //      psExStallHost.nextValid := (
+          //        True
+          //      )
+          //    }
+          //  } otherwise { // when (!doCheckHazard)
+          //    when (savedPsExStallHost.myDuplicateIt) {
+          //      currDuplicateIt := True
+          //    }
+          //    psExStallHost.nextValid := (
+          //      True
+          //    )
+          //  }
+          //  //--------
           //}
-          if (cfg.optFormal) {
-            when (!doCheckHazard) {
-              when (!savedPsExStallHost.myDuplicateIt) {
-                assert(!currDuplicateIt)
+          when (cMid0Front.up.isValid) {
+            //when (!rSetOutpState) {
+              //when (
+              //  doCheckHazard
+              //  && myDoHaveHazard
+              //) {
+              //}
+            //}
+            //--------
+            //when (
+            //  !myDoStall(stallKindMem)
+            //  //&& !RegNextWhen(
+            //  //  next=cMid0Front.down.isFiring,
+            //  //  cond=cMid0Front.up.isFiring,
+            //  //  init=False,
+            //  //)
+            //) {
+            //  //when (
+            //  //  !nextSetOutpState
+            //  //) {
+            //  //}
+            //  psExStallHost.nextValid := True
+            //  myDoStall(stallKindMultiCycle) := True
+            //} otherwise {
+            //  psExStallHost.nextValid := False
+            //  myDoStall(stallKindMultiCycle) := False
+            //}
+            //when (
+            //  psExStallHost.rValid && psExStallHost.ready
+            //) {
+            //  psExStallHost.nextValid := False
+            //  myDoStall(stallKindMultiCycle) := False
+            //}
+            ////when (!nextSetOutpState) {
+            ////}
+            ////when (doCheckHazard) {
+            ////}
+            when (
+              !rSavedStall
+              //|| doWriteSavedStall
+            ) {
+              myDoStall(stallKindMultiCycle) := True
+              when (doCheckHazard && myDoHaveHazard) {
+                //when (!rSavedStall) {
+                //}
+                when (
+                  //!rSavedStall
+                  //&& 
+                  cMid0Front.down.isFiring
+                ) {
+                  nextSavedStall := True
+                  psExStallHost.nextValid := True
+                }
+              } otherwise {
+                nextSavedStall := True
+                psExStallHost.nextValid := True
+                //myDoStall(stallKindMultiCycle) := True
               }
             }
+          }
+          when (
+            rSavedStall
+            && psExStallHost.rValid && psExStallHost.ready
+          ) {
+            psExStallHost.nextValid := False
+            myDoStall(stallKindMultiCycle) := False
+          }
+          when (cMid0Front.up.isFiring) {
+            nextSavedStall := False
           }
         }
+        //when (savedPsExStallHost.myDuplicateIt) {
+        //  currDuplicateIt := True
+        //}
+        //--------
+        // TODO: replace this formal verification
+        //if (cfg.optFormal) {
+        //  when (!doCheckHazard) {
+        //    when (!savedPsExStallHost.myDuplicateIt) {
+        //      assert(!myDoStall(stallKindMem))
+        //    }
+        //  }
+        //}
+        //--------
         default {
         }
       }
@@ -2048,7 +2196,7 @@ case class SnowHousePipeStageExecute(
   //  }
   //}
   when (
-    currDuplicateIt
+    myDoStall.sFindFirst(_ === True)._1
     || outp.instrCnt.shouldIgnoreInstr
   ) {
     //handleDuplicateIt()
@@ -2059,7 +2207,7 @@ case class SnowHousePipeStageExecute(
         False
       )
     }
-    when (currDuplicateIt) {
+    when (myDoStall.sFindFirst(_ === True)._1) {
       cMid0Front.duplicateIt()
     }
   }

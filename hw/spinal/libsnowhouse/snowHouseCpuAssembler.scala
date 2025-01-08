@@ -897,7 +897,7 @@ object bnz {
     //  rC=Gpr(SnowHouseCpuOp.BneRaRbSimm._2),
     //  imm=(
     //    //imm,
-    //    imm - SnowHouseCpuExpr.Dot - 4
+    //    imm - SnowHouseCpuExpr.Dot //- 4
     //  ),
     //)
   }

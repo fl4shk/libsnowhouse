@@ -275,7 +275,11 @@ object SnowHouseCpuPipeStageInstrDecode {
     )
     encInstr.assignFromBits(
       //io.ibus.devData.instr.asBits
-      psId.tempInstr.asBits
+      Mux[Bits](
+        !psId.shouldBubble,
+        psId.tempInstr.asBits,
+        psId.tempInstr.asBits.getZero
+      )
     )
     val nextMultiCycleState = Bool()
     val rMultiCycleState = (
