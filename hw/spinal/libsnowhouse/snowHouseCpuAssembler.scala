@@ -765,7 +765,7 @@ object beq {
         rB=SnowHouseCpuRegs.r0,
         rC=Gpr(SnowHouseCpuOp.BeqRaRbSimm._2),
         imm=(
-          imm - SnowHouseCpuExpr.Dot //- 4
+          imm - SnowHouseCpuExpr.Dot - 4
         ),
       )
     } else {
@@ -775,7 +775,7 @@ object beq {
         rB=rB,
         rC=Gpr(SnowHouseCpuOp.BeqRaRbSimm._2),
         imm=(
-          imm - SnowHouseCpuExpr.Dot //- 4
+          imm - SnowHouseCpuExpr.Dot - 4
         ),
       )
     }
@@ -799,7 +799,7 @@ object bz {
     //  rB=SnowHouseCpuRegs.r0,
     //  rC=Gpr(SnowHouseCpuOp.BeqRaRbSimm._2),
     //  imm=(
-    //    imm - SnowHouseCpuExpr.Dot //- 4
+    //    imm - SnowHouseCpuExpr.Dot - 4
     //  ),
     //)
   }
@@ -829,7 +829,7 @@ object bl {
       rB=rA,
       rC=Gpr(SnowHouseCpuOp.BlSimm._2),
       imm=(
-        imm - SnowHouseCpuExpr.Dot //- 4
+        imm - SnowHouseCpuExpr.Dot - 4
       ),
     )
   }
@@ -859,7 +859,7 @@ object bne {
         rB=SnowHouseCpuRegs.r0,
         rC=Gpr(SnowHouseCpuOp.BneRaRbSimm._2),
         imm=(
-          imm - SnowHouseCpuExpr.Dot //- 4
+          imm - SnowHouseCpuExpr.Dot - 4
         ),
       )
     } else {
@@ -872,7 +872,7 @@ object bne {
         rB=rB,
         rC=Gpr(SnowHouseCpuOp.BneRaRbSimm._2),
         imm=(
-          imm - SnowHouseCpuExpr.Dot //- 4
+          imm - SnowHouseCpuExpr.Dot - 4
         ),
       )
     }
@@ -897,7 +897,7 @@ object bnz {
     //  rC=Gpr(SnowHouseCpuOp.BneRaRbSimm._2),
     //  imm=(
     //    //imm,
-    //    imm - SnowHouseCpuExpr.Dot //- 4
+    //    imm - SnowHouseCpuExpr.Dot - 4
     //  ),
     //)
   }

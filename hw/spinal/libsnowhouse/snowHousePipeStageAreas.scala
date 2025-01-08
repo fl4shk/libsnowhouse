@@ -550,10 +550,14 @@ case class SnowHousePipeStageExecuteSetOutpModMemWordIo(
     UInt(cfg.mainWidth bits)
   ))
   val regPc = /*in*/(UInt(cfg.mainWidth bits))
+  //val instrCnt = /*in*/(SnowHouseInstrCnt(cfg=cfg))
+  val upIsFiring = /*in*/(Bool())
+  //val downIsFiring = /*in*/(Bool())
   val regPcPlusInstrSize = /*in*/(UInt(cfg.mainWidth bits))
   val regPcPlusImm = /*in*/(UInt(cfg.mainWidth bits))
   val imm = /*in*/(UInt(cfg.mainWidth bits))
   val pcChangeState = Bool() ///*in*/(Flow(PcChangeState()))
+  val shouldIgnoreInstr = /*out*/(Bool())
   def selRdMemWord(
     opInfo: OpInfo,
     idx: Int,
@@ -737,14 +741,50 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
     //&& 
     io.psExSetPc.fire
   )
+  io.shouldIgnoreInstr := (
+    //False
+    RegNext(
+      next=io.shouldIgnoreInstr,
+      init=io.shouldIgnoreInstr.getZero,
+    )
+  )
+  //val rSavedInstrCnt = (
+  //  RegNextWhen(
+  //    next=io.instrCnt,
+  //    cond=io.upIsFiring,
+  //    init=io.instrCnt.getZero,
+  //  )
+  //)
+  val rSavedRegPc = (
+    RegNextWhen(
+      next=io.regPc,
+      cond=io.upIsFiring,
+      init=io.regPc.getZero,
+    )
+  )
   //switch (io.pcChangeState.payload) {
   //  is (PcChangeState.Idle) {
       //when (io.pcChangeState) {
+        //io.shouldIgnoreInstr := (
+        //  RegNextWhen(
+        //    next=(!io.pcChangeState),
+        //    cond=io.upIsFiring,
+        //  )
+        //)
         when (!io.pcChangeState) {
+          when (
+            //io.instrCnt.any === rSavedInstrCnt.any + 1
+            io.regPc === rSavedRegPc + (cfg.instrMainWidth / 8)
+          ) {
+            io.shouldIgnoreInstr := True
+          }
+
           io.modMemWordValid := False
           io.modMemWord.foreach(modMemWord => {
             modMemWord := modMemWord.getZero
           })
+        } otherwise {
+          io.shouldIgnoreInstr := False
         }
         switch (io.currOp) {
           //--------
@@ -997,13 +1037,14 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
                       ) else {
                         //io.modMemWordValid := True
                         // TODO: support more outputs
-                        !io.gprIsZeroVec(0)
+                        io.modMemWordValid := !io.gprIsZeroVec(0)
+                        //io.shouldIgnoreInstr := io.modMemWordValid
                       }
                       io.modMemWord(0) := (
                         //io.regPcPlusInstrSize
                         //io.regPc + ((cfg.instrMainWidth / 8) * 2)
 
-                        io.regPc //+ ((cfg.instrMainWidth / 8) * 1)
+                        io.regPc + ((cfg.instrMainWidth / 8) * 1)
 
                         //io.regPc //+ ((cfg.instrMainWidth / 8) * 1/*2*/)
                       )
@@ -1035,7 +1076,7 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
                           io.psExSetPc.nextPc := io.regPcPlusImm
                           io.modMemWord(0) := (
                             //io.regPcPlusInstrSize
-                            io.regPc //+ ((cfg.instrMainWidth / 8) * 1)
+                            io.regPc + ((cfg.instrMainWidth / 8) * 1)
                           )
                           //io.modMemWordValid := True
                           if (opInfo.dstArr.size == 1) (
@@ -1046,6 +1087,7 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
                               !io.gprIsZeroVec(0)
                               //True
                             )
+                            //io.shouldIgnoreInstr := io.modMemWordValid
                           }
                         }
                         //case CondKind.Link => {
@@ -1714,6 +1756,8 @@ case class SnowHousePipeStageExecute(
   //setOutpModMemWord.io.rdMemWord(zdx) := (
   //)
   //--------
+  //setOutpModMemWord.io.instrCnt := outp.instrCnt
+  setOutpModMemWord.io.upIsFiring := cMid0Front.up.isFiring
   def doFinishSetOutpModMemWord(
     ydx: Int,
     zdx: Int,
@@ -2051,10 +2095,15 @@ case class SnowHousePipeStageExecute(
     //!rSetPcCnt.valid
   )
   outp.instrCnt.shouldIgnoreInstr := (
-    !setOutpModMemWord.io.pcChangeState
+    //!setOutpModMemWord.io.pcChangeState
+    setOutpModMemWord.io.shouldIgnoreInstr
     //RegNext(
     //  next=setOutpModMemWord.io.pcChangeState,
     //  init=setOutpModMemWord.io.pcChangeState.getZero,
+    //)
+    //RegNext(
+    //  next=outp.instrCnt.shouldIgnoreInstr,
+    //  init=outp.instrCnt.shouldIgnoreInstr.getZero,
     //)
     //rSetPcCnt.valid
   )
