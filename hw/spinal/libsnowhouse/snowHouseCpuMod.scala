@@ -1076,7 +1076,7 @@ case class SnowHouseCpuTestProgram(
     //--------
     Lb"multiply",
     //mul(r7, r6, r1),          // 0x5c
-    jmp(lr),                  // 0x60
+    jmp(lr),                  // 0x5c
     cpy(r0, r0),
     cpy(r0, r0),
   )
