@@ -51,23 +51,23 @@ case class SnowHouseInstrDataDualRam(
     initBigInt=Some(instrInitBigInt),
   )
   //--------
-  //io.ibus.ready := io.ibus.rValid
-  io.ibus.ready := False
-  val rIbusReadyCnt = Reg(UInt(8 bits)) init(0)
-  val rIbusReadyState = Reg(Bool()) init(False)
-  when (io.ibus.rValid) {
-    when (rIbusReadyCnt > 0) {
-      rIbusReadyCnt := rIbusReadyCnt - 1
-    } otherwise {
-      io.ibus.ready := True
-      rIbusReadyState := !rIbusReadyState
-      when (!rIbusReadyState) {
-        rIbusReadyCnt := 2
-      } otherwise {
-        rIbusReadyCnt := 0
-      }
-    }
-  }
+  io.ibus.ready := io.ibus.rValid
+  //io.ibus.ready := False
+  //val rIbusReadyCnt = Reg(UInt(8 bits)) init(0)
+  //val rIbusReadyState = Reg(Bool()) init(False)
+  //when (io.ibus.rValid) {
+  //  when (rIbusReadyCnt > 0) {
+  //    rIbusReadyCnt := rIbusReadyCnt - 1
+  //  } otherwise {
+  //    io.ibus.ready := True
+  //    rIbusReadyState := !rIbusReadyState
+  //    when (!rIbusReadyState) {
+  //      rIbusReadyCnt := 2
+  //    } otherwise {
+  //      rIbusReadyCnt := 0
+  //    }
+  //  }
+  //}
   //--------
   instrRam.io.rdEn := io.ibus.nextValid
   instrRam.io.rdAddr := (
@@ -309,17 +309,17 @@ case class SnowHouse
     }
   )
   linkArr += sIf
-  val s2mIf = S2MLink(
-    up={
-      sIf.down
-    },
-    down={
-      val node = Node()
-      node.setName("s2mIf_down")
-      node
-    }
-  )
-  linkArr += s2mIf
+  //val s2mIf = S2MLink(
+  //  up={
+  //    sIf.down
+  //  },
+  //  down={
+  //    val node = Node()
+  //    node.setName("s2mIf_down")
+  //    node
+  //  }
+  //)
+  //linkArr += s2mIf
   val pipeStageIf = SnowHousePipeStageInstrFetch(
     args=SnowHousePipeStageArgs(
       cfg=cfg,
@@ -335,8 +335,8 @@ case class SnowHouse
 
   val cId = CtrlLink(
     up={
-      //sIf.down
-      s2mIf.down
+      sIf.down
+      //s2mIf.down
     },
     down={
       regFile.io.front

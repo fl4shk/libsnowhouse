@@ -1037,9 +1037,10 @@ case class SnowHouseCpuTestProgram(
                               // reading first instruction, so put
                               // in a dummy
     cpy(r0, 0x0),             // 0x4: r0 = 0
-    cpy(r1, 0x8),             // 0x8: r1 = 8
-    cpy(r2, 0x1),             // 0xc: r2 = 1
-    pre(0xabcd),              // 0x10
+    cpy(r0, 0x0),             // 0x8
+    cpy(r1, 0x8),             // 0xc: r1 = 8
+    cpy(r2, 0x1),             // 0x10: r2 = 1
+    //pre(0xabcd),                // 0x10
     cpy(r3, 0x1000),          // 0x14: r3 = 0x1000
     cpy(r4, 0x8),             // 0x18: r4 = 4
     ////cpy(r6, 0x0),       //
@@ -1074,7 +1075,7 @@ case class SnowHouseCpuTestProgram(
     jmp(lr),                  // 0x58
     //--------
     Lb"multiply",
-    mul(r7, r6, r1),          // 0x5c
+    //mul(r7, r6, r1),          // 0x5c
     jmp(lr),                  // 0x60
     cpy(r0, r0),
     cpy(r0, r0),
@@ -1138,7 +1139,7 @@ object SnowHouseCpuWithDualRamSim extends App {
     SnowHouseCpuWithDualRam(program=testProgram.program)
   ).doSim{dut => {
     dut.clockDomain.forkStimulus(10)
-    for (i <- 0 until 256) {
+    for (i <- 0 until 1024) {
       dut.clockDomain.waitSampling()
       //for (gprIdx <- 0 until cfg.numGprs) {
       //  printf(
