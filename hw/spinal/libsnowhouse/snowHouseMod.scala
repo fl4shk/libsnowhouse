@@ -132,14 +132,22 @@ case class SnowHouseInstrDataDualRam(
 case class SnowHouseIo(
   cfg: SnowHouseConfig
 ) extends Bundle {
-  //val icache = 
+  val haveIrqIdsIrq = (
+    cfg.irqCfg != None
+  )
+  val iraIdsIrq = (
+    haveIrqIdsIrq
+  ) generate (
+    in(Bool())
+  )
   // instruction bus
   val ibus = new LcvStallIo[IbusHostPayload, IbusDevPayload ](
     hostPayloadType=Some(IbusHostPayload(cfg=cfg)),
     devPayloadType=Some(IbusDevPayload(cfg=cfg)),
   )
   val haveMultiCycleBusVec = (
-    cfg.opInfoMap.find(_._2.select == OpSelect.MultiCycle) != None
+    //cfg.opInfoMap.find(_._2.select == OpSelect.MultiCycle) != None
+    cfg.havePsExStall
   )
   val multiCycleBusVec = (
     haveMultiCycleBusVec
@@ -154,8 +162,13 @@ case class SnowHouseIo(
           MultiCycleDevPayload,
         ]
       ]()
-      for (((_, opInfo), idx) <- cfg.opInfoMap.view.zipWithIndex) {
-        if (opInfo.select == OpSelect.MultiCycle) {
+      for (
+        ((_, opInfo), idx) <- cfg.multiCycleOpInfoMap.view.zipWithIndex
+      ) {
+        assert(
+          opInfo.select == OpSelect.MultiCycle
+        )
+        //if (opInfo.select == OpSelect.MultiCycle) {
           tempArr += new LcvStallIo(
             hostPayloadType=(
               Some(MultiCycleHostPayload(cfg=cfg, opInfo=opInfo))
@@ -164,7 +177,7 @@ case class SnowHouseIo(
               Some(MultiCycleDevPayload(cfg=cfg, opInfo=opInfo))
             ),
           )
-        }
+        //}
       }
       tempArr
     }

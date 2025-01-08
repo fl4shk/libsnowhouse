@@ -897,6 +897,15 @@ case class SnowHouseCpuConfig(
   //--------
   val shCfg = SnowHouseConfig(
     haveZeroReg=Some(0),
+    irqCfg=(
+      //None
+      Some(
+        SnowHouseIrqConfig.IraIds(
+          //iraRegIdx
+          allowNestedIrqs=true,
+        ),
+      )
+    ),
     //encInstrType=SnowHouseCpuEncInstr(),
     instrMainWidth=instrMainWidth,
     shRegFileCfg=SnowHouseRegFileConfig(
@@ -1037,10 +1046,10 @@ case class SnowHouseCpuTestProgram(
                               // reading first instruction, so put
                               // in a dummy
     cpy(r0, 0x0),             // 0x4: r0 = 0
-    cpy(r0, 0x0),             // 0x8
+    //cpy(r0, 0x0),             // 0x8
     cpy(r1, 0x8),             // 0xc: r1 = 8
     cpy(r2, 0x1),             // 0x10: r2 = 1
-    //pre(0xabcd),                // 0x10
+    pre(0xabcd),                // 0x10
     cpy(r3, 0x1000),          // 0x14: r3 = 0x1000
     cpy(r4, 0x8),             // 0x18: r4 = 4
     ////cpy(r6, 0x0),       //

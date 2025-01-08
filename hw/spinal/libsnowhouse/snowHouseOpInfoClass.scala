@@ -49,6 +49,9 @@ object SrcKind {
   //                                        // double the normal size of a
   //                                        // general purpose register)
   case object Pc extends SrcKind
+  case object Ira extends SrcKind
+  case object Ids extends SrcKind
+  case object Ie extends SrcKind
   //case class PcPlusImm(
   //  isSImm: Option[Boolean],
   //) extends SrcKind
@@ -60,7 +63,7 @@ object SrcKind {
   case class Imm(
     //isSImm: Option[Boolean], // `None` means "either unsigned or signed"
   ) extends SrcKind
-  case object AluFlags extends SrcKind  // 
+  //case object AluFlags extends SrcKind  // 
 }
 
 // kinds of destination operands of instruction
@@ -72,7 +75,10 @@ object DstKind {
   case object Pc extends DstKind
   //case object Mem extends DstKind   // data written to mem by a store
   //                                  // instruction
-  case object AluFlags extends DstKind
+  //case object AluFlags extends DstKind
+  case object Ira extends DstKind
+  case object Ids extends DstKind
+  case object Ie extends DstKind
 }
 //--------
 sealed trait MemAccessKind
@@ -122,26 +128,6 @@ object MemAccessKind {
     isStore=isStore,
     subKind=SubKind.Sz64,
   )
-  //case class Mem16(
-  //  isSigned: Option[Boolean],  // `None` means this is word-size
-  //  isStore: Option[Boolean],   // `None` means this is atomic
-  //) extends MemAccessKind
-  //case class Mem32(
-  //  isSigned: Option[Boolean],  // `None` means this is word-size
-  //  isStore: Option[Boolean],   // `None` means this is atomic
-  //) extends MemAccessKind
-  //case class Mem64(
-  //  isSigned: Option[Boolean],  // `None` means this is word-size
-  //  isStore: Option[Boolean],   // `None` means this is atomic
-  //) extends MemAccessKind
-  //case object MemU8 extends ModifySrcDstKind
-  //case object MemS8 extends ModifySrcDstKind
-  //case object MemU16 extends ModifySrcDstKind
-  //case object MemS16 extends ModifySrcDstKind
-  //case object MemU32 extends ModifySrcDstKind
-  //case object MemS32 extends ModifySrcDstKind
-  //case object MemU64 extends ModifySrcDstKind
-  //case object MemS64 extends ModifySrcDstKind
 }
 case class AddrCalcKindOptions(
   minNum: Int,
@@ -598,6 +584,9 @@ object CpyOpKind {
         dst=Array[HashSet[DstKind]](
           HashSet(
             DstKind.Gpr, //DstKind.AluFlags
+            DstKind.Ira,
+            DstKind.Ids,
+            DstKind.Ie,
           ),
         ),
         src=Array[HashSet[SrcKind]](
@@ -610,6 +599,9 @@ object CpyOpKind {
             //SrcKind.Imm(Some(true)),
             //SrcKind.Imm(Some(false)),
             //SrcKind.AluFlags,
+            SrcKind.Ira,
+            SrcKind.Ids,
+            SrcKind.Ie,
           ),
         ),
         cond=HashSet[CondKind](
@@ -645,7 +637,10 @@ object CpyOpKind {
         // word
         //dstSize=1, srcSize=1
         dst=Array[HashSet[DstKind]](
-          HashSet(DstKind.Gpr, DstKind.AluFlags),
+          HashSet(
+            DstKind.Gpr,
+            //DstKind.AluFlags
+          ),
         ),
         src=Array[HashSet[SrcKind]](
           HashSet(
@@ -830,22 +825,22 @@ object AluOpKind {
           CondKind.Always
         ),
       ),
-      //OpKindNumArgs(dst=2, src=4),  // two-word
-      OpKindValidArgs(
-        // word, with output flags
-        //dstSize=2, srcSize=2,
-        dst=Array[HashSet[DstKind]](
-          HashSet(DstKind.Gpr),
-          HashSet(DstKind.AluFlags),
-        ),
-        src=Array[HashSet[SrcKind]](
-          HashSet(SrcKind.Gpr, SrcKind.Pc),
-          HashSet(SrcKind.Gpr, SrcKind.Pc, SrcKind.Imm(/*None*/)),
-        ),
-        cond=HashSet[CondKind](
-          //CondKind.Always
-        ),
-      ),
+      ////OpKindNumArgs(dst=2, src=4),  // two-word
+      //OpKindValidArgs(
+      //  // word, with output flags
+      //  //dstSize=2, srcSize=2,
+      //  dst=Array[HashSet[DstKind]](
+      //    HashSet(DstKind.Gpr),
+      //    HashSet(DstKind.AluFlags),
+      //  ),
+      //  src=Array[HashSet[SrcKind]](
+      //    HashSet(SrcKind.Gpr, SrcKind.Pc),
+      //    HashSet(SrcKind.Gpr, SrcKind.Pc, SrcKind.Imm(/*None*/)),
+      //  ),
+      //  cond=HashSet[CondKind](
+      //    //CondKind.Always
+      //  ),
+      //),
       //OpKindNumArgs(                // two-word, with flags
       //  dst=2,
       //  src=4,
@@ -874,42 +869,42 @@ object AluOpKind {
     private[libsnowhouse] val _validArgsSet = LinkedHashSet[
       OpKindValidArgs
     ](
-      //minD=1, maxD=1, minS=2, maxS=2
-      OpKindValidArgs(
-        //dstSize=1, srcSize=3
-        dst=Array[HashSet[DstKind]](
-          HashSet(DstKind.Gpr)
-        ),
-        src=Array[HashSet[SrcKind]](
-          HashSet(SrcKind.Gpr, SrcKind.Pc),
-          HashSet(SrcKind.Gpr, SrcKind.Pc, SrcKind.Imm(/*None*/)),
-          HashSet(SrcKind.AluFlags),
-        ),
-        cond=HashSet[CondKind](
-          //CondKind.Always
-        )
-      ),  // word, with input and output flags
-      //OpKindNumArgs(dst=2, src=5),  // two-word
-      OpKindValidArgs(                // word, with input and output flags
-        //dstSize=2,
-        //srcSize=3,
-        dst=Array[HashSet[DstKind]](
-          HashSet(DstKind.Gpr),
-          HashSet(DstKind.AluFlags),
-        ),
-        src=Array[HashSet[SrcKind]](
-          HashSet(SrcKind.Gpr, SrcKind.Pc),
-          HashSet(SrcKind.Gpr, SrcKind.Pc, SrcKind.Imm(/*None*/)),
-          HashSet(SrcKind.AluFlags),
-        ),
-        cond=HashSet[CondKind](
-          //CondKind.Always
-        )
-      ),
-      //OpKindNumArgs(                // two-word, with flags
-      //  dst=2,
-      //  src=5,
+      ////minD=1, maxD=1, minS=2, maxS=2
+      //OpKindValidArgs(
+      //  //dstSize=1, srcSize=3
+      //  dst=Array[HashSet[DstKind]](
+      //    HashSet(DstKind.Gpr)
+      //  ),
+      //  src=Array[HashSet[SrcKind]](
+      //    HashSet(SrcKind.Gpr, SrcKind.Pc),
+      //    HashSet(SrcKind.Gpr, SrcKind.Pc, SrcKind.Imm(/*None*/)),
+      //    HashSet(SrcKind.AluFlags),
+      //  ),
+      //  cond=HashSet[CondKind](
+      //    //CondKind.Always
+      //  )
+      //),  // word, with input and output flags
+      ////OpKindNumArgs(dst=2, src=5),  // two-word
+      //OpKindValidArgs(                // word, with input and output flags
+      //  //dstSize=2,
+      //  //srcSize=3,
+      //  dst=Array[HashSet[DstKind]](
+      //    HashSet(DstKind.Gpr),
+      //    HashSet(DstKind.AluFlags),
+      //  ),
+      //  src=Array[HashSet[SrcKind]](
+      //    HashSet(SrcKind.Gpr, SrcKind.Pc),
+      //    HashSet(SrcKind.Gpr, SrcKind.Pc, SrcKind.Imm(/*None*/)),
+      //    HashSet(SrcKind.AluFlags),
+      //  ),
+      //  cond=HashSet[CondKind](
+      //    //CondKind.Always
+      //  )
       //),
+      ////OpKindNumArgs(                // two-word, with flags
+      ////  dst=2,
+      ////  src=5,
+      ////),
     )
     def validArgsSet = _validArgsSet
     //def binopFunc(left: UInt, right: UInt): Option[UInt] = None
@@ -957,42 +952,42 @@ object AluOpKind {
         src=_subCmpSrc,
         cond=_subCmpCond,
       ),
-      OpKindValidArgs(
-        // word `Sub` or `Cmp`
-        //dstSize=1, srcSize=2
-        dst=Array[HashSet[DstKind]](
-          HashSet(
-            //DstKind.Gpr,
-            DstKind.AluFlags
-            //  // `DstKind.AluFlags` means this is a `Cmp` instruction
-          ),
-        ),
-        src=_subCmpSrc,
-        cond=HashSet[CondKind](
-          //CondKind.Always
-        ),
-      ),
-      //OpKindNumArgs(dst=2, src=4),  // two-word
-      OpKindValidArgs(
-        // word, with output flags
-        //dstSize=2,
-        //srcSize=2,
-        dst=Array[HashSet[DstKind]](
-          HashSet(DstKind.Gpr),
-          HashSet(DstKind.AluFlags)
-        ),
-        src=Array[HashSet[SrcKind]](
-          HashSet(SrcKind.Gpr, SrcKind.Pc),
-          HashSet(SrcKind.Gpr, SrcKind.Pc, SrcKind.Imm(/*None*/)),
-        ),
-        cond=HashSet[CondKind](
-          //CondKind.Always
-        ),
-      ),
-      //OpKindNumArgs(                // two-word, with flags
-      //  dst=2,
-      //  src=4,
+      //OpKindValidArgs(
+      //  // word `Sub` or `Cmp`
+      //  //dstSize=1, srcSize=2
+      //  dst=Array[HashSet[DstKind]](
+      //    HashSet(
+      //      //DstKind.Gpr,
+      //      DstKind.AluFlags
+      //      //  // `DstKind.AluFlags` means this is a `Cmp` instruction
+      //    ),
+      //  ),
+      //  src=_subCmpSrc,
+      //  cond=HashSet[CondKind](
+      //    //CondKind.Always
+      //  ),
       //),
+      ////OpKindNumArgs(dst=2, src=4),  // two-word
+      //OpKindValidArgs(
+      //  // word, with output flags
+      //  //dstSize=2,
+      //  //srcSize=2,
+      //  dst=Array[HashSet[DstKind]](
+      //    HashSet(DstKind.Gpr),
+      //    HashSet(DstKind.AluFlags)
+      //  ),
+      //  src=Array[HashSet[SrcKind]](
+      //    HashSet(SrcKind.Gpr, SrcKind.Pc),
+      //    HashSet(SrcKind.Gpr, SrcKind.Pc, SrcKind.Imm(/*None*/)),
+      //  ),
+      //  cond=HashSet[CondKind](
+      //    //CondKind.Always
+      //  ),
+      //),
+      ////OpKindNumArgs(                // two-word, with flags
+      ////  dst=2,
+      ////  src=4,
+      ////),
     )
     def validArgsSet = _validArgsSet
     //def binopFunc(left: UInt, right: UInt): Option[UInt] = (
@@ -1020,44 +1015,44 @@ object AluOpKind {
     private[libsnowhouse] val _validArgsSet = LinkedHashSet[
       OpKindValidArgs
     ](
-      //minD=1, maxD=1, minS=2, maxS=2
-      OpKindValidArgs(
-        // word, with input and output flags
-        //dstSize=1, srcSize=3
-        dst=Array[HashSet[DstKind]](
-          HashSet(DstKind.Gpr),
-        ),
-        src=Array[HashSet[SrcKind]](
-          HashSet(SrcKind.Gpr, SrcKind.Pc),
-          HashSet(SrcKind.Gpr, SrcKind.Pc, SrcKind.Imm(/*None*/)),
-          HashSet(SrcKind.AluFlags),
-        ),
-        cond=HashSet[CondKind](
-          //CondKind.Always
-        ),
-      ),
-      //OpKindNumArgs(dst=2, src=5),  // two-word
-      OpKindValidArgs(
-        // word, with output flags
-        //dstSize=2,
-        //srcSize=3,
-        dst=Array[HashSet[DstKind]](
-          HashSet(DstKind.Gpr),
-          HashSet(DstKind.AluFlags),
-        ),
-        src=Array[HashSet[SrcKind]](
-          HashSet(SrcKind.Gpr, SrcKind.Pc),
-          HashSet(SrcKind.Gpr, SrcKind.Pc, SrcKind.Imm(/*None*/)),
-          HashSet(SrcKind.AluFlags),
-        ),
-        cond=HashSet[CondKind](
-          //CondKind.Always
-        ),
-      ),
-      //OpKindNumArgs(                // two-word, with flags
-      //  dst=2,
-      //  src=5,
+      ////minD=1, maxD=1, minS=2, maxS=2
+      //OpKindValidArgs(
+      //  // word, with input and output flags
+      //  //dstSize=1, srcSize=3
+      //  dst=Array[HashSet[DstKind]](
+      //    HashSet(DstKind.Gpr),
+      //  ),
+      //  src=Array[HashSet[SrcKind]](
+      //    HashSet(SrcKind.Gpr, SrcKind.Pc),
+      //    HashSet(SrcKind.Gpr, SrcKind.Pc, SrcKind.Imm(/*None*/)),
+      //    HashSet(SrcKind.AluFlags),
+      //  ),
+      //  cond=HashSet[CondKind](
+      //    //CondKind.Always
+      //  ),
       //),
+      ////OpKindNumArgs(dst=2, src=5),  // two-word
+      //OpKindValidArgs(
+      //  // word, with output flags
+      //  //dstSize=2,
+      //  //srcSize=3,
+      //  dst=Array[HashSet[DstKind]](
+      //    HashSet(DstKind.Gpr),
+      //    HashSet(DstKind.AluFlags),
+      //  ),
+      //  src=Array[HashSet[SrcKind]](
+      //    HashSet(SrcKind.Gpr, SrcKind.Pc),
+      //    HashSet(SrcKind.Gpr, SrcKind.Pc, SrcKind.Imm(/*None*/)),
+      //    HashSet(SrcKind.AluFlags),
+      //  ),
+      //  cond=HashSet[CondKind](
+      //    //CondKind.Always
+      //  ),
+      //),
+      ////OpKindNumArgs(                // two-word, with flags
+      ////  dst=2,
+      ////  src=5,
+      ////),
     )
     def validArgsSet = _validArgsSet
     def binopFunc(
@@ -1099,28 +1094,28 @@ object AluOpKind {
           CondKind.Always
         ),
       ),
-      //OpKindNumArgs(dst=2, src=4),  // two-word
-      OpKindValidArgs(
-        // word, with output flags
-        //dstSize=2,
-        //srcSize=2,
-        dst=Array[HashSet[DstKind]](
-          HashSet(DstKind.Gpr),
-          HashSet(DstKind.AluFlags),
-        ),
-        src=Array[HashSet[SrcKind]](
-          HashSet(SrcKind.Gpr, SrcKind.Pc),
-          HashSet(SrcKind.Gpr, SrcKind.Pc, SrcKind.Imm(/*Some(false)*/)),
-        ),
-        cond=HashSet[CondKind](
-          //CondKind.Always
-        ),
-      ),
-      //OpKindNumArgs(                // two-word, with flags
-      //  dst=2,
-      //  src=4,
-      //  optExtraDstKind=Some(DstKind.AluFlags),
+      ////OpKindNumArgs(dst=2, src=4),  // two-word
+      //OpKindValidArgs(
+      //  // word, with output flags
+      //  //dstSize=2,
+      //  //srcSize=2,
+      //  dst=Array[HashSet[DstKind]](
+      //    HashSet(DstKind.Gpr),
+      //    HashSet(DstKind.AluFlags),
+      //  ),
+      //  src=Array[HashSet[SrcKind]](
+      //    HashSet(SrcKind.Gpr, SrcKind.Pc),
+      //    HashSet(SrcKind.Gpr, SrcKind.Pc, SrcKind.Imm(/*Some(false)*/)),
+      //  ),
+      //  cond=HashSet[CondKind](
+      //    //CondKind.Always
+      //  ),
       //),
+      ////OpKindNumArgs(                // two-word, with flags
+      ////  dst=2,
+      ////  src=4,
+      ////  optExtraDstKind=Some(DstKind.AluFlags),
+      ////),
     )
     def validArgsSet = _validArgsSet
     def binopFunc(
@@ -1153,28 +1148,28 @@ object AluOpKind {
           CondKind.Always
         ),
       ),
-      //OpKindNumArgs(dst=2, src=4),  // two-word
-      OpKindValidArgs(
-        // word, with output flags
-        //dstSize=2,
-        //srcSize=2,
-        dst=Array[HashSet[DstKind]](
-          HashSet(DstKind.Gpr),
-          HashSet(DstKind.AluFlags),
-        ),
-        src=Array[HashSet[SrcKind]](
-          HashSet(SrcKind.Gpr, SrcKind.Pc),
-          HashSet(SrcKind.Gpr, SrcKind.Pc, SrcKind.Imm(/*Some(false)*/)),
-        ),
-        cond=HashSet[CondKind](
-          //CondKind.Always
-        ),
-      ),
-      //OpKindNumArgs(                // two-word, with flags
-      //  dst=2,
-      //  src=4,
-      //  optExtraDstKind=Some(DstKind.AluFlags),
+      ////OpKindNumArgs(dst=2, src=4),  // two-word
+      //OpKindValidArgs(
+      //  // word, with output flags
+      //  //dstSize=2,
+      //  //srcSize=2,
+      //  dst=Array[HashSet[DstKind]](
+      //    HashSet(DstKind.Gpr),
+      //    HashSet(DstKind.AluFlags),
+      //  ),
+      //  src=Array[HashSet[SrcKind]](
+      //    HashSet(SrcKind.Gpr, SrcKind.Pc),
+      //    HashSet(SrcKind.Gpr, SrcKind.Pc, SrcKind.Imm(/*Some(false)*/)),
+      //  ),
+      //  cond=HashSet[CondKind](
+      //    //CondKind.Always
+      //  ),
       //),
+      ////OpKindNumArgs(                // two-word, with flags
+      ////  dst=2,
+      ////  src=4,
+      ////  optExtraDstKind=Some(DstKind.AluFlags),
+      ////),
     )
     def validArgsSet = _validArgsSet
     def binopFunc(
@@ -1206,23 +1201,23 @@ object AluOpKind {
           CondKind.Always
         ),
       ),  // word
-      //OpKindNumArgs(dst=2, src=4),  // two-word
-      OpKindValidArgs(
-        // word, with output flags
-        //dstSize=2,
-        //srcSize=2,
-        dst=Array[HashSet[DstKind]](
-          HashSet(DstKind.Gpr),
-          HashSet(DstKind.AluFlags),
-        ),
-        src=Array[HashSet[SrcKind]](
-          HashSet(SrcKind.Gpr, SrcKind.Pc),
-          HashSet(SrcKind.Gpr, SrcKind.Pc, SrcKind.Imm(/*Some(false)*/)),
-        ),
-        cond=HashSet[CondKind](
-          //CondKind.Always
-        ),
-      ),
+      ////OpKindNumArgs(dst=2, src=4),  // two-word
+      //OpKindValidArgs(
+      //  // word, with output flags
+      //  //dstSize=2,
+      //  //srcSize=2,
+      //  dst=Array[HashSet[DstKind]](
+      //    HashSet(DstKind.Gpr),
+      //    HashSet(DstKind.AluFlags),
+      //  ),
+      //  src=Array[HashSet[SrcKind]](
+      //    HashSet(SrcKind.Gpr, SrcKind.Pc),
+      //    HashSet(SrcKind.Gpr, SrcKind.Pc, SrcKind.Imm(/*Some(false)*/)),
+      //  ),
+      //  cond=HashSet[CondKind](
+      //    //CondKind.Always
+      //  ),
+      //),
     )
     def validArgsSet = _validArgsSet
     def binopFunc(
@@ -1255,23 +1250,23 @@ object AluOpKind {
           CondKind.Always
         ),
       ),
-      //OpKindNumArgs(dst=2, src=4),  // two-word
-      OpKindValidArgs(
-        // word, with flags
-        //dstSize=2,
-        //srcSize=2,
-        dst=Array[HashSet[DstKind]](
-          HashSet(DstKind.Gpr),
-          HashSet(DstKind.AluFlags),
-        ),
-        src=Array[HashSet[SrcKind]](
-          HashSet(SrcKind.Gpr, SrcKind.Pc),
-          HashSet(SrcKind.Gpr, SrcKind.Pc, SrcKind.Imm(/*None*/)),
-        ),
-        cond=HashSet[CondKind](
-          //CondKind.Always
-        ),
-      ),
+      ////OpKindNumArgs(dst=2, src=4),  // two-word
+      //OpKindValidArgs(
+      //  // word, with flags
+      //  //dstSize=2,
+      //  //srcSize=2,
+      //  dst=Array[HashSet[DstKind]](
+      //    HashSet(DstKind.Gpr),
+      //    HashSet(DstKind.AluFlags),
+      //  ),
+      //  src=Array[HashSet[SrcKind]](
+      //    HashSet(SrcKind.Gpr, SrcKind.Pc),
+      //    HashSet(SrcKind.Gpr, SrcKind.Pc, SrcKind.Imm(/*None*/)),
+      //  ),
+      //  cond=HashSet[CondKind](
+      //    //CondKind.Always
+      //  ),
+      //),
     )
     def validArgsSet = _validArgsSet
     def binopFunc(
@@ -1304,23 +1299,23 @@ object AluOpKind {
           CondKind.Always
         ),
       ),
-      //OpKindNumArgs(dst=2, src=4),  // two-word
-      OpKindValidArgs(
-        // word, with flags
-        //dstSize=2,
-        //srcSize=2,
-        dst=Array[HashSet[DstKind]](
-          HashSet(DstKind.Gpr),
-          HashSet(DstKind.AluFlags),
-        ),
-        src=Array[HashSet[SrcKind]](
-          HashSet(SrcKind.Gpr, SrcKind.Pc),
-          HashSet(SrcKind.Gpr, SrcKind.Pc, SrcKind.Imm(/*None*/)),
-        ),
-        cond=HashSet[CondKind](
-          //CondKind.Always
-        ),
-      ),
+      ////OpKindNumArgs(dst=2, src=4),  // two-word
+      //OpKindValidArgs(
+      //  // word, with flags
+      //  //dstSize=2,
+      //  //srcSize=2,
+      //  dst=Array[HashSet[DstKind]](
+      //    HashSet(DstKind.Gpr),
+      //    HashSet(DstKind.AluFlags),
+      //  ),
+      //  src=Array[HashSet[SrcKind]](
+      //    HashSet(SrcKind.Gpr, SrcKind.Pc),
+      //    HashSet(SrcKind.Gpr, SrcKind.Pc, SrcKind.Imm(/*None*/)),
+      //  ),
+      //  cond=HashSet[CondKind](
+      //    //CondKind.Always
+      //  ),
+      //),
     )
     def validArgsSet = _validArgsSet
     def binopFunc(
@@ -1353,22 +1348,22 @@ object AluOpKind {
           CondKind.Always
         ),
       ),
-      //OpKindNumArgs(dst=2, src=4),  // two-word
-      OpKindValidArgs(                // word, with flags
-        //dstSize=2,
-        //srcSize=2,
-        dst=Array[HashSet[DstKind]](
-          HashSet(DstKind.Gpr),
-          HashSet(DstKind.AluFlags),
-        ),
-        src=Array[HashSet[SrcKind]](
-          HashSet(SrcKind.Gpr, SrcKind.Pc),
-          HashSet(SrcKind.Gpr, SrcKind.Pc, SrcKind.Imm(/*None*/)),
-        ),
-        cond=HashSet[CondKind](
-          //CondKind.Always
-        ),
-      ),
+      ////OpKindNumArgs(dst=2, src=4),  // two-word
+      //OpKindValidArgs(                // word, with flags
+      //  //dstSize=2,
+      //  //srcSize=2,
+      //  dst=Array[HashSet[DstKind]](
+      //    HashSet(DstKind.Gpr),
+      //    HashSet(DstKind.AluFlags),
+      //  ),
+      //  src=Array[HashSet[SrcKind]](
+      //    HashSet(SrcKind.Gpr, SrcKind.Pc),
+      //    HashSet(SrcKind.Gpr, SrcKind.Pc, SrcKind.Imm(/*None*/)),
+      //  ),
+      //  cond=HashSet[CondKind](
+      //    //CondKind.Always
+      //  ),
+      //),
     )
     def validArgsSet = _validArgsSet
     def binopFunc(

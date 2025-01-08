@@ -95,8 +95,34 @@ case class SnowHouseRegFileConfig(
 //  shRegFileCfg: SnowHouseRegFileConfig,
 //) {
 //}
+sealed trait SnowHouseIrqConfig {
+  //def numIrqs: Int
+}
+object SnowHouseIrqConfig {
+  case class IraIds(
+    //val iraRegIdx: Int,
+    //val idsRegIdx: Int,
+    val allowNestedIrqs: Boolean,
+    //val numIrqs: Int
+  ) extends SnowHouseIrqConfig {
+    // TODO: possibly support multiple IRQs?
+  }
+  //case class Vector(
+  //  val numIrqs: Int,
+  //) extends SnowHouseIrqConfig {
+  //}
+}
+//case class SnowHouseIrqConfig(
+//  numIrqs: Int
+//) {
+//  assert(
+//    numIrqs > 0,
+//    s"numIrqs (${numIrqs}) must be greater than 0.",
+//  )
+//}
 case class SnowHouseConfig(
   haveZeroReg: Option[Int],
+  irqCfg: Option[SnowHouseIrqConfig],
   //encInstrType: HardType,
   //gprFileDepth: Int,
   //sprFileDepth: Int,

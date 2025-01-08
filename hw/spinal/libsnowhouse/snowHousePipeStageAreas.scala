@@ -653,6 +653,9 @@ case class SnowHousePipeStageExecuteSetOutpModMemWordIo(
   val decodeExt = /*out*/(
     SnowHouseDecodeExt(cfg=cfg)
   )
+  val multiCycleOpInfoIdx = /*out*/(
+    UInt(log2Up(cfg.multiCycleOpInfoMap.size) bits)
+  )
   def opIs = decodeExt.opIs
   def opIsMemAccess = decodeExt.opIsMemAccess
   def opIsCpyNonJmpAlu = decodeExt.opIsCpyNonJmpAlu
@@ -762,6 +765,7 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
       init=io.regPc.getZero,
     )
   )
+  io.multiCycleOpInfoIdx := 0x0
   //switch (io.pcChangeState.payload) {
   //  is (PcChangeState.Idle) {
       //when (io.pcChangeState) {
@@ -1272,6 +1276,16 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
                   io.modMemWord(0) := binop.main
                 }
                 case OpSelect.MultiCycle => {
+                    
+                  for (
+                    ((_, innerOpInfo), idx)
+                    <- cfg.multiCycleOpInfoMap.view.zipWithIndex
+                  ) {
+                    //cfg.multiCycleOpInfoMap.find(_._2 == opInfo).get
+                    if (opInfo == innerOpInfo) {
+                      io.multiCycleOpInfoIdx := idx
+                    }
+                  }
                   io.opIsMultiCycle := True
                   assert(
                     opInfo.cond == CondKind.Always,
@@ -1452,25 +1466,64 @@ case class SnowHousePipeStageExecute(
     )
   }
   val havePsExStall = cfg.havePsExStall
-  val psExStallHost = (
-    //PipeMemRmwSimDut.haveModOpMul
-    havePsExStall
-  ) generate (
-    cfg.mkLcvStallHost[
-      MultiCycleHostPayload,
-      MultiCycleDevPayload,
-    ](
-      stallIo=(
-        //io.psExStallIo
-        // TODO: support multiple external `MultiCycleOp`
-        if (!io.haveMultiCycleBusVec) {
-          None
-        } else { // if (io.haveMultiCycleBusVec)
-          Some(io.multiCycleBusVec(0))
-        }
-      ),
+  //val psExStallHost = (
+  //  //PipeMemRmwSimDut.haveModOpMul
+  //  havePsExStall
+  //) generate (
+  //  cfg.mkLcvStallHost[
+  //    MultiCycleHostPayload,
+  //    MultiCycleDevPayload,
+  //  ](
+  //    stallIo=(
+  //      //io.psExStallIo
+  //      // TODO: support multiple external `MultiCycleOp`
+  //      if (!io.haveMultiCycleBusVec) {
+  //        None
+  //      } else { // if (io.haveMultiCycleBusVec)
+  //        Some(io.multiCycleBusVec(0))
+  //      }
+  //    ),
+  //  )
+  //)
+  val psExStallHostArr = ArrayBuffer[LcvStallHost[
+    MultiCycleHostPayload, MultiCycleDevPayload
+  ]]()
+  for (
+    ((_, opInfo), idx) <- cfg.multiCycleOpInfoMap.view.zipWithIndex
+  ) {
+    psExStallHostArr += (
+      cfg.mkLcvStallHost[MultiCycleHostPayload, MultiCycleDevPayload](
+        stallIo=(
+          //io.psExStallIo
+          // TODO: support multiple external `MultiCycleOp`
+          //if (!io.haveMultiCycleBusVec) {
+          //  None
+          //} else { // if (io.haveMultiCycleBusVec)
+            Some(io.multiCycleBusVec(idx))
+          //}
+        ),
+      )
     )
-  )
+  }
+  //--------
+  //def psExStallHost(
+  //  opInfo: OpInfo
+  //): (LcvStallHost[MultiCycleHostPayload, MultiCycleDevPayload], Int) = {
+  //  for (
+  //    ((_, innerOpInfo), idx) <- cfg.multiCycleOpInfoMap.view.zipWithIndex
+  //  ) {
+  //    //cfg.multiCycleOpInfoMap.find(_._2 == opInfo).get
+  //    if (opInfo == innerOpInfo) {
+  //      return (psExStallHostArr(idx), idx)
+  //    }
+  //  }
+  //  assert(
+  //    false,
+  //    s"eek! ${opInfo.select}"
+  //  )
+  //  return (null, -1)
+  //}
+  //--------
   //val psMemStallHost = (
   //  mkLcvStallHost(
   //    stallIo=(
@@ -1542,12 +1595,12 @@ case class SnowHousePipeStageExecute(
   }
   //val doTestModOpMainArea = new Area {
   //--------
-  val savedPsExStallHost = (
-    LcvStallHostSaved(
-      stallHost=psExStallHost,
-      someLink=cMid0Front,
-    )
-  )
+  //val savedPsExStallHost = (
+  //  LcvStallHostSaved(
+  //    stallHost=psExStallHost,
+  //    someLink=cMid0Front,
+  //  )
+  //)
   val savedPsMemStallHost = (
     LcvStallHostSaved(
       stallHost=psMemStallHost,
@@ -2283,92 +2336,45 @@ case class SnowHousePipeStageExecute(
           is (M"1---") {
             // instruction is of type MultiCycle,
             // but with NO mem access
-            //when (cMid0Front.up.isValid) {
-            //  when (doCheckHazard) {
-            //    when (!currDuplicateIt) {
-            //      psExStallHost.nextValid := (
-            //        True
-            //      )
-            //    }
-            //  } otherwise { // when (!doCheckHazard)
-            //    when (savedPsExStallHost.myDuplicateIt) {
-            //      currDuplicateIt := True
-            //    }
-            //    psExStallHost.nextValid := (
-            //      True
-            //    )
-            //  }
-            //  //--------
-            //}
-            //when (cMid0Front.up.isValid) {
-              //when (!rSetOutpState) {
-                //when (
-                //  doCheckHazard
-                //  && myDoHaveHazard
-                //) {
-                //}
-              //}
-              //--------
-              //when (
-              //  !myDoStall(stallKindMem)
-              //  //&& !RegNextWhen(
-              //  //  next=cMid0Front.down.isFiring,
-              //  //  cond=cMid0Front.up.isFiring,
-              //  //  init=False,
-              //  //)
-              //) {
-              //  //when (
-              //  //  !nextSetOutpState
-              //  //) {
-              //  //}
-              //  psExStallHost.nextValid := True
-              //  myDoStall(stallKindMultiCycle) := True
-              //} otherwise {
-              //  psExStallHost.nextValid := False
-              //  myDoStall(stallKindMultiCycle) := False
-              //}
-              //when (
-              //  psExStallHost.rValid && psExStallHost.ready
-              //) {
-              //  psExStallHost.nextValid := False
-              //  myDoStall(stallKindMultiCycle) := False
-              //}
-              ////when (!nextSetOutpState) {
-              ////}
-              ////when (doCheckHazard) {
-              ////}
-              when (
-                !rSavedStall
-                //|| doWriteSavedStall
+            switch (setOutpModMemWord.io.multiCycleOpInfoIdx) {
+              for (
+                (psExStallHost, psExStallHostArrIdx)
+                <- psExStallHostArr.view.zipWithIndex
               ) {
-                myDoStall(stallKindMultiCycle) := True
-                when (doCheckHazard && myDoHaveHazard) {
-                  //when (!rSavedStall) {
-                  //}
+                is (psExStallHostArrIdx) {
                   when (
-                    //!rSavedStall
-                    //&& 
-                    cMid0Front.down.isFiring
+                    !rSavedStall
+                    //|| doWriteSavedStall
                   ) {
-                    nextSavedStall := True
-                    psExStallHost.nextValid := True
+                    myDoStall(stallKindMultiCycle) := True
+                    when (doCheckHazard && myDoHaveHazard) {
+                      //when (!rSavedStall) {
+                      //}
+                      when (
+                        //!rSavedStall
+                        //&& 
+                        cMid0Front.down.isFiring
+                      ) {
+                        nextSavedStall := True
+                      }
+                    } otherwise {
+                      nextSavedStall := True
+                      psExStallHost.nextValid := True
+                      //myDoStall(stallKindMultiCycle) := True
+                    }
                   }
-                } otherwise {
-                  nextSavedStall := True
-                  psExStallHost.nextValid := True
-                  //myDoStall(stallKindMultiCycle) := True
+                  when (
+                    rSavedStall
+                    && psExStallHost.rValid
+                  ) {
+                    psExStallHost.nextValid := False
+                    myDoStall(stallKindMultiCycle) := False
+                  }
+                  when (cMid0Front.up.isFiring) {
+                    nextSavedStall := False
+                  }
                 }
               }
-            //}
-            when (
-              rSavedStall
-              && psExStallHost.rValid && psExStallHost.ready
-            ) {
-              psExStallHost.nextValid := False
-              myDoStall(stallKindMultiCycle) := False
-            }
-            when (cMid0Front.up.isFiring) {
-              nextSavedStall := False
             }
           }
           //when (savedPsExStallHost.myDuplicateIt) {
@@ -2429,9 +2435,11 @@ case class SnowHousePipeStageExecute(
   //  //  //)
   //  //}
   //}
-  when (psExStallHost.fire) {
-    psExStallHost.nextValid := False
-  }
+  psExStallHostArr.foreach(psExStallHost => {
+    when (psExStallHost.fire) {
+      psExStallHost.nextValid := False
+    }
+  })
   doCheckHazard := rPrevTxnWasHazard
   //when (rPrevTxnWasHazard) {
   //  //assert(cfg.regFileModRdPortCnt == 1)
