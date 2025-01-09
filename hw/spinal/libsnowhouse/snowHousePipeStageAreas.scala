@@ -1880,13 +1880,13 @@ case class SnowHousePipeStageExecute(
     )
     val rSetTempRdMemWordState = Reg(Bool(), init=False)
     when (cMid0Front.up.isValid) {
-      //when (!rSetTempRdMemWordState) {
-      //  rSetTempRdMemWordState := True
+      when (!rSetTempRdMemWordState) {
+        rSetTempRdMemWordState := True
         tempRdMemWord := myRdMemWord(ydx=ydx, modIdx=zdx)
-      //}
-      //when (cMid0Front.up.isFiring) {
-      //  rSetTempRdMemWordState := False
-      //}
+      }
+      when (cMid0Front.up.isFiring) {
+        rSetTempRdMemWordState := False
+      }
     }
   }
   if (cfg.regFileWordCountArr.size == 0) {
