@@ -87,12 +87,17 @@ case class SnowHouseInstrDataDualRam(
   //io.dbus.ready := io.dbus.rValid
   io.dbus.ready := False
   val rDbusReadyCnt = Reg(UInt(8 bits)) init(2)
+  val rDbusReadyState = Reg(Bool(), init=False)
   when (io.dbus.rValid) {
     when (rDbusReadyCnt > 0) {
       rDbusReadyCnt := rDbusReadyCnt - 1
     } otherwise {
-      rDbusReadyCnt := 2
       io.dbus.ready := True
+      when (!rDbusReadyState) {
+        rDbusReadyCnt := 5
+      } otherwise {
+        rDbusReadyCnt := 1
+      }
     }
   }
   io.dbus.devData.data := io.dbus.hostData.data.getZero
