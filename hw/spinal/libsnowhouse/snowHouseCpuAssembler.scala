@@ -603,14 +603,14 @@ object and {
   //  )
   //}
 }
-object orr {
+object or {
   def apply(
     rA: Gpr,
     rB: Gpr,
     rC: Gpr,
   ) = {
     InstructionAsmStmt(
-      op=SnowHouseCpuOp.OrrRaRbRc,
+      op=SnowHouseCpuOp.OrRaRbRc,
       rA=rA,
       rB=rB,
       rC=rC,
@@ -624,7 +624,7 @@ object orr {
     imm: SnowHouseCpuExpr
   ) = {
     InstructionAsmStmt(
-      op=SnowHouseCpuOp.OrrRaRbImm16,
+      op=SnowHouseCpuOp.OrRaRbImm16,
       rA=rA,
       rB=rB,
       rC=SnowHouseCpuRegs.r0,

@@ -63,7 +63,7 @@ object SrcKind {
   case class Imm(
     //isSImm: Option[Boolean], // `None` means "either unsigned or signed"
   ) extends SrcKind
-  //case object AluFlags extends SrcKind  // 
+  case object AluFlags extends SrcKind  // 
 }
 
 // kinds of destination operands of instruction
@@ -75,7 +75,7 @@ object DstKind {
   case object Pc extends DstKind
   //case object Mem extends DstKind   // data written to mem by a store
   //                                  // instruction
-  //case object AluFlags extends DstKind
+  case object AluFlags extends DstKind
   case object Ira extends DstKind
   case object Ids extends DstKind
   case object Ie extends DstKind
@@ -583,7 +583,8 @@ object CpyOpKind {
         // word
         dst=Array[HashSet[DstKind]](
           HashSet(
-            DstKind.Gpr, //DstKind.AluFlags
+            DstKind.Gpr, 
+            DstKind.AluFlags,
             DstKind.Ira,
             DstKind.Ids,
             DstKind.Ie,
@@ -599,6 +600,7 @@ object CpyOpKind {
             //SrcKind.Imm(Some(true)),
             //SrcKind.Imm(Some(false)),
             //SrcKind.AluFlags,
+            SrcKind.AluFlags,
             SrcKind.Ira,
             SrcKind.Ids,
             SrcKind.Ie,
@@ -787,14 +789,39 @@ object CpyOpKind {
 // ALU-type instructions evaluated entirely in the EX pipeline stage
 // (besides forwarding!)
 case class InstrResult(
-  cfg: SnowHouseConfig
+  cfg: SnowHouseConfig,
+)(
+  width: Int=cfg.mainWidth,
 ) extends Area {
+  assert(
+    width <= cfg.mainWidth,
+    s"not permitted: width:${width} > cfg.mainWidth:${cfg.mainWidth}"
+  )
+  assert(
+    width > 0,
+    s"not permitted: width:${width} <= 0"
+  )
+  //private[libsnowhouse] def _vnMask: BigInt = (
+  //  (1.toLong << (width.toLong - 1.toLong)).toLong
+  //)
+  //val vnMask = Cat(
+  //  True,
+  //  U((width - 1) bits, default -> False),
+  //).asUInt
+  val leftMsb = Bool()
+  val rightMsb = Bool()
   val main = UInt(cfg.mainWidth bits)
-  val N: Bool = main.msb
-  // TODO: support the Zero and oVerflow flags
-  //val V = Bool()
-  val C = Bool()
-  //val Z: Bool = main =/= 0
+  val flagN: Bool = main(width - 1)
+  def getAddSubFlagV = (
+    (leftMsb ^ flagN)
+    & (rightMsb ^ flagN)
+  )
+  val flagV = Bool()
+
+  val flagC = Bool()
+  val flagZ: Bool = (
+    main(width - 1 downto 0) =/= 0
+  )
 }
 sealed trait AluOpKind extends OpKindBase {
   def binopFunc(
@@ -802,6 +829,8 @@ sealed trait AluOpKind extends OpKindBase {
     left: UInt,
     right: UInt,
     carry: Bool,
+  )(
+    width: Int=cfg.mainWidth,
   ): InstrResult
 }
 object AluOpKind {
@@ -825,22 +854,22 @@ object AluOpKind {
           CondKind.Always
         ),
       ),
-      ////OpKindNumArgs(dst=2, src=4),  // two-word
-      //OpKindValidArgs(
-      //  // word, with output flags
-      //  //dstSize=2, srcSize=2,
-      //  dst=Array[HashSet[DstKind]](
-      //    HashSet(DstKind.Gpr),
-      //    HashSet(DstKind.AluFlags),
-      //  ),
-      //  src=Array[HashSet[SrcKind]](
-      //    HashSet(SrcKind.Gpr, SrcKind.Pc),
-      //    HashSet(SrcKind.Gpr, SrcKind.Pc, SrcKind.Imm(/*None*/)),
-      //  ),
-      //  cond=HashSet[CondKind](
-      //    //CondKind.Always
-      //  ),
-      //),
+      //OpKindNumArgs(dst=2, src=4),  // two-word
+      OpKindValidArgs(
+        // word, with output flags
+        //dstSize=2, srcSize=2,
+        dst=Array[HashSet[DstKind]](
+          HashSet(DstKind.Gpr),
+          HashSet(DstKind.AluFlags),
+        ),
+        src=Array[HashSet[SrcKind]](
+          HashSet(SrcKind.Gpr, SrcKind.Pc),
+          HashSet(SrcKind.Gpr, SrcKind.Pc, SrcKind.Imm(/*None*/)),
+        ),
+        cond=HashSet[CondKind](
+          CondKind.Always
+        ),
+      ),
       //OpKindNumArgs(                // two-word, with flags
       //  dst=2,
       //  src=4,
@@ -849,18 +878,21 @@ object AluOpKind {
     def validArgsSet = _validArgsSet
     def binopFunc(
       cfg: SnowHouseConfig, left: UInt, right: UInt, carry: Bool
+    )(
+      width: Int=cfg.mainWidth
     ) = {
       //Some(left + right)
-      val ret = InstrResult(cfg=cfg)
-      val tempSum = UInt((cfg.mainWidth + 1) bits)
-      val tempLeft = Cat(False, left).asUInt
-      val tempRight = Cat(False, right).asUInt
-      //val tempCarryIn = Cat(U(s"${cfg.mainWidth}'d0"), carry).asUInt
+      val ret = InstrResult(cfg=cfg)(width=width)
+      val tempSum = UInt((width + 1) bits)
+      val tempLeft = Cat(False, Cat(left)(width - 1 downto 0)).asUInt
+      val tempRight = Cat(False, Cat(right)(width - 1 downto 0)).asUInt
+      //val tempCarryIn = Cat(U(s"${width}'d0"), True).asUInt
       tempSum := tempLeft + tempRight //+ tempCarryIn
-      ret.main := tempSum(cfg.mainWidth - 1 downto 0)
-      //ret.N := ret.main.msb
-      //ret.Z := ret.main =/= 0
-      ret.C := tempSum.msb
+      ret.main := tempSum.resized
+      ret.leftMsb := left.msb
+      ret.rightMsb := right.msb
+      ret.flagV := ret.getAddSubFlagV
+      ret.flagC := tempSum.msb
       ret
     }
     
@@ -869,57 +901,62 @@ object AluOpKind {
     private[libsnowhouse] val _validArgsSet = LinkedHashSet[
       OpKindValidArgs
     ](
-      ////minD=1, maxD=1, minS=2, maxS=2
-      //OpKindValidArgs(
-      //  //dstSize=1, srcSize=3
-      //  dst=Array[HashSet[DstKind]](
-      //    HashSet(DstKind.Gpr)
-      //  ),
-      //  src=Array[HashSet[SrcKind]](
-      //    HashSet(SrcKind.Gpr, SrcKind.Pc),
-      //    HashSet(SrcKind.Gpr, SrcKind.Pc, SrcKind.Imm(/*None*/)),
-      //    HashSet(SrcKind.AluFlags),
-      //  ),
-      //  cond=HashSet[CondKind](
-      //    //CondKind.Always
-      //  )
-      //),  // word, with input and output flags
-      ////OpKindNumArgs(dst=2, src=5),  // two-word
-      //OpKindValidArgs(                // word, with input and output flags
-      //  //dstSize=2,
-      //  //srcSize=3,
-      //  dst=Array[HashSet[DstKind]](
-      //    HashSet(DstKind.Gpr),
-      //    HashSet(DstKind.AluFlags),
-      //  ),
-      //  src=Array[HashSet[SrcKind]](
-      //    HashSet(SrcKind.Gpr, SrcKind.Pc),
-      //    HashSet(SrcKind.Gpr, SrcKind.Pc, SrcKind.Imm(/*None*/)),
-      //    HashSet(SrcKind.AluFlags),
-      //  ),
-      //  cond=HashSet[CondKind](
-      //    //CondKind.Always
-      //  )
+      //minD=1, maxD=1, minS=2, maxS=2
+      OpKindValidArgs(
+        //dstSize=1, srcSize=3
+        dst=Array[HashSet[DstKind]](
+          HashSet(DstKind.Gpr)
+        ),
+        src=Array[HashSet[SrcKind]](
+          HashSet(SrcKind.Gpr, SrcKind.Pc),
+          HashSet(SrcKind.Gpr, SrcKind.Pc, SrcKind.Imm(/*None*/)),
+          HashSet(SrcKind.AluFlags),
+        ),
+        cond=HashSet[CondKind](
+          CondKind.Always
+        )
+      ),  // word, with input and output flags
+      //OpKindNumArgs(dst=2, src=5),  // two-word
+      OpKindValidArgs(                // word, with input and output flags
+        //dstSize=2,
+        //srcSize=3,
+        dst=Array[HashSet[DstKind]](
+          HashSet(DstKind.AluFlags),
+          HashSet(DstKind.Gpr),
+        ),
+        src=Array[HashSet[SrcKind]](
+          HashSet(SrcKind.Gpr, SrcKind.Pc),
+          HashSet(SrcKind.Gpr, SrcKind.Pc, SrcKind.Imm(/*None*/)),
+          HashSet(SrcKind.AluFlags),
+        ),
+        cond=HashSet[CondKind](
+          CondKind.Always
+        )
+      ),
+      //OpKindNumArgs(                // two-word, with flags
+      //  dst=2,
+      //  src=5,
       //),
-      ////OpKindNumArgs(                // two-word, with flags
-      ////  dst=2,
-      ////  src=5,
-      ////),
     )
     def validArgsSet = _validArgsSet
     //def binopFunc(left: UInt, right: UInt): Option[UInt] = None
     def binopFunc(
       cfg: SnowHouseConfig, left: UInt, right: UInt, carry: Bool
+    )(
+      width: Int=cfg.mainWidth
     ) = {
       //Some(left + right)
-      val ret = InstrResult(cfg=cfg)
-      val tempSum = UInt((cfg.mainWidth + 1) bits)
-      val tempLeft = Cat(False, left).asUInt
-      val tempRight = Cat(False, right).asUInt
-      val tempCarryIn = Cat(U(s"${cfg.mainWidth}'d0"), carry).asUInt
+      val ret = InstrResult(cfg=cfg)(width=width)
+      val tempSum = UInt((width + 1) bits)
+      val tempLeft = Cat(False, Cat(left)(width - 1 downto 0)).asUInt
+      val tempRight = Cat(False, Cat(right)(width - 1 downto 0)).asUInt
+      val tempCarryIn = Cat(U(s"${width}'d0"), True).asUInt
       tempSum := tempLeft + tempRight + tempCarryIn
-      ret.main := tempSum(cfg.mainWidth - 1 downto 0)
-      ret.C := tempSum.msb
+      ret.main := tempSum.resized
+      ret.leftMsb := left.msb
+      ret.rightMsb := right.msb
+      ret.flagV := ret.getAddSubFlagV
+      ret.flagC := tempSum.msb
       ret
     }
   }
@@ -952,42 +989,51 @@ object AluOpKind {
         src=_subCmpSrc,
         cond=_subCmpCond,
       ),
-      //OpKindValidArgs(
-      //  // word `Sub` or `Cmp`
-      //  //dstSize=1, srcSize=2
-      //  dst=Array[HashSet[DstKind]](
-      //    HashSet(
-      //      //DstKind.Gpr,
-      //      DstKind.AluFlags
-      //      //  // `DstKind.AluFlags` means this is a `Cmp` instruction
-      //    ),
-      //  ),
-      //  src=_subCmpSrc,
-      //  cond=HashSet[CondKind](
-      //    //CondKind.Always
-      //  ),
-      //),
+      OpKindValidArgs(
+        // word `Sub` or `Cmp`
+        //dstSize=1, srcSize=2
+        dst=Array[HashSet[DstKind]](
+          HashSet(
+            //DstKind.Gpr,
+            DstKind.AluFlags
+            //  // `DstKind.AluFlags` means this is a `Cmp` instruction
+          ),
+        ),
+        src=_subCmpSrc,
+        cond=(
+          //HashSet[CondKind](
+          //  CondKind.Always
+          //)
+          _subCmpCond
+        ),
+      ),
       ////OpKindNumArgs(dst=2, src=4),  // two-word
-      //OpKindValidArgs(
-      //  // word, with output flags
-      //  //dstSize=2,
-      //  //srcSize=2,
-      //  dst=Array[HashSet[DstKind]](
-      //    HashSet(DstKind.Gpr),
-      //    HashSet(DstKind.AluFlags)
-      //  ),
-      //  src=Array[HashSet[SrcKind]](
-      //    HashSet(SrcKind.Gpr, SrcKind.Pc),
-      //    HashSet(SrcKind.Gpr, SrcKind.Pc, SrcKind.Imm(/*None*/)),
-      //  ),
-      //  cond=HashSet[CondKind](
-      //    //CondKind.Always
-      //  ),
+      OpKindValidArgs(
+        // word, with output flags
+        //dstSize=2,
+        //srcSize=2,
+        dst=Array[HashSet[DstKind]](
+          HashSet(DstKind.AluFlags),
+          HashSet(DstKind.Gpr),
+        ),
+        src=(
+          _subCmpSrc
+          //Array[HashSet[SrcKind]](
+          //  HashSet(SrcKind.Gpr, SrcKind.Pc),
+          //  HashSet(SrcKind.Gpr, SrcKind.Pc, SrcKind.Imm(/*None*/)),
+          //)
+        ),
+        cond=(
+          _subCmpCond
+          //HashSet[CondKind](
+          //  CondKind.Always
+          //)
+        ),
+      ),
+      //OpKindNumArgs(                // two-word, with flags
+      //  dst=2,
+      //  src=4,
       //),
-      ////OpKindNumArgs(                // two-word, with flags
-      ////  dst=2,
-      ////  src=4,
-      ////),
     )
     def validArgsSet = _validArgsSet
     //def binopFunc(left: UInt, right: UInt): Option[UInt] = (
@@ -995,19 +1041,24 @@ object AluOpKind {
     //)
     def binopFunc(
       cfg: SnowHouseConfig, left: UInt, right: UInt, carry: Bool
+    )(
+      width: Int=cfg.mainWidth
     ) = {
       //Some(left + right)
-      val ret = InstrResult(cfg=cfg)
-      val tempSum = UInt((cfg.mainWidth + 1) bits)
-      val tempLeft = Cat(False, left).asUInt
-      val tempRight = Cat(False, right).asUInt
-      //val tempCarryIn = Cat(U(s"${cfg.mainWidth}'d0"), True).asUInt
+      val ret = InstrResult(cfg=cfg)(width=width)
+      val tempSum = UInt((width + 1) bits)
+      val tempLeft = Cat(False, Cat(left)(width - 1 downto 0)).asUInt
+      val tempRight = Cat(False, Cat(right)(width - 1 downto 0)).asUInt
+      val tempCarryIn = Cat(U(s"${width}'d0"), True).asUInt
       tempSum := (
         tempLeft - tempRight
         //tempLeft + (~tempRight) + tempCarryIn
       )
-      ret.main := tempSum(cfg.mainWidth - 1 downto 0)
-      ret.C := tempSum.msb
+      ret.main := tempSum.resized
+      ret.leftMsb := left.msb
+      ret.rightMsb := right.msb
+      ret.flagV := ret.getAddSubFlagV
+      ret.flagC := tempSum.msb
       ret
     }
   }
@@ -1016,66 +1067,72 @@ object AluOpKind {
       OpKindValidArgs
     ](
       ////minD=1, maxD=1, minS=2, maxS=2
-      //OpKindValidArgs(
-      //  // word, with input and output flags
-      //  //dstSize=1, srcSize=3
-      //  dst=Array[HashSet[DstKind]](
-      //    HashSet(DstKind.Gpr),
-      //  ),
-      //  src=Array[HashSet[SrcKind]](
-      //    HashSet(SrcKind.Gpr, SrcKind.Pc),
-      //    HashSet(SrcKind.Gpr, SrcKind.Pc, SrcKind.Imm(/*None*/)),
-      //    HashSet(SrcKind.AluFlags),
-      //  ),
-      //  cond=HashSet[CondKind](
-      //    //CondKind.Always
-      //  ),
+      OpKindValidArgs(
+        // word, with input and output flags
+        //dstSize=1, srcSize=3
+        dst=Array[HashSet[DstKind]](
+          HashSet(DstKind.Gpr),
+        ),
+        src=Array[HashSet[SrcKind]](
+          HashSet(SrcKind.Gpr, SrcKind.Pc),
+          HashSet(SrcKind.Gpr, SrcKind.Pc, SrcKind.Imm(/*None*/)),
+          HashSet(SrcKind.AluFlags),
+        ),
+        cond=HashSet[CondKind](
+          CondKind.Always
+        ),
+      ),
+      //OpKindNumArgs(dst=2, src=5),  // two-word
+      OpKindValidArgs(
+        // word, with output flags
+        //dstSize=2,
+        //srcSize=3,
+        dst=Array[HashSet[DstKind]](
+          HashSet(DstKind.AluFlags),
+          HashSet(DstKind.Gpr),
+        ),
+        src=Array[HashSet[SrcKind]](
+          HashSet(SrcKind.Gpr, SrcKind.Pc),
+          HashSet(SrcKind.Gpr, SrcKind.Pc, SrcKind.Imm(/*None*/)),
+          HashSet(SrcKind.AluFlags),
+        ),
+        cond=HashSet[CondKind](
+          CondKind.Always
+        ),
+      ),
+      //OpKindNumArgs(                // two-word, with flags
+      //  dst=2,
+      //  src=5,
       //),
-      ////OpKindNumArgs(dst=2, src=5),  // two-word
-      //OpKindValidArgs(
-      //  // word, with output flags
-      //  //dstSize=2,
-      //  //srcSize=3,
-      //  dst=Array[HashSet[DstKind]](
-      //    HashSet(DstKind.Gpr),
-      //    HashSet(DstKind.AluFlags),
-      //  ),
-      //  src=Array[HashSet[SrcKind]](
-      //    HashSet(SrcKind.Gpr, SrcKind.Pc),
-      //    HashSet(SrcKind.Gpr, SrcKind.Pc, SrcKind.Imm(/*None*/)),
-      //    HashSet(SrcKind.AluFlags),
-      //  ),
-      //  cond=HashSet[CondKind](
-      //    //CondKind.Always
-      //  ),
-      //),
-      ////OpKindNumArgs(                // two-word, with flags
-      ////  dst=2,
-      ////  src=5,
-      ////),
     )
     def validArgsSet = _validArgsSet
     def binopFunc(
       cfg: SnowHouseConfig, left: UInt, right: UInt, carry: Bool
+    )(
+      width: Int=cfg.mainWidth
     ) = {
       //Some(left + right)
-      val ret = InstrResult(cfg=cfg)
-      val tempSum = UInt((cfg.mainWidth + 1) bits)
-      val tempLeft = Cat(False, left).asUInt
-      val tempRight = Cat(False, right).asUInt
-      val tempCarryIn = Cat(U(s"${cfg.mainWidth}'d0"), True).asUInt
+      val ret = InstrResult(cfg=cfg)(width=width)
+      val tempSum = UInt((width + 1) bits)
+      val tempLeft = Cat(False, Cat(left)(width - 1 downto 0)).asUInt
+      val tempRight = Cat(False, Cat(right)(width - 1 downto 0)).asUInt
+      val tempCarryIn = Cat(U(s"${width}'d0"), True).asUInt
       tempSum := (
         //tempLeft - tempRight
         tempLeft + (~tempRight) + tempCarryIn
       )
-      ret.main := tempSum(cfg.mainWidth - 1 downto 0)
-      ret.C := tempSum.msb
+      ret.main := tempSum.resized
+      ret.leftMsb := left.msb
+      ret.rightMsb := right.msb
+      ret.flagV := ret.getAddSubFlagV
+      ret.flagC := tempSum.msb
       ret
     }
   }
   //--------
   //case object Cpy extends AluOpKind // "move"/"load immediate" instruction
   case object Lsl extends AluOpKind {
+    // logical shift left
     private[libsnowhouse] val _validArgsSet = LinkedHashSet[
       OpKindValidArgs
     ](
@@ -1094,42 +1151,50 @@ object AluOpKind {
           CondKind.Always
         ),
       ),
-      ////OpKindNumArgs(dst=2, src=4),  // two-word
-      //OpKindValidArgs(
-      //  // word, with output flags
-      //  //dstSize=2,
-      //  //srcSize=2,
-      //  dst=Array[HashSet[DstKind]](
-      //    HashSet(DstKind.Gpr),
-      //    HashSet(DstKind.AluFlags),
-      //  ),
-      //  src=Array[HashSet[SrcKind]](
-      //    HashSet(SrcKind.Gpr, SrcKind.Pc),
-      //    HashSet(SrcKind.Gpr, SrcKind.Pc, SrcKind.Imm(/*Some(false)*/)),
-      //  ),
-      //  cond=HashSet[CondKind](
-      //    //CondKind.Always
-      //  ),
+      //OpKindNumArgs(dst=2, src=4),  // two-word
+      OpKindValidArgs(
+        // word, with output flags
+        //dstSize=2,
+        //srcSize=2,
+        dst=Array[HashSet[DstKind]](
+          HashSet(DstKind.AluFlags),
+          HashSet(DstKind.Gpr),
+        ),
+        src=Array[HashSet[SrcKind]](
+          HashSet(SrcKind.Gpr, SrcKind.Pc),
+          HashSet(SrcKind.Gpr, SrcKind.Pc, SrcKind.Imm(/*Some(false)*/)),
+        ),
+        cond=HashSet[CondKind](
+          CondKind.Always
+        ),
+      ),
+      //OpKindNumArgs(                // two-word, with flags
+      //  dst=2,
+      //  src=4,
+      //  optExtraDstKind=Some(DstKind.AluFlags),
       //),
-      ////OpKindNumArgs(                // two-word, with flags
-      ////  dst=2,
-      ////  src=4,
-      ////  optExtraDstKind=Some(DstKind.AluFlags),
-      ////),
     )
     def validArgsSet = _validArgsSet
     def binopFunc(
       cfg: SnowHouseConfig, left: UInt, right: UInt, carry: Bool
+    )(
+      width: Int=cfg.mainWidth
     ) = {
-      val ret = InstrResult(cfg=cfg)
+      val ret = InstrResult(cfg=cfg)(width=width)
+      val tempLeft = Cat(left).asUInt(width - 1 downto 0)
+      val tempRight = Cat(right).asUInt(width - 1 downto 0)
+      ret.leftMsb := left(width - 1)
+      ret.rightMsb := right(width - 1)
       ret.main := (
-        left << right(log2Up(cfg.mainWidth) downto 0)
-      )(ret.main.bitsRange)
-      ret.C := False
+        tempLeft << tempRight(log2Up(width) downto 0)
+      ).resized//(ret.main.bitsRange)
+      ret.flagV := False
+      ret.flagC := False
       ret
     }
   }
   case object Lsr extends AluOpKind {
+    // logical shift right
     private[libsnowhouse] val _validArgsSet = LinkedHashSet[
       OpKindValidArgs
     ](
@@ -1148,38 +1213,45 @@ object AluOpKind {
           CondKind.Always
         ),
       ),
-      ////OpKindNumArgs(dst=2, src=4),  // two-word
-      //OpKindValidArgs(
-      //  // word, with output flags
-      //  //dstSize=2,
-      //  //srcSize=2,
-      //  dst=Array[HashSet[DstKind]](
-      //    HashSet(DstKind.Gpr),
-      //    HashSet(DstKind.AluFlags),
-      //  ),
-      //  src=Array[HashSet[SrcKind]](
-      //    HashSet(SrcKind.Gpr, SrcKind.Pc),
-      //    HashSet(SrcKind.Gpr, SrcKind.Pc, SrcKind.Imm(/*Some(false)*/)),
-      //  ),
-      //  cond=HashSet[CondKind](
-      //    //CondKind.Always
-      //  ),
+      //OpKindNumArgs(dst=2, src=4),  // two-word
+      OpKindValidArgs(
+        // word, with output flags
+        //dstSize=2,
+        //srcSize=2,
+        dst=Array[HashSet[DstKind]](
+          HashSet(DstKind.AluFlags),
+          HashSet(DstKind.Gpr),
+        ),
+        src=Array[HashSet[SrcKind]](
+          HashSet(SrcKind.Gpr, SrcKind.Pc),
+          HashSet(SrcKind.Gpr, SrcKind.Pc, SrcKind.Imm(/*Some(false)*/)),
+        ),
+        cond=HashSet[CondKind](
+          CondKind.Always
+        ),
+      ),
+      //OpKindNumArgs(                // two-word, with flags
+      //  dst=2,
+      //  src=4,
+      //  optExtraDstKind=Some(DstKind.AluFlags),
       //),
-      ////OpKindNumArgs(                // two-word, with flags
-      ////  dst=2,
-      ////  src=4,
-      ////  optExtraDstKind=Some(DstKind.AluFlags),
-      ////),
     )
     def validArgsSet = _validArgsSet
     def binopFunc(
       cfg: SnowHouseConfig, left: UInt, right: UInt, carry: Bool
+    )(
+      width: Int=cfg.mainWidth
     ) = {
-      val ret = InstrResult(cfg=cfg)
+      val ret = InstrResult(cfg=cfg)(width=width)
+      val tempLeft = Cat(left).asUInt(width - 1 downto 0)
+      val tempRight = Cat(right).asUInt(width - 1 downto 0)
+      ret.leftMsb := left(width - 1)
+      ret.rightMsb := right(width - 1)
       ret.main := (
-        left >> right//(log2Up(cfg.mainWidth) downto 0)
-      )//.resized
-      ret.C := False
+        tempLeft >> tempRight//(log2Up(cfg.mainWidth) downto 0)
+      ).resized
+      ret.flagV := False
+      ret.flagC := False
       ret
     }
   }
@@ -1222,12 +1294,19 @@ object AluOpKind {
     def validArgsSet = _validArgsSet
     def binopFunc(
       cfg: SnowHouseConfig, left: UInt, right: UInt, carry: Bool
+    )(
+      width: Int=cfg.mainWidth
     ) = {
-      val ret = InstrResult(cfg=cfg)
+      val ret = InstrResult(cfg=cfg)(width=width)
+      val tempLeft = Cat(left).asUInt(width - 1 downto 0)
+      val tempRight = Cat(right).asUInt(width - 1 downto 0)
+      ret.leftMsb := left(width - 1)
+      ret.rightMsb := right(width - 1)
       ret.main := (
-        left.asSInt >> right//(log2Up(cfg.mainWidth) downto 0)
-      ).asUInt//.resized
-      ret.C := False
+        tempLeft.asSInt >> tempRight//(log2Up(cfg.mainWidth) downto 0)
+      ).asUInt.resized
+      ret.flagV := False
+      ret.flagC := False
       ret
     }
   }
@@ -1250,33 +1329,40 @@ object AluOpKind {
           CondKind.Always
         ),
       ),
-      ////OpKindNumArgs(dst=2, src=4),  // two-word
-      //OpKindValidArgs(
-      //  // word, with flags
-      //  //dstSize=2,
-      //  //srcSize=2,
-      //  dst=Array[HashSet[DstKind]](
-      //    HashSet(DstKind.Gpr),
-      //    HashSet(DstKind.AluFlags),
-      //  ),
-      //  src=Array[HashSet[SrcKind]](
-      //    HashSet(SrcKind.Gpr, SrcKind.Pc),
-      //    HashSet(SrcKind.Gpr, SrcKind.Pc, SrcKind.Imm(/*None*/)),
-      //  ),
-      //  cond=HashSet[CondKind](
-      //    //CondKind.Always
-      //  ),
-      //),
+      //OpKindNumArgs(dst=2, src=4),  // two-word
+      OpKindValidArgs(
+        // word, with flags
+        //dstSize=2,
+        //srcSize=2,
+        dst=Array[HashSet[DstKind]](
+          HashSet(DstKind.AluFlags),
+          HashSet(DstKind.Gpr),
+        ),
+        src=Array[HashSet[SrcKind]](
+          HashSet(SrcKind.Gpr, SrcKind.Pc),
+          HashSet(SrcKind.Gpr, SrcKind.Pc, SrcKind.Imm(/*None*/)),
+        ),
+        cond=HashSet[CondKind](
+          //CondKind.Always
+        ),
+      ),
     )
     def validArgsSet = _validArgsSet
     def binopFunc(
       cfg: SnowHouseConfig, left: UInt, right: UInt, carry: Bool
+    )(
+      width: Int=cfg.mainWidth
     ) = {
-      val ret = InstrResult(cfg=cfg)
+      val ret = InstrResult(cfg=cfg)(width=width)
+      val tempLeft = Cat(left).asUInt(width - 1 downto 0)
+      val tempRight = Cat(right).asUInt(width - 1 downto 0)
+      ret.leftMsb := left(width - 1)
+      ret.rightMsb := right(width - 1)
       ret.main := (
-        left & right
-      )
-      ret.C := False
+        tempLeft & tempRight
+      ).resized
+      ret.flagV := False
+      ret.flagC := False
       ret
     }
   }
@@ -1320,12 +1406,15 @@ object AluOpKind {
     def validArgsSet = _validArgsSet
     def binopFunc(
       cfg: SnowHouseConfig, left: UInt, right: UInt, carry: Bool
+    )(
+      width: Int=cfg.mainWidth
     ) = {
-      val ret = InstrResult(cfg=cfg)
+      val ret = InstrResult(cfg=cfg)(width=width)
       ret.main := (
         left | right
       )
-      ret.C := False
+      ret.flagV := False
+      ret.flagC := False
       ret
     }
   }
@@ -1348,32 +1437,39 @@ object AluOpKind {
           CondKind.Always
         ),
       ),
-      ////OpKindNumArgs(dst=2, src=4),  // two-word
-      //OpKindValidArgs(                // word, with flags
-      //  //dstSize=2,
-      //  //srcSize=2,
-      //  dst=Array[HashSet[DstKind]](
-      //    HashSet(DstKind.Gpr),
-      //    HashSet(DstKind.AluFlags),
-      //  ),
-      //  src=Array[HashSet[SrcKind]](
-      //    HashSet(SrcKind.Gpr, SrcKind.Pc),
-      //    HashSet(SrcKind.Gpr, SrcKind.Pc, SrcKind.Imm(/*None*/)),
-      //  ),
-      //  cond=HashSet[CondKind](
-      //    //CondKind.Always
-      //  ),
-      //),
+      //OpKindNumArgs(dst=2, src=4),  // two-word
+      OpKindValidArgs(                // word, with flags
+        //dstSize=2,
+        //srcSize=2,
+        dst=Array[HashSet[DstKind]](
+          HashSet(DstKind.AluFlags),
+          HashSet(DstKind.Gpr),
+        ),
+        src=Array[HashSet[SrcKind]](
+          HashSet(SrcKind.Gpr, SrcKind.Pc),
+          HashSet(SrcKind.Gpr, SrcKind.Pc, SrcKind.Imm(/*None*/)),
+        ),
+        cond=HashSet[CondKind](
+          CondKind.Always
+        ),
+      ),
     )
     def validArgsSet = _validArgsSet
     def binopFunc(
       cfg: SnowHouseConfig, left: UInt, right: UInt, carry: Bool
+    )(
+      width: Int=cfg.mainWidth
     ) = {
-      val ret = InstrResult(cfg=cfg)
+      val ret = InstrResult(cfg=cfg)(width=width)
+      val tempLeft = Cat(left).asUInt(width - 1 downto 0)
+      val tempRight = Cat(right).asUInt(width - 1 downto 0)
+      ret.leftMsb := left(width - 1)
+      ret.rightMsb := right(width - 1)
       ret.main := (
-        left ^ right
-      )
-      ret.C := False
+        tempLeft ^ tempRight
+      ).resized
+      ret.flagV := False
+      ret.flagC := False
       ret
     }
   }
@@ -1422,14 +1518,17 @@ object AluOpKind {
     def validArgsSet = _validArgsSet
     def binopFunc(
       cfg: SnowHouseConfig, left: UInt, right: UInt, carry: Bool
+    )(
+      width: Int=cfg.mainWidth
     ) = {
-      val ret = InstrResult(cfg=cfg)
+      val ret = InstrResult(cfg=cfg)(width=width)
       when (left < right) {
         ret.main := 1
       } otherwise {
         ret.main := 0
       }
-      ret.C := False
+      ret.flagV := False
+      ret.flagC := False
       ret
     }
   }
@@ -1456,14 +1555,17 @@ object AluOpKind {
     def validArgsSet = _validArgsSet
     def binopFunc(
       cfg: SnowHouseConfig, left: UInt, right: UInt, carry: Bool
+    )(
+      width: Int=cfg.mainWidth
     ) = {
-      val ret = InstrResult(cfg=cfg)
+      val ret = InstrResult(cfg=cfg)(width=width)
       when (left.asSInt < right.asSInt) {
         ret.main := 1
       } otherwise {
         ret.main := 0
       }
-      ret.C := False
+      ret.flagV := False
+      ret.flagC := False
       ret
     }
   }

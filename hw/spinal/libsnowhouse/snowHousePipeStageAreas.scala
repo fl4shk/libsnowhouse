@@ -1309,94 +1309,43 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
                     + s"opInfo(${opInfo}) index:${opInfoIdx}"
                   )
                   // TODO: support ALU flags
-                  val binop: InstrResult = opInfo.aluOp.get match {
-                    //case AluOpKind.Add => {
-                    //  io.modMemWord(0) := (
-                    //    selRdMemWord(1) + selRdMemWord(2)
-                    //  )
-                    //}
-                    case AluOpKind.Adc => {
-                      assert(
-                        false,
-                        s"not yet implemented: "
-                        + s"opInfo(${opInfo}) index:${opInfoIdx}"
-                      )
-                      InstrResult(cfg=cfg)
-                    }
-                    //case AluOpKind.Sub => {
-                    //  io.modMemWord(0) := (
-                    //    selRdMemWord(1) - selRdMemWord(2)
-                    //  )
-                    //}
-                    case AluOpKind.Sbc => {
-                      assert(
-                        false,
-                        s"not yet implemented: "
-                        + s"opInfo(${opInfo}) index:${opInfoIdx}"
-                      )
-                      InstrResult(cfg=cfg)
-                    }
-                    //case AluOpKind.Lsl => {
-                    //  io.modMemWord(0) := (
-                    //    (
-                    //      selRdMemWord(1)
-                    //      << selRdMemWord(2)(log2Up(cfg.mainWidth) - 1 downto 0)
-                    //    )(
-                    //      io.modMemWord(0).bitsRange
-                    //    )
-                    //  )
-                    //}
-                    //case AluOpKind.Lsr => {
-                    //  io.modMemWord(0) := (
-                    //    (selRdMemWord(1) >> selRdMemWord(2))(
-                    //      io.modMemWord(0).bitsRange
-                    //    )
-                    //  )
-                    //}
-                    //case AluOpKind.Asr => {
-                    //  io.modMemWord(0) := (
-                    //    selRdMemWord(1).asSInt >> selRdMemWord(2)
-                    //  ).asUInt(
-                    //    io.modMemWord(0).bitsRange
-                    //  )
-                    //}
-                    //case AluOpKind.And => {
-                    //  io.modMemWord(0) := (
-                    //    selRdMemWord(1) & selRdMemWord(2)
-                    //  )
-                    //}
-                    //case AluOpKind.Or => {
-                    //  io.modMemWord(0) := (
-                    //    selRdMemWord(1) | selRdMemWord(2)
-                    //  )
-                    //}
-                    //case AluOpKind.Xor => {
-                    //  io.modMemWord(0) := (
-                    //    selRdMemWord(1) ^ selRdMemWord(2)
-                    //  )
-                    //}
-                    //case AluOpKind.Sltu => {
-                    //  io.modMemWord(0) := Cat(
-                    //    U(s"${cfg.mainWidth - 1}'d0"),
-                    //    selRdMemWord(1) < selRdMemWord(2),
-                    //  ).asUInt
-                    //}
-                    //case AluOpKind.Slts => {
-                    //  io.modMemWord(0) := Cat(
-                    //    U(s"${cfg.mainWidth - 1}'d0"),
-                    //    selRdMemWord(1).asSInt < selRdMemWord(2).asSInt,
-                    //  ).asUInt
-                    //}
-                    case op => {
-                      op.binopFunc(
+                  /*val binop: InstrResult =*/ opInfo.aluOp.get match {
+                    case AluOpKind.Sub => {
+                      //io.modMemWord(0) := (
+                      //  selRdMemWord(1) - selRdMemWord(2)
+                      //)
+                      val myBinop = AluOpKind.Sub.binopFunc(
                         cfg=cfg,
                         left=selRdMemWord(1),
                         right=selRdMemWord(2),
                         carry=False,
+                      )(
+                        width=cfg.mainWidth
+                      )
+                      io.modMemWord(0) := (
+                        if (
+                          opInfo.dstArr.find(_ == DstKind.Gpr) != None
+                        ) {
+                          myBinop.main
+                        } else {
+                          selRdMemWord(0)
+                        }
                       )
                     }
+                    case op => {
+                      val binop = op.binopFunc(
+                        cfg=cfg,
+                        left=selRdMemWord(1),
+                        right=selRdMemWord(2),
+                        carry=False,
+                      )(
+                        // TODO: support more widths than just
+                        // `cfg.mainWidth`
+                        width=cfg.mainWidth
+                      )
+                      io.modMemWord(0) := binop.main
+                    }
                   }
-                  io.modMemWord(0) := binop.main
                 }
                 case OpSelect.MultiCycle => {
                     
@@ -3407,26 +3356,27 @@ case class SnowHousePipeStageMem(
                   case OpSelect.Alu => {
                     assert(stable(myExtLeft.modMemWord))
                     opInfo.aluOp.get match {
-                      case AluOpKind.Adc => {
-                        assert(
-                          false,
-                          s"not yet implemented: "
-                          + s"opInfo(${opInfo}) index:${opInfoIdx}"
-                        )
-                      }
-                      case AluOpKind.Sbc => {
-                        assert(
-                          false,
-                          s"not yet implemented: "
-                          + s"opInfo(${opInfo}) index:${opInfoIdx}"
-                        )
-                      }
+                      //case AluOpKind.Adc => {
+                      //  assert(
+                      //    false,
+                      //    s"not yet implemented: "
+                      //    + s"opInfo(${opInfo}) index:${opInfoIdx}"
+                      //  )
+                      //}
+                      //case AluOpKind.Sbc => {
+                      //  assert(
+                      //    false,
+                      //    s"not yet implemented: "
+                      //    + s"opInfo(${opInfo}) index:${opInfoIdx}"
+                      //  )
+                      //}
                       case op => {
                         val result = op.binopFunc(
                           cfg=cfg,
                           left=selRdMemWord(1),
                           right=selRdMemWord(2),
                           carry=False,
+                        )(
                         )
                         when (myExtLeft.modMemWordValid) {
                           assert(
@@ -3929,26 +3879,27 @@ case class SnowHousePipeStageMem(
                       }
                       case OpSelect.Alu => {
                         opInfo.aluOp.get match {
-                          case AluOpKind.Adc => {
-                            assert(
-                              false,
-                              s"not yet implemented: "
-                              + s"opInfo(${opInfo}) index:${opInfoIdx}"
-                            )
-                          }
-                          case AluOpKind.Sbc => {
-                            assert(
-                              false,
-                              s"not yet implemented: "
-                              + s"opInfo(${opInfo}) index:${opInfoIdx}"
-                            )
-                          }
+                          //case AluOpKind.Adc => {
+                          //  assert(
+                          //    false,
+                          //    s"not yet implemented: "
+                          //    + s"opInfo(${opInfo}) index:${opInfoIdx}"
+                          //  )
+                          //}
+                          //case AluOpKind.Sbc => {
+                          //  assert(
+                          //    false,
+                          //    s"not yet implemented: "
+                          //    + s"opInfo(${opInfo}) index:${opInfoIdx}"
+                          //  )
+                          //}
                           case op => {
                             val result = op.binopFunc(
                               cfg=cfg,
                               left=selRdMemWord(1),
                               right=selRdMemWord(2),
                               carry=False,
+                            )(
                             )
                             when (myExtLeft.modMemWordValid) {
                               assert(
@@ -5085,7 +5036,7 @@ case class SnowHousePipeStageWriteBack(
                     case OpSelect.Cpy => {
                       opInfo.cpyOp.get match {
                         case CpyOpKind.Cpy => {
-                          val result = InstrResult(cfg=cfg)
+                          val result = InstrResult(cfg=cfg)()
                           opInfo.memAccess match {
                             case MemAccessKind.NoMemAccess => {
                               result.main := myLeft
@@ -5114,7 +5065,7 @@ case class SnowHousePipeStageWriteBack(
                           result
                         }
                         case CpyOpKind.Cpyu => {
-                          val result = InstrResult(cfg=cfg)
+                          val result = InstrResult(cfg=cfg)()
                           result.main.allowOverride
                           result.main := myGpr0
                           result.main(
@@ -5129,7 +5080,7 @@ case class SnowHousePipeStageWriteBack(
                           result
                         }
                         case CpyOpKind.Jmp => {
-                          val result = InstrResult(cfg=cfg)
+                          val result = InstrResult(cfg=cfg)()
                           myDoFormalAssertRegular := False
                           //when (
                           //  modBack(modBackPayload).instrCnt
@@ -5139,7 +5090,7 @@ case class SnowHousePipeStageWriteBack(
                           result
                         }
                         case CpyOpKind.Br => {
-                          val result = InstrResult(cfg=cfg)
+                          val result = InstrResult(cfg=cfg)()
                           myDoFormalAssertRegular := False
                           //opInfo.cond match {
                           //  case CondKind.Always => {
@@ -5165,34 +5116,35 @@ case class SnowHousePipeStageWriteBack(
                             s"not yet implemented: "
                             + s"opInfo(${opInfo}) idx:${opInfoIdx}"
                           )
-                          InstrResult(cfg=cfg)
+                          InstrResult(cfg=cfg)()
                         }
                       }
                     }
                     case OpSelect.Alu => {
                       opInfo.aluOp.get match {
-                        case AluOpKind.Adc => {
-                          assert(
-                            false,
-                            s"not yet implemented: "
-                            + s"opInfo(${opInfo}) idx:${opInfoIdx}"
-                          )
-                          InstrResult(cfg=cfg)
-                        }
-                        case AluOpKind.Sbc => {
-                          assert(
-                            false,
-                            s"not yet implemented: "
-                            + s"opInfo(${opInfo}) idx:${opInfoIdx}"
-                          )
-                          InstrResult(cfg=cfg)
-                        }
+                        //case AluOpKind.Adc => {
+                        //  assert(
+                        //    false,
+                        //    s"not yet implemented: "
+                        //    + s"opInfo(${opInfo}) idx:${opInfoIdx}"
+                        //  )
+                        //  InstrResult(cfg=cfg)()
+                        //}
+                        //case AluOpKind.Sbc => {
+                        //  assert(
+                        //    false,
+                        //    s"not yet implemented: "
+                        //    + s"opInfo(${opInfo}) idx:${opInfoIdx}"
+                        //  )
+                        //  InstrResult(cfg=cfg)()
+                        //}
                         case op => {
                           op.binopFunc(
                             cfg=cfg,
                             left=myLeft,
                             right=myRight,
                             carry=False,
+                          )(
                           )
                         }
                       }
@@ -5200,7 +5152,7 @@ case class SnowHousePipeStageWriteBack(
                     case OpSelect.MultiCycle => {
                       opInfo.multiCycleOp.get match {
                         case MultiCycleOpKind.Umul => {
-                          val result = InstrResult(cfg=cfg)
+                          val result = InstrResult(cfg=cfg)()
                           result.main := (
                             (myLeft * myRight)(result.main.bitsRange)
                           )
@@ -5212,7 +5164,7 @@ case class SnowHousePipeStageWriteBack(
                             s"not yet implemented: "
                             + s"opInfo(${opInfo}) idx:${opInfoIdx}"
                           )
-                          InstrResult(cfg=cfg)
+                          InstrResult(cfg=cfg)()
                         }
                       }
                     }

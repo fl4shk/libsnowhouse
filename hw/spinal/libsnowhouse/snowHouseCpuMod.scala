@@ -87,14 +87,14 @@ object SnowHouseCpuOp {
   def XorKindRc = 0x0
   def XorKindSimm16 = 0x1
 
-  val OrrRaRbRc = mkOp(                           // 4, 0
-    "orr rA, rB, rC", OrrKindRc, false
+  val OrRaRbRc = mkOp(                           // 4, 0
+    "or rA, rB, rC", OrKindRc, false
   )
-  val OrrRaRbImm16 = mkOp(                        // 4, 1
-    "orr rA, rB, simm16", OrrKindSimm16, true
+  val OrRaRbImm16 = mkOp(                        // 4, 1
+    "or rA, rB, simm16", OrKindSimm16, true
   )
-  def OrrKindRc = 0x0
-  def OrrKindSimm16 = 0x1
+  def OrKindRc = 0x0
+  def OrKindSimm16 = 0x1
 
   // `AndRaRbRc` is moved down here to help with synthesis/routing of
   // executing/decoding instructions
@@ -399,11 +399,11 @@ object SnowHouseCpuPipeStageInstrDecode {
           setOp(XorRaRbImm16)
         }
       }
-      is (OrrRaRbRc._1) {
+      is (OrRaRbRc._1) {
         when (encInstr.rcIdx =/= 0x0) {
-          setOp(OrrRaRbRc)
+          setOp(OrRaRbRc)
         } otherwise {
-          setOp(OrrRaRbImm16)
+          setOp(OrRaRbImm16)
         }
       }
       is (AndRaRbRc._1) {
@@ -661,14 +661,14 @@ object SnowHouseCpuOpInfoMap {
   )
   //--------
   opInfoMap += (
-    SnowHouseCpuOp.OrrRaRbRc -> OpInfo.mkAlu(
+    SnowHouseCpuOp.OrRaRbRc -> OpInfo.mkAlu(
       dstArr=Array[DstKind](DstKind.Gpr),
       srcArr=Array[SrcKind](SrcKind.Gpr, SrcKind.Gpr),
       aluOp=AluOpKind.Or,
     )
   )
   opInfoMap += (
-    SnowHouseCpuOp.OrrRaRbImm16 -> OpInfo.mkAlu(
+    SnowHouseCpuOp.OrRaRbImm16 -> OpInfo.mkAlu(
       dstArr=Array[DstKind](DstKind.Gpr),
       srcArr=Array[SrcKind](SrcKind.Gpr, SrcKind.Imm(/*Some(true)*/)),
       aluOp=AluOpKind.Or,
