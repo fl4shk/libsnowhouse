@@ -770,6 +770,7 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
         //!io.pcChangeState
         //&& io.upIsFiring
         io.psExSetPc.valid
+        //&& !io.shouldIgnoreInstr
         //&& io.upIsFiring
       ),
       init=(
@@ -914,7 +915,8 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
                                     case AddrCalcKind.AddReduce => (
                                       selRdMemWord(1)
                                     )
-                                    case kind: AddrCalcKind.LslThenMaybeAdd => (
+                                    case kind:
+                                    AddrCalcKind.LslThenMaybeAdd => (
                                       selRdMemWord(1)
                                       << kind.options.lslAmount.get
                                     )
@@ -2180,15 +2182,16 @@ case class SnowHousePipeStageExecute(
     temp
   }
   nextSetPcCnt := rSetPcCnt
-  psExSetPc.valid := (
-    False
-  )
+  //psExSetPc.valid := (
+  //  False
+  //)
   psExSetPc.payload := (
     RegNext(
       next=psExSetPc.payload,
       init=psExSetPc.payload.getZero,
     )
   )
+  psExSetPc.nextPc.allowOverride
   val condForAssertSetPcValid = (
     //setOutpModMemWord.io.psExSetPc.fire
     //&& !rSetPcCnt.valid
@@ -2222,6 +2225,11 @@ case class SnowHousePipeStageExecute(
     //)
     //rSetPcCnt.valid
   )
+  psExSetPc.valid := (
+    setOutpModMemWord.io.psExSetPc.valid
+    && !outp.instrCnt.shouldIgnoreInstr
+  )
+  psExSetPc.nextPc := setOutpModMemWord.io.psExSetPc.nextPc
   //psExSetPc.cnt := rSetPcCnt.payload + 1
   //switch (rPcChangeState) {
   //  is (PcChangeState.Idle) {
@@ -2306,20 +2314,23 @@ case class SnowHousePipeStageExecute(
         !rSetPcCnt.valid
       ) {
         setOutpModMemWord.io.pcChangeState := True
+        nextSetPcCnt.payload := (
+          //rSetPcCnt.payload + 1
+          //outp.instrCnt.any
+          setOutpModMemWord.io.psExSetPc.nextPc
+        )
         when (
           condForAssertSetPcValid
         ) {
           //myPcChangeState := True
           //when (cMid0Front.up.isFiring) {
             nextSetPcCnt.valid := True
-            nextSetPcCnt.payload := (
-              //rSetPcCnt.payload + 1
-              //outp.instrCnt.any
-              setOutpModMemWord.io.psExSetPc.nextPc
-            )
+            //nextSetPcCnt.payload := (
+            //  //rSetPcCnt.payload + 1
+            //  //outp.instrCnt.any
+            //  setOutpModMemWord.io.psExSetPc.nextPc
+            //)
             setOutpModMemWord.io.pcChangeState := False
-            psExSetPc.valid := setOutpModMemWord.io.psExSetPc.valid
-            psExSetPc.nextPc := setOutpModMemWord.io.psExSetPc.nextPc
             psExSetPc.cnt := (
               RegNext(
                 next=psExSetPc.cnt,
@@ -2413,11 +2424,16 @@ case class SnowHousePipeStageExecute(
                   //when (!myDoStall(stallKindMem)) {
                   //}
                   val rTempSavedRegPc = (
-                    RegNextWhen(
-                      next=outp.regPc,
-                      cond=cMid0Front.up.isFiring,
-                      init=outp.regPc.getZero,
+                    KeepAttribute(
+                      //RegNextWhen(
+                      //  next=outp.regPc,
+                      //  cond=cMid0Front.up.isFiring,
+                      //  init=outp.regPc.getZero,
+                      //)
+                      Reg(UInt(cfg.mainWidth bits))
+                      init(0x0)
                     )
+                    .setName(s"rTempSavedRegPc_${psExStallHostArrIdx}")
                   )
                   when (
                     outp.regPc =/= rTempSavedRegPc
@@ -2439,21 +2455,21 @@ case class SnowHousePipeStageExecute(
                       psExStallHost.nextValid := True
                       nextSavedStall := True
                     }
-                    when (
-                      psExStallHost.rValid
-                      && psExStallHost.ready
-                    ) {
-                      psExStallHost.nextValid := False
-                      //myDoStall(stallKindMem) := False
-                      myDoStall(stallKindMultiCycle) := False
-                      //nextSavedStall := False
-                    }
-                    when (
-                      rSavedStall
-                      //&& !myDoStall(stallKindMultiCycle)
-                    ) {
-                      myDoStall(stallKindMem) := False
-                    }
+                  }
+                  when (
+                    psExStallHost.rValid
+                    && psExStallHost.ready
+                  ) {
+                    psExStallHost.nextValid := False
+                    //myDoStall(stallKindMem) := False
+                    myDoStall(stallKindMultiCycle) := False
+                    //nextSavedStall := False
+                  }
+                  when (
+                    rSavedStall
+                    //&& !myDoStall(stallKindMultiCycle)
+                  ) {
+                    myDoStall(stallKindMem) := False
                   }
                   when (cMid0Front.up.isFiring) {
                     nextSavedStall := False

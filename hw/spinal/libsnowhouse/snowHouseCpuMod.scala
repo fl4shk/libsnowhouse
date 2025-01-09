@@ -1070,12 +1070,13 @@ case class SnowHouseCpuTestProgram(
     str(r6, r3, 0x4),         // 0x38:
     add(r3, r3, 0x4),         // 0x3c: r3 += 4
     sub(r1, r1, 0x1),         // 0x40: r1 -= 1 
-    //bl(LbR"multiply"),        // 0x44
-    mul(r7, r6, r1),
+    bl(LbR"multiply"),        // 0x44
+    //mul(r7, r6, r1),
     bnz(r1, LbR"loop"),       // 0x48: if (r1 != 0) goto LbR"loop"
     //--------
     cpy(r12, 0x0),            // 0x4c
     Lb"infin",
+    //cpy(r12, 0x0),            // 0x4c
     bz(r12, LbR"infin"),      // 0x50
     //Db32(0x3f),
     //--------
