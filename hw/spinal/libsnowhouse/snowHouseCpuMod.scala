@@ -1047,13 +1047,14 @@ case class SnowHouseCpuTestProgram(
                               // reading first instruction, so put
                               // in a dummy
     cpy(r0, 0x0),             // 0x4: r0 = 0
-    cpy(r0, 0x0),             // 0x8
-    cpy(r1, 0x8),             // 0xc: r1 = 8
-    cpy(r2, 0x1),             // 0x10: r2 = 1
-    //pre(0xabcd),                // 0x10
-    cpy(r3, 0x1000),          // 0x14: r3 = 0x1000
-    cpy(r4, 0x8),             // 0x18: r4 = 4
-    cpy(r5, LbR"increment"),  // 0x1c
+    //cpy(r0, 0x0),             // 0x8
+    cpy(r1, 0x8),             // 0x8: r1 = 8
+    cpy(r2, 0x1),             // 0x0c: r2 = 1
+    //pre(0xabcd),                // 0x0c
+    cpy(r3, 0x1000),          // 0x10: r3 = 0x1000
+    cpy(r4, 0x8),             // 0x14: r4 = 4
+    cpy(r5, LbR"increment"),  // 0x18
+    pre(0xabcd),
     cpy(r6, 0x20),            // 0x20: r6 = 0x20
     str(r6, r0, r3),          // 0x24: [r0 + r3] = r6
     ldr(r6, r0, r3),          // 0x28
@@ -1128,38 +1129,122 @@ case class SnowHouseCpuWithDualRam(
   )
   if (cpu.io.haveMultiCycleBusVec) {
     for (
-      (multiCycleBus, busIdx) <- cpu.io.multiCycleBusVec.view.zipWithIndex
+      //(multiCycleBus, busIdx) <- cpu.io.multiCycleBusVec.view.zipWithIndex
+      ((_, multiCycleOpInfo), busIdx)
+      <- cfg.shCfg.multiCycleOpInfoMap.view.zipWithIndex
     ) {
       //cpu.io.multiCycleBusVec
-      multiCycleBus.devData.dstVec(0) := (
+      val multiCycleBus = cpu.io.multiCycleBusVec(busIdx)
+      def dstVec = multiCycleBus.devData.dstVec
+      dstVec(0) := (
         RegNext(
-          next=multiCycleBus.devData.dstVec(0),
-          init=multiCycleBus.devData.dstVec(0).getZero
+          next=dstVec(0),
+          init=dstVec(0).getZero
         )
       )
-      when (
-        multiCycleBus.rValid
-        && multiCycleBus.ready
-      ) {
-        // TODO: add support for more kinds of operations
-        multiCycleBus.devData.dstVec(0) := (
-          multiCycleBus.hostData.srcVec(0)
-          * multiCycleBus.hostData.srcVec(1)
-        )(cfg.mainWidth - 1 downto 0)
-      }
+      //when (
+      //  multiCycleBus.rValid
+      //  && multiCycleBus.ready
+      //) {
+      //  // TODO: add support for more kinds of operations
+      //  multiCycleBus.devData.dstVec(0) := (
+      //    multiCycleBus.hostData.srcVec(0)
+      //    * multiCycleBus.hostData.srcVec(1)
+      //  )(cfg.mainWidth - 1 downto 0)
+      //}
       //multiCycleBus.ready := multiCycleBus.rValid
+      def srcVec = multiCycleBus.hostData.srcVec
+      def mainWidth = cfg.shCfg.mainWidth
+      object UMul32State
+      extends SpinalEnum(defaultEncoding=binarySequential) {
+        val
+          DO_THREE_MUL16X16,
+          FIRST_ADD,
+          SECOND_ADD,
+          PROVIDE_RESULT
+          = newElement()
+      }
+      val rState = (
+        Reg(UMul32State()) init(UMul32State.DO_THREE_MUL16X16)
+      )
+      val low = (mainWidth >> 1) - 1 downto 0
+      val high = (mainWidth - 1 downto (mainWidth >> 1))
+      val shiftAmount = mainWidth >> 1
+      val mulCond = (
+        rState === UMul32State.DO_THREE_MUL16X16
+        && multiCycleBus.rValid
+      )
+      val rY0X0 = (
+        RegNextWhen(
+          //UInt(cfg.shCfg.mainWidth bits)
+          next=(
+            srcVec(1)(low) * srcVec(0)(low)
+          ),
+          cond=mulCond
+        )
+        init(0x0)
+      )
+      val rY1X0 = (
+        RegNextWhen(
+          //UInt(cfg.shCfg.mainWidth bits)
+          next=(
+            srcVec(1)(high) * srcVec(0)(low)
+          ),
+          cond=mulCond,
+        )
+        init(0x0)
+      )
+      val rY0X1 = (
+        RegNextWhen(
+          //UInt(cfg.shCfg.mainWidth bits)
+          next=(
+            srcVec(1)(low) * srcVec(0)(high)
+          ),
+          cond=mulCond,
+        )
+        init(0x0)
+      )
+      val rPartialSum = /*Vec.fill(2)*/(
+        Reg(UInt(mainWidth bits))
+        init(0x0)
+      )
       multiCycleBus.ready := False
       when (multiCycleBus.rValid) {
-        when (rMultiCycleBusReadyCnt > 0) {
-          rMultiCycleBusReadyCnt := rMultiCycleBusReadyCnt - 1
-        } otherwise {
-          multiCycleBus.ready := True
-          when (!rMultiCycleBusState) {
-            rMultiCycleBusReadyCnt := 3
-          } otherwise {
-            rMultiCycleBusReadyCnt := 5
+        switch (rState) {
+          is (UMul32State.DO_THREE_MUL16X16) {
+            rState := UMul32State.FIRST_ADD
+          }
+          is (UMul32State.FIRST_ADD) {
+            rState := UMul32State.SECOND_ADD
+            rPartialSum := (
+              rY1X0 + rY0X1
+            )
+          }
+          is (UMul32State.SECOND_ADD) {
+            rState := UMul32State.PROVIDE_RESULT
+            //dstVec(0) := (
+            //)
+            rPartialSum := (
+              (rPartialSum << shiftAmount)
+              + rY0X0
+            )(rPartialSum.bitsRange)
+          }
+          is (UMul32State.PROVIDE_RESULT) {
+            rState := UMul32State.DO_THREE_MUL16X16
+            dstVec(0) := rPartialSum
+            multiCycleBus.ready := True
           }
         }
+        //when (rMultiCycleBusReadyCnt > 0) {
+        //  rMultiCycleBusReadyCnt := rMultiCycleBusReadyCnt - 1
+        //} otherwise {
+        //  multiCycleBus.ready := True
+        //  when (!rMultiCycleBusState) {
+        //    rMultiCycleBusReadyCnt := 3
+        //  } otherwise {
+        //    rMultiCycleBusReadyCnt := 5
+        //  }
+        //}
       }
     }
   }
