@@ -759,10 +759,23 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
   //  )
   //)
   val rSavedRegPc = (
+    //Reg(UInt(cfg.mainWidth bits))
+    //init(0x0)
     RegNextWhen(
-      next=io.regPc,
-      cond=io.upIsFiring,
-      init=io.regPc.getZero,
+      next=(
+        //io.psExSetPc.nextPc
+        io.regPc
+      ),
+      cond=(
+        //!io.pcChangeState
+        //&& io.upIsFiring
+        io.psExSetPc.valid
+        //&& io.upIsFiring
+      ),
+      init=(
+        //io.psExSetPc.nextPc.getZero
+        io.regPc.getZero
+      ),
     )
   )
   io.multiCycleOpInfoIdx := 0x0
@@ -777,11 +790,18 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
         //)
         when (!io.pcChangeState) {
           when (
-            //io.instrCnt.any === rSavedInstrCnt.any + 1
+            //io.opIsJmp
             io.regPc === rSavedRegPc + (cfg.instrMainWidth / 8)
           ) {
             io.shouldIgnoreInstr := True
           }
+          //when (
+          //  //io.instrCnt.any === rSavedInstrCnt.any + 1
+          //  //io.regPc === rSavedRegPc //+ (cfg.instrMainWidth / 8)
+          //  io.regPc =/= rSavedRegPc
+          //) {
+          //  io.shouldIgnoreInstr := True
+          //}
 
           io.modMemWordValid := False
           io.modMemWord.foreach(modMemWord => {
@@ -1055,7 +1075,7 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
                       io.psExSetPc.valid := True
                       io.psExSetPc.nextPc := (
                         io.rdMemWord(io.jmpAddrIdx)
-                        - ((cfg.instrMainWidth / 8) * 1/*2*/)
+                        //- ((cfg.instrMainWidth / 8) * 1/*2*/)
                       )
                     }
                     case CpyOpKind.Br => {
@@ -2191,15 +2211,15 @@ case class SnowHousePipeStageExecute(
   )
   outp.instrCnt.shouldIgnoreInstr := (
     //!setOutpModMemWord.io.pcChangeState
-    //setOutpModMemWord.io.shouldIgnoreInstr
+    setOutpModMemWord.io.shouldIgnoreInstr
     //RegNext(
     //  next=setOutpModMemWord.io.pcChangeState,
     //  init=setOutpModMemWord.io.pcChangeState.getZero,
     //)
-    RegNext(
-      next=outp.instrCnt.shouldIgnoreInstr,
-      init=outp.instrCnt.shouldIgnoreInstr.getZero,
-    )
+    //RegNext(
+    //  next=outp.instrCnt.shouldIgnoreInstr,
+    //  init=outp.instrCnt.shouldIgnoreInstr.getZero,
+    //)
     //rSetPcCnt.valid
   )
   //psExSetPc.cnt := rSetPcCnt.payload + 1
@@ -2222,28 +2242,57 @@ case class SnowHousePipeStageExecute(
       //  outp.instrCnt.shouldIgnoreInstr := True
       //}
       //--------
-      val rSetPsExSetPcValidState = Reg(Bool(), init=False)
-      when (cMid0Front.up.isValid) {
-        when (setOutpModMemWord.io.psExSetPc.valid) {
-          when (!rSetPsExSetPcValidState) {
-            psExSetPc.valid := True
-            rSetPsExSetPcValidState := True
-          } otherwise {
-          }
-        }
-        when (rSetPsExSetPcValidState) {
-          psExSetPc.valid := False
-        }
-      }
+      //val rSetPsExSetPcValidState = Reg(Bool(), init=False)
+      //when (cMid0Front.up.isValid) {
+      //  when (setOutpModMemWord.io.psExSetPc.valid) {
+      //    when (!rSetPsExSetPcValidState) {
+      //      psExSetPc.valid := True
+      //      rSetPsExSetPcValidState := True
+      //    } otherwise {
+      //    }
+      //  }
+      //  when (rSetPsExSetPcValidState) {
+      //    psExSetPc.valid := False
+      //  }
+      //}
+      //when (
+      //  //condForAssertSetPcValid
+      //  rSetPcCnt.valid
+      //  //&& outp.instrCnt.jmp === rSetPcCnt.payload
+      //  //&& outp.instrCnt.any === rSetPcCnt.payload + 2
+      //  //&& outp.regPc === rSetPcCnt.payload
+      //) {
+      //  setOutpModMemWord.io.pcChangeState := False
+      //  //outp.shouldIgnoreInstr :=
+      //  when (outp.regPc === rSetPcCnt.payload) {
+      //    when (
+      //      cMid0Front.up.isFiring
+      //      //cMid0Front.up.isValid
+      //    ) {
+      //      setOutpModMemWord.io.pcChangeState := True
+      //      //myPcChangeState := False
+      //      nextSetPcCnt.valid := False
+      //      rSetPsExSetPcValidState := False
+      //    } otherwise {
+      //      rSetPsExSetPcValidState := True
+      //    }
+      //  } otherwise {
+      //    rSetPsExSetPcValidState := True
+      //  }
+      //}
+      //when (psExSetPc.valid) {
+      //  nextSetPcCnt.payload := setOutpModMemWord.io.psExSetPc.nextPc
+      //  psExSetPc.nextPc := setOutpModMemWord.io.psExSetPc.nextPc
+      //}
       when (
         //condForAssertSetPcValid
         rSetPcCnt.valid
         //&& outp.instrCnt.jmp === rSetPcCnt.payload
         //&& outp.instrCnt.any === rSetPcCnt.payload + 2
+        //&& outp.regPc === rSetPcCnt.payload
         && outp.regPc === rSetPcCnt.payload
       ) {
-        setOutpModMemWord.io.pcChangeState := False
-        //outp.shouldIgnoreInstr :=
+        //setOutpModMemWord.io.pcChangeState := False
         when (
           cMid0Front.up.isFiring
           //cMid0Front.up.isValid
@@ -2251,63 +2300,41 @@ case class SnowHousePipeStageExecute(
           setOutpModMemWord.io.pcChangeState := True
           //myPcChangeState := False
           nextSetPcCnt.valid := False
-          rSetPsExSetPcValidState := False
-        } otherwise {
-          rSetPsExSetPcValidState := True
         }
-      }
-      when (psExSetPc.valid) {
-        nextSetPcCnt.payload := setOutpModMemWord.io.psExSetPc.nextPc
-        psExSetPc.nextPc := setOutpModMemWord.io.psExSetPc.nextPc
       }
       when (
         !rSetPcCnt.valid
-        //&& outp.regPc === rSetPcCnt.payload
       ) {
         setOutpModMemWord.io.pcChangeState := True
-        outp.instrCnt.shouldIgnoreInstr := False
         when (
           condForAssertSetPcValid
         ) {
           //myPcChangeState := True
-          //when (setOutpModMemWord.io.psExSetPc.valid) {
-          //  nextSetPcCnt.payload := (
-          //    setOutpModMemWord.io.psExSetPc.nextPc
-          //  )
-          //  psExSetPc.nextPc := setOutpModMemWord.io.psExSetPc.nextPc
-          //}
-          when (cMid0Front.up.isFiring) {
+          //when (cMid0Front.up.isFiring) {
             nextSetPcCnt.valid := True
-            //--------
-            //nextSetPcCnt.payload := (
-            //  //rSetPcCnt.payload + 1
-            //  //outp.instrCnt.any
-            //  setOutpModMemWord.io.psExSetPc.nextPc
-            //)
-            //--------
-            ////when (cMid0Front.up.isFiring) {
-            //  setOutpModMemWord.io.pcChangeState := False
-            ////}
-            //setOutpModMemWord.io.pcChangeState := False
-            //when (!outp.instrCnt.shouldIgnoreInstr) {
-          }
-          //--------
+            nextSetPcCnt.payload := (
+              //rSetPcCnt.payload + 1
+              //outp.instrCnt.any
+              setOutpModMemWord.io.psExSetPc.nextPc
+            )
+            setOutpModMemWord.io.pcChangeState := False
+            psExSetPc.valid := setOutpModMemWord.io.psExSetPc.valid
+            psExSetPc.nextPc := setOutpModMemWord.io.psExSetPc.nextPc
+            psExSetPc.cnt := (
+              RegNext(
+                next=psExSetPc.cnt,
+                init=psExSetPc.cnt.getZero
+              )
+              + 1
+            )
+          //}
+        } otherwise {
         }
-        //--------
-        //--------
-        //when (!condForAssertSetPcValid) {
-        //  nextSetPcCnt.valid := False
-        //}
-        //if (cfg.optFormal) {
-        //  when (pastValidAfterReset) {
-        //    when (past(rPcChangeState) === PcChangeState.WaitTwoInstrs) {
-        //      assert(past(cMid0Front.up.isFiring))
-        //    } otherwise {
-        //    }
-        //    //when (past(cMid0Front.up.isFiring)) {
-        //    //}
-        //  }
-        //}
+      }
+      when (
+        !rSetPcCnt.valid
+        || outp.regPc === rSetPcCnt.payload
+      ) {
         switch (setOutpModMemWord.io.opIs) {
           // TODO: support mem access in more kinds of instructions
           is (M"0010") {
