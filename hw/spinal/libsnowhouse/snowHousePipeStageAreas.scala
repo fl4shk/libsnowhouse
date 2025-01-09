@@ -2551,9 +2551,12 @@ case class SnowHousePipeStageExecute(
                   )
                   when (
                     (
-                      outp.regPc
-                      === rTempSavedRegPc + (cfg.instrMainWidth / 8)
-                    ) 
+                      outp.regPc(3 downto 0)
+                      === (
+                        rTempSavedRegPc(3 downto 0)
+                        + (cfg.instrMainWidth / 8)
+                      )
+                    )
                     //|| (
                     //  outp.regPc
                     //  === rTempSavedRegPc + ((cfg.instrMainWidth / 8) * 2)
@@ -2805,8 +2808,6 @@ case class SnowHousePipeStageMem(
         //val temp = Node()
         //temp.setName(s"sMidModFront_down")
         //temp
-
-        //modBack
       },
     )
   )
