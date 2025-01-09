@@ -123,6 +123,7 @@ object SnowHouseIrqConfig {
 case class SnowHouseConfig(
   haveZeroReg: Option[Int],
   irqCfg: Option[SnowHouseIrqConfig],
+  haveAluFlags: Boolean,
   //encInstrType: HardType,
   //gprFileDepth: Int,
   //sprFileDepth: Int,

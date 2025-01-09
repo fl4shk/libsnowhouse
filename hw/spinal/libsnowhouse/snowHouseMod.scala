@@ -211,6 +211,18 @@ case class SnowHouse
 ) extends Component {
   //--------
   val io = SnowHouseIo(cfg=cfg)
+  //if (io.haveMultiCycleBusVec) {
+  //  io.multiCycleBusVec.foreach(multiCycleBus => {
+  //    multiCycleBus.hostData.srcVec.foreach(src => {
+  //      src := (
+  //        RegNext(
+  //          next=src,
+  //          init=src.getZero,
+  //        )
+  //      )
+  //    })
+  //  })
+  //}
   //--------
   val psIdHaltIt = Bool()
   val psExSetPc = (

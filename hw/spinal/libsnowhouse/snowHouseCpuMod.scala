@@ -906,6 +906,7 @@ case class SnowHouseCpuConfig(
         ),
       )
     ),
+    haveAluFlags=false,
     //encInstrType=SnowHouseCpuEncInstr(),
     instrMainWidth=instrMainWidth,
     shRegFileCfg=SnowHouseRegFileConfig(
@@ -1130,6 +1131,22 @@ case class SnowHouseCpuWithDualRam(
       (multiCycleBus, busIdx) <- cpu.io.multiCycleBusVec.view.zipWithIndex
     ) {
       //cpu.io.multiCycleBusVec
+      multiCycleBus.devData.dstVec(0) := (
+        RegNext(
+          next=multiCycleBus.devData.dstVec(0),
+          init=multiCycleBus.devData.dstVec(0).getZero
+        )
+      )
+      when (
+        multiCycleBus.rValid
+        && multiCycleBus.ready
+      ) {
+        // TODO: add support for more kinds of operations
+        multiCycleBus.devData.dstVec(0) := (
+          multiCycleBus.hostData.srcVec(0)
+          * multiCycleBus.hostData.srcVec(1)
+        )(cfg.mainWidth - 1 downto 0)
+      }
       //multiCycleBus.ready := multiCycleBus.rValid
       multiCycleBus.ready := False
       when (multiCycleBus.rValid) {
