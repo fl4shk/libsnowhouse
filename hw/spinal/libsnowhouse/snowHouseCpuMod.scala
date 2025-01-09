@@ -1046,13 +1046,12 @@ case class SnowHouseCpuTestProgram(
                               // reading first instruction, so put
                               // in a dummy
     cpy(r0, 0x0),             // 0x4: r0 = 0
-    //cpy(r0, 0x0),             // 0x8
+    cpy(r0, 0x0),             // 0x8
     cpy(r1, 0x8),             // 0xc: r1 = 8
     cpy(r2, 0x1),             // 0x10: r2 = 1
-    pre(0xabcd),                // 0x10
+    //pre(0xabcd),                // 0x10
     cpy(r3, 0x1000),          // 0x14: r3 = 0x1000
     cpy(r4, 0x8),             // 0x18: r4 = 4
-    ////cpy(r6, 0x0),       //
     cpy(r5, LbR"increment"),  // 0x1c
     cpy(r6, 0x20),            // 0x20: r6 = 0x20
     str(r6, r0, r3),          // 0x24: [r0 + r3] = r6
@@ -1071,7 +1070,8 @@ case class SnowHouseCpuTestProgram(
     str(r6, r3, 0x4),         // 0x38:
     add(r3, r3, 0x4),         // 0x3c: r3 += 4
     sub(r1, r1, 0x1),         // 0x40: r1 -= 1 
-    bl(LbR"multiply"),        // 0x44
+    //bl(LbR"multiply"),        // 0x44
+    mul(r7, r6, r1),
     bnz(r1, LbR"loop"),       // 0x48: if (r1 != 0) goto LbR"loop"
     //--------
     cpy(r12, 0x0),            // 0x4c
@@ -1117,12 +1117,32 @@ case class SnowHouseCpuWithDualRam(
   )
   cpu.io.ibus <> dualRam.io.ibus
   cpu.io.dbus <> dualRam.io.dbus
+  val rMultiCycleBusReadyCnt = (
+    Reg(UInt(8 bits))
+    init(0x3)
+  )
+  val rMultiCycleBusState = (
+    Reg(Bool(), init=False)
+  )
   if (cpu.io.haveMultiCycleBusVec) {
     for (
       (multiCycleBus, busIdx) <- cpu.io.multiCycleBusVec.view.zipWithIndex
     ) {
       //cpu.io.multiCycleBusVec
-      multiCycleBus.ready := multiCycleBus.rValid
+      //multiCycleBus.ready := multiCycleBus.rValid
+      multiCycleBus.ready := False
+      when (multiCycleBus.rValid) {
+        when (rMultiCycleBusReadyCnt > 0) {
+          rMultiCycleBusReadyCnt := rMultiCycleBusReadyCnt - 1
+        } otherwise {
+          multiCycleBus.ready := True
+          when (!rMultiCycleBusState) {
+            rMultiCycleBusReadyCnt := 3
+          } otherwise {
+            rMultiCycleBusReadyCnt := 5
+          }
+        }
+      }
     }
   }
 }

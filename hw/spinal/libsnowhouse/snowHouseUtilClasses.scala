@@ -228,6 +228,7 @@ case class SnowHouseConfig(
       Some(myInitBigInt)
     },
     optModHazardKind=PipeMemRmw.ModHazardKind.Fwd,
+    optIncludeModFrontS2MLink=false,
     optFormal=optFormal,
   )
   regFileCfg.linkArr = None
