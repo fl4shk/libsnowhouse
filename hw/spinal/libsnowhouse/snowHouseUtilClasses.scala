@@ -169,6 +169,31 @@ case class SnowHouseConfig(
   val myHaveZeroReg = (
     myZeroRegIdx >= 0
   )
+  val myHaveAluFlags: Boolean = {
+    var found: Boolean = false
+    var foundAnyDst: Boolean = false
+    var foundAnySrc: Boolean = false
+    for (((_, opInfo), opInfoIdx) <- opInfoMap.view.zipWithIndex) {
+      val foundDst = opInfo.dstArr.find(_ == DstKind.AluFlags)
+      val foundSrc = opInfo.srcArr.find(_ == SrcKind.AluFlags)
+      if (foundDst != None) {
+        foundAnyDst = true
+        found = true
+      }
+      if (foundSrc != None) {
+        foundAnySrc = true
+        found = true
+      }
+
+    }
+    if (foundAnyDst) {
+      assert(
+        foundAnySrc,
+        s"Can't only destinations for AluFlags"
+      )
+    }
+    found
+  }
   assert(
     (instrMainWidth / 8) * 8 == instrMainWidth,
     s"instrMainWidth must be a multiple of 8"

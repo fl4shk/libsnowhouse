@@ -72,7 +72,7 @@ case class SnowHousePsExSetPcPayload(
   cfg: SnowHouseConfig
 ) extends Bundle {
   val nextPc = UInt(cfg.mainWidth bits)
-  val cnt = UInt(cfg.instrCntWidth bits)
+  //val cnt = UInt(cfg.instrCntWidth bits)
 }
 case class SnowHousePipeStageInstrFetch(
   args: SnowHousePipeStageArgs,
@@ -164,8 +164,8 @@ case class SnowHousePipeStageInstrFetch(
         rSavedExSetPc.nextPc //- (cfg.instrMainWidth / 8)
       )
       //if (cfg.optFormal) {
-        //myInstrCnt.jmp := rPrevInstrCnt.jmp + 1
-        myInstrCnt.jmp := rSavedExSetPc.cnt
+        myInstrCnt.jmp := rPrevInstrCnt.jmp + 1
+        //myInstrCnt.jmp := rSavedExSetPc.cnt
       //}
     } otherwise {
       nextRegPcSetItCnt := 0x0
@@ -182,38 +182,6 @@ case class SnowHousePipeStageInstrFetch(
   )
   io.ibus.hostData.addr := nextRegPc //upModExt.regPc
   //--------
-  val myDoStallIt = (cfg.optFormal) generate (
-    Bool()
-  )
-  if (cfg.optFormal) {
-    myDoStallIt := False
-  }
-  def doStallMain(): Unit = {
-    io.ibus.hostData.addr := (
-      RegNext(
-        next=io.ibus.hostData.addr,
-        init=io.ibus.hostData.addr.getZero,
-      )
-    )
-  }
-  def doStallItEtc(): Unit = {
-    //io.ibus.nextValid := False
-    doStallMain()
-    //cIf.haltIt()
-    cIf.duplicateIt()
-    if (cfg.optFormal) {
-      myDoStallIt := True
-    }
-  }
-  //when (
-  //  //io.ibus.nextValid
-  //  //&& 
-  //  io.ibus.rValid
-  //  && !io.ibus.ready
-  //) {
-  //  //cIf.duplicateIt()
-  //  doStallItEtc()
-  //}
   //--------
   // TODO: formal
   //if (cfg.optFormal) {
@@ -568,6 +536,19 @@ case class SnowHousePipeStageExecuteSetOutpModMemWordIo(
   val imm = /*in*/(UInt(cfg.mainWidth bits))
   val pcChangeState = Bool() ///*in*/(Flow(PcChangeState()))
   val shouldIgnoreInstr = /*out*/(Bool())
+  val rAluFlags = (
+    cfg.myHaveAluFlags
+  ) generate (
+    /*out*/(UInt(cfg.mainWidth bits))
+  )
+  def aluFlagsIdxZ = 0
+  def aluFlagsIdxC = 1
+  def aluFlagsIdxV = 2
+  def aluFlagsIdxN = 3
+  def rFlagZ = rAluFlags(aluFlagsIdxZ)
+  def rFlagC = rAluFlags(aluFlagsIdxC)
+  def rFlagV = rAluFlags(aluFlagsIdxV)
+  def rFlagN = rAluFlags(aluFlagsIdxN)
   def selRdMemWord(
     opInfo: OpInfo,
     idx: Int,
@@ -607,6 +588,9 @@ case class SnowHousePipeStageExecuteSetOutpModMemWordIo(
           case SrcKind.Pc => {
             regPc
           }
+          case SrcKind.AluFlags => {
+            rAluFlags
+          }
           case SrcKind.Imm(/*isSImm*/) => {
             imm
           }
@@ -642,6 +626,15 @@ case class SnowHousePipeStageExecuteSetOutpModMemWordIo(
           case _ => {
             return innerFunc(idx=idx, isPostPcDst=false)
           }
+        }
+      }
+      case OpSelect.Alu => {
+        if (
+          opInfo.dstArr(0) == DstKind.AluFlags
+        ) {
+          return innerFunc(idx=(idx + 1), isPostPcDst=false)
+        } else {
+          return innerFunc(idx=idx, isPostPcDst=false)
         }
       }
       case _ => {
@@ -790,6 +783,17 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
   //    ),
   //  )
   //)
+  //io.rAluFlags := (
+  //  RegNext(
+  //    next=io.rAluFlags,
+  //    init=io.rAluFlags.getZero,
+  //  )
+  //)
+  if (cfg.myHaveAluFlags) {
+    io.rAluFlags.setAsReg()
+    io.rAluFlags.init(io.rAluFlags.getZero)
+  }
+
   io.multiCycleOpInfoIdx := 0x0
   val nextShouldIgnoreInstrState = Bool()
   val rShouldIgnoreInstrState = (
@@ -799,658 +803,847 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
     )
   )
   nextShouldIgnoreInstrState := rShouldIgnoreInstrState
-  //switch (io.pcChangeState.payload) {
-  //  is (PcChangeState.Idle) {
-      //when (io.pcChangeState) {
-        //io.shouldIgnoreInstr := (
-        //  RegNextWhen(
-        //    next=(!io.pcChangeState),
-        //    cond=io.upIsFiring,
-        //  )
-        //)
-        //--------
-        //when (
-        //  //io.opIsJmp
-        //  //(
-        //  //  io.regPc === rSavedRegPc + (cfg.instrMainWidth / 8)
-        //  //) || (
-        //  //  io.regPc === rSavedRegPc + ((cfg.instrMainWidth / 8) * 2)
-        //  //)
-        //  io.regPcSetItCnt =/= 0x0
-        //) {
-        //  io.shouldIgnoreInstr := True
-        //  io.modMemWordValid := False
-        //  io.modMemWord.foreach(modMemWord => {
-        //    modMemWord := modMemWord.getZero
-        //  })
-        //} otherwise {
-        //  io.shouldIgnoreInstr := False
-        //}
-        //--------
-        when (io.shouldIgnoreInstr) {
-          io.modMemWordValid := False
-          io.modMemWord.foreach(modMemWord => {
-            modMemWord := modMemWord.getZero
-          })
+  //--------
+  when (io.shouldIgnoreInstr) {
+    io.modMemWordValid := False
+    io.modMemWord.foreach(modMemWord => {
+      modMemWord := modMemWord.getZero
+    })
+  }
+  when (!rShouldIgnoreInstrState) {
+    io.shouldIgnoreInstr := False
+    when (io.opIsJmp) {
+      when (io.upIsFiring) {
+        nextShouldIgnoreInstrState := True
+      }
+    }
+  } otherwise {
+    when (io.regPcSetItCnt =/= 0) {
+      io.shouldIgnoreInstr := False
+      when (io.opIsJmp) {
+        //io.shouldIgnoreInstr := False
+      } otherwise {
+        when (io.upIsFiring) {
+          nextShouldIgnoreInstrState := False
         }
-        //--------
-        //when (io.upIsFiring) {
-        //  when (io.opIsJmp) {
-        //    io.shouldIgnoreInstr := False
-        //  }
-        //}
-        //--------
-        //when (!rShouldIgnoreInstrState) {
-        //  io.shouldIgnoreInstr := 
-        //  when (io.opIsJmp) {
-        //  }
-        //} otherwise {
-        //}
-        when (!rShouldIgnoreInstrState) {
-          io.shouldIgnoreInstr := False
-          when (io.opIsJmp) {
-            when (io.upIsFiring) {
-              nextShouldIgnoreInstrState := True
-            }
-          }
-        } otherwise {
-          when (io.regPcSetItCnt =/= 0) {
-            io.shouldIgnoreInstr := False
-            when (io.opIsJmp) {
-              //io.shouldIgnoreInstr := False
-            } otherwise {
-              when (io.upIsFiring) {
-                nextShouldIgnoreInstrState := False
-              }
-            }
-          } otherwise {
-            io.shouldIgnoreInstr := True
-          }
-        }
-        //--------
-        //when (!rShouldIgnoreInstrState) {
-        //  io.shouldIgnoreInstr := False
-        //  when (io.opIsJmp) {
-        //    when (io.upIsFiring) {
-        //      rShouldIgnoreInstrState := True
-        //    }
-        //    //io.shouldIgnoreInstr := True
-        //  }
-        //} otherwise {
-        //  when (io.regPcSetItCnt =/= 0) {
-        //    io.shouldIgnoreInstr := False
-        //    when (io.opIsJmp) {
-        //    }
-        //  } otherwise {
-        //    io.shouldIgnoreInstr := True
-        //  }
-        //  //when (io.regPcSetItCnt =/= 0) {
-        //  //  io.shouldIgnoreInstr := False
-        //  //} otherwise {
-        //  //  io.shouldIgnoreInstr := True
-        //  //}
-        //  //when (io.upIsFiring) {
-        //  //  when (!io.opIsJmp) {
-        //  //    rShouldIgnoreInstrState := False
-        //  //  }
-        //  //}
-        //}
-        //--------
-        //when (!io.pcChangeState) {
-        //  //when (
-        //  //  //io.instrCnt.any === rSavedInstrCnt.any + 1
-        //  //  //io.regPc === rSavedRegPc //+ (cfg.instrMainWidth / 8)
-        //  //  io.regPc =/= rSavedRegPc
-        //  //) {
-        //  //  io.shouldIgnoreInstr := True
-        //  //}
-
-        //  io.modMemWordValid := False
-        //  io.modMemWord.foreach(modMemWord => {
-        //    modMemWord := modMemWord.getZero
-        //  })
-        //} otherwise {
-        //  io.shouldIgnoreInstr := False
-        //}
-        switch (io.currOp) {
-          //--------
-          for (
-            ((_, opInfo), opInfoIdx) <- cfg.opInfoMap.view.zipWithIndex
-          ) {
-            def selRdMemWord(
-              srcArrIdx: Int
-            ): UInt = {
-              io.selRdMemWord(opInfo=opInfo, idx=srcArrIdx)
-            }
-            assert(
-              opInfo.dstArr.size == 1 || opInfo.dstArr.size == 2,
-              s"not yet implemented: "
-              + s"opInfo(${opInfo}) index:${opInfoIdx}"
-            )
-            assert(
-              opInfo.srcArr.size == 1
-              || opInfo.srcArr.size == 2
-              || opInfo.srcArr.size == 3,
-              s"not yet implemented: "
-              + s"opInfo(${opInfo}) index:${opInfoIdx}"
-            )
-            is (U(s"${io.currOp.getWidth}'d${opInfoIdx}")) {
-              opInfo.select match {
-                case OpSelect.Cpy => {
-                  opInfo.cpyOp.get match {
-                    case CpyOpKind.Cpy => {
-                      io.opIsCpyNonJmpAlu := True
-                      assert(
-                        opInfo.cond == CondKind.Always,
-                        s"not yet implemented: "
-                        + s"opInfo(${opInfo}) index:${opInfoIdx}"
-                      )
-                      opInfo.memAccess match {
-                        case MemAccessKind.NoMemAccess => {
-                          assert(
-                            opInfo.dstArr.size == 1,
-                            s"invalid opInfo.dstArr.size: "
-                            + s"opInfo(${opInfo}) index:${opInfoIdx}"
-                          )
-                          assert(
-                            opInfo.srcArr.size == 1,
-                            s"invalid opInfo.srcArr.size: "
-                            + s"opInfo(${opInfo}) index:${opInfoIdx}"
-                          )
-                          io.modMemWord(0) := selRdMemWord(1)
-                        }
-                        case mem: MemAccessKind.Mem => {
-                          io.opIsMemAccess := True
-                          //assert(
-                          //  opInfo.dstArr.size == 1,
-                          //  s"invalid opInfo.dstArr.size: "
-                          //  + s"opInfo(${opInfo}) index:${opInfoIdx}"
-                          //)
-                          //assert(
-                          //  mem.isSigned == None,
-                          //  s"not yet implemented: "
-                          //  + s"opInfo(${opInfo}) index:${opInfoIdx}"
-                          //)
-                          mem.isStore match {
-                            case Some(isStore) => {
-                              val tempSubKind = (
-                                mem.subKind match {
-                                  case MemAccessKind.SubKind.Sz8 => {
-                                    SnowHouseMemAccessSubKind.Sz8
-                                  }
-                                  case MemAccessKind.SubKind.Sz16 => {
-                                    SnowHouseMemAccessSubKind.Sz16
-                                  }
-                                  case MemAccessKind.SubKind.Sz32 => {
-                                    SnowHouseMemAccessSubKind.Sz32
-                                  }
-                                  case MemAccessKind.SubKind.Sz64 => {
-                                    SnowHouseMemAccessSubKind.Sz64
-                                  }
-                                }
+      }
+    } otherwise {
+      io.shouldIgnoreInstr := True
+    }
+  }
+  switch (io.currOp) {
+    //--------
+    for (((_, opInfo), opInfoIdx) <- cfg.opInfoMap.view.zipWithIndex) {
+      def selRdMemWord(
+        srcArrIdx: Int
+      ): UInt = {
+        io.selRdMemWord(opInfo=opInfo, idx=srcArrIdx)
+      }
+      assert(
+        opInfo.dstArr.size == 1 || opInfo.dstArr.size == 2,
+        s"not yet implemented: "
+        + s"opInfo(${opInfo}) index:${opInfoIdx}"
+      )
+      assert(
+        opInfo.srcArr.size == 1
+        || opInfo.srcArr.size == 2
+        || opInfo.srcArr.size == 3,
+        s"not yet implemented: "
+        + s"opInfo(${opInfo}) index:${opInfoIdx}"
+      )
+      is (U(s"${io.currOp.getWidth}'d${opInfoIdx}")) {
+        opInfo.select match {
+          case OpSelect.Cpy => {
+            opInfo.cpyOp.get match {
+              case CpyOpKind.Cpy => {
+                io.opIsCpyNonJmpAlu := True
+                assert(
+                  opInfo.cond == CondKind.Always,
+                  s"not yet implemented: "
+                  + s"opInfo(${opInfo}) index:${opInfoIdx}"
+                )
+                opInfo.memAccess match {
+                  case MemAccessKind.NoMemAccess => {
+                    assert(
+                      opInfo.dstArr.size == 1,
+                      s"invalid opInfo.dstArr.size: "
+                      + s"opInfo(${opInfo}) index:${opInfoIdx}"
+                    )
+                    assert(
+                      opInfo.srcArr.size == 1,
+                      s"invalid opInfo.srcArr.size: "
+                      + s"opInfo(${opInfo}) index:${opInfoIdx}"
+                    )
+                    opInfo.dstArr(0) match {
+                      case DstKind.Gpr => {
+                        io.modMemWord(0) := selRdMemWord(1)
+                      }
+                      case DstKind.AluFlags => {
+                        io.rAluFlags := selRdMemWord(1)
+                      }
+                      case _ => {
+                        assert(
+                          false,
+                          s"not yet implemented: "
+                          + s"opInfo(${opInfo}) index:${opInfoIdx}"
+                        )
+                      }
+                    }
+                  }
+                  case mem: MemAccessKind.Mem => {
+                    io.opIsMemAccess := True
+                    //assert(
+                    //  opInfo.dstArr.size == 1,
+                    //  s"invalid opInfo.dstArr.size: "
+                    //  + s"opInfo(${opInfo}) index:${opInfoIdx}"
+                    //)
+                    //assert(
+                    //  mem.isSigned == None,
+                    //  s"not yet implemented: "
+                    //  + s"opInfo(${opInfo}) index:${opInfoIdx}"
+                    //)
+                    mem.isStore match {
+                      case Some(isStore) => {
+                        val tempSubKind = (
+                          mem.subKind match {
+                            case MemAccessKind.SubKind.Sz8 => {
+                              SnowHouseMemAccessSubKind.Sz8
+                            }
+                            case MemAccessKind.SubKind.Sz16 => {
+                              SnowHouseMemAccessSubKind.Sz16
+                            }
+                            case MemAccessKind.SubKind.Sz32 => {
+                              SnowHouseMemAccessSubKind.Sz32
+                            }
+                            case MemAccessKind.SubKind.Sz64 => {
+                              SnowHouseMemAccessSubKind.Sz64
+                            }
+                          }
+                        )
+                        modIo.dbus.hostData.subKind := (
+                          //DbusHostMemAccessSubKind.fromWordSize(cfg=cfg)
+                          //mem.subKind match {
+                          //  case MemAccessKind.SubKind.Sz8 => {
+                          //    SnowHouseMemAccessSubKind.Sz8
+                          //  }
+                          //  case MemAccessKind.SubKind.Sz16 => {
+                          //    SnowHouseMemAccessSubKind.Sz16
+                          //  }
+                          //  case MemAccessKind.SubKind.Sz32 => {
+                          //    SnowHouseMemAccessSubKind.Sz32
+                          //  }
+                          //  case MemAccessKind.SubKind.Sz64 => {
+                          //    SnowHouseMemAccessSubKind.Sz64
+                          //  }
+                          //}
+                          tempSubKind
+                        )
+                        io.decodeExt.memAccessSubKind := (
+                          tempSubKind
+                        )
+                        modIo.dbus.hostData.addr := (
+                          (
+                            opInfo.addrCalc match {
+                              case AddrCalcKind.AddReduce => (
+                                selRdMemWord(1)
                               )
-                              modIo.dbus.hostData.subKind := (
-                                //DbusHostMemAccessSubKind.fromWordSize(cfg=cfg)
-                                //mem.subKind match {
-                                //  case MemAccessKind.SubKind.Sz8 => {
-                                //    SnowHouseMemAccessSubKind.Sz8
-                                //  }
-                                //  case MemAccessKind.SubKind.Sz16 => {
-                                //    SnowHouseMemAccessSubKind.Sz16
-                                //  }
-                                //  case MemAccessKind.SubKind.Sz32 => {
-                                //    SnowHouseMemAccessSubKind.Sz32
-                                //  }
-                                //  case MemAccessKind.SubKind.Sz64 => {
-                                //    SnowHouseMemAccessSubKind.Sz64
-                                //  }
-                                //}
-                                tempSubKind
+                              case kind:
+                              AddrCalcKind.LslThenMaybeAdd => (
+                                selRdMemWord(1)
+                                << kind.options.lslAmount.get
                               )
-                              io.decodeExt.memAccessSubKind := (
-                                tempSubKind
-                              )
-                              modIo.dbus.hostData.addr := (
-                                (
-                                  opInfo.addrCalc match {
-                                    case AddrCalcKind.AddReduce => (
-                                      selRdMemWord(1)
-                                    )
-                                    case kind:
-                                    AddrCalcKind.LslThenMaybeAdd => (
-                                      selRdMemWord(1)
-                                      << kind.options.lslAmount.get
-                                    )
-                                  }
-                                ) + (
-                                  opInfo.srcArr.size match {
-                                    case 1 => {
-                                      U(s"${cfg.mainWidth}'d0")
-                                    }
-                                    case 2 => {
-                                      selRdMemWord(2)
-                                    }
-                                    case _ => {
-                                      assert(
-                                        false,
-                                        s"invalid opInfo.srcArr.size: "
-                                        + s"opInfo(${opInfo}) "
-                                        + s"index:${opInfoIdx}"
-                                      )
-                                      U"s${cfg.mainWidth}'d0"
-                                    }
-                                  }
+                            }
+                          ) + (
+                            opInfo.srcArr.size match {
+                              case 1 => {
+                                U(s"${cfg.mainWidth}'d0")
+                              }
+                              case 2 => {
+                                selRdMemWord(2)
+                              }
+                              case _ => {
+                                assert(
+                                  false,
+                                  s"invalid opInfo.srcArr.size: "
+                                  + s"opInfo(${opInfo}) "
+                                  + s"index:${opInfoIdx}"
                                 )
-                              )
-                              //modIo.dbus.hostData.subKind := (
-                              //  tempSubKind
-                              //)
-                              if (!isStore) {
-                                //io.decodeExt.memAccessKind := (
-                                //  //io.decodeExt._memAccessLdStKindLoad
-                                //)
-                                val tempMemAccessKind = (
-                                  if (!mem.isSigned) (
-                                    SnowHouseMemAccessKind.LoadU
-                                  ) else (
-                                    SnowHouseMemAccessKind.LoadS
-                                  )
-                                )
-                                io.decodeExt.memAccessKind := (
-                                  tempMemAccessKind
-                                )
-                                modIo.dbus.hostData.accKind := (
-                                  tempMemAccessKind
-                                )
-                                modIo.dbus.hostData.data := (
-                                  modIo.dbus.hostData.data.getZero
-                                )
-                              } else { // if (isStore)
-                                val tempMemAccessKind = (
-                                  SnowHouseMemAccessKind.Store
-                                )
-                                io.decodeExt.memAccessKind := (
-                                  //io.decodeExt._memAccessLdStKindStore
-                                  tempMemAccessKind
-                                )
-                                modIo.dbus.hostData.accKind := (
-                                  tempMemAccessKind
-                                )
-                                modIo.dbus.hostData.data := selRdMemWord(0)
+                                U"s${cfg.mainWidth}'d0"
                               }
                             }
-                            case None => {
-                              assert(
-                                false,
-                                s"not yet implemented: "
-                                + s"opInfo(${opInfo}) index:${opInfoIdx}"
-                              )
-                            }
-                          }
-                          io.modMemWordValid := False
-                          io.modMemWord(0) := 0x0
-                        }
-                      }
-                    }
-                    case CpyOpKind.Cpyu => {
-                      io.opIsCpyNonJmpAlu := True
-                      assert(
-                        opInfo.dstArr.size == 1,
-                        s"not yet implemented: "
-                        + s"opInfo(${opInfo}) index:${opInfoIdx}"
-                      )
-                      assert(
-                        opInfo.srcArr.size == 1,
-                        s"not yet implemented: "
-                        + s"opInfo(${opInfo}) index:${opInfoIdx}"
-                      )
-                      assert(
-                        opInfo.cond == CondKind.Always,
-                        s"not yet implemented: "
-                        + s"opInfo(${opInfo}) index:${opInfoIdx}"
-                      )
-                      assert(
-                        opInfo.memAccess == MemAccessKind.NoMemAccess,
-                        s"not yet implemented: "
-                        + s"opInfo(${opInfo}) index:${opInfoIdx}"
-                      )
-                      assert(
-                        opInfo.addrCalc == AddrCalcKind.AddReduce,
-                        s"not yet implemented: "
-                        + s"opInfo(${opInfo}) index:${opInfoIdx}"
-                      )
-                      io.modMemWord(0)(
-                        cfg.mainWidth - 1 downto (cfg.mainWidth >> 1)
-                      ) := (
-                        selRdMemWord(1)((cfg.mainWidth >> 1) - 1 downto 0)
-                      )
-                      io.modMemWord(0)(
-                        (cfg.mainWidth >> 1) - 1 downto 0
-                      ) := (
-                        selRdMemWord(0)(
-                          (cfg.mainWidth >> 1) - 1 downto 0
+                          )
                         )
-                      )
-                    }
-                    case CpyOpKind.Jmp => {
-                      assert(
-                        opInfo.dstArr.size == 1
-                        || opInfo.dstArr.size == 2,
-                        s"not yet implemented: "
-                        + s"opInfo(${opInfo}) index:${opInfoIdx}"
-                      )
-                      assert(
-                        opInfo.srcArr.size == 1,
-                        s"not yet implemented: "
-                        + s"opInfo(${opInfo}) index:${opInfoIdx}"
-                      )
-                      assert(
-                        opInfo.cond == CondKind.Always,
-                        s"not yet implemented: "
-                        + s"opInfo(${opInfo}) index:${opInfoIdx}"
-                      )
-                      assert(
-                        opInfo.memAccess == MemAccessKind.NoMemAccess,
-                        s"not yet implemented: "
-                        + s"opInfo(${opInfo}) index:${opInfoIdx}"
-                      )
-                      assert(
-                        opInfo.addrCalc == AddrCalcKind.AddReduce,
-                        s"not yet implemented: "
-                        + s"opInfo(${opInfo}) index:${opInfoIdx}"
-                      )
-                      if (opInfo.dstArr.size == 1) (
-                        io.modMemWordValid := False
-                      ) else {
-                        //io.modMemWordValid := True
-                        // TODO: support more outputs
-                        io.modMemWordValid := !io.gprIsZeroVec(0)
-                        //io.shouldIgnoreInstr := io.modMemWordValid
-                      }
-                      io.modMemWord(0) := (
-                        //io.regPcPlusInstrSize
-                        //io.regPc + ((cfg.instrMainWidth / 8) * 2)
-
-                        io.regPc + ((cfg.instrMainWidth / 8) * 1)
-
-                        //io.regPc //+ ((cfg.instrMainWidth / 8) * 1/*2*/)
-                      )
-                      io.psExSetPc.valid := True
-                      io.psExSetPc.nextPc := (
-                        io.rdMemWord(io.jmpAddrIdx)
-                        //- ((cfg.instrMainWidth / 8) * 1/*2*/)
-                      )
-                    }
-                    case CpyOpKind.Br => {
-                      if (opInfo.dstArr.size == 1) (
-                        io.modMemWordValid := False
-                      )
-                      opInfo.cond match {
-                        case CondKind.Always => {
-                          //io.opIsJmp := True
-                          //assert(
-                          //  opInfo.dstArr.size == 1,
-                          //  s"not yet implemented: "
-                          //  + s"opInfo(${opInfo}) index:${opInfoIdx}"
+                        //modIo.dbus.hostData.subKind := (
+                        //  tempSubKind
+                        //)
+                        if (!isStore) {
+                          //io.decodeExt.memAccessKind := (
+                          //  //io.decodeExt._memAccessLdStKindLoad
                           //)
-                          //assert(
-                          //  opInfo.srcArr.size == 1,
-                          //  s"not yet implemented: "
-                          //  + s"opInfo(${opInfo}) index:${opInfoIdx}"
-                          //)
-                          //io.modMemWordValid := False
-                          io.psExSetPc.valid := True
-                          io.psExSetPc.nextPc := io.regPcPlusImm
-                          io.modMemWord(0) := (
-                            //io.regPcPlusInstrSize
-                            io.regPc + ((cfg.instrMainWidth / 8) * 1)
-                          )
-                          //io.modMemWordValid := True
-                          if (opInfo.dstArr.size == 1) (
-                            io.modMemWordValid := False
-                          ) else {
-                            io.modMemWordValid := (
-                              // TODO: support more outputs
-                              !io.gprIsZeroVec(0)
-                              //True
+                          val tempMemAccessKind = (
+                            if (!mem.isSigned) (
+                              SnowHouseMemAccessKind.LoadU
+                            ) else (
+                              SnowHouseMemAccessKind.LoadS
                             )
-                            //io.shouldIgnoreInstr := io.modMemWordValid
-                          }
-                        }
-                        //case CondKind.Link => {
-                        //  io.opIsJmp := True
-                        //  assert(
-                        //    opInfo.dstArr.size == 2,
-                        //  )
-                        //}
-                        case CondKind.Eq => {
-                          //io.modMemWordValid := False
-                          io.psExSetPc.valid := (
-                            io.rdMemWord(io.brCondIdx(0))
-                            === io.rdMemWord(io.brCondIdx(1))
                           )
-                          io.psExSetPc.nextPc := (
-                            io.regPcPlusImm
+                          io.decodeExt.memAccessKind := (
+                            tempMemAccessKind
                           )
-                        }
-                        case CondKind.Ne => {
-                          //io.modMemWordValid := False
-                          io.psExSetPc.valid := (
-                            io.rdMemWord(io.brCondIdx(0))
-                            =/= io.rdMemWord(io.brCondIdx(1))
+                          modIo.dbus.hostData.accKind := (
+                            tempMemAccessKind
                           )
-                          io.psExSetPc.nextPc := (
-                            io.regPcPlusImm
+                          modIo.dbus.hostData.data := (
+                            modIo.dbus.hostData.data.getZero
                           )
-                        }
-                        case CondKind.Z => {
-                          //assert(
-                          //  opInfo.dstArr.size == 1,
-                          //  s"not yet implemented: "
-                          //  + s"opInfo(${opInfo}) index:${opInfoIdx}"
-                          //)
-                          //assert(
-                          //  opInfo.srcArr.size == 1,
-                          //  s"not yet implemented: "
-                          //  + s"opInfo(${opInfo}) index:${opInfoIdx}"
-                          //)
-                          //io.modMemWordValid := False
-                          io.psExSetPc.valid := (
-                            io.rdMemWord(io.brCondIdx(0)) === 0
+                        } else { // if (isStore)
+                          val tempMemAccessKind = (
+                            SnowHouseMemAccessKind.Store
                           )
-                          io.psExSetPc.nextPc := (
-                            io.regPcPlusImm
+                          io.decodeExt.memAccessKind := (
+                            //io.decodeExt._memAccessLdStKindStore
+                            tempMemAccessKind
                           )
-                        }
-                        case CondKind.Nz => {
-                          //assert(
-                          //  opInfo.dstArr.size == 1,
-                          //  s"not yet implemented: "
-                          //  + s"opInfo(${opInfo}) index:${opInfoIdx}"
-                          //)
-                          //assert(
-                          //  opInfo.srcArr.size == 1,
-                          //  s"not yet implemented: "
-                          //  + s"opInfo(${opInfo}) index:${opInfoIdx}"
-                          //)
-                          //io.modMemWordValid := False
-                          io.psExSetPc.valid := (
-                            io.rdMemWord(io.brCondIdx(0)) =/= 0
+                          modIo.dbus.hostData.accKind := (
+                            tempMemAccessKind
                           )
-                          io.psExSetPc.nextPc := (
-                            io.regPcPlusImm
-                          )
-                        }
-                        case _ => {
-                          assert(
-                            false,
-                            "not yet implemented"
-                          )
+                          modIo.dbus.hostData.data := selRdMemWord(0)
                         }
                       }
+                      case None => {
+                        assert(
+                          false,
+                          s"not yet implemented: "
+                          + s"opInfo(${opInfo}) index:${opInfoIdx}"
+                        )
+                      }
                     }
+                    io.modMemWordValid := False
+                    io.modMemWord(0) := 0x0
                   }
                 }
-                case OpSelect.Alu => {
-                  io.opIsCpyNonJmpAlu := True
-                  assert(
-                    opInfo.cond == CondKind.Always,
-                    s"not yet implemented: "
-                    + s"opInfo(${opInfo}) index:${opInfoIdx}"
+              }
+              case CpyOpKind.Cpyu => {
+                io.opIsCpyNonJmpAlu := True
+                assert(
+                  opInfo.dstArr.size == 1,
+                  s"not yet implemented: "
+                  + s"opInfo(${opInfo}) index:${opInfoIdx}"
+                )
+                assert(
+                  opInfo.srcArr.size == 1,
+                  s"not yet implemented: "
+                  + s"opInfo(${opInfo}) index:${opInfoIdx}"
+                )
+                assert(
+                  opInfo.cond == CondKind.Always,
+                  s"not yet implemented: "
+                  + s"opInfo(${opInfo}) index:${opInfoIdx}"
+                )
+                assert(
+                  opInfo.memAccess == MemAccessKind.NoMemAccess,
+                  s"not yet implemented: "
+                  + s"opInfo(${opInfo}) index:${opInfoIdx}"
+                )
+                assert(
+                  opInfo.addrCalc == AddrCalcKind.AddReduce,
+                  s"not yet implemented: "
+                  + s"opInfo(${opInfo}) index:${opInfoIdx}"
+                )
+                io.modMemWord(0)(
+                  cfg.mainWidth - 1 downto (cfg.mainWidth >> 1)
+                ) := (
+                  selRdMemWord(1)((cfg.mainWidth >> 1) - 1 downto 0)
+                )
+                io.modMemWord(0)(
+                  (cfg.mainWidth >> 1) - 1 downto 0
+                ) := (
+                  selRdMemWord(0)(
+                    (cfg.mainWidth >> 1) - 1 downto 0
                   )
-                  assert(
-                    opInfo.memAccess == MemAccessKind.NoMemAccess,
-                    s"not yet implemented: "
-                    + s"opInfo(${opInfo}) index:${opInfoIdx}"
-                  )
-                  assert(
-                    opInfo.addrCalc == AddrCalcKind.AddReduce,
-                    s"not yet implemented: "
-                    + s"opInfo(${opInfo}) index:${opInfoIdx}"
-                  )
-                  // TODO: support ALU flags
-                  /*val binop: InstrResult =*/ opInfo.aluOp.get match {
-                    case AluOpKind.Sub => {
-                      //io.modMemWord(0) := (
-                      //  selRdMemWord(1) - selRdMemWord(2)
-                      //)
-                      val myBinop = AluOpKind.Sub.binopFunc(
-                        cfg=cfg,
-                        left=selRdMemWord(1),
-                        right=selRdMemWord(2),
-                        carry=False,
-                      )(
-                        width=cfg.mainWidth
-                      )
-                      io.modMemWord(0) := (
-                        if (
-                          opInfo.dstArr.find(_ == DstKind.Gpr) != None
-                        ) {
-                          myBinop.main
-                        } else {
-                          selRdMemWord(0)
-                        }
-                      )
-                    }
-                    case op => {
-                      val binop = op.binopFunc(
-                        cfg=cfg,
-                        left=selRdMemWord(1),
-                        right=selRdMemWord(2),
-                        carry=False,
-                      )(
-                        // TODO: support more widths than just
-                        // `cfg.mainWidth`
-                        width=cfg.mainWidth
-                      )
-                      io.modMemWord(0) := binop.main
-                    }
-                  }
+                )
+              }
+              case CpyOpKind.Jmp => {
+                assert(
+                  opInfo.dstArr.size == 1
+                  || opInfo.dstArr.size == 2,
+                  s"not yet implemented: "
+                  + s"opInfo(${opInfo}) index:${opInfoIdx}"
+                )
+                assert(
+                  opInfo.srcArr.size == 1,
+                  s"not yet implemented: "
+                  + s"opInfo(${opInfo}) index:${opInfoIdx}"
+                )
+                assert(
+                  opInfo.cond == CondKind.Always,
+                  s"not yet implemented: "
+                  + s"opInfo(${opInfo}) index:${opInfoIdx}"
+                )
+                assert(
+                  opInfo.memAccess == MemAccessKind.NoMemAccess,
+                  s"not yet implemented: "
+                  + s"opInfo(${opInfo}) index:${opInfoIdx}"
+                )
+                assert(
+                  opInfo.addrCalc == AddrCalcKind.AddReduce,
+                  s"not yet implemented: "
+                  + s"opInfo(${opInfo}) index:${opInfoIdx}"
+                )
+                if (opInfo.dstArr.size == 1) (
+                  io.modMemWordValid := False
+                ) else {
+                  //io.modMemWordValid := True
+                  // TODO: support more outputs
+                  io.modMemWordValid := !io.gprIsZeroVec(0)
+                  //io.shouldIgnoreInstr := io.modMemWordValid
                 }
-                case OpSelect.MultiCycle => {
-                    
-                  for (
-                    ((_, innerOpInfo), idx)
-                    <- cfg.multiCycleOpInfoMap.view.zipWithIndex
-                  ) {
-                    //cfg.multiCycleOpInfoMap.find(_._2 == opInfo).get
-                    if (opInfo == innerOpInfo) {
-                      io.multiCycleOpInfoIdx := idx
-                      io.modMemWord(0) := (
-                        modIo.multiCycleBusVec(idx).devData.dstVec(0)
+                io.modMemWord(0) := (
+                  //io.regPcPlusInstrSize
+                  //io.regPc + ((cfg.instrMainWidth / 8) * 2)
+
+                  io.regPc + ((cfg.instrMainWidth / 8) * 1)
+
+                  //io.regPc //+ ((cfg.instrMainWidth / 8) * 1/*2*/)
+                )
+                io.psExSetPc.valid := True
+                io.psExSetPc.nextPc := (
+                  io.rdMemWord(io.jmpAddrIdx)
+                  //- ((cfg.instrMainWidth / 8) * 1/*2*/)
+                )
+              }
+              case CpyOpKind.Br => {
+                if (opInfo.dstArr.size == 1) (
+                  io.modMemWordValid := False
+                )
+                opInfo.cond match {
+                  case CondKind.Always => {
+                    //io.opIsJmp := True
+                    //assert(
+                    //  opInfo.dstArr.size == 1,
+                    //  s"not yet implemented: "
+                    //  + s"opInfo(${opInfo}) index:${opInfoIdx}"
+                    //)
+                    //assert(
+                    //  opInfo.srcArr.size == 1,
+                    //  s"not yet implemented: "
+                    //  + s"opInfo(${opInfo}) index:${opInfoIdx}"
+                    //)
+                    //io.modMemWordValid := False
+                    io.psExSetPc.valid := True
+                    io.psExSetPc.nextPc := io.regPcPlusImm
+                    io.modMemWord(0) := (
+                      //io.regPcPlusInstrSize
+                      io.regPc + ((cfg.instrMainWidth / 8) * 1)
+                    )
+                    //io.modMemWordValid := True
+                    if (opInfo.dstArr.size == 1) (
+                      io.modMemWordValid := False
+                    ) else {
+                      io.modMemWordValid := (
+                        // TODO: support more outputs
+                        !io.gprIsZeroVec(0)
+                        //True
                       )
+                      //io.shouldIgnoreInstr := io.modMemWordValid
                     }
                   }
-                  io.opIsMultiCycle := True
-                  assert(
-                    opInfo.cond == CondKind.Always,
-                    s"not yet implemented: "
-                    + s"opInfo(${opInfo}) index:${opInfoIdx}"
-                  )
-                  assert(
-                    opInfo.memAccess == MemAccessKind.NoMemAccess,
-                    s"not yet implemented: "
-                    + s"opInfo(${opInfo}) index:${opInfoIdx}"
-                  )
-                  assert(
-                    opInfo.addrCalc == AddrCalcKind.AddReduce,
-                    s"not yet implemented: "
-                    + s"opInfo(${opInfo}) index:${opInfoIdx}"
-                  )
-                  //opInfo.multiCycleOp.get match {
-                  //  case MultiCycleOpKind.Umul => {
-                  //    //assert(
-                  //    //  opInfo.dstArr.size == 1,
-                  //    //  s"not yet implemented: "
-                  //    //  + s"opInfo(${opInfo}) index:${opInfoIdx}"
-                  //    //)
-                  //    //assert(
-                  //    //  opInfo.srcArr.size == 2,
-                  //    //  s"not yet implemented: "
-                  //    //  + s"opInfo(${opInfo}) index:${opInfoIdx}"
-                  //    //)
-                  //    io.modMemWord(0) := (
-                  //      (selRdMemWord(1) * selRdMemWord(2))(
-                  //        io.modMemWord(0).bitsRange
-                  //      )
-                  //    )
-                  //  }
-                  //  case _ => {
-                  //    assert(
-                  //      false,
-                  //      s"not yet implemented"
-                  //    )
-                  //  }
+                  //case CondKind.Link => {
+                  //  io.opIsJmp := True
+                  //  assert(
+                  //    opInfo.dstArr.size == 2,
+                  //  )
                   //}
+                  case CondKind.Eq => {
+                    //io.modMemWordValid := False
+                    if (
+                      opInfo.srcArr(0) == SrcKind.AluFlags
+                      && opInfo.srcArr(1) == SrcKind.Imm()
+                    ) {
+                      io.psExSetPc.valid := (
+                        io.rFlagZ
+                      )
+                    } else {
+                      assert(
+                        opInfo.srcArr(0) == SrcKind.Gpr
+                        && opInfo.srcArr(1) == SrcKind.Gpr,
+                        s"not yet implemented: "
+                        + s"opInfo(${opInfo}) index:${opInfoIdx}"
+                      )
+                      io.psExSetPc.valid := (
+                        io.rdMemWord(io.brCondIdx(0))
+                        === io.rdMemWord(io.brCondIdx(1))
+                      )
+                    }
+                    io.psExSetPc.nextPc := (
+                      io.regPcPlusImm
+                    )
+                  }
+                  case CondKind.Ne => {
+                    //io.modMemWordValid := False
+                    if (
+                      opInfo.srcArr(0) == SrcKind.AluFlags
+                      && opInfo.srcArr(1) == SrcKind.Imm()
+                    ) {
+                      io.psExSetPc.valid := (
+                        !io.rFlagZ
+                      )
+                    } else {
+                      assert(
+                        opInfo.srcArr(0) == SrcKind.Gpr
+                        && opInfo.srcArr(1) == SrcKind.Gpr,
+                        s"not yet implemented: "
+                        + s"opInfo(${opInfo}) index:${opInfoIdx}"
+                      )
+                      io.psExSetPc.valid := (
+                        io.rdMemWord(io.brCondIdx(0))
+                        =/= io.rdMemWord(io.brCondIdx(1))
+                      )
+                    }
+                    io.psExSetPc.nextPc := (
+                      io.regPcPlusImm
+                    )
+                  }
+                  case CondKind.Mi => {
+                    io.psExSetPc.valid := (
+                      io.rFlagN
+                    )
+                    io.psExSetPc.nextPc := (
+                      io.regPcPlusImm
+                    )
+                  }
+                  case CondKind.Pl => {
+                    io.psExSetPc.valid := (
+                      !io.rFlagN
+                    )
+                    io.psExSetPc.nextPc := (
+                      io.regPcPlusImm
+                    )
+                  }
+                  case CondKind.Vs => {
+                    io.psExSetPc.valid := (
+                      io.rFlagV
+                    )
+                    io.psExSetPc.nextPc := (
+                      io.regPcPlusImm
+                    )
+                  }
+                  case CondKind.Vc => {
+                    io.psExSetPc.valid := (
+                      !io.rFlagV
+                    )
+                    io.psExSetPc.nextPc := (
+                      io.regPcPlusImm
+                    )
+                  }
+                  case CondKind.Geu => {
+                    //io.modMemWordValid := False
+                    if (
+                      opInfo.srcArr(0) == SrcKind.AluFlags
+                      && opInfo.srcArr(1) == SrcKind.Imm()
+                    ) {
+                      io.psExSetPc.valid := (
+                        io.rFlagC
+                      )
+                    } else {
+                      assert(
+                        opInfo.srcArr(0) == SrcKind.Gpr
+                        && opInfo.srcArr(1) == SrcKind.Gpr,
+                        s"not yet implemented: "
+                        + s"opInfo(${opInfo}) index:${opInfoIdx}"
+                      )
+                      io.psExSetPc.valid := (
+                        io.rdMemWord(io.brCondIdx(0))
+                        >= io.rdMemWord(io.brCondIdx(1))
+                      )
+                    }
+                    io.psExSetPc.nextPc := (
+                      io.regPcPlusImm
+                    )
+                  }
+                  case CondKind.Ltu => {
+                    //io.modMemWordValid := False
+                    if (
+                      opInfo.srcArr(0) == SrcKind.AluFlags
+                      && opInfo.srcArr(1) == SrcKind.Imm()
+                    ) {
+                      io.psExSetPc.valid := (
+                        !io.rFlagC
+                      )
+                    } else {
+                      assert(
+                        opInfo.srcArr(0) == SrcKind.Gpr
+                        && opInfo.srcArr(1) == SrcKind.Gpr,
+                        s"not yet implemented: "
+                        + s"opInfo(${opInfo}) index:${opInfoIdx}"
+                      )
+                      io.psExSetPc.valid := (
+                        io.rdMemWord(io.brCondIdx(0))
+                        < io.rdMemWord(io.brCondIdx(1))
+                      )
+                    }
+                    io.psExSetPc.nextPc := (
+                      io.regPcPlusImm
+                    )
+                  }
+                  case CondKind.Gtu => {
+                    //io.modMemWordValid := False
+                    if (
+                      opInfo.srcArr(0) == SrcKind.AluFlags
+                      && opInfo.srcArr(1) == SrcKind.Imm()
+                    ) {
+                      io.psExSetPc.valid := (
+                        //io.rFlagC && !io.rFlagZ
+                        io.rFlagC && !io.rFlagZ
+                      )
+                    } else {
+                      assert(
+                        opInfo.srcArr(0) == SrcKind.Gpr
+                        && opInfo.srcArr(1) == SrcKind.Gpr,
+                        s"not yet implemented: "
+                        + s"opInfo(${opInfo}) index:${opInfoIdx}"
+                      )
+                      io.psExSetPc.valid := (
+                        io.rdMemWord(io.brCondIdx(0))
+                        > io.rdMemWord(io.brCondIdx(1))
+                      )
+                    }
+                    io.psExSetPc.nextPc := (
+                      io.regPcPlusImm
+                    )
+                  }
+                  case CondKind.Leu => {
+                    //io.modMemWordValid := False
+                    if (
+                      opInfo.srcArr(0) == SrcKind.AluFlags
+                      && opInfo.srcArr(1) == SrcKind.Imm()
+                    ) {
+                      io.psExSetPc.valid := (
+                        //!io.rFlagC || io.rFlagZ
+                        !io.rFlagC || io.rFlagZ
+                      )
+                    } else {
+                      assert(
+                        opInfo.srcArr(0) == SrcKind.Gpr
+                        && opInfo.srcArr(1) == SrcKind.Gpr,
+                        s"not yet implemented: "
+                        + s"opInfo(${opInfo}) index:${opInfoIdx}"
+                      )
+                      io.psExSetPc.valid := (
+                        io.rdMemWord(io.brCondIdx(0))
+                        <= io.rdMemWord(io.brCondIdx(1))
+                      )
+                    }
+                    io.psExSetPc.nextPc := (
+                      io.regPcPlusImm
+                    )
+                  }
+                  case CondKind.Ges => {
+                    //io.modMemWordValid := False
+                    if (
+                      opInfo.srcArr(0) == SrcKind.AluFlags
+                      && opInfo.srcArr(1) == SrcKind.Imm()
+                    ) {
+                      io.psExSetPc.valid := (
+                        //io.rFlagC
+                        !(io.rFlagN ^ io.rFlagV)
+                      )
+                    } else {
+                      assert(
+                        opInfo.srcArr(0) == SrcKind.Gpr
+                        && opInfo.srcArr(1) == SrcKind.Gpr,
+                        s"not yet implemented: "
+                        + s"opInfo(${opInfo}) index:${opInfoIdx}"
+                      )
+                      io.psExSetPc.valid := (
+                        io.rdMemWord(io.brCondIdx(0)).asSInt
+                        >= io.rdMemWord(io.brCondIdx(1)).asSInt
+                      )
+                    }
+                    io.psExSetPc.nextPc := (
+                      io.regPcPlusImm
+                    )
+                  }
+                  case CondKind.Lts => {
+                    //io.modMemWordValid := False
+                    if (
+                      opInfo.srcArr(0) == SrcKind.AluFlags
+                      && opInfo.srcArr(1) == SrcKind.Imm()
+                    ) {
+                      io.psExSetPc.valid := (
+                        //!io.rFlagC
+                        (io.rFlagN ^ io.rFlagV)
+                      )
+                    } else {
+                      assert(
+                        opInfo.srcArr(0) == SrcKind.Gpr
+                        && opInfo.srcArr(1) == SrcKind.Gpr,
+                        s"not yet implemented: "
+                        + s"opInfo(${opInfo}) index:${opInfoIdx}"
+                      )
+                      io.psExSetPc.valid := (
+                        io.rdMemWord(io.brCondIdx(0)).asSInt
+                        < io.rdMemWord(io.brCondIdx(1)).asSInt
+                      )
+                    }
+                    io.psExSetPc.nextPc := (
+                      io.regPcPlusImm
+                    )
+                  }
+                  case CondKind.Gts => {
+                    //io.modMemWordValid := False
+                    if (
+                      opInfo.srcArr(0) == SrcKind.AluFlags
+                      && opInfo.srcArr(1) == SrcKind.Imm()
+                    ) {
+                      io.psExSetPc.valid := (
+                        //io.rFlagC && !io.rFlagZ
+                        (!(io.rFlagN ^ io.rFlagV)) & !io.rFlagZ
+                      )
+                    } else {
+                      assert(
+                        opInfo.srcArr(0) == SrcKind.Gpr
+                        && opInfo.srcArr(1) == SrcKind.Gpr,
+                        s"not yet implemented: "
+                        + s"opInfo(${opInfo}) index:${opInfoIdx}"
+                      )
+                      io.psExSetPc.valid := (
+                        io.rdMemWord(io.brCondIdx(0)).asSInt
+                        > io.rdMemWord(io.brCondIdx(1)).asSInt
+                      )
+                    }
+                    io.psExSetPc.nextPc := (
+                      io.regPcPlusImm
+                    )
+                  }
+                  case CondKind.Les => {
+                    //io.modMemWordValid := False
+                    if (
+                      opInfo.srcArr(0) == SrcKind.AluFlags
+                      && opInfo.srcArr(1) == SrcKind.Imm()
+                    ) {
+                      io.psExSetPc.valid := (
+                        //!io.rFlagC || io.rFlagZ
+                        (io.rFlagN ^ io.rFlagV) | io.rFlagZ
+                      )
+                    } else {
+                      assert(
+                        opInfo.srcArr(0) == SrcKind.Gpr
+                        && opInfo.srcArr(1) == SrcKind.Gpr,
+                        s"not yet implemented: "
+                        + s"opInfo(${opInfo}) index:${opInfoIdx}"
+                      )
+                      io.psExSetPc.valid := (
+                        io.rdMemWord(io.brCondIdx(0)).asSInt
+                        <= io.rdMemWord(io.brCondIdx(1)).asSInt
+                      )
+                    }
+                    io.psExSetPc.nextPc := (
+                      io.regPcPlusImm
+                    )
+                  }
+                  case CondKind.Z => {
+                    //assert(
+                    //  opInfo.dstArr.size == 1,
+                    //  s"not yet implemented: "
+                    //  + s"opInfo(${opInfo}) index:${opInfoIdx}"
+                    //)
+                    //assert(
+                    //  opInfo.srcArr.size == 1,
+                    //  s"not yet implemented: "
+                    //  + s"opInfo(${opInfo}) index:${opInfoIdx}"
+                    //)
+                    //io.modMemWordValid := False
+                    assert(
+                      opInfo.srcArr(0) == SrcKind.Gpr,
+                      s"not yet implemented: "
+                      + s"opInfo(${opInfo}) index:${opInfoIdx}"
+                    )
+                    io.psExSetPc.valid := (
+                      io.rdMemWord(io.brCondIdx(0)) === 0
+                    )
+                    io.psExSetPc.nextPc := (
+                      io.regPcPlusImm
+                    )
+                  }
+                  case CondKind.Nz => {
+                    //assert(
+                    //  opInfo.dstArr.size == 1,
+                    //  s"not yet implemented: "
+                    //  + s"opInfo(${opInfo}) index:${opInfoIdx}"
+                    //)
+                    //assert(
+                    //  opInfo.srcArr.size == 1,
+                    //  s"not yet implemented: "
+                    //  + s"opInfo(${opInfo}) index:${opInfoIdx}"
+                    //)
+                    //io.modMemWordValid := False
+                    assert(
+                      opInfo.srcArr(0) == SrcKind.Gpr,
+                      s"not yet implemented: "
+                      + s"opInfo(${opInfo}) index:${opInfoIdx}"
+                    )
+                    io.psExSetPc.valid := (
+                      io.rdMemWord(io.brCondIdx(0)) =/= 0
+                    )
+                    io.psExSetPc.nextPc := (
+                      io.regPcPlusImm
+                    )
+                  }
+                  case _ => {
+                    assert(
+                      false,
+                      "not yet implemented"
+                    )
+                  }
                 }
               }
             }
           }
-          default {
-            //assert(False)
+          case OpSelect.Alu => {
+            io.opIsCpyNonJmpAlu := True
+            assert(
+              opInfo.cond == CondKind.Always,
+              s"not yet implemented: "
+              + s"opInfo(${opInfo}) index:${opInfoIdx}"
+            )
+            assert(
+              opInfo.memAccess == MemAccessKind.NoMemAccess,
+              s"not yet implemented: "
+              + s"opInfo(${opInfo}) index:${opInfoIdx}"
+            )
+            assert(
+              opInfo.addrCalc == AddrCalcKind.AddReduce,
+              s"not yet implemented: "
+              + s"opInfo(${opInfo}) index:${opInfoIdx}"
+            )
+            // TODO: support ALU flags
+            /*val binop: InstrResult =*/ opInfo.aluOp.get match {
+              case AluOpKind.Sub => {
+                //io.modMemWord(0) := (
+                //  selRdMemWord(1) - selRdMemWord(2)
+                //)
+                val myBinop = AluOpKind.Sub.binopFunc(
+                  cfg=cfg,
+                  left=selRdMemWord(1),
+                  right=selRdMemWord(2),
+                  carry=(
+                    if (cfg.myHaveAluFlags) (
+                      io.rFlagC
+                    ) else (
+                      False
+                    )
+                  ),
+                )(
+                  width=cfg.mainWidth
+                )
+                if (opInfo.dstArr(0) == DstKind.AluFlags) {
+                  io.rFlagN := myBinop.flagN
+                  io.rFlagV := myBinop.flagV
+                  io.rFlagC := myBinop.flagC
+                  io.rFlagZ := myBinop.flagZ
+                }
+                io.modMemWord(0) := (
+                  if (
+                    opInfo.dstArr.find(_ == DstKind.Gpr) != None
+                  ) {
+                    myBinop.main
+                  } else {
+                    selRdMemWord(0)
+                  }
+                )
+              }
+              case op => {
+                val binop = op.binopFunc(
+                  cfg=cfg,
+                  left=selRdMemWord(1),
+                  right=selRdMemWord(2),
+                  carry=(
+                    if (cfg.myHaveAluFlags) (
+                      io.rFlagC
+                    ) else (
+                      False
+                    )
+                  ),
+                )(
+                  // TODO: support more widths than just
+                  // `cfg.mainWidth`
+                  width=cfg.mainWidth
+                )
+                if (opInfo.dstArr(0) == DstKind.AluFlags) {
+                  io.rFlagN := binop.flagN
+                  io.rFlagV := binop.flagV
+                  io.rFlagC := binop.flagC
+                  io.rFlagZ := binop.flagZ
+                }
+                io.modMemWord(0) := binop.main
+              }
+            }
           }
-          //is (PipeMemRmwSimDut.ModOp.AddRaRb) {
-          //  io.modMemWord := (
-          //    someRdMemWord + 0x1
-          //  )
-          //  //io.modMemWordValid := (
-          //  //  True
-          //  //)
-          //}
-          //is (PipeMemRmwSimDut.ModOp.LdrRaRb) {
-          //  io.modMemWord := (
-          //    //someRdMemWord //+ 0x1
-          //    0x0
-          //  )
-          //  io.modMemWordValid := (
-          //    False
-          //  )
-          //}
-          //is (PipeMemRmwSimDut.ModOp.MulRaRb) {
-          //  io.modMemWord := (
-          //    (
-          //      if (PipeMemRmwSimDut.allModOpsSameChange) (
-          //        someRdMemWord + 0x1
-          //      ) else (
-          //        (someRdMemWord << 1)(
-          //          io.modMemWord.bitsRange
-          //        )
-          //      )
-          //    )                    )
-          //  //io.modMemWordValid := (
-          //  //  True
-          //  //)
-          //}
-          //--------
+          case OpSelect.MultiCycle => {
+              
+            for (
+              ((_, innerOpInfo), idx)
+              <- cfg.multiCycleOpInfoMap.view.zipWithIndex
+            ) {
+              //cfg.multiCycleOpInfoMap.find(_._2 == opInfo).get
+              if (opInfo == innerOpInfo) {
+                io.multiCycleOpInfoIdx := idx
+                io.modMemWord(0) := (
+                  modIo.multiCycleBusVec(idx).devData.dstVec(0)
+                )
+              }
+            }
+            io.opIsMultiCycle := True
+            assert(
+              opInfo.cond == CondKind.Always,
+              s"not yet implemented: "
+              + s"opInfo(${opInfo}) index:${opInfoIdx}"
+            )
+            assert(
+              opInfo.memAccess == MemAccessKind.NoMemAccess,
+              s"not yet implemented: "
+              + s"opInfo(${opInfo}) index:${opInfoIdx}"
+            )
+            assert(
+              opInfo.addrCalc == AddrCalcKind.AddReduce,
+              s"not yet implemented: "
+              + s"opInfo(${opInfo}) index:${opInfoIdx}"
+            )
+            //opInfo.multiCycleOp.get match {
+            //  case MultiCycleOpKind.Umul => {
+            //    //assert(
+            //    //  opInfo.dstArr.size == 1,
+            //    //  s"not yet implemented: "
+            //    //  + s"opInfo(${opInfo}) index:${opInfoIdx}"
+            //    //)
+            //    //assert(
+            //    //  opInfo.srcArr.size == 2,
+            //    //  s"not yet implemented: "
+            //    //  + s"opInfo(${opInfo}) index:${opInfoIdx}"
+            //    //)
+            //    io.modMemWord(0) := (
+            //      (selRdMemWord(1) * selRdMemWord(2))(
+            //        io.modMemWord(0).bitsRange
+            //      )
+            //    )
+            //  }
+            //  case _ => {
+            //    assert(
+            //      false,
+            //      s"not yet implemented"
+            //    )
+            //  }
+            //}
+          }
         }
-      //} otherwise {
-      //when (!io.pcChangeState) {
-      //  io.modMemWordValid := False
-      //  io.modMemWord.foreach(modMemWord => {
-      //    modMemWord := modMemWord.getZero
-      //  })
-      //}
-  //  }
+      }
+    }
+    default {
+      //assert(False)
+    }
+  }
+//  }
   //  is (PcChangeState.WaitTwoInstrs) {
   //    io.modMemWordValid := False
   //    io.modMemWord.foreach(modMemWord => {
@@ -3087,7 +3280,7 @@ case class SnowHousePipeStageMem(
           def tempExtLeft(ydx: Int) = midModPayload(extIdxUp).myExt(ydx)
           def tempExtRight(ydx: Int) = modFront(modFrontPayload).myExt(ydx)
           opInfo.select match {
-            //is (PipeMemRmwSimDut.ModOp.LdrRaRb) 
+            //is (PipeMemRmwSimDut.ModOp.LdrRaRb)
             case OpSelect.Cpy => {
               for (ydx <- 0 until cfg.regFileCfg.memArrSize) {
                 val myExtLeft = tempExtLeft(ydx=ydx)
@@ -3228,7 +3421,7 @@ case class SnowHousePipeStageMem(
                 }
               }
             }
-            //is (PipeMemRmwSimDut.ModOp.MulRaRb) 
+            //is (PipeMemRmwSimDut.ModOp.MulRaRb)
             case OpSelect.MultiCycle => {
               for (ydx <- 0 until cfg.regFileCfg.memArrSize) {
                 val myExtLeft = tempExtLeft(ydx=ydx)
@@ -4038,7 +4231,7 @@ case class SnowHousePipeStageMem(
                 //      assert(
                 //        midModPayload(extIdx).myExt(0).modMemWord
                 //        === (
-                //          midModPayload(extIdx).myExt(0).rdMemWord(0) 
+                //          midModPayload(extIdx).myExt(0).rdMemWord(0)
                 //          + 1
                 //        )
                 //      )
@@ -4051,7 +4244,7 @@ case class SnowHousePipeStageMem(
                 //        midModPayload(extIdx).myExt(0).modMemWord(
                 //          tempBitsRange
                 //        ) === (
-                //          midModPayload(extIdx).myExt(0).rdMemWord(0) 
+                //          midModPayload(extIdx).myExt(0).rdMemWord(0)
                 //          << 1
                 //        )(
                 //          tempBitsRange
@@ -4482,7 +4675,7 @@ case class SnowHousePipeStageWriteBack(
         val tempArr = ArrayBuffer[Vec[UInt]]()
         for ((wordCount, ydx) <- regFile.wordCountArr.view.zipWithIndex) {
           tempArr += {
-            val myArr = new ArrayBuffer[UInt]() 
+            val myArr = new ArrayBuffer[UInt]()
             for (idx <- 0 until wordCount) {
               myArr += (
                 //wordType()
