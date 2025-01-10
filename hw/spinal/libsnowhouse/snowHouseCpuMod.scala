@@ -122,13 +122,25 @@ object SnowHouseCpuOp {
   //def AddPcKindMain = 0x0
   //val Asr = mkOp("Asr")                     // 8
   val MulRaRbRc = mkOp(                           // 7, 0
-    "mul rA, rB, rC", MulitCycleKindMulRc, true
+    "mul rA, rB, rC", MultiCycleKindMulRc, false
   )
-  def MulitCycleKindMulRc = 0x0
-  //def MultiCycleKindUdivRc = 0x1
-  //def MultiCycleKindSdivRc = 0x2
-  //def MultiCycleKindUmodRc = 0x3
-  //def MultiCycleKindSmodRc = 0x3
+  val UdivRaRbRc = mkOp(                           // 7, 1
+    "udiv rA, rB, rC", MultiCycleKindUdivRc, false
+  )
+  val SdivRaRbRc = mkOp(                           // 7, 2
+    "sdiv rA, rB, rC", MultiCycleKindSdivRc, false
+  )
+  val UmodRaRbRc = mkOp(                           // 7, 3
+    "umod rA, rB, rC", MultiCycleKindUmodRc, false
+  )
+  val SmodRaRbRc = mkOp(                           // 7, 4
+    "smod rA, rB, rC", MultiCycleKindSmodRc, true
+  )
+  def MultiCycleKindMulRc = 0x0
+  def MultiCycleKindUdivRc = 0x1
+  def MultiCycleKindSdivRc = 0x2
+  def MultiCycleKindUmodRc = 0x3
+  def MultiCycleKindSmodRc = 0x4
 
   val LdrRaRbRc = mkOp(                       // 8, 0
     "ldr rA, rB, rC", LdKind32Rc, false
@@ -300,20 +312,36 @@ object SnowHouseCpuPipeStageInstrDecode {
     upPayload.gprIdxVec(0) := encInstr.raIdx
     upPayload.gprIdxVec(1) := encInstr.rbIdx
     upPayload.gprIdxVec(2) := encInstr.rcIdx
-    val tempImm = Cat(
-      Mux[UInt](
-        encInstr.imm16.msb,
-        U"16'hffff",
-        U"16'h0000",
-      ),
-      encInstr.imm16.asSInt
-    ).asUInt
-    val rPrevPreImm16 = (
+    //val tempImm = Cat(
+    //  Mux[UInt](
+    //    encInstr.imm16.msb,
+    //    U"16'hffff",
+    //    U"16'h0000",
+    //  ),
+    //  encInstr.imm16.asSInt
+    //).asUInt
+    val tempImm = UInt(cfg.mainWidth bits)
+    tempImm := (
+      Cat(
+        Mux[UInt](
+          encInstr.imm16.msb,
+          U"16'hffff",
+          U"16'h0000",
+        ),
+        encInstr.imm16.asSInt
+      ).asUInt
+    )
+    val rPrevPreImm = (
       KeepAttribute(
         RegNextWhen(
-          next=encInstr.imm16,
+          next=Cat(
+            encInstr.raIdx,
+            encInstr.rbIdx,
+            encInstr.rcIdx,
+            encInstr.imm16
+          ).asUInt,
           cond=cId.up.isFiring,
-          init=encInstr.imm16.getZero,
+          //init=encInstr.imm16.getZero,
         )
       )
       .setName(s"InstrDecode_rPrevPreImm16")
@@ -325,11 +353,12 @@ object SnowHouseCpuPipeStageInstrDecode {
       is (True) {
         upPayload.imm := (
           Cat(
-            rPrevPreImm16,
+            rPrevPreImm,
             encInstr.imm16,
-          ).asUInt
+          ).asUInt.resized
         )
         when (cId.up.isFiring) {
+          upPayload.blockIrq := False
           nextMultiCycleState := False
         }
       }
@@ -429,7 +458,26 @@ object SnowHouseCpuPipeStageInstrDecode {
       //  setOp(AddRaPcSimm16)
       //}
       is (MulRaRbRc._1) {
-        setOp(MulRaRbRc)
+        switch (encInstr.imm16(2 downto 0)) {
+          is (MulRaRbRc._2) {
+            setOp(MulRaRbRc)
+          }
+          is (UdivRaRbRc._2) {
+            setOp(UdivRaRbRc)
+          }
+          is (SdivRaRbRc._2) {
+            setOp(SdivRaRbRc)
+          }
+          is (UmodRaRbRc._2) {
+            setOp(UmodRaRbRc)
+          }
+          is (SmodRaRbRc._2) {
+            setOp(SmodRaRbRc)
+          }
+          default {
+            doDefault()
+          }
+        }
       }
       is (LdrRaRbRc._1) {
         when (encInstr.rcIdx =/= 0x0) {
@@ -525,6 +573,7 @@ object SnowHouseCpuPipeStageInstrDecode {
           cId.up.isFiring
           && !rMultiCycleState
         ) {
+          upPayload.blockIrq := True
           nextMultiCycleState := True
         }
       }
@@ -721,6 +770,38 @@ object SnowHouseCpuOpInfoMap {
       dstArr=Array[DstKind](DstKind.Gpr),
       srcArr=Array[SrcKind](SrcKind.Gpr, SrcKind.Gpr),
       multiCycleOp=MultiCycleOpKind.Umul,
+    )
+  )
+  opInfoMap += (
+    // udiv rA, rB, rC
+    SnowHouseCpuOp.UdivRaRbRc -> OpInfo.mkMultiCycle(
+      dstArr=Array[DstKind](DstKind.Gpr),
+      srcArr=Array[SrcKind](SrcKind.Gpr, SrcKind.Gpr),
+      multiCycleOp=MultiCycleOpKind.Udiv,
+    )
+  )
+  opInfoMap += (
+    // sdiv rA, rB, rC
+    SnowHouseCpuOp.SdivRaRbRc -> OpInfo.mkMultiCycle(
+      dstArr=Array[DstKind](DstKind.Gpr),
+      srcArr=Array[SrcKind](SrcKind.Gpr, SrcKind.Gpr),
+      multiCycleOp=MultiCycleOpKind.Sdiv,
+    )
+  )
+  opInfoMap += (
+    // umod rA, rB, rC
+    SnowHouseCpuOp.UmodRaRbRc -> OpInfo.mkMultiCycle(
+      dstArr=Array[DstKind](DstKind.Gpr),
+      srcArr=Array[SrcKind](SrcKind.Gpr, SrcKind.Gpr),
+      multiCycleOp=MultiCycleOpKind.Umod,
+    )
+  )
+  opInfoMap += (
+    // smod rA, rB, rC
+    SnowHouseCpuOp.SmodRaRbRc -> OpInfo.mkMultiCycle(
+      dstArr=Array[DstKind](DstKind.Gpr),
+      srcArr=Array[SrcKind](SrcKind.Gpr, SrcKind.Gpr),
+      multiCycleOp=MultiCycleOpKind.Smod,
     )
   )
   //--------
@@ -1059,7 +1140,9 @@ case class SnowHouseCpuTestProgram(
     str(r6, r0, r3),          // 0x24: [r0 + r3] = r6
     ldr(r6, r0, r3),          // 0x28
     //cpy(r0, r0),
-    mul(r7, r6, r1),          // 0x2c
+    //mul(r7, r6, r1),          // 0x2c
+    udiv(r7, r6, r1),
+    umod(r8, r6, r1),
     //--------
     Lb"loop",
     //add(r0, r1, r2),
@@ -1072,7 +1155,7 @@ case class SnowHouseCpuTestProgram(
     str(r6, r3, 0x4),         // 0x38:
     add(r3, r3, 0x4),         // 0x3c: r3 += 4
     sub(r1, r1, 0x1),         // 0x40: r1 -= 1 
-    bl(LbR"multiply"),        // 0x44
+    bl(LbR"divmod"),        // 0x44
     //mul(r7, r6, r1),
     bnz(r1, LbR"loop"),       // 0x48: if (r1 != 0) goto LbR"loop"
     //--------
@@ -1087,8 +1170,10 @@ case class SnowHouseCpuTestProgram(
     //add(r6, r6, r0),
     jmp(lr),                  // 0x58
     //--------
-    Lb"multiply",
-    mul(r7, r6, r1),          // 0x5c
+    Lb"divmod",
+    //mul(r7, r6, r1),          // 0x5c
+    udiv(r7, r6, r1),
+    umod(r8, r6, r1),
     jmp(lr),                  // 0x60
     cpy(r0, r0),
     cpy(r0, r0),
@@ -1099,6 +1184,421 @@ case class SnowHouseCpuTestProgram(
   //  stmtArr=program,
   //  outpArr=outpArr,
   //)
+}
+case class SnowHouseCpuMul32(
+  cpuIo: SnowHouseIo,
+) extends Area {
+  def cfg = cpuIo.cfg
+  for (
+    //(multiCycleBus, busIdx) <- cpuIo.multiCycleBusVec.view.zipWithIndex
+    ((_, opInfo), busIdx)
+    <- cfg.multiCycleOpInfoMap.view.zipWithIndex
+  ) {
+    opInfo.multiCycleOp.get match {
+      case MultiCycleOpKind.Umul => {
+        //cpuIo.multiCycleBusVec
+        val multiCycleBus = cpuIo.multiCycleBusVec(busIdx)
+        def dstVec = multiCycleBus.devData.dstVec
+        dstVec(0) := (
+          RegNext(
+            next=dstVec(0),
+            init=dstVec(0).getZero
+          )
+        )
+        //when (
+        //  multiCycleBus.rValid
+        //  && multiCycleBus.ready
+        //) {
+        //  // TODO: add support for more kinds of operations
+        //  multiCycleBus.devData.dstVec(0) := (
+        //    multiCycleBus.hostData.srcVec(0)
+        //    * multiCycleBus.hostData.srcVec(1)
+        //  )(cfg.mainWidth - 1 downto 0)
+        //}
+        //multiCycleBus.ready := multiCycleBus.rValid
+        def srcVec = multiCycleBus.hostData.srcVec
+        def mainWidth = cfg.mainWidth
+        object UMul32State
+        extends SpinalEnum(defaultEncoding=binarySequential) {
+          val
+            DO_THREE_MUL16X16,
+            FIRST_ADD,
+            SECOND_ADD,
+            YIELD_RESULT
+            = newElement()
+        }
+        val rState = (
+          Reg(UMul32State()) init(UMul32State.DO_THREE_MUL16X16)
+        )
+        val low = (mainWidth >> 1) - 1 downto 0
+        val high = (mainWidth - 1 downto (mainWidth >> 1))
+        val shiftAmount = mainWidth >> 1
+        val mulCond = (
+          rState === UMul32State.DO_THREE_MUL16X16
+          && multiCycleBus.rValid
+        )
+        val rY0X0 = (
+          RegNextWhen(
+            //UInt(cfg.mainWidth bits)
+            next=(
+              srcVec(1)(low) * srcVec(0)(low)
+            ),
+            cond=mulCond
+          )
+          init(0x0)
+        )
+        val rY1X0 = (
+          RegNextWhen(
+            //UInt(cfg.mainWidth bits)
+            next=(
+              srcVec(1)(high) * srcVec(0)(low)
+            ),
+            cond=mulCond,
+          )
+          init(0x0)
+        )
+        val rY0X1 = (
+          RegNextWhen(
+            //UInt(cfg.mainWidth bits)
+            next=(
+              srcVec(1)(low) * srcVec(0)(high)
+            ),
+            cond=mulCond,
+          )
+          init(0x0)
+        )
+        val rPartialSum = /*Vec.fill(2)*/(
+          Reg(UInt(mainWidth bits))
+          init(0x0)
+        )
+        multiCycleBus.ready := False
+        when (multiCycleBus.rValid) {
+          switch (rState) {
+            is (UMul32State.DO_THREE_MUL16X16) {
+              rState := UMul32State.FIRST_ADD
+            }
+            is (UMul32State.FIRST_ADD) {
+              rState := UMul32State.SECOND_ADD
+              rPartialSum := (
+                rY1X0 + rY0X1
+              )
+            }
+            is (UMul32State.SECOND_ADD) {
+              rState := UMul32State.YIELD_RESULT
+              //dstVec(0) := (
+              //)
+              rPartialSum := (
+                (rPartialSum << shiftAmount)
+                + rY0X0
+              )(rPartialSum.bitsRange)
+            }
+            is (UMul32State.YIELD_RESULT) {
+              rState := UMul32State.DO_THREE_MUL16X16
+              dstVec(0) := rPartialSum
+              multiCycleBus.ready := True
+            }
+          }
+        }
+      }
+      case _ => {
+      }
+    }
+  }
+}
+case class SnowHouseCpuDivmod32(
+  cpuIo: SnowHouseIo
+) extends Area {
+  def cfg = cpuIo.cfg
+  val divmod = LongDivMultiCycle(
+    mainWidth=cfg.mainWidth,
+    denomWidth=cfg.mainWidth,
+    chunkWidth=2,
+    signedReset=0x0,
+  )
+  object Divmod32State
+  extends SpinalEnum(defaultEncoding=binarySequential) {
+    val
+      IDLE,
+      CHECK_PREV,
+      RUNNING,
+      YIELD_RESULT
+      = newElement()
+  }
+  val rState = Reg(Divmod32State()) init(Divmod32State.IDLE)
+  object Divmod32Kind
+  extends SpinalEnum(defaultEncoding=binarySequential) {
+    val
+      UDIV,
+      SDIV,
+      UMOD,
+      SMOD
+      = newElement()
+  }
+  val rKind = (
+    Reg(Divmod32Kind())
+    init(Divmod32Kind.UDIV)
+  )
+  val rPrevKind = {
+    val temp = (
+      Reg(Flow(Divmod32Kind()))
+    )
+    temp.valid.init(temp.valid.getZero)
+    temp.payload.init(Divmod32Kind.UDIV)
+    temp
+  }
+  def myFunc(
+    doItFunc: (
+      OpInfo,
+      Int,
+      LcvStallIo[MultiCycleHostPayload, MultiCycleDevPayload]
+    ) => Area,
+    setKind: Boolean,
+    needBusRvalid: Boolean=true,
+    //setPrevKind: Boolean,
+  ): Area = new Area {
+    //if (setPrevKind) {
+    //  rPrevKind.valid := True
+    //  rPrevKind.payload := rKind
+    //}
+    for (
+      //(multiCycleBus, busIdx) <- cpuIo.multiCycleBusVec.view.zipWithIndex
+      ((_, opInfo), busIdx)
+      <- cfg.multiCycleOpInfoMap.view.zipWithIndex
+    ) {
+      opInfo.multiCycleOp.get match {
+        case MultiCycleOpKind.Udiv => {
+          if (!needBusRvalid) {
+            val tempArea = doItFunc(
+              opInfo,
+              busIdx,
+              cpuIo.multiCycleBusVec(busIdx)
+            )
+          } else {
+            when (cpuIo.multiCycleBusVec(busIdx).rValid) {
+              if (setKind) {
+                rKind := Divmod32Kind.UDIV
+              }
+              val tempArea = doItFunc(
+                opInfo,
+                busIdx,
+                cpuIo.multiCycleBusVec(busIdx)
+              )
+            }
+          }
+        }
+        case MultiCycleOpKind.Sdiv => {
+          if (!needBusRvalid) {
+            val tempArea = doItFunc(
+              opInfo,
+              busIdx,
+              cpuIo.multiCycleBusVec(busIdx)
+            )
+          } else {
+            when (cpuIo.multiCycleBusVec(busIdx).rValid) {
+              if (setKind) {
+                rKind := Divmod32Kind.SDIV
+              }
+              val tempArea = doItFunc(
+                opInfo,
+                busIdx,
+                cpuIo.multiCycleBusVec(busIdx)
+              )
+            }
+          }
+        }
+        case MultiCycleOpKind.Umod => {
+          if (!needBusRvalid) {
+            val tempArea = doItFunc(
+              opInfo,
+              busIdx,
+              cpuIo.multiCycleBusVec(busIdx)
+            )
+          } else {
+            when (cpuIo.multiCycleBusVec(busIdx).rValid) {
+              if (setKind) {
+                rKind := Divmod32Kind.UMOD
+              }
+              val tempArea = doItFunc(
+                opInfo,
+                busIdx,
+                cpuIo.multiCycleBusVec(busIdx)
+              )
+            }
+          }
+        }
+        case MultiCycleOpKind.Smod => {
+          if (!needBusRvalid) {
+            val tempArea = doItFunc(
+              opInfo,
+              busIdx,
+              cpuIo.multiCycleBusVec(busIdx)
+            )
+          } else {
+            when (cpuIo.multiCycleBusVec(busIdx).rValid) {
+              if (setKind) {
+                rKind := Divmod32Kind.SMOD
+              }
+              val tempArea = doItFunc(
+                opInfo,
+                busIdx,
+                cpuIo.multiCycleBusVec(busIdx)
+              )
+            }
+          }
+        }
+        case _ => {
+        }
+      }
+    }
+  }
+  val rSavedSrcVec = Vec.fill(2)(
+    Reg(UInt(cfg.mainWidth bits))
+    init(0x0)
+  )
+  val rSavedQuot = (
+    Reg(UInt(cfg.mainWidth bits))
+    init(0x0)
+  )
+  val rSavedRema = (
+    Reg(UInt(cfg.mainWidth bits))
+    init(0x0)
+  )
+  def mainWidth = cfg.mainWidth
+  val myArea = myFunc(
+    doItFunc=(
+      opInfo,
+      busIdx,
+      stallIo
+    ) => new Area {
+      stallIo.devData.dstVec.foreach(dst => {
+        dst := (
+          RegNext(
+            next=dst,
+            init=dst.getZero
+          )
+        )
+      })
+      stallIo.ready := False
+    },
+    setKind=false,
+    needBusRvalid=false,
+  )
+  divmod.io.inp.valid := False
+  divmod.io.inp.numer := (
+    RegNext(
+      next=divmod.io.inp.numer,
+      init=divmod.io.inp.numer.getZero,
+    )
+  )
+  divmod.io.inp.denom := (
+    RegNext(
+      next=divmod.io.inp.denom,
+      init=divmod.io.inp.denom.getZero,
+    )
+  )
+  divmod.io.inp.signed := (
+    RegNext(
+      next=divmod.io.inp.signed,
+      init=divmod.io.inp.signed.getZero,
+    )
+  )
+  switch (rState) {
+    is (Divmod32State.IDLE) {
+      val idleArea = myFunc(
+        doItFunc=(
+          opInfo,
+          busIdx,
+          stallIo,
+        ) => new Area {
+          rState := Divmod32State.CHECK_PREV
+          def dstVec = stallIo.devData.dstVec
+          def srcVec = stallIo.hostData.srcVec
+        },
+        setKind=true,
+      )
+    }
+    is (Divmod32State.CHECK_PREV) {
+      val checkPrevInpArea = myFunc(
+        doItFunc=(
+          opInfo,
+          busIdx,
+          stallIo,
+        ) => new Area {
+          def dstVec = stallIo.devData.dstVec
+          def srcVec = stallIo.hostData.srcVec
+          when (
+            rPrevKind.fire
+            && (
+              // this checks if the signedness is the same due to the
+              // encoding of `Divmod32Kind`
+              rPrevKind.payload.asBits(0) === rKind.asBits(0)
+            ) && (
+              srcVec(0) === rSavedSrcVec(0)
+            ) && (
+              srcVec(1) === rSavedSrcVec(1)
+            )
+          ) {
+            stallIo.ready := True
+            rState := Divmod32State.IDLE
+            when (
+              !rKind.asBits(1)
+            ) {
+              dstVec(0) := rSavedQuot
+            } otherwise {
+              dstVec(0) := rSavedRema
+            }
+          } otherwise {
+            divmod.io.inp.valid := True
+            divmod.io.inp.numer := srcVec(0)
+            divmod.io.inp.denom := srcVec(1)
+            divmod.io.inp.signed := rKind.asBits(0)
+            rSavedSrcVec(0) := srcVec(0)
+            rSavedSrcVec(1) := srcVec(1)
+
+            rState := Divmod32State.RUNNING
+          }
+        },
+        setKind=false,
+      )
+    }
+    is (Divmod32State.RUNNING) {
+      //val runningArea = myFunc(
+      //  doItFunc=(
+      //    opInfo,
+      //    busIdx,
+      //    stallIo,
+      //  ) => new Area {
+      //  },
+      //  setKind=false,
+      //)
+      when (divmod.io.outp.ready) {
+        rSavedQuot := divmod.io.outp.quot
+        rSavedRema := divmod.io.outp.rema
+        rState := Divmod32State.YIELD_RESULT
+      }
+    }
+    is (Divmod32State.YIELD_RESULT) {
+      rPrevKind.valid := True
+      rPrevKind.payload := rKind
+      val yieldResultArea = myFunc(
+        doItFunc=(
+          opInfo,
+          busIdx,
+          stallIo,
+        ) => new Area {
+          def dstVec = stallIo.devData.dstVec
+          rState := Divmod32State.IDLE
+          when (!rKind.asBits(1)) {
+            dstVec(0) := rSavedQuot
+          } otherwise {
+            dstVec(0) := rSavedRema
+          }
+          stallIo.ready := True
+        },
+        setKind=false,
+      )
+    }
+  }
 }
 case class SnowHouseCpuWithDualRamIo(
   program: SnowHouseCpuProgram,
@@ -1120,134 +1620,25 @@ case class SnowHouseCpuWithDualRam(
   )
   cpu.io.ibus <> dualRam.io.ibus
   cpu.io.dbus <> dualRam.io.dbus
-  val rMultiCycleBusReadyCnt = (
-    Reg(UInt(8 bits))
-    init(0x3)
-  )
-  val rMultiCycleBusState = (
-    Reg(Bool(), init=False)
-  )
-  if (cpu.io.haveMultiCycleBusVec) {
-    for (
-      //(multiCycleBus, busIdx) <- cpu.io.multiCycleBusVec.view.zipWithIndex
-      ((_, multiCycleOpInfo), busIdx)
-      <- cfg.shCfg.multiCycleOpInfoMap.view.zipWithIndex
-    ) {
-      //cpu.io.multiCycleBusVec
-      val multiCycleBus = cpu.io.multiCycleBusVec(busIdx)
-      def dstVec = multiCycleBus.devData.dstVec
-      dstVec(0) := (
-        RegNext(
-          next=dstVec(0),
-          init=dstVec(0).getZero
-        )
-      )
-      //when (
-      //  multiCycleBus.rValid
-      //  && multiCycleBus.ready
-      //) {
-      //  // TODO: add support for more kinds of operations
-      //  multiCycleBus.devData.dstVec(0) := (
-      //    multiCycleBus.hostData.srcVec(0)
-      //    * multiCycleBus.hostData.srcVec(1)
-      //  )(cfg.mainWidth - 1 downto 0)
-      //}
-      //multiCycleBus.ready := multiCycleBus.rValid
-      def srcVec = multiCycleBus.hostData.srcVec
-      def mainWidth = cfg.shCfg.mainWidth
-      object UMul32State
-      extends SpinalEnum(defaultEncoding=binarySequential) {
-        val
-          DO_THREE_MUL16X16,
-          FIRST_ADD,
-          SECOND_ADD,
-          PROVIDE_RESULT
-          = newElement()
-      }
-      val rState = (
-        Reg(UMul32State()) init(UMul32State.DO_THREE_MUL16X16)
-      )
-      val low = (mainWidth >> 1) - 1 downto 0
-      val high = (mainWidth - 1 downto (mainWidth >> 1))
-      val shiftAmount = mainWidth >> 1
-      val mulCond = (
-        rState === UMul32State.DO_THREE_MUL16X16
-        && multiCycleBus.rValid
-      )
-      val rY0X0 = (
-        RegNextWhen(
-          //UInt(cfg.shCfg.mainWidth bits)
-          next=(
-            srcVec(1)(low) * srcVec(0)(low)
-          ),
-          cond=mulCond
-        )
-        init(0x0)
-      )
-      val rY1X0 = (
-        RegNextWhen(
-          //UInt(cfg.shCfg.mainWidth bits)
-          next=(
-            srcVec(1)(high) * srcVec(0)(low)
-          ),
-          cond=mulCond,
-        )
-        init(0x0)
-      )
-      val rY0X1 = (
-        RegNextWhen(
-          //UInt(cfg.shCfg.mainWidth bits)
-          next=(
-            srcVec(1)(low) * srcVec(0)(high)
-          ),
-          cond=mulCond,
-        )
-        init(0x0)
-      )
-      val rPartialSum = /*Vec.fill(2)*/(
-        Reg(UInt(mainWidth bits))
-        init(0x0)
-      )
-      multiCycleBus.ready := False
-      when (multiCycleBus.rValid) {
-        switch (rState) {
-          is (UMul32State.DO_THREE_MUL16X16) {
-            rState := UMul32State.FIRST_ADD
-          }
-          is (UMul32State.FIRST_ADD) {
-            rState := UMul32State.SECOND_ADD
-            rPartialSum := (
-              rY1X0 + rY0X1
-            )
-          }
-          is (UMul32State.SECOND_ADD) {
-            rState := UMul32State.PROVIDE_RESULT
-            //dstVec(0) := (
-            //)
-            rPartialSum := (
-              (rPartialSum << shiftAmount)
-              + rY0X0
-            )(rPartialSum.bitsRange)
-          }
-          is (UMul32State.PROVIDE_RESULT) {
-            rState := UMul32State.DO_THREE_MUL16X16
-            dstVec(0) := rPartialSum
-            multiCycleBus.ready := True
-          }
-        }
-        //when (rMultiCycleBusReadyCnt > 0) {
-        //  rMultiCycleBusReadyCnt := rMultiCycleBusReadyCnt - 1
-        //} otherwise {
-        //  multiCycleBus.ready := True
-        //  when (!rMultiCycleBusState) {
-        //    rMultiCycleBusReadyCnt := 3
-        //  } otherwise {
-        //    rMultiCycleBusReadyCnt := 5
-        //  }
-        //}
-      }
-    }
-  }
+  val mul32 = SnowHouseCpuMul32(cpuIo=cpu.io)
+  val divmod32 = SnowHouseCpuDivmod32(cpuIo=cpu.io)
+  //val rMultiCycleBusReadyCnt = (
+  //  Reg(UInt(8 bits))
+  //  init(0x3)
+  //)
+  //val rMultiCycleBusState = (
+  //  Reg(Bool(), init=False)
+  //)
+  //when (rMultiCycleBusReadyCnt > 0) {
+  //  rMultiCycleBusReadyCnt := rMultiCycleBusReadyCnt - 1
+  //} otherwise {
+  //  multiCycleBus.ready := True
+  //  when (!rMultiCycleBusState) {
+  //    rMultiCycleBusReadyCnt := 3
+  //  } otherwise {
+  //    rMultiCycleBusReadyCnt := 5
+  //  }
+  //}
 }
 object SnowHouseCpuWithDualRamSim extends App {
   //Config.spinal.generateVerilog({

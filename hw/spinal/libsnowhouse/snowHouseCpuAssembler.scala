@@ -751,6 +751,66 @@ object mul {
   //  )
   //}
 }
+object udiv {
+  def apply(
+    rA: Gpr,
+    rB: Gpr,
+    rC: Gpr
+  ) = {
+    InstructionAsmStmt(
+      op=SnowHouseCpuOp.UdivRaRbRc,
+      rA=rA,
+      rB=rB,
+      rC=rC,
+      imm=SnowHouseCpuOp.UdivRaRbRc._2,
+    )
+  }
+}
+object sdiv {
+  def apply(
+    rA: Gpr,
+    rB: Gpr,
+    rC: Gpr
+  ) = {
+    InstructionAsmStmt(
+      op=SnowHouseCpuOp.SdivRaRbRc,
+      rA=rA,
+      rB=rB,
+      rC=rC,
+      imm=SnowHouseCpuOp.SdivRaRbRc._2,
+    )
+  }
+}
+object umod {
+  def apply(
+    rA: Gpr,
+    rB: Gpr,
+    rC: Gpr
+  ) = {
+    InstructionAsmStmt(
+      op=SnowHouseCpuOp.UmodRaRbRc,
+      rA=rA,
+      rB=rB,
+      rC=rC,
+      imm=SnowHouseCpuOp.UmodRaRbRc._2,
+    )
+  }
+}
+object smod {
+  def apply(
+    rA: Gpr,
+    rB: Gpr,
+    rC: Gpr
+  ) = {
+    InstructionAsmStmt(
+      op=SnowHouseCpuOp.SmodRaRbRc,
+      rA=rA,
+      rB=rB,
+      rC=rC,
+      imm=SnowHouseCpuOp.SmodRaRbRc._2,
+    )
+  }
+}
 object beq {
   def apply(
     rA: Gpr,

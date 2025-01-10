@@ -153,6 +153,9 @@ case class SnowHouseConfig(
     3
   ),
 ) {
+  val haveIrqIraIds = (
+    irqCfg != None
+  )
   val myZeroRegIdx: Int = (
     haveZeroReg match {
       case Some(regIdx) => {
@@ -469,6 +472,11 @@ case class SnowHousePipePayload(
 ) extends Bundle with PipeMemRmwPayloadBase[UInt, Bool] {
   def myHaveFormalFwd = (
     cfg.optFormal
+  )
+  val blockIrq = (
+    cfg.irqCfg != None
+  ) generate (
+    Bool()
   )
   val decodeExt = SnowHouseDecodeExt(cfg=cfg) //simPublic()
   val instrCnt = SnowHouseInstrCnt(cfg=cfg) //simPublic()

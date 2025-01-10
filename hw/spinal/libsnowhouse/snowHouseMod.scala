@@ -137,11 +137,11 @@ case class SnowHouseInstrDataDualRam(
 case class SnowHouseIo(
   cfg: SnowHouseConfig
 ) extends Bundle {
-  val haveIrqIdsIrq = (
-    cfg.irqCfg != None
+  val haveIrqIraIds = (
+    cfg.haveIrqIraIds
   )
   val iraIdsIrq = (
-    haveIrqIdsIrq
+    haveIrqIraIds
   ) generate (
     in(Bool())
   )

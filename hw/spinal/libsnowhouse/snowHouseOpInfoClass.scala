@@ -1656,7 +1656,7 @@ object MultiCycleOpKind {
           HashSet(SrcKind.Gpr, SrcKind.Pc, SrcKind.Imm(/*None*/)),
         ),
         cond=HashSet[CondKind](
-          //CondKind.Always
+          CondKind.Always
         ),
       ),
       OpKindValidArgs(
@@ -1695,7 +1695,7 @@ object MultiCycleOpKind {
           HashSet(SrcKind.Gpr, SrcKind.Pc, SrcKind.Imm(/*None*/)),
         ),
         cond=HashSet[CondKind](
-          //CondKind.Always
+          CondKind.Always
         ),
       ),
       OpKindValidArgs(
@@ -1734,7 +1734,7 @@ object MultiCycleOpKind {
           HashSet(SrcKind.Gpr, SrcKind.Pc, SrcKind.Imm(/*None*/)),
         ),
         cond=HashSet[CondKind](
-          //CondKind.Always
+          CondKind.Always
         ),
       ),
       OpKindValidArgs(
@@ -1773,7 +1773,7 @@ object MultiCycleOpKind {
           HashSet(SrcKind.Gpr, SrcKind.Pc, SrcKind.Imm(/*None*/)),
         ),
         cond=HashSet[CondKind](
-          //CondKind.Always
+          CondKind.Always
         ),
       ),
       OpKindValidArgs(
