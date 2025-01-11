@@ -26,10 +26,10 @@ object SnowHouseCpuOp {
     //opAsInt: Int,
     //lim: Int,
     name: String,
-    kind: Int,
+    kind: (Int, Int),
     update: Boolean,
     //kindLim: Int,
-  ): (/*UInt,*/ Int, Int, String) = {
+  ): (/*UInt,*/ Int, (Int, Int), String) = {
     val ret = (
       //U(s"${SnowHouseCpuInstrEnc.opWidth}'d${opAsInt}"),
       //opAsInt,
@@ -55,8 +55,8 @@ object SnowHouseCpuOp {
   val AddRaRbSimm16 = mkOp(                     // 0, 1
     "add rA, rB, simm16", AddKindSimm16, true
   )
-  def AddKindRc = 0x0
-  def AddKindSimm16 = 0x1
+  def AddKindRc = (0x0, 0x0)
+  def AddKindSimm16 = (0x1, 0x0)
 
   val SubRaRbRc = mkOp(                         // 1, 0
     "sub rA, rB, rC", SubKindRc, false
@@ -65,9 +65,9 @@ object SnowHouseCpuOp {
   val SubReserved = mkOp(                       // 1, 1
     "SubReserved", SubKindReserved, true
   )
-  def SubKindRc = 0x0
+  def SubKindRc = (0x0, 0x0)
   //def SubKindSimm16 = 0x1
-  def SubKindReserved = 0x1
+  def SubKindReserved = (0x1, 0x0)
 
   val SltuRaRbRc = mkOp(                        // 2, 0
     "sltu rA, rB, rC", SltKindSltuRc, false
@@ -75,8 +75,8 @@ object SnowHouseCpuOp {
   val SltsRaRbRc = mkOp(                        // 2, 1
     "slts rA, rB, rC", SltKindSltsRc, true
   )
-  def SltKindSltuRc = 0x0
-  def SltKindSltsRc = 0x1
+  def SltKindSltuRc = (0x0, 0x0)
+  def SltKindSltsRc = (0x1, 0x0)
   //--------
   val XorRaRbRc = mkOp(                     // 3, 0
     "xor rA, rB, rC", XorKindRc, false
@@ -84,8 +84,8 @@ object SnowHouseCpuOp {
   val XorRaRbImm16 = mkOp(                  // 3, 1
     "xor rA, rB, imm16", XorKindSimm16, true
   )
-  def XorKindRc = 0x0
-  def XorKindSimm16 = 0x1
+  def XorKindRc = (0x0, 0x0)
+  def XorKindSimm16 = (0x1, 0x0)
 
   val OrRaRbRc = mkOp(                           // 4, 0
     "or rA, rB, rC", OrKindRc, false
@@ -93,15 +93,16 @@ object SnowHouseCpuOp {
   val OrRaRbImm16 = mkOp(                        // 4, 1
     "or rA, rB, simm16", OrKindSimm16, true
   )
-  def OrKindRc = 0x0
-  def OrKindSimm16 = 0x1
+  def OrKindRc = (0x0, 0x0)
+  def OrKindSimm16 = (0x1, 0x0)
 
   // `AndRaRbRc` is moved down here to help with synthesis/routing of
   // executing/decoding instructions
   val AndRaRbRc = mkOp(                       // 5, 0
     "and rA, rB, rC", AndKindRc, true
   )
-  def AndKindRc = 0x0
+  def AndKindRc = (0x0, 0x0)
+  //def AndKindSimm16
 
   val LslRaRbRc = mkOp(                         // 6, 0
     "lsl rA, rB, rC", ShiftKindLslRc, false
@@ -112,9 +113,9 @@ object SnowHouseCpuOp {
   val AsrRaRbRc = mkOp(                         // 6, 2
     "asr rA, rB, rC", ShiftKindAsrRc, true
   )
-  def ShiftKindLslRc = 0x0
-  def ShiftKindLsrRc = 0x1
-  def ShiftKindAsrRc = 0x2
+  def ShiftKindLslRc = (0x0, 0x0)
+  def ShiftKindLsrRc = (0x1, 0x0)
+  def ShiftKindAsrRc = (0x2, 0x0)
 
   //val AddRaPcSimm16 = mkOp(                   // 7, 0
   //  "AddRaPcSimm16", AddPcKindMain, true
@@ -136,11 +137,11 @@ object SnowHouseCpuOp {
   val SmodRaRbRc = mkOp(                           // 7, 4
     "smod rA, rB, rC", MultiCycleKindSmodRc, true
   )
-  def MultiCycleKindMulRc = 0x0
-  def MultiCycleKindUdivRc = 0x1
-  def MultiCycleKindSdivRc = 0x2
-  def MultiCycleKindUmodRc = 0x3
-  def MultiCycleKindSmodRc = 0x4
+  def MultiCycleKindMulRc = (0x0, 0x0)
+  def MultiCycleKindUdivRc = (0x1, 0x0)
+  def MultiCycleKindSdivRc = (0x2, 0x0)
+  def MultiCycleKindUmodRc = (0x3, 0x0)
+  def MultiCycleKindSmodRc = (0x4, 0x0)
 
   val LdrRaRbRc = mkOp(                       // 8, 0
     "ldr rA, rB, rC", LdKind32Rc, false
@@ -148,8 +149,8 @@ object SnowHouseCpuOp {
   val LdrRaRbSimm16 = mkOp(                   // 8, 1
     "ldr rA, rB, simm16", LdKind32Simm16, true
   )
-  def LdKind32Rc = 0x0
-  def LdKind32Simm16 = 0x1
+  def LdKind32Rc = (0x0, 0x0)
+  def LdKind32Simm16 = (0x1, 0x0)
 
   val LduhRaRbRc = mkOp(                      // 9, 0
     "lduh rA, rB, rC", LdSmallKindU16Rc, false
@@ -175,13 +176,13 @@ object SnowHouseCpuOp {
   //val LdsbRaRbSimm16 = mkOp(                  // 9, ?
   //  "ldsb rA, rB, simm16", LdSmallKindS8Simm16, true
   //)
-  def LdSmallKindU16Rc = 0x0
+  def LdSmallKindU16Rc = (0x0, 0x0)
   //def LdSmallKindU16Simm16 = ?
-  def LdSmallKindS16Rc = 0x1
+  def LdSmallKindS16Rc = (0x1, 0x0)
   //def LdSmallKindS16Simm16 = ?
-  def LdSmallKindU8Rc = 0x2
+  def LdSmallKindU8Rc = (0x2, 0x0)
   //def LdSmallKindU8Simm16 = ?
-  def LdSmallKindS8Rc = 0x3
+  def LdSmallKindS8Rc = (0x3, 0x0)
   //def LdSmallKindS8Simm16 = ?
 
   val StrRaRbRc = mkOp(                       // 10, 0
@@ -190,8 +191,8 @@ object SnowHouseCpuOp {
   val StrRaRbSimm16 = mkOp(                   // 10, 1
     "str rA, rB, simm16", StKind32Simm16, true
   )
-  def StKind32Rc = 0x0
-  def StKind32Simm16 = 0x1
+  def StKind32Rc = (0x0, 0x0)
+  def StKind32Simm16 = (0x1, 0x0)
 
   val SthRaRbRc = mkOp(                         // 11, 0
     "sth rA, rB, rC", StSmallKind16Rc, false
@@ -205,9 +206,9 @@ object SnowHouseCpuOp {
   //val StbRaRbSimm16 = mkOp(                   // 11, ?
   //  "stb rA, rB, simm16", StKind8Simm16, true
   //)
-  def StSmallKind16Rc = 0x0
+  def StSmallKind16Rc = (0x0, 0x0)
   //def StKind16Simm16 = 0x?
-  def StSmallKind8Rc = 0x1
+  def StSmallKind8Rc = (0x1, 0x0)
   //def StKind8Simm16 = 0x?
   //--------
   val BeqRaRbSimm = mkOp(                     // 12, 0
@@ -228,11 +229,11 @@ object SnowHouseCpuOp {
   val JmpReserved = mkOp(                     // 12, 3
     "<JmpReserved>", JmpKindReserved, true
   )
-  def JmpKindBeq = 0x0
-  def JmpKindBne = 0x1
-  def JmpKindJlRaRb = 0x2
+  def JmpKindBeq = (0x0, 0x0)
+  def JmpKindBne = (0x1, 0x0)
+  def JmpKindJlRaRb = (0x2, 0x0)
   //def AddPcKindMain = 0x3
-  def JmpKindReserved = 0x3
+  def JmpKindReserved = (0x3, 0x0)
 
   //val CpyRaRb = mkOp("cpy rA, rB", CpyKindCpyRb, false)              // 12, 0
   //val CpyRaSimm16 = mkOp("cpy rA, simm16", CpyKindCpySimm16, false)  // 12, 1
@@ -245,13 +246,32 @@ object SnowHouseCpuOp {
   ////def CpyKindCpySimm16 = 0x1
   //def CpyKindCpyuRb = 0x0//0x2
   //def CpyKindCpyuSimm16 = 0x1//0x3
-  val PreImm16 = mkOp(                      // 13, 0
+  val PushRaRb = mkOp(                            // 13, 0
+    "push rA, rB", StackKindPushRaRb, false
+  )
+  val PopRaRb = (                                 // 13, 1
+    mkOp(
+      "pop rA, rB", StackKindPopRaRb, false //
+    ),
+    mkOp(
+      "internal: pop0", StackKindPopRaRbInternal0, false
+    ),
+    mkOp(
+      "internal: pop1", StackKindPopRaRbInternal1, true
+    )
+  )
+  def StackKindPushRaRb = (0x0, 0x0)
+  def StackKindPopRaRb = (0x1, 0x0)
+  def StackKindPopRaRbInternal0 = (StackKindPopRaRb._1, 0x1)
+  def StackKindPopRaRbInternal1 = (StackKindPopRaRb._1, 0x2)
+  //--------
+  val PreImm16 = mkOp(                      // 14, 0
     "pre simm16", PreKindImm16, true
   )
-  def PreKindImm16 = 0x0
+  def PreKindImm16 = (0x0, 0x0)
   //--------
   val OpLim = _opCnt
-  val expectedNumOpcodes = 14
+  val expectedNumOpcodes = 15
   assert(
     OpLim == expectedNumOpcodes,
     s"eek! "
@@ -364,7 +384,7 @@ object SnowHouseCpuPipeStageInstrDecode {
       }
     }
     def setOp(
-      someOp: (Int, Int, String)
+      someOp: (Int, (Int, Int), String)
     ): Unit = {
       for (
         ((tuple, opInfo), opInfoIdx) <- cfg.opInfoMap.view.zipWithIndex
@@ -396,6 +416,7 @@ object SnowHouseCpuPipeStageInstrDecode {
         upPayload.imm := 0x0
       }
     }
+    psId.nextPrevInstrWasJump := False
     switch (encInstr.op) {
       is (AddRaRbRc._1) {
         when (encInstr.rcIdx =/= 0x0) {
@@ -413,10 +434,10 @@ object SnowHouseCpuPipeStageInstrDecode {
       }
       is (SltuRaRbRc._1) {
         switch (encInstr.imm16(0 downto 0)) {
-          is (SltuRaRbRc._2) {
+          is (SltuRaRbRc._2._1) {
             setOp(SltuRaRbRc)
           }
-          is (SltsRaRbRc._2) {
+          is (SltsRaRbRc._2._1) {
             setOp(SltsRaRbRc)
           }
         }
@@ -440,13 +461,13 @@ object SnowHouseCpuPipeStageInstrDecode {
       }
       is (LslRaRbRc._1) {
         switch (encInstr.imm16(1 downto 0)) {
-          is (LslRaRbRc._2) {
+          is (LslRaRbRc._2._1) {
             setOp(LslRaRbRc)
           }
-          is (LsrRaRbRc._2) {
+          is (LsrRaRbRc._2._1) {
             setOp(LsrRaRbRc)
           }
-          is (AsrRaRbRc._2) {
+          is (AsrRaRbRc._2._1) {
             setOp(AsrRaRbRc)
           }
           default {
@@ -459,19 +480,19 @@ object SnowHouseCpuPipeStageInstrDecode {
       //}
       is (MulRaRbRc._1) {
         switch (encInstr.imm16(2 downto 0)) {
-          is (MulRaRbRc._2) {
+          is (MulRaRbRc._2._1) {
             setOp(MulRaRbRc)
           }
-          is (UdivRaRbRc._2) {
+          is (UdivRaRbRc._2._1) {
             setOp(UdivRaRbRc)
           }
-          is (SdivRaRbRc._2) {
+          is (SdivRaRbRc._2._1) {
             setOp(SdivRaRbRc)
           }
-          is (UmodRaRbRc._2) {
+          is (UmodRaRbRc._2._1) {
             setOp(UmodRaRbRc)
           }
-          is (SmodRaRbRc._2) {
+          is (SmodRaRbRc._2._1) {
             setOp(SmodRaRbRc)
           }
           default {
@@ -488,16 +509,16 @@ object SnowHouseCpuPipeStageInstrDecode {
       }
       is (LduhRaRbRc._1) {
         switch (encInstr.imm16(1 downto 0)) {
-          is (LduhRaRbRc._2) {
+          is (LduhRaRbRc._2._1) {
             setOp(LduhRaRbRc)
           }
-          is (LdshRaRbRc._2) {
+          is (LdshRaRbRc._2._1) {
             setOp(LdshRaRbRc)
           }
-          is (LdubRaRbRc._2) {
+          is (LdubRaRbRc._2._1) {
             setOp(LdubRaRbRc)
           }
-          is (LdsbRaRbRc._2) {
+          is (LdsbRaRbRc._2._1) {
             setOp(LdsbRaRbRc)
           }
         }
@@ -511,17 +532,18 @@ object SnowHouseCpuPipeStageInstrDecode {
       }
       is (SthRaRbRc._1) {
         switch (encInstr.imm16(0 downto 0)) {
-          is (SthRaRbRc._2) {
+          is (SthRaRbRc._2._1) {
             setOp(SthRaRbRc)
           }
-          is (StbRaRbRc._2) {
+          is (StbRaRbRc._2._1) {
             setOp(StbRaRbRc)
           }
         }
       }
       is (BeqRaRbSimm._1) {
         switch (encInstr.rcIdx(1 downto 0)) {
-          is (BeqRaRbSimm._2) {
+          is (BeqRaRbSimm._2._1) {
+            psId.nextPrevInstrWasJump := True
             when (
               encInstr.raIdx === encInstr.rbIdx
               && encInstr.raIdx =/= 0x0
@@ -531,7 +553,8 @@ object SnowHouseCpuPipeStageInstrDecode {
               setOp(BeqRaRbSimm)
             }
           }
-          is (BneRaRbSimm._2) {
+          is (BneRaRbSimm._2._1) {
+            psId.nextPrevInstrWasJump := True
             when (
               encInstr.raIdx === encInstr.rbIdx
               && encInstr.raIdx =/= 0x0
@@ -541,7 +564,8 @@ object SnowHouseCpuPipeStageInstrDecode {
               setOp(BneRaRbSimm)
             }
           }
-          is (JlRaRb._2) {
+          is (JlRaRb._2._1) {
+            psId.nextPrevInstrWasJump := True
             setOp(JlRaRb)
           }
           default {
@@ -551,20 +575,64 @@ object SnowHouseCpuPipeStageInstrDecode {
       }
       //is (CpyuRaRb._1) {
       //  switch (encInstr.rcIdx(0 downto 0)) {
-      //    //is (CpyRaRb._2) {
+      //    //is (CpyRaRb._2._1) {
       //    //  setOp(CpyRaRb)
       //    //}
-      //    //is (CpyRaSimm16._2) {
+      //    //is (CpyRaSimm16._2._1) {
       //    //  setOp(CpyRaSimm16)
       //    //}
-      //    is (CpyuRaRb._2) {
+      //    is (CpyuRaRb._2._1) {
       //      setOp(CpyuRaRb)
       //    }
-      //    is (CpyuRaSimm16._2) {
+      //    is (CpyuRaSimm16._2._1) {
       //      setOp(CpyuRaSimm16)
       //    }
       //  }
       //}
+      is (PushRaRb._1) {
+        switch (encInstr.imm16(0 downto 0)) {
+          //when (psId.rMultIn
+          is (PushRaRb._2._1) {
+            //upPayload.gprIdxVec(0) := encInstr.rbIdx
+            //upPayload.gprIdxVec(1) := encInstr.raIdx
+            setOp(PushRaRb)
+            //when (psId.startDecode) {
+            //  psId.nextMultiInstrCnt := 1
+            //  setOp(StrRaRbSimm16)
+            //  upPayload.gprIdxVec(0) := encInstr.raIdx
+            //  upPayload.gprIdxVec(1) := encInstr.rbIdx
+            //  upPayload.gprIdxVec(2) := SnowHouseCpuRegs.r0.index
+            //  upPayload.imm := 0x0
+            //} otherwise {
+            //  setOp(AddRaRbSimm16)
+            //  upPayload.gprIdxVec(0) := encInstr.rbIdx
+            //  upPayload.gprIdxVec(1) := encInstr.rbIdx
+            //  upPayload.gprIdxVec(2) := SnowHouseCpuRegs.r0.index
+            //  val tempSImm = SInt(cfg.mainWidth bits)
+            //  tempSImm := -(cfg.mainWidth / 8)
+            //  upPayload.imm := tempSImm.asUInt
+            //}
+          }
+          is (PopRaRb._1._2._1) {
+            when (psId.startDecode) {
+              psId.nextMultiInstrCnt := 1
+              setOp(AddRaRbSimm16)
+              upPayload.gprIdxVec(0) := encInstr.rbIdx
+              upPayload.gprIdxVec(1) := encInstr.rbIdx
+              upPayload.gprIdxVec(2) := SnowHouseCpuRegs.r0.index
+              //val tempSImm = SInt(cfg.mainWidth bits)
+              //tempSImm := -(cfg.mainWidth / 8)
+              upPayload.imm := (cfg.mainWidth / 8) //tempSImm.asUInt
+            } otherwise {
+              setOp(LdrRaRbSimm16)
+              upPayload.gprIdxVec(0) := encInstr.raIdx
+              upPayload.gprIdxVec(1) := encInstr.rbIdx
+              upPayload.gprIdxVec(2) := SnowHouseCpuRegs.r0.index
+              upPayload.imm := 0x0
+            }
+          }
+        }
+      }
       is (PreImm16._1) {
         doDefault(
           //doSetImm=false
@@ -581,7 +649,6 @@ object SnowHouseCpuPipeStageInstrDecode {
         doDefault()
       }
     }
-    //upPayload.op := encInstr.op
   }
 }
 //case class SnowHouseCpuPipeStageInstrDecode(
@@ -809,14 +876,14 @@ object SnowHouseCpuOpInfoMap {
     SnowHouseCpuOp.LdrRaRbRc -> OpInfo.mkLdSt(
       dstArr=Array[DstKind](DstKind.Gpr),
       srcArr=Array[SrcKind](SrcKind.Gpr, SrcKind.Gpr),
-      modify=MemAccessKind.Mem32(isSigned=false, isStore=Some(false)),
+      modify=MemAccessKind.Mem32(isSigned=false, isStore=false),
     )
   )
   opInfoMap += (
     SnowHouseCpuOp.LdrRaRbSimm16 -> OpInfo.mkLdSt(
       dstArr=Array[DstKind](DstKind.Gpr),
       srcArr=Array[SrcKind](SrcKind.Gpr, SrcKind.Imm(/*Some(true)*/)),
-      modify=MemAccessKind.Mem32(isSigned=false, isStore=Some(false)),
+      modify=MemAccessKind.Mem32(isSigned=false, isStore=false),
     )
   )
   //--------
@@ -824,28 +891,28 @@ object SnowHouseCpuOpInfoMap {
     SnowHouseCpuOp.LduhRaRbRc -> OpInfo.mkLdSt(
       dstArr=Array[DstKind](DstKind.Gpr),
       srcArr=Array[SrcKind](SrcKind.Gpr, SrcKind.Gpr),
-      modify=MemAccessKind.Mem16(isSigned=false, isStore=Some(false)),
+      modify=MemAccessKind.Mem16(isSigned=false, isStore=false),
     )
   )
   opInfoMap += (
     SnowHouseCpuOp.LdshRaRbRc -> OpInfo.mkLdSt(
       dstArr=Array[DstKind](DstKind.Gpr),
       srcArr=Array[SrcKind](SrcKind.Gpr, SrcKind.Gpr),
-      modify=MemAccessKind.Mem16(isSigned=true, isStore=Some(false)),
+      modify=MemAccessKind.Mem16(isSigned=true, isStore=false),
     )
   )
   opInfoMap += (
     SnowHouseCpuOp.LdubRaRbRc -> OpInfo.mkLdSt(
       dstArr=Array[DstKind](DstKind.Gpr),
       srcArr=Array[SrcKind](SrcKind.Gpr, SrcKind.Gpr),
-      modify=MemAccessKind.Mem8(isSigned=false, isStore=Some(false)),
+      modify=MemAccessKind.Mem8(isSigned=false, isStore=false),
     )
   )
   opInfoMap += (
     SnowHouseCpuOp.LdsbRaRbRc -> OpInfo.mkLdSt(
       dstArr=Array[DstKind](DstKind.Gpr),
       srcArr=Array[SrcKind](SrcKind.Gpr, SrcKind.Gpr),
-      modify=MemAccessKind.Mem8(isSigned=true, isStore=Some(false)),
+      modify=MemAccessKind.Mem8(isSigned=true, isStore=false),
     )
   )
   //--------
@@ -853,14 +920,14 @@ object SnowHouseCpuOpInfoMap {
     SnowHouseCpuOp.StrRaRbRc -> OpInfo.mkLdSt(
       dstArr=Array[DstKind](DstKind.Gpr),
       srcArr=Array[SrcKind](SrcKind.Gpr, SrcKind.Gpr),
-      modify=MemAccessKind.Mem32(isSigned=false, isStore=Some(true)),
+      modify=MemAccessKind.Mem32(isSigned=false, isStore=true),
     )
   )
   opInfoMap += (
     SnowHouseCpuOp.StrRaRbSimm16 -> OpInfo.mkLdSt(
       dstArr=Array[DstKind](DstKind.Gpr),
       srcArr=Array[SrcKind](SrcKind.Gpr, SrcKind.Imm(/*Some(true)*/)),
-      modify=MemAccessKind.Mem32(isSigned=false, isStore=Some(true)),
+      modify=MemAccessKind.Mem32(isSigned=false, isStore=true),
     )
   )
   //--------
@@ -868,14 +935,14 @@ object SnowHouseCpuOpInfoMap {
     SnowHouseCpuOp.SthRaRbRc -> OpInfo.mkLdSt(
       dstArr=Array[DstKind](DstKind.Gpr),
       srcArr=Array[SrcKind](SrcKind.Gpr, SrcKind.Gpr),
-      modify=MemAccessKind.Mem16(isSigned=false, isStore=Some(true)),
+      modify=MemAccessKind.Mem16(isSigned=false, isStore=true),
     )
   )
   opInfoMap += (
     SnowHouseCpuOp.StbRaRbRc -> OpInfo.mkLdSt(
       dstArr=Array[DstKind](DstKind.Gpr),
       srcArr=Array[SrcKind](SrcKind.Gpr, SrcKind.Gpr),
-      modify=MemAccessKind.Mem8(isSigned=false, isStore=Some(true)),
+      modify=MemAccessKind.Mem8(isSigned=false, isStore=true),
     )
   )
   //--------
@@ -932,6 +999,20 @@ object SnowHouseCpuOpInfoMap {
       cpyOp=CpyOpKind.Jmp,
     )
   )
+  //--------
+  opInfoMap += (
+    SnowHouseCpuOp.PushRaRb -> OpInfo.mkLdSt(
+      dstArr=Array[DstKind](DstKind.Gpr),
+      srcArr=Array[SrcKind](SrcKind.Gpr),
+      modify=MemAccessKind.Mem32(
+        isSigned=false, isStore=true, isPush=true,
+      )
+    )
+  )
+  //opInfoMap ++ (
+  //  SnowHouseCpuOp.PopRaRb -> OpInfo.mkLdSt(
+  //  )
+  //)
   //--------
   //opInfoMap += (
   //  SnowHouseCpuOp.CpyRaRb -> OpInfo.mkCpy(
@@ -1131,52 +1212,51 @@ case class SnowHouseCpuTestProgram(
     //cpy(r0, 0x0),             // 0x8
     cpy(r1, 0x8),             // 0x8: r1 = 8
     cpy(r2, 0x1),             // 0x0c: r2 = 1
-    //pre(0xabcd),                // 0x0c
     cpy(r3, 0x1000),          // 0x10: r3 = 0x1000
     cpy(r4, 0x8),             // 0x14: r4 = 4
     cpy(r5, LbR"increment"),  // 0x18
-    pre(0xabcd),
+    cpy(sp, 0x2000),          // 0x1c
     cpy(r6, 0x20),            // 0x20: r6 = 0x20
     str(r6, r0, r3),          // 0x24: [r0 + r3] = r6
     ldr(r6, r0, r3),          // 0x28
-    //cpy(r0, r0),
-    //mul(r7, r6, r1),          // 0x2c
-    udiv(r7, r6, r1),
-    umod(r8, r6, r1),
-    //--------
-    Lb"loop",
-    //add(r0, r1, r2),
-    //cpyu(r2, tempData >> 16),
-    //cpy(r2, tempData & 0xffff),
-    ldr(r6, r3, 0x0),         // 0x30:
-    //add(r6, r6, 0x1),       
-    //jl(r5),
-    bl(LbR"increment"),       // 0x34:
-    str(r6, r3, 0x4),         // 0x38:
-    add(r3, r3, 0x4),         // 0x3c: r3 += 4
-    sub(r1, r1, 0x1),         // 0x40: r1 -= 1 
-    bl(LbR"divmod"),        // 0x44
-    //mul(r7, r6, r1),
-    bnz(r1, LbR"loop"),       // 0x48: if (r1 != 0) goto LbR"loop"
-    //--------
-    cpy(r12, 0x0),            // 0x4c
+    add(r7, r6, 4),           // 0x2c
+    push(r7),                 // 0x30
+    pop(r8),                  // 0x34
+    //umod(r8, r6, r1),
+    ////--------
+    //Lb"loop",
+    ////add(r0, r1, r2),
+    ////cpyu(r2, tempData >> 16),
+    ////cpy(r2, tempData & 0xffff),
+    //ldr(r6, r3, 0x0),         // 0x30:
+    ////add(r6, r6, 0x1),       
+    ////jl(r5),
+    //bl(LbR"increment"),       // 0x34:
+    //str(r6, r3, 0x4),         // 0x38:
+    //add(r3, r3, 0x4),         // 0x3c: r3 += 4
+    //sub(r1, r1, 0x1),         // 0x40: r1 -= 1 
+    //bl(LbR"divmod"),        // 0x44
+    ////mul(r7, r6, r1),
+    //bnz(r1, LbR"loop"),       // 0x48: if (r1 != 0) goto LbR"loop"
+    ////--------
+    //cpy(r12, 0x0),            // 0x4c
     Lb"infin",
     //cpy(r12, 0x0),            // 0x4c
-    bz(r12, LbR"infin"),      // 0x50
+    bz(r0, LbR"infin"),      // 0x38
     //Db32(0x3f),
-    //--------
+    ////--------
     Lb"increment",
     add(r6, r6, 0x1),         // 0x54
     //add(r6, r6, r0),
     jmp(lr),                  // 0x58
-    //--------
-    Lb"divmod",
-    //mul(r7, r6, r1),          // 0x5c
-    udiv(r7, r6, r1),
-    umod(r8, r6, r1),
-    jmp(lr),                  // 0x60
-    cpy(r0, r0),
-    cpy(r0, r0),
+    ////--------
+    //Lb"divmod",
+    ////mul(r7, r6, r1),          // 0x5c
+    //udiv(r7, r6, r1),
+    //umod(r8, r6, r1),
+    //jmp(lr),                  // 0x60
+    //cpy(r0, r0),
+    //cpy(r0, r0),
   )
   val program = SnowHouseCpuProgram(cfg=cfg)
   //val outpArr = ArrayBuffer[BigInt]()

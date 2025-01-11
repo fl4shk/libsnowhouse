@@ -34,6 +34,47 @@ import libcheesevoyage.bus.lcvStall._
 //  def myType[T] = macro SealedTraitToSpinalEnumImpl.myType[T]
 //}
 
+sealed trait SprKind {
+  def idx: Int
+}
+object SprKind {
+  case object AluFlags extends SprKind {
+    def idx: Int = 0
+  }
+  case object Ids extends SprKind {
+    def idx: Int = 1
+  }
+  case object Ira extends SprKind {
+    def idx: Int = 2
+  }
+  case object Ie extends SprKind {
+    def idx: Int = 3
+  }
+  case object Ity extends SprKind {
+    def idx: Int = 4
+  }
+  case object Sty extends SprKind {
+    def idx: Int = 5
+  }
+  case object Hi extends SprKind {
+    def idx: Int = 6
+  }
+  case object Lo extends SprKind {
+    def idx: Int = 7
+  }
+  case object Modhi extends SprKind {
+    def idx: Int = 6
+  }
+  case object Modlo extends SprKind {
+    def idx: Int = 7
+  }
+}
+sealed trait HiddenRegKind {
+}
+object HiddenRegKind {
+  case object IndexReg extends HiddenRegKind
+  case object PopData extends HiddenRegKind
+}
 // kinds of source operands of instructions
 sealed trait SrcKind
 object SrcKind {
@@ -49,10 +90,31 @@ object SrcKind {
   //                                        // double the normal size of a
   //                                        // general purpose register)
   case object Pc extends SrcKind
-  case object Ira extends SrcKind
-  case object Ids extends SrcKind
-  case object Ie extends SrcKind
-  case object IndexReg extends SrcKind
+  //case object Ira extends SrcKind
+  //case object Ids extends SrcKind
+  //case object Ie extends SrcKind
+  //case object Hi extends SrcKind
+  //case object Lo extends SrcKind
+  case class Spr(
+    kind: SprKind
+  ) extends SrcKind
+  def AluFlags = Spr(SprKind.AluFlags)
+  def Ids = Spr(SprKind.Ids)
+  def Ira = Spr(SprKind.Ira)
+  def Ie = Spr(SprKind.Ie)
+  def Ity = Spr(SprKind.Ity)
+  def Sty = Spr(SprKind.Sty)
+  def Hi = Spr(SprKind.Hi)
+  def Lo = Spr(SprKind.Lo)
+  def Modhi = Spr(SprKind.Modhi)
+  def Modlo = Spr(SprKind.Modlo)
+  //case object IndexReg extends SrcKind
+  case class HiddenReg(
+    kind: HiddenRegKind
+  ) extends SrcKind
+  def IndexReg = HiddenReg(HiddenRegKind.IndexReg)
+  def PopData = HiddenReg(HiddenRegKind.PopData)
+  //def IndexReg = 
   //case class PcPlusImm(
   //  isSImm: Option[Boolean],
   //) extends SrcKind
@@ -64,7 +126,7 @@ object SrcKind {
   case class Imm(
     //isSImm: Option[Boolean], // `None` means "either unsigned or signed"
   ) extends SrcKind
-  case object AluFlags extends SrcKind  // 
+  //case object AluFlags extends SrcKind  // 
 }
 
 // kinds of destination operands of instruction
@@ -76,11 +138,31 @@ object DstKind {
   case object Pc extends DstKind
   //case object Mem extends DstKind   // data written to mem by a store
   //                                  // instruction
-  case object Ira extends DstKind
-  case object Ids extends DstKind
-  case object Ie extends DstKind
-  case object IndexReg extends DstKind
-  case object AluFlags extends DstKind
+  //case object Ira extends DstKind
+  //case object Ids extends DstKind
+  //case object Ie extends DstKind
+  //case object Hi extends SrcKind
+  //case object Lo extends SrcKind
+  case class Spr(
+    kind: SprKind
+  ) extends DstKind
+  def AluFlags = Spr(SprKind.AluFlags)
+  def Ids = Spr(SprKind.Ids)
+  def Ira = Spr(SprKind.Ira)
+  def Ie = Spr(SprKind.Ie)
+  def Ity = Spr(SprKind.Ity)
+  def Sty = Spr(SprKind.Sty)
+  def Hi = Spr(SprKind.Hi)
+  def Lo = Spr(SprKind.Lo)
+  def Modhi = Spr(SprKind.Modhi)
+  def Modlo = Spr(SprKind.Modlo)
+  //case object IndexReg extends DstKind
+  case class HiddenReg(
+    kind: HiddenRegKind
+  ) extends DstKind
+  def IndexReg = HiddenReg(HiddenRegKind.IndexReg)
+  def PopData = HiddenReg(HiddenRegKind.PopData)
+  //case object AluFlags extends DstKind
 }
 //--------
 sealed trait MemAccessKind
@@ -95,39 +177,77 @@ object MemAccessKind {
   }
   case class Mem(
     isSigned: Boolean,
-    isStore: Option[Boolean],   // `None` means this is atomic
+    isStore: Boolean,   // `None` means this is atomic
+    isPush: Boolean,            // `true` means to post-decrement
+                                // the register indicating an address
+    isAtomic: Boolean,
     subKind: SubKind,
-  ) extends MemAccessKind
+  ) extends MemAccessKind {
+    if (!isStore) {
+      assert(
+        !isPush,
+        s"`push` instructions must be marked as `store` instructions"
+      )
+    }
+    //isStore match {
+    //  case Some(storeKind) => {
+    //    if (!storeKind) {
+    //      assert(
+    //        !isPush,
+    //        s"`push` instructions must be marked as `store` instructions"
+    //      )
+    //    }
+    //  }
+    //  case None => {
+    //  }
+    //}
+  }
   def Mem8(
     isSigned: Boolean,
-    isStore: Option[Boolean],
+    isStore: Boolean,
+    isPush: Boolean=false,
+    isAtomic: Boolean=false,
   ) = Mem(
     isSigned=isSigned,
     isStore=isStore,
+    isPush=isPush,
+    isAtomic=isAtomic,
     subKind=SubKind.Sz8,
   )
   def Mem16(
     isSigned: Boolean,
-    isStore: Option[Boolean],
+    isStore: Boolean,
+    isPush: Boolean=false,
+    isAtomic: Boolean=false,
   ) = Mem(
     isSigned=isSigned,
     isStore=isStore,
+    isPush=isPush,
+    isAtomic=isAtomic,
     subKind=SubKind.Sz16,
   )
   def Mem32(
     isSigned: Boolean,
-    isStore: Option[Boolean],
+    isStore: Boolean,
+    isPush: Boolean=false,
+    isAtomic: Boolean=false,
   ) = Mem(
     isSigned=isSigned,
     isStore=isStore,
+    isPush=isPush,
+    isAtomic=isAtomic,
     subKind=SubKind.Sz32,
   )
   def Mem64(
     isSigned: Boolean,
-    isStore: Option[Boolean],
+    isStore: Boolean,
+    isPush: Boolean=false,
+    isAtomic: Boolean=false,
   ) = Mem(
     isSigned=isSigned,
     isStore=isStore,
+    isPush=isPush,
+    isAtomic=isAtomic,
     subKind=SubKind.Sz64,
   )
 }
@@ -1643,14 +1763,16 @@ object MultiCycleOpKind {
         // word, unsigned full-product
         //dstSize=2, srcSize=2
         dst=Array[HashSet[DstKind]](
-          HashSet(DstKind.Gpr),
-          HashSet(DstKind.Gpr),
+          HashSet(DstKind.Hi),
+          HashSet(DstKind.Lo),
         ),
         src=Array[HashSet[SrcKind]](
-          HashSet(SrcKind.Gpr, SrcKind.Pc),
-          HashSet(SrcKind.Gpr, SrcKind.Pc),
-          HashSet(SrcKind.Gpr, SrcKind.Pc),
-          HashSet(SrcKind.Gpr, SrcKind.Pc),
+          //HashSet(SrcKind.Gpr, SrcKind.Pc),
+          //HashSet(SrcKind.Gpr, SrcKind.Pc),
+          //HashSet(SrcKind.Gpr, SrcKind.Pc),
+          //HashSet(SrcKind.Gpr, SrcKind.Pc),
+          HashSet(SrcKind.Gpr),
+          HashSet(SrcKind.Gpr),
         ),
         cond=HashSet[CondKind](
           //CondKind.Always
@@ -1663,19 +1785,21 @@ object MultiCycleOpKind {
     private[libsnowhouse] val _validArgsSet = LinkedHashSet[
       OpKindValidArgs
     ](
-      // word, signed full product
       //minD=1, maxD=2, minS=2, maxS=4
       OpKindValidArgs(
+        // word, signed full-product
         //dstSize=2, srcSize=2
         dst=Array[HashSet[DstKind]](
-          HashSet(DstKind.Gpr),
-          HashSet(DstKind.Gpr),
+          HashSet(DstKind.Hi),
+          HashSet(DstKind.Lo),
         ),
         src=Array[HashSet[SrcKind]](
-          HashSet(SrcKind.Gpr, SrcKind.Pc),
-          HashSet(SrcKind.Gpr, SrcKind.Pc),
-          HashSet(SrcKind.Gpr, SrcKind.Pc),
-          HashSet(SrcKind.Gpr, SrcKind.Pc),
+          //HashSet(SrcKind.Gpr, SrcKind.Pc),
+          //HashSet(SrcKind.Gpr, SrcKind.Pc),
+          //HashSet(SrcKind.Gpr, SrcKind.Pc),
+          //HashSet(SrcKind.Gpr, SrcKind.Pc),
+          HashSet(SrcKind.Gpr),
+          HashSet(SrcKind.Gpr),
         ),
         cond=HashSet[CondKind](
           //CondKind.Always
@@ -1771,7 +1895,7 @@ object MultiCycleOpKind {
         // word
         //dstSize=1, srcSize=2
         dst=Array[HashSet[DstKind]](
-          HashSet(DstKind.Gpr),
+          HashSet(DstKind.Gpr, DstKind.Modlo),
         ),
         src=Array[HashSet[SrcKind]](
           HashSet(SrcKind.Gpr, SrcKind.Pc),
@@ -1810,7 +1934,7 @@ object MultiCycleOpKind {
         // word
         //dstSize=1, srcSize=2
         dst=Array[HashSet[DstKind]](
-          HashSet(DstKind.Gpr),
+          HashSet(DstKind.Gpr, DstKind.Modlo),
         ),
         src=Array[HashSet[SrcKind]](
           HashSet(SrcKind.Gpr, SrcKind.Pc),
@@ -1824,12 +1948,16 @@ object MultiCycleOpKind {
         // two-word
         //dstSize=2, srcSize=4
         dst=Array[HashSet[DstKind]](
-          HashSet(DstKind.Gpr),
-          HashSet(DstKind.Gpr),
+          //HashSet(DstKind.Gpr),
+          //HashSet(DstKind.Gpr),
+          HashSet(DstKind.Modhi),
+          HashSet(DstKind.Modlo),
         ),
         src=Array[HashSet[SrcKind]](
-          HashSet(SrcKind.Gpr, SrcKind.Pc),
-          HashSet(SrcKind.Gpr, SrcKind.Pc),
+          //HashSet(SrcKind.Gpr, SrcKind.Pc),
+          //HashSet(SrcKind.Gpr, SrcKind.Pc),
+          HashSet(SrcKind.Hi),
+          HashSet(SrcKind.Lo),
           HashSet(SrcKind.Gpr, SrcKind.Pc),
           HashSet(SrcKind.Gpr, SrcKind.Pc),
         ),
@@ -1840,88 +1968,88 @@ object MultiCycleOpKind {
     )
     def validArgsSet = _validArgsSet
   }
-  case object Udivmod extends MultiCycleOpKind {
-    private[libsnowhouse] val _validArgsSet = LinkedHashSet[
-      OpKindValidArgs
-    ](
-      //minD=2, maxD=4, minS=2, maxS=4
-      OpKindValidArgs(
-        //dstSize=2, srcSize=2
-        dst=Array[HashSet[DstKind]](
-          HashSet(DstKind.Gpr),
-          HashSet(DstKind.Gpr),
-        ),
-        src=Array[HashSet[SrcKind]](
-          HashSet(SrcKind.Gpr),
-          HashSet(SrcKind.Gpr),
-        ),
-        cond=HashSet[CondKind](
-          //CondKind.Always
-        ),
-      ),
-      OpKindValidArgs(
-        // dual-word
-        //dstSize=4, srcSize=4
-        dst=Array[HashSet[DstKind]](
-          HashSet(DstKind.Gpr),
-          HashSet(DstKind.Gpr),
-          HashSet(DstKind.Gpr),
-          HashSet(DstKind.Gpr),
-        ),
-        src=Array[HashSet[SrcKind]](
-          HashSet(SrcKind.Gpr),
-          HashSet(SrcKind.Gpr),
-          HashSet(SrcKind.Gpr),
-          HashSet(SrcKind.Gpr),
-        ),
-        cond=HashSet[CondKind](
-          //CondKind.Always
-        ),
-      ),
-    )
-    def validArgsSet = _validArgsSet
-  }
-  case object Sdivmod extends MultiCycleOpKind {
-    private[libsnowhouse] val _validArgsSet = LinkedHashSet[
-      OpKindValidArgs
-    ](
-      //minD=2, maxD=4, minS=2, maxS=4
-      OpKindValidArgs(
-        //dstSize=2, srcSize=2
-        dst=Array[HashSet[DstKind]](
-          HashSet(DstKind.Gpr),
-          HashSet(DstKind.Gpr),
-        ),
-        src=Array[HashSet[SrcKind]](
-          HashSet(SrcKind.Gpr),
-          HashSet(SrcKind.Gpr),
-        ),
-        cond=HashSet[CondKind](
-          //CondKind.Always
-        ),
-      ),  // word
-      OpKindValidArgs(
-        // dual-word
-        //dstSize=4, srcSize=4
-        dst=Array[HashSet[DstKind]](
-          HashSet(DstKind.Gpr),
-          HashSet(DstKind.Gpr),
-          HashSet(DstKind.Gpr),
-          HashSet(DstKind.Gpr),
-        ),
-        src=Array[HashSet[SrcKind]](
-          HashSet(SrcKind.Gpr),
-          HashSet(SrcKind.Gpr),
-          HashSet(SrcKind.Gpr),
-          HashSet(SrcKind.Gpr),
-        ),
-        cond=HashSet[CondKind](
-          //CondKind.Always
-        ),
-      ),
-    )
-    def validArgsSet = _validArgsSet
-  }
+  //case object Udivmod extends MultiCycleOpKind {
+  //  private[libsnowhouse] val _validArgsSet = LinkedHashSet[
+  //    OpKindValidArgs
+  //  ](
+  //    //minD=2, maxD=4, minS=2, maxS=4
+  //    OpKindValidArgs(
+  //      //dstSize=2, srcSize=2
+  //      dst=Array[HashSet[DstKind]](
+  //        HashSet(DstKind.Gpr),
+  //        HashSet(DstKind.Gpr),
+  //      ),
+  //      src=Array[HashSet[SrcKind]](
+  //        HashSet(SrcKind.Gpr),
+  //        HashSet(SrcKind.Gpr),
+  //      ),
+  //      cond=HashSet[CondKind](
+  //        //CondKind.Always
+  //      ),
+  //    ),
+  //    OpKindValidArgs(
+  //      // dual-word
+  //      //dstSize=4, srcSize=4
+  //      dst=Array[HashSet[DstKind]](
+  //        HashSet(DstKind.Gpr),
+  //        HashSet(DstKind.Gpr),
+  //        HashSet(DstKind.Gpr),
+  //        HashSet(DstKind.Gpr),
+  //      ),
+  //      src=Array[HashSet[SrcKind]](
+  //        HashSet(SrcKind.Gpr),
+  //        HashSet(SrcKind.Gpr),
+  //        HashSet(SrcKind.Gpr),
+  //        HashSet(SrcKind.Gpr),
+  //      ),
+  //      cond=HashSet[CondKind](
+  //        //CondKind.Always
+  //      ),
+  //    ),
+  //  )
+  //  def validArgsSet = _validArgsSet
+  //}
+  //case object Sdivmod extends MultiCycleOpKind {
+  //  private[libsnowhouse] val _validArgsSet = LinkedHashSet[
+  //    OpKindValidArgs
+  //  ](
+  //    //minD=2, maxD=4, minS=2, maxS=4
+  //    OpKindValidArgs(
+  //      //dstSize=2, srcSize=2
+  //      dst=Array[HashSet[DstKind]](
+  //        HashSet(DstKind.Gpr),
+  //        HashSet(DstKind.Gpr),
+  //      ),
+  //      src=Array[HashSet[SrcKind]](
+  //        HashSet(SrcKind.Gpr),
+  //        HashSet(SrcKind.Gpr),
+  //      ),
+  //      cond=HashSet[CondKind](
+  //        //CondKind.Always
+  //      ),
+  //    ),  // word
+  //    OpKindValidArgs(
+  //      // dual-word
+  //      //dstSize=4, srcSize=4
+  //      dst=Array[HashSet[DstKind]](
+  //        HashSet(DstKind.Gpr),
+  //        HashSet(DstKind.Gpr),
+  //        HashSet(DstKind.Gpr),
+  //        HashSet(DstKind.Gpr),
+  //      ),
+  //      src=Array[HashSet[SrcKind]](
+  //        HashSet(SrcKind.Gpr),
+  //        HashSet(SrcKind.Gpr),
+  //        HashSet(SrcKind.Gpr),
+  //        HashSet(SrcKind.Gpr),
+  //      ),
+  //      cond=HashSet[CondKind](
+  //        //CondKind.Always
+  //      ),
+  //    ),
+  //  )
+  //  def validArgsSet = _validArgsSet
+  //}
   //--------
   //case object Lumul extends MultiCycleOpKind {
   //  // unsigned full product

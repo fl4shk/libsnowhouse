@@ -238,6 +238,7 @@ case class SnowHouse
       ),
     )
   )
+  val pcChangeState = Bool()
   //--------
   val linkArr = PipeHelper.mkLinkArr()
   cfg.regFileCfg.linkArr = Some(linkArr)
@@ -386,8 +387,9 @@ case class SnowHouse
       ),
       regFile=regFile,
     ),
-    psIdHaltIt,
-    psExSetPc,
+    psIdHaltIt=psIdHaltIt,
+    psExSetPc=psExSetPc,
+    pcChangeState=pcChangeState,
     doDecodeFunc=cfg.doInstrDecodeFunc,
   )
   //--------
@@ -416,6 +418,7 @@ case class SnowHouse
     ),
     psExSetPc=psExSetPc,
     psMemStallHost=psMemStallHost,
+    pcChangeState=pcChangeState,
     doModInModFrontParams=doModInModFrontParams,
   )
   //--------

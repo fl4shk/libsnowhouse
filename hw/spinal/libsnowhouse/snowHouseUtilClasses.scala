@@ -174,8 +174,8 @@ case class SnowHouseConfig(
     var foundAnyDst: Boolean = false
     var foundAnySrc: Boolean = false
     for (((_, opInfo), opInfoIdx) <- opInfoMap.view.zipWithIndex) {
-      val foundDst = opInfo.dstArr.find(_ == DstKind.AluFlags)
-      val foundSrc = opInfo.srcArr.find(_ == SrcKind.AluFlags)
+      val foundDst = opInfo.dstArr.find(_ == DstKind.Spr(SprKind.AluFlags))
+      val foundSrc = opInfo.srcArr.find(_ == SrcKind.Spr(SprKind.AluFlags))
       if (foundDst != None) {
         foundAnyDst = true
         found = true
@@ -279,24 +279,23 @@ case class SnowHouseConfig(
     opInfo.memAccess match {
       case MemAccessKind.NoMemAccess => {
       }
-      case MemAccessKind.Mem(isSigned, isStore, accSize) => {
-        isStore match {
-          case Some(isStore) => {
-            //if (!isStore) {
-            //  loadOpInfoMap += (idx -> opInfo)
-            //} else { // if (isStore)
-            //  storeOpInfoMap += (idx -> opInfo)
-            //}
-            memAccOpInfoMap += (idx -> opInfo)
-          }
-          case None => {
-            assert(
-              false,
-              s"Error: Atomic operations are not yet implemented: "
-              + s"opInfo(${opInfo}), instructionIndex:${idx}"
-            )
-            false
-          }
+      case MemAccessKind.Mem(
+        isSigned, isStore, isPush, isAtomic, accSize
+      ) => {
+        if (!isAtomic) {
+          //if (!isStore) {
+          //  loadOpInfoMap += (idx -> opInfo)
+          //} else { // if (isStore)
+          //  storeOpInfoMap += (idx -> opInfo)
+          //}
+          memAccOpInfoMap += (idx -> opInfo)
+        } else {
+          assert(
+            false,
+            s"Error: Atomic operations are not yet implemented: "
+            + s"opInfo(${opInfo}), instructionIndex:${idx}"
+          )
+          false
         }
         //accSize match {
         //  case MemAccessSize.Sz8 => {
@@ -466,6 +465,7 @@ case class SnowHouseDecodeExt(
   //)
   val memAccessKind = SnowHouseMemAccessKind()
   val memAccessSubKind = SnowHouseMemAccessSubKind()
+  val memAccessIsPush = Bool()
   // TODO: add support for atomic operations
   // (probably just read-modify-write)
   //val memAccessIsAtomic = Bool()

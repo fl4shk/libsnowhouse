@@ -527,7 +527,7 @@ object sltu {
       rA=rA,
       rB=rB,
       rC=rC,
-      imm=SnowHouseCpuOp.SltuRaRbRc._2,
+      imm=SnowHouseCpuOp.SltuRaRbRc._2._1,
     )
   }
   //def apply(
@@ -556,7 +556,7 @@ object slts {
       rA=rA,
       rB=rB,
       rC=rC,
-      imm=SnowHouseCpuOp.SltsRaRbRc._2,
+      imm=SnowHouseCpuOp.SltsRaRbRc._2._1,
     )
   }
   //def apply(
@@ -674,7 +674,7 @@ object lsl {
       rA=rA,
       rB=rB,
       rC=rC,
-      imm=SnowHouseCpuOp.LslRaRbRc._2,
+      imm=SnowHouseCpuOp.LslRaRbRc._2._1,
     )
   }
   //def apply(
@@ -703,7 +703,7 @@ object lsr {
       rA=rA,
       rB=rB,
       rC=rC,
-      imm=SnowHouseCpuOp.LsrRaRbRc._2,
+      imm=SnowHouseCpuOp.LsrRaRbRc._2._1,
     )
   }
 }
@@ -718,7 +718,7 @@ object asr {
       rA=rA,
       rB=rB,
       rC=rC,
-      imm=SnowHouseCpuOp.AsrRaRbRc._2,
+      imm=SnowHouseCpuOp.AsrRaRbRc._2._1,
     )
   }
 }
@@ -733,7 +733,7 @@ object mul {
       rA=rA,
       rB=rB,
       rC=rC,
-      imm=SnowHouseCpuOp.MulRaRbRc._2,
+      imm=SnowHouseCpuOp.MulRaRbRc._2._1,
     )
   }
   //def apply(
@@ -762,7 +762,7 @@ object udiv {
       rA=rA,
       rB=rB,
       rC=rC,
-      imm=SnowHouseCpuOp.UdivRaRbRc._2,
+      imm=SnowHouseCpuOp.UdivRaRbRc._2._1,
     )
   }
 }
@@ -777,7 +777,7 @@ object sdiv {
       rA=rA,
       rB=rB,
       rC=rC,
-      imm=SnowHouseCpuOp.SdivRaRbRc._2,
+      imm=SnowHouseCpuOp.SdivRaRbRc._2._1,
     )
   }
 }
@@ -792,7 +792,7 @@ object umod {
       rA=rA,
       rB=rB,
       rC=rC,
-      imm=SnowHouseCpuOp.UmodRaRbRc._2,
+      imm=SnowHouseCpuOp.UmodRaRbRc._2._1,
     )
   }
 }
@@ -807,7 +807,7 @@ object smod {
       rA=rA,
       rB=rB,
       rC=rC,
-      imm=SnowHouseCpuOp.SmodRaRbRc._2,
+      imm=SnowHouseCpuOp.SmodRaRbRc._2._1,
     )
   }
 }
@@ -823,7 +823,7 @@ object beq {
         op=SnowHouseCpuOp.BeqRaRbSimm,
         rA=SnowHouseCpuRegs.r0,
         rB=SnowHouseCpuRegs.r0,
-        rC=Gpr(SnowHouseCpuOp.BeqRaRbSimm._2),
+        rC=Gpr(SnowHouseCpuOp.BeqRaRbSimm._2._1),
         imm=(
           imm - SnowHouseCpuExpr.Dot //- 4
         ),
@@ -833,7 +833,7 @@ object beq {
         op=SnowHouseCpuOp.BeqRaRbSimm,
         rA=rA,
         rB=rB,
-        rC=Gpr(SnowHouseCpuOp.BeqRaRbSimm._2),
+        rC=Gpr(SnowHouseCpuOp.BeqRaRbSimm._2._1),
         imm=(
           imm - SnowHouseCpuExpr.Dot //- 4
         ),
@@ -857,7 +857,7 @@ object bz {
     //  op=SnowHouseCpuOp.BeqRaRbSimm,
     //  rA=rA,
     //  rB=SnowHouseCpuRegs.r0,
-    //  rC=Gpr(SnowHouseCpuOp.BeqRaRbSimm._2),
+    //  rC=Gpr(SnowHouseCpuOp.BeqRaRbSimm._2._1),
     //  imm=(
     //    imm - SnowHouseCpuExpr.Dot //- 4
     //  ),
@@ -887,7 +887,7 @@ object bl {
       op=SnowHouseCpuOp.BlSimm,
       rA=rA,
       rB=rA,
-      rC=Gpr(SnowHouseCpuOp.BlSimm._2),
+      rC=Gpr(SnowHouseCpuOp.BlSimm._2._1),
       imm=(
         imm - SnowHouseCpuExpr.Dot //- 4
       ),
@@ -917,7 +917,7 @@ object bne {
         op=SnowHouseCpuOp.BneRaRbSimm,
         rA=SnowHouseCpuRegs.r0,
         rB=SnowHouseCpuRegs.r0,
-        rC=Gpr(SnowHouseCpuOp.BneRaRbSimm._2),
+        rC=Gpr(SnowHouseCpuOp.BneRaRbSimm._2._1),
         imm=(
           imm - SnowHouseCpuExpr.Dot //- 4
         ),
@@ -930,7 +930,7 @@ object bne {
         op=SnowHouseCpuOp.BneRaRbSimm,
         rA=rA,
         rB=rB,
-        rC=Gpr(SnowHouseCpuOp.BneRaRbSimm._2),
+        rC=Gpr(SnowHouseCpuOp.BneRaRbSimm._2._1),
         imm=(
           imm - SnowHouseCpuExpr.Dot //- 4
         ),
@@ -954,7 +954,7 @@ object bnz {
     //  op=SnowHouseCpuOp.BneRaRbSimm,
     //  rA=rA,
     //  rB=SnowHouseCpuRegs.r0,
-    //  rC=Gpr(SnowHouseCpuOp.BneRaRbSimm._2),
+    //  rC=Gpr(SnowHouseCpuOp.BneRaRbSimm._2._1),
     //  imm=(
     //    //imm,
     //    imm - SnowHouseCpuExpr.Dot //- 4
@@ -995,7 +995,7 @@ object jl {
       op=SnowHouseCpuOp.JlRaRb,
       rA=rA,
       rB=rB,
-      rC=Gpr(SnowHouseCpuOp.JlRaRb._2),
+      rC=Gpr(SnowHouseCpuOp.JlRaRb._2._1),
       imm=0x0,
     )
   }
@@ -1106,7 +1106,7 @@ object cpy {
     //  op=SnowHouseCpuOp.AddRaRbRc,
     //  rA=rA,
     //  rB=rB,
-    //  rC=Gpr(SnowHouseCpuOp.CpyRaRb._2),
+    //  rC=Gpr(SnowHouseCpuOp.CpyRaRb._2._1),
     //  imm=0x0,
     //)
   }
@@ -1123,7 +1123,7 @@ object cpy {
     //  op=SnowHouseCpuOp.CpyRaSimm16,
     //  rA=rA,
     //  rB=SnowHouseCpuRegs.r0,
-    //  rC=Gpr(SnowHouseCpuOp.CpyRaSimm16._2),
+    //  rC=Gpr(SnowHouseCpuOp.CpyRaSimm16._2._1),
     //  imm=imm
     //)
   }
@@ -1139,6 +1139,50 @@ object cpy {
   //    imm=SnowHouseCpuExpr.ExprInt(imm),
   //  )
   //}
+}
+object push {
+  def apply(
+    rA: Gpr,
+    rB: Gpr,
+  ) = {
+    InstructionAsmStmt(
+      op=SnowHouseCpuOp.PushRaRb,
+      rA=rA,
+      rB=rB,
+      rC=SnowHouseCpuRegs.r0,
+      imm=SnowHouseCpuOp.PushRaRb._2._1,
+    )
+  }
+  def apply(
+    rA: Gpr
+  ): AsmStmt = {
+    push.apply(
+      rA=rA,
+      rB=SnowHouseCpuRegs.sp,
+    )
+  }
+}
+object pop {
+  def apply(
+    rA: Gpr,
+    rB: Gpr,
+  ) = {
+    InstructionAsmStmt(
+      op=SnowHouseCpuOp.PopRaRb._1,
+      rA=rA,
+      rB=rB,
+      rC=SnowHouseCpuRegs.r0,
+      imm=SnowHouseCpuOp.PopRaRb._1._2._1,
+    )
+  }
+  def apply(
+    rA: Gpr
+  ): AsmStmt = {
+    pop.apply(
+      rA=rA,
+      rB=SnowHouseCpuRegs.sp,
+    )
+  }
 }
 object pre {
   def apply(
@@ -1163,7 +1207,7 @@ object pre {
 //      op=SnowHouseCpuOp.CpyuRaRb,
 //      rA=rA,
 //      rB=rB,
-//      rC=Gpr(SnowHouseCpuOp.CpyuRaRb._2),
+//      rC=Gpr(SnowHouseCpuOp.CpyuRaRb._2._1),
 //      imm=0x0
 //    )
 //  }
@@ -1175,7 +1219,7 @@ object pre {
 //      op=SnowHouseCpuOp.CpyuRaSimm16,
 //      rA=rA,
 //      rB=SnowHouseCpuRegs.r0,
-//      rC=Gpr(SnowHouseCpuOp.CpyuRaSimm16._2),
+//      rC=Gpr(SnowHouseCpuOp.CpyuRaSimm16._2._1),
 //      imm=imm
 //    )
 //  }
@@ -1226,7 +1270,7 @@ case class Gpr(
 }
 object InstructionAsmStmt {
   def apply(
-    op: (/*UInt,*/ Int, Int, String),
+    op: (/*UInt,*/ Int, (Int, Int), String),
     rA: Gpr,
     rB: Gpr,
     rC: Gpr,
@@ -1250,7 +1294,7 @@ object InstructionAsmStmt {
   }
 }
 class InstructionAsmStmt(
-  val op: (/*UInt,*/ Int, Int, String),
+  val op: (/*UInt,*/ Int, (Int, Int), String),
   val rA: Gpr,
   val rB: Gpr,
   val rC: Gpr,
