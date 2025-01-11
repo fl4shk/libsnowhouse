@@ -52,6 +52,7 @@ object SrcKind {
   case object Ira extends SrcKind
   case object Ids extends SrcKind
   case object Ie extends SrcKind
+  case object IndexReg extends SrcKind
   //case class PcPlusImm(
   //  isSImm: Option[Boolean],
   //) extends SrcKind
@@ -75,10 +76,11 @@ object DstKind {
   case object Pc extends DstKind
   //case object Mem extends DstKind   // data written to mem by a store
   //                                  // instruction
-  case object AluFlags extends DstKind
   case object Ira extends DstKind
   case object Ids extends DstKind
   case object Ie extends DstKind
+  case object IndexReg extends DstKind
+  case object AluFlags extends DstKind
 }
 //--------
 sealed trait MemAccessKind
@@ -140,7 +142,10 @@ sealed trait AddrCalcKind {
   def options: AddrCalcKindOptions
 }
 object AddrCalcKind {
-  case object AddReduce extends AddrCalcKind {
+  case class AddReduce(
+    //toIndexReg: Boolean,
+    fromIndexReg: Boolean,
+  ) extends AddrCalcKind {
     private[libsnowhouse] val _options = AddrCalcKindOptions(
       minNum=1,
       maxNum=None,
@@ -214,7 +219,7 @@ class OpInfo(
   val select: OpSelect,
   val cond: CondKind=CondKind.Always,
   val memAccess: MemAccessKind=MemAccessKind.NoMemAccess,
-  val addrCalc: AddrCalcKind=AddrCalcKind.AddReduce,
+  val addrCalc: AddrCalcKind=AddrCalcKind.AddReduce(false),
   //var aluOp: Option[AluOpKind]=None,
   //val opCond: AluOpKind | LoadOpKind | StoreOpKind,
   //var cond: Option[CondKind]=None,
@@ -411,7 +416,7 @@ object OpInfo {
     //loadOp: LoadOpKind,
     modify: MemAccessKind,
     cond: CondKind=CondKind.Always,
-    addrCalc: AddrCalcKind=AddrCalcKind.AddReduce,
+    addrCalc: AddrCalcKind=AddrCalcKind.AddReduce(false),
   ): OpInfo = {
     val ret = new OpInfo(
       dstArr=dstArr,
@@ -582,12 +587,14 @@ object CpyOpKind {
         dst=Array[HashSet[DstKind]](
           HashSet(
             DstKind.Gpr, //DstKind.AluFlags
+            //DstKind.IndexReg, // DstKind.IndexReg turns this into an Add
           ),
         ),
         src=Array[HashSet[SrcKind]](
           HashSet(
             SrcKind.Gpr,
             SrcKind.Pc,
+            //SrcKind.IndexReg,
           ),
           HashSet(
             SrcKind.Gpr,
@@ -877,10 +884,12 @@ object AluOpKind {
         // word
         //dstSize=1, srcSize=2
         dst=Array[HashSet[DstKind]](
-          HashSet(DstKind.Gpr)
+          HashSet(
+            DstKind.Gpr, DstKind.IndexReg,
+          )
         ),
         src=Array[HashSet[SrcKind]](
-          HashSet(SrcKind.Gpr, SrcKind.Pc),
+          HashSet(SrcKind.Gpr, SrcKind.IndexReg, SrcKind.Pc),
           HashSet(SrcKind.Gpr, SrcKind.Pc, SrcKind.Imm(/*None*/)),
         ),
         cond=HashSet[CondKind](

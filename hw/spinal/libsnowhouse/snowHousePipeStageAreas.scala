@@ -536,6 +536,7 @@ case class SnowHousePipeStageExecuteSetOutpModMemWordIo(
   val imm = /*in*/(UInt(cfg.mainWidth bits))
   val pcChangeState = Bool() ///*in*/(Flow(PcChangeState()))
   val shouldIgnoreInstr = /*out*/(Bool())
+  val rIndexReg = /*out*/(UInt(cfg.mainWidth bits))
   val rAluFlags = (
     cfg.myHaveAluFlags
   ) generate (
@@ -590,6 +591,9 @@ case class SnowHousePipeStageExecuteSetOutpModMemWordIo(
           }
           case SrcKind.AluFlags => {
             rAluFlags
+          }
+          case SrcKind.IndexReg => {
+            rIndexReg
           }
           case SrcKind.Imm(/*isSImm*/) => {
             imm
@@ -941,17 +945,35 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
                         io.decodeExt.memAccessSubKind := (
                           tempSubKind
                         )
+                        opInfo.addrCalc match {
+                          case AddrCalcKind.AddReduce(true) => (
+                            when (io.upIsFiring) {
+                              io.rIndexReg := 0x0
+                            }
+                          )
+                          case _ => {
+                          }
+                        }
                         modIo.dbus.hostData.addr := (
                           (
                             opInfo.addrCalc match {
-                              case AddrCalcKind.AddReduce => (
-                                selRdMemWord(1)
+                              case AddrCalcKind.AddReduce(
+                                fromIndexReg
+                              ) => (
+                                if (!fromIndexReg) (
+                                  selRdMemWord(1)
+                                ) else (
+                                  io.rIndexReg
+                                )
                               )
                               case kind:
                               AddrCalcKind.LslThenMaybeAdd => (
                                 selRdMemWord(1)
                                 << kind.options.lslAmount.get
                               )
+                              //case _ => {
+                              //  selRdMemWord(1)
+                              //}
                             }
                           ) + (
                             opInfo.srcArr.size match {
@@ -1046,7 +1068,15 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
                   + s"opInfo(${opInfo}) index:${opInfoIdx}"
                 )
                 assert(
-                  opInfo.addrCalc == AddrCalcKind.AddReduce,
+                  //opInfo.addrCalc == AddrCalcKind.AddReduce(_),
+                  opInfo.addrCalc match {
+                    case AddrCalcKind.AddReduce(_) => {
+                      true
+                    }
+                    case _ => {
+                      false
+                    }
+                  },
                   s"not yet implemented: "
                   + s"opInfo(${opInfo}) index:${opInfoIdx}"
                 )
@@ -1086,7 +1116,15 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
                   + s"opInfo(${opInfo}) index:${opInfoIdx}"
                 )
                 assert(
-                  opInfo.addrCalc == AddrCalcKind.AddReduce,
+                  //opInfo.addrCalc == AddrCalcKind.AddReduce(_),
+                  opInfo.addrCalc match {
+                    case AddrCalcKind.AddReduce(_) => {
+                      true
+                    }
+                    case _ => {
+                      false
+                    }
+                  },
                   s"not yet implemented: "
                   + s"opInfo(${opInfo}) index:${opInfoIdx}"
                 )
@@ -1513,12 +1551,57 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
               + s"opInfo(${opInfo}) index:${opInfoIdx}"
             )
             assert(
-              opInfo.addrCalc == AddrCalcKind.AddReduce,
+              opInfo.addrCalc match {
+                case AddrCalcKind.AddReduce(_) => {
+                  true
+                }
+                case _ => {
+                  false
+                }
+              },
+              //opInfo.addrCalc == AddrCalcKind.AddReduce(_),
               s"not yet implemented: "
               + s"opInfo(${opInfo}) index:${opInfoIdx}"
             )
-            // TODO: support ALU flags
             /*val binop: InstrResult =*/ opInfo.aluOp.get match {
+              case AluOpKind.Add => {
+                val myBinop = AluOpKind.Add.binopFunc(
+                  cfg=cfg,
+                  left=selRdMemWord(1),
+                  right=selRdMemWord(2),
+                  carry=(
+                    if (cfg.myHaveAluFlags) (
+                      io.rFlagC
+                    ) else (
+                      False
+                    )
+                  ),
+                )(
+                  width=cfg.mainWidth
+                )
+                opInfo.dstArr(0) match {
+                  case DstKind.AluFlags => {
+                    io.rFlagN := myBinop.flagN
+                    io.rFlagV := myBinop.flagV
+                    io.rFlagC := myBinop.flagC
+                    io.rFlagZ := myBinop.flagZ
+                  }
+                  case DstKind.IndexReg => {
+                    io.rIndexReg := myBinop.main
+                  }
+                  case _ => {
+                  }
+                }
+                io.modMemWord(0) := (
+                  if (
+                    opInfo.dstArr.find(_ == DstKind.Gpr) != None
+                  ) {
+                    myBinop.main
+                  } else {
+                    selRdMemWord(0)
+                  }
+                )
+              }
               case AluOpKind.Sub => {
                 //io.modMemWord(0) := (
                 //  selRdMemWord(1) - selRdMemWord(2)
@@ -1606,7 +1689,15 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
               + s"opInfo(${opInfo}) index:${opInfoIdx}"
             )
             assert(
-              opInfo.addrCalc == AddrCalcKind.AddReduce,
+              opInfo.addrCalc match {
+                case AddrCalcKind.AddReduce(_) => {
+                  true
+                }
+                case _ => {
+                  false
+                }
+              },
+              //opInfo.addrCalc == AddrCalcKind.AddReduce(_),
               s"not yet implemented: "
               + s"opInfo(${opInfo}) index:${opInfoIdx}"
             )
