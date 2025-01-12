@@ -572,16 +572,16 @@ case class SnowHousePipeStageInstrDecode(
     when (
       //upPayload.regPcSetItCnt =/= 0
       (
-        (
-          !rPrevInstrWasJump
-          && !pcChangeState
-        ) || (
+        !rPrevInstrWasJump
+        || !pcChangeState
+        || (
           pcChangeState
           && upPayload.regPcSetItCnt =/= 0x0
         )
       )
     ) {
       startDecode := True
+      val myDecodeArea = doDecodeFunc(this)
       when (
         rMultiInstrCnt === 0x0
       ) {
@@ -608,18 +608,18 @@ case class SnowHousePipeStageInstrDecode(
       }
     }
   }
-  when (
-    up.isValid
-    //&& !upPayload.psExSetPc.fire
-  ) {
-    val myDecodeArea = doDecodeFunc(this)
-    //when (
-    //  pcChangeState
-    //  && upPayload.regPcSetItCnt =/= 0x0
-    //) {
-    //  nextPrevInstrWasJump := False
-    //}
-  }
+  //when (
+  //  up.isValid
+  //  //&& !upPayload.psExSetPc.fire
+  //) {
+  //  val myDecodeArea = doDecodeFunc(this)
+  //  //when (
+  //  //  pcChangeState
+  //  //  && upPayload.regPcSetItCnt =/= 0x0
+  //  //) {
+  //  //  nextPrevInstrWasJump := False
+  //  //}
+  //}
   //val myDecodeArea = doDecodeFunc(this)
 }
 private[libsnowhouse] object PcChangeState
@@ -2791,6 +2791,7 @@ case class SnowHousePipeStageExecute(
       //  outp.gprRdMemWordVec(zdx) := tempRdMemWord
       //}
     def tempRdMemWord = setOutpModMemWord.io.rdMemWord(zdx)
+    tempRdMemWord := myRdMemWord(ydx=ydx, modIdx=zdx)
     //tempRdMemWord := RegNext(
     //  next=tempRdMemWord,
     //  init=tempRdMemWord.getZero,
@@ -2798,8 +2799,10 @@ case class SnowHousePipeStageExecute(
     //val rSetTempRdMemWordState = Reg(Bool(), init=False)
     //when (cMid0Front.up.isValid) {
     //  when (!rSetTempRdMemWordState) {
-    //    rSetTempRdMemWordState := True
-        tempRdMemWord := myRdMemWord(ydx=ydx, modIdx=zdx)
+    //    when (cMid0Front.down.isReady) {
+    //      rSetTempRdMemWordState := True
+    //      tempRdMemWord := myRdMemWord(ydx=ydx, modIdx=zdx)
+    //    }
     //  }
     //  when (cMid0Front.up.isFiring) {
     //    rSetTempRdMemWordState := False

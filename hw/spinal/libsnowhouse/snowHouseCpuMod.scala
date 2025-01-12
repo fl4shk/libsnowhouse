@@ -552,7 +552,9 @@ object SnowHouseCpuPipeStageInstrDecode {
       is (BeqRaRbSimm._1) {
         switch (encInstr.rcIdx(1 downto 0)) {
           is (BeqRaRbSimm._2._1) {
-            psId.nextPrevInstrWasJump := True
+            when (psId.startDecode) {
+              psId.nextPrevInstrWasJump := True
+            }
             when (
               encInstr.raIdx === encInstr.rbIdx
               && encInstr.raIdx =/= 0x0
@@ -563,7 +565,6 @@ object SnowHouseCpuPipeStageInstrDecode {
             }
           }
           is (BneRaRbSimm._2._1) {
-            psId.nextPrevInstrWasJump := True
             when (
               encInstr.raIdx === encInstr.rbIdx
               && encInstr.raIdx =/= 0x0
@@ -571,10 +572,15 @@ object SnowHouseCpuPipeStageInstrDecode {
               setOp(AddRaPcSimm16)
             } otherwise {
               setOp(BneRaRbSimm)
+              when (psId.startDecode) {
+                psId.nextPrevInstrWasJump := True
+              }
             }
           }
           is (JlRaRb._2._1) {
-            psId.nextPrevInstrWasJump := True
+            when (psId.startDecode) {
+              psId.nextPrevInstrWasJump := True
+            }
             setOp(JlRaRb)
           }
           default {
@@ -1238,7 +1244,7 @@ case class SnowHouseCpuTestProgram(
   val tempData: Int = 0x17000
   cfg.program ++= Array[AsmStmt](
     //--------
-    cpy(r0, 0x0),             // 0: r0 = 0
+    cpy(r0, 0x0),             // 0x0: r0 = 0
                               // instruction fetcher has trouble
                               // reading first instruction, so put
                               // in a dummy
@@ -1253,50 +1259,52 @@ case class SnowHouseCpuTestProgram(
     cpy(r6, 0x20),            // 0x20: r6 = 0x20
     str(r6, r0, r3),          // 0x24: [r0 + r3] = r6
     ldr(r6, r0, r3),          // 0x28
+    //str(r6, r0, r3),
+    //ldr(r6, r0, r3),
     //add(r7, r6, 4),           // 0x2c
     cpy(r7, 0x4),
-    Lb"asdf",
+    Lb"push_loop",
     push(r7),                 // 0x30
     pop(r8),                  // 0x34
     push(r8),                 // 0x38
     pop(r9),                  // 0x3c
     sub(r7, r7, 1),           // 0x40
     //sub(r6, r6, 1),
-    bnz(r7, LbR"asdf"),       // 0x44
-    udiv(r7, r6, r1),
-    umod(r8, r6, r1),
+    bnz(r7, LbR"push_loop"),       // 0x44
+    udiv(r7, r6, r1),         // 0x44
+    umod(r8, r6, r1),         // 0x48
     //--------
     Lb"loop",
     //add(r0, r1, r2),
     //cpyu(r2, tempData >> 16),
     //cpy(r2, tempData & 0xffff),
-    ldr(r6, r3, 0x0),         // 0x30:
+    ldr(r6, r3, 0x0),         // 0x4c:
     //add(r6, r6, 0x1),       
     //jl(r5),
-    bl(LbR"increment"),       // 0x34:
-    str(r6, r3, 0x4),         // 0x38:
-    add(r3, r3, 0x4),         // 0x3c: r3 += 4
-    sub(r1, r1, 0x1),         // 0x40: r1 -= 1 
-    bl(LbR"divmod"),        // 0x44
+    bl(LbR"increment"),       // 0x50:
+    str(r6, r3, 0x4),         // 0x54:
+    add(r3, r3, 0x4),         // 0x58: r3 += 4
+    sub(r1, r1, 0x1),         // 0x5c: r1 -= 1 
+    bl(LbR"divmod"),          // 0x60
     //mul(r7, r6, r1),
-    bnz(r1, LbR"loop"),       // 0x48: if (r1 != 0) goto LbR"loop"
+    bnz(r1, LbR"loop"),       // 0x64: if (r1 != 0) goto LbR"loop"
     ////--------
-    //cpy(r12, 0x0),            // 0x4c
+    //cpy(r12, 0x0),              // 0x4c
     Lb"infin",
-    //cpy(r12, 0x0),            // 0x4c
-    bz(r0, LbR"infin"),      // 0x38
+    //cpy(r12, 0x0),              // 0x4c
+    bz(r0, LbR"infin"),       // 0x68
     //Db32(0x3f),
     ////--------
     Lb"increment",
-    add(r6, r6, 0x1),         // 0x54
+    add(r6, r6, 0x1),         // 0x6c
     //add(r6, r6, r0),
-    jmp(lr),                  // 0x58
+    jmp(lr),                  // 0x70
     ////--------
     Lb"divmod",
-    //mul(r7, r6, r1),          // 0x5c
-    udiv(r7, r6, r1),
-    umod(r8, r6, r1),
-    jmp(lr),                  // 0x60
+    //mul(r7, r6, r1),        // 0x74
+    udiv(r7, r6, r1),         // 0x78
+    umod(r8, r6, r1),         // 0x7c
+    jmp(lr),                  // 0x80
     //cpy(r0, r0),
     //cpy(r0, r0),
   )
