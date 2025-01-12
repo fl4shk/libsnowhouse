@@ -313,6 +313,12 @@ object SnowHouseCpuPipeStageInstrDecode {
         psId.tempInstr.asBits.getZero
       )
     )
+    val rTempState = (
+      KeepAttribute(
+        Reg(Bool(), init=False)
+      )
+      .setName(s"InstrDecode_PopRaRb_rTempState")
+    )
     val nextMultiCycleState = Bool()
     val rMultiCycleState = (
       KeepAttribute(
@@ -417,6 +423,9 @@ object SnowHouseCpuPipeStageInstrDecode {
       }
     }
     psId.nextPrevInstrWasJump := False
+    when (cId.up.isFiring) {
+      rTempState := False
+    }
     switch (encInstr.op) {
       is (AddRaRbRc._1) {
         when (encInstr.rcIdx =/= 0x0) {
@@ -614,22 +623,47 @@ object SnowHouseCpuPipeStageInstrDecode {
             //}
           }
           is (PopRaRb._1._2._1) {
+            upPayload.blockIrq := True
+            //when (psId.rMultiInstrCnt === 0)
+            //val dontChangeTempState = Bool()
+            //dontChangeTempState := False
             when (psId.startDecode) {
-              psId.nextMultiInstrCnt := 1
-              setOp(AddRaRbSimm16)
-              upPayload.gprIdxVec(0) := encInstr.rbIdx
-              upPayload.gprIdxVec(1) := encInstr.rbIdx
-              upPayload.gprIdxVec(2) := SnowHouseCpuRegs.r0.index
-              //val tempSImm = SInt(cfg.mainWidth bits)
-              //tempSImm := -(cfg.mainWidth / 8)
-              upPayload.imm := (cfg.mainWidth / 8) //tempSImm.asUInt
-            } otherwise {
-              setOp(LdrRaRbSimm16)
-              upPayload.gprIdxVec(0) := encInstr.raIdx
-              upPayload.gprIdxVec(1) := encInstr.rbIdx
-              upPayload.gprIdxVec(2) := SnowHouseCpuRegs.r0.index
-              upPayload.imm := 0x0
+              when (
+                //!rTempState
+                psId.rMultiInstrCnt === 0x0
+              ) {
+                when (
+                  cId.up.isFiring
+                  //cId.down.isFiring
+                ) {
+                  //rTempState := True
+                  //dontChangeTempState := True
+                  psId.nextMultiInstrCnt := 1
+                  setOp(AddRaRbSimm16)
+                  upPayload.gprIdxVec(0) := encInstr.rbIdx
+                  upPayload.gprIdxVec(1) := encInstr.rbIdx
+                  upPayload.gprIdxVec(2) := SnowHouseCpuRegs.r0.index
+                  //val tempSImm = SInt(cfg.mainWidth bits)
+                  //tempSImm := -(cfg.mainWidth / 8)
+                  upPayload.imm := (cfg.mainWidth / 8) //tempSImm.asUInt
+                }
+              } otherwise {
+                when (cId.down.isFiring) {
+                  setOp(LdrRaRbSimm16)
+                  upPayload.gprIdxVec(0) := encInstr.raIdx
+                  upPayload.gprIdxVec(1) := encInstr.rbIdx
+                  upPayload.gprIdxVec(2) := SnowHouseCpuRegs.r0.index
+                  upPayload.imm := 0x0
+                }
+              }
             }
+            //when (rTempState) {
+            //when (!psId.startDecode) {
+              //when (cId.up.isFiring) {
+              //  rTempState := False
+              //}
+            //}
+            //}
           }
         }
       }
@@ -1219,25 +1253,33 @@ case class SnowHouseCpuTestProgram(
     cpy(r6, 0x20),            // 0x20: r6 = 0x20
     str(r6, r0, r3),          // 0x24: [r0 + r3] = r6
     ldr(r6, r0, r3),          // 0x28
-    add(r7, r6, 4),           // 0x2c
+    //add(r7, r6, 4),           // 0x2c
+    cpy(r7, 0x4),
+    Lb"asdf",
     push(r7),                 // 0x30
     pop(r8),                  // 0x34
-    //umod(r8, r6, r1),
-    ////--------
-    //Lb"loop",
-    ////add(r0, r1, r2),
-    ////cpyu(r2, tempData >> 16),
-    ////cpy(r2, tempData & 0xffff),
-    //ldr(r6, r3, 0x0),         // 0x30:
-    ////add(r6, r6, 0x1),       
-    ////jl(r5),
-    //bl(LbR"increment"),       // 0x34:
-    //str(r6, r3, 0x4),         // 0x38:
-    //add(r3, r3, 0x4),         // 0x3c: r3 += 4
-    //sub(r1, r1, 0x1),         // 0x40: r1 -= 1 
-    //bl(LbR"divmod"),        // 0x44
-    ////mul(r7, r6, r1),
-    //bnz(r1, LbR"loop"),       // 0x48: if (r1 != 0) goto LbR"loop"
+    push(r8),                 // 0x38
+    pop(r9),                  // 0x3c
+    sub(r7, r7, 1),           // 0x40
+    //sub(r6, r6, 1),
+    bnz(r7, LbR"asdf"),       // 0x44
+    udiv(r7, r6, r1),
+    umod(r8, r6, r1),
+    //--------
+    Lb"loop",
+    //add(r0, r1, r2),
+    //cpyu(r2, tempData >> 16),
+    //cpy(r2, tempData & 0xffff),
+    ldr(r6, r3, 0x0),         // 0x30:
+    //add(r6, r6, 0x1),       
+    //jl(r5),
+    bl(LbR"increment"),       // 0x34:
+    str(r6, r3, 0x4),         // 0x38:
+    add(r3, r3, 0x4),         // 0x3c: r3 += 4
+    sub(r1, r1, 0x1),         // 0x40: r1 -= 1 
+    bl(LbR"divmod"),        // 0x44
+    //mul(r7, r6, r1),
+    bnz(r1, LbR"loop"),       // 0x48: if (r1 != 0) goto LbR"loop"
     ////--------
     //cpy(r12, 0x0),            // 0x4c
     Lb"infin",
@@ -1250,11 +1292,11 @@ case class SnowHouseCpuTestProgram(
     //add(r6, r6, r0),
     jmp(lr),                  // 0x58
     ////--------
-    //Lb"divmod",
-    ////mul(r7, r6, r1),          // 0x5c
-    //udiv(r7, r6, r1),
-    //umod(r8, r6, r1),
-    //jmp(lr),                  // 0x60
+    Lb"divmod",
+    //mul(r7, r6, r1),          // 0x5c
+    udiv(r7, r6, r1),
+    umod(r8, r6, r1),
+    jmp(lr),                  // 0x60
     //cpy(r0, r0),
     //cpy(r0, r0),
   )
