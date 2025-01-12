@@ -2123,9 +2123,66 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
               //cfg.multiCycleOpInfoMap.find(_._2 == opInfo).get
               if (opInfo == innerOpInfo) {
                 io.multiCycleOpInfoIdx := idx
-                io.modMemWord(0) := (
-                  modIo.multiCycleBusVec(idx).devData.dstVec(0)
-                )
+                for ((dst, dstIdx) <- opInfo.dstArr.view.zipWithIndex) {
+                  val tempDst = (
+                    modIo.multiCycleBusVec(idx).devData.dstVec(dstIdx)
+                  )
+                  dst match {
+                    case DstKind.Gpr => {
+                      // TODO: *maybe* support multiple output regs
+                      io.modMemWord(0) := (
+                        tempDst
+                      )
+                    }
+                    case DstKind.HiddenReg(kind) => {
+                      kind match {
+                        case HiddenRegKind.MulHiOutp => {
+                          nextMulHiOutp := tempDst
+                        }
+                        case HiddenRegKind.DivHiOutp => {
+                          nextDivHiOutp := tempDst
+                        }
+                        case HiddenRegKind.ModHiOutp => {
+                          nextModHiOutp := tempDst
+                        }
+                        case _ => {
+                          assert(
+                            false,
+                            s"not yet implemented: "
+                            + s"opInfo(${opInfo}) index:${opInfoIdx}"
+                          )
+                        }
+                      }
+                    }
+                    case DstKind.Spr(kind) => {
+                      kind match {
+                        case SprKind.Hi => {
+                          nextHi := tempDst
+                        }
+                        case SprKind.Lo => {
+                          nextLo := tempDst
+                        }
+                        case _ => {
+                          assert(
+                            false,
+                            s"not yet implemented: "
+                            + s"opInfo(${opInfo}) index:${opInfoIdx}"
+                          )
+                        }
+                      }
+                    }
+                    case _ => {
+                      assert(
+                        false,
+                        s"not yet implemented: "
+                        + s"opInfo(${opInfo}) index:${opInfoIdx}"
+                      )
+                    }
+                  }
+                }
+                //io.modMemWord(0) := (
+                //  modIo.multiCycleBusVec(idx).devData.dstVec(0)
+                //)
               }
             }
             io.opIsMultiCycle := True
