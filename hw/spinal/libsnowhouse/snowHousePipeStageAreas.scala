@@ -612,7 +612,7 @@ case class SnowHousePipeStageInstrDecode(
   //)
   if (cfg.irqCfg != None) {
     upPayload.takeIrq := False
-    io.idsIraIrq.ready := False
+    //io.idsIraIrq.ready := False
   }
   val nextPrevInstrBlockedIrq = (
     //cfg.irqCfg != None
@@ -723,7 +723,7 @@ case class SnowHousePipeStageInstrDecode(
                 io.idsIraIrq.rValid
               )
             ) {
-              io.idsIraIrq.ready := True
+              //io.idsIraIrq.ready := True
               upPayload.takeIrq := True
             }
             nextPrevInstrBlockedIrq := (
@@ -1740,9 +1740,13 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
                   )
                   if (opInfo.dstArr.size == 1) (
                     io.modMemWordValid := False
-                  ) else {
+                  ) else if (
+                    opInfo.dstArr(1) == DstKind.Spr(SprKind.Ie)
+                  ) {
+                    io.modMemWordValid := False
+                  } else {
                     //io.modMemWordValid := True
-                    // TODO: support more outputs
+                    // TODO: *maybe* support more outputs
                     io.modMemWordValid := !io.gprIsZeroVec(0)
                     //io.shouldIgnoreInstr := io.modMemWordValid
                   }
@@ -1755,10 +1759,28 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
                     //io.regPc //+ ((cfg.instrMainWidth / 8) * 1/*2*/)
                   )
                   io.psExSetPc.valid := True
-                  io.psExSetPc.nextPc := (
-                    io.rdMemWord(io.jmpAddrIdx)
-                    //- ((cfg.instrMainWidth / 8) * 1/*2*/)
-                  )
+                  opInfo.srcArr(0) match {
+                    case SrcKind.Gpr => {
+                      io.psExSetPc.nextPc := (
+                        io.rdMemWord(io.jmpAddrIdx)
+                        //- ((cfg.instrMainWidth / 8) * 1/*2*/)
+                      )
+                      nextIe := 0x1
+                    }
+                    case SrcKind.Spr(SprKind.Ira) => {
+                      io.psExSetPc.nextPc := (
+                        io.rIra
+                        //- ((cfg.instrMainWidth / 8) * 1/*2*/)
+                      )
+                    }
+                    case _ => {
+                      assert(
+                        false,
+                        s"not yet implemented: "
+                        + s"opInfo(${opInfo}) index:${opInfoIdx}"
+                      )
+                    }
+                  }
                 }
                 case CpyOpKind.Br => {
                   if (opInfo.dstArr.size == 1) (
@@ -2413,7 +2435,11 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
       }
     }
   } otherwise { // when (io.takeIrq)
-    //io.psExSetPc.valid := True
+    io.psExSetPc.valid := True
+    io.psExSetPc.nextPc := io.rIds
+    nextIra := io.regPc
+    nextIe := 0x0
+    //io.rIra :=
   }
 //  }
   //  is (PcChangeState.WaitTwoInstrs) {
@@ -2849,7 +2875,15 @@ case class SnowHousePipeStageExecute(
     //cfg=cfg
     args=args
   )
-  setOutpModMemWord.io.takeIrq := False; //outp.takeIrq
+  setOutpModMemWord.io.takeIrq := (
+    io.idsIraIrq.rValid
+    && outp.takeIrq
+    && (setOutpModMemWord.io.rIe =/= 0x0)
+  )
+  io.idsIraIrq.ready := False
+  when (setOutpModMemWord.io.takeIrq) {
+    io.idsIraIrq.ready := True
+  }
   setOutpModMemWord.io.currOp := myCurrOp
   setOutpModMemWord.io.regPcSetItCnt := outp.regPcSetItCnt
   setOutpModMemWord.io.regPc := outp.regPc

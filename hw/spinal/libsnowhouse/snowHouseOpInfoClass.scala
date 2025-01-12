@@ -893,6 +893,19 @@ object CpyOpKind {
           CondKind.Always
         ),
       ),
+      OpKindValidArgs(
+        dst=Array[HashSet[DstKind]](
+          HashSet(DstKind.Pc),
+          HashSet(DstKind.Ie),
+        ),
+        src=Array[HashSet[SrcKind]](
+          HashSet(SrcKind.Ira),
+        ),
+        cond=HashSet[CondKind](
+          //CondKind.Link
+          CondKind.Always
+        ),
+      )
       //OpKindValidArgs( // for "compare and jump"
       //  //dstSize=1, srcSize=3
       //  dst=Array[HashSet[DstKind]](
