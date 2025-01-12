@@ -343,14 +343,33 @@ case class SnowHousePipeStageInstrDecode(
     )
   )
   nextMultiInstrCnt := rMultiInstrCnt
-  when (rMultiInstrCnt === 0) {
+  val myInstr = UInt(cfg.instrMainWidth bits)
+  myInstr := (
+    RegNext(
+      next=myInstr,
+      init=myInstr.getZero
+    )
+  )
+  when (up.isValid) {
     when (
       io.ibus.rValid
-      && !io.ibus.ready
+      //&& !io.ibus.ready
     ) {
+      when (!rSetUpPayloadState(1)) {
+        when (!io.ibus.ready) {
+          cId.haltIt()
+        } otherwise {
+          nextSetUpPayloadState(1) := True
+          myInstr := (
+            io.ibus.devData.instr
+          )
+        }
+      }
       //myDoStallIt()
-      cId.haltIt()
+      //cId.duplicateIt()
     }
+  }
+  when (rMultiInstrCnt === 0) {
     when (up.isValid) {
       //upPayload.regPc := cId.up(pIf).regPc
       //upPayload.instrCnt := cId.up(pIf).instrCnt
@@ -361,6 +380,10 @@ case class SnowHousePipeStageInstrDecode(
           nextSetUpPayloadState(0) := True
         //}
       }
+      //when (up.isFiring) {
+      //  //up(pId) := upPayload
+      //  nextSetUpPayloadState(0) := False
+      //}
     }
   } otherwise {
     //when (nextMultiInstrCnt =/= 0) {
@@ -380,6 +403,7 @@ case class SnowHousePipeStageInstrDecode(
   when (up.isFiring) {
     //up(pId) := upPayload
     nextSetUpPayloadState(0) := False
+    nextSetUpPayloadState(1) := False
   }
   //if (optFormal) {
   //  when (pastValidAfterReset) {
@@ -531,8 +555,8 @@ case class SnowHousePipeStageInstrDecode(
   //  }
   //  //cId.terminateIt()
   //}
-  val shouldBubble = Bool()
-  shouldBubble := False
+  //val shouldBubble = Bool()
+  //shouldBubble := False
   val tempInstr = UInt(cfg.instrMainWidth bits)
   tempInstr := (
     RegNext(
@@ -557,20 +581,13 @@ case class SnowHousePipeStageInstrDecode(
   //) {
   //  rSavedExSetPc := psExSetPc
   //}
-  val myInstr = UInt(cfg.instrMainWidth bits)
-  myInstr := (
-    RegNext(
-      next=myInstr,
-      init=myInstr.getZero
-    )
-  )
-  when (up.isValid) {
-    when (io.ibus.rValid && io.ibus.ready) {
-      myInstr := (
-        io.ibus.devData.instr
-      )
-    }
-  }
+  //when (up.isValid) {
+  //  when (io.ibus.rValid && io.ibus.ready) {
+  //    myInstr := (
+  //      io.ibus.devData.instr
+  //    )
+  //  }
+  //}
   when (up.isValid) {
     when (
       //upPayload.regPcSetItCnt =/= 0
@@ -582,12 +599,18 @@ case class SnowHousePipeStageInstrDecode(
           && upPayload.regPcSetItCnt =/= 0x0
         )
       )
+      //True
     ) {
       startDecode := True
       val myDecodeArea = doDecodeFunc(this)
       when (
         rMultiInstrCnt === 0x0
       ) {
+        //when (io.ibus.rValid && io.ibus.ready) {
+        //  myInstr := (
+        //    io.ibus.devData.instr
+        //  )
+        //}
         //doDecode := True
         tempInstr := myInstr
         //nextDoDecodeState := True

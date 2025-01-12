@@ -51,23 +51,23 @@ case class SnowHouseInstrDataDualRam(
     initBigInt=Some(instrInitBigInt),
   )
   //--------
-  io.ibus.ready := io.ibus.rValid
-  //io.ibus.ready := False
-  //val rIbusReadyCnt = Reg(UInt(8 bits)) init(0)
-  //val rIbusReadyState = Reg(Bool()) init(False)
-  //when (io.ibus.rValid) {
-  //  when (rIbusReadyCnt > 0) {
-  //    rIbusReadyCnt := rIbusReadyCnt - 1
-  //  } otherwise {
-  //    io.ibus.ready := True
-  //    rIbusReadyState := !rIbusReadyState
-  //    when (!rIbusReadyState) {
-  //      rIbusReadyCnt := 2
-  //    } otherwise {
-  //      rIbusReadyCnt := 1
-  //    }
-  //  }
-  //}
+  //io.ibus.ready := io.ibus.rValid
+  io.ibus.ready := False
+  val rIbusReadyCnt = Reg(UInt(8 bits)) init(0)
+  val rIbusReadyState = Reg(Bool()) init(False)
+  when (io.ibus.rValid) {
+    when (rIbusReadyCnt > 0) {
+      rIbusReadyCnt := rIbusReadyCnt - 1
+    } otherwise {
+      io.ibus.ready := True
+      rIbusReadyState := !rIbusReadyState
+      when (!rIbusReadyState) {
+        rIbusReadyCnt := 2
+      } otherwise {
+        rIbusReadyCnt := 1
+      }
+    }
+  }
   //--------
   instrRam.io.rdEn := io.ibus.nextValid
   instrRam.io.rdAddr := (

@@ -307,11 +307,11 @@ object SnowHouseCpuPipeStageInstrDecode {
     )
     encInstr.assignFromBits(
       //io.ibus.devData.instr.asBits
-      Mux[Bits](
-        !psId.shouldBubble,
+      //Mux[Bits](
+      //  !psId.shouldBubble,
         psId.tempInstr.asBits,
-        psId.tempInstr.asBits.getZero
-      )
+      //  psId.tempInstr.asBits.getZero
+      //)
     )
     val rTempState = (
       KeepAttribute(
@@ -1249,7 +1249,7 @@ case class SnowHouseCpuTestProgram(
                               // reading first instruction, so put
                               // in a dummy
     cpy(r0, 0x0),             // 0x4: r0 = 0
-    //cpy(r0, 0x0),             // 0x8
+    cpy(r0, 0x0),             // 0x8
     cpy(r1, 0x8),             // 0x8: r1 = 8
     cpy(r2, 0x1),             // 0x0c: r2 = 1
     cpy(r3, 0x1000),          // 0x10: r3 = 0x1000
