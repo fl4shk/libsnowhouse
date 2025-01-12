@@ -1765,13 +1765,13 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
                         io.rdMemWord(io.jmpAddrIdx)
                         //- ((cfg.instrMainWidth / 8) * 1/*2*/)
                       )
-                      nextIe := 0x1
                     }
                     case SrcKind.Spr(SprKind.Ira) => {
                       io.psExSetPc.nextPc := (
                         io.rIra
                         //- ((cfg.instrMainWidth / 8) * 1/*2*/)
                       )
+                      nextIe := 0x1
                     }
                     case _ => {
                       assert(

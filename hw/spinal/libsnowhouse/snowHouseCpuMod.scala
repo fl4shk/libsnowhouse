@@ -105,17 +105,50 @@ object SnowHouseCpuOp {
   //def AndKindSimm16
 
   val LslRaRbRc = mkOp(                         // 6, 0
-    "lsl rA, rB, rC", ShiftKindLslRc, false
+    "lsl rA, rB, rC", ShiftSprKindLslRc, false
   )
   val LsrRaRbRc = mkOp(                         // 6, 1
-    "lsr rA, rB, rC", ShiftKindLsrRc, false
+    "lsr rA, rB, rC", ShiftSprKindLsrRc, false
   )
   val AsrRaRbRc = mkOp(                         // 6, 2
-    "asr rA, rB, rC", ShiftKindAsrRc, true
+    "asr rA, rB, rC", ShiftSprKindAsrRc, false
   )
-  def ShiftKindLslRc = (0x0, 0x0)
-  def ShiftKindLsrRc = (0x1, 0x0)
-  def ShiftKindAsrRc = (0x2, 0x0)
+  val CpyRaIds = mkOp(                          // 6, 3
+    "cpy rA, ids", ShiftSprKindCpyRaIds, false
+  )
+  val CpyIdsRb = mkOp(                          // 6, 4
+    "cpy ids, rB", ShiftSprKindCpyIdsRb, false
+  )
+  val CpyRaIra = mkOp(                          // 6, 5
+    "cpy rA, ira", ShiftSprKindCpyRaIra, false
+  )
+  val CpyIraRb = mkOp(                          // 6, 6
+    "cpy ira, rB", ShiftSprKindCpyIraRb, false
+  )
+  val CpyRaIe = mkOp(                           // 6, 7
+    "cpy rA, ie", ShiftSprKindCpyRaIe, false
+  )
+  val CpyIeRb = mkOp(                           // 6, 8
+    "cpy ie, rB", ShiftSprKindCpyIeRb, false
+  )
+  val RetIra = mkOp(                            // 6, 9
+    "ret ira", ShiftSprKindRetIra, false
+  )
+  val ShiftSprOpReserved = mkOp(                // 6, 10
+    "ShiftSprOpReserved", ShiftSprKindReserved, true
+  )
+
+  def ShiftSprKindLslRc = (0x0, 0x0)
+  def ShiftSprKindLsrRc = (0x1, 0x0)
+  def ShiftSprKindAsrRc = (0x2, 0x0)
+  def ShiftSprKindCpyRaIds = (0x3, 0x0)
+  def ShiftSprKindCpyIdsRb = (0x4, 0x0)
+  def ShiftSprKindCpyRaIra = (0x5, 0x0)
+  def ShiftSprKindCpyIraRb = (0x6, 0x0)
+  def ShiftSprKindCpyRaIe = (0x7, 0x0)
+  def ShiftSprKindCpyIeRb = (0x8, 0x0)
+  def ShiftSprKindRetIra = (0x9, 0x0)
+  def ShiftSprKindReserved = (0xa, 0x0)
 
   //val AddRaPcSimm16 = mkOp(                   // 7, 0
   //  "AddRaPcSimm16", AddPcKindMain, true
@@ -473,7 +506,7 @@ object SnowHouseCpuPipeStageInstrDecode {
         setOp(AndRaRbRc)
       }
       is (LslRaRbRc._1) {
-        switch (encInstr.imm16(1 downto 0)) {
+        switch (encInstr.imm16(3 downto 0)) {
           is (LslRaRbRc._2._1) {
             setOp(LslRaRbRc)
           }
@@ -482,6 +515,27 @@ object SnowHouseCpuPipeStageInstrDecode {
           }
           is (AsrRaRbRc._2._1) {
             setOp(AsrRaRbRc)
+          }
+          is (CpyRaIds._2._1) {
+            setOp(CpyRaIds)
+          }
+          is (CpyIdsRb._2._1) {
+            setOp(CpyIdsRb)
+          }
+          is (CpyRaIra._2._1) {
+            setOp(CpyRaIra)
+          }
+          is (CpyIraRb._2._1) {
+            setOp(CpyIraRb)
+          }
+          is (CpyRaIe._2._1) {
+            setOp(CpyRaIe)
+          }
+          is (CpyIeRb._2._1) {
+            setOp(CpyIeRb)
+          }
+          is (RetIra._2._1) {
+            setOp(RetIra)
           }
           default {
             doDefault()
@@ -887,6 +941,56 @@ object SnowHouseCpuOpInfoMap {
     )
   )
   opInfoMap += (
+    SnowHouseCpuOp.CpyRaIds -> OpInfo.mkCpy(
+      dstArr=Array[DstKind](DstKind.Gpr),
+      srcArr=Array[SrcKind](SrcKind.Ids),
+      cpyOp=CpyOpKind.Cpy,
+    )
+  )
+  opInfoMap += (
+    SnowHouseCpuOp.CpyIdsRb -> OpInfo.mkCpy(
+      dstArr=Array[DstKind](DstKind.Ids),
+      srcArr=Array[SrcKind](SrcKind.Gpr),
+      cpyOp=CpyOpKind.Cpy,
+    )
+  )
+  opInfoMap += (
+    SnowHouseCpuOp.CpyRaIra -> OpInfo.mkCpy(
+      dstArr=Array[DstKind](DstKind.Gpr),
+      srcArr=Array[SrcKind](SrcKind.Ira),
+      cpyOp=CpyOpKind.Cpy,
+    )
+  )
+  opInfoMap += (
+    SnowHouseCpuOp.CpyIraRb -> OpInfo.mkCpy(
+      dstArr=Array[DstKind](DstKind.Ira),
+      srcArr=Array[SrcKind](SrcKind.Gpr),
+      cpyOp=CpyOpKind.Cpy,
+    )
+  )
+  opInfoMap += (
+    SnowHouseCpuOp.CpyRaIe -> OpInfo.mkCpy(
+      dstArr=Array[DstKind](DstKind.Gpr),
+      srcArr=Array[SrcKind](SrcKind.Ie),
+      cpyOp=CpyOpKind.Cpy,
+    )
+  )
+  opInfoMap += (
+    SnowHouseCpuOp.CpyIeRb -> OpInfo.mkCpy(
+      dstArr=Array[DstKind](DstKind.Ie),
+      srcArr=Array[SrcKind](SrcKind.Gpr),
+      cpyOp=CpyOpKind.Cpy,
+    )
+  )
+  opInfoMap += (
+    SnowHouseCpuOp.RetIra -> OpInfo.mkCpy(
+      dstArr=Array[DstKind](DstKind.Pc, DstKind.Ie),
+      srcArr=Array[SrcKind](SrcKind.Ira),
+      cpyOp=CpyOpKind.Jmp,
+    )
+  )
+  //--------
+  opInfoMap += (
     // mul rA, rB, rC
     SnowHouseCpuOp.MulRaRbRc -> OpInfo.mkMultiCycle(
       dstArr=Array[DstKind](DstKind.Gpr),
@@ -1260,9 +1364,6 @@ case class SnowHouseCpuTestProgram(
   cfg.program ++= Array[AsmStmt](
     //--------
     cpy(r0, 0x0),             // 0x0: r0 = 0
-                              // instruction fetcher has trouble
-                              // reading first instruction, so put
-                              // in a dummy
     cpy(r0, 0x0),             // 0x4: r0 = 0
     cpy(r0, 0x0),             // 0x8
     cpy(r1, 0x8),             // 0x8: r1 = 8
@@ -1272,54 +1373,56 @@ case class SnowHouseCpuTestProgram(
     cpy(r5, LbR"increment"),  // 0x18
     cpy(sp, 0x2000),          // 0x1c
     cpy(r6, 0x20),            // 0x20: r6 = 0x20
-    str(r6, r3, 0x0),          // 0x24: [r0 + r3] = r6
-    ldr(r5, r3, 0x0),          // 0x28
-    str(r5, r3, 0x4),
-    ldr(r6, r3, 0x4),
-    //add(r7, r6, 4),           // 0x2c
-    cpy(r7, 0x4),
+    str(r6, r3, 0x0),         // 0x24: [r0 + r3] = r6
+    ldr(r5, r3, 0x0),         // 0x28
+    str(r5, r3, 0x4),         // 0x2c
+    ldr(r6, r3, 0x4),         // 0x30
+    //add(r7, r6, 4),
+    cpy(r7, 0x4),             // 0x34
+    mul(r9, r5, r7),          // 0x38
     Lb"push_loop",
-    push(r7),                 // 0x30
-    pop(r8),                  // 0x34
-    push(r8),                 // 0x38
-    pop(r9),                  // 0x3c
-    sub(r7, r7, 1),           // 0x40
+    push(r7),                 // 0x3c
+    pop(r8),                  // 0x40
+    push(r8),                 // 0x44
+    pop(r9),                  // 0x48
+    sub(r7, r7, 1),           // 0x4c
     //sub(r6, r6, 1),
-    bnz(r7, LbR"push_loop"),       // 0x44
-    udiv(r7, r6, r1),         // 0x44
-    umod(r8, r6, r1),         // 0x48
+    bnz(r7, LbR"push_loop"),  // 0x50
+    mul(r7, r6, r1),
+    udiv(r7, r7, r1),         // 0x54
+    umod(r8, r7, r1),         // 0x58
     //--------
     Lb"loop",
     //add(r0, r1, r2),
     //cpyu(r2, tempData >> 16),
     //cpy(r2, tempData & 0xffff),
-    ldr(r6, r3, 0x0),         // 0x4c:
+    ldr(r6, r3, 0x0),         // 0x5c:
     //add(r6, r6, 0x1),       
     //jl(r5),
-    bl(LbR"increment"),       // 0x50:
-    str(r6, r3, 0x4),         // 0x54:
-    add(r3, r3, 0x4),         // 0x58: r3 += 4
-    sub(r1, r1, 0x1),         // 0x5c: r1 -= 1 
-    bl(LbR"divmod"),          // 0x60
+    bl(LbR"increment"),       // 0x60:
+    str(r6, r3, 0x4),         // 0x64:
+    add(r3, r3, 0x4),         // 0x68: r3 += 4
+    sub(r1, r1, 0x1),         // 0x6c: r1 -= 1 
+    bl(LbR"divmod"),          // 0x70
     //mul(r7, r6, r1),
-    bnz(r1, LbR"loop"),       // 0x64: if (r1 != 0) goto LbR"loop"
+    bnz(r1, LbR"loop"),       // 0x74: if (r1 != 0) goto LbR"loop"
     ////--------
     //cpy(r12, 0x0),              // 0x4c
     Lb"infin",
     //cpy(r12, 0x0),              // 0x4c
-    bz(r0, LbR"infin"),       // 0x68
+    bz(r0, LbR"infin"),       // 0x78
     //Db32(0x3f),
     ////--------
     Lb"increment",
-    add(r6, r6, 0x1),         // 0x6c
+    add(r6, r6, 0x1),         // 0x7c
     //add(r6, r6, r0),
-    jmp(lr),                  // 0x70
+    jmp(lr),                  // 0x80
     ////--------
     Lb"divmod",
-    //mul(r7, r6, r1),        // 0x74
-    udiv(r7, r6, r1),         // 0x78
-    umod(r8, r6, r1),         // 0x7c
-    jmp(lr),                  // 0x80
+    //mul(r7, r6, r1),        // 0x84
+    udiv(r7, r6, r1),         // 0x88
+    umod(r8, r6, r1),         // 0x8c
+    jmp(lr),                  // 0x90
     //cpy(r0, r0),
     //cpy(r0, r0),
   )

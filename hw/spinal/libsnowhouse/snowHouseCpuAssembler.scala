@@ -443,6 +443,9 @@ object SnowHouseCpuRegs {
   val lr = Gpr(13)
   val fp = Gpr(14)
   val sp = Gpr(15)
+  val ids = Spr(SprKind.Ids)
+  val ira = Spr(SprKind.Ira)
+  val ie = Spr(SprKind.Ie)
   val pc = RegPc()
 }
 //--------
@@ -976,6 +979,19 @@ object bnz {
   //  )
   //}
 }
+object retIra {
+  def apply(
+  ) = {
+    InstructionAsmStmt(
+      op=SnowHouseCpuOp.RetIra,
+      rA=SnowHouseCpuRegs.r0,
+      rB=SnowHouseCpuRegs.r0,
+      rC=SnowHouseCpuRegs.r0,
+      imm=SnowHouseCpuOp.RetIra._2._1,
+
+    )
+  }
+}
 object jmp {
   def apply(
     rB: Gpr,
@@ -1127,6 +1143,90 @@ object cpy {
     //  imm=imm
     //)
   }
+  def apply(
+    rA: Gpr,
+    sB: Spr,
+  ) = {
+    val op = (
+      sB match {
+        case Spr(kind) => {
+          kind match {
+            case SprKind.Ids => {
+              SnowHouseCpuOp.CpyRaIds
+            }
+            case SprKind.Ira => {
+              SnowHouseCpuOp.CpyRaIra
+            }
+            case SprKind.Ie => {
+              SnowHouseCpuOp.CpyRaIe
+            }
+            case _ => {
+              assert(
+                false,
+                s"${kind}"
+              )
+              SnowHouseCpuOp.CpyRaIe
+            }
+          }
+        }
+        case _ => {
+          assert(
+            false
+          )
+          SnowHouseCpuOp.CpyRaIe
+        }
+      }
+    )
+    InstructionAsmStmt(
+      op=op,
+      rA=rA,
+      rB=SnowHouseCpuRegs.r0,
+      rC=SnowHouseCpuRegs.r0,
+      imm=op._2._1,
+    )
+  }
+  def apply(
+    sA: Spr,
+    rB: Gpr,
+  ) = {
+    val op = (
+      sA match {
+        case Spr(kind) => {
+          kind match {
+            case SprKind.Ids => {
+              SnowHouseCpuOp.CpyIdsRb
+            }
+            case SprKind.Ira => {
+              SnowHouseCpuOp.CpyIraRb
+            }
+            case SprKind.Ie => {
+              SnowHouseCpuOp.CpyIeRb
+            }
+            case _ => {
+              assert(
+                false,
+                s"${kind}"
+              )
+              SnowHouseCpuOp.CpyIeRb
+            }
+          }
+        }
+        case _ => {
+          assert(
+            false
+          )
+          SnowHouseCpuOp.CpyIeRb
+        }
+      }
+    )
+    InstructionAsmStmt(
+      op=op,
+      rA=SnowHouseCpuRegs.r0,
+      rB=rB,
+      rC=SnowHouseCpuRegs.r0,
+      imm=op._2._1,
+    )
+  }
   //def apply(
   //  rA: Gpr,
   //  imm: Int
@@ -1267,6 +1367,10 @@ case class Gpr(
     index < SnowHouseCpuInstrEnc.numGprs,
     s"${index}",
   )
+}
+case class Spr(
+  val kind: SprKind
+) {
 }
 object InstructionAsmStmt {
   def apply(

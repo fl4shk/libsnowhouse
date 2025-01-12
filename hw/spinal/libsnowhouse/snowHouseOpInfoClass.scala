@@ -894,6 +894,7 @@ object CpyOpKind {
         ),
       ),
       OpKindValidArgs(
+        // The Flare CPU's "ret ira" instruction.
         dst=Array[HashSet[DstKind]](
           HashSet(DstKind.Pc),
           HashSet(DstKind.Ie),
