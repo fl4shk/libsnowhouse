@@ -153,7 +153,7 @@ case class SnowHouseConfig(
     3
   ),
 ) {
-  val haveIrqIraIds = (
+  val myHaveIrqIdsIra = (
     irqCfg != None
   )
   val myZeroRegIdx: Int = (

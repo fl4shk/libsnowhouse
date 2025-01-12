@@ -62,18 +62,21 @@ object SprKind {
   case object Lo extends SprKind {
     def idx: Int = 7
   }
-  case object Modhi extends SprKind {
-    def idx: Int = 6
-  }
-  case object Modlo extends SprKind {
-    def idx: Int = 7
-  }
+  //case object Modhi extends SprKind {
+  //  def idx: Int = 6
+  //}
+  //case object Modlo extends SprKind {
+  //  def idx: Int = 7
+  //}
 }
 sealed trait HiddenRegKind {
 }
 object HiddenRegKind {
   case object IndexReg extends HiddenRegKind
-  case object PopData extends HiddenRegKind
+  case object MulHiOutp extends HiddenRegKind
+  case object DivHiOutp extends HiddenRegKind
+  case object ModHiOutp extends HiddenRegKind
+  //case object PopData extends HiddenRegKind
 }
 // kinds of source operands of instructions
 sealed trait SrcKind
@@ -106,14 +109,17 @@ object SrcKind {
   def Sty = Spr(SprKind.Sty)
   def Hi = Spr(SprKind.Hi)
   def Lo = Spr(SprKind.Lo)
-  def Modhi = Spr(SprKind.Modhi)
-  def Modlo = Spr(SprKind.Modlo)
+  //def Modhi = Spr(SprKind.Modhi)
+  //def Modlo = Spr(SprKind.Modlo)
   //case object IndexReg extends SrcKind
   case class HiddenReg(
     kind: HiddenRegKind
   ) extends SrcKind
   def IndexReg = HiddenReg(HiddenRegKind.IndexReg)
-  def PopData = HiddenReg(HiddenRegKind.PopData)
+  def MulHiOutp = HiddenReg(HiddenRegKind.MulHiOutp)
+  def DivHiOutp = HiddenReg(HiddenRegKind.DivHiOutp)
+  def ModHiOutp = HiddenReg(HiddenRegKind.ModHiOutp)
+  //def PopData = HiddenReg(HiddenRegKind.PopData)
   //def IndexReg = 
   //case class PcPlusImm(
   //  isSImm: Option[Boolean],
@@ -154,14 +160,17 @@ object DstKind {
   def Sty = Spr(SprKind.Sty)
   def Hi = Spr(SprKind.Hi)
   def Lo = Spr(SprKind.Lo)
-  def Modhi = Spr(SprKind.Modhi)
-  def Modlo = Spr(SprKind.Modlo)
+  //def Modhi = Spr(SprKind.Modhi)
+  //def Modlo = Spr(SprKind.Modlo)
   //case object IndexReg extends DstKind
   case class HiddenReg(
     kind: HiddenRegKind
   ) extends DstKind
   def IndexReg = HiddenReg(HiddenRegKind.IndexReg)
-  def PopData = HiddenReg(HiddenRegKind.PopData)
+  def MulHiOutp = HiddenReg(HiddenRegKind.MulHiOutp)
+  def DivHiOutp = HiddenReg(HiddenRegKind.DivHiOutp)
+  def ModHiOutp = HiddenReg(HiddenRegKind.ModHiOutp)
+  //def PopData = HiddenReg(HiddenRegKind.PopData)
   //case object AluFlags extends DstKind
 }
 //--------
@@ -264,7 +273,7 @@ sealed trait AddrCalcKind {
 object AddrCalcKind {
   case class AddReduce(
     //toIndexReg: Boolean,
-    fromIndexReg: Boolean,
+    //fromIndexReg: Boolean,
   ) extends AddrCalcKind {
     private[libsnowhouse] val _options = AddrCalcKindOptions(
       minNum=1,
@@ -339,7 +348,7 @@ class OpInfo(
   val select: OpSelect,
   val cond: CondKind=CondKind.Always,
   val memAccess: MemAccessKind=MemAccessKind.NoMemAccess,
-  val addrCalc: AddrCalcKind=AddrCalcKind.AddReduce(false),
+  val addrCalc: AddrCalcKind=AddrCalcKind.AddReduce(),
   //var aluOp: Option[AluOpKind]=None,
   //val opCond: AluOpKind | LoadOpKind | StoreOpKind,
   //var cond: Option[CondKind]=None,
@@ -536,7 +545,7 @@ object OpInfo {
     //loadOp: LoadOpKind,
     modify: MemAccessKind,
     cond: CondKind=CondKind.Always,
-    addrCalc: AddrCalcKind=AddrCalcKind.AddReduce(false),
+    addrCalc: AddrCalcKind=AddrCalcKind.AddReduce(),
   ): OpInfo = {
     val ret = new OpInfo(
       dstArr=dstArr,
@@ -707,14 +716,14 @@ object CpyOpKind {
         dst=Array[HashSet[DstKind]](
           HashSet(
             DstKind.Gpr, //DstKind.AluFlags
-            //DstKind.IndexReg, // DstKind.IndexReg turns this into an Add
+            //DstKind.IndexReg,
           ),
         ),
         src=Array[HashSet[SrcKind]](
           HashSet(
             SrcKind.Gpr,
             SrcKind.Pc,
-            //SrcKind.IndexReg,
+            SrcKind.IndexReg,
           ),
           HashSet(
             SrcKind.Gpr,
@@ -736,10 +745,17 @@ object CpyOpKind {
         dst=Array[HashSet[DstKind]](
           HashSet(
             DstKind.Gpr, 
+            //--------
             DstKind.AluFlags,
-            //DstKind.Ira,
-            //DstKind.Ids,
-            //DstKind.Ie,
+            DstKind.Ids,
+            DstKind.Ira,
+            DstKind.Ie,
+            DstKind.Ity,
+            DstKind.Sty,
+            DstKind.Hi,
+            DstKind.Lo,
+            //DstKind.IndexReg,
+            //--------
           ),
         ),
         src=Array[HashSet[SrcKind]](
@@ -752,13 +768,34 @@ object CpyOpKind {
             //SrcKind.Imm(Some(true)),
             //SrcKind.Imm(Some(false)),
             SrcKind.AluFlags,
-            //SrcKind.Ira,
-            //SrcKind.Ids,
-            //SrcKind.Ie,
+            SrcKind.Ids,
+            SrcKind.Ira,
+            SrcKind.Ie,
+            SrcKind.Ity,
+            SrcKind.Sty,
+            SrcKind.Hi,
+            SrcKind.Lo,
+            //--------
+            SrcKind.MulHiOutp,
+            SrcKind.DivHiOutp,
+            SrcKind.ModHiOutp,
+            //--------
           ),
         ),
         cond=HashSet[CondKind](
           CondKind.Always
+        ),
+      ),
+      OpKindValidArgs(
+        // this is a load or store that uses *just* `rIndexReg` for the
+        // address to load from or store to
+        dst=Array[HashSet[DstKind]](
+          HashSet(DstKind.Gpr),
+        ),
+        src=Array[HashSet[SrcKind]](
+          HashSet(SrcKind.IndexReg),
+        ),
+        cond=HashSet[CondKind](
         ),
       ),
       OpKindValidArgs(
@@ -1763,8 +1800,8 @@ object MultiCycleOpKind {
         // word, unsigned full-product
         //dstSize=2, srcSize=2
         dst=Array[HashSet[DstKind]](
-          HashSet(DstKind.Hi),
-          HashSet(DstKind.Lo),
+          HashSet(DstKind.MulHiOutp, DstKind.Hi),
+          HashSet(DstKind.Gpr, DstKind.Lo),
         ),
         src=Array[HashSet[SrcKind]](
           //HashSet(SrcKind.Gpr, SrcKind.Pc),
@@ -1790,8 +1827,8 @@ object MultiCycleOpKind {
         // word, signed full-product
         //dstSize=2, srcSize=2
         dst=Array[HashSet[DstKind]](
-          HashSet(DstKind.Hi),
-          HashSet(DstKind.Lo),
+          HashSet(DstKind.MulHiOutp, DstKind.Hi),
+          HashSet(DstKind.Gpr, DstKind.Lo),
         ),
         src=Array[HashSet[SrcKind]](
           //HashSet(SrcKind.Gpr, SrcKind.Pc),
@@ -1828,22 +1865,38 @@ object MultiCycleOpKind {
         ),
       ),
       OpKindValidArgs(
-        // dual-word
-        //dstSize=2, srcSize=4
+        // dual word
         dst=Array[HashSet[DstKind]](
-          HashSet(DstKind.Gpr),
-          HashSet(DstKind.Gpr),
+          HashSet(DstKind.DivHiOutp, DstKind.Hi),
+          HashSet(DstKind.Gpr, DstKind.Lo),
         ),
         src=Array[HashSet[SrcKind]](
-          HashSet(SrcKind.Gpr, SrcKind.Pc),
-          HashSet(SrcKind.Gpr, SrcKind.Pc),
-          HashSet(SrcKind.Gpr, SrcKind.Pc),
-          HashSet(SrcKind.Gpr, SrcKind.Pc),
+          HashSet(SrcKind.Gpr),
+          HashSet(SrcKind.Gpr),
+          HashSet(SrcKind.Gpr),
+          HashSet(SrcKind.Gpr),
         ),
         cond=HashSet[CondKind](
-          //CondKind.Always
+          CondKind.Always
         ),
       ),
+      //OpKindValidArgs(
+      //  // dual-word
+      //  //dstSize=2, srcSize=4
+      //  dst=Array[HashSet[DstKind]](
+      //    HashSet(DstKind.Gpr),
+      //    HashSet(DstKind.Gpr),
+      //  ),
+      //  src=Array[HashSet[SrcKind]](
+      //    HashSet(SrcKind.Gpr, SrcKind.Pc),
+      //    HashSet(SrcKind.Gpr, SrcKind.Pc),
+      //    HashSet(SrcKind.Gpr, SrcKind.Pc),
+      //    HashSet(SrcKind.Gpr, SrcKind.Pc),
+      //  ),
+      //  cond=HashSet[CondKind](
+      //    //CondKind.Always
+      //  ),
+      //),
     )
     def validArgsSet = _validArgsSet
   }
@@ -1867,22 +1920,38 @@ object MultiCycleOpKind {
         ),
       ),
       OpKindValidArgs(
-        // dual-word
-        //dstSize=2, srcSize=4
+        // dual word
         dst=Array[HashSet[DstKind]](
-          HashSet(DstKind.Gpr),
-          HashSet(DstKind.Gpr),
+          HashSet(DstKind.DivHiOutp, DstKind.Hi),
+          HashSet(DstKind.Gpr, DstKind.Lo),
         ),
         src=Array[HashSet[SrcKind]](
-          HashSet(SrcKind.Gpr, SrcKind.Pc),
-          HashSet(SrcKind.Gpr, SrcKind.Pc),
-          HashSet(SrcKind.Gpr, SrcKind.Pc),
-          HashSet(SrcKind.Gpr, SrcKind.Pc),
+          HashSet(SrcKind.Gpr),
+          HashSet(SrcKind.Gpr),
+          HashSet(SrcKind.Gpr),
+          HashSet(SrcKind.Gpr),
         ),
         cond=HashSet[CondKind](
-          //CondKind.Always
+          CondKind.Always
         ),
       ),
+      //OpKindValidArgs(
+      //  // dual-word
+      //  //dstSize=2, srcSize=4
+      //  dst=Array[HashSet[DstKind]](
+      //    HashSet(DstKind.Gpr),
+      //    HashSet(DstKind.Gpr),
+      //  ),
+      //  src=Array[HashSet[SrcKind]](
+      //    HashSet(SrcKind.Gpr, SrcKind.Pc),
+      //    HashSet(SrcKind.Gpr, SrcKind.Pc),
+      //    HashSet(SrcKind.Gpr, SrcKind.Pc),
+      //    HashSet(SrcKind.Gpr, SrcKind.Pc),
+      //  ),
+      //  cond=HashSet[CondKind](
+      //    //CondKind.Always
+      //  ),
+      //),
     )
     def validArgsSet = _validArgsSet
   }
@@ -1895,7 +1964,7 @@ object MultiCycleOpKind {
         // word
         //dstSize=1, srcSize=2
         dst=Array[HashSet[DstKind]](
-          HashSet(DstKind.Gpr, DstKind.Modlo),
+          HashSet(DstKind.Gpr, DstKind.Lo),
         ),
         src=Array[HashSet[SrcKind]](
           HashSet(SrcKind.Gpr, SrcKind.Pc),
@@ -1906,22 +1975,38 @@ object MultiCycleOpKind {
         ),
       ),
       OpKindValidArgs(
-        // two-word
-        //dstSize=2, srcSize=4
+        // dual word
         dst=Array[HashSet[DstKind]](
-          HashSet(DstKind.Gpr),
-          HashSet(DstKind.Gpr),
+          HashSet(DstKind.ModHiOutp, DstKind.Hi),
+          HashSet(DstKind.Gpr, DstKind.Lo),
         ),
         src=Array[HashSet[SrcKind]](
-          HashSet(SrcKind.Gpr, SrcKind.Pc),
-          HashSet(SrcKind.Gpr, SrcKind.Pc),
-          HashSet(SrcKind.Gpr, SrcKind.Pc),
-          HashSet(SrcKind.Gpr, SrcKind.Pc),
+          HashSet(SrcKind.Gpr),
+          HashSet(SrcKind.Gpr),
+          HashSet(SrcKind.Gpr),
+          HashSet(SrcKind.Gpr),
         ),
         cond=HashSet[CondKind](
-          //CondKind.Always
+          CondKind.Always
         ),
       ),
+      //OpKindValidArgs(
+      //  // two-word
+      //  //dstSize=2, srcSize=4
+      //  dst=Array[HashSet[DstKind]](
+      //    HashSet(DstKind.Gpr),
+      //    HashSet(DstKind.Gpr),
+      //  ),
+      //  src=Array[HashSet[SrcKind]](
+      //    HashSet(SrcKind.Gpr, SrcKind.Pc),
+      //    HashSet(SrcKind.Gpr, SrcKind.Pc),
+      //    HashSet(SrcKind.Gpr, SrcKind.Pc),
+      //    HashSet(SrcKind.Gpr, SrcKind.Pc),
+      //  ),
+      //  cond=HashSet[CondKind](
+      //    //CondKind.Always
+      //  ),
+      //),
     )
     def validArgsSet = _validArgsSet
   }
@@ -1934,7 +2019,7 @@ object MultiCycleOpKind {
         // word
         //dstSize=1, srcSize=2
         dst=Array[HashSet[DstKind]](
-          HashSet(DstKind.Gpr, DstKind.Modlo),
+          HashSet(DstKind.Gpr, DstKind.Lo),
         ),
         src=Array[HashSet[SrcKind]](
           HashSet(SrcKind.Gpr, SrcKind.Pc),
@@ -1945,29 +2030,62 @@ object MultiCycleOpKind {
         ),
       ),
       OpKindValidArgs(
-        // two-word
-        //dstSize=2, srcSize=4
+        // dual word
         dst=Array[HashSet[DstKind]](
-          //HashSet(DstKind.Gpr),
-          //HashSet(DstKind.Gpr),
-          HashSet(DstKind.Modhi),
-          HashSet(DstKind.Modlo),
+          HashSet(DstKind.ModHiOutp, DstKind.Hi),
+          HashSet(DstKind.Gpr, DstKind.Lo),
         ),
         src=Array[HashSet[SrcKind]](
-          //HashSet(SrcKind.Gpr, SrcKind.Pc),
-          //HashSet(SrcKind.Gpr, SrcKind.Pc),
-          HashSet(SrcKind.Hi),
-          HashSet(SrcKind.Lo),
-          HashSet(SrcKind.Gpr, SrcKind.Pc),
-          HashSet(SrcKind.Gpr, SrcKind.Pc),
+          HashSet(SrcKind.Gpr),
+          HashSet(SrcKind.Gpr),
+          HashSet(SrcKind.Gpr),
+          HashSet(SrcKind.Gpr),
         ),
         cond=HashSet[CondKind](
-          //CondKind.Always
+          CondKind.Always
         ),
       ),
+      //OpKindValidArgs(
+      //  // two-word
+      //  //dstSize=2, srcSize=4
+      //  dst=Array[HashSet[DstKind]](
+      //    //HashSet(DstKind.Gpr),
+      //    //HashSet(DstKind.Gpr),
+      //    HashSet(DstKind.Hi),
+      //    HashSet(DstKind.Lo),
+      //  ),
+      //  src=Array[HashSet[SrcKind]](
+      //    //HashSet(SrcKind.Gpr, SrcKind.Pc),
+      //    //HashSet(SrcKind.Gpr, SrcKind.Pc),
+      //    HashSet(SrcKind.Hi),
+      //    HashSet(SrcKind.Lo),
+      //    HashSet(SrcKind.Gpr, SrcKind.Pc),
+      //    HashSet(SrcKind.Gpr, SrcKind.Pc),
+      //  ),
+      //  cond=HashSet[CondKind](
+      //    //CondKind.Always
+      //  ),
+      //),
     )
     def validArgsSet = _validArgsSet
   }
+  //case object UdivHiGprOutp extends MultiCycleOpKind {
+  //  private[libsnowhouse] val _validArgsSet = LinkedHashSet[
+  //    OpKindValidArgs
+  //  ](
+  //    OpKindValidArgs(
+  //      dst=Array[HashSet[DstKind]](
+  //        HashSet(DstKind.Gpr),
+  //      ),
+  //      src=Array[HashSet[SrcKind]](
+  //      ),
+  //      cond=HashSet[CondKind](
+  //        CondKind.Always
+  //      ),
+  //    )
+  //  )
+  //  def validArgsSet = _validArgsSet
+  //}
   //case object Udivmod extends MultiCycleOpKind {
   //  private[libsnowhouse] val _validArgsSet = LinkedHashSet[
   //    OpKindValidArgs
@@ -1987,25 +2105,25 @@ object MultiCycleOpKind {
   //        //CondKind.Always
   //      ),
   //    ),
-  //    OpKindValidArgs(
-  //      // dual-word
-  //      //dstSize=4, srcSize=4
-  //      dst=Array[HashSet[DstKind]](
-  //        HashSet(DstKind.Gpr),
-  //        HashSet(DstKind.Gpr),
-  //        HashSet(DstKind.Gpr),
-  //        HashSet(DstKind.Gpr),
-  //      ),
-  //      src=Array[HashSet[SrcKind]](
-  //        HashSet(SrcKind.Gpr),
-  //        HashSet(SrcKind.Gpr),
-  //        HashSet(SrcKind.Gpr),
-  //        HashSet(SrcKind.Gpr),
-  //      ),
-  //      cond=HashSet[CondKind](
-  //        //CondKind.Always
-  //      ),
-  //    ),
+  //    //OpKindValidArgs(
+  //    //  // dual-word
+  //    //  //dstSize=4, srcSize=4
+  //    //  dst=Array[HashSet[DstKind]](
+  //    //    HashSet(DstKind.Gpr),
+  //    //    HashSet(DstKind.Gpr),
+  //    //    HashSet(DstKind.Gpr),
+  //    //    HashSet(DstKind.Gpr),
+  //    //  ),
+  //    //  src=Array[HashSet[SrcKind]](
+  //    //    HashSet(SrcKind.Gpr),
+  //    //    HashSet(SrcKind.Gpr),
+  //    //    HashSet(SrcKind.Gpr),
+  //    //    HashSet(SrcKind.Gpr),
+  //    //  ),
+  //    //  cond=HashSet[CondKind](
+  //    //    //CondKind.Always
+  //    //  ),
+  //    //),
   //  )
   //  def validArgsSet = _validArgsSet
   //}
@@ -2028,25 +2146,25 @@ object MultiCycleOpKind {
   //        //CondKind.Always
   //      ),
   //    ),  // word
-  //    OpKindValidArgs(
-  //      // dual-word
-  //      //dstSize=4, srcSize=4
-  //      dst=Array[HashSet[DstKind]](
-  //        HashSet(DstKind.Gpr),
-  //        HashSet(DstKind.Gpr),
-  //        HashSet(DstKind.Gpr),
-  //        HashSet(DstKind.Gpr),
-  //      ),
-  //      src=Array[HashSet[SrcKind]](
-  //        HashSet(SrcKind.Gpr),
-  //        HashSet(SrcKind.Gpr),
-  //        HashSet(SrcKind.Gpr),
-  //        HashSet(SrcKind.Gpr),
-  //      ),
-  //      cond=HashSet[CondKind](
-  //        //CondKind.Always
-  //      ),
-  //    ),
+  //    //OpKindValidArgs(
+  //    //  // dual-word
+  //    //  //dstSize=4, srcSize=4
+  //    //  dst=Array[HashSet[DstKind]](
+  //    //    HashSet(DstKind.Gpr),
+  //    //    HashSet(DstKind.Gpr),
+  //    //    HashSet(DstKind.Gpr),
+  //    //    HashSet(DstKind.Gpr),
+  //    //  ),
+  //    //  src=Array[HashSet[SrcKind]](
+  //    //    HashSet(SrcKind.Gpr),
+  //    //    HashSet(SrcKind.Gpr),
+  //    //    HashSet(SrcKind.Gpr),
+  //    //    HashSet(SrcKind.Gpr),
+  //    //  ),
+  //    //  cond=HashSet[CondKind](
+  //    //    //CondKind.Always
+  //    //  ),
+  //    //),
   //  )
   //  def validArgsSet = _validArgsSet
   //}
