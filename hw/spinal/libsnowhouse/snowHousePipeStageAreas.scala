@@ -290,11 +290,15 @@ case class SnowHousePipeStageInstrDecode(
   //    init=upPayload.getZero,
   //  )
   //)
+  val startDecode = Bool()
   val nextPrevInstrWasJump = Bool()
   val rPrevInstrWasJump = (
     RegNextWhen(
       next=nextPrevInstrWasJump,
-      cond=up.isFiring,
+      cond=(
+        up.isFiring
+        && startDecode
+      ),
       init=nextPrevInstrWasJump.getZero
     )
   )
@@ -536,7 +540,6 @@ case class SnowHousePipeStageInstrDecode(
       init=tempInstr.getZero,
     )
   )
-  val startDecode = Bool()
   startDecode := False
   //val rSavedExSetPc = {
   //  val temp = KeepAttribute(

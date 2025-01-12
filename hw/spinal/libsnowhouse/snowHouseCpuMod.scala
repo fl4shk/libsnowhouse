@@ -552,9 +552,9 @@ object SnowHouseCpuPipeStageInstrDecode {
       is (BeqRaRbSimm._1) {
         switch (encInstr.rcIdx(1 downto 0)) {
           is (BeqRaRbSimm._2._1) {
-            when (psId.startDecode) {
+            //when (psId.startDecode) {
               psId.nextPrevInstrWasJump := True
-            }
+            //}
             when (
               encInstr.raIdx === encInstr.rbIdx
               && encInstr.raIdx =/= 0x0
@@ -572,15 +572,15 @@ object SnowHouseCpuPipeStageInstrDecode {
               setOp(AddRaPcSimm16)
             } otherwise {
               setOp(BneRaRbSimm)
-              when (psId.startDecode) {
+              //when (psId.startDecode) {
                 psId.nextPrevInstrWasJump := True
-              }
+              //}
             }
           }
           is (JlRaRb._2._1) {
-            when (psId.startDecode) {
+            //when (psId.startDecode) {
               psId.nextPrevInstrWasJump := True
-            }
+            //}
             setOp(JlRaRb)
           }
           default {
@@ -1257,10 +1257,10 @@ case class SnowHouseCpuTestProgram(
     cpy(r5, LbR"increment"),  // 0x18
     cpy(sp, 0x2000),          // 0x1c
     cpy(r6, 0x20),            // 0x20: r6 = 0x20
-    str(r6, r0, r3),          // 0x24: [r0 + r3] = r6
-    ldr(r6, r0, r3),          // 0x28
-    //str(r6, r0, r3),
-    //ldr(r6, r0, r3),
+    str(r6, r3, 0x0),          // 0x24: [r0 + r3] = r6
+    ldr(r5, r3, 0x0),          // 0x28
+    str(r5, r3, 0x4),
+    ldr(r6, r3, 0x4),
     //add(r7, r6, 4),           // 0x2c
     cpy(r7, 0x4),
     Lb"push_loop",
