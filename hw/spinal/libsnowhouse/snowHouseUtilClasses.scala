@@ -503,6 +503,13 @@ case class SnowHousePipePayload(
   ) generate (
     Bool()
   )
+  val takeIrq = (
+    //cfg.irqCfg != None
+    true
+  ) generate (
+    Bool()
+  )
+  val encInstr = UInt(cfg.instrMainWidth bits)
   val decodeExt = SnowHouseDecodeExt(cfg=cfg) //simPublic()
   val instrCnt = SnowHouseInstrCnt(cfg=cfg) //simPublic()
   //val opCnt = UInt(cfg.instrCntWidth bits)

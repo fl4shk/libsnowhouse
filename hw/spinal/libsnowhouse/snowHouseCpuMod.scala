@@ -313,12 +313,12 @@ object SnowHouseCpuPipeStageInstrDecode {
       //  psId.tempInstr.asBits.getZero
       //)
     )
-    val rTempState = (
-      KeepAttribute(
-        Reg(Bool(), init=False)
-      )
-      .setName(s"InstrDecode_PopRaRb_rTempState")
-    )
+    //val rTempState = (
+    //  KeepAttribute(
+    //    Reg(Bool(), init=False)
+    //  )
+    //  .setName(s"InstrDecode_PopRaRb_rTempState")
+    //)
     val nextMultiCycleState = Bool()
     val rMultiCycleState = (
       KeepAttribute(
@@ -330,6 +330,7 @@ object SnowHouseCpuPipeStageInstrDecode {
       .setName(s"InstrDecode_rMultiCycleState")
     )
     nextMultiCycleState := rMultiCycleState
+    //psId.nextMultiCycleStateIsIdle := nextMultiCycleState
     for (idx <- 0 until cfg.maxNumGprsPerInstr) {
       upPayload.gprIsZeroVec(idx) := (
         upPayload.gprIdxVec(idx) === 0x0
@@ -372,23 +373,6 @@ object SnowHouseCpuPipeStageInstrDecode {
       )
       .setName(s"InstrDecode_rPrevPreImm16")
     )
-    switch (rMultiCycleState) {
-      is (False) {
-        upPayload.imm := tempImm
-      }
-      is (True) {
-        upPayload.imm := (
-          Cat(
-            rPrevPreImm,
-            encInstr.imm16,
-          ).asUInt.resized
-        )
-        when (cId.up.isFiring) {
-          upPayload.blockIrq := False
-          nextMultiCycleState := False
-        }
-      }
-    }
     def setOp(
       someOp: (Int, (Int, Int), String)
     ): Unit = {
@@ -423,8 +407,28 @@ object SnowHouseCpuPipeStageInstrDecode {
       }
     }
     psId.nextPrevInstrWasJump := False
-    when (cId.up.isFiring) {
-      rTempState := False
+    //when (cId.up.isFiring) {
+    //  rTempState := False
+    //}
+    switch (rMultiCycleState) {
+      is (False) {
+        upPayload.imm := tempImm
+        //upPayload.blockIrq := False
+      }
+      is (True) {
+        upPayload.imm := (
+          Cat(
+            rPrevPreImm,
+            encInstr.imm16,
+          ).asUInt.resized
+        )
+        when (cId.up.isFiring) {
+          if (cfg.irqCfg != None) {
+            upPayload.blockIrq := False
+          }
+          nextMultiCycleState := False
+        }
+      }
     }
     switch (encInstr.op) {
       is (AddRaRbRc._1) {
@@ -629,7 +633,9 @@ object SnowHouseCpuPipeStageInstrDecode {
             //}
           }
           is (PopRaRb._1._2._1) {
-            upPayload.blockIrq := True
+            if (cfg.irqCfg != None) {
+              upPayload.blockIrq := True
+            }
             //when (psId.rMultiInstrCnt === 0)
             //val dontChangeTempState = Bool()
             //dontChangeTempState := False
@@ -677,13 +683,22 @@ object SnowHouseCpuPipeStageInstrDecode {
         doDefault(
           //doSetImm=false
         )
-        when (
-          cId.up.isFiring
-          && !rMultiCycleState
-        ) {
-          upPayload.blockIrq := True
-          nextMultiCycleState := True
-        }
+        //when (!rMultiCycleState) {
+          when (
+            cId.up.isFiring
+          ) {
+            if (cfg.irqCfg != None) {
+              upPayload.blockIrq := True
+            }
+            when (!rMultiCycleState) {
+              nextMultiCycleState := True
+            }
+          }
+        //} otherwise {
+        //  if(cfg.irqCfg != None) {
+        //    upPayload.blockIrq := False
+        //  }
+        //}
       }
       default {
         doDefault()
@@ -1752,6 +1767,23 @@ case class SnowHouseCpuWithDualRam(
   cpu.io.dbus <> dualRam.io.dbus
   val mul32 = SnowHouseCpuMul32(cpuIo=cpu.io)
   val divmod32 = SnowHouseCpuDivmod32(cpuIo=cpu.io)
+  //cpu.io.idsIraIrq.nextValid := True
+  val rIrqValidCnt = (
+    Reg(UInt(8 bits))
+    init(U(8 bits, default -> True))
+  )
+  //cpu.io.idsIraIrq.nextValid := True
+  cpu.io.idsIraIrq.nextValid := False
+  when (rIrqValidCnt =/= 0) {
+    rIrqValidCnt := rIrqValidCnt - 1
+  } otherwise {
+    cpu.io.idsIraIrq.nextValid := True
+    when (cpu.io.idsIraIrq.rValid && cpu.io.idsIraIrq.ready) {
+      cpu.io.idsIraIrq.nextValid := False
+      rIrqValidCnt := U(rIrqValidCnt.getWidth bits, default -> True)
+    }
+  }
+  //--------
   //val rMultiCycleBusReadyCnt = (
   //  Reg(UInt(8 bits))
   //  init(0x3)

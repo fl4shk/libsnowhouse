@@ -145,13 +145,26 @@ case class SnowHouseInstrDataDualRam(
 case class SnowHouseIo(
   cfg: SnowHouseConfig
 ) extends Bundle {
-  val myHaveIrqIraIds = (
+  val myHaveIrqIdsIra = (
     cfg.myHaveIrqIdsIra
   )
-  val iraIdsIrq = (
-    myHaveIrqIraIds
+  //val irqValid = (
+  //  myHaveIrqIdsIra
+  //) generate (
+  //  in(Bool())
+  //)
+  //val idsIraIgnt = (
+  //  myHaveIrqIdsIra
+  //) generate (
+  //  out(Bool())
+  //)
+  val idsIraIrq = (
+    myHaveIrqIdsIra
   ) generate (
-    in(Bool())
+    slave(new LcvStallIo[Bool, Bool](
+      hostPayloadType=None,
+      devPayloadType=None,
+    ))
   )
   // instruction bus
   val ibus = new LcvStallIo[IbusHostPayload, IbusDevPayload ](
