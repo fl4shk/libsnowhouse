@@ -97,15 +97,18 @@ case class SnowHouseRegFileConfig(
 //}
 sealed trait SnowHouseIrqConfig {
   //def numIrqs: Int
+  private[libsnowhouse] def _allowIrqStorm: Boolean
 }
 object SnowHouseIrqConfig {
   case class IraIds(
     //val iraRegIdx: Int,
     //val idsRegIdx: Int,
-    val allowNestedIrqs: Boolean,
+    //val allowNestedIrqs: Boolean,
+    val allowIrqStorm: Boolean,
     //val numIrqs: Int
   ) extends SnowHouseIrqConfig {
     // TODO: possibly support multiple IRQs?
+    def _allowIrqStorm: Boolean = allowIrqStorm
   }
   //case class Vector(
   //  val numIrqs: Int,
@@ -130,6 +133,8 @@ case class SnowHouseConfig(
   instrMainWidth: Int,
   shRegFileCfg: SnowHouseRegFileConfig,
   opInfoMap: LinkedHashMap[Any, OpInfo],
+  irqJmpOp: Int,
+  //irqRetIraOp: Int,
   //decodeFunc: (
   //  SnowHouseIo, // io
   //  CtrlLink,               // cId
@@ -515,6 +520,7 @@ case class SnowHousePipePayload(
   //val opCnt = UInt(cfg.instrCntWidth bits)
   def opCnt = instrCnt.any
   val op = UInt(log2Up(cfg.opInfoMap.size) bits) //simPublic()
+  val irqJmpOp = UInt(log2Up(cfg.opInfoMap.size) bits)
   def formalAssumes() = new Area {
     if (cfg.optFormal) {
       if ((1 << op.getWidth) != cfg.opInfoMap.size) {

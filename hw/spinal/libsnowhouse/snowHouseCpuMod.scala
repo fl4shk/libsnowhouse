@@ -407,7 +407,8 @@ object SnowHouseCpuPipeStageInstrDecode {
       .setName(s"InstrDecode_rPrevPreImm16")
     )
     def setOp(
-      someOp: (Int, (Int, Int), String)
+      someOp: (Int, (Int, Int), String),
+      //someOutpOp: UInt=upPayload.op,
     ): Unit = {
       for (
         ((tuple, opInfo), opInfoIdx) <- cfg.opInfoMap.view.zipWithIndex
@@ -759,9 +760,14 @@ object SnowHouseCpuPipeStageInstrDecode {
         doDefault()
       }
     }
-    when (upPayload.takeIrq) {
-      setOp(JlRaRb)
-    }
+    //setOp(
+    //  JlRaRb,
+    //  upPayload.irqJmpOp,
+    //)
+    //upPayload.irqJmpOp := JlRaRb
+    //when (upPayload.takeIrq) {
+    //  setOp(JlRaRb)
+    //}
   }
 }
 //case class SnowHouseCpuPipeStageInstrDecode(
@@ -1227,7 +1233,11 @@ case class SnowHouseCpuConfig(
       Some(
         SnowHouseIrqConfig.IraIds(
           //iraRegIdx
-          allowNestedIrqs=true,
+          //allowNestedIrqs=true,
+          allowIrqStorm=(
+            true
+            //false
+          ),
         ),
       )
     ),
@@ -1305,6 +1315,30 @@ case class SnowHouseCpuConfig(
       ),
     ),
     opInfoMap=SnowHouseCpuOpInfoMap.opInfoMap,
+    irqJmpOp={
+      var myIrqJmpOp: Int = 0x0
+      for (
+        ((tuple, opInfo), opInfoIdx)
+        <- SnowHouseCpuOpInfoMap.opInfoMap.view.zipWithIndex
+      ) {
+        if (tuple == SnowHouseCpuOp.JlRaRb) {
+          myIrqJmpOp = opInfoIdx
+        }
+      }
+      myIrqJmpOp
+    },
+    //irqRetIraOp={
+    //  var myIrqRetIraOp: Int = 0x0
+    //  for (
+    //    ((tuple, opInfo), opInfoIdx)
+    //    <- SnowHouseCpuOpInfoMap.opInfoMap.view.zipWithIndex
+    //  ) {
+    //    if (tuple == SnowHouseCpuOp.RetIra) {
+    //      myIrqRetIraOp = opInfoIdx
+    //    }
+    //  }
+    //  myIrqRetIraOp
+    //},
     //psDecode=SnowHouseCpuPipeStageInstrDecode(),
     //mkPipeStageInstrDecode=(
     //  (
@@ -1372,6 +1406,7 @@ case class SnowHouseCpuTestProgram(
     cpy(r1, LbR"irq_handler"),  // 0x8
     cpy(ids, r1),             // 0xc
     cpy(r1, 0x1),             // 0x10
+    //cpy(r1, 0x0),
     cpy(ie, r1),              // 0x14
     cpy(r1, 0x8),             // 0x18: r1 = 8
     cpy(r2, 0x1),             // 0x1c: r2 = 1
@@ -1387,6 +1422,7 @@ case class SnowHouseCpuTestProgram(
     //add(r7, r6, 4),
     cpy(r7, 0x4),             // 0x44
     mul(r9, r5, r7),          // 0x48
+    //--------
     Lb"push_loop",
     push(r7),                 // 0x4c
     pop(r8),                  // 0x50
@@ -1395,9 +1431,12 @@ case class SnowHouseCpuTestProgram(
     sub(r7, r7, 1),           // 0x5c
     //sub(r6, r6, 1),
     bnz(r7, LbR"push_loop"),  // 0x60
+    //cpy(r0, r0),
+    //cpy(r0, r0),
+    //cpy(r0, r0),
     mul(r7, r6, r1),          // 0x64
-    udiv(r7, r7, r1),         // 0x68
-    umod(r8, r7, r1),         // 0x6c
+    udiv(r7, r6, r1),         // 0x68
+    umod(r8, r6, r1),         // 0x6c
     //--------
     Lb"loop",
     //add(r0, r1, r2),
@@ -1434,8 +1473,8 @@ case class SnowHouseCpuTestProgram(
     //cpy(r0, r0),
     //--------
     Lb"irq_handler",
-    add(r2, r2, 1),
-    retIra(),                 // 0xa4
+    //add(r10, r10, 1),           // 0xa4
+    retIra(),                 // 0xa8
   )
   val program = SnowHouseCpuProgram(cfg=cfg)
   //val outpArr = ArrayBuffer[BigInt]()

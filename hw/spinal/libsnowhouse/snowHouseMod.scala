@@ -260,6 +260,7 @@ case class SnowHouse
     )
   )
   val pcChangeState = Bool()
+  val shouldIgnoreInstr = Bool()
   //--------
   val linkArr = PipeHelper.mkLinkArr()
   cfg.regFileCfg.linkArr = Some(linkArr)
@@ -411,6 +412,7 @@ case class SnowHouse
     psIdHaltIt=psIdHaltIt,
     psExSetPc=psExSetPc,
     pcChangeState=pcChangeState,
+    shouldIgnoreInstr=shouldIgnoreInstr,
     doDecodeFunc=cfg.doInstrDecodeFunc,
   )
   //--------
@@ -440,6 +442,7 @@ case class SnowHouse
     psExSetPc=psExSetPc,
     psMemStallHost=psMemStallHost,
     pcChangeState=pcChangeState,
+    shouldIgnoreInstr=shouldIgnoreInstr,
     doModInModFrontParams=doModInModFrontParams,
   )
   //--------
