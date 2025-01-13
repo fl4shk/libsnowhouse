@@ -535,6 +535,7 @@ object SnowHouseCpuPipeStageInstrDecode {
             setOp(CpyIeRb)
           }
           is (RetIra._2._1) {
+            psId.nextPrevInstrWasJump := True
             setOp(RetIra)
           }
           default {
@@ -757,6 +758,9 @@ object SnowHouseCpuPipeStageInstrDecode {
       default {
         doDefault()
       }
+    }
+    when (upPayload.takeIrq) {
+      setOp(JlRaRb)
     }
   }
 }
@@ -1365,66 +1369,73 @@ case class SnowHouseCpuTestProgram(
     //--------
     cpy(r0, 0x0),             // 0x0: r0 = 0
     cpy(r0, 0x0),             // 0x4: r0 = 0
-    cpy(r0, 0x0),             // 0x8
-    cpy(r1, 0x8),             // 0x8: r1 = 8
-    cpy(r2, 0x1),             // 0x0c: r2 = 1
-    cpy(r3, 0x1000),          // 0x10: r3 = 0x1000
-    cpy(r4, 0x8),             // 0x14: r4 = 4
-    cpy(r5, LbR"increment"),  // 0x18
-    cpy(sp, 0x2000),          // 0x1c
-    cpy(r6, 0x20),            // 0x20: r6 = 0x20
-    str(r6, r3, 0x0),         // 0x24: [r0 + r3] = r6
-    ldr(r5, r3, 0x0),         // 0x28
-    str(r5, r3, 0x4),         // 0x2c
-    ldr(r6, r3, 0x4),         // 0x30
+    cpy(r1, LbR"irq_handler"),  // 0x8
+    cpy(ids, r1),             // 0xc
+    cpy(r1, 0x1),             // 0x10
+    cpy(ie, r1),              // 0x14
+    cpy(r1, 0x8),             // 0x18: r1 = 8
+    cpy(r2, 0x1),             // 0x1c: r2 = 1
+    cpy(r3, 0x1000),          // 0x20: r3 = 0x1000
+    cpy(r4, 0x8),             // 0x24: r4 = 4
+    cpy(r5, LbR"increment"),  // 0x28
+    cpy(sp, 0x2000),          // 0x2c
+    cpy(r6, 0x20),            // 0x30: r6 = 0x20
+    str(r6, r3, 0x0),         // 0x34: [r0 + r3] = r6
+    ldr(r5, r3, 0x0),         // 0x38
+    str(r5, r3, 0x4),         // 0x3c
+    ldr(r6, r3, 0x4),         // 0x40
     //add(r7, r6, 4),
-    cpy(r7, 0x4),             // 0x34
-    mul(r9, r5, r7),          // 0x38
+    cpy(r7, 0x4),             // 0x44
+    mul(r9, r5, r7),          // 0x48
     Lb"push_loop",
-    push(r7),                 // 0x3c
-    pop(r8),                  // 0x40
-    push(r8),                 // 0x44
-    pop(r9),                  // 0x48
-    sub(r7, r7, 1),           // 0x4c
+    push(r7),                 // 0x4c
+    pop(r8),                  // 0x50
+    push(r8),                 // 0x54
+    pop(r9),                  // 0x58
+    sub(r7, r7, 1),           // 0x5c
     //sub(r6, r6, 1),
-    bnz(r7, LbR"push_loop"),  // 0x50
-    mul(r7, r6, r1),
-    udiv(r7, r7, r1),         // 0x54
-    umod(r8, r7, r1),         // 0x58
+    bnz(r7, LbR"push_loop"),  // 0x60
+    mul(r7, r6, r1),          // 0x64
+    udiv(r7, r7, r1),         // 0x68
+    umod(r8, r7, r1),         // 0x6c
     //--------
     Lb"loop",
     //add(r0, r1, r2),
     //cpyu(r2, tempData >> 16),
     //cpy(r2, tempData & 0xffff),
-    ldr(r6, r3, 0x0),         // 0x5c:
+    ldr(r6, r3, 0x0),         // 0x70:
     //add(r6, r6, 0x1),       
     //jl(r5),
-    bl(LbR"increment"),       // 0x60:
-    str(r6, r3, 0x4),         // 0x64:
-    add(r3, r3, 0x4),         // 0x68: r3 += 4
-    sub(r1, r1, 0x1),         // 0x6c: r1 -= 1 
-    bl(LbR"divmod"),          // 0x70
+    bl(LbR"increment"),       // 0x74:
+    str(r6, r3, 0x4),         // 0x78:
+    add(r3, r3, 0x4),         // 0x7c: r3 += 4
+    sub(r1, r1, 0x1),         // 0x80: r1 -= 1 
+    bl(LbR"divmod"),          // 0x84
     //mul(r7, r6, r1),
-    bnz(r1, LbR"loop"),       // 0x74: if (r1 != 0) goto LbR"loop"
+    bnz(r1, LbR"loop"),       // 0x88: if (r1 != 0) goto LbR"loop"
     ////--------
     //cpy(r12, 0x0),              // 0x4c
     Lb"infin",
     //cpy(r12, 0x0),              // 0x4c
-    bz(r0, LbR"infin"),       // 0x78
+    bz(r0, LbR"infin"),       // 0x8c
     //Db32(0x3f),
     ////--------
     Lb"increment",
-    add(r6, r6, 0x1),         // 0x7c
+    add(r6, r6, 0x1),         // 0x8c
     //add(r6, r6, r0),
-    jmp(lr),                  // 0x80
+    jmp(lr),                  // 0x90
     ////--------
     Lb"divmod",
-    //mul(r7, r6, r1),        // 0x84
-    udiv(r7, r6, r1),         // 0x88
-    umod(r8, r6, r1),         // 0x8c
-    jmp(lr),                  // 0x90
+    //mul(r7, r6, r1),        // 0x94
+    udiv(r7, r6, r1),         // 0x98
+    umod(r8, r6, r1),         // 0x9c
+    jmp(lr),                  // 0xa0
     //cpy(r0, r0),
     //cpy(r0, r0),
+    //--------
+    Lb"irq_handler",
+    add(r2, r2, 1),
+    retIra(),                 // 0xa4
   )
   val program = SnowHouseCpuProgram(cfg=cfg)
   //val outpArr = ArrayBuffer[BigInt]()
