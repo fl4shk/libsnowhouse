@@ -157,6 +157,8 @@ case class SnowHouseConfig(
     //4
     3
   ),
+  //exposeGprsToIo: Option[Seq[Int]]=None,
+  exposeModMemWordToIo: Boolean=false,
 ) {
   val myHaveIrqIdsIra = (
     irqCfg != None

@@ -1215,6 +1215,15 @@ object SnowHouseCpuOpInfoMap {
 }
 case class SnowHouseCpuConfig(
   optFormal: Boolean,
+  //exposeGprsToIo: Option[Seq[Int]]=Some({
+  //  import SnowHouseCpuRegs._
+  //  val tempArr = ArrayBuffer[Int]()
+  //  //tempArr += r1.index
+  //  tempArr += r7.index
+  //  tempArr += r8.index
+  //  tempArr
+  //})
+  exposeModMemWordToIo: Boolean=false,
 ) {
   //--------
   val instrMainWidth = 32
@@ -1363,6 +1372,8 @@ case class SnowHouseCpuConfig(
     //},
     optFormal=optFormal,
     //maxNumGprsPerInstr=3,
+    //exposeGprsToIo=exposeGprsToIo
+    exposeModMemWordToIo=exposeModMemWordToIo,
   )
   //--------
   val program = ArrayBuffer[AsmStmt]()
@@ -1473,7 +1484,7 @@ case class SnowHouseCpuTestProgram(
     //cpy(r0, r0),
     //--------
     Lb"irq_handler",
-    //add(r10, r10, 1),           // 0xa4
+    add(r10, r10, 1),           // 0xa4
     retIra(),                 // 0xa8
   )
   val program = SnowHouseCpuProgram(cfg=cfg)
@@ -1902,6 +1913,17 @@ case class SnowHouseCpuWithDualRamIo(
   program: SnowHouseCpuProgram,
 ) extends Bundle {
   def cfg = program.cfg
+  val idsIraIrq = (
+    slave(new LcvStallIo[Bool, Bool](
+      hostPayloadType=None,
+      devPayloadType=None,
+    ))
+  )
+  val modMemWord = (
+    cfg.exposeModMemWordToIo
+  ) generate (
+    out(UInt(cfg.shCfg.mainWidth bits))
+  )
 }
 case class SnowHouseCpuWithDualRam(
   program: SnowHouseCpuProgram,
@@ -1916,26 +1938,29 @@ case class SnowHouseCpuWithDualRam(
       Array.fill(1 << 16)(BigInt(0))
     ),
   )
+  cpu.io.idsIraIrq <> io.idsIraIrq
   cpu.io.ibus <> dualRam.io.ibus
   cpu.io.dbus <> dualRam.io.dbus
+  cpu.io.modMemWord <> io.modMemWord
   val mul32 = SnowHouseCpuMul32(cpuIo=cpu.io)
   val divmod32 = SnowHouseCpuDivmod32(cpuIo=cpu.io)
-  //cpu.io.idsIraIrq.nextValid := True
-  val rIrqValidCnt = (
-    Reg(UInt(8 bits))
-    init(U(8 bits, default -> True))
-  )
-  //cpu.io.idsIraIrq.nextValid := True
-  cpu.io.idsIraIrq.nextValid := False
-  when (rIrqValidCnt =/= 0) {
-    rIrqValidCnt := rIrqValidCnt - 1
-  } otherwise {
-    cpu.io.idsIraIrq.nextValid := True
-    when (cpu.io.idsIraIrq.rValid && cpu.io.idsIraIrq.ready) {
-      cpu.io.idsIraIrq.nextValid := False
-      rIrqValidCnt := U(rIrqValidCnt.getWidth bits, default -> True)
-    }
-  }
+
+  ////cpu.io.idsIraIrq.nextValid := True
+  //val rIrqValidCnt = (
+  //  Reg(UInt(8 bits))
+  //  init(U(8 bits, default -> True))
+  //)
+  ////cpu.io.idsIraIrq.nextValid := True
+  //cpu.io.idsIraIrq.nextValid := False
+  //when (rIrqValidCnt =/= 0) {
+  //  rIrqValidCnt := rIrqValidCnt - 1
+  //} otherwise {
+  //  cpu.io.idsIraIrq.nextValid := True
+  //  when (cpu.io.idsIraIrq.rValid && cpu.io.idsIraIrq.ready) {
+  //    cpu.io.idsIraIrq.nextValid := False
+  //    rIrqValidCnt := U(rIrqValidCnt.getWidth bits, default -> True)
+  //  }
+  //}
   //--------
   //val rMultiCycleBusReadyCnt = (
   //  Reg(UInt(8 bits))
@@ -1954,6 +1979,24 @@ case class SnowHouseCpuWithDualRam(
   //    rMultiCycleBusReadyCnt := 5
   //  }
   //}
+}
+object SnowHouseCpuWithDualRamToVerilog extends App {
+  Config.spinal.generateVerilog({
+    //val cfg = SnowHouseCpuConfig(
+    //  optFormal=(
+    //    false
+    //  )
+    //)
+    val cfg = SnowHouseCpuConfig(
+      optFormal=(
+        //true
+        false
+      ),
+      exposeModMemWordToIo=true,
+    )
+    val testProgram = SnowHouseCpuTestProgram(cfg=cfg)
+    SnowHouseCpuWithDualRam(program=testProgram.program)
+  })
 }
 object SnowHouseCpuWithDualRamSim extends App {
   //Config.spinal.generateVerilog({

@@ -166,6 +166,11 @@ case class SnowHouseIo(
       devPayloadType=None,
     ))
   )
+  val modMemWord = (
+    cfg.exposeModMemWordToIo
+  ) generate (
+    out(UInt(cfg.mainWidth bits))
+  )
   // instruction bus
   val ibus = new LcvStallIo[IbusHostPayload, IbusDevPayload ](
     hostPayloadType=Some(IbusHostPayload(cfg=cfg)),
@@ -475,6 +480,11 @@ case class SnowHouse
       psMemStallHost=psMemStallHost,
     )
   )
+  if (cfg.exposeModMemWordToIo) {
+    io.modMemWord := (
+      regFile.io.modBack(regFile.io.modBackPayload).myExt(0).modMemWord
+    )
+  }
   regFile.io.back.ready := True
   Builder(linkArr)
   //--------
