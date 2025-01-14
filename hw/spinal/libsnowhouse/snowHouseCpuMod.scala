@@ -431,9 +431,9 @@ object SnowHouseCpuPipeStageInstrDecode {
     ): Unit = {
       // just do a NOP
       setOp(AddRaRbRc)
-      upPayload.gprIdxVec.foreach{gprIdx => {
-        gprIdx := 0x0
-      }}
+      //upPayload.gprIdxVec.foreach{gprIdx => {
+      //  gprIdx := 0x0
+      //}}
       if (doSetImm) {
         upPayload.imm := 0x0
       }
@@ -663,79 +663,79 @@ object SnowHouseCpuPipeStageInstrDecode {
       //  }
       //}
       is (PushRaRb._1) {
-        //doDefault()
-        switch (encInstr.imm16(0 downto 0)) {
-          //when (psId.rMultIn
-          is (PushRaRb._2._1) {
-            //upPayload.gprIdxVec(0) := encInstr.rbIdx
-            //upPayload.gprIdxVec(1) := encInstr.raIdx
-            setOp(PushRaRb)
-            //when (psId.startDecode) {
-            //  psId.nextMultiInstrCnt := 1
-            //  setOp(StrRaRbSimm16)
-            //  upPayload.gprIdxVec(0) := encInstr.raIdx
-            //  upPayload.gprIdxVec(1) := encInstr.rbIdx
-            //  upPayload.gprIdxVec(2) := SnowHouseCpuRegs.r0.index
-            //  upPayload.imm := 0x0
-            //} otherwise {
-            //  setOp(AddRaRbSimm16)
-            //  upPayload.gprIdxVec(0) := encInstr.rbIdx
-            //  upPayload.gprIdxVec(1) := encInstr.rbIdx
-            //  upPayload.gprIdxVec(2) := SnowHouseCpuRegs.r0.index
-            //  val tempSImm = SInt(cfg.mainWidth bits)
-            //  tempSImm := -(cfg.mainWidth / 8)
-            //  upPayload.imm := tempSImm.asUInt
-            //}
-          }
-          is (PopRaRb._1._2._1) {
-            if (cfg.irqCfg != None) {
-              upPayload.blockIrq := True
-            }
-            //when (psId.rMultiInstrCnt === 0)
-            //val dontChangeTempState = Bool()
-            //dontChangeTempState := False
-            when (
-              //!rTempState
-              psId.rMultiInstrCnt.msb
-            ) {
-              when (psId.startDecode) {
-                when (
-                  cId.up.isFiring
-                  //cId.down.isFiring
-                ) {
-                  //rTempState := True
-                  //dontChangeTempState := True
-                  psId.nextMultiInstrCnt := 0x0
-                  //doDefault()
-                  setOp(AddRaRbSimm16)
-                }
-              }
-              upPayload.gprIdxVec(0) := encInstr.rbIdx
-              upPayload.gprIdxVec(1) := encInstr.rbIdx
-              upPayload.gprIdxVec(2) := SnowHouseCpuRegs.r0.index
-              //val tempSImm = SInt(cfg.mainWidth bits)
-              //tempSImm := -(cfg.mainWidth / 8)
-              upPayload.imm := (cfg.mainWidth / 8) //tempSImm.asUInt
-            } otherwise {
-              //when (psId.startDecode) {
-              when (cId.down.isFiring) {
-                setOp(LdrRaRbSimm16)
-              }
-              upPayload.gprIdxVec(0) := encInstr.raIdx
-              upPayload.gprIdxVec(1) := encInstr.rbIdx
-              upPayload.gprIdxVec(2) := SnowHouseCpuRegs.r0.index
-              upPayload.imm := 0x0
-              //}
-            }
-            //when (rTempState) {
-            //when (!psId.startDecode) {
-              //when (cId.up.isFiring) {
-              //  rTempState := False
-              //}
-            //}
-            //}
-          }
-        }
+        doDefault()
+        //switch (encInstr.imm16(0 downto 0)) {
+        //  //when (psId.rMultIn
+        //  is (PushRaRb._2._1) {
+        //    //upPayload.gprIdxVec(0) := encInstr.rbIdx
+        //    //upPayload.gprIdxVec(1) := encInstr.raIdx
+        //    setOp(PushRaRb)
+        //    //when (psId.startDecode) {
+        //    //  psId.nextMultiInstrCnt := 1
+        //    //  setOp(StrRaRbSimm16)
+        //    //  upPayload.gprIdxVec(0) := encInstr.raIdx
+        //    //  upPayload.gprIdxVec(1) := encInstr.rbIdx
+        //    //  upPayload.gprIdxVec(2) := SnowHouseCpuRegs.r0.index
+        //    //  upPayload.imm := 0x0
+        //    //} otherwise {
+        //    //  setOp(AddRaRbSimm16)
+        //    //  upPayload.gprIdxVec(0) := encInstr.rbIdx
+        //    //  upPayload.gprIdxVec(1) := encInstr.rbIdx
+        //    //  upPayload.gprIdxVec(2) := SnowHouseCpuRegs.r0.index
+        //    //  val tempSImm = SInt(cfg.mainWidth bits)
+        //    //  tempSImm := -(cfg.mainWidth / 8)
+        //    //  upPayload.imm := tempSImm.asUInt
+        //    //}
+        //  }
+        //  is (PopRaRb._1._2._1) {
+        //    if (cfg.irqCfg != None) {
+        //      upPayload.blockIrq := True
+        //    }
+        //    //when (psId.rMultiInstrCnt === 0)
+        //    //val dontChangeTempState = Bool()
+        //    //dontChangeTempState := False
+        //    when (
+        //      //!rTempState
+        //      psId.rMultiInstrCnt.msb
+        //    ) {
+        //      when (psId.startDecode) {
+        //        when (
+        //          cId.up.isFiring
+        //          //cId.down.isFiring
+        //        ) {
+        //          //rTempState := True
+        //          //dontChangeTempState := True
+        //          psId.nextMultiInstrCnt := 0x0
+        //          //doDefault()
+        //          setOp(AddRaRbSimm16)
+        //        }
+        //      }
+        //      upPayload.gprIdxVec(0) := encInstr.rbIdx
+        //      upPayload.gprIdxVec(1) := encInstr.rbIdx
+        //      upPayload.gprIdxVec(2) := SnowHouseCpuRegs.r0.index
+        //      //val tempSImm = SInt(cfg.mainWidth bits)
+        //      //tempSImm := -(cfg.mainWidth / 8)
+        //      upPayload.imm := (cfg.mainWidth / 8) //tempSImm.asUInt
+        //    } otherwise {
+        //      //when (psId.startDecode) {
+        //      when (cId.down.isFiring) {
+        //        setOp(LdrRaRbSimm16)
+        //      }
+        //      upPayload.gprIdxVec(0) := encInstr.raIdx
+        //      upPayload.gprIdxVec(1) := encInstr.rbIdx
+        //      upPayload.gprIdxVec(2) := SnowHouseCpuRegs.r0.index
+        //      upPayload.imm := 0x0
+        //      //}
+        //    }
+        //    //when (rTempState) {
+        //    //when (!psId.startDecode) {
+        //      //when (cId.up.isFiring) {
+        //      //  rTempState := False
+        //      //}
+        //    //}
+        //    //}
+        //  }
+        //}
       }
       is (PreImm16._1) {
         doDefault(
@@ -1438,10 +1438,18 @@ case class SnowHouseCpuTestProgram(
     mul(r9, r5, r7),          // 0x48
     //--------
     Lb"push_loop",
-    push(r7),                 // 0x4c
-    pop(r8),                  // 0x50
-    push(r8),                 // 0x54
-    pop(r9),                  // 0x58
+    //push(r7),                 // 0x4c
+    //cpy(r0, r0),
+    str(r7, sp, 0),
+    add(sp, sp, 4),
+    sub(sp, sp, 4),
+    ldr(r8, sp, 0),
+    //pop(r8),                  // 0x50
+    //cpy(r0, r0),
+    //push(r8),                 // 0x54
+    //cpy(r0, r0),
+    //pop(r9),                  // 0x58
+    cpy(r0, r0),
     sub(r7, r7, 1),           // 0x5c
     //sub(r6, r6, 1),
     bnz(r7, LbR"push_loop"),  // 0x60
@@ -1956,9 +1964,9 @@ case class SnowHouseCpuWithDualRam(
   val mul32 = SnowHouseCpuMul32(cpuIo=cpu.io)
   val divmod32 = SnowHouseCpuDivmod32(cpuIo=cpu.io)
 
-  cpu.io.idsIraIrq <> io.idsIraIrq
-  //io.idsIraIrq.ready := True
-  ////cpu.io.idsIraIrq.nextValid := True
+  //cpu.io.idsIraIrq <> io.idsIraIrq
+  io.idsIraIrq.ready := True
+  cpu.io.idsIraIrq.nextValid := True
   //val rIrqValidCnt = (
   //  Reg(UInt(8 bits))
   //  init(U(8 bits, default -> True))

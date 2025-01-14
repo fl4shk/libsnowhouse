@@ -581,6 +581,7 @@ case class SnowHousePipeStageInstrDecode(
       init=tempInstr.getZero,
     )
   )
+  tempInstr.allowOverride
   startDecode := False
   //val rSavedExSetPc = {
   //  val temp = KeepAttribute(
@@ -677,6 +678,7 @@ case class SnowHousePipeStageInstrDecode(
   //    init=upPayload.takeIrq.getZero,
   //  )
   //)
+  //tempInstr := myInstr
   when (up.isValid) {
     when (
       //upPayload.regPcSetItCnt =/= 0
@@ -693,6 +695,7 @@ case class SnowHousePipeStageInstrDecode(
     ) {
       startDecode := True
       val myDecodeArea = doDecodeFunc(this)
+      tempInstr := myInstr
       when (
         rMultiInstrCnt.msb// === 0x0
       ) {
@@ -702,7 +705,6 @@ case class SnowHousePipeStageInstrDecode(
         //  )
         //}
         //doDecode := True
-        tempInstr := myInstr
         //nextDoDecodeState := True
         //val myDecodeArea = doDecodeFunc(this)
         //when (!down.isFiring) {
