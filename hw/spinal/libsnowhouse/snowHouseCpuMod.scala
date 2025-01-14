@@ -1621,7 +1621,7 @@ case class SnowHouseCpuDivmod32(
   val divmod = LongDivMultiCycle(
     mainWidth=cfg.mainWidth,
     denomWidth=cfg.mainWidth,
-    chunkWidth=2,
+    chunkWidth=1,//2,
     signedReset=0x0,
   )
   object Divmod32State
@@ -1822,6 +1822,8 @@ case class SnowHouseCpuDivmod32(
           rState := Divmod32State.CHECK_PREV
           def dstVec = stallIo.devData.dstVec
           def srcVec = stallIo.hostData.srcVec
+          rSavedSrcVec(0) := srcVec(0)
+          rSavedSrcVec(1) := srcVec(1)
         },
         setKind=true,
       )
@@ -1835,37 +1837,42 @@ case class SnowHouseCpuDivmod32(
         ) => new Area {
           def dstVec = stallIo.devData.dstVec
           def srcVec = stallIo.hostData.srcVec
-          when (
-            rPrevKind.fire
-            && (
-              // this checks if the signedness is the same due to the
-              // encoding of `Divmod32Kind`
-              rPrevKind.payload.asBits(0) === rKind.asBits(0)
-            ) && (
-              srcVec(0) === rSavedSrcVec(0)
-            ) && (
-              srcVec(1) === rSavedSrcVec(1)
-            )
-          ) {
-            stallIo.ready := True
-            rState := Divmod32State.IDLE
-            when (
-              !rKind.asBits(1)
-            ) {
-              dstVec(0) := rSavedQuot
-            } otherwise {
-              dstVec(0) := rSavedRema
-            }
-          } otherwise {
-            divmod.io.inp.valid := True
-            divmod.io.inp.numer := srcVec(0)
-            divmod.io.inp.denom := srcVec(1)
-            divmod.io.inp.signed := rKind.asBits(0)
-            rSavedSrcVec(0) := srcVec(0)
-            rSavedSrcVec(1) := srcVec(1)
+          //when (
+          //  rPrevKind.fire
+          //  && (
+          //    // this checks if the signedness is the same due to the
+          //    // encoding of `Divmod32Kind`
+          //    rPrevKind.payload.asBits(0) === rKind.asBits(0)
+          //  ) && (
+          //    srcVec(0) === rSavedSrcVec(0)
+          //  ) && (
+          //    srcVec(1) === rSavedSrcVec(1)
+          //  )
+          //) {
+          //  stallIo.ready := True
+          //  rState := Divmod32State.IDLE
+          //  when (
+          //    !rKind.asBits(1)
+          //  ) {
+          //    dstVec(0) := rSavedQuot
+          //  } otherwise {
+          //    dstVec(0) := rSavedRema
+          //  }
+          //} otherwise {
+          //  divmod.io.inp.valid := True
+          //  divmod.io.inp.numer := srcVec(0)
+          //  divmod.io.inp.denom := srcVec(1)
+          //  divmod.io.inp.signed := rKind.asBits(0)
+          //  rSavedSrcVec(0) := srcVec(0)
+          //  rSavedSrcVec(1) := srcVec(1)
 
-            rState := Divmod32State.RUNNING
-          }
+          //  rState := Divmod32State.RUNNING
+          //}
+          divmod.io.inp.valid := True
+          divmod.io.inp.numer := rSavedSrcVec(0)
+          divmod.io.inp.denom := rSavedSrcVec(1)
+          divmod.io.inp.signed := rKind.asBits(0)
+          rState := Divmod32State.RUNNING
         },
         setKind=false,
       )
@@ -1938,29 +1945,32 @@ case class SnowHouseCpuWithDualRam(
       Array.fill(1 << 16)(BigInt(0))
     ),
   )
-  cpu.io.idsIraIrq <> io.idsIraIrq
+  //cpu.io.idsIraIrq <> io.idsIraIrq
+  io.idsIraIrq.ready := True
   cpu.io.ibus <> dualRam.io.ibus
   cpu.io.dbus <> dualRam.io.dbus
-  cpu.io.modMemWord <> io.modMemWord
+  if (cfg.exposeModMemWordToIo) {
+    cpu.io.modMemWord <> io.modMemWord
+  }
   val mul32 = SnowHouseCpuMul32(cpuIo=cpu.io)
   val divmod32 = SnowHouseCpuDivmod32(cpuIo=cpu.io)
 
-  ////cpu.io.idsIraIrq.nextValid := True
-  //val rIrqValidCnt = (
-  //  Reg(UInt(8 bits))
-  //  init(U(8 bits, default -> True))
-  //)
-  ////cpu.io.idsIraIrq.nextValid := True
-  //cpu.io.idsIraIrq.nextValid := False
-  //when (rIrqValidCnt =/= 0) {
-  //  rIrqValidCnt := rIrqValidCnt - 1
-  //} otherwise {
-  //  cpu.io.idsIraIrq.nextValid := True
-  //  when (cpu.io.idsIraIrq.rValid && cpu.io.idsIraIrq.ready) {
-  //    cpu.io.idsIraIrq.nextValid := False
-  //    rIrqValidCnt := U(rIrqValidCnt.getWidth bits, default -> True)
-  //  }
-  //}
+  //cpu.io.idsIraIrq.nextValid := True
+  val rIrqValidCnt = (
+    Reg(UInt(8 bits))
+    init(U(8 bits, default -> True))
+  )
+  //cpu.io.idsIraIrq.nextValid := True
+  cpu.io.idsIraIrq.nextValid := False
+  when (rIrqValidCnt =/= 0) {
+    rIrqValidCnt := rIrqValidCnt - 1
+  } otherwise {
+    cpu.io.idsIraIrq.nextValid := True
+    when (cpu.io.idsIraIrq.rValid && cpu.io.idsIraIrq.ready) {
+      cpu.io.idsIraIrq.nextValid := False
+      rIrqValidCnt := U(rIrqValidCnt.getWidth bits, default -> True)
+    }
+  }
   //--------
   //val rMultiCycleBusReadyCnt = (
   //  Reg(UInt(8 bits))

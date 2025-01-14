@@ -832,7 +832,10 @@ case class SnowHousePipeStageExecuteSetOutpModMemWordIo(
     UInt(cfg.mainWidth bits)
   ))
   val regPc = /*in*/(UInt(cfg.mainWidth bits))
-  val regPcSetItCnt = /*in*/(UInt(cfg.instrCntWidth bits))
+  val regPcSetItCnt = /*in*/(UInt(
+    //cfg.instrCntWidth bits
+    1 bits
+  ))
   //val instrCnt = /*in*/(SnowHouseInstrCnt(cfg=cfg))
   val upIsFiring = /*in*/(Bool())
   val upIsValid = /*in*/(Bool())
@@ -1086,7 +1089,8 @@ case class SnowHousePipeStageExecuteSetOutpModMemWordIo(
       case Some(irqCfg) => {
         irqCfg match {
           case SnowHouseIrqConfig.IraIds(allowIrqStorm) => {
-            !allowIrqStorm
+            //!allowIrqStorm
+            true
           }
         }
       }
@@ -1846,7 +1850,7 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
                     //io.regPc //+ ((cfg.instrMainWidth / 8) * 1/*2*/)
                   )
                   io.psExSetPc.valid := True
-                  when (!io.takeIrq) {
+                  //when (!io.takeIrq) {
                     opInfo.srcArr(0) match {
                       case SrcKind.Gpr => {
                         io.psExSetPc.nextPc := (
@@ -1877,13 +1881,13 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
                         )
                       }
                     }
-                  } otherwise {
-                    nextIra := io.regPc
-                    nextIe := 0x0
-                    io.psExSetPc.nextPc := (
-                      io.rIds
-                    )
-                  }
+                  //} otherwise {
+                  //  nextIra := io.regPc
+                  //  //nextIe := 0x0
+                  //  io.psExSetPc.nextPc := (
+                  //    io.rIds
+                  //  )
+                  //}
                 }
                 case CpyOpKind.Br => {
                   if (opInfo.dstArr.size == 1) (
@@ -2537,6 +2541,13 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
         //assert(False)
       }
     }
+    when (io.takeIrq) {
+      nextIra := io.regPc
+      nextIe(0) := False //0x0
+      io.psExSetPc.nextPc := (
+        io.rIds
+      )
+    }
   //} otherwise { // when (io.takeIrq)
   //  io.psExSetPc.valid := True
   //  io.psExSetPc.nextPc := io.rIds
@@ -3014,7 +3025,7 @@ case class SnowHousePipeStageExecute(
         && outp.takeIrq
         //&& myDoStall.sFindFirst(_ === True)._1
         //&& cMid0Front.up.isReady
-        && (setOutpModMemWord.io.rIe =/= 0x0)
+        && (setOutpModMemWord.io.rIe(0 downto 0) =/= 0x0)
         && (
           !rIrqHndlState//.valid
           //&& rPrevCurrOp.currOp =/= cfg.irqRetIraOp
@@ -3053,7 +3064,7 @@ case class SnowHousePipeStageExecute(
   ) generate (
     cMid0Front.up.isFiring
     && setOutpModMemWord.io.takeIrq
-    && !rIrqHndlState//.fire
+    //&& !rIrqHndlState//.fire
     //&& !pcChangeState
     //&& setOutpModMemWord.nextIe =/= 0x0 
     //&& setOutpModMemWord.io.rIe =/= 0
@@ -3088,7 +3099,9 @@ case class SnowHousePipeStageExecute(
     && rIrqHndlState//.fire
     && (
       !pcChangeState
-      || outp.regPcSetItCnt =/= 0x0
+      || (
+        outp.regPcSetItCnt =/= 0x0
+      )
     )
     && !outp.instrCnt.shouldIgnoreInstr
     //&& setOutpModMemWord.io.Ie === 0
@@ -3101,26 +3114,38 @@ case class SnowHousePipeStageExecute(
         True
       )
     )
-    && setOutpModMemWord.io.rIe === 0x0
+    && setOutpModMemWord.io.rIe(0) === False//0x0
   )
   if (cfg.irqCfg != None) {
+    //when (
+    //  reEnableIrqsCond
+    //  //&& RegNextWhen(
+    //  //  next=setOutpModMemWord.io.rIe =/= 0,
+    //  //  cond=(
+    //  //    //reEnableIrqsCond
+    //  //    cMid0Front.up.isFiring
+    //  //    && rPrevCurrOp.fire
+    //  //  ),
+    //  //  init=False,
+    //  //)
+    //) {
+    //  rIrqHndlState/*.valid*/ := False
+    //  if (setOutpModMemWord.io.haveRetIraState) {
+    //    setOutpModMemWord.io.rHadRetIra := False
+    //  }
+    //}
     when (
-      reEnableIrqsCond
-      //&& RegNextWhen(
-      //  next=setOutpModMemWord.io.rIe =/= 0,
-      //  cond=(
-      //    //reEnableIrqsCond
-      //    cMid0Front.up.isFiring
-      //    && rPrevCurrOp.fire
-      //  ),
-      //  init=False,
-      //)
+      RegNextWhen(
+        next=reEnableIrqsCond, 
+        cond=cMid0Front.up.isFiring,
+        init=False,
+      )
     ) {
+      setOutpModMemWord.nextIe(0) := True//0x1
       rIrqHndlState/*.valid*/ := False
       if (setOutpModMemWord.io.haveRetIraState) {
         setOutpModMemWord.io.rHadRetIra := False
       }
-      setOutpModMemWord.nextIe := 0x1
     }
   }
   //when (
