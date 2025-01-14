@@ -153,6 +153,7 @@ case class SnowHouseConfig(
   optFormal: Boolean,
   //maxNumGprsPerInstr: Int,
   //modOpCntWidth: Int=8,
+  supportUcode: Boolean=false,// whether or not to support microcode
   instrCntWidth: Int=(
     //8
     //4

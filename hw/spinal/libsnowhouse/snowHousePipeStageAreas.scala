@@ -377,7 +377,13 @@ case class SnowHousePipeStageInstrDecode(
       //cId.duplicateIt()
     }
   }
-  when (rMultiInstrCnt.msb) {
+  when (
+    if (cfg.supportUcode) (
+      rMultiInstrCnt.msb
+    ) else (
+      True
+    )
+  ) {
     when (up.isValid) {
       //upPayload.regPc := cId.up(pIf).regPc
       //upPayload.instrCnt := cId.up(pIf).instrCnt
@@ -684,7 +690,7 @@ case class SnowHousePipeStageInstrDecode(
   when (up.isValid) {
     when (
       //upPayload.regPcSetItCnt =/= 0
-      (
+      if (cfg.supportUcode) (
         //!rPrevInstrWasJump
         //|| 
         !pcChangeState
@@ -692,14 +698,19 @@ case class SnowHousePipeStageInstrDecode(
           pcChangeState
           && upPayload.regPcSetItCnt =/= 0x0
         )
+      ) else (
+        True
       )
-      //True
     ) {
       startDecode := True
       val myDecodeArea = doDecodeFunc(this)
       tempInstr := myInstr
       when (
-        rMultiInstrCnt.msb// === 0x0
+        if (cfg.supportUcode) (
+          rMultiInstrCnt.msb// === 0x0
+        ) else (
+          True
+        )
       ) {
         //when (io.ibus.rValid && io.ibus.ready) {
         //  myInstr := (
