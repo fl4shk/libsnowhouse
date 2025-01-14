@@ -1486,10 +1486,10 @@ case class SnowHouseCpuTestProgram(
     //cpy(r0, r0),
     //cpy(r0, r0),
     mul(r7, r6, r1),          // 0x64
-    //udiv(r7, r6, r1),         // 0x68
-    //umod(r8, r6, r1),         // 0x6c
-    add(r7, r6, r1),
-    sub(r8, r6, r1),
+    udiv(r7, r6, r1),         // 0x68
+    umod(r8, r6, r1),         // 0x6c
+    //add(r7, r6, r1),
+    //sub(r8, r6, r1),
     //--------
     Lb"loop",
     //add(r0, r1, r2),
@@ -1519,11 +1519,12 @@ case class SnowHouseCpuTestProgram(
     ////--------
     Lb"divmod",
     //mul(r7, r6, r1),        // 0x94
+    cpy(r0, r0),
     //--------
-    //udiv(r7, r6, r1),         // 0x98
-    //umod(r8, r6, r1),         // 0x9c
-    add(r7, r6, r1),
-    sub(r8, r6, r1),
+    udiv(r7, r6, r1),         // 0x98
+    umod(r8, r6, r1),         // 0x9c
+    //add(r7, r6, r1),
+    //sub(r8, r6, r1),
     //--------
     jmp(lr),                  // 0xa0
     //cpy(r0, r0),
@@ -1998,7 +1999,7 @@ case class SnowHouseCpuWithDualRam(
     cfg=cfg.shCfg,
     instrInitBigInt=program.outpArr,
     dataInitBigInt=(
-      Array.fill(1 << 16)(BigInt(0))
+      Array.fill(1 << (16 - 2))(BigInt(0))
     ),
   )
   cpu.io.ibus <> dualRam.io.ibus
@@ -2006,16 +2007,16 @@ case class SnowHouseCpuWithDualRam(
   if (cfg.exposeModMemWordToIo) {
     cpu.io.modMemWord <> io.modMemWord
   }
-  for ((multiCycleBus, idx) <- cpu.io.multiCycleBusVec.view.zipWithIndex) {
-    if (idx != 0) {
-      multiCycleBus.ready := True
-      multiCycleBus.devData.dstVec.foreach(dst => {
-        dst := dst.getZero
-      })
-    }
-  }
+  //for ((multiCycleBus, idx) <- cpu.io.multiCycleBusVec.view.zipWithIndex) {
+  //  if (idx != 0) {
+  //    multiCycleBus.ready := True
+  //    multiCycleBus.devData.dstVec.foreach(dst => {
+  //      dst := dst.getZero
+  //    })
+  //  }
+  //}
   val mul32 = SnowHouseCpuMul32(cpuIo=cpu.io)
-  //val divmod32 = SnowHouseCpuDivmod32(cpuIo=cpu.io)
+  val divmod32 = SnowHouseCpuDivmod32(cpuIo=cpu.io)
 
   if (doConnExternIrq) {
     cpu.io.idsIraIrq <> io.idsIraIrq
