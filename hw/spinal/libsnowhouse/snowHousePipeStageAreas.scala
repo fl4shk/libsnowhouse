@@ -1419,6 +1419,10 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
     }
   }
   //--------
+  io.psExSetPc.nextPc.allowOverride
+  io.psExSetPc.nextPc := (
+    io.regPcPlusImm
+  )
   //when (!io.takeIrq) {
     switch (io.currOp) {
       //--------
@@ -1910,7 +1914,7 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
                       //)
                       //io.modMemWordValid := False
                       io.psExSetPc.valid := True
-                      io.psExSetPc.nextPc := io.regPcPlusImm
+                      //io.psExSetPc.nextPc := io.regPcPlusImm
                       io.modMemWord(0) := (
                         //io.regPcPlusInstrSize
                         io.regPc + ((cfg.instrMainWidth / 8) * 1)
@@ -1954,9 +1958,9 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
                           === io.rdMemWord(io.brCondIdx(1))
                         )
                       }
-                      io.psExSetPc.nextPc := (
-                        io.regPcPlusImm
-                      )
+                      //io.psExSetPc.nextPc := (
+                      //  io.regPcPlusImm
+                      //)
                     }
                     case CondKind.Ne => {
                       //io.modMemWordValid := False
@@ -1979,41 +1983,41 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
                           =/= io.rdMemWord(io.brCondIdx(1))
                         )
                       }
-                      io.psExSetPc.nextPc := (
-                        io.regPcPlusImm
-                      )
+                      //io.psExSetPc.nextPc := (
+                      //  io.regPcPlusImm
+                      //)
                     }
                     case CondKind.Mi => {
                       io.psExSetPc.valid := (
                         io.rFlagN
                       )
-                      io.psExSetPc.nextPc := (
-                        io.regPcPlusImm
-                      )
+                      //io.psExSetPc.nextPc := (
+                      //  io.regPcPlusImm
+                      //)
                     }
                     case CondKind.Pl => {
                       io.psExSetPc.valid := (
                         !io.rFlagN
                       )
-                      io.psExSetPc.nextPc := (
-                        io.regPcPlusImm
-                      )
+                      //io.psExSetPc.nextPc := (
+                      //  io.regPcPlusImm
+                      //)
                     }
                     case CondKind.Vs => {
                       io.psExSetPc.valid := (
                         io.rFlagV
                       )
-                      io.psExSetPc.nextPc := (
-                        io.regPcPlusImm
-                      )
+                      //io.psExSetPc.nextPc := (
+                      //  io.regPcPlusImm
+                      //)
                     }
                     case CondKind.Vc => {
                       io.psExSetPc.valid := (
                         !io.rFlagV
                       )
-                      io.psExSetPc.nextPc := (
-                        io.regPcPlusImm
-                      )
+                      //io.psExSetPc.nextPc := (
+                      //  io.regPcPlusImm
+                      //)
                     }
                     case CondKind.Geu => {
                       //io.modMemWordValid := False
@@ -2036,9 +2040,9 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
                           >= io.rdMemWord(io.brCondIdx(1))
                         )
                       }
-                      io.psExSetPc.nextPc := (
-                        io.regPcPlusImm
-                      )
+                      //io.psExSetPc.nextPc := (
+                      //  io.regPcPlusImm
+                      //)
                     }
                     case CondKind.Ltu => {
                       //io.modMemWordValid := False
@@ -2061,9 +2065,9 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
                           < io.rdMemWord(io.brCondIdx(1))
                         )
                       }
-                      io.psExSetPc.nextPc := (
-                        io.regPcPlusImm
-                      )
+                      //io.psExSetPc.nextPc := (
+                      //  io.regPcPlusImm
+                      //)
                     }
                     case CondKind.Gtu => {
                       //io.modMemWordValid := False
@@ -2087,9 +2091,9 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
                           > io.rdMemWord(io.brCondIdx(1))
                         )
                       }
-                      io.psExSetPc.nextPc := (
-                        io.regPcPlusImm
-                      )
+                      //io.psExSetPc.nextPc := (
+                      //  io.regPcPlusImm
+                      //)
                     }
                     case CondKind.Leu => {
                       //io.modMemWordValid := False
@@ -2113,9 +2117,9 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
                           <= io.rdMemWord(io.brCondIdx(1))
                         )
                       }
-                      io.psExSetPc.nextPc := (
-                        io.regPcPlusImm
-                      )
+                      //io.psExSetPc.nextPc := (
+                      //  io.regPcPlusImm
+                      //)
                     }
                     case CondKind.Ges => {
                       //io.modMemWordValid := False
@@ -2138,9 +2142,9 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
                           >= io.rdMemWord(io.brCondIdx(1)).asSInt
                         )
                       }
-                      io.psExSetPc.nextPc := (
-                        io.regPcPlusImm
-                      )
+                      //io.psExSetPc.nextPc := (
+                      //  io.regPcPlusImm
+                      //)
                     }
                     case CondKind.Lts => {
                       //io.modMemWordValid := False
@@ -2163,9 +2167,9 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
                           < io.rdMemWord(io.brCondIdx(1)).asSInt
                         )
                       }
-                      io.psExSetPc.nextPc := (
-                        io.regPcPlusImm
-                      )
+                      //io.psExSetPc.nextPc := (
+                      //  io.regPcPlusImm
+                      //)
                     }
                     case CondKind.Gts => {
                       //io.modMemWordValid := False
@@ -2189,9 +2193,9 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
                           > io.rdMemWord(io.brCondIdx(1)).asSInt
                         )
                       }
-                      io.psExSetPc.nextPc := (
-                        io.regPcPlusImm
-                      )
+                      //io.psExSetPc.nextPc := (
+                      //  io.regPcPlusImm
+                      //)
                     }
                     case CondKind.Les => {
                       //io.modMemWordValid := False
@@ -2214,9 +2218,9 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
                           <= io.rdMemWord(io.brCondIdx(1)).asSInt
                         )
                       }
-                      io.psExSetPc.nextPc := (
-                        io.regPcPlusImm
-                      )
+                      //io.psExSetPc.nextPc := (
+                      //  io.regPcPlusImm
+                      //)
                     }
                     case CondKind.Z => {
                       //assert(
@@ -2238,9 +2242,9 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
                       io.psExSetPc.valid := (
                         io.rdMemWord(io.brCondIdx(0)) === 0
                       )
-                      io.psExSetPc.nextPc := (
-                        io.regPcPlusImm
-                      )
+                      //io.psExSetPc.nextPc := (
+                      //  io.regPcPlusImm
+                      //)
                     }
                     case CondKind.Nz => {
                       //assert(
@@ -2262,9 +2266,9 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
                       io.psExSetPc.valid := (
                         io.rdMemWord(io.brCondIdx(0)) =/= 0
                       )
-                      io.psExSetPc.nextPc := (
-                        io.regPcPlusImm
-                      )
+                      //io.psExSetPc.nextPc := (
+                      //  io.regPcPlusImm
+                      //)
                     }
                     case _ => {
                       assert(
