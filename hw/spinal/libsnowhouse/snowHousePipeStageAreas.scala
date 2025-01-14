@@ -298,18 +298,18 @@ case class SnowHousePipeStageInstrDecode(
   //  )
   //)
   val startDecode = Bool()
-  val nextPrevInstrWasJump = Bool()
-  val rPrevInstrWasJump = (
-    RegNextWhen(
-      next=nextPrevInstrWasJump,
-      cond=(
-        up.isFiring
-        && startDecode
-      ),
-      init=nextPrevInstrWasJump.getZero
-    )
-  )
-  nextPrevInstrWasJump := rPrevInstrWasJump
+  //val nextPrevInstrWasJump = Bool()
+  //val rPrevInstrWasJump = (
+  //  RegNextWhen(
+  //    next=nextPrevInstrWasJump,
+  //    cond=(
+  //      up.isFiring
+  //      && startDecode
+  //    ),
+  //    init=nextPrevInstrWasJump.getZero
+  //  )
+  //)
+  //nextPrevInstrWasJump := rPrevInstrWasJump
 
   //up(pId) := upModExt
   up(pId) := upPayload//(0)
@@ -344,7 +344,10 @@ case class SnowHousePipeStageInstrDecode(
   val rMultiInstrCnt = (
     RegNext(
       next=nextMultiInstrCnt,
-      init=nextMultiInstrCnt.getZero
+      init=(
+        //nextMultiInstrCnt.getZero
+        U(multiInstrCntWidth bits, default -> True)
+      )
     )
   )
   nextMultiInstrCnt := rMultiInstrCnt
@@ -374,7 +377,7 @@ case class SnowHousePipeStageInstrDecode(
       //cId.duplicateIt()
     }
   }
-  when (rMultiInstrCnt === 0) {
+  when (rMultiInstrCnt.msb) {
     when (up.isValid) {
       //upPayload.regPc := cId.up(pIf).regPc
       //upPayload.instrCnt := cId.up(pIf).instrCnt
@@ -638,34 +641,35 @@ case class SnowHousePipeStageInstrDecode(
     .setName(s"GenInstrDecode_tempIsFiring")
   )
   tempIsFiring := up.isFiring
-  when (
-    nextMultiInstrCnt =/= 0x0
-    && rMultiInstrCnt === 0x0
-  ) {
-    tempIsFiring := False//up.isFiring
-    //when (!rPrevInstrBlockedIrq) {
-    //  when (
-    //    //psId.nextMultiInstrCnt === 1
-    //    //rPrevInstrBlockedIrq
-    //    upPayload.blockIrq
-    //    && io.idsIraIrq.rValid
-    //  ) {
-    //    //io.idsIraIrq.ready := True
-    //    nextPrevInstrBlockedIrq := True
-    //  }
-    //} otherwise { // when (rPrevInstrBlockedIrq)
-    //}
-  } elsewhen(
-    nextMultiInstrCnt === 0x0
-    && rMultiInstrCnt === 0x0
-  ) {
-    //tempIsFiring := 
-  } otherwise {
-    //tempIsFiring := (
-    //  down.isFiring
-    //  && rMultiInstrCnt - 1 === 0x0
-    //)
-  }
+  //when (
+  //  nextMultiInstrCnt(0 downto 0) =/= 0x0
+  //  && rMultiInstrCnt(0 downto 0) === 0x0
+  //) {
+  //  tempIsFiring := False//up.isFiring
+  //  //when (!rPrevInstrBlockedIrq) {
+  //  //  when (
+  //  //    //psId.nextMultiInstrCnt === 1
+  //  //    //rPrevInstrBlockedIrq
+  //  //    upPayload.blockIrq
+  //  //    && io.idsIraIrq.rValid
+  //  //  ) {
+  //  //    //io.idsIraIrq.ready := True
+  //  //    nextPrevInstrBlockedIrq := True
+  //  //  }
+  //  //} otherwise { // when (rPrevInstrBlockedIrq)
+  //  //}
+  //}
+  //elsewhen(
+  //  nextMultiInstrCnt === 0x0
+  //  && rMultiInstrCnt === 0x0
+  //) {
+  //  //tempIsFiring := 
+  //} otherwise {
+  //  //tempIsFiring := (
+  //  //  down.isFiring
+  //  //  && rMultiInstrCnt - 1 === 0x0
+  //  //)
+  //}
   //val rPrevTakeIrq = (
   //  RegNextWhen(
   //    next=upPayload.takeIrq,
@@ -690,7 +694,7 @@ case class SnowHousePipeStageInstrDecode(
       startDecode := True
       val myDecodeArea = doDecodeFunc(this)
       when (
-        rMultiInstrCnt === 0x0
+        rMultiInstrCnt.msb// === 0x0
       ) {
         //when (io.ibus.rValid && io.ibus.ready) {
         //  myInstr := (
@@ -744,6 +748,10 @@ case class SnowHousePipeStageInstrDecode(
         )
       }
     }
+    //when (
+    //  rMultiInstrCnt === 0x0
+    //) {
+    //}
   }
   //val rPrevPcChangeState = (
   //  KeepAttribute(

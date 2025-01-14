@@ -429,8 +429,6 @@ object SnowHouseCpuPipeStageInstrDecode {
     def doDefault(
       doSetImm: Boolean=true
     ): Unit = {
-      // this function could be useful for decoding variable width
-      // instructions!
       // just do a NOP
       setOp(AddRaRbRc)
       upPayload.gprIdxVec.foreach{gprIdx => {
@@ -440,7 +438,7 @@ object SnowHouseCpuPipeStageInstrDecode {
         upPayload.imm := 0x0
       }
     }
-    psId.nextPrevInstrWasJump := False
+    //psId.nextPrevInstrWasJump := False
     //when (cId.up.isFiring) {
     //  rTempState := False
     //}
@@ -536,7 +534,7 @@ object SnowHouseCpuPipeStageInstrDecode {
             setOp(CpyIeRb)
           }
           is (RetIra._2._1) {
-            psId.nextPrevInstrWasJump := True
+            //psId.nextPrevInstrWasJump := True
             setOp(RetIra)
           }
           default {
@@ -613,7 +611,7 @@ object SnowHouseCpuPipeStageInstrDecode {
         switch (encInstr.rcIdx(1 downto 0)) {
           is (BeqRaRbSimm._2._1) {
             //when (psId.startDecode) {
-              psId.nextPrevInstrWasJump := True
+              //psId.nextPrevInstrWasJump := True
             //}
             when (
               encInstr.raIdx === encInstr.rbIdx
@@ -633,13 +631,13 @@ object SnowHouseCpuPipeStageInstrDecode {
             } otherwise {
               setOp(BneRaRbSimm)
               //when (psId.startDecode) {
-                psId.nextPrevInstrWasJump := True
+                //psId.nextPrevInstrWasJump := True
               //}
             }
           }
           is (JlRaRb._2._1) {
             //when (psId.startDecode) {
-              psId.nextPrevInstrWasJump := True
+              //psId.nextPrevInstrWasJump := True
             //}
             setOp(JlRaRb)
           }
@@ -696,35 +694,38 @@ object SnowHouseCpuPipeStageInstrDecode {
             //when (psId.rMultiInstrCnt === 0)
             //val dontChangeTempState = Bool()
             //dontChangeTempState := False
-            when (psId.startDecode) {
-              when (
-                //!rTempState
-                psId.rMultiInstrCnt(0 downto 0) === 0x0
-              ) {
+            when (
+              //!rTempState
+              psId.rMultiInstrCnt.msb
+            ) {
+              when (psId.startDecode) {
                 when (
                   cId.up.isFiring
                   //cId.down.isFiring
                 ) {
                   //rTempState := True
                   //dontChangeTempState := True
-                  psId.nextMultiInstrCnt := 1
+                  psId.nextMultiInstrCnt := 0x0
+                  //doDefault()
                   setOp(AddRaRbSimm16)
-                  upPayload.gprIdxVec(0) := encInstr.rbIdx
-                  upPayload.gprIdxVec(1) := encInstr.rbIdx
-                  upPayload.gprIdxVec(2) := SnowHouseCpuRegs.r0.index
-                  //val tempSImm = SInt(cfg.mainWidth bits)
-                  //tempSImm := -(cfg.mainWidth / 8)
-                  upPayload.imm := (cfg.mainWidth / 8) //tempSImm.asUInt
-                }
-              } otherwise {
-                when (cId.down.isFiring) {
-                  setOp(LdrRaRbSimm16)
-                  upPayload.gprIdxVec(0) := encInstr.raIdx
-                  upPayload.gprIdxVec(1) := encInstr.rbIdx
-                  upPayload.gprIdxVec(2) := SnowHouseCpuRegs.r0.index
-                  upPayload.imm := 0x0
                 }
               }
+              upPayload.gprIdxVec(0) := encInstr.rbIdx
+              upPayload.gprIdxVec(1) := encInstr.rbIdx
+              upPayload.gprIdxVec(2) := SnowHouseCpuRegs.r0.index
+              //val tempSImm = SInt(cfg.mainWidth bits)
+              //tempSImm := -(cfg.mainWidth / 8)
+              upPayload.imm := (cfg.mainWidth / 8) //tempSImm.asUInt
+            } otherwise {
+              //when (psId.startDecode) {
+              when (cId.down.isFiring) {
+                setOp(LdrRaRbSimm16)
+              }
+              upPayload.gprIdxVec(0) := encInstr.raIdx
+              upPayload.gprIdxVec(1) := encInstr.rbIdx
+              upPayload.gprIdxVec(2) := SnowHouseCpuRegs.r0.index
+              upPayload.imm := 0x0
+              //}
             }
             //when (rTempState) {
             //when (!psId.startDecode) {
@@ -1957,7 +1958,7 @@ case class SnowHouseCpuWithDualRam(
 
   cpu.io.idsIraIrq <> io.idsIraIrq
   //io.idsIraIrq.ready := True
-  //cpu.io.idsIraIrq.nextValid := True
+  ////cpu.io.idsIraIrq.nextValid := True
   //val rIrqValidCnt = (
   //  Reg(UInt(8 bits))
   //  init(U(8 bits, default -> True))
