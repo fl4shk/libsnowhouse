@@ -107,29 +107,35 @@ case class SnowHouseInstrDataDualRam(
   //io.dbus.devData.data := io.dbus.hostData.data.getZero
 
   //dataRam.io.rdEn := False
-  dataRam.io.rdAddr := dataRam.io.wrAddr.getZero
+  //dataRam.io.rdAddr := dataRam.io.rdAddr.getZero
   dataRam.io.wrEn := False
-  dataRam.io.wrAddr := dataRam.io.wrAddr.getZero
+  //dataRam.io.wrAddr := dataRam.io.wrAddr.getZero
   dataRam.io.wrData := dataRam.io.wrData.getZero
   dataRam.io.rdEn := io.dbus.nextValid
   when (io.dbus.rValid && io.dbus.ready) {
   }
+  dataRam.io.rdAddr := (
+    (io.dbus.hostData.addr >> 2).resized
+  )
+  dataRam.io.wrAddr := (
+    (io.dbus.hostData.addr >> 2).resized
+  )
   io.dbus.devData.data := dataRam.io.rdData.asUInt
   switch (io.dbus.hostData.accKind) {
     is (SnowHouseMemAccessKind.LoadU) {
       //dataRam.io.rdEn := io.dbus.nextValid
-      dataRam.io.rdAddr := (
-        (io.dbus.hostData.addr >> 2).resized
-      )
+      //dataRam.io.rdAddr := (
+      //  (io.dbus.hostData.addr >> 2).resized
+      //)
       //when (io.dbus.rValid && io.dbus.ready) {
       //  io.dbus.devData.data := dataRam.io.rdData.asUInt
       //}
     }
     is (SnowHouseMemAccessKind.LoadS) {
       //dataRam.io.rdEn := io.dbus.nextValid
-      dataRam.io.rdAddr := (
-        (io.dbus.hostData.addr >> 2).resized
-      )
+      //dataRam.io.rdAddr := (
+      //  (io.dbus.hostData.addr >> 2).resized
+      //)
       //when (io.dbus.rValid && io.dbus.ready) {
       //  io.dbus.devData.data := dataRam.io.rdData.asUInt
       //}
@@ -137,9 +143,9 @@ case class SnowHouseInstrDataDualRam(
     is (SnowHouseMemAccessKind.Store) {
       // TODO: possibly update this to work better?
       dataRam.io.wrEn := io.dbus.nextValid
-      dataRam.io.wrAddr := (
-        (io.dbus.hostData.addr >> 2).resized
-      )
+      //dataRam.io.wrAddr := (
+      //  (io.dbus.hostData.addr >> 2).resized
+      //)
       dataRam.io.wrData := io.dbus.hostData.data.asBits
     }
   }
