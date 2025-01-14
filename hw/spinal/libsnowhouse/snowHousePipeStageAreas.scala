@@ -1451,6 +1451,7 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
     io.regPcPlusImm
   )
   io.dbusHostPayload.data := io.rdMemWord(0) //selRdMemWord(0)
+  // TODO: support other kinds of addressing...
   io.dbusHostPayload.addr := io.rdMemWord(1) + io.imm
   //when (!io.takeIrq) {
     switch (io.currOp) {
