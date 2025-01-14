@@ -1323,6 +1323,7 @@ case class SnowHouseCpuConfig(
           tempArr
         })
       ),
+      memRamStyle="distributed",
     ),
     opInfoMap=SnowHouseCpuOpInfoMap.opInfoMap,
     irqJmpOp={
