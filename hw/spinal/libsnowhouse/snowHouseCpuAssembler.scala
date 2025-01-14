@@ -484,7 +484,10 @@ object add {
     InstructionAsmStmt(
       op=SnowHouseCpuOp.AddRaPcSimm16,
       rA=rA,
-      rB=rA,
+      rB=(
+        //rA
+        SnowHouseCpuRegs.r0
+      ),
       rC=SnowHouseCpuRegs.r0,
       imm=imm,
     )
@@ -814,48 +817,78 @@ object smod {
     )
   }
 }
-object beq {
-  def apply(
-    rA: Gpr,
-    rB: Gpr,
-    //rC: SnowHouseCpuAsmAst.Gpr,
-    imm: SnowHouseCpuExpr,
-  ) = {
-    if (rA.index == rB.index && rA.index != 0x0) {
-      InstructionAsmStmt(
-        op=SnowHouseCpuOp.BeqRaRbSimm,
-        rA=SnowHouseCpuRegs.r0,
-        rB=SnowHouseCpuRegs.r0,
-        rC=Gpr(SnowHouseCpuOp.BeqRaRbSimm._2._1),
-        imm=(
-          imm - SnowHouseCpuExpr.Dot //- 4
-        ),
-      )
-    } else {
-      InstructionAsmStmt(
-        op=SnowHouseCpuOp.BeqRaRbSimm,
-        rA=rA,
-        rB=rB,
-        rC=Gpr(SnowHouseCpuOp.BeqRaRbSimm._2._1),
-        imm=(
-          imm - SnowHouseCpuExpr.Dot //- 4
-        ),
-      )
-    }
-  }
-}
+//object beq {
+//  def apply(
+//    rA: Gpr,
+//    rB: Gpr,
+//    //rC: SnowHouseCpuAsmAst.Gpr,
+//    imm: SnowHouseCpuExpr,
+//  ) = {
+//    if (rA.index == rB.index && rA.index != 0x0) {
+//      InstructionAsmStmt(
+//        op=SnowHouseCpuOp.BeqRaRbSimm,
+//        rA=SnowHouseCpuRegs.r0,
+//        rB=SnowHouseCpuRegs.r0,
+//        rC=Gpr(SnowHouseCpuOp.BeqRaRbSimm._2._1),
+//        imm=(
+//          imm - SnowHouseCpuExpr.Dot //- 4
+//        ),
+//      )
+//    } else {
+//      InstructionAsmStmt(
+//        op=SnowHouseCpuOp.BeqRaRbSimm,
+//        rA=rA,
+//        rB=rB,
+//        rC=Gpr(SnowHouseCpuOp.BeqRaRbSimm._2._1),
+//        imm=(
+//          imm - SnowHouseCpuExpr.Dot //- 4
+//        ),
+//      )
+//    }
+//  }
+//}
 object bz {
   def apply(
     rA: Gpr,
-    //rB: SnowHouseCpuAsmAst.Gpr,
+    //rB: Gpr,
     //rC: SnowHouseCpuAsmAst.Gpr,
     imm: SnowHouseCpuExpr,
   ) = {
-    beq(
+    InstructionAsmStmt(
+      op=SnowHouseCpuOp.BzRaSimm,
       rA=rA,
-      rB=SnowHouseCpuRegs.r0,
-      imm=imm,
+      rB=SnowHouseCpuRegs.r1,
+      rC=Gpr(SnowHouseCpuOp.BzRaSimm._2._1),
+      imm=(
+        imm - SnowHouseCpuExpr.Dot //- 4
+      ),
     )
+    //if (rA.index != 0x0) {
+    //  InstructionAsmStmt(
+    //    op=SnowHouseCpuOp.BzRaSimm,
+    //    rA=rA,
+    //    rB=rA,
+    //    rC=Gpr(SnowHouseCpuOp.BzRaSimm._2._1),
+    //    imm=(
+    //      imm - SnowHouseCpuExpr.Dot //- 4
+    //    ),
+    //  )
+    //} else {
+    //  InstructionAsmStmt(
+    //    op=SnowHouseCpuOp.BzRaSimm,
+    //    rA=rA,
+    //    rB=SnowHouseCpuRegs.r1,
+    //    rC=Gpr(SnowHouseCpuOp.BzRaSimm._2._1),
+    //    imm=(
+    //      imm - SnowHouseCpuExpr.Dot //- 4
+    //    ),
+    //  )
+    //}
+    //beq(
+    //  rA=rA,
+    //  rB=SnowHouseCpuRegs.r0,
+    //  imm=imm,
+    //)
     //Instruction(
     //  op=SnowHouseCpuOp.BeqRaRbSimm,
     //  rA=rA,
@@ -889,7 +922,10 @@ object bl {
     InstructionAsmStmt(
       op=SnowHouseCpuOp.BlSimm,
       rA=rA,
-      rB=rA,
+      rB=(
+        //rA
+        SnowHouseCpuRegs.r0
+      ),
       rC=Gpr(SnowHouseCpuOp.BlSimm._2._1),
       imm=(
         imm - SnowHouseCpuExpr.Dot //- 4
@@ -905,42 +941,42 @@ object bl {
     )
   }
 }
-object bne {
-  def apply(
-    rA: Gpr,
-    rB: Gpr,
-    //rC: SnowHouseCpuAsmAst.Gpr,
-    imm: SnowHouseCpuExpr,
-  ) = {
-    if (rA.index == rB.index && rA.index != 0x0) {
-      println(
-        s"rA.index != 0: ${rA.index} ${rB.index}"
-      )
-      InstructionAsmStmt(
-        op=SnowHouseCpuOp.BneRaRbSimm,
-        rA=SnowHouseCpuRegs.r0,
-        rB=SnowHouseCpuRegs.r0,
-        rC=Gpr(SnowHouseCpuOp.BneRaRbSimm._2._1),
-        imm=(
-          imm - SnowHouseCpuExpr.Dot //- 4
-        ),
-      )
-    } else {
-      println(
-        s"other: ${rA.index} ${rB.index}"
-      )
-      InstructionAsmStmt(
-        op=SnowHouseCpuOp.BneRaRbSimm,
-        rA=rA,
-        rB=rB,
-        rC=Gpr(SnowHouseCpuOp.BneRaRbSimm._2._1),
-        imm=(
-          imm - SnowHouseCpuExpr.Dot //- 4
-        ),
-      )
-    }
-  }
-}
+//object bne {
+//  def apply(
+//    rA: Gpr,
+//    rB: Gpr,
+//    //rC: SnowHouseCpuAsmAst.Gpr,
+//    imm: SnowHouseCpuExpr,
+//  ) = {
+//    if (rA.index == rB.index && rA.index != 0x0) {
+//      println(
+//        s"rA.index != 0: ${rA.index} ${rB.index}"
+//      )
+//      InstructionAsmStmt(
+//        op=SnowHouseCpuOp.BneRaRbSimm,
+//        rA=SnowHouseCpuRegs.r0,
+//        rB=SnowHouseCpuRegs.r0,
+//        rC=Gpr(SnowHouseCpuOp.BneRaRbSimm._2._1),
+//        imm=(
+//          imm - SnowHouseCpuExpr.Dot //- 4
+//        ),
+//      )
+//    } else {
+//      println(
+//        s"other: ${rA.index} ${rB.index}"
+//      )
+//      InstructionAsmStmt(
+//        op=SnowHouseCpuOp.BneRaRbSimm,
+//        rA=rA,
+//        rB=rB,
+//        rC=Gpr(SnowHouseCpuOp.BneRaRbSimm._2._1),
+//        imm=(
+//          imm - SnowHouseCpuExpr.Dot //- 4
+//        ),
+//      )
+//    }
+//  }
+//}
 object bnz {
   def apply(
     rA: Gpr,
@@ -948,11 +984,41 @@ object bnz {
     //rC: SnowHouseCpuAsmAst.Gpr,
     imm: SnowHouseCpuExpr,
   ) = {
-    bne(
+    InstructionAsmStmt(
+      op=SnowHouseCpuOp.BnzRaSimm,
       rA=rA,
-      rB=SnowHouseCpuRegs.r0,
-      imm=imm,
+      rB=SnowHouseCpuRegs.r1,
+      rC=Gpr(SnowHouseCpuOp.BnzRaSimm._2._1),
+      imm=(
+        imm - SnowHouseCpuExpr.Dot //- 4
+      ),
     )
+    //if (rA.index != 0x0) {
+    //  InstructionAsmStmt(
+    //    op=SnowHouseCpuOp.BnzRaSimm,
+    //    rA=rA,
+    //    rB=rA,
+    //    rC=Gpr(SnowHouseCpuOp.BnzRaSimm._2._1),
+    //    imm=(
+    //      imm - SnowHouseCpuExpr.Dot //- 4
+    //    ),
+    //  )
+    //} else {
+    //  InstructionAsmStmt(
+    //    op=SnowHouseCpuOp.BnzRaSimm,
+    //    rA=rA,
+    //    rB=SnowHouseCpuRegs.r1,
+    //    rC=Gpr(SnowHouseCpuOp.BnzRaSimm._2._1),
+    //    imm=(
+    //      imm - SnowHouseCpuExpr.Dot //- 4
+    //    ),
+    //  )
+    //}
+    //bne(
+    //  rA=rA,
+    //  rB=SnowHouseCpuRegs.r0,
+    //  imm=imm,
+    //)
     //Instruction(
     //  op=SnowHouseCpuOp.BneRaRbSimm,
     //  rA=rA,
