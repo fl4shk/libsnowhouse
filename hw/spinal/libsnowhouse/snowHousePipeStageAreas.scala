@@ -442,9 +442,11 @@ case class SnowHousePipeStageInstrDecode(
   upPayload.regPcPlusInstrSize := (
     upPayload.regPc + (cfg.instrMainWidth / 8)
   )
-  upPayload.regPcPlusImm := (
-    upPayload.regPc + upPayload.imm //+ (cfg.instrMainWidth / 8)
-  )
+  //--------
+  //upPayload.regPcPlusImm := (
+  //  upPayload.regPc + upPayload.imm //+ (cfg.instrMainWidth / 8)
+  //)
+  //--------
   //val upGprIdxToRegFileMemAddrMap = (
   //  upPayload.gprIdxToRegFileMemAddrMap
   //)
@@ -4176,6 +4178,9 @@ case class SnowHousePipeStageExecute(
   if (cfg.optFormal) {
     outp.psExSetOutpModMemWordIo := setOutpModMemWord.io
   }
+  outp.regPcPlusImm := (
+    outp.regPc + outp.imm //+ (cfg.instrMainWidth / 8)
+  )
 }
 case class SnowHousePipeStageMem(
   args: SnowHousePipeStageArgs,

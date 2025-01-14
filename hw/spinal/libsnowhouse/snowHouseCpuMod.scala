@@ -1812,6 +1812,10 @@ case class SnowHouseCpuDivmod32(
     Reg(UInt(cfg.mainWidth bits))
     init(0x0)
   )
+  val rSavedResult = (
+    Reg(UInt(cfg.mainWidth bits))
+    init(0x0)
+  )
   def mainWidth = cfg.mainWidth
   val myArea = myFunc(
     doItFunc=(
@@ -1930,6 +1934,11 @@ case class SnowHouseCpuDivmod32(
       when (divmod.io.outp.ready) {
         rSavedQuot := divmod.io.outp.quot
         rSavedRema := divmod.io.outp.rema
+        when (!rKind.asBits(1)) {
+          rSavedResult := divmod.io.outp.quot
+        } otherwise {
+          rSavedRema := divmod.io.outp.rema
+        }
         rState := Divmod32State.YIELD_RESULT
       }
     }
