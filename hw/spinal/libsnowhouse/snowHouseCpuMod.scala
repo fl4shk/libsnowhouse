@@ -1948,7 +1948,6 @@ case class SnowHouseCpuWithDualRam(
     ),
   )
   cpu.io.idsIraIrq <> io.idsIraIrq
-  //io.idsIraIrq.ready := True
   cpu.io.ibus <> dualRam.io.ibus
   cpu.io.dbus <> dualRam.io.dbus
   if (cfg.exposeModMemWordToIo) {
@@ -1957,6 +1956,7 @@ case class SnowHouseCpuWithDualRam(
   val mul32 = SnowHouseCpuMul32(cpuIo=cpu.io)
   val divmod32 = SnowHouseCpuDivmod32(cpuIo=cpu.io)
 
+  //io.idsIraIrq.ready := True
   //cpu.io.idsIraIrq.nextValid := True
   //val rIrqValidCnt = (
   //  Reg(UInt(8 bits))

@@ -677,8 +677,9 @@ case class SnowHousePipeStageInstrDecode(
     when (
       //upPayload.regPcSetItCnt =/= 0
       (
-        !rPrevInstrWasJump
-        || !pcChangeState
+        //!rPrevInstrWasJump
+        //|| 
+        !pcChangeState
         || (
           pcChangeState
           && upPayload.regPcSetItCnt =/= 0x0
