@@ -1439,9 +1439,10 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
   nextHadRetIra := False
   if (io.haveRetIraState) {
     when (io.upIsFiring) {
-      when (!io.rHadRetIra && nextHadRetIra) {
-        io.rHadRetIra := True
-      }
+      //when (!io.rHadRetIra && nextHadRetIra) {
+      //  io.rHadRetIra := True
+      //}
+      io.rHadRetIra := nextHadRetIra
     }
   }
   //--------
@@ -1449,7 +1450,8 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
   io.psExSetPc.nextPc := (
     io.regPcPlusImm
   )
-  io.dbusHostPayload.data := io.rdMemWord(0 )//selRdMemWord(0)
+  io.dbusHostPayload.data := io.rdMemWord(0) //selRdMemWord(0)
+  io.dbusHostPayload.addr := io.rdMemWord(1) + io.imm
   //when (!io.takeIrq) {
     switch (io.currOp) {
       //--------
@@ -1660,69 +1662,69 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
                         //  }
                         //}
                         //--------
-                        val tempAddr = (
-                          (
-                            opInfo.addrCalc match {
-                              case AddrCalcKind.AddReduce(
-                                //fromIndexReg
-                              ) => (
-                                //if (!fromIndexReg) (
-                                  selRdMemWord(1)
-                                //) else (
-                                //  io.rIndexReg
-                                //)
-                              )
-                              case kind:
-                              AddrCalcKind.LslThenMaybeAdd => (
-                                selRdMemWord(1)
-                                << kind.options.lslAmount.get
-                              )
-                              //case _ => {
-                              //  selRdMemWord(1)
-                              //}
-                            }
-                          ) 
-                          //+ (
-                          //  opInfo.srcArr.size match {
-                          //    case 1 => {
-                          //      U(s"${cfg.mainWidth}'d0")
-                          //    }
-                          //    case 2 => {
-                          //      selRdMemWord(2)
-                          //    }
-                          //    case _ => {
-                          //      assert(
-                          //        false,
-                          //        s"invalid opInfo.srcArr.size: "
-                          //        + s"opInfo(${opInfo}) "
-                          //        + s"index:${opInfoIdx}"
-                          //      )
-                          //      U("s${cfg.mainWidth}'d0")
-                          //    }
-                          //  }
-                          //)
-                        )
+                        //val tempAddr = (
+                        //  (
+                        //    opInfo.addrCalc match {
+                        //      case AddrCalcKind.AddReduce(
+                        //        //fromIndexReg
+                        //      ) => (
+                        //        //if (!fromIndexReg) (
+                        //          selRdMemWord(1)
+                        //        //) else (
+                        //        //  io.rIndexReg
+                        //        //)
+                        //      )
+                        //      case kind:
+                        //      AddrCalcKind.LslThenMaybeAdd => (
+                        //        selRdMemWord(1)
+                        //        << kind.options.lslAmount.get
+                        //      )
+                        //      //case _ => {
+                        //      //  selRdMemWord(1)
+                        //      //}
+                        //    }
+                        //  ) 
+                        //  //+ (
+                        //  //  opInfo.srcArr.size match {
+                        //  //    case 1 => {
+                        //  //      U(s"${cfg.mainWidth}'d0")
+                        //  //    }
+                        //  //    case 2 => {
+                        //  //      selRdMemWord(2)
+                        //  //    }
+                        //  //    case _ => {
+                        //  //      assert(
+                        //  //        false,
+                        //  //        s"invalid opInfo.srcArr.size: "
+                        //  //        + s"opInfo(${opInfo}) "
+                        //  //        + s"index:${opInfoIdx}"
+                        //  //      )
+                        //  //      U("s${cfg.mainWidth}'d0")
+                        //  //    }
+                        //  //  }
+                        //  //)
+                        //)
                         //--------
-                        io.dbusHostPayload.addr := (
-                          opInfo.srcArr.size match {
-                            case 1 => (
-                              //U(s"${cfg.mainWidth}'d0")
-                              tempAddr
-                            )
-                            case 2 => (
-                              tempAddr + selRdMemWord(2)
-                            )
-                            case _ => {
-                              assert(
-                                false,
-                                s"invalid opInfo.srcArr.size: "
-                                + s"opInfo(${opInfo}) "
-                                + s"index:${opInfoIdx}"
-                              )
-                              U(s"${cfg.mainWidth}'d0")
-                            }
-                          }
-                        )
+                        //io.dbusHostPayload.addr := (
+                        //  opInfo.srcArr.size match {
+                        //    case 1 => (
+                        //      //U(s"${cfg.mainWidth}'d0")
+                        //      tempAddr
+                        //    )
+                        //    case 2 => (
+                        //      tempAddr + selRdMemWord(2)
+                        //    )
+                        //    case _ => {
+                        //      assert(
+                        //        false,
+                        //        s"invalid opInfo.srcArr.size: "
+                        //        + s"opInfo(${opInfo}) "
+                        //        + s"index:${opInfoIdx}"
+                        //      )
+                        //      U(s"${cfg.mainWidth}'d0")
+                        //    }
+                        //  }
+                        //)
                         //--------
                         //io.dbusHostPayload.subKind := (
                         //  tempSubKind
@@ -1888,7 +1890,10 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
                     //io.regPc //+ ((cfg.instrMainWidth / 8) * 1/*2*/)
                   )
                   io.psExSetPc.valid := True
-                  //when (!io.takeIrq) {
+                  when (
+                    //!io.takeIrq
+                    !io.shouldIgnoreInstr
+                  ) {
                     opInfo.srcArr(0) match {
                       case SrcKind.Gpr => {
                         io.psExSetPc.nextPc := (
@@ -1919,7 +1924,8 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
                         )
                       }
                     }
-                  //} otherwise {
+                  }
+                  //otherwise {
                   //  nextIra := io.regPc
                   //  //nextIe := 0x0
                   //  io.psExSetPc.nextPc := (
@@ -3070,6 +3076,7 @@ case class SnowHousePipeStageExecute(
         && (
           !rIrqHndlState//.valid
           //&& rPrevCurrOp.currOp =/= cfg.irqRetIraOp
+          //True
         ) && (
           if (setOutpModMemWord.io.haveRetIraState) (
             !setOutpModMemWord.io.rHadRetIra
@@ -3138,13 +3145,16 @@ case class SnowHousePipeStageExecute(
   ) generate (
     cMid0Front.up.isFiring
     && rIrqHndlState//.fire
-    && (
-      !pcChangeState
-      || (
-        outp.regPcSetItCnt =/= 0x0
-      )
-    )
-    && !outp.instrCnt.shouldIgnoreInstr
+    //--------
+    //&& (
+    //  !pcChangeState
+    //  || (
+    //    pcChangeState
+    //    && outp.regPcSetItCnt =/= 0x0
+    //  )
+    //)
+    ////--------
+    //&& !outp.instrCnt.shouldIgnoreInstr
     //&& setOutpModMemWord.io.Ie === 0
     //&& setOutpModMemWord.nextIe =/= 0x0 
     //&& setOutpModMemWord.nextHadRetIra
@@ -3175,29 +3185,35 @@ case class SnowHousePipeStageExecute(
     //    setOutpModMemWord.io.rHadRetIra := False
     //  }
     //}
+    //when (
+    //  //cMid0Front.up.isFiring
+    //  reEnableIrqsCond
+    //  //&& RegNextWhen(
+    //  //  next=reEnableIrqsCond, 
+    //  //  cond=cMid0Front.up.isFiring,
+    //  //  init=False,
+    //  //)
+    //) {
+    //  //setOutpModMemWord.nextIe(0) := True//0x1
+    //  rIrqHndlState/*.valid*/ := False
+    //  if (setOutpModMemWord.io.haveRetIraState) {
+    //    setOutpModMemWord.io.rHadRetIra := False
+    //  }
+    //}
     when (
       //cMid0Front.up.isFiring
-      reEnableIrqsCond
       //&& RegNextWhen(
       //  next=reEnableIrqsCond, 
       //  cond=cMid0Front.up.isFiring,
       //  init=False,
       //)
-    ) {
-      //setOutpModMemWord.nextIe(0) := True//0x1
-      rIrqHndlState/*.valid*/ := False
-      if (setOutpModMemWord.io.haveRetIraState) {
-        setOutpModMemWord.io.rHadRetIra := False
-      }
-    }
-    when (
-      RegNextWhen(
-        next=reEnableIrqsCond, 
-        cond=cMid0Front.up.isFiring,
-        init=False,
-      )
+      reEnableIrqsCond
     ) {
       setOutpModMemWord.nextIe(0) := True//0x1
+      rIrqHndlState/*.valid*/ := False
+      if (setOutpModMemWord.io.haveRetIraState) {
+        //setOutpModMemWord.io.rHadRetIra := False
+      }
     }
   }
   //when (
