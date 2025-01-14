@@ -665,6 +665,7 @@ object SnowHouseCpuPipeStageInstrDecode {
       //  }
       //}
       is (PushRaRb._1) {
+        //doDefault()
         switch (encInstr.imm16(0 downto 0)) {
           //when (psId.rMultIn
           is (PushRaRb._2._1) {
@@ -698,7 +699,7 @@ object SnowHouseCpuPipeStageInstrDecode {
             when (psId.startDecode) {
               when (
                 //!rTempState
-                psId.rMultiInstrCnt === 0x0
+                psId.rMultiInstrCnt(0 downto 0) === 0x0
               ) {
                 when (
                   cId.up.isFiring
@@ -1945,8 +1946,8 @@ case class SnowHouseCpuWithDualRam(
       Array.fill(1 << 16)(BigInt(0))
     ),
   )
-  //cpu.io.idsIraIrq <> io.idsIraIrq
-  io.idsIraIrq.ready := True
+  cpu.io.idsIraIrq <> io.idsIraIrq
+  //io.idsIraIrq.ready := True
   cpu.io.ibus <> dualRam.io.ibus
   cpu.io.dbus <> dualRam.io.dbus
   if (cfg.exposeModMemWordToIo) {
@@ -1956,21 +1957,21 @@ case class SnowHouseCpuWithDualRam(
   val divmod32 = SnowHouseCpuDivmod32(cpuIo=cpu.io)
 
   //cpu.io.idsIraIrq.nextValid := True
-  val rIrqValidCnt = (
-    Reg(UInt(8 bits))
-    init(U(8 bits, default -> True))
-  )
-  //cpu.io.idsIraIrq.nextValid := True
-  cpu.io.idsIraIrq.nextValid := False
-  when (rIrqValidCnt =/= 0) {
-    rIrqValidCnt := rIrqValidCnt - 1
-  } otherwise {
-    cpu.io.idsIraIrq.nextValid := True
-    when (cpu.io.idsIraIrq.rValid && cpu.io.idsIraIrq.ready) {
-      cpu.io.idsIraIrq.nextValid := False
-      rIrqValidCnt := U(rIrqValidCnt.getWidth bits, default -> True)
-    }
-  }
+  //val rIrqValidCnt = (
+  //  Reg(UInt(8 bits))
+  //  init(U(8 bits, default -> True))
+  //)
+  ////cpu.io.idsIraIrq.nextValid := True
+  //cpu.io.idsIraIrq.nextValid := False
+  //when (rIrqValidCnt =/= 0) {
+  //  rIrqValidCnt := rIrqValidCnt - 1
+  //} otherwise {
+  //  cpu.io.idsIraIrq.nextValid := True
+  //  when (cpu.io.idsIraIrq.rValid && cpu.io.idsIraIrq.ready) {
+  //    cpu.io.idsIraIrq.nextValid := False
+  //    rIrqValidCnt := U(rIrqValidCnt.getWidth bits, default -> True)
+  //  }
+  //}
   //--------
   //val rMultiCycleBusReadyCnt = (
   //  Reg(UInt(8 bits))

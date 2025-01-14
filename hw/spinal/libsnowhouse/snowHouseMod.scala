@@ -100,7 +100,7 @@ case class SnowHouseInstrDataDualRam(
       }
     }
   }
-  io.dbus.devData.data := io.dbus.hostData.data.getZero
+  //io.dbus.devData.data := io.dbus.hostData.data.getZero
 
   //dataRam.io.rdEn := False
   dataRam.io.rdAddr := dataRam.io.wrAddr.getZero
@@ -109,8 +109,8 @@ case class SnowHouseInstrDataDualRam(
   dataRam.io.wrData := dataRam.io.wrData.getZero
   dataRam.io.rdEn := io.dbus.nextValid
   when (io.dbus.rValid && io.dbus.ready) {
-    io.dbus.devData.data := dataRam.io.rdData.asUInt
   }
+  io.dbus.devData.data := dataRam.io.rdData.asUInt
   switch (io.dbus.hostData.accKind) {
     is (SnowHouseMemAccessKind.LoadU) {
       //dataRam.io.rdEn := io.dbus.nextValid
@@ -451,21 +451,21 @@ case class SnowHouse
     doModInModFrontParams=doModInModFrontParams,
   )
   //--------
-  val pipeStageWb = (
-    //cfg.optFormal
-    true
-  ) generate (
-    SnowHousePipeStageWriteBack(
-      args=SnowHousePipeStageArgs(
-        cfg=cfg,
-        io=io,
-        link=null,
-        prevPayload=null,
-        currPayload=null,
-        regFile=regFile,
-      ),
-    )
-  )
+  //val pipeStageWb = (
+  //  //cfg.optFormal
+  //  true
+  //) generate (
+  //  SnowHousePipeStageWriteBack(
+  //    args=SnowHousePipeStageArgs(
+  //      cfg=cfg,
+  //      io=io,
+  //      link=null,
+  //      prevPayload=null,
+  //      currPayload=null,
+  //      regFile=regFile,
+  //    ),
+  //  )
+  //)
   val pipeStageMem = (
     SnowHousePipeStageMem(
       args=SnowHousePipeStageArgs(
@@ -476,7 +476,10 @@ case class SnowHouse
         currPayload=null,
         regFile=regFile,
       ),
-      psWb=pipeStageWb,
+      psWb=(
+        //pipeStageWb
+        null
+      ),
       psMemStallHost=psMemStallHost,
     )
   )
