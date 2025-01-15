@@ -503,15 +503,39 @@ case class SnowHouseGprIdxToMemAddrIdxMapElem(
     )
   )
 }
+object SnowHouseSplitOpKind
+extends SpinalEnum(defaultEncoding=binaryOneHot) {
+  val
+    PURE_CPY,
+    PURE_JMP,
+    PURE_BR,
+    ALU,
+    MULTI_CYCLE,
+    PURE_CPYUI
+    = newElement()
+}
 case class SnowHouseSplitOp(
   cfg: SnowHouseConfig
 ) extends Bundle {
-  val pureCpyOp = Flow(UInt(log2Up(cfg.pureCpyOpInfoMap.size) bits))
-  val pureCpyuiOp = Flow(UInt(log2Up(cfg.pureCpyuiOpInfoMap.size) bits))
-  val pureJmpOp = Flow(UInt(log2Up(cfg.pureJmpOpInfoMap.size) bits))
-  val pureBrOp = Flow(UInt(log2Up(cfg.pureBrOpInfoMap.size) bits))
-  val aluOp = Flow(UInt(log2Up(cfg.aluOpInfoMap.size) bits))
-  val multiCycleOp = Flow(UInt(log2Up(cfg.multiCycleOpInfoMap.size) bits))
+  val kind = SnowHouseSplitOpKind()
+  val pureCpyOp = /*Flow*/(
+    UInt(log2Up(cfg.pureCpyOpInfoMap.size) bits)
+  )
+  val pureJmpOp = /*Flow*/(
+    UInt(log2Up(cfg.pureJmpOpInfoMap.size) bits)
+  )
+  val pureBrOp = /*Flow*/(
+    UInt(log2Up(cfg.pureBrOpInfoMap.size) bits)
+  )
+  val aluOp = /*Flow*/(
+    UInt(log2Up(cfg.aluOpInfoMap.size) bits)
+  )
+  val multiCycleOp = /*Flow*/(
+    UInt(log2Up(cfg.multiCycleOpInfoMap.size) bits)
+  )
+  val pureCpyuiOp = /*Flow*/(
+    UInt(log2Up(cfg.pureCpyuiOpInfoMap.size) bits)
+  )
 }
 case class SnowHousePipePayload(
   cfg: SnowHouseConfig,

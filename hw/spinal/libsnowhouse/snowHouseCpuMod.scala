@@ -425,6 +425,14 @@ object SnowHouseCpuPipeStageInstrDecode {
             ((_, cpyOpInfo), cpyOpInfoIdx)
             <- cfg.pureCpyOpInfoMap.view.zipWithIndex
           ) {
+            //if (cpyOpInfoIdx == 0) {
+            //  println(
+            //    //s"pureCpyOp (${cpyOpInfoIdx}): "
+            //    //+ s"${opInfoIdx}: ${someOp._3}"
+            //    s"test: pureCpyOp: ${cpyOpInfoIdx} "
+            //    + s"${someOp._3} // ${opInfoIdx}"
+            //  )
+            //}
             if (opInfo == cpyOpInfo) {
               println(
                 //s"pureCpyOp (${cpyOpInfoIdx}): "
@@ -433,8 +441,9 @@ object SnowHouseCpuPipeStageInstrDecode {
                 + s"${someOp._3} // ${opInfoIdx}"
               )
               //upPayload.op := opInfoIdx
-              mySplitOp.pureCpyOp.valid := True
-              mySplitOp.pureCpyOp.payload := cpyOpInfoIdx
+              //mySplitOp.pureCpyOp.valid := True
+              mySplitOp.kind := SnowHouseSplitOpKind.PURE_CPY
+              mySplitOp.pureCpyOp := cpyOpInfoIdx
               return
             }
           }
@@ -448,8 +457,9 @@ object SnowHouseCpuPipeStageInstrDecode {
                 + s"${someOp._3} // ${opInfoIdx}"
               )
               //upPayload.op := opInfoIdx
-              mySplitOp.pureCpyuiOp.valid := True
-              mySplitOp.pureCpyuiOp.payload := cpyuiOpInfoIdx
+              //mySplitOp.pureCpyuiOp.valid := True
+              mySplitOp.kind := SnowHouseSplitOpKind.PURE_CPYUI
+              mySplitOp.pureCpyuiOp := cpyuiOpInfoIdx
               return
             }
           }
@@ -463,8 +473,9 @@ object SnowHouseCpuPipeStageInstrDecode {
                 + s"${someOp._3} // ${opInfoIdx}"
               )
               //upPayload.op := opInfoIdx
-              mySplitOp.pureJmpOp.valid := True
-              mySplitOp.pureJmpOp.payload := jmpOpInfoIdx
+              //mySplitOp.pureJmpOp.valid := True
+              mySplitOp.kind := SnowHouseSplitOpKind.PURE_JMP
+              mySplitOp.pureJmpOp := jmpOpInfoIdx
               return
             }
           }
@@ -478,8 +489,9 @@ object SnowHouseCpuPipeStageInstrDecode {
                 + s"${someOp._3} // ${opInfoIdx}"
               )
               //upPayload.op := opInfoIdx
-              mySplitOp.pureBrOp.valid := True
-              mySplitOp.pureBrOp.payload := brOpInfoIdx
+              //mySplitOp.pureBrOp.valid := True
+              mySplitOp.kind := SnowHouseSplitOpKind.PURE_BR
+              mySplitOp.pureBrOp := brOpInfoIdx
               return
             }
           }
@@ -493,8 +505,9 @@ object SnowHouseCpuPipeStageInstrDecode {
                 + s"${someOp._3} // ${opInfoIdx}"
               )
               //upPayload.op := opInfoIdx
-              mySplitOp.aluOp.valid := True
-              mySplitOp.aluOp.payload := aluOpInfoIdx
+              //mySplitOp.aluOp.valid := True
+              mySplitOp.kind := SnowHouseSplitOpKind.ALU
+              mySplitOp.aluOp := aluOpInfoIdx
               return
             }
           }
@@ -508,8 +521,9 @@ object SnowHouseCpuPipeStageInstrDecode {
                 + s"${someOp._3} // ${opInfoIdx}"
               )
               //upPayload.op := opInfoIdx
-              mySplitOp.multiCycleOp.valid := True
-              mySplitOp.multiCycleOp.payload := multiCycleOpInfoIdx
+              //mySplitOp.multiCycleOp.valid := True
+              mySplitOp.kind := SnowHouseSplitOpKind.MULTI_CYCLE
+              mySplitOp.multiCycleOp := multiCycleOpInfoIdx
               return
             }
           }
@@ -945,10 +959,10 @@ object SnowHouseCpuOpInfoMap {
     )
   )
   opInfoMap += (
-    SnowHouseCpuOp.SubReserved -> OpInfo.mkCpy(
+    SnowHouseCpuOp.SubReserved -> OpInfo.mkAlu(
       dstArr=Array[DstKind](DstKind.Gpr),
-      srcArr=Array[SrcKind](SrcKind.Gpr),
-      cpyOp=CpyOpKind.Cpy,
+      srcArr=Array[SrcKind](SrcKind.Gpr, SrcKind.Gpr),
+      aluOp=AluOpKind.Sub,
     )
     //// sub rA, rB, simm16
     //SnowHouseCpuOp.SubRaRbSimm16 -> OpInfo.mkAlu(
