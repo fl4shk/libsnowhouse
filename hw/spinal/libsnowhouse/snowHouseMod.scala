@@ -64,7 +64,7 @@ case class SnowHouseInstrDataDualRam(
       when (!rIbusReadyState) {
         rIbusReadyCnt := 2
       } otherwise {
-        rIbusReadyCnt := 1
+        rIbusReadyCnt := 0
       }
     }
   }
@@ -98,7 +98,10 @@ case class SnowHouseInstrDataDualRam(
       io.dbus.ready := True
       rDbusReadyState := !rDbusReadyState
       when (!rDbusReadyState) {
-        rDbusReadyCnt := 4
+        rDbusReadyCnt := (
+          //4
+          2
+        )
       } otherwise {
         rDbusReadyCnt := 0
       }
