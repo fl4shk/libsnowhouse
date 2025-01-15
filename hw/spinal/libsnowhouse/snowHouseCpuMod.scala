@@ -1865,6 +1865,15 @@ case class SnowHouseCpuDivmod32(
       init=divmod.io.inp.signed.getZero,
     )
   )
+  rSavedQuot := divmod.io.outp.quot
+  rSavedRema := divmod.io.outp.rema
+  when (!rKind.asBits(1)) {
+    rSavedResult(0).foreach(result => result := rSavedQuot)
+  } otherwise {
+    rSavedResult(0).foreach(result => result := rSavedRema)
+  }
+  rSavedResult(1) := rSavedResult(0)
+  rSavedResult(2) := rSavedResult(1)
   switch (rState) {
     is (Divmod32State.IDLE) {
       val idleArea = myFunc(
@@ -1947,25 +1956,16 @@ case class SnowHouseCpuDivmod32(
       //  setKind=false,
       //)
       when (divmod.io.outp.ready) {
-        rSavedQuot := divmod.io.outp.quot
-        rSavedRema := divmod.io.outp.rema
         rState := Divmod32State.YIELD_RESULT_PIPE_3
       }
     }
     is (Divmod32State.YIELD_RESULT_PIPE_3) {
-      when (!rKind.asBits(1)) {
-        rSavedResult(0).foreach(result => result := rSavedQuot)
-      } otherwise {
-        rSavedResult(0).foreach(result => result := rSavedRema)
-      }
       rState := Divmod32State.YIELD_RESULT_PIPE_2
     }
     is (Divmod32State.YIELD_RESULT_PIPE_2) {
-      rSavedResult(1) := rSavedResult(0)
       rState := Divmod32State.YIELD_RESULT_PIPE_1
     }
     is (Divmod32State.YIELD_RESULT_PIPE_1) {
-      rSavedResult(2) := rSavedResult(1)
       rState := Divmod32State.YIELD_RESULT
     }
     is (Divmod32State.YIELD_RESULT) {
