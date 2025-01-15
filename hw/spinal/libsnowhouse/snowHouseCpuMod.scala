@@ -1551,12 +1551,12 @@ case class SnowHouseCpuMul32(
         //cpuIo.multiCycleBusVec
         val multiCycleBus = cpuIo.multiCycleBusVec(busIdx)
         def dstVec = multiCycleBus.devData.dstVec
-        dstVec(0) := (
-          RegNext(
-            next=dstVec(0),
-            init=dstVec(0).getZero
-          )
-        )
+        //dstVec(0) := (
+        //  RegNext(
+        //    next=dstVec(0),
+        //    init=dstVec(0).getZero
+        //  )
+        //)
         //when (
         //  multiCycleBus.rValid
         //  && multiCycleBus.ready
@@ -1585,70 +1585,71 @@ case class SnowHouseCpuMul32(
         val low = (mainWidth >> 1) - 1 downto 0
         val high = (mainWidth - 1 downto (mainWidth >> 1))
         val shiftAmount = mainWidth >> 1
-        val mulCond = (
-          rState === UMul32State.DO_THREE_MUL16X16
-          && multiCycleBus.rValid
-        )
+        //val mulCond = (
+        //  rState === UMul32State.DO_THREE_MUL16X16
+        //  && multiCycleBus.rValid
+        //)
         val rY0X0 = (
-          RegNextWhen(
+          RegNext(
             //UInt(cfg.mainWidth bits)
             next=(
               srcVec(1)(low) * srcVec(0)(low)
             ),
-            cond=mulCond
+            //cond=mulCond
           )
           init(0x0)
         )
         val rY1X0 = (
-          RegNextWhen(
+          RegNext(
             //UInt(cfg.mainWidth bits)
             next=(
               srcVec(1)(high) * srcVec(0)(low)
             ),
-            cond=mulCond,
+            //cond=mulCond,
           )
           init(0x0)
         )
         val rY0X1 = (
-          RegNextWhen(
+          RegNext(
             //UInt(cfg.mainWidth bits)
             next=(
               srcVec(1)(low) * srcVec(0)(high)
             ),
-            cond=mulCond,
+            //cond=mulCond,
           )
           init(0x0)
         )
-        val rPartialSum = /*Vec.fill(2)*/(
+        val rPartialSum = Vec.fill(2)(
           Reg(UInt(mainWidth bits))
           init(0x0)
         )
+        rPartialSum(0) := (
+          rY1X0 + rY0X1
+        )
+        rPartialSum(1) := (
+          (rPartialSum(0) << shiftAmount)
+          + rY0X0
+        )(rPartialSum(1).bitsRange)
+
+        dstVec(0) := rPartialSum(1)
         multiCycleBus.ready := False
-        when (multiCycleBus.rValid) {
-          switch (rState) {
-            is (UMul32State.DO_THREE_MUL16X16) {
+        switch (rState) {
+          is (UMul32State.DO_THREE_MUL16X16) {
+            when (multiCycleBus.rValid) {
               rState := UMul32State.FIRST_ADD
             }
-            is (UMul32State.FIRST_ADD) {
-              rState := UMul32State.SECOND_ADD
-              rPartialSum := (
-                rY1X0 + rY0X1
-              )
-            }
-            is (UMul32State.SECOND_ADD) {
-              rState := UMul32State.YIELD_RESULT
-              //dstVec(0) := (
-              //)
-              rPartialSum := (
-                (rPartialSum << shiftAmount)
-                + rY0X0
-              )(rPartialSum.bitsRange)
-            }
-            is (UMul32State.YIELD_RESULT) {
-              rState := UMul32State.DO_THREE_MUL16X16
-              dstVec(0) := rPartialSum
-              multiCycleBus.ready := True
-            }
+          }
+          is (UMul32State.FIRST_ADD) {
+            rState := UMul32State.SECOND_ADD
+          }
+          is (UMul32State.SECOND_ADD) {
+            rState := UMul32State.YIELD_RESULT
+            //dstVec(0) := (
+            //)
+          }
+          is (UMul32State.YIELD_RESULT) {
+            rState := UMul32State.DO_THREE_MUL16X16
+            multiCycleBus.ready := True
           }
         }
       }
@@ -1811,12 +1812,16 @@ case class SnowHouseCpuDivmod32(
     init(0x0)
   )
   val rSavedQuot = (
-    Reg(UInt(cfg.mainWidth bits))
-    init(0x0)
+    Vec.fill(4)(
+      Reg(UInt(cfg.mainWidth bits))
+      init(0x0)
+    )
   )
   val rSavedRema = (
-    Reg(UInt(cfg.mainWidth bits))
-    init(0x0)
+    Vec.fill(4)(
+      Reg(UInt(cfg.mainWidth bits))
+      init(0x0)
+    )
   )
   val rSavedResult = (
     Vec.fill(3)(
@@ -1865,12 +1870,18 @@ case class SnowHouseCpuDivmod32(
   //    init=divmod.io.inp.signed.getZero,
   //  )
   //)
-  rSavedQuot := divmod.io.outp.quot
-  rSavedRema := divmod.io.outp.rema
-  when (!rKind.asBits(1)) {
-    rSavedResult(0).foreach(result => result := rSavedQuot)
-  } otherwise {
-    rSavedResult(0).foreach(result => result := rSavedRema)
+  for (idx <- 0 until 4) {
+    when (divmod.io.outp.ready) {
+      rSavedQuot(idx) := divmod.io.outp.quot
+      rSavedRema(idx) := divmod.io.outp.rema
+    }
+    when (!rKind.asBits(1)) {
+      //rSavedResult(0).foreach(result => result := rSavedQuot)
+      rSavedResult(0)(idx) := rSavedQuot(idx)
+    } otherwise {
+      //rSavedResult(0).foreach(result => result := rSavedRema)
+      rSavedResult(0)(idx) := rSavedQuot(idx)
+    }
   }
   rSavedResult(1) := rSavedResult(0)
   rSavedResult(2) := rSavedResult(1)
