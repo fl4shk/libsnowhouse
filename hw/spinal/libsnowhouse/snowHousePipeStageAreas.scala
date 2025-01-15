@@ -5027,11 +5027,12 @@ case class SnowHousePipeStageMem(
     //  }
     //)
     when (
-      savedPsMemStallHost.myDuplicateIt
+      //savedPsMemStallHost.myDuplicateIt
       //&& (
       //  modFront(modFrontPayload).instrCnt.any
       //  === midModPayload(extIdxUp).instrCnt.any + 1
       //)
+      io.dbus.rValid && !io.dbus.ready
     ) {
       //--------
       cMidModFront.duplicateIt()

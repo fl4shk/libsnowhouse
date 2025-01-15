@@ -56,7 +56,9 @@ case class SnowHouseInstrDataDualRam(
   val rIbusReadyCnt = Reg(UInt(8 bits)) init(0)
   val rIbusReadyState = Reg(Bool()) init(False)
   when (io.ibus.rValid) {
-    when (rIbusReadyCnt > 0) {
+    when (
+      rIbusReadyCnt > 0
+    ) {
       rIbusReadyCnt := rIbusReadyCnt - 1
     } otherwise {
       io.ibus.ready := True
