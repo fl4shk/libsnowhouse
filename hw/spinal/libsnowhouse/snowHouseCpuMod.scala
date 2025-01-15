@@ -1833,38 +1833,38 @@ case class SnowHouseCpuDivmod32(
       busIdx,
       stallIo
     ) => new Area {
-      stallIo.devData.dstVec.foreach(dst => {
-        dst := (
-          RegNext(
-            next=dst,
-            init=dst.getZero
-          )
-        )
-      })
+      //stallIo.devData.dstVec.foreach(dst => {
+      //  dst := (
+      //    RegNext(
+      //      next=dst,
+      //      init=dst.getZero
+      //    )
+      //  )
+      //})
       stallIo.ready := False
     },
     setKind=false,
     needBusRvalid=false,
   )
   divmod.io.inp.valid := False
-  divmod.io.inp.numer := (
-    RegNext(
-      next=divmod.io.inp.numer,
-      init=divmod.io.inp.numer.getZero,
-    )
-  )
-  divmod.io.inp.denom := (
-    RegNext(
-      next=divmod.io.inp.denom,
-      init=divmod.io.inp.denom.getZero,
-    )
-  )
-  divmod.io.inp.signed := (
-    RegNext(
-      next=divmod.io.inp.signed,
-      init=divmod.io.inp.signed.getZero,
-    )
-  )
+  //divmod.io.inp.numer := (
+  //  RegNext(
+  //    next=divmod.io.inp.numer,
+  //    init=divmod.io.inp.numer.getZero,
+  //  )
+  //)
+  //divmod.io.inp.denom := (
+  //  RegNext(
+  //    next=divmod.io.inp.denom,
+  //    init=divmod.io.inp.denom.getZero,
+  //  )
+  //)
+  //divmod.io.inp.signed := (
+  //  RegNext(
+  //    next=divmod.io.inp.signed,
+  //    init=divmod.io.inp.signed.getZero,
+  //  )
+  //)
   rSavedQuot := divmod.io.outp.quot
   rSavedRema := divmod.io.outp.rema
   when (!rKind.asBits(1)) {
@@ -1874,6 +1874,60 @@ case class SnowHouseCpuDivmod32(
   }
   rSavedResult(1) := rSavedResult(0)
   rSavedResult(2) := rSavedResult(1)
+  divmod.io.inp.numer := rSavedSrcVec(0)
+  divmod.io.inp.denom := rSavedSrcVec(1)
+  divmod.io.inp.signed := rKind.asBits(0)
+  //switch (rKind) {
+    for (
+      ((_, opInfo), busIdx)
+      <- cfg.multiCycleOpInfoMap.view.zipWithIndex
+    ) {
+      opInfo.multiCycleOp.get match {
+        case MultiCycleOpKind.Udiv => {
+          //is (Divmod32Kind.UDIV) {
+            val stallIo = (
+              cpuIo.multiCycleBusVec(busIdx)
+            )
+            def dstVec = stallIo.devData.dstVec
+            //stallIo.ready := True
+            dstVec(0) := rSavedResult.last(0)
+          //}
+        }
+        case MultiCycleOpKind.Sdiv => {
+          //is (Divmod32Kind.SDIV) {
+            val stallIo = (
+              cpuIo.multiCycleBusVec(busIdx)
+            )
+            def dstVec = stallIo.devData.dstVec
+            //stallIo.ready := True
+            dstVec(0) := rSavedResult.last(1)
+          //}
+        }
+        case MultiCycleOpKind.Umod => {
+          //is (Divmod32Kind.UMOD) {
+            val stallIo = (
+              cpuIo.multiCycleBusVec(busIdx)
+            )
+            def dstVec = stallIo.devData.dstVec
+            //stallIo.ready := True
+            dstVec(0) := rSavedResult.last(2)
+          //}
+        }
+        case MultiCycleOpKind.Smod => {
+          //is (Divmod32Kind.SMOD) {
+            val stallIo = (
+              cpuIo.multiCycleBusVec(busIdx)
+            )
+            def dstVec = stallIo.devData.dstVec
+            //stallIo.ready := True
+            dstVec(0) := rSavedResult.last(3)
+          //}
+        }
+        case _ => {
+        }
+      }
+    }
+  //}
   switch (rState) {
     is (Divmod32State.IDLE) {
       val idleArea = myFunc(
@@ -1940,9 +1994,6 @@ case class SnowHouseCpuDivmod32(
       //  setKind=false,
       //)
       divmod.io.inp.valid := True
-      divmod.io.inp.numer := rSavedSrcVec(0)
-      divmod.io.inp.denom := rSavedSrcVec(1)
-      divmod.io.inp.signed := rKind.asBits(0)
       rState := Divmod32State.RUNNING
     }
     is (Divmod32State.RUNNING) {
@@ -2003,7 +2054,7 @@ case class SnowHouseCpuDivmod32(
                 )
                 def dstVec = stallIo.devData.dstVec
                 stallIo.ready := True
-                dstVec(0) := rSavedResult.last(0)
+                //dstVec(0) := rSavedResult.last(0)
               //}
             }
             case MultiCycleOpKind.Sdiv => {
@@ -2013,7 +2064,7 @@ case class SnowHouseCpuDivmod32(
                 )
                 def dstVec = stallIo.devData.dstVec
                 stallIo.ready := True
-                dstVec(0) := rSavedResult.last(1)
+                //dstVec(0) := rSavedResult.last(1)
               //}
             }
             case MultiCycleOpKind.Umod => {
@@ -2023,7 +2074,7 @@ case class SnowHouseCpuDivmod32(
                 )
                 def dstVec = stallIo.devData.dstVec
                 stallIo.ready := True
-                dstVec(0) := rSavedResult.last(2)
+                //dstVec(0) := rSavedResult.last(2)
               //}
             }
             case MultiCycleOpKind.Smod => {
@@ -2033,7 +2084,7 @@ case class SnowHouseCpuDivmod32(
                 )
                 def dstVec = stallIo.devData.dstVec
                 stallIo.ready := True
-                dstVec(0) := rSavedResult.last(3)
+                //dstVec(0) := rSavedResult.last(3)
               //}
             }
             case _ => {
