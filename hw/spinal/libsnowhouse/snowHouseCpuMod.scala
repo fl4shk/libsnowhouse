@@ -2134,7 +2134,10 @@ case class SnowHouseCpuWithDualRam(
     cfg=cfg.shCfg,
     instrInitBigInt=program.outpArr,
     dataInitBigInt=(
-      Array.fill(1 << (16 - 2))(BigInt(0))
+      Array.fill(
+        //1 << (16 - 2)
+        1 << (16 - 4)
+      )(BigInt(0))
     ),
   )
   cpu.io.ibus <> dualRam.io.ibus
