@@ -352,6 +352,40 @@ object SnowHouseCpuPipeStageInstrDecode {
       //  psId.tempInstr.asBits.getZero
       //)
     )
+    val tempHaveHazardAddrCheckVec = Vec.fill(upPayload.gprIdxVec.size)(
+      Bool()
+    )
+    for (idx <- 0 until upPayload.gprIdxVec.size) {
+      val tempRegIdx: UInt = (
+        if (idx == 0) {
+          encInstr.raIdx
+        } else if (idx == 1) {
+          encInstr.rbIdx
+        } else if (idx == 2) {
+          encInstr.rcIdx
+        } else {
+          assert(
+            //idx == 2
+            false,
+            s"${idx} ${upPayload.gprIdxVec.size}"
+          )
+          encInstr.raIdx
+        }
+      )
+      tempHaveHazardAddrCheckVec(idx) := (
+        tempRegIdx
+        === (
+          RegNextWhen(
+            next=encInstr.raIdx,
+            cond=psId.up.isFiring,
+            init=encInstr.raIdx.getZero
+          )
+        )
+      )
+    }
+    upPayload.myDoHaveHazardAddrCheckVec(0) := (
+      tempHaveHazardAddrCheckVec.reduceLeft(_ || _)
+    )
     //val rTempState = (
     //  KeepAttribute(
     //    Reg(Bool(), init=False)
@@ -1573,9 +1607,12 @@ case class SnowHouseCpuTestProgram(
     //--------
     Lb"push_loop",
     str(r7, sp, 0),           // 0x4c
-    add(sp, sp, 4),           // 0x50
-    sub(sp, sp, 4),           // 0x54
-    ldr(r8, sp, 0),           // 0x58
+    ldr(r8, sp, 0),           // 0x50
+    //add(sp, sp, 4),           // 0x54
+    add(r9, r8, 1),
+    add(r9, r9, 1),
+    //sub(sp, sp, 4),           // 0x58
+    //ldr(r8, sp, 0),           // 0x58
     //push(r7),
     //pop(r8),                  // 0x50
     //push(r8),                 // 0x54

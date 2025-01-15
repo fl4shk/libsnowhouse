@@ -687,6 +687,11 @@ case class SnowHousePipeStageInstrDecode(
   //  )
   //)
   //tempInstr := myInstr
+  val myDecodeAreaWithoutUcode = (
+    !cfg.supportUcode
+  ) generate(
+    doDecodeFunc(this)
+  )
   when (up.isValid) {
     when (
       //upPayload.regPcSetItCnt =/= 0
@@ -703,8 +708,12 @@ case class SnowHousePipeStageInstrDecode(
       )
     ) {
       startDecode := True
-      val myDecodeArea = doDecodeFunc(this)
       tempInstr := myInstr
+      val myDecodeAreaWithUcode = (
+        cfg.supportUcode
+      ) generate(
+        doDecodeFunc(this)
+      )
       when (
         if (cfg.supportUcode) (
           rMultiInstrCnt.msb// === 0x0
@@ -2990,37 +2999,42 @@ case class SnowHousePipeStageExecute(
       )
       val temp = ArrayBuffer[Bool]()
       // TODO: support multiple register writes per instruction
-      val tempArr = ArrayBuffer[Bool]()
-      for (idx <- 0 until outp.gprIdxVec.size) {
-        tempArr += (
-          //(
-          //  //outp.gprIdxVec(idx)
-          //  outp.myExt(0).memAddr(idx)
-          //  === (
-          //    //tempModFrontPayload.gprIdxVec(0)
-          //    // TODO: *maybe* support multiple output registers!
-          //    tempModFrontPayload.myExt(0).memAddr(0)
-          //  )
-          //) ||
-          (
-            //True
-            //outp.gprIdxVec(idx)
-            outp.myExt(0).memAddr(idx)
-            === RegNextWhen(
-              next=(
-                //outp.gprIdxVec(0)
-                outp.myExt(0).memAddr(0)
-              ),
-              cond=cMid0Front.up.isFiring,
-              init=(
-                //outp.gprIdxVec(0).getZero
-                outp.myExt(0).memAddr(0).getZero
-              ),
-            )
-          )
-        )
-      }
-      temp += tempArr.reduceLeft(_ || _)
+      //val tempArr = ArrayBuffer[Bool]()
+      //for (idx <- 0 until outp.gprIdxVec.size) {
+      //  tempArr += (
+      //    //(
+      //    //  //outp.gprIdxVec(idx)
+      //    //  outp.myExt(0).memAddr(idx)
+      //    //  === (
+      //    //    //tempModFrontPayload.gprIdxVec(0)
+      //    //    // TODO: *maybe* support multiple output registers!
+      //    //    tempModFrontPayload.myExt(0).memAddr(0)
+      //    //  )
+      //    //) ||
+      //    (
+      //      //True
+      //      //outp.gprIdxVec(idx)
+      //      outp.myExt(0).memAddr(idx)
+      //      === RegNextWhen(
+      //        next=(
+      //          //outp.gprIdxVec(0)
+      //          outp.myExt(0).memAddr(0)
+      //        ),
+      //        cond=cMid0Front.up.isFiring,
+      //        init=(
+      //          //outp.gprIdxVec(0).getZero
+      //          outp.myExt(0).memAddr(0).getZero
+      //        ),
+      //      )
+      //    )
+      //  )
+      //}
+      //temp += tempArr.reduceLeft(_ || _)
+      // TODO: support multiple register writes per instruction
+      temp += (
+        outp.myDoHaveHazardAddrCheckVec(0)
+      )
+
       //for (ydx <- 0 until cfg.regFileCfg.memArrSize) {
       //  //println(s"begin: ${ydx} ${temp.size}")
       //  temp += {
