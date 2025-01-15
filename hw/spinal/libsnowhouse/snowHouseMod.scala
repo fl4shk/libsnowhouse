@@ -111,7 +111,8 @@ case class SnowHouseInstrDataDualRam(
   dataRam.io.wrEn := False
   //dataRam.io.wrAddr := dataRam.io.wrAddr.getZero
   dataRam.io.wrData := dataRam.io.wrData.getZero
-  dataRam.io.rdEn := io.dbus.nextValid
+  //dataRam.io.rdEn := io.dbus.nextValid
+  dataRam.io.rdEn := True
   when (io.dbus.rValid && io.dbus.ready) {
   }
   dataRam.io.rdAddr := (

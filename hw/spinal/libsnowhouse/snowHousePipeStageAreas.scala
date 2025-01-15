@@ -3763,6 +3763,13 @@ case class SnowHousePipeStageExecute(
       init=io.dbus.hostData.getZero,
     )
   )
+  //io.dbus.hostData := 
+  when (
+    //!outp.instrCnt.shouldIgnoreInstr
+    cMid0Front.up.isFiring
+  ) {
+    io.dbus.hostData := setOutpModMemWord.io.dbusHostPayload
+  }
   //psExSetPc.cnt := rSetPcCnt.payload + 1
   //switch (rPcChangeState) {
   //  is (PcChangeState.Idle) {
@@ -3911,7 +3918,7 @@ case class SnowHousePipeStageExecute(
             when (cMid0Front.up.isFiring) {
               nextPrevTxnWasHazard := True
               psMemStallHost.nextValid := True
-              io.dbus.hostData := setOutpModMemWord.io.dbusHostPayload
+              //io.dbus.hostData := setOutpModMemWord.io.dbusHostPayload
             }
             //when (cMid0Front.down.isReady) {
             //  io.dbus.hostData := setOutpModMemWord.io.dbusHostPayload

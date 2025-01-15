@@ -1880,7 +1880,7 @@ case class SnowHouseCpuDivmod32(
       rSavedResult(0)(idx) := rSavedQuot(idx)
     } otherwise {
       //rSavedResult(0).foreach(result => result := rSavedRema)
-      rSavedResult(0)(idx) := rSavedQuot(idx)
+      rSavedResult(0)(idx) := rSavedRema(idx)
     }
   }
   rSavedResult(1) := rSavedResult(0)
