@@ -274,10 +274,10 @@ case class SnowHouseConfig(
   regFileCfg.linkArr = None
   def numGprs = regFileCfg.wordCountSum
   //--------
-  val pureCpyOpInfoMap = LinkedHashMap[Int, OpInfo]()
-  val pureCpyuiOpInfoMap = LinkedHashMap[Int, OpInfo]()
-  val pureJmpOpInfoMap = LinkedHashMap[Int, OpInfo]()
-  val pureBrOpInfoMap = LinkedHashMap[Int, OpInfo]()
+  val cpyCpyuiOpInfoMap = LinkedHashMap[Int, OpInfo]()
+  //val pureCpyOpInfoMap = LinkedHashMap[Int, OpInfo]()
+  val jmpBrOpInfoMap = LinkedHashMap[Int, OpInfo]()
+  //val pureJmpOpInfoMap = LinkedHashMap[Int, OpInfo]()
   //val cpyOpInfoMap = LinkedHashMap[Int, OpInfo]()
   val aluOpInfoMap = LinkedHashMap[Int, OpInfo]()
   val multiCycleOpInfoMap = LinkedHashMap[Int, OpInfo]()
@@ -378,7 +378,7 @@ case class SnowHouseConfig(
             //  + s"instruction: "
             //  + s"opInfo(${opInfo}), instructionIndex:${idx}"
             //)
-            pureCpyOpInfoMap += (idx -> opInfo)
+            cpyCpyuiOpInfoMap += (idx -> opInfo)
           }
           case CpyOpKind.Cpyu => {
             //assert(
@@ -387,7 +387,8 @@ case class SnowHouseConfig(
             //  + s"instruction: "
             //  + s"opInfo(${opInfo}), instructionIndex:${idx}"
             //)
-            pureCpyuiOpInfoMap += (idx -> opInfo)
+            //pureCpyuiOpInfoMap += (idx -> opInfo)
+            cpyCpyuiOpInfoMap += (idx -> opInfo)
           }
           case CpyOpKind.Jmp => { // non-relative jumps
             //assert(
@@ -397,10 +398,11 @@ case class SnowHouseConfig(
             //  + s"instruction: "
             //  + s"opInfo(${opInfo}), instructionIndex:${idx}"
             //)
-            pureJmpOpInfoMap += (idx -> opInfo)
+            jmpBrOpInfoMap += (idx -> opInfo)
           }
           case CpyOpKind.Br => { // relative branches
-            pureBrOpInfoMap += (idx -> opInfo)
+            //pureBrOpInfoMap += (idx -> opInfo)
+            jmpBrOpInfoMap += (idx -> opInfo)
           }
         }
       }
@@ -504,38 +506,38 @@ case class SnowHouseGprIdxToMemAddrIdxMapElem(
   )
 }
 object SnowHouseSplitOpKind
-extends SpinalEnum(defaultEncoding=binaryOneHot) {
+extends SpinalEnum(defaultEncoding=native) {
   val
-    PURE_CPY,
-    PURE_JMP,
-    PURE_BR,
+    CPY_CPYUI,
+    JMP_BR,
+    //PURE_BR,
     ALU,
-    MULTI_CYCLE,
-    PURE_CPYUI
+    MULTI_CYCLE
+    //PURE_CPYUI
     = newElement()
 }
 case class SnowHouseSplitOp(
   cfg: SnowHouseConfig
 ) extends Bundle {
   val kind = SnowHouseSplitOpKind()
-  val pureCpyOp = /*Flow*/(
-    UInt(log2Up(cfg.pureCpyOpInfoMap.size) bits)
+  val cpyCpyuiOp = /*Flow*/(
+    UInt(log2Up(cfg.cpyCpyuiOpInfoMap.size) bits)
   )
-  val pureJmpOp = /*Flow*/(
-    UInt(log2Up(cfg.pureJmpOpInfoMap.size) bits)
+  val jmpBrOp = /*Flow*/(
+    UInt(log2Up(cfg.jmpBrOpInfoMap.size) bits)
   )
-  val pureBrOp = /*Flow*/(
-    UInt(log2Up(cfg.pureBrOpInfoMap.size) bits)
-  )
+  //val pureJmpOp = /*Flow*/(
+  //  UInt(log2Up(cfg.pureJmpOpInfoMap.size) bits)
+  //)
   val aluOp = /*Flow*/(
     UInt(log2Up(cfg.aluOpInfoMap.size) bits)
   )
   val multiCycleOp = /*Flow*/(
     UInt(log2Up(cfg.multiCycleOpInfoMap.size) bits)
   )
-  val pureCpyuiOp = /*Flow*/(
-    UInt(log2Up(cfg.pureCpyuiOpInfoMap.size) bits)
-  )
+  //val pureCpyuiOp = /*Flow*/(
+  //  UInt(log2Up(cfg.pureCpyOpInfoMap.size) bits)
+  //)
 }
 case class SnowHousePipePayload(
   cfg: SnowHouseConfig,
