@@ -4524,16 +4524,16 @@ case class SnowHousePipeStageMem(
       init=midModPayload(extIdxSaved).getZero,
     )
   )
-  for (extIdx <- 0 until extIdxLim) {
-    if (extIdx != extIdxSaved) {
-      midModPayload(extIdx) := (
-        RegNext(
-          next=midModPayload(extIdx),
-          init=midModPayload(extIdx).getZero,
-        )
-      )
-    }
-  }
+  //for (extIdx <- 0 until extIdxLim) {
+  //  if (extIdx != extIdxSaved) {
+  //    midModPayload(extIdx) := (
+  //      RegNext(
+  //        next=midModPayload(extIdx),
+  //        init=midModPayload(extIdx).getZero,
+  //      )
+  //    )
+  //  }
+  //}
   tempModFrontPayload := midModPayload(extIdxUp)
   for (idx <- 0 until tempModFrontPayload.gprIdxVec.size) {
     tempModFrontPayload.gprIdxVec(idx).allowOverride
@@ -4561,210 +4561,211 @@ case class SnowHousePipeStageMem(
       }
     }
   }
-  when (cMidModFront.up.isValid ) {
-    when (!rSetMidModPayloadState) {
-      midModPayload(extIdxUp) := modFront(modFrontPayload)
-      nextSetMidModPayloadState := True
-    }
-    when (cMidModFront.up.isFiring) {
-      nextSetMidModPayloadState := False
-    }
-    //--------
-    //switch (midModPayload(extIdxUp).op) {
-    //  for (((_, opInfo), opInfoIdx) <- cfg.opInfoMap.view.zipWithIndex) {
-    //    is (opInfoIdx) {
-    //      def tempExtLeft(ydx: Int) = midModPayload(extIdxUp).myExt(ydx)
-    //      def tempExtRight(ydx: Int) = modFront(modFrontPayload).myExt(ydx)
-    //      opInfo.select match {
-    //        //is (PipeMemRmwSimDut.ModOp.LdrRaRb)
-    //        case OpSelect.Cpy => {
-    //          for (ydx <- 0 until cfg.regFileCfg.memArrSize) {
-    //            val myExtLeft = tempExtLeft(ydx=ydx)
-    //            val myExtRight = tempExtRight(ydx=ydx)
-    //            opInfo.cpyOp.get match {
-    //              case CpyOpKind.Cpy if (
-    //                opInfo.memAccess != MemAccessKind.NoMemAccess
-    //              ) => {
-    //                when (!myExtLeft.modMemWordValid) {
-    //                } otherwise {
-    //                  if (cfg.optFormal) {
-    //                    when (!myShouldIgnoreInstr) {
-    //                      //assert(!savedPsMemStallHost.myDuplicateIt)
-    //                    }
-    //                  }
-    //                }
-    //                if (cfg.optFormal) {
-    //                  opInfo.memAccess match {
-    //                    case mem: MemAccessKind.Mem => {
-    //                      if (!mem.isAtomic) {
-    //                        when (
-    //                          cMidModFront.up.isFiring
-    //                          && !myShouldIgnoreInstr
-    //                        ) {
-    //                          //if (!isStore) {
-    //                          assert(
-    //                            myExtLeft.modMemWordValid
-    //                            === (
-    //                              if (!mem.isStore) (
-    //                                True
-    //                              ) else ( // if (isStore)
-    //                                False
-    //                              )
-    //                            )
-    //                          )
-    //                          //}
-    //                        }
-    //                      } else {
-    //                        assert(
-    //                          false,
-    //                          s"atomic operations not yet supported: "
-    //                          + s"opInfo(${opInfo} ${opInfo.select}) "
-    //                          + s"opInfoIdx:${opInfoIdx}"
-    //                        )
-    //                      }
-    //                    }
-    //                    case _ => {
-    //                    }
-    //                  }
-    //                }
-    //              }
-    //              case _ => {
-    //                myExtLeft.modMemWord := (
-    //                  myExtRight.modMemWord
-    //                )
-    //                myExtLeft.modMemWordValid := (
-    //                  myExtRight.modMemWordValid
-    //                )
-    //                for (zdx <- 0 until cfg.regFileModRdPortCnt) {
-    //                  myExtLeft.rdMemWord(zdx) := (
-    //                    myExtRight.rdMemWord(zdx)
-    //                  )
-    //                  myExtLeft.memAddr(zdx) := (
-    //                    myExtRight.memAddr(zdx)
-    //                  )
-    //                  if (cfg.optFormal) {
-    //                    when (pastValidAfterReset) {
-    //                      when (rose(rSetMidModPayloadState)) {
-    //                        assert(
-    //                          myExtLeft.memAddr(zdx)
-    //                          === past(myExtRight.memAddr(zdx))
-    //                        )
-    //                        assert(
-    //                          myExtLeft.rdMemWord(zdx)
-    //                          === past(myExtRight.rdMemWord(zdx))
-    //                        )
-    //                        if (zdx == 0) {
-    //                          assert(
-    //                            myExtLeft.modMemWord
-    //                            === past(myExtRight.modMemWord)
-    //                          )
-    //                          assert(
-    //                            myExtLeft.modMemWordValid
-    //                            === past(myExtRight.modMemWordValid)
-    //                          )
-    //                        }
-    //                      }
-    //                    }
-    //                  }
-    //                }
-    //              }
-    //            }
-    //          }
-    //        }
-    //        case OpSelect.Alu => {
-    //          for (ydx <- 0 until cfg.regFileCfg.memArrSize) {
-    //            val myExtLeft = tempExtLeft(ydx=ydx)
-    //            val myExtRight = tempExtRight(ydx=ydx)
-    //            myExtLeft.modMemWord := (
-    //              myExtRight.modMemWord
-    //            )
-    //            myExtLeft.modMemWordValid := (
-    //              myExtRight.modMemWordValid
-    //            )
-    //            for (zdx <- 0 until cfg.regFileModRdPortCnt) {
-    //              myExtLeft.rdMemWord(zdx) := (
-    //                myExtRight.rdMemWord(zdx)
-    //              )
-    //              myExtLeft.memAddr(zdx) := (
-    //                myExtRight.memAddr(zdx)
-    //              )
-    //              if (cfg.optFormal) {
-    //                when (pastValidAfterReset) {
-    //                  when (rose(rSetMidModPayloadState)) {
-    //                    assert(
-    //                      myExtLeft.memAddr(zdx)
-    //                      === past(myExtRight.memAddr(zdx))
-    //                    )
-    //                    assert(
-    //                      myExtLeft.rdMemWord(zdx)
-    //                      === past(myExtRight.rdMemWord(zdx))
-    //                    )
-    //                    if (zdx == 0) {
-    //                      assert(
-    //                        myExtLeft.modMemWord
-    //                        === past(myExtRight.modMemWord)
-    //                      )
-    //                      assert(
-    //                        myExtLeft.modMemWordValid
-    //                        === past(myExtRight.modMemWordValid)
-    //                      )
-    //                    }
-    //                  }
-    //                }
-    //              }
-    //            }
-    //          }
-    //        }
-    //        //is (PipeMemRmwSimDut.ModOp.MulRaRb)
-    //        case OpSelect.MultiCycle => {
-    //          for (ydx <- 0 until cfg.regFileCfg.memArrSize) {
-    //            val myExtLeft = tempExtLeft(ydx=ydx)
-    //            val myExtRight = tempExtRight(ydx=ydx)
-    //            myExtLeft.modMemWord := (
-    //              myExtRight.modMemWord
-    //            )
-    //            myExtLeft.modMemWordValid := (
-    //              myExtRight.modMemWordValid
-    //            )
-    //            for (zdx <- 0 until cfg.regFileModRdPortCnt) {
-    //              myExtLeft.memAddr(zdx) := (
-    //                myExtRight.memAddr(zdx)
-    //              )
-    //              myExtLeft.rdMemWord(zdx) := (
-    //                myExtRight.rdMemWord(zdx)
-    //              )
-    //              if (cfg.optFormal) {
-    //                when (pastValidAfterReset) {
-    //                  when (rose(rSetMidModPayloadState)) {
-    //                    assert(
-    //                      myExtLeft.memAddr(zdx)
-    //                      === past(myExtRight.memAddr(zdx))
-    //                    )
-    //                    assert(
-    //                      myExtLeft.rdMemWord(zdx)
-    //                      === past(myExtRight.rdMemWord(zdx))
-    //                    )
-    //                    if (zdx == 0) {
-    //                      assert(
-    //                        myExtLeft.modMemWord
-    //                        === past(myExtRight.modMemWord)
-    //                      )
-    //                      assert(
-    //                        myExtLeft.modMemWordValid
-    //                        === past(myExtRight.modMemWordValid)
-    //                      )
-    //                    }
-    //                  }
-    //                }
-    //              }
-    //            }
-    //          }
-    //        }
-    //      }
-    //    }
-    //  }
-    //}
-  }
+  midModPayload(extIdxUp) := modFront(modFrontPayload)
+  //when (cMidModFront.up.isValid ) {
+  //  when (!rSetMidModPayloadState) {
+  //    midModPayload(extIdxUp) := modFront(modFrontPayload)
+  //    nextSetMidModPayloadState := True
+  //  }
+  //  when (cMidModFront.up.isFiring) {
+  //    nextSetMidModPayloadState := False
+  //  }
+  //  //--------
+  //  //switch (midModPayload(extIdxUp).op) {
+  //  //  for (((_, opInfo), opInfoIdx) <- cfg.opInfoMap.view.zipWithIndex) {
+  //  //    is (opInfoIdx) {
+  //  //      def tempExtLeft(ydx: Int) = midModPayload(extIdxUp).myExt(ydx)
+  //  //      def tempExtRight(ydx: Int) = modFront(modFrontPayload).myExt(ydx)
+  //  //      opInfo.select match {
+  //  //        //is (PipeMemRmwSimDut.ModOp.LdrRaRb)
+  //  //        case OpSelect.Cpy => {
+  //  //          for (ydx <- 0 until cfg.regFileCfg.memArrSize) {
+  //  //            val myExtLeft = tempExtLeft(ydx=ydx)
+  //  //            val myExtRight = tempExtRight(ydx=ydx)
+  //  //            opInfo.cpyOp.get match {
+  //  //              case CpyOpKind.Cpy if (
+  //  //                opInfo.memAccess != MemAccessKind.NoMemAccess
+  //  //              ) => {
+  //  //                when (!myExtLeft.modMemWordValid) {
+  //  //                } otherwise {
+  //  //                  if (cfg.optFormal) {
+  //  //                    when (!myShouldIgnoreInstr) {
+  //  //                      //assert(!savedPsMemStallHost.myDuplicateIt)
+  //  //                    }
+  //  //                  }
+  //  //                }
+  //  //                if (cfg.optFormal) {
+  //  //                  opInfo.memAccess match {
+  //  //                    case mem: MemAccessKind.Mem => {
+  //  //                      if (!mem.isAtomic) {
+  //  //                        when (
+  //  //                          cMidModFront.up.isFiring
+  //  //                          && !myShouldIgnoreInstr
+  //  //                        ) {
+  //  //                          //if (!isStore) {
+  //  //                          assert(
+  //  //                            myExtLeft.modMemWordValid
+  //  //                            === (
+  //  //                              if (!mem.isStore) (
+  //  //                                True
+  //  //                              ) else ( // if (isStore)
+  //  //                                False
+  //  //                              )
+  //  //                            )
+  //  //                          )
+  //  //                          //}
+  //  //                        }
+  //  //                      } else {
+  //  //                        assert(
+  //  //                          false,
+  //  //                          s"atomic operations not yet supported: "
+  //  //                          + s"opInfo(${opInfo} ${opInfo.select}) "
+  //  //                          + s"opInfoIdx:${opInfoIdx}"
+  //  //                        )
+  //  //                      }
+  //  //                    }
+  //  //                    case _ => {
+  //  //                    }
+  //  //                  }
+  //  //                }
+  //  //              }
+  //  //              case _ => {
+  //  //                myExtLeft.modMemWord := (
+  //  //                  myExtRight.modMemWord
+  //  //                )
+  //  //                myExtLeft.modMemWordValid := (
+  //  //                  myExtRight.modMemWordValid
+  //  //                )
+  //  //                for (zdx <- 0 until cfg.regFileModRdPortCnt) {
+  //  //                  myExtLeft.rdMemWord(zdx) := (
+  //  //                    myExtRight.rdMemWord(zdx)
+  //  //                  )
+  //  //                  myExtLeft.memAddr(zdx) := (
+  //  //                    myExtRight.memAddr(zdx)
+  //  //                  )
+  //  //                  if (cfg.optFormal) {
+  //  //                    when (pastValidAfterReset) {
+  //  //                      when (rose(rSetMidModPayloadState)) {
+  //  //                        assert(
+  //  //                          myExtLeft.memAddr(zdx)
+  //  //                          === past(myExtRight.memAddr(zdx))
+  //  //                        )
+  //  //                        assert(
+  //  //                          myExtLeft.rdMemWord(zdx)
+  //  //                          === past(myExtRight.rdMemWord(zdx))
+  //  //                        )
+  //  //                        if (zdx == 0) {
+  //  //                          assert(
+  //  //                            myExtLeft.modMemWord
+  //  //                            === past(myExtRight.modMemWord)
+  //  //                          )
+  //  //                          assert(
+  //  //                            myExtLeft.modMemWordValid
+  //  //                            === past(myExtRight.modMemWordValid)
+  //  //                          )
+  //  //                        }
+  //  //                      }
+  //  //                    }
+  //  //                  }
+  //  //                }
+  //  //              }
+  //  //            }
+  //  //          }
+  //  //        }
+  //  //        case OpSelect.Alu => {
+  //  //          for (ydx <- 0 until cfg.regFileCfg.memArrSize) {
+  //  //            val myExtLeft = tempExtLeft(ydx=ydx)
+  //  //            val myExtRight = tempExtRight(ydx=ydx)
+  //  //            myExtLeft.modMemWord := (
+  //  //              myExtRight.modMemWord
+  //  //            )
+  //  //            myExtLeft.modMemWordValid := (
+  //  //              myExtRight.modMemWordValid
+  //  //            )
+  //  //            for (zdx <- 0 until cfg.regFileModRdPortCnt) {
+  //  //              myExtLeft.rdMemWord(zdx) := (
+  //  //                myExtRight.rdMemWord(zdx)
+  //  //              )
+  //  //              myExtLeft.memAddr(zdx) := (
+  //  //                myExtRight.memAddr(zdx)
+  //  //              )
+  //  //              if (cfg.optFormal) {
+  //  //                when (pastValidAfterReset) {
+  //  //                  when (rose(rSetMidModPayloadState)) {
+  //  //                    assert(
+  //  //                      myExtLeft.memAddr(zdx)
+  //  //                      === past(myExtRight.memAddr(zdx))
+  //  //                    )
+  //  //                    assert(
+  //  //                      myExtLeft.rdMemWord(zdx)
+  //  //                      === past(myExtRight.rdMemWord(zdx))
+  //  //                    )
+  //  //                    if (zdx == 0) {
+  //  //                      assert(
+  //  //                        myExtLeft.modMemWord
+  //  //                        === past(myExtRight.modMemWord)
+  //  //                      )
+  //  //                      assert(
+  //  //                        myExtLeft.modMemWordValid
+  //  //                        === past(myExtRight.modMemWordValid)
+  //  //                      )
+  //  //                    }
+  //  //                  }
+  //  //                }
+  //  //              }
+  //  //            }
+  //  //          }
+  //  //        }
+  //  //        //is (PipeMemRmwSimDut.ModOp.MulRaRb)
+  //  //        case OpSelect.MultiCycle => {
+  //  //          for (ydx <- 0 until cfg.regFileCfg.memArrSize) {
+  //  //            val myExtLeft = tempExtLeft(ydx=ydx)
+  //  //            val myExtRight = tempExtRight(ydx=ydx)
+  //  //            myExtLeft.modMemWord := (
+  //  //              myExtRight.modMemWord
+  //  //            )
+  //  //            myExtLeft.modMemWordValid := (
+  //  //              myExtRight.modMemWordValid
+  //  //            )
+  //  //            for (zdx <- 0 until cfg.regFileModRdPortCnt) {
+  //  //              myExtLeft.memAddr(zdx) := (
+  //  //                myExtRight.memAddr(zdx)
+  //  //              )
+  //  //              myExtLeft.rdMemWord(zdx) := (
+  //  //                myExtRight.rdMemWord(zdx)
+  //  //              )
+  //  //              if (cfg.optFormal) {
+  //  //                when (pastValidAfterReset) {
+  //  //                  when (rose(rSetMidModPayloadState)) {
+  //  //                    assert(
+  //  //                      myExtLeft.memAddr(zdx)
+  //  //                      === past(myExtRight.memAddr(zdx))
+  //  //                    )
+  //  //                    assert(
+  //  //                      myExtLeft.rdMemWord(zdx)
+  //  //                      === past(myExtRight.rdMemWord(zdx))
+  //  //                    )
+  //  //                    if (zdx == 0) {
+  //  //                      assert(
+  //  //                        myExtLeft.modMemWord
+  //  //                        === past(myExtRight.modMemWord)
+  //  //                      )
+  //  //                      assert(
+  //  //                        myExtLeft.modMemWordValid
+  //  //                        === past(myExtRight.modMemWordValid)
+  //  //                      )
+  //  //                    }
+  //  //                  }
+  //  //                }
+  //  //              }
+  //  //            }
+  //  //          }
+  //  //        }
+  //  //      }
+  //  //    }
+  //  //  }
+  //  //}
+  //}
   //when (!midModPayload(extIdxUp).instrCnt.shouldIgnoreInstr) {
   //} otherwise {
   //  midModPayload(extIdxUp).myExt.foreach(someExt => {
