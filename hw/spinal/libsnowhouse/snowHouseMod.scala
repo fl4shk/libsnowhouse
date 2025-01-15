@@ -509,7 +509,7 @@ case class SnowHouse
   )
   if (cfg.exposeModMemWordToIo) {
     io.modMemWord := (
-      regFile.io.modBack(regFile.io.modBackPayload).myExt(0).modMemWord
+      regFile.io.back(regFile.io.modBackPayload).myExt(0).modMemWord
     )
   }
   regFile.io.back.ready := True
