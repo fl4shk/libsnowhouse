@@ -1583,7 +1583,7 @@ case class SnowHouseCpuTestProgram(
     //--------
     cpy(r0, 0x0),             // 0x0: r0 = 0
     cpy(r0, 0x0),             // 0x4: r0 = 0
-    cpy(r0, 0x0),             // 0x4: r0 = 0
+    //cpy(r0, 0x0),             // 0x4: r0 = 0
     cpy(r1, LbR"irq_handler"),  // 0x8
     cpy(ids, r1),             // 0xc
     cpy(r1, 0x1),             // 0x10

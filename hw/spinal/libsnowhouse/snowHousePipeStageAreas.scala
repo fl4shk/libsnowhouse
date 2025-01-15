@@ -3482,8 +3482,8 @@ case class SnowHousePipeStageExecute(
     ydx: Int,
     zdx: Int,
   ): Unit = {
+    def tempExt = outp.myExt(ydx)
       if (zdx == PipeMemRmw.modWrIdx) {
-        def tempExt = outp.myExt(ydx)
         //when (setOutpModMemWord.io.decodeExt.memAccessIsPush) {
           //tempExt.memAddr(zdx) := (
           //  setOutpModMemWord.io.outpWrMemAddr
@@ -3493,15 +3493,23 @@ case class SnowHousePipeStageExecute(
           // TODO: support multiple output `modMemWord`s
           setOutpModMemWord.io.modMemWord(0)
         )
-        tempExt.modMemWordValid := (
-          setOutpModMemWord.io.modMemWordValid
-        )
+        when (!outp.gprIsZeroVec(zdx)) {
+          tempExt.modMemWordValid := (
+            setOutpModMemWord.io.modMemWordValid
+          )
+        } otherwise {
+          tempExt.modMemWordValid := False
+        }
       }
       //if (!cfg.optFormal) {
       //  outp.gprRdMemWordVec(zdx) := tempRdMemWord
       //}
     def tempRdMemWord = setOutpModMemWord.io.rdMemWord(zdx)
-    tempRdMemWord := myRdMemWord(ydx=ydx, modIdx=zdx)
+    when (!outp.gprIsZeroVec(zdx)) {
+      tempRdMemWord := myRdMemWord(ydx=ydx, modIdx=zdx)
+    } otherwise {
+      tempRdMemWord := 0x0
+    }
     //tempRdMemWord := RegNext(
     //  next=tempRdMemWord,
     //  init=tempRdMemWord.getZero,
