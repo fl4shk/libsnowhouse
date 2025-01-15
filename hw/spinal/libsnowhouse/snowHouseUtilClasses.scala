@@ -503,6 +503,16 @@ case class SnowHouseGprIdxToMemAddrIdxMapElem(
     )
   )
 }
+case class SnowHouseSplitOp(
+  cfg: SnowHouseConfig
+) extends Bundle {
+  val pureCpyOp = Flow(UInt(log2Up(cfg.pureCpyOpInfoMap.size) bits))
+  val pureCpyuiOp = Flow(UInt(log2Up(cfg.pureCpyuiOpInfoMap.size) bits))
+  val pureJmpOp = Flow(UInt(log2Up(cfg.pureJmpOpInfoMap.size) bits))
+  val pureBrOp = Flow(UInt(log2Up(cfg.pureBrOpInfoMap.size) bits))
+  val aluOp = Flow(UInt(log2Up(cfg.aluOpInfoMap.size) bits))
+  val multiCycleOp = Flow(UInt(log2Up(cfg.multiCycleOpInfoMap.size) bits))
+}
 case class SnowHousePipePayload(
   cfg: SnowHouseConfig,
 ) extends Bundle with PipeMemRmwPayloadBase[UInt, Bool] {
@@ -526,6 +536,8 @@ case class SnowHousePipePayload(
   //val opCnt = UInt(cfg.instrCntWidth bits)
   def opCnt = instrCnt.any
   val op = UInt(log2Up(cfg.opInfoMap.size) bits) //simPublic()
+  val splitOp = SnowHouseSplitOp(cfg=cfg)
+
   val irqJmpOp = UInt(log2Up(cfg.opInfoMap.size) bits)
   def formalAssumes() = new Area {
     if (cfg.optFormal) {

@@ -420,11 +420,99 @@ object SnowHouseCpuPipeStageInstrDecode {
         ((tuple, opInfo), opInfoIdx) <- cfg.opInfoMap.view.zipWithIndex
       ) {
         if (someOp == tuple) {
-          println(
-            s"${opInfoIdx}: ${someOp._3}"
-          )
-          upPayload.op := opInfoIdx
-          return
+          val mySplitOp = upPayload.splitOp
+          for (
+            ((_, cpyOpInfo), cpyOpInfoIdx)
+            <- cfg.pureCpyOpInfoMap.view.zipWithIndex
+          ) {
+            if (opInfo == cpyOpInfo) {
+              println(
+                //s"pureCpyOp (${cpyOpInfoIdx}): "
+                //+ s"${opInfoIdx}: ${someOp._3}"
+                s"pureCpyOp: ${cpyOpInfoIdx} "
+                + s"${someOp._3} // ${opInfoIdx}"
+              )
+              upPayload.op := opInfoIdx
+              mySplitOp.pureCpyOp.valid := True
+              mySplitOp.pureCpyOp.payload := cpyOpInfoIdx
+              return
+            }
+          }
+          for (
+            ((_, cpyuiOpInfo), cpyuiOpInfoIdx)
+            <- cfg.pureCpyuiOpInfoMap.view.zipWithIndex
+          ) {
+            if (opInfo == cpyuiOpInfo) {
+              println(
+                s"pureCpyuiOp: ${cpyuiOpInfoIdx} "
+                + s"${someOp._3} // ${opInfoIdx}"
+              )
+              upPayload.op := opInfoIdx
+              mySplitOp.pureCpyuiOp.valid := True
+              mySplitOp.pureCpyuiOp.payload := cpyuiOpInfoIdx
+              return
+            }
+          }
+          for (
+            ((_, jmpOpInfo), jmpOpInfoIdx)
+            <- cfg.pureJmpOpInfoMap.view.zipWithIndex
+          ) {
+            if (opInfo == jmpOpInfo) {
+              println(
+                s"pureJmpOp: ${jmpOpInfoIdx} "
+                + s"${someOp._3} // ${opInfoIdx}"
+              )
+              upPayload.op := opInfoIdx
+              mySplitOp.pureJmpOp.valid := True
+              mySplitOp.pureJmpOp.payload := jmpOpInfoIdx
+              return
+            }
+          }
+          for (
+            ((_, brOpInfo), brOpInfoIdx)
+            <- cfg.pureBrOpInfoMap.view.zipWithIndex
+          ) {
+            if (opInfo == brOpInfo) {
+              println(
+                s"pureBrOp: ${brOpInfoIdx} "
+                + s"${someOp._3} // ${opInfoIdx}"
+              )
+              upPayload.op := opInfoIdx
+              mySplitOp.pureBrOp.valid := True
+              mySplitOp.pureBrOp.payload := brOpInfoIdx
+              return
+            }
+          }
+          for (
+            ((_, aluOpInfo), aluOpInfoIdx)
+            <- cfg.aluOpInfoMap.view.zipWithIndex
+          ) {
+            if (opInfo == aluOpInfo) {
+              println(
+                s"aluOp: ${aluOpInfoIdx} "
+                + s"${someOp._3} // ${opInfoIdx}"
+              )
+              upPayload.op := opInfoIdx
+              mySplitOp.aluOp.valid := True
+              mySplitOp.aluOp.payload := aluOpInfoIdx
+              return
+            }
+          }
+          for (
+            ((_, multiCycleOpInfo), multiCycleOpInfoIdx)
+            <- cfg.multiCycleOpInfoMap.view.zipWithIndex
+          ) {
+            if (opInfo == multiCycleOpInfo) {
+              println(
+                s"multiCycleOp: ${multiCycleOpInfoIdx} "
+                + s"${someOp._3} // ${opInfoIdx}"
+              )
+              upPayload.op := opInfoIdx
+              mySplitOp.multiCycleOp.valid := True
+              mySplitOp.multiCycleOp.payload := multiCycleOpInfoIdx
+              return
+            }
+          }
         }
       }
       assert(
@@ -448,6 +536,7 @@ object SnowHouseCpuPipeStageInstrDecode {
     //when (cId.up.isFiring) {
     //  rTempState := False
     //}
+    upPayload.splitOp := upPayload.splitOp.getZero
     switch (rMultiCycleState) {
       is (False) {
         upPayload.imm := tempImm
