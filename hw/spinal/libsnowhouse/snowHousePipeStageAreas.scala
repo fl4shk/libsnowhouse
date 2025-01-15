@@ -3519,11 +3519,11 @@ case class SnowHousePipeStageExecute(
       //  outp.gprRdMemWordVec(zdx) := tempRdMemWord
       //}
     def tempRdMemWord = setOutpModMemWord.io.rdMemWord(zdx)
-    when (!outp.gprIsZeroVec(zdx)) {
+    //when (!outp.gprIsZeroVec(zdx)) {
       tempRdMemWord := myRdMemWord(ydx=ydx, modIdx=zdx)
-    } otherwise {
-      tempRdMemWord := 0x0
-    }
+    //} otherwise {
+    //  tempRdMemWord := 0x0
+    //}
     //tempRdMemWord := RegNext(
     //  next=tempRdMemWord,
     //  init=tempRdMemWord.getZero,
