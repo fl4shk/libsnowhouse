@@ -3507,13 +3507,13 @@ case class SnowHousePipeStageExecute(
           // TODO: support multiple output `modMemWord`s
           setOutpModMemWord.io.modMemWord(0)
         )
-        when (!outp.gprIsZeroVec(zdx)) {
+        //when (!outp.gprIsZeroVec(zdx)) {
           tempExt.modMemWordValid := (
             setOutpModMemWord.io.modMemWordValid
           )
-        } otherwise {
-          tempExt.modMemWordValid := False
-        }
+        //} otherwise {
+        //  tempExt.modMemWordValid := False
+        //}
       }
       //if (!cfg.optFormal) {
       //  outp.gprRdMemWordVec(zdx) := tempRdMemWord
@@ -3925,128 +3925,45 @@ case class SnowHousePipeStageExecute(
   ) {
     io.dbus.hostData := setOutpModMemWord.io.dbusHostPayload
   }
+  var busIdxFound: Boolean = false
+  var busIdx: Int = 0
+  for (
+    ((_, opInfo), opInfoIdx)
+    <- cfg.multiCycleOpInfoMap.view.zipWithIndex
+  ) {
+    for (
+      ((_, multiCycleOpInfo), myBusIdx)
+      <- cfg.multiCycleOpInfoMap.view.zipWithIndex
+    ) {
+      if (opInfo == multiCycleOpInfo) {
+        busIdxFound = true
+        busIdx = myBusIdx
+      }
+    }
+    if (busIdxFound) {
+      def multiCycleBus = io.multiCycleBusVec(busIdx)
+      multiCycleBus.hostData.srcVec.foreach(src => {
+        src.allowOverride
+      })
+      multiCycleBus.hostData.srcVec(0) := (
+        setOutpModMemWord.io.selRdMemWord(
+          opInfo=opInfo,
+          idx=1,
+        )
+      )
+      multiCycleBus.hostData.srcVec(1) := (
+        setOutpModMemWord.io.selRdMemWord(
+          opInfo=opInfo,
+          idx=2,
+        )
+      )
+    }
+  }
   //io.dbus.hostData := setOutpModMemWord.io.dbusHostPayload
   //io.dbus.hostData.addr := setOutpModMemWord.io.dbusHostPayload.addr
   //psExSetPc.cnt := rSetPcCnt.payload + 1
   //switch (rPcChangeState) {
   //  is (PcChangeState.Idle) {
-      //when (
-      //  //outp.instrCnt.any === rSavedJmpCnt.any + 2
-      //  rSetPcCnt.valid
-      //) {
-      //  setOutpModMemWord.io.pcChangeState := False
-      //  outp.instrCnt.shouldIgnoreInstr := True
-      //  when (outp.instrCnt.jmp === rSetPcCnt.payload) {
-      //    outp.instrCnt.shouldIgnoreInstr := False
-      //    nextSetPcCnt.valid := False
-      //  }
-      //} otherwise
-      //--------
-      //when (rSetPcCnt.valid) {
-      //  setOutpModMemWord.io.pcChangeState := False
-      //  outp.instrCnt.shouldIgnoreInstr := True
-      //}
-      //--------
-      //val rSetPsExSetPcValidState = Reg(Bool(), init=False)
-      //when (cMid0Front.up.isValid) {
-      //  when (setOutpModMemWord.io.psExSetPc.valid) {
-      //    when (!rSetPsExSetPcValidState) {
-      //      psExSetPc.valid := True
-      //      rSetPsExSetPcValidState := True
-      //    } otherwise {
-      //    }
-      //  }
-      //  when (rSetPsExSetPcValidState) {
-      //    psExSetPc.valid := False
-      //  }
-      //}
-      //when (
-      //  //condForAssertSetPcValid
-      //  rSetPcCnt.valid
-      //  //&& outp.instrCnt.jmp === rSetPcCnt.payload
-      //  //&& outp.instrCnt.any === rSetPcCnt.payload + 2
-      //  //&& outp.regPc === rSetPcCnt.payload
-      //) {
-      //  setOutpModMemWord.io.pcChangeState := False
-      //  //outp.shouldIgnoreInstr :=
-      //  when (outp.regPc === rSetPcCnt.payload) {
-      //    when (
-      //      cMid0Front.up.isFiring
-      //      //cMid0Front.up.isValid
-      //    ) {
-      //      setOutpModMemWord.io.pcChangeState := True
-      //      //myPcChangeState := False
-      //      nextSetPcCnt.valid := False
-      //      rSetPsExSetPcValidState := False
-      //    } otherwise {
-      //      rSetPsExSetPcValidState := True
-      //    }
-      //  } otherwise {
-      //    rSetPsExSetPcValidState := True
-      //  }
-      //}
-      //when (psExSetPc.valid) {
-      //  nextSetPcCnt.payload := setOutpModMemWord.io.psExSetPc.nextPc
-      //  psExSetPc.nextPc := setOutpModMemWord.io.psExSetPc.nextPc
-      //}
-      //--------
-      //when (
-      //  //condForAssertSetPcValid
-      //  rSetPcCnt.valid
-      //  //&& outp.instrCnt.jmp === rSetPcCnt.payload
-      //  //&& outp.instrCnt.any === rSetPcCnt.payload + 2
-      //  //&& outp.regPc === rSetPcCnt.payload
-      //  //&& 
-      //  //outp.regPc === rSetPcCnt.payload
-      //) {
-      //  //setOutpModMemWord.io.pcChangeState := False
-      //  when (
-      //    outp.regPc === rSetPcCnt.payload
-      //    //!outp.instrCnt.shouldIgnoreInstr
-      //  ) {
-      //    when (
-      //      cMid0Front.up.isFiring
-      //      //cMid0Front.up.isValid
-      //    ) {
-      //      setOutpModMemWord.io.pcChangeState := True
-      //      //myPcChangeState := False
-      //      nextSetPcCnt.valid := False
-      //    }
-      //  }
-      //}
-      //when (
-      //  !rSetPcCnt.valid
-      //  //&& !outp.instrCnt.shouldIgnoreInstr
-      //) {
-      //  setOutpModMemWord.io.pcChangeState := True
-      //  nextSetPcCnt.payload := (
-      //    //rSetPcCnt.payload + 1
-      //    //outp.instrCnt.any
-      //    setOutpModMemWord.io.psExSetPc.nextPc
-      //  )
-      //  when (
-      //    condForAssertSetPcValid
-      //  ) {
-      //    //myPcChangeState := True
-      //    //when (cMid0Front.up.isFiring) {
-      //      nextSetPcCnt.valid := True
-      //      //nextSetPcCnt.payload := (
-      //      //  //rSetPcCnt.payload + 1
-      //      //  //outp.instrCnt.any
-      //      //  setOutpModMemWord.io.psExSetPc.nextPc
-      //      //)
-      //      setOutpModMemWord.io.pcChangeState := False
-      //      psExSetPc.cnt := (
-      //        RegNext(
-      //          next=psExSetPc.cnt,
-      //          init=psExSetPc.cnt.getZero
-      //        )
-      //        + 1
-      //      )
-      //    //}
-      //  } otherwise {
-      //  }
-      //}
       //--------
       when (
         //!rSetPcCnt.valid
@@ -4055,214 +3972,300 @@ case class SnowHousePipeStageExecute(
         //|| 
         !outp.instrCnt.shouldIgnoreInstr
       ) {
-        switch (setOutpModMemWord.io.opIs) {
-          // TODO: support mem access in more kinds of instructions
-          is (M"0010") {
-            // instruction is of type Cpy (non-Jmp, non-Br)/Alu,
-            // but NO mem access
-            if (cfg.optFormal) {
-              when (cMid0Front.up.isValid) {
-                when (!doCheckHazard) {
-                  assert(!myDoStall(stallKindMem))
-                  assert(!myDoStall(stallKindMultiCycle))
-                }
-              }
-            }
-          }
-          is (M"0011") {
-            // instruction is of type Cpy (non-Jmp, non-Br)/Alu,
-            // but WITH mem access
-            when (cMid0Front.up.isFiring) {
-              nextPrevTxnWasHazard := True
-              psMemStallHost.nextValid := True
-              //io.dbus.hostData := setOutpModMemWord.io.dbusHostPayload
-            }
-            //when (cMid0Front.down.isReady) {
-            //  io.dbus.hostData := setOutpModMemWord.io.dbusHostPayload
-            //}
-          }
-          is (M"01--") {
-            // instruction is of type Cpy (TAKEN Jmp or Br),
-            // but with NO mem access
-            //--------
-            //nextSetPcCnt.valid := False
-            //when (setOutpModMemWord.io.psExSetPc.fire) {
-            //  nextSetPcCnt.valid := True
-            //  nextSetPcCnt.payload := rSetPcCnt.payload + 1
-            //  psExSetPc.valid := setOutpModMemWord.io.psExSetPc.valid
-            //  psExSetPc.nextPc := setOutpModMemWord.io.psExSetPc.nextPc
-            //  psExSetPc.cnt := rSetPcCnt.payload + 1
-            //  //nextSetPcCnt.payload := psExSetPc.cnt
-            //}
-            //--------
-            when (cMid0Front.up.isFiring) {
-              //nextPcChangeState := PcChangeState.WaitTwoInstrs
-              //rSavedJmpCnt := outp.instrCnt
-              //for (ydx <- 0 until cfg.regFileCfg.memArrSize) {
-              //  outp.myExt(ydx).modMemWordValid := False
-              //}
-              //outp.instrCnt.shouldIgnoreInstr := True
-            }
-          }
-          is (M"1---") {
-            // instruction is of type MultiCycle,
-            // but with NO mem access
-            val rTempSavedRegPc = (
-              KeepAttribute(
-                RegNextWhen(
-                  next=outp.regPc,
-                  cond=cMid0Front.up.isFiring,
-                  init=outp.regPc.getZero,
-                )
-                //Reg(UInt(cfg.mainWidth bits))
-                //init(0x0)
-              )
-              .setName(
-                //s"rTempSavedRegPc_${psExStallHostArrIdx}"
-                s"rTempSavedRegPc"
-              )
-            )
-            switch (
-              //setOutpModMemWord.io.multiCycleOpInfoIdx
-              //outp.op
-              outp.splitOp.multiCycleOp
-            ) {
-              for (
-                //(psExStallHost, psExStallHostArrIdx)
-                //<- psExStallHostArr.view.zipWithIndex
-                //((_, opInfo), opInfoIdx)
-                //<- cfg.opInfoMap.view.zipWithIndex
-
-                ((_, opInfo), opInfoIdx)
-                <- cfg.multiCycleOpInfoMap.view.zipWithIndex
-              ) {
-                is (
-                  //psExStallHostArrIdx
-                  opInfoIdx
-                ) {
-                  var busIdxFound: Boolean = false
-                  var busIdx: Int = 0
-                  for (
-                    ((_, multiCycleOpInfo), myBusIdx)
-                    <- cfg.multiCycleOpInfoMap.view.zipWithIndex
-                  ) {
-                    if (opInfo == multiCycleOpInfo) {
-                      busIdxFound = true
-                      busIdx = myBusIdx
-                    }
-                  }
-                  //when (
-                  //  !rSavedStall
-                  //  //|| doWriteSavedStall
-                  //) {
-                  //  myDoStall(stallKindMultiCycle) := True
-                  //  when (doCheckHazard && myDoHaveHazard) {
-                  //    //when (!rSavedStall) {
-                  //    //}
-                  //    when (
-                  //      //!rSavedStall
-                  //      //&& 
-                  //      cMid0Front.down.isFiring
-                  //    ) {
-                  //      nextSavedStall := True
-                  //    }
-                  //  } otherwise {
-                  //    nextSavedStall := True
-                  //    psExStallHost.nextValid := True
-                  //    //myDoStall(stallKindMultiCycle) := True
-                  //  }
-                  //}
-                  //when (!myDoStall(stallKindMem)) {
-                  //}
-                  if (busIdxFound) {
-                    val psExStallHost = psExStallHostArr(busIdx)
-                    //when (
-                    //  (
-                    //    outp.regPc(3 downto 0)
-                    //    === (
-                    //      rTempSavedRegPc(3 downto 0)
-                    //      + (cfg.instrMainWidth / 8)
-                    //    )
-                    //  )
-                    //  //|| (
-                    //  //  outp.regPc
-                    //  //  === rTempSavedRegPc + ((cfg.instrMainWidth / 8) * 2)
-                    //  //)
-                    //) {
-                      def doStart(): Unit = {
-                        myDoStall(stallKindMem) := False
-                        myDoStall(stallKindMultiCycle) := True
-                        psExStallHost.nextValid := True
-                        def multiCycleBus = io.multiCycleBusVec(busIdx)
-                        multiCycleBus.hostData.srcVec(0) := (
-                          setOutpModMemWord.io.selRdMemWord(
-                            opInfo=opInfo,
-                            idx=1,
-                          )
-                        )
-                        multiCycleBus.hostData.srcVec(1) := (
-                          setOutpModMemWord.io.selRdMemWord(
-                            opInfo=opInfo,
-                            idx=2,
-                          )
-                        )
-                        nextSavedStall := True
-                      }
-                      when (
-                        !rSavedStall
-                        && doCheckHazard && myDoHaveHazard
-                      ) {
-                        psExStallHost.nextValid := False
-                        when (psMemStallHost.fire) {
-                          doStart()
-                        }
-                      } otherwise {
-                        //myDoStall(stallKindMem) := False
-                        //myDoStall(stallKindMultiCycle) := True
-                        //psExStallHost.nextValid := True
-                        //nextSavedStall := True
-                        doStart()
-                      }
-                    //}
-                    when (
-                      psExStallHost.rValid
-                      && psExStallHost.ready
-                    ) {
-                      psExStallHost.nextValid := False
-                      //myDoStall(stallKindMem) := False
-                      myDoStall(stallKindMultiCycle) := False
-                      //nextSavedStall := False
-                    }
-                    when (
-                      rSavedStall
-                      //&& !myDoStall(stallKindMultiCycle)
-                    ) {
-                      myDoStall(stallKindMem) := False
-                    }
-                    when (cMid0Front.up.isFiring) {
-                      nextSavedStall := False
-                    }
-                  }
-                }
-              }
-            }
-          }
-          //when (savedPsExStallHost.myDuplicateIt) {
-          //  currDuplicateIt := True
-          //}
-          //--------
-          // TODO: replace this formal verification
-          //if (cfg.optFormal) {
-          //  when (!doCheckHazard) {
-          //    when (!savedPsExStallHost.myDuplicateIt) {
-          //      assert(!myDoStall(stallKindMem))
-          //    }
-          //  }
-          //}
-          //--------
-          default {
+        when (
+          setOutpModMemWord.io.opIsMemAccess
+        ) {
+          nextPrevTxnWasHazard := True
+          when (cMid0Front.up.isFiring) {
+            psMemStallHost.nextValid := True
           }
         }
+        when (
+          //setOutpModMemWord.io.opIsMultiCycle
+          outp.splitOp.kind === SnowHouseSplitOpKind.MULTI_CYCLE
+        ) {
+          switch (
+            //setOutpModMemWord.io.multiCycleOpInfoIdx
+            //outp.op
+            outp.splitOp.multiCycleOp
+          ) {
+            for (
+              ((_, opInfo), opInfoIdx)
+              <- cfg.multiCycleOpInfoMap.view.zipWithIndex
+            ) {
+              is (
+                //psExStallHostArrIdx
+                opInfoIdx
+              ) {
+                var busIdxFound: Boolean = false
+                var busIdx: Int = 0
+                for (
+                  ((_, multiCycleOpInfo), myBusIdx)
+                  <- cfg.multiCycleOpInfoMap.view.zipWithIndex
+                ) {
+                  if (opInfo == multiCycleOpInfo) {
+                    busIdxFound = true
+                    busIdx = myBusIdx
+                  }
+                }
+                if (busIdxFound) {
+                  val psExStallHost = psExStallHostArr(busIdx)
+                  def doStart(): Unit = {
+                    myDoStall(stallKindMem) := False
+                    myDoStall(stallKindMultiCycle) := True
+                    psExStallHost.nextValid := True
+                    //def multiCycleBus = io.multiCycleBusVec(busIdx)
+                    //multiCycleBus.hostData.srcVec(0) := (
+                    //  setOutpModMemWord.io.selRdMemWord(
+                    //    opInfo=opInfo,
+                    //    idx=1,
+                    //  )
+                    //)
+                    //multiCycleBus.hostData.srcVec(1) := (
+                    //  setOutpModMemWord.io.selRdMemWord(
+                    //    opInfo=opInfo,
+                    //    idx=2,
+                    //  )
+                    //)
+                    nextSavedStall := True
+                  }
+                  when (
+                    !rSavedStall
+                    && doCheckHazard && myDoHaveHazard
+                  ) {
+                    psExStallHost.nextValid := False
+                    when (psMemStallHost.fire) {
+                      doStart()
+                    }
+                  } otherwise {
+                    doStart()
+                  }
+                  when (
+                    psExStallHost.rValid
+                    && psExStallHost.ready
+                  ) {
+                    psExStallHost.nextValid := False
+                    myDoStall(stallKindMultiCycle) := False
+                  }
+                  when (rSavedStall) {
+                    myDoStall(stallKindMem) := False
+                  }
+                  when (cMid0Front.up.isFiring) {
+                    nextSavedStall := False
+                  }
+                }
+              }
+            }
+          }
+        }
+        //switch (setOutpModMemWord.io.opIs) {
+        //  // TODO: support mem access in more kinds of instructions
+        //  //is (M"0010") {
+        //  //  // instruction is of type Cpy (non-Jmp, non-Br)/Alu,
+        //  //  // but NO mem access
+        //  //  if (cfg.optFormal) {
+        //  //    when (cMid0Front.up.isValid) {
+        //  //      when (!doCheckHazard) {
+        //  //        assert(!myDoStall(stallKindMem))
+        //  //        assert(!myDoStall(stallKindMultiCycle))
+        //  //      }
+        //  //    }
+        //  //  }
+        //  //}
+        //  is (M"0011") {
+        //    // instruction is of type Cpy (non-Jmp, non-Br)/Alu,
+        //    // but WITH mem access
+        //    when (cMid0Front.up.isFiring) {
+        //      nextPrevTxnWasHazard := True
+        //      psMemStallHost.nextValid := True
+        //      //io.dbus.hostData := setOutpModMemWord.io.dbusHostPayload
+        //    }
+        //    //when (cMid0Front.down.isReady) {
+        //    //  io.dbus.hostData := setOutpModMemWord.io.dbusHostPayload
+        //    //}
+        //  }
+        //  is (M"01--") {
+        //    // instruction is of type Cpy (TAKEN Jmp or Br),
+        //    // but with NO mem access
+        //    //--------
+        //    //nextSetPcCnt.valid := False
+        //    //when (setOutpModMemWord.io.psExSetPc.fire) {
+        //    //  nextSetPcCnt.valid := True
+        //    //  nextSetPcCnt.payload := rSetPcCnt.payload + 1
+        //    //  psExSetPc.valid := setOutpModMemWord.io.psExSetPc.valid
+        //    //  psExSetPc.nextPc := setOutpModMemWord.io.psExSetPc.nextPc
+        //    //  psExSetPc.cnt := rSetPcCnt.payload + 1
+        //    //  //nextSetPcCnt.payload := psExSetPc.cnt
+        //    //}
+        //    //--------
+        //    when (cMid0Front.up.isFiring) {
+        //      //nextPcChangeState := PcChangeState.WaitTwoInstrs
+        //      //rSavedJmpCnt := outp.instrCnt
+        //      //for (ydx <- 0 until cfg.regFileCfg.memArrSize) {
+        //      //  outp.myExt(ydx).modMemWordValid := False
+        //      //}
+        //      //outp.instrCnt.shouldIgnoreInstr := True
+        //    }
+        //  }
+        //  is (M"1---") {
+        //    // instruction is of type MultiCycle,
+        //    // but with NO mem access
+        //    //val rTempSavedRegPc = (
+        //    //  KeepAttribute(
+        //    //    RegNextWhen(
+        //    //      next=outp.regPc,
+        //    //      cond=cMid0Front.up.isFiring,
+        //    //      init=outp.regPc.getZero,
+        //    //    )
+        //    //    //Reg(UInt(cfg.mainWidth bits))
+        //    //    //init(0x0)
+        //    //  )
+        //    //  .setName(
+        //    //    //s"rTempSavedRegPc_${psExStallHostArrIdx}"
+        //    //    s"rTempSavedRegPc"
+        //    //  )
+        //    //)
+        //    switch (
+        //      //setOutpModMemWord.io.multiCycleOpInfoIdx
+        //      //outp.op
+        //      outp.splitOp.multiCycleOp
+        //    ) {
+        //      for (
+        //        //(psExStallHost, psExStallHostArrIdx)
+        //        //<- psExStallHostArr.view.zipWithIndex
+        //        //((_, opInfo), opInfoIdx)
+        //        //<- cfg.opInfoMap.view.zipWithIndex
+
+        //        ((_, opInfo), opInfoIdx)
+        //        <- cfg.multiCycleOpInfoMap.view.zipWithIndex
+        //      ) {
+        //        is (
+        //          //psExStallHostArrIdx
+        //          opInfoIdx
+        //        ) {
+        //          var busIdxFound: Boolean = false
+        //          var busIdx: Int = 0
+        //          for (
+        //            ((_, multiCycleOpInfo), myBusIdx)
+        //            <- cfg.multiCycleOpInfoMap.view.zipWithIndex
+        //          ) {
+        //            if (opInfo == multiCycleOpInfo) {
+        //              busIdxFound = true
+        //              busIdx = myBusIdx
+        //            }
+        //          }
+        //          //when (
+        //          //  !rSavedStall
+        //          //  //|| doWriteSavedStall
+        //          //) {
+        //          //  myDoStall(stallKindMultiCycle) := True
+        //          //  when (doCheckHazard && myDoHaveHazard) {
+        //          //    //when (!rSavedStall) {
+        //          //    //}
+        //          //    when (
+        //          //      //!rSavedStall
+        //          //      //&& 
+        //          //      cMid0Front.down.isFiring
+        //          //    ) {
+        //          //      nextSavedStall := True
+        //          //    }
+        //          //  } otherwise {
+        //          //    nextSavedStall := True
+        //          //    psExStallHost.nextValid := True
+        //          //    //myDoStall(stallKindMultiCycle) := True
+        //          //  }
+        //          //}
+        //          //when (!myDoStall(stallKindMem)) {
+        //          //}
+        //          if (busIdxFound) {
+        //            val psExStallHost = psExStallHostArr(busIdx)
+        //            //when (
+        //            //  (
+        //            //    outp.regPc(3 downto 0)
+        //            //    === (
+        //            //      rTempSavedRegPc(3 downto 0)
+        //            //      + (cfg.instrMainWidth / 8)
+        //            //    )
+        //            //  )
+        //            //  //|| (
+        //            //  //  outp.regPc
+        //            //  //  === rTempSavedRegPc + ((cfg.instrMainWidth / 8) * 2)
+        //            //  //)
+        //            //) {
+        //              def doStart(): Unit = {
+        //                myDoStall(stallKindMem) := False
+        //                myDoStall(stallKindMultiCycle) := True
+        //                psExStallHost.nextValid := True
+        //                def multiCycleBus = io.multiCycleBusVec(busIdx)
+        //                multiCycleBus.hostData.srcVec(0) := (
+        //                  setOutpModMemWord.io.selRdMemWord(
+        //                    opInfo=opInfo,
+        //                    idx=1,
+        //                  )
+        //                )
+        //                multiCycleBus.hostData.srcVec(1) := (
+        //                  setOutpModMemWord.io.selRdMemWord(
+        //                    opInfo=opInfo,
+        //                    idx=2,
+        //                  )
+        //                )
+        //                nextSavedStall := True
+        //              }
+        //              when (
+        //                !rSavedStall
+        //                && doCheckHazard && myDoHaveHazard
+        //              ) {
+        //                psExStallHost.nextValid := False
+        //                when (psMemStallHost.fire) {
+        //                  doStart()
+        //                }
+        //              } otherwise {
+        //                //myDoStall(stallKindMem) := False
+        //                //myDoStall(stallKindMultiCycle) := True
+        //                //psExStallHost.nextValid := True
+        //                //nextSavedStall := True
+        //                doStart()
+        //              }
+        //            //}
+        //            when (
+        //              psExStallHost.rValid
+        //              && psExStallHost.ready
+        //            ) {
+        //              psExStallHost.nextValid := False
+        //              //myDoStall(stallKindMem) := False
+        //              myDoStall(stallKindMultiCycle) := False
+        //              //nextSavedStall := False
+        //            }
+        //            when (
+        //              rSavedStall
+        //              //&& !myDoStall(stallKindMultiCycle)
+        //            ) {
+        //              myDoStall(stallKindMem) := False
+        //            }
+        //            when (cMid0Front.up.isFiring) {
+        //              nextSavedStall := False
+        //            }
+        //          }
+        //        }
+        //      }
+        //    }
+        //  }
+        //  //when (savedPsExStallHost.myDuplicateIt) {
+        //  //  currDuplicateIt := True
+        //  //}
+        //  //--------
+        //  // TODO: replace this formal verification
+        //  //if (cfg.optFormal) {
+        //  //  when (!doCheckHazard) {
+        //  //    when (!savedPsExStallHost.myDuplicateIt) {
+        //  //      assert(!myDoStall(stallKindMem))
+        //  //    }
+        //  //  }
+        //  //}
+        //  //--------
+        //  default {
+        //  }
+        //}
       } otherwise {
         //setOutpModMemWord.io.pcChangeState := False
         //outp.instrCnt.shouldIgnoreInstr := True
