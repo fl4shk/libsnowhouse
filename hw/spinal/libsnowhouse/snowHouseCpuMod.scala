@@ -432,7 +432,7 @@ object SnowHouseCpuPipeStageInstrDecode {
                 s"pureCpyOp: ${cpyOpInfoIdx} "
                 + s"${someOp._3} // ${opInfoIdx}"
               )
-              upPayload.op := opInfoIdx
+              //upPayload.op := opInfoIdx
               mySplitOp.pureCpyOp.valid := True
               mySplitOp.pureCpyOp.payload := cpyOpInfoIdx
               return
@@ -447,7 +447,7 @@ object SnowHouseCpuPipeStageInstrDecode {
                 s"pureCpyuiOp: ${cpyuiOpInfoIdx} "
                 + s"${someOp._3} // ${opInfoIdx}"
               )
-              upPayload.op := opInfoIdx
+              //upPayload.op := opInfoIdx
               mySplitOp.pureCpyuiOp.valid := True
               mySplitOp.pureCpyuiOp.payload := cpyuiOpInfoIdx
               return
@@ -462,7 +462,7 @@ object SnowHouseCpuPipeStageInstrDecode {
                 s"pureJmpOp: ${jmpOpInfoIdx} "
                 + s"${someOp._3} // ${opInfoIdx}"
               )
-              upPayload.op := opInfoIdx
+              //upPayload.op := opInfoIdx
               mySplitOp.pureJmpOp.valid := True
               mySplitOp.pureJmpOp.payload := jmpOpInfoIdx
               return
@@ -477,7 +477,7 @@ object SnowHouseCpuPipeStageInstrDecode {
                 s"pureBrOp: ${brOpInfoIdx} "
                 + s"${someOp._3} // ${opInfoIdx}"
               )
-              upPayload.op := opInfoIdx
+              //upPayload.op := opInfoIdx
               mySplitOp.pureBrOp.valid := True
               mySplitOp.pureBrOp.payload := brOpInfoIdx
               return
@@ -492,7 +492,7 @@ object SnowHouseCpuPipeStageInstrDecode {
                 s"aluOp: ${aluOpInfoIdx} "
                 + s"${someOp._3} // ${opInfoIdx}"
               )
-              upPayload.op := opInfoIdx
+              //upPayload.op := opInfoIdx
               mySplitOp.aluOp.valid := True
               mySplitOp.aluOp.payload := aluOpInfoIdx
               return
@@ -507,7 +507,7 @@ object SnowHouseCpuPipeStageInstrDecode {
                 s"multiCycleOp: ${multiCycleOpInfoIdx} "
                 + s"${someOp._3} // ${opInfoIdx}"
               )
-              upPayload.op := opInfoIdx
+              //upPayload.op := opInfoIdx
               mySplitOp.multiCycleOp.valid := True
               mySplitOp.multiCycleOp.payload := multiCycleOpInfoIdx
               return
@@ -1540,8 +1540,8 @@ case class SnowHouseCpuTestProgram(
     cpy(ids, r1),             // 0xc
     cpy(r1, 0x1),             // 0x10
     //cpy(r1, 0x0),
-    //cpy(ie, r1),              // 0x14
-    cpy(r0, r0),
+    cpy(ie, r1),              // 0x14
+    //cpy(r0, r0),
     cpy(r1, 0x8),             // 0x18: r1 = 8
     cpy(r2, 0x1),             // 0x1c: r2 = 1
     cpy(r3, 0x1000),          // 0x20: r3 = 0x1000

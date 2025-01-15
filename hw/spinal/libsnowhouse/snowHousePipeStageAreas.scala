@@ -4076,13 +4076,17 @@ case class SnowHousePipeStageExecute(
             )
             switch (
               //setOutpModMemWord.io.multiCycleOpInfoIdx
-              outp.op
+              //outp.op
+              outp.splitOp.multiCycleOp.payload
             ) {
               for (
                 //(psExStallHost, psExStallHostArrIdx)
                 //<- psExStallHostArr.view.zipWithIndex
+                //((_, opInfo), opInfoIdx)
+                //<- cfg.opInfoMap.view.zipWithIndex
+
                 ((_, opInfo), opInfoIdx)
-                <- cfg.opInfoMap.view.zipWithIndex
+                <- cfg.multiCycleOpInfoMap.view.zipWithIndex
               ) {
                 is (
                   //psExStallHostArrIdx
