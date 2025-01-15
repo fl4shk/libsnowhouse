@@ -115,9 +115,9 @@ case class SnowHouseInstrDataDualRam(
   //dataRam.io.rdAddr := dataRam.io.rdAddr.getZero
   dataRam.io.wrEn := False
   //dataRam.io.wrAddr := dataRam.io.wrAddr.getZero
-  dataRam.io.wrData := dataRam.io.wrData.getZero
-  //dataRam.io.rdEn := io.dbus.nextValid
-  dataRam.io.rdEn := True
+  //dataRam.io.wrData := dataRam.io.wrData.getZero
+  dataRam.io.rdEn := io.dbus.nextValid
+  //dataRam.io.rdEn := True
   when (io.dbus.rValid && io.dbus.ready) {
   }
   dataRam.io.rdAddr := (
@@ -127,34 +127,42 @@ case class SnowHouseInstrDataDualRam(
     (io.dbus.hostData.addr >> 2).resized
   )
   io.dbus.devData.data := dataRam.io.rdData.asUInt
-  switch (io.dbus.hostData.accKind) {
-    is (SnowHouseMemAccessKind.LoadU) {
-      //dataRam.io.rdEn := io.dbus.nextValid
-      //dataRam.io.rdAddr := (
-      //  (io.dbus.hostData.addr >> 2).resized
-      //)
-      //when (io.dbus.rValid && io.dbus.ready) {
-      //  io.dbus.devData.data := dataRam.io.rdData.asUInt
-      //}
-    }
-    is (SnowHouseMemAccessKind.LoadS) {
-      //dataRam.io.rdEn := io.dbus.nextValid
-      //dataRam.io.rdAddr := (
-      //  (io.dbus.hostData.addr >> 2).resized
-      //)
-      //when (io.dbus.rValid && io.dbus.ready) {
-      //  io.dbus.devData.data := dataRam.io.rdData.asUInt
-      //}
-    }
-    is (SnowHouseMemAccessKind.Store) {
-      // TODO: possibly update this to work better?
-      dataRam.io.wrEn := io.dbus.nextValid
-      //dataRam.io.wrAddr := (
-      //  (io.dbus.hostData.addr >> 2).resized
-      //)
-      dataRam.io.wrData := io.dbus.hostData.data.asBits
-    }
+  when (io.dbus.hostData.accKind.asBits(1)) {
+    // TODO: possibly update this to work better?
+    dataRam.io.wrEn := io.dbus.nextValid
+    //dataRam.io.wrAddr := (
+    //  (io.dbus.hostData.addr >> 2).resized
+    //)
   }
+  dataRam.io.wrData := io.dbus.hostData.data.asBits
+  //switch (io.dbus.hostData.accKind) {
+  //  is (SnowHouseMemAccessKind.LoadU) {
+  //    //dataRam.io.rdEn := io.dbus.nextValid
+  //    //dataRam.io.rdAddr := (
+  //    //  (io.dbus.hostData.addr >> 2).resized
+  //    //)
+  //    //when (io.dbus.rValid && io.dbus.ready) {
+  //    //  io.dbus.devData.data := dataRam.io.rdData.asUInt
+  //    //}
+  //  }
+  //  is (SnowHouseMemAccessKind.LoadS) {
+  //    //dataRam.io.rdEn := io.dbus.nextValid
+  //    //dataRam.io.rdAddr := (
+  //    //  (io.dbus.hostData.addr >> 2).resized
+  //    //)
+  //    //when (io.dbus.rValid && io.dbus.ready) {
+  //    //  io.dbus.devData.data := dataRam.io.rdData.asUInt
+  //    //}
+  //  }
+  //  is (SnowHouseMemAccessKind.Store) {
+  //    // TODO: possibly update this to work better?
+  //    dataRam.io.wrEn := io.dbus.nextValid
+  //    //dataRam.io.wrAddr := (
+  //    //  (io.dbus.hostData.addr >> 2).resized
+  //    //)
+  //    dataRam.io.wrData := io.dbus.hostData.data.asBits
+  //  }
+  //}
   
 }
 //--------

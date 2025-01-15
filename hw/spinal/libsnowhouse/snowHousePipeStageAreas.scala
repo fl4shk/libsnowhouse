@@ -3888,12 +3888,14 @@ case class SnowHousePipeStageExecute(
     && !outp.instrCnt.shouldIgnoreInstr
   )
   psExSetPc.nextPc := setOutpModMemWord.io.psExSetPc.nextPc
+  io.dbus.allowOverride
   io.dbus.hostData := (
     RegNext(
       next=io.dbus.hostData,
       init=io.dbus.hostData.getZero,
     )
   )
+  //io.dbus.hostData.addr.allowOverride
   //io.dbus.hostData := 
   when (
     //!outp.instrCnt.shouldIgnoreInstr
@@ -3901,6 +3903,8 @@ case class SnowHousePipeStageExecute(
   ) {
     io.dbus.hostData := setOutpModMemWord.io.dbusHostPayload
   }
+  //io.dbus.hostData := setOutpModMemWord.io.dbusHostPayload
+  //io.dbus.hostData.addr := setOutpModMemWord.io.dbusHostPayload.addr
   //psExSetPc.cnt := rSetPcCnt.payload + 1
   //switch (rPcChangeState) {
   //  is (PcChangeState.Idle) {
