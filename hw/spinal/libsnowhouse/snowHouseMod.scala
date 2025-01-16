@@ -55,6 +55,10 @@ case class SnowHouseInstrDataDualRam(
     //true
     false
   )
+  val fastDbusReady = (
+    //true
+    false
+  )
   val rIbusReadyCnt = Reg(UInt(8 bits)) init(0)
   val rIbusReadyState = Reg(Bool()) init(False)
   if (fastIbusReady) {
@@ -92,10 +96,6 @@ case class SnowHouseInstrDataDualRam(
     wordType=UInt(cfg.mainWidth bits),
     depth=dataRamDepth,
     initBigInt=Some(dataInitBigInt),
-  )
-  val fastDbusReady = (
-    //true
-    false
   )
   val rDbusReadyCnt = Reg(UInt(5 bits)) init(0)
   val rDbusReadyState = Reg(Bool(), init=False)
