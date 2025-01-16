@@ -1597,8 +1597,6 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
                   //)
                   //--------
                   //if (!mem.isPush) {
-                    io.modMemWordValid := False
-                    io.modMemWord(0) := 0x0
                   //}
                   //--------
                   //else {
@@ -1608,6 +1606,13 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
                   //}
                   if (!mem.isAtomic) {
                     val isStore = mem.isStore
+                    if (!isStore) {
+                      io.modMemWordValid := False
+                      io.modMemWord(0) := 0x0
+                    } else {
+                      io.modMemWordValid := True
+                      io.modMemWord(0) := selRdMemWord(0)
+                    }
                     val tempSubKind = (
                       mem.subKind match {
                         case MemAccessKind.SubKind.Sz8 => {
@@ -4731,7 +4736,7 @@ case class SnowHousePipeStageMem(
     }
   }
   //midModPayload(extIdxUp) := modFront(modFrontPayload)
-  when (cMidModFront.up.isValid ) {
+  when (cMidModFront.up.isValid) {
     when (!rSetMidModPayloadState) {
       midModPayload(extIdxUp) := modFront(modFrontPayload)
       nextSetMidModPayloadState := True
@@ -5224,7 +5229,7 @@ case class SnowHousePipeStageMem(
           )
         )
       )
-      myCurrExt.modMemWordValid := False
+      //myCurrExt.modMemWordValid := False
     } otherwise {
       ////--------
       //midModPayload(extIdxUp).myExt(0).modMemWordValid := True
@@ -5284,46 +5289,49 @@ case class SnowHousePipeStageMem(
     )
     val myDecodeExt = midModPayload(extIdxUp).decodeExt
     when (!myDecodeExt.memAccessKind.asBits(1)) {
-      when (!midModPayload(extIdxUp).gprIsZeroVec(0)) {
-        switch (myDecodeExt.memAccessSubKind) {
-          is (SnowHouseMemAccessSubKind.Sz8) {
-            if (cfg.mainWidth >= 8) {
-              myCurrExt.modMemWord := (
-                io.dbus.devData.data.resized
-              )
-            }
-          }
-          is (SnowHouseMemAccessSubKind.Sz16) {
-            if (cfg.mainWidth >= 16) {
-              myCurrExt.modMemWord := (
-                io.dbus.devData.data.resized
-              )
-            }
-          }
-          is (SnowHouseMemAccessSubKind.Sz32) {
-            if (cfg.mainWidth >= 32) {
-              myCurrExt.modMemWord := (
-                io.dbus.devData.data.resized
-              )
-            }
-          }
-          is (SnowHouseMemAccessSubKind.Sz64) {
-            if (cfg.mainWidth >= 64) {
-              myCurrExt.modMemWord := (
-                io.dbus.devData.data.resized
-              )
-            }
+      //when (!midModPayload(extIdxUp).gprIsZeroVec(0)) {
+      myCurrExt.modMemWord := (
+        io.dbus.devData.data.resized
+      )
+      switch (myDecodeExt.memAccessSubKind) {
+        is (SnowHouseMemAccessSubKind.Sz8) {
+          if (cfg.mainWidth >= 8) {
+            myCurrExt.modMemWord := (
+              io.dbus.devData.data.resized
+            )
           }
         }
-      } otherwise {
-        myCurrExt.modMemWord := (
-          myCurrExt.rdMemWord(PipeMemRmw.modWrIdx)
-        )
+        is (SnowHouseMemAccessSubKind.Sz16) {
+          if (cfg.mainWidth >= 16) {
+            myCurrExt.modMemWord := (
+              io.dbus.devData.data.resized
+            )
+          }
+        }
+        is (SnowHouseMemAccessSubKind.Sz32) {
+          if (cfg.mainWidth >= 32) {
+            myCurrExt.modMemWord := (
+              io.dbus.devData.data.resized
+            )
+          }
+        }
+        is (SnowHouseMemAccessSubKind.Sz64) {
+          if (cfg.mainWidth >= 64) {
+            myCurrExt.modMemWord := (
+              io.dbus.devData.data.resized
+            )
+          }
+        }
       }
+      //} otherwise {
+      //  myCurrExt.modMemWord := (
+      //    myCurrExt.rdMemWord(PipeMemRmw.modWrIdx)
+      //  )
+      //}
     } otherwise {
-      myCurrExt.modMemWord := (
-        myCurrExt.rdMemWord(PipeMemRmw.modWrIdx)
-      )
+      //myCurrExt.modMemWord := (
+      //  myCurrExt.rdMemWord(PipeMemRmw.modWrIdx)
+      //)
     }
     //switch (myDecodeExt.memAccessKind) {
     //  is (SnowHouseMemAccessKind.LoadU) {
