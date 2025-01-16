@@ -2419,18 +2419,27 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
                 width=cfg.mainWidth
               )
               opInfo.dstArr(0) match {
-                case DstKind.Spr(SprKind.AluFlags) => {
-                  nextFlagN := myBinop.flagN
-                  nextFlagV := myBinop.flagV
-                  nextFlagC := myBinop.flagC
-                  nextFlagZ := myBinop.flagZ
-                  //io.rIndexReg := 0x0
-                  nextIndexReg := 0x0
-                }
+                //case DstKind.Spr(SprKind.AluFlags) => {
+                //  nextFlagN := myBinop.flagN
+                //  nextFlagV := myBinop.flagV
+                //  nextFlagC := myBinop.flagC
+                //  nextFlagZ := myBinop.flagZ
+                //  //io.rIndexReg := 0x0
+                //  nextIndexReg := 0x0
+                //}
                 case DstKind.Spr(kind) => {
+                    nextIndexReg := 0x0
                   kind match {
                     case SprKind.AluFlags => {
-                      nextAluFlags := myBinop.main
+                      if (opInfo.dstArr.size == 1) {
+                        nextAluFlags := myBinop.main
+                      } else {
+                        nextFlagN := myBinop.flagN
+                        nextFlagV := myBinop.flagV
+                        nextFlagC := myBinop.flagC
+                        nextFlagZ := myBinop.flagZ
+                        //io.rIndexReg := 0x0
+                      }
                     }
                     case SprKind.Ids => {
                       nextIds := myBinop.main
