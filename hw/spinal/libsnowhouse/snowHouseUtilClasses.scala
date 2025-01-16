@@ -507,7 +507,7 @@ case class SnowHouseGprIdxToMemAddrIdxMapElem(
   )
 }
 object SnowHouseSplitOpKind
-extends SpinalEnum(defaultEncoding=binaryOneHot) {
+extends SpinalEnum(defaultEncoding=binarySequential) {
   val
     CPY_CPYUI,
     JMP_BR,
