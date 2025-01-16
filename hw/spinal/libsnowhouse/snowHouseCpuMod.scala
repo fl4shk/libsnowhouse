@@ -473,7 +473,9 @@ object SnowHouseCpuPipeStageInstrDecode {
     def setOp(
       someOp: (Int, (Int, Int), String),
       //someOutpOp: UInt=upPayload.op,
-    ): Unit = {
+    ): Area = new Area {
+      setName(s"setOp_${someOp._1}")
+      var found = false
       for (
         ((tuple, opInfo), opInfoIdx) <- cfg.opInfoMap.view.zipWithIndex
       ) {
@@ -505,7 +507,8 @@ object SnowHouseCpuPipeStageInstrDecode {
               //mySplitOp.pureCpyOp.valid := True
               mySplitOp.kind := SnowHouseSplitOpKind.CPY_CPYUI
               mySplitOp.cpyCpyuiOp := cpyOpInfoIdx
-              return
+              //return
+              found = true
             }
           }
           //for (
@@ -537,7 +540,8 @@ object SnowHouseCpuPipeStageInstrDecode {
               //mySplitOp.pureJmpOp.valid := True
               mySplitOp.kind := SnowHouseSplitOpKind.JMP_BR
               mySplitOp.jmpBrOp := jmpOpInfoIdx
-              return
+              //return
+              found = true
             }
           }
           //for (
@@ -569,7 +573,8 @@ object SnowHouseCpuPipeStageInstrDecode {
               //mySplitOp.aluOp.valid := True
               mySplitOp.kind := SnowHouseSplitOpKind.ALU
               mySplitOp.aluOp := aluOpInfoIdx
-              return
+              //return
+              found = true
             }
           }
           for (
@@ -585,15 +590,18 @@ object SnowHouseCpuPipeStageInstrDecode {
               //mySplitOp.multiCycleOp.valid := True
               mySplitOp.kind := SnowHouseSplitOpKind.MULTI_CYCLE
               mySplitOp.multiCycleOp := multiCycleOpInfoIdx
-              return
+              //return
+              found = true
             }
           }
         }
       }
-      assert(
-        false,
-        s"eek! ${someOp}"
-      )
+      if (!found) {
+        assert(
+          false,
+          s"eek! ${someOp}"
+        )
+      }
     }
     def doDefault(
       doSetImm: Boolean=true
@@ -614,6 +622,7 @@ object SnowHouseCpuPipeStageInstrDecode {
     //  rTempState := False
     //}
     upPayload.splitOp := upPayload.splitOp.getZero
+    upPayload.splitOp.kind := SnowHouseSplitOpKind.CPY_CPYUI
     switch (rMultiCycleState) {
       is (False) {
         upPayload.imm.foreach(imm => {

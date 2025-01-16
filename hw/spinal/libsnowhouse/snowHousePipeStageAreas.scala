@@ -2689,92 +2689,94 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
       }
     //}
   }
-  switch (io.splitOp.kind) {
-    is (SnowHouseSplitOpKind.CPY_CPYUI) {
-      switch (io.splitOp.cpyCpyuiOp) {
-        for (
-          ((_, opInfo), idx) <- cfg.cpyCpyuiOpInfoMap.view.zipWithIndex
-        ) {
-          is (idx) {
-            innerFunc(
-              opInfo=opInfo,
-              opInfoIdx=idx,
-            )
+  when (io.splitOp.kind.asBits =/= 0x0) {
+    switch (io.splitOp.kind) {
+      is (SnowHouseSplitOpKind.CPY_CPYUI) {
+        switch (io.splitOp.cpyCpyuiOp) {
+          for (
+            ((_, opInfo), idx) <- cfg.cpyCpyuiOpInfoMap.view.zipWithIndex
+          ) {
+            is (idx) {
+              innerFunc(
+                opInfo=opInfo,
+                opInfoIdx=idx,
+              )
+            }
           }
         }
       }
-    }
-    is (SnowHouseSplitOpKind.JMP_BR) {
-      switch (io.splitOp.jmpBrOp) {
-        for (
-          ((_, opInfo), idx) <- cfg.jmpBrOpInfoMap.view.zipWithIndex
-        ) {
-          is (idx) {
-            innerFunc(
-              opInfo=opInfo,
-              opInfoIdx=idx,
-            )
+      is (SnowHouseSplitOpKind.JMP_BR) {
+        switch (io.splitOp.jmpBrOp) {
+          for (
+            ((_, opInfo), idx) <- cfg.jmpBrOpInfoMap.view.zipWithIndex
+          ) {
+            is (idx) {
+              innerFunc(
+                opInfo=opInfo,
+                opInfoIdx=idx,
+              )
+            }
           }
         }
       }
-    }
-    //is (SnowHouseSplitOpKind.PURE_BR) {
-    //  switch (io.splitOp.pureBrOp) {
-    //    for (
-    //      ((_, opInfo), idx) <- cfg.pureBrOpInfoMap.view.zipWithIndex
-    //    ) {
-    //      is (idx) {
-    //        innerFunc(
-    //          opInfo=opInfo,
-    //          opInfoIdx=idx,
-    //        )
-    //      }
-    //    }
-    //  }
-    //}
-    is (SnowHouseSplitOpKind.ALU) {
-      switch (io.splitOp.aluOp) {
-        for (
-          ((_, opInfo), idx) <- cfg.aluOpInfoMap.view.zipWithIndex
-        ) {
-          is (idx) {
-            innerFunc(
-              opInfo=opInfo,
-              opInfoIdx=idx,
-            )
+      //is (SnowHouseSplitOpKind.PURE_BR) {
+      //  switch (io.splitOp.pureBrOp) {
+      //    for (
+      //      ((_, opInfo), idx) <- cfg.pureBrOpInfoMap.view.zipWithIndex
+      //    ) {
+      //      is (idx) {
+      //        innerFunc(
+      //          opInfo=opInfo,
+      //          opInfoIdx=idx,
+      //        )
+      //      }
+      //    }
+      //  }
+      //}
+      is (SnowHouseSplitOpKind.ALU) {
+        switch (io.splitOp.aluOp) {
+          for (
+            ((_, opInfo), idx) <- cfg.aluOpInfoMap.view.zipWithIndex
+          ) {
+            is (idx) {
+              innerFunc(
+                opInfo=opInfo,
+                opInfoIdx=idx,
+              )
+            }
           }
         }
       }
-    }
-    is (SnowHouseSplitOpKind.MULTI_CYCLE) {
-      switch (io.splitOp.multiCycleOp) {
-        for (
-          ((_, opInfo), idx) <- cfg.multiCycleOpInfoMap.view.zipWithIndex
-        ) {
-          is (idx) {
-            innerFunc(
-              opInfo=opInfo,
-              opInfoIdx=idx,
-            )
+      is (SnowHouseSplitOpKind.MULTI_CYCLE) {
+        switch (io.splitOp.multiCycleOp) {
+          for (
+            ((_, opInfo), idx) <- cfg.multiCycleOpInfoMap.view.zipWithIndex
+          ) {
+            is (idx) {
+              innerFunc(
+                opInfo=opInfo,
+                opInfoIdx=idx,
+              )
+            }
           }
         }
       }
+      //is (SnowHouseSplitOpKind.PURE_CPYUI) 
+      //default {
+      //  switch (io.splitOp.pureCpyuiOp) {
+      //    for (
+      //      ((_, opInfo), idx) <- cfg.pureCpyOpInfoMap.view.zipWithIndex
+      //    ) {
+      //      is (idx) {
+      //        innerFunc(
+      //          opInfo=opInfo,
+      //          opInfoIdx=idx,
+      //        )
+      //      }
+      //    }
+      //  }
+      //}
     }
-    //is (SnowHouseSplitOpKind.PURE_CPYUI) 
-    //default {
-    //  switch (io.splitOp.pureCpyuiOp) {
-    //    for (
-    //      ((_, opInfo), idx) <- cfg.pureCpyOpInfoMap.view.zipWithIndex
-    //    ) {
-    //      is (idx) {
-    //        innerFunc(
-    //          opInfo=opInfo,
-    //          opInfoIdx=idx,
-    //        )
-    //      }
-    //    }
-    //  }
-    //}
   }
   when (io.takeIrq) {
     nextIra := io.regPc
