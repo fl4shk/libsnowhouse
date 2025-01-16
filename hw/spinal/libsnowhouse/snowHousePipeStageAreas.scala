@@ -959,6 +959,43 @@ case class SnowHousePipeStageExecuteSetOutpModMemWordIo(
           //case DstKind.Pc => {
           //  regPc
           //}
+          case DstKind.Spr(kind) => {
+            kind match {
+              case SprKind.AluFlags => {
+                rAluFlags
+              }
+              case SprKind.Ids => {
+                rIds
+              }
+              case SprKind.Ira => {
+                rIra
+              }
+              case SprKind.Ie => {
+                Cat(rIe).asUInt.resized
+              }
+              case SprKind.Ity => {
+                rIty
+              }
+              case SprKind.Sty => {
+                rSty
+              }
+              case SprKind.Hi => {
+                rHi
+              }
+              case SprKind.Lo => {
+                rLo
+              }
+              case _ => {
+                assert(
+                  false,
+                  s"not yet implemented"
+                  + s"opInfo(${opInfo} ${opInfo.select}) "
+                  + s"${opInfo.srcArr(idx)}"
+                )
+                U(s"${cfg.mainWidth}'d0")
+              }
+            }
+          }
           case _ => {
             assert(
               false,
@@ -2389,6 +2426,48 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
                   nextFlagZ := myBinop.flagZ
                   //io.rIndexReg := 0x0
                   nextIndexReg := 0x0
+                }
+                case DstKind.Spr(kind) => {
+                  kind match {
+                    case SprKind.AluFlags => {
+                      nextAluFlags := myBinop.main
+                    }
+                    case SprKind.Ids => {
+                      nextIds := myBinop.main
+                    }
+                    case SprKind.Ira => {
+                      nextIra := myBinop.main
+                    }
+                    case SprKind.Ie => {
+                      nextIe := myBinop.main(0)
+                    }
+                    case SprKind.Ity => {
+                      nextIty := myBinop.main
+                    }
+                    case SprKind.Sty => {
+                      nextSty := myBinop.main
+                    }
+                    case SprKind.Hi => {
+                      nextHi := myBinop.main
+                    }
+                    case SprKind.Lo => {
+                      nextLo := myBinop.main
+                    }
+                    //case SprKind.Modhi => {
+                    //}
+                    //case SprKind.Modlo => {
+                    //}
+                    case _ => {
+                      assert(
+                        false,
+                        s"not yet implemented: ${kind}"
+                      )
+                    }
+                    //case SprKind.Ie => {
+                    //}
+                    //case SprKind.IndexReg => {
+                    //}
+                  }
                 }
                 case DstKind.HiddenReg(HiddenRegKind.IndexReg) => {
                   //io.rIndexReg := myBinop.main

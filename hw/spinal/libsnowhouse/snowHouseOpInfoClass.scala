@@ -1056,11 +1056,32 @@ object AluOpKind {
         //dstSize=1, srcSize=2
         dst=Array[HashSet[DstKind]](
           HashSet(
-            DstKind.Gpr, DstKind.IndexReg,
+            DstKind.Gpr,
+            DstKind.IndexReg,
+            DstKind.AluFlags,
+            DstKind.Ids,
+            DstKind.Ira,
+            DstKind.Ie,
+            DstKind.Ity,
+            DstKind.Sty,
+            DstKind.Hi,
+            DstKind.Lo,
           )
         ),
         src=Array[HashSet[SrcKind]](
-          HashSet(SrcKind.Gpr, SrcKind.IndexReg, SrcKind.Pc),
+          HashSet(
+            SrcKind.Gpr,
+            SrcKind.Pc,
+            SrcKind.IndexReg,
+            SrcKind.AluFlags,
+            SrcKind.Ids,
+            SrcKind.Ira,
+            SrcKind.Ie,
+            SrcKind.Ity,
+            SrcKind.Sty,
+            SrcKind.Hi,
+            SrcKind.Lo,
+          ),
           HashSet(SrcKind.Gpr, SrcKind.Pc, SrcKind.Imm(/*None*/)),
         ),
         cond=HashSet[CondKind](

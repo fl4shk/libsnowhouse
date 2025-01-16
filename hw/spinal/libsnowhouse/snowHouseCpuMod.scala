@@ -1130,17 +1130,27 @@ object SnowHouseCpuOpInfoMap {
   //  )
   //)
   opInfoMap += (
-    SnowHouseCpuOp.CpyIdsRb -> OpInfo.mkCpy(
+    //SnowHouseCpuOp.CpyIdsRb -> OpInfo.mkCpy(
+    //  dstArr=Array[DstKind](DstKind.Ids),
+    //  srcArr=Array[SrcKind](SrcKind.Gpr),
+    //  cpyOp=CpyOpKind.Cpy,
+    //)
+    SnowHouseCpuOp.CpyIdsRb -> OpInfo.mkAlu(
       dstArr=Array[DstKind](DstKind.Ids),
-      srcArr=Array[SrcKind](SrcKind.Gpr),
-      cpyOp=CpyOpKind.Cpy,
+      srcArr=Array[SrcKind](SrcKind.Gpr, SrcKind.Gpr),
+      aluOp=AluOpKind.Add,
     )
   )
   opInfoMap += (
-    SnowHouseCpuOp.CpyRaIra -> OpInfo.mkCpy(
+    //SnowHouseCpuOp.CpyRaIra -> OpInfo.mkCpy(
+    //  dstArr=Array[DstKind](DstKind.Gpr),
+    //  srcArr=Array[SrcKind](SrcKind.Ira),
+    //  cpyOp=CpyOpKind.Cpy,
+    //)
+    SnowHouseCpuOp.CpyRaIra -> OpInfo.mkAlu(
       dstArr=Array[DstKind](DstKind.Gpr),
-      srcArr=Array[SrcKind](SrcKind.Ira),
-      cpyOp=CpyOpKind.Cpy,
+      srcArr=Array[SrcKind](SrcKind.Ira, SrcKind.Gpr),
+      aluOp=AluOpKind.Add,
     )
   )
   //opInfoMap += (
@@ -1158,10 +1168,15 @@ object SnowHouseCpuOpInfoMap {
   //  )
   //)
   opInfoMap += (
-    SnowHouseCpuOp.CpyIeRb -> OpInfo.mkCpy(
+    //SnowHouseCpuOp.CpyIeRb -> OpInfo.mkCpy(
+    //  dstArr=Array[DstKind](DstKind.Ie),
+    //  srcArr=Array[SrcKind](SrcKind.Gpr),
+    //  cpyOp=CpyOpKind.Cpy,
+    //)
+    SnowHouseCpuOp.CpyIeRb -> OpInfo.mkAlu(
       dstArr=Array[DstKind](DstKind.Ie),
-      srcArr=Array[SrcKind](SrcKind.Gpr),
-      cpyOp=CpyOpKind.Cpy,
+      srcArr=Array[SrcKind](SrcKind.Gpr, SrcKind.Gpr),
+      aluOp=AluOpKind.Add,
     )
   )
   opInfoMap += (
