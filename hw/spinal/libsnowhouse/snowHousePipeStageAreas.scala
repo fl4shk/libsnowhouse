@@ -5293,36 +5293,36 @@ case class SnowHousePipeStageMem(
       myCurrExt.modMemWord := (
         io.dbus.devData.data.resized
       )
-      switch (myDecodeExt.memAccessSubKind) {
-        is (SnowHouseMemAccessSubKind.Sz8) {
-          if (cfg.mainWidth >= 8) {
-            myCurrExt.modMemWord := (
-              io.dbus.devData.data.resized
-            )
-          }
-        }
-        is (SnowHouseMemAccessSubKind.Sz16) {
-          if (cfg.mainWidth >= 16) {
-            myCurrExt.modMemWord := (
-              io.dbus.devData.data.resized
-            )
-          }
-        }
-        is (SnowHouseMemAccessSubKind.Sz32) {
-          if (cfg.mainWidth >= 32) {
-            myCurrExt.modMemWord := (
-              io.dbus.devData.data.resized
-            )
-          }
-        }
-        is (SnowHouseMemAccessSubKind.Sz64) {
-          if (cfg.mainWidth >= 64) {
-            myCurrExt.modMemWord := (
-              io.dbus.devData.data.resized
-            )
-          }
-        }
-      }
+      //switch (myDecodeExt.memAccessSubKind) {
+      //  is (SnowHouseMemAccessSubKind.Sz8) {
+      //    if (cfg.mainWidth >= 8) {
+      //      myCurrExt.modMemWord := (
+      //        io.dbus.devData.data.resized
+      //      )
+      //    }
+      //  }
+      //  is (SnowHouseMemAccessSubKind.Sz16) {
+      //    if (cfg.mainWidth >= 16) {
+      //      myCurrExt.modMemWord := (
+      //        io.dbus.devData.data.resized
+      //      )
+      //    }
+      //  }
+      //  is (SnowHouseMemAccessSubKind.Sz32) {
+      //    if (cfg.mainWidth >= 32) {
+      //      myCurrExt.modMemWord := (
+      //        io.dbus.devData.data.resized
+      //      )
+      //    }
+      //  }
+      //  is (SnowHouseMemAccessSubKind.Sz64) {
+      //    if (cfg.mainWidth >= 64) {
+      //      myCurrExt.modMemWord := (
+      //        io.dbus.devData.data.resized
+      //      )
+      //    }
+      //  }
+      //}
       //} otherwise {
       //  myCurrExt.modMemWord := (
       //    myCurrExt.rdMemWord(PipeMemRmw.modWrIdx)
