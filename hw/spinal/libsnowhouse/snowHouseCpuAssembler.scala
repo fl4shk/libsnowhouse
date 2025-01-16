@@ -591,23 +591,23 @@ object and {
       rA=rA,
       rB=rB,
       rC=rC,
-      imm=0,
+      imm=SnowHouseCpuOp.AndRaRbRc._2._1,
     )
   }
-  //def apply(
-  //  rA: Gpr,
-  //  rB: Gpr,
-  //  //rC: Gpr,
-  //  imm: SnowHouseCpuExpr
-  //) = {
-  //  Instruction(
-  //    op=SnowHouseCpuOp.And,
-  //    rA=rA,
-  //    rB=rB,
-  //    rC=SnowHouseCpuRegs.r0,
-  //    imm=imm,
-  //  )
-  //}
+  def apply(
+    rA: Gpr,
+    rB: Gpr,
+    //rC: Gpr,
+    imm: SnowHouseCpuExpr
+  ) = {
+    InstructionAsmStmt(
+      op=SnowHouseCpuOp.AndRaRbSimm16,
+      rA=rA,
+      rB=rB,
+      rC=SnowHouseCpuRegs.r0,
+      imm=imm,
+    )
+  }
 }
 object or {
   def apply(
@@ -1217,21 +1217,22 @@ object cpy {
       sB match {
         case Spr(kind) => {
           kind match {
-            case SprKind.Ids => {
-              SnowHouseCpuOp.CpyRaIds
-            }
+            //case SprKind.Ids => {
+            //  SnowHouseCpuOp.CpyRaIds
+            //}
             case SprKind.Ira => {
               SnowHouseCpuOp.CpyRaIra
             }
-            case SprKind.Ie => {
-              SnowHouseCpuOp.CpyRaIe
-            }
+            //case SprKind.Ie => {
+            //  SnowHouseCpuOp.CpyRaIe
+            //}
             case _ => {
               assert(
                 false,
                 s"${kind}"
               )
-              SnowHouseCpuOp.CpyRaIe
+              //SnowHouseCpuOp.CpyRaIe
+              SnowHouseCpuOp.CpyRaIra
             }
           }
         }
@@ -1239,7 +1240,8 @@ object cpy {
           assert(
             false
           )
-          SnowHouseCpuOp.CpyRaIe
+          //SnowHouseCpuOp.CpyRaIe
+          SnowHouseCpuOp.CpyRaIra
         }
       }
     )
@@ -1262,9 +1264,9 @@ object cpy {
             case SprKind.Ids => {
               SnowHouseCpuOp.CpyIdsRb
             }
-            case SprKind.Ira => {
-              SnowHouseCpuOp.CpyIraRb
-            }
+            //case SprKind.Ira => {
+            //  SnowHouseCpuOp.CpyIraRb
+            //}
             case SprKind.Ie => {
               SnowHouseCpuOp.CpyIeRb
             }

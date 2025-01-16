@@ -96,59 +96,63 @@ object SnowHouseCpuOp {
   def OrKindRc = (0x0, 0x0)
   def OrKindSimm16 = (0x1, 0x0)
 
-  // `AndRaRbRc` is moved down here to help with synthesis/routing of
+  // `AndRaRbSimm16` is moved down here to help with synthesis/routing of
   // executing/decoding instructions
-  val AndRaRbRc = mkOp(                       // 5, 0
-    "and rA, rB, rC", AndKindRc, true
+  val AndRaRbSimm16 = mkOp(                       // 5, 0
+    "and rA, rB, rC", AndKindSimm16, true
   )
-  def AndKindRc = (0x0, 0x0)
-  //def AndKindSimm16
+  //def AndKindRc = (0x0, 0x0)
+  def AndKindSimm16 = (0x0, 0x0)
 
   val LslRaRbRc = mkOp(                         // 6, 0
-    "lsl rA, rB, rC", ShiftSprKindLslRc, false
+    "lsl rA, rB, rC", ShiftEtcSprKindLslRc, false
   )
   val LsrRaRbRc = mkOp(                         // 6, 1
-    "lsr rA, rB, rC", ShiftSprKindLsrRc, false
+    "lsr rA, rB, rC", ShiftEtcSprKindLsrRc, false
   )
   val AsrRaRbRc = mkOp(                         // 6, 2
-    "asr rA, rB, rC", ShiftSprKindAsrRc, false
+    "asr rA, rB, rC", ShiftEtcSprKindAsrRc, false
   )
-  val CpyRaIds = mkOp(                          // 6, 3
-    "cpy rA, ids", ShiftSprKindCpyRaIds, false
+  val AndRaRbRc = mkOp(                         // 6, 2
+    "and rA, rB, rC", ShiftEtcSprKindAndRc, false
   )
+  //val CpyRaIds = mkOp(                          // 6, 3
+  //  "cpy rA, ids", ShiftEtcSprKindCpyRaIds, false
+  //)
   val CpyIdsRb = mkOp(                          // 6, 4
-    "cpy ids, rB", ShiftSprKindCpyIdsRb, false
+    "cpy ids, rB", ShiftEtcSprKindCpyIdsRb, false
   )
   val CpyRaIra = mkOp(                          // 6, 5
-    "cpy rA, ira", ShiftSprKindCpyRaIra, false
+    "cpy rA, ira", ShiftEtcSprKindCpyRaIra, false
   )
-  val CpyIraRb = mkOp(                          // 6, 6
-    "cpy ira, rB", ShiftSprKindCpyIraRb, false
-  )
-  val CpyRaIe = mkOp(                           // 6, 7
-    "cpy rA, ie", ShiftSprKindCpyRaIe, false
-  )
+  //val CpyIraRb = mkOp(                          // 6, 6
+  //  "cpy ira, rB", ShiftEtcSprKindCpyIraRb, false
+  //)
+  //val CpyRaIe = mkOp(                           // 6, 7
+  //  "cpy rA, ie", ShiftEtcSprKindCpyRaIe, false
+  //)
   val CpyIeRb = mkOp(                           // 6, 8
-    "cpy ie, rB", ShiftSprKindCpyIeRb, false
+    "cpy ie, rB", ShiftEtcSprKindCpyIeRb, false
   )
   val RetIra = mkOp(                            // 6, 9
-    "ret ira", ShiftSprKindRetIra, false
+    "ret ira", ShiftEtcSprKindRetIra, true
   )
-  val ShiftSprOpReserved = mkOp(                // 6, 10
-    "ShiftSprOpReserved", ShiftSprKindReserved, true
-  )
+  //val ShiftEtcSprOpReserved = mkOp(                // 6, 10
+  //  "ShiftEtcSprOpReserved", ShiftEtcSprKindReserved, true
+  //)
 
-  def ShiftSprKindLslRc = (0x0, 0x0)
-  def ShiftSprKindLsrRc = (0x1, 0x0)
-  def ShiftSprKindAsrRc = (0x2, 0x0)
-  def ShiftSprKindCpyRaIds = (0x3, 0x0)
-  def ShiftSprKindCpyIdsRb = (0x4, 0x0)
-  def ShiftSprKindCpyRaIra = (0x5, 0x0)
-  def ShiftSprKindCpyIraRb = (0x6, 0x0)
-  def ShiftSprKindCpyRaIe = (0x7, 0x0)
-  def ShiftSprKindCpyIeRb = (0x8, 0x0)
-  def ShiftSprKindRetIra = (0x9, 0x0)
-  def ShiftSprKindReserved = (0xa, 0x0)
+  def ShiftEtcSprKindLslRc = (0x0, 0x0)
+  def ShiftEtcSprKindLsrRc = (0x1, 0x0)
+  def ShiftEtcSprKindAsrRc = (0x2, 0x0)
+  def ShiftEtcSprKindAndRc = (0x3, 0x0)
+  //def ShiftEtcSprKindCpyRaIds = (0x3, 0x0)
+  def ShiftEtcSprKindCpyIdsRb = (0x4, 0x0)
+  def ShiftEtcSprKindCpyRaIra = (0x5, 0x0)
+  //def ShiftEtcSprKindCpyIraRb = (0x6, 0x0)
+  //def ShiftEtcSprKindCpyRaIe = (0x7, 0x0)
+  def ShiftEtcSprKindCpyIeRb = (0x6, 0x0)
+  def ShiftEtcSprKindRetIra = (0x7, 0x0)
+  //def ShiftEtcSprKindReserved = (0xa, 0x0)
 
   //val AddRaPcSimm16 = mkOp(                   // 7, 0
   //  "AddRaPcSimm16", AddPcKindMain, true
@@ -459,6 +463,9 @@ object SnowHouseCpuPipeStageInstrDecode {
       ) {
         if (someOp == tuple) {
           val mySplitOp = upPayload.splitOp
+          //for ((src, srcIdx) <- opInfo.srcArr.view.zipWithIndex) {
+          //  mySplitOp.srcKindVec
+          //}
           for (
             ((_, cpyOpInfo), cpyOpInfoIdx)
             <- cfg.cpyCpyuiOpInfoMap.view.zipWithIndex
@@ -648,8 +655,8 @@ object SnowHouseCpuPipeStageInstrDecode {
           setOp(OrRaRbImm16)
         }
       }
-      is (AndRaRbRc._1) {
-        setOp(AndRaRbRc)
+      is (AndRaRbSimm16._1) {
+        setOp(AndRaRbSimm16)
       }
       is (LslRaRbRc._1) {
         switch (encInstr.imm16(3 downto 0)) {
@@ -662,21 +669,24 @@ object SnowHouseCpuPipeStageInstrDecode {
           is (AsrRaRbRc._2._1) {
             setOp(AsrRaRbRc)
           }
-          is (CpyRaIds._2._1) {
-            setOp(CpyRaIds)
+          is (AndRaRbRc._2._1) {
+            setOp(AndRaRbRc)
           }
+          //is (CpyRaIds._2._1) {
+          //  setOp(CpyRaIds)
+          //}
           is (CpyIdsRb._2._1) {
             setOp(CpyIdsRb)
           }
           is (CpyRaIra._2._1) {
             setOp(CpyRaIra)
           }
-          is (CpyIraRb._2._1) {
-            setOp(CpyIraRb)
-          }
-          is (CpyRaIe._2._1) {
-            setOp(CpyRaIe)
-          }
+          //is (CpyIraRb._2._1) {
+          //  setOp(CpyIraRb)
+          //}
+          //is (CpyRaIe._2._1) {
+          //  setOp(CpyRaIe)
+          //}
           is (CpyIeRb._2._1) {
             setOp(CpyIeRb)
           }
@@ -1065,10 +1075,10 @@ object SnowHouseCpuOpInfoMap {
   )
   //--------
   opInfoMap += (
-    // and rA, rB, rC
-    SnowHouseCpuOp.AndRaRbRc -> OpInfo.mkAlu(
+    // and rA, rB, simm16
+    SnowHouseCpuOp.AndRaRbSimm16 -> OpInfo.mkAlu(
       dstArr=Array[DstKind](DstKind.Gpr),
-      srcArr=Array[SrcKind](SrcKind.Gpr, SrcKind.Gpr),
+      srcArr=Array[SrcKind](SrcKind.Gpr, SrcKind.Imm()),
       aluOp=AluOpKind.And,
     )
   )
@@ -1105,12 +1115,20 @@ object SnowHouseCpuOpInfoMap {
     )
   )
   opInfoMap += (
-    SnowHouseCpuOp.CpyRaIds -> OpInfo.mkCpy(
+    // and rA, rB, rC
+    SnowHouseCpuOp.AndRaRbRc -> OpInfo.mkAlu(
       dstArr=Array[DstKind](DstKind.Gpr),
-      srcArr=Array[SrcKind](SrcKind.Ids),
-      cpyOp=CpyOpKind.Cpy,
+      srcArr=Array[SrcKind](SrcKind.Gpr, SrcKind.Gpr),
+      aluOp=AluOpKind.And,
     )
   )
+  //opInfoMap += (
+  //  SnowHouseCpuOp.CpyRaIds -> OpInfo.mkCpy(
+  //    dstArr=Array[DstKind](DstKind.Gpr),
+  //    srcArr=Array[SrcKind](SrcKind.Ids),
+  //    cpyOp=CpyOpKind.Cpy,
+  //  )
+  //)
   opInfoMap += (
     SnowHouseCpuOp.CpyIdsRb -> OpInfo.mkCpy(
       dstArr=Array[DstKind](DstKind.Ids),
@@ -1125,20 +1143,20 @@ object SnowHouseCpuOpInfoMap {
       cpyOp=CpyOpKind.Cpy,
     )
   )
-  opInfoMap += (
-    SnowHouseCpuOp.CpyIraRb -> OpInfo.mkCpy(
-      dstArr=Array[DstKind](DstKind.Ira),
-      srcArr=Array[SrcKind](SrcKind.Gpr),
-      cpyOp=CpyOpKind.Cpy,
-    )
-  )
-  opInfoMap += (
-    SnowHouseCpuOp.CpyRaIe -> OpInfo.mkCpy(
-      dstArr=Array[DstKind](DstKind.Gpr),
-      srcArr=Array[SrcKind](SrcKind.Ie),
-      cpyOp=CpyOpKind.Cpy,
-    )
-  )
+  //opInfoMap += (
+  //  SnowHouseCpuOp.CpyIraRb -> OpInfo.mkCpy(
+  //    dstArr=Array[DstKind](DstKind.Ira),
+  //    srcArr=Array[SrcKind](SrcKind.Gpr),
+  //    cpyOp=CpyOpKind.Cpy,
+  //  )
+  //)
+  //opInfoMap += (
+  //  SnowHouseCpuOp.CpyRaIe -> OpInfo.mkCpy(
+  //    dstArr=Array[DstKind](DstKind.Gpr),
+  //    srcArr=Array[SrcKind](SrcKind.Ie),
+  //    cpyOp=CpyOpKind.Cpy,
+  //  )
+  //)
   opInfoMap += (
     SnowHouseCpuOp.CpyIeRb -> OpInfo.mkCpy(
       dstArr=Array[DstKind](DstKind.Ie),

@@ -516,6 +516,17 @@ extends SpinalEnum(defaultEncoding=binaryOneHot) {
     //PURE_CPYUI
     = newElement()
 }
+//object SnowHouseSplitOpSrcKind
+//extends SpinalEnum(defaultEncoding=binarySequential) {
+//  val
+//    IMM,
+//    GPR
+//    //ALU_FLAGS
+//    //IDS,
+//    //IRA,
+//    //IE
+//    = newElement()
+//}
 case class SnowHouseSplitOp(
   cfg: SnowHouseConfig
 ) extends Bundle {
@@ -537,6 +548,9 @@ case class SnowHouseSplitOp(
   )
   //val pureCpyuiOp = /*Flow*/(
   //  UInt(log2Up(cfg.pureCpyOpInfoMap.size) bits)
+  //)
+  //val srcKindVec = Vec.fill(cfg.numGprs)(
+  //  SnowHouseSplitOpSrcKind()
   //)
 }
 case class SnowHousePipePayload(
