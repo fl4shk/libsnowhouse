@@ -51,22 +51,29 @@ case class SnowHouseInstrDataDualRam(
     initBigInt=Some(instrInitBigInt),
   )
   //--------
-  //io.ibus.ready := io.ibus.rValid
-  io.ibus.ready := False
+  val fastIbusReady = (
+    //true
+    false
+  )
   val rIbusReadyCnt = Reg(UInt(8 bits)) init(0)
   val rIbusReadyState = Reg(Bool()) init(False)
-  when (io.ibus.rValid) {
-    when (
-      rIbusReadyCnt > 0
-    ) {
-      rIbusReadyCnt := rIbusReadyCnt - 1
-    } otherwise {
-      io.ibus.ready := True
-      rIbusReadyState := !rIbusReadyState
-      when (!rIbusReadyState) {
-        rIbusReadyCnt := 2
+  if (fastIbusReady) {
+    io.ibus.ready := io.ibus.rValid
+  } else {
+    io.ibus.ready := False
+    when (io.ibus.rValid) {
+      when (
+        rIbusReadyCnt > 0
+      ) {
+        rIbusReadyCnt := rIbusReadyCnt - 1
       } otherwise {
-        rIbusReadyCnt := 0
+        io.ibus.ready := True
+        rIbusReadyState := !rIbusReadyState
+        when (!rIbusReadyState) {
+          rIbusReadyCnt := 2
+        } otherwise {
+          rIbusReadyCnt := 0
+        }
       }
     }
   }
@@ -86,26 +93,33 @@ case class SnowHouseInstrDataDualRam(
     depth=dataRamDepth,
     initBigInt=Some(dataInitBigInt),
   )
-  //io.dbus.ready := io.dbus.rValid
-  io.dbus.ready := False
+  val fastDbusReady = (
+    //true
+    false
+  )
   val rDbusReadyCnt = Reg(UInt(5 bits)) init(0)
   val rDbusReadyState = Reg(Bool(), init=False)
-  when (io.dbus.rValid) {
-    when (
-      //rDbusReadyCnt > 0
-      !rDbusReadyCnt.msb
-    ) {
-      rDbusReadyCnt := rDbusReadyCnt - 1
-    } otherwise {
-      io.dbus.ready := True
-      rDbusReadyState := !rDbusReadyState
-      when (!rDbusReadyState) {
-        rDbusReadyCnt := (
-          //4
-          2
-        )
+  if (fastDbusReady) {
+    io.dbus.ready := io.dbus.rValid
+  } else {
+    io.dbus.ready := False
+    when (io.dbus.rValid) {
+      when (
+        //rDbusReadyCnt > 0
+        !rDbusReadyCnt.msb
+      ) {
+        rDbusReadyCnt := rDbusReadyCnt - 1
       } otherwise {
-        rDbusReadyCnt := 0
+        io.dbus.ready := True
+        rDbusReadyState := !rDbusReadyState
+        when (!rDbusReadyState) {
+          rDbusReadyCnt := (
+            //4
+            2
+          )
+        } otherwise {
+          rDbusReadyCnt := 0
+        }
       }
     }
   }
