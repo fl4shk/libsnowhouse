@@ -1091,20 +1091,20 @@ object jl {
   }
 }
 object ldr {
-  def apply(
-    rA: Gpr,
-    rB: Gpr,
-    rC: Gpr,
-    //imm: SnowHouseCpuExpr,
-  ) = {
-    InstructionAsmStmt(
-      op=SnowHouseCpuOp.LdrRaRbRc,
-      rA=rA,
-      rB=rB,
-      rC=rC,
-      imm=0x0,
-    )
-  }
+  //def apply(
+  //  rA: Gpr,
+  //  rB: Gpr,
+  //  rC: Gpr,
+  //  //imm: SnowHouseCpuExpr,
+  //) = {
+  //  InstructionAsmStmt(
+  //    op=SnowHouseCpuOp.LdrRaRbRc,
+  //    rA=rA,
+  //    rB=rB,
+  //    rC=rC,
+  //    imm=0x0,
+  //  )
+  //}
   def apply(
     rA: Gpr,
     rB: Gpr,
@@ -1133,20 +1133,20 @@ object ldr {
   //}
 }
 object str {
-  def apply(
-    rA: Gpr,
-    rB: Gpr,
-    rC: Gpr,
-    //imm: SnowHouseCpuExpr,
-  ) = {
-    InstructionAsmStmt(
-      op=SnowHouseCpuOp.StrRaRbRc,
-      rA=rA,
-      rB=rB,
-      rC=rC,
-      imm=0x0,
-    )
-  }
+  //def apply(
+  //  rA: Gpr,
+  //  rB: Gpr,
+  //  rC: Gpr,
+  //  //imm: SnowHouseCpuExpr,
+  //) = {
+  //  InstructionAsmStmt(
+  //    op=SnowHouseCpuOp.StrRaRbRc,
+  //    rA=rA,
+  //    rB=rB,
+  //    rC=rC,
+  //    imm=0x0,
+  //  )
+  //}
   def apply(
     rA: Gpr,
     rB: Gpr,
@@ -1306,50 +1306,50 @@ object cpy {
   //  )
   //}
 }
-object push {
-  def apply(
-    rA: Gpr,
-    rB: Gpr,
-  ) = {
-    InstructionAsmStmt(
-      op=SnowHouseCpuOp.PushRaRb,
-      rA=rA,
-      rB=rB,
-      rC=SnowHouseCpuRegs.r0,
-      imm=SnowHouseCpuOp.PushRaRb._2._1,
-    )
-  }
-  def apply(
-    rA: Gpr
-  ): AsmStmt = {
-    push.apply(
-      rA=rA,
-      rB=SnowHouseCpuRegs.sp,
-    )
-  }
-}
-object pop {
-  def apply(
-    rA: Gpr,
-    rB: Gpr,
-  ) = {
-    InstructionAsmStmt(
-      op=SnowHouseCpuOp.PopRaRb._1,
-      rA=rA,
-      rB=rB,
-      rC=SnowHouseCpuRegs.r0,
-      imm=SnowHouseCpuOp.PopRaRb._1._2._1,
-    )
-  }
-  def apply(
-    rA: Gpr
-  ): AsmStmt = {
-    pop.apply(
-      rA=rA,
-      rB=SnowHouseCpuRegs.sp,
-    )
-  }
-}
+//object push {
+//  def apply(
+//    rA: Gpr,
+//    rB: Gpr,
+//  ) = {
+//    InstructionAsmStmt(
+//      op=SnowHouseCpuOp.PushRaRb,
+//      rA=rA,
+//      rB=rB,
+//      rC=SnowHouseCpuRegs.r0,
+//      imm=SnowHouseCpuOp.PushRaRb._2._1,
+//    )
+//  }
+//  def apply(
+//    rA: Gpr
+//  ): AsmStmt = {
+//    push.apply(
+//      rA=rA,
+//      rB=SnowHouseCpuRegs.sp,
+//    )
+//  }
+//}
+//object pop {
+//  def apply(
+//    rA: Gpr,
+//    rB: Gpr,
+//  ) = {
+//    InstructionAsmStmt(
+//      op=SnowHouseCpuOp.PopRaRb._1,
+//      rA=rA,
+//      rB=rB,
+//      rC=SnowHouseCpuRegs.r0,
+//      imm=SnowHouseCpuOp.PopRaRb._1._2._1,
+//    )
+//  }
+//  def apply(
+//    rA: Gpr
+//  ): AsmStmt = {
+//    pop.apply(
+//      rA=rA,
+//      rB=SnowHouseCpuRegs.sp,
+//    )
+//  }
+//}
 object pre {
   def apply(
     imm: SnowHouseCpuExpr,

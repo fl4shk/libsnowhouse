@@ -176,37 +176,48 @@ object SnowHouseCpuOp {
   def MultiCycleKindUmodRc = (0x3, 0x0)
   def MultiCycleKindSmodRc = (0x4, 0x0)
 
-  val LdrRaRbRc = mkOp(                       // 8, 0
-    "ldr rA, rB, rC", LdKind32Rc, false
-  )
+  //val LdrRaRbRc = mkOp(                       // 8, 0
+  //  "ldr rA, rB, rC", LdKind32Rc, false
+  //)
   val LdrRaRbSimm16 = mkOp(                   // 8, 1
     "ldr rA, rB, simm16", LdKind32Simm16, true
   )
-  def LdKind32Rc = (0x0, 0x0)
-  def LdKind32Simm16 = (0x1, 0x0)
+  //def LdKind32Rc = (0x0, 0x0)
+  def LdKind32Simm16 = (0x0, 0x0)
+  //def LdKind32Simm16 = (0x1, 0x0)
 
-  val LduhRaRbRc = mkOp(                      // 9, 0
+  //val StrRaRbRc = mkOp(                       // 9, 0
+  //  "str rA, rB, rC", StKind32Rc, false
+  //)
+  val StrRaRbSimm16 = mkOp(                   // 9, 1
+    "str rA, rB, simm16", StKind32Simm16, true
+  )
+  //def StKind32Rc = (0x0, 0x0)
+  def StKind32Simm16 = (0x0, 0x0)
+  //def StKind32Simm16 = (0x1, 0x0)
+
+  val LduhRaRbRc = mkOp(                      // 10, 0
     "lduh rA, rB, rC", LdSmallKindU16Rc, false
   )
-  //val LduhRaRbSimm16 = mkOp(                  // 9, ?
+  //val LduhRaRbSimm16 = mkOp(                  // 10, ?
   //  "lduh rA, rB, simm16", LdSmallKindU16Simm16, false
   //)
-  val LdshRaRbRc = mkOp(                      // 9, 1
+  val LdshRaRbRc = mkOp(                      // 10, 1
     "ldsh rA, rB, rC", LdSmallKindS16Rc, false
   )
-  //val LdshRaRbSimm16 = mkOp(                  // 9, ?
+  //val LdshRaRbSimm16 = mkOp(                  // 10, ?
   //  "ldsh rA, rB, simm16", LdSmallKindS16Simm16, false
   //)
-  val LdubRaRbRc = mkOp(                      // 9, 2
+  val LdubRaRbRc = mkOp(                      // 10, 2
     "ldub rA, rB, rC", LdSmallKindU8Rc, false
   )
-  //val LdubRaRbSimm16 = mkOp(                  // 9, ?
+  //val LdubRaRbSimm16 = mkOp(                  // 10, ?
   //  "ldub rA, rB, simm16", LdSmallKindU8Simm16, false
   //)
-  val LdsbRaRbRc = mkOp(                      // 9, 3
+  val LdsbRaRbRc = mkOp(                      // 10, 3
     "ldsb rA, rB, rC", LdSmallKindS8Rc, true
   )
-  //val LdsbRaRbSimm16 = mkOp(                  // 9, ?
+  //val LdsbRaRbSimm16 = mkOp(                  // 10, ?
   //  "ldsb rA, rB, simm16", LdSmallKindS8Simm16, true
   //)
   def LdSmallKindU16Rc = (0x0, 0x0)
@@ -218,14 +229,6 @@ object SnowHouseCpuOp {
   def LdSmallKindS8Rc = (0x3, 0x0)
   //def LdSmallKindS8Simm16 = ?
 
-  val StrRaRbRc = mkOp(                       // 10, 0
-    "str rA, rB, rC", StKind32Rc, false
-  )
-  val StrRaRbSimm16 = mkOp(                   // 10, 1
-    "str rA, rB, simm16", StKind32Simm16, true
-  )
-  def StKind32Rc = (0x0, 0x0)
-  def StKind32Simm16 = (0x1, 0x0)
 
   val SthRaRbRc = mkOp(                         // 11, 0
     "sth rA, rB, rC", StSmallKind16Rc, false
@@ -263,16 +266,16 @@ object SnowHouseCpuOp {
     "add rA, pc, simm16", JmpKindBnz, false
   )
   val JlRaRb = mkOp(                          // 12, 2
-    "jl rA, rB", JmpKindJlRaRb, false
+    "jl rA, rB", JmpKindJlRaRb, true
   )
-  val JmpReserved = mkOp(                     // 12, 3
-    "<JmpReserved>", JmpKindReserved, true
-  )
+  //val JmpReserved = mkOp(                     // 12, 3
+  //  "<JmpReserved>", JmpKindReserved, true
+  //)
   def JmpKindBz = (0x0, 0x0)
   def JmpKindBnz = (0x1, 0x0)
   def JmpKindJlRaRb = (0x2, 0x0)
   //def AddPcKindMain = 0x3
-  def JmpKindReserved = (0x3, 0x0)
+  //def JmpKindReserved = (0x3, 0x0)
 
   //val CpyRaRb = mkOp("cpy rA, rB", CpyKindCpyRb, false)              // 12, 0
   //val CpyRaSimm16 = mkOp("cpy rA, simm16", CpyKindCpySimm16, false)  // 12, 1
@@ -285,24 +288,25 @@ object SnowHouseCpuOp {
   ////def CpyKindCpySimm16 = 0x1
   //def CpyKindCpyuRb = 0x0//0x2
   //def CpyKindCpyuSimm16 = 0x1//0x3
-  val PushRaRb = mkOp(                            // 13, 0
-    "push rA, rB", StackKindPushRaRb, false
-  )
-  val PopRaRb = (                                 // 13, 1
-    mkOp(
-      "pop rA, rB", StackKindPopRaRb, false //
-    ),
-    mkOp(
-      "internal: pop0", StackKindPopRaRbInternal0, false
-    ),
-    mkOp(
-      "internal: pop1", StackKindPopRaRbInternal1, true
-    )
-  )
-  def StackKindPushRaRb = (0x0, 0x0)
-  def StackKindPopRaRb = (0x1, 0x0)
-  def StackKindPopRaRbInternal0 = (StackKindPopRaRb._1, 0x1)
-  def StackKindPopRaRbInternal1 = (StackKindPopRaRb._1, 0x2)
+  //--------
+  //val PushRaRb = mkOp(                            // 13, 0
+  //  "push rA, rB", StackKindPushRaRb, false
+  //)
+  //val PopRaRb = (                                 // 13, 1
+  //  mkOp(
+  //    "pop rA, rB", StackKindPopRaRb, false //
+  //  ),
+  //  mkOp(
+  //    "internal: pop0", StackKindPopRaRbInternal0, false
+  //  ),
+  //  mkOp(
+  //    "internal: pop1", StackKindPopRaRbInternal1, true
+  //  )
+  //)
+  //def StackKindPushRaRb = (0x0, 0x0)
+  //def StackKindPopRaRb = (0x1, 0x0)
+  //def StackKindPopRaRbInternal0 = (StackKindPopRaRb._1, 0x1)
+  //def StackKindPopRaRbInternal1 = (StackKindPopRaRb._1, 0x2)
   //--------
   val PreImm16 = mkOp(                      // 14, 0
     "pre simm16", PreKindImm16, true
@@ -310,7 +314,7 @@ object SnowHouseCpuOp {
   def PreKindImm16 = (0x0, 0x0)
   //--------
   val OpLim = _opCnt
-  val expectedNumOpcodes = 15
+  val expectedNumOpcodes = 14
   assert(
     OpLim == expectedNumOpcodes,
     s"eek! "
@@ -710,12 +714,19 @@ object SnowHouseCpuPipeStageInstrDecode {
           }
         }
       }
-      is (LdrRaRbRc._1) {
-        when (encInstr.rcIdx =/= 0x0) {
-          setOp(LdrRaRbRc)
-        } otherwise {
+      is (LdrRaRbSimm16._1) {
+        //when (encInstr.rcIdx =/= 0x0) {
+        //  setOp(LdrRaRbRc)
+        //} otherwise {
           setOp(LdrRaRbSimm16)
-        }
+        //}
+      }
+      is (StrRaRbSimm16._1) {
+        //when (encInstr.rcIdx =/= 0x0) {
+        //  setOp(StrRaRbRc)
+        //} otherwise {
+          setOp(StrRaRbSimm16)
+        //}
       }
       is (LduhRaRbRc._1) {
         switch (encInstr.imm16(1 downto 0)) {
@@ -731,13 +742,6 @@ object SnowHouseCpuPipeStageInstrDecode {
           is (LdsbRaRbRc._2._1) {
             setOp(LdsbRaRbRc)
           }
-        }
-      }
-      is (StrRaRbRc._1) {
-        when (encInstr.rcIdx =/= 0x0) {
-          setOp(StrRaRbRc)
-        } otherwise {
-          setOp(StrRaRbSimm16)
         }
       }
       is (SthRaRbRc._1) {
@@ -810,81 +814,81 @@ object SnowHouseCpuPipeStageInstrDecode {
       //    }
       //  }
       //}
-      is (PushRaRb._1) {
-        doDefault()
-        //switch (encInstr.imm16(0 downto 0)) {
-        //  //when (psId.rMultIn
-        //  is (PushRaRb._2._1) {
-        //    //upPayload.gprIdxVec(0) := encInstr.rbIdx
-        //    //upPayload.gprIdxVec(1) := encInstr.raIdx
-        //    setOp(PushRaRb)
-        //    //when (psId.startDecode) {
-        //    //  psId.nextMultiInstrCnt := 1
-        //    //  setOp(StrRaRbSimm16)
-        //    //  upPayload.gprIdxVec(0) := encInstr.raIdx
-        //    //  upPayload.gprIdxVec(1) := encInstr.rbIdx
-        //    //  upPayload.gprIdxVec(2) := SnowHouseCpuRegs.r0.index
-        //    //  upPayload.imm := 0x0
-        //    //} otherwise {
-        //    //  setOp(AddRaRbSimm16)
-        //    //  upPayload.gprIdxVec(0) := encInstr.rbIdx
-        //    //  upPayload.gprIdxVec(1) := encInstr.rbIdx
-        //    //  upPayload.gprIdxVec(2) := SnowHouseCpuRegs.r0.index
-        //    //  val tempSImm = SInt(cfg.mainWidth bits)
-        //    //  tempSImm := -(cfg.mainWidth / 8)
-        //    //  upPayload.imm := tempSImm.asUInt
-        //    //}
-        //  }
-        //  is (PopRaRb._1._2._1) {
-        //    if (cfg.irqCfg != None) {
-        //      upPayload.blockIrq := True
-        //    }
-        //    //when (psId.rMultiInstrCnt === 0)
-        //    //val dontChangeTempState = Bool()
-        //    //dontChangeTempState := False
-        //    when (
-        //      //!rTempState
-        //      psId.rMultiInstrCnt.msb
-        //    ) {
-        //      when (psId.startDecode) {
-        //        when (
-        //          cId.up.isFiring
-        //          //cId.down.isFiring
-        //        ) {
-        //          //rTempState := True
-        //          //dontChangeTempState := True
-        //          psId.nextMultiInstrCnt := 0x0
-        //          //doDefault()
-        //          setOp(AddRaRbSimm16)
-        //        }
-        //      }
-        //      upPayload.gprIdxVec(0) := encInstr.rbIdx
-        //      upPayload.gprIdxVec(1) := encInstr.rbIdx
-        //      upPayload.gprIdxVec(2) := SnowHouseCpuRegs.r0.index
-        //      //val tempSImm = SInt(cfg.mainWidth bits)
-        //      //tempSImm := -(cfg.mainWidth / 8)
-        //      upPayload.imm := (cfg.mainWidth / 8) //tempSImm.asUInt
-        //    } otherwise {
-        //      //when (psId.startDecode) {
-        //      when (cId.down.isFiring) {
-        //        setOp(LdrRaRbSimm16)
-        //      }
-        //      upPayload.gprIdxVec(0) := encInstr.raIdx
-        //      upPayload.gprIdxVec(1) := encInstr.rbIdx
-        //      upPayload.gprIdxVec(2) := SnowHouseCpuRegs.r0.index
-        //      upPayload.imm := 0x0
-        //      //}
-        //    }
-        //    //when (rTempState) {
-        //    //when (!psId.startDecode) {
-        //      //when (cId.up.isFiring) {
-        //      //  rTempState := False
-        //      //}
-        //    //}
-        //    //}
-        //  }
-        //}
-      }
+      //is (PushRaRb._1) {
+      //  doDefault()
+      //  //switch (encInstr.imm16(0 downto 0)) {
+      //  //  //when (psId.rMultIn
+      //  //  is (PushRaRb._2._1) {
+      //  //    //upPayload.gprIdxVec(0) := encInstr.rbIdx
+      //  //    //upPayload.gprIdxVec(1) := encInstr.raIdx
+      //  //    setOp(PushRaRb)
+      //  //    //when (psId.startDecode) {
+      //  //    //  psId.nextMultiInstrCnt := 1
+      //  //    //  setOp(StrRaRbSimm16)
+      //  //    //  upPayload.gprIdxVec(0) := encInstr.raIdx
+      //  //    //  upPayload.gprIdxVec(1) := encInstr.rbIdx
+      //  //    //  upPayload.gprIdxVec(2) := SnowHouseCpuRegs.r0.index
+      //  //    //  upPayload.imm := 0x0
+      //  //    //} otherwise {
+      //  //    //  setOp(AddRaRbSimm16)
+      //  //    //  upPayload.gprIdxVec(0) := encInstr.rbIdx
+      //  //    //  upPayload.gprIdxVec(1) := encInstr.rbIdx
+      //  //    //  upPayload.gprIdxVec(2) := SnowHouseCpuRegs.r0.index
+      //  //    //  val tempSImm = SInt(cfg.mainWidth bits)
+      //  //    //  tempSImm := -(cfg.mainWidth / 8)
+      //  //    //  upPayload.imm := tempSImm.asUInt
+      //  //    //}
+      //  //  }
+      //  //  is (PopRaRb._1._2._1) {
+      //  //    if (cfg.irqCfg != None) {
+      //  //      upPayload.blockIrq := True
+      //  //    }
+      //  //    //when (psId.rMultiInstrCnt === 0)
+      //  //    //val dontChangeTempState = Bool()
+      //  //    //dontChangeTempState := False
+      //  //    when (
+      //  //      //!rTempState
+      //  //      psId.rMultiInstrCnt.msb
+      //  //    ) {
+      //  //      when (psId.startDecode) {
+      //  //        when (
+      //  //          cId.up.isFiring
+      //  //          //cId.down.isFiring
+      //  //        ) {
+      //  //          //rTempState := True
+      //  //          //dontChangeTempState := True
+      //  //          psId.nextMultiInstrCnt := 0x0
+      //  //          //doDefault()
+      //  //          setOp(AddRaRbSimm16)
+      //  //        }
+      //  //      }
+      //  //      upPayload.gprIdxVec(0) := encInstr.rbIdx
+      //  //      upPayload.gprIdxVec(1) := encInstr.rbIdx
+      //  //      upPayload.gprIdxVec(2) := SnowHouseCpuRegs.r0.index
+      //  //      //val tempSImm = SInt(cfg.mainWidth bits)
+      //  //      //tempSImm := -(cfg.mainWidth / 8)
+      //  //      upPayload.imm := (cfg.mainWidth / 8) //tempSImm.asUInt
+      //  //    } otherwise {
+      //  //      //when (psId.startDecode) {
+      //  //      when (cId.down.isFiring) {
+      //  //        setOp(LdrRaRbSimm16)
+      //  //      }
+      //  //      upPayload.gprIdxVec(0) := encInstr.raIdx
+      //  //      upPayload.gprIdxVec(1) := encInstr.rbIdx
+      //  //      upPayload.gprIdxVec(2) := SnowHouseCpuRegs.r0.index
+      //  //      upPayload.imm := 0x0
+      //  //      //}
+      //  //    }
+      //  //    //when (rTempState) {
+      //  //    //when (!psId.startDecode) {
+      //  //      //when (cId.up.isFiring) {
+      //  //      //  rTempState := False
+      //  //      //}
+      //  //    //}
+      //  //    //}
+      //  //  }
+      //  //}
+      //}
       is (PreImm16._1) {
         doDefault(
           //doSetImm=false
@@ -1191,18 +1195,33 @@ object SnowHouseCpuOpInfoMap {
     )
   )
   //--------
-  opInfoMap += (
-    SnowHouseCpuOp.LdrRaRbRc -> OpInfo.mkLdSt(
-      dstArr=Array[DstKind](DstKind.Gpr),
-      srcArr=Array[SrcKind](SrcKind.Gpr, SrcKind.Gpr),
-      modify=MemAccessKind.Mem32(isSigned=false, isStore=false),
-    )
-  )
+  //opInfoMap += (
+  //  SnowHouseCpuOp.LdrRaRbRc -> OpInfo.mkLdSt(
+  //    dstArr=Array[DstKind](DstKind.Gpr),
+  //    srcArr=Array[SrcKind](SrcKind.Gpr, SrcKind.Gpr),
+  //    modify=MemAccessKind.Mem32(isSigned=false, isStore=false),
+  //  )
+  //)
   opInfoMap += (
     SnowHouseCpuOp.LdrRaRbSimm16 -> OpInfo.mkLdSt(
       dstArr=Array[DstKind](DstKind.Gpr),
       srcArr=Array[SrcKind](SrcKind.Gpr, SrcKind.Imm(/*Some(true)*/)),
       modify=MemAccessKind.Mem32(isSigned=false, isStore=false),
+    )
+  )
+  //--------
+  //opInfoMap += (
+  //  SnowHouseCpuOp.StrRaRbRc -> OpInfo.mkLdSt(
+  //    dstArr=Array[DstKind](DstKind.Gpr),
+  //    srcArr=Array[SrcKind](SrcKind.Gpr, SrcKind.Gpr),
+  //    modify=MemAccessKind.Mem32(isSigned=false, isStore=true),
+  //  )
+  //)
+  opInfoMap += (
+    SnowHouseCpuOp.StrRaRbSimm16 -> OpInfo.mkLdSt(
+      dstArr=Array[DstKind](DstKind.Gpr),
+      srcArr=Array[SrcKind](SrcKind.Gpr, SrcKind.Imm(/*Some(true)*/)),
+      modify=MemAccessKind.Mem32(isSigned=false, isStore=true),
     )
   )
   //--------
@@ -1232,21 +1251,6 @@ object SnowHouseCpuOpInfoMap {
       dstArr=Array[DstKind](DstKind.Gpr),
       srcArr=Array[SrcKind](SrcKind.Gpr, SrcKind.Gpr),
       modify=MemAccessKind.Mem8(isSigned=true, isStore=false),
-    )
-  )
-  //--------
-  opInfoMap += (
-    SnowHouseCpuOp.StrRaRbRc -> OpInfo.mkLdSt(
-      dstArr=Array[DstKind](DstKind.Gpr),
-      srcArr=Array[SrcKind](SrcKind.Gpr, SrcKind.Gpr),
-      modify=MemAccessKind.Mem32(isSigned=false, isStore=true),
-    )
-  )
-  opInfoMap += (
-    SnowHouseCpuOp.StrRaRbSimm16 -> OpInfo.mkLdSt(
-      dstArr=Array[DstKind](DstKind.Gpr),
-      srcArr=Array[SrcKind](SrcKind.Gpr, SrcKind.Imm(/*Some(true)*/)),
-      modify=MemAccessKind.Mem32(isSigned=false, isStore=true),
     )
   )
   //--------
@@ -1329,23 +1333,23 @@ object SnowHouseCpuOpInfoMap {
       cpyOp=CpyOpKind.Jmp,
     )
   )
-  opInfoMap += (
-    SnowHouseCpuOp.JmpReserved -> OpInfo.mkCpy(
-      dstArr=Array[DstKind](DstKind.Pc),
-      srcArr=Array[SrcKind](SrcKind.Gpr),
-      cpyOp=CpyOpKind.Jmp,
-    )
-  )
+  //opInfoMap += (
+  //  SnowHouseCpuOp.JmpReserved -> OpInfo.mkCpy(
+  //    dstArr=Array[DstKind](DstKind.Pc),
+  //    srcArr=Array[SrcKind](SrcKind.Gpr),
+  //    cpyOp=CpyOpKind.Jmp,
+  //  )
+  //)
   //--------
-  opInfoMap += (
-    SnowHouseCpuOp.PushRaRb -> OpInfo.mkLdSt(
-      dstArr=Array[DstKind](DstKind.Gpr),
-      srcArr=Array[SrcKind](SrcKind.Gpr),
-      modify=MemAccessKind.Mem32(
-        isSigned=false, isStore=true, isPush=true,
-      )
-    )
-  )
+  //opInfoMap += (
+  //  SnowHouseCpuOp.PushRaRb -> OpInfo.mkLdSt(
+  //    dstArr=Array[DstKind](DstKind.Gpr),
+  //    srcArr=Array[SrcKind](SrcKind.Gpr),
+  //    modify=MemAccessKind.Mem32(
+  //      isSigned=false, isStore=true, isPush=true,
+  //    )
+  //  )
+  //)
   //opInfoMap ++ (
   //  SnowHouseCpuOp.PopRaRb -> OpInfo.mkLdSt(
   //  )
