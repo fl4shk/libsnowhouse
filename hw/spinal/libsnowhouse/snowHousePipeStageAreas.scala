@@ -879,7 +879,7 @@ case class SnowHousePipeStageExecuteSetOutpModMemWordIo(
   //val downIsFiring = /*in*/(Bool())
   val regPcPlusInstrSize = /*in*/(UInt(cfg.mainWidth bits))
   val regPcPlusImm = /*in*/(UInt(cfg.mainWidth bits))
-  val imm = /*in*/(UInt(cfg.mainWidth bits))
+  val imm = /*in*/(Vec.fill(4)(UInt(cfg.mainWidth bits)))
   val pcChangeState = /*out*/(Bool()) ///*in*/(Flow(PcChangeState()))
   val shouldIgnoreInstr = /*out*/(Bool())
   val rAluFlags = (
@@ -1069,7 +1069,7 @@ case class SnowHousePipeStageExecuteSetOutpModMemWordIo(
             }
           }
           case SrcKind.Imm(/*isSImm*/) => {
-            imm
+            imm(0)
           }
           case _ => {
             assert(
@@ -1502,7 +1502,7 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
   )
   io.dbusHostPayload.data := io.rdMemWord(0) //selRdMemWord(0)
   // TODO: support other kinds of addressing...
-  io.dbusHostPayload.addr := io.rdMemWord(1) + io.imm
+  io.dbusHostPayload.addr := io.rdMemWord(1) + io.imm(1)
   def innerFunc(
     opInfo: OpInfo,
     opInfoIdx: Int,
@@ -2428,7 +2428,7 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
                 //  nextIndexReg := 0x0
                 //}
                 case DstKind.Spr(kind) => {
-                    nextIndexReg := 0x0
+                  nextIndexReg := 0x0
                   kind match {
                     case SprKind.AluFlags => {
                       if (opInfo.dstArr.size == 1) {
@@ -4490,7 +4490,7 @@ case class SnowHousePipeStageExecute(
     outp.psExSetOutpModMemWordIo := setOutpModMemWord.io
   }
   outp.regPcPlusImm := (
-    outp.regPc + outp.imm //+ (cfg.instrMainWidth / 8)
+    outp.regPc + outp.imm(2) //+ (cfg.instrMainWidth / 8)
   )
 }
 case class SnowHousePipeStageMem(

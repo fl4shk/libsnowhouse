@@ -161,6 +161,7 @@ case class SnowHouseConfig(
   ),
   //exposeGprsToIo: Option[Seq[Int]]=None,
   exposeModMemWordToIo: Boolean=false,
+  //splitAluOp: Boolean=false,
 ) {
   val myHaveIrqIdsIra = (
     irqCfg != None
@@ -516,7 +517,7 @@ extends SpinalEnum(defaultEncoding=binarySequential) {
     //PURE_CPYUI
     = newElement()
 }
-//object SnowHouseSplitOpSrcKind
+//object SnowHouseSplitOpAluSrcKind
 //extends SpinalEnum(defaultEncoding=binarySequential) {
 //  val
 //    IMM,
@@ -549,9 +550,10 @@ case class SnowHouseSplitOp(
   //val pureCpyuiOp = /*Flow*/(
   //  UInt(log2Up(cfg.pureCpyOpInfoMap.size) bits)
   //)
-  //val srcKindVec = Vec.fill(cfg.numGprs)(
-  //  SnowHouseSplitOpSrcKind()
+  //val aluSrcKindVec = Vec.fill(cfg.numGprs)(
+  //  SnowHouseSplitOpAluSrcKind()
   //)
+  //val lastAluSrcKind = SnowHouseSplitOpAluSrcKind()
 }
 case class SnowHousePipePayload(
   cfg: SnowHouseConfig,
@@ -658,7 +660,7 @@ case class SnowHousePipePayload(
   ) //Bool()
   val regPcPlusInstrSize = UInt(cfg.mainWidth bits)
   val regPcPlusImm = UInt(cfg.mainWidth bits)//.simPublic()
-  val imm = UInt(cfg.mainWidth bits)//.simPublic()
+  val imm = Vec.fill(4)(UInt(cfg.mainWidth bits))//.simPublic()
   //val op = UInt(log2Up(cfg.opInfoMap.size) bits)
   def mkOneExt(ydx: Int) = (
     PipeMemRmwPayloadExt(

@@ -604,7 +604,9 @@ object SnowHouseCpuPipeStageInstrDecode {
       //  gprIdx := 0x0
       //}}
       if (doSetImm) {
-        upPayload.imm := 0x0
+        upPayload.imm.foreach(imm => {
+          imm := 0x0
+        })
       }
     }
     //psId.nextPrevInstrWasJump := False
@@ -614,16 +616,20 @@ object SnowHouseCpuPipeStageInstrDecode {
     upPayload.splitOp := upPayload.splitOp.getZero
     switch (rMultiCycleState) {
       is (False) {
-        upPayload.imm := tempImm
+        upPayload.imm.foreach(imm => {
+          imm := tempImm
+        })
         //upPayload.blockIrq := False
       }
       is (True) {
-        upPayload.imm := (
-          Cat(
-            rPrevPreImm,
-            encInstr.imm16,
-          ).asUInt.resized
-        )
+        upPayload.imm.foreach(imm => {
+          imm := (
+            Cat(
+              rPrevPreImm,
+              encInstr.imm16,
+            ).asUInt.resized
+          )
+        })
         when (cId.up.isFiring) {
           if (cfg.irqCfg != None) {
             upPayload.blockIrq := False
@@ -1178,28 +1184,28 @@ object SnowHouseCpuOpInfoMap {
   //  )
   //)
   opInfoMap += (
-    //SnowHouseCpuOp.CpyIdsRb -> OpInfo.mkCpy(
-    //  dstArr=Array[DstKind](DstKind.Ids),
-    //  srcArr=Array[SrcKind](SrcKind.Gpr),
-    //  cpyOp=CpyOpKind.Cpy,
-    //)
-    SnowHouseCpuOp.CpyIdsRb -> OpInfo.mkAlu(
+    SnowHouseCpuOp.CpyIdsRb -> OpInfo.mkCpy(
       dstArr=Array[DstKind](DstKind.Ids),
-      srcArr=Array[SrcKind](SrcKind.Gpr, SrcKind.Gpr),
-      aluOp=AluOpKind.Add,
+      srcArr=Array[SrcKind](SrcKind.Gpr),
+      cpyOp=CpyOpKind.Cpy,
     )
+    //SnowHouseCpuOp.CpyIdsRb -> OpInfo.mkAlu(
+    //  dstArr=Array[DstKind](DstKind.Ids),
+    //  srcArr=Array[SrcKind](SrcKind.Gpr, SrcKind.Gpr),
+    //  aluOp=AluOpKind.Add,
+    //)
   )
   opInfoMap += (
-    //SnowHouseCpuOp.CpyRaIra -> OpInfo.mkCpy(
-    //  dstArr=Array[DstKind](DstKind.Gpr),
-    //  srcArr=Array[SrcKind](SrcKind.Ira),
-    //  cpyOp=CpyOpKind.Cpy,
-    //)
-    SnowHouseCpuOp.CpyRaIra -> OpInfo.mkAlu(
+    SnowHouseCpuOp.CpyRaIra -> OpInfo.mkCpy(
       dstArr=Array[DstKind](DstKind.Gpr),
-      srcArr=Array[SrcKind](SrcKind.Ira, SrcKind.Gpr),
-      aluOp=AluOpKind.Add,
+      srcArr=Array[SrcKind](SrcKind.Ira),
+      cpyOp=CpyOpKind.Cpy,
     )
+    //SnowHouseCpuOp.CpyRaIra -> OpInfo.mkAlu(
+    //  dstArr=Array[DstKind](DstKind.Gpr),
+    //  srcArr=Array[SrcKind](SrcKind.Ira, SrcKind.Gpr),
+    //  aluOp=AluOpKind.Add,
+    //)
   )
   //opInfoMap += (
   //  SnowHouseCpuOp.CpyIraRb -> OpInfo.mkCpy(
@@ -1216,16 +1222,16 @@ object SnowHouseCpuOpInfoMap {
   //  )
   //)
   opInfoMap += (
-    //SnowHouseCpuOp.CpyIeRb -> OpInfo.mkCpy(
-    //  dstArr=Array[DstKind](DstKind.Ie),
-    //  srcArr=Array[SrcKind](SrcKind.Gpr),
-    //  cpyOp=CpyOpKind.Cpy,
-    //)
-    SnowHouseCpuOp.CpyIeRb -> OpInfo.mkAlu(
+    SnowHouseCpuOp.CpyIeRb -> OpInfo.mkCpy(
       dstArr=Array[DstKind](DstKind.Ie),
-      srcArr=Array[SrcKind](SrcKind.Gpr, SrcKind.Gpr),
-      aluOp=AluOpKind.Add,
+      srcArr=Array[SrcKind](SrcKind.Gpr),
+      cpyOp=CpyOpKind.Cpy,
     )
+    //SnowHouseCpuOp.CpyIeRb -> OpInfo.mkAlu(
+    //  dstArr=Array[DstKind](DstKind.Ie),
+    //  srcArr=Array[SrcKind](SrcKind.Gpr, SrcKind.Gpr),
+    //  aluOp=AluOpKind.Add,
+    //)
   )
   //opInfoMap += (
   //  SnowHouseCpuOp.RetIra -> OpInfo.mkCpy(
