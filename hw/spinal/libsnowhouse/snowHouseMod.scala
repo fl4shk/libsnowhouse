@@ -6,6 +6,7 @@ import spinal.core._
 import spinal.core.formal._
 import spinal.lib._
 import spinal.lib.misc.pipeline._
+import spinal.lib.bus.tilelink
 
 import libcheesevoyage.general._
 import libcheesevoyage.math._
@@ -32,6 +33,14 @@ case class SnowHouseInstrDataDualRamIo(
     dbus,
   )
 }
+//case class SnowHouseDirectMappedIcacheIo(
+//  cfg: SnowHouseConfig
+//) extends Bundle {
+//}
+//case class SnowHouseDirectMappedIcache(
+//  cfg: SnowHouseConfig
+//) extends Component {
+//}
 case class SnowHouseInstrDataDualRam(
   cfg: SnowHouseConfig,
   //isInstr: Boolean,
@@ -91,92 +100,150 @@ case class SnowHouseInstrDataDualRam(
   instrRam.io.wrAddr := instrRam.io.wrAddr.getZero
   instrRam.io.wrData := instrRam.io.wrData.getZero
   //--------
-  val dataRamDepth = dataInitBigInt.size
-  val dataRam = FpgacpuRamSimpleDualPort(
-    wordType=UInt(cfg.mainWidth bits),
-    depth=dataRamDepth,
-    initBigInt=Some(dataInitBigInt),
-  )
-  val rDbusReadyCnt = Reg(UInt(5 bits)) init(0)
-  val rDbusReadyState = Reg(Bool(), init=False)
-  if (fastDbusReady) {
-    io.dbus.ready := io.dbus.rValid
-  } else {
-    io.dbus.ready := False
-    when (io.dbus.rValid) {
-      when (
-        //rDbusReadyCnt > 0
-        !rDbusReadyCnt.msb
-      ) {
-        rDbusReadyCnt := rDbusReadyCnt - 1
-      } otherwise {
-        io.dbus.ready := True
-        rDbusReadyState := !rDbusReadyState
-        when (!rDbusReadyState) {
-          rDbusReadyCnt := (
-            //4
-            2
-          )
-        } otherwise {
-          rDbusReadyCnt := 0
-        }
-      }
-    }
+  val dataRamArea = new Area {
+    setName("SnowHouseInstrDataDualRam_dataRamArea")
+    val depth = dataInitBigInt.size
+    val transfers = tilelink.M2sTransfers(
+      get=tilelink.SizeRange(cfg.mainWidth / 8, cfg.mainWidth / 8),
+      putFull=tilelink.SizeRange(cfg.mainWidth / 8, cfg.mainWidth / 8),
+    )
+    val addrMapping = spinal.lib.bus.misc.SizeMapping(
+      base=0x0,
+      size=(
+        //depth
+        2
+      ),
+    )
+    val m2sSource = tilelink.M2sSource(
+      id=addrMapping,
+      emits=transfers,
+    )
+    val m2sAgent = tilelink.M2sAgent(
+      name=this,
+      mapping=m2sSource
+    )
+    val m2sCfg = tilelink.M2sParameters(
+      addressWidth=(
+        //cfg.mainWidth
+        log2Up(depth * (cfg.mainWidth / 8))
+      ),
+      dataWidth=cfg.mainWidth,
+      masters=Array[tilelink.M2sAgent](m2sAgent),
+    )
+    val myRam = new tilelink.Ram(
+      p=m2sCfg.toNodeParameters(),
+      bytes=(
+        depth * (cfg.mainWidth / 8)
+      ),
+    )
+    val bridgeCfg = LcvStallToTilelinkConfig(
+      addrWidth=(
+        //cfg.mainWidth
+        log2Up(depth * (cfg.mainWidth / 8))
+      ),
+      dataWidth=cfg.mainWidth,
+      sizeBytes=cfg.mainWidth / 8,
+      srcWidth=1,
+    )
+    val bridge = LcvStallToTilelinkHost(
+      cfg=bridgeCfg,
+    )
+    bridge.io.lcvStall.nextValid := io.dbus.nextValid
+    bridge.io.lcvStall.hostData.addr := io.dbus.hostData.addr.resized
+    bridge.io.lcvStall.hostData.data := io.dbus.hostData.data
+    bridge.io.lcvStall.hostData.src := 0x0
+    bridge.io.lcvStall.hostData.isWrite := (
+      io.dbus.hostData.accKind.asBits(1)
+    )
+    io.dbus.ready := bridge.io.lcvStall.ready
+    io.dbus.devData.data := bridge.io.lcvStall.devData.data
+    myRam.io.up << bridge.io.tlBus
   }
-  //io.dbus.devData.data := io.dbus.hostData.data.getZero
 
-  //dataRam.io.rdEn := False
-  //dataRam.io.rdAddr := dataRam.io.rdAddr.getZero
-  dataRam.io.wrEn := False
-  //dataRam.io.wrAddr := dataRam.io.wrAddr.getZero
-  //dataRam.io.wrData := dataRam.io.wrData.getZero
-  dataRam.io.rdEn := io.dbus.nextValid
-  //dataRam.io.rdEn := True
-  when (io.dbus.rValid && io.dbus.ready) {
-  }
-  dataRam.io.rdAddr := (
-    (io.dbus.hostData.addr >> 2).resized
-  )
-  dataRam.io.wrAddr := (
-    (io.dbus.hostData.addr >> 2).resized
-  )
-  io.dbus.devData.data := dataRam.io.rdData.asUInt
-  when (io.dbus.hostData.accKind.asBits(1)) {
-    // TODO: possibly update this to work better?
-    dataRam.io.wrEn := io.dbus.nextValid
-    //dataRam.io.wrAddr := (
-    //  (io.dbus.hostData.addr >> 2).resized
-    //)
-  }
-  dataRam.io.wrData := io.dbus.hostData.data.asBits
-  //switch (io.dbus.hostData.accKind) {
-  //  is (SnowHouseMemAccessKind.LoadU) {
-  //    //dataRam.io.rdEn := io.dbus.nextValid
-  //    //dataRam.io.rdAddr := (
-  //    //  (io.dbus.hostData.addr >> 2).resized
-  //    //)
-  //    //when (io.dbus.rValid && io.dbus.ready) {
-  //    //  io.dbus.devData.data := dataRam.io.rdData.asUInt
-  //    //}
-  //  }
-  //  is (SnowHouseMemAccessKind.LoadS) {
-  //    //dataRam.io.rdEn := io.dbus.nextValid
-  //    //dataRam.io.rdAddr := (
-  //    //  (io.dbus.hostData.addr >> 2).resized
-  //    //)
-  //    //when (io.dbus.rValid && io.dbus.ready) {
-  //    //  io.dbus.devData.data := dataRam.io.rdData.asUInt
-  //    //}
-  //  }
-  //  is (SnowHouseMemAccessKind.Store) {
-  //    // TODO: possibly update this to work better?
-  //    dataRam.io.wrEn := io.dbus.nextValid
-  //    //dataRam.io.wrAddr := (
-  //    //  (io.dbus.hostData.addr >> 2).resized
-  //    //)
-  //    dataRam.io.wrData := io.dbus.hostData.data.asBits
+  //val dataRam = tilelink.Ram(
+  //  p=
+  //)
+  //val dataRam = FpgacpuRamSimpleDualPort(
+  //  wordType=UInt(cfg.mainWidth bits),
+  //  depth=dataRamDepth,
+  //  initBigInt=Some(dataInitBigInt),
+  //)
+  //val rDbusReadyCnt = Reg(UInt(5 bits)) init(0)
+  //val rDbusReadyState = Reg(Bool(), init=False)
+
+  //if (fastDbusReady) {
+  //  io.dbus.ready := io.dbus.rValid
+  //} else {
+  //  io.dbus.ready := False
+  //  when (io.dbus.rValid) {
+  //    when (
+  //      //rDbusReadyCnt > 0
+  //      !rDbusReadyCnt.msb
+  //    ) {
+  //      rDbusReadyCnt := rDbusReadyCnt - 1
+  //    } otherwise {
+  //      io.dbus.ready := True
+  //      rDbusReadyState := !rDbusReadyState
+  //      when (!rDbusReadyState) {
+  //        rDbusReadyCnt := (
+  //          //4
+  //          2
+  //        )
+  //      } otherwise {
+  //        rDbusReadyCnt := 0
+  //      }
+  //    }
   //  }
   //}
+
+  ////dataRam.io.rdEn := False
+  //dataRam.io.wrEn := False
+  //dataRam.io.rdEn := io.dbus.nextValid
+  //when (io.dbus.rValid && io.dbus.ready) {
+  //}
+  //dataRam.io.rdAddr := (
+  //  (io.dbus.hostData.addr >> 2).resized
+  //)
+  //dataRam.io.wrAddr := (
+  //  (io.dbus.hostData.addr >> 2).resized
+  //)
+  //io.dbus.devData.data := dataRam.io.rdData.asUInt
+  //when (io.dbus.hostData.accKind.asBits(1)) {
+  //  // TODO: possibly update this to work better?
+  //  dataRam.io.wrEn := io.dbus.nextValid
+  //  //dataRam.io.wrAddr := (
+  //  //  (io.dbus.hostData.addr >> 2).resized
+  //  //)
+  //}
+  //dataRam.io.wrData := io.dbus.hostData.data.asBits
+  ////switch (io.dbus.hostData.accKind) {
+  ////  is (SnowHouseMemAccessKind.LoadU) {
+  ////    //dataRam.io.rdEn := io.dbus.nextValid
+  ////    //dataRam.io.rdAddr := (
+  ////    //  (io.dbus.hostData.addr >> 2).resized
+  ////    //)
+  ////    //when (io.dbus.rValid && io.dbus.ready) {
+  ////    //  io.dbus.devData.data := dataRam.io.rdData.asUInt
+  ////    //}
+  ////  }
+  ////  is (SnowHouseMemAccessKind.LoadS) {
+  ////    //dataRam.io.rdEn := io.dbus.nextValid
+  ////    //dataRam.io.rdAddr := (
+  ////    //  (io.dbus.hostData.addr >> 2).resized
+  ////    //)
+  ////    //when (io.dbus.rValid && io.dbus.ready) {
+  ////    //  io.dbus.devData.data := dataRam.io.rdData.asUInt
+  ////    //}
+  ////  }
+  ////  is (SnowHouseMemAccessKind.Store) {
+  ////    // TODO: possibly update this to work better?
+  ////    dataRam.io.wrEn := io.dbus.nextValid
+  ////    //dataRam.io.wrAddr := (
+  ////    //  (io.dbus.hostData.addr >> 2).resized
+  ////    //)
+  ////    dataRam.io.wrData := io.dbus.hostData.data.asBits
+  ////  }
+  ////}
   
 }
 //--------
