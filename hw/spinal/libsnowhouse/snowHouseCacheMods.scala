@@ -510,141 +510,142 @@ case class SnowHouseCache(
       when (io.bus.rValid) {
         //rSavedBusHostData := io.bus.sendData
         //rLineAddrCnt := 0x0
-        when (if (isIcache) (True) else (!rBusAddrIsNonCached)) {
-          when (
-            if (isIcache) (
-              True
-            ) else (
-              !rBusSendData.accKind.asBits(1)
-            )
-          ) {
-            when (haveHit) {
-              // cached load
-              io.bus.ready := True
-              busDevData := rdLineWord
-            } otherwise {
-              // cache miss upon a load
-              //myH2dBus.nextValid := True
-              when (if (isIcache) (False) else (rdLineAttrs.dirty)) {
-                nextState := State.HANDLE_SEND_LINE_TO_BUS
-                //rH2dSendData.isWrite := True
-              } otherwise {
-                nextState := State.HANDLE_RECV_LINE_FROM_BUS
-                //rH2dSendData.isWrite := False
-              }
-              println(
-                io.tlCfg.beatMax
-              )
-              //rH2dSendData.addr := (
-              //  //Cat(
-              //  //  rBusAddr >> log2Up(cacheCfg.lineSizeBytes),
-              //  //  U(s"${log2Up(cacheCfg.lineSizeBytes)}'d0"),
-              //  //).asUInt
-              //  tempLineBusAddr.resize(rH2dSendData.addr.getWidth)
-              //)
-              ////setLineBusAddrToFirst()
-              ////incrLineBusAddr()
-              ////setLineBusAddrToFirst()
-              //rH2dSendData.data := (
-              //  0x0
-              //  ////rBusSendData.data
-              //  //rdLineWord
-              //  //// since this can be anything (per the Tilelink spec)
-              //  //// for an opcode of `GET`, we can put the data read
-              //  //// from `lineRam` here every time
-              //)
-              //rH2dSendData.src := cacheCfg.srcNum
-              //rH2dSendData.size := (
-              //  io.tlCfg.beatMax
-              //)
-              //--------
-              //setTlBusA(
-              //  isStore=(
-              //    if (isIcache) (
-              //      False
-              //    ) else (
-              //      rdLineAttrs.dirty
-              //    )
-              //  ),
-              //  //addr=(
-              //  //  busAddr
-              //  //),
-              //  data=(
-              //    rdLineWord
-              //    // since this can be anything (per the Tilelink spec)
-              //    // for an opcode of `GET`, we can put the data read
-              //    // from `lineRam` here every time
-              //  ),
-              //  isFakeBurst=true,
-              //  isFirstFakeBurstTxn=true,
-              //)
-              //--------
-              //nextTempBusAddr := busAddr + cacheCfg.wordSizeBytes
-            }
-          } otherwise {
-            if (!isIcache) {
-              when (haveHit) {
-                // cached store
-                nextState := State.HANDLE_STORE_HIT
-                wrLineAttrs := rdLineAttrs
-                wrLineAttrs.dirty := True
-                doLineAttrsRamWrite(
-                  busAddr=rBusAddr
-                )
-                doLineWordRamWrite(
-                  busAddr=rBusAddr,
-                  lineWord=rBusSendData.data,
-                )
-                //lineWordRam.io.wrEn := True
-                ////lineRam.io.wrAddr := tempLineRamWrAddr
-                //// the default `tempLineRamWrAddr` is fine
+        //when (if (isIcache) (True) else (!rBusAddrIsNonCached)) {
+        //  when (
+        //    if (isIcache) (
+        //      True
+        //    ) else (
+        //      !rBusSendData.accKind.asBits(1)
+        //    )
+        //  ) {
+        //    when (haveHit) {
+        //      // cached load
+        //      io.bus.ready := True
+        //      busDevData := rdLineWord
+        //    } otherwise {
+        //      // cache miss upon a load
+        //      //myH2dBus.nextValid := True
+        //      when (if (isIcache) (False) else (rdLineAttrs.dirty)) {
+        //        nextState := State.HANDLE_SEND_LINE_TO_BUS
+        //        //rH2dSendData.isWrite := True
+        //      } otherwise {
+        //        nextState := State.HANDLE_RECV_LINE_FROM_BUS
+        //        //rH2dSendData.isWrite := False
+        //      }
+        //      println(
+        //        io.tlCfg.beatMax
+        //      )
+        //      //rH2dSendData.addr := (
+        //      //  //Cat(
+        //      //  //  rBusAddr >> log2Up(cacheCfg.lineSizeBytes),
+        //      //  //  U(s"${log2Up(cacheCfg.lineSizeBytes)}'d0"),
+        //      //  //).asUInt
+        //      //  tempLineBusAddr.resize(rH2dSendData.addr.getWidth)
+        //      //)
+        //      ////setLineBusAddrToFirst()
+        //      ////incrLineBusAddr()
+        //      ////setLineBusAddrToFirst()
+        //      //rH2dSendData.data := (
+        //      //  0x0
+        //      //  ////rBusSendData.data
+        //      //  //rdLineWord
+        //      //  //// since this can be anything (per the Tilelink spec)
+        //      //  //// for an opcode of `GET`, we can put the data read
+        //      //  //// from `lineRam` here every time
+        //      //)
+        //      //rH2dSendData.src := cacheCfg.srcNum
+        //      //rH2dSendData.size := (
+        //      //  io.tlCfg.beatMax
+        //      //)
+        //      //--------
+        //      //setTlBusA(
+        //      //  isStore=(
+        //      //    if (isIcache) (
+        //      //      False
+        //      //    ) else (
+        //      //      rdLineAttrs.dirty
+        //      //    )
+        //      //  ),
+        //      //  //addr=(
+        //      //  //  busAddr
+        //      //  //),
+        //      //  data=(
+        //      //    rdLineWord
+        //      //    // since this can be anything (per the Tilelink spec)
+        //      //    // for an opcode of `GET`, we can put the data read
+        //      //    // from `lineRam` here every time
+        //      //  ),
+        //      //  isFakeBurst=true,
+        //      //  isFirstFakeBurstTxn=true,
+        //      //)
+        //      //--------
+        //      //nextTempBusAddr := busAddr + cacheCfg.wordSizeBytes
+        //    }
+        //  } otherwise {
+        //    if (!isIcache) {
+        //      when (haveHit) {
+        //        // cached store
+        //        nextState := State.HANDLE_STORE_HIT
+        //        wrLineAttrs := rdLineAttrs
+        //        wrLineAttrs.dirty := True
+        //        doLineAttrsRamWrite(
+        //          busAddr=rBusAddr
+        //        )
+        //        doLineWordRamWrite(
+        //          busAddr=rBusAddr,
+        //          lineWord=rBusSendData.data,
+        //        )
+        //        //lineWordRam.io.wrEn := True
+        //        ////lineRam.io.wrAddr := tempLineRamWrAddr
+        //        //// the default `tempLineRamWrAddr` is fine
 
-                ////lineRam.io.wrAddr := (
-                ////  (busAddr >> myLineRamAddrRshift)
-                ////  .resize(
-                ////    width=lineRam.io.wrAddr.getWidth
-                ////  )
-                ////)
-                //wrLineWord := rBusSendData.data
+        //        ////lineRam.io.wrAddr := (
+        //        ////  (busAddr >> myLineRamAddrRshift)
+        //        ////  .resize(
+        //        ////    width=lineRam.io.wrAddr.getWidth
+        //        ////  )
+        //        ////)
+        //        //wrLineWord := rBusSendData.data
 
-                ////lineAttrsRam.io.wrEn := True
-                //wrLineAttrs.dirty := (
-                //  True
+        //        ////lineAttrsRam.io.wrEn := True
+        //        //wrLineAttrs.dirty := (
+        //        //  True
 
-                //  // tiny optimization
-                //  // not very helpful in practice, probably
-                //  //wrLineWord =/= rdLineWord
-                //)
-                //wrLineAttrs.tag := rdLineAttrs.tag //busAddrTag
+        //        //  // tiny optimization
+        //        //  // not very helpful in practice, probably
+        //        //  //wrLineWord =/= rdLineWord
+        //        //)
+        //        //wrLineAttrs.tag := rdLineAttrs.tag //busAddrTag
 
-                ////lineAttrsValidMem.write(
-                ////  address=
-                ////)
+        //        ////lineAttrsValidMem.write(
+        //        ////  address=
+        //        ////)
 
-                ////lineAttrsValidMemWrEnable := True
-                ////lineAttrsValidMemWrData := True
+        //        ////lineAttrsValidMemWrEnable := True
+        //        ////lineAttrsValidMemWrData := True
 
-                //nextState := State.HANDLE_STORE_HIT
-                //myH2dBus.nextValid := True
-                //rH2dSendData.addr := rBusAddr.resized
-                //rH2dSendData.data := rBusSendData.data
-                //rH2dSendData.src := cacheCfg.srcNum
-                //rH2dSendData.isWrite := True
-                //rH2dSendData.size := 0x1
-                ////--------
-                ////setTlBusA(
-                ////  isStore=True,
-                ////  data=wrLineWord,
-                ////  isFakeBurst=false,
-                ////  isFirstFakeBurstTxn=false,
-                ////)
-                ////--------
-              } otherwise {
-              }
-            }
-          }
-        } otherwise {
+        //        //nextState := State.HANDLE_STORE_HIT
+        //        //myH2dBus.nextValid := True
+        //        //rH2dSendData.addr := rBusAddr.resized
+        //        //rH2dSendData.data := rBusSendData.data
+        //        //rH2dSendData.src := cacheCfg.srcNum
+        //        //rH2dSendData.isWrite := True
+        //        //rH2dSendData.size := 0x1
+        //        ////--------
+        //        ////setTlBusA(
+        //        ////  isStore=True,
+        //        ////  data=wrLineWord,
+        //        ////  isFakeBurst=false,
+        //        ////  isFirstFakeBurstTxn=false,
+        //        ////)
+        //        ////--------
+        //      } otherwise {
+        //      }
+        //    }
+        //  }
+        //} otherwise {
           if (!isIcache) {
+            // non-cached access
             //when (!rBusSendData.accKind.asBits(1)) {
             //  // non-cached load
             //  nextState := State.HANDLE_NON_CACHED_LOAD
@@ -653,6 +654,13 @@ case class SnowHouseCache(
             //  nextState := State.HANDLE_NON_CACHED_STORE
             //}
             nextState := State.HANDLE_NON_CACHED_BUS_ACC
+            myH2dBus.nextValid := True
+            rH2dSendData.isWrite := rBusSendData.accKind.asBits(1)
+            rH2dSendData.addr := (
+              rBusAddr.resize(rH2dSendData.addr.getWidth)
+            )
+            rH2dSendData.data := rBusSendData.data
+            rH2dSendData.size := 1
             //--------
             //setTlBusA(
             //  isStore=rBusSendData.accKind.asBits(1),
@@ -676,7 +684,7 @@ case class SnowHouseCache(
             //  }
             //}
           }
-        }
+        //}
       }
     }
     is (State.HANDLE_SEND_LINE_TO_BUS) {
@@ -685,29 +693,29 @@ case class SnowHouseCache(
       //)
       myH2dBus.nextValid := True
       rH2dSendData.isWrite := True
+      rH2dSendData.addr := (
+        //Cat(
+        //  rBusAddr >> log2Up(cacheCfg.lineSizeBytes),
+        //  U(s"${log2Up(cacheCfg.lineSizeBytes)}'d0"),
+        //).asUInt
+        tempLineBusAddr.resize(rH2dSendData.addr.getWidth)
+      )
+      rH2dSendData.data := (
+        0x0
+        ////rBusSendData.data
+        //rdLineWord
+        //// since this can be anything (per the Tilelink spec)
+        //// for an opcode of `GET`, we can put the data read
+        //// from `lineRam` here every time
+      )
+      rH2dSendData.size := (
+        log2Up(io.tlCfg.beatMax)
+      )
       when (!myH2dBus.rValid) {
-        rH2dSendData.addr := (
-          //Cat(
-          //  rBusAddr >> log2Up(cacheCfg.lineSizeBytes),
-          //  U(s"${log2Up(cacheCfg.lineSizeBytes)}'d0"),
-          //).asUInt
-          tempLineBusAddr.resize(rH2dSendData.addr.getWidth)
-        )
         //setLineBusAddrToFirst()
         //incrLineBusAddr()
         //setLineBusAddrToFirst()
-        rH2dSendData.data := (
-          0x0
-          ////rBusSendData.data
-          //rdLineWord
-          //// since this can be anything (per the Tilelink spec)
-          //// for an opcode of `GET`, we can put the data read
-          //// from `lineRam` here every time
-        )
         rH2dSendData.src := cacheCfg.srcNum
-        rH2dSendData.size := (
-          log2Up(io.tlCfg.beatMax)
-        )
       } elsewhen (myH2dBus.fire) {
         when (!pastLastLineBusAddr) {
           rH2dSendData.addr := (
