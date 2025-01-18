@@ -136,7 +136,7 @@ case class SnowHouseCacheConfig(
   srcNum: Int,
   totalNumBusHosts: Int,
   isIcache: Boolean,
-  var srcStart: Int=0,
+  //var srcStart: Int=0,
   var bridgeCfg: LcvStallToTilelinkConfig=null,
 ) {
   //--------
@@ -329,22 +329,22 @@ case class SnowHouseSubConfig(
       }
     }
   )
-  icacheCfg.srcStart = (
-    //(
-    //  log2Up(icacheCfg.numWordsPerLine)
-    //  .max(log2Up(dcacheCfg.numWordsPerLine))
-    //) * (
-      icacheCfg.srcNum
-    //)
-  )
-  dcacheCfg.srcStart = (
-    //(
-    //  log2Up(icacheCfg.numWordsPerLine)
-    //  .max(log2Up(dcacheCfg.numWordsPerLine))
-    //) * (
-      dcacheCfg.srcNum
-    //)
-  )
+  //icacheCfg.srcStart = (
+  //  //(
+  //  //  log2Up(icacheCfg.numWordsPerLine)
+  //  //  .max(log2Up(dcacheCfg.numWordsPerLine))
+  //  //) * (
+  //    icacheCfg.srcNum
+  //  //)
+  //)
+  //dcacheCfg.srcStart = (
+  //  //(
+  //  //  log2Up(icacheCfg.numWordsPerLine)
+  //  //  .max(log2Up(dcacheCfg.numWordsPerLine))
+  //  //) * (
+  //    dcacheCfg.srcNum
+  //  //)
+  //)
   icacheCfg.bridgeCfg = (
     icacheCfg._mkBridgeCfg(
       srcWidth=cacheBusSrcWidth
