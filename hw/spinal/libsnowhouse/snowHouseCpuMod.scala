@@ -369,7 +369,7 @@ object SnowHouseCpuPipeStageInstrDecode {
       .setName("InstrDecode_encInstr")
     )
     encInstr.assignFromBits(
-      //io.ibus.devData.instr.asBits
+      //io.ibus.recvData.instr.asBits
       //Mux[Bits](
       //  !psId.shouldBubble,
         psId.tempInstr.asBits,
@@ -1572,89 +1572,109 @@ case class SnowHouseCpuConfig(
       //None
       Some(
         SnowHouseIrqConfig.IraIds(
-          //iraRegIdx
-          //allowNestedIrqs=true,
-          allowIrqStorm=(
-            true
-            //false
-          ),
+          ////iraRegIdx
+          ////allowNestedIrqs=true,
+          //allowIrqStorm=(
+          //  true
+          //  //false
+          //),
         ),
       )
     ),
     haveAluFlags=false,
     //encInstrType=SnowHouseCpuEncInstr(),
-    instrMainWidth=instrMainWidth,
-    shRegFileCfg=SnowHouseRegFileConfig(
-      mainWidth=mainWidth,
-      wordCountArr=(
-        Array.fill(1)(numGprs)
-        //Array.fill(2)(
-        //  numGprs >> 1
-        //)
-        //Array[Int](
-        //  4,
-        //  12,
-        //)
-      ),
-      modRdPortCnt=modRdPortCnt,
-      pipeName=pipeName,
-      optHowToSlice=(
-        //None
-        Some({
-          val tempArr = ArrayBuffer[LinkedHashSet[Int]]()
-          tempArr += LinkedHashSet[Int]()
-          for (idx <- 0 until numGprs) {
-            tempArr.last += idx
-          }
-          //for (jdx <- 0 until 2) {
-          //  tempArr += {
-          //    val tempSet = LinkedHashSet[Int]()
-          //    if (jdx == 0) {
-          //      //for (idx <- 0 until 4) {
-          //      //  tempSet += idx
-          //      //}
-          //      tempSet ++= LinkedHashSet[Int](
-          //        0,
-          //        2,
-          //        4,
-          //        6,
-          //      )
-          //    } else { // if (jdx == 1)
-          //      tempSet ++= LinkedHashSet[Int](
-          //        1,
-          //        3,
-          //        5,
-          //        7,
-          //        8,
-          //        9,
-          //        10,
-          //        11,
-          //        12,
-          //        13,
-          //        14,
-          //        15,
-          //      )
-          //    }
-          //    //for (idx <- 0 until (numGprs >> 1)) {
-          //    //  tempSet += {
-          //    //    val temp = (
-          //    //      (2 * idx) + jdx
-          //    //    )
-          //    //    println(
-          //    //      s"debug: "
-          //    //      + s"temp:${temp} idx:${idx} jdx:${jdx}"
-          //    //    )
-          //    //    temp
-          //    //  }
-          //    //}
-          //    tempSet
-          //  }
-          //}
-          tempArr
-        })
-      ),
-      memRamStyle="distributed",
-    ),
+    subCfg={
+      val icacheDepth = 8192
+      val icacheLineSizeBytes = 64
+      val icacheBusSrcNum = 0x0
+      val dcacheDepth = 8192
+      val dcacheLineSizeBytes = 64
+      val dcacheBusSrcNum = 0x1
+      SnowHouseSubConfig(
+        instrMainWidth=instrMainWidth,
+        shRegFileCfg=SnowHouseRegFileConfig(
+          mainWidth=mainWidth,
+          wordCountArr=(
+            Array.fill(1)(numGprs)
+            //Array.fill(2)(
+            //  numGprs >> 1
+            //)
+            //Array[Int](
+            //  4,
+            //  12,
+            //)
+          ),
+          modRdPortCnt=modRdPortCnt,
+          pipeName=pipeName,
+          optHowToSlice=(
+            //None
+            Some({
+              val tempArr = ArrayBuffer[LinkedHashSet[Int]]()
+              tempArr += LinkedHashSet[Int]()
+              for (idx <- 0 until numGprs) {
+                tempArr.last += idx
+              }
+              //for (jdx <- 0 until 2) {
+              //  tempArr += {
+              //    val tempSet = LinkedHashSet[Int]()
+              //    if (jdx == 0) {
+              //      //for (idx <- 0 until 4) {
+              //      //  tempSet += idx
+              //      //}
+              //      tempSet ++= LinkedHashSet[Int](
+              //        0,
+              //        2,
+              //        4,
+              //        6,
+              //      )
+              //    } else { // if (jdx == 1)
+              //      tempSet ++= LinkedHashSet[Int](
+              //        1,
+              //        3,
+              //        5,
+              //        7,
+              //        8,
+              //        9,
+              //        10,
+              //        11,
+              //        12,
+              //        13,
+              //        14,
+              //        15,
+              //      )
+              //    }
+              //    //for (idx <- 0 until (numGprs >> 1)) {
+              //    //  tempSet += {
+              //    //    val temp = (
+              //    //      (2 * idx) + jdx
+              //    //    )
+              //    //    println(
+              //    //      s"debug: "
+              //    //      + s"temp:${temp} idx:${idx} jdx:${jdx}"
+              //    //    )
+              //    //    temp
+              //    //  }
+              //    //}
+              //    tempSet
+              //  }
+              //}
+              tempArr
+            })
+          ),
+          memRamStyle="distributed",
+        ),
+        haveIcache=true,
+        icacheDepth=icacheDepth,
+        icacheLineSizeBytes=icacheLineSizeBytes,
+        icacheBusSrcNum=icacheBusSrcNum,
+        haveDcache=true,
+        dcacheDepth=dcacheDepth,
+        dcacheLineSizeBytes=dcacheLineSizeBytes,
+        dcacheBusSrcNum=dcacheBusSrcNum,
+        totalNumBusHosts=2,
+        optCacheBusSrcWidth=None,
+      )
+    },
     opInfoMap=SnowHouseCpuOpInfoMap.opInfoMap,
     irqJmpOp={
       var myIrqJmpOp: Int = 0x0
@@ -1855,7 +1875,7 @@ case class SnowHouseCpuMul32(
       case MultiCycleOpKind.Umul => {
         //cpuIo.multiCycleBusVec
         val multiCycleBus = cpuIo.multiCycleBusVec(busIdx)
-        def dstVec = multiCycleBus.devData.dstVec
+        def dstVec = multiCycleBus.recvData.dstVec
         //dstVec(0) := (
         //  RegNext(
         //    next=dstVec(0),
@@ -1867,13 +1887,13 @@ case class SnowHouseCpuMul32(
         //  && multiCycleBus.ready
         //) {
         //  // TODO: add support for more kinds of operations
-        //  multiCycleBus.devData.dstVec(0) := (
-        //    multiCycleBus.hostData.srcVec(0)
-        //    * multiCycleBus.hostData.srcVec(1)
+        //  multiCycleBus.recvData.dstVec(0) := (
+        //    multiCycleBus.sendData.srcVec(0)
+        //    * multiCycleBus.sendData.srcVec(1)
         //  )(cfg.mainWidth - 1 downto 0)
         //}
         //multiCycleBus.ready := multiCycleBus.rValid
-        def srcVec = multiCycleBus.hostData.srcVec
+        def srcVec = multiCycleBus.sendData.srcVec
         def mainWidth = cfg.mainWidth
         object UMul32State
         extends SpinalEnum(defaultEncoding=binarySequential) {
@@ -2143,7 +2163,7 @@ case class SnowHouseCpuDivmod32(
       busIdx,
       stallIo
     ) => new Area {
-      //stallIo.devData.dstVec.foreach(dst => {
+      //stallIo.recvData.dstVec.foreach(dst => {
       //  dst := (
       //    RegNext(
       //      next=dst,
@@ -2204,7 +2224,7 @@ case class SnowHouseCpuDivmod32(
             val stallIo = (
               cpuIo.multiCycleBusVec(busIdx)
             )
-            def dstVec = stallIo.devData.dstVec
+            def dstVec = stallIo.recvData.dstVec
             //stallIo.ready := True
             dstVec(0) := rSavedResult.last(0)
           //}
@@ -2214,7 +2234,7 @@ case class SnowHouseCpuDivmod32(
             val stallIo = (
               cpuIo.multiCycleBusVec(busIdx)
             )
-            def dstVec = stallIo.devData.dstVec
+            def dstVec = stallIo.recvData.dstVec
             //stallIo.ready := True
             dstVec(0) := rSavedResult.last(1)
           //}
@@ -2224,7 +2244,7 @@ case class SnowHouseCpuDivmod32(
             val stallIo = (
               cpuIo.multiCycleBusVec(busIdx)
             )
-            def dstVec = stallIo.devData.dstVec
+            def dstVec = stallIo.recvData.dstVec
             //stallIo.ready := True
             dstVec(0) := rSavedResult.last(2)
           //}
@@ -2234,7 +2254,7 @@ case class SnowHouseCpuDivmod32(
             val stallIo = (
               cpuIo.multiCycleBusVec(busIdx)
             )
-            def dstVec = stallIo.devData.dstVec
+            def dstVec = stallIo.recvData.dstVec
             //stallIo.ready := True
             dstVec(0) := rSavedResult.last(3)
           //}
@@ -2253,8 +2273,8 @@ case class SnowHouseCpuDivmod32(
           stallIo,
         ) => new Area {
           rState := Divmod32State.CHECK_PREV
-          def dstVec = stallIo.devData.dstVec
-          def srcVec = stallIo.hostData.srcVec
+          def dstVec = stallIo.recvData.dstVec
+          def srcVec = stallIo.sendData.srcVec
           rSavedSrcVec(0) := srcVec(0)
           rSavedSrcVec(1) := srcVec(1)
         },
@@ -2268,8 +2288,8 @@ case class SnowHouseCpuDivmod32(
       //    busIdx,
       //    stallIo,
       //  ) => new Area {
-      //    def dstVec = stallIo.devData.dstVec
-      //    def srcVec = stallIo.hostData.srcVec
+      //    def dstVec = stallIo.recvData.dstVec
+      //    def srcVec = stallIo.sendData.srcVec
       //    //when (
       //    //  rPrevKind.fire
       //    //  && (
@@ -2344,7 +2364,7 @@ case class SnowHouseCpuDivmod32(
       //    busIdx,
       //    stallIo,
       //  ) => new Area {
-      //    def dstVec = stallIo.devData.dstVec
+      //    def dstVec = stallIo.recvData.dstVec
       //    rState := Divmod32State.IDLE
       //    //when (!rKind.asBits(1)) {
       //    //  dstVec(0) := rSavedQuot
@@ -2368,7 +2388,7 @@ case class SnowHouseCpuDivmod32(
                 val stallIo = (
                   cpuIo.multiCycleBusVec(busIdx)
                 )
-                def dstVec = stallIo.devData.dstVec
+                def dstVec = stallIo.recvData.dstVec
                 stallIo.ready := True
                 //dstVec(0) := rSavedResult.last(0)
               //}
@@ -2378,7 +2398,7 @@ case class SnowHouseCpuDivmod32(
                 val stallIo = (
                   cpuIo.multiCycleBusVec(busIdx)
                 )
-                def dstVec = stallIo.devData.dstVec
+                def dstVec = stallIo.recvData.dstVec
                 stallIo.ready := True
                 //dstVec(0) := rSavedResult.last(1)
               //}
@@ -2388,7 +2408,7 @@ case class SnowHouseCpuDivmod32(
                 val stallIo = (
                   cpuIo.multiCycleBusVec(busIdx)
                 )
-                def dstVec = stallIo.devData.dstVec
+                def dstVec = stallIo.recvData.dstVec
                 stallIo.ready := True
                 //dstVec(0) := rSavedResult.last(2)
               //}
@@ -2398,7 +2418,7 @@ case class SnowHouseCpuDivmod32(
                 val stallIo = (
                   cpuIo.multiCycleBusVec(busIdx)
                 )
-                def dstVec = stallIo.devData.dstVec
+                def dstVec = stallIo.recvData.dstVec
                 stallIo.ready := True
                 //dstVec(0) := rSavedResult.last(3)
               //}
@@ -2418,8 +2438,8 @@ case class SnowHouseCpuWithDualRamIo(
   def cfg = program.cfg
   val idsIraIrq = (
     slave(new LcvStallIo[Bool, Bool](
-      hostPayloadType=None,
-      devPayloadType=None,
+      sendPayloadType=None,
+      recvPayloadType=None,
     ))
   )
   val modMemWord = (
@@ -2453,7 +2473,7 @@ case class SnowHouseCpuWithDualRam(
   //for ((multiCycleBus, idx) <- cpu.io.multiCycleBusVec.view.zipWithIndex) {
   //  if (idx != 0) {
   //    multiCycleBus.ready := True
-  //    multiCycleBus.devData.dstVec.foreach(dst => {
+  //    multiCycleBus.recvData.dstVec.foreach(dst => {
   //      dst := dst.getZero
   //    })
   //  }
@@ -2598,18 +2618,18 @@ object SnowHouseCpuFormal extends App {
     )
 
     assumeInitial(clockDomain.isResetActive)
-    anyseq(dut.io.ibus.devData)
+    anyseq(dut.io.ibus.recvData)
     anyseq(dut.io.ibus.ready)
     if (dut.io.haveMultiCycleBusVec) {
       for (
         (multiCycleBus, busIdx)
         <- dut.io.multiCycleBusVec.view.zipWithIndex
       ) {
-        anyseq(multiCycleBus.devData)
+        anyseq(multiCycleBus.recvData)
         anyseq(multiCycleBus.ready)
       }
     }
-    anyseq(dut.io.dbus.devData)
+    anyseq(dut.io.dbus.recvData)
     anyseq(dut.io.dbus.ready)
   }
   //--------

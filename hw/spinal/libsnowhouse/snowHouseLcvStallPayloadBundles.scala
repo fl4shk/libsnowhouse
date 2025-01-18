@@ -12,17 +12,17 @@ import libcheesevoyage.math._
 import libcheesevoyage.bus.lcvStall._
 
 //--------
-case class IbusHostPayload(
-  cfg: SnowHouseConfig,
-) extends Bundle {
-  val addr = UInt(cfg.mainWidth bits)
-  //val data = UInt(cfg.mainWidth bits)
-}
-case class IbusDevPayload(
-  cfg: SnowHouseConfig,
-) extends Bundle {
-  val instr = UInt(cfg.instrMainWidth bits)
-}
+//case class BusHostPayload(
+//  cfg: SnowHouseConfig,
+//) extends Bundle {
+//  val addr = UInt(cfg.mainWidth bits)
+//  //val data = UInt(cfg.mainWidth bits)
+//}
+//case class BusDevPayload(
+//  cfg: SnowHouseConfig,
+//) extends Bundle {
+//  val instr = UInt(cfg.instrMainWidth bits)
+//}
 //--------
 //object MultiCycleOpEnum
 //extends SpinalEnum(defaultEncoding=native) {
@@ -132,18 +132,29 @@ extends SpinalEnum(defaultEncoding=binarySequential) {
   //  }
   //}
 }
-case class DbusHostPayload(
+case class BusHostPayload(
   cfg: SnowHouseConfig,
+  isIbus: Boolean,
 ) extends Bundle {
   val addr = UInt(cfg.mainWidth bits)
-  val data = UInt(cfg.mainWidth bits)
-  val accKind = SnowHouseMemAccessKind()
-  val subKind = SnowHouseMemAccessSubKind()
-  val lock = Bool() // for atomics
+  val data = (!isIbus) generate (
+    UInt(cfg.mainWidth bits)
+  )
+  val accKind = (!isIbus) generate (
+    SnowHouseMemAccessKind()
+  )
+  val subKind = (!isIbus) generate (
+    SnowHouseMemAccessSubKind()
+  )
+  val lock = (!isIbus) generate (
+    Bool() // for atomics
+  )
 }
-case class DbusDevPayload(
+case class BusDevPayload(
   cfg: SnowHouseConfig,
+  isIbus: Boolean,
 ) extends Bundle {
-  val data = UInt(cfg.mainWidth bits)
+  val instr = (isIbus) generate (UInt(cfg.instrMainWidth bits))
+  val data = (!isIbus) generate (UInt(cfg.mainWidth bits))
 }
 //--------

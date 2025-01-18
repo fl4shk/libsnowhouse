@@ -180,7 +180,7 @@ case class SnowHousePipeStageInstrFetch(
     True
     //down.isReady // don't un-comment-out this
   )
-  io.ibus.hostData.addr := nextRegPc //upModExt.regPc
+  io.ibus.sendData.addr := nextRegPc //upModExt.regPc
   //--------
   //--------
   // TODO: formal
@@ -194,7 +194,7 @@ case class SnowHousePipeStageInstrFetch(
   //  }
   //  when (pastValidAfterReset) {
   //    when (!io.ibus.ready) {
-  //      assert(stable(io.ibus.hostData.addr))
+  //      assert(stable(io.ibus.sendData.addr))
   //    }
   //  }
   //  when (pastValidAfterReset) {
@@ -369,7 +369,7 @@ case class SnowHousePipeStageInstrDecode(
         } otherwise {
           nextSetUpPayloadState(1) := True
           myInstr := (
-            io.ibus.devData.instr
+            io.ibus.recvData.instr
           )
         }
       }
@@ -610,7 +610,7 @@ case class SnowHousePipeStageInstrDecode(
   //when (up.isValid) {
   //  when (io.ibus.rValid && io.ibus.ready) {
   //    myInstr := (
-  //      io.ibus.devData.instr
+  //      io.ibus.recvData.instr
   //    )
   //  }
   //}
@@ -723,7 +723,7 @@ case class SnowHousePipeStageInstrDecode(
       ) {
         //when (io.ibus.rValid && io.ibus.ready) {
         //  myInstr := (
-        //    io.ibus.devData.instr
+        //    io.ibus.recvData.instr
         //  )
         //}
         //doDecode := True
@@ -734,7 +734,7 @@ case class SnowHousePipeStageInstrDecode(
         //}
         //when (!rDoDecodeState) {
         //  when (io.ibus.rValid && io.ibus.ready) {
-        //    tempInstr := io.ibus.devData.instr
+        //    tempInstr := io.ibus.recvData.instr
         //    nextDoDecodeState := True
         //  } otherwise {
         //    //shouldBubble := True
@@ -855,11 +855,11 @@ case class SnowHousePipeStageExecuteSetOutpModMemWordIo(
     )
   )
   //val dbus = new LcvStallIo[DbusHostPayload, DbusDevPayload](
-  //  hostPayloadType=Some(DbusHostPayload(cfg=cfg)),
-  //  devPayloadType=Some(DbusDevPayload(cfg=cfg)),
+  //  sendPayloadType=Some(DbusHostPayload(cfg=cfg)),
+  //  recvPayloadType=Some(DbusDevPayload(cfg=cfg)),
   //)
   val dbusHostPayload = (
-    DbusHostPayload(cfg=cfg)
+    BusHostPayload(cfg=cfg, isIbus=false)
   )
   val rdMemWord = /*in*/(Vec.fill(tempVecSize)(
     UInt(cfg.mainWidth bits)
@@ -1161,7 +1161,7 @@ case class SnowHousePipeStageExecuteSetOutpModMemWordIo(
     cfg.irqCfg match {
       case Some(irqCfg) => {
         irqCfg match {
-          case SnowHouseIrqConfig.IraIds(allowIrqStorm) => {
+          case SnowHouseIrqConfig.IraIds(/*allowIrqStorm*/) => {
             //!allowIrqStorm
             true
           }
@@ -2576,7 +2576,7 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
               io.multiCycleOpInfoIdx := idx
               for ((dst, dstIdx) <- opInfo.dstArr.view.zipWithIndex) {
                 val tempDst = (
-                  modIo.multiCycleBusVec(idx).devData.dstVec(dstIdx)
+                  modIo.multiCycleBusVec(idx).recvData.dstVec(dstIdx)
                 )
                 dst match {
                   case DstKind.Gpr => {
@@ -2632,7 +2632,7 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
                 }
               }
               //io.modMemWord(0) := (
-              //  modIo.multiCycleBusVec(idx).devData.dstVec(0)
+              //  modIo.multiCycleBusVec(idx).recvData.dstVec(0)
               //)
             }
           }
@@ -2825,8 +2825,8 @@ case class SnowHousePipeStageExecute(
   args: SnowHousePipeStageArgs,
   psExSetPc: Flow[SnowHousePsExSetPcPayload],
   psMemStallHost: LcvStallHost[
-    DbusHostPayload,
-    DbusDevPayload,
+    BusHostPayload,
+    BusDevPayload,
   ],
   doModInModFrontParams: PipeMemRmwDoModInModFrontFuncParams[
     UInt,
@@ -3544,15 +3544,15 @@ case class SnowHousePipeStageExecute(
     for (
       (multiCycleBus, busIdx) <- io.multiCycleBusVec.view.zipWithIndex
     ) {
-      for (idx <- 0 until multiCycleBus.hostData.srcVec.size) {
-        multiCycleBus.hostData.srcVec(idx) := (
+      for (idx <- 0 until multiCycleBus.sendData.srcVec.size) {
+        multiCycleBus.sendData.srcVec(idx) := (
           RegNext(
-            next=multiCycleBus.hostData.srcVec(idx),
-            init=multiCycleBus.hostData.srcVec(idx).getZero,
+            next=multiCycleBus.sendData.srcVec(idx),
+            init=multiCycleBus.sendData.srcVec(idx).getZero,
           )
           //0x0
           //setOutpModMemWord.io.selRdMemWord(
-          //  opInfo=multiCycleBus.hostData.opInfo,
+          //  opInfo=multiCycleBus.sendData.opInfo,
           //  idx=(idx + 1),
           //)
         )
@@ -4011,19 +4011,19 @@ case class SnowHousePipeStageExecute(
   )
   psExSetPc.nextPc := setOutpModMemWord.io.psExSetPc.nextPc
   io.dbus.allowOverride
-  io.dbus.hostData := (
+  io.dbus.sendData := (
     RegNext(
-      next=io.dbus.hostData,
-      init=io.dbus.hostData.getZero,
+      next=io.dbus.sendData,
+      init=io.dbus.sendData.getZero,
     )
   )
-  //io.dbus.hostData.addr.allowOverride
-  //io.dbus.hostData := 
+  //io.dbus.sendData.addr.allowOverride
+  //io.dbus.sendData := 
   when (
     //!outp.instrCnt.shouldIgnoreInstr
     cMid0Front.up.isFiring
   ) {
-    io.dbus.hostData := setOutpModMemWord.io.dbusHostPayload
+    io.dbus.sendData := setOutpModMemWord.io.dbusHostPayload
   }
   var busIdxFound: Boolean = false
   var busIdx: Int = 0
@@ -4042,16 +4042,16 @@ case class SnowHousePipeStageExecute(
     }
     if (busIdxFound) {
       def multiCycleBus = io.multiCycleBusVec(busIdx)
-      multiCycleBus.hostData.srcVec.foreach(src => {
+      multiCycleBus.sendData.srcVec.foreach(src => {
         src.allowOverride
       })
-      multiCycleBus.hostData.srcVec(0) := (
+      multiCycleBus.sendData.srcVec(0) := (
         setOutpModMemWord.io.selRdMemWord(
           opInfo=opInfo,
           idx=1,
         )
       )
-      multiCycleBus.hostData.srcVec(1) := (
+      multiCycleBus.sendData.srcVec(1) := (
         setOutpModMemWord.io.selRdMemWord(
           opInfo=opInfo,
           idx=2,
@@ -4059,8 +4059,8 @@ case class SnowHousePipeStageExecute(
       )
     }
   }
-  //io.dbus.hostData := setOutpModMemWord.io.dbusHostPayload
-  //io.dbus.hostData.addr := setOutpModMemWord.io.dbusHostPayload.addr
+  //io.dbus.sendData := setOutpModMemWord.io.dbusHostPayload
+  //io.dbus.sendData.addr := setOutpModMemWord.io.dbusHostPayload.addr
   //psExSetPc.cnt := rSetPcCnt.payload + 1
   //switch (rPcChangeState) {
   //  is (PcChangeState.Idle) {
@@ -4115,13 +4115,13 @@ case class SnowHousePipeStageExecute(
                   myDoStall(stallKindMultiCycle) := True
                   psExStallHost.nextValid := True
                   //def multiCycleBus = io.multiCycleBusVec(busIdx)
-                  //multiCycleBus.hostData.srcVec(0) := (
+                  //multiCycleBus.sendData.srcVec(0) := (
                   //  setOutpModMemWord.io.selRdMemWord(
                   //    opInfo=opInfo,
                   //    idx=1,
                   //  )
                   //)
-                  //multiCycleBus.hostData.srcVec(1) := (
+                  //multiCycleBus.sendData.srcVec(1) := (
                   //  setOutpModMemWord.io.selRdMemWord(
                   //    opInfo=opInfo,
                   //    idx=2,
@@ -4178,10 +4178,10 @@ case class SnowHousePipeStageExecute(
         //    when (cMid0Front.up.isFiring) {
         //      nextPrevTxnWasHazard := True
         //      psMemStallHost.nextValid := True
-        //      //io.dbus.hostData := setOutpModMemWord.io.dbusHostPayload
+        //      //io.dbus.sendData := setOutpModMemWord.io.dbusHostPayload
         //    }
         //    //when (cMid0Front.down.isReady) {
-        //    //  io.dbus.hostData := setOutpModMemWord.io.dbusHostPayload
+        //    //  io.dbus.sendData := setOutpModMemWord.io.dbusHostPayload
         //    //}
         //  }
         //  is (M"01--") {
@@ -4297,13 +4297,13 @@ case class SnowHousePipeStageExecute(
         //                myDoStall(stallKindMultiCycle) := True
         //                psExStallHost.nextValid := True
         //                def multiCycleBus = io.multiCycleBusVec(busIdx)
-        //                multiCycleBus.hostData.srcVec(0) := (
+        //                multiCycleBus.sendData.srcVec(0) := (
         //                  setOutpModMemWord.io.selRdMemWord(
         //                    opInfo=opInfo,
         //                    idx=1,
         //                  )
         //                )
-        //                multiCycleBus.hostData.srcVec(1) := (
+        //                multiCycleBus.sendData.srcVec(1) := (
         //                  setOutpModMemWord.io.selRdMemWord(
         //                    opInfo=opInfo,
         //                    idx=2,
@@ -4499,8 +4499,8 @@ case class SnowHousePipeStageMem(
   args: SnowHousePipeStageArgs,
   psWb: SnowHousePipeStageWriteBack,
   psMemStallHost: LcvStallHost[
-    DbusHostPayload,
-    DbusDevPayload,
+    BusHostPayload,
+    BusDevPayload,
   ],
 ) extends Area {
   def cfg = args.cfg
@@ -5383,34 +5383,34 @@ case class SnowHousePipeStageMem(
     when (!myDecodeExt.memAccessKind.asBits(1)) {
       //when (!midModPayload(extIdxUp).gprIsZeroVec(0)) {
       myCurrExt.modMemWord := (
-        io.dbus.devData.data.resized
+        io.dbus.recvData.data.resized
       )
       //switch (myDecodeExt.memAccessSubKind) {
       //  is (SnowHouseMemAccessSubKind.Sz8) {
       //    if (cfg.mainWidth >= 8) {
       //      myCurrExt.modMemWord := (
-      //        io.dbus.devData.data.resized
+      //        io.dbus.recvData.data.resized
       //      )
       //    }
       //  }
       //  is (SnowHouseMemAccessSubKind.Sz16) {
       //    if (cfg.mainWidth >= 16) {
       //      myCurrExt.modMemWord := (
-      //        io.dbus.devData.data.resized
+      //        io.dbus.recvData.data.resized
       //      )
       //    }
       //  }
       //  is (SnowHouseMemAccessSubKind.Sz32) {
       //    if (cfg.mainWidth >= 32) {
       //      myCurrExt.modMemWord := (
-      //        io.dbus.devData.data.resized
+      //        io.dbus.recvData.data.resized
       //      )
       //    }
       //  }
       //  is (SnowHouseMemAccessSubKind.Sz64) {
       //    if (cfg.mainWidth >= 64) {
       //      myCurrExt.modMemWord := (
-      //        io.dbus.devData.data.resized
+      //        io.dbus.recvData.data.resized
       //      )
       //    }
       //  }
@@ -5438,28 +5438,28 @@ case class SnowHousePipeStageMem(
     //        is (SnowHouseMemAccessSubKind.Sz8) {
     //          if (cfg.mainWidth >= 8) {
     //            myCurrExt.modMemWord := (
-    //              io.dbus.devData.data.resized
+    //              io.dbus.recvData.data.resized
     //            )
     //          }
     //        }
     //        is (SnowHouseMemAccessSubKind.Sz16) {
     //          if (cfg.mainWidth >= 16) {
     //            myCurrExt.modMemWord := (
-    //              io.dbus.devData.data.resized
+    //              io.dbus.recvData.data.resized
     //            )
     //          }
     //        }
     //        is (SnowHouseMemAccessSubKind.Sz32) {
     //          if (cfg.mainWidth >= 32) {
     //            myCurrExt.modMemWord := (
-    //              io.dbus.devData.data.resized
+    //              io.dbus.recvData.data.resized
     //            )
     //          }
     //        }
     //        is (SnowHouseMemAccessSubKind.Sz64) {
     //          if (cfg.mainWidth >= 64) {
     //            myCurrExt.modMemWord := (
-    //              io.dbus.devData.data.resized
+    //              io.dbus.recvData.data.resized
     //            )
     //          }
     //        }
@@ -5482,7 +5482,7 @@ case class SnowHousePipeStageMem(
     //          if (cfg.mainWidth >= 8) {
     //            val temp = SInt(cfg.mainWidth bits)
     //            temp := (
-    //              io.dbus.devData.data(7 downto 0).asSInt.resized
+    //              io.dbus.recvData.data(7 downto 0).asSInt.resized
     //            )
     //            myCurrExt.modMemWord := (
     //              temp.asUInt
@@ -5493,7 +5493,7 @@ case class SnowHousePipeStageMem(
     //          if (cfg.mainWidth >= 16) {
     //            val temp = SInt(cfg.mainWidth bits)
     //            temp := (
-    //              io.dbus.devData.data(15 downto 0).asSInt.resized
+    //              io.dbus.recvData.data(15 downto 0).asSInt.resized
     //            )
     //            myCurrExt.modMemWord := (
     //              temp.asUInt
@@ -5504,7 +5504,7 @@ case class SnowHousePipeStageMem(
     //          if (cfg.mainWidth >= 32) {
     //            val temp = SInt(cfg.mainWidth bits)
     //            temp := (
-    //              io.dbus.devData.data(31 downto 0).asSInt.resized
+    //              io.dbus.recvData.data(31 downto 0).asSInt.resized
     //            )
     //            myCurrExt.modMemWord := (
     //              temp.asUInt
@@ -5515,7 +5515,7 @@ case class SnowHousePipeStageMem(
     //          if (cfg.mainWidth >= 64) {
     //            val temp = SInt(cfg.mainWidth bits)
     //            temp := (
-    //              io.dbus.devData.data(63 downto 0).asSInt.resized
+    //              io.dbus.recvData.data(63 downto 0).asSInt.resized
     //            )
     //            myCurrExt.modMemWord := (
     //              temp.asUInt

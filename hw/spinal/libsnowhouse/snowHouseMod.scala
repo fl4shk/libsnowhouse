@@ -20,13 +20,13 @@ import libcheesevoyage.bus.lcvStall._
 case class SnowHouseInstrDataDualRamIo(
   cfg: SnowHouseConfig,
 ) extends Bundle {
-  val ibus = new LcvStallIo[IbusHostPayload, IbusDevPayload ](
-    hostPayloadType=Some(IbusHostPayload(cfg=cfg)),
-    devPayloadType=Some(IbusDevPayload(cfg=cfg)),
+  val ibus = new LcvStallIo[BusHostPayload, BusDevPayload](
+    sendPayloadType=Some(BusHostPayload(cfg=cfg, isIbus=true)),
+    recvPayloadType=Some(BusDevPayload(cfg=cfg, isIbus=true)),
   )
-  val dbus = new LcvStallIo[DbusHostPayload, DbusDevPayload](
-    hostPayloadType=Some(DbusHostPayload(cfg=cfg)),
-    devPayloadType=Some(DbusDevPayload(cfg=cfg)),
+  val dbus = new LcvStallIo[BusHostPayload, BusDevPayload](
+    sendPayloadType=Some(BusHostPayload(cfg=cfg, isIbus=false)),
+    recvPayloadType=Some(BusDevPayload(cfg=cfg, isIbus=false)),
   )
   slave(
     ibus,
@@ -48,8 +48,8 @@ case class SnowHouseInstrDataDualRam(
   dataInitBigInt: Seq[BigInt],
 ) extends Component {
   //val io = slave(new LcvStallIo[HostPayloadT, DevPayloadT](
-  //  hostPayloadType=Some(hostPayloadType()),
-  //  devPayloadType=Some(devPayloadType()),
+  //  sendPayloadType=Some(sendPayloadType()),
+  //  recvPayloadType=Some(recvPayloadType()),
   //))
   val io = SnowHouseInstrDataDualRamIo(cfg=cfg)
   //--------
@@ -93,9 +93,9 @@ case class SnowHouseInstrDataDualRam(
   //--------
   instrRam.io.rdEn := io.ibus.nextValid
   instrRam.io.rdAddr := (
-    (io.ibus.hostData.addr >> 2).resized
+    (io.ibus.sendData.addr >> 2).resized
   )
-  io.ibus.devData.instr := instrRam.io.rdData.asUInt
+  io.ibus.recvData.instr := instrRam.io.rdData.asUInt
   instrRam.io.wrEn := False
   instrRam.io.wrAddr := instrRam.io.wrAddr.getZero
   instrRam.io.wrData := instrRam.io.wrData.getZero
@@ -103,20 +103,36 @@ case class SnowHouseInstrDataDualRam(
   val dataRamArea = new Area {
     setName("SnowHouseInstrDataDualRam_dataRamArea")
     val depth = dataInitBigInt.size
-    val transfers = tilelink.M2sTransfers(
-      get=tilelink.SizeRange(cfg.mainWidth / 8, cfg.mainWidth / 8),
-      putFull=tilelink.SizeRange(cfg.mainWidth / 8, cfg.mainWidth / 8),
+    val dcache = SnowHouseCache(
+      cfg=cfg,
+      isIcache=false,
+    )
+    val m2sTransfers = tilelink.M2sTransfers(
+      get=tilelink.SizeRange(
+        cfg.mainWidth / 8,
+        //cfg.mainWidth / 8,
+        dcache.cacheCfg.lineSizeBytes
+      ),
+      putFull=tilelink.SizeRange(
+        cfg.mainWidth / 8,
+        //cfg.mainWidth / 8
+        dcache.cacheCfg.lineSizeBytes
+      ),
     )
     val addrMapping = spinal.lib.bus.misc.SizeMapping(
       base=0x0,
       size=(
+        //1
+        //cfg.mainWidth / 8
         //depth
-        2
+        //2
+        cfg.subCfg.totalNumBusHosts
+        //dcache.bridgeCfg.tlCfg.sizeBytes
       ),
     )
     val m2sSource = tilelink.M2sSource(
       id=addrMapping,
-      emits=transfers,
+      emits=m2sTransfers,
     )
     val m2sAgent = tilelink.M2sAgent(
       name=this,
@@ -136,33 +152,36 @@ case class SnowHouseInstrDataDualRam(
         depth * (cfg.mainWidth / 8)
       ),
     )
-    val bridgeCfg = LcvStallToTilelinkConfig(
-      addrWidth=(
-        //cfg.mainWidth
-        log2Up(depth * (cfg.mainWidth / 8))
-      ),
-      dataWidth=cfg.mainWidth,
-      sizeBytes=cfg.mainWidth / 8,
-      srcWidth=1,
-    )
-    val bridge = LcvStallToTilelinkHost(
-      cfg=bridgeCfg,
-    )
-    bridge.io.lcvStall.nextValid := io.dbus.nextValid
-    bridge.io.lcvStall.hostData.addr := io.dbus.hostData.addr.resized
-    bridge.io.lcvStall.hostData.data := io.dbus.hostData.data
-    bridge.io.lcvStall.hostData.src := 0x0
-    bridge.io.lcvStall.hostData.isWrite := (
-      io.dbus.hostData.accKind.asBits(1)
-    )
-    io.dbus.ready := bridge.io.lcvStall.ready
-    io.dbus.devData.data := bridge.io.lcvStall.devData.data
-    myRam.io.up << bridge.io.tlBus
+    //val bridgeCfg = LcvStallToTilelinkConfig(
+    //  addrWidth=(
+    //    //cfg.mainWidth
+    //    log2Up(depth * (cfg.mainWidth / 8))
+    //  ),
+    //  dataWidth=cfg.mainWidth,
+    //  sizeBytes=cfg.mainWidth / 8,
+    //  srcWidth=1,
+    //  isDual=false,
+    //)
+    //val bridge = LcvStallToTilelink(
+    //  cfg=bridgeCfg,
+    //)
+    //bridge.io.lcvStall.nextValid := io.dbus.nextValid
+    //bridge.io.lcvStall.sendData.addr := io.dbus.sendData.addr.resized
+    //bridge.io.lcvStall.sendData.data := io.dbus.sendData.data
+    //bridge.io.lcvStall.sendData.src := 0x0
+    //bridge.io.lcvStall.sendData.isWrite := (
+    //  io.dbus.sendData.accKind.asBits(1)
+    //)
+    //io.dbus.ready := bridge.io.lcvStall.ready
+    //io.dbus.recvData.data := bridge.io.lcvStall.recvData.data
+    //myRam.io.up << bridge.io.tlBus
+    dcache.io.bus <> io.dbus
+    myRam.io.up << dcache.io.tlBus
+    //myRam.io.up.a <-/< dcache.io.tlBus.a
+    //dcache.io.tlBus.d <-/< myRam.io.up.d
   }
 
-  //val dataRam = tilelink.Ram(
-  //  p=
-  //)
+  //val dataRamDepth = dataInitBigInt.size
   //val dataRam = FpgacpuRamSimpleDualPort(
   //  wordType=UInt(cfg.mainWidth bits),
   //  depth=dataRamDepth,
@@ -202,46 +221,46 @@ case class SnowHouseInstrDataDualRam(
   //when (io.dbus.rValid && io.dbus.ready) {
   //}
   //dataRam.io.rdAddr := (
-  //  (io.dbus.hostData.addr >> 2).resized
+  //  (io.dbus.sendData.addr >> 2).resized
   //)
   //dataRam.io.wrAddr := (
-  //  (io.dbus.hostData.addr >> 2).resized
+  //  (io.dbus.sendData.addr >> 2).resized
   //)
-  //io.dbus.devData.data := dataRam.io.rdData.asUInt
-  //when (io.dbus.hostData.accKind.asBits(1)) {
+  //io.dbus.recvData.data := dataRam.io.rdData.asUInt
+  //when (io.dbus.sendData.accKind.asBits(1)) {
   //  // TODO: possibly update this to work better?
   //  dataRam.io.wrEn := io.dbus.nextValid
   //  //dataRam.io.wrAddr := (
-  //  //  (io.dbus.hostData.addr >> 2).resized
+  //  //  (io.dbus.sendData.addr >> 2).resized
   //  //)
   //}
-  //dataRam.io.wrData := io.dbus.hostData.data.asBits
-  ////switch (io.dbus.hostData.accKind) {
+  //dataRam.io.wrData := io.dbus.sendData.data.asBits
+  ////switch (io.dbus.sendData.accKind) {
   ////  is (SnowHouseMemAccessKind.LoadU) {
   ////    //dataRam.io.rdEn := io.dbus.nextValid
   ////    //dataRam.io.rdAddr := (
-  ////    //  (io.dbus.hostData.addr >> 2).resized
+  ////    //  (io.dbus.sendData.addr >> 2).resized
   ////    //)
   ////    //when (io.dbus.rValid && io.dbus.ready) {
-  ////    //  io.dbus.devData.data := dataRam.io.rdData.asUInt
+  ////    //  io.dbus.recvData.data := dataRam.io.rdData.asUInt
   ////    //}
   ////  }
   ////  is (SnowHouseMemAccessKind.LoadS) {
   ////    //dataRam.io.rdEn := io.dbus.nextValid
   ////    //dataRam.io.rdAddr := (
-  ////    //  (io.dbus.hostData.addr >> 2).resized
+  ////    //  (io.dbus.sendData.addr >> 2).resized
   ////    //)
   ////    //when (io.dbus.rValid && io.dbus.ready) {
-  ////    //  io.dbus.devData.data := dataRam.io.rdData.asUInt
+  ////    //  io.dbus.recvData.data := dataRam.io.rdData.asUInt
   ////    //}
   ////  }
   ////  is (SnowHouseMemAccessKind.Store) {
   ////    // TODO: possibly update this to work better?
   ////    dataRam.io.wrEn := io.dbus.nextValid
   ////    //dataRam.io.wrAddr := (
-  ////    //  (io.dbus.hostData.addr >> 2).resized
+  ////    //  (io.dbus.sendData.addr >> 2).resized
   ////    //)
-  ////    dataRam.io.wrData := io.dbus.hostData.data.asBits
+  ////    dataRam.io.wrData := io.dbus.sendData.data.asBits
   ////  }
   ////}
   
@@ -267,8 +286,8 @@ case class SnowHouseIo(
     myHaveIrqIdsIra
   ) generate (
     slave(new LcvStallIo[Bool, Bool](
-      hostPayloadType=None,
-      devPayloadType=None,
+      sendPayloadType=None,
+      recvPayloadType=None,
     ))
   )
   val modMemWord = (
@@ -277,9 +296,9 @@ case class SnowHouseIo(
     out(UInt(cfg.mainWidth bits))
   )
   // instruction bus
-  val ibus = new LcvStallIo[IbusHostPayload, IbusDevPayload ](
-    hostPayloadType=Some(IbusHostPayload(cfg=cfg)),
-    devPayloadType=Some(IbusDevPayload(cfg=cfg)),
+  val ibus = new LcvStallIo[BusHostPayload, BusDevPayload ](
+    sendPayloadType=Some(BusHostPayload(cfg=cfg, isIbus=true)),
+    recvPayloadType=Some(BusDevPayload(cfg=cfg, isIbus=true)),
   )
   val haveMultiCycleBusVec = (
     //cfg.opInfoMap.find(_._2.select == OpSelect.MultiCycle) != None
@@ -306,10 +325,10 @@ case class SnowHouseIo(
         )
         //if (opInfo.select == OpSelect.MultiCycle) {
           tempArr += new LcvStallIo(
-            hostPayloadType=(
+            sendPayloadType=(
               Some(MultiCycleHostPayload(cfg=cfg, opInfo=opInfo))
             ),
-            devPayloadType=(
+            recvPayloadType=(
               Some(MultiCycleDevPayload(cfg=cfg, opInfo=opInfo))
             ),
           )
@@ -318,9 +337,9 @@ case class SnowHouseIo(
       tempArr
     }
   )
-  val dbus = new LcvStallIo[DbusHostPayload, DbusDevPayload](
-    hostPayloadType=Some(DbusHostPayload(cfg=cfg)),
-    devPayloadType=Some(DbusDevPayload(cfg=cfg)),
+  val dbus = new LcvStallIo[BusHostPayload, BusDevPayload](
+    sendPayloadType=Some(BusHostPayload(cfg=cfg, isIbus=false)),
+    recvPayloadType=Some(BusDevPayload(cfg=cfg, isIbus=false)),
   )
   master(
     ibus,
@@ -344,7 +363,7 @@ case class SnowHouse
   val io = SnowHouseIo(cfg=cfg)
   //if (io.haveMultiCycleBusVec) {
   //  io.multiCycleBusVec.foreach(multiCycleBus => {
-  //    multiCycleBus.hostData.srcVec.foreach(src => {
+  //    multiCycleBus.sendData.srcVec.foreach(src => {
   //      src := (
   //        RegNext(
   //          next=src,

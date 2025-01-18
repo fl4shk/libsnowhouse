@@ -7,6 +7,8 @@ import spinal.core.formal._
 import spinal.core.sim._
 import spinal.lib._
 import spinal.lib.misc.pipeline._
+import spinal.lib.bus.tilelink
+import spinal.core.fiber.Fiber
 
 import libcheesevoyage.general._
 import libcheesevoyage.math._
@@ -98,18 +100,18 @@ case class SnowHouseRegFileConfig(
 //}
 sealed trait SnowHouseIrqConfig {
   //def numIrqs: Int
-  private[libsnowhouse] def _allowIrqStorm: Boolean
+  //private[libsnowhouse] def _allowIrqStorm: Boolean
 }
 object SnowHouseIrqConfig {
   case class IraIds(
-    //val iraRegIdx: Int,
-    //val idsRegIdx: Int,
-    //val allowNestedIrqs: Boolean,
-    val allowIrqStorm: Boolean,
-    //val numIrqs: Int
+    ////val iraRegIdx: Int,
+    ////val idsRegIdx: Int,
+    ////val allowNestedIrqs: Boolean,
+    //val allowIrqStorm: Boolean,
+    ////val numIrqs: Int
   ) extends SnowHouseIrqConfig {
-    // TODO: possibly support multiple IRQs?
-    def _allowIrqStorm: Boolean = allowIrqStorm
+    // TODO: possibly support multiple IRQ lines?
+    //def _allowIrqStorm: Boolean = allowIrqStorm
   }
   //case class Vector(
   //  val numIrqs: Int,
@@ -124,6 +126,270 @@ object SnowHouseIrqConfig {
 //    s"numIrqs (${numIrqs}) must be greater than 0.",
 //  )
 //}
+case class SnowHouseCacheConfig(
+  addrWidth: Int,
+  wordWidth: Int,
+  //maxWordWidth: Int,
+  lineSizeBytes: Int,
+  depthWords: Int, // this is in number of words
+  //srcWidth: Int,
+  srcNum: Int,
+  totalNumBusHosts: Int,
+  isIcache: Boolean,
+  var srcStart: Int=0,
+  var bridgeCfg: LcvStallToTilelinkConfig=null,
+) {
+  //--------
+  assert(
+    addrWidth == (1 << log2Up(addrWidth)),
+    s"addrWidth: need power of two: "
+    + s"${addrWidth} != ${(1 << log2Up(addrWidth))}"
+  )
+  assert(
+    addrWidth == (addrWidth / 8).toInt * 8,
+    s"addrWidth: need multiple of 8: "
+    + s"${addrWidth} != ${(addrWidth / 8).toInt * 8}"
+  )
+  assert(
+    wordWidth == (1 << log2Up(wordWidth)),
+    s"wordWidth: need power of two: "
+    + s"${wordWidth} != ${(1 << log2Up(wordWidth))}"
+  )
+  assert(
+    wordWidth == (wordWidth / 8).toInt * 8,
+    s"wordWidth: need multiple of 8: "
+    + s"${wordWidth} != ${(wordWidth / 8).toInt * 8}"
+  )
+  assert(
+    lineSizeBytes == (1 << log2Up(lineSizeBytes)),
+    s"lineSizeBytes: need power of two: "
+    + s"${lineSizeBytes} != ${(1 << log2Up(lineSizeBytes))}"
+  )
+  assert(
+    depthWords == (1 << log2Up(depthWords)),
+    s"depthWords: need power of two: "
+    + s"${depthWords} != ${(1 << log2Up(depthWords))}"
+  )
+  //--------
+  val wordSizeBytes = wordWidth / 8
+  val depthBytes = depthWords * wordSizeBytes
+  val depthLines = (
+    // number of cache lines
+    depthBytes / lineSizeBytes
+  )
+  val numWordsPerLine = (
+    lineSizeBytes / wordSizeBytes
+  )
+  val tagWidth = (
+    //addrWidth - log2Up(depthBytes)
+    //tag bits = addr bits - index bits - offset bits
+    //index bits = log2(lines)
+    //offset bits = log2(words per line)
+    //(assuming your addresses are word-based ofc) (edited)
+    addrWidth - log2Up(depthLines) - log2Up(numWordsPerLine) - 1
+  )
+  val tagRange = (
+    addrWidth - 2 downto (addrWidth - 1 - tagWidth)
+  )
+  val nonCachedRange = (
+    addrWidth - 1 downto addrWidth - 1
+  )
+  //--------
+  //--------
+  // TileLink stuff follows
+  val m2sTransfers = tilelink.M2sTransfers(
+    get=tilelink.SizeRange(1, wordWidth),
+    putFull=(
+      if (isIcache) (
+        tilelink.SizeRange.none
+      ) else (
+        tilelink.SizeRange(1, wordWidth)
+      )
+    ),
+  )
+  val m2sCfg = {
+    tilelink.M2sParameters(
+      support=tilelink.M2sSupport(
+        transfers=m2sTransfers,
+        addressWidth=addrWidth,
+        dataWidth=wordWidth,
+      ),
+      sourceCount=totalNumBusHosts,
+    )
+  }
+  //val tlSrcBase = (
+  //  log2Up(numWordsPerLine)
+  //)
+  //def m2sCfg(
+  //  masters: Seq[tilelink.M2sAgent]
+  //): tilelink.M2sParameters = {
+  //  tilelink.M2sParameters(
+  //    addressWidth=addrWidth,
+  //    dataWidth=mainWidth,
+  //    masters=masters,
+  //  )
+  //}
+  //def m2sAgentSeq(
+  //): tilelink.
+  //val addrMapping = spinal.lib.bus.misc.SizeMapping(
+  //  base=0x0,
+  //)
+  //def addrMapping = 
+  private[libsnowhouse] def _mkBridgeCfg(
+    srcWidth: Int
+  ) = {
+    LcvStallToTilelinkConfig(
+      addrWidth=(
+        //addrWidth
+        14
+      ),
+      dataWidth=wordWidth,
+      sizeBytes=(
+        //(wordWidth / 8)
+        lineSizeBytes
+      ),
+      srcWidth=(
+        srcWidth
+        //log2Up(totalNumBusHosts)
+      ),
+      isDual=true,
+    )
+  }
+}
+case class SnowHouseSubConfig(
+  instrMainWidth: Int,
+  shRegFileCfg: SnowHouseRegFileConfig,
+  //haveIcache: Boolean=false,
+  //--------
+  //srcWidth: Int=1,
+  haveIcache: Boolean=true,
+  icacheDepth: Int=8192,
+  icacheLineSizeBytes: Int=64,
+  icacheBusSrcNum: Int=0,
+  //--------
+  haveDcache: Boolean=true,
+  dcacheDepth: Int=8192,
+  dcacheLineSizeBytes: Int=64,
+  dcacheBusSrcNum: Int=1,
+  //--------
+  totalNumBusHosts: Int=2,
+  optCacheBusSrcWidth: Option[Int]=None,
+  //--------
+) {
+  //val haveIcache = icacheDepth > 0
+  //val haveDcache = dcacheDepth > 0
+  //val cacheMaxWordWidth = (
+  //  log2Up(icacheCfg.numWordsPerLine)
+  //  .max(log2Up(dcacheCfg.numWordsPerLine))
+  //)
+  val icacheCfg = (
+    haveIcache
+  ) generate (
+    SnowHouseCacheConfig(
+      addrWidth=shRegFileCfg.mainWidth,
+      wordWidth=instrMainWidth,
+      lineSizeBytes=icacheLineSizeBytes,
+      depthWords=icacheDepth,
+      //srcWidth=srcWidth,
+      srcNum=icacheBusSrcNum,
+      totalNumBusHosts=totalNumBusHosts,
+      isIcache=true,
+    )
+  )
+  val dcacheCfg = (
+    haveDcache
+  ) generate (
+    SnowHouseCacheConfig(
+      addrWidth=shRegFileCfg.mainWidth,
+      wordWidth=shRegFileCfg.mainWidth,
+      lineSizeBytes=dcacheLineSizeBytes,
+      depthWords=dcacheDepth,
+      //srcWidth=srcWidth,
+      srcNum=dcacheBusSrcNum,
+      totalNumBusHosts=totalNumBusHosts,
+      isIcache=false,
+    )
+  )
+  val cacheBusSrcWidth = (
+    optCacheBusSrcWidth match {
+      case Some(cacheBusSrcWidth) => {
+        cacheBusSrcWidth
+      }
+      case None => {
+        //assert(
+        //  totalNumBusHosts == 2,
+        //  s"totalNumBusHosts:${totalNumBusHosts} must be 2 in this case"
+        //)
+        //(
+        //  log2Up(icacheCfg.numWordsPerLine)
+        //  .max(log2Up(dcacheCfg.numWordsPerLine))
+        //) * (
+          log2Up(totalNumBusHosts)
+        //)
+      }
+    }
+  )
+  icacheCfg.srcStart = (
+    //(
+    //  log2Up(icacheCfg.numWordsPerLine)
+    //  .max(log2Up(dcacheCfg.numWordsPerLine))
+    //) * (
+      icacheCfg.srcNum
+    //)
+  )
+  dcacheCfg.srcStart = (
+    //(
+    //  log2Up(icacheCfg.numWordsPerLine)
+    //  .max(log2Up(dcacheCfg.numWordsPerLine))
+    //) * (
+      dcacheCfg.srcNum
+    //)
+  )
+  icacheCfg.bridgeCfg = (
+    icacheCfg._mkBridgeCfg(
+      srcWidth=cacheBusSrcWidth
+    )
+    //LcvStallToTilelinkConfig(
+    //  addrWidth=icacheCfg.addrWidth,
+    //  dataWidth=icacheCfg.wordWidth,
+    //  sizeBytes=(icacheCfg.wordWidth / 8),
+    //  srcWidth=cacheBusSrcWidth,
+    //  isDual=true,
+    //)
+  )
+  dcacheCfg.bridgeCfg = (
+    dcacheCfg._mkBridgeCfg(
+      srcWidth=cacheBusSrcWidth
+    )
+    //LcvStallToTilelinkConfig(
+    //  addrWidth=dcacheCfg.addrWidth,
+    //  dataWidth=dcacheCfg.wordWidth,
+    //  sizeBytes=(dcacheCfg.wordWidth / 8),
+    //  srcWidth=cacheBusSrcWidth,
+    //  isDual=true,
+    //)
+  )
+  //val icacheBridgeCfg = (
+  //  haveIcache
+  //) generate (
+  //  LcvStallToTilelinkConfig(
+  //    addrWidth=log2Up(icacheDepth),
+  //    dataWidth=instrMainWidth,
+  //    sizeBytes=instrMainWidth / 8,
+  //    srcWidth=srcWidth,
+  //  )
+  //)
+  //val dcacheBridgeCfg = (
+  //  haveDcache
+  //) generate (
+  //  LcvStallToTilelinkConfig(
+  //    addrWidth=log2Up(dcacheDepth),
+  //    dataWidth=shRegFileCfg.mainWidth,
+  //    sizeBytes=shRegFileCfg.mainWidth / 8,
+  //    srcWidth=srcWidth,
+  //  )
+  //)
+}
 case class SnowHouseConfig(
   haveZeroReg: Option[Int],
   irqCfg: Option[SnowHouseIrqConfig],
@@ -131,29 +397,17 @@ case class SnowHouseConfig(
   //encInstrType: HardType,
   //gprFileDepth: Int,
   //sprFileDepth: Int,
-  instrMainWidth: Int,
-  shRegFileCfg: SnowHouseRegFileConfig,
+  //shRegFileCfg: SnowHouseRegFileConfig,
+  subCfg: SnowHouseSubConfig,
   opInfoMap: LinkedHashMap[Any, OpInfo],
   irqJmpOp: Int,
   //irqRetIraOp: Int,
-  //decodeFunc: (
-  //  SnowHouseIo, // io
-  //  CtrlLink,               // cId
-  //  UInt,                   // output the decoded instruction
-  //) => Area,                
   //--------
-  //psDecode: SnowHousePipeStageInstrDecode,
-  //mkPipeStageInstrDecode: (
-  //  SnowHousePipeStageArgs,           // args
-  //  Bool,                             // psIdHaltIt
-  //  Flow[SnowHousePsExSetPcPayload],  // psExSetPc
-  //) => SnowHousePipeStageInstrDecode,
   doInstrDecodeFunc: (SnowHousePipeStageInstrDecode) => Area,
   //--------
-  optFormal: Boolean,
   //maxNumGprsPerInstr: Int,
   //modOpCntWidth: Int=8,
-  supportUcode: Boolean=false,// whether or not to support microcode
+  supportUcode: Boolean=false, // whether or not to support microcode
   instrCntWidth: Int=(
     //8
     //4
@@ -162,7 +416,10 @@ case class SnowHouseConfig(
   //exposeGprsToIo: Option[Seq[Int]]=None,
   exposeModMemWordToIo: Boolean=false,
   //splitAluOp: Boolean=false,
+  optFormal: Boolean=false,
 ) {
+  def instrMainWidth = subCfg.instrMainWidth
+  def shRegFileCfg = subCfg.shRegFileCfg
   val myHaveIrqIdsIra = (
     irqCfg != None
   )
