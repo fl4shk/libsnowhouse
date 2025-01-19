@@ -1782,8 +1782,8 @@ case class SnowHouseCpuTestProgram(
     cpy(r6, 0x20),            // 0x30: r6 = 0x20
     str(r6, r3, 0x0),         // 0x34: [r0 + r3] = r6
     ldr(r5, r3, 0x0),         // 0x38
-    str(r5, r3, 0x4),         // 0x3c
-    ldr(r6, r3, 0x4),         // 0x40
+    str(r5, r3, 0x1000),         // 0x3c
+    ldr(r6, r3, 0x1000),         // 0x40
     //add(r7, r6, 4),
     cpy(r7, 0x4),             // 0x44
     mul(r9, r5, r7),          // 0x48

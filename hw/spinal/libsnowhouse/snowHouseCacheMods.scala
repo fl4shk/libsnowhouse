@@ -225,6 +225,12 @@ case class SnowHouseCache(
       bits
     )
   )
+  println(
+    1 << nextLineAddrCnt.getWidth
+  )
+  println(
+    nextLineAddrCnt.getWidth
+  )
   val rLineAddrCnt = (
     KeepAttribute(
       RegNext/*When*/(
@@ -237,7 +243,15 @@ case class SnowHouseCache(
   nextLineAddrCnt := rLineAddrCnt
   val rRevLineAddrCnt = (
     Reg(UInt((rLineAddrCnt.getWidth + 1) bits))
-    init(io.tlCfg.beatMax - 2)
+    init(
+      //io.tlCfg.beatMax - 2
+      (
+        1
+        << (
+          log2Up(cacheCfg.lineSizeBytes) - log2Up(cacheCfg.wordSizeBytes)
+        )
+      ) - 1
+    )
   )
   tempLineBusAddr := (
     Cat(
@@ -256,9 +270,20 @@ case class SnowHouseCache(
   //def decrRecvCnt(): Unit = {
   //  rRecvCnt := rRecvCnt - 1
   //}
+  println(
+    io.tlCfg.beatMax
+  )
   def setLineBusAddrCntsToStart(): Unit = {
     nextLineAddrCnt := 0x0
-    rRevLineAddrCnt := log2Up(io.tlCfg.beatMax) - 2
+    rRevLineAddrCnt := (
+      ///*log2Up*/(io.tlCfg.beatMax) - 2
+      (
+        1
+        << (
+          log2Up(cacheCfg.lineSizeBytes) - log2Up(cacheCfg.wordSizeBytes)
+        )
+      ) - 1
+    )
     //rRecvCnt := io.tlCfg.beatMax - 2
   }
   def atLastLineBusAddrCnt() = (
@@ -691,7 +716,8 @@ case class SnowHouseCache(
       //  //// from `lineRam` here every time
       //)
       rH2dSendData.size := (
-        log2Up(io.tlCfg.beatMax)
+        //log2Up(io.tlCfg.beatMax)
+        log2Up(cacheCfg.lineSizeBytes) //- log2Up(cacheCfg.wordSizeBytes)
       )
       rH2dSendData.src := cacheCfg.srcId
       doLineWordRamReadSync(
@@ -701,20 +727,24 @@ case class SnowHouseCache(
       rH2dSendData.mask := (
         U(rH2dSendData.mask.getWidth bits, default -> True)
       )
+      val tempBridgeSavedFires = Bool()
+      tempBridgeSavedFires := False
       when (
         !myH2dBus.rValid
         && !rBridgeSavedFires(0)
       ) {
         myH2dBus.nextValid := True
-        setLineBusAddrCntsToStart()
+        //setLineBusAddrCntsToStart()
         //setLineBusAddrToFirst()
         //rRecvCnt := 0x0
+        incrLineBusAddrCnts()
       } elsewhen (myH2dBus.fire) {
         when (!atLastLineBusAddrCnt) {
           incrLineBusAddrCnts()
         } otherwise {
           myH2dBus.nextValid := False
           nextBridgeSavedFires(0) := True
+          tempBridgeSavedFires := False
         }
         //rH2dSendData.addr := (
         //  tempLineBusAddr.resize(rH2dSendData.addr.getWidth)
@@ -723,36 +753,39 @@ case class SnowHouseCache(
       when (
         myD2hBus.rValid
         && (
-          nextBridgeSavedFires(0)
+          //nextBridgeSavedFires(0)
+          tempBridgeSavedFires
           || rBridgeSavedFires(0)
         )
       ) {
         myD2hBus.ready := True
         setLineBusAddrCntsToStart()
-        //nextBridgeSavedFires := 0x0
+        nextBridgeSavedFires := 0x0
         nextState := State.HANDLE_RECV_LINE_FROM_BUS
       }
     }
     is (State.HANDLE_RECV_LINE_FROM_BUS) {
       rH2dSendData.isWrite := False
       rH2dSendData.size := (
-        log2Up(io.tlCfg.beatMax)
+        //log2Up(io.tlCfg.beatMax)
+        log2Up(cacheCfg.lineSizeBytes) //- log2Up(cacheCfg.wordSizeBytes)
       )
       rH2dSendData.src := cacheCfg.srcId
       rH2dSendData.mask := (
         U(rH2dSendData.mask.getWidth bits, default -> True)
       )
-      when (
-        RegNext(rState) === State.HANDLE_SEND_LINE_TO_BUS
-      ) {
-        nextBridgeSavedFires := 0x0
-      }
+      //when (
+      //  RegNext(rState) === State.HANDLE_SEND_LINE_TO_BUS
+      //) {
+      //  nextBridgeSavedFires := 0x0
+      //}
       when (
         !myH2dBus.rValid
         && !rBridgeSavedFires(0)
       ) {
         myH2dBus.nextValid := True
-        setLineBusAddrCntsToStart()
+        //setLineBusAddrCntsToStart()
+        incrLineBusAddrCnts()
         rH2dSendData.addr := (
           //Cat(
           //  rBusAddr >> log2Up(cacheCfg.lineSizeBytes),
@@ -774,6 +807,10 @@ case class SnowHouseCache(
       }
       when (
         myD2hBus.rValid
+        && (
+          nextBridgeSavedFires(0)
+          || rBridgeSavedFires(0)
+        )
       ) {
         when (!atLastLineBusAddrCnt()) {
           incrLineBusAddrCnts()
