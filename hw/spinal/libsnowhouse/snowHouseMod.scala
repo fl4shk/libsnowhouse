@@ -61,8 +61,8 @@ case class SnowHouseInstrDataDualRam(
   )
   //--------
   val fastIbusReady = (
-    //true
-    false
+    true
+    //false
   )
   val fastDbusReady = (
     //true
@@ -100,6 +100,86 @@ case class SnowHouseInstrDataDualRam(
   instrRam.io.wrAddr := instrRam.io.wrAddr.getZero
   instrRam.io.wrData := instrRam.io.wrData.getZero
   //--------
+  //val instrRamArea = new Area {
+  //  setName("SnowHouseInstrDataDualRam_dataRamArea")
+  //  val depth = instrInitBigInt.size
+  //  val icache = SnowHouseCache(
+  //    cfg=cfg,
+  //    isIcache=false,
+  //  )
+  //  val m2sTransfers = tilelink.M2sTransfers(
+  //    get=tilelink.SizeRange(
+  //      cfg.mainWidth / 8,
+  //      //cfg.mainWidth / 8,
+  //      icache.cacheCfg.lineSizeBytes
+  //    ),
+  //    putFull=tilelink.SizeRange(
+  //      cfg.mainWidth / 8,
+  //      //cfg.mainWidth / 8
+  //      icache.cacheCfg.lineSizeBytes
+  //    ),
+  //  )
+  //  val addrMapping = spinal.lib.bus.misc.SizeMapping(
+  //    base=0x0,
+  //    size=(
+  //      //1
+  //      //cfg.mainWidth / 8
+  //      //depth
+  //      //2
+  //      cfg.subCfg.totalNumBusHosts
+  //      //icache.bridgeCfg.tlCfg.sizeBytes
+  //    ),
+  //  )
+  //  val m2sSource = tilelink.M2sSource(
+  //    id=addrMapping,
+  //    emits=m2sTransfers,
+  //  )
+  //  val m2sAgent = tilelink.M2sAgent(
+  //    name=this,
+  //    mapping=m2sSource
+  //  )
+  //  val m2sCfg = tilelink.M2sParameters(
+  //    addressWidth=(
+  //      //cfg.mainWidth
+  //      log2Up(depth * (cfg.mainWidth / 8))
+  //    ),
+  //    dataWidth=cfg.mainWidth,
+  //    masters=Array[tilelink.M2sAgent](m2sAgent),
+  //  )
+  //  val myRam = new tilelink.Ram(
+  //    p=m2sCfg.toNodeParameters(),
+  //    bytes=(
+  //      depth * (cfg.mainWidth / 8)
+  //    ),
+  //  )
+  //  //val bridgeCfg = LcvStallToTilelinkConfig(
+  //  //  addrWidth=(
+  //  //    //cfg.mainWidth
+  //  //    log2Up(depth * (cfg.mainWidth / 8))
+  //  //  ),
+  //  //  dataWidth=cfg.mainWidth,
+  //  //  sizeBytes=cfg.mainWidth / 8,
+  //  //  srcWidth=1,
+  //  //  isDual=false,
+  //  //)
+  //  //val bridge = LcvStallToTilelink(
+  //  //  cfg=bridgeCfg,
+  //  //)
+  //  //bridge.io.lcvStall.nextValid := io.dbus.nextValid
+  //  //bridge.io.lcvStall.sendData.addr := io.dbus.sendData.addr.resized
+  //  //bridge.io.lcvStall.sendData.data := io.dbus.sendData.data
+  //  //bridge.io.lcvStall.sendData.src := 0x0
+  //  //bridge.io.lcvStall.sendData.isWrite := (
+  //  //  io.dbus.sendData.accKind.asBits(1)
+  //  //)
+  //  //io.dbus.ready := bridge.io.lcvStall.ready
+  //  //io.dbus.recvData.data := bridge.io.lcvStall.recvData.data
+  //  //myRam.io.up << bridge.io.tlBus
+  //  icache.io.bus <> io.dbus
+  //  myRam.io.up << icache.io.tlBus
+  //  //myRam.io.up.a <-/< icache.io.tlBus.a
+  //  //icache.io.tlBus.d <-/< myRam.io.up.d
+  //}
   val dataRamArea = new Area {
     setName("SnowHouseInstrDataDualRam_dataRamArea")
     val depth = dataInitBigInt.size

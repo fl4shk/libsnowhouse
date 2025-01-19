@@ -537,7 +537,84 @@ case class SnowHouseCache(
             when (haveHit) {
               // cached load
               io.bus.ready := True
-              busDevData := rdLineWord
+              switch (rBusSendData.subKind) {
+                is (SnowHouseMemAccessSubKind.Sz8) {
+                  if (busDevData.getWidth >= 8) {
+                    when (!rBusSendData.accKind.asBits(0)) {
+                      busDevData := (
+                        rdLineWord(
+                          7 downto 0
+                        ).resize(busDevData.getWidth)
+                      )
+                    } otherwise {
+                      busDevData := (
+                        rdLineWord(
+                          7 downto 0
+                        ).asSInt.resize(busDevData.getWidth).asUInt
+                      )
+                    }
+                  } else {
+                    busDevData := rdLineWord.resized
+                  }
+                }
+                is (SnowHouseMemAccessSubKind.Sz16) {
+                  if (busDevData.getWidth >= 16) {
+                    when (!rBusSendData.accKind.asBits(0)) {
+                      busDevData := (
+                        rdLineWord(
+                          15 downto 0
+                        ).resize(busDevData.getWidth)
+                      )
+                    } otherwise {
+                      busDevData := (
+                        rdLineWord(
+                          15 downto 0
+                        ).asSInt.resize(busDevData.getWidth).asUInt
+                      )
+                    }
+                  } else {
+                    busDevData := rdLineWord.resized
+                  }
+                }
+                is (SnowHouseMemAccessSubKind.Sz32) {
+                  if (busDevData.getWidth >= 32) {
+                    when (!rBusSendData.accKind.asBits(0)) {
+                      busDevData := (
+                        rdLineWord(
+                          31 downto 0
+                        ).resize(busDevData.getWidth)
+                      )
+                    } otherwise {
+                      busDevData := (
+                        rdLineWord(
+                          31 downto 0
+                        ).asSInt.resize(busDevData.getWidth).asUInt
+                      )
+                    }
+                  } else {
+                    busDevData := rdLineWord.resized
+                  }
+                }
+                is (SnowHouseMemAccessSubKind.Sz64) {
+                  if (busDevData.getWidth >= 64) {
+                    when (!rBusSendData.accKind.asBits(0)) {
+                      busDevData := (
+                        rdLineWord(
+                          63 downto 0
+                        ).resize(busDevData.getWidth)
+                      )
+                    } otherwise {
+                      busDevData := (
+                        rdLineWord(
+                          63 downto 0
+                        ).asSInt.resize(busDevData.getWidth).asUInt
+                      )
+                    }
+                  } else {
+                    busDevData := rdLineWord.resized
+                  }
+                }
+              }
             } otherwise {
               // cache miss upon a load
               when (if (isIcache) (False) else (rdLineAttrs.dirty)) {
@@ -585,6 +662,9 @@ case class SnowHouseCache(
             )
             rH2dSendData.data := rBusSendData.data
             rH2dSendData.size := 1
+            rH2dSendData.mask := (
+              U(rH2dSendData.mask.getWidth bits, default -> True)
+            )
             //--------
           }
         }
@@ -618,6 +698,9 @@ case class SnowHouseCache(
         busAddr=tempLineBusAddr
       )
       rH2dSendData.data := rdLineWord
+      rH2dSendData.mask := (
+        U(rH2dSendData.mask.getWidth bits, default -> True)
+      )
       when (
         !myH2dBus.rValid
         && !rBridgeSavedFires(0)
@@ -656,6 +739,9 @@ case class SnowHouseCache(
         log2Up(io.tlCfg.beatMax)
       )
       rH2dSendData.src := cacheCfg.srcId
+      rH2dSendData.mask := (
+        U(rH2dSendData.mask.getWidth bits, default -> True)
+      )
       when (
         RegNext(rState) === State.HANDLE_SEND_LINE_TO_BUS
       ) {
