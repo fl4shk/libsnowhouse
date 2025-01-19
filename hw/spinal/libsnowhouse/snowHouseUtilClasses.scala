@@ -133,7 +133,7 @@ case class SnowHouseCacheConfig(
   lineSizeBytes: Int,
   depthWords: Int, // this is in number of words
   //srcWidth: Int,
-  srcNum: Int,
+  srcId: Int,
   totalNumBusHosts: Int,
   isIcache: Boolean,
   //var srcStart: Int=0,
@@ -291,7 +291,7 @@ case class SnowHouseSubConfig(
       lineSizeBytes=icacheLineSizeBytes,
       depthWords=icacheDepth,
       //srcWidth=srcWidth,
-      srcNum=icacheBusSrcNum,
+      srcId=icacheBusSrcNum,
       totalNumBusHosts=totalNumBusHosts,
       isIcache=true,
     )
@@ -305,7 +305,7 @@ case class SnowHouseSubConfig(
       lineSizeBytes=dcacheLineSizeBytes,
       depthWords=dcacheDepth,
       //srcWidth=srcWidth,
-      srcNum=dcacheBusSrcNum,
+      srcId=dcacheBusSrcNum,
       totalNumBusHosts=totalNumBusHosts,
       isIcache=false,
     )
