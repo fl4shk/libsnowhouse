@@ -4019,12 +4019,12 @@ case class SnowHousePipeStageExecute(
   )
   //io.dbus.sendData.addr.allowOverride
   //io.dbus.sendData := 
-  when (
-    //!outp.instrCnt.shouldIgnoreInstr
-    cMid0Front.up.isFiring
-  ) {
-    io.dbus.sendData := setOutpModMemWord.io.dbusHostPayload
-  }
+  //when (
+  //  //!outp.instrCnt.shouldIgnoreInstr
+  //  cMid0Front.up.isFiring
+  //) {
+  //  io.dbus.sendData := setOutpModMemWord.io.dbusHostPayload
+  //}
   var busIdxFound: Boolean = false
   var busIdx: Int = 0
   for (
@@ -4072,12 +4072,14 @@ case class SnowHousePipeStageExecute(
       //  //|| 
       //  !outp.instrCnt.shouldIgnoreInstr
       //) {
+      //when (!outp.instrCnt.shouldIgnoreInstr)
       when (
         setOutpModMemWord.io.opIsMemAccess
       ) {
         nextPrevTxnWasHazard := True
         when (cMid0Front.up.isFiring) {
           psMemStallHost.nextValid := True
+          io.dbus.sendData := setOutpModMemWord.io.dbusHostPayload
         }
       }
       when (

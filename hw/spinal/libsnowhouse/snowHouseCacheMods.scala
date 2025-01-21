@@ -225,12 +225,12 @@ case class SnowHouseCache(
       bits
     )
   )
-  println(
-    1 << nextLineAddrCnt.getWidth
-  )
-  println(
-    nextLineAddrCnt.getWidth
-  )
+  //println(
+  //  1 << nextLineAddrCnt.getWidth
+  //)
+  //println(
+  //  nextLineAddrCnt.getWidth
+  //)
   val rLineAddrCnt = (
     KeepAttribute(
       RegNext/*When*/(
@@ -258,10 +258,50 @@ case class SnowHouseCache(
       rBusAddr(rBusAddr.high downto log2Up(cacheCfg.lineSizeBytes)),
       //U(log2Up(cacheCfg.lineSizeBytes) bits, default -> False),
       //rLineAddrCnt(rLineAddrCnt.high - 1 downto 0),
+      //nextLineAddrCnt,
       rLineAddrCnt,
       U(log2Up(cacheCfg.wordSizeBytes) bits, default -> False),
     ).asUInt
   )
+  //println(
+  //  rBusAddr.high downto log2Up(cacheCfg.lineSizeBytes)
+  //)
+  val rSavedRdLineAttrs = {
+    val temp = Reg(
+      SnowHouseCacheLineAttrs(
+        cfg=cfg,
+        isIcache=isIcache,
+      )
+    )
+    temp.init(temp.getZero)
+    temp
+  }
+  val tempRdLineAttrsAddr = (
+    Cat(
+      rSavedRdLineAttrs.tag,
+      //U(log2Up(cacheCfg.lineSizeBytes) bits, default -> False),
+      //rLineAddrCnt(rLineAddrCnt.high - 1 downto 0),
+      //nextLineAddrCnt,
+      rBusAddr(
+        rBusAddr.high - cacheCfg.tagWidth
+        downto log2Up(cacheCfg.lineSizeBytes)
+      ),
+      rLineAddrCnt,
+      U(log2Up(cacheCfg.wordSizeBytes) bits, default -> False),
+    ).asUInt
+  )
+  //println(
+  //  s"test: "
+  //  + Cat(
+  //    rLineAddrCnt,
+  //    U(cacheCfg.wordSizeBytes bits, default -> False),
+  //  ).getWidth
+  //)
+  //println(
+  //  s"tagWidth:${cacheCfg.tagWidth} "
+  //  + s"tempLineBusAddr.getWidth:${tempLineBusAddr.getWidth} "
+  //  + s"tempRdLineAttrsAddr.getWidth:${tempRdLineAttrsAddr.getWidth}"
+  //)
   //val rRecvCnt = cloneOf(rRevLineAddrCnt)
   def incrLineBusAddrCnts(): Unit = {
     nextLineAddrCnt := rLineAddrCnt + 1
@@ -270,9 +310,9 @@ case class SnowHouseCache(
   //def decrRecvCnt(): Unit = {
   //  rRecvCnt := rRecvCnt - 1
   //}
-  println(
-    io.tlCfg.beatMax
-  )
+  //println(
+  //  io.tlCfg.beatMax
+  //)
   def setLineBusAddrCntsToStart(): Unit = {
     nextLineAddrCnt := 0x0
     rRevLineAddrCnt := (
@@ -328,7 +368,7 @@ case class SnowHouseCache(
       IDLE,
       HANDLE_SEND_LINE_TO_BUS,
       HANDLE_RECV_LINE_FROM_BUS,
-      HANDLE_STORE_HIT,
+      //HANDLE_STORE_HIT,
       //HANDLE_STORE_MISS_RD,
       //HANDLE_STORE_MISS_WR,
       HANDLE_NON_CACHED_BUS_ACC
@@ -560,6 +600,10 @@ case class SnowHouseCache(
       setLineBusAddrCntsToStart()
       myH2dBus.nextValid := False
       rSavedBusAddr := rBusAddr
+      rSavedRdLineAttrs := rdLineAttrs
+      //val rBusReadyCnt = (
+      //  Reg(UInt(1 bits)) init(0x0)
+      //)
 
       when (io.bus.rValid) {
         //rSavedBusHostData := io.bus.sendData
@@ -675,16 +719,33 @@ case class SnowHouseCache(
             if (!isIcache) {
               when (haveHit) {
                 // cached store
-                nextState := State.HANDLE_STORE_HIT
-                wrLineAttrs := rdLineAttrs
-                wrLineAttrs.dirty := True
-                doLineAttrsRamWrite(
-                  busAddr=rBusAddr
+                //nextState := State.HANDLE_STORE_HIT
+                val rBusReadyState = (
+                  KeepAttribute(
+                    Reg(Bool(), init=False)
+                  )
                 )
-                doLineWordRamWrite(
-                  busAddr=rBusAddr,
-                  lineWord=rBusSendData.data,
-                )
+                lineAttrsRam.io.rdEn := False
+                lineWordRam.io.rdEn := False
+                when (
+                  //rBusReadyCnt === 0
+                  !rBusReadyState
+                ) {
+                  //rBusReadyCnt := rBusReadyCnt - 1
+                  rBusReadyState := True
+                  wrLineAttrs := rdLineAttrs
+                  wrLineAttrs.dirty := True
+                  doLineAttrsRamWrite(
+                    busAddr=rBusAddr
+                  )
+                  doLineWordRamWrite(
+                    busAddr=rBusAddr,
+                    lineWord=rBusSendData.data,
+                  )
+                } otherwise {
+                  rBusReadyState := False
+                  io.bus.ready := True
+                }
               } otherwise {
                 // cache miss upon a store
                 when (if (isIcache) (False) else (rdLineAttrs.dirty)) {
@@ -725,7 +786,8 @@ case class SnowHouseCache(
         //  rBusAddr >> log2Up(cacheCfg.lineSizeBytes),
         //  U(s"${log2Up(cacheCfg.lineSizeBytes)}'d0"),
         //).asUInt
-        tempLineBusAddr.resize(rH2dSendData.addr.getWidth)
+        //tempLineBusAddr.resize(rH2dSendData.addr.getWidth)
+        tempRdLineAttrsAddr.resize(rH2dSendData.addr.getWidth)
       )
       //rH2dSendData.data := (
       //  0x0
@@ -741,7 +803,10 @@ case class SnowHouseCache(
       )
       rH2dSendData.src := cacheCfg.srcId
       doLineWordRamReadSync(
-        busAddr=tempLineBusAddr
+        busAddr=(
+          //tempLineBusAddr
+          tempRdLineAttrsAddr
+        )
       )
       rH2dSendData.data := rdLineWord
       rH2dSendData.mask := (
@@ -754,10 +819,10 @@ case class SnowHouseCache(
         && !rBridgeSavedFires(0)
       ) {
         myH2dBus.nextValid := True
-        //setLineBusAddrCntsToStart()
+        setLineBusAddrCntsToStart()
         //setLineBusAddrToFirst()
         //rRecvCnt := 0x0
-        incrLineBusAddrCnts()
+        //incrLineBusAddrCnts()
       }
       when (myH2dBus.fire) {
         when (!atLastLineBusAddrCnt) {
@@ -813,8 +878,8 @@ case class SnowHouseCache(
         && !rBridgeSavedFires(1)
       ) {
         myH2dBus.nextValid := True
-        //setLineBusAddrCntsToStart()
-        incrLineBusAddrCnts()
+        setLineBusAddrCntsToStart()
+        //incrLineBusAddrCnts()
         wrLineAttrs.tag := (
           rSavedBusAddrTag
         )
@@ -833,7 +898,7 @@ case class SnowHouseCache(
       when (
         myD2hBus.rValid
         && (
-          //nextBridgeSavedFires(0)
+          //nextBridgeSavedFires(1)
           //|| 
           rBridgeSavedFires(1)
         )
@@ -845,7 +910,10 @@ case class SnowHouseCache(
           nextState := State.IDLE
         }
         doLineWordRamWrite(
-          busAddr=tempLineBusAddr,
+          busAddr=(
+            tempLineBusAddr
+            //myD2hBus.sendData.addr
+          ),
           lineWord=myD2hBus.sendData.data,
         )
         myD2hBus.ready := True
@@ -858,30 +926,30 @@ case class SnowHouseCache(
       //}
     }
     //--------
-    is (State.HANDLE_STORE_HIT) {
-      nextState := State.IDLE
-      //setLineBusAddrCntsToStart()
-      io.bus.ready := True
-      //// NOTE: this makes this cache be of the "write-through" variety.
-      //// TODO: I will need to implement something better later!
-      //when (myH2dBus.fire) {
-      //  myH2dBus.nextValid := False
-      //  nextBridgeSavedFires(0) := True
-      //}
-      //when (
-      //  myD2hBus.rValid
-      //  && (
-      //    nextBridgeSavedFires(0)
-      //    || rBridgeSavedFires(0)
-      //  )
-      //) {
-      //  myD2hBus.ready := True
-      //  busDevData := myD2hBus.sendData.data
-      //  nextState := State.IDLE
-      //  //nextBridgeSavedFires(1) := True
-      //  io.bus.ready := True
-      //}
-    }
+    //is (State.HANDLE_STORE_HIT) {
+    //  nextState := State.IDLE
+    //  //setLineBusAddrCntsToStart()
+    //  io.bus.ready := True
+    //  //// NOTE: this makes this cache be of the "write-through" variety.
+    //  //// TODO: I will need to implement something better later!
+    //  //when (myH2dBus.fire) {
+    //  //  myH2dBus.nextValid := False
+    //  //  nextBridgeSavedFires(0) := True
+    //  //}
+    //  //when (
+    //  //  myD2hBus.rValid
+    //  //  && (
+    //  //    nextBridgeSavedFires(0)
+    //  //    || rBridgeSavedFires(0)
+    //  //  )
+    //  //) {
+    //  //  myD2hBus.ready := True
+    //  //  busDevData := myD2hBus.sendData.data
+    //  //  nextState := State.IDLE
+    //  //  //nextBridgeSavedFires(1) := True
+    //  //  io.bus.ready := True
+    //  //}
+    //}
     //--------
     //is (State.HANDLE_STORE_MISS_RD) {
     //  if (!isIcache) {

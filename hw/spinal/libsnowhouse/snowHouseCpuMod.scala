@@ -1791,15 +1791,15 @@ case class SnowHouseCpuTestProgram(
     Lb"push_loop",
     str(r7, sp, 0),           // 0x4c
     ldr(r8, sp, 0),           // 0x50
-    //add(sp, sp, 4),           // 0x54
-    add(r9, r8, 1),
-    add(r9, r9, 1),
-    //sub(sp, sp, 4),           // 0x58
-    //ldr(r8, sp, 0),           // 0x58
+    //add(sp, sp, 4),
+    add(r9, r8, 1),           // 0x54
+    add(r9, r9, 1),           // 0x58
+    //sub(sp, sp, 4),
+    //ldr(r8, sp, 0),
     //push(r7),
-    //pop(r8),                  // 0x50
-    //push(r8),                 // 0x54
-    //pop(r9),                  // 0x58
+    //pop(r8),
+    //push(r8),
+    //pop(r9),
     sub(r7, r7, 1),           // 0x5c
     //sub(r6, r6, 1),
     bnz(r7, LbR"push_loop"),  // 0x60
@@ -2460,8 +2460,8 @@ case class SnowHouseCpuWithDualRam(
     instrInitBigInt=program.outpArr,
     dataInitBigInt=(
       Array.fill(
-        //1 << (16 - 2)
-        1 << (16 - 4)
+        1 << (16 - 2)
+        //1 << (16 - 4)
       )(BigInt(0))
     ),
   )
