@@ -420,7 +420,13 @@ case class SnowHouseCache(
     isIcache=isIcache,
   )
   wrLineAttrs.allowOverride
-  wrLineAttrs := wrLineAttrs.getZero
+  //wrLineAttrs := wrLineAttrs.getZero
+  wrLineAttrs := (
+    RegNext(
+      next=wrLineAttrs,
+      init=wrLineAttrs.getZero
+    )
+  )
 
   //val lineAttrsValidMem = (
   //  //Vec.fill(cacheCfg.depthLines)(
@@ -532,6 +538,12 @@ case class SnowHouseCache(
     (rBusAddr(cacheCfg.tagRange))
     //init(0x0)
   )
+  val rSavedBusAddr = (
+    Reg(cloneOf(rBusAddr), init=rBusAddr.getZero)
+  )
+  def rSavedBusAddrTag = (
+    rSavedBusAddr(cacheCfg.tagRange)
+  )
 
   when (
     //nextState === State.IDLE
@@ -547,6 +559,7 @@ case class SnowHouseCache(
       nextBridgeSavedFires := 0x0
       setLineBusAddrCntsToStart()
       myH2dBus.nextValid := False
+      rSavedBusAddr := rBusAddr
 
       when (io.bus.rValid) {
         //rSavedBusHostData := io.bus.sendData
@@ -562,84 +575,91 @@ case class SnowHouseCache(
             when (haveHit) {
               // cached load
               io.bus.ready := True
-              switch (rBusSendData.subKind) {
-                is (SnowHouseMemAccessSubKind.Sz8) {
-                  if (busDevData.getWidth >= 8) {
-                    when (!rBusSendData.accKind.asBits(0)) {
-                      busDevData := (
-                        rdLineWord(
-                          7 downto 0
-                        ).resize(busDevData.getWidth)
-                      )
-                    } otherwise {
-                      busDevData := (
-                        rdLineWord(
-                          7 downto 0
-                        ).asSInt.resize(busDevData.getWidth).asUInt
-                      )
-                    }
-                  } else {
-                    busDevData := rdLineWord.resized
-                  }
-                }
-                is (SnowHouseMemAccessSubKind.Sz16) {
-                  if (busDevData.getWidth >= 16) {
-                    when (!rBusSendData.accKind.asBits(0)) {
-                      busDevData := (
-                        rdLineWord(
-                          15 downto 0
-                        ).resize(busDevData.getWidth)
-                      )
-                    } otherwise {
-                      busDevData := (
-                        rdLineWord(
-                          15 downto 0
-                        ).asSInt.resize(busDevData.getWidth).asUInt
-                      )
-                    }
-                  } else {
-                    busDevData := rdLineWord.resized
-                  }
-                }
-                is (SnowHouseMemAccessSubKind.Sz32) {
-                  if (busDevData.getWidth >= 32) {
-                    when (!rBusSendData.accKind.asBits(0)) {
-                      busDevData := (
-                        rdLineWord(
-                          31 downto 0
-                        ).resize(busDevData.getWidth)
-                      )
-                    } otherwise {
-                      busDevData := (
-                        rdLineWord(
-                          31 downto 0
-                        ).asSInt.resize(busDevData.getWidth).asUInt
-                      )
-                    }
-                  } else {
-                    busDevData := rdLineWord.resized
-                  }
-                }
-                is (SnowHouseMemAccessSubKind.Sz64) {
-                  if (busDevData.getWidth >= 64) {
-                    when (!rBusSendData.accKind.asBits(0)) {
-                      busDevData := (
-                        rdLineWord(
-                          63 downto 0
-                        ).resize(busDevData.getWidth)
-                      )
-                    } otherwise {
-                      busDevData := (
-                        rdLineWord(
-                          63 downto 0
-                        ).asSInt.resize(busDevData.getWidth).asUInt
-                      )
-                    }
-                  } else {
-                    busDevData := rdLineWord.resized
-                  }
-                }
-              }
+              busDevData := (
+                rdLineWord
+                //(
+                //  31 downto 0
+                //)
+                .resize(busDevData.getWidth)
+              )
+              //switch (rBusSendData.subKind) {
+              //  is (SnowHouseMemAccessSubKind.Sz8) {
+              //    if (busDevData.getWidth >= 8) {
+              //      when (!rBusSendData.accKind.asBits(0)) {
+              //        busDevData := (
+              //          rdLineWord(
+              //            7 downto 0
+              //          ).resize(busDevData.getWidth)
+              //        )
+              //      } otherwise {
+              //        busDevData := (
+              //          rdLineWord(
+              //            7 downto 0
+              //          ).asSInt.resize(busDevData.getWidth).asUInt
+              //        )
+              //      }
+              //    } else {
+              //      busDevData := rdLineWord.resized
+              //    }
+              //  }
+              //  is (SnowHouseMemAccessSubKind.Sz16) {
+              //    if (busDevData.getWidth >= 16) {
+              //      when (!rBusSendData.accKind.asBits(0)) {
+              //        busDevData := (
+              //          rdLineWord(
+              //            15 downto 0
+              //          ).resize(busDevData.getWidth)
+              //        )
+              //      } otherwise {
+              //        busDevData := (
+              //          rdLineWord(
+              //            15 downto 0
+              //          ).asSInt.resize(busDevData.getWidth).asUInt
+              //        )
+              //      }
+              //    } else {
+              //      busDevData := rdLineWord.resized
+              //    }
+              //  }
+              //  is (SnowHouseMemAccessSubKind.Sz32) {
+              //    if (busDevData.getWidth >= 32) {
+              //      when (!rBusSendData.accKind.asBits(0)) {
+              //        busDevData := (
+              //          rdLineWord(
+              //            31 downto 0
+              //          ).resize(busDevData.getWidth)
+              //        )
+              //      } otherwise {
+              //        busDevData := (
+              //          rdLineWord(
+              //            31 downto 0
+              //          ).asSInt.resize(busDevData.getWidth).asUInt
+              //        )
+              //      }
+              //    } else {
+              //      busDevData := rdLineWord.resized
+              //    }
+              //  }
+              //  is (SnowHouseMemAccessSubKind.Sz64) {
+              //    if (busDevData.getWidth >= 64) {
+              //      when (!rBusSendData.accKind.asBits(0)) {
+              //        busDevData := (
+              //          rdLineWord(
+              //            63 downto 0
+              //          ).resize(busDevData.getWidth)
+              //        )
+              //      } otherwise {
+              //        busDevData := (
+              //          rdLineWord(
+              //            63 downto 0
+              //          ).asSInt.resize(busDevData.getWidth).asUInt
+              //        )
+              //      }
+              //    } else {
+              //      busDevData := rdLineWord.resized
+              //    }
+              //  }
+              //}
             } otherwise {
               // cache miss upon a load
               when (if (isIcache) (False) else (rdLineAttrs.dirty)) {
@@ -727,8 +747,8 @@ case class SnowHouseCache(
       rH2dSendData.mask := (
         U(rH2dSendData.mask.getWidth bits, default -> True)
       )
-      val tempBridgeSavedFires = Bool()
-      tempBridgeSavedFires := False
+      //val tempBridgeSavedFires = Bool()
+      //tempBridgeSavedFires := False
       when (
         !myH2dBus.rValid
         && !rBridgeSavedFires(0)
@@ -738,13 +758,14 @@ case class SnowHouseCache(
         //setLineBusAddrToFirst()
         //rRecvCnt := 0x0
         incrLineBusAddrCnts()
-      } elsewhen (myH2dBus.fire) {
+      }
+      when (myH2dBus.fire) {
         when (!atLastLineBusAddrCnt) {
           incrLineBusAddrCnts()
         } otherwise {
           myH2dBus.nextValid := False
           nextBridgeSavedFires(0) := True
-          tempBridgeSavedFires := False
+          //tempBridgeSavedFires := False
         }
         //rH2dSendData.addr := (
         //  tempLineBusAddr.resize(rH2dSendData.addr.getWidth)
@@ -754,8 +775,9 @@ case class SnowHouseCache(
         myD2hBus.rValid
         && (
           //nextBridgeSavedFires(0)
-          tempBridgeSavedFires
-          || rBridgeSavedFires(0)
+          //tempBridgeSavedFires
+          //|| 
+          rBridgeSavedFires(0)
         )
       ) {
         myD2hBus.ready := True
@@ -774,6 +796,13 @@ case class SnowHouseCache(
       rH2dSendData.mask := (
         U(rH2dSendData.mask.getWidth bits, default -> True)
       )
+      rH2dSendData.addr := (
+        //Cat(
+        //  rBusAddr >> log2Up(cacheCfg.lineSizeBytes),
+        //  U(s"${log2Up(cacheCfg.lineSizeBytes)}'d0"),
+        //).asUInt
+        tempLineBusAddr.resize(rH2dSendData.addr.getWidth)
+      )
       //when (
       //  RegNext(rState) === State.HANDLE_SEND_LINE_TO_BUS
       //) {
@@ -781,35 +810,32 @@ case class SnowHouseCache(
       //}
       when (
         !myH2dBus.rValid
-        && !rBridgeSavedFires(0)
+        && !rBridgeSavedFires(1)
       ) {
         myH2dBus.nextValid := True
         //setLineBusAddrCntsToStart()
         incrLineBusAddrCnts()
-        rH2dSendData.addr := (
-          //Cat(
-          //  rBusAddr >> log2Up(cacheCfg.lineSizeBytes),
-          //  U(s"${log2Up(cacheCfg.lineSizeBytes)}'d0"),
-          //).asUInt
-          tempLineBusAddr.resize(rH2dSendData.addr.getWidth)
+        wrLineAttrs.tag := (
+          rSavedBusAddrTag
         )
-        wrLineAttrs.tag := rBusAddrTag
-        wrLineAttrs.valid := True
+        //wrLineAttrs.valid := True
         if (!isIcache) {
           wrLineAttrs.dirty := False
         }
         doLineAttrsRamWrite(
           busAddr=tempLineBusAddr,
         )
-      } elsewhen (myH2dBus.fire) {
+      }
+      when (myH2dBus.fire) {
         myH2dBus.nextValid := False
-        nextBridgeSavedFires(0) := True
+        nextBridgeSavedFires(1) := True
       }
       when (
         myD2hBus.rValid
         && (
-          nextBridgeSavedFires(0)
-          || rBridgeSavedFires(0)
+          //nextBridgeSavedFires(0)
+          //|| 
+          rBridgeSavedFires(1)
         )
       ) {
         when (!atLastLineBusAddrCnt()) {
@@ -824,6 +850,12 @@ case class SnowHouseCache(
         )
         myD2hBus.ready := True
       }
+      //when (myD2hBus.rValid) {
+      //  doLineWordRamWrite(
+      //    busAddr=tempLineBusAddr,
+      //    lineWord=myD2hBus.sendData.data,
+      //  )
+      //}
     }
     //--------
     is (State.HANDLE_STORE_HIT) {
@@ -889,4 +921,5 @@ case class SnowHouseCache(
     //  //}
     //}
   }
+  wrLineAttrs.valid := True
 }
