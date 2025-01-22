@@ -947,9 +947,9 @@ case class SnowHousePipePayload(
       myMemAddr := inpExt.main.memAddr(zdx).resized
     }
     for (
-      (myMemAddrFwd, zdx) <- myExt(ydx).main.memAddrFwd.view.zipWithIndex
+      (myMemAddrFwd, zdx) <- myExt(ydx).main.memAddrAlt.view.zipWithIndex
     ) {
-      myMemAddrFwd := inpExt.main.memAddrFwd(zdx).resized
+      myMemAddrFwd := inpExt.main.memAddrAlt(zdx).resized
     }
   }
   def getPipeMemRmwExt(
@@ -968,9 +968,9 @@ case class SnowHousePipePayload(
       //)
     }
     for (
-      (myMemAddrFwd, zdx) <- myExt(ydx).main.memAddrFwd.view.zipWithIndex
+      (myMemAddrFwd, zdx) <- myExt(ydx).main.memAddrAlt.view.zipWithIndex
     ) {
-      outpExt.main.memAddrFwd(zdx) := myMemAddrFwd.resized
+      outpExt.main.memAddrAlt(zdx) := myMemAddrFwd.resized
     }
   }
   def formalSetPipeMemRmwFwd(
