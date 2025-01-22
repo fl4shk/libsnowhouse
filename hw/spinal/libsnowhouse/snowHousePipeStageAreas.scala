@@ -3233,6 +3233,9 @@ case class SnowHousePipeStageExecute(
       tempArr
     }
   )
+  val myDoHaveHazard1 = (
+    myDoHaveHazardVec.reduceLeft(_ || _)
+  )
   val myDoHaveHazard = KeepAttribute(
     //myDoHaveHazardVec.reduce(_ || _)
     //myDoHaveHazardVec.foldLeft(False)((left, right) => (left || right))
@@ -4059,6 +4062,10 @@ case class SnowHousePipeStageExecute(
       )
     }
   }
+  io.dcacheHaveHazard := (
+    !rSavedStall
+    && doCheckHazard && myDoHaveHazard1
+  )
   //io.dbus.sendData := setOutpModMemWord.io.dbusHostPayload
   //io.dbus.sendData.addr := setOutpModMemWord.io.dbusHostPayload.addr
   //psExSetPc.cnt := rSetPcCnt.payload + 1

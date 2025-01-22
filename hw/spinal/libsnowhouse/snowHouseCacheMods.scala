@@ -40,6 +40,11 @@ case class SnowHouseCacheIo(
       subCfg.dcacheCfg
     )
   )
+  val haveHazard = (
+    !isIcache
+  ) generate (
+    in(Bool())
+  )
   val bus = (
     slave(
       new LcvStallIo[BusHostPayload, BusDevPayload](
@@ -633,6 +638,7 @@ case class SnowHouseCache(
       //init(0x0)
     )
   )
+  val rTempBusReady = Reg(Bool(), init=False)
   switch (rState) {
     is (State.IDLE) {
       nextBridgeSavedFires := 0x0
@@ -643,6 +649,7 @@ case class SnowHouseCache(
       //val rBusReadyCnt = (
       //  Reg(UInt(1 bits)) init(0x0)
       //)
+      rTempBusReady := False
 
       when (io.bus.rValid) {
         //rSavedBusHostData := io.bus.sendData
@@ -657,14 +664,25 @@ case class SnowHouseCache(
           ) {
             when (haveHit) {
               // cached load
-              io.bus.ready := True
-              busDevData := (
-                rdLineWord
-                //(
-                //  31 downto 0
-                //)
-                .resize(busDevData.getWidth)
-              )
+              //when (!io.haveHazard) {
+              //  io.bus.ready := True
+              //  busDevData := (
+              //    rdLineWord
+              //    //(
+              //    //  31 downto 0
+              //    //)
+              //    .resize(busDevData.getWidth)
+              //  )
+              //} otherwise {
+                io.bus.ready := rTempBusReady
+                rTempBusReady := True
+                busDevData := (
+                  RegNext(
+                    next=rdLineWord,
+                    init=rdLineWord.getZero,
+                  ).resize(busDevData.getWidth)
+                )
+              //}
               //switch (rBusSendData.subKind) {
               //  is (SnowHouseMemAccessSubKind.Sz8) {
               //    if (busDevData.getWidth >= 8) {

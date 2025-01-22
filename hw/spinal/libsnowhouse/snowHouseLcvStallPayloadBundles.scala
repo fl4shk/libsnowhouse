@@ -149,6 +149,9 @@ case class BusHostPayload(
   val lock = (!isIbus) generate (
     Bool() // for atomics
   )
+  //val haveHazard = (!isIbus) generate (
+  //  Bool()
+  //)
 }
 case class BusDevPayload(
   cfg: SnowHouseConfig,

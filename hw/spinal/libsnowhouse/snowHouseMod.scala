@@ -28,10 +28,12 @@ case class SnowHouseInstrDataDualRamIo(
     sendPayloadType=Some(BusHostPayload(cfg=cfg, isIbus=false)),
     recvPayloadType=Some(BusDevPayload(cfg=cfg, isIbus=false)),
   )
+  val dcacheHaveHazard = Bool()
   slave(
     ibus,
     dbus,
   )
+  in(dcacheHaveHazard)
 }
 //case class SnowHouseDirectMappedIcacheIo(
 //  cfg: SnowHouseConfig
@@ -187,6 +189,7 @@ case class SnowHouseInstrDataDualRam(
       cfg=cfg,
       isIcache=false,
     )
+    dcache.io.haveHazard := io.dcacheHaveHazard
     val m2sTransfers = tilelink.M2sTransfers(
       get=tilelink.SizeRange(
         cfg.mainWidth / 8,
@@ -442,6 +445,7 @@ case class SnowHouseIo(
     sendPayloadType=Some(BusHostPayload(cfg=cfg, isIbus=false)),
     recvPayloadType=Some(BusDevPayload(cfg=cfg, isIbus=false)),
   )
+  val dcacheHaveHazard = Bool()
   master(
     ibus,
     dbus,
@@ -451,6 +455,7 @@ case class SnowHouseIo(
       master(multiCycleBusVec(idx))
     }
   }
+  out(dcacheHaveHazard)
 }
 case class SnowHouse
 //[
