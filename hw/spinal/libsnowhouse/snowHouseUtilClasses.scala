@@ -241,6 +241,7 @@ case class SnowHouseCacheConfig(
     LcvStallToTilelinkConfig(
       addrWidth=(
         //addrWidth
+        //16
         14
       ),
       dataWidth=wordWidth,
