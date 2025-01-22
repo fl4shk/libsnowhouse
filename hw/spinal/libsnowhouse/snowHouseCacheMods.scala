@@ -664,16 +664,19 @@ case class SnowHouseCache(
           ) {
             when (haveHit) {
               // cached load
-              //when (!io.haveHazard) {
-              //  io.bus.ready := True
-              //  busDevData := (
-              //    rdLineWord
-              //    //(
-              //    //  31 downto 0
-              //    //)
-              //    .resize(busDevData.getWidth)
-              //  )
-              //} otherwise {
+              if (
+                //!io.haveHazard
+                isIcache
+              ) {
+                io.bus.ready := True
+                busDevData := (
+                  rdLineWord
+                  //(
+                  //  31 downto 0
+                  //)
+                  .resize(busDevData.getWidth)
+                )
+              } else {
                 io.bus.ready := rTempBusReady
                 rTempBusReady := True
                 busDevData := (
@@ -682,7 +685,7 @@ case class SnowHouseCache(
                     init=rdLineWord.getZero,
                   ).resize(busDevData.getWidth)
                 )
-              //}
+              }
               //switch (rBusSendData.subKind) {
               //  is (SnowHouseMemAccessSubKind.Sz8) {
               //    if (busDevData.getWidth >= 8) {
