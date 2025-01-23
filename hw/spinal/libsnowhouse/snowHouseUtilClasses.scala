@@ -943,6 +943,12 @@ case class SnowHousePipePayload(
   ): Unit = {
     myExt(ydx).pipeFlags := inpExt.pipeFlags
     myExt(ydx).main.nonMemAddr := inpExt.main.nonMemAddr
+    for (
+      (myMemAddrFwdCmp, zdx)
+      <- myExt(ydx).main.memAddrFwdCmp.view.zipWithIndex
+    ) {
+      myMemAddrFwdCmp := inpExt.main.memAddrFwdCmp(zdx)
+    }
     for ((myMemAddr, zdx) <- myExt(ydx).main.memAddr.view.zipWithIndex) {
       myMemAddr := inpExt.main.memAddr(zdx).resized
     }
@@ -961,6 +967,12 @@ case class SnowHousePipePayload(
     //outpExt := myExt(ydx)
     outpExt.pipeFlags := myExt(ydx).pipeFlags
     outpExt.main.nonMemAddr := myExt(ydx).main.nonMemAddr
+    for (
+      (myMemAddrFwdCmp, zdx)
+      <- myExt(ydx).main.memAddrFwdCmp.view.zipWithIndex
+    ) {
+      outpExt.main.memAddrFwdCmp(zdx) := myMemAddrFwdCmp
+    }
     for ((myMemAddr, zdx) <- myExt(ydx).main.memAddr.view.zipWithIndex) {
       outpExt.main.memAddr(zdx) := myMemAddr.resized
       //(
