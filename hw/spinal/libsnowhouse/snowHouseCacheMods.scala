@@ -845,13 +845,13 @@ case class SnowHouseCache(
                     rBusReadyCnt := True
                     wrLineAttrs := rdLineAttrs
                     wrLineAttrs.dirty := True
-                    doLineAttrsRamWrite(
-                      busAddr=rBusAddr
-                    )
-                    doLineWordRamWrite(
-                      busAddr=rBusAddr,
-                      lineWord=rBusSendData.data,
-                    )
+                    //doLineAttrsRamWrite(
+                    //  busAddr=rBusAddr
+                    //)
+                    //doLineWordRamWrite(
+                    //  busAddr=rBusAddr,
+                    //  lineWord=rBusSendData.data,
+                    //)
                   //} otherwise {
                   //  //lineAttrsRam.io.rdEn := False
                   //  //lineWordRam.io.rdEn := False
@@ -910,6 +910,13 @@ case class SnowHouseCache(
     }
     is (State.HANDLE_DCACHE_STORE_HIT) {
       nextState := State.IDLE
+      doLineAttrsRamWrite(
+        busAddr=RegNext(rBusAddr)
+      )
+      doLineWordRamWrite(
+        busAddr=RegNext(rBusAddr),
+        lineWord=RegNext(rBusSendData.data),
+      )
     }
     is (State.HANDLE_SEND_LINE_TO_BUS) {
       //handleWriteLineRam(
