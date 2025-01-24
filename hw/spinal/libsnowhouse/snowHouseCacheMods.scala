@@ -208,6 +208,11 @@ case class SnowHouseCache(
     //cacheCfg.depth / (cacheCfg.lineSizeBytes * cacheCfg.dataWidth)
     cacheCfg.depthLines
   )
+  println(
+    s"depthWords:${cacheCfg.depthWords} "
+    + s"depthBytes:${cacheCfg.depthBytes} "
+    + s"depthLines:${cacheCfg.depthLines} "
+  )
   val lineWordRam = FpgacpuRamSimpleDualPort(
     wordType=UInt(cacheCfg.wordWidth bits),
     depth=depthWords,
