@@ -227,7 +227,7 @@ case class SnowHouseCache(
     initBigInt=Some(Array.fill(depthLines)(BigInt(0))),
   )
   val tempLineBusAddr = (
-    KeepAttribute(cloneOf(rBusAddr))
+    /*KeepAttribute*/(cloneOf(rBusAddr))
   )
   val nextLineAddrCnt = (
     UInt(
@@ -242,7 +242,7 @@ case class SnowHouseCache(
   //  nextLineAddrCnt.getWidth
   //)
   val rLineAddrCnt = (
-    KeepAttribute(
+    /*KeepAttribute*/(
       RegNext/*When*/(
         next=nextLineAddrCnt,
         //cond=io.tlBus.a.fire,
@@ -287,7 +287,7 @@ case class SnowHouseCache(
     temp
   }
   val rdLineAttrs = (
-    KeepAttribute(
+    /*KeepAttribute*/(
       SnowHouseCacheLineAttrs(
         cfg=cfg,
         isIcache=isIcache,
@@ -501,7 +501,7 @@ case class SnowHouseCache(
     log2Up(cacheCfg.wordSizeBytes)
   )
   val rdLineWord = (
-    KeepAttribute(
+    /*KeepAttribute*/(
       //UInt(lineWordRam.io.rdData.getWidth bits)
       UInt(cacheCfg.wordWidth bits)
     )
@@ -677,7 +677,7 @@ case class SnowHouseCache(
     //doLineAttrsRamReadSync(busAddr=io.bus.sendData.addr)
   }
   val rBusReadyCnt = (
-    KeepAttribute(
+    /*KeepAttribute*/(
       Reg(Bool(), init=False)
       //Reg(UInt(2 bits))
       //init(0x0)

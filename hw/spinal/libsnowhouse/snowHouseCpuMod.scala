@@ -354,7 +354,7 @@ object SnowHouseCpuPipeStageInstrDecode {
     psId: SnowHousePipeStageInstrDecode
   ) = new Area {
     //--------
-    // NOTE: the `KeepAttribute(...)`s seem to be required for signals
+    // NOTE: the `/*KeepAttribute*/(...)`s seem to be required for signals
     // defined in this function.
     //--------
     import SnowHouseCpuOp._
@@ -363,7 +363,7 @@ object SnowHouseCpuPipeStageInstrDecode {
     def cfg = psId.cfg
     def cId = psId.cId
     val encInstr = (
-      KeepAttribute(
+      /*KeepAttribute*/(
         SnowHouseCpuEncInstr()
       )
       .setName("InstrDecode_encInstr")
@@ -411,14 +411,14 @@ object SnowHouseCpuPipeStageInstrDecode {
       tempHaveHazardAddrCheckVec.reduceLeft(_ || _)
     )
     //val rTempState = (
-    //  KeepAttribute(
+    //  /*KeepAttribute*/(
     //    Reg(Bool(), init=False)
     //  )
     //  .setName(s"InstrDecode_PopRaRb_rTempState")
     //)
     val nextMultiCycleState = Bool()
     val rMultiCycleState = (
-      KeepAttribute(
+      /*KeepAttribute*/(
         RegNext(
           next=nextMultiCycleState,
           init=nextMultiCycleState.getZero,
@@ -456,7 +456,7 @@ object SnowHouseCpuPipeStageInstrDecode {
       ).asUInt
     )
     val rPrevPreImm = (
-      KeepAttribute(
+      /*KeepAttribute*/(
         RegNextWhen(
           next=Cat(
             encInstr.raIdx,

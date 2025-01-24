@@ -91,7 +91,7 @@ case class SnowHousePipeStageInstrFetch(
   //val psIdHaltIt = Bool()
   //val psExSetPc = Flow(SnowHousePsExSetPcPayload(cfg=cfg))
   val upModExt = (
-    KeepAttribute(
+    /*KeepAttribute*/(
       SnowHousePipePayload(cfg=cfg)
     )
     .setName(s"PipeStageInstrFetch_upModExt")
@@ -108,7 +108,7 @@ case class SnowHousePipeStageInstrFetch(
   def nextRegPc = upModExt.regPc
   def nextRegPcSetItCnt = upModExt.regPcSetItCnt
   val rSavedExSetPc = {
-    val temp = KeepAttribute(
+    val temp = /*KeepAttribute*/(
       Reg(Flow(
         //UInt(cfg.mainWidth bits)
         SnowHousePsExSetPcPayload(cfg=cfg)
@@ -592,7 +592,7 @@ case class SnowHousePipeStageInstrDecode(
   tempInstr.allowOverride
   startDecode := False
   //val rSavedExSetPc = {
-  //  val temp = KeepAttribute(
+  //  val temp = /*KeepAttribute*/(
   //    Reg(Flow(
   //      //UInt(cfg.mainWidth bits)
   //      SnowHousePsExSetPcPayload(cfg=cfg)
@@ -644,7 +644,7 @@ case class SnowHousePipeStageInstrDecode(
   //io.idsIraIrq.ready := False
   nextPrevInstrBlockedIrq := rPrevInstrBlockedIrq
   val tempIsFiring = (
-    KeepAttribute(
+    /*KeepAttribute*/(
       Bool()
     )
     .setName(s"GenInstrDecode_tempIsFiring")
@@ -778,7 +778,7 @@ case class SnowHousePipeStageInstrDecode(
     //}
   }
   //val rPrevPcChangeState = (
-  //  KeepAttribute(
+  //  /*KeepAttribute*/(
   //    RegNextWhen(
   //      next=(
   //        pcChangeState
@@ -3106,7 +3106,7 @@ case class SnowHousePipeStageExecute(
   def stallKindLim = 2
 
   //val currDuplicateIt = (
-  //  KeepAttribute(
+  //  /*KeepAttribute*/(
   //    Vec.fill(2)(
   //      Bool()
   //    )
@@ -3116,7 +3116,7 @@ case class SnowHousePipeStageExecute(
   //  current := False
   //})
   val myDoStall = (
-    KeepAttribute(
+    /*KeepAttribute*/(
       Vec.fill(stallKindLim)(
         Bool()
       )
@@ -3259,7 +3259,7 @@ case class SnowHousePipeStageExecute(
   //  }
   //  temp
   //}
-  val myDoHaveHazardVec = KeepAttribute(
+  val myDoHaveHazardVec = /*KeepAttribute*/(
     Vec[Bool]{
       //val tempFindFirst = Vec[(Bool, UInt)]
       //val tempFindFirst_1 = Bool()
@@ -3284,7 +3284,7 @@ case class SnowHousePipeStageExecute(
   val myDoHaveHazard1 = (
     myDoHaveHazardVec.reduceLeft(_ || _)
   )
-  val myDoHaveHazard = KeepAttribute(
+  val myDoHaveHazard = /*KeepAttribute*/(
     //myDoHaveHazardVec.reduce(_ || _)
     //myDoHaveHazardVec.foldLeft(False)((left, right) => (left || right))
     //myDoHaveHazardVec.sFindFirst(_ === True)._1
@@ -3622,12 +3622,12 @@ case class SnowHousePipeStageExecute(
   //}
   //--------
   //val myOutpModMemWordValid = (
-  //  KeepAttribute(
+  //  /*KeepAttribute*/(
   //    Bool()
   //  )
   //)
   //val myOutpModMemWord = (
-  //  KeepAttribute(
+  //  /*KeepAttribute*/(
   //    UInt(cfg.mainWidth bits)
   //  )
   //)
@@ -3864,7 +3864,7 @@ case class SnowHousePipeStageExecute(
   //}
   val nextSavedStall = Bool()
   val rSavedStall = (
-    KeepAttribute(
+    /*KeepAttribute*/(
       RegNext(
         next=nextSavedStall,
         init=nextSavedStall.getZero
@@ -3983,7 +3983,7 @@ case class SnowHousePipeStageExecute(
     temp
   }
   //val doWriteSavedStall = (
-  //  KeepAttribute(
+  //  /*KeepAttribute*/(
   //    Bool()
   //  )
   //)
@@ -4004,7 +4004,7 @@ case class SnowHousePipeStageExecute(
     ))
   )
   val rSetPcCnt = {
-    val temp = KeepAttribute(
+    val temp = /*KeepAttribute*/(
       RegNext(next=nextSetPcCnt)
     )
     temp.valid.init(False)
@@ -4272,7 +4272,7 @@ case class SnowHousePipeStageExecute(
         //    // instruction is of type MultiCycle,
         //    // but with NO mem access
         //    //val rTempSavedRegPc = (
-        //    //  KeepAttribute(
+        //    //  /*KeepAttribute*/(
         //    //    RegNextWhen(
         //    //      next=outp.regPc,
         //    //      cond=cMid0Front.up.isFiring,
@@ -4659,7 +4659,7 @@ case class SnowHousePipeStageMem(
   val formalFwdMidModArea = (regFile.myHaveFormalFwd) generate (
     new Area {
       val myFwd = (
-        KeepAttribute(
+        /*KeepAttribute*/(
           Vec.fill(extIdxLim)(
             regFile.mkFwd()
           )
@@ -4723,13 +4723,13 @@ case class SnowHousePipeStageMem(
   //}
   //--------
   val nextSetMidModPayloadState = (
-    KeepAttribute(
+    /*KeepAttribute*/(
       Bool()
     )
     .setName(s"nextSetMidModPayloadState")
   )
   val rSetMidModPayloadState = (
-    KeepAttribute(
+    /*KeepAttribute*/(
       RegNext(
         next=nextSetMidModPayloadState,
         init=nextSetMidModPayloadState.getZero,
@@ -6240,7 +6240,7 @@ case class SnowHousePipeStageWriteBack(
     null
   )
   val myHaveSeenPipeToModFrontFire = (
-    KeepAttribute(
+    /*KeepAttribute*/(
       tempHadFrontIsFiring._1
       && tempHadMid0FrontUpIsValid._1
       && tempHadModFrontIsValid._1
@@ -6271,7 +6271,7 @@ case class SnowHousePipeStageWriteBack(
     4
   )
   val tempHaveSeenPipeToWriteV2dFindFirst_0 = (
-    KeepAttribute(
+    /*KeepAttribute*/(
       Vec.fill(tempHistHaveSeenPipeToWriteV2dOuterDim)({
         //Vec.fill(wordCount)(
         //  Bool()
@@ -6356,7 +6356,7 @@ case class SnowHousePipeStageWriteBack(
       tempMyCoverInit := tempMyCoverInit.getZero
       //tempMyCoverInit.op := PipeMemRmwSimDut.ModOp.LIM
       val myHistCoverVec = (
-        KeepAttribute(
+        /*KeepAttribute*/(
           History(
             that=modBack(modBackPayload),
             length=myCoverVecSize,
@@ -6381,7 +6381,7 @@ case class SnowHousePipeStageWriteBack(
     })
   )
   val myPrevWriteData = (
-    KeepAttribute(
+    /*KeepAttribute*/(
       Vec[Vec[UInt]]({
         val tempArr = ArrayBuffer[Vec[UInt]]()
         for ((wordCount, ydx) <- regFile.wordCountArr.view.zipWithIndex) {
@@ -6423,7 +6423,7 @@ case class SnowHousePipeStageWriteBack(
   val formalFwdModBackArea = (regFile.myHaveFormalFwd) generate (
     new Area {
       val myExt = (
-        KeepAttribute(
+        /*KeepAttribute*/(
           regFile.mkExt()
         )
         .setName(
@@ -6432,7 +6432,7 @@ case class SnowHousePipeStageWriteBack(
         )
       )
       val myFwd = (
-        KeepAttribute(
+        /*KeepAttribute*/(
           Vec.fill(extIdxLim)(
             regFile.mkFwd()
           )
@@ -6561,7 +6561,7 @@ case class SnowHousePipeStageWriteBack(
   }
   def myHistMainSize = 8
   val myHistMain: Vec[HistMain] = (
-    KeepAttribute(Vec[HistMain]{
+    /*KeepAttribute*/(Vec[HistMain]{
       //History(
       //  that={
       //    //modBack(modBackPayload)
@@ -6890,7 +6890,7 @@ case class SnowHousePipeStageWriteBack(
         //  tempArr
         //})
         val tempCond1 = (
-          KeepAttribute(
+          /*KeepAttribute*/(
             //modBack.isValid
             //&& 
             /*past*/(regFile.mod.back.myWriteEnable(ydx))
@@ -6948,7 +6948,7 @@ case class SnowHousePipeStageWriteBack(
         //  tempArr
         //})
         val myTempRight = (
-          KeepAttribute(
+          /*KeepAttribute*/(
             Vec[UInt]({
               val myArr = new ArrayBuffer[UInt]()
               //myArr += (
