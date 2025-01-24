@@ -1794,6 +1794,10 @@ case class SnowHouseCpuTestProgram(
     //add(sp, sp, 4),
     add(r9, r8, 1),           // 0x54
     add(r9, r9, 1),           // 0x58
+    //add(r12, r8, 1),
+    //add(r0, r0, 1),
+    //cpy(r0, r0),        
+    //add(r9, r9, 1),
     //sub(sp, sp, 4),
     //ldr(r8, sp, 0),
     //push(r7),
