@@ -1587,7 +1587,7 @@ case class SnowHouseCpuConfig(
       val icacheDepth = 8192
       val icacheLineSizeBytes = 64
       val icacheBusSrcNum = 0x0
-      val dcacheDepth = 512//8192
+      val dcacheDepth = /*512*/ 8192
       val dcacheLineSizeBytes = 64
       val dcacheBusSrcNum = 0x1
       SnowHouseSubConfig(
