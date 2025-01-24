@@ -471,34 +471,28 @@ case class SnowHouseCache(
   //lineWordRam.io.rdEn := io.bus.nextValid//io.bus.nextValid
 
   lineWordRam.io.rdEn := False
-  lineWordRam.io.rdAddr := 0x0
+  lineWordRam.io.rdAddr := (
+    0x0
+  )
   lineWordRam.io.wrEn := False
-  lineWordRam.io.wrAddr := 0x0
-  lineWordRam.io.wrData := lineWordRam.io.wrData.getZero
+  //lineWordRam.io.wrAddr := (
+  //  0x0
+  //  //lineWordRam.io.wrAddr
+  //)
+  //lineWordRam.io.wrData := lineWordRam.io.wrData.getZero
 
   lineAttrsRam.io.rdEn := False
-  lineAttrsRam.io.rdAddr := 0x0
+  lineAttrsRam.io.rdAddr := (
+    0x0
+  )
   lineAttrsRam.io.wrEn := False
-  lineAttrsRam.io.wrAddr := 0x0
-  lineAttrsRam.io.wrData := lineAttrsRam.io.wrData.getZero
-
+  //lineAttrsRam.io.wrAddr := (
+  //  0x0
+  //)
+  //lineAttrsRam.io.wrData := lineAttrsRam.io.wrData.getZero
   val myLineRamAddrRshift = (
     log2Up(cacheCfg.wordSizeBytes)
   )
-  //lineWordRam.io.wrEn := False
-  //lineWordRam.io.wrAddr := (
-  //  //tempLineRamWrAddr
-  //  RegNext(
-  //    next=lineWordRam.io.wrAddr,
-  //    init=lineWordRam.io.wrAddr.getZero,
-  //  )
-  //)
-  //lineWordRam.io.wrData := (
-  //  RegNext(
-  //    next=lineWordRam.io.wrData,
-  //    init=lineWordRam.io.wrData.getZero,
-  //  )
-  //)
   val rdLineWord = (
     KeepAttribute(
       //UInt(lineWordRam.io.rdData.getWidth bits)
@@ -518,6 +512,30 @@ case class SnowHouseCache(
       init=wrLineAttrs.getZero
     )
   )
+  doLineAttrsRamWrite(
+    busAddr=RegNext(rBusAddr),
+    setEn=false,
+  )
+  doLineWordRamWrite(
+    busAddr=RegNext(rBusAddr),
+    lineWord=RegNext(rBusSendData.data),
+    setEn=false,
+  )
+
+  //lineWordRam.io.wrEn := False
+  //lineWordRam.io.wrAddr := (
+  //  //tempLineRamWrAddr
+  //  RegNext(
+  //    next=lineWordRam.io.wrAddr,
+  //    init=lineWordRam.io.wrAddr.getZero,
+  //  )
+  //)
+  //lineWordRam.io.wrData := (
+  //  RegNext(
+  //    next=lineWordRam.io.wrData,
+  //    init=lineWordRam.io.wrData.getZero,
+  //  )
+  //)
 
   //val lineAttrsValidMem = (
   //  //Vec.fill(cacheCfg.depthLines)(
@@ -591,8 +609,11 @@ case class SnowHouseCache(
   def doLineWordRamWrite(
     busAddr: UInt,
     lineWord: UInt,
+    setEn: Boolean=true,
   ): Unit = {
-    lineWordRam.io.wrEn := True
+    if (setEn) {
+      lineWordRam.io.wrEn := True
+    }
     lineWordRam.io.wrAddr := (
       (busAddr >> myLineRamAddrRshift)
       .resize(lineWordRam.io.wrAddr.getWidth)
@@ -611,8 +632,11 @@ case class SnowHouseCache(
   def doLineAttrsRamWrite(
     busAddr: UInt,
     lineAttrs: SnowHouseCacheLineAttrs=wrLineAttrs,
+    setEn: Boolean=true,
   ): Unit = {
-    lineAttrsRam.io.wrEn := True
+    if (setEn) {
+      lineAttrsRam.io.wrEn := True
+    }
     lineAttrsRam.io.wrAddr := (
       (busAddr >> log2Up(cacheCfg.lineSizeBytes))
       .resize(lineAttrsRam.io.wrAddr.getWidth)
@@ -910,13 +934,15 @@ case class SnowHouseCache(
     }
     is (State.HANDLE_DCACHE_STORE_HIT) {
       nextState := State.IDLE
-      doLineAttrsRamWrite(
-        busAddr=RegNext(rBusAddr)
-      )
-      doLineWordRamWrite(
-        busAddr=RegNext(rBusAddr),
-        lineWord=RegNext(rBusSendData.data),
-      )
+      lineAttrsRam.io.wrEn := True
+      lineWordRam.io.wrEn := True
+      //doLineAttrsRamWrite(
+      //  busAddr=RegNext(rBusAddr)
+      //)
+      //doLineWordRamWrite(
+      //  busAddr=RegNext(rBusAddr),
+      //  lineWord=RegNext(rBusSendData.data),
+      //)
     }
     is (State.HANDLE_SEND_LINE_TO_BUS) {
       //handleWriteLineRam(
