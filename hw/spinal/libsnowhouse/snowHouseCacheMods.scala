@@ -957,7 +957,7 @@ case class SnowHouseCache(
       doLineWordRamReadSync(
         busAddr=(
           //tempLineBusAddr
-          tempRdLineAttrsAddr2
+          RegNext(tempRdLineAttrsAddr2)
         )
       )
     }
