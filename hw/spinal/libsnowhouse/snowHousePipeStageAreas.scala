@@ -4607,9 +4607,29 @@ case class SnowHousePipeStageMem(
       },
     )
   )
+  val fMidModFront = (doMidMod) generate (
+    ForkLink(
+      up=cMidModFront.down,
+      downs={
+        Array.fill(2)(Node())
+      },
+      synchronous=false
+    )
+  )
+  val sMidModFrontFwd = (doMidMod) generate (
+    StageLink(
+      up=fMidModFront.downs(0),
+      down={
+        regFile.io.modBackFwd
+      }
+    )
+  )
   val sMidModFront = (doMidMod) generate (
     StageLink(
-      up=cMidModFront.down,
+      up=(
+        //cMidModFront.down
+        fMidModFront.downs(1)
+      ),
       down={
         modBack
         ////Node()
@@ -4628,6 +4648,8 @@ case class SnowHousePipeStageMem(
   //  )
   //)
   regFile.myLinkArr += cMidModFront
+  regFile.myLinkArr += fMidModFront
+  regFile.myLinkArr += sMidModFrontFwd
   regFile.myLinkArr += sMidModFront
   //regFile.myLinkArr += s2mMidModFront
   val formalFwdMidModArea = (regFile.myHaveFormalFwd) generate (
