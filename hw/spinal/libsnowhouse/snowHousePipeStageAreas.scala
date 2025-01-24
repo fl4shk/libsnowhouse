@@ -3904,7 +3904,11 @@ case class SnowHousePipeStageExecute(
   //when (cMid0Front.up.isFiring) {
   //  nextSavedStall := False
   //}
-  when (psMemStallHost.fire) {
+  when (
+    //psMemStallHost.fire
+    RegNext(psMemStallHost.nextValid)
+    && psMemStallHost.ready
+  ) {
     psMemStallHost.nextValid := False
   }
   //--------
@@ -5349,38 +5353,22 @@ case class SnowHousePipeStageMem(
 
   def tempExtLeft(ydx: Int) = midModPayload(extIdxUp).myExt(ydx)
   def tempExtRight(ydx: Int) = modFront(modFrontPayload).myExt(ydx)
+  val rDbusState = (
+    Reg(Bool(), init=False)
+  )
   when (
     //midModPayload(extIdxUp).op
     ////modFront(modFrontPayload).op
     //=== PipeMemRmwSimDut.ModOp.LdrRaRb
     //midModPayload(extIdxUp).decodeExt.opIsMemAccess
     //&& !myShouldIgnoreInstr
-    io.dbus.rValid
+    //io.dbus.rValid
+    RegNext(io.dbus.nextValid)
   ) {
     def tempExtLeft(ydx: Int) = midModPayload(extIdxUp).myExt(ydx)
     def tempExtRight(ydx: Int) = modFront(modFrontPayload).myExt(ydx)
     //--------
-    //midModPayload(extIdxUp).myExt.foreach(
-    //  someExt => {
-    //    someExt.modMemWordValid := (
-    //      //False
-    //      (
-    //        midModPayload(extIdxUp).decodeExt.memAccessKind
-    //        =/= SnowHouseMemAccessKind.Store
-    //      ) && (
-    //        // TODO: support more destination GPRs
-    //        !midModPayload(extIdxUp).gprIsZeroVec(0)
-    //      )
-    //    )
-    //  }
-    //)
     when (
-      //savedPsMemStallHost.myDuplicateIt
-      //&& (
-      //  modFront(modFrontPayload).instrCnt.any
-      //  === midModPayload(extIdxUp).instrCnt.any + 1
-      //)
-      //io.dbus.rValid &&
       !io.dbus.ready
     ) {
       //--------
@@ -5402,21 +5390,7 @@ case class SnowHousePipeStageMem(
       )
       //myCurrExt.modMemWordValid := False
     } otherwise {
-      ////--------
-      //midModPayload(extIdxUp).myExt(0).modMemWordValid := True
-      ////--------
-      //midModPayload(extIdxUp).myExt(0).modMemWord := (
-      //  //if (PipeMemRmwSimDut.allModOpsSameChange) (
-      //  //  midModPayload(extIdxUp).myExt(0).rdMemWord(0) + 1
-      //  //) else (
-      //  //  midModPayload(extIdxUp).myExt(0).rdMemWord(0) - 1
-      //  //)
-      //)
       val myDecodeExt = midModPayload(extIdxUp).decodeExt
-      //for (ydx <- 0 until cfg.regFileCfg.memArrSize) {
-      //  val myExtLeft = tempExtLeft(ydx=ydx)
-      //  myExtLeft.modMemWord := myExtLeft.modMemWord.getZero
-      //}
       val mapElem = midModPayload(extIdxUp).gprIdxToMemAddrIdxMap(0)
       val myCurrExt = (
         if (!mapElem.haveHowToSetIdx) (
