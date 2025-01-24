@@ -426,7 +426,9 @@ case class SnowHouseCache(
       IDLE,
       HANDLE_DCACHE_LOAD_HIT,
       HANDLE_DCACHE_STORE_HIT,
+      HANDLE_SEND_LINE_TO_BUS_PIPE_1,
       HANDLE_SEND_LINE_TO_BUS,
+      //HANDLE_RECV_LINE_FROM_BUS_PIPE_1,
       HANDLE_RECV_LINE_FROM_BUS,
       //HANDLE_STORE_HIT,
       //HANDLE_STORE_MISS_RD,
@@ -839,13 +841,13 @@ case class SnowHouseCache(
               } otherwise {
                 // cache miss upon a load
                 when (if (isIcache) (False) else (rdLineAttrs.dirty)) {
-                  nextState := State.HANDLE_SEND_LINE_TO_BUS
-                  doLineWordRamReadSync(
-                    busAddr=(
-                      //tempLineBusAddr
-                      tempRdLineAttrsAddr2
-                    )
-                  )
+                  nextState := State.HANDLE_SEND_LINE_TO_BUS_PIPE_1
+                  //doLineWordRamReadSync(
+                  //  busAddr=(
+                  //    //tempLineBusAddr
+                  //    tempRdLineAttrsAddr2
+                  //  )
+                  //)
                 } otherwise {
                   nextState := State.HANDLE_RECV_LINE_FROM_BUS
                 }
@@ -889,13 +891,13 @@ case class SnowHouseCache(
                   } otherwise {
                     // cache miss upon a store
                     when (if (isIcache) (False) else (rdLineAttrs.dirty)) {
-                      nextState := State.HANDLE_SEND_LINE_TO_BUS
-                      doLineWordRamReadSync(
-                        busAddr=(
-                          //tempLineBusAddr
-                          tempRdLineAttrsAddr2
-                        )
-                      )
+                      nextState := State.HANDLE_SEND_LINE_TO_BUS_PIPE_1
+                      //doLineWordRamReadSync(
+                      //  busAddr=(
+                      //    //tempLineBusAddr
+                      //    tempRdLineAttrsAddr2
+                      //  )
+                      //)
                     } otherwise {
                       nextState := State.HANDLE_RECV_LINE_FROM_BUS
                       //rH2dSendData.isWrite := False
@@ -949,6 +951,15 @@ case class SnowHouseCache(
       //  busAddr=RegNext(rBusAddr),
       //  lineWord=RegNext(rBusSendData.data),
       //)
+    }
+    is (State.HANDLE_SEND_LINE_TO_BUS_PIPE_1) {
+      nextState := State.HANDLE_SEND_LINE_TO_BUS 
+      doLineWordRamReadSync(
+        busAddr=(
+          //tempLineBusAddr
+          tempRdLineAttrsAddr2
+        )
+      )
     }
     is (State.HANDLE_SEND_LINE_TO_BUS) {
       //handleWriteLineRam(
