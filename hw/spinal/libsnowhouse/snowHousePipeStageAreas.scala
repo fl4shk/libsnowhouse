@@ -5380,66 +5380,49 @@ case class SnowHousePipeStageMem(
       )
       //myCurrExt.modMemWordValid := False
     } otherwise {
-      //////--------
-      ////midModPayload(extIdxUp).myExt(0).modMemWordValid := True
-      //////--------
-      ////midModPayload(extIdxUp).myExt(0).modMemWord := (
-      ////  //if (PipeMemRmwSimDut.allModOpsSameChange) (
-      ////  //  midModPayload(extIdxUp).myExt(0).rdMemWord(0) + 1
-      ////  //) else (
-      ////  //  midModPayload(extIdxUp).myExt(0).rdMemWord(0) - 1
-      ////  //)
-      ////)
-      //val myDecodeExt = midModPayload(extIdxUp).decodeExt
-      ////for (ydx <- 0 until cfg.regFileCfg.memArrSize) {
-      ////  val myExtLeft = tempExtLeft(ydx=ydx)
-      ////  myExtLeft.modMemWord := myExtLeft.modMemWord.getZero
-      ////}
-      //val mapElem = midModPayload(extIdxUp).gprIdxToMemAddrIdxMap(0)
-      //val myCurrExt = (
-      //  if (!mapElem.haveHowToSetIdx) (
-      //    midModPayload(extIdxUp).myExt(
-      //      //U(s"${log2Up(cfg.shRegFileCfg.howToSlice.size).max(1)}'d0")
-      //      0
-      //    )
-      //  ) else (
-      //    midModPayload(extIdxUp).myExt(
-      //      mapElem.howToSetIdx
-      //    )
-      //  )
+      ////--------
+      //midModPayload(extIdxUp).myExt(0).modMemWordValid := True
+      ////--------
+      //midModPayload(extIdxUp).myExt(0).modMemWord := (
+      //  //if (PipeMemRmwSimDut.allModOpsSameChange) (
+      //  //  midModPayload(extIdxUp).myExt(0).rdMemWord(0) + 1
+      //  //) else (
+      //  //  midModPayload(extIdxUp).myExt(0).rdMemWord(0) - 1
+      //  //)
       //)
-      //when (midModPayload(extIdxUp).gprIsZeroVec(0)) {
-      //} otherwise {
+      val myDecodeExt = midModPayload(extIdxUp).decodeExt
+      //for (ydx <- 0 until cfg.regFileCfg.memArrSize) {
+      //  val myExtLeft = tempExtLeft(ydx=ydx)
+      //  myExtLeft.modMemWord := myExtLeft.modMemWord.getZero
       //}
-      //myCurrExt.modMemWordValid := (
-      //  // TODO: support more destination GPRs
-      //  //!midModPayload(extIdxUp).gprIsZeroVec(0)
-      //  True
-      //)
-      //if (cfg.optFormal) {
-      //  assume(
-      //    myDecodeExt.memAccessKind.asBits.asUInt
-      //    <= SnowHouseMemAccessKind.Store.asBits.asUInt
-      //  )
-      //}
+      val mapElem = midModPayload(extIdxUp).gprIdxToMemAddrIdxMap(0)
+      val myCurrExt = (
+        if (!mapElem.haveHowToSetIdx) (
+          midModPayload(extIdxUp).myExt(
+            //U(s"${log2Up(cfg.shRegFileCfg.howToSlice.size).max(1)}'d0")
+            0
+          )
+        ) else (
+          midModPayload(extIdxUp).myExt(
+            mapElem.howToSetIdx
+          )
+        )
+      )
+      when (midModPayload(extIdxUp).gprIsZeroVec(0)) {
+      } otherwise {
+      }
+      myCurrExt.modMemWordValid := (
+        // TODO: support more destination GPRs
+        //!midModPayload(extIdxUp).gprIsZeroVec(0)
+        True
+      )
+      if (cfg.optFormal) {
+        assume(
+          myDecodeExt.memAccessKind.asBits.asUInt
+          <= SnowHouseMemAccessKind.Store.asBits.asUInt
+        )
+      }
     }
-  }
-  when (io.dbus.ready) {
-    ////--------
-    //midModPayload(extIdxUp).myExt(0).modMemWordValid := True
-    ////--------
-    //midModPayload(extIdxUp).myExt(0).modMemWord := (
-    //  //if (PipeMemRmwSimDut.allModOpsSameChange) (
-    //  //  midModPayload(extIdxUp).myExt(0).rdMemWord(0) + 1
-    //  //) else (
-    //  //  midModPayload(extIdxUp).myExt(0).rdMemWord(0) - 1
-    //  //)
-    //)
-    val myDecodeExt = midModPayload(extIdxUp).decodeExt
-    //for (ydx <- 0 until cfg.regFileCfg.memArrSize) {
-    //  val myExtLeft = tempExtLeft(ydx=ydx)
-    //  myExtLeft.modMemWord := myExtLeft.modMemWord.getZero
-    //}
     val mapElem = midModPayload(extIdxUp).gprIdxToMemAddrIdxMap(0)
     val myCurrExt = (
       if (!mapElem.haveHowToSetIdx) (
@@ -5453,34 +5436,7 @@ case class SnowHousePipeStageMem(
         )
       )
     )
-    when (midModPayload(extIdxUp).gprIsZeroVec(0)) {
-    } otherwise {
-    }
-    myCurrExt.modMemWordValid := (
-      // TODO: support more destination GPRs
-      //!midModPayload(extIdxUp).gprIsZeroVec(0)
-      True
-    )
-    if (cfg.optFormal) {
-      assume(
-        myDecodeExt.memAccessKind.asBits.asUInt
-        <= SnowHouseMemAccessKind.Store.asBits.asUInt
-      )
-    }
-    //val mapElem = midModPayload(extIdxUp).gprIdxToMemAddrIdxMap(0)
-    //val myCurrExt = (
-    //  if (!mapElem.haveHowToSetIdx) (
-    //    midModPayload(extIdxUp).myExt(
-    //      //U(s"${log2Up(cfg.shRegFileCfg.howToSlice.size).max(1)}'d0")
-    //      0
-    //    )
-    //  ) else (
-    //    midModPayload(extIdxUp).myExt(
-    //      mapElem.howToSetIdx
-    //    )
-    //  )
-    //)
-    //val myDecodeExt = midModPayload(extIdxUp).decodeExt
+    val myDecodeExt = midModPayload(extIdxUp).decodeExt
     when (!myDecodeExt.memAccessKind.asBits(1)) {
       //when (!midModPayload(extIdxUp).gprIsZeroVec(0)) {
       myCurrExt.modMemWord := (
