@@ -1876,6 +1876,7 @@ case class SnowHouseCpuMul32(
         //cpuIo.multiCycleBusVec
         val multiCycleBus = cpuIo.multiCycleBusVec(busIdx)
         def dstVec = multiCycleBus.recvData.dstVec
+        //dstVec.setAsReg
         //dstVec(0) := (
         //  RegNext(
         //    next=dstVec(0),
@@ -1956,8 +1957,14 @@ case class SnowHouseCpuMul32(
           + rY0X0
         )(rPartialSum(1).bitsRange)
 
-        dstVec(0) := rPartialSum(1)
         multiCycleBus.ready := False
+        val rDst = (
+          Reg(
+            cloneOf(dstVec(0)),
+            init=dstVec(0).getZero
+          )
+        )
+        dstVec(0) := rDst
         switch (rState) {
           is (UMul32State.DO_THREE_MUL16X16) {
             when (multiCycleBus.rValid) {
@@ -1966,11 +1973,13 @@ case class SnowHouseCpuMul32(
           }
           is (UMul32State.FIRST_ADD) {
             rState := UMul32State.SECOND_ADD
+            rDst := rPartialSum(1)
           }
           is (UMul32State.SECOND_ADD) {
             rState := UMul32State.YIELD_RESULT
             //dstVec(0) := (
             //)
+            //rDst := rPartialSum(1)
           }
           is (UMul32State.YIELD_RESULT) {
             rState := UMul32State.DO_THREE_MUL16X16

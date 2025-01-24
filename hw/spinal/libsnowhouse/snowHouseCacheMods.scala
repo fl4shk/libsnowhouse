@@ -403,12 +403,24 @@ case class SnowHouseCache(
       io.bus.recvData.data
     )
   )
-  busDevData := (
-    RegNext(
-      next=busDevData,
-      init=busDevData.getZero,
+  val rBusDevData = (
+    !isIcache
+  ) generate (
+    Reg(
+      cloneOf(busDevData),
+      init=busDevData.getZero
     )
   )
+  if (isIcache) {
+    busDevData := (
+      RegNext(
+        next=busDevData,
+        init=busDevData.getZero,
+      )
+    )
+  } else {
+    busDevData := rBusDevData
+  }
   object State extends SpinalEnum(defaultEncoding=binaryOneHot) {
     val
       IDLE,
@@ -646,6 +658,12 @@ case class SnowHouseCache(
   def doPipe(): Unit = {
   }
   val rSavedBusSendData = Reg(cloneOf(io.bus.sendData))
+  val rPleaseFinishLoad = (
+    Reg(
+      Bool(),
+      init=False,
+    )
+  )
   switch (rState) {
     is (State.IDLE) {
       nextBridgeSavedFires := 0x0
@@ -678,10 +696,13 @@ case class SnowHouseCache(
               if (isIcache) (
                 False
               ) else (
-                RegNext(rState) === State.HANDLE_DCACHE_LOAD_HIT
+                //RegNext(rState) === State.HANDLE_DCACHE_LOAD_HIT
+                //|| RegNext(rState) === State.HANDLE_NON_CACHED_BUS_ACC
+                rPleaseFinishLoad
               )
             ) {
               io.bus.ready := True
+              rPleaseFinishLoad := False
             } otherwise {
               when (haveHit) {
                 // cached load
@@ -876,13 +897,16 @@ case class SnowHouseCache(
     }
     is (State.HANDLE_DCACHE_LOAD_HIT) {
       nextState := State.IDLE
-      busDevData := (
-        rSavedRdLineWord
-        //RegNext(
-        //  next=rSavedRdLineWord,
-        //  init=rSavedRdLineWord.getZero,
-        //).resize(busDevData.getWidth)
-      )
+      rPleaseFinishLoad := True
+      if (!isIcache) {
+        rBusDevData := (
+          rSavedRdLineWord
+          //RegNext(
+          //  next=rSavedRdLineWord,
+          //  init=rSavedRdLineWord.getZero,
+          //).resize(busDevData.getWidth)
+        )
+      }
     }
     is (State.HANDLE_DCACHE_STORE_HIT) {
       nextState := State.IDLE
@@ -1110,10 +1134,17 @@ case class SnowHouseCache(
         )
       ) {
         myD2hBus.ready := True
-        busDevData := myD2hBus.sendData.data
-        nextState := State.IDLE
+        if (!isIcache) {
+          //busDevData := myD2hBus.sendData.data
+          rBusDevData := myD2hBus.sendData.data
+        }
+        nextState := (
+          State.IDLE
+          //State.HANDLE_DCACHE_LOAD_HIT
+        )
+        rPleaseFinishLoad := True
         //nextBridgeSavedFires(1) := True
-        io.bus.ready := True
+        //io.bus.ready := True
       }
       //setLineBusAddrCntsToStart()
     }
