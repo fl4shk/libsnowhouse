@@ -360,7 +360,7 @@ case class SnowHousePipeStageInstrDecode(
   )
   when (up.isValid) {
     when (
-      io.ibus.rValid
+      RegNext(io.ibus.nextValid)
       //&& !io.ibus.ready
     ) {
       when (!rSetUpPayloadState(1)) {
@@ -755,7 +755,7 @@ case class SnowHousePipeStageInstrDecode(
                   !upPayload.blockIrq
                   || rPrevInstrBlockedIrq
                 ) && (
-                  io.idsIraIrq.rValid
+                  RegNext(io.idsIraIrq.nextValid)
                 )
               ) {
                 //io.idsIraIrq.ready := True
@@ -3320,7 +3320,7 @@ case class SnowHousePipeStageExecute(
     temp
   }
   if (cfg.irqCfg != None) {
-    when (io.idsIraIrq.rValid) {
+    when (RegNext(io.idsIraIrq.nextValid)) {
       setOutpModMemWord.io.takeIrq := (
         cMid0Front.up.isValid
         && outp.takeIrq
@@ -3392,7 +3392,7 @@ case class SnowHousePipeStageExecute(
       )
     }
     io.idsIraIrq.ready := False
-    when (io.idsIraIrq.rValid) {
+    when (RegNext(io.idsIraIrq.nextValid)) {
       when (setOutpModMemWord.io.takeIrq) {
         when (cMid0Front.up.isFiring) {
           io.idsIraIrq.ready := True
@@ -4202,7 +4202,7 @@ case class SnowHousePipeStageExecute(
                   doStart()
                 }
                 when (
-                  psExStallHost.rValid
+                  RegNext(psExStallHost.nextValid)
                   && psExStallHost.ready
                 ) {
                   psExStallHost.nextValid := False
