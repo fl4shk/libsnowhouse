@@ -720,7 +720,7 @@ case class SnowHouseCache(
   }
 
   //rBusDevData := rdLineWord
-  rPastBusSendDataData := RegNext(rdLineWord)
+  rPastBusSendDataData := /*RegNext*/(rdLineWord)
   switch (RegNext(rBusSendData.subKind)) {
     is (SnowHouseMemAccessSubKind.Sz8) {
       if (rBusDevData.getWidth > 8) {
@@ -739,16 +739,16 @@ case class SnowHouseCache(
         }
         //RegNext(rBusSendData).data
         rPastBusSendDataData(
-          offset=RegNext(rBusSendData).addr(
+          offset=/*RegNext*/(rBusSendData).addr(
             log2Up(cacheCfg.wordWidth) - 1 downto 0
           ),
           8 bits
         ) := (
-          RegNext(rBusSendData).data(7 downto 0)
+          /*RegNext*/(rBusSendData).data(7 downto 0)
         )
       } else {
         rBusDevData := rdLineWord.resized
-        rPastBusSendDataData := RegNext(rBusSendData).data.resized
+        rPastBusSendDataData := /*RegNext*/(rBusSendData).data.resized
       }
     }
     is (SnowHouseMemAccessSubKind.Sz16) {
@@ -767,16 +767,16 @@ case class SnowHouseCache(
           )
         }
         rPastBusSendDataData(
-          offset=RegNext(rBusSendData).addr(
+          offset=/*RegNext*/(rBusSendData).addr(
             log2Up(cacheCfg.wordWidth) - 1 downto 1
           ),
           16 bits
         ) := (
-          RegNext(rBusSendData).data(15 downto 0)
+          /*RegNext*/(rBusSendData).data(15 downto 0)
         )
       } else {
         rBusDevData := rdLineWord.resized
-        rPastBusSendDataData := RegNext(rBusSendData).data.resized
+        rPastBusSendDataData := /*RegNext*/(rBusSendData).data.resized
       }
     }
     is (SnowHouseMemAccessSubKind.Sz32) {
@@ -795,16 +795,16 @@ case class SnowHouseCache(
           )
         }
         rPastBusSendDataData(
-          offset=RegNext(rBusSendData).addr(
+          offset=/*RegNext*/(rBusSendData).addr(
             log2Up(cacheCfg.wordWidth) - 1 downto 2
           ),
           32 bits
         ) := (
-          RegNext(rBusSendData).data(31 downto 0)
+          /*RegNext*/(rBusSendData).data(31 downto 0)
         )
       } else {
         rBusDevData := rdLineWord.resized
-        rPastBusSendDataData := RegNext(rBusSendData).data.resized
+        rPastBusSendDataData := /*RegNext*/(rBusSendData).data.resized
       }
     }
     is (SnowHouseMemAccessSubKind.Sz64) {
@@ -823,16 +823,16 @@ case class SnowHouseCache(
           )
         }
         rPastBusSendDataData(
-          offset=RegNext(rBusSendData).addr(
+          offset=/*RegNext*/(rBusSendData).addr(
             log2Up(cacheCfg.wordWidth) - 1 downto 3
           ),
           64 bits
         ) := (
-          RegNext(rBusSendData).data(63 downto 0)
+          /*RegNext*/(rBusSendData).data(63 downto 0)
         )
       } else {
         rBusDevData := rdLineWord.resized
-        rPastBusSendDataData := RegNext(rBusSendData).data.resized
+        rPastBusSendDataData := /*RegNext*/(rBusSendData).data.resized
       }
     }
   }
