@@ -530,6 +530,7 @@ case class SnowHouseCache(
       init=rBusSendData.data.getZero,
     )
   )
+  rPastBusSendDataData.allowOverride
   doLineWordRamWrite(
     busAddr=RegNext(rBusAddr),
     lineWord=(
@@ -719,6 +720,7 @@ case class SnowHouseCache(
   }
 
   //rBusDevData := rdLineWord
+  rPastBusSendDataData := RegNext(rdLineWord)
   switch (RegNext(rBusSendData.subKind)) {
     is (SnowHouseMemAccessSubKind.Sz8) {
       if (rBusDevData.getWidth > 8) {
@@ -728,26 +730,25 @@ case class SnowHouseCache(
               7 downto 0
             ).resize(rBusDevData.getWidth)
           )
-          rPastBusSendDataData := (
-            rBusSendData.data(
-              7 downto 0
-            ).resize(rPastBusSendDataData.getWidth)
-          )
         } otherwise {
           rBusDevData := (
             rdLineWord(
               7 downto 0
             ).asSInt.resize(rBusDevData.getWidth).asUInt
           )
-          rPastBusSendDataData := (
-            rBusSendData.data(
-              7 downto 0
-            ).asSInt.resize(rBusDevData.getWidth).asUInt
-          )
         }
+        //RegNext(rBusSendData).data
+        rPastBusSendDataData(
+          offset=RegNext(rBusSendData).addr(
+            log2Up(cacheCfg.wordWidth) - 1 downto 0
+          ),
+          8 bits
+        ) := (
+          RegNext(rBusSendData).data(7 downto 0)
+        )
       } else {
         rBusDevData := rdLineWord.resized
-        rPastBusSendDataData := rBusSendData.data.resized
+        rPastBusSendDataData := RegNext(rBusSendData).data.resized
       }
     }
     is (SnowHouseMemAccessSubKind.Sz16) {
@@ -758,26 +759,24 @@ case class SnowHouseCache(
               15 downto 0
             ).resize(rBusDevData.getWidth)
           )
-          rPastBusSendDataData := (
-            rBusSendData.data(
-              15 downto 0
-            ).resize(rPastBusSendDataData.getWidth)
-          )
         } otherwise {
           rBusDevData := (
             rdLineWord(
               15 downto 0
             ).asSInt.resize(rBusDevData.getWidth).asUInt
           )
-          rPastBusSendDataData := (
-            rBusSendData.data(
-              15 downto 0
-            ).asSInt.resize(rBusDevData.getWidth).asUInt
-          )
         }
+        rPastBusSendDataData(
+          offset=RegNext(rBusSendData).addr(
+            log2Up(cacheCfg.wordWidth) - 1 downto 1
+          ),
+          16 bits
+        ) := (
+          RegNext(rBusSendData).data(15 downto 0)
+        )
       } else {
         rBusDevData := rdLineWord.resized
-        rPastBusSendDataData := rBusSendData.data.resized
+        rPastBusSendDataData := RegNext(rBusSendData).data.resized
       }
     }
     is (SnowHouseMemAccessSubKind.Sz32) {
@@ -788,26 +787,24 @@ case class SnowHouseCache(
               31 downto 0
             ).resize(rBusDevData.getWidth)
           )
-          rPastBusSendDataData := (
-            rBusSendData.data(
-              31 downto 0
-            ).resize(rPastBusSendDataData.getWidth)
-          )
         } otherwise {
           rBusDevData := (
             rdLineWord(
               31 downto 0
             ).asSInt.resize(rBusDevData.getWidth).asUInt
           )
-          rPastBusSendDataData := (
-            rBusSendData.data(
-              31 downto 0
-            ).asSInt.resize(rBusDevData.getWidth).asUInt
-          )
         }
+        rPastBusSendDataData(
+          offset=RegNext(rBusSendData).addr(
+            log2Up(cacheCfg.wordWidth) - 1 downto 2
+          ),
+          32 bits
+        ) := (
+          RegNext(rBusSendData).data(31 downto 0)
+        )
       } else {
         rBusDevData := rdLineWord.resized
-        rPastBusSendDataData := rBusSendData.data.resized
+        rPastBusSendDataData := RegNext(rBusSendData).data.resized
       }
     }
     is (SnowHouseMemAccessSubKind.Sz64) {
@@ -818,26 +815,24 @@ case class SnowHouseCache(
               63 downto 0
             ).resize(rBusDevData.getWidth)
           )
-          rPastBusSendDataData := (
-            rBusSendData.data(
-              63 downto 0
-            ).resize(rPastBusSendDataData.getWidth)
-          )
         } otherwise {
           rBusDevData := (
             rdLineWord(
               63 downto 0
             ).asSInt.resize(rBusDevData.getWidth).asUInt
           )
-          rPastBusSendDataData := (
-            rBusSendData.data(
-              63 downto 0
-            ).asSInt.resize(rBusDevData.getWidth).asUInt
-          )
         }
+        rPastBusSendDataData(
+          offset=RegNext(rBusSendData).addr(
+            log2Up(cacheCfg.wordWidth) - 1 downto 3
+          ),
+          64 bits
+        ) := (
+          RegNext(rBusSendData).data(63 downto 0)
+        )
       } else {
         rBusDevData := rdLineWord.resized
-        rPastBusSendDataData := rBusSendData.data.resized
+        rPastBusSendDataData := RegNext(rBusSendData).data.resized
       }
     }
   }
