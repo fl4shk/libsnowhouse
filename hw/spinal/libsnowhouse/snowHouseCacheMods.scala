@@ -690,19 +690,23 @@ case class SnowHouseCache(
   }
   val rSavedBusSendData = Reg(cloneOf(io.bus.sendData))
   val rPleaseFinish = (
-    Reg(
-      Bool(),
-      init=False,
+    Vec.fill(3)(
+      Reg(
+        Bool(),
+        init=False,
+      )
     )
   )
-  when (rPleaseFinish) {
+  when (rPleaseFinish.sFindFirst(_ === True)._1) {
     io.bus.ready := True
-    rPleaseFinish := False
+    rPleaseFinish.foreach(current => {
+      current := False
+    })
   }
   rBusDevData := rdLineWord
   switch (rState) {
     is (State.IDLE) {
-      when (!rPleaseFinish) {
+      when (!rPleaseFinish.sFindFirst(_ === True)._1) {
         nextBridgeSavedFires := 0x0
         setLineBusAddrCntsToStart()
         myH2dBus.nextValid := False
@@ -757,7 +761,7 @@ case class SnowHouseCache(
                   )
                 } else {
                   //nextState := State.HANDLE_DCACHE_LOAD_HIT
-                  rPleaseFinish := True
+                  rPleaseFinish(0) := True
                   //io.bus.ready := rTempBusReady
                   //rTempBusReady := True
                   //busDevData := (
@@ -948,7 +952,7 @@ case class SnowHouseCache(
     //}
     is (State.HANDLE_DCACHE_STORE_HIT) {
       nextState := State.IDLE
-      rPleaseFinish := True
+      rPleaseFinish(1) := True
       lineAttrsRam.io.wrEn := True
       lineWordRam.io.wrEn := True
       //doLineAttrsRamWrite(
@@ -1199,7 +1203,7 @@ case class SnowHouseCache(
           State.IDLE
           //State.HANDLE_DCACHE_LOAD_HIT
         )
-        rPleaseFinish := True
+        rPleaseFinish(2) := True
         //nextBridgeSavedFires(1) := True
         //io.bus.ready := True
       }
