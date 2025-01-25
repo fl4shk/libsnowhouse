@@ -690,23 +690,27 @@ case class SnowHouseCache(
   }
   val rSavedBusSendData = Reg(cloneOf(io.bus.sendData))
   val rPleaseFinish = (
-    Vec.fill(3)(
-      Reg(
-        Bool(),
-        init=False,
+    Vec.fill(2)(
+      Vec.fill(3)(
+        Reg(
+          Bool(),
+          init=False,
+        )
       )
     )
   )
-  when (rPleaseFinish.sFindFirst(_ === True)._1) {
+  when (rPleaseFinish(0).sFindFirst(_ === True)._1) {
     io.bus.ready := True
-    rPleaseFinish.foreach(current => {
-      current := False
+    rPleaseFinish.foreach(myVec => {
+      myVec.foreach(current => {
+        current := False
+      })
     })
   }
   rBusDevData := rdLineWord
   switch (rState) {
     is (State.IDLE) {
-      when (!rPleaseFinish.sFindFirst(_ === True)._1) {
+      when (!rPleaseFinish(1).sFindFirst(_ === True)._1) {
         nextBridgeSavedFires := 0x0
         setLineBusAddrCntsToStart()
         myH2dBus.nextValid := False
@@ -761,7 +765,9 @@ case class SnowHouseCache(
                   )
                 } else {
                   //nextState := State.HANDLE_DCACHE_LOAD_HIT
-                  rPleaseFinish(0) := True
+                  rPleaseFinish.foreach(current => {
+                    current(0) := True
+                  })
                   //io.bus.ready := rTempBusReady
                   //rTempBusReady := True
                   //busDevData := (
@@ -952,7 +958,10 @@ case class SnowHouseCache(
     //}
     is (State.HANDLE_DCACHE_STORE_HIT) {
       nextState := State.IDLE
-      rPleaseFinish(1) := True
+      //rPleaseFinish(1) := True
+      rPleaseFinish.foreach(current => {
+        current(1) := True
+      })
       lineAttrsRam.io.wrEn := True
       lineWordRam.io.wrEn := True
       //doLineAttrsRamWrite(
@@ -1203,7 +1212,10 @@ case class SnowHouseCache(
           State.IDLE
           //State.HANDLE_DCACHE_LOAD_HIT
         )
-        rPleaseFinish(2) := True
+        //rPleaseFinish(2) := True
+        rPleaseFinish.foreach(current => {
+          current(2) := True
+        })
         //nextBridgeSavedFires(1) := True
         //io.bus.ready := True
       }
