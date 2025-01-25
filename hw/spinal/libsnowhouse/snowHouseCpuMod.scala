@@ -1971,7 +1971,7 @@ case class SnowHouseCpuMul32(
         dstVec(0) := rDst
         switch (rState) {
           is (UMul32State.DO_THREE_MUL16X16) {
-            when (multiCycleBus.rValid) {
+            when (RegNext(multiCycleBus.nextValid)) {
               rState := UMul32State.FIRST_ADD
             }
           }
@@ -2068,7 +2068,7 @@ case class SnowHouseCpuDivmod32(
               cpuIo.multiCycleBusVec(busIdx)
             )
           } else {
-            when (cpuIo.multiCycleBusVec(busIdx).rValid) {
+            when (RegNext(cpuIo.multiCycleBusVec(busIdx).nextValid)) {
               if (setKind) {
                 rKind := Divmod32Kind.UDIV
               }
@@ -2088,7 +2088,7 @@ case class SnowHouseCpuDivmod32(
               cpuIo.multiCycleBusVec(busIdx)
             )
           } else {
-            when (cpuIo.multiCycleBusVec(busIdx).rValid) {
+            when (RegNext(cpuIo.multiCycleBusVec(busIdx).nextValid)) {
               if (setKind) {
                 rKind := Divmod32Kind.SDIV
               }
@@ -2108,7 +2108,7 @@ case class SnowHouseCpuDivmod32(
               cpuIo.multiCycleBusVec(busIdx)
             )
           } else {
-            when (cpuIo.multiCycleBusVec(busIdx).rValid) {
+            when (RegNext(cpuIo.multiCycleBusVec(busIdx).nextValid)) {
               if (setKind) {
                 rKind := Divmod32Kind.UMOD
               }
@@ -2128,7 +2128,7 @@ case class SnowHouseCpuDivmod32(
               cpuIo.multiCycleBusVec(busIdx)
             )
           } else {
-            when (cpuIo.multiCycleBusVec(busIdx).rValid) {
+            when (RegNext(cpuIo.multiCycleBusVec(busIdx).nextValid)) {
               if (setKind) {
                 rKind := Divmod32Kind.SMOD
               }
