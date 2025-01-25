@@ -429,7 +429,7 @@ case class SnowHouseCache(
   object State extends SpinalEnum(defaultEncoding=binaryOneHot) {
     val
       IDLE,
-      HANDLE_DCACHE_LOAD_HIT,
+      //HANDLE_DCACHE_LOAD_HIT,
       HANDLE_DCACHE_STORE_HIT,
       HANDLE_SEND_LINE_TO_BUS_PIPE_1,
       HANDLE_SEND_LINE_TO_BUS,
@@ -699,6 +699,7 @@ case class SnowHouseCache(
     io.bus.ready := True
     rPleaseFinish := False
   }
+  rBusDevData := rdLineWord
   switch (rState) {
     is (State.IDLE) {
       when (!rPleaseFinish) {
@@ -755,7 +756,8 @@ case class SnowHouseCache(
                     .resize(busDevData.getWidth)
                   )
                 } else {
-                  nextState := State.HANDLE_DCACHE_LOAD_HIT
+                  //nextState := State.HANDLE_DCACHE_LOAD_HIT
+                  rPleaseFinish := True
                   //io.bus.ready := rTempBusReady
                   //rTempBusReady := True
                   //busDevData := (
@@ -931,19 +933,19 @@ case class SnowHouseCache(
         }
       }
     }
-    is (State.HANDLE_DCACHE_LOAD_HIT) {
-      nextState := State.IDLE
-      rPleaseFinish := True
-      if (!isIcache) {
-        rBusDevData := (
-          rSavedRdLineWord
-          //RegNext(
-          //  next=rSavedRdLineWord,
-          //  init=rSavedRdLineWord.getZero,
-          //).resize(busDevData.getWidth)
-        )
-      }
-    }
+    //is (State.HANDLE_DCACHE_LOAD_HIT) {
+    //  nextState := State.IDLE
+    //  rPleaseFinish := True
+    //  if (!isIcache) {
+    //    rBusDevData := (
+    //      rSavedRdLineWord
+    //      //RegNext(
+    //      //  next=rSavedRdLineWord,
+    //      //  init=rSavedRdLineWord.getZero,
+    //      //).resize(busDevData.getWidth)
+    //    )
+    //  }
+    //}
     is (State.HANDLE_DCACHE_STORE_HIT) {
       nextState := State.IDLE
       rPleaseFinish := True
