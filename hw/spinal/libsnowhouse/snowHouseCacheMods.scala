@@ -430,6 +430,7 @@ case class SnowHouseCache(
     val
       IDLE,
       //HANDLE_DCACHE_LOAD_HIT,
+      HANDLE_DCACHE_LOAD_HIT_EXTEND,
       HANDLE_DCACHE_STORE_HIT,
       HANDLE_SEND_LINE_TO_BUS_PIPE_1,
       HANDLE_SEND_LINE_TO_BUS,
@@ -523,9 +524,18 @@ case class SnowHouseCache(
     busAddr=RegNext(rBusAddr),
     setEn=false,
   )
+  val rPastBusSendDataData = (
+    Reg(
+      cloneOf(rBusSendData.data),
+      init=rBusSendData.data.getZero,
+    )
+  )
   doLineWordRamWrite(
     busAddr=RegNext(rBusAddr),
-    lineWord=RegNext(rBusSendData.data),
+    lineWord=(
+      //RegNext(rBusSendData.data)
+      rPastBusSendDataData
+    ),
     setEn=false,
   )
 
@@ -707,7 +717,130 @@ case class SnowHouseCache(
       })
     })
   }
-  rBusDevData := rdLineWord
+
+  //rBusDevData := rdLineWord
+  switch (RegNext(rBusSendData.subKind)) {
+    is (SnowHouseMemAccessSubKind.Sz8) {
+      if (rBusDevData.getWidth > 8) {
+        when (!RegNext(rBusSendData).accKind.asBits(0)) {
+          rBusDevData := (
+            rdLineWord(
+              7 downto 0
+            ).resize(rBusDevData.getWidth)
+          )
+          rPastBusSendDataData := (
+            rBusSendData.data(
+              7 downto 0
+            ).resize(rPastBusSendDataData.getWidth)
+          )
+        } otherwise {
+          rBusDevData := (
+            rdLineWord(
+              7 downto 0
+            ).asSInt.resize(rBusDevData.getWidth).asUInt
+          )
+          rPastBusSendDataData := (
+            rBusSendData.data(
+              7 downto 0
+            ).asSInt.resize(rBusDevData.getWidth).asUInt
+          )
+        }
+      } else {
+        rBusDevData := rdLineWord.resized
+        rPastBusSendDataData := rBusSendData.data.resized
+      }
+    }
+    is (SnowHouseMemAccessSubKind.Sz16) {
+      if (rBusDevData.getWidth > 16) {
+        when (!RegNext(rBusSendData).accKind.asBits(0)) {
+          rBusDevData := (
+            rdLineWord(
+              15 downto 0
+            ).resize(rBusDevData.getWidth)
+          )
+          rPastBusSendDataData := (
+            rBusSendData.data(
+              15 downto 0
+            ).resize(rPastBusSendDataData.getWidth)
+          )
+        } otherwise {
+          rBusDevData := (
+            rdLineWord(
+              15 downto 0
+            ).asSInt.resize(rBusDevData.getWidth).asUInt
+          )
+          rPastBusSendDataData := (
+            rBusSendData.data(
+              15 downto 0
+            ).asSInt.resize(rBusDevData.getWidth).asUInt
+          )
+        }
+      } else {
+        rBusDevData := rdLineWord.resized
+        rPastBusSendDataData := rBusSendData.data.resized
+      }
+    }
+    is (SnowHouseMemAccessSubKind.Sz32) {
+      if (rBusDevData.getWidth > 32) {
+        when (!RegNext(rBusSendData).accKind.asBits(0)) {
+          rBusDevData := (
+            rdLineWord(
+              31 downto 0
+            ).resize(rBusDevData.getWidth)
+          )
+          rPastBusSendDataData := (
+            rBusSendData.data(
+              31 downto 0
+            ).resize(rPastBusSendDataData.getWidth)
+          )
+        } otherwise {
+          rBusDevData := (
+            rdLineWord(
+              31 downto 0
+            ).asSInt.resize(rBusDevData.getWidth).asUInt
+          )
+          rPastBusSendDataData := (
+            rBusSendData.data(
+              31 downto 0
+            ).asSInt.resize(rBusDevData.getWidth).asUInt
+          )
+        }
+      } else {
+        rBusDevData := rdLineWord.resized
+        rPastBusSendDataData := rBusSendData.data.resized
+      }
+    }
+    is (SnowHouseMemAccessSubKind.Sz64) {
+      if (rBusDevData.getWidth > 64) {
+        when (!RegNext(rBusSendData).accKind.asBits(0)) {
+          rBusDevData := (
+            rdLineWord(
+              63 downto 0
+            ).resize(rBusDevData.getWidth)
+          )
+          rPastBusSendDataData := (
+            rBusSendData.data(
+              63 downto 0
+            ).resize(rPastBusSendDataData.getWidth)
+          )
+        } otherwise {
+          rBusDevData := (
+            rdLineWord(
+              63 downto 0
+            ).asSInt.resize(rBusDevData.getWidth).asUInt
+          )
+          rPastBusSendDataData := (
+            rBusSendData.data(
+              63 downto 0
+            ).asSInt.resize(rBusDevData.getWidth).asUInt
+          )
+        }
+      } else {
+        rBusDevData := rdLineWord.resized
+        rPastBusSendDataData := rBusSendData.data.resized
+      }
+    }
+  }
   switch (rState) {
     is (State.IDLE) {
       when (!rPleaseFinish(1).sFindFirst(_ === True)._1) {
