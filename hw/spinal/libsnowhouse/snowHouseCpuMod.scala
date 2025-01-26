@@ -18,6 +18,8 @@ object SnowHouseCpuInstrEnc {
   val numGprs: Int = 16
   val gprIdxWidth: Int = log2Up(numGprs)
   val immWidth: Int = 16
+
+  val regIdxPopData = numGprs + 1 - 1
 }
 object SnowHouseCpuOp {
   //private var _rawOpCnt: Int = 0
@@ -1046,12 +1048,16 @@ object SnowHouseCpuPipeStageInstrDecode {
         switch (encInstr.rcIdx(0 downto 0)) {
           is (LdrPdRbSimm16._2._1) {
             //setOp(LdrPdRbSimm16)
+            upPayload.gprIdxVec(0) := SnowHouseCpuRegs.popData.index
+            setOp(LdrRaRbSimm16)
           }
           is (JmpPd._2._1) {
             //setOp(JmpPd)
             //setOp(
             //  
             //)
+            upPayload.gprIdxVec(0) := SnowHouseCpuRegs.r0.index
+            upPayload.gprIdxVec(1) := SnowHouseCpuRegs.popData.index
           }
         }
       }
@@ -1741,7 +1747,6 @@ case class SnowHouseCpuConfig(
     //16
   )
   val numGprs = SnowHouseCpuInstrEnc.numGprs + 1
-  val gprIdxPopData = numGprs - 1
   val modRdPortCnt = 3
   val pipeName="SnowHouseCpu"
   //--------

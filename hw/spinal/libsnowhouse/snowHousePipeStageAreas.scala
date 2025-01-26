@@ -1513,8 +1513,7 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
     io.regPcPlusImm
   )
   io.dbusHostPayload.data := io.rdMemWord(0) //selRdMemWord(0)
-  if (cfg.allMainLdstUseGprThenImm) {
-    // TODO: support other kinds of addressing...
+  if (cfg.allMainLdstUseGprPlusImm) {
     io.dbusHostPayload.addr := io.rdMemWord(1) + io.imm(1)
   }
   def innerFunc(
@@ -1747,69 +1746,71 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
                     //  }
                     //}
                     //--------
-                    //val tempAddr = (
-                    //  (
-                    //    opInfo.addrCalc match {
-                    //      case AddrCalcKind.AddReduce(
-                    //        //fromIndexReg
-                    //      ) => (
-                    //        //if (!fromIndexReg) (
-                    //          selRdMemWord(1)
-                    //        //) else (
-                    //        //  io.rIndexReg
-                    //        //)
-                    //      )
-                    //      case kind:
-                    //      AddrCalcKind.LslThenMaybeAdd => (
-                    //        selRdMemWord(1)
-                    //        << kind.options.lslAmount.get
-                    //      )
-                    //      //case _ => {
-                    //      //  selRdMemWord(1)
-                    //      //}
-                    //    }
-                    //  ) 
-                    //  //+ (
-                    //  //  opInfo.srcArr.size match {
-                    //  //    case 1 => {
-                    //  //      U(s"${cfg.mainWidth}'d0")
-                    //  //    }
-                    //  //    case 2 => {
-                    //  //      selRdMemWord(2)
-                    //  //    }
-                    //  //    case _ => {
-                    //  //      assert(
-                    //  //        false,
-                    //  //        s"invalid opInfo.srcArr.size: "
-                    //  //        + s"opInfo(${opInfo}) "
-                    //  //        + s"index:${opInfoIdx}"
-                    //  //      )
-                    //  //      U("s${cfg.mainWidth}'d0")
-                    //  //    }
-                    //  //  }
-                    //  //)
-                    //)
-                    //--------
-                    //io.dbusHostPayload.addr := (
-                    //  opInfo.srcArr.size match {
-                    //    case 1 => (
-                    //      //U(s"${cfg.mainWidth}'d0")
-                    //      tempAddr
-                    //    )
-                    //    case 2 => (
-                    //      tempAddr + selRdMemWord(2)
-                    //    )
-                    //    case _ => {
-                    //      assert(
-                    //        false,
-                    //        s"invalid opInfo.srcArr.size: "
-                    //        + s"opInfo(${opInfo}) "
-                    //        + s"index:${opInfoIdx}"
-                    //      )
-                    //      U(s"${cfg.mainWidth}'d0")
-                    //    }
-                    //  }
-                    //)
+                    //if (!cfg.allMainLdstUseGprPlusImm) {
+                      val tempAddr = (
+                        (
+                          opInfo.addrCalc match {
+                            case AddrCalcKind.AddReduce(
+                              //fromIndexReg
+                            ) => (
+                              //if (!fromIndexReg) (
+                                selRdMemWord(1)
+                              //) else (
+                              //  io.rIndexReg
+                              //)
+                            )
+                            case kind:
+                            AddrCalcKind.LslThenMaybeAdd => (
+                              selRdMemWord(1)
+                              << kind.options.lslAmount.get
+                            )
+                            //case _ => {
+                            //  selRdMemWord(1)
+                            //}
+                          }
+                        ) 
+                        //+ (
+                        //  opInfo.srcArr.size match {
+                        //    case 1 => {
+                        //      U(s"${cfg.mainWidth}'d0")
+                        //    }
+                        //    case 2 => {
+                        //      selRdMemWord(2)
+                        //    }
+                        //    case _ => {
+                        //      assert(
+                        //        false,
+                        //        s"invalid opInfo.srcArr.size: "
+                        //        + s"opInfo(${opInfo}) "
+                        //        + s"index:${opInfoIdx}"
+                        //      )
+                        //      U("s${cfg.mainWidth}'d0")
+                        //    }
+                        //  }
+                        //)
+                      )
+                      //--------
+                      io.dbusHostPayload.addr := (
+                        opInfo.srcArr.size match {
+                          case 1 => (
+                            //U(s"${cfg.mainWidth}'d0")
+                            tempAddr
+                          )
+                          case 2 => (
+                            tempAddr + selRdMemWord(2)
+                          )
+                          case _ => {
+                            assert(
+                              false,
+                              s"invalid opInfo.srcArr.size: "
+                              + s"opInfo(${opInfo}) "
+                              + s"index:${opInfoIdx}"
+                            )
+                            U(s"${cfg.mainWidth}'d0")
+                          }
+                        }
+                      )
+                    //}
                     //--------
                     //io.dbusHostPayload.subKind := (
                     //  tempSubKind

@@ -697,7 +697,7 @@ case class SnowHouseConfig(
     ////|| atomicRmwOpInfoMap.size > 0
   )
   //def optFormal: Boolean = psDecode.optFormal
-  val allMainLdstUseGprThenImm = {
+  val allMainLdstUseGprPlusImm = {
     var found: Boolean = false
     for ((_, cpyOpInfo) <- cpyCpyuiOpInfoMap.view) {
       if (!found) {
