@@ -1114,7 +1114,7 @@ object ldr {
       op=SnowHouseCpuOp.LdrRaRbSimm16,
       rA=rA,
       rB=rB,
-      rC=SnowHouseCpuRegs.r0,
+      rC=Gpr(SnowHouseCpuOp.LdrRaRbSimm16._2._1),
       imm=imm,
     )
   }
@@ -1156,7 +1156,7 @@ object str {
       op=SnowHouseCpuOp.StrRaRbSimm16,
       rA=rA,
       rB=rB,
-      rC=SnowHouseCpuRegs.r0,
+      rC=Gpr(SnowHouseCpuOp.StrRaRbSimm16._2._1),
       imm=imm,
     )
   }

@@ -931,6 +931,9 @@ case class SnowHousePipeStageExecuteSetOutpModMemWordIo(
   val rModHiOutp = (
     /*out*/UInt(cfg.mainWidth bits)
   )
+  //val rPopData = (
+  //  /*out*/UInt(cfg.mainWidth bits)
+  //)
   val takeIrq = /*in*/(
     Bool()
   )
@@ -1485,6 +1488,15 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
     )
   )
   nextModHiOutp := io.rModHiOutp
+  //val nextPopData = UInt(cfg.mainWidth bits)
+  //io.rPopData := (
+  //  RegNextWhen(
+  //    next=nextPopData,
+  //    cond=io.upIsFiring,
+  //    init=nextPopData.getZero
+  //  )
+  //)
+  //nextPopData := io.rPopData
   val nextHadRetIra = Bool()
   nextHadRetIra := False
   if (io.haveRetIraState) {
@@ -1501,8 +1513,10 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
     io.regPcPlusImm
   )
   io.dbusHostPayload.data := io.rdMemWord(0) //selRdMemWord(0)
-  // TODO: support other kinds of addressing...
-  io.dbusHostPayload.addr := io.rdMemWord(1) + io.imm(1)
+  if (cfg.allMainLdstUseGprThenImm) {
+    // TODO: support other kinds of addressing...
+    io.dbusHostPayload.addr := io.rdMemWord(1) + io.imm(1)
+  }
   def innerFunc(
     opInfo: OpInfo,
     opInfoIdx: Int,
@@ -1617,6 +1631,9 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
                         case HiddenRegKind.ModHiOutp => {
                           nextModHiOutp := selRdMemWord(1)
                         }
+                        //case HiddenRegKind.PopData => {
+                        //  nextPopData := selRdMemWord
+                        //}
                       }
                     }
                     case _ => {

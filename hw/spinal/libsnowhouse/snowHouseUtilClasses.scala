@@ -550,7 +550,7 @@ case class SnowHouseConfig(
       case MemAccessKind.NoMemAccess => {
       }
       case MemAccessKind.Mem(
-        isSigned, isStore, isPush, isAtomic, accSize
+        isSigned, isStore, isAtomic, accSize
       ) => {
         if (!isAtomic) {
           //if (!isStore) {
@@ -697,6 +697,39 @@ case class SnowHouseConfig(
     ////|| atomicRmwOpInfoMap.size > 0
   )
   //def optFormal: Boolean = psDecode.optFormal
+  val allMainLdstUseGprThenImm = {
+    var found: Boolean = false
+    for ((_, cpyOpInfo) <- cpyCpyuiOpInfoMap.view) {
+      if (!found) {
+        cpyOpInfo.memAccess match {
+          case MemAccessKind.NoMemAccess => {
+            if (cpyOpInfo.srcArr.size == 2) {
+              cpyOpInfo.srcArr(0) match {
+                case SrcKind.Gpr => {
+                  cpyOpInfo.srcArr(1) match {
+                    case imm: SrcKind.Imm => {
+                    }
+                    case SrcKind.Gpr => {
+                      found = true
+                    }
+                    case _ => {
+                    }
+                  }
+                }
+                case _ => {
+                }
+              }
+            } else {
+              found = true
+            }
+          }
+          case mem: MemAccessKind.Mem => {
+          }
+        }
+      }
+    }
+    (!found)
+  }
 }
 
 //object SnowHouseFormalInstrCnt {

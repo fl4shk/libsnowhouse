@@ -187,17 +187,17 @@ object MemAccessKind {
   case class Mem(
     isSigned: Boolean,
     isStore: Boolean,   // `None` means this is atomic
-    isPush: Boolean,            // `true` means to post-decrement
+    //isPush: Boolean,            // `true` means to post-decrement
                                 // the register indicating an address
     isAtomic: Boolean,
     subKind: SubKind,
   ) extends MemAccessKind {
-    if (!isStore) {
-      assert(
-        !isPush,
-        s"`push` instructions must be marked as `store` instructions"
-      )
-    }
+    //if (!isStore) {
+    //  assert(
+    //    !isPush,
+    //    s"`push` instructions must be marked as `store` instructions"
+    //  )
+    //}
     //isStore match {
     //  case Some(storeKind) => {
     //    if (!storeKind) {
@@ -214,48 +214,48 @@ object MemAccessKind {
   def Mem8(
     isSigned: Boolean,
     isStore: Boolean,
-    isPush: Boolean=false,
+    //isPush: Boolean=false,
     isAtomic: Boolean=false,
   ) = Mem(
     isSigned=isSigned,
     isStore=isStore,
-    isPush=isPush,
+    //isPush=isPush,
     isAtomic=isAtomic,
     subKind=SubKind.Sz8,
   )
   def Mem16(
     isSigned: Boolean,
     isStore: Boolean,
-    isPush: Boolean=false,
+    //isPush: Boolean=false,
     isAtomic: Boolean=false,
   ) = Mem(
     isSigned=isSigned,
     isStore=isStore,
-    isPush=isPush,
+    //isPush=isPush,
     isAtomic=isAtomic,
     subKind=SubKind.Sz16,
   )
   def Mem32(
     isSigned: Boolean,
     isStore: Boolean,
-    isPush: Boolean=false,
+    //isPush: Boolean=false,
     isAtomic: Boolean=false,
   ) = Mem(
     isSigned=isSigned,
     isStore=isStore,
-    isPush=isPush,
+    //isPush=isPush,
     isAtomic=isAtomic,
     subKind=SubKind.Sz32,
   )
   def Mem64(
     isSigned: Boolean,
     isStore: Boolean,
-    isPush: Boolean=false,
+    //isPush: Boolean=false,
     isAtomic: Boolean=false,
   ) = Mem(
     isSigned=isSigned,
     isStore=isStore,
-    isPush=isPush,
+    //isPush=isPush,
     isAtomic=isAtomic,
     subKind=SubKind.Sz64,
   )
@@ -717,6 +717,7 @@ object CpyOpKind {
           HashSet(
             DstKind.Gpr, //DstKind.AluFlags
             //DstKind.IndexReg,
+            //DstKind.PopData,
           ),
         ),
         src=Array[HashSet[SrcKind]](
@@ -755,6 +756,7 @@ object CpyOpKind {
             DstKind.Hi,
             DstKind.Lo,
             //DstKind.IndexReg,
+            //DstKind.PopData,
             //--------
           ),
         ),
@@ -779,6 +781,7 @@ object CpyOpKind {
             SrcKind.MulHiOutp,
             SrcKind.DivHiOutp,
             SrcKind.ModHiOutp,
+            //SrcKind.PopData,
             //--------
           ),
         ),
@@ -872,7 +875,10 @@ object CpyOpKind {
           HashSet(DstKind.Pc),
         ),
         src=Array[HashSet[SrcKind]](
-          HashSet(SrcKind.Gpr),
+          HashSet(
+            SrcKind.Gpr,
+            //SrcKind.PopData,
+          ),
         ),
         cond=HashSet[CondKind](
           CondKind.Always
