@@ -447,7 +447,7 @@ object SnowHouseCpuRegs {
   val ira = Spr(SprKind.Ira)
   val ie = Spr(SprKind.Ie)
   val pc = RegPc()
-  val popData = RegPopData() //Gpr(SnowHouseCpuInstrEnc.gprIdxPopData)
+  //val popData = RegPopData() //Gpr(SnowHouseCpuInstrEnc.gprIdxPopData)
 }
 //--------
 object add {
@@ -1068,17 +1068,17 @@ object jmp {
       rB=rB,
     )
   }
-  def apply(
-    popData: RegPopData,
-  ) = {
-    InstructionAsmStmt(
-      op=SnowHouseCpuOp.JmpPd,
-      rA=SnowHouseCpuRegs.r0,
-      rB=SnowHouseCpuRegs.r0,
-      rC=Gpr(SnowHouseCpuOp.JmpPd._2._1),
-      imm=0x0,
-    )
-  }
+  //def apply(
+  //  popData: RegPopData,
+  //) = {
+  //  InstructionAsmStmt(
+  //    op=SnowHouseCpuOp.JmpPd,
+  //    rA=SnowHouseCpuRegs.r0,
+  //    rB=SnowHouseCpuRegs.r0,
+  //    rC=Gpr(SnowHouseCpuOp.JmpPd._2._1),
+  //    imm=0x0,
+  //  )
+  //}
 }
 object jl {
   def apply(
@@ -1130,19 +1130,19 @@ object ldr {
       imm=imm,
     )
   }
-  def apply(
-    popData: RegPopData,
-    rB: Gpr,
-    imm: SnowHouseCpuExpr,
-  ) = {
-    InstructionAsmStmt(
-      op=SnowHouseCpuOp.LdrPdRbSimm16,
-      rA=SnowHouseCpuRegs.r0,
-      rB=rB,
-      rC=Gpr(SnowHouseCpuOp.LdrPdRbSimm16._2._1),
-      imm=imm,
-    )
-  }
+  //def apply(
+  //  popData: RegPopData,
+  //  rB: Gpr,
+  //  imm: SnowHouseCpuExpr,
+  //) = {
+  //  InstructionAsmStmt(
+  //    op=SnowHouseCpuOp.LdrPdRbSimm16,
+  //    rA=SnowHouseCpuRegs.r0,
+  //    rB=rB,
+  //    rC=Gpr(SnowHouseCpuOp.LdrPdRbSimm16._2._1),
+  //    imm=imm,
+  //  )
+  //}
   //def apply(
   //  rA: Gpr,
   //  rB: Gpr,
@@ -1445,10 +1445,10 @@ object pre {
 case class RegPc(
 ) {
 }
-case class RegPopData(
-) {
-  val index = SnowHouseCpuInstrEnc.regIdxPopData
-}
+//case class RegPopData(
+//) {
+//  val index = SnowHouseCpuInstrEnc.regIdxPopData
+//}
 case class Gpr(
   val index: Int=0
 ) /*extends SnowHouseCpuAsmAst*/ {

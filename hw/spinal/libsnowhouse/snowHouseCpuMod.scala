@@ -19,7 +19,7 @@ object SnowHouseCpuInstrEnc {
   val gprIdxWidth: Int = log2Up(numGprs)
   val immWidth: Int = 16
 
-  val regIdxPopData = numGprs + 1 - 1
+  //val regIdxPopData = numGprs + 1 - 1
 }
 object SnowHouseCpuOp {
   //private var _rawOpCnt: Int = 0
@@ -336,29 +336,29 @@ object SnowHouseCpuOp {
   //  //  "internal 1: pop pc, rB", StackKindPopPcRbInternal1, true
   //  //),
   //)
-  val LdrPdRbSimm16 = mkOp(
-    "ldr pop_data, rB, simm16", StackKindLdrPdRbSimm16, false
-  )
-  val JmpPd = mkOp(
-    "jmp pop_data", StackKindJmpPd, true
-  )
-  def StackKindLdrPdRbSimm16 = (0x0, 0x0)
-  def StackKindJmpPd = (0x1, 0x0)
-  //def StackKindPushRaRb = (0x0, 0x0)
-  //def StackKindPopRaRb = (0x1, 0x0)
-  ////def StackKindPopRaRbInternal0 = (StackKindPopRaRb._1, 0x1)
-  ////def StackKindPopRaRbInternal1 = (StackKindPopRaRb._1, 0x2)
-  //def StackKindPopPcRb = (0x2, 0x0)
-  //def StackKindPopPcRbInternal0 = (StackKindPopPcRb._1, 0x1)
-  ////def StackKindPopPcRbInternal1 = (StackKindPopPcRb._1, 0x2)
+  //val LdrPdRbSimm16 = mkOp(
+  //  "ldr pop_data, rB, simm16", StackKindLdrPdRbSimm16, false
+  //)
+  //val JmpPd = mkOp(
+  //  "jmp pop_data", StackKindJmpPd, true
+  //)
+  //def StackKindLdrPdRbSimm16 = (0x0, 0x0)
+  //def StackKindJmpPd = (0x1, 0x0)
+  ////def StackKindPushRaRb = (0x0, 0x0)
+  ////def StackKindPopRaRb = (0x1, 0x0)
+  //////def StackKindPopRaRbInternal0 = (StackKindPopRaRb._1, 0x1)
+  //////def StackKindPopRaRbInternal1 = (StackKindPopRaRb._1, 0x2)
+  ////def StackKindPopPcRb = (0x2, 0x0)
+  ////def StackKindPopPcRbInternal0 = (StackKindPopPcRb._1, 0x1)
+  //////def StackKindPopPcRbInternal1 = (StackKindPopPcRb._1, 0x2)
   //--------
-  val PreImm16 = mkOp(                      // 11, 0
+  val PreImm16 = mkOp(                      // 10, 0
     "pre simm16", PreKindImm16, true
   )
   def PreKindImm16 = (0x0, 0x0)
   //--------
   val OpLim = _opCnt
-  val expectedNumOpcodes = 12
+  val expectedNumOpcodes = 11
   assert(
     OpLim == expectedNumOpcodes,
     s"eek! "
@@ -1044,23 +1044,23 @@ object SnowHouseCpuPipeStageInstrDecode {
       //    }
       //  }
       //}
-      is (LdrPdRbSimm16._1) {
-        switch (encInstr.rcIdx(0 downto 0)) {
-          is (LdrPdRbSimm16._2._1) {
-            //setOp(LdrPdRbSimm16)
-            upPayload.gprIdxVec(0) := SnowHouseCpuRegs.popData.index
-            setOp(LdrRaRbSimm16)
-          }
-          is (JmpPd._2._1) {
-            //setOp(JmpPd)
-            //setOp(
-            //  
-            //)
-            upPayload.gprIdxVec(0) := SnowHouseCpuRegs.r0.index
-            upPayload.gprIdxVec(1) := SnowHouseCpuRegs.popData.index
-          }
-        }
-      }
+      //is (LdrPdRbSimm16._1) {
+      //  switch (encInstr.rcIdx(0 downto 0)) {
+      //    is (LdrPdRbSimm16._2._1) {
+      //      //setOp(LdrPdRbSimm16)
+      //      upPayload.gprIdxVec(0) := SnowHouseCpuRegs.popData.index
+      //      setOp(LdrRaRbSimm16)
+      //    }
+      //    is (JmpPd._2._1) {
+      //      //setOp(JmpPd)
+      //      //setOp(
+      //      //  
+      //      //)
+      //      upPayload.gprIdxVec(0) := SnowHouseCpuRegs.r0.index
+      //      upPayload.gprIdxVec(1) := SnowHouseCpuRegs.popData.index
+      //    }
+      //  }
+      //}
       is (PreImm16._1) {
         doDefault(
           //doSetImm=false
@@ -1746,7 +1746,7 @@ case class SnowHouseCpuConfig(
     32
     //16
   )
-  val numGprs = SnowHouseCpuInstrEnc.numGprs + 1
+  val numGprs = SnowHouseCpuInstrEnc.numGprs //+ 1
   val modRdPortCnt = 3
   val pipeName="SnowHouseCpu"
   //--------
