@@ -269,33 +269,52 @@ object SnowHouseCpuOp {
   //def StSmallKind8Rc = (0x1, 0x0)
   def StKind8Simm16 = (0x7, 0x0)
   //--------
-  //val BeqRaRbSimm = mkOp(                     // 9, 0
-  //  "beq rA, rB, simm16", JmpKindBeq, false
-  //)
-  val BzRaSimm = mkOp(                     // 9, 0
-    "bz rA, simm16", JmpKindBz, false
+  val BeqRaRbSimm = mkOp(                     // 9, 0
+    "beq rA, rB, simm16", JmpKindBeq, false
   )
+  //val BzRaSimm = mkOp(                     // 9, 0
+  //  "bz rA, simm16", JmpKindBz, false
+  //)
   val BlSimm = mkOp(                     // 9, 0
-    "bl simm16", JmpKindBz, false
+    "bl simm16", JmpKindBeq, false
   )
-  //val BneRaRbSimm = mkOp(                     // 9, 1
-  //  "bne rA, rB, simm16", JmpKindBne, false
+  val BneRaRbSimm = mkOp(                     // 9, 1
+    "bne rA, rB, simm16", JmpKindBne, false
+  )
+  //val BnzRaSimm = mkOp(                     // 9, 1
+  //  "bnz rA, simm16", JmpKindBnz, false
   //)
-  val BnzRaSimm = mkOp(                     // 9, 1
-    "bnz rA, simm16", JmpKindBnz, false
-  )
   val AddRaPcSimm16 = mkOp(                   // 9, 1
-    "add rA, pc, simm16", JmpKindBnz, false
+    "add rA, pc, simm16", JmpKindBne, false
   )
+
+  val BltuRaRbSimm = mkOp(
+    "bltu rA, rB, simm16", JmpKindBltu, false
+  )
+  val BgeuRaRbSimm = mkOp(
+    "bgeu rA, rB, simm16", JmpKindBgeu, false
+  )
+  val BltsRaRbSimm = mkOp(
+    "blts rA, rB, simm16", JmpKindBlts, false
+  )
+  val BgesRaRbSimm = mkOp(
+    "bges rA, rB, simm16", JmpKindBges, false
+  )
+
   val JlRaRb = mkOp(                          // 9, 2
     "jl rA, rB", JmpKindJlRaRb, true
   )
   //val JmpReserved = mkOp(                     // 9, 3
   //  "<JmpReserved>", JmpKindReserved, true
   //)
-  def JmpKindBz = (0x0, 0x0)
-  def JmpKindBnz = (0x1, 0x0)
-  def JmpKindJlRaRb = (0x2, 0x0)
+  //def JmpKindBz = (0x0, 0x0)
+  def JmpKindBeq = (0x0, 0x0)
+  def JmpKindBne = (0x1, 0x0)
+  def JmpKindBltu = (0x2, 0x0)
+  def JmpKindBgeu = (0x3, 0x0)
+  def JmpKindBlts = (0x4, 0x0)
+  def JmpKindBges = (0x5, 0x0)
+  def JmpKindJlRaRb = (0x6, 0x0)
   //def AddPcKindMain = 0x3
   //def JmpKindReserved = (0x3, 0x0)
 
@@ -845,38 +864,49 @@ object SnowHouseCpuPipeStageInstrDecode {
       //    }
       //  }
       //}
-      is (BzRaSimm._1) {
-        switch (encInstr.rcIdx(1 downto 0)) {
-          is (BzRaSimm._2._1) {
+      is (BeqRaRbSimm._1) {
+        switch (encInstr.rcIdx(2 downto 0)) {
+          is (BeqRaRbSimm._2._1) {
             //when (psId.startDecode) {
               //psId.nextPrevInstrWasJump := True
             //}
             when (
-              //encInstr.raIdx === encInstr.rbIdx
-              //&& 
-              encInstr.rbIdx === 0x0
+              encInstr.raIdx === encInstr.rbIdx
+              && encInstr.raIdx =/= 0
+              //&& encInstr.rbIdx === 0x0
             ) {
               setOp(BlSimm)
             } otherwise {
-              //setOp(BeqRaRbSimm)
-              setOp(BzRaSimm)
+              setOp(BeqRaRbSimm)
+              //setOp(BzRaSimm)
             }
           }
-          is (BnzRaSimm._2._1) {
+          is (BneRaRbSimm._2._1) {
             when (
-              //encInstr.raIdx === encInstr.rbIdx
-              //&& 
-              //encInstr.raIdx =/= 0x0
-              encInstr.rbIdx === 0x0
+              encInstr.raIdx === encInstr.rbIdx
+              && encInstr.raIdx =/= 0x0
+              //encInstr.rbIdx === 0x0
             ) {
               setOp(AddRaPcSimm16)
             } otherwise {
-              setOp(BnzRaSimm)
-              //setOp(BneRaRbSimm)
+              //setOp(BnRaSimm)
+              setOp(BneRaRbSimm)
               //when (psId.startDecode) {
                 //psId.nextPrevInstrWasJump := True
               //}
             }
+          }
+          is (BltuRaRbSimm._2._1) {
+            setOp(BltuRaRbSimm)
+          }
+          is (BgeuRaRbSimm._2._1) {
+            setOp(BgeuRaRbSimm)
+          }
+          is (BltsRaRbSimm._2._1) {
+            setOp(BltsRaRbSimm)
+          }
+          is (BgesRaRbSimm._2._1) {
+            setOp(BgesRaRbSimm)
           }
           is (JlRaRb._2._1) {
             //when (psId.startDecode) {
@@ -1591,24 +1621,24 @@ object SnowHouseCpuOpInfoMap {
   //)
   //--------
   opInfoMap += (
-    //// beq rA, rB, simm
-    //SnowHouseCpuOp.BeqRaRbSimm -> OpInfo.mkCpy(
-    //  dstArr=Array[DstKind](DstKind.Pc),
-    //  srcArr=Array[SrcKind](
-    //    SrcKind.Gpr, SrcKind.Gpr, SrcKind.Imm(/*Some(true)*/)
-    //  ),
-    //  cpyOp=CpyOpKind.Br,
-    //  cond=CondKind.Eq,
-    //)
-    // bz rA, simm
-    SnowHouseCpuOp.BzRaSimm -> OpInfo.mkCpy(
+    // beq rA, rB, simm
+    SnowHouseCpuOp.BeqRaRbSimm -> OpInfo.mkCpy(
       dstArr=Array[DstKind](DstKind.Pc),
       srcArr=Array[SrcKind](
-        SrcKind.Gpr, SrcKind.Imm(/*Some(true)*/)
+        SrcKind.Gpr, SrcKind.Gpr, SrcKind.Imm(/*Some(true)*/)
       ),
       cpyOp=CpyOpKind.Br,
-      cond=CondKind.Z,
+      cond=CondKind.Eq,
     )
+    // bz rA, simm
+    //SnowHouseCpuOp.BzRaSimm -> OpInfo.mkCpy(
+    //  dstArr=Array[DstKind](DstKind.Pc),
+    //  srcArr=Array[SrcKind](
+    //    SrcKind.Gpr, SrcKind.Imm(/*Some(true)*/)
+    //  ),
+    //  cpyOp=CpyOpKind.Br,
+    //  cond=CondKind.Z,
+    //)
   )
   opInfoMap += (
     SnowHouseCpuOp.BlSimm -> OpInfo.mkCpy(
@@ -1620,23 +1650,67 @@ object SnowHouseCpuOpInfoMap {
     )
   )
   opInfoMap += (
-    //// bne rA, rB, simm16
-    //SnowHouseCpuOp.BneRaRbSimm -> OpInfo.mkCpy(
-    //  dstArr=Array[DstKind](DstKind.Pc),
-    //  srcArr=Array[SrcKind](
-    //    SrcKind.Gpr, SrcKind.Gpr, SrcKind.Imm(/*Some(true)*/)
-    //  ),
-    //  cpyOp=CpyOpKind.Br,
-    //  cond=CondKind.Ne
-    //)
-    // bnz rA, simm
-    SnowHouseCpuOp.BnzRaSimm -> OpInfo.mkCpy(
+    // bne rA, rB, simm16
+    SnowHouseCpuOp.BneRaRbSimm -> OpInfo.mkCpy(
       dstArr=Array[DstKind](DstKind.Pc),
       srcArr=Array[SrcKind](
-        SrcKind.Gpr, SrcKind.Imm(/*Some(true)*/)
+        SrcKind.Gpr, SrcKind.Gpr, SrcKind.Imm(/*Some(true)*/)
       ),
       cpyOp=CpyOpKind.Br,
-      cond=CondKind.Nz,
+      cond=CondKind.Ne
+    )
+    // bnz rA, simm
+    //SnowHouseCpuOp.BnzRaSimm -> OpInfo.mkCpy(
+    //  dstArr=Array[DstKind](DstKind.Pc),
+    //  srcArr=Array[SrcKind](
+    //    SrcKind.Gpr, SrcKind.Imm(/*Some(true)*/)
+    //  ),
+    //  cpyOp=CpyOpKind.Br,
+    //  cond=CondKind.Nz,
+    //)
+  )
+  opInfoMap += (
+    // bltu rA, rB, simm16
+    SnowHouseCpuOp.BltuRaRbSimm -> OpInfo.mkCpy(
+      dstArr=Array[DstKind](DstKind.Pc),
+      srcArr=Array[SrcKind](
+        SrcKind.Gpr, SrcKind.Gpr, SrcKind.Imm(/*Some(true)*/)
+      ),
+      cpyOp=CpyOpKind.Br,
+      cond=CondKind.Ltu
+    )
+  )
+  opInfoMap += (
+    // bgeu rA, rB, simm16
+    SnowHouseCpuOp.BgeuRaRbSimm -> OpInfo.mkCpy(
+      dstArr=Array[DstKind](DstKind.Pc),
+      srcArr=Array[SrcKind](
+        SrcKind.Gpr, SrcKind.Gpr, SrcKind.Imm(/*Some(true)*/)
+      ),
+      cpyOp=CpyOpKind.Br,
+      cond=CondKind.Geu
+    )
+  )
+  opInfoMap += (
+    // blts rA, rB, simm16
+    SnowHouseCpuOp.BltsRaRbSimm -> OpInfo.mkCpy(
+      dstArr=Array[DstKind](DstKind.Pc),
+      srcArr=Array[SrcKind](
+        SrcKind.Gpr, SrcKind.Gpr, SrcKind.Imm(/*Some(true)*/)
+      ),
+      cpyOp=CpyOpKind.Br,
+      cond=CondKind.Lts
+    )
+  )
+  opInfoMap += (
+    // bges rA, rB, simm16
+    SnowHouseCpuOp.BgesRaRbSimm -> OpInfo.mkCpy(
+      dstArr=Array[DstKind](DstKind.Pc),
+      srcArr=Array[SrcKind](
+        SrcKind.Gpr, SrcKind.Gpr, SrcKind.Imm(/*Some(true)*/)
+      ),
+      cpyOp=CpyOpKind.Br,
+      cond=CondKind.Ges
     )
   )
   opInfoMap += (
