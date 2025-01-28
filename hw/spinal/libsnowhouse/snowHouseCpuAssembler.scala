@@ -1061,6 +1061,19 @@ object bltu {
     )
   }
 }
+object bgtu {
+  def apply(
+    rA: Gpr,
+    rB: Gpr,
+    imm: SnowHouseCpuExpr,
+  ) = {
+    bltu(
+      rA=rB,
+      rB=rA,
+      imm=imm,
+    )
+  }
+}
 object bgeu {
   def apply(
     rA: Gpr,
@@ -1072,6 +1085,19 @@ object bgeu {
       rA=rA,
       rB=rB,
       rC=Gpr(SnowHouseCpuOp.BgeuRaRbSimm._2._1),
+      imm=imm,
+    )
+  }
+}
+object bleu {
+  def apply(
+    rA: Gpr,
+    rB: Gpr,
+    imm: SnowHouseCpuExpr,
+  ) = {
+    bgeu(
+      rA=rB,
+      rB=rA,
       imm=imm,
     )
   }
@@ -1091,6 +1117,19 @@ object blts {
     )
   }
 }
+object bgts {
+  def apply(
+    rA: Gpr,
+    rB: Gpr,
+    imm: SnowHouseCpuExpr,
+  ) = {
+    blts(
+      rA=rB,
+      rB=rA,
+      imm=imm,
+    )
+  }
+}
 object bges {
   def apply(
     rA: Gpr,
@@ -1102,6 +1141,19 @@ object bges {
       rA=rA,
       rB=rB,
       rC=Gpr(SnowHouseCpuOp.BgesRaRbSimm._2._1),
+      imm=imm,
+    )
+  }
+}
+object bles {
+  def apply(
+    rA: Gpr,
+    rB: Gpr,
+    imm: SnowHouseCpuExpr,
+  ) = {
+    bges(
+      rA=rB,
+      rB=rA,
       imm=imm,
     )
   }
