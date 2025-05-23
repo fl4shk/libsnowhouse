@@ -714,6 +714,7 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
   )
   val myModMemWordValid = (
     if (cfg.myHaveZeroReg) (
+      // TODO: support more register simultaneous writes
       !io.gprIsZeroVec(0)
     ) else (
       True
@@ -1242,6 +1243,7 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
                 ) {
                   io.modMemWordValid := False
                 } else {
+                  // TODO: *maybe* support more outputs
                   io.modMemWordValid := !io.gprIsZeroVec(0)
                 }
               } otherwise {
@@ -1301,6 +1303,7 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
                     io.modMemWordValid := False
                   ) else {
                     io.modMemWordValid := (
+                      // TODO: support more outputs
                       !io.gprIsZeroVec(0)
                     )
                   }
@@ -1746,6 +1749,8 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
                   )
                 ),
               )(
+                // TODO: support more widths than just
+                // `cfg.mainWidth`
                 width=cfg.mainWidth
               )
               if (opInfo.dstArr(0) == DstKind.Spr(SprKind.AluFlags)) {
@@ -1773,6 +1778,7 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
                 )
                 dst match {
                   case DstKind.Gpr => {
+                    // TODO: *maybe* support multiple output regs
                     io.modMemWord(0) := (
                       tempDst
                     )
@@ -2094,6 +2100,38 @@ case class SnowHousePipeStageExecute(
         outp.myExt.size == cfg.regFileCfg.memArrSize
       )
       val temp = ArrayBuffer[Bool]()
+      // TODO: support multiple register writes per instruction
+      //val tempArr = ArrayBuffer[Bool]()
+      //for (idx <- 0 until outp.gprIdxVec.size) {
+      //  tempArr += (
+      //    //(
+      //    //  //outp.gprIdxVec(idx)
+      //    //  outp.myExt(0).memAddr(idx)
+      //    //  === (
+      //    //    //tempModFrontPayload.gprIdxVec(0)
+      //    //    // TODO: *maybe* support multiple output registers!
+      //    //    tempModFrontPayload.myExt(0).memAddr(0)
+      //    //  )
+      //    //) ||
+      //    (
+      //      //True
+      //      //outp.gprIdxVec(idx)
+      //      outp.myExt(0).memAddr(idx)
+      //      === RegNextWhen(
+      //        next=(
+      //          //outp.gprIdxVec(0)
+      //          outp.myExt(0).memAddr(0)
+      //        ),
+      //        cond=cMid0Front.up.isFiring,
+      //        init=(
+      //          //outp.gprIdxVec(0).getZero
+      //          outp.myExt(0).memAddr(0).getZero
+      //        ),
+      //      )
+      //    )
+      //  )
+      //}
+      // TODO: support multiple register writes per instruction
       temp += (
         outp.myDoHaveHazardAddrCheckVec(0)
       )
@@ -2310,6 +2348,7 @@ case class SnowHousePipeStageExecute(
     def tempExt = outp.myExt(ydx)
       if (zdx == PipeMemRmw.modWrIdx) {
         tempExt.modMemWord := (
+          // TODO: support multiple output `modMemWord`s
           setOutpModMemWord.io.modMemWord(0)
         )
           tempExt.modMemWordValid := (
@@ -2318,6 +2357,7 @@ case class SnowHousePipeStageExecute(
       }
     def tempRdMemWord = setOutpModMemWord.io.rdMemWord(zdx)
       tempRdMemWord := myRdMemWord(ydx=ydx, modIdx=zdx)
+    // TODO (maybe): support multiple register writes per instruction
   }
   if (cfg.regFileWordCountArr.size == 0) {
     assert(
@@ -2953,6 +2993,8 @@ case class SnowHousePipeStageMem(
       } otherwise {
       }
       myCurrExt.modMemWordValid := (
+        // TODO: support more destination GPRs
+        //!midModPayload(extIdxUp).gprIsZeroVec(0)
         True
       )
       if (cfg.optFormal) {
@@ -3793,6 +3835,23 @@ case class SnowHousePipeStageWriteBack(
                             }
                             case mem: MemAccessKind.Mem => {
                               myDoFormalAssertRegular := False
+                              //mem.isStore match {
+                              //  case Some(isStore) => {
+                              //    if (!isStore) {
+                              //      // don't formally verify stores I guess?
+                              //      //result.main := myGpr0
+                              //      myDoFormalAssert := False
+                              //    } else {
+                              //    }
+                              //  }
+                              //  case None => {
+                              //    // TODO: support atomics
+                              //    assert(
+                              //      false,
+                              //      s"atomics not supported yet"
+                              //    )
+                              //  }
+                              //}
                             }
                           }
                           result
