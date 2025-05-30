@@ -40,11 +40,11 @@ case class SnowHouseCacheIo(
       subCfg.dcacheCfg
     )
   )
-  val haveHazard = (
-    !isIcache
-  ) generate (
-    in(Bool())
-  )
+  //val haveHazard = (
+  //  !isIcache
+  //) generate (
+  //  in(Bool())
+  //)
   val bus = (
     slave(
       new LcvStallIo[BusHostPayload, BusDevPayload](
@@ -430,7 +430,7 @@ case class SnowHouseCache(
     val
       IDLE,
       //HANDLE_DCACHE_LOAD_HIT,
-      HANDLE_DCACHE_LOAD_HIT_EXTEND,
+      //HANDLE_DCACHE_LOAD_HIT_EXTEND,
       HANDLE_DCACHE_STORE_HIT,
       HANDLE_SEND_LINE_TO_BUS_PIPE_1,
       HANDLE_SEND_LINE_TO_BUS,

@@ -189,7 +189,7 @@ case class SnowHouseInstrDataDualRam(
       cfg=cfg,
       isIcache=false,
     )
-    dcache.io.haveHazard := io.dcacheHaveHazard
+    //dcache.io.haveHazard := io.dcacheHaveHazard
     val m2sTransfers = tilelink.M2sTransfers(
       get=tilelink.SizeRange(
         cfg.mainWidth / 8,
@@ -235,6 +235,7 @@ case class SnowHouseInstrDataDualRam(
         depth * (cfg.mainWidth / 8)
       ),
     )
+    myRam.mem.initBigInt(dataInitBigInt)
     //val bridgeCfg = LcvStallToTilelinkConfig(
     //  addrWidth=(
     //    //cfg.mainWidth
