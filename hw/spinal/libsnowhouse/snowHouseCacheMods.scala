@@ -408,6 +408,10 @@ case class SnowHouseCache(
       io.bus.recvData.data
     )
   )
+  if (!isIcache) {
+    io.bus.recvData.setAsReg()
+    io.bus.ready.setAsReg() init(False)
+  }
   val rBusDevData = (
     !isIcache
   ) generate (
@@ -712,11 +716,18 @@ case class SnowHouseCache(
   )
   when (rPleaseFinish(0).sFindFirst(_ === True)._1) {
     io.bus.ready := True
+  }
+  when (
+    //io.bus.fire
+    (RegNext(io.bus.nextValid) init(False))
+    && io.bus.ready
+  ) {
     rPleaseFinish.foreach(myVec => {
       myVec.foreach(current => {
         current := False
       })
     })
+    io.bus.ready := False
   }
 
   //rBusDevData := rdLineWord
