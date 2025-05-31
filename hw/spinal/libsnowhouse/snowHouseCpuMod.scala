@@ -1813,6 +1813,7 @@ case class SnowHouseCpuConfig(
   //  tempArr
   //})
   exposeModMemWordToIo: Boolean=false,
+  regFileMemRamStyle: String="distributed"
 ) {
   //--------
   val instrMainWidth = 32
@@ -1919,7 +1920,10 @@ case class SnowHouseCpuConfig(
               tempArr
             })
           ),
-          memRamStyle="distributed",
+          memRamStyle=(
+            //"distributed"
+            regFileMemRamStyle
+          ),
         ),
         haveIcache=true,
         icacheDepth=icacheDepth,

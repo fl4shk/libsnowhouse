@@ -20,7 +20,7 @@ case class SnowHouseRegFileConfig(
   modRdPortCnt: Int,
   pipeName: String,
   private val optHowToSlice: Option[Seq[LinkedHashSet[Int]]],
-  memRamStyle: String="auto"
+  memRamStyle: String="auto",
   //linkArr: Option[ArrayBuffer[Link]]=None,
 ) {
   assert(
