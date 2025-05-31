@@ -259,7 +259,25 @@ case class SnowHouseInstrDataDualRam(
     //io.dbus.ready := bridge.io.lcvStall.ready
     //io.dbus.recvData.data := bridge.io.lcvStall.recvData.data
     //myRam.io.up << bridge.io.tlBus
-    dcache.io.bus <> io.dbus
+
+    //dcache.io.bus <> io.dbus
+    dcache.io.bus.nextValid := (
+      /*RegNext*/(io.dbus.nextValid)
+      //init(io.dbus.nextValid.getZero)
+    )
+    dcache.io.bus.sendData := (
+      /*RegNext*/(io.dbus.sendData)
+      //init(io.dbus.sendData.getZero)
+    )
+    io.dbus.recvData := (
+      /*RegNext*/(dcache.io.bus.recvData)
+      //init(dcache.io.bus.recvData.getZero)
+    )
+    io.dbus.ready := (
+      /*RegNext*/(dcache.io.bus.ready)
+      //init(dcache.io.bus.ready.getZero)
+    )
+
     //myRam.io.up << dcache.io.tlBus
     //myRam.io.up.a << dcache.io.tlBus.a
     myRam.io.up.a.opcode := dcache.io.tlBus.a.opcode

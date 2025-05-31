@@ -2067,12 +2067,12 @@ case class SnowHousePipeStageExecute(
       inp.myExt(ydx).rdMemWord
     )
   }
-  val savedPsMemStallHost = (
-    LcvStallHostSaved(
-      stallHost=psMemStallHost,
-      someLink=cMid0Front,
-    )
-  )
+  //val savedPsMemStallHost = (
+  //  LcvStallHostSaved(
+  //    stallHost=psMemStallHost,
+  //    someLink=cMid0Front,
+  //  )
+  //)
   def stallKindMem = 0
   def stallKindMultiCycle = 1
   def stallKindLim = 2
@@ -2351,12 +2351,12 @@ case class SnowHousePipeStageExecute(
           // TODO: support multiple output `modMemWord`s
           setOutpModMemWord.io.modMemWord(0)
         )
-          tempExt.modMemWordValid := (
-            setOutpModMemWord.io.modMemWordValid
-          )
+        tempExt.modMemWordValid := (
+          setOutpModMemWord.io.modMemWordValid
+        )
       }
     def tempRdMemWord = setOutpModMemWord.io.rdMemWord(zdx)
-      tempRdMemWord := myRdMemWord(ydx=ydx, modIdx=zdx)
+    tempRdMemWord := myRdMemWord(ydx=ydx, modIdx=zdx)
     // TODO (maybe): support multiple register writes per instruction
   }
   if (cfg.regFileWordCountArr.size == 0) {
@@ -2521,76 +2521,70 @@ case class SnowHousePipeStageExecute(
     !rSavedStall
     && doCheckHazard && myDoHaveHazard1
   )
-      when (
-        setOutpModMemWord.io.opIsMemAccess
-      ) {
-        nextPrevTxnWasHazard := True
-        when (cMid0Front.up.isFiring) {
-          psMemStallHost.nextValid := True
-          io.dbus.sendData := setOutpModMemWord.io.dbusHostPayload
-        }
-      }
-      when (
-        setOutpModMemWord.io.opIsMultiCycle
-      ) {
-        switch (
-          outp.splitOp.multiCycleOp
-        ) {
-          for (
-            ((_, opInfo), opInfoIdx)
-            <- cfg.multiCycleOpInfoMap.view.zipWithIndex
-          ) {
-            is (
-              opInfoIdx
-            ) {
-              var busIdxFound: Boolean = false
-              var busIdx: Int = 0
-              for (
-                ((_, multiCycleOpInfo), myBusIdx)
-                <- cfg.multiCycleOpInfoMap.view.zipWithIndex
-              ) {
-                if (opInfo == multiCycleOpInfo) {
-                  busIdxFound = true
-                  busIdx = myBusIdx
-                }
-              }
-              if (busIdxFound) {
-                val psExStallHost = psExStallHostArr(busIdx)
-                def doStart(): Unit = {
-                  myDoStall(stallKindMem) := False
-                  myDoStall(stallKindMultiCycle) := True
-                  psExStallHost.nextValid := True
-                  nextSavedStall := True
-                }
-                when (
-                  !rSavedStall
-                  && doCheckHazard && myDoHaveHazard
-                ) {
-                  psExStallHost.nextValid := False
-                  when (psMemStallHost.fire) {
-                    doStart()
-                  }
-                } otherwise {
-                  doStart()
-                }
-                when (
-                  RegNext(psExStallHost.nextValid)
-                  && psExStallHost.ready
-                ) {
-                  psExStallHost.nextValid := False
-                  myDoStall(stallKindMultiCycle) := False
-                }
-                when (rSavedStall) {
-                  myDoStall(stallKindMem) := False
-                }
-                when (cMid0Front.up.isFiring) {
-                  nextSavedStall := False
-                }
-              }
-            }
-          }
-        }
-      }
+  when (
+    setOutpModMemWord.io.opIsMemAccess
+  ) {
+    nextPrevTxnWasHazard := True
+    when (cMid0Front.up.isFiring) {
+      psMemStallHost.nextValid := True
+      io.dbus.sendData := setOutpModMemWord.io.dbusHostPayload
+    }
+  }
+  //when (setOutpModMemWord.io.opIsMultiCycle) {
+  //  switch (outp.splitOp.multiCycleOp) {
+  //    for (
+  //      ((_, opInfo), opInfoIdx)
+  //      <- cfg.multiCycleOpInfoMap.view.zipWithIndex
+  //    ) {
+  //      is (opInfoIdx) {
+  //        var busIdxFound: Boolean = false
+  //        var busIdx: Int = 0
+  //        for (
+  //          ((_, multiCycleOpInfo), myBusIdx)
+  //          <- cfg.multiCycleOpInfoMap.view.zipWithIndex
+  //        ) {
+  //          if (opInfo == multiCycleOpInfo) {
+  //            busIdxFound = true
+  //            busIdx = myBusIdx
+  //          }
+  //        }
+  //        if (busIdxFound) {
+  //          val psExStallHost = psExStallHostArr(busIdx)
+  //          def doStart(): Unit = {
+  //            myDoStall(stallKindMem) := False
+  //            myDoStall(stallKindMultiCycle) := True
+  //            psExStallHost.nextValid := True
+  //            nextSavedStall := True
+  //          }
+  //          when (
+  //            !rSavedStall
+  //            && doCheckHazard && myDoHaveHazard
+  //          ) {
+  //            psExStallHost.nextValid := False
+  //            when (psMemStallHost.fire) {
+  //              doStart()
+  //            }
+  //          } otherwise {
+  //            doStart()
+  //          }
+  //          when (
+  //            RegNext(psExStallHost.nextValid)
+  //            && psExStallHost.ready
+  //          ) {
+  //            psExStallHost.nextValid := False
+  //            myDoStall(stallKindMultiCycle) := False
+  //          }
+  //          when (rSavedStall) {
+  //            myDoStall(stallKindMem) := False
+  //          }
+  //          when (cMid0Front.up.isFiring) {
+  //            nextSavedStall := False
+  //          }
+  //        }
+  //      }
+  //    }
+  //  }
+  //}
 
   psExStallHostArr.foreach(psExStallHost => {
     when (psExStallHost.fire) {
@@ -2909,13 +2903,13 @@ case class SnowHousePipeStageMem(
       modFront(modFrontPayload).gprIdxVec(idx)
     )
   }
-  val savedPsMemStallHost = (
-    LcvStallHostSaved(
-      stallHost=psMemStallHost,
-      someLink=cMidModFront,
-    )
-    .setName(s"psMem_savedPsMemStallHost")
-  )
+  //val savedPsMemStallHost = (
+  //  LcvStallHostSaved(
+  //    stallHost=psMemStallHost,
+  //    someLink=cMidModFront,
+  //  )
+  //  .setName(s"psMem_savedPsMemStallHost")
+  //)
   if (cfg.optFormal) {
     when (pastValidAfterReset) {
       when (past(cMidModFront.up.isFiring) init(False)) {
@@ -3006,15 +3000,16 @@ case class SnowHousePipeStageMem(
     }
     val mapElem = midModPayload(extIdxUp).gprIdxToMemAddrIdxMap(0)
     val myCurrExt = (
-      if (!mapElem.haveHowToSetIdx) (
+      if (!mapElem.haveHowToSetIdx) {
         midModPayload(extIdxUp).myExt(
           0
         )
-      ) else (
+      } else {
+        //assert(false)
         midModPayload(extIdxUp).myExt(
           mapElem.howToSetIdx
         )
-      )
+      }
     )
     val myDecodeExt = midModPayload(extIdxUp).decodeExt
     when (!myDecodeExt.memAccessKind.asBits(1)) {
@@ -3023,16 +3018,14 @@ case class SnowHousePipeStageMem(
       )
     } otherwise {
     }
-
   }
-
 
   def setMidModStages(): Unit = {
     regFile.io.midModStages(0) := midModPayload
   }
   setMidModStages()
 
-    modFront(modBackPayload) := midModPayload(extIdxUp)
+  modFront(modBackPayload) := midModPayload(extIdxUp)
   when (modFront.isValid) {
   } otherwise {
   }
