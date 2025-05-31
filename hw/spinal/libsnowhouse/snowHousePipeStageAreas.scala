@@ -389,7 +389,7 @@ case class SnowHousePipeStageInstrDecode(
 //val myDecodeArea = doDecodeFunc(this)
 }
 private[libsnowhouse] object PcChangeState
-extends SpinalEnum(defaultEncoding=binarySequential) {
+extends SpinalEnum(defaultEncoding=binaryOneHot) {
   val
     Idle,
     WaitTwoInstrs
@@ -2280,8 +2280,9 @@ case class SnowHousePipeStageExecute(
   setOutpModMemWord.io.splitOp := (
     RegNext(
       next=setOutpModMemWord.io.splitOp,
-      init=setOutpModMemWord.io.splitOp.getZero,
+      //init=setOutpModMemWord.io.splitOp.getZero,
     )
+    //init(SnowHouseSplitOpKind.CPY_CPYUI)
   )
   when (cMid0Front.up.isValid) {
     when (!setOutpModMemWord.io.takeIrq) {
