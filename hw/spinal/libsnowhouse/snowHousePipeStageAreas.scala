@@ -2620,7 +2620,7 @@ case class SnowHousePipeStageExecute(
 }
 case class SnowHousePipeStageMem(
   args: SnowHousePipeStageArgs,
-  psWb: SnowHousePipeStageWriteBack,
+  //psWb: SnowHousePipeStageWriteBack,
   psMemStallHost: LcvStallHost[
     BusHostPayload,
     BusDevPayload,

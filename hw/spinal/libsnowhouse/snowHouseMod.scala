@@ -66,10 +66,10 @@ case class SnowHouseInstrDataDualRam(
     true
     //false
   )
-  val fastDbusReady = (
-    //true
-    false
-  )
+  //val fastDbusReady = (
+  //  //true
+  //  false
+  //)
   val rIbusReadyCnt = Reg(UInt(8 bits)) init(0)
   val rIbusReadyState = Reg(Bool()) init(False)
   if (fastIbusReady) {
@@ -707,10 +707,10 @@ case class SnowHouse
         currPayload=null,
         regFile=regFile,
       ),
-      psWb=(
-        //pipeStageWb
-        null
-      ),
+      //psWb=(
+      //  //pipeStageWb
+      //  null
+      //),
       psMemStallHost=psMemStallHost,
     )
   )
