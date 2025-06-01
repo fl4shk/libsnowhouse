@@ -2761,7 +2761,8 @@ case class SnowHouseCpuWithDualRam(
   )
   cpu.io.ibus <> dualRam.io.ibus
   cpu.io.dbus <> dualRam.io.dbus
-  dualRam.io.dcacheHaveHazard := cpu.io.dcacheHaveHazard
+  //dualRam.io.dcacheHaveHazard := cpu.io.dcacheHaveHazard
+  cpu.io.dbusExtraReady := dualRam.io.dbusExtraReady
   if (cfg.exposeModMemWordToIo) {
     cpu.io.modMemWord <> io.modMemWord
   }

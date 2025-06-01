@@ -28,12 +28,14 @@ case class SnowHouseInstrDataDualRamIo(
     sendPayloadType=Some(BusHostPayload(cfg=cfg, isIbus=false)),
     recvPayloadType=Some(BusDevPayload(cfg=cfg, isIbus=false)),
   )
-  val dcacheHaveHazard = Bool()
+  //val dcacheHaveHazard = Bool()
+  val dbusExtraReady = Bool()
   slave(
     ibus,
     dbus,
   )
-  in(dcacheHaveHazard)
+  out(dbusExtraReady)
+  //in(dcacheHaveHazard)
 }
 //case class SnowHouseDirectMappedIcacheIo(
 //  cfg: SnowHouseConfig
@@ -277,6 +279,7 @@ case class SnowHouseInstrDataDualRam(
       /*RegNext*/(dcache.io.bus.ready)
       //init(dcache.io.bus.ready.getZero)
     )
+    io.dbusExtraReady := dcache.io.busExtraReady
 
     //myRam.io.up << dcache.io.tlBus
     //myRam.io.up.a << dcache.io.tlBus.a
@@ -464,7 +467,8 @@ case class SnowHouseIo(
     sendPayloadType=Some(BusHostPayload(cfg=cfg, isIbus=false)),
     recvPayloadType=Some(BusDevPayload(cfg=cfg, isIbus=false)),
   )
-  val dcacheHaveHazard = Bool()
+  val dbusExtraReady = Bool()
+  //val dcacheHaveHazard = Bool()
   master(
     ibus,
     dbus,
@@ -474,7 +478,8 @@ case class SnowHouseIo(
       master(multiCycleBusVec(idx))
     }
   }
-  out(dcacheHaveHazard)
+  //out(dcacheHaveHazard)
+  in(dbusExtraReady)
 }
 case class SnowHouse
 //[

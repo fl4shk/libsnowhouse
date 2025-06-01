@@ -53,6 +53,7 @@ case class SnowHouseCacheIo(
       )
     )
   )
+  val busExtraReady = out(Bool())
   //val bridgeCfg = (
   //  LcvStallToTilelinkConfig(
   //    addrWidth=(
@@ -411,6 +412,13 @@ case class SnowHouseCache(
   if (!isIcache) {
     io.bus.recvData.setAsReg()
     io.bus.ready.setAsReg() init(False)
+    io.busExtraReady.setAsReg() init(False)
+  }
+  def doSetBusReadyEtc(
+    someReady: Bool
+  ): Unit = {
+    io.bus.ready := someReady
+    io.busExtraReady := someReady
   }
   val rBusDevData = (
     !isIcache
@@ -666,7 +674,8 @@ case class SnowHouseCache(
     lineAttrsRam.io.wrData := lineAttrs.asBits
   }
   //--------
-  io.bus.ready := False
+  //io.bus.ready := False
+  doSetBusReadyEtc(False)
   def rBusAddrIsNonCached = (
     (rBusAddr(cacheCfg.nonCachedRange) =/= 0x0)
     //init(False)
@@ -715,7 +724,8 @@ case class SnowHouseCache(
     )
   )
   when (rPleaseFinish(0).sFindFirst(_ === True)._1) {
-    io.bus.ready := True
+    //io.bus.ready := True
+    doSetBusReadyEtc(True)
   }
   when (
     //io.bus.fire
@@ -727,7 +737,8 @@ case class SnowHouseCache(
         current := False
       })
     })
-    io.bus.ready := False
+    //io.bus.ready := False
+    doSetBusReadyEtc(False)
   }
   //val rToggle = (
   //  Reg(Bool())

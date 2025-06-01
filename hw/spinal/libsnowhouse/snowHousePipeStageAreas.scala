@@ -2518,10 +2518,10 @@ case class SnowHousePipeStageExecute(
       )
     }
   }
-  io.dcacheHaveHazard := (
-    !rSavedStall
-    && doCheckHazard && myDoHaveHazard1
-  )
+  //io.dcacheHaveHazard := (
+  //  !rSavedStall
+  //  && doCheckHazard && myDoHaveHazard1
+  //)
   when (
     setOutpModMemWord.io.opIsMemAccess
   ) {
@@ -3016,7 +3016,8 @@ case class SnowHousePipeStageMem(
   }
   when (
     //RegNext(io.dbus.nextValid)
-    io.dbus.ready
+    //io.dbus.ready
+    io.dbusExtraReady
   ) {
     val myDecodeExt = midModPayload(extIdxUp).decodeExt
     val mapElem = midModPayload(extIdxUp).gprIdxToMemAddrIdxMap(0)
