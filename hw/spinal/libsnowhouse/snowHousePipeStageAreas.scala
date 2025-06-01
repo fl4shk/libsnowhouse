@@ -2765,7 +2765,10 @@ case class SnowHousePipeStageMem(
       downs={
         Array.fill(2)(Node())
       },
-      synchronous=false
+      synchronous=(
+        //false
+        true
+      )
     )
   )
   val sMidModFrontFwd = (doMidMod) generate (
