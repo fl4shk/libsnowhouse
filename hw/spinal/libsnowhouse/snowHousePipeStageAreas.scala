@@ -2510,17 +2510,20 @@ case class SnowHousePipeStageExecute(
   when (cMid0Front.up.isFiring) {
     nextPrevTxnWasHazard := False
     for (ydx <- 0 until cfg.regFileCfg.memArrSize) {
-      val tempYdx = (
-        if (ydx < cfg.regFileCfg.modMemWordValidSize) (
-          ydx
-        ) else (
-          cfg.regFileCfg.modMemWordValidSize - 1
+      //val tempYdx = (
+      //  if (ydx < cfg.regFileCfg.modMemWordValidSize) (
+      //    ydx
+      //  ) else (
+      //    cfg.regFileCfg.modMemWordValidSize - 1
+      //  )
+      //)
+      for (kdx <- 0 until cfg.regFileCfg.modMemWordValidSize) {
+        outp.myExt(ydx).valid(kdx) := (
+          //outp.myExt(ydx).modMemWordValid.last
+          //outp.myExt(ydx).modMemWordValid(tempYdx)
+          outp.myExt(ydx).modMemWordValid(kdx)
         )
-      )
-      outp.myExt(ydx).valid := (
-        //outp.myExt(ydx).modMemWordValid.last
-        outp.myExt(ydx).modMemWordValid(tempYdx)
-      )
+      }
     }
   }
   val rSavedJmpCnt = {
@@ -2686,7 +2689,9 @@ case class SnowHousePipeStageExecute(
     myDoStall.sFindFirst(_ === True)._1
   ) {
     for (ydx <- 0 until cfg.regFileCfg.memArrSize) {
-      outp.myExt(ydx).valid := False
+      outp.myExt(ydx).valid.foreach(current => {
+        current := False
+      })
       outp.myExt(ydx).modMemWordValid.foreach(current => {
         current := (
           False
@@ -2956,9 +2961,11 @@ case class SnowHousePipeStageMem(
     val myExtLeft = tempExtLeft(ydx=ydx)
     val myExtRight = tempExtRight(ydx=ydx)
     myExtLeft.allowOverride
-    myExtLeft.valid := (
-      cMidModFront.up.isValid
-    )
+    myExtLeft.valid.foreach(current => {
+      current := (
+        cMidModFront.up.isValid
+      )
+    })
     myExtLeft.ready := (
       cMidModFront.up.isReady
     )
