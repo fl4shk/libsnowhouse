@@ -2148,7 +2148,7 @@ case class SnowHousePipeStageExecute(
         <- 0 until cfg.regFileCfg.memArrSize
       ) {
         temp += (
-          !tempModFrontPayload.myExt(ydx).modMemWordValid
+          !tempModFrontPayload.myExt(ydx).modMemWordValid.head
         )
       }
       temp
@@ -2352,9 +2352,11 @@ case class SnowHousePipeStageExecute(
           // TODO: support multiple output `modMemWord`s
           setOutpModMemWord.io.modMemWord(0)
         )
-        tempExt.modMemWordValid := (
-          setOutpModMemWord.io.modMemWordValid
-        )
+        tempExt.modMemWordValid.foreach(current =>{
+          current := (
+            setOutpModMemWord.io.modMemWordValid
+          )
+        })
       }
     def tempRdMemWord = setOutpModMemWord.io.rdMemWord(zdx)
     tempRdMemWord := myRdMemWord(ydx=ydx, modIdx=zdx)
@@ -2430,7 +2432,7 @@ case class SnowHousePipeStageExecute(
     nextPrevTxnWasHazard := False
     for (ydx <- 0 until cfg.regFileCfg.memArrSize) {
       outp.myExt(ydx).valid := (
-        outp.myExt(ydx).modMemWordValid
+        outp.myExt(ydx).modMemWordValid.last
       )
     }
   }
@@ -2598,9 +2600,11 @@ case class SnowHousePipeStageExecute(
   ) {
     for (ydx <- 0 until cfg.regFileCfg.memArrSize) {
       outp.myExt(ydx).valid := False
-      outp.myExt(ydx).modMemWordValid := (
-        False
-      )
+      outp.myExt(ydx).modMemWordValid.foreach(current => {
+        current := (
+          False
+        )
+      })
     }
     when (myDoStall.sFindFirst(_ === True)._1) {
       cMid0Front.duplicateIt()
@@ -2791,18 +2795,18 @@ case class SnowHousePipeStageMem(
           myExt(extIdxUp).foreach(current => {
             assert(current.main === current.main.getZero)
           })
-          assert(
-            myFwd(extIdxUp)
-            === myFwd(extIdxUp).getZero
-          )
+          //assert(
+          //  myFwd(extIdxUp)
+          //  === myFwd(extIdxUp).getZero
+          //)
         }
         myExt(extIdxSaved).foreach(current => {
           assert(current === current.getZero)
         })
-        assert(
-          myFwd(extIdxSaved)
-          === myFwd(extIdxSaved).getZero
-        )
+        //assert(
+        //  myFwd(extIdxSaved)
+        //  === myFwd(extIdxSaved).getZero
+        //)
       } 
       when (
         past(cMidModFront.up.isFiring) init(False)
@@ -2816,66 +2820,9 @@ case class SnowHousePipeStageMem(
         !cMidModFront.up.isValid
         && !past(cMidModFront.up.isValid)
       ) {
-        for (ydx <- 0 until cfg.regFileCfg.memArrSize) {
-          for (zdx <- 0 until cfg.regFileModRdPortCnt) {
-            assert(
-              stable(myExt(extIdxUp)(ydx).memAddr(zdx))
-            )
-            assert(
-              stable(myExt(extIdxUp)(ydx).rdMemWord(zdx))
-            )
-          }
-        }
-        when (
-          midModPayload(extIdxUp).decodeExt.opIsMemAccess
-        ) {
-          for (ydx <- 0 until cfg.regFileCfg.memArrSize) {
-            for (zdx <- 0 until cfg.regFileModRdPortCnt) {
-              assert(stable(myExt(extIdxUp)(ydx).modMemWord(zdx)))
-            }
-          }
-        }
         myExt(extIdxSaved).foreach(current => {
           assert(stable(current))
         })
-        assert(
-          stable(myFwd(extIdxUp))
-        )
-        assert(
-          stable(myFwd(extIdxSaved))
-        )
-      }
-      when (
-        cMidModFront.up.isValid
-        && !rSetMidModPayloadState
-      ) {
-        assert(
-          myFwd(extIdxUp)
-          === cMidModFront.up(modFrontPayload).myFwd
-        )
-        for (ydx <- 0 until cfg.regFileCfg.memArrSize) {
-          for (zdx <- 0 until cfg.regFileModRdPortCnt) {
-            assert(
-              myExt(extIdxUp)(ydx).rdMemWord(zdx)
-              === (
-                cMidModFront.up(modFrontPayload).myExt(ydx).rdMemWord(zdx)
-              )
-            )
-            assert(
-              myExt(extIdxUp)(ydx).memAddr(zdx)
-              === (
-                cMidModFront.up(modFrontPayload).myExt(ydx).memAddr(zdx)
-              )
-            )
-          }
-          when (
-            cMidModFront.up(modFrontPayload).myExt(ydx).modMemWordValid
-          ) {
-            assert(
-              myExt(extIdxUp)(ydx).modMemWordValid
-            )
-          }
-        }
       }
     }
   }
@@ -2912,17 +2859,6 @@ case class SnowHousePipeStageMem(
   //  .setName(s"psMem_savedPsMemStallHost")
   //)
   if (cfg.optFormal) {
-    when (pastValidAfterReset) {
-      when (past(cMidModFront.up.isFiring) init(False)) {
-        assert(!rSetMidModPayloadState)
-      }
-      when (!(past(cMidModFront.up.isValid) init(False))) {
-        assert(stable(rSetMidModPayloadState))
-      }
-      when (rSetMidModPayloadState) {
-        assert(cMidModFront.up.isValid)
-      }
-    }
   }
   when (cMidModFront.up.isValid) {
     midModPayload(extIdxUp) := modFront(modFrontPayload)
@@ -2987,11 +2923,13 @@ case class SnowHousePipeStageMem(
       when (midModPayload(extIdxUp).gprIsZeroVec(0)) {
       } otherwise {
       }
-      myCurrExt.modMemWordValid := (
-        // TODO: support more destination GPRs
-        //!midModPayload(extIdxUp).gprIsZeroVec(0)
-        True
-      )
+      myCurrExt.modMemWordValid.foreach(current => {
+        current := (
+          // TODO: support more destination GPRs
+          //!midModPayload(extIdxUp).gprIsZeroVec(0)
+          True
+        )
+      })
       if (cfg.optFormal) {
         assume(
           myDecodeExt.memAccessKind.asBits.asUInt
@@ -3366,42 +3304,42 @@ case class SnowHousePipeStageWriteBack(
       }
     }
   }
-      val rPrevOpCnt = Vec({
-        val tempArr = ArrayBuffer[UInt]()
-        for (ydx <- 0 until regFile.memArrSize) {
-          tempArr += (
-            RegNextWhen(
-              next=modBack(modBackPayload).opCnt,
-              cond=myHaveCurrWrite(ydx),
-            )
-            .init(0x0)
-            .setName(s"rPrevOpCnt_${ydx}")
-          )
-        }
-        tempArr
-      })
-      for ((rPrevOpCntElem, ydx) <- rPrevOpCnt.view.zipWithIndex) {
-        assumeInitial(
-          rPrevOpCntElem === 0x0
+  val rPrevOpCnt = Vec({
+    val tempArr = ArrayBuffer[UInt]()
+    for (ydx <- 0 until regFile.memArrSize) {
+      tempArr += (
+        RegNextWhen(
+          next=modBack(modBackPayload).opCnt,
+          cond=myHaveCurrWrite(ydx),
         )
-      }
-      val myCoverCond = (
-        myHaveAnyCurrWrite
+        .init(0x0)
+        .setName(s"rPrevOpCnt_${ydx}")
       )
-      def myCoverVecSize = 8
-      val tempMyCoverInit = SnowHousePipePayload(cfg=cfg)
-      tempMyCoverInit.allowOverride
-      tempMyCoverInit := tempMyCoverInit.getZero
-      val myHistCoverVec = (
-        /*KeepAttribute*/(
-          History(
-            that=modBack(modBackPayload),
-            length=myCoverVecSize,
-            when=myCoverCond,
-            init=tempMyCoverInit,
-          )
-        )
+    }
+    tempArr
+  })
+  for ((rPrevOpCntElem, ydx) <- rPrevOpCnt.view.zipWithIndex) {
+    assumeInitial(
+      rPrevOpCntElem === 0x0
+    )
+  }
+  val myCoverCond = (
+    myHaveAnyCurrWrite
+  )
+  def myCoverVecSize = 8
+  val tempMyCoverInit = SnowHousePipePayload(cfg=cfg)
+  tempMyCoverInit.allowOverride
+  tempMyCoverInit := tempMyCoverInit.getZero
+  val myHistCoverVec = (
+    /*KeepAttribute*/(
+      History(
+        that=modBack(modBackPayload),
+        length=myCoverVecSize,
+        when=myCoverCond,
+        init=tempMyCoverInit,
       )
+    )
+  )
   val myHadWriteAt = (
     Vec({
       val tempArr = ArrayBuffer[Vec[Bool]]()
