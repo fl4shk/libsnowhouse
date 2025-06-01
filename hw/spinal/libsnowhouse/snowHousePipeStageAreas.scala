@@ -389,7 +389,7 @@ case class SnowHousePipeStageInstrDecode(
 //val myDecodeArea = doDecodeFunc(this)
 }
 private[libsnowhouse] object PcChangeState
-extends SpinalEnum(defaultEncoding=binaryOneHot) {
+extends SpinalEnum(defaultEncoding=binarySequential) {
   val
     Idle,
     WaitTwoInstrs
@@ -925,9 +925,9 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
     io.regPcPlusImm
   )
   io.dbusHostPayload.data := io.rdMemWord(0) //selRdMemWord(0)
-  if (cfg.allMainLdstUseGprPlusImm) {
-    io.dbusHostPayload.addr := io.rdMemWord(1) + io.imm(1)
-  }
+  //if (cfg.allMainLdstUseGprPlusImm) {
+  //  io.dbusHostPayload.addr := io.rdMemWord(1) + io.imm(1)
+  //}
   def innerFunc(
     opInfo: OpInfo,
     opInfoIdx: Int,
@@ -3013,12 +3013,30 @@ case class SnowHousePipeStageMem(
       }
     )
     val myDecodeExt = midModPayload(extIdxUp).decodeExt
-    when (!myDecodeExt.memAccessKind.asBits(1)) {
+  }
+  when (
+    //RegNext(io.dbus.nextValid)
+    io.dbus.ready
+  ) {
+    val myDecodeExt = midModPayload(extIdxUp).decodeExt
+    val mapElem = midModPayload(extIdxUp).gprIdxToMemAddrIdxMap(0)
+    val myCurrExt = (
+      if (!mapElem.haveHowToSetIdx) (
+        midModPayload(extIdxUp).myExt(
+          0
+        )
+      ) else (
+        midModPayload(extIdxUp).myExt(
+          mapElem.howToSetIdx
+        )
+      )
+    )
+    //when (!myDecodeExt.memAccessKind.asBits(1)) {
       myCurrExt.modMemWord := (
         io.dbus.recvData.data.resized
       )
-    } otherwise {
-    }
+    //} otherwise {
+    //}
   }
 
   def setMidModStages(): Unit = {

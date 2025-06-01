@@ -97,7 +97,7 @@ extends SpinalEnum(defaultEncoding=binarySequential) {
     = newElement();
 }
 object SnowHouseMemAccessSubKind
-extends SpinalEnum(defaultEncoding=binaryOneHot) {
+extends SpinalEnum(defaultEncoding=binarySequential) {
   val
     Sz8,
     Sz16,
