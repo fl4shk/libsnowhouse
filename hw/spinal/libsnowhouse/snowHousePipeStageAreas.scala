@@ -363,7 +363,7 @@ case class SnowHousePipeStageInstrDecode(
                   RegNext(io.idsIraIrq.nextValid)
                 )
               ) {
-                  upPayload.takeIrq := True
+                upPayload.takeIrq := True
               }
               nextPrevInstrBlockedIrq := (
                 upPayload.blockIrq
@@ -2249,6 +2249,18 @@ case class SnowHousePipeStageExecute(
       init=setOutpModMemWord.io.takeIrq.getZero,
     )
   )
+  //object IrqHndlState extends SpinalEnum(defaultEncoding=binaryOneHot) {
+  //  val
+  //    Idle,
+  //    HndlIrq,
+  //    Last
+  //    = newElement()
+  //}
+  //val rSavedTakeIrq = (
+  //  Reg(Bool())
+  //  init(False)
+  //)
+  //setOutpModMemWord.io.takeIrq.setAsReg() init(False)
   val rIrqHndlState = {
     val temp = Reg(
       Bool()
@@ -2258,24 +2270,27 @@ case class SnowHousePipeStageExecute(
   }
   if (cfg.irqCfg != None) {
     when (RegNext(io.idsIraIrq.nextValid)) {
-      setOutpModMemWord.io.takeIrq := (
-        cMid0Front.up.isValid
-        && outp.takeIrq
-        && (
-          RegNextWhen(
-            next=(setOutpModMemWord.io.rIe/*(0)*/ === True),//0x0
-            cond=cMid0Front.up.isFiring,
-            init=False,
+      setOutpModMemWord.io.takeIrq := RegNextWhen(
+        next=(
+          cMid0Front.up.isValid
+          && outp.takeIrq
+          && (
+            RegNextWhen(
+              next=(setOutpModMemWord.nextIe/*(0)*/ === True),//0x0
+              cond=cMid0Front.up.isFiring,
+              init=False,
+            )
+          ) && (
+            !rIrqHndlState//.valid
+          ) && (
+            if (setOutpModMemWord.io.haveRetIraState) (
+              !setOutpModMemWord.io.rHadRetIra
+            ) else (
+              True
+            )
           )
-        ) && (
-          !rIrqHndlState//.valid
-        ) && (
-          if (setOutpModMemWord.io.haveRetIraState) (
-            !setOutpModMemWord.io.rHadRetIra
-          ) else (
-            True
-          )
-        )
+        ),
+        cond=cMid0Front.up.isFiring
       )
     }
   }
@@ -2285,12 +2300,8 @@ case class SnowHousePipeStageExecute(
     cMid0Front.up.isFiring
     && setOutpModMemWord.io.takeIrq
   )
-  if (
-    cfg.irqCfg != None
-  ) {
-    when (
-      nextTempIrqCond
-    ) {
+  if (cfg.irqCfg != None) {
+    when (nextTempIrqCond) {
       rIrqHndlState/*.valid*/ := True
     }
     when (rIrqHndlState) {
@@ -2939,36 +2950,32 @@ case class SnowHousePipeStageMem(
   when (cMidModFront.up.isValid) {
     midModPayload(extIdxUp) := modFront(modFrontPayload)
   }
-    for (ydx <- 0 until cfg.regFileCfg.memArrSize) {
-      def tempExtLeft(ydx: Int) = midModPayload(extIdxUp).myExt(ydx)
-      def tempExtRight(ydx: Int) = modFront(modFrontPayload).myExt(ydx)
-      val myExtLeft = tempExtLeft(ydx=ydx)
-      val myExtRight = tempExtRight(ydx=ydx)
-      myExtLeft.allowOverride
-      myExtLeft.valid := (
-        cMidModFront.up.isValid
-      )
-      myExtLeft.ready := (
-        cMidModFront.up.isReady
-      )
-      myExtLeft.fire := (
-        cMidModFront.up.isFiring
-      )
-    }
+  for (ydx <- 0 until cfg.regFileCfg.memArrSize) {
+    def tempExtLeft(ydx: Int) = midModPayload(extIdxUp).myExt(ydx)
+    def tempExtRight(ydx: Int) = modFront(modFrontPayload).myExt(ydx)
+    val myExtLeft = tempExtLeft(ydx=ydx)
+    val myExtRight = tempExtRight(ydx=ydx)
+    myExtLeft.allowOverride
+    myExtLeft.valid := (
+      cMidModFront.up.isValid
+    )
+    myExtLeft.ready := (
+      cMidModFront.up.isReady
+    )
+    myExtLeft.fire := (
+      cMidModFront.up.isFiring
+    )
+  }
 
   def tempExtLeft(ydx: Int) = midModPayload(extIdxUp).myExt(ydx)
   def tempExtRight(ydx: Int) = modFront(modFrontPayload).myExt(ydx)
   val rDbusState = (
     Reg(Bool(), init=False)
   )
-  when (
-    RegNext(io.dbus.nextValid)
-  ) {
+  when (RegNext(io.dbus.nextValid)) {
     def tempExtLeft(ydx: Int) = midModPayload(extIdxUp).myExt(ydx)
     def tempExtRight(ydx: Int) = modFront(modFrontPayload).myExt(ydx)
-    when (
-      !io.dbus.ready
-    ) {
+    when (!io.dbus.ready) {
       cMidModFront.duplicateIt()
       val mapElem = midModPayload(extIdxUp).gprIdxToMemAddrIdxMap(0)
       val myCurrExt = (
@@ -3047,9 +3054,9 @@ case class SnowHousePipeStageMem(
       )
     )
     //when (!myDecodeExt.memAccessKind.asBits(1)) {
-      myCurrExt.modMemWord := (
-        io.dbus.recvData.data.resized
-      )
+    myCurrExt.modMemWord := (
+      io.dbus.recvData.data.resized
+    )
     //} otherwise {
     //}
   }
