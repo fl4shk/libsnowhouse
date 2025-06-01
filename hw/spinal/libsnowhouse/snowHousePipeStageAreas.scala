@@ -662,7 +662,7 @@ case class SnowHousePipeStageExecuteSetOutpModMemWordIo(
   )
   val modMemWordValid = /*out*/(
     Vec.fill(
-      cfg.regFileCfg.modMemWordValidSize
+      cfg.regFileCfg.modMemWordValidSize //+ 1
     )(
       Bool()
     )
@@ -2200,12 +2200,16 @@ case class SnowHousePipeStageExecute(
   val myDoHaveHazardValidCheckVec = Vec[Bool](
     {
       val temp = ArrayBuffer[Bool]()
-      for (
-        ydx
-        <- 0 until cfg.regFileCfg.memArrSize
-      ) {
+      for (ydx <- 0 until cfg.regFileCfg.memArrSize) {
+        val tempYdx = (
+          if (ydx < cfg.regFileCfg.modMemWordValidSize) (
+            ydx
+          ) else (
+            cfg.regFileCfg.modMemWordValidSize - 1
+          )
+        )
         temp += (
-          !tempModFrontPayload.myExt(ydx).modMemWordValid.last
+          !tempModFrontPayload.myExt(ydx).modMemWordValid(tempYdx)
         )
       }
       temp
@@ -2495,8 +2499,16 @@ case class SnowHousePipeStageExecute(
   when (cMid0Front.up.isFiring) {
     nextPrevTxnWasHazard := False
     for (ydx <- 0 until cfg.regFileCfg.memArrSize) {
+      val tempYdx = (
+        if (ydx < cfg.regFileCfg.modMemWordValidSize) (
+          ydx
+        ) else (
+          cfg.regFileCfg.modMemWordValidSize - 1
+        )
+      )
       outp.myExt(ydx).valid := (
-        outp.myExt(ydx).modMemWordValid.last
+        //outp.myExt(ydx).modMemWordValid.last
+        outp.myExt(ydx).modMemWordValid(tempYdx)
       )
     }
   }
