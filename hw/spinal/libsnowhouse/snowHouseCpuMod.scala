@@ -472,9 +472,11 @@ object SnowHouseCpuPipeStageInstrDecode {
     nextMultiCycleState := rMultiCycleState
     //psId.nextMultiCycleStateIsIdle := nextMultiCycleState
     for (idx <- 0 until cfg.maxNumGprsPerInstr) {
-      upPayload.gprIsZeroVec(idx) := (
-        upPayload.gprIdxVec(idx) === 0x0
-      )
+      for (jdx <- 0 until cfg.regFileCfg.modMemWordValidSize) {
+        upPayload.gprIsZeroVec(idx)(jdx) := (
+          upPayload.gprIdxVec(idx) === 0x0
+        )
+      }
     }
     upPayload.gprIdxVec(0) := encInstr.raIdx.resized
     upPayload.gprIdxVec(1) := encInstr.rbIdx.resized
@@ -2084,12 +2086,12 @@ case class SnowHouseCpuTestProgram(
     //cpy(r0, r0),
     //cpy(r0, r0),
     //--------
-    //mul(r7, r6, r1),          // 0x64
-    //udiv(r7, r6, r1),         // 0x68
-    //umod(r8, r6, r1),         // 0x6c
-    cpy(r0, r0),
-    cpy(r0, r0),
-    cpy(r0, r0),
+    mul(r7, r6, r1),          // 0x64
+    udiv(r7, r6, r1),         // 0x68
+    umod(r8, r6, r1),         // 0x6c
+    //cpy(r0, r0),
+    //cpy(r0, r0),
+    //cpy(r0, r0),
     //--------
     //add(r7, r6, r1),
     //sub(r8, r6, r1),
@@ -2124,10 +2126,10 @@ case class SnowHouseCpuTestProgram(
     ////mul(r7, r6, r1),
     //cpy(r0, r0),
     //--------
-    //udiv(r7, r6, r1),         // 0x98
-    //umod(r8, r6, r1),         // 0x9c
-    cpy(r0, r0),
-    cpy(r0, r0),
+    udiv(r7, r6, r1),         // 0x98
+    umod(r8, r6, r1),         // 0x9c
+    //cpy(r0, r0),
+    //cpy(r0, r0),
     //add(r7, r6, r1),
     //sub(r8, r6, r1),
     //--------

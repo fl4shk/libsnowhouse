@@ -405,7 +405,9 @@ case class SnowHousePipeStageExecuteSetOutpModMemWordIo(
     cfg.myHaveZeroReg
   ) generate (
     Vec.fill(tempVecSize)(
-      Bool()
+      Vec.fill(cfg.regFileCfg.modMemWordValidSize)(
+        Bool()
+      )
     )
   )
   val dbusHostPayload = (
@@ -658,7 +660,13 @@ case class SnowHousePipeStageExecuteSetOutpModMemWordIo(
       UInt(log2Up(cfg.regFileCfg.wordCountMax) bits)
     )
   )
-  val modMemWordValid = /*out*/(Bool())
+  val modMemWordValid = /*out*/(
+    Vec.fill(
+      cfg.regFileCfg.modMemWordValidSize
+    )(
+      Bool()
+    )
+  )
   val modMemWord = /*out*/(Vec.fill(1)( // TODO: temporary size of `1`
     UInt(cfg.mainWidth bits)
   ))
@@ -712,17 +720,24 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
       init=io.modMemWord.getZero,
     )
   )
-  val myModMemWordValid = (
-    if (cfg.myHaveZeroReg) (
-      // TODO: support more register simultaneous writes
-      !io.gprIsZeroVec(0)
-    ) else (
-      True
+  //val myModMemWordValid = (
+  //  if (cfg.myHaveZeroReg) (
+  //    // TODO: support more register simultaneous writes
+  //    !io.gprIsZeroVec(0)
+  //  ) else (
+  //    True
+  //  )
+  //)
+  for (idx <- 0 until cfg.regFileCfg.modMemWordValidSize) {
+    io.modMemWordValid(idx) := (
+      if (cfg.myHaveZeroReg) (
+        !io.gprIsZeroVec(0)(idx)
+      ) else (
+        True
+      )
+      //myModMemWordValid
     )
-  )
-  io.modMemWordValid := (
-    myModMemWordValid
-  )
+  }
   io.psExSetPc := io.psExSetPc.getZero
   io.dbusHostPayload := (
     RegNext(
@@ -763,7 +778,9 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
   )
   nextShouldIgnoreInstrState := rShouldIgnoreInstrState
   when (io.shouldIgnoreInstr) {
-    io.modMemWordValid := False
+    io.modMemWordValid.foreach(current => {
+      current := False
+    })
     io.modMemWord.foreach(modMemWord => {
       modMemWord := modMemWord.getZero
     })
@@ -978,7 +995,9 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
                     io.modMemWord(0) := selRdMemWord(1)
                   }
                   case DstKind.Spr(kind) => {
-                    io.modMemWordValid := False
+                    io.modMemWordValid.foreach(current => {
+                      current := False
+                    })
                     io.modMemWord.foreach(modMemWord => {
                       modMemWord := modMemWord.getZero
                     })
@@ -1016,7 +1035,9 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
                     }
                   }
                   case DstKind.HiddenReg(kind) => {
-                    io.modMemWordValid := False
+                    io.modMemWordValid.foreach(current => {
+                      current := False
+                    })
                     io.modMemWord.foreach(modMemWord => {
                       modMemWord := modMemWord.getZero
                     })
@@ -1049,12 +1070,16 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
                 if (!mem.isAtomic) {
                   val isStore = mem.isStore
                   if (!isStore) {
-                    io.modMemWordValid := False
+                    io.modMemWordValid.foreach(current => {
+                      current := False
+                    })
                     io.modMemWord.foreach(modMemWord => {
                       modMemWord := modMemWord.getZero
                     })
                   } else {
-                    io.modMemWordValid := True
+                    io.modMemWordValid.foreach(current => {
+                      current := True
+                    })
                     io.modMemWord(0) := selRdMemWord(0)
                   }
                   val tempSubKind = (
@@ -1237,17 +1262,25 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
             )
             when (!io.takeIrq) {
               if (opInfo.dstArr.size == 1) (
-                io.modMemWordValid := False
+                io.modMemWordValid.foreach(current => {
+                  current := False
+                })
               ) else if (
                 opInfo.dstArr(1) == DstKind.Spr(SprKind.Ie)
               ) {
-                io.modMemWordValid := False
+                io.modMemWordValid.foreach(current => {
+                  current := False
+                })
               } else {
                 // TODO: *maybe* support more outputs
-                io.modMemWordValid := !io.gprIsZeroVec(0)
+                for (idx <- 0 until io.modMemWordValid.size) {
+                  io.modMemWordValid(idx) := !io.gprIsZeroVec(0)(idx)
+                }
               }
             } otherwise {
-              io.modMemWordValid := False
+              io.modMemWordValid.foreach(current => {
+                current := False
+              })
             }
             io.modMemWord(0) := (
 
@@ -1289,7 +1322,9 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
           }
           case CpyOpKind.Br => {
             if (opInfo.dstArr.size == 1) (
-              io.modMemWordValid := False
+              io.modMemWordValid.foreach(current => {
+                current := False
+              })
             )
             nextIndexReg := 0x0
             opInfo.cond match {
@@ -1300,12 +1335,16 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
                   io.regPc + ((cfg.instrMainWidth / 8) * 1)
                 )
                 if (opInfo.dstArr.size == 1) (
-                  io.modMemWordValid := False
+                  io.modMemWordValid.foreach(current => {
+                    current := False
+                  })
                 ) else {
-                  io.modMemWordValid := (
-                    // TODO: support more outputs
-                    !io.gprIsZeroVec(0)
-                  )
+                  for (idx <- 0 until io.modMemWordValid.size) {
+                    io.modMemWordValid(idx) := (
+                      // TODO: support more outputs
+                      !io.gprIsZeroVec(0)(idx)
+                    )
+                  }
                 }
               }
               case CondKind.Eq => {
@@ -1615,7 +1654,9 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
                   case SprKind.AluFlags => {
                     if (opInfo.dstArr.size == 1) {
                       nextAluFlags := myBinop.main
-                      io.modMemWordValid := False
+                      io.modMemWordValid.foreach(current => {
+                        current := False
+                      })
                       io.modMemWord.foreach(modMemWord => {
                         modMemWord := modMemWord.getZero
                       })
@@ -1628,49 +1669,63 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
                   }
                   case SprKind.Ids => {
                     nextIds := myBinop.main
-                    io.modMemWordValid := False
+                    io.modMemWordValid.foreach(current => {
+                      current := False
+                    })
                     io.modMemWord.foreach(modMemWord => {
                       modMemWord := modMemWord.getZero
                     })
                   }
                   case SprKind.Ira => {
                     nextIra := myBinop.main
-                    io.modMemWordValid := False
+                    io.modMemWordValid.foreach(current => {
+                      current := False
+                    })
                     io.modMemWord.foreach(modMemWord => {
                       modMemWord := modMemWord.getZero
                     })
                   }
                   case SprKind.Ie => {
                     nextIe := myBinop.main(0)
-                    io.modMemWordValid := False
+                    io.modMemWordValid.foreach(current => {
+                      current := False
+                    })
                     io.modMemWord.foreach(modMemWord => {
                       modMemWord := modMemWord.getZero
                     })
                   }
                   case SprKind.Ity => {
                     nextIty := myBinop.main
-                    io.modMemWordValid := False
+                    io.modMemWordValid.foreach(current => {
+                      current := False
+                    })
                     io.modMemWord.foreach(modMemWord => {
                       modMemWord := modMemWord.getZero
                     })
                   }
                   case SprKind.Sty => {
                     nextSty := myBinop.main
-                    io.modMemWordValid := False
+                    io.modMemWordValid.foreach(current => {
+                      current := False
+                    })
                     io.modMemWord.foreach(modMemWord => {
                       modMemWord := modMemWord.getZero
                     })
                   }
                   case SprKind.Hi => {
                     nextHi := myBinop.main
-                    io.modMemWordValid := False
+                    io.modMemWordValid.foreach(current => {
+                      current := False
+                    })
                     io.modMemWord.foreach(modMemWord => {
                       modMemWord := modMemWord.getZero
                     })
                   }
                   case SprKind.Lo => {
                     nextLo := myBinop.main
-                    io.modMemWordValid := False
+                    io.modMemWordValid.foreach(current => {
+                      current := False
+                    })
                     io.modMemWord.foreach(modMemWord => {
                       modMemWord := modMemWord.getZero
                     })
@@ -1685,7 +1740,9 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
               }
               case DstKind.HiddenReg(HiddenRegKind.IndexReg) => {
                 nextIndexReg := myBinop.main
-                io.modMemWordValid := False
+                io.modMemWordValid.foreach(current => {
+                  current := False
+                })
                 io.modMemWord.foreach(modMemWord => {
                   modMemWord := modMemWord.getZero
                 })
@@ -2148,7 +2205,7 @@ case class SnowHousePipeStageExecute(
         <- 0 until cfg.regFileCfg.memArrSize
       ) {
         temp += (
-          !tempModFrontPayload.myExt(ydx).modMemWordValid.head
+          !tempModFrontPayload.myExt(ydx).modMemWordValid.last
         )
       }
       temp
@@ -2330,9 +2387,11 @@ case class SnowHousePipeStageExecute(
   }
   if (cfg.myHaveZeroReg) {
     for ((gprIdx, idx) <- outp.gprIdxVec.view.zipWithIndex) {
-      setOutpModMemWord.io.gprIsZeroVec(idx) := (
-        outp.gprIsZeroVec(idx)
-      )
+      for (jdx <- 0 until outp.gprIsZeroVec(idx).size) {
+        setOutpModMemWord.io.gprIsZeroVec(idx)(jdx) := (
+          outp.gprIsZeroVec(idx)(jdx)
+        )
+      }
     }
   }
   setOutpModMemWord.io.upIsFiring := cMid0Front.up.isFiring
@@ -2352,11 +2411,16 @@ case class SnowHousePipeStageExecute(
           // TODO: support multiple output `modMemWord`s
           setOutpModMemWord.io.modMemWord(0)
         )
-        tempExt.modMemWordValid.foreach(current =>{
-          current := (
-            setOutpModMemWord.io.modMemWordValid
+        for (idx <- 0 until tempExt.modMemWordValid.size) {
+          //tempExt.modMemWordValid.foreach(current =>{
+          //  current := (
+          //    setOutpModMemWord.io.modMemWordValid
+          //  )
+          //})
+          tempExt.modMemWordValid(idx) := (
+            setOutpModMemWord.io.modMemWordValid(idx)
           )
-        })
+        }
       }
     def tempRdMemWord = setOutpModMemWord.io.rdMemWord(zdx)
     tempRdMemWord := myRdMemWord(ydx=ydx, modIdx=zdx)
@@ -2920,9 +2984,9 @@ case class SnowHousePipeStageMem(
           )
         )
       )
-      when (midModPayload(extIdxUp).gprIsZeroVec(0)) {
-      } otherwise {
-      }
+      //when (midModPayload(extIdxUp).gprIsZeroVec(0)) {
+      //} otherwise {
+      //}
       myCurrExt.modMemWordValid.foreach(current => {
         current := (
           // TODO: support more destination GPRs
