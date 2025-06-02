@@ -1822,74 +1822,74 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
       }
       case OpSelect.MultiCycle => {
         nextIndexReg := 0x0
-        for (
-          ((_, innerOpInfo), idx)
-          <- cfg.multiCycleOpInfoMap.view.zipWithIndex
-        ) {
-          if (opInfo == innerOpInfo) {
-            io.multiCycleOpInfoIdx := idx
-            for ((dst, dstIdx) <- opInfo.dstArr.view.zipWithIndex) {
-              val tempDst = (
-                modIo.multiCycleBusVec(idx).recvData.dstVec(dstIdx)
-              )
-              dst match {
-                case DstKind.Gpr => {
-                  // TODO: *maybe* support multiple output regs
-                  io.modMemWord(0) := (
-                    tempDst
-                  )
-                }
-                case DstKind.HiddenReg(kind) => {
-                  kind match {
-                    case HiddenRegKind.MulHiOutp => {
-                      nextMulHiOutp := tempDst
-                    }
-                    case HiddenRegKind.DivHiOutp => {
-                      nextDivHiOutp := tempDst
-                    }
-                    case HiddenRegKind.ModHiOutp => {
-                      nextModHiOutp := tempDst
-                    }
-                    case _ => {
-                      assert(
-                        false,
-                        s"not yet implemented: "
-                        + s"opInfo(${opInfo}) index:${opInfoIdx}"
-                      )
-                    }
-                  }
-                }
-                case DstKind.Spr(kind) => {
-                  kind match {
-                    case SprKind.Hi => {
-                      nextHi := tempDst
-                    }
-                    case SprKind.Lo => {
-                      nextLo := tempDst
-                    }
-                    case _ => {
-                      assert(
-                        false,
-                        s"not yet implemented: "
-                        + s"opInfo(${opInfo}) index:${opInfoIdx}"
-                      )
-                    }
-                  }
-                }
-                case _ => {
-                  assert(
-                    false,
-                    s"not yet implemented: "
-                    + s"opInfo(${opInfo}) index:${opInfoIdx}"
-                  )
-                }
-              }
-            }
-          }
-        }
+        //for (
+        //  ((_, innerOpInfo), idx)
+        //  <- cfg.multiCycleOpInfoMap.view.zipWithIndex
+        //) {
+        //  if (opInfo == innerOpInfo) {
+        //    io.multiCycleOpInfoIdx := idx
+        //    for ((dst, dstIdx) <- opInfo.dstArr.view.zipWithIndex) {
+        //      val tempDst = (
+        //        modIo.multiCycleBusVec(idx).recvData.dstVec(dstIdx)
+        //      )
+        //      dst match {
+        //        case DstKind.Gpr => {
+        //          // TODO: *maybe* support multiple output regs
+        //          io.modMemWord(0) := (
+        //            tempDst
+        //          )
+        //        }
+        //        case DstKind.HiddenReg(kind) => {
+        //          kind match {
+        //            case HiddenRegKind.MulHiOutp => {
+        //              nextMulHiOutp := tempDst
+        //            }
+        //            case HiddenRegKind.DivHiOutp => {
+        //              nextDivHiOutp := tempDst
+        //            }
+        //            case HiddenRegKind.ModHiOutp => {
+        //              nextModHiOutp := tempDst
+        //            }
+        //            case _ => {
+        //              assert(
+        //                false,
+        //                s"not yet implemented: "
+        //                + s"opInfo(${opInfo}) index:${opInfoIdx}"
+        //              )
+        //            }
+        //          }
+        //        }
+        //        case DstKind.Spr(kind) => {
+        //          kind match {
+        //            case SprKind.Hi => {
+        //              nextHi := tempDst
+        //            }
+        //            case SprKind.Lo => {
+        //              nextLo := tempDst
+        //            }
+        //            case _ => {
+        //              assert(
+        //                false,
+        //                s"not yet implemented: "
+        //                + s"opInfo(${opInfo}) index:${opInfoIdx}"
+        //              )
+        //            }
+        //          }
+        //        }
+        //        case _ => {
+        //          assert(
+        //            false,
+        //            s"not yet implemented: "
+        //            + s"opInfo(${opInfo}) index:${opInfoIdx}"
+        //          )
+        //        }
+        //      }
+        //    }
+        //  }
+        //}
         io.opIsMultiCycle := (
-          True
-          //False
+          //True
+          False
         )
         assert(
           opInfo.cond == CondKind.Always,
