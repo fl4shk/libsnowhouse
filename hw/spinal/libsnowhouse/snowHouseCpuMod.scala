@@ -2626,7 +2626,7 @@ case class SnowHouseCpuDivmod32(
       //)
       //--------
       // BEGIN: FMAX debugging
-      //divmod.io.inp.valid := True
+      divmod.io.inp.valid := True
       // END: FMAX debugging
       //--------
       rState := Divmod32State.RUNNING
@@ -2644,10 +2644,10 @@ case class SnowHouseCpuDivmod32(
       when (
         //--------
         // BEGIN: FMAX debugging
-        //divmod.io.outp.ready
+        divmod.io.outp.ready
         // END: FMAX debugging
         //--------
-        True
+        //True
       ) {
         rState := Divmod32State.YIELD_RESULT_PIPE_3
       }

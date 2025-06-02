@@ -126,18 +126,18 @@ case class SnowHousePipeStageInstrFetch(
   )
 
   when (up.isFiring) {
-      myInstrCnt.any := rPrevInstrCnt.any + 1
+    myInstrCnt.any := rPrevInstrCnt.any + 1
     when (rSavedExSetPc.fire) {
       rSavedExSetPc := rSavedExSetPc.getZero
       nextRegPcSetItCnt := 0x1
       nextRegPc := (
         rSavedExSetPc.nextPc //- (cfg.instrMainWidth / 8)
       )
-        myInstrCnt.jmp := rPrevInstrCnt.jmp + 1
+      myInstrCnt.jmp := rPrevInstrCnt.jmp + 1
     } otherwise {
       nextRegPcSetItCnt := 0x0
       nextRegPc := rPrevRegPc + (cfg.instrMainWidth / 8)
-        myInstrCnt.fwd := rPrevInstrCnt.fwd + 1
+      myInstrCnt.fwd := rPrevInstrCnt.fwd + 1
     }
   }
   io.ibus.nextValid := (
@@ -1888,7 +1888,10 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
             }
           }
         }
-        io.opIsMultiCycle := True
+        io.opIsMultiCycle := (
+          True
+          //False
+        )
         assert(
           opInfo.cond == CondKind.Always,
           s"not yet implemented: "
@@ -2385,7 +2388,7 @@ case class SnowHousePipeStageExecute(
   setOutpModMemWord.io.regPcPlusImm := outp.regPcPlusImm
   setOutpModMemWord.io.imm := outp.imm
   outp.decodeExt := setOutpModMemWord.io.decodeExt
-    outp.psExSetPc := psExSetPc
+  outp.psExSetPc := psExSetPc
   if (io.haveMultiCycleBusVec) {
     for (
       (multiCycleBus, busIdx) <- io.multiCycleBusVec.view.zipWithIndex
@@ -2766,8 +2769,8 @@ case class SnowHousePipeStageMem(
         Array.fill(2)(Node())
       },
       synchronous=(
-        //false
-        true
+        false
+        //true
       )
     )
   )
