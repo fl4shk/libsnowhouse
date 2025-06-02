@@ -106,7 +106,7 @@ case class SnowHousePipeStageInstrFetch(
 
   when (
     psExSetPc.fire
-    && !rSavedExSetPc.fire
+    //&& !rSavedExSetPc.fire
   ) {
     rSavedExSetPc := psExSetPc
   }
@@ -1283,9 +1283,7 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
               })
             }
             io.modMemWord(0) := (
-
               io.regPc + ((cfg.instrMainWidth / 8) * 1)
-
             )
             io.psExSetPc.valid := True
             when (
@@ -2273,16 +2271,20 @@ case class SnowHousePipeStageExecute(
   }
   if (cfg.irqCfg != None) {
     when (RegNext(io.idsIraIrq.nextValid)) {
-      setOutpModMemWord.io.takeIrq := RegNextWhen(
-        next=(
+      setOutpModMemWord.io.takeIrq := /*RegNextWhen*/(
+        //next=
+        (
           cMid0Front.up.isValid
-          && outp.takeIrq
           && (
+            outp.takeIrq
+          ) && (
             RegNextWhen(
               next=(setOutpModMemWord.nextIe/*(0)*/ === True),//0x0
               cond=cMid0Front.up.isFiring,
               init=False,
             )
+          ) && (
+            !setOutpModMemWord.io.shouldIgnoreInstr
           ) && (
             !rIrqHndlState//.valid
           ) && (
@@ -2292,8 +2294,8 @@ case class SnowHousePipeStageExecute(
               True
             )
           )
-        ),
-        cond=cMid0Front.up.isFiring
+        )
+        //cond=cMid0Front.up.isFiring
       )
     }
   }
@@ -2334,16 +2336,17 @@ case class SnowHousePipeStageExecute(
       )
     ) && (
       RegNextWhen(
-        next=(setOutpModMemWord.io.rIe/*(0)*/ === False),//0x0
+        next=(
+          setOutpModMemWord.io.rIe/*(0)*/ === False
+          //setOutpModMemWord.nextIe/*(0)*/ === False
+        ),//0x0
         cond=cMid0Front.up.isFiring,
         init=False,
       )
     )
   )
   if (cfg.irqCfg != None) {
-    when (
-      reEnableIrqsCond
-    ) {
+    when (reEnableIrqsCond) {
       setOutpModMemWord.nextIe/*(0)*/ := True//0x1
       rIrqHndlState/*.valid*/ := False
       if (setOutpModMemWord.io.haveRetIraState) {

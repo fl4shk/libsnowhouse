@@ -1098,9 +1098,7 @@ object SnowHouseCpuPipeStageInstrDecode {
           //doSetImm=false
         )
         //when (!rMultiCycleState) {
-          when (
-            cId.up.isFiring
-          ) {
+          when (cId.up.isFiring) {
             if (cfg.irqCfg != None) {
               upPayload.blockIrq := True
             }
@@ -2795,7 +2793,11 @@ case class SnowHouseCpuWithDualRam(
   } else {
     io.idsIraIrq.ready := True
     //cpu.io.idsIraIrq.nextValid := True
-    val cntWidth = 8
+    val cntWidth = (
+      8
+      //6
+      //4 
+    )
     val rIrqValidCnt = (
       Reg(UInt(cntWidth bits))
       init(U(cntWidth bits, default -> True))
