@@ -279,6 +279,7 @@ case class SnowHouseInstrDataDualRam(
       /*RegNext*/(dcache.io.bus.ready)
       //init(dcache.io.bus.ready.getZero)
     )
+    io.dbusExtraReady.addAttribute(KeepAttribute.keep)
     io.dbusExtraReady := dcache.io.busExtraReady
 
     //myRam.io.up << dcache.io.tlBus

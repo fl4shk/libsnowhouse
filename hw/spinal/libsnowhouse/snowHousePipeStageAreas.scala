@@ -755,12 +755,12 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
   io.opIsJmp := (
     io.psExSetPc.fire
   )
-  io.shouldIgnoreInstr := (
-    RegNext(
-      next=io.shouldIgnoreInstr,
-      init=io.shouldIgnoreInstr.getZero,
-    )
-  )
+  //io.shouldIgnoreInstr := (
+  //  RegNext(
+  //    next=io.shouldIgnoreInstr,
+  //    init=io.shouldIgnoreInstr.getZero,
+  //  )
+  //)
   io.pcChangeState := (
     RegNext(
       next=io.pcChangeState,
@@ -785,8 +785,9 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
       modMemWord := modMemWord.getZero
     })
   }
+  io.shouldIgnoreInstr := False
   when (!rShouldIgnoreInstrState) {
-    io.shouldIgnoreInstr := False
+    //io.shouldIgnoreInstr := False
     io.pcChangeState := False
     when (io.opIsJmp) {
       io.pcChangeState := True
@@ -796,7 +797,7 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
     }
   } otherwise {
     when (io.regPcSetItCnt =/= 0) {
-      io.shouldIgnoreInstr := False
+      //io.shouldIgnoreInstr := False
       when (io.opIsJmp) {
         io.pcChangeState := True
       } otherwise {

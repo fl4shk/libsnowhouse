@@ -413,6 +413,7 @@ case class SnowHouseCache(
     io.bus.recvData.setAsReg()
     io.bus.ready.setAsReg() init(False)
     io.busExtraReady.setAsReg() init(False)
+    io.busExtraReady.addAttribute(KeepAttribute.keep)
   }
   def doSetBusReadyEtc(
     someReady: Bool
