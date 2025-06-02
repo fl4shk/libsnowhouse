@@ -2705,9 +2705,15 @@ case class SnowHousePipeStageExecute(
         )
       })
     }
-    when (myDoStall.sFindFirst(_ === True)._1) {
+    //when (
+    //  //myDoStall.sFindFirst(_ === True)._1
+    //  PipeMemRmw.mySFindFirst[Bool](
+    //    myDoStall,
+    //    current => (current === True)
+    //  )._1
+    //) {
       cMid0Front.duplicateIt()
-    }
+    //}
   }
   if (cfg.optFormal) {
     outp.psExSetOutpModMemWordIo := setOutpModMemWord.io
