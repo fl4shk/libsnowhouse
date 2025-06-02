@@ -1261,7 +1261,7 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
               s"not yet implemented: "
               + s"opInfo(${opInfo}) index:${opInfoIdx}"
             )
-            when (!io.takeIrq) {
+            //when (!io.takeIrq) {
               if (opInfo.dstArr.size == 1) (
                 io.modMemWordValid.foreach(current => {
                   current := False
@@ -1278,11 +1278,11 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
                   io.modMemWordValid(idx) := !io.gprIsZeroVec(0)(idx)
                 }
               }
-            } otherwise {
-              io.modMemWordValid.foreach(current => {
-                current := False
-              })
-            }
+            //} otherwise {
+            //  io.modMemWordValid.foreach(current => {
+            //    current := False
+            //  })
+            //}
             io.modMemWord(0) := (
               io.regPc + ((cfg.instrMainWidth / 8) * 1)
             )
@@ -1975,6 +1975,9 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
     }
   }
   when (io.takeIrq) {
+    io.modMemWordValid.foreach(current => {
+      current := False
+    })
     nextIra := io.regPc
     nextIe/*(0)*/ := False //0x0
     io.psExSetPc.nextPc := (
