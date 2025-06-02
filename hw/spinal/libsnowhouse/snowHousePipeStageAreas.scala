@@ -777,7 +777,11 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
     )
   )
   nextShouldIgnoreInstrState := rShouldIgnoreInstrState
-  when (io.shouldIgnoreInstr) {
+  val lowerMyFanoutShouldIgnoreInstr = Bool()
+  when (
+    //io.shouldIgnoreInstr
+    lowerMyFanoutShouldIgnoreInstr
+  ) {
     io.modMemWordValid.foreach(current => {
       current := False
     })
@@ -786,6 +790,7 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
     })
   }
   io.shouldIgnoreInstr := False
+  lowerMyFanoutShouldIgnoreInstr := False
   when (!rShouldIgnoreInstrState) {
     //io.shouldIgnoreInstr := False
     io.pcChangeState := False
@@ -808,6 +813,7 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
       }
     } otherwise {
       io.pcChangeState := True
+      lowerMyFanoutShouldIgnoreInstr := True
       io.shouldIgnoreInstr := True
     }
   }
@@ -946,6 +952,9 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
   //if (cfg.allMainLdstUseGprPlusImm) {
   //  io.dbusHostPayload.addr := io.rdMemWord(1) + io.imm(1)
   //}
+  //io.modMemWordValid.foreach(current => {
+  //  current := True
+  //})
   def innerFunc(
     opInfo: OpInfo,
     opInfoIdx: Int,
@@ -1078,9 +1087,9 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
                       modMemWord := modMemWord.getZero
                     })
                   } else {
-                    io.modMemWordValid.foreach(current => {
-                      current := True
-                    })
+                    //io.modMemWordValid.foreach(current => {
+                    //  current := True
+                    //})
                     io.modMemWord(0) := selRdMemWord(0)
                   }
                   val tempSubKind = (
@@ -1288,7 +1297,8 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
             )
             io.psExSetPc.valid := True
             when (
-              !io.shouldIgnoreInstr
+              //!io.shouldIgnoreInstr
+              !lowerMyFanoutShouldIgnoreInstr
             ) {
               opInfo.srcArr(0) match {
                 case SrcKind.Gpr => {
@@ -1984,7 +1994,10 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
       io.rIds
     )
   }
-  when (io.shouldIgnoreInstr) {
+  when (
+    //io.shouldIgnoreInstr
+    lowerMyFanoutShouldIgnoreInstr
+  ) {
     io.opIs := 0x0
   }
 //  }

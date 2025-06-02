@@ -822,7 +822,9 @@ extends SpinalEnum(defaultEncoding=binarySequential) {
 case class SnowHouseSplitOp(
   cfg: SnowHouseConfig
 ) extends Bundle {
-  val kind = SnowHouseSplitOpKind(binaryOneHot)
+  val kind = SnowHouseSplitOpKind(
+    //binaryOneHot
+  )
   val cpyCpyuiOp = /*Flow*/(
     UInt(log2Up(cfg.cpyCpyuiOpInfoMap.size) bits)
   )
