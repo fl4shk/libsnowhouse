@@ -3211,13 +3211,13 @@ case class SnowHousePipeStageMem(
       //when (midModPayload(extIdxUp).gprIsZeroVec(0)) {
       //} otherwise {
       //}
-      myCurrExt.modMemWordValid.foreach(current => {
-        current := (
-          // TODO: support more destination GPRs
-          //!midModPayload(extIdxUp).gprIsZeroVec(0)
-          True
-        )
-      })
+      //myCurrExt.modMemWordValid.foreach(current => {
+      //  current := (
+      //    // TODO: support more destination GPRs
+      //    //!midModPayload(extIdxUp).gprIsZeroVec(0)
+      //    True
+      //  )
+      //})
       if (cfg.optFormal) {
         assume(
           myDecodeExt.memAccessKind.asBits.asUInt
@@ -3264,6 +3264,13 @@ case class SnowHousePipeStageMem(
     )
     //} otherwise {
     //}
+    myCurrExt.modMemWordValid.foreach(current => {
+      current := (
+        // TODO: support more destination GPRs
+        //!midModPayload(extIdxUp).gprIsZeroVec(0)
+        True
+      )
+    })
   }
 
   def setMidModStages(): Unit = {
