@@ -1303,7 +1303,10 @@ object SnowHouseCpuOpInfoMap {
     SnowHouseCpuOp.LslReserved -> OpInfo.mkAlu(
       dstArr=Array[DstKind](DstKind.Gpr),
       srcArr=Array[SrcKind](SrcKind.Gpr, SrcKind.Gpr),
-      aluOp=AluOpKind.Lsl,
+      aluOp=(
+        //AluOpKind.Lsl
+        AluOpKind.Add
+      ),
     )
   )
   opInfoMap += (
@@ -1319,7 +1322,10 @@ object SnowHouseCpuOpInfoMap {
     SnowHouseCpuOp.LsrReserved -> OpInfo.mkAlu(
       dstArr=Array[DstKind](DstKind.Gpr),
       srcArr=Array[SrcKind](SrcKind.Gpr, SrcKind.Gpr),
-      aluOp=AluOpKind.Lsr,
+      aluOp=(
+        //AluOpKind.Lsr
+        AluOpKind.Add
+      ),
     )
   )
   opInfoMap += (
@@ -1335,7 +1341,10 @@ object SnowHouseCpuOpInfoMap {
     SnowHouseCpuOp.AsrReserved -> OpInfo.mkAlu(
       dstArr=Array[DstKind](DstKind.Gpr),
       srcArr=Array[SrcKind](SrcKind.Gpr, SrcKind.Gpr),
-      aluOp=AluOpKind.Asr,
+      aluOp=(
+        //AluOpKind.Asr
+        AluOpKind.Add
+      ),
     )
   )
   opInfoMap += (
@@ -1699,10 +1708,7 @@ object SnowHouseCpuOpInfoMap {
         SrcKind.Gpr, SrcKind.Gpr, SrcKind.Imm(/*Some(true)*/)
       ),
       cpyOp=CpyOpKind.Br,
-      cond=(
-        //CondKind.Lts,
-        CondKind.Ltu,
-      )
+      cond=CondKind.Lts
     )
   )
   opInfoMap += (
@@ -1713,10 +1719,7 @@ object SnowHouseCpuOpInfoMap {
         SrcKind.Gpr, SrcKind.Gpr, SrcKind.Imm(/*Some(true)*/)
       ),
       cpyOp=CpyOpKind.Br,
-      cond=(
-        //CondKind.Ges,
-        CondKind.Geu,
-      )
+      cond=CondKind.Ges
     )
   )
   opInfoMap += (
