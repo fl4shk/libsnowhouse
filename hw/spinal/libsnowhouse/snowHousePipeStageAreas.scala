@@ -1275,17 +1275,15 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
                 io.modMemWordValid.foreach(current => {
                   current := False
                 })
-              ) else if (
-                opInfo.dstArr(1) == DstKind.Spr(SprKind.Ie)
-              ) {
+              ) else if (opInfo.dstArr(1) == DstKind.Spr(SprKind.Ie)) {
                 io.modMemWordValid.foreach(current => {
                   current := False
                 })
               } else {
                 // TODO: *maybe* support more outputs
-                for (idx <- 0 until io.modMemWordValid.size) {
-                  io.modMemWordValid(idx) := !io.gprIsZeroVec(0)(idx)
-                }
+                //for (idx <- 0 until io.modMemWordValid.size) {
+                //  io.modMemWordValid(idx) := !io.gprIsZeroVec(0)(idx)
+                //}
               }
             //} otherwise {
             //  io.modMemWordValid.foreach(current => {
@@ -2448,33 +2446,40 @@ case class SnowHousePipeStageExecute(
     temp.init(temp.getZero)
     temp
   }
+  val tempTakeIrq = (
+    cfg.irqCfg != None
+  ) generate (
+    //(
+    //  cMid0Front.up.isValid
+    //) && (
+    //  outp.takeIrq
+    //) && (
+    //  RegNextWhen(
+    //    next=(setOutpModMemWord.nextIe/*(0)*/ === True),//0x0
+    //    cond=cMid0Front.up.isFiring,
+    //    init=False,
+    //  )
+    //  //setOutpModMemWord.nextIe/*(0)*/ === True
+    //) && (
+    //  !setOutpModMemWord.io.shouldIgnoreInstr
+    //) && (
+    //  !rIrqHndlState//.valid
+    //) && (
+    //  if (setOutpModMemWord.io.haveRetIraState) (
+    //    !setOutpModMemWord.io.rHadRetIra
+    //  ) else (
+    //    True
+    //  )
+    //)
+    False
+  )
   if (cfg.irqCfg != None) {
     when (RegNext(io.idsIraIrq.nextValid)) {
       setOutpModMemWord.io.takeIrq := /*RegNextWhen*/(
-        //next=
-        (
-          cMid0Front.up.isValid
-          && (
-            outp.takeIrq
-          ) && (
-            RegNextWhen(
-              next=(setOutpModMemWord.nextIe/*(0)*/ === True),//0x0
-              cond=cMid0Front.up.isFiring,
-              init=False,
-            )
-          ) && (
-            !setOutpModMemWord.io.shouldIgnoreInstr
-          ) && (
-            !rIrqHndlState//.valid
-          ) && (
-            if (setOutpModMemWord.io.haveRetIraState) (
-              !setOutpModMemWord.io.rHadRetIra
-            ) else (
-              True
-            )
-          )
-        )
-        //cond=cMid0Front.up.isFiring
+        tempTakeIrq
+        //next=tempTakeIrq,
+        //cond=cMid0Front.up.isFiring,
+        //init=False,
       )
     }
   }
@@ -2482,7 +2487,13 @@ case class SnowHousePipeStageExecute(
     cfg.irqCfg != None
   ) generate (
     cMid0Front.up.isFiring
-    && setOutpModMemWord.io.takeIrq
+    && 
+    setOutpModMemWord.io.takeIrq
+    //RegNextWhen(
+    //  next=tempTakeIrq,
+    //  cond=cMid0Front.up.isFiring,
+    //  init=False,
+    //)
   )
   if (cfg.irqCfg != None) {
     when (nextTempIrqCond) {
@@ -2542,6 +2553,7 @@ case class SnowHousePipeStageExecute(
     //init(SnowHouseSplitOpKind.CPY_CPYUI)
   )
   when (cMid0Front.up.isValid) {
+    setOutpModMemWord.io.splitOp := outp.splitOp
     when (!setOutpModMemWord.io.takeIrq) {
       setOutpModMemWord.io.splitOp := outp.splitOp
     } otherwise {
