@@ -1371,10 +1371,39 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
                     s"not yet implemented: "
                     + s"opInfo(${opInfo}) index:${opInfoIdx}"
                   )
-                  io.psExSetPc.valid := (
-                    io.rdMemWord(io.brCondIdx(0))
-                    === io.rdMemWord(io.brCondIdx(1))
-                  )
+                  io.psExSetPc.valid := {
+                    //io.rdMemWord(io.brCondIdx(0))
+                    //=== io.rdMemWord(io.brCondIdx(1))
+                    val q = Bool()
+                    val unusedSumOut = UInt(cfg.mainWidth bits)
+                    (
+                      q,
+                      unusedSumOut
+                    ) := (
+                      (
+                        Cat(
+                          False,
+                          (
+                            io.rdMemWord(io.brCondIdx(0))
+                            ^ (
+                              ~io.rdMemWord(io.brCondIdx(1))
+                            )
+                          )
+                        ).asUInt
+                      ) + (
+                        Cat(
+                          U{
+                            val myWidth = (
+                              io.rdMemWord(io.brCondIdx(0)).getWidth
+                            )
+                            f"${myWidth}'d0"
+                          },
+                          True
+                        ).asUInt
+                      )
+                    )
+                    q
+                  }
                 }
               }
               case CondKind.Ne => {
@@ -1392,10 +1421,39 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
                     s"not yet implemented: "
                     + s"opInfo(${opInfo}) index:${opInfoIdx}"
                   )
-                  io.psExSetPc.valid := (
-                    io.rdMemWord(io.brCondIdx(0))
-                    =/= io.rdMemWord(io.brCondIdx(1))
-                  )
+                  io.psExSetPc.valid := {
+                    //io.rdMemWord(io.brCondIdx(0))
+                    //=/= io.rdMemWord(io.brCondIdx(1))
+                    val q = Bool()
+                    val unusedSumOut = UInt(cfg.mainWidth bits)
+                    (
+                      q,
+                      unusedSumOut
+                    ) := (
+                      (
+                        Cat(
+                          False,
+                          (
+                            io.rdMemWord(io.brCondIdx(0))
+                            ^ (
+                              ~io.rdMemWord(io.brCondIdx(1))
+                            )
+                          )
+                        ).asUInt
+                      ) + (
+                        Cat(
+                          U{
+                            val myWidth = (
+                              io.rdMemWord(io.brCondIdx(0)).getWidth
+                            )
+                            f"${myWidth}'d0"
+                          },
+                          True
+                        ).asUInt
+                      )
+                    )
+                    (!q)
+                  }
                 }
               }
               case CondKind.Mi => {
@@ -1433,10 +1491,34 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
                     s"not yet implemented: "
                     + s"opInfo(${opInfo}) index:${opInfoIdx}"
                   )
-                  io.psExSetPc.valid := (
-                    io.rdMemWord(io.brCondIdx(0))
-                    >= io.rdMemWord(io.brCondIdx(1))
-                  )
+                  io.psExSetPc.valid := {
+                    //io.rdMemWord(io.brCondIdx(0))
+                    //>= io.rdMemWord(io.brCondIdx(1))
+                    //(
+                    //  Cat(False, io.rdMemWord(io.brCondIdx(0))).asUInt
+                    //  + Cat(False, ~io.rdMemWord(io.brCondIdx(1))).asUInt
+                    //  + Cat(
+                    //    U{
+                    //      val myWidth = (
+                    //        io.rdMemWord(io.brCondIdx(0)).getWidth
+                    //      )
+                    //      f"${myWidth}'d0"
+                    //    },
+                    //    True
+                    //  ).asUInt
+                    //).msb
+                    val myBinop = AluOpKind.Sub.binopFunc(
+                      cfg=cfg,
+                      left=io.rdMemWord(io.brCondIdx(0)),
+                      right=io.rdMemWord(io.brCondIdx(1)),
+                      carry=(
+                        False
+                      )
+                    )(
+                      width=cfg.mainWidth
+                    )
+                    myBinop.flagC
+                  }
                 }
               }
               case CondKind.Ltu => {
@@ -1454,10 +1536,21 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
                     s"not yet implemented: "
                     + s"opInfo(${opInfo}) index:${opInfoIdx}"
                   )
-                  io.psExSetPc.valid := (
-                    io.rdMemWord(io.brCondIdx(0))
-                    < io.rdMemWord(io.brCondIdx(1))
-                  )
+                  io.psExSetPc.valid := {
+                    //io.rdMemWord(io.brCondIdx(0))
+                    //< io.rdMemWord(io.brCondIdx(1))
+                    val myBinop = AluOpKind.Sub.binopFunc(
+                      cfg=cfg,
+                      left=io.rdMemWord(io.brCondIdx(0)),
+                      right=io.rdMemWord(io.brCondIdx(1)),
+                      carry=(
+                        False
+                      )
+                    )(
+                      width=cfg.mainWidth
+                    )
+                    (!myBinop.flagC)
+                  }
                 }
               }
               case CondKind.Gtu => {
@@ -1475,10 +1568,22 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
                     s"not yet implemented: "
                     + s"opInfo(${opInfo}) index:${opInfoIdx}"
                   )
-                  io.psExSetPc.valid := (
-                    io.rdMemWord(io.brCondIdx(0))
-                    > io.rdMemWord(io.brCondIdx(1))
-                  )
+                  io.psExSetPc.valid := {
+                    //io.rdMemWord(io.brCondIdx(0))
+                    //> io.rdMemWord(io.brCondIdx(1))
+                    val myBinop = AluOpKind.Sub.binopFunc(
+                      cfg=cfg,
+                      left=io.rdMemWord(io.brCondIdx(0)),
+                      right=io.rdMemWord(io.brCondIdx(1)),
+                      carry=(
+                        False
+                      )
+                    )(
+                      width=cfg.mainWidth
+                    )
+
+                    (myBinop.flagC && !myBinop.flagZ)
+                  }
                 }
               }
               case CondKind.Leu => {
@@ -1496,10 +1601,21 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
                     s"not yet implemented: "
                     + s"opInfo(${opInfo}) index:${opInfoIdx}"
                   )
-                  io.psExSetPc.valid := (
-                    io.rdMemWord(io.brCondIdx(0))
-                    <= io.rdMemWord(io.brCondIdx(1))
-                  )
+                  io.psExSetPc.valid := {
+                    //io.rdMemWord(io.brCondIdx(0))
+                    //<= io.rdMemWord(io.brCondIdx(1))
+                    val myBinop = AluOpKind.Sub.binopFunc(
+                      cfg=cfg,
+                      left=io.rdMemWord(io.brCondIdx(0)),
+                      right=io.rdMemWord(io.brCondIdx(1)),
+                      carry=(
+                        False
+                      )
+                    )(
+                      width=cfg.mainWidth
+                    )
+                    (!myBinop.flagC || myBinop.flagZ)
+                  }
                 }
               }
               case CondKind.Ges => {
@@ -1517,10 +1633,21 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
                     s"not yet implemented: "
                     + s"opInfo(${opInfo}) index:${opInfoIdx}"
                   )
-                  io.psExSetPc.valid := (
-                    io.rdMemWord(io.brCondIdx(0)).asSInt
-                    >= io.rdMemWord(io.brCondIdx(1)).asSInt
-                  )
+                  io.psExSetPc.valid := {
+                    //io.rdMemWord(io.brCondIdx(0)).asSInt
+                    //>= io.rdMemWord(io.brCondIdx(1)).asSInt
+                    val myBinop = AluOpKind.Sub.binopFunc(
+                      cfg=cfg,
+                      left=io.rdMemWord(io.brCondIdx(0)),
+                      right=io.rdMemWord(io.brCondIdx(1)),
+                      carry=(
+                        False
+                      )
+                    )(
+                      width=cfg.mainWidth
+                    )
+                    !(myBinop.flagN ^ myBinop.flagV)
+                  }
                 }
               }
               case CondKind.Lts => {
@@ -1538,10 +1665,21 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
                     s"not yet implemented: "
                     + s"opInfo(${opInfo}) index:${opInfoIdx}"
                   )
-                  io.psExSetPc.valid := (
-                    io.rdMemWord(io.brCondIdx(0)).asSInt
-                    < io.rdMemWord(io.brCondIdx(1)).asSInt
-                  )
+                  io.psExSetPc.valid := {
+                    //io.rdMemWord(io.brCondIdx(0)).asSInt
+                    //< io.rdMemWord(io.brCondIdx(1)).asSInt
+                    val myBinop = AluOpKind.Sub.binopFunc(
+                      cfg=cfg,
+                      left=io.rdMemWord(io.brCondIdx(0)),
+                      right=io.rdMemWord(io.brCondIdx(1)),
+                      carry=(
+                        False
+                      )
+                    )(
+                      width=cfg.mainWidth
+                    )
+                    (myBinop.flagN ^ myBinop.flagV)
+                  }
                 }
               }
               case CondKind.Gts => {
@@ -1559,10 +1697,21 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
                     s"not yet implemented: "
                     + s"opInfo(${opInfo}) index:${opInfoIdx}"
                   )
-                  io.psExSetPc.valid := (
-                    io.rdMemWord(io.brCondIdx(0)).asSInt
-                    > io.rdMemWord(io.brCondIdx(1)).asSInt
-                  )
+                  io.psExSetPc.valid := {
+                    //io.rdMemWord(io.brCondIdx(0)).asSInt
+                    //> io.rdMemWord(io.brCondIdx(1)).asSInt
+                    val myBinop = AluOpKind.Sub.binopFunc(
+                      cfg=cfg,
+                      left=io.rdMemWord(io.brCondIdx(0)),
+                      right=io.rdMemWord(io.brCondIdx(1)),
+                      carry=(
+                        False
+                      )
+                    )(
+                      width=cfg.mainWidth
+                    )
+                    ((!(myBinop.flagN ^ myBinop.flagV)) & !myBinop.flagZ)
+                  }
                 }
               }
               case CondKind.Les => {
@@ -1580,10 +1729,21 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
                     s"not yet implemented: "
                     + s"opInfo(${opInfo}) index:${opInfoIdx}"
                   )
-                  io.psExSetPc.valid := (
-                    io.rdMemWord(io.brCondIdx(0)).asSInt
-                    <= io.rdMemWord(io.brCondIdx(1)).asSInt
-                  )
+                  io.psExSetPc.valid := {
+                    //io.rdMemWord(io.brCondIdx(0)).asSInt
+                    //<= io.rdMemWord(io.brCondIdx(1)).asSInt
+                    val myBinop = AluOpKind.Sub.binopFunc(
+                      cfg=cfg,
+                      left=io.rdMemWord(io.brCondIdx(0)),
+                      right=io.rdMemWord(io.brCondIdx(1)),
+                      carry=(
+                        False
+                      )
+                    )(
+                      width=cfg.mainWidth
+                    )
+                    ((myBinop.flagN ^ myBinop.flagV) | myBinop.flagZ)
+                  }
                 }
               }
               case CondKind.Z => {
@@ -1593,7 +1753,8 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
                   + s"opInfo(${opInfo}) index:${opInfoIdx}"
                 )
                 io.psExSetPc.valid := (
-                  io.rdMemWord(io.brCondIdx(0)) === 0
+                  //io.rdMemWord(io.brCondIdx(0)) === 0
+                  !(io.rdMemWord(io.brCondIdx(0)).orR)
                 )
               }
               case CondKind.Nz => {
@@ -1603,7 +1764,8 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
                   + s"opInfo(${opInfo}) index:${opInfoIdx}"
                 )
                 io.psExSetPc.valid := (
-                  io.rdMemWord(io.brCondIdx(0)) =/= 0
+                  //io.rdMemWord(io.brCondIdx(0)) =/= 0
+                  io.rdMemWord(io.brCondIdx(0)).orR
                 )
               }
               case _ => {

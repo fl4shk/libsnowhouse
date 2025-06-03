@@ -1699,7 +1699,10 @@ object SnowHouseCpuOpInfoMap {
         SrcKind.Gpr, SrcKind.Gpr, SrcKind.Imm(/*Some(true)*/)
       ),
       cpyOp=CpyOpKind.Br,
-      cond=CondKind.Lts
+      cond=(
+        //CondKind.Lts,
+        CondKind.Ltu,
+      )
     )
   )
   opInfoMap += (
@@ -1710,7 +1713,10 @@ object SnowHouseCpuOpInfoMap {
         SrcKind.Gpr, SrcKind.Gpr, SrcKind.Imm(/*Some(true)*/)
       ),
       cpyOp=CpyOpKind.Br,
-      cond=CondKind.Ges
+      cond=(
+        //CondKind.Ges,
+        CondKind.Geu,
+      )
     )
   )
   opInfoMap += (
