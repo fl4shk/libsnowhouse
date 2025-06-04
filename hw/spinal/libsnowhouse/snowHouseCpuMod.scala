@@ -636,7 +636,7 @@ object SnowHouseCpuPipeStageInstrDecode {
               //upPayload.op := opInfoIdx
               //mySplitOp.aluOp.valid := True
               mySplitOp.kind := SnowHouseSplitOpKind.ALU
-              mySplitOp.aluOp := aluOpInfoIdx
+              mySplitOp.aluOp := (1 << aluOpInfoIdx)
               //return
               found = true
             }
