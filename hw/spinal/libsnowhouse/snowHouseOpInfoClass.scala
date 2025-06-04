@@ -378,17 +378,6 @@ class OpInfo(
               }
             }
           }
-          //if (memAccess != validArgs.memAccess) {
-          //  found = false
-          //}
-          //if (addrCalc != validArgs.addrCalc) {
-          //  found = false
-          //}
-          //if (found) {
-          //  if (validArgs.cond.size == 0) {
-          //    
-          //  }
-          //}
           found
         } else {
           false
@@ -414,6 +403,7 @@ class OpInfo(
   //private[libsnowhouse] var _select: OpSelect = null
   private[libsnowhouse] var _cpyOp: CpyOpKind = null
   private[libsnowhouse] var _aluOp: AluOpKind = null
+  private[libsnowhouse] var _aluShiftOp: AluShiftOpKind = null
   private[libsnowhouse] var _multiCycleOp: MultiCycleOpKind = null
   //private[libsnowhouse] var _multiCycleArea: Area = null
   //private[libsnowhouse] var _loadOp: LoadOpKind = null
@@ -438,6 +428,17 @@ class OpInfo(
     if (select == OpSelect.Alu) {
       if (_aluOp != null) {
         Some(_aluOp)
+      } else {
+        None
+      }
+    } else {
+      None
+    }
+  )
+  def aluShiftOp: Option[AluShiftOpKind] = (
+    if (select == OpSelect.AluShift) {
+      if (_aluShiftOp != null) {
+        Some(_aluShiftOp)
       } else {
         None
       }
@@ -522,6 +523,21 @@ object OpInfo {
     ret._aluOp = aluOp
     ret
   }
+  def mkAluShift(
+    dstArr: Seq[DstKind],
+    srcArr: Seq[SrcKind],
+    aluShiftOp: AluShiftOpKind,
+    cond: CondKind=CondKind.Always,
+  ): OpInfo = {
+    val ret = new OpInfo(
+      dstArr=dstArr,
+      srcArr=srcArr,
+      select=OpSelect.AluShift,
+      cond=cond
+    )
+    ret._aluShiftOp = aluShiftOp
+    ret
+  }
   def mkMultiCycle(
     dstArr: Seq[DstKind],
     srcArr: Seq[SrcKind],
@@ -600,7 +616,8 @@ object OpSelect {
   //--------
   // "jump"/"branch"/"move"/"load immediate" operation
   case object Cpy extends OpSelect 
-  case object Alu extends OpSelect // just an ALU operation
+  case object Alu extends OpSelect // just an ALU operation (non-bitshift)
+  case object AluShift extends OpSelect // ALU operation: bit-shift
   case object MultiCycle extends OpSelect
   //case object Load extends OpSelect
   //case object Store extends OpSelect
@@ -1372,185 +1389,6 @@ object AluOpKind {
   }
   //--------
   //case object Cpy extends AluOpKind // "move"/"load immediate" instruction
-  case object Lsl extends AluOpKind {
-    // logical shift left
-    private[libsnowhouse] val _validArgsSet = LinkedHashSet[
-      OpKindValidArgs
-    ](
-      //minD=1, maxD=1, minS=2, maxS=2
-      OpKindValidArgs(
-        // word
-        //dstSize=1, srcSize=2
-        dst=Array[HashSet[DstKind]](
-          HashSet(DstKind.Gpr),
-        ),
-        src=Array[HashSet[SrcKind]](
-          HashSet(SrcKind.Gpr, SrcKind.Pc),
-          HashSet(SrcKind.Gpr, SrcKind.Pc, SrcKind.Imm(/*Some(false)*/)),
-        ),
-        cond=HashSet[CondKind](
-          CondKind.Always
-        ),
-      ),
-      //OpKindNumArgs(dst=2, src=4),  // two-word
-      OpKindValidArgs(
-        // word, with output flags
-        //dstSize=2,
-        //srcSize=2,
-        dst=Array[HashSet[DstKind]](
-          //HashSet(DstKind.AluFlags),
-          HashSet(DstKind.Gpr),
-        ),
-        src=Array[HashSet[SrcKind]](
-          HashSet(SrcKind.Gpr, SrcKind.Pc),
-          HashSet(SrcKind.Gpr, SrcKind.Pc, SrcKind.Imm(/*Some(false)*/)),
-        ),
-        cond=HashSet[CondKind](
-          CondKind.Always
-        ),
-      ),
-      //OpKindNumArgs(                // two-word, with flags
-      //  dst=2,
-      //  src=4,
-      //  optExtraDstKind=Some(DstKind.AluFlags),
-      //),
-    )
-    def validArgsSet = _validArgsSet
-    def binopFunc(
-      cfg: SnowHouseConfig, left: UInt, right: UInt, carry: Bool
-    )(
-      width: Int=cfg.mainWidth
-    ) = {
-      val ret = InstrResult(cfg=cfg)(width=width)
-      val tempLeft = Cat(left).asUInt(width - 1 downto 0)
-      val tempRight = Cat(right).asUInt(width - 1 downto 0)
-      ret.leftMsb := left(width - 1)
-      ret.rightMsb := right(width - 1)
-      ret.main := (
-        tempLeft << tempRight(log2Up(width) downto 0)
-      ).resized//(ret.main.bitsRange)
-      ret.flagV := False
-      ret.flagC := False
-      ret
-    }
-  }
-  case object Lsr extends AluOpKind {
-    // logical shift right
-    private[libsnowhouse] val _validArgsSet = LinkedHashSet[
-      OpKindValidArgs
-    ](
-      //minD=1, maxD=1, minS=2, maxS=2
-      OpKindValidArgs(
-        // word
-        //dstSize=1, srcSize=2
-        dst=Array[HashSet[DstKind]](
-          HashSet(DstKind.Gpr),
-        ),
-        src=Array[HashSet[SrcKind]](
-          HashSet(SrcKind.Gpr, SrcKind.Pc),
-          HashSet(SrcKind.Gpr, SrcKind.Pc, SrcKind.Imm(/*Some(false)*/)),
-        ),
-        cond=HashSet[CondKind](
-          CondKind.Always
-        ),
-      ),
-      //OpKindNumArgs(dst=2, src=4),  // two-word
-      OpKindValidArgs(
-        // word, with output flags
-        //dstSize=2,
-        //srcSize=2,
-        dst=Array[HashSet[DstKind]](
-          HashSet(DstKind.AluFlags),
-          HashSet(DstKind.Gpr),
-        ),
-        src=Array[HashSet[SrcKind]](
-          HashSet(SrcKind.Gpr, SrcKind.Pc),
-          HashSet(SrcKind.Gpr, SrcKind.Pc, SrcKind.Imm(/*Some(false)*/)),
-        ),
-        cond=HashSet[CondKind](
-          CondKind.Always
-        ),
-      ),
-      //OpKindNumArgs(                // two-word, with flags
-      //  dst=2,
-      //  src=4,
-      //  optExtraDstKind=Some(DstKind.AluFlags),
-      //),
-    )
-    def validArgsSet = _validArgsSet
-    def binopFunc(
-      cfg: SnowHouseConfig, left: UInt, right: UInt, carry: Bool
-    )(
-      width: Int=cfg.mainWidth
-    ) = {
-      val ret = InstrResult(cfg=cfg)(width=width)
-      val tempLeft = Cat(left).asUInt(width - 1 downto 0)
-      val tempRight = Cat(right).asUInt(width - 1 downto 0)
-      ret.leftMsb := left(width - 1)
-      ret.rightMsb := right(width - 1)
-      ret.main := (
-        tempLeft >> tempRight//(log2Up(cfg.mainWidth) downto 0)
-      ).resized
-      ret.flagV := False
-      ret.flagC := False
-      ret
-    }
-  }
-  case object Asr extends AluOpKind {
-    private[libsnowhouse] val _validArgsSet = LinkedHashSet[
-      OpKindValidArgs
-    ](
-      //minD=1, maxD=1, minS=2, maxS=2
-      OpKindValidArgs(
-        //dstSize=1, srcSize=2
-        dst=Array[HashSet[DstKind]](
-          HashSet(DstKind.Gpr),
-        ),
-        src=Array[HashSet[SrcKind]](
-          HashSet(SrcKind.Gpr, SrcKind.Pc),
-          HashSet(SrcKind.Gpr, SrcKind.Pc, SrcKind.Imm(/*Some(false)*/)),
-        ),
-        cond=HashSet[CondKind](
-          CondKind.Always
-        ),
-      ),  // word
-      ////OpKindNumArgs(dst=2, src=4),  // two-word
-      OpKindValidArgs(
-        // word, with output flags
-        //dstSize=2,
-        //srcSize=2,
-        dst=Array[HashSet[DstKind]](
-          HashSet(DstKind.AluFlags),
-          HashSet(DstKind.Gpr),
-        ),
-        src=Array[HashSet[SrcKind]](
-          HashSet(SrcKind.Gpr, SrcKind.Pc),
-          HashSet(SrcKind.Gpr, SrcKind.Pc, SrcKind.Imm(/*Some(false)*/)),
-        ),
-        cond=HashSet[CondKind](
-          CondKind.Always
-        ),
-      ),
-    )
-    def validArgsSet = _validArgsSet
-    def binopFunc(
-      cfg: SnowHouseConfig, left: UInt, right: UInt, carry: Bool
-    )(
-      width: Int=cfg.mainWidth
-    ) = {
-      val ret = InstrResult(cfg=cfg)(width=width)
-      val tempLeft = Cat(left).asUInt(width - 1 downto 0)
-      val tempRight = Cat(right).asUInt(width - 1 downto 0)
-      ret.leftMsb := left(width - 1)
-      ret.rightMsb := right(width - 1)
-      ret.main := (
-        tempLeft.asSInt >> tempRight//(log2Up(cfg.mainWidth) downto 0)
-      ).asUInt.resized
-      ret.flagV := False
-      ret.flagC := False
-      ret
-    }
-  }
   case object And extends AluOpKind {
     private[libsnowhouse] val _validArgsSet = LinkedHashSet[
       OpKindValidArgs
@@ -1813,6 +1651,197 @@ object AluOpKind {
   }
   //--------
   //--------
+}
+sealed trait AluShiftOpKind extends OpKindBase {
+  def binopFunc(
+    cfg: SnowHouseConfig,
+    left: UInt,
+    right: UInt,
+    carry: Bool,
+  )(
+    width: Int=cfg.mainWidth,
+  ): InstrResult
+}
+object AluShiftOpKind {
+  case object Lsl extends AluShiftOpKind {
+    // logical shift left
+    private[libsnowhouse] val _validArgsSet = LinkedHashSet[
+      OpKindValidArgs
+    ](
+      //minD=1, maxD=1, minS=2, maxS=2
+      OpKindValidArgs(
+        // word
+        //dstSize=1, srcSize=2
+        dst=Array[HashSet[DstKind]](
+          HashSet(DstKind.Gpr),
+        ),
+        src=Array[HashSet[SrcKind]](
+          HashSet(SrcKind.Gpr, SrcKind.Pc),
+          HashSet(SrcKind.Gpr, SrcKind.Pc, SrcKind.Imm(/*Some(false)*/)),
+        ),
+        cond=HashSet[CondKind](
+          CondKind.Always
+        ),
+      ),
+      //OpKindNumArgs(dst=2, src=4),  // two-word
+      OpKindValidArgs(
+        // word, with output flags
+        //dstSize=2,
+        //srcSize=2,
+        dst=Array[HashSet[DstKind]](
+          //HashSet(DstKind.AluFlags),
+          HashSet(DstKind.Gpr),
+        ),
+        src=Array[HashSet[SrcKind]](
+          HashSet(SrcKind.Gpr, SrcKind.Pc),
+          HashSet(SrcKind.Gpr, SrcKind.Pc, SrcKind.Imm(/*Some(false)*/)),
+        ),
+        cond=HashSet[CondKind](
+          CondKind.Always
+        ),
+      ),
+      //OpKindNumArgs(                // two-word, with flags
+      //  dst=2,
+      //  src=4,
+      //  optExtraDstKind=Some(DstKind.AluFlags),
+      //),
+    )
+    def validArgsSet = _validArgsSet
+    def binopFunc(
+      cfg: SnowHouseConfig, left: UInt, right: UInt, carry: Bool
+    )(
+      width: Int=cfg.mainWidth
+    ) = {
+      val ret = InstrResult(cfg=cfg)(width=width)
+      val tempLeft = Cat(left).asUInt(width - 1 downto 0)
+      val tempRight = Cat(right).asUInt(width - 1 downto 0)
+      ret.leftMsb := left(width - 1)
+      ret.rightMsb := right(width - 1)
+      ret.main := (
+        tempLeft << tempRight(log2Up(width) downto 0)
+      ).resized//(ret.main.bitsRange)
+      ret.flagV := False
+      ret.flagC := False
+      ret
+    }
+  }
+  case object Lsr extends AluShiftOpKind {
+    // logical shift right
+    private[libsnowhouse] val _validArgsSet = LinkedHashSet[
+      OpKindValidArgs
+    ](
+      //minD=1, maxD=1, minS=2, maxS=2
+      OpKindValidArgs(
+        // word
+        //dstSize=1, srcSize=2
+        dst=Array[HashSet[DstKind]](
+          HashSet(DstKind.Gpr),
+        ),
+        src=Array[HashSet[SrcKind]](
+          HashSet(SrcKind.Gpr, SrcKind.Pc),
+          HashSet(SrcKind.Gpr, SrcKind.Pc, SrcKind.Imm(/*Some(false)*/)),
+        ),
+        cond=HashSet[CondKind](
+          CondKind.Always
+        ),
+      ),
+      //OpKindNumArgs(dst=2, src=4),  // two-word
+      OpKindValidArgs(
+        // word, with output flags
+        //dstSize=2,
+        //srcSize=2,
+        dst=Array[HashSet[DstKind]](
+          HashSet(DstKind.AluFlags),
+          HashSet(DstKind.Gpr),
+        ),
+        src=Array[HashSet[SrcKind]](
+          HashSet(SrcKind.Gpr, SrcKind.Pc),
+          HashSet(SrcKind.Gpr, SrcKind.Pc, SrcKind.Imm(/*Some(false)*/)),
+        ),
+        cond=HashSet[CondKind](
+          CondKind.Always
+        ),
+      ),
+      //OpKindNumArgs(                // two-word, with flags
+      //  dst=2,
+      //  src=4,
+      //  optExtraDstKind=Some(DstKind.AluFlags),
+      //),
+    )
+    def validArgsSet = _validArgsSet
+    def binopFunc(
+      cfg: SnowHouseConfig, left: UInt, right: UInt, carry: Bool
+    )(
+      width: Int=cfg.mainWidth
+    ) = {
+      val ret = InstrResult(cfg=cfg)(width=width)
+      val tempLeft = Cat(left).asUInt(width - 1 downto 0)
+      val tempRight = Cat(right).asUInt(width - 1 downto 0)
+      ret.leftMsb := left(width - 1)
+      ret.rightMsb := right(width - 1)
+      ret.main := (
+        tempLeft >> tempRight//(log2Up(cfg.mainWidth) downto 0)
+      ).resized
+      ret.flagV := False
+      ret.flagC := False
+      ret
+    }
+  }
+  case object Asr extends AluShiftOpKind {
+    private[libsnowhouse] val _validArgsSet = LinkedHashSet[
+      OpKindValidArgs
+    ](
+      //minD=1, maxD=1, minS=2, maxS=2
+      OpKindValidArgs(
+        //dstSize=1, srcSize=2
+        dst=Array[HashSet[DstKind]](
+          HashSet(DstKind.Gpr),
+        ),
+        src=Array[HashSet[SrcKind]](
+          HashSet(SrcKind.Gpr, SrcKind.Pc),
+          HashSet(SrcKind.Gpr, SrcKind.Pc, SrcKind.Imm(/*Some(false)*/)),
+        ),
+        cond=HashSet[CondKind](
+          CondKind.Always
+        ),
+      ),  // word
+      ////OpKindNumArgs(dst=2, src=4),  // two-word
+      OpKindValidArgs(
+        // word, with output flags
+        //dstSize=2,
+        //srcSize=2,
+        dst=Array[HashSet[DstKind]](
+          HashSet(DstKind.AluFlags),
+          HashSet(DstKind.Gpr),
+        ),
+        src=Array[HashSet[SrcKind]](
+          HashSet(SrcKind.Gpr, SrcKind.Pc),
+          HashSet(SrcKind.Gpr, SrcKind.Pc, SrcKind.Imm(/*Some(false)*/)),
+        ),
+        cond=HashSet[CondKind](
+          CondKind.Always
+        ),
+      ),
+    )
+    def validArgsSet = _validArgsSet
+    def binopFunc(
+      cfg: SnowHouseConfig, left: UInt, right: UInt, carry: Bool
+    )(
+      width: Int=cfg.mainWidth
+    ) = {
+      val ret = InstrResult(cfg=cfg)(width=width)
+      val tempLeft = Cat(left).asUInt(width - 1 downto 0)
+      val tempRight = Cat(right).asUInt(width - 1 downto 0)
+      ret.leftMsb := left(width - 1)
+      ret.rightMsb := right(width - 1)
+      ret.main := (
+        tempLeft.asSInt >> tempRight//(log2Up(cfg.mainWidth) downto 0)
+      ).asUInt.resized
+      ret.flagV := False
+      ret.flagC := False
+      ret
+    }
+  }
 }
 sealed trait MultiCycleOpKind extends OpKindBase
 object MultiCycleOpKind {

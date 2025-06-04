@@ -642,6 +642,23 @@ object SnowHouseCpuPipeStageInstrDecode {
             }
           }
           for (
+            ((_, aluShiftOpInfo), aluShiftOpInfoIdx)
+            <- cfg.aluShiftOpInfoMap.view.zipWithIndex
+          ) {
+            if (opInfo == aluShiftOpInfo) {
+              println(
+                s"aluShiftOp: ${aluShiftOpInfoIdx} "
+                + s"${someOp._3} // ${opInfoIdx}"
+              )
+              //upPayload.op := opInfoIdx
+              //mySplitOp.aluShiftOp.valid := True
+              mySplitOp.kind := SnowHouseSplitOpKind.ALU_SHIFT
+              mySplitOp.aluShiftOp := (aluShiftOpInfoIdx)
+              //return
+              found = true
+            }
+          }
+          for (
             ((_, multiCycleOpInfo), multiCycleOpInfoIdx)
             <- cfg.multiCycleOpInfoMap.view.zipWithIndex
           ) {
@@ -759,19 +776,19 @@ object SnowHouseCpuPipeStageInstrDecode {
             setOp(LslRaRbRc)
           }
           is (LslRaRbImm5._2._1) {
-            setOp(LslRaRbImm5)
+            setOp(LslRaRbImm5, immShift=true)
           }
           is (LsrRaRbRc._2._1) {
             setOp(LsrRaRbRc)
           }
           is (LsrRaRbImm5._2._1) {
-            setOp(LsrRaRbImm5)
+            setOp(LsrRaRbImm5, immShift=true)
           }
           is (AsrRaRbRc._2._1) {
             setOp(AsrRaRbRc)
           }
           is (AsrRaRbImm5._2._1) {
-            setOp(AsrRaRbImm5)
+            setOp(AsrRaRbImm5, immShift=true)
           }
           is (AndRaRbRc._2._1) {
             setOp(AndRaRbRc)
@@ -1320,58 +1337,58 @@ object SnowHouseCpuOpInfoMap {
   //--------
   opInfoMap += (
     // lsl rA, rB, rC
-    SnowHouseCpuOp.LslRaRbRc -> OpInfo.mkAlu(
+    SnowHouseCpuOp.LslRaRbRc -> OpInfo.mkAluShift(
       dstArr=Array[DstKind](DstKind.Gpr),
       srcArr=Array[SrcKind](SrcKind.Gpr, SrcKind.Gpr),
-      aluOp=AluOpKind.Lsl,
+      aluShiftOp=AluShiftOpKind.Lsl,
     )
   )
   opInfoMap += (
     // lsl rA, rB, imm5
-    SnowHouseCpuOp.LslRaRbImm5 -> OpInfo.mkAlu(
+    SnowHouseCpuOp.LslRaRbImm5 -> OpInfo.mkAluShift(
       dstArr=Array[DstKind](DstKind.Gpr),
       srcArr=Array[SrcKind](SrcKind.Gpr, SrcKind.Imm()),
-      aluOp=(
-        AluOpKind.Lsl
-        //AluOpKind.Add
+      aluShiftOp=(
+        AluShiftOpKind.Lsl
+        //AluShiftOpKind.Add
       ),
     )
   )
   opInfoMap += (
     // lsr rA, rB, rC
-    SnowHouseCpuOp.LsrRaRbRc -> OpInfo.mkAlu(
+    SnowHouseCpuOp.LsrRaRbRc -> OpInfo.mkAluShift(
       dstArr=Array[DstKind](DstKind.Gpr),
       srcArr=Array[SrcKind](SrcKind.Gpr, SrcKind.Gpr),
-      aluOp=AluOpKind.Lsr,
+      aluShiftOp=AluShiftOpKind.Lsr,
     )
   )
   opInfoMap += (
     // lsr rA, rB, imm5
-    SnowHouseCpuOp.LsrRaRbImm5 -> OpInfo.mkAlu(
+    SnowHouseCpuOp.LsrRaRbImm5 -> OpInfo.mkAluShift(
       dstArr=Array[DstKind](DstKind.Gpr),
       srcArr=Array[SrcKind](SrcKind.Gpr, SrcKind.Imm()),
-      aluOp=(
-        AluOpKind.Lsr
-        //AluOpKind.Add
+      aluShiftOp=(
+        AluShiftOpKind.Lsr
+        //AluShiftOpKind.Add
       ),
     )
   )
   opInfoMap += (
     // asr rA, rB, rC
-    SnowHouseCpuOp.AsrRaRbRc -> OpInfo.mkAlu(
+    SnowHouseCpuOp.AsrRaRbRc -> OpInfo.mkAluShift(
       dstArr=Array[DstKind](DstKind.Gpr),
       srcArr=Array[SrcKind](SrcKind.Gpr, SrcKind.Gpr),
-      aluOp=AluOpKind.Asr,
+      aluShiftOp=AluShiftOpKind.Asr,
     )
   )
   opInfoMap += (
     // asr rA, rB, imm5
-    SnowHouseCpuOp.AsrRaRbImm5 -> OpInfo.mkAlu(
+    SnowHouseCpuOp.AsrRaRbImm5 -> OpInfo.mkAluShift(
       dstArr=Array[DstKind](DstKind.Gpr),
       srcArr=Array[SrcKind](SrcKind.Gpr, SrcKind.Imm()),
-      aluOp=(
-        AluOpKind.Asr
-        //AluOpKind.Add
+      aluShiftOp=(
+        AluShiftOpKind.Asr
+        //AluShiftOpKind.Add
       ),
     )
   )
@@ -2082,7 +2099,8 @@ case class SnowHouseCpuTestProgram(
     //cpy(r1, 0x0),
     cpy(ie, r1),              // 0x14
     //cpy(r0, r0),
-    cpy(r1, 0x8),             // 0x18: r1 = 8
+    //cpy(r1, 0x8),             // 0x18: r1 = 8
+    lsl(r1, r1, 3),
     cpy(r2, 0x1),             // 0x1c: r2 = 1
     cpy(r3, 0x1000),          // 0x20: r3 = 0x1000
     cpy(r4, 0x8),             // 0x24: r4 = 4

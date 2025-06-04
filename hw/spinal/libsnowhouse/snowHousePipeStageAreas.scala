@@ -639,9 +639,14 @@ case class SnowHousePipeStageExecuteSetOutpModMemWordIo(
         }
       }
       case OpSelect.Alu => {
-        if (
-          opInfo.dstArr(0) == DstKind.Spr(SprKind.AluFlags)
-        ) {
+        if (opInfo.dstArr(0) == DstKind.Spr(SprKind.AluFlags)) {
+          return innerFunc(idx=(idx + 1), isPostPcDst=false)
+        } else {
+          return innerFunc(idx=idx, isPostPcDst=false)
+        }
+      }
+      case OpSelect.AluShift => {
+        if (opInfo.dstArr(0) == DstKind.Spr(SprKind.AluFlags)) {
           return innerFunc(idx=(idx + 1), isPostPcDst=false)
         } else {
           return innerFunc(idx=idx, isPostPcDst=false)
@@ -682,6 +687,7 @@ case class SnowHousePipeStageExecuteSetOutpModMemWordIo(
   def opIs = decodeExt.opIs
   def opIsMemAccess = decodeExt.opIsMemAccess
   def opIsCpyNonJmpAlu = decodeExt.opIsCpyNonJmpAlu
+  def opIsAluShift = decodeExt.opIsAluShift
   def opIsJmp = decodeExt.opIsJmp
   def opIsMultiCycle = decodeExt.opIsMultiCycle
   def jmpAddrIdx = (
@@ -1990,6 +1996,59 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
           }
         }
       }
+      case OpSelect.AluShift => {
+        io.opIsAluShift := True
+        assert(
+          opInfo.cond == CondKind.Always,
+          s"not yet implemented: "
+          + s"opInfo(${opInfo}) index:${opInfoIdx}"
+        )
+        assert(
+          opInfo.memAccess == MemAccessKind.NoMemAccess,
+          s"not yet implemented: "
+          + s"opInfo(${opInfo}) index:${opInfoIdx}"
+        )
+        assert(
+          opInfo.addrCalc match {
+            case AddrCalcKind.AddReduce() => {
+              true
+            }
+            case _ => {
+              false
+            }
+          },
+          s"not yet implemented: "
+          + s"opInfo(${opInfo}) index:${opInfoIdx}"
+        )
+        /*val binop: InstrResult =*/ opInfo.aluShiftOp.get match {
+          case op => {
+            val binop = op.binopFunc(
+              cfg=cfg,
+              left=selRdMemWord(1),
+              right=selRdMemWord(2),
+              carry=(
+                if (cfg.myHaveAluFlags) (
+                  io.rFlagC
+                ) else (
+                  False
+                )
+              ),
+            )(
+              // TODO: support more widths than just
+              // `cfg.mainWidth`
+              width=cfg.mainWidth
+            )
+            if (opInfo.dstArr(0) == DstKind.Spr(SprKind.AluFlags)) {
+              nextFlagN := binop.flagN
+              nextFlagV := binop.flagV
+              nextFlagC := binop.flagC
+              nextFlagZ := binop.flagZ
+            }
+            io.modMemWord(0) := binop.main
+            nextIndexReg := 0x0
+          }
+        }
+      }
       case OpSelect.MultiCycle => {
         nextIndexReg := 0x0
         //for (
@@ -2119,6 +2178,20 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
       switch (io.splitOp.aluOp) {
         for (
           ((_, opInfo), idx) <- cfg.aluOpInfoMap.view.zipWithIndex
+        ) {
+          is (idx) {
+            innerFunc(
+              opInfo=opInfo,
+              opInfoIdx=idx,
+            )
+          }
+        }
+      }
+    }
+    is (SnowHouseSplitOpKind.ALU_SHIFT) {
+      switch (io.splitOp.aluShiftOp) {
+        for (
+          ((_, opInfo), idx) <- cfg.aluShiftOpInfoMap.view.zipWithIndex
         ) {
           is (idx) {
             innerFunc(
@@ -4139,6 +4212,19 @@ case class SnowHousePipeStageWriteBack(
                     }
                     case OpSelect.Alu => {
                       opInfo.aluOp.get match {
+                        case op => {
+                          op.binopFunc(
+                            cfg=cfg,
+                            left=myLeft,
+                            right=myRight,
+                            carry=False,
+                          )(
+                          )
+                        }
+                      }
+                    }
+                    case OpSelect.AluShift => {
+                      opInfo.aluShiftOp.get match {
                         case op => {
                           op.binopFunc(
                             cfg=cfg,

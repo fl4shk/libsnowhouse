@@ -539,6 +539,7 @@ case class SnowHouseConfig(
   //val pureJmpOpInfoMap = LinkedHashMap[Int, OpInfo]()
   //val cpyOpInfoMap = LinkedHashMap[Int, OpInfo]()
   val aluOpInfoMap = LinkedHashMap[Int, OpInfo]()
+  val aluShiftOpInfoMap = LinkedHashMap[Int, OpInfo]()
   val multiCycleOpInfoMap = LinkedHashMap[Int, OpInfo]()
   //val loadOpInfoMap = LinkedHashMap[Int, OpInfo]()
   //val storeOpInfoMap = LinkedHashMap[Int, OpInfo]()
@@ -675,6 +676,10 @@ case class SnowHouseConfig(
         //)
         aluOpInfoMap += (idx -> opInfo)
       }
+      case OpSelect.AluShift => {
+        checkValidArgs(opInfo.aluShiftOp)
+        aluShiftOpInfoMap += (idx -> opInfo)
+      }
       case OpSelect.MultiCycle => {
         checkValidArgs(opInfo.multiCycleOp)
         //assert(
@@ -758,9 +763,10 @@ case class SnowHouseDecodeExt(
   //--------
   private val _opIsMemAccessIdx = 0
   private val _opIsCpyNonJmpAluIdx = 1
-  private val _opIsJmpIdx = 2
-  private val _opIsMultiCycleIdx = 3
-  val opIsLim = 4
+  private val _opIsAluShiftIdx = 2
+  private val _opIsJmpIdx = 3
+  private val _opIsMultiCycleIdx = 4
+  val opIsLim = 5
   val opIs = /*out*/(UInt(opIsLim bits))
   //val memAccessLdStKind = SnowHouseDecodeExtLdStKind() //Bool()
   //def memAccessIsLoad = (
@@ -778,6 +784,7 @@ case class SnowHouseDecodeExt(
   //--------
   def opIsMemAccess = opIs(_opIsMemAccessIdx)
   def opIsCpyNonJmpAlu = opIs(_opIsCpyNonJmpAluIdx)
+  def opIsAluShift = opIs(_opIsAluShiftIdx)
   def opIsJmp = opIs(_opIsJmpIdx)
   def opIsMultiCycle = opIs(_opIsMultiCycleIdx)
   //--------
@@ -805,6 +812,7 @@ extends SpinalEnum(defaultEncoding=binaryOneHot) {
     JMP_BR,
     //PURE_BR,
     ALU,
+    ALU_SHIFT,
     MULTI_CYCLE
     //PURE_CPYUI
     = newElement()
@@ -837,6 +845,9 @@ case class SnowHouseSplitOp(
   //)
   val aluOp = /*Flow*/(
     UInt(log2Up(cfg.aluOpInfoMap.size) bits)
+  )
+  val aluShiftOp = /*Flow*/(
+    UInt(log2Up(cfg.aluShiftOpInfoMap.size) bits)
   )
   val multiCycleOp = /*Flow*/(
     UInt(log2Up(cfg.multiCycleOpInfoMap.size) bits)
