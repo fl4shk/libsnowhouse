@@ -24,51 +24,51 @@ import libcheesevoyage.bus.lcvStall._
 //    ret
 //  }
 //}
-object SnowHouseFastOrR {
-  def apply(
-    self: UInt
-  ): Bool = {
-    val q = Bool()
-    val unusedSumOut = UInt(self.getWidth bits)
-    (q, unusedSumOut) := (
-      Cat(False, self).asUInt
-      + U(self.getWidth bits, default -> True)
-    )
-    q
-  }
-}
-object SnowHouseFastAndR {
-  def apply(
-    self: UInt
-  ): Bool = {
-    val q = Bool()
-    val unusedSumOut = UInt(self.getWidth bits)
-    (q, unusedSumOut) := (
-      Cat(False, self).asUInt
-      + U(self.getWidth + 1 bits, 0 -> True, default -> False)
-    )
-    q
-  }
-}
-object SnowHouseFastCmpEq {
-  def apply(
-    left: UInt,
-    right: UInt,
-  ): Bool = {
-    assert(
-      left.getWidth == right.getWidth,
-      f"leftWidth:${left.getWidth} != rightWidth:${right.getWidth}"
-    )
-    val q = Bool()
-    val unusedSumOut = UInt(left.getWidth bits)
-    (q, unusedSumOut) := (
-      Cat(False, left ^ (~right)).asUInt
-      + U(left.getWidth + 1 bits, 0 -> True, default -> False)
-    )
-
-    q
-  }
-}
+//object LcvFastOrR {
+//  def apply(
+//    self: UInt
+//  ): Bool = {
+//    val q = Bool()
+//    val unusedSumOut = UInt(self.getWidth bits)
+//    (q, unusedSumOut) := (
+//      Cat(False, self).asUInt
+//      + U(self.getWidth bits, default -> True)
+//    )
+//    q
+//  }
+//}
+//object LcvFastAndR {
+//  def apply(
+//    self: UInt
+//  ): Bool = {
+//    val q = Bool()
+//    val unusedSumOut = UInt(self.getWidth bits)
+//    (q, unusedSumOut) := (
+//      Cat(False, self).asUInt
+//      + U(self.getWidth + 1 bits, 0 -> True, default -> False)
+//    )
+//    q
+//  }
+//}
+//object LcvFastCmpEq {
+//  def apply(
+//    left: UInt,
+//    right: UInt,
+//  ): Bool = {
+//    assert(
+//      left.getWidth == right.getWidth,
+//      f"leftWidth:${left.getWidth} != rightWidth:${right.getWidth}"
+//    )
+//    val q = Bool()
+//    val unusedSumOut = UInt(left.getWidth bits)
+//    (q, unusedSumOut) := (
+//      Cat(False, left ^ (~right)).asUInt
+//      + U(left.getWidth + 1 bits, 0 -> True, default -> False)
+//    )
+//
+//    q
+//  }
+//}
 case class SnowHousePipeStageArgs(
   cfg: SnowHouseConfig,
   io: SnowHouseIo,
@@ -1466,7 +1466,7 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
                     //  )
                     //)
                     //q
-                    SnowHouseFastCmpEq(
+                    LcvFastCmpEq(
                       left=io.rdMemWord(io.brCondIdx(0)),
                       right=io.rdMemWord(io.brCondIdx(1)),
                     )
@@ -1520,7 +1520,7 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
                     //  )
                     //)
                     //(!q)
-                    !SnowHouseFastCmpEq(
+                    !LcvFastCmpEq(
                       left=io.rdMemWord(io.brCondIdx(0)),
                       right=io.rdMemWord(io.brCondIdx(1)),
                     )
@@ -2661,26 +2661,31 @@ case class SnowHousePipeStageExecute(
   }
   val reEnableIrqsCond = (
     cfg.irqCfg != None
-  ) generate (
-    cMid0Front.up.isFiring
-    && rIrqHndlState//.fire
-    && (
-      if (setOutpModMemWord.io.haveRetIraState) (
-        setOutpModMemWord.io.rHadRetIra
-      ) else (
-        True
-      )
-    ) && (
-      RegNextWhen(
-        next=(
-          setOutpModMemWord.io.rIe/*(0)*/ === False
-          //setOutpModMemWord.nextIe/*(0)*/ === False
-        ),//0x0
-        cond=cMid0Front.up.isFiring,
-        init=False,
-      )
+  ) generate {
+    LcvFastAndR(
+      Vec[Bool](
+        cMid0Front.up.isFiring,
+        rIrqHndlState,//.fire
+        (
+          if (setOutpModMemWord.io.haveRetIraState) (
+            setOutpModMemWord.io.rHadRetIra
+          ) else (
+            True
+          )
+        ),
+        (
+          RegNextWhen(
+            next=(
+              setOutpModMemWord.io.rIe/*(0)*/ === False
+              //setOutpModMemWord.nextIe/*(0)*/ === False
+            ),//0x0
+            cond=cMid0Front.up.isFiring,
+            init=False,
+          )
+        ),
+      ).asBits.asUInt
     )
-  )
+  }
   if (cfg.irqCfg != None) {
     when (reEnableIrqsCond) {
       setOutpModMemWord.nextIe/*(0)*/ := True//0x1
@@ -2957,7 +2962,7 @@ case class SnowHousePipeStageExecute(
   //  !rSavedStall
   //  && doCheckHazard && myDoHaveHazard1
   //)
-  when (SnowHouseFastOrR(
+  when (LcvFastOrR(
     setOutpModMemWord.io.opIsMemAccess.asBits.asUInt
   )) {
     nextPrevTxnWasHazard := True
@@ -2968,7 +2973,7 @@ case class SnowHousePipeStageExecute(
   }
   when (
     //setOutpModMemWord.io.opIsMultiCycle.orR
-    SnowHouseFastOrR(
+    LcvFastOrR(
       setOutpModMemWord.io.opIsMultiCycle.asBits.asUInt
     )
   ) {
@@ -2998,19 +3003,36 @@ case class SnowHousePipeStageExecute(
               nextSavedStall := True
             }
             when (
-              !rSavedStall
-              && doCheckHazard && myDoHaveHazard
+              LcvFastAndR(
+                Vec[Bool](
+                  !rSavedStall,
+                  doCheckHazard,
+                  myDoHaveHazard,
+                ).asBits.asUInt
+              )
             ) {
               psExStallHost.nextValid := False
-              when (
-                //psMemStallHost.fire
-                RegNext(psMemStallHost.nextValid, init=False)
-                && psMemStallHost.ready
-              ) {
-                doStart()
-              }
+              //when (
+              //  //psMemStallHost.fire
+              //  RegNext(psMemStallHost.nextValid, init=False)
+              //  && psMemStallHost.ready
+              //) {
+              //  doStart()
+              //}
             } otherwise {
               doStart()
+            }
+            when (
+              LcvFastAndR(
+                Vec[Bool](
+                  !rSavedStall,
+                  doCheckHazard,
+                  myDoHaveHazard,
+                  RegNext(psMemStallHost.nextValid, init=False),
+                  psMemStallHost.ready,
+                ).asBits.asUInt
+              )
+            ) {
             }
             when (
               RegNext(psExStallHost.nextValid)
