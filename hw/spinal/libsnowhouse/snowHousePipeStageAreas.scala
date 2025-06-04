@@ -2120,7 +2120,7 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
         for (
           ((_, opInfo), idx) <- cfg.aluOpInfoMap.view.zipWithIndex
         ) {
-          is (1 << idx) {
+          is (idx) {
             innerFunc(
               opInfo=opInfo,
               opInfoIdx=idx,

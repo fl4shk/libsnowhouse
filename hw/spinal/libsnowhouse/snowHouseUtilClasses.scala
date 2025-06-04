@@ -836,7 +836,7 @@ case class SnowHouseSplitOp(
   //  UInt(log2Up(cfg.pureJmpOpInfoMap.size) bits)
   //)
   val aluOp = /*Flow*/(
-    UInt(/*log2Up*/(cfg.aluOpInfoMap.size) bits)
+    UInt(log2Up(cfg.aluOpInfoMap.size) bits)
   )
   val multiCycleOp = /*Flow*/(
     UInt(log2Up(cfg.multiCycleOpInfoMap.size) bits)
