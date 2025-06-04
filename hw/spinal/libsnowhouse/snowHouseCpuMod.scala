@@ -109,20 +109,20 @@ object SnowHouseCpuOp {
   val LslRaRbRc = mkOp(                         // 6, 0
     "lsl rA, rB, rC", ShiftEtcSprKindLslRc, false
   )
-  val LslReserved = mkOp(                         // 6, 1
-    "lsl <Reserved>", ShiftEtcSprKindLslReserved, false
+  val LslRaRbImm5 = mkOp(                         // 6, 1
+    "lsl rA, rB, imm5", ShiftEtcSprKindLslRaRbImm5, false
   )
   val LsrRaRbRc = mkOp(                         // 6, 2
     "lsr rA, rB, rC", ShiftEtcSprKindLsrRc, false
   )
-  val LsrReserved = mkOp(                         // 6, 3
-    "lsr <Reserved>", ShiftEtcSprKindLsrReserved, false
+  val LsrRaRbImm5 = mkOp(                         // 6, 3
+    "lsr rA, rB, imm5", ShiftEtcSprKindLsrRaRbImm5, false
   )
   val AsrRaRbRc = mkOp(                         // 6, 4
     "asr rA, rB, rC", ShiftEtcSprKindAsrRc, false
   )
-  val AsrReserved = mkOp(                         // 6, 5
-    "asr <Reserved>", ShiftEtcSprKindAsrReserved, false
+  val AsrRaRbImm5 = mkOp(                         // 6, 5
+    "asr rA, rB, imm5", ShiftEtcSprKindAsrRaRbImm5, false
   )
   val AndRaRbRc = mkOp(                         // 6, 6
     "and rA, rB, rC", ShiftEtcSprKindAndRc, false
@@ -156,11 +156,11 @@ object SnowHouseCpuOp {
   //)
 
   def ShiftEtcSprKindLslRc = (0x0, 0x0)
-  def ShiftEtcSprKindLslReserved = (0x1, 0x0)
+  def ShiftEtcSprKindLslRaRbImm5 = (0x1, 0x0)
   def ShiftEtcSprKindLsrRc = (0x2, 0x0)
-  def ShiftEtcSprKindLsrReserved = (0x3, 0x0)
+  def ShiftEtcSprKindLsrRaRbImm5 = (0x3, 0x0)
   def ShiftEtcSprKindAsrRc = (0x4, 0x0)
-  def ShiftEtcSprKindAsrReserved = (0x5, 0x0)
+  def ShiftEtcSprKindAsrRaRbImm5 = (0x5, 0x0)
   def ShiftEtcSprKindAndRc = (0x6, 0x0)
   def ShiftEtcSprKindAndReserved = (0x7, 0x0)
   //def ShiftEtcSprKindCpyRaIds = (0x7, 0x0)
@@ -490,7 +490,9 @@ object SnowHouseCpuPipeStageInstrDecode {
     //  encInstr.imm16.asSInt
     //).asUInt
     val tempImm = UInt(cfg.mainWidth bits)
-    tempImm := (
+    val tempImmNoShift = UInt(cfg.mainWidth bits)
+    val tempImmWithShift = UInt(cfg.mainWidth bits)
+    tempImmNoShift := (
       Cat(
         Mux[UInt](
           encInstr.imm16.msb,
@@ -500,6 +502,17 @@ object SnowHouseCpuPipeStageInstrDecode {
         encInstr.imm16.asSInt
       ).asUInt
     )
+    tempImmWithShift := (
+      Cat(
+        Mux[UInt](
+          (encInstr.imm16 >> 4).msb,
+          U"20'hfffff",
+          U"20'h00000",
+        ),
+        (encInstr.imm16 >> 4).asSInt
+      ).asUInt
+    )
+    tempImm := tempImmNoShift
     val rPrevPreImm = (
       /*KeepAttribute*/(
         RegNextWhen(
@@ -517,9 +530,15 @@ object SnowHouseCpuPipeStageInstrDecode {
     )
     def setOp(
       someOp: (Int, (Int, Int), String),
+      immShift: Boolean=false,
       //someOutpOp: UInt=upPayload.op,
     ): Area = new Area {
       setName(s"setOp_${someOp._1}")
+      if (immShift) {
+        tempImm := (
+          tempImmWithShift.resized
+        )
+      }
       var found = false
       for (
         ((tuple, opInfo), opInfoIdx) <- cfg.opInfoMap.view.zipWithIndex
@@ -739,11 +758,20 @@ object SnowHouseCpuPipeStageInstrDecode {
           is (LslRaRbRc._2._1) {
             setOp(LslRaRbRc)
           }
+          is (LslRaRbImm5._2._1) {
+            setOp(LslRaRbImm5)
+          }
           is (LsrRaRbRc._2._1) {
             setOp(LsrRaRbRc)
           }
+          is (LsrRaRbImm5._2._1) {
+            setOp(LsrRaRbImm5)
+          }
           is (AsrRaRbRc._2._1) {
             setOp(AsrRaRbRc)
+          }
+          is (AsrRaRbImm5._2._1) {
+            setOp(AsrRaRbImm5)
           }
           is (AndRaRbRc._2._1) {
             setOp(AndRaRbRc)
@@ -1299,13 +1327,13 @@ object SnowHouseCpuOpInfoMap {
     )
   )
   opInfoMap += (
-    // lsl <Reserved>
-    SnowHouseCpuOp.LslReserved -> OpInfo.mkAlu(
+    // lsl rA, rB, imm5
+    SnowHouseCpuOp.LslRaRbImm5 -> OpInfo.mkAlu(
       dstArr=Array[DstKind](DstKind.Gpr),
-      srcArr=Array[SrcKind](SrcKind.Gpr, SrcKind.Gpr),
+      srcArr=Array[SrcKind](SrcKind.Gpr, SrcKind.Imm()),
       aluOp=(
-        //AluOpKind.Lsl
-        AluOpKind.Add
+        AluOpKind.Lsl
+        //AluOpKind.Add
       ),
     )
   )
@@ -1318,13 +1346,13 @@ object SnowHouseCpuOpInfoMap {
     )
   )
   opInfoMap += (
-    // lsr <Reserved>
-    SnowHouseCpuOp.LsrReserved -> OpInfo.mkAlu(
+    // lsr rA, rB, imm5
+    SnowHouseCpuOp.LsrRaRbImm5 -> OpInfo.mkAlu(
       dstArr=Array[DstKind](DstKind.Gpr),
-      srcArr=Array[SrcKind](SrcKind.Gpr, SrcKind.Gpr),
+      srcArr=Array[SrcKind](SrcKind.Gpr, SrcKind.Imm()),
       aluOp=(
-        //AluOpKind.Lsr
-        AluOpKind.Add
+        AluOpKind.Lsr
+        //AluOpKind.Add
       ),
     )
   )
@@ -1337,13 +1365,13 @@ object SnowHouseCpuOpInfoMap {
     )
   )
   opInfoMap += (
-    // asr <Reserved>
-    SnowHouseCpuOp.AsrReserved -> OpInfo.mkAlu(
+    // asr rA, rB, imm5
+    SnowHouseCpuOp.AsrRaRbImm5 -> OpInfo.mkAlu(
       dstArr=Array[DstKind](DstKind.Gpr),
-      srcArr=Array[SrcKind](SrcKind.Gpr, SrcKind.Gpr),
+      srcArr=Array[SrcKind](SrcKind.Gpr, SrcKind.Imm()),
       aluOp=(
-        //AluOpKind.Asr
-        AluOpKind.Add
+        AluOpKind.Asr
+        //AluOpKind.Add
       ),
     )
   )

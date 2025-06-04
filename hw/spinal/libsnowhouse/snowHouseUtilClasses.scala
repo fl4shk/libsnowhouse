@@ -751,6 +751,7 @@ case class SnowHouseInstrCnt(
 //    Store
 //    = newElement()
 //}
+object SnowHouseDecodeExt
 case class SnowHouseDecodeExt(
   cfg: SnowHouseConfig
 ) extends Bundle {

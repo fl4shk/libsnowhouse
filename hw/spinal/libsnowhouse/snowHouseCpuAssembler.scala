@@ -698,6 +698,21 @@ object lsl {
   //    imm=imm,
   //  )
   //}
+  def apply(
+    rA: Gpr,
+    rB: Gpr,
+    imm: SnowHouseCpuExpr,
+  ) = {
+    InstructionAsmStmt(
+      op=SnowHouseCpuOp.LslRaRbImm5,
+      rA=rA,
+      rB=rB,
+      rC=SnowHouseCpuRegs.r0,
+      imm=(
+        (imm << 4) | SnowHouseCpuOp.LslRaRbImm5._2._1
+      )
+    )
+  }
 }
 object lsr {
   def apply(
@@ -713,6 +728,21 @@ object lsr {
       imm=SnowHouseCpuOp.LsrRaRbRc._2._1,
     )
   }
+  def apply(
+    rA: Gpr,
+    rB: Gpr,
+    imm: SnowHouseCpuExpr,
+  ) = {
+    InstructionAsmStmt(
+      op=SnowHouseCpuOp.LsrRaRbImm5,
+      rA=rA,
+      rB=rB,
+      rC=SnowHouseCpuRegs.r0,
+      imm=(
+        (imm << 4) | SnowHouseCpuOp.LsrRaRbImm5._2._1
+      )
+    )
+  }
 }
 object asr {
   def apply(
@@ -726,6 +756,21 @@ object asr {
       rB=rB,
       rC=rC,
       imm=SnowHouseCpuOp.AsrRaRbRc._2._1,
+    )
+  }
+  def apply(
+    rA: Gpr,
+    rB: Gpr,
+    imm: SnowHouseCpuExpr,
+  ) = {
+    InstructionAsmStmt(
+      op=SnowHouseCpuOp.AsrRaRbImm5,
+      rA=rA,
+      rB=rB,
+      rC=SnowHouseCpuRegs.r0,
+      imm=(
+        (imm << 4) | SnowHouseCpuOp.AsrRaRbImm5._2._1
+      )
     )
   }
 }
