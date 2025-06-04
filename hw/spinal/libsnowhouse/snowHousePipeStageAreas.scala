@@ -2977,7 +2977,7 @@ case class SnowHousePipeStageExecute(
         ((_, opInfo), opInfoIdx)
         <- cfg.multiCycleOpInfoMap.view.zipWithIndex
       ) {
-        //is (opInfoIdx) 
+        //is (opInfoIdx)
         if (opInfoIdx == idx) {
           var busIdxFound: Boolean = false
           var busIdx: Int = 0
@@ -2999,12 +2999,12 @@ case class SnowHousePipeStageExecute(
               nextSavedStall := True
             }
             when (
-              LcvFastAndR(
+              /*LcvFastAndR*/(
                 Vec[Bool](
                   !rSavedStall,
                   doCheckHazard,
                   myDoHaveHazard,
-                ).asBits.asUInt
+                ).asBits.asUInt.andR
               )
             ) {
               psExStallHost.nextValid := False
@@ -3049,88 +3049,88 @@ case class SnowHousePipeStageExecute(
       }
     }
   }
-  when (
-    //setOutpModMemWord.io.opIsMultiCycle.orR
-    LcvFastOrR(
-      setOutpModMemWord.io.opIsMultiCycle.asBits.asUInt
-    )
-  ) {
-    switch (outp.splitOp.multiCycleOp) {
-      for (
-        ((_, opInfo), opInfoIdx)
-        <- cfg.multiCycleOpInfoMap.view.zipWithIndex
-      ) {
-        is (opInfoIdx) {
-          var busIdxFound: Boolean = false
-          var busIdx: Int = 0
-          for (
-            ((_, multiCycleOpInfo), myBusIdx)
-            <- cfg.multiCycleOpInfoMap.view.zipWithIndex
-          ) {
-            if (opInfo == multiCycleOpInfo) {
-              busIdxFound = true
-              busIdx = myBusIdx
-            }
-          }
-          if (busIdxFound) {
-            val psExStallHost = psExStallHostArr(busIdx)
-            def doStart(): Unit = {
-              myDoStall(stallKindMem) := False
-              myDoStall(stallKindMultiCycle) := True
-              psExStallHost.nextValid := True
-              nextSavedStall := True
-            }
-            when (
-              LcvFastAndR(
-                Vec[Bool](
-                  !rSavedStall,
-                  doCheckHazard,
-                  myDoHaveHazard,
-                ).asBits.asUInt
-              )
-            ) {
-              psExStallHost.nextValid := False
-              when (
-                //psMemStallHost.fire
-                RegNext(psMemStallHost.nextValid, init=False)
-                && psMemStallHost.ready
-              ) {
-                doStart()
-              }
-            } otherwise {
-              doStart()
-            }
-            //when (
-            //  LcvFastAndR(
-            //    Vec[Bool](
-            //      !rSavedStall,
-            //      doCheckHazard,
-            //      myDoHaveHazard,
-            //      RegNext(psMemStallHost.nextValid, init=False),
-            //      psMemStallHost.ready,
-            //    ).asBits.asUInt
-            //  )
-            //) {
-            //  doStart()
-            //}
-            when (
-              RegNext(psExStallHost.nextValid)
-              && psExStallHost.ready
-            ) {
-              psExStallHost.nextValid := False
-              myDoStall(stallKindMultiCycle) := False
-            }
-            when (rSavedStall) {
-              myDoStall(stallKindMem) := False
-            }
-            when (cMid0Front.up.isFiring) {
-              nextSavedStall := False
-            }
-          }
-        }
-      }
-    }
-  }
+  //when (
+  //  //setOutpModMemWord.io.opIsMultiCycle.orR
+  //  LcvFastOrR(
+  //    setOutpModMemWord.io.opIsMultiCycle.asBits.asUInt
+  //  )
+  //) {
+  //  switch (outp.splitOp.multiCycleOp) {
+  //    for (
+  //      ((_, opInfo), opInfoIdx)
+  //      <- cfg.multiCycleOpInfoMap.view.zipWithIndex
+  //    ) {
+  //      is (opInfoIdx) {
+  //        var busIdxFound: Boolean = false
+  //        var busIdx: Int = 0
+  //        for (
+  //          ((_, multiCycleOpInfo), myBusIdx)
+  //          <- cfg.multiCycleOpInfoMap.view.zipWithIndex
+  //        ) {
+  //          if (opInfo == multiCycleOpInfo) {
+  //            busIdxFound = true
+  //            busIdx = myBusIdx
+  //          }
+  //        }
+  //        if (busIdxFound) {
+  //          val psExStallHost = psExStallHostArr(busIdx)
+  //          def doStart(): Unit = {
+  //            myDoStall(stallKindMem) := False
+  //            myDoStall(stallKindMultiCycle) := True
+  //            psExStallHost.nextValid := True
+  //            nextSavedStall := True
+  //          }
+  //          when (
+  //            LcvFastAndR(
+  //              Vec[Bool](
+  //                !rSavedStall,
+  //                doCheckHazard,
+  //                myDoHaveHazard,
+  //              ).asBits.asUInt
+  //            )
+  //          ) {
+  //            psExStallHost.nextValid := False
+  //            when (
+  //              //psMemStallHost.fire
+  //              RegNext(psMemStallHost.nextValid, init=False)
+  //              && psMemStallHost.ready
+  //            ) {
+  //              doStart()
+  //            }
+  //          } otherwise {
+  //            doStart()
+  //          }
+  //          //when (
+  //          //  LcvFastAndR(
+  //          //    Vec[Bool](
+  //          //      !rSavedStall,
+  //          //      doCheckHazard,
+  //          //      myDoHaveHazard,
+  //          //      RegNext(psMemStallHost.nextValid, init=False),
+  //          //      psMemStallHost.ready,
+  //          //    ).asBits.asUInt
+  //          //  )
+  //          //) {
+  //          //  doStart()
+  //          //}
+  //          when (
+  //            RegNext(psExStallHost.nextValid)
+  //            && psExStallHost.ready
+  //          ) {
+  //            psExStallHost.nextValid := False
+  //            myDoStall(stallKindMultiCycle) := False
+  //          }
+  //          when (rSavedStall) {
+  //            myDoStall(stallKindMem) := False
+  //          }
+  //          when (cMid0Front.up.isFiring) {
+  //            nextSavedStall := False
+  //          }
+  //        }
+  //      }
+  //    }
+  //  }
+  //}
 
   psExStallHostArr.foreach(psExStallHost => {
     when (psExStallHost.fire) {
