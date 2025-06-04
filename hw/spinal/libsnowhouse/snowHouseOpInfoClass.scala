@@ -1719,7 +1719,7 @@ object AluShiftOpKind {
       ret.rightMsb := right(width - 1)
       ret.main := (
         tempLeft << tempRight(log2Up(width) downto 0)
-      ).resized//(ret.main.bitsRange)
+      )(ret.main.bitsRange)
       ret.flagV := False
       ret.flagC := False
       ret
