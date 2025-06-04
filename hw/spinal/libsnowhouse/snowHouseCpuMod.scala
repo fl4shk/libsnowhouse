@@ -653,7 +653,7 @@ object SnowHouseCpuPipeStageInstrDecode {
               //upPayload.op := opInfoIdx
               //mySplitOp.aluShiftOp.valid := True
               mySplitOp.kind := SnowHouseSplitOpKind.ALU_SHIFT
-              mySplitOp.aluShiftOp := (1 << aluShiftOpInfoIdx)
+              mySplitOp.aluShiftOp := (/*1 <<*/ aluShiftOpInfoIdx)
               //return
               found = true
             }
