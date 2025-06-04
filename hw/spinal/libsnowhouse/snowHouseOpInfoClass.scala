@@ -1846,6 +1846,64 @@ object AluShiftOpKind {
 sealed trait MultiCycleOpKind extends OpKindBase
 object MultiCycleOpKind {
   //--------
+  case object Lsl extends MultiCycleOpKind {
+    private val _validArgsSet = LinkedHashSet[
+      OpKindValidArgs
+    ](
+      OpKindValidArgs(
+        dst=Array[HashSet[DstKind]](
+          HashSet(DstKind.Gpr),
+        ),
+        src=Array[HashSet[SrcKind]](
+          HashSet(SrcKind.Gpr, SrcKind.Pc),
+          HashSet(SrcKind.Gpr, SrcKind.Pc, SrcKind.Imm(/*None*/)),
+        ),
+        cond=HashSet[CondKind](
+          CondKind.Always,
+        ),
+      )
+    )
+    def validArgsSet = _validArgsSet
+  }
+  case object Lsr extends MultiCycleOpKind {
+    private val _validArgsSet = LinkedHashSet[
+      OpKindValidArgs
+    ](
+      OpKindValidArgs(
+        dst=Array[HashSet[DstKind]](
+          HashSet(DstKind.Gpr),
+        ),
+        src=Array[HashSet[SrcKind]](
+          HashSet(SrcKind.Gpr, SrcKind.Pc),
+          HashSet(SrcKind.Gpr, SrcKind.Pc, SrcKind.Imm(/*None*/)),
+        ),
+        cond=HashSet[CondKind](
+          CondKind.Always,
+        ),
+      )
+    )
+    def validArgsSet = _validArgsSet
+  }
+  case object Asr extends MultiCycleOpKind {
+    private val _validArgsSet = LinkedHashSet[
+      OpKindValidArgs
+    ](
+      OpKindValidArgs(
+        dst=Array[HashSet[DstKind]](
+          HashSet(DstKind.Gpr),
+        ),
+        src=Array[HashSet[SrcKind]](
+          HashSet(SrcKind.Gpr, SrcKind.Pc),
+          HashSet(SrcKind.Gpr, SrcKind.Pc, SrcKind.Imm(/*None*/)),
+        ),
+        cond=HashSet[CondKind](
+          CondKind.Always,
+        ),
+      )
+    )
+    def validArgsSet = _validArgsSet
+  }
+  //--------
   case object Umul extends MultiCycleOpKind {
     // `Umul` also represents non-full-product multiplies
     private[libsnowhouse] val _validArgsSet = LinkedHashSet[
