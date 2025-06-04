@@ -53,7 +53,9 @@ case class SnowHouseCacheIo(
       )
     )
   )
-  val busExtraReady = out(Bool())
+  val busExtraReady = out(Vec.fill(cfg.lowerMyFanout)(
+    Bool()
+  ))
   //val bridgeCfg = (
   //  LcvStallToTilelinkConfig(
   //    addrWidth=(
@@ -412,14 +414,19 @@ case class SnowHouseCache(
   if (!isIcache) {
     io.bus.recvData.setAsReg()
     io.bus.ready.setAsReg() init(False)
-    io.busExtraReady.setAsReg() init(False)
+    io.busExtraReady.setAsReg() //init(False)
+    io.busExtraReady.foreach(extraReady => {
+      extraReady.init(extraReady.getZero)
+    })
     io.busExtraReady.addAttribute(KeepAttribute.keep)
   }
   def doSetBusReadyEtc(
     someReady: Bool
   ): Unit = {
     io.bus.ready := someReady
-    io.busExtraReady := someReady
+    io.busExtraReady.foreach(extraReady => {
+      extraReady := someReady
+    })
   }
   val rBusDevData = (
     !isIcache

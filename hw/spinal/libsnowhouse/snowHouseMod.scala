@@ -29,7 +29,11 @@ case class SnowHouseInstrDataDualRamIo(
     recvPayloadType=Some(BusDevPayload(cfg=cfg, isIbus=false)),
   )
   //val dcacheHaveHazard = Bool()
-  val dbusExtraReady = Bool()
+  val dbusExtraReady = Vec.fill(
+    cfg.lowerMyFanout
+  )(
+    Bool()
+  )
   slave(
     ibus,
     dbus,
@@ -468,7 +472,9 @@ case class SnowHouseIo(
     sendPayloadType=Some(BusHostPayload(cfg=cfg, isIbus=false)),
     recvPayloadType=Some(BusDevPayload(cfg=cfg, isIbus=false)),
   )
-  val dbusExtraReady = Bool()
+  val dbusExtraReady = Vec.fill(cfg.lowerMyFanout)(
+    Bool()
+  )
   //val dcacheHaveHazard = Bool()
   master(
     ibus,

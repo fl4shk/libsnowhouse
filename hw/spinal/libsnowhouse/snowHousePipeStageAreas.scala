@@ -955,9 +955,12 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
     io.regPcPlusImm
   )
   io.dbusHostPayload.data := io.rdMemWord(0) //selRdMemWord(0)
-  //if (cfg.allMainLdstUseGprPlusImm) {
-  //  io.dbusHostPayload.addr := io.rdMemWord(1) + io.imm(1)
-  //}
+  if (cfg.allMainLdstUseGprPlusImm) {
+    io.dbusHostPayload.addr := io.rdMemWord(1) + io.imm(1)
+  }
+  println(
+    f"cfg.allMainLdstUseGprPlusImm:${cfg.allMainLdstUseGprPlusImm}"
+  )
   //io.modMemWordValid.foreach(current => {
   //  current := True
   //})
@@ -3316,7 +3319,7 @@ case class SnowHousePipeStageMem(
   when (
     //RegNext(io.dbus.nextValid)
     //io.dbus.ready
-    io.dbusExtraReady
+    io.dbusExtraReady(0)
   ) {
     val myDecodeExt = midModPayload(extIdxUp).decodeExt
     val mapElem = midModPayload(extIdxUp).gprIdxToMemAddrIdxMap(0)
@@ -3337,6 +3340,21 @@ case class SnowHousePipeStageMem(
     )
     //} otherwise {
     //}
+  }
+  when (io.dbusExtraReady(1)) {
+    val myDecodeExt = midModPayload(extIdxUp).decodeExt
+    val mapElem = midModPayload(extIdxUp).gprIdxToMemAddrIdxMap(0)
+    val myCurrExt = (
+      if (!mapElem.haveHowToSetIdx) (
+        midModPayload(extIdxUp).myExt(
+          0
+        )
+      ) else (
+        midModPayload(extIdxUp).myExt(
+          mapElem.howToSetIdx
+        )
+      )
+    )
     myCurrExt.modMemWordValid.foreach(current => {
       current := (
         // TODO: support more destination GPRs

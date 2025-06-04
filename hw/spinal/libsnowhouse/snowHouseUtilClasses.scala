@@ -419,6 +419,7 @@ case class SnowHouseConfig(
   //splitAluOp: Boolean=false,
   optFormal: Boolean=false,
 ) {
+  def lowerMyFanout = 3
   def instrMainWidth = subCfg.instrMainWidth
   def shRegFileCfg = subCfg.shRegFileCfg
   val myHaveIrqIdsIra = (
@@ -708,6 +709,8 @@ case class SnowHouseConfig(
       if (!found) {
         cpyOpInfo.memAccess match {
           case MemAccessKind.NoMemAccess => {
+          }
+          case mem: MemAccessKind.Mem => {
             if (cpyOpInfo.srcArr.size == 2) {
               cpyOpInfo.srcArr(0) match {
                 case SrcKind.Gpr => {
@@ -727,8 +730,6 @@ case class SnowHouseConfig(
             } else {
               found = true
             }
-          }
-          case mem: MemAccessKind.Mem => {
           }
         }
       }
