@@ -3003,12 +3003,12 @@ case class SnowHousePipeStageExecute(
               nextSavedStall := True
             }
             when (
-              LcvFastAndR(
+              /*LcvFastAndR*/(
                 Vec[Bool](
                   !rSavedStall,
                   doCheckHazard,
                   myDoHaveHazard,
-                ).asBits.asUInt
+                ).asBits.asUInt.andR
               )
             ) {
               psExStallHost.nextValid := False
@@ -3023,14 +3023,14 @@ case class SnowHousePipeStageExecute(
               doStart()
             }
             when (
-              LcvFastAndR(
+              /*LcvFastAndR*/(
                 Vec[Bool](
                   !rSavedStall,
                   doCheckHazard,
                   myDoHaveHazard,
                   RegNext(psMemStallHost.nextValid, init=False),
                   psMemStallHost.ready,
-                ).asBits.asUInt
+                ).asBits.asUInt.andR
               )
             ) {
               doStart()
