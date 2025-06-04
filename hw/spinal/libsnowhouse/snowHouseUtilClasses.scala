@@ -419,7 +419,7 @@ case class SnowHouseConfig(
   //splitAluOp: Boolean=false,
   optFormal: Boolean=false,
 ) {
-  def lowerMyFanout = 3
+  def lowerMyFanout = 4
   def instrMainWidth = subCfg.instrMainWidth
   def shRegFileCfg = subCfg.shRegFileCfg
   val myHaveIrqIdsIra = (

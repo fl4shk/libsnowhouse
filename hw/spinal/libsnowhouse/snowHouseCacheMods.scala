@@ -53,7 +53,9 @@ case class SnowHouseCacheIo(
       )
     )
   )
-  val busExtraReady = out(Vec.fill(cfg.lowerMyFanout)(
+  val busExtraReady = out(Vec.fill(
+    cfg.lowerMyFanout
+  )(
     Bool()
   ))
   //val bridgeCfg = (
