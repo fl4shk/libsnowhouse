@@ -24,6 +24,51 @@ import libcheesevoyage.bus.lcvStall._
 //    ret
 //  }
 //}
+object SnowHouseFastOrR {
+  def apply(
+    self: UInt
+  ): Bool = {
+    val q = Bool()
+    val unusedSumOut = UInt(self.getWidth bits)
+    (q, unusedSumOut) := (
+      Cat(False, self).asUInt
+      + U(self.getWidth bits, default -> True)
+    )
+    q
+  }
+}
+object SnowHouseFastAndR {
+  def apply(
+    self: UInt
+  ): Bool = {
+    val q = Bool()
+    val unusedSumOut = UInt(self.getWidth bits)
+    (q, unusedSumOut) := (
+      Cat(False, self).asUInt
+      + U(self.getWidth + 1 bits, 0 -> True, default -> False)
+    )
+    q
+  }
+}
+object SnowHouseFastCmpEq {
+  def apply(
+    left: UInt,
+    right: UInt,
+  ): Bool = {
+    assert(
+      left.getWidth == right.getWidth,
+      f"leftWidth:${left.getWidth} != rightWidth:${right.getWidth}"
+    )
+    val q = Bool()
+    val unusedSumOut = UInt(left.getWidth bits)
+    (q, unusedSumOut) := (
+      Cat(False, left ^ (~right)).asUInt
+      + U(left.getWidth + 1 bits, 0 -> True, default -> False)
+    )
+
+    q
+  }
+}
 case class SnowHousePipeStageArgs(
   cfg: SnowHouseConfig,
   io: SnowHouseIo,
@@ -754,6 +799,12 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
   io.dbusHostPayload.addr.allowOverride
   io.dbusHostPayload.data.allowOverride
   io.opIs := 0x0
+  io.opIsMemAccess.foreach(current => {
+    current := False
+  })
+  io.opIsMultiCycle.foreach(current => {
+    current := False
+  })
   io.decodeExt.memAccessKind := SnowHouseMemAccessKind.LoadU
   io.decodeExt.memAccessSubKind := SnowHouseMemAccessSubKind.Sz8
   io.decodeExt.memAccessIsPush := False
@@ -964,6 +1015,7 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
   //io.modMemWordValid.foreach(current => {
   //  current := True
   //})
+  var myMemAccIdx: Int = 0
   def innerFunc(
     opInfo: OpInfo,
     opInfoIdx: Int,
@@ -1085,7 +1137,11 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
                 }
               }
               case mem: MemAccessKind.Mem => {
-                io.opIsMemAccess := True
+                //io.opIsMemAccess.foreach(current => {
+                //  current := True
+                //})
+                io.opIsMemAccess(myMemAccIdx) := True
+                myMemAccIdx += 1
                 if (!mem.isAtomic) {
                   val isStore = mem.isStore
                   if (!isStore) {
@@ -1381,35 +1437,39 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
                   io.psExSetPc.valid := {
                     //io.rdMemWord(io.brCondIdx(0))
                     //=== io.rdMemWord(io.brCondIdx(1))
-                    val q = Bool()
-                    val unusedSumOut = UInt(cfg.mainWidth bits)
-                    (
-                      q,
-                      unusedSumOut
-                    ) := (
-                      (
-                        Cat(
-                          False,
-                          (
-                            io.rdMemWord(io.brCondIdx(0))
-                            ^ (
-                              ~io.rdMemWord(io.brCondIdx(1))
-                            )
-                          )
-                        ).asUInt
-                      ) + (
-                        Cat(
-                          U{
-                            val myWidth = (
-                              io.rdMemWord(io.brCondIdx(0)).getWidth
-                            )
-                            f"${myWidth}'d0"
-                          },
-                          True
-                        ).asUInt
-                      )
+                    //val q = Bool()
+                    //val unusedSumOut = UInt(cfg.mainWidth bits)
+                    //(
+                    //  q,
+                    //  unusedSumOut
+                    //) := (
+                    //  (
+                    //    Cat(
+                    //      False,
+                    //      (
+                    //        io.rdMemWord(io.brCondIdx(0))
+                    //        ^ (
+                    //          ~io.rdMemWord(io.brCondIdx(1))
+                    //        )
+                    //      )
+                    //    ).asUInt
+                    //  ) + (
+                    //    Cat(
+                    //      U{
+                    //        val myWidth = (
+                    //          io.rdMemWord(io.brCondIdx(0)).getWidth
+                    //        )
+                    //        f"${myWidth}'d0"
+                    //      },
+                    //      True
+                    //    ).asUInt
+                    //  )
+                    //)
+                    //q
+                    SnowHouseFastCmpEq(
+                      left=io.rdMemWord(io.brCondIdx(0)),
+                      right=io.rdMemWord(io.brCondIdx(1)),
                     )
-                    q
                   }
                 }
               }
@@ -1431,35 +1491,39 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
                   io.psExSetPc.valid := {
                     //io.rdMemWord(io.brCondIdx(0))
                     //=/= io.rdMemWord(io.brCondIdx(1))
-                    val q = Bool()
-                    val unusedSumOut = UInt(cfg.mainWidth bits)
-                    (
-                      q,
-                      unusedSumOut
-                    ) := (
-                      (
-                        Cat(
-                          False,
-                          (
-                            io.rdMemWord(io.brCondIdx(0))
-                            ^ (
-                              ~io.rdMemWord(io.brCondIdx(1))
-                            )
-                          )
-                        ).asUInt
-                      ) + (
-                        Cat(
-                          U{
-                            val myWidth = (
-                              io.rdMemWord(io.brCondIdx(0)).getWidth
-                            )
-                            f"${myWidth}'d0"
-                          },
-                          True
-                        ).asUInt
-                      )
+                    //val q = Bool()
+                    //val unusedSumOut = UInt(cfg.mainWidth bits)
+                    //(
+                    //  q,
+                    //  unusedSumOut
+                    //) := (
+                    //  (
+                    //    Cat(
+                    //      False,
+                    //      (
+                    //        io.rdMemWord(io.brCondIdx(0))
+                    //        ^ (
+                    //          ~io.rdMemWord(io.brCondIdx(1))
+                    //        )
+                    //      )
+                    //    ).asUInt
+                    //  ) + (
+                    //    Cat(
+                    //      U{
+                    //        val myWidth = (
+                    //          io.rdMemWord(io.brCondIdx(0)).getWidth
+                    //        )
+                    //        f"${myWidth}'d0"
+                    //      },
+                    //      True
+                    //    ).asUInt
+                    //  )
+                    //)
+                    //(!q)
+                    !SnowHouseFastCmpEq(
+                      left=io.rdMemWord(io.brCondIdx(0)),
+                      right=io.rdMemWord(io.brCondIdx(1)),
                     )
-                    (!q)
                   }
                 }
               }
@@ -1760,8 +1824,8 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
                   + s"opInfo(${opInfo}) index:${opInfoIdx}"
                 )
                 io.psExSetPc.valid := (
-                  //io.rdMemWord(io.brCondIdx(0)) === 0
-                  !(io.rdMemWord(io.brCondIdx(0)).orR)
+                  io.rdMemWord(io.brCondIdx(0)) === 0
+                  //!(io.rdMemWord(io.brCondIdx(0)).orR)
                 )
               }
               case CondKind.Nz => {
@@ -1771,8 +1835,8 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
                   + s"opInfo(${opInfo}) index:${opInfoIdx}"
                 )
                 io.psExSetPc.valid := (
-                  //io.rdMemWord(io.brCondIdx(0)) =/= 0
-                  io.rdMemWord(io.brCondIdx(0)).orR
+                  io.rdMemWord(io.brCondIdx(0)) =/= 0
+                  //io.rdMemWord(io.brCondIdx(0)).orR
                 )
               }
               case _ => {
@@ -2119,7 +2183,7 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
             }
           }
         }
-        io.opIsMultiCycle := (
+        io.opIsMultiCycle(opInfoIdx) := (
           True
           //False
         )
@@ -2235,6 +2299,12 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
     lowerMyFanoutShouldIgnoreInstr
   ) {
     io.opIs := 0x0
+    io.opIsMemAccess.foreach(current => {
+      current := False
+    })
+    io.opIsMultiCycle.foreach(current => {
+      current := False
+    })
   }
 //  }
 }
@@ -2887,14 +2957,21 @@ case class SnowHousePipeStageExecute(
   //  !rSavedStall
   //  && doCheckHazard && myDoHaveHazard1
   //)
-  when (setOutpModMemWord.io.opIsMemAccess) {
+  when (SnowHouseFastOrR(
+    setOutpModMemWord.io.opIsMemAccess.asBits.asUInt
+  )) {
     nextPrevTxnWasHazard := True
     when (cMid0Front.up.isFiring) {
       psMemStallHost.nextValid := True
       io.dbus.sendData := setOutpModMemWord.io.dbusHostPayload
     }
   }
-  when (setOutpModMemWord.io.opIsMultiCycle) {
+  when (
+    //setOutpModMemWord.io.opIsMultiCycle.orR
+    SnowHouseFastOrR(
+      setOutpModMemWord.io.opIsMultiCycle.asBits.asUInt
+    )
+  ) {
     switch (outp.splitOp.multiCycleOp) {
       for (
         ((_, opInfo), opInfoIdx)

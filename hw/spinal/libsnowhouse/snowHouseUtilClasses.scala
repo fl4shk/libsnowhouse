@@ -420,6 +420,7 @@ case class SnowHouseConfig(
   optFormal: Boolean=false,
 ) {
   def lowerMyFanout = 4
+  //def lowerMyFanoutDec = multiCycle
   def instrMainWidth = subCfg.instrMainWidth
   def shRegFileCfg = subCfg.shRegFileCfg
   val myHaveIrqIdsIra = (
@@ -762,12 +763,12 @@ case class SnowHouseDecodeExt(
   cfg: SnowHouseConfig
 ) extends Bundle {
   //--------
-  private val _opIsMemAccessIdx = 0
-  private val _opIsCpyNonJmpAluIdx = 1
-  private val _opIsAluShiftIdx = 2
-  private val _opIsJmpIdx = 3
-  private val _opIsMultiCycleIdx = 4
-  val opIsLim = 5
+  //private val _opIsMemAccessIdx = 0
+  private val _opIsCpyNonJmpAluIdx = 0
+  private val _opIsAluShiftIdx = 1
+  private val _opIsJmpIdx = 2
+  //private val _opIsMultiCycleIdx = 4
+  val opIsLim = 3
   val opIs = /*out*/(UInt(opIsLim bits))
   //val memAccessLdStKind = SnowHouseDecodeExtLdStKind() //Bool()
   //def memAccessIsLoad = (
@@ -783,11 +784,21 @@ case class SnowHouseDecodeExt(
   // (probably just read-modify-write)
   //val memAccessIsAtomic = Bool()
   //--------
-  def opIsMemAccess = opIs(_opIsMemAccessIdx)
+  //def opIsMemAccess = opIs(_opIsMemAccessIdx)
+  val opIsMemAccess = Vec.fill(
+    cfg.memAccOpInfoMap.size
+  )(
+    Bool()
+  )
   def opIsCpyNonJmpAlu = opIs(_opIsCpyNonJmpAluIdx)
   def opIsAluShift = opIs(_opIsAluShiftIdx)
   def opIsJmp = opIs(_opIsJmpIdx)
-  def opIsMultiCycle = opIs(_opIsMultiCycleIdx)
+  //def opIsMultiCycle = opIs(_opIsMultiCycleIdx)
+  val opIsMultiCycle = Vec.fill(
+    cfg.multiCycleOpInfoMap.size
+  )(
+    Bool()
+  )
   //--------
 }
 case class SnowHouseGprIdxToMemAddrIdxMapElem(
