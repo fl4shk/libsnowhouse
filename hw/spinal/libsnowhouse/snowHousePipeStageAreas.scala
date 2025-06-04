@@ -1899,9 +1899,9 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
                       io.modMemWordValid.foreach(current => {
                         current := False
                       })
-                      io.modMemWord.foreach(modMemWord => {
-                        modMemWord := modMemWord.getZero
-                      })
+                      //io.modMemWord.foreach(modMemWord => {
+                      //  modMemWord := modMemWord.getZero
+                      //})
                     } else {
                       nextFlagN := myBinop.flagN
                       nextFlagV := myBinop.flagV
@@ -1914,63 +1914,63 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
                     io.modMemWordValid.foreach(current => {
                       current := False
                     })
-                    io.modMemWord.foreach(modMemWord => {
-                      modMemWord := modMemWord.getZero
-                    })
+                    //io.modMemWord.foreach(modMemWord => {
+                    //  modMemWord := modMemWord.getZero
+                    //})
                   }
                   case SprKind.Ira => {
                     nextIra := myBinop.main
                     io.modMemWordValid.foreach(current => {
                       current := False
                     })
-                    io.modMemWord.foreach(modMemWord => {
-                      modMemWord := modMemWord.getZero
-                    })
+                    //io.modMemWord.foreach(modMemWord => {
+                    //  modMemWord := modMemWord.getZero
+                    //})
                   }
                   case SprKind.Ie => {
                     nextIe := myBinop.main(0)
                     io.modMemWordValid.foreach(current => {
                       current := False
                     })
-                    io.modMemWord.foreach(modMemWord => {
-                      modMemWord := modMemWord.getZero
-                    })
+                    //io.modMemWord.foreach(modMemWord => {
+                    //  modMemWord := modMemWord.getZero
+                    //})
                   }
                   case SprKind.Ity => {
                     nextIty := myBinop.main
                     io.modMemWordValid.foreach(current => {
                       current := False
                     })
-                    io.modMemWord.foreach(modMemWord => {
-                      modMemWord := modMemWord.getZero
-                    })
+                    //io.modMemWord.foreach(modMemWord => {
+                    //  modMemWord := modMemWord.getZero
+                    //})
                   }
                   case SprKind.Sty => {
                     nextSty := myBinop.main
                     io.modMemWordValid.foreach(current => {
                       current := False
                     })
-                    io.modMemWord.foreach(modMemWord => {
-                      modMemWord := modMemWord.getZero
-                    })
+                    //io.modMemWord.foreach(modMemWord => {
+                    //  modMemWord := modMemWord.getZero
+                    //})
                   }
                   case SprKind.Hi => {
                     nextHi := myBinop.main
                     io.modMemWordValid.foreach(current => {
                       current := False
                     })
-                    io.modMemWord.foreach(modMemWord => {
-                      modMemWord := modMemWord.getZero
-                    })
+                    //io.modMemWord.foreach(modMemWord => {
+                    //  modMemWord := modMemWord.getZero
+                    //})
                   }
                   case SprKind.Lo => {
                     nextLo := myBinop.main
                     io.modMemWordValid.foreach(current => {
                       current := False
                     })
-                    io.modMemWord.foreach(modMemWord => {
-                      modMemWord := modMemWord.getZero
-                    })
+                    //io.modMemWord.foreach(modMemWord => {
+                    //  modMemWord := modMemWord.getZero
+                    //})
                   }
                   case _ => {
                     assert(
@@ -1985,9 +1985,9 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
                 io.modMemWordValid.foreach(current => {
                   current := False
                 })
-                io.modMemWord.foreach(modMemWord => {
-                  modMemWord := modMemWord.getZero
-                })
+                //io.modMemWord.foreach(modMemWord => {
+                //  modMemWord := modMemWord.getZero
+                //})
               }
               case _ => {
                 nextIndexReg := 0x0
