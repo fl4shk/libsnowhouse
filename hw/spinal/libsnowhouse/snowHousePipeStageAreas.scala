@@ -2971,6 +2971,84 @@ case class SnowHousePipeStageExecute(
       io.dbus.sendData := setOutpModMemWord.io.dbusHostPayload
     }
   }
+  for (idx <- 0 until setOutpModMemWord.io.opIsMultiCycle.size) {
+    when (setOutpModMemWord.io.opIsMultiCycle(idx)) {
+      for (
+        ((_, opInfo), opInfoIdx)
+        <- cfg.multiCycleOpInfoMap.view.zipWithIndex
+      ) {
+        //is (opInfoIdx) 
+        if (opInfoIdx == idx) {
+          var busIdxFound: Boolean = false
+          var busIdx: Int = 0
+          for (
+            ((_, multiCycleOpInfo), myBusIdx)
+            <- cfg.multiCycleOpInfoMap.view.zipWithIndex
+          ) {
+            if (opInfo == multiCycleOpInfo) {
+              busIdxFound = true
+              busIdx = myBusIdx
+            }
+          }
+          if (busIdxFound) {
+            val psExStallHost = psExStallHostArr(busIdx)
+            def doStart(): Unit = {
+              myDoStall(stallKindMem) := False
+              myDoStall(stallKindMultiCycle) := True
+              psExStallHost.nextValid := True
+              nextSavedStall := True
+            }
+            when (
+              LcvFastAndR(
+                Vec[Bool](
+                  !rSavedStall,
+                  doCheckHazard,
+                  myDoHaveHazard,
+                ).asBits.asUInt
+              )
+            ) {
+              psExStallHost.nextValid := False
+              when (
+                //psMemStallHost.fire
+                RegNext(psMemStallHost.nextValid, init=False)
+                && psMemStallHost.ready
+              ) {
+                doStart()
+              }
+            } otherwise {
+              doStart()
+            }
+            //when (
+            //  LcvFastAndR(
+            //    Vec[Bool](
+            //      !rSavedStall,
+            //      doCheckHazard,
+            //      myDoHaveHazard,
+            //      RegNext(psMemStallHost.nextValid, init=False),
+            //      psMemStallHost.ready,
+            //    ).asBits.asUInt
+            //  )
+            //) {
+            //  doStart()
+            //}
+            when (
+              RegNext(psExStallHost.nextValid)
+              && psExStallHost.ready
+            ) {
+              psExStallHost.nextValid := False
+              myDoStall(stallKindMultiCycle) := False
+            }
+            when (rSavedStall) {
+              myDoStall(stallKindMem) := False
+            }
+            when (cMid0Front.up.isFiring) {
+              nextSavedStall := False
+            }
+          }
+        }
+      }
+    }
+  }
   when (
     //setOutpModMemWord.io.opIsMultiCycle.orR
     LcvFastOrR(
@@ -3003,38 +3081,38 @@ case class SnowHousePipeStageExecute(
               nextSavedStall := True
             }
             when (
-              /*LcvFastAndR*/(
+              LcvFastAndR(
                 Vec[Bool](
                   !rSavedStall,
                   doCheckHazard,
                   myDoHaveHazard,
-                ).asBits.asUInt.andR
+                ).asBits.asUInt
               )
             ) {
               psExStallHost.nextValid := False
-              //when (
-              //  //psMemStallHost.fire
-              //  RegNext(psMemStallHost.nextValid, init=False)
-              //  && psMemStallHost.ready
-              //) {
-              //  doStart()
-              //}
+              when (
+                //psMemStallHost.fire
+                RegNext(psMemStallHost.nextValid, init=False)
+                && psMemStallHost.ready
+              ) {
+                doStart()
+              }
             } otherwise {
               doStart()
             }
-            when (
-              /*LcvFastAndR*/(
-                Vec[Bool](
-                  !rSavedStall,
-                  doCheckHazard,
-                  myDoHaveHazard,
-                  RegNext(psMemStallHost.nextValid, init=False),
-                  psMemStallHost.ready,
-                ).asBits.asUInt.andR
-              )
-            ) {
-              doStart()
-            }
+            //when (
+            //  LcvFastAndR(
+            //    Vec[Bool](
+            //      !rSavedStall,
+            //      doCheckHazard,
+            //      myDoHaveHazard,
+            //      RegNext(psMemStallHost.nextValid, init=False),
+            //      psMemStallHost.ready,
+            //    ).asBits.asUInt
+            //  )
+            //) {
+            //  doStart()
+            //}
             when (
               RegNext(psExStallHost.nextValid)
               && psExStallHost.ready
