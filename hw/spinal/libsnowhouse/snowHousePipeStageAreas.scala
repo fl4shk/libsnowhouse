@@ -2662,7 +2662,7 @@ case class SnowHousePipeStageExecute(
   val reEnableIrqsCond = (
     cfg.irqCfg != None
   ) generate {
-    LcvFastAndR(
+    /*LcvFastAndR*/(
       Vec[Bool](
         cMid0Front.up.isFiring,
         rIrqHndlState,//.fire
@@ -2683,7 +2683,7 @@ case class SnowHousePipeStageExecute(
             init=False,
           )
         ),
-      ).asBits.asUInt
+      ).asBits.asUInt.andR
     )
   }
   if (cfg.irqCfg != None) {
@@ -3033,6 +3033,7 @@ case class SnowHousePipeStageExecute(
                 ).asBits.asUInt
               )
             ) {
+              doStart()
             }
             when (
               RegNext(psExStallHost.nextValid)
