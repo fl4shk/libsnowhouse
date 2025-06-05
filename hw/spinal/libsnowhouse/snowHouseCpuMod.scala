@@ -2275,12 +2275,13 @@ case class SnowHouseCpuShift32(
         when (RegNext(multiCycleBus.nextValid) init(False)) {
           val width: Int=cfg.mainWidth
           val binop = InstrResult(cfg=cfg)(width=width)
-          val left = RegNext(srcVec(0)) init(0x0)
-          val right = RegNext(srcVec(1)) init(0x0)
+          val left = /*RegNext*/(srcVec(0)) //init(0x0)
+          val right = /*RegNext*/(srcVec(1)) //init(0x0)
           val tempLeft = Cat(left).asUInt(width - 1 downto 0)
           val tempRight = Cat(right).asUInt(width - 1 downto 0)
           //binop.leftMsb := left(width - 1)
           //binop.rightMsb := right(width - 1)
+          binop.main.setAsReg() init(binop.main.getZero)
           binop.main := (
             tempLeft << tempRight(log2Up(width) downto 0)
           )(binop.main.bitsRange)
@@ -2306,12 +2307,13 @@ case class SnowHouseCpuShift32(
         when (RegNext(multiCycleBus.nextValid) init(False)) {
           val width: Int = cfg.mainWidth
           val binop = InstrResult(cfg=cfg)(width=width)
-          val left = RegNext(srcVec(0)) init(0x0)
-          val right = RegNext(srcVec(1)) init(0x0)
+          val left = /*RegNext*/(srcVec(0)) //init(0x0)
+          val right = /*RegNext*/(srcVec(1)) //init(0x0)
           val tempLeft = Cat(left).asUInt(width - 1 downto 0)
           val tempRight = Cat(right).asUInt(width - 1 downto 0)
           //binop.leftMsb := left(width - 1)
           //binop.rightMsb := right(width - 1)
+          binop.main.setAsReg() init(binop.main.getZero)
           binop.main := (
             tempLeft >> tempRight//(log2Up(cfg.mainWidth) downto 0)
           ).resized
@@ -2336,12 +2338,13 @@ case class SnowHouseCpuShift32(
         when (RegNext(multiCycleBus.nextValid) init(False)) {
           val width: Int = cfg.mainWidth
           val binop = InstrResult(cfg=cfg)(width=width)
-          val left = RegNext(srcVec(0)) init(0x0)
-          val right = RegNext(srcVec(1)) init(0x0)
+          val left = /*RegNext*/(srcVec(0)) //init(0x0)
+          val right = /*RegNext*/(srcVec(1)) //init(0x0)
           val tempLeft = Cat(left).asUInt(width - 1 downto 0)
           val tempRight = Cat(right).asUInt(width - 1 downto 0)
           //binop.leftMsb := left(width - 1)
           //binop.rightMsb := right(width - 1)
+          binop.main.setAsReg() init(binop.main.getZero)
           binop.main := (
             tempLeft.asSInt >> tempRight//(log2Up(cfg.mainWidth) downto 0)
           ).asUInt.resized
