@@ -237,6 +237,13 @@ case class SnowHouseCache(
     ),
     depth=depthLines,
     initBigInt=Some(Array.fill(depthLines)(BigInt(0))),
+    arrRamStyle=(
+      if (isIcache) (
+        cfg.subCfg.icacheCfg.memRamStyle
+      ) else (
+        cfg.subCfg.dcacheCfg.memRamStyle
+      )
+    )
   )
   val tempLineBusAddr = (
     /*KeepAttribute*/(cloneOf(rBusAddr))
