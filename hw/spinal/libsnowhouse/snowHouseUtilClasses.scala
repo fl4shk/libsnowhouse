@@ -823,7 +823,12 @@ case class SnowHouseGprIdxToMemAddrIdxMapElem(
   )
 }
 object SnowHouseSplitOpKind
-extends SpinalEnum(defaultEncoding=binaryOneHot) {
+extends SpinalEnum(
+  defaultEncoding=(
+    binaryOneHot
+    //binarySequential
+  )
+) {
   val
     CPY_CPYUI,
     JMP_BR,
@@ -848,6 +853,9 @@ extends SpinalEnum(defaultEncoding=binaryOneHot) {
 case class SnowHouseSplitOp(
   cfg: SnowHouseConfig
 ) extends Bundle {
+  val fullOp = /*Flow*/(
+    UInt(log2Up(cfg.opInfoMap.size) bits)
+  )
   val kind = SnowHouseSplitOpKind(
     //binaryOneHot
   )
