@@ -222,6 +222,13 @@ case class SnowHouseCache(
     wordType=UInt(cacheCfg.wordWidth bits),
     depth=depthWords,
     initBigInt=Some(Array.fill(depthWords)(BigInt(0))),
+    arrRamStyle=(
+      if (isIcache) (
+        cfg.subCfg.icacheCfg.memRamStyle
+      ) else (
+        cfg.subCfg.dcacheCfg.memRamStyle
+      )
+    )
   )
   val lineAttrsRam = FpgacpuRamSimpleDualPort(
     wordType=SnowHouseCacheLineAttrs(
