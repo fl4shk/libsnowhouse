@@ -2413,9 +2413,20 @@ case class SnowHousePipeStageExecute(
     doModInModFrontParams.getMyRdMemWordFunc(ydx, modIdx)
   )
   when (cMid0Front.up.isValid ) {
-    when (!rSetOutpState) {
+    when (
+      //!rSetOutpState
+      !RegNext(next=nextSetOutpState, init=nextSetOutpState.getZero)
+    ) {
       outp := inp
+    }
+    when (
+      !RegNext(next=nextSetOutpState, init=nextSetOutpState.getZero)
+    ) {
       tempExt := inp.myExt
+    }
+    when (
+      !RegNext(next=nextSetOutpState, init=nextSetOutpState.getZero)
+    ) {
       nextSetOutpState := True
     }
     when (cMid0Front.up.isFiring) {
