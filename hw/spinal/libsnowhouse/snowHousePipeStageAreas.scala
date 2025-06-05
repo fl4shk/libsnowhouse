@@ -2216,73 +2216,102 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
       }
     }
   }
-  switch (io.splitOp.fullOp) {
-    for (
-      ((_, opInfo), opInfoIdx) <- cfg.opInfoMap.view.zipWithIndex
-    ) {
-      is (opInfoIdx) {
-        //innerFunc(
-        //  opInfo=opInfo,
-        //  opInfoIdx=idx,
-        //)
-        for (
-          ((_, cpyOpInfo), idx)
-          <- cfg.cpyCpyuiOpInfoMap.view.zipWithIndex
-        ) {
-          if (opInfo == cpyOpInfo) {
-            innerFunc(
-              opInfo=opInfo,
-              opInfoIdx=idx,
-            )
-          }
+  when (!io.splitOp.opIsMultiCycle) {
+    switch (io.splitOp.nonMultiCycleOp) {
+      for (
+        ((_, opInfo), idx)
+        <- cfg.nonMultiCycleOpInfoMap.view.zipWithIndex
+      ) {
+        is (idx) {
+          innerFunc(
+            opInfo=opInfo,
+            opInfoIdx=idx,
+          )
         }
-        for (
-          ((_, jmpOpInfo), idx)
-          <- cfg.jmpBrOpInfoMap.view.zipWithIndex
-        ) {
-          if (opInfo == jmpOpInfo) {
-            innerFunc(
-              opInfo=opInfo,
-              opInfoIdx=idx,
-            )
-          }
-        }
-        for (
-          ((_, aluOpInfo), idx)
-          <- cfg.aluOpInfoMap.view.zipWithIndex
-        ) {
-          if (opInfo == aluOpInfo) {
-            innerFunc(
-              opInfo=opInfo,
-              opInfoIdx=idx,
-            )
-          }
-        }
-        for (
-          ((_, aluShiftOpInfo), idx)
-          <- cfg.aluShiftOpInfoMap.view.zipWithIndex
-        ) {
-          if (opInfo == aluShiftOpInfo) {
-            innerFunc(
-              opInfo=opInfo,
-              opInfoIdx=idx,
-            )
-          }
-        }
-        for (
-          ((_, multiCycleOpInfo), idx)
-          <- cfg.multiCycleOpInfoMap.view.zipWithIndex
-        ) {
-          if (opInfo == multiCycleOpInfo) {
-            innerFunc(
-              opInfo=opInfo,
-              opInfoIdx=idx,
-            )
-          }
+      }
+    }
+  } otherwise { // when (io.splitOp.opIsMultiCycle)
+    switch (io.splitOp.multiCycleOp) {
+      for (
+        ((_, opInfo), idx)
+        <- cfg.multiCycleOpInfoMap.view.zipWithIndex
+      ) {
+        is (idx) {
+          innerFunc(
+            opInfo=opInfo,
+            opInfoIdx=idx,
+          )
         }
       }
     }
   }
+  //switch (io.splitOp.fullOp) {
+  //  for (
+  //    ((_, opInfo), opInfoIdx) <- cfg.opInfoMap.view.zipWithIndex
+  //  ) {
+  //    is (opInfoIdx) {
+  //      //innerFunc(
+  //      //  opInfo=opInfo,
+  //      //  opInfoIdx=idx,
+  //      //)
+  //      for (
+  //        ((_, cpyOpInfo), idx)
+  //        <- cfg.cpyCpyuiOpInfoMap.view.zipWithIndex
+  //      ) {
+  //        if (opInfo == cpyOpInfo) {
+  //          innerFunc(
+  //            opInfo=opInfo,
+  //            opInfoIdx=idx,
+  //          )
+  //        }
+  //      }
+  //      for (
+  //        ((_, jmpOpInfo), idx)
+  //        <- cfg.jmpBrOpInfoMap.view.zipWithIndex
+  //      ) {
+  //        if (opInfo == jmpOpInfo) {
+  //          innerFunc(
+  //            opInfo=opInfo,
+  //            opInfoIdx=idx,
+  //          )
+  //        }
+  //      }
+  //      for (
+  //        ((_, aluOpInfo), idx)
+  //        <- cfg.aluOpInfoMap.view.zipWithIndex
+  //      ) {
+  //        if (opInfo == aluOpInfo) {
+  //          innerFunc(
+  //            opInfo=opInfo,
+  //            opInfoIdx=idx,
+  //          )
+  //        }
+  //      }
+  //      for (
+  //        ((_, aluShiftOpInfo), idx)
+  //        <- cfg.aluShiftOpInfoMap.view.zipWithIndex
+  //      ) {
+  //        if (opInfo == aluShiftOpInfo) {
+  //          innerFunc(
+  //            opInfo=opInfo,
+  //            opInfoIdx=idx,
+  //          )
+  //        }
+  //      }
+  //      for (
+  //        ((_, multiCycleOpInfo), idx)
+  //        <- cfg.multiCycleOpInfoMap.view.zipWithIndex
+  //      ) {
+  //        if (opInfo == multiCycleOpInfo) {
+  //          innerFunc(
+  //            opInfo=opInfo,
+  //            opInfoIdx=idx,
+  //          )
+  //        }
+  //      }
+  //    }
+  //  }
+  //}
   //switch (io.splitOp.kind) {
   //  is (SnowHouseSplitOpKind.CPY_CPYUI) {
   //    switch (io.splitOp.cpyCpyuiOp) {

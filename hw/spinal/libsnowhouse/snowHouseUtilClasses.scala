@@ -547,6 +547,7 @@ case class SnowHouseConfig(
   //val cpyOpInfoMap = LinkedHashMap[Int, OpInfo]()
   val aluOpInfoMap = LinkedHashMap[Int, OpInfo]()
   val aluShiftOpInfoMap = LinkedHashMap[Int, OpInfo]()
+  val nonMultiCycleOpInfoMap = LinkedHashMap[Int, OpInfo]()
   val multiCycleOpInfoMap = LinkedHashMap[Int, OpInfo]()
   //val loadOpInfoMap = LinkedHashMap[Int, OpInfo]()
   //val storeOpInfoMap = LinkedHashMap[Int, OpInfo]()
@@ -646,6 +647,7 @@ case class SnowHouseConfig(
             //  + s"opInfo(${opInfo}), instructionIndex:${idx}"
             //)
             cpyCpyuiOpInfoMap += (idx -> opInfo)
+            nonMultiCycleOpInfoMap += (idx -> opInfo)
           }
           case CpyOpKind.Cpyu => {
             //assert(
@@ -656,6 +658,7 @@ case class SnowHouseConfig(
             //)
             //pureCpyuiOpInfoMap += (idx -> opInfo)
             cpyCpyuiOpInfoMap += (idx -> opInfo)
+            nonMultiCycleOpInfoMap += (idx -> opInfo)
           }
           case CpyOpKind.Jmp => { // non-relative jumps
             //assert(
@@ -666,10 +669,12 @@ case class SnowHouseConfig(
             //  + s"opInfo(${opInfo}), instructionIndex:${idx}"
             //)
             jmpBrOpInfoMap += (idx -> opInfo)
+            nonMultiCycleOpInfoMap += (idx -> opInfo)
           }
           case CpyOpKind.Br => { // relative branches
             //pureBrOpInfoMap += (idx -> opInfo)
             jmpBrOpInfoMap += (idx -> opInfo)
+            nonMultiCycleOpInfoMap += (idx -> opInfo)
           }
         }
       }
@@ -682,10 +687,12 @@ case class SnowHouseConfig(
         //  + s"opInfo(${opInfo}), instructionIndex:${idx}"
         //)
         aluOpInfoMap += (idx -> opInfo)
+        nonMultiCycleOpInfoMap += (idx -> opInfo)
       }
       case OpSelect.AluShift => {
         checkValidArgs(opInfo.aluShiftOp)
         aluShiftOpInfoMap += (idx -> opInfo)
+        nonMultiCycleOpInfoMap += (idx -> opInfo)
       }
       case OpSelect.MultiCycle => {
         checkValidArgs(opInfo.multiCycleOp)
@@ -853,8 +860,12 @@ extends SpinalEnum(
 case class SnowHouseSplitOp(
   cfg: SnowHouseConfig
 ) extends Bundle {
-  val fullOp = /*Flow*/(
-    UInt(log2Up(cfg.opInfoMap.size) bits)
+  //val fullOp = /*Flow*/(
+  //  UInt(log2Up(cfg.opInfoMap.size) bits)
+  //)
+  val opIsMultiCycle = Bool()
+  val nonMultiCycleOp = /*Flow*/(
+    UInt(log2Up(cfg.nonMultiCycleOpInfoMap.size) bits)
   )
   val kind = SnowHouseSplitOpKind(
     //binaryOneHot
