@@ -1415,12 +1415,12 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
                     current := False
                   })
                 ) else {
-                  for (idx <- 0 until io.modMemWordValid.size) {
-                    io.modMemWordValid(idx) := (
-                      // TODO: support more outputs
-                      !io.gprIsZeroVec(0)(idx)
-                    )
-                  }
+                  //for (idx <- 0 until io.modMemWordValid.size) {
+                  //  io.modMemWordValid(idx) := (
+                  //    // TODO: support more outputs
+                  //    !io.gprIsZeroVec(0)(idx)
+                  //  )
+                  //}
                 }
               }
               case CondKind.Eq => {
