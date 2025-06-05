@@ -1195,25 +1195,27 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
                       }
                     ) 
                   )
-                  io.dbusHostPayload.addr := (
-                    opInfo.srcArr.size match {
-                      case 1 => (
-                        tempAddr
-                      )
-                      case 2 => (
-                        tempAddr + selRdMemWord(2)
-                      )
-                      case _ => {
-                        assert(
-                          false,
-                          s"invalid opInfo.srcArr.size: "
-                          + s"opInfo(${opInfo}) "
-                          + s"index:${opInfoIdx}"
+                  if (!cfg.allMainLdstUseGprPlusImm) {
+                    io.dbusHostPayload.addr := (
+                      opInfo.srcArr.size match {
+                        case 1 => (
+                          tempAddr
                         )
-                        U(s"${cfg.mainWidth}'d0")
+                        case 2 => (
+                          tempAddr + selRdMemWord(2)
+                        )
+                        case _ => {
+                          assert(
+                            false,
+                            s"invalid opInfo.srcArr.size: "
+                            + s"opInfo(${opInfo}) "
+                            + s"index:${opInfoIdx}"
+                          )
+                          U(s"${cfg.mainWidth}'d0")
+                        }
                       }
-                    }
-                  )
+                    )
+                  }
                   if (!isStore) {
                     val tempMemAccessKind = (
                       if (!mem.isSigned) (
