@@ -1885,7 +1885,9 @@ case class SnowHouseCpuConfig(
   //  tempArr
   //})
   exposeModMemWordToIo: Boolean=false,
-  regFileMemRamStyle: String="distributed"
+  regFileMemRamStyle: String="distributed",
+  icacheMemRamStyle: String="auto",
+  dcacheMemRamStyle: String="auto",
 ) {
   //--------
   val instrMainWidth = 32
@@ -2001,10 +2003,12 @@ case class SnowHouseCpuConfig(
         icacheDepth=icacheDepth,
         icacheLineSizeBytes=icacheLineSizeBytes,
         icacheBusSrcNum=icacheBusSrcNum,
+        icacheMemRamStyle=icacheMemRamStyle,
         haveDcache=true,
         dcacheDepth=dcacheDepth,
         dcacheLineSizeBytes=dcacheLineSizeBytes,
         dcacheBusSrcNum=dcacheBusSrcNum,
+        dcacheMemRamStyle=dcacheMemRamStyle,
         totalNumBusHosts=2,
         optCacheBusSrcWidth=None,
       )
