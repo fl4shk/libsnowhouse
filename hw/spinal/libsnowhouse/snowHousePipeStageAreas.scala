@@ -1069,9 +1069,9 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
                     io.modMemWordValid.foreach(current => {
                       current := False
                     })
-                    io.modMemWord.foreach(modMemWord => {
-                      modMemWord := modMemWord.getZero
-                    })
+                    //io.modMemWord.foreach(modMemWord => {
+                    //  modMemWord := modMemWord.getZero
+                    //})
                     kind match {
                       case SprKind.AluFlags => {
                         nextAluFlags := selRdMemWord(1)
@@ -1109,9 +1109,9 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
                     io.modMemWordValid.foreach(current => {
                       current := False
                     })
-                    io.modMemWord.foreach(modMemWord => {
-                      modMemWord := modMemWord.getZero
-                    })
+                    //io.modMemWord.foreach(modMemWord => {
+                    //  modMemWord := modMemWord.getZero
+                    //})
                     kind match {
                       case HiddenRegKind.IndexReg => {
                         nextIndexReg := selRdMemWord(1)
@@ -1148,9 +1148,9 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
                     io.modMemWordValid.foreach(current => {
                       current := False
                     })
-                    io.modMemWord.foreach(modMemWord => {
-                      modMemWord := modMemWord.getZero
-                    })
+                    //io.modMemWord.foreach(modMemWord => {
+                    //  modMemWord := modMemWord.getZero
+                    //})
                   } else {
                     //io.modMemWordValid.foreach(current => {
                     //  current := True
@@ -1358,7 +1358,8 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
             //  })
             //}
             io.modMemWord(0) := (
-              io.regPc + ((cfg.instrMainWidth / 8) * 1)
+              //io.regPc + ((cfg.instrMainWidth / 8) * 1)
+              io.regPcPlusInstrSize
             )
             io.psExSetPc.valid := True
             when (
@@ -1406,7 +1407,8 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
                 io.psExSetPc.valid := True
 
                 io.modMemWord(0) := (
-                  io.regPc + ((cfg.instrMainWidth / 8) * 1)
+                  //io.regPc + ((cfg.instrMainWidth / 8) * 1)
+                  io.regPcPlusInstrSize
                 )
                 if (opInfo.dstArr.size == 1) (
                   io.modMemWordValid.foreach(current => {
