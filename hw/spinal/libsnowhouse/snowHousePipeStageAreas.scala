@@ -2608,38 +2608,38 @@ case class SnowHousePipeStageExecute(
   val tempTakeIrq = (
     cfg.irqCfg != None
   ) generate (
-    LcvFastAndR(
-      Vec[Bool](
-        (
-          cMid0Front.up.isValid
-        ), 
-        (
-          outp.takeIrq
-        ),
-        (
-          RegNextWhen(
-            next=(setOutpModMemWord.nextIe/*(0)*/ === True),//0x0
-            cond=cMid0Front.up.isFiring,
-            init=False,
-          )
-          //setOutpModMemWord.nextIe/*(0)*/ === True
-        ),
-        (
-          !setOutpModMemWord.io.shouldIgnoreInstr
-        ),
-        (
-          !rIrqHndlState//.valid
-        ),
-        (
-          if (setOutpModMemWord.io.haveRetIraState) (
-            !setOutpModMemWord.io.rHadRetIra
-          ) else (
-            True
-          )
-        )
-      ).asBits.asUInt
-    )
-    //False
+    //LcvFastAndR(
+    //  Vec[Bool](
+    //    (
+    //      cMid0Front.up.isValid
+    //    ), 
+    //    (
+    //      outp.takeIrq
+    //    ),
+    //    (
+    //      RegNextWhen(
+    //        next=(setOutpModMemWord.nextIe/*(0)*/ === True),//0x0
+    //        cond=cMid0Front.up.isFiring,
+    //        init=False,
+    //      )
+    //      //setOutpModMemWord.nextIe/*(0)*/ === True
+    //    ),
+    //    (
+    //      !setOutpModMemWord.io.shouldIgnoreInstr
+    //    ),
+    //    (
+    //      !rIrqHndlState//.valid
+    //    ),
+    //    (
+    //      if (setOutpModMemWord.io.haveRetIraState) (
+    //        !setOutpModMemWord.io.rHadRetIra
+    //      ) else (
+    //        True
+    //      )
+    //    )
+    //  ).asBits.asUInt
+    //)
+    False
   )
   if (cfg.irqCfg != None) {
     when (RegNext(io.idsIraIrq.nextValid)) {
