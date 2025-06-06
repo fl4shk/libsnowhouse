@@ -1006,9 +1006,9 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
     io.regPcPlusImm
   )
   io.dbusHostPayload.data := io.rdMemWord(0) //selRdMemWord(0)
-  if (cfg.allMainLdstUseGprPlusImm) {
-    io.dbusHostPayload.addr := io.rdMemWord(1) + io.imm(1)
-  }
+  //if (cfg.allMainLdstUseGprPlusImm) {
+  //  io.dbusHostPayload.addr := io.rdMemWord(1) + io.imm(1)
+  //}
   println(
     f"cfg.allMainLdstUseGprPlusImm:${cfg.allMainLdstUseGprPlusImm}"
   )
@@ -2217,6 +2217,9 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
     }
   }
   when (!io.splitOp.opIsMultiCycle) {
+    if (cfg.allMainLdstUseGprPlusImm) {
+      io.dbusHostPayload.addr := io.rdMemWord(1) + io.imm(1)
+    }
     switch (io.splitOp.nonMultiCycleOp) {
       for (
         ((_, opInfo), idx)
@@ -2231,6 +2234,12 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
       }
     }
   } otherwise { // when (io.splitOp.opIsMultiCycle)
+    if (cfg.allMainLdstUseGprPlusImm) {
+      io.dbusHostPayload.addr := RegNext(
+        next=io.dbusHostPayload.addr,
+        init=io.dbusHostPayload.addr.getZero,
+      )
+    }
     switch (io.splitOp.multiCycleOp) {
       for (
         ((_, opInfo), idx)
@@ -3213,19 +3222,6 @@ case class SnowHousePipeStageExecute(
                 ) {
                   doMultiCycleStart(psExStallHost)
                 }
-                //when (
-                //  LcvFastAndR(
-                //    Vec[Bool](
-                //      !rSavedStall,
-                //      doCheckHazard,
-                //      myDoHaveHazard,
-                //      RegNext(psMemStallHost.nextValid, init=False),
-                //      psMemStallHost.ready,
-                //    ).asBits.asUInt
-                //  )
-                //) {
-                //  doStart()
-                //}
                 when (
                   RegNext(psExStallHost.nextValid, init=False)
                   && psExStallHost.ready
