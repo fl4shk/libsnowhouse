@@ -3145,9 +3145,9 @@ case class SnowHousePipeStageExecute(
   }
   switch (rMultiCycleOpState) {
     is (False) {
-      when (/*LcvFastOrR*/(
+      when (LcvFastOrR(
         setOutpModMemWord.io.opIsMultiCycle.asBits.asUInt
-        .orR
+        //.orR
       )) {
         rMultiCycleOpState := True
         for (idx <- 0 until rOpIsMultiCycle.size) {
