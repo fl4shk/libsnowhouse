@@ -157,7 +157,7 @@ case class SnowHousePipeStageInstrFetch(
   }
   val rPrevRegPcThenNext = (
     RegNextWhen(
-      next=nextRegPc /*+ (cfg.instrMainWidth / 8)*/,
+      next=nextRegPc + (cfg.instrMainWidth / 8),
       cond=up.isFiring,
     )
     init(nextRegPc.getZero)
@@ -181,7 +181,7 @@ case class SnowHousePipeStageInstrFetch(
       myInstrCnt.jmp := rPrevInstrCnt.jmp + 1
     } otherwise {
       nextRegPcSetItCnt := 0x0
-      nextRegPc := rPrevRegPcThenNext + (cfg.instrMainWidth / 8)
+      nextRegPc := rPrevRegPcThenNext //+ (cfg.instrMainWidth / 8)
       myInstrCnt.fwd := rPrevInstrCnt.fwd + 1
     }
   }
