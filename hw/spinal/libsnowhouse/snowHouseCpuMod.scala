@@ -542,132 +542,105 @@ object SnowHouseCpuPipeStageInstrDecode {
       }
       var found = false
       var didFirstPrint: Boolean = false
+      val mySplitOp = upPayload.splitOp
+      //print(
+      //  someOp
+      //)
       for (
-        ((tuple, opInfo), opInfoIdx) <- cfg.opInfoMap.view.zipWithIndex
+        ((tuple, opInfo), opInfoIdx)
+        <- cfg.opInfoMap.view.zipWithIndex
       ) {
         if (someOp == tuple) {
-          val mySplitOp = upPayload.splitOp
-          //mySplitOp.fullOp := opInfoIdx
           for (
             ((_, nonMultiCycleOpInfo), nonMultiCycleOpInfoIdx)
             <- cfg.nonMultiCycleOpInfoMap.view.zipWithIndex
           ) {
             if (nonMultiCycleOpInfo == opInfo) {
               mySplitOp.nonMultiCycleOp := nonMultiCycleOpInfoIdx
-              found = true
-            }
-            if (!didFirstPrint) {
-              didFirstPrint = true
+              //println(
+              //  s"test: ${nonMultiCycleOpInfoIdx}"
+              //)
+              //found = true
               for (
                 ((_, cpyOpInfo), cpyOpInfoIdx)
                 <- cfg.cpyCpyuiOpInfoMap.view.zipWithIndex
               ) {
-                if (opInfo == cpyOpInfo) {
+                if (
+                  //nonMultiCycleOpInfo == cpyOpInfo
+                  //someOp == cpyOpTuple
+                  cpyOpInfo == opInfo
+                ) {
                   println(
                     //s"pureCpyOp (${cpyOpInfoIdx}): "
                     //+ s"${opInfoIdx}: ${someOp._3}"
                     s"cpyCpyuiOp: " //"${opInfoIdx} -> ${cpyOpInfoIdx} "
                     + s"${someOp._3} // ${nonMultiCycleOpInfoIdx}"
                   )
-                  ////upPayload.op := opInfoIdx
-                  ////mySplitOp.pureCpyOp.valid := True
-                  //mySplitOp.kind := SnowHouseSplitOpKind.CPY_CPYUI
-                  //mySplitOp.cpyCpyuiOp := cpyOpInfoIdx
-                  ////return
-                  //found = true
+                  found = true
                 }
               }
               for (
                 ((_, jmpOpInfo), jmpOpInfoIdx)
                 <- cfg.jmpBrOpInfoMap.view.zipWithIndex
               ) {
-                if (opInfo == jmpOpInfo) {
+                if (
+                  //opInfo == jmpOpInfo
+                  //someOp == jmpOpTuple
+                  jmpOpInfo == opInfo
+                ) {
                   println(
                     s"jmpBrOp: " // "${opInfoIdx} -> ${jmpOpInfoIdx} "
                     + s"${someOp._3} // ${nonMultiCycleOpInfoIdx}"
                   )
+                  found = true
                 }
               }
               for (
                 ((_, aluOpInfo), aluOpInfoIdx)
                 <- cfg.aluOpInfoMap.view.zipWithIndex
               ) {
-                if (opInfo == aluOpInfo) {
+                if (
+                  //opInfo == aluOpInfo
+                  //someOp == aluOpTuple
+                  aluOpInfo == opInfo
+                ) {
                   println(
-                    s"aluOp: ${opInfoIdx} -> ${aluOpInfoIdx} "
-                    + s"${someOp._3} // ${opInfoIdx}"
+                    s"aluOp: " //"${opInfoIdx} -> ${aluOpInfoIdx} "
+                    + s"${someOp._3} // ${nonMultiCycleOpInfoIdx}"
                   )
+                  found = true
                 }
               }
               for (
                 ((_, aluShiftOpInfo), aluShiftOpInfoIdx)
                 <- cfg.aluShiftOpInfoMap.view.zipWithIndex
               ) {
-                if (opInfo == aluShiftOpInfo) {
+                if (
+                  //opInfo == aluShiftOpInfo
+                  //someOp == aluShiftOpTuple
+                  aluShiftOpInfo == opInfo
+                ) {
                   println(
-                    s"aluShiftOp: ${opInfoIdx} -> ${aluShiftOpInfoIdx} "
-                    + s"${someOp._3} // ${opInfoIdx}"
+                    s"aluShiftOp: " //"${opInfoIdx} -> ${aluShiftOpInfoIdx} "
+                    + s"${someOp._3} // ${nonMultiCycleOpInfoIdx}"
                   )
-                  ////upPayload.op := opInfoIdx
-                  ////mySplitOp.aluShiftOp.valid := True
-                  //mySplitOp.kind := SnowHouseSplitOpKind.ALU_SHIFT
-                  //mySplitOp.aluShiftOp := (/*1 <<*/ aluShiftOpInfoIdx)
-                  ////return
-                  //found = true
+                  found = true
                 }
               }
             }
           }
-          //    println(
-          //      //s"pureCpyOp (${cpyOpInfoIdx}): "
-          //      //+ s"${opInfoIdx}: ${someOp._3}"
-          //      s"cpyCpyuiOp: ${cpyOpInfoIdx} "
-          //      + s"${someOp._3} // ${opInfoIdx}"
-          //    )
-          //found = true
-          //for ((src, srcIdx) <- opInfo.srcArr.view.zipWithIndex) {
-          //  mySplitOp.srcKindVec
-          //}
-          //for (
-          //  ((_, cpyuiOpInfo), cpyuiOpInfoIdx)
-          //  <- cfg.pureCpyuiOpInfoMap.view.zipWithIndex
-          //) {
-          //  if (opInfo == cpyuiOpInfo) {
-          //    println(
-          //      s"pureCpyuiOp: ${cpyuiOpInfoIdx} "
-          //      + s"${someOp._3} // ${opInfoIdx}"
-          //    )
-          //    //upPayload.op := opInfoIdx
-          //    //mySplitOp.pureCpyuiOp.valid := True
-          //    mySplitOp.kind := SnowHouseSplitOpKind.PURE_CPYUI
-          //    mySplitOp.pureCpyuiOp := cpyuiOpInfoIdx
-          //    return
-          //  }
-          //}
-          //for (
-          //  ((_, brOpInfo), brOpInfoIdx)
-          //  <- cfg.pureJmpOpInfoMap.view.zipWithIndex
-          //) {
-          //  if (opInfo == brOpInfo) {
-          //    println(
-          //      s"pureBrOp: ${brOpInfoIdx} "
-          //      + s"${someOp._3} // ${opInfoIdx}"
-          //    )
-          //    //upPayload.op := opInfoIdx
-          //    //mySplitOp.pureBrOp.valid := True
-          //    mySplitOp.kind := SnowHouseSplitOpKind.PURE_BR
-          //    mySplitOp.pureBrOp := brOpInfoIdx
-          //    return
-          //  }
-          //}
           for (
             ((_, multiCycleOpInfo), multiCycleOpInfoIdx)
             <- cfg.multiCycleOpInfoMap.view.zipWithIndex
           ) {
-            if (opInfo == multiCycleOpInfo) {
+            if (
+              //opInfo == multiCycleOpInfo
+              //someOp == tuple
+              multiCycleOpInfo == opInfo
+            ) {
               println(
-                s"multiCycleOp: ${opInfoIdx} -> ${multiCycleOpInfoIdx} "
-                + s"${someOp._3} // ${opInfoIdx}"
+                s"multiCycleOp: " // ${opInfoIdx} -> ${multiCycleOpInfoIdx} "
+                + s"${someOp._3} // ${multiCycleOpInfoIdx}"
               )
               ////upPayload.op := opInfoIdx
               ////mySplitOp.multiCycleOp.valid := True
@@ -680,6 +653,85 @@ object SnowHouseCpuPipeStageInstrDecode {
           }
         }
       }
+
+      //for (
+      //  ((tuple, nonMultiCycleOpInfo), nonMultiCycleOpInfoIdx)
+      //  <- cfg.nonMultiCycleOpInfoMap.view.zipWithIndex
+      //) {
+      //  if (
+      //    //nonMultiCycleOpInfo == opInfo
+      //    someOp == tuple
+      //  ) {
+      //  }
+      //}
+      //for (
+      //  ((tuple, opInfo), opInfoIdx) <- cfg.opInfoMap.view.zipWithIndex
+      //) {
+      //  if (someOp == tuple) {
+      //    val mySplitOp = upPayload.splitOp
+      //    //mySplitOp.fullOp := opInfoIdx
+      //    //    println(
+      //    //      //s"pureCpyOp (${cpyOpInfoIdx}): "
+      //    //      //+ s"${opInfoIdx}: ${someOp._3}"
+      //    //      s"cpyCpyuiOp: ${cpyOpInfoIdx} "
+      //    //      + s"${someOp._3} // ${opInfoIdx}"
+      //    //    )
+      //    //found = true
+      //    //for ((src, srcIdx) <- opInfo.srcArr.view.zipWithIndex) {
+      //    //  mySplitOp.srcKindVec
+      //    //}
+      //    //for (
+      //    //  ((_, cpyuiOpInfo), cpyuiOpInfoIdx)
+      //    //  <- cfg.pureCpyuiOpInfoMap.view.zipWithIndex
+      //    //) {
+      //    //  if (opInfo == cpyuiOpInfo) {
+      //    //    println(
+      //    //      s"pureCpyuiOp: ${cpyuiOpInfoIdx} "
+      //    //      + s"${someOp._3} // ${opInfoIdx}"
+      //    //    )
+      //    //    //upPayload.op := opInfoIdx
+      //    //    //mySplitOp.pureCpyuiOp.valid := True
+      //    //    mySplitOp.kind := SnowHouseSplitOpKind.PURE_CPYUI
+      //    //    mySplitOp.pureCpyuiOp := cpyuiOpInfoIdx
+      //    //    return
+      //    //  }
+      //    //}
+      //    //for (
+      //    //  ((_, brOpInfo), brOpInfoIdx)
+      //    //  <- cfg.pureJmpOpInfoMap.view.zipWithIndex
+      //    //) {
+      //    //  if (opInfo == brOpInfo) {
+      //    //    println(
+      //    //      s"pureBrOp: ${brOpInfoIdx} "
+      //    //      + s"${someOp._3} // ${opInfoIdx}"
+      //    //    )
+      //    //    //upPayload.op := opInfoIdx
+      //    //    //mySplitOp.pureBrOp.valid := True
+      //    //    mySplitOp.kind := SnowHouseSplitOpKind.PURE_BR
+      //    //    mySplitOp.pureBrOp := brOpInfoIdx
+      //    //    return
+      //    //  }
+      //    //}
+      //    for (
+      //      ((_, multiCycleOpInfo), multiCycleOpInfoIdx)
+      //      <- cfg.multiCycleOpInfoMap.view.zipWithIndex
+      //    ) {
+      //      if (opInfo == multiCycleOpInfo) {
+      //        println(
+      //          s"multiCycleOp: ${opInfoIdx} -> ${multiCycleOpInfoIdx} "
+      //          + s"${someOp._3} // ${opInfoIdx}"
+      //        )
+      //        ////upPayload.op := opInfoIdx
+      //        ////mySplitOp.multiCycleOp.valid := True
+      //        //mySplitOp.kind := SnowHouseSplitOpKind.MULTI_CYCLE
+      //        mySplitOp.opIsMultiCycle := True
+      //        mySplitOp.multiCycleOp := multiCycleOpInfoIdx
+      //        ////return
+      //        found = true
+      //      }
+      //    }
+      //  }
+      //}
       if (!found) {
         assert(
           false,
@@ -2133,7 +2185,7 @@ case class SnowHouseCpuTestProgram(
     cpy(sp, 0x800),          // 0x2c
     cpy(r6, 0x20),            // 0x30: r6 = 0x20
     str(r6, r3, 0x0),         // 0x34: [r0 + r3] = r6
-    ldr(r5, r3, 0x4),
+    //ldr(r5, r3, 0x4),
     ldr(r5, r3, 0x0),         // 0x38
     str(r5, r3, 0x1000),         // 0x3c
     ldr(r6, r3, 0x1000),         // 0x40

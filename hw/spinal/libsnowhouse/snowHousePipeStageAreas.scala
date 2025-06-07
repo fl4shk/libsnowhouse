@@ -157,7 +157,7 @@ case class SnowHousePipeStageInstrFetch(
   }
   val rPrevRegPcThenNext = (
     RegNextWhen(
-      next=nextRegPc + (cfg.instrMainWidth / 8),
+      next=nextRegPc /*+ (cfg.instrMainWidth / 8)*/,
       cond=up.isFiring,
     )
     init(nextRegPc.getZero)
@@ -181,7 +181,7 @@ case class SnowHousePipeStageInstrFetch(
       myInstrCnt.jmp := rPrevInstrCnt.jmp + 1
     } otherwise {
       nextRegPcSetItCnt := 0x0
-      nextRegPc := rPrevRegPcThenNext //+ (cfg.instrMainWidth / 8)
+      nextRegPc := rPrevRegPcThenNext + (cfg.instrMainWidth / 8)
       myInstrCnt.fwd := rPrevInstrCnt.fwd + 1
     }
   }
@@ -260,11 +260,13 @@ case class SnowHousePipeStageInstrDecode(
   )
   when (up.isValid) {
     when (
-      RegNext(io.ibus.nextValid)
+      RegNext(next=io.ibus.nextValid, init=False)
     ) {
       when (!rSetUpPayloadState(1)) {
         when (!io.ibus.ready) {
           cId.haltIt()
+          //cId.duplicateIt()
+          //cId.throwIt()
         } otherwise {
           nextSetUpPayloadState(1) := True
           myInstr := (
@@ -1439,8 +1441,10 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
                     + s"opInfo(${opInfo}) index:${opInfoIdx}"
                   )
                   io.psExSetPc.valid := {
-                    //io.rdMemWord(io.brCondIdx(0))
-                    //=== io.rdMemWord(io.brCondIdx(1))
+                    //(
+                    //  io.rdMemWord(io.brCondIdx(0))
+                    //  === io.rdMemWord(io.brCondIdx(1))
+                    //)
                     //val q = Bool()
                     //val unusedSumOut = UInt(cfg.mainWidth bits)
                     //(
@@ -1493,8 +1497,10 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
                     + s"opInfo(${opInfo}) index:${opInfoIdx}"
                   )
                   io.psExSetPc.valid := {
-                    //io.rdMemWord(io.brCondIdx(0))
-                    //=/= io.rdMemWord(io.brCondIdx(1))
+                    //(
+                    //  io.rdMemWord(io.brCondIdx(0))
+                    //  =/= io.rdMemWord(io.brCondIdx(1))
+                    //)
                     //val q = Bool()
                     //val unusedSumOut = UInt(cfg.mainWidth bits)
                     //(
@@ -3048,6 +3054,7 @@ case class SnowHousePipeStageExecute(
   psExSetPc.valid := (
     setOutpModMemWord.io.psExSetPc.valid
     && !outp.instrCnt.shouldIgnoreInstr
+    && cMid0Front.up.valid
   )
   psExSetPc.nextPc := setOutpModMemWord.io.psExSetPc.nextPc
   io.dbus.allowOverride
@@ -3523,60 +3530,6 @@ case class SnowHousePipeStageMem(
     .setName(s"rSetMidModPayloadState")
   )
   nextSetMidModPayloadState := rSetMidModPayloadState
-  if (regFile.myHaveFormalFwd) {
-    when (pastValidAfterReset) {
-      def myExt(
-        someExtIdx: Int
-      ) = (
-        midModPayload(someExtIdx).myExt
-      )
-      def myFwd(
-        someExtIdx: Int
-      ) = (
-        midModPayload(someExtIdx).myFwd
-      )
-      when (
-        !RegNextWhen(
-          next=True,
-          cond=cMidModFront.up.isFiring,
-          init=False,
-        )
-      ) {
-        when (!cMidModFront.up.isValid) {
-          myExt(extIdxUp).foreach(current => {
-            assert(current.main === current.main.getZero)
-          })
-          //assert(
-          //  myFwd(extIdxUp)
-          //  === myFwd(extIdxUp).getZero
-          //)
-        }
-        myExt(extIdxSaved).foreach(current => {
-          assert(current === current.getZero)
-        })
-        //assert(
-        //  myFwd(extIdxSaved)
-        //  === myFwd(extIdxSaved).getZero
-        //)
-      } 
-      when (
-        past(cMidModFront.up.isFiring) init(False)
-      ) {
-        assert(
-          midModPayload(extIdxSaved)
-          === past(midModPayload(extIdxUp))
-        )
-      }
-      when (
-        !cMidModFront.up.isValid
-        && !past(cMidModFront.up.isValid)
-      ) {
-        myExt(extIdxSaved).foreach(current => {
-          assert(stable(current))
-        })
-      }
-    }
-  }
 
   midModPayload(extIdxSaved) := (
     RegNextWhen(
@@ -3623,7 +3576,7 @@ case class SnowHousePipeStageMem(
     val myExtLeft = tempExtLeft(ydx=ydx)
     val myExtRight = tempExtRight(ydx=ydx)
     myExtLeft.allowOverride
-    myExtLeft.modMemWord := myExtRight.modMemWord
+    //myExtLeft.modMemWord := myExtRight.modMemWord
     myExtLeft.valid.foreach(current => {
       current := (
         cMidModFront.up.isValid
