@@ -283,8 +283,8 @@ case class SnowHousePipeStageInstrDecode(
   ) {
     when (up.isValid) {
       when (!rSetUpPayloadState(0)) {
-          upPayload := up(pIf)
-          nextSetUpPayloadState(0) := True
+        upPayload := up(pIf)
+        nextSetUpPayloadState(0) := True
       }
     }
   } otherwise {
@@ -3379,7 +3379,7 @@ case class SnowHousePipeStageMem(
   def front = regFile.io.front
   def frontPayload = regFile.io.frontPayload
   def modFront = regFile.io.modFront
-  def modFrontPayload = regFile.io.modFrontPayload
+  def modFrontAfterPayload = regFile.io.modFrontAfterPayload
   def modBack = regFile.io.modBack
   def modBackPayload = regFile.io.modBackPayload
   def back = regFile.io.back
@@ -3387,7 +3387,7 @@ case class SnowHousePipeStageMem(
   def tempModFrontPayload = (
     regFile.io.tempModFrontPayload
   )
-  val modFrontFormalAssumes = modFront(modFrontPayload).formalAssumes()
+  //val modFrontFormalAssumes = modFront(modFrontPayload).formalAssumes()
   val modBackFormalAssumes = modBack(modBackPayload).formalAssumes()
   def extIdxUp = PipeMemRmw.extIdxUp
   def extIdxSaved = PipeMemRmw.extIdxSaved
@@ -3398,9 +3398,9 @@ case class SnowHousePipeStageMem(
       SnowHousePipePayload(cfg=cfg)
     )
   )
-  val myShouldIgnoreInstr = (
-    modFront(modFrontPayload).instrCnt.shouldIgnoreInstr
-  )
+  //val myShouldIgnoreInstr = (
+  //  modFront(modFrontPayload).instrCnt.shouldIgnoreInstr
+  //)
   val midModFormalAssumesArr = ArrayBuffer[Area]()
   for ((midModElem, midModIdx) <- midModPayload.view.zipWithIndex) {
     midModFormalAssumesArr += midModElem.formalAssumes()
@@ -3595,12 +3595,15 @@ case class SnowHousePipeStageMem(
       )
     }
   }
-  tempModFrontPayload := midModPayload(extIdxUp)
-  for (idx <- 0 until tempModFrontPayload.gprIdxVec.size) {
-    tempModFrontPayload.gprIdxVec(idx).allowOverride
-    tempModFrontPayload.gprIdxVec(idx) := (
-      modFront(modFrontPayload).gprIdxVec(idx)
-    )
+  for (fjIdx <- 0 until tempModFrontPayload.size) {
+    tempModFrontPayload(fjIdx) := midModPayload(extIdxUp)
+    for (idx <- 0 until tempModFrontPayload(fjIdx).gprIdxVec.size) {
+      tempModFrontPayload(fjIdx).gprIdxVec(idx).allowOverride
+      tempModFrontPayload(fjIdx).gprIdxVec(idx) := (
+        //modFront(modFrontPayload(fjIdx)).gprIdxVec(idx)
+        modFront(modFrontAfterPayload).gprIdxVec(idx)
+      )
+    }
   }
   //val savedPsMemStallHost = (
   //  LcvStallHostSaved(
@@ -3612,11 +3615,11 @@ case class SnowHousePipeStageMem(
   if (cfg.optFormal) {
   }
   when (cMidModFront.up.isValid) {
-    midModPayload(extIdxUp) := modFront(modFrontPayload)
+    midModPayload(extIdxUp) := modFront(modFrontAfterPayload)
   }
   for (ydx <- 0 until cfg.regFileCfg.memArrSize) {
     def tempExtLeft(ydx: Int) = midModPayload(extIdxUp).myExt(ydx)
-    def tempExtRight(ydx: Int) = modFront(modFrontPayload).myExt(ydx)
+    def tempExtRight(ydx: Int) = modFront(modFrontAfterPayload).myExt(ydx)
     val myExtLeft = tempExtLeft(ydx=ydx)
     val myExtRight = tempExtRight(ydx=ydx)
     myExtLeft.allowOverride
@@ -3634,7 +3637,7 @@ case class SnowHousePipeStageMem(
   }
 
   def tempExtLeft(ydx: Int) = midModPayload(extIdxUp).myExt(ydx)
-  def tempExtRight(ydx: Int) = modFront(modFrontPayload).myExt(ydx)
+  def tempExtRight(ydx: Int) = modFront(modFrontAfterPayload).myExt(ydx)
   val rDbusState = (
     Reg(Bool(), init=False)
   )
@@ -3643,7 +3646,7 @@ case class SnowHousePipeStageMem(
     //True
   ) {
     def tempExtLeft(ydx: Int) = midModPayload(extIdxUp).myExt(ydx)
-    def tempExtRight(ydx: Int) = modFront(modFrontPayload).myExt(ydx)
+    def tempExtRight(ydx: Int) = modFront(modFrontAfterPayload).myExt(ydx)
     when (
       //!io.dbus.ready
       !io.dbusExtraReady(3)
@@ -3768,923 +3771,923 @@ case class SnowHousePipeStageMem(
 case class SnowHousePipeStageWriteBack(
   args: SnowHousePipeStageArgs,
 ) extends Area {
-  def cfg = args.cfg
-  def regFile = args.regFile
-  def front = regFile.io.front
-  def frontPayload = regFile.io.frontPayload
-  def modFront = regFile.io.modFront
-  def modFrontPayload = regFile.io.modFrontPayload
-  def modBack = regFile.io.modBack
-  def modBackPayload = regFile.io.modBackPayload
-  def back = regFile.io.back
-  def backPayload = regFile.io.backPayload
-  def tempModFrontPayload = (
-    regFile.io.tempModFrontPayload
-  )
-  val myHaveCurrWrite = Vec[Bool]({
-    val tempArr = ArrayBuffer[Bool]()
-    for (ydx <- 0 until regFile.memArrSize) {
-      tempArr += (
-        pastValidAfterReset
-        && modBack.isFiring
-        && regFile.mod.back.myWriteEnable(ydx)
-      )
-    }
-    tempArr
-  })
+  //def cfg = args.cfg
+  //def regFile = args.regFile
+  //def front = regFile.io.front
+  //def frontPayload = regFile.io.frontPayload
+  //def modFront = regFile.io.modFront
+  //def modFrontPayload = regFile.io.modFrontPayload
+  //def modBack = regFile.io.modBack
+  //def modBackPayload = regFile.io.modBackPayload
+  //def back = regFile.io.back
+  //def backPayload = regFile.io.backPayload
+  //def tempModFrontPayload = (
+  //  regFile.io.tempModFrontPayload
+  //)
+  //val myHaveCurrWrite = Vec[Bool]({
+  //  val tempArr = ArrayBuffer[Bool]()
+  //  for (ydx <- 0 until regFile.memArrSize) {
+  //    tempArr += (
+  //      pastValidAfterReset
+  //      && modBack.isFiring
+  //      && regFile.mod.back.myWriteEnable(ydx)
+  //    )
+  //  }
+  //  tempArr
+  //})
 
-  val myHaveAnyCurrWrite = (
-    myHaveCurrWrite.reduceLeft(_ || _)
-  )
-  val tempLeft = (
-    regFile.mod.back.myWriteData
-  )
-  val tempHadFrontIsFiring: (Bool, Bool) = (
-    RegNextWhen[Bool](
-      next=True,
-      cond=front.isFiring,
-      init=False,
-    ),
-    null
-  )
-  val tempHadMid0FrontUpIsValid: (Bool, Bool) = (
-    {
-      val cond = (
-        regFile.cMid0FrontArea.up.isValid
-        && (
-          tempHadFrontIsFiring._1
-          || front.isFiring
-        )
-      )
-      RegNextWhen(
-        next=True,
-        cond=cond,
-        init=False,
-      )
-    },
-    null
-  )
-  val tempHadMid0FrontDownIsValid: (Bool, UInt) = (
-    {
-      val cond = (
-        regFile.cMid0FrontArea.down.isValid
-        && (
-          tempHadFrontIsFiring._1
-          || front.isFiring
-        ) && (
-          tempHadMid0FrontUpIsValid._1
-          || regFile.cMid0FrontArea.up.isValid
-        )
-      )
-      RegNextWhen(
-        next=True,
-        cond=cond,
-        init=False
-      )
-    },
-    null
-  )
-  val tempHadMid0FrontDownIsFiring: (Bool, UInt) = (
-    {
-      val cond = (
-        regFile.cMid0FrontArea.down.isFiring
-        && (
-          tempHadFrontIsFiring._1
-          || front.isFiring
-        ) && (
-          tempHadMid0FrontUpIsValid._1
-          || regFile.cMid0FrontArea.up.isValid
-        )
-      )
-      RegNextWhen(
-        next=True,
-        cond=cond,
-        init=False
-      )
-    },
-    null
-  )
-  val tempHadModFrontIsValid: (Bool, Bool) = (
-    {
-      val cond = (
-        modFront.isValid
-        && (
-          tempHadFrontIsFiring._1
-          || front.isFiring
-        ) && (
-          tempHadMid0FrontUpIsValid._1
-          || regFile.cMid0FrontArea.up.isValid
-        )
-      )
-      RegNextWhen(
-        next=True,
-        cond=cond,
-        init=False
-      )
-    },
-    null
-  )
-  if (cfg.optFormal) {
-    when (!tempHadModFrontIsValid._1) {
-      for (ydx <- 0 until cfg.regFileCfg.memArrSize) {
-        val wordCount = cfg.regFileWordCountArr(ydx)
-        for (zdx <- 0 until cfg.regFileModRdPortCnt) {
-          assume(
-            (
-              regFile.modMem(ydx)(zdx).readAsync(
-                address=U(s"${log2Up(wordCount)}'d${zdx}")
-              )
-            ) === (
-              0x0
-            )
-          )
-        }
-      }
-    }
-  }
-  val tempHadModBackIsFiring: (Bool, Bool) = (
-    {
-      val cond = (
-        modBack.isFiring
-        && (
-          tempHadFrontIsFiring._1
-          || front.isFiring
-        ) && (
-          tempHadMid0FrontUpIsValid._1
-          || regFile.cMid0FrontArea.up.isValid
-        ) && (
-          tempHadModFrontIsValid._1
-          || modFront.isValid
-        )
-      )
-      RegNextWhen(
-        next=True,
-        cond=cond,
-        init=False
-      )
-    },
-    null
-  )
-  val tempHadModBackIsValid: (Bool, Bool) = (
-    {
-      val cond = (
-        modBack.isValid
-        && (
-          tempHadFrontIsFiring._1
-          || front.isFiring
-        ) && (
-          tempHadMid0FrontUpIsValid._1
-          || regFile.cMid0FrontArea.up.isValid
-        ) && (
-          tempHadModFrontIsValid._1
-          || modFront.isValid
-        )
-      )
-      RegNextWhen(
-        next=True,
-        cond=cond,
-        init=False
-      )
-    },
-    null
-  )
-  val tempHadBackIsFiring: (Bool, Bool) = (
-    {
-      val cond = (
-        back.isFiring
-        && (
-          tempHadFrontIsFiring._1
-          || front.isFiring
-        ) && (
-          tempHadMid0FrontUpIsValid._1
-          || regFile.cMid0FrontArea.up.isValid
-        ) && (
-          tempHadModFrontIsValid._1
-          || modFront.isValid
-        ) && (
-          tempHadModBackIsValid._1
-          || modBack.isValid
-        )
-      )
-      RegNextWhen(
-        next=True,
-        cond=cond,
-        init=False
-      )
-    },
-    null
-  )
-  val tempHadBackIsValid: (Bool, Bool) = (
-    {
-      val cond = (
-        back.isValid
-        && (
-          tempHadFrontIsFiring._1
-          || front.isFiring
-        ) && (
-          tempHadMid0FrontUpIsValid._1
-          || regFile.cMid0FrontArea.up.isValid
-        ) && (
-          tempHadModFrontIsValid._1
-          || modFront.isValid
-        ) && (
-          tempHadModBackIsValid._1
-          || modBack.isValid
-        ) && (
-          tempHadModBackIsFiring._1
-          || modBack.isFiring
-        )
-      )
-      RegNextWhen(
-        next=True,
-        cond=cond,
-        init=False
-      )
-    },
-    null
-  )
-  val myHaveSeenPipeToModFrontFire = (
-    /*KeepAttribute*/(
-      tempHadFrontIsFiring._1
-      && tempHadMid0FrontUpIsValid._1
-      && tempHadModFrontIsValid._1
-    )
-    .setName(s"myHaveSeenPipeToModFrontFire")
-  )
-  val myHaveSeenPipeToWrite = Vec[Bool]({
-    val tempArr = ArrayBuffer[Bool]()
-    for (tempHaveCurrWrite <- myHaveCurrWrite.view) {
-      tempArr += (
-        myHaveSeenPipeToModFrontFire
-        && tempHaveCurrWrite
-      )
-    }
-    tempArr
-  })
-  def getMyHistHaveSeenPipeToWriteVecCond(
-    ydx: Int,
-    idx: Int,
-  ) = (
-    myHaveSeenPipeToWrite(ydx)
-    && (
-      regFile.mod.back.myWriteAddr(ydx) === idx
-    )
-  )
-  def tempHistHaveSeenPipeToWriteV2dOuterDim = (
-    4
-  )
-  val tempHaveSeenPipeToWriteV2dFindFirst_0 = (
-    /*KeepAttribute*/(
-      Vec.fill(tempHistHaveSeenPipeToWriteV2dOuterDim)({
-        val temp = ArrayBuffer[Vec[Bool]]()
-        for (wordCount <- cfg.regFileWordCountArr.view) {
-          temp += Vec.fill(wordCount)(
-            Bool()
-          )
-        }
-        Vec[Vec[Bool]](temp)
-      })
-    )
-    .setName(s"tempHaveSeenPipeToWriteV2dFindFirst_0")
-  )
-  for ((wordCount, ydx) <- cfg.regFileWordCountArr.view.zipWithIndex) {
-    for (idx <- 0 until wordCount) {
-      for (jdx <- 0 until tempHistHaveSeenPipeToWriteV2dOuterDim) {
-        def tempFunc(
-          someJdx: Int
-        ) = (
-          tempHaveSeenPipeToWriteV2dFindFirst_0(someJdx)(ydx)
-        )
-        if (jdx == 0) {
-          tempFunc(jdx)(idx) := (
-            getMyHistHaveSeenPipeToWriteVecCond(
-              ydx=ydx,
-              idx=idx,
-            )
-          )
-        } else {
-          tempFunc(jdx)(idx) := (
-            RegNext(
-              next=tempFunc(jdx)(idx),
-              init=tempFunc(jdx)(idx).getZero,
-            )
-          )
-          when (tempFunc(jdx - 1)(idx)) {
-            tempFunc(jdx)(idx) := (
-              RegNext(
-                next=tempFunc(jdx - 1)(idx),
-                init=tempFunc(jdx)(idx).getZero,
-              )
-            )
-          }
-        }
-      }
-    }
-  }
-  val rPrevOpCnt = Vec({
-    val tempArr = ArrayBuffer[UInt]()
-    for (ydx <- 0 until regFile.memArrSize) {
-      tempArr += (
-        RegNextWhen(
-          next=modBack(modBackPayload).opCnt,
-          cond=myHaveCurrWrite(ydx),
-        )
-        .init(0x0)
-        .setName(s"rPrevOpCnt_${ydx}")
-      )
-    }
-    tempArr
-  })
-  for ((rPrevOpCntElem, ydx) <- rPrevOpCnt.view.zipWithIndex) {
-    assumeInitial(
-      rPrevOpCntElem === 0x0
-    )
-  }
-  val myCoverCond = (
-    myHaveAnyCurrWrite
-  )
-  def myCoverVecSize = 8
-  val tempMyCoverInit = SnowHousePipePayload(cfg=cfg)
-  tempMyCoverInit.allowOverride
-  tempMyCoverInit := tempMyCoverInit.getZero
-  val myHistCoverVec = (
-    /*KeepAttribute*/(
-      History(
-        that=modBack(modBackPayload),
-        length=myCoverVecSize,
-        when=myCoverCond,
-        init=tempMyCoverInit,
-      )
-    )
-  )
-  val myHadWriteAt = (
-    Vec({
-      val tempArr = ArrayBuffer[Vec[Bool]]()
-      for ((wordCount, ydx) <- cfg.regFileWordCountArr.view.zipWithIndex) {
-        tempArr += (
-          Vec.fill(wordCount)(
-            Bool()
-          )
-        )
-      }
-      tempArr
-    })
-  )
-  val myPrevWriteData = (
-    /*KeepAttribute*/(
-      Vec[Vec[UInt]]({
-        val tempArr = ArrayBuffer[Vec[UInt]]()
-        for ((wordCount, ydx) <- regFile.wordCountArr.view.zipWithIndex) {
-          tempArr += {
-            val myArr = new ArrayBuffer[UInt]()
-            for (idx <- 0 until wordCount) {
-              myArr += (
-                UInt(cfg.mainWidth bits)
-              )
-            }
-            Vec[UInt](myArr)
-          }
-        }
-        tempArr
-      })
-    )
-    .setName(s"myPrevWriteData")
-  )
-  for ((wordCount, ydx) <- regFile.wordCountArr.view.zipWithIndex) {
-    for (idx <- 0 until wordCount) {
-      myHadWriteAt(ydx)(idx) := (
-        RegNext(
-          next=myHadWriteAt(ydx)(idx),
-          init=myHadWriteAt(ydx)(idx).getZero,
-        )
-      )
-      myPrevWriteData(ydx)(idx) := (
-        RegNext(
-          next=myPrevWriteData(ydx)(idx),
-          init=myPrevWriteData(ydx)(idx).getZero,
-        )
-      )
-    }
-  }
-  def extIdxUp = PipeMemRmw.extIdxUp
-  def extIdxSaved = PipeMemRmw.extIdxSaved
-  def extIdxLim = PipeMemRmw.extIdxLim
-  val formalFwdModBackArea = (regFile.myHaveFormalFwd) generate (
-    new Area {
-      val myExt = (
-        /*KeepAttribute*/(
-          regFile.mkExt()
-        )
-        .setName(
-          s"formalFwdModBackArea_"
-          + s"myExt"
-        )
-      )
-      val myFwd = (
-        /*KeepAttribute*/(
-          Vec.fill(extIdxLim)(
-            regFile.mkFwd()
-          )
-        )
-        .setName(
-          s"formalFwdModBackArea_"
-          + s"myFwd"
-        )
-      )
-      for (extIdx <- 0 until extIdxLim) {
-        for (ydx <- 0 until regFile.memArrSize) {
-          myExt(ydx)(extIdx) := regFile.cBackArea.upExt(1)(ydx)(extIdx)
-        }
-        myFwd(extIdx) := regFile.cBackArea.upFwd(extIdx)
-      }
-      if (regFile.myHaveFormalFwd) {
-        when (pastValidAfterReset) {
-          when (
-            !RegNextWhen(
-              next=True,
-              cond=modBack.isFiring,
-              init=False,
-            )
-          ) {
-            when (!modBack.isValid) {
-              myExt.foreach(someExt => {
-                assert(
-                  someExt(extIdxUp).main
-                  === someExt(extIdxUp).main.getZero
-                )
-              })
-              assert(myFwd(extIdxUp) === myFwd(extIdxUp).getZero)
-            }
-            myExt.foreach(someExt => {
-              assert(someExt(extIdxSaved) === someExt(extIdxSaved).getZero)
-            })
-            assert(myFwd(extIdxSaved) === myFwd(extIdxSaved).getZero)
-          } 
-          when (
-            past(modBack.isFiring) init(False)
-          ) {
-            myExt.foreach(someExt => {
-              assert(
-                someExt(extIdxSaved)
-                === (
-                  past(someExt(extIdxUp)) init(someExt(extIdxUp).getZero)
-                )
-              )
-            })
-            assert(
-              myFwd(extIdxSaved)
-              === (
-                past(myFwd(extIdxUp)) init(myFwd(extIdxUp).getZero)
-              )
-            )
-          }
-          when (modBack.isValid) {
-            assert(myFwd(extIdxUp) === modBack(modBackPayload).myFwd)
-            for (ydx <- 0 until regFile.memArrSize) {
-              assert(
-                myExt(ydx)(extIdxUp).main
-                === modBack(modBackPayload).myExt(ydx).main
-              )
-            }
-          }
-        }
-      }
-      val doFormalFwdUp = (
-        PipeMemRmwDoFwdArea(
-          fwdAreaName=s"formalFwdModBackArea_doFormalFwdUp",
-          fwd=(
-            myFwd(extIdxUp)
-          ),
-          setToMyFwdDataFunc=(
-            ydx: Int,
-            zdx: Int,
-            myFwdData: UInt,
-          ) => {
-            when (pastValidAfterReset) {
-              assert(myExt(ydx)(extIdxUp).rdMemWord(zdx) === myFwdData)
-            }
-          }
-        )
-      )
-      val doFormalFwdSaved =  (
-        PipeMemRmwDoFwdArea(
-          fwdAreaName=s"formalFwdModBackArea_doFormalFwdSaved",
-          fwd=(
-            myFwd(extIdxSaved)
-          ),
-          setToMyFwdDataFunc=(
-            ydx: Int,
-            zdx: Int,
-            myFwdData: UInt,
-          ) => {
-            when (pastValidAfterReset) {
-              assert(myExt(ydx)(extIdxSaved).rdMemWord(zdx) === myFwdData)
-            }
-          }
-        )
-      )
-    }
-  )
-  case class HistMain(
-  ) extends Bundle {
-    val myHaveCurrWrite = Vec.fill(regFile.memArrSize)(
-      Bool()
-    )
-    val flow = Flow(SnowHousePipePayload(cfg=cfg))
-  }
-  def myHistMainSize = 8
-  val myHistMain: Vec[HistMain] = (
-    /*KeepAttribute*/(Vec[HistMain]{
-      val tempArr = ArrayBuffer[HistMain]()
-      for (idx <- 0 until myHistMainSize) {
-        def myHistMainCond = (
-          pastValidAfterReset
-          && modBack.isFiring
-        )
-        val temp = HistMain()
-        temp.myHaveCurrWrite := myHaveCurrWrite
-        temp.flow.payload := modBack(modBackPayload)
-        temp.flow.valid := True
-        tempArr += (
-          if (idx == 0) {
-            temp
-          } else {
-            RegNextWhen(
-              next=temp,
-              cond=(
-                myHistMainCond
-                && (
-                  tempArr.last.flow.instrCnt.any
-                  === temp.flow.instrCnt.any + 1
-                )
-              ),
-              init=HistMain().getZero,
-            )
-          }
-        )
-      }
-      tempArr
-    })
-  )
-  val myHistAssumes = ArrayBuffer[Area]()
-  for ((myHistMainElem, myHistMainIdx) <- myHistMain.view.zipWithIndex) {
-    myHistAssumes += myHistMainElem.flow.formalAssumes()
-  }
-  val myHistMainFireFindFirst = myHistMain.sFindFirst(_.flow.fire)
-  if (cfg.optFormal) {
-    when (
-      myHistMain(0).flow.fire
-      && myHistMain(1).flow.fire
-      && myHistMain(2).flow.fire
-      && myHistMain(3).flow.fire
-    ) {
-      def flow0 = myHistMain(0).flow
-      def flow1 = myHistMain(1).flow
-      def flow2 = myHistMain(2).flow
-      def flow3 = myHistMain(3).flow
-      switch (flow3.op) {
-        for (
-          ((_, opInfoJmp), opInfoJmpIdx)
-          <- cfg.opInfoMap.view.zipWithIndex
-        ) {
-          is (opInfoJmpIdx) {
-            def jmpSelRdMemWord(
-              idx: Int,
-            ): UInt = {
-              flow3.psExSetOutpModMemWordIo.selRdMemWord(
-                opInfo=opInfoJmp,
-                idx=idx,
-              )
-            }
-            opInfoJmp.select match {
-              case OpSelect.Cpy => {
-                def handlePcChange(
-                  cond: Bool,
-                ): Unit = {
-                  assert(flow3.decodeExt.opIsJmp)
-                  assert(
-                    flow3.psExSetPc.fire === cond
-                  )
-                  when (cond) {
-                    assert(
-                      flow2.regPc
-                      === flow3.regPc + (cfg.instrMainWidth / 8)
-                    )
-                    assert(
-                      flow1.regPc
-                      === flow2.regPc + (cfg.instrMainWidth / 8)
-                    )
-                    assert(
-                      flow0.regPc === flow3.psExSetPc.nextPc
-                    )
-                  } otherwise {
-                    when (!flow2.decodeExt.opIsJmp) {
-                      assert(!flow2.psExSetPc.fire)
-                      assert(
-                        flow2.regPc
-                        === flow3.regPc + (cfg.instrMainWidth / 8)
-                      )
-                    }
-                    when (!flow1.decodeExt.opIsJmp) {
-                      assert(!flow1.psExSetPc.fire)
-                    }
-                    when (!flow0.decodeExt.opIsJmp) {
-                      assert(!flow0.psExSetPc.fire)
-                    }
-                  }
-                  assert(
-                    flow0.instrCnt.any
-                    === flow1.instrCnt.any + 1
-                  )
-                  assert(
-                    flow1.instrCnt.any
-                    === flow2.instrCnt.any + 1
-                  )
-                  assert(
-                    flow2.instrCnt.any
-                    === flow3.instrCnt.any + 1
-                  )
-                }
-                opInfoJmp.cpyOp.get match {
-                  case CpyOpKind.Jmp | CpyOpKind.Br => {
-                    opInfoJmp.cond match {
-                      case CondKind.Always => {
-                        handlePcChange(
-                          cond=True
-                        )
-                      }
-                      case CondKind.Eq => {
-                        handlePcChange(
-                          cond=(
-                            jmpSelRdMemWord(0) === jmpSelRdMemWord(1)
-                          )
-                        )
-                      }
-                      case CondKind.Ne => {
-                        handlePcChange(
-                          cond=(
-                            jmpSelRdMemWord(0) =/= jmpSelRdMemWord(1)
-                          )
-                        )
-                      }
-                      case CondKind.Z => {
-                        handlePcChange(
-                          cond=(jmpSelRdMemWord(0) === 0)
-                        )
-                      }
-                      case CondKind.Nz => {
-                        handlePcChange(
-                          cond=(jmpSelRdMemWord(0) =/= 0)
-                        )
-                      }
-                      case cond => {
-                        assert(
-                          false,
-                          s"not yet implemented: "
-                          + s"opInfoJmp(${opInfoJmp} ${opInfoJmp.select}) "
-                          + s"opInfoJmpIdx:${opInfoJmpIdx} "
-                        )
-                      }
-                    }
-                  }
-                  case _ => {
-                  }
-                }
-              }
-              case _ => {
-              }
-            }
-          }
-        }
-      }
-    }
-    when (pastValidAfterReset) {
-      val tempCond = (
-        (
-          myHaveCurrWrite
-        )
-      )
-      for ((wordCount, ydx) <- regFile.wordCountArr.view.zipWithIndex) {
-        when (past(tempCond(ydx))) {
-          for (idx <- 0 until wordCount) {
-            when (
-              past(regFile.mod.back.myWriteAddr(ydx)) === idx
-            ) {
-              myHadWriteAt(ydx)(idx) := (
-                past(True) init(False)
-              )
-              myPrevWriteData(ydx)(idx) := (
-                past(regFile.mod.back.myWriteData(ydx))
-              )
-            }
-          }
-        }
-        val tempCond1 = (
-          /*KeepAttribute*/(
-            /*past*/(regFile.mod.back.myWriteEnable(ydx))
-            && (
-              myHadWriteAt(ydx)(
-              /*past*/(regFile.mod.back.myWriteAddr(ydx)(
-                log2Up(wordCount) - 1 downto 0
-              ))
-              )
-            ) && (
-              tempHaveSeenPipeToWriteV2dFindFirst_0(0)(ydx)(
-                regFile.mod.back.myWriteAddr(ydx)(
-                  log2Up(wordCount) - 1 downto 0
-                )
-              )
-            ) && (
-              tempHaveSeenPipeToWriteV2dFindFirst_0(1)(ydx)(
-                regFile.mod.back.myWriteAddr(ydx)(
-                  log2Up(wordCount) - 1 downto 0
-                )
-              )
-            ) && (
-              tempHaveSeenPipeToWriteV2dFindFirst_0(2)(ydx)(
-                regFile.mod.back.myWriteAddr(ydx)(
-                  log2Up(wordCount) - 1 downto 0
-                )
-              )
-            )
-          )
-          .setName(s"tempCond1_${ydx}")
-        )
-        val myTempRight = (
-          /*KeepAttribute*/(
-            Vec[UInt]({
-              val myArr = new ArrayBuffer[UInt]()
-              myArr += (
-                modBack(modBackPayload).myExt(ydx)
-                .rdMemWord(PipeMemRmw.modWrIdx)
-              )
-              myArr
-            })
-          )
-          .setName(s"${regFile.pipeName}_myTempRight_${ydx}")
-        )
-        when (tempCond1) {
-          val myTempLeft = (
-            regFile.mod.back.myWriteData
-          )
-          val myDoFormalAssertRegular = Bool()
-          myDoFormalAssertRegular := True
-          for ((right, rightIdx) <- myTempRight.view.zipWithIndex) {
-            switch (modBack(modBackPayload).op) {
-              for (
-                ((_, opInfo), opInfoIdx) <- cfg.opInfoMap.view.zipWithIndex
-              ) {
-                is (opInfoIdx) {
-                  val psExOutpTempIo = (
-                    modBack(modBackPayload)
-                    .psExSetOutpModMemWordIo
-                  )
-                  def myGpr0 = (
-                    psExOutpTempIo.selRdMemWord(opInfo=opInfo, idx=0)
-                  )
-                  def myLeft = (
-                    psExOutpTempIo.selRdMemWord(opInfo=opInfo, idx=1)
-                  )
-                  def myRight = (
-                    psExOutpTempIo.selRdMemWord(opInfo=opInfo, idx=2)
-                  )
-                  val howToSlice = cfg.shRegFileCfg.howToSlice
-                  val tempInfo = (
-                    modBack(modBackPayload).gprIdxToMemAddrIdxMap(0)
-                  )
-                  val result: InstrResult = opInfo.select match {
-                    case OpSelect.Cpy => {
-                      opInfo.cpyOp.get match {
-                        case CpyOpKind.Cpy => {
-                          val result = InstrResult(cfg=cfg)()
-                          opInfo.memAccess match {
-                            case MemAccessKind.NoMemAccess => {
-                              result.main := myLeft
-                            }
-                            case mem: MemAccessKind.Mem => {
-                              myDoFormalAssertRegular := False
-                              //mem.isStore match {
-                              //  case Some(isStore) => {
-                              //    if (!isStore) {
-                              //      // don't formally verify stores I guess?
-                              //      //result.main := myGpr0
-                              //      myDoFormalAssert := False
-                              //    } else {
-                              //    }
-                              //  }
-                              //  case None => {
-                              //    // TODO: support atomics
-                              //    assert(
-                              //      false,
-                              //      s"atomics not supported yet"
-                              //    )
-                              //  }
-                              //}
-                            }
-                          }
-                          result
-                        }
-                        case CpyOpKind.Cpyu => {
-                          val result = InstrResult(cfg=cfg)()
-                          result.main.allowOverride
-                          result.main := myGpr0
-                          result.main(
-                            (cfg.mainWidth - 1)
-                            downto (cfg.mainWidth >> 1)
-                          ) := (
-                            myLeft(
-                              (cfg.mainWidth >> 1) - 1
-                              downto 0
-                            )
-                          )
-                          result
-                        }
-                        case CpyOpKind.Jmp => {
-                          val result = InstrResult(cfg=cfg)()
-                          myDoFormalAssertRegular := False
-                          result
-                        }
-                        case CpyOpKind.Br => {
-                          val result = InstrResult(cfg=cfg)()
-                          myDoFormalAssertRegular := False
-                          result
-                        }
-                        case _ => {
-                          assert(
-                            false,
-                            s"not yet implemented: "
-                            + s"opInfo(${opInfo}) idx:${opInfoIdx}"
-                          )
-                          InstrResult(cfg=cfg)()
-                        }
-                      }
-                    }
-                    case OpSelect.Alu => {
-                      opInfo.aluOp.get match {
-                        case op => {
-                          op.binopFunc(
-                            cfg=cfg,
-                            left=myLeft,
-                            right=myRight,
-                            carry=False,
-                          )(
-                          )
-                        }
-                      }
-                    }
-                    case OpSelect.AluShift => {
-                      opInfo.aluShiftOp.get match {
-                        case op => {
-                          op.binopFunc(
-                            cfg=cfg,
-                            left=myLeft,
-                            right=myRight,
-                            carry=False,
-                          )(
-                          )
-                        }
-                      }
-                    }
-                    case OpSelect.MultiCycle => {
-                      opInfo.multiCycleOp.get match {
-                        case MultiCycleOpKind.Umul => {
-                          val result = InstrResult(cfg=cfg)()
-                          result.main := (
-                            (myLeft * myRight)(result.main.bitsRange)
-                          )
-                          result
-                        }
-                        case _ => {
-                          assert(
-                            false,
-                            s"not yet implemented: "
-                            + s"opInfo(${opInfo}) idx:${opInfoIdx}"
-                          )
-                          InstrResult(cfg=cfg)()
-                        }
-                      }
-                    }
-                  }
-                  when (myDoFormalAssertRegular) {
-                    assert(
-                      myTempLeft(
-                        if (tempInfo.haveHowToSetIdx) (
-                          tempInfo.howToSetIdx
-                        ) else (
-                          U(s"${log2Up(cfg.regFileCfg.memArrSize)}'d0")
-                        )
-                      ) === result.main
-                    )
-                  }
-                }
-              }
-            }
-            if ((1 << log2Up(cfg.opInfoMap.size)) != cfg.opInfoMap.size) {
-              assume(modBack(modBackPayload).op < cfg.opInfoMap.size)
-            }
-          }
-        }
-      }
-    }
-  }
+  //val myHaveAnyCurrWrite = (
+  //  myHaveCurrWrite.reduceLeft(_ || _)
+  //)
+  //val tempLeft = (
+  //  regFile.mod.back.myWriteData
+  //)
+  //val tempHadFrontIsFiring: (Bool, Bool) = (
+  //  RegNextWhen[Bool](
+  //    next=True,
+  //    cond=front.isFiring,
+  //    init=False,
+  //  ),
+  //  null
+  //)
+  //val tempHadMid0FrontUpIsValid: (Bool, Bool) = (
+  //  {
+  //    val cond = (
+  //      regFile.cMid0FrontArea.up.isValid
+  //      && (
+  //        tempHadFrontIsFiring._1
+  //        || front.isFiring
+  //      )
+  //    )
+  //    RegNextWhen(
+  //      next=True,
+  //      cond=cond,
+  //      init=False,
+  //    )
+  //  },
+  //  null
+  //)
+  //val tempHadMid0FrontDownIsValid: (Bool, UInt) = (
+  //  {
+  //    val cond = (
+  //      regFile.cMid0FrontArea.down.isValid
+  //      && (
+  //        tempHadFrontIsFiring._1
+  //        || front.isFiring
+  //      ) && (
+  //        tempHadMid0FrontUpIsValid._1
+  //        || regFile.cMid0FrontArea.up.isValid
+  //      )
+  //    )
+  //    RegNextWhen(
+  //      next=True,
+  //      cond=cond,
+  //      init=False
+  //    )
+  //  },
+  //  null
+  //)
+  //val tempHadMid0FrontDownIsFiring: (Bool, UInt) = (
+  //  {
+  //    val cond = (
+  //      regFile.cMid0FrontArea.down.isFiring
+  //      && (
+  //        tempHadFrontIsFiring._1
+  //        || front.isFiring
+  //      ) && (
+  //        tempHadMid0FrontUpIsValid._1
+  //        || regFile.cMid0FrontArea.up.isValid
+  //      )
+  //    )
+  //    RegNextWhen(
+  //      next=True,
+  //      cond=cond,
+  //      init=False
+  //    )
+  //  },
+  //  null
+  //)
+  //val tempHadModFrontIsValid: (Bool, Bool) = (
+  //  {
+  //    val cond = (
+  //      modFront.isValid
+  //      && (
+  //        tempHadFrontIsFiring._1
+  //        || front.isFiring
+  //      ) && (
+  //        tempHadMid0FrontUpIsValid._1
+  //        || regFile.cMid0FrontArea.up.isValid
+  //      )
+  //    )
+  //    RegNextWhen(
+  //      next=True,
+  //      cond=cond,
+  //      init=False
+  //    )
+  //  },
+  //  null
+  //)
+  //if (cfg.optFormal) {
+  //  when (!tempHadModFrontIsValid._1) {
+  //    for (ydx <- 0 until cfg.regFileCfg.memArrSize) {
+  //      val wordCount = cfg.regFileWordCountArr(ydx)
+  //      for (zdx <- 0 until cfg.regFileModRdPortCnt) {
+  //        assume(
+  //          (
+  //            regFile.modMem(ydx)(zdx).readAsync(
+  //              address=U(s"${log2Up(wordCount)}'d${zdx}")
+  //            )
+  //          ) === (
+  //            0x0
+  //          )
+  //        )
+  //      }
+  //    }
+  //  }
+  //}
+  //val tempHadModBackIsFiring: (Bool, Bool) = (
+  //  {
+  //    val cond = (
+  //      modBack.isFiring
+  //      && (
+  //        tempHadFrontIsFiring._1
+  //        || front.isFiring
+  //      ) && (
+  //        tempHadMid0FrontUpIsValid._1
+  //        || regFile.cMid0FrontArea.up.isValid
+  //      ) && (
+  //        tempHadModFrontIsValid._1
+  //        || modFront.isValid
+  //      )
+  //    )
+  //    RegNextWhen(
+  //      next=True,
+  //      cond=cond,
+  //      init=False
+  //    )
+  //  },
+  //  null
+  //)
+  //val tempHadModBackIsValid: (Bool, Bool) = (
+  //  {
+  //    val cond = (
+  //      modBack.isValid
+  //      && (
+  //        tempHadFrontIsFiring._1
+  //        || front.isFiring
+  //      ) && (
+  //        tempHadMid0FrontUpIsValid._1
+  //        || regFile.cMid0FrontArea.up.isValid
+  //      ) && (
+  //        tempHadModFrontIsValid._1
+  //        || modFront.isValid
+  //      )
+  //    )
+  //    RegNextWhen(
+  //      next=True,
+  //      cond=cond,
+  //      init=False
+  //    )
+  //  },
+  //  null
+  //)
+  //val tempHadBackIsFiring: (Bool, Bool) = (
+  //  {
+  //    val cond = (
+  //      back.isFiring
+  //      && (
+  //        tempHadFrontIsFiring._1
+  //        || front.isFiring
+  //      ) && (
+  //        tempHadMid0FrontUpIsValid._1
+  //        || regFile.cMid0FrontArea.up.isValid
+  //      ) && (
+  //        tempHadModFrontIsValid._1
+  //        || modFront.isValid
+  //      ) && (
+  //        tempHadModBackIsValid._1
+  //        || modBack.isValid
+  //      )
+  //    )
+  //    RegNextWhen(
+  //      next=True,
+  //      cond=cond,
+  //      init=False
+  //    )
+  //  },
+  //  null
+  //)
+  //val tempHadBackIsValid: (Bool, Bool) = (
+  //  {
+  //    val cond = (
+  //      back.isValid
+  //      && (
+  //        tempHadFrontIsFiring._1
+  //        || front.isFiring
+  //      ) && (
+  //        tempHadMid0FrontUpIsValid._1
+  //        || regFile.cMid0FrontArea.up.isValid
+  //      ) && (
+  //        tempHadModFrontIsValid._1
+  //        || modFront.isValid
+  //      ) && (
+  //        tempHadModBackIsValid._1
+  //        || modBack.isValid
+  //      ) && (
+  //        tempHadModBackIsFiring._1
+  //        || modBack.isFiring
+  //      )
+  //    )
+  //    RegNextWhen(
+  //      next=True,
+  //      cond=cond,
+  //      init=False
+  //    )
+  //  },
+  //  null
+  //)
+  //val myHaveSeenPipeToModFrontFire = (
+  //  /*KeepAttribute*/(
+  //    tempHadFrontIsFiring._1
+  //    && tempHadMid0FrontUpIsValid._1
+  //    && tempHadModFrontIsValid._1
+  //  )
+  //  .setName(s"myHaveSeenPipeToModFrontFire")
+  //)
+  //val myHaveSeenPipeToWrite = Vec[Bool]({
+  //  val tempArr = ArrayBuffer[Bool]()
+  //  for (tempHaveCurrWrite <- myHaveCurrWrite.view) {
+  //    tempArr += (
+  //      myHaveSeenPipeToModFrontFire
+  //      && tempHaveCurrWrite
+  //    )
+  //  }
+  //  tempArr
+  //})
+  //def getMyHistHaveSeenPipeToWriteVecCond(
+  //  ydx: Int,
+  //  idx: Int,
+  //) = (
+  //  myHaveSeenPipeToWrite(ydx)
+  //  && (
+  //    regFile.mod.back.myWriteAddr(ydx) === idx
+  //  )
+  //)
+  //def tempHistHaveSeenPipeToWriteV2dOuterDim = (
+  //  4
+  //)
+  //val tempHaveSeenPipeToWriteV2dFindFirst_0 = (
+  //  /*KeepAttribute*/(
+  //    Vec.fill(tempHistHaveSeenPipeToWriteV2dOuterDim)({
+  //      val temp = ArrayBuffer[Vec[Bool]]()
+  //      for (wordCount <- cfg.regFileWordCountArr.view) {
+  //        temp += Vec.fill(wordCount)(
+  //          Bool()
+  //        )
+  //      }
+  //      Vec[Vec[Bool]](temp)
+  //    })
+  //  )
+  //  .setName(s"tempHaveSeenPipeToWriteV2dFindFirst_0")
+  //)
+  //for ((wordCount, ydx) <- cfg.regFileWordCountArr.view.zipWithIndex) {
+  //  for (idx <- 0 until wordCount) {
+  //    for (jdx <- 0 until tempHistHaveSeenPipeToWriteV2dOuterDim) {
+  //      def tempFunc(
+  //        someJdx: Int
+  //      ) = (
+  //        tempHaveSeenPipeToWriteV2dFindFirst_0(someJdx)(ydx)
+  //      )
+  //      if (jdx == 0) {
+  //        tempFunc(jdx)(idx) := (
+  //          getMyHistHaveSeenPipeToWriteVecCond(
+  //            ydx=ydx,
+  //            idx=idx,
+  //          )
+  //        )
+  //      } else {
+  //        tempFunc(jdx)(idx) := (
+  //          RegNext(
+  //            next=tempFunc(jdx)(idx),
+  //            init=tempFunc(jdx)(idx).getZero,
+  //          )
+  //        )
+  //        when (tempFunc(jdx - 1)(idx)) {
+  //          tempFunc(jdx)(idx) := (
+  //            RegNext(
+  //              next=tempFunc(jdx - 1)(idx),
+  //              init=tempFunc(jdx)(idx).getZero,
+  //            )
+  //          )
+  //        }
+  //      }
+  //    }
+  //  }
+  //}
+  //val rPrevOpCnt = Vec({
+  //  val tempArr = ArrayBuffer[UInt]()
+  //  for (ydx <- 0 until regFile.memArrSize) {
+  //    tempArr += (
+  //      RegNextWhen(
+  //        next=modBack(modBackPayload).opCnt,
+  //        cond=myHaveCurrWrite(ydx),
+  //      )
+  //      .init(0x0)
+  //      .setName(s"rPrevOpCnt_${ydx}")
+  //    )
+  //  }
+  //  tempArr
+  //})
+  //for ((rPrevOpCntElem, ydx) <- rPrevOpCnt.view.zipWithIndex) {
+  //  assumeInitial(
+  //    rPrevOpCntElem === 0x0
+  //  )
+  //}
+  //val myCoverCond = (
+  //  myHaveAnyCurrWrite
+  //)
+  //def myCoverVecSize = 8
+  //val tempMyCoverInit = SnowHousePipePayload(cfg=cfg)
+  //tempMyCoverInit.allowOverride
+  //tempMyCoverInit := tempMyCoverInit.getZero
+  //val myHistCoverVec = (
+  //  /*KeepAttribute*/(
+  //    History(
+  //      that=modBack(modBackPayload),
+  //      length=myCoverVecSize,
+  //      when=myCoverCond,
+  //      init=tempMyCoverInit,
+  //    )
+  //  )
+  //)
+  //val myHadWriteAt = (
+  //  Vec({
+  //    val tempArr = ArrayBuffer[Vec[Bool]]()
+  //    for ((wordCount, ydx) <- cfg.regFileWordCountArr.view.zipWithIndex) {
+  //      tempArr += (
+  //        Vec.fill(wordCount)(
+  //          Bool()
+  //        )
+  //      )
+  //    }
+  //    tempArr
+  //  })
+  //)
+  //val myPrevWriteData = (
+  //  /*KeepAttribute*/(
+  //    Vec[Vec[UInt]]({
+  //      val tempArr = ArrayBuffer[Vec[UInt]]()
+  //      for ((wordCount, ydx) <- regFile.wordCountArr.view.zipWithIndex) {
+  //        tempArr += {
+  //          val myArr = new ArrayBuffer[UInt]()
+  //          for (idx <- 0 until wordCount) {
+  //            myArr += (
+  //              UInt(cfg.mainWidth bits)
+  //            )
+  //          }
+  //          Vec[UInt](myArr)
+  //        }
+  //      }
+  //      tempArr
+  //    })
+  //  )
+  //  .setName(s"myPrevWriteData")
+  //)
+  //for ((wordCount, ydx) <- regFile.wordCountArr.view.zipWithIndex) {
+  //  for (idx <- 0 until wordCount) {
+  //    myHadWriteAt(ydx)(idx) := (
+  //      RegNext(
+  //        next=myHadWriteAt(ydx)(idx),
+  //        init=myHadWriteAt(ydx)(idx).getZero,
+  //      )
+  //    )
+  //    myPrevWriteData(ydx)(idx) := (
+  //      RegNext(
+  //        next=myPrevWriteData(ydx)(idx),
+  //        init=myPrevWriteData(ydx)(idx).getZero,
+  //      )
+  //    )
+  //  }
+  //}
+  //def extIdxUp = PipeMemRmw.extIdxUp
+  //def extIdxSaved = PipeMemRmw.extIdxSaved
+  //def extIdxLim = PipeMemRmw.extIdxLim
+  //val formalFwdModBackArea = (regFile.myHaveFormalFwd) generate (
+  //  new Area {
+  //    val myExt = (
+  //      /*KeepAttribute*/(
+  //        regFile.mkExt()
+  //      )
+  //      .setName(
+  //        s"formalFwdModBackArea_"
+  //        + s"myExt"
+  //      )
+  //    )
+  //    val myFwd = (
+  //      /*KeepAttribute*/(
+  //        Vec.fill(extIdxLim)(
+  //          regFile.mkFwd()
+  //        )
+  //      )
+  //      .setName(
+  //        s"formalFwdModBackArea_"
+  //        + s"myFwd"
+  //      )
+  //    )
+  //    for (extIdx <- 0 until extIdxLim) {
+  //      for (ydx <- 0 until regFile.memArrSize) {
+  //        myExt(ydx)(extIdx) := regFile.cBackArea.upExt(1)(ydx)(extIdx)
+  //      }
+  //      myFwd(extIdx) := regFile.cBackArea.upFwd(extIdx)
+  //    }
+  //    if (regFile.myHaveFormalFwd) {
+  //      when (pastValidAfterReset) {
+  //        when (
+  //          !RegNextWhen(
+  //            next=True,
+  //            cond=modBack.isFiring,
+  //            init=False,
+  //          )
+  //        ) {
+  //          when (!modBack.isValid) {
+  //            myExt.foreach(someExt => {
+  //              assert(
+  //                someExt(extIdxUp).main
+  //                === someExt(extIdxUp).main.getZero
+  //              )
+  //            })
+  //            assert(myFwd(extIdxUp) === myFwd(extIdxUp).getZero)
+  //          }
+  //          myExt.foreach(someExt => {
+  //            assert(someExt(extIdxSaved) === someExt(extIdxSaved).getZero)
+  //          })
+  //          assert(myFwd(extIdxSaved) === myFwd(extIdxSaved).getZero)
+  //        } 
+  //        when (
+  //          past(modBack.isFiring) init(False)
+  //        ) {
+  //          myExt.foreach(someExt => {
+  //            assert(
+  //              someExt(extIdxSaved)
+  //              === (
+  //                past(someExt(extIdxUp)) init(someExt(extIdxUp).getZero)
+  //              )
+  //            )
+  //          })
+  //          assert(
+  //            myFwd(extIdxSaved)
+  //            === (
+  //              past(myFwd(extIdxUp)) init(myFwd(extIdxUp).getZero)
+  //            )
+  //          )
+  //        }
+  //        when (modBack.isValid) {
+  //          assert(myFwd(extIdxUp) === modBack(modBackPayload).myFwd)
+  //          for (ydx <- 0 until regFile.memArrSize) {
+  //            assert(
+  //              myExt(ydx)(extIdxUp).main
+  //              === modBack(modBackPayload).myExt(ydx).main
+  //            )
+  //          }
+  //        }
+  //      }
+  //    }
+  //    val doFormalFwdUp = (
+  //      PipeMemRmwDoFwdArea(
+  //        fwdAreaName=s"formalFwdModBackArea_doFormalFwdUp",
+  //        fwd=(
+  //          myFwd(extIdxUp)
+  //        ),
+  //        setToMyFwdDataFunc=(
+  //          ydx: Int,
+  //          zdx: Int,
+  //          myFwdData: UInt,
+  //        ) => {
+  //          when (pastValidAfterReset) {
+  //            assert(myExt(ydx)(extIdxUp).rdMemWord(zdx) === myFwdData)
+  //          }
+  //        }
+  //      )
+  //    )
+  //    val doFormalFwdSaved =  (
+  //      PipeMemRmwDoFwdArea(
+  //        fwdAreaName=s"formalFwdModBackArea_doFormalFwdSaved",
+  //        fwd=(
+  //          myFwd(extIdxSaved)
+  //        ),
+  //        setToMyFwdDataFunc=(
+  //          ydx: Int,
+  //          zdx: Int,
+  //          myFwdData: UInt,
+  //        ) => {
+  //          when (pastValidAfterReset) {
+  //            assert(myExt(ydx)(extIdxSaved).rdMemWord(zdx) === myFwdData)
+  //          }
+  //        }
+  //      )
+  //    )
+  //  }
+  //)
+  //case class HistMain(
+  //) extends Bundle {
+  //  val myHaveCurrWrite = Vec.fill(regFile.memArrSize)(
+  //    Bool()
+  //  )
+  //  val flow = Flow(SnowHousePipePayload(cfg=cfg))
+  //}
+  //def myHistMainSize = 8
+  //val myHistMain: Vec[HistMain] = (
+  //  /*KeepAttribute*/(Vec[HistMain]{
+  //    val tempArr = ArrayBuffer[HistMain]()
+  //    for (idx <- 0 until myHistMainSize) {
+  //      def myHistMainCond = (
+  //        pastValidAfterReset
+  //        && modBack.isFiring
+  //      )
+  //      val temp = HistMain()
+  //      temp.myHaveCurrWrite := myHaveCurrWrite
+  //      temp.flow.payload := modBack(modBackPayload)
+  //      temp.flow.valid := True
+  //      tempArr += (
+  //        if (idx == 0) {
+  //          temp
+  //        } else {
+  //          RegNextWhen(
+  //            next=temp,
+  //            cond=(
+  //              myHistMainCond
+  //              && (
+  //                tempArr.last.flow.instrCnt.any
+  //                === temp.flow.instrCnt.any + 1
+  //              )
+  //            ),
+  //            init=HistMain().getZero,
+  //          )
+  //        }
+  //      )
+  //    }
+  //    tempArr
+  //  })
+  //)
+  //val myHistAssumes = ArrayBuffer[Area]()
+  //for ((myHistMainElem, myHistMainIdx) <- myHistMain.view.zipWithIndex) {
+  //  myHistAssumes += myHistMainElem.flow.formalAssumes()
+  //}
+  //val myHistMainFireFindFirst = myHistMain.sFindFirst(_.flow.fire)
+  //if (cfg.optFormal) {
+  //  when (
+  //    myHistMain(0).flow.fire
+  //    && myHistMain(1).flow.fire
+  //    && myHistMain(2).flow.fire
+  //    && myHistMain(3).flow.fire
+  //  ) {
+  //    def flow0 = myHistMain(0).flow
+  //    def flow1 = myHistMain(1).flow
+  //    def flow2 = myHistMain(2).flow
+  //    def flow3 = myHistMain(3).flow
+  //    switch (flow3.op) {
+  //      for (
+  //        ((_, opInfoJmp), opInfoJmpIdx)
+  //        <- cfg.opInfoMap.view.zipWithIndex
+  //      ) {
+  //        is (opInfoJmpIdx) {
+  //          def jmpSelRdMemWord(
+  //            idx: Int,
+  //          ): UInt = {
+  //            flow3.psExSetOutpModMemWordIo.selRdMemWord(
+  //              opInfo=opInfoJmp,
+  //              idx=idx,
+  //            )
+  //          }
+  //          opInfoJmp.select match {
+  //            case OpSelect.Cpy => {
+  //              def handlePcChange(
+  //                cond: Bool,
+  //              ): Unit = {
+  //                assert(flow3.decodeExt.opIsJmp)
+  //                assert(
+  //                  flow3.psExSetPc.fire === cond
+  //                )
+  //                when (cond) {
+  //                  assert(
+  //                    flow2.regPc
+  //                    === flow3.regPc + (cfg.instrMainWidth / 8)
+  //                  )
+  //                  assert(
+  //                    flow1.regPc
+  //                    === flow2.regPc + (cfg.instrMainWidth / 8)
+  //                  )
+  //                  assert(
+  //                    flow0.regPc === flow3.psExSetPc.nextPc
+  //                  )
+  //                } otherwise {
+  //                  when (!flow2.decodeExt.opIsJmp) {
+  //                    assert(!flow2.psExSetPc.fire)
+  //                    assert(
+  //                      flow2.regPc
+  //                      === flow3.regPc + (cfg.instrMainWidth / 8)
+  //                    )
+  //                  }
+  //                  when (!flow1.decodeExt.opIsJmp) {
+  //                    assert(!flow1.psExSetPc.fire)
+  //                  }
+  //                  when (!flow0.decodeExt.opIsJmp) {
+  //                    assert(!flow0.psExSetPc.fire)
+  //                  }
+  //                }
+  //                assert(
+  //                  flow0.instrCnt.any
+  //                  === flow1.instrCnt.any + 1
+  //                )
+  //                assert(
+  //                  flow1.instrCnt.any
+  //                  === flow2.instrCnt.any + 1
+  //                )
+  //                assert(
+  //                  flow2.instrCnt.any
+  //                  === flow3.instrCnt.any + 1
+  //                )
+  //              }
+  //              opInfoJmp.cpyOp.get match {
+  //                case CpyOpKind.Jmp | CpyOpKind.Br => {
+  //                  opInfoJmp.cond match {
+  //                    case CondKind.Always => {
+  //                      handlePcChange(
+  //                        cond=True
+  //                      )
+  //                    }
+  //                    case CondKind.Eq => {
+  //                      handlePcChange(
+  //                        cond=(
+  //                          jmpSelRdMemWord(0) === jmpSelRdMemWord(1)
+  //                        )
+  //                      )
+  //                    }
+  //                    case CondKind.Ne => {
+  //                      handlePcChange(
+  //                        cond=(
+  //                          jmpSelRdMemWord(0) =/= jmpSelRdMemWord(1)
+  //                        )
+  //                      )
+  //                    }
+  //                    case CondKind.Z => {
+  //                      handlePcChange(
+  //                        cond=(jmpSelRdMemWord(0) === 0)
+  //                      )
+  //                    }
+  //                    case CondKind.Nz => {
+  //                      handlePcChange(
+  //                        cond=(jmpSelRdMemWord(0) =/= 0)
+  //                      )
+  //                    }
+  //                    case cond => {
+  //                      assert(
+  //                        false,
+  //                        s"not yet implemented: "
+  //                        + s"opInfoJmp(${opInfoJmp} ${opInfoJmp.select}) "
+  //                        + s"opInfoJmpIdx:${opInfoJmpIdx} "
+  //                      )
+  //                    }
+  //                  }
+  //                }
+  //                case _ => {
+  //                }
+  //              }
+  //            }
+  //            case _ => {
+  //            }
+  //          }
+  //        }
+  //      }
+  //    }
+  //  }
+  //  when (pastValidAfterReset) {
+  //    val tempCond = (
+  //      (
+  //        myHaveCurrWrite
+  //      )
+  //    )
+  //    for ((wordCount, ydx) <- regFile.wordCountArr.view.zipWithIndex) {
+  //      when (past(tempCond(ydx))) {
+  //        for (idx <- 0 until wordCount) {
+  //          when (
+  //            past(regFile.mod.back.myWriteAddr(ydx)) === idx
+  //          ) {
+  //            myHadWriteAt(ydx)(idx) := (
+  //              past(True) init(False)
+  //            )
+  //            myPrevWriteData(ydx)(idx) := (
+  //              past(regFile.mod.back.myWriteData(ydx))
+  //            )
+  //          }
+  //        }
+  //      }
+  //      val tempCond1 = (
+  //        /*KeepAttribute*/(
+  //          /*past*/(regFile.mod.back.myWriteEnable(ydx))
+  //          && (
+  //            myHadWriteAt(ydx)(
+  //            /*past*/(regFile.mod.back.myWriteAddr(ydx)(
+  //              log2Up(wordCount) - 1 downto 0
+  //            ))
+  //            )
+  //          ) && (
+  //            tempHaveSeenPipeToWriteV2dFindFirst_0(0)(ydx)(
+  //              regFile.mod.back.myWriteAddr(ydx)(
+  //                log2Up(wordCount) - 1 downto 0
+  //              )
+  //            )
+  //          ) && (
+  //            tempHaveSeenPipeToWriteV2dFindFirst_0(1)(ydx)(
+  //              regFile.mod.back.myWriteAddr(ydx)(
+  //                log2Up(wordCount) - 1 downto 0
+  //              )
+  //            )
+  //          ) && (
+  //            tempHaveSeenPipeToWriteV2dFindFirst_0(2)(ydx)(
+  //              regFile.mod.back.myWriteAddr(ydx)(
+  //                log2Up(wordCount) - 1 downto 0
+  //              )
+  //            )
+  //          )
+  //        )
+  //        .setName(s"tempCond1_${ydx}")
+  //      )
+  //      val myTempRight = (
+  //        /*KeepAttribute*/(
+  //          Vec[UInt]({
+  //            val myArr = new ArrayBuffer[UInt]()
+  //            myArr += (
+  //              modBack(modBackPayload).myExt(ydx)
+  //              .rdMemWord(PipeMemRmw.modWrIdx)
+  //            )
+  //            myArr
+  //          })
+  //        )
+  //        .setName(s"${regFile.pipeName}_myTempRight_${ydx}")
+  //      )
+  //      when (tempCond1) {
+  //        val myTempLeft = (
+  //          regFile.mod.back.myWriteData
+  //        )
+  //        val myDoFormalAssertRegular = Bool()
+  //        myDoFormalAssertRegular := True
+  //        for ((right, rightIdx) <- myTempRight.view.zipWithIndex) {
+  //          switch (modBack(modBackPayload).op) {
+  //            for (
+  //              ((_, opInfo), opInfoIdx) <- cfg.opInfoMap.view.zipWithIndex
+  //            ) {
+  //              is (opInfoIdx) {
+  //                val psExOutpTempIo = (
+  //                  modBack(modBackPayload)
+  //                  .psExSetOutpModMemWordIo
+  //                )
+  //                def myGpr0 = (
+  //                  psExOutpTempIo.selRdMemWord(opInfo=opInfo, idx=0)
+  //                )
+  //                def myLeft = (
+  //                  psExOutpTempIo.selRdMemWord(opInfo=opInfo, idx=1)
+  //                )
+  //                def myRight = (
+  //                  psExOutpTempIo.selRdMemWord(opInfo=opInfo, idx=2)
+  //                )
+  //                val howToSlice = cfg.shRegFileCfg.howToSlice
+  //                val tempInfo = (
+  //                  modBack(modBackPayload).gprIdxToMemAddrIdxMap(0)
+  //                )
+  //                val result: InstrResult = opInfo.select match {
+  //                  case OpSelect.Cpy => {
+  //                    opInfo.cpyOp.get match {
+  //                      case CpyOpKind.Cpy => {
+  //                        val result = InstrResult(cfg=cfg)()
+  //                        opInfo.memAccess match {
+  //                          case MemAccessKind.NoMemAccess => {
+  //                            result.main := myLeft
+  //                          }
+  //                          case mem: MemAccessKind.Mem => {
+  //                            myDoFormalAssertRegular := False
+  //                            //mem.isStore match {
+  //                            //  case Some(isStore) => {
+  //                            //    if (!isStore) {
+  //                            //      // don't formally verify stores I guess?
+  //                            //      //result.main := myGpr0
+  //                            //      myDoFormalAssert := False
+  //                            //    } else {
+  //                            //    }
+  //                            //  }
+  //                            //  case None => {
+  //                            //    // TODO: support atomics
+  //                            //    assert(
+  //                            //      false,
+  //                            //      s"atomics not supported yet"
+  //                            //    )
+  //                            //  }
+  //                            //}
+  //                          }
+  //                        }
+  //                        result
+  //                      }
+  //                      case CpyOpKind.Cpyu => {
+  //                        val result = InstrResult(cfg=cfg)()
+  //                        result.main.allowOverride
+  //                        result.main := myGpr0
+  //                        result.main(
+  //                          (cfg.mainWidth - 1)
+  //                          downto (cfg.mainWidth >> 1)
+  //                        ) := (
+  //                          myLeft(
+  //                            (cfg.mainWidth >> 1) - 1
+  //                            downto 0
+  //                          )
+  //                        )
+  //                        result
+  //                      }
+  //                      case CpyOpKind.Jmp => {
+  //                        val result = InstrResult(cfg=cfg)()
+  //                        myDoFormalAssertRegular := False
+  //                        result
+  //                      }
+  //                      case CpyOpKind.Br => {
+  //                        val result = InstrResult(cfg=cfg)()
+  //                        myDoFormalAssertRegular := False
+  //                        result
+  //                      }
+  //                      case _ => {
+  //                        assert(
+  //                          false,
+  //                          s"not yet implemented: "
+  //                          + s"opInfo(${opInfo}) idx:${opInfoIdx}"
+  //                        )
+  //                        InstrResult(cfg=cfg)()
+  //                      }
+  //                    }
+  //                  }
+  //                  case OpSelect.Alu => {
+  //                    opInfo.aluOp.get match {
+  //                      case op => {
+  //                        op.binopFunc(
+  //                          cfg=cfg,
+  //                          left=myLeft,
+  //                          right=myRight,
+  //                          carry=False,
+  //                        )(
+  //                        )
+  //                      }
+  //                    }
+  //                  }
+  //                  case OpSelect.AluShift => {
+  //                    opInfo.aluShiftOp.get match {
+  //                      case op => {
+  //                        op.binopFunc(
+  //                          cfg=cfg,
+  //                          left=myLeft,
+  //                          right=myRight,
+  //                          carry=False,
+  //                        )(
+  //                        )
+  //                      }
+  //                    }
+  //                  }
+  //                  case OpSelect.MultiCycle => {
+  //                    opInfo.multiCycleOp.get match {
+  //                      case MultiCycleOpKind.Umul => {
+  //                        val result = InstrResult(cfg=cfg)()
+  //                        result.main := (
+  //                          (myLeft * myRight)(result.main.bitsRange)
+  //                        )
+  //                        result
+  //                      }
+  //                      case _ => {
+  //                        assert(
+  //                          false,
+  //                          s"not yet implemented: "
+  //                          + s"opInfo(${opInfo}) idx:${opInfoIdx}"
+  //                        )
+  //                        InstrResult(cfg=cfg)()
+  //                      }
+  //                    }
+  //                  }
+  //                }
+  //                when (myDoFormalAssertRegular) {
+  //                  assert(
+  //                    myTempLeft(
+  //                      if (tempInfo.haveHowToSetIdx) (
+  //                        tempInfo.howToSetIdx
+  //                      ) else (
+  //                        U(s"${log2Up(cfg.regFileCfg.memArrSize)}'d0")
+  //                      )
+  //                    ) === result.main
+  //                  )
+  //                }
+  //              }
+  //            }
+  //          }
+  //          if ((1 << log2Up(cfg.opInfoMap.size)) != cfg.opInfoMap.size) {
+  //            assume(modBack(modBackPayload).op < cfg.opInfoMap.size)
+  //          }
+  //        }
+  //      }
+  //    }
+  //  }
+  //}
 }
