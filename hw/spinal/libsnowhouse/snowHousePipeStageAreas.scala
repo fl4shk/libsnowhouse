@@ -3623,6 +3623,7 @@ case class SnowHousePipeStageMem(
     val myExtLeft = tempExtLeft(ydx=ydx)
     val myExtRight = tempExtRight(ydx=ydx)
     myExtLeft.allowOverride
+    myExtLeft.modMemWord := myExtRight.modMemWord
     myExtLeft.valid.foreach(current => {
       current := (
         cMidModFront.up.isValid
