@@ -69,8 +69,8 @@ case class SnowHouseInstrDataDualRam(
   )
   //--------
   val fastIbusReady = (
-    true
-    //false
+    //true
+    false
   )
   //val fastDbusReady = (
   //  //true
