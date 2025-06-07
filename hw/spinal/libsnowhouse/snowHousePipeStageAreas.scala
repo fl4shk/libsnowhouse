@@ -3119,9 +3119,9 @@ case class SnowHousePipeStageExecute(
   //  !rSavedStall
   //  && doCheckHazard && myDoHaveHazard1
   //)
-  when (/*LcvFastOrR*/(
+  when (LcvFastOrR(
     setOutpModMemWord.io.opIsMemAccess.asBits.asUInt
-    .orR
+    //.orR
   )) {
     nextPrevTxnWasHazard := True
     when (cMid0Front.up.isFiring) {
