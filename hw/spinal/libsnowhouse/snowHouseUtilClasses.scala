@@ -536,7 +536,7 @@ case class SnowHouseConfig(
     optModHazardKind=PipeMemRmw.ModHazardKind.Fwd,
     optIncludeModFrontS2MLink=false,
     optFormal=optFormal,
-    numForkJoin=1,
+    numForkJoin=/*2*/1,
   )
   regFileCfg.linkArr = None
   def numGprs = regFileCfg.wordCountSum

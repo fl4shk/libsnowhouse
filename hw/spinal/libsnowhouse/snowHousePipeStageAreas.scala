@@ -3449,64 +3449,64 @@ case class SnowHousePipeStageMem(
   regFile.myLinkArr += fMidModFront
   regFile.myLinkArr += sMidModFrontFwd
   regFile.myLinkArr += sMidModFront
-  val formalFwdMidModArea = (regFile.myHaveFormalFwd) generate (
-    new Area {
-      val myFwd = (
-        /*KeepAttribute*/(
-          Vec.fill(extIdxLim)(
-            regFile.mkFwd()
-          )
-        )
-        .setName(
-          s"formalFwdMidModArea_"
-          + s"myFwd"
-        )
-      )
-      for (extIdx <- 0 until extIdxLim) {
-        myFwd(extIdx) := midModPayload(extIdx).myFwd
-      }
-      val doFormalFwdUp =  (
-        PipeMemRmwDoFwdArea(
-          fwdAreaName=s"formalFwdMidModArea_doFormalFwdUp",
-          fwd=(
-            myFwd(extIdxUp)
-          ),
-          setToMyFwdDataFunc=(
-            ydx: Int,
-            zdx: Int,
-            myFwdData: UInt,
-          ) => {
-            when (pastValidAfterReset) {
-              assert(
-                midModPayload(extIdxUp).myExt(ydx).rdMemWord(zdx)
-                === myFwdData
-              )
-            }
-          }
-        )
-      )
-      val doFormalFwdSaved =  (
-        PipeMemRmwDoFwdArea(
-          fwdAreaName=s"formalFwdMidModArea_doFormalFwdSaved",
-          fwd=(
-            myFwd(extIdxSaved)
-          ),
-          setToMyFwdDataFunc=(
-            ydx: Int,
-            zdx: Int,
-            myFwdData: UInt,
-          ) => {
-            when (pastValidAfterReset) {
-              assert(
-                midModPayload(extIdxSaved).myExt(ydx).rdMemWord(zdx)
-                === myFwdData
-              )
-            }
-          }
-        )
-      )
-    }
-  )
+  //val formalFwdMidModArea = (regFile.myHaveFormalFwd) generate (
+  //  new Area {
+  //    val myFwd = (
+  //      /*KeepAttribute*/(
+  //        Vec.fill(extIdxLim)(
+  //          regFile.mkFwd()
+  //        )
+  //      )
+  //      .setName(
+  //        s"formalFwdMidModArea_"
+  //        + s"myFwd"
+  //      )
+  //    )
+  //    for (extIdx <- 0 until extIdxLim) {
+  //      myFwd(extIdx) := midModPayload(extIdx).myFwd
+  //    }
+  //    val doFormalFwdUp =  (
+  //      PipeMemRmwDoFwdArea(
+  //        fwdAreaName=s"formalFwdMidModArea_doFormalFwdUp",
+  //        fwd=(
+  //          myFwd(extIdxUp)
+  //        ),
+  //        setToMyFwdDataFunc=(
+  //          ydx: Int,
+  //          zdx: Int,
+  //          myFwdData: UInt,
+  //        ) => {
+  //          when (pastValidAfterReset) {
+  //            assert(
+  //              midModPayload(extIdxUp).myExt(ydx).rdMemWord(zdx)
+  //              === myFwdData
+  //            )
+  //          }
+  //        }
+  //      )
+  //    )
+  //    val doFormalFwdSaved =  (
+  //      PipeMemRmwDoFwdArea(
+  //        fwdAreaName=s"formalFwdMidModArea_doFormalFwdSaved",
+  //        fwd=(
+  //          myFwd(extIdxSaved)
+  //        ),
+  //        setToMyFwdDataFunc=(
+  //          ydx: Int,
+  //          zdx: Int,
+  //          myFwdData: UInt,
+  //        ) => {
+  //          when (pastValidAfterReset) {
+  //            assert(
+  //              midModPayload(extIdxSaved).myExt(ydx).rdMemWord(zdx)
+  //              === myFwdData
+  //            )
+  //          }
+  //        }
+  //      )
+  //    )
+  //  }
+  //)
   val nextSetMidModPayloadState = (
     /*KeepAttribute*/(
       Bool()
