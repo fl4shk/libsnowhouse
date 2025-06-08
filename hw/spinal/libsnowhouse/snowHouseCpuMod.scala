@@ -534,6 +534,9 @@ object SnowHouseCpuPipeStageInstrDecode {
     )
     upPayload.splitOp.multiCycleOp := 0x0
     upPayload.splitOp.opIsMemAccess := False
+    upPayload.splitOp.jmpBrOp := (
+      (1 << upPayload.splitOp.jmpBrOp.getWidth) - 1
+    )
     def setOp(
       someOp: (Int, (Int, Int), String),
       immShift: Boolean=false,
@@ -606,6 +609,9 @@ object SnowHouseCpuPipeStageInstrDecode {
                   println(
                     s"jmpBrOp: " // "${opInfoIdx} -> ${jmpOpInfoIdx} "
                     + s"${someOp._3} // ${nonMultiCycleOpInfoIdx}"
+                  )
+                  mySplitOp.jmpBrOp := (
+                    jmpOpInfoIdx
                   )
                   found = true
                 }

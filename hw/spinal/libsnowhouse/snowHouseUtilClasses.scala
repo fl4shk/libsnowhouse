@@ -877,7 +877,7 @@ case class SnowHouseSplitOp(
     UInt(log2Up(cfg.cpyCpyuiOpInfoMap.size) bits)
   )
   val jmpBrOp = /*Flow*/(
-    UInt(log2Up(cfg.jmpBrOpInfoMap.size) bits)
+    UInt(log2Up(cfg.jmpBrOpInfoMap.size + 1) bits)
   )
   //val pureJmpOp = /*Flow*/(
   //  UInt(log2Up(cfg.pureJmpOpInfoMap.size) bits)
