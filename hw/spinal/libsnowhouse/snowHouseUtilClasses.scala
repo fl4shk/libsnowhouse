@@ -799,7 +799,8 @@ case class SnowHouseDecodeExt(
   //--------
   //def opIsMemAccess = opIs(_opIsMemAccessIdx)
   val opIsMemAccess = Vec.fill(
-    cfg.memAccOpInfoMap.size
+    //cfg.memAccOpInfoMap.size
+    1
   )(
     Bool()
   )
@@ -865,6 +866,7 @@ case class SnowHouseSplitOp(
   //  UInt(log2Up(cfg.opInfoMap.size) bits)
   //)
   //val opIsMultiCycle = Bool()
+  val opIsMemAccess = Bool()
   val nonMultiCycleOp = /*Flow*/(
     UInt(log2Up(cfg.nonMultiCycleOpInfoMap.size + 1) bits)
   )

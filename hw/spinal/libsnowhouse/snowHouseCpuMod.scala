@@ -533,6 +533,7 @@ object SnowHouseCpuPipeStageInstrDecode {
       (1 << upPayload.splitOp.nonMultiCycleOp.getWidth) - 1
     )
     upPayload.splitOp.multiCycleOp := 0x0
+    upPayload.splitOp.opIsMemAccess := False
     def setOp(
       someOp: (Int, (Int, Int), String),
       immShift: Boolean=false,
@@ -565,6 +566,16 @@ object SnowHouseCpuPipeStageInstrDecode {
               //  s"test: ${nonMultiCycleOpInfoIdx}"
               //)
               //found = true
+              for (
+                ((_, memAccOpInfo), memAccOpInfoIdx)
+                <- cfg.memAccOpInfoMap.view.zipWithIndex
+              ) {
+                if (
+                  memAccOpInfo == opInfo
+                ) {
+                  mySplitOp.opIsMemAccess := True
+                }
+              }
               for (
                 ((_, cpyOpInfo), cpyOpInfoIdx)
                 <- cfg.cpyCpyuiOpInfoMap.view.zipWithIndex

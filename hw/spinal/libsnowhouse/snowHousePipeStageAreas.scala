@@ -802,7 +802,10 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
   io.dbusHostPayload.data.allowOverride
   io.opIs := 0x0
   io.opIsMemAccess.foreach(current => {
-    current := False
+    current := (
+      //False
+      io.splitOp.opIsMemAccess
+    )
   })
   //io.opIsMultiCycle.foreach(current => {
   //  current := False
@@ -1022,7 +1025,7 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
   //io.modMemWordValid.foreach(current => {
   //  current := True
   //})
-  var myMemAccIdx: Int = 0
+  //var myMemAccIdx: Int = 0
   def innerFunc(
     opInfo: OpInfo,
     opInfoIdx: Int,
@@ -1147,8 +1150,8 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
                 //io.opIsMemAccess.foreach(current => {
                 //  current := True
                 //})
-                io.opIsMemAccess(myMemAccIdx) := True
-                myMemAccIdx += 1
+                //io.opIsMemAccess(myMemAccIdx) := True
+                //myMemAccIdx += 1
                 if (!mem.isAtomic) {
                   val isStore = mem.isStore
                   if (!isStore) {
@@ -3150,9 +3153,9 @@ case class SnowHousePipeStageExecute(
   //  !rSavedStall
   //  && doCheckHazard && myDoHaveHazard1
   //)
-  when (LcvFastOrR(
+  when (/*LcvFastOrR*/(
     setOutpModMemWord.io.opIsMemAccess.asBits.asUInt
-    //.orR
+    .orR
   )) {
     nextPrevTxnWasHazard := True
     when (cMid0Front.up.isFiring) {
@@ -3176,9 +3179,9 @@ case class SnowHousePipeStageExecute(
   }
   switch (rMultiCycleOpState) {
     is (False) {
-      when (/*LcvFastOrR*/(
+      when (LcvFastOrR(
         setOutpModMemWord.io.opIsMultiCycle.asBits.asUInt
-        =/= 0x0
+        //=/= 0x0
         //.orR
       )) {
         rMultiCycleOpState := True
