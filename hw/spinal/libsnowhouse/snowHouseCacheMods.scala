@@ -835,8 +835,8 @@ case class SnowHouseCache(
                   when (haveHit) {
                     // cached store
                     nextState := State.HANDLE_DCACHE_STORE_HIT
-                    lineAttrsRam.io.rdEn := False
-                    lineWordRam.io.rdEn := False
+                    //lineAttrsRam.io.rdEn := False
+                    //lineWordRam.io.rdEn := False
                     rBusReadyCnt := True
                     wrLineAttrs := rdLineAttrs
                     wrLineAttrs.dirty := True
