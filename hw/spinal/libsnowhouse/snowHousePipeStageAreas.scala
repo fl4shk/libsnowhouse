@@ -2268,26 +2268,26 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
   //  //  )
   //  //}
   //}
-  //switch (io.splitOp.multiCycleOp) {
+  switch (io.splitOp.multiCycleOp) {
     for (
       ((_, opInfo), idx)
       <- cfg.multiCycleOpInfoMap.view.zipWithIndex
     ) {
-      when /*is*/ (
+      /*when*/ is(
         //idx
-        io.splitOp.multiCycleOp(idx)
-        //new MaskedLiteral(
-        //  value=(
-        //    (1 << idx)
-        //  ),
-        //  careAbout=(
-        //    (1 << idx)
-        //    | ((1 << idx) - 1)
-        //  ),
-        //  width=(
-        //    cfg.multiCycleOpInfoMap.size
-        //  )
-        //)
+        //io.splitOp.multiCycleOp(idx)
+        new MaskedLiteral(
+          value=(
+            (1 << idx)
+          ),
+          careAbout=(
+            (1 << idx)
+            | ((1 << idx) - 1)
+          ),
+          width=(
+            cfg.multiCycleOpInfoMap.size
+          )
+        )
       ) {
         innerFunc(
           opInfo=opInfo,
@@ -2295,7 +2295,7 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
         )
       }
     }
-  //}
+  }
   //switch (io.splitOp.fullOp) {
   //  for (
   //    ((_, opInfo), opInfoIdx) <- cfg.opInfoMap.view.zipWithIndex
