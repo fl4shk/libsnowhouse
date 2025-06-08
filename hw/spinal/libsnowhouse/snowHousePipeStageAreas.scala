@@ -2646,6 +2646,7 @@ case class SnowHousePipeStageExecute(
       temp += (
         outp.myDoHaveHazardAddrCheckVec(0)
       )
+      //val tempMyDoHaveHazard = outp.myDoHaveHazardAddrCheckVec
 
       temp
     },
@@ -2655,15 +2656,18 @@ case class SnowHousePipeStageExecute(
     {
       val temp = ArrayBuffer[Bool]()
       for (ydx <- 0 until cfg.regFileCfg.memArrSize) {
-        val tempYdx = (
-          if (ydx < cfg.regFileCfg.modMemWordValidSize) (
-            ydx
-          ) else (
-            cfg.regFileCfg.modMemWordValidSize - 1
-          )
-        )
+        //val tempYdx = (
+        //  if (ydx < cfg.regFileCfg.modMemWordValidSize) (
+        //    ydx
+        //  ) else (
+        //    cfg.regFileCfg.modMemWordValidSize - 1
+        //  )
+        //)
         temp += (
-          !tempModFrontPayload.myExt(ydx).modMemWordValid(tempYdx)
+          !tempModFrontPayload.myExt(ydx).modMemWordValid(
+            //tempYdx
+            1
+          )
         )
       }
       temp
