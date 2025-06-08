@@ -3068,17 +3068,18 @@ case class SnowHousePipeStageExecute(
       init=io.dbus.sendData.getZero,
     )
   )
-  val rMultiCycleOpState = {
-    val temp = (
-      Reg(Bool())
-    )
-    temp.init(temp.getZero)
-    temp
-  }
+  //val rMultiCycleOpState = {
+  //  val temp = (
+  //    Reg(Bool())
+  //  )
+  //  temp.init(temp.getZero)
+  //  temp
+  //}
   val rOpIsMultiCycle = {
     val temp = (
       Reg(Vec.fill(setOutpModMemWord.io.opIsMultiCycle.size)(
-        Bool()
+        //Bool()
+        UInt(2 bits)
       ))
     )
     for ((elem, tempIdx) <- temp.view.zipWithIndex) {
@@ -3154,29 +3155,34 @@ case class SnowHousePipeStageExecute(
     myPsExStallHost.nextValid := True
     nextSavedStall := True
   }
-  switch (rMultiCycleOpState) {
-    is (False) {
-      when (LcvFastOrR(
-        setOutpModMemWord.io.opIsMultiCycle.asBits.asUInt
-        //.orR
-      )) {
-        rMultiCycleOpState := True
-        for (idx <- 0 until rOpIsMultiCycle.size) {
-          rOpIsMultiCycle(idx) := (
-            setOutpModMemWord.io.opIsMultiCycle(idx)
-          )
+  for (idx <- 0 until rOpIsMultiCycle.size) {
+    def rMultiCycleOpState = rOpIsMultiCycle(idx)(1)
+    switch (
+      rMultiCycleOpState
+    ) {
+      is (False) {
+        when (
+          //LcvFastOrR(
+          //  setOutpModMemWord.io.opIsMultiCycle.asBits.asUInt
+          //  //.orR
+          //)
+          setOutpModMemWord.io.opIsMultiCycle(idx)
+        ) {
+          rMultiCycleOpState := True
+            rOpIsMultiCycle(idx)(0) := (
+              setOutpModMemWord.io.opIsMultiCycle(idx)
+            )
+          myDoStall(stallKindMultiCycle1) := True
+          //cMid0Front.duplicateIt()
         }
-        myDoStall(stallKindMultiCycle1) := True
-        //cMid0Front.duplicateIt()
       }
-    }
-    is (True) {
-      for (idx <- 0 until setOutpModMemWord.io.opIsMultiCycle.size) {
+      is (True) {
+        //for (idx <- 0 until setOutpModMemWord.io.opIsMultiCycle.size) {
         //--------
         // BEGIN: working, slower than desired multi-cycle op handling code
         when (
           //setOutpModMemWord.io.opIsMultiCycle(idx)
-          rOpIsMultiCycle(idx)
+          rOpIsMultiCycle(idx)(0)
         ) {
           for (
             ((_, opInfo), opInfoIdx)
@@ -3201,8 +3207,8 @@ case class SnowHousePipeStageExecute(
                   /*LcvFastAndR*/(
                     Vec[Bool](
                       !rSavedStall,
-                      doCheckHazard,
-                      myDoHaveHazard,
+                      RegNext(next=doCheckHazard, init=False),
+                      RegNext(next=myDoHaveHazard, init=False),
                     ).asBits.asUInt.andR
                   )
                 ) {
@@ -3221,8 +3227,8 @@ case class SnowHousePipeStageExecute(
                   (
                     Vec[Bool](
                       !rSavedStall,
-                      doCheckHazard,
-                      myDoHaveHazard,
+                      RegNext(next=doCheckHazard, init=False),
+                      RegNext(next=myDoHaveHazard, init=False),
                       RegNext(psMemStallHost.nextValid, init=False),
                       psMemStallHost.ready,
                     ).asBits.asUInt.andR
@@ -3256,6 +3262,7 @@ case class SnowHousePipeStageExecute(
         }
         // END: working, slower than desired multi-cycle op handling code
         //--------
+        //}
       }
     }
   }
