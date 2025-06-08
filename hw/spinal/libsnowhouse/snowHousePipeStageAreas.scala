@@ -2602,8 +2602,15 @@ case class SnowHousePipeStageExecute(
   myDoStall(stallKindMultiCycle1) := (
     False
   )
+  val setOutpModMemWord = SnowHousePipeStageExecuteSetOutpModMemWord(
+    args=args
+  )
   val doCheckHazard = (
-    Bool()
+    Vec.fill(
+      setOutpModMemWord.io.opIsMultiCycle.size
+    )(
+      Bool()
+    )
   )
   val myDoHaveHazardAddrCheckVec = Vec[Bool](
     {
@@ -2692,14 +2699,15 @@ case class SnowHousePipeStageExecute(
       tempArr
     }
   )
-  val myDoHaveHazard1 = (
-    myDoHaveHazardVec.reduceLeft(_ || _)
-  )
+  //val myDoHaveHazard1 = (
+  //  myDoHaveHazardVec.reduceLeft(_ || _)
+  //)
   val myDoHaveHazard = /*KeepAttribute*/(
-    myDoHaveHazardVec.reduceLeft(_ || _)
-  )
-  val setOutpModMemWord = SnowHousePipeStageExecuteSetOutpModMemWord(
-    args=args
+    Vec.fill(
+      setOutpModMemWord.io.opIsMultiCycle.size
+    )(
+      myDoHaveHazardVec.reduceLeft(_ || _)
+    )
   )
   setOutpModMemWord.io.takeIrq := (
     RegNext(
@@ -2978,8 +2986,8 @@ case class SnowHousePipeStageExecute(
     )
   )
   nextSavedStall := rSavedStall
-  when (doCheckHazard) {
-    when (myDoHaveHazard) {
+  when (doCheckHazard(0)) {
+    when (myDoHaveHazard(0)) {
       myDoStall(stallKindMem) := True
     }
     if (cfg.optFormal) {
@@ -3207,8 +3215,8 @@ case class SnowHousePipeStageExecute(
                   /*LcvFastAndR*/(
                     Vec[Bool](
                       !rSavedStall,
-                      RegNext(next=doCheckHazard, init=False),
-                      RegNext(next=myDoHaveHazard, init=False),
+                      RegNext(next=doCheckHazard(idx), init=False),
+                      RegNext(next=myDoHaveHazard(idx), init=False),
                     ).asBits.asUInt.andR
                   )
                 ) {
@@ -3227,16 +3235,16 @@ case class SnowHousePipeStageExecute(
                   (
                     Vec[Bool](
                       !rSavedStall,
-                      RegNext(next=doCheckHazard, init=False),
-                      RegNext(next=myDoHaveHazard, init=False),
+                      RegNext(next=doCheckHazard(idx), init=False),
+                      RegNext(next=myDoHaveHazard(idx), init=False),
                       RegNext(psMemStallHost.nextValid, init=False),
                       psMemStallHost.ready,
                     ).asBits.asUInt.andR
                   ) || (
                     !Vec[Bool](
                       !rSavedStall,
-                      doCheckHazard,
-                      myDoHaveHazard,
+                      RegNext(next=doCheckHazard(idx), init=False),
+                      RegNext(next=myDoHaveHazard(idx), init=False),
                     ).asBits.asUInt.andR
                   )
                 ) {
@@ -3358,7 +3366,9 @@ case class SnowHousePipeStageExecute(
       psExStallHost.nextValid := False
     }
   })
-  doCheckHazard := rPrevTxnWasHazard
+  doCheckHazard.foreach(current => {
+    current := rPrevTxnWasHazard
+  })
   when (
     myDoStall.sFindFirst(_ === True)._1
   ) {
