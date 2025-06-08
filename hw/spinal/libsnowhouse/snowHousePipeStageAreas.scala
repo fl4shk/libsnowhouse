@@ -3215,25 +3215,25 @@ case class SnowHousePipeStageExecute(
       }
     }
     is (True) {
-      //switch (rOpIsMultiCycle.asBits.asUInt) {
+      switch (rOpIsMultiCycle.asBits.asUInt) {
         for (idx <- 0 until setOutpModMemWord.io.opIsMultiCycle.size) {
           //--------
           // BEGIN: working, slower than desired multi-cycle op handling code
-          when /*is*/ (
+          /*when*/ is (
             //setOutpModMemWord.io.opIsMultiCycle(idx)
-            rOpIsMultiCycle(idx)
-            //new MaskedLiteral(
-            //  value=(
-            //    (1 << idx)
-            //  ),
-            //  careAbout=(
-            //    (1 << idx)
-            //    | ((1 << idx) - 1)
-            //  ),
-            //  width=(
-            //    cfg.multiCycleOpInfoMap.size
-            //  )
-            //)
+            //rOpIsMultiCycle(idx)
+            new MaskedLiteral(
+              value=(
+                (1 << idx)
+              ),
+              careAbout=(
+                (1 << idx)
+                | ((1 << idx) - 1)
+              ),
+              width=(
+                cfg.multiCycleOpInfoMap.size
+              )
+            )
           ) {
             for (
               ((_, opInfo), opInfoIdx)
@@ -3314,7 +3314,7 @@ case class SnowHousePipeStageExecute(
           // END: working, slower than desired multi-cycle op handling code
           //--------
         }
-      //}
+      }
     }
   }
   //--------
