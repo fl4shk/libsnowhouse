@@ -110,6 +110,7 @@ case class SnowHousePipeStageArgs(
 case class SnowHousePsExSetPcPayload(
   cfg: SnowHouseConfig
 ) extends Bundle {
+  val valid1 = Bool()
   val nextPc = UInt(cfg.mainWidth bits)
 }
 case class SnowHousePipeStageInstrFetch(
@@ -150,8 +151,9 @@ case class SnowHousePipeStageInstrFetch(
   }
 
   when (
-    psExSetPc.fire
+    //psExSetPc.fire
     //&& !rSavedExSetPc.fire
+    psExSetPc.valid1
   ) {
     rSavedExSetPc := psExSetPc
   }
@@ -3071,6 +3073,7 @@ case class SnowHousePipeStageExecute(
       init=psExSetPc.payload.getZero,
     )
   )
+  psExSetPc.valid1.allowOverride
   psExSetPc.nextPc.allowOverride
   val condForAssertSetPcValid = (
     setOutpModMemWord.io.opIsJmp
@@ -3084,7 +3087,11 @@ case class SnowHousePipeStageExecute(
   psExSetPc.valid := (
     setOutpModMemWord.io.psExSetPc.valid
     && !outp.instrCnt.shouldIgnoreInstr
-    && cMid0Front.up.valid
+    && cMid0Front.up.isValid
+  )
+  psExSetPc.valid1 := (
+    !outp.instrCnt.shouldIgnoreInstr
+    && cMid0Front.up.isValid
   )
   psExSetPc.nextPc := setOutpModMemWord.io.psExSetPc.nextPc
   io.dbus.allowOverride
