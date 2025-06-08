@@ -307,9 +307,6 @@ case class SnowHousePipeStageInstrDecode(
   upPayload.regPcPlusInstrSize := (
     upPayload.regPc + (cfg.instrMainWidth / 8)
   )
-  upPayload.regPcPlusImm := (
-    upPayload.regPc + upPayload.imm(2)
-  )
   val upGprIdxToMemAddrIdxMap = upPayload.gprIdxToMemAddrIdxMap
   for ((gprIdx, zdx) <- upPayload.gprIdxVec.view.zipWithIndex) {
     upPayload.myExt(0).memAddr(zdx) := gprIdx
@@ -3096,8 +3093,8 @@ case class SnowHousePipeStageExecute(
   )
   psExSetPc.valid := (
     setOutpModMemWord.io.psExSetPc.valid
-    && !outp.instrCnt.shouldIgnoreInstr
-    && cMid0Front.up.isValid
+    //&& !outp.instrCnt.shouldIgnoreInstr
+    //&& cMid0Front.up.isValid
   )
   psExSetPc.valid1 := (
     !outp.instrCnt.shouldIgnoreInstr
@@ -3200,12 +3197,12 @@ case class SnowHousePipeStageExecute(
   switch (rMultiCycleOpState) {
     is (False) {
       when (
-        //LcvFastOrR(
-        //  setOutpModMemWord.io.opIsMultiCycle.asBits.asUInt
-        //  //=/= 0x0
-        //  //.orR
-        //)
-        setOutpModMemWord.io.opIsAnyMultiCycle
+        LcvFastOrR(
+          setOutpModMemWord.io.opIsMultiCycle.asBits.asUInt
+          //=/= 0x0
+          //.orR
+        )
+        //setOutpModMemWord.io.opIsAnyMultiCycle
       ) {
         rMultiCycleOpState := True
         for (idx <- 0 until rOpIsMultiCycle.size) {
@@ -3534,9 +3531,9 @@ case class SnowHousePipeStageExecute(
   if (cfg.optFormal) {
     outp.psExSetOutpModMemWordIo := setOutpModMemWord.io
   }
-  //outp.regPcPlusImm := (
-  //  outp.regPc + outp.imm(2) //+ (cfg.instrMainWidth / 8)
-  //)
+  outp.regPcPlusImm := (
+    outp.regPc + outp.imm(2) //+ (cfg.instrMainWidth / 8)
+  )
 }
 case class SnowHousePipeStageMem(
   args: SnowHousePipeStageArgs,
