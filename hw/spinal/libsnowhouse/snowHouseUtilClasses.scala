@@ -864,9 +864,9 @@ case class SnowHouseSplitOp(
   //val fullOp = /*Flow*/(
   //  UInt(log2Up(cfg.opInfoMap.size) bits)
   //)
-  val opIsMultiCycle = Bool()
+  //val opIsMultiCycle = Bool()
   val nonMultiCycleOp = /*Flow*/(
-    UInt(log2Up(cfg.nonMultiCycleOpInfoMap.size) bits)
+    UInt(log2Up(cfg.nonMultiCycleOpInfoMap.size + 1) bits)
   )
   val kind = SnowHouseSplitOpKind(
     //binaryOneHot
@@ -887,7 +887,7 @@ case class SnowHouseSplitOp(
     UInt(log2Up(cfg.aluShiftOpInfoMap.size) bits)
   )
   val multiCycleOp = /*Flow*/(
-    UInt(log2Up(cfg.multiCycleOpInfoMap.size) bits)
+    UInt(/*log2Up*/(cfg.multiCycleOpInfoMap.size) bits)
   )
   //val pureCpyuiOp = /*Flow*/(
   //  UInt(log2Up(cfg.pureCpyOpInfoMap.size) bits)

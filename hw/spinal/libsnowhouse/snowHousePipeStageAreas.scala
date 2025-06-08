@@ -804,9 +804,14 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
   io.opIsMemAccess.foreach(current => {
     current := False
   })
-  io.opIsMultiCycle.foreach(current => {
-    current := False
-  })
+  //io.opIsMultiCycle.foreach(current => {
+  //  current := False
+  //})
+  for (idx <- 0 until cfg.multiCycleOpInfoMap.size) {
+    io.opIsMultiCycle(idx) := (
+      io.splitOp.multiCycleOp(idx)
+    )
+  }
   io.decodeExt.memAccessKind := SnowHouseMemAccessKind.LoadU
   io.decodeExt.memAccessSubKind := SnowHouseMemAccessSubKind.Sz8
   io.decodeExt.memAccessIsPush := False
@@ -2193,10 +2198,10 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
             }
           }
         }
-        io.opIsMultiCycle(opInfoIdx) := (
-          True
-          //False
-        )
+        //io.opIsMultiCycle(opInfoIdx) := (
+        //  True
+        //  //False
+        //)
         assert(
           opInfo.cond == CondKind.Always,
           s"not yet implemented: "
@@ -2222,7 +2227,7 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
       }
     }
   }
-  when (!io.splitOp.opIsMultiCycle) {
+  //when (!io.splitOp.opIsMultiCycle) {
     //if (cfg.allMainLdstUseGprPlusImm) {
     //  io.dbusHostPayload.addr := io.rdMemWord(1) + io.imm(1)
     //}
@@ -2231,35 +2236,42 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
         ((_, opInfo), idx)
         <- cfg.nonMultiCycleOpInfoMap.view.zipWithIndex
       ) {
-        is (idx) {
-          innerFunc(
-            opInfo=opInfo,
-            opInfoIdx=idx,
-          )
-        }
+        //if (
+        //  idx + 1 < cfg.nonMultiCycleOpInfoMap.size
+        //) {
+          is (idx) {
+            innerFunc(
+              opInfo=opInfo,
+              opInfoIdx=idx,
+            )
+          }
+        //}
       }
     }
-  } otherwise { // when (io.splitOp.opIsMultiCycle)
-    //if (cfg.allMainLdstUseGprPlusImm) {
-    //  io.dbusHostPayload.addr := RegNext(
-    //    next=io.dbusHostPayload.addr,
-    //    init=io.dbusHostPayload.addr.getZero,
-    //  )
-    //}
-    switch (io.splitOp.multiCycleOp) {
-      for (
-        ((_, opInfo), idx)
-        <- cfg.multiCycleOpInfoMap.view.zipWithIndex
+  //} otherwise { // when (io.splitOp.opIsMultiCycle)
+  //  //if (cfg.allMainLdstUseGprPlusImm) {
+  //  //  io.dbusHostPayload.addr := RegNext(
+  //  //    next=io.dbusHostPayload.addr,
+  //  //    init=io.dbusHostPayload.addr.getZero,
+  //  //  )
+  //  //}
+  //}
+  //switch (io.splitOp.multiCycleOp) {
+    for (
+      ((_, opInfo), idx)
+      <- cfg.multiCycleOpInfoMap.view.zipWithIndex
+    ) {
+      when (
+        //idx
+        io.splitOp.multiCycleOp(idx)
       ) {
-        is (idx) {
-          innerFunc(
-            opInfo=opInfo,
-            opInfoIdx=idx,
-          )
-        }
+        innerFunc(
+          opInfo=opInfo,
+          opInfoIdx=idx,
+        )
       }
     }
-  }
+  //}
   //switch (io.splitOp.fullOp) {
   //  for (
   //    ((_, opInfo), opInfoIdx) <- cfg.opInfoMap.view.zipWithIndex
@@ -2838,7 +2850,7 @@ case class SnowHousePipeStageExecute(
   setOutpModMemWord.io.splitOp := (
     RegNext(
       next=setOutpModMemWord.io.splitOp,
-      //init=setOutpModMemWord.io.splitOp.getZero,
+      init=setOutpModMemWord.io.splitOp.getZero,
     )
     //init(SnowHouseSplitOpKind.CPY_CPYUI)
   )

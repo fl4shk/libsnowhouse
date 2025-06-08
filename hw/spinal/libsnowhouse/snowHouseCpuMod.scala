@@ -528,7 +528,11 @@ object SnowHouseCpuPipeStageInstrDecode {
       )
       .setName(s"InstrDecode_rPrevPreImm16")
     )
-    upPayload.splitOp.opIsMultiCycle := False
+    //upPayload.splitOp.opIsMultiCycle := False
+    upPayload.splitOp.nonMultiCycleOp := (
+      (1 << upPayload.splitOp.nonMultiCycleOp.getWidth) - 1
+    )
+    upPayload.splitOp.multiCycleOp := 0x0
     def setOp(
       someOp: (Int, (Int, Int), String),
       immShift: Boolean=false,
@@ -645,8 +649,10 @@ object SnowHouseCpuPipeStageInstrDecode {
               ////upPayload.op := opInfoIdx
               ////mySplitOp.multiCycleOp.valid := True
               //mySplitOp.kind := SnowHouseSplitOpKind.MULTI_CYCLE
-              mySplitOp.opIsMultiCycle := True
-              mySplitOp.multiCycleOp := multiCycleOpInfoIdx
+              //mySplitOp.opIsMultiCycle := True
+              mySplitOp.multiCycleOp := (
+                1 << multiCycleOpInfoIdx
+              )
               ////return
               found = true
             }
