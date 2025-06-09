@@ -3143,11 +3143,25 @@ case class SnowHousePipeStageExecute(
       init=io.dbus.sendData.getZero,
     )
   )
+  object MultiCycleOpState
+  extends SpinalEnum(defaultEncoding=binaryOneHot) {
+    val
+      Idle,
+      Main//,
+      //NoMoreStall
+      = newElement()
+  }
   val rMultiCycleOpState = {
     val temp = (
-      Reg(Bool())
+      Reg(
+        //Bool()
+        MultiCycleOpState()
+      )
     )
-    temp.init(temp.getZero)
+    temp.init(
+      //temp.getZero
+      MultiCycleOpState.Idle
+    )
     temp
   }
   val rOpIsMultiCycle = {
@@ -3225,23 +3239,29 @@ case class SnowHousePipeStageExecute(
     ],
     idx: Int,
   ): Unit = {
-    myDoStall(stallKindMem) := False
+    //myDoStall(stallKindMem) := False
     myDoStall(stallKindMultiCycle) := True
     myPsExStallHost.nextValid := True
     //nextSavedStall(idx) := True
     nextSavedStall.head := True
   }
   switch (rMultiCycleOpState) {
-    is (False) {
+    is (
+      //False
+      MultiCycleOpState.Idle
+    ) {
       when (
-        LcvFastOrR(
-          setOutpModMemWord.io.opIsMultiCycle.asBits.asUInt
-          //=/= 0x0
-          //.orR
-        )
-        //setOutpModMemWord.io.opIsAnyMultiCycle
+        //LcvFastOrR(
+        //  setOutpModMemWord.io.opIsMultiCycle.asBits.asUInt
+        //  //=/= 0x0
+        //  //.orR
+        //)
+        setOutpModMemWord.io.opIsAnyMultiCycle
       ) {
-        rMultiCycleOpState := True
+        //rMultiCycleOpState := (
+        //  //True
+        //  MultiCycleOpState.Main
+        //)
         for (idx <- 0 until rOpIsMultiCycle.size) {
           rOpIsMultiCycle(idx) := (
             setOutpModMemWord.io.opIsMultiCycle(idx)
@@ -3249,9 +3269,38 @@ case class SnowHousePipeStageExecute(
         }
         myDoStall(stallKindMultiCycle1) := True
         //cMid0Front.duplicateIt()
+        when (
+          (
+            Vec[Bool](
+              !rSavedStall.head/*(idx)*/,
+              RegNext(next=doCheckHazard).head/*(idx)*/,
+              RegNext(next=myDoHaveHazard).head/*(idx)*/,
+              RegNext(psMemStallHost.nextValid, init=False),
+              psMemStallHost.ready,
+            ).asBits.asUInt.andR
+          ) || (
+            !Vec[Bool](
+              !rSavedStall.head/*(idx)*/,
+              RegNext(next=doCheckHazard).head/*(idx)*/,
+              RegNext(next=myDoHaveHazard).head/*(idx)*/,
+            ).asBits.asUInt.andR
+          )
+        ) {
+          //doMultiCycleStart(psExStallHost, idx=idx)
+          rMultiCycleOpState := (
+            //True
+            MultiCycleOpState.Main
+          )
+          myDoStall(stallKindMem) := False
+        }
       }
+      //myDoStall(stallKindMultiCycle) := False
     }
-    is (True) {
+    is (
+      //True
+      MultiCycleOpState.Main
+    ) {
+      //myDoStall(stallKindMultiCycle) := True
       //switch (rOpIsMultiCycle.asBits.asUInt) {
         for (idx <- 0 until cfg.multiCycleOpInfoMap.size) {
           //--------
@@ -3291,59 +3340,65 @@ case class SnowHousePipeStageExecute(
                 }
                 if (busIdxFound) {
                   val psExStallHost = psExStallHostArr(busIdx)
-                  when (
-                    /*LcvFastAndR*/(
-                      Vec[Bool](
-                        !rSavedStall.head/*(idx)*/,
-                        RegNext(next=doCheckHazard).head/*(idx)*/,
-                        RegNext(next=myDoHaveHazard).head/*(idx)*/,
-                      ).asBits.asUInt.andR
-                    )
-                  ) {
-                    psExStallHost.nextValid := False
-                    //when (
-                    //  //psMemStallHost.fire
-                    //  RegNext(psMemStallHost.nextValid, init=False)
-                    //  && psMemStallHost.ready
-                    //) {
-                    //  doMultiCycleStart(psExStallHost)
-                    //}
-                  } otherwise {
-                    //doMultiCycleStart(psExStallHost)
-                  }
-                  when (
-                    (
-                      Vec[Bool](
-                        !rSavedStall.head/*(idx)*/,
-                        RegNext(next=doCheckHazard).head/*(idx)*/,
-                        RegNext(next=myDoHaveHazard).head/*(idx)*/,
-                        RegNext(psMemStallHost.nextValid, init=False),
-                        psMemStallHost.ready,
-                      ).asBits.asUInt.andR
-                    ) || (
-                      !Vec[Bool](
-                        !rSavedStall.head/*(idx)*/,
-                        RegNext(next=doCheckHazard).head/*(idx)*/,
-                        RegNext(next=myDoHaveHazard).head/*(idx)*/,
-                      ).asBits.asUInt.andR
-                    )
-                  ) {
-                    doMultiCycleStart(psExStallHost, idx=idx)
-                  }
+                  //psExStallHost.nextValid := True
+                  //when (
+                  //  /*LcvFastAndR*/(
+                  //    Vec[Bool](
+                  //      !rSavedStall.head/*(idx)*/,
+                  //      RegNext(next=doCheckHazard).head/*(idx)*/,
+                  //      RegNext(next=myDoHaveHazard).head/*(idx)*/,
+                  //    ).asBits.asUInt.andR
+                  //  )
+                  //) {
+                  //  psExStallHost.nextValid := False
+                  //  //when (
+                  //  //  //psMemStallHost.fire
+                  //  //  RegNext(psMemStallHost.nextValid, init=False)
+                  //  //  && psMemStallHost.ready
+                  //  //) {
+                  //  //  doMultiCycleStart(psExStallHost)
+                  //  //}
+                  //} otherwise {
+                  //  //doMultiCycleStart(psExStallHost)
+                  //}
+                  //when (
+                  //  (
+                  //    Vec[Bool](
+                  //      !rSavedStall.head/*(idx)*/,
+                  //      RegNext(next=doCheckHazard).head/*(idx)*/,
+                  //      RegNext(next=myDoHaveHazard).head/*(idx)*/,
+                  //      RegNext(psMemStallHost.nextValid, init=False),
+                  //      psMemStallHost.ready,
+                  //    ).asBits.asUInt.andR
+                  //  ) || (
+                  //    !Vec[Bool](
+                  //      !rSavedStall.head/*(idx)*/,
+                  //      RegNext(next=doCheckHazard).head/*(idx)*/,
+                  //      RegNext(next=myDoHaveHazard).head/*(idx)*/,
+                  //    ).asBits.asUInt.andR
+                  //  )
+                  //) {
+                  //  //doMultiCycleStart(psExStallHost, idx=idx)
+                  //}
+                  doMultiCycleStart(psExStallHost, idx=idx)
                   when (
                     RegNext(psExStallHost.nextValid, init=False)
                     && psExStallHost.ready
                   ) {
                     psExStallHost.nextValid := False
                     myDoStall(stallKindMultiCycle) := False
-                    rMultiCycleOpState := False
+                    rMultiCycleOpState := (
+                      //False
+                      MultiCycleOpState.Idle
+                      //MultiCycleOpState.NoMoreStall
+                    )
                   }
-                  when (rSavedStall.head/*(idx)*/) {
-                    myDoStall(stallKindMem) := False
-                  }
-                  when (cMid0Front.up.isFiring) {
-                    nextSavedStall.head/*(idx)*/ := False
-                  }
+                  //when (rSavedStall.head/*(idx)*/) {
+                  //  myDoStall(stallKindMem) := False
+                  //}
+                  //when (cMid0Front.up.isFiring) {
+                  //  nextSavedStall.head/*(idx)*/ := False
+                  //}
                 }
               }
             }
@@ -3353,13 +3408,19 @@ case class SnowHousePipeStageExecute(
         }
       //}
     }
+    //is (MultiCycleOpState.NoMoreStall) {
+    //  myDoStall(stallKindMultiCycle) := False
+    //  when (cMid0Front.up.isFiring) {
+    //    rMultiCycleOpState := MultiCycleOpState.Idle
+    //  }
+    //}
   }
-  //when (rSavedStall.head/*(idx)*/) {
-  //  myDoStall(stallKindMem) := False
-  //}
-  //when (cMid0Front.up.isFiring) {
-  //  nextSavedStall.head/*(idx)*/ := False
-  //}
+  when (rSavedStall.head/*(idx)*/) {
+    myDoStall(stallKindMem) := False
+  }
+  when (cMid0Front.up.isFiring) {
+    nextSavedStall.head/*(idx)*/ := False
+  }
   //--------
   //switch (rOpIsMultiCycle.asBits.asUInt) {
   //  for (idx <- 0 until cfg.multiCycleOpInfoMap.size) {
