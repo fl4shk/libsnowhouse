@@ -2641,8 +2641,13 @@ case class SnowHousePipeStageExecute(
   myDoStall(stallKindMultiCycle1) := (
     False
   )
+  val setOutpModMemWord = SnowHousePipeStageExecuteSetOutpModMemWord(
+    args=args
+  )
   val doCheckHazard = (
-    Bool()
+    Vec.fill(setOutpModMemWord.io.opIsMultiCycle.size)(
+      Bool()
+    )
   )
   val myDoHaveHazardAddrCheckVec = Vec[Bool](
     {
@@ -2731,10 +2736,9 @@ case class SnowHousePipeStageExecute(
     myDoHaveHazardVec.reduceLeft(_ || _)
   )
   val myDoHaveHazard = /*KeepAttribute*/(
-    myDoHaveHazardVec.reduceLeft(_ || _)
-  )
-  val setOutpModMemWord = SnowHousePipeStageExecuteSetOutpModMemWord(
-    args=args
+    Vec.fill(setOutpModMemWord.io.opIsMultiCycle.size)(
+      myDoHaveHazardVec.reduceLeft(_ || _)
+    )
   )
   setOutpModMemWord.io.takeIrq := (
     RegNext(
@@ -3003,18 +3007,25 @@ case class SnowHousePipeStageExecute(
       }
     }
   }
-  val nextSavedStall = Bool()
+  val nextSavedStall = (
+    Vec.fill(setOutpModMemWord.io.opIsMultiCycle.size)(
+      Bool()
+    )
+  )
   val rSavedStall = (
     /*KeepAttribute*/(
       RegNext(
         next=nextSavedStall,
-        init=nextSavedStall.getZero
+        //init=nextSavedStall.getZero
       )
     )
   )
-  nextSavedStall := rSavedStall
-  when (doCheckHazard) {
-    when (myDoHaveHazard) {
+  for (idx <- 0 until nextSavedStall.size) {
+    rSavedStall(idx).init(nextSavedStall(idx).getZero)
+    nextSavedStall(idx) := rSavedStall(idx)
+  }
+  when (doCheckHazard.head) {
+    when (myDoHaveHazard.head) {
       myDoStall(stallKindMem) := True
     }
     if (cfg.optFormal) {
@@ -3188,11 +3199,12 @@ case class SnowHousePipeStageExecute(
       MultiCycleHostPayload,
       MultiCycleDevPayload
     ],
+    idx: Int,
   ): Unit = {
     myDoStall(stallKindMem) := False
     myDoStall(stallKindMultiCycle) := True
     myPsExStallHost.nextValid := True
-    nextSavedStall := True
+    nextSavedStall(idx) := True
   }
   switch (rMultiCycleOpState) {
     is (False) {
@@ -3257,9 +3269,9 @@ case class SnowHousePipeStageExecute(
                   when (
                     /*LcvFastAndR*/(
                       Vec[Bool](
-                        !rSavedStall,
-                        RegNext(next=doCheckHazard, init=False),
-                        RegNext(next=myDoHaveHazard, init=False),
+                        !rSavedStall(idx),
+                        RegNext(next=doCheckHazard)(idx),
+                        RegNext(next=myDoHaveHazard)(idx),
                       ).asBits.asUInt.andR
                     )
                   ) {
@@ -3277,21 +3289,21 @@ case class SnowHousePipeStageExecute(
                   when (
                     (
                       Vec[Bool](
-                        !rSavedStall,
-                        RegNext(next=doCheckHazard, init=False),
-                        RegNext(next=myDoHaveHazard, init=False),
+                        !rSavedStall(idx),
+                        RegNext(next=doCheckHazard)(idx),
+                        RegNext(next=myDoHaveHazard)(idx),
                         RegNext(psMemStallHost.nextValid, init=False),
                         psMemStallHost.ready,
                       ).asBits.asUInt.andR
                     ) || (
                       !Vec[Bool](
-                        !rSavedStall,
-                        RegNext(next=doCheckHazard, init=False),
-                        RegNext(next=myDoHaveHazard, init=False),
+                        !rSavedStall(idx),
+                        RegNext(next=doCheckHazard)(idx),
+                        RegNext(next=myDoHaveHazard)(idx),
                       ).asBits.asUInt.andR
                     )
                   ) {
-                    doMultiCycleStart(psExStallHost)
+                    doMultiCycleStart(psExStallHost, idx=idx)
                   }
                   when (
                     RegNext(psExStallHost.nextValid, init=False)
@@ -3301,11 +3313,11 @@ case class SnowHousePipeStageExecute(
                     myDoStall(stallKindMultiCycle) := False
                     rMultiCycleOpState := False
                   }
-                  when (rSavedStall) {
+                  when (rSavedStall(idx)) {
                     myDoStall(stallKindMem) := False
                   }
                   when (cMid0Front.up.isFiring) {
-                    nextSavedStall := False
+                    nextSavedStall(idx) := False
                   }
                 }
               }
@@ -3613,7 +3625,9 @@ case class SnowHousePipeStageExecute(
       psExStallHost.nextValid := False
     }
   })
-  doCheckHazard := rPrevTxnWasHazard
+  doCheckHazard.foreach(current => {
+    current := rPrevTxnWasHazard
+  })
   when (
     myDoStall.sFindFirst(_ === True)._1
   ) {
