@@ -2219,8 +2219,9 @@ case class SnowHouseCpuTestProgram(
     Lb"push_loop",
     str(r7, sp, 0),           // 0x4c
     ldr(r8, sp, 0),           // 0x50
+    mul(r5, r8, r7),
     //add(sp, sp, 4),
-    add(r9, r8, 1),           // 0x54
+    add(r9, r5, 1),           // 0x54
     add(r9, r9, 1),           // 0x58
     //add(r12, r8, 1),
     //add(r0, r0, 1),
