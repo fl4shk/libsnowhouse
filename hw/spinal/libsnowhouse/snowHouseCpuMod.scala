@@ -476,6 +476,9 @@ object SnowHouseCpuPipeStageInstrDecode {
         upPayload.gprIsZeroVec(idx)(jdx) := (
           upPayload.gprIdxVec(idx) === 0x0
         )
+        upPayload.gprIsNonZeroVec(idx)(jdx) := (
+          upPayload.gprIdxVec(idx) =/= 0x0
+        )
       }
     }
     upPayload.gprIdxVec(0) := encInstr.raIdx.resized

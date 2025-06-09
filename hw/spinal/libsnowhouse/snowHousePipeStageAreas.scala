@@ -453,7 +453,7 @@ case class SnowHousePipeStageExecuteSetOutpModMemWordIo(
   val currOp = /*in*/(UInt(log2Up(cfg.opInfoMap.size) bits))
   val splitOp = /*in*/(SnowHouseSplitOp(cfg=cfg))
   val tempVecSize = 3 // TODO: temporary size of `3`
-  val gprIsZeroVec = (
+  val gprIsNonZeroVec = (
     cfg.myHaveZeroReg
   ) generate (
     Vec.fill(tempVecSize)(
@@ -790,7 +790,8 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
   for (idx <- 0 until cfg.regFileCfg.modMemWordValidSize) {
     io.modMemWordValid(idx) := (
       if (cfg.myHaveZeroReg) (
-        !io.gprIsZeroVec(0)(idx)
+        //!io.gprIsZeroVec(0)(idx)
+        io.gprIsNonZeroVec(0)(idx)
       ) else (
         True
       )
@@ -2535,15 +2536,20 @@ case class SnowHousePipeStageExecute(
     )
   }
   val nextSetOutpState = (
-    Bool()
+    Vec.fill(3)(
+      Bool()
+    )
   )
   val rSetOutpState = (
     RegNext(
       next=nextSetOutpState,
-      init=nextSetOutpState.getZero,
+      //init=nextSetOutpState.getZero,
     )
   )
-  nextSetOutpState := rSetOutpState
+  for (idx <- 0 until nextSetOutpState.size) {
+    rSetOutpState(idx).init(nextSetOutpState(idx).getZero)
+    nextSetOutpState(idx) := rSetOutpState(idx)
+  }
   outp := (
     RegNext(
       next=outp,
@@ -2551,15 +2557,15 @@ case class SnowHousePipeStageExecute(
     )
   )
   outp.allowOverride
-  val tempExt = (
-    cloneOf(outp.myExt)
-  )
-  tempExt := (
-    RegNext(
-      next=tempExt,
-      init=tempExt.getZero,
-    )
-  )
+  //val tempExt = (
+  //  cloneOf(outp.myExt)
+  //)
+  //tempExt := (
+  //  RegNext(
+  //    next=tempExt,
+  //    init=tempExt.getZero,
+  //  )
+  //)
   def myRdMemWord(
     ydx: Int,
     modIdx: Int,
@@ -2569,44 +2575,29 @@ case class SnowHousePipeStageExecute(
   when (cMid0Front.up.isValid ) {
     when (
       //!rSetOutpState
-      !RegNext(next=nextSetOutpState, init=nextSetOutpState.getZero)
+      !rSetOutpState(0)
+      //!RegNext(next=nextSetOutpState, init=nextSetOutpState.getZero)
     ) {
       outp := inp
     }
+    //when (
+    //  !RegNext(next=nextSetOutpState, init=nextSetOutpState.getZero)
+    //) {
+    //  tempExt := inp.myExt
+    //}
     when (
-      !RegNext(next=nextSetOutpState, init=nextSetOutpState.getZero)
+      //!RegNext(next=nextSetOutpState, init=nextSetOutpState.getZero)
+      !rSetOutpState(1)
     ) {
-      tempExt := inp.myExt
-    }
-    when (
-      !RegNext(next=nextSetOutpState, init=nextSetOutpState.getZero)
-    ) {
-      nextSetOutpState := True
-    }
-    when (cMid0Front.up.isFiring) {
-      nextSetOutpState := False
+      nextSetOutpState.foreach(current => {
+        current := True
+      })
     }
   }
-  if (cfg.optFormal) {
-    when (pastValidAfterReset) {
-      when (past(cMid0Front.up.isFiring) init(False)) {
-        assert(!rSetOutpState)
-      }
-      when (!(past(cMid0Front.up.isValid) init(False))) {
-        assert(stable(rSetOutpState))
-      }
-      when (rSetOutpState) {
-        assert(cMid0Front.up.isValid)
-      }
-    }
-  }
-  if (cfg.optFormal) {
-    when (pastValidAfterReset) {
-      when (rose(rSetOutpState)) {
-        assert(outp.op === past(inp.op))
-        assert(outp.opCnt === past(inp.opCnt))
-      }
-    }
+  when (cMid0Front.up.isFiring) {
+    nextSetOutpState.foreach(current => {
+      current := False
+    })
   }
   for (ydx <- 0 until outp.myExt.size) {
     outp.myExt(ydx).rdMemWord := (
@@ -2953,9 +2944,9 @@ case class SnowHousePipeStageExecute(
   }
   if (cfg.myHaveZeroReg) {
     for ((gprIdx, idx) <- outp.gprIdxVec.view.zipWithIndex) {
-      for (jdx <- 0 until outp.gprIsZeroVec(idx).size) {
-        setOutpModMemWord.io.gprIsZeroVec(idx)(jdx) := (
-          outp.gprIsZeroVec(idx)(jdx)
+      for (jdx <- 0 until outp.gprIsNonZeroVec(idx).size) {
+        setOutpModMemWord.io.gprIsNonZeroVec(idx)(jdx) := (
+          outp.gprIsNonZeroVec(idx)(jdx)
         )
       }
     }

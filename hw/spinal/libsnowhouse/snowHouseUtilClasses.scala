@@ -961,6 +961,11 @@ case class SnowHousePipePayload(
       Bool()
     )
   )
+  val gprIsNonZeroVec = Vec.fill(cfg.maxNumGprsPerInstr)(
+    Vec.fill(cfg.regFileCfg.modMemWordValidSize)(
+      Bool()
+    )
+  )
   val gprIdxToMemAddrIdxMap = Vec[SnowHouseGprIdxToMemAddrIdxMapElem]({
     val myArr = ArrayBuffer[SnowHouseGprIdxToMemAddrIdxMapElem]()
     for (zdx <- 0 until cfg.maxNumGprsPerInstr) {
