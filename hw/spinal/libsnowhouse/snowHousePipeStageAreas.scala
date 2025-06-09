@@ -2646,15 +2646,16 @@ case class SnowHousePipeStageExecute(
   )
   val doCheckHazard = (
     Vec.fill(
-      setOutpModMemWord.io.opIsMultiCycle.size + 1
-      //1
+      //cfg.multiCycleOpInfoMap.size + 1
+      1
     )(
       Bool()
     )
   )
   val myNextPrevTxnWasHazardVec = (
     Vec.fill(
-      setOutpModMemWord.io.opIsMultiCycle.size + 1
+      //cfg.multiCycleOpInfoMap.size + 1
+      1
     )(
       Bool()
     )
@@ -2754,8 +2755,8 @@ case class SnowHousePipeStageExecute(
   )
   val myDoHaveHazard = /*KeepAttribute*/(
     Vec.fill(
-      setOutpModMemWord.io.opIsMultiCycle.size + 1
-      //1
+      //cfg.multiCycleOpInfoMap.size + 1
+      1
     )(
       myDoHaveHazardVec.reduceLeft(_ || _)
     )
@@ -3029,7 +3030,7 @@ case class SnowHousePipeStageExecute(
   }
   val nextSavedStall = (
     Vec.fill(
-      //setOutpModMemWord.io.opIsMultiCycle.size
+      //cfg.multiCycleOpInfoMap.size
       1
     )(
       Bool()
@@ -3047,8 +3048,8 @@ case class SnowHousePipeStageExecute(
     rSavedStall(idx).init(nextSavedStall(idx).getZero)
     nextSavedStall(idx) := rSavedStall(idx)
   }
-  when (doCheckHazard.last) {
-    when (myDoHaveHazard.last) {
+  when (doCheckHazard.head) {
+    when (myDoHaveHazard.head) {
       myDoStall(stallKindMem) := True
     }
     if (cfg.optFormal) {
@@ -3151,7 +3152,7 @@ case class SnowHousePipeStageExecute(
   }
   val rOpIsMultiCycle = {
     val temp = (
-      Reg(Vec.fill(setOutpModMemWord.io.opIsMultiCycle.size)(
+      Reg(Vec.fill(cfg.multiCycleOpInfoMap.size)(
         Bool()
       ))
     )
@@ -3252,7 +3253,7 @@ case class SnowHousePipeStageExecute(
     }
     is (True) {
       //switch (rOpIsMultiCycle.asBits.asUInt) {
-        for (idx <- 0 until setOutpModMemWord.io.opIsMultiCycle.size) {
+        for (idx <- 0 until cfg.multiCycleOpInfoMap.size) {
           //--------
           // BEGIN: working, slower than desired multi-cycle op handling code
           when /*is*/ (
@@ -3294,8 +3295,8 @@ case class SnowHousePipeStageExecute(
                     /*LcvFastAndR*/(
                       Vec[Bool](
                         !rSavedStall.head/*(idx)*/,
-                        RegNext(next=doCheckHazard)/*.head*/(idx),
-                        RegNext(next=myDoHaveHazard)/*.head*/(idx),
+                        RegNext(next=doCheckHazard).head/*(idx)*/,
+                        RegNext(next=myDoHaveHazard).head/*(idx)*/,
                       ).asBits.asUInt.andR
                     )
                   ) {
@@ -3314,16 +3315,16 @@ case class SnowHousePipeStageExecute(
                     (
                       Vec[Bool](
                         !rSavedStall.head/*(idx)*/,
-                        RegNext(next=doCheckHazard)/*.head*/(idx),
-                        RegNext(next=myDoHaveHazard)/*.head*/(idx),
+                        RegNext(next=doCheckHazard).head/*(idx)*/,
+                        RegNext(next=myDoHaveHazard).head/*(idx)*/,
                         RegNext(psMemStallHost.nextValid, init=False),
                         psMemStallHost.ready,
                       ).asBits.asUInt.andR
                     ) || (
                       !Vec[Bool](
                         !rSavedStall.head/*(idx)*/,
-                        RegNext(next=doCheckHazard)/*.head*/(idx),
-                        RegNext(next=myDoHaveHazard)/*.head*/(idx),
+                        RegNext(next=doCheckHazard).head/*(idx)*/,
+                        RegNext(next=myDoHaveHazard).head/*(idx)*/,
                       ).asBits.asUInt.andR
                     )
                   ) {
@@ -3361,7 +3362,7 @@ case class SnowHousePipeStageExecute(
   }
   //--------
   //switch (rOpIsMultiCycle.asBits.asUInt) {
-  //  for (idx <- 0 until setOutpModMemWord.io.opIsMultiCycle.size) {
+  //  for (idx <- 0 until cfg.multiCycleOpInfoMap.size) {
   //    //--------
   //    // BEGIN: working, slower than desired multi-cycle op handling code
   //    when /*is*/ (
@@ -3463,7 +3464,7 @@ case class SnowHousePipeStageExecute(
   //}
   //--------
   //--------
-  //for (idx <- 0 until setOutpModMemWord.io.opIsMultiCycle.size) {
+  //for (idx <- 0 until cfg.multiCycleOpInfoMap.size) {
   //  //--------
   //  // BEGIN: working, slower than desired multi-cycle op handling code
   //  when /*is*/ (
