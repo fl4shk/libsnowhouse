@@ -3338,12 +3338,12 @@ case class SnowHousePipeStageExecute(
                     myDoStall(stallKindMultiCycle) := False
                     rMultiCycleOpState := False
                   }
-                  //when (rSavedStall.head/*(idx)*/) {
-                  //  myDoStall(stallKindMem) := False
-                  //}
-                  //when (cMid0Front.up.isFiring) {
-                  //  nextSavedStall.head/*(idx)*/ := False
-                  //}
+                  when (rSavedStall.head/*(idx)*/) {
+                    myDoStall(stallKindMem) := False
+                  }
+                  when (cMid0Front.up.isFiring) {
+                    nextSavedStall.head/*(idx)*/ := False
+                  }
                 }
               }
             }
@@ -3354,12 +3354,12 @@ case class SnowHousePipeStageExecute(
       //}
     }
   }
-  when (rSavedStall.head/*(idx)*/) {
-    myDoStall(stallKindMem) := False
-  }
-  when (cMid0Front.up.isFiring) {
-    nextSavedStall.head/*(idx)*/ := False
-  }
+  //when (rSavedStall.head/*(idx)*/) {
+  //  myDoStall(stallKindMem) := False
+  //}
+  //when (cMid0Front.up.isFiring) {
+  //  nextSavedStall.head/*(idx)*/ := False
+  //}
   //--------
   //switch (rOpIsMultiCycle.asBits.asUInt) {
   //  for (idx <- 0 until cfg.multiCycleOpInfoMap.size) {
