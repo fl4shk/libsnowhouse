@@ -3270,21 +3270,24 @@ case class SnowHousePipeStageExecute(
         myDoStall(stallKindMultiCycle1) := True
         //cMid0Front.duplicateIt()
         when (
-          (
-            Vec[Bool](
-              !rSavedStall.head/*(idx)*/,
-              RegNext(next=doCheckHazard).head/*(idx)*/,
-              RegNext(next=myDoHaveHazard).head/*(idx)*/,
-              RegNext(psMemStallHost.nextValid, init=False),
-              psMemStallHost.ready,
-            ).asBits.asUInt.andR
-          ) || (
-            !Vec[Bool](
-              !rSavedStall.head/*(idx)*/,
-              RegNext(next=doCheckHazard).head/*(idx)*/,
-              RegNext(next=myDoHaveHazard).head/*(idx)*/,
-            ).asBits.asUInt.andR
+          RegNext(
+            (
+              Vec[Bool](
+                !rSavedStall.head/*(idx)*/,
+                /*RegNext*/(doCheckHazard).head/*(idx)*/,
+                /*RegNext*/(myDoHaveHazard).head/*(idx)*/,
+                RegNext(psMemStallHost.nextValid, init=False),
+                psMemStallHost.ready,
+              ).asBits.asUInt.andR
+            ) || (
+              !Vec[Bool](
+                !rSavedStall.head/*(idx)*/,
+                /*RegNext*/(doCheckHazard).head/*(idx)*/,
+                /*RegNext*/(myDoHaveHazard).head/*(idx)*/,
+              ).asBits.asUInt.andR
+            )
           )
+          init(False)
         ) {
           //doMultiCycleStart(psExStallHost, idx=idx)
           rMultiCycleOpState := (
