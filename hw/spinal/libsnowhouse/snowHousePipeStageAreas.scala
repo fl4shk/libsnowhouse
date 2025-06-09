@@ -2645,7 +2645,10 @@ case class SnowHousePipeStageExecute(
     args=args
   )
   val doCheckHazard = (
-    Vec.fill(setOutpModMemWord.io.opIsMultiCycle.size)(
+    Vec.fill(
+      //setOutpModMemWord.io.opIsMultiCycle.size
+      1
+    )(
       Bool()
     )
   )
@@ -2736,7 +2739,10 @@ case class SnowHousePipeStageExecute(
     myDoHaveHazardVec.reduceLeft(_ || _)
   )
   val myDoHaveHazard = /*KeepAttribute*/(
-    Vec.fill(setOutpModMemWord.io.opIsMultiCycle.size)(
+    Vec.fill(
+      //setOutpModMemWord.io.opIsMultiCycle.size
+      1
+    )(
       myDoHaveHazardVec.reduceLeft(_ || _)
     )
   )
@@ -3270,8 +3276,8 @@ case class SnowHousePipeStageExecute(
                     /*LcvFastAndR*/(
                       Vec[Bool](
                         !rSavedStall(idx),
-                        RegNext(next=doCheckHazard)(idx),
-                        RegNext(next=myDoHaveHazard)(idx),
+                        RegNext(next=doCheckHazard).head/*(idx)*/,
+                        RegNext(next=myDoHaveHazard).head/*(idx)*/,
                       ).asBits.asUInt.andR
                     )
                   ) {
@@ -3290,16 +3296,16 @@ case class SnowHousePipeStageExecute(
                     (
                       Vec[Bool](
                         !rSavedStall(idx),
-                        RegNext(next=doCheckHazard)(idx),
-                        RegNext(next=myDoHaveHazard)(idx),
+                        RegNext(next=doCheckHazard).head/*(idx)*/,
+                        RegNext(next=myDoHaveHazard).head/*(idx)*/,
                         RegNext(psMemStallHost.nextValid, init=False),
                         psMemStallHost.ready,
                       ).asBits.asUInt.andR
                     ) || (
                       !Vec[Bool](
                         !rSavedStall(idx),
-                        RegNext(next=doCheckHazard)(idx),
-                        RegNext(next=myDoHaveHazard)(idx),
+                        RegNext(next=doCheckHazard).head/*(idx)*/,
+                        RegNext(next=myDoHaveHazard).head/*(idx)*/,
                       ).asBits.asUInt.andR
                     )
                   ) {
