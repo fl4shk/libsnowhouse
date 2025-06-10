@@ -635,7 +635,7 @@ case class SnowHouseCache(
   //}
   val rSavedBusSendData = Reg(cloneOf(io.bus.sendData))
   val rPleaseFinish = (
-    Vec.fill(2)(
+    Vec.fill(3)(
       Vec.fill(3)(
         Reg(
           Bool(),
@@ -644,14 +644,15 @@ case class SnowHouseCache(
       )
     )
   )
-  when (rPleaseFinish(0).sFindFirst(_ === True)._1) {
+  when (rPleaseFinish(2).sFindFirst(_ === True)._1) {
     //io.bus.ready := True
     doSetBusReadyEtc(True)
   }
   when (
     //io.bus.fire
-    (RegNext(io.bus.nextValid) init(False))
-    && io.bus.ready
+    //(RegNext(io.bus.nextValid) init(False))
+    //&& 
+    io.bus.ready
   ) {
     rPleaseFinish.foreach(myVec => {
       myVec.foreach(current => {
