@@ -416,13 +416,13 @@ case class SnowHouseCache(
     )
   )
   if (!isIcache) {
-    io.bus.recvData.setAsReg()
-    io.bus.ready.setAsReg() init(False)
-    io.busExtraReady.setAsReg() //init(False)
-    io.busExtraReady.foreach(extraReady => {
-      extraReady.init(extraReady.getZero)
-    })
-    io.busExtraReady.addAttribute(KeepAttribute.keep)
+    //io.bus.recvData.setAsReg()
+    //io.bus.ready.setAsReg() init(False)
+    //io.busExtraReady.setAsReg() //init(False)
+    //io.busExtraReady.foreach(extraReady => {
+    //  extraReady.init(extraReady.getZero)
+    //})
+    //io.busExtraReady.addAttribute(KeepAttribute.keep)
   }
   def doSetBusReadyEtc(
     someReady: Bool
@@ -432,6 +432,17 @@ case class SnowHouseCache(
       extraReady := someReady
     })
   }
+  if (!isIcache) {
+    busDevData := (
+      RegNext(
+        next=busDevData,
+        init=busDevData.getZero,
+      )
+    )
+  }
+  //doSetBusReadyEtc(
+  //  someReady=False
+  //)
   val rBusDevData = (
     !isIcache
   ) generate (
@@ -648,7 +659,7 @@ case class SnowHouseCache(
       })
     })
     //io.bus.ready := False
-    doSetBusReadyEtc(False)
+    //doSetBusReadyEtc(False)
   }
   when (rPleaseFinish(0).sFindFirst(_ === True)._1) {
     when (rSavedBusSendData.accKind.asBits(1)) {
