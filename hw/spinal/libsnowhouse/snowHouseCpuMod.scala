@@ -1998,10 +1998,10 @@ case class SnowHouseCpuConfig(
     haveAluFlags=false,
     //encInstrType=SnowHouseCpuEncInstr(),
     subCfg={
-      val icacheDepth = /*8192*/ 2048 // 8 kiB icache
+      val icacheDepth = /*8192*/ 1024 /*2048*/ // 8 kiB icache
       val icacheLineSizeBytes = 64
       val icacheBusSrcNum = 0x0
-      val dcacheDepth = /*512*/ 2048 /*8192*/ // 8 kiB dcache
+      val dcacheDepth = /*512*/ 1024 /*2048*/ /*8192*/ // 8 kiB dcache
       val dcacheLineSizeBytes = 64
       val dcacheBusSrcNum = 0x1
       SnowHouseSubConfig(
@@ -2223,7 +2223,7 @@ case class SnowHouseCpuTestProgram(
     str(r7, sp, 0),           // 0x4c
     ldr(r8, sp, 0),           // 0x50
     //str(r8, sp, 0),           // 0x4c
-    ldr(r3, sp, 0),           // 0x50
+    ldr(r4, sp, 0),           // 0x50
     //str(r3, sp, 0),           // 0x4c
     ldr(r8, sp, 0),           // 0x50
     //mul(r5, r8, r7),
