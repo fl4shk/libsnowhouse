@@ -2573,32 +2573,33 @@ case class SnowHousePipeStageExecute(
     doModInModFrontParams.getMyRdMemWordFunc(ydx, modIdx)
   )
   when (cMid0Front.up.isValid ) {
-    when (
-      //!rSetOutpState
-      !rSetOutpState(0)
-      //!RegNext(next=nextSetOutpState, init=nextSetOutpState.getZero)
-    ) {
-      outp := inp
-    }
+    outp := inp
     //when (
-    //  !RegNext(next=nextSetOutpState, init=nextSetOutpState.getZero)
+    //  //!rSetOutpState
+    //  !rSetOutpState(0)
+    //  //!RegNext(next=nextSetOutpState, init=nextSetOutpState.getZero)
     //) {
-    //  tempExt := inp.myExt
+    //  outp := inp
     //}
-    when (
-      //!RegNext(next=nextSetOutpState, init=nextSetOutpState.getZero)
-      !rSetOutpState(1)
-    ) {
-      nextSetOutpState.foreach(current => {
-        current := True
-      })
-    }
+    ////when (
+    ////  !RegNext(next=nextSetOutpState, init=nextSetOutpState.getZero)
+    ////) {
+    ////  tempExt := inp.myExt
+    ////}
+    //when (
+    //  //!RegNext(next=nextSetOutpState, init=nextSetOutpState.getZero)
+    //  !rSetOutpState(1)
+    //) {
+    //  nextSetOutpState.foreach(current => {
+    //    current := True
+    //  })
+    //}
   }
-  when (cMid0Front.up.isFiring) {
-    nextSetOutpState.foreach(current => {
-      current := False
-    })
-  }
+  //when (cMid0Front.up.isFiring) {
+  //  nextSetOutpState.foreach(current => {
+  //    current := False
+  //  })
+  //}
   for (ydx <- 0 until outp.myExt.size) {
     outp.myExt(ydx).rdMemWord := (
       inp.myExt(ydx).rdMemWord
