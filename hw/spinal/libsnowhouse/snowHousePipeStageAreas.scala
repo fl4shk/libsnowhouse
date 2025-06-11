@@ -283,11 +283,11 @@ case class SnowHousePipeStageInstrDecode(
       init=myInstr.getZero
     )
   )
-  when (up.isValid) {
+  //when (up.isValid) {
     //when (
     //  RegNext(next=io.ibus.nextValid, init=False)
     //) {
-      //when (!rSetUpPayloadState(1)) {
+      when (!rSetUpPayloadState(1)) {
         when (!io.ibus.ready) {
           cId.haltIt()
           //cId.duplicateIt()
@@ -298,9 +298,9 @@ case class SnowHousePipeStageInstrDecode(
             io.ibus.recvData.instr
           )
         }
-      //}
+      }
     //}
-  }
+  //}
   //when (
   //  if (cfg.supportUcode) (
   //    rMultiInstrCnt.msb
@@ -308,24 +308,24 @@ case class SnowHousePipeStageInstrDecode(
   //    True
   //  )
   //) {
-    when (
-      up.isValid
-    ) {
-      //when (!rSetUpPayloadState(0)) {
+    //when (
+    //  up.isValid
+    //) {
+      when (!rSetUpPayloadState(0)) {
         upPayload := up(pIf)
-      //  nextSetUpPayloadState(0) := True
-      //}
-    }
+        nextSetUpPayloadState(0) := True
+      }
+    //}
   //} otherwise {
   //  cId.duplicateIt()
   //  when (down.isFiring) {
   //    nextMultiInstrCnt := rMultiInstrCnt - 1
   //  }
   //}
-  //when (up.isFiring) {
-  //  nextSetUpPayloadState(0) := False
-  //  nextSetUpPayloadState(1) := False
-  //}
+  when (up.isFiring) {
+    nextSetUpPayloadState(0) := False
+    nextSetUpPayloadState(1) := False
+  }
   upPayload.regPcPlusInstrSize := (
     upPayload.regPc + (cfg.instrMainWidth / 8)
   )
