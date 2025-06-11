@@ -118,8 +118,8 @@ case class SnowHouseInstrDataDualRam(
       cfg=cfg,
       isIcache=true,
       forFmax=(
-        false
-        //true
+        //false
+        true
       ),
     )
     //icache.io.haveHazard := io.icacheHaveHazard

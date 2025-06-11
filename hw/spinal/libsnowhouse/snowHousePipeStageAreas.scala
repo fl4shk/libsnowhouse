@@ -147,7 +147,7 @@ case class SnowHousePipeStageInstrFetch(
   )
   def myInstrCnt = upModExt.instrCnt
   def nextRegPc = upModExt.regPc
-  def nextRegPcSetItCnt = upModExt.regPcSetItCnt
+  //def nextRegPcSetItCnt = upModExt.regPcSetItCnt
   val rSavedExSetPc = {
     val temp = /*KeepAttribute*/(
       Reg(Flow(
@@ -191,7 +191,7 @@ case class SnowHousePipeStageInstrFetch(
   //}
   when (psExSetPc.fire && !rSavedExSetPc.fire) {
     rSavedExSetPc := psExSetPc//rSavedExSetPc.getZero
-    nextRegPcSetItCnt := 0x1
+    //nextRegPcSetItCnt := 0x1
     nextRegPc := (
       //rSavedExSetPc.nextPc //- (cfg.instrMainWidth / 8)
       psExSetPc.nextPc - (cfg.instrMainWidth / 8)
@@ -213,7 +213,7 @@ case class SnowHousePipeStageInstrFetch(
     //.otherwise 
     //{
       when (!psExSetPc.fire && !rSavedExSetPc.fire) {
-        nextRegPcSetItCnt := 0x0
+        //nextRegPcSetItCnt := 0x0
         nextRegPc := (
           //rPrevRegPcThenNext
           rPrevRegPc + (cfg.instrMainWidth / 8)

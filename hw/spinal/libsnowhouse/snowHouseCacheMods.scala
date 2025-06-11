@@ -212,14 +212,6 @@ case class SnowHouseCacheForFmax(
       init=myH2dBus.nextValid.getZero,
     )
   )
-  //myH2dBus.sendData := (
-  //  RegNext(
-  //    next=myH2dBus.sendData,
-  //    init=myH2dBus.sendData.getZero
-  //  )
-  //)
-  //myH2dBus.sendData.setAsReg
-  //myH2dBus.sendData.init(myH2dBus.sendData.getZero)
   val rH2dSendData = {
     val temp = Reg(cloneOf(myH2dBus.sendData))
     temp.init(temp.getZero)
@@ -227,10 +219,6 @@ case class SnowHouseCacheForFmax(
   }
   myH2dBus.sendData := rH2dSendData
   myD2hBus.ready := (
-    //RegNext(
-    //  next=myD2hBus.ready,
-    //  init=myD2hBus.ready.getZero,
-    //)
     False
   )
   io.tlBus << bridge.io.tlBus
@@ -251,7 +239,6 @@ case class SnowHouseCacheForFmax(
     cacheCfg.depthBytes
   )
   def depthLines = (
-    //cacheCfg.depth / (cacheCfg.lineSizeBytes * cacheCfg.dataWidth)
     cacheCfg.depthLines
   )
   println(
@@ -302,7 +289,7 @@ case class SnowHouseCacheForFmax(
   //  nextLineAddrCnt.getWidth
   //)
   val rLineAddrCnt = (
-    /*KeepAttribute*/(
+    (
       RegNext/*When*/(
         next=nextLineAddrCnt,
         //cond=io.tlBus.a.fire,
@@ -314,13 +301,12 @@ case class SnowHouseCacheForFmax(
   val rRevLineAddrCnt = (
     Reg(UInt((rLineAddrCnt.getWidth + 1) bits))
     init(
-      //io.tlCfg.beatMax - 2
       (
         1
         << (
           log2Up(cacheCfg.lineSizeBytes) - log2Up(cacheCfg.wordSizeBytes)
         )
-      ) - 1
+      ) - 1 - 1
     )
   )
   tempLineBusAddr := (
@@ -510,7 +496,6 @@ case class SnowHouseCacheForFmax(
   ) {
     val
       IDLE,
-      //HANDLE_DCACHE_LOAD_HIT_EXTEND,
       HANDLE_DCACHE_STORE_HIT,
       HANDLE_SEND_LINE_TO_BUS_PIPE_1,
       HANDLE_SEND_LINE_TO_BUS,
@@ -547,7 +532,13 @@ case class SnowHouseCacheForFmax(
       UInt(cacheCfg.wordWidth bits)
     )
   )
-  rdLineWord := lineWordRam.io.rdData.asUInt
+  rdLineWord := (
+    if (isIcache) (
+      RegNext(lineWordRam.io.rdData.asUInt) init(0x0)
+    ) else (
+      lineWordRam.io.rdData.asUInt
+    )
+  )
   val wrLineAttrs = SnowHouseCacheLineAttrs(
     cfg=cfg,
     isIcache=isIcache,
@@ -679,18 +670,9 @@ case class SnowHouseCacheForFmax(
     //doLineWordRamReadSync(busAddr=io.bus.sendData.addr)
     //doLineAttrsRamReadSync(busAddr=io.bus.sendData.addr)
   //}
-  val rBusReadyCnt = (
-    /*KeepAttribute*/(
-      Reg(Bool(), init=False)
-      //Reg(UInt(2 bits))
-      //init(0x0)
-    )
-  )
   //val rTempBusReady = Reg(Bool(), init=False)
   //val rSavedHaveHit = Reg(Bool(), init=False)
   val rSavedRdLineWord = Reg(cloneOf(rdLineWord), init=rdLineWord.getZero)
-  //def doPipe(): Unit = {
-  //}
   val rSavedBusSendData = Reg(cloneOf(io.bus.sendData))
   val rPleaseFinish = (
     Vec.fill(3)(
@@ -903,7 +885,6 @@ case class SnowHouseCacheForFmax(
                   nextState := State.HANDLE_DCACHE_STORE_HIT
                   lineAttrsRam.io.rdEn := False
                   lineWordRam.io.rdEn := False
-                  rBusReadyCnt := True
                   wrLineAttrs := rdLineAttrs
                   wrLineAttrs.dirty := True
                 } otherwise {
@@ -1257,7 +1238,7 @@ case class SnowHouseCacheForLatency(
         << (
           log2Up(cacheCfg.lineSizeBytes) - log2Up(cacheCfg.wordSizeBytes)
         )
-      ) - 1
+      ) - 1 - 1
     )
   )
   tempLineBusAddr := (
@@ -1607,13 +1588,6 @@ case class SnowHouseCacheForLatency(
     //doLineWordRamReadSync(busAddr=io.bus.sendData.addr)
     //doLineAttrsRamReadSync(busAddr=io.bus.sendData.addr)
   //}
-  val rBusReadyCnt = (
-    /*KeepAttribute*/(
-      Reg(Bool(), init=False)
-      //Reg(UInt(2 bits))
-      //init(0x0)
-    )
-  )
   //val rTempBusReady = Reg(Bool(), init=False)
   val rSavedRdLineWord = Reg(cloneOf(rdLineWord), init=rdLineWord.getZero)
   //def doPipe(): Unit = {
@@ -1853,7 +1827,6 @@ case class SnowHouseCacheForLatency(
                     nextState := State.HANDLE_DCACHE_STORE_HIT
                     lineAttrsRam.io.rdEn := False
                     lineWordRam.io.rdEn := False
-                    rBusReadyCnt := True
                     wrLineAttrs := rdLineAttrs
                     wrLineAttrs.dirty := True
                     rPleaseFinish.foreach(current => {
