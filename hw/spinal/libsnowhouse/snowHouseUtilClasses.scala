@@ -195,6 +195,12 @@ case class SnowHouseCacheConfig(
   val nonCachedRange = (
     addrWidth - 1 downto addrWidth - 1
   )
+  println(
+    s"isIcache:${isIcache}: "
+    + s"tagWidth:${tagWidth} "
+    + s"tagRange:${tagRange} "
+    + s"nonCachedRange:${nonCachedRange}"
+  )
   //--------
   //--------
   // TileLink stuff follows

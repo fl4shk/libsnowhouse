@@ -61,6 +61,7 @@ case class SnowHouseInstrDataDualRam(
   //))
   val io = SnowHouseInstrDataDualRamIo(cfg=cfg)
   //--------
+  // BEGIN: old, non-icache code
   val instrRamDepth = instrInitBigInt.size
   val instrRam = FpgacpuRamSimpleDualPort(
     wordType=UInt(cfg.instrMainWidth bits),
@@ -107,14 +108,21 @@ case class SnowHouseInstrDataDualRam(
   instrRam.io.wrEn := False
   instrRam.io.wrAddr := instrRam.io.wrAddr.getZero
   instrRam.io.wrData := instrRam.io.wrData.getZero
+  // END: old, non-icache code
+  //--------
   //--------
   //val instrRamArea = new Area {
-  //  setName("SnowHouseInstrDataDualRam_dataRamArea")
+  //  setName("SnowHouseInstrDataDualRam_instrRamArea")
   //  val depth = instrInitBigInt.size
   //  val icache = SnowHouseCache(
   //    cfg=cfg,
-  //    isIcache=false,
+  //    isIcache=true,
+  //    forFmax=(
+  //      false
+  //      //true
+  //    ),
   //  )
+  //  //icache.io.haveHazard := io.icacheHaveHazard
   //  val m2sTransfers = tilelink.M2sTransfers(
   //    get=tilelink.SizeRange(
   //      cfg.mainWidth / 8,
@@ -151,40 +159,54 @@ case class SnowHouseInstrDataDualRam(
   //      //cfg.mainWidth
   //      log2Up(depth * (cfg.mainWidth / 8))
   //    ),
-  //    dataWidth=cfg.mainWidth,
+  //    dataWidth=cfg.instrMainWidth,
   //    masters=Array[tilelink.M2sAgent](m2sAgent),
   //  )
   //  val myRam = new tilelink.Ram(
   //    p=m2sCfg.toNodeParameters(),
   //    bytes=(
-  //      depth * (cfg.mainWidth / 8)
+  //      depth * (cfg.instrMainWidth / 8)
   //    ),
   //  )
-  //  //val bridgeCfg = LcvStallToTilelinkConfig(
-  //  //  addrWidth=(
-  //  //    //cfg.mainWidth
-  //  //    log2Up(depth * (cfg.mainWidth / 8))
-  //  //  ),
-  //  //  dataWidth=cfg.mainWidth,
-  //  //  sizeBytes=cfg.mainWidth / 8,
-  //  //  srcWidth=1,
-  //  //  isDual=false,
+  //  myRam.mem.initBigInt(instrInitBigInt, allowNegative=true)
+
+  //  icache.io.bus.nextValid := (
+  //    io.ibus.nextValid
+  //  )
+  //  icache.io.bus.sendData := (
+  //    io.ibus.sendData
+  //  )
+  //  io.ibus.recvData := (
+  //    icache.io.bus.recvData
+  //  )
+  //  io.ibus.ready := (
+  //    icache.io.bus.ready
+  //  )
+  //  //io.ibusExtraReady.addAttribute(KeepAttribute.keep)
+  //  //io.ibusExtraReady := icache.io.busExtraReady
+
+  //  //myRam.io.up << icache.io.tlBus
+  //  //myRam.io.up.a << icache.io.tlBus.a
+  //  myRam.io.up.a.opcode := icache.io.tlBus.a.opcode
+  //  myRam.io.up.a.param := icache.io.tlBus.a.param
+  //  myRam.io.up.a.source := icache.io.tlBus.a.source
+  //  myRam.io.up.a.address := icache.io.tlBus.a.address.resize(
+  //    myRam.io.up.a.address.getWidth
+  //  )
+  //  myRam.io.up.a.size := icache.io.tlBus.a.size
+  //  myRam.io.up.a.mask := icache.io.tlBus.a.mask
+  //  myRam.io.up.a.data := icache.io.tlBus.a.data
+  //  myRam.io.up.a.corrupt := icache.io.tlBus.a.corrupt
+  //  myRam.io.up.a.debugId := icache.io.tlBus.a.debugId
+
+  //  myRam.io.up.a.valid := icache.io.tlBus.a.valid
+  //  icache.io.tlBus.a.ready := myRam.io.up.a.ready
+
+  //  //myRam.io.up.a.address.allowOverride
+  //  //myRam.io.up.a.address := (
+  //  //  icache.io.tlBus.a.address.resized
   //  //)
-  //  //val bridge = LcvStallToTilelink(
-  //  //  cfg=bridgeCfg,
-  //  //)
-  //  //bridge.io.lcvStall.nextValid := io.dbus.nextValid
-  //  //bridge.io.lcvStall.sendData.addr := io.dbus.sendData.addr.resized
-  //  //bridge.io.lcvStall.sendData.data := io.dbus.sendData.data
-  //  //bridge.io.lcvStall.sendData.src := 0x0
-  //  //bridge.io.lcvStall.sendData.isWrite := (
-  //  //  io.dbus.sendData.accKind.asBits(1)
-  //  //)
-  //  //io.dbus.ready := bridge.io.lcvStall.ready
-  //  //io.dbus.recvData.data := bridge.io.lcvStall.recvData.data
-  //  //myRam.io.up << bridge.io.tlBus
-  //  icache.io.bus <> io.dbus
-  //  myRam.io.up << icache.io.tlBus
+  //  icache.io.tlBus.d << myRam.io.up.d
   //  //myRam.io.up.a <-/< icache.io.tlBus.a
   //  //icache.io.tlBus.d <-/< myRam.io.up.d
   //}
@@ -194,6 +216,7 @@ case class SnowHouseInstrDataDualRam(
     val dcache = SnowHouseCache(
       cfg=cfg,
       isIcache=false,
+      forFmax=true,
     )
     //dcache.io.haveHazard := io.dcacheHaveHazard
     val m2sTransfers = tilelink.M2sTransfers(
@@ -525,7 +548,12 @@ case class SnowHouse
       ),
     )
   )
-  val pcChangeState = Bool()
+  val pcChangeState = (
+    //Bool()
+    UInt(
+      SnowHouseShouldIgnoreInstrState().asBits.getWidth bits
+    )
+  )
   val shouldIgnoreInstr = Bool()
   //--------
   val linkArr = PipeHelper.mkLinkArr()
