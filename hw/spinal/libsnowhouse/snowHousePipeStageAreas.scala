@@ -3975,6 +3975,9 @@ case class SnowHousePipeStageMem(
   when (
     RegNext(io.dbus.nextValid) init(False)
     //True
+    //midModPayload(extIdxUp).decodeExt.opIsMemAccess.sFindFirst(
+    //  _ === True
+    //)._1
   ) {
     def tempExtLeft(ydx: Int) = midModPayload(extIdxUp).myExt(ydx)
     def tempExtRight(ydx: Int) = modFront(modFrontAfterPayload).myExt(ydx)

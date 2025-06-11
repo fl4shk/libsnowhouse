@@ -2225,7 +2225,8 @@ case class SnowHouseCpuTestProgram(
     //str(r8, sp, 0),           // 0x4c
     ldr(r4, sp, 0),           // 0x50
     //str(r3, sp, 0),           // 0x4c
-    ldr(r8, sp, 0),           // 0x50
+    //ldr(r8, sp, 0),           // 0x50
+    add(r5, r5, 1),
     //mul(r5, r8, r7),
     //add(sp, sp, 4),
     //add(r9, r5, 1),
