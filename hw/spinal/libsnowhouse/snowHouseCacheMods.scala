@@ -421,7 +421,7 @@ case class SnowHouseCacheForFmax(
         << (
           log2Up(cacheCfg.lineSizeBytes) - log2Up(cacheCfg.wordSizeBytes)
         )
-      ) - 1
+      ) - 1 - 1
     )
     //rRecvCnt := io.tlCfg.beatMax - 2
   }
@@ -1337,7 +1337,7 @@ case class SnowHouseCacheForLatency(
         << (
           log2Up(cacheCfg.lineSizeBytes) - log2Up(cacheCfg.wordSizeBytes)
         )
-      ) - 1
+      ) - 1 - 1
     )
     //rRecvCnt := io.tlCfg.beatMax - 2
   }
