@@ -368,7 +368,7 @@ case class SnowHousePipeStageInstrDecode(
     )
   )
   tempInstr.allowOverride
-  startDecode := False
+  //startDecode := False
   if (cfg.irqCfg != None) {
     upPayload.takeIrq := False
   }
@@ -398,12 +398,12 @@ case class SnowHousePipeStageInstrDecode(
   ) generate(
     doDecodeFunc(this)
   )
-  when (up.isValid) {
+  //when (up.isValid) {
     startDecode := True
     tempInstr := myInstr
     //startDecode := True
     //tempInstr := myInstr
-  }
+  //}
   //when (up.isValid) {
   //  when (
   //    if (cfg.supportUcode) (
