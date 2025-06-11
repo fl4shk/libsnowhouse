@@ -158,17 +158,20 @@ case class SnowHousePipeStageInstrFetch(
     temp.setName(s"rSavedExSetPc")
   }
 
-  when (
-    psExSetPc.fire
-    && !rSavedExSetPc.fire
-    //psExSetPc.valid1
-  ) {
-    rSavedExSetPc := psExSetPc
-  }
+  //when (
+  //  psExSetPc.fire
+  //  //&& !rSavedExSetPc.fire
+  //  //psExSetPc.valid1
+  //) {
+  //  rSavedExSetPc := psExSetPc
+  //}
   val rPrevRegPc /*rPrevRegPcThenNext*/ = (
     RegNextWhen(
       next=nextRegPc /*+ (cfg.instrMainWidth / 8)*/,
-      cond=up.isFiring,
+      cond=(
+        up.isFiring
+        //|| psExSetPc.fire
+      ),
     )
     init(nextRegPc.getZero)
   )
@@ -180,33 +183,46 @@ case class SnowHousePipeStageInstrFetch(
     )
   )
 
+  //val rDidSetOutpState = {
+  //  val temp = Reg(
+  //    Vec.fill(4)(
+  //    )
+  //  )
+  //}
+  when (psExSetPc.fire && !rSavedExSetPc.fire) {
+    rSavedExSetPc := psExSetPc//rSavedExSetPc.getZero
+    nextRegPcSetItCnt := 0x1
+    nextRegPc := (
+      //rSavedExSetPc.nextPc //- (cfg.instrMainWidth / 8)
+      psExSetPc.nextPc - (cfg.instrMainWidth / 8)
+    )
+    myInstrCnt.jmp := rPrevInstrCnt.jmp + 1
+  }
   when (up.isFiring) {
     myInstrCnt.any := rPrevInstrCnt.any + 1
-    //when (psExSetPc.fire) {
+    //elsewhen (
+    //  rSavedExSetPc.fire
+    //) {
     //  rSavedExSetPc := rSavedExSetPc.getZero
     //  nextRegPcSetItCnt := 0x1
     //  nextRegPc := (
     //    rSavedExSetPc.nextPc //- (cfg.instrMainWidth / 8)
     //  )
     //  myInstrCnt.jmp := rPrevInstrCnt.jmp + 1
-    //} else
-    when (
-      rSavedExSetPc.fire
-    ) {
-      rSavedExSetPc := rSavedExSetPc.getZero
-      nextRegPcSetItCnt := 0x1
-      nextRegPc := (
-        rSavedExSetPc.nextPc //- (cfg.instrMainWidth / 8)
-      )
-      myInstrCnt.jmp := rPrevInstrCnt.jmp + 1
-    } otherwise {
-      nextRegPcSetItCnt := 0x0
-      nextRegPc := (
-        //rPrevRegPcThenNext
-        rPrevRegPc + (cfg.instrMainWidth / 8)
-      )
-      myInstrCnt.fwd := rPrevInstrCnt.fwd + 1
-    }
+    //} 
+    //.otherwise 
+    //{
+      when (!psExSetPc.fire && !rSavedExSetPc.fire) {
+        nextRegPcSetItCnt := 0x0
+        nextRegPc := (
+          //rPrevRegPcThenNext
+          rPrevRegPc + (cfg.instrMainWidth / 8)
+        )
+        myInstrCnt.fwd := rPrevInstrCnt.fwd + 1
+      } otherwise {
+        rSavedExSetPc := rSavedExSetPc.getZero
+      }
+    //}
   }
   io.ibus.nextValid := (
     True
