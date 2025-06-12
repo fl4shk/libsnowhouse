@@ -426,13 +426,13 @@ case class SnowHouseDataCache(
         )
       )
       - 1 
-      + (
-        if (isIcache) (
-          - 1
-        ) else (
-          0
-        )
-      )
+      //+ (
+      //  if (isIcache) (
+      //    - 1
+      //  ) else (
+      //    0
+      //  )
+      //)
     )
     //rRecvCnt := io.tlCfg.beatMax - 2
   }
@@ -1376,13 +1376,21 @@ case class SnowHouseInstrCache(
   //def atLastRecvCnt() = (
   //  rRecvCnt.msb
   //)
-  def busDevData = (
+  val busDevData = (
     //if (isIcache) (
-      io.bus.recvData.instr
+      //io.bus.recvData.instr
+      Reg(UInt(cfg.instrMainWidth bits))
+      init(0x0)
     //) else (
     //  io.bus.recvData.data
     //)
   )
+  val myReady = (
+    Reg(Bool())
+    init(False)
+  )
+  io.bus.recvData.instr := busDevData
+  io.bus.ready := myReady
   if (isIcache) {
     //io.bus.recvData.setAsReg()
     //io.bus.ready.setAsReg() init(False)
@@ -1395,10 +1403,10 @@ case class SnowHouseInstrCache(
   def doSetBusReadyEtc(
     someReady: Bool
   ): Unit = {
-    io.bus.ready := someReady
-    io.busExtraReady.foreach(extraReady => {
-      extraReady := someReady
-    })
+    myReady := someReady
+    //io.busExtraReady.foreach(extraReady => {
+    //  extraReady := someReady
+    //})
   }
   //if (!isIcache) {
   //  busDevData := (

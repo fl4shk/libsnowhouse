@@ -235,7 +235,7 @@ case class SnowHousePipeStageInstrFetch(
       rSavedExSetPc := rSavedExSetPc.getZero
       nextRegPc.assignFromBits(
         (
-          psExSetPc.nextPc - (cfg.instrMainWidth / 8)
+          psExSetPc.nextPc - (3 * (cfg.instrMainWidth / 8))
         ).asBits
       )
       myInstrCnt.jmp := rPrevInstrCnt.jmp + 1
@@ -244,7 +244,7 @@ case class SnowHousePipeStageInstrFetch(
       //nextRegPcSetItCnt := 0x1
       nextRegPc.assignFromBits(
         (
-          rSavedExSetPc.nextPc - (cfg.instrMainWidth / 8)
+          rSavedExSetPc.nextPc - (3 * (cfg.instrMainWidth / 8))
         ).asBits
       )
       myInstrCnt.jmp := rPrevInstrCnt.jmp + 1
@@ -277,13 +277,13 @@ case class SnowHousePipeStageInstrFetch(
   //)
   //when (up.isFiring) {
     io.ibus.sendData.addr := (
-      nextRegPc.asUInt //+ (2 * (cfg.instrMainWidth / 8))
+      nextRegPc.asUInt + (2 * (cfg.instrMainWidth / 8))
     )
   //}
   upModExt.regPc.allowOverride
   upModExt.regPc := (
-    nextRegPc.asUInt //+ (1 * (cfg.instrMainWidth / 8)) //io.ibus.sendData.addr
-    //io.ibus.sendData.addr - (1 * (cfg.instrMainWidth / 8))
+    //nextRegPc.asUInt //+ (1 * (cfg.instrMainWidth / 8)) //io.ibus.sendData.addr
+    io.ibus.sendData.addr //- (1 * (cfg.instrMainWidth / 8))
   )
   //upModExt.regPc
 }
