@@ -26,11 +26,11 @@ cpy r5, _increment
 cpy sp, 0x800
 cpy r6, 0x20
 str r6, r3, 0x0
-ldr r5, r3, 0x0
-str r5, r3, 0x1000
-ldr r6, r3, 0x1000
+//ldr r5, r3, 0x0
+//str r5, r3, 0x1000
+//ldr r6, r3, 0x1000
 cpy r7, 0x4
-mul r9, r5, r7
+//mul r9, r5, r7
 //--------
 _push_loop:
 str r7, sp, 0
@@ -44,42 +44,46 @@ add r7, r7, -1
 //bnz r7, _push_loop
 bne r7, r0, _push_loop
 //--------
+cpy r0, r0
 mul r7, r6, r1
 udiv r7, r6, r1
 umod r8, r6, r1
-//beq r0, r0, _loop
+beq r0, r0, _loop
 
-//.rept 7
-//cpy r0, r0
-//.endr
+.rept 8
+cpy r0, r0
+.endr
 //--------
 //.align 2
 //.align 8
 //--------
 //.rept 2048
-//.rept 7
 //add r1, r1, 3
 //.endr
 //beq r0, r0, _loop
-//cpy r0, r0
 _loop:
 ldr r6, r3, 0x0
 bl _increment
+cpy r0, r0
 str r6, r3, 0x4
 add r3, r3, 0x4
 //sub r1, r1, 0x1
 add r1, r1, -1
 bl _divmod
+cpy r0, r0
 //bnz r1, _loop
 bne r1, r0, _loop
+cpy r0, r0
 ////--------
 _infin:
 //bz r0, _infin
 beq r0, r0, _infin
+cpy r0, r0
 ////--------
 _increment:
 add r6, r6, 0x1
 jmp lr
+cpy r0, r0
 ////--------
 _divmod:
 //--------
@@ -87,6 +91,7 @@ udiv r7, r6, r1
 umod r8, r6, r1
 //--------
 jmp lr
+cpy r0, r0
 //--------
 _irq_handler:
 add r10, r10, 1

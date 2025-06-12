@@ -306,7 +306,14 @@ case class SnowHouseCacheForFmax(
         << (
           log2Up(cacheCfg.lineSizeBytes) - log2Up(cacheCfg.wordSizeBytes)
         )
-      ) - 1 - 1
+      ) - 1 
+      + (
+        if (isIcache) (
+          - 1
+        ) else (
+          0
+        )
+      )
     )
   )
   tempLineBusAddr := (
@@ -407,7 +414,14 @@ case class SnowHouseCacheForFmax(
         << (
           log2Up(cacheCfg.lineSizeBytes) - log2Up(cacheCfg.wordSizeBytes)
         )
-      ) - 1 - 1
+      ) - 1 
+      + (
+        if (isIcache) (
+          - 1
+        ) else (
+          0
+        )
+      )
     )
     //rRecvCnt := io.tlCfg.beatMax - 2
   }
@@ -442,14 +456,17 @@ case class SnowHouseCacheForFmax(
       io.bus.recvData.data
     )
   )
-  if (!isIcache) {
-    //io.bus.recvData.setAsReg()
-    //io.bus.ready.setAsReg() init(False)
-    //io.busExtraReady.setAsReg() //init(False)
-    //io.busExtraReady.foreach(extraReady => {
-    //  extraReady.init(extraReady.getZero)
-    //})
-    //io.busExtraReady.addAttribute(KeepAttribute.keep)
+  if (
+    //!isIcache
+    isIcache
+  ) {
+    io.bus.recvData.setAsReg()
+    io.bus.ready.setAsReg() init(False)
+    io.busExtraReady.setAsReg() //init(False)
+    io.busExtraReady.foreach(extraReady => {
+      extraReady.init(extraReady.getZero)
+    })
+    io.busExtraReady.addAttribute(KeepAttribute.keep)
   }
   def doSetBusReadyEtc(
     someReady: Bool
@@ -533,11 +550,11 @@ case class SnowHouseCacheForFmax(
     )
   )
   rdLineWord := (
-    if (isIcache) (
-      RegNext(lineWordRam.io.rdData.asUInt) init(0x0)
-    ) else (
+    //if (isIcache) (
+    //  RegNext(lineWordRam.io.rdData.asUInt) init(0x0)
+    //) else (
       lineWordRam.io.rdData.asUInt
-    )
+    //)
   )
   val wrLineAttrs = SnowHouseCacheLineAttrs(
     cfg=cfg,
@@ -578,10 +595,20 @@ case class SnowHouseCacheForFmax(
     setEn=false,
   )
 
-  def haveHit = (
+  def rawHaveHit = (
     rdLineAttrs.fire
     //currLineValid
     && rdLineAttrs.tag === rBusAddrTag
+  )
+  def haveHit = (
+    //rdLineAttrs.fire
+    ////currLineValid
+    //&& rdLineAttrs.tag === rBusAddrTag
+    if (isIcache) (
+      RegNext(rawHaveHit, init=False)
+    ) else (
+      rawHaveHit
+    )
   )
 
   def doAllLineRamsReadSync(
@@ -672,7 +699,7 @@ case class SnowHouseCacheForFmax(
   //}
   //val rTempBusReady = Reg(Bool(), init=False)
   //val rSavedHaveHit = Reg(Bool(), init=False)
-  val rSavedRdLineWord = Reg(cloneOf(rdLineWord), init=rdLineWord.getZero)
+  //val rSavedRdLineWord = Reg(cloneOf(rdLineWord), init=rdLineWord.getZero)
   val rSavedBusSendData = Reg(cloneOf(io.bus.sendData))
   val rPleaseFinish = (
     Vec.fill(3)(
@@ -846,7 +873,7 @@ case class SnowHouseCacheForFmax(
         myH2dBus.nextValid := False
         rSavedBusAddr := rBusAddr
         rSavedRdLineAttrs := rdLineAttrs
-        rSavedRdLineWord := rdLineWord
+        //rSavedRdLineWord := rdLineWord
         //rSavedHaveHit := haveHit
         rSavedBusSendData := rBusSendData
         when (RegNext(io.bus.nextValid) init(False)) {
@@ -1589,7 +1616,7 @@ case class SnowHouseCacheForLatency(
     //doLineAttrsRamReadSync(busAddr=io.bus.sendData.addr)
   //}
   //val rTempBusReady = Reg(Bool(), init=False)
-  val rSavedRdLineWord = Reg(cloneOf(rdLineWord), init=rdLineWord.getZero)
+  //val rSavedRdLineWord = Reg(cloneOf(rdLineWord), init=rdLineWord.getZero)
   //def doPipe(): Unit = {
   //}
   //val rSavedBusSendData = Reg(cloneOf(io.bus.sendData))
@@ -1779,7 +1806,7 @@ case class SnowHouseCacheForLatency(
         myH2dBus.nextValid := False
         rSavedBusAddr := rBusAddr
         rSavedRdLineAttrs := rdLineAttrs
-        rSavedRdLineWord := rdLineWord
+        //rSavedRdLineWord := rdLineWord
         //rSavedBusSendData := rBusSendData
         when (RegNext(io.bus.nextValid) init(False)) {
           when (if (isIcache) (True) else (!rBusAddrIsNonCached)) {
