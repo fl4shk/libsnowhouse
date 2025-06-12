@@ -146,7 +146,7 @@ case class SnowHousePipeStageInstrFetch(
     )
   )
   def myInstrCnt = upModExt.instrCnt
-  def nextRegPc = upModExt.regPc
+  val nextRegPc = SInt(cfg.mainWidth bits) //cloneOf(upModExt.regPc)
   //def nextRegPcSetItCnt = upModExt.regPcSetItCnt
   val rSavedExSetPc = {
     val temp = /*KeepAttribute*/(
@@ -165,6 +165,17 @@ case class SnowHousePipeStageInstrFetch(
   //) {
   //  rSavedExSetPc := psExSetPc
   //}
+  val myNextRegPcInit = (
+    //(
+    //  ((3.toLong * (cfg.instrMainWidth.toLong / 8.toLong)).toLong
+    //  ^ ((1.toLong << cfg.instrMainWidth.toLong).toLong) - 1.toLong)
+    //  + 1.toLong
+    //) & (
+    //  (1.toLong << cfg.instrMainWidth.toLong) - 1.toLong
+    //)
+    //-(2.toLong * (cfg.instrMainWidth.toLong / 8.toLong))
+    0
+  )
   val rPrevRegPc /*rPrevRegPcThenNext*/ = (
     RegNextWhen(
       next=nextRegPc /*+ (cfg.instrMainWidth / 8)*/,
@@ -173,13 +184,27 @@ case class SnowHousePipeStageInstrFetch(
         //|| psExSetPc.fire
       ),
     )
-    init(nextRegPc.getZero)
+    init(
+      //nextRegPc.asUInt.getZero
+
+      //-(3.toLong * (cfg.instrMainWidth.toLong / 8.toLong))
+      myNextRegPcInit //- (1.toLong * (cfg.instrMainWidth / 8.toLong))
+    )
   )
   val rPrevInstrCnt = /*(cfg.optFormal) generate*/ (
     RegNextWhen(
       next=myInstrCnt,
       cond=up.isFiring,
       init=myInstrCnt.getZero,
+    )
+  )
+  println(
+    s"myNextRegPcInit:${myNextRegPcInit}"
+  )
+  nextRegPc := (
+    RegNext(nextRegPc)
+    init(
+      myNextRegPcInit
     )
   )
 
@@ -189,14 +214,19 @@ case class SnowHousePipeStageInstrFetch(
   //    )
   //  )
   //}
-  when (psExSetPc.fire && !rSavedExSetPc.fire) {
+  when (
+    psExSetPc.fire && !rSavedExSetPc.fire
+  ) {
     rSavedExSetPc := psExSetPc//rSavedExSetPc.getZero
     //nextRegPcSetItCnt := 0x1
-    nextRegPc := (
-      //rSavedExSetPc.nextPc //- (cfg.instrMainWidth / 8)
-      psExSetPc.nextPc - (cfg.instrMainWidth / 8)
+    nextRegPc.assignFromBits(
+      (
+        //rSavedExSetPc.nextPc //- (cfg.instrMainWidth / 8)
+        psExSetPc.nextPc - (1 * (cfg.instrMainWidth / 8))
+      ).asBits
     )
     myInstrCnt.jmp := rPrevInstrCnt.jmp + 1
+    upModExt.regPcSetItCnt := 0x1
   }
   when (up.isFiring) {
     myInstrCnt.any := rPrevInstrCnt.any + 1
@@ -209,25 +239,46 @@ case class SnowHousePipeStageInstrFetch(
     //    rSavedExSetPc.nextPc //- (cfg.instrMainWidth / 8)
     //  )
     //  myInstrCnt.jmp := rPrevInstrCnt.jmp + 1
-    //} 
+    //}
     //.otherwise 
     //{
       when (!psExSetPc.fire && !rSavedExSetPc.fire) {
         //nextRegPcSetItCnt := 0x0
-        nextRegPc := (
-          //rPrevRegPcThenNext
-          rPrevRegPc + (cfg.instrMainWidth / 8)
+        nextRegPc.assignFromBits(
+          (
+            //rPrevRegPcThenNext
+            rPrevRegPc + (cfg.instrMainWidth / 8)
+          ).asBits
         )
         myInstrCnt.fwd := rPrevInstrCnt.fwd + 1
       } otherwise {
-        rSavedExSetPc := rSavedExSetPc.getZero
+        upModExt.regPcSetItCnt := 0x0
       }
+      rSavedExSetPc := rSavedExSetPc.getZero
     //}
   }
   io.ibus.nextValid := (
     True
+    //down.isReady
+    //up.isFiring
   )
-  io.ibus.sendData.addr := nextRegPc //upModExt.regPc
+  //io.ibus.sendData.addr := (
+  //  RegNext(
+  //    next=io.ibus.sendData.addr,
+  //    init=io.ibus.sendData.addr.getZero,
+  //  )
+  //)
+  //when (up.isFiring) {
+    io.ibus.sendData.addr := (
+      nextRegPc.asUInt + (2 * (cfg.instrMainWidth / 8))
+    )
+  //}
+  upModExt.regPc.allowOverride
+  upModExt.regPc := (
+    nextRegPc.asUInt //+ (1 * (cfg.instrMainWidth / 8)) //io.ibus.sendData.addr
+    //io.ibus.sendData.addr - (1 * (cfg.instrMainWidth / 8))
+  )
+  //upModExt.regPc
 }
 case class SnowHousePipeStageInstrDecode(
   val args: SnowHousePipeStageArgs,
@@ -252,7 +303,7 @@ case class SnowHousePipeStageInstrDecode(
   val upPayload = /*Vec.fill(2)*/(
     SnowHousePipePayload(cfg=cfg)
   )
-  val startDecode = Bool()
+  val startDecode = Reg(Bool(), init=False)
 
   //when (up.isFiring) {
   up(pId) := upPayload//(0)
@@ -299,23 +350,48 @@ case class SnowHousePipeStageInstrDecode(
       init=myInstr.getZero
     )
   )
-  //when (up.isValid) {
+  when (up.isValid) {
     //when (
     //  RegNext(next=io.ibus.nextValid, init=False)
     //) {
-      when (!rSetUpPayloadState(1)) {
-        when (!io.ibus.ready) {
+      //when (!rSetUpPayloadState(1))
+        when (
+          !(RegNext(io.ibus.ready) init(False))
+          || !io.ibus.ready
+          //|| shouldIgnoreInstr
+        ) {
           cId.haltIt()
           //cId.duplicateIt()
           //cId.throwIt()
-        } otherwise {
+        }
+        when (!rSetUpPayloadState(1)) {
+        //when (
+        //  io.ibus.rValid
+        //  && io.ibus.ready
+        //  && !rSetUpPayloadState(1)
+        //) {
           nextSetUpPayloadState(1) := True
           myInstr := (
-            io.ibus.recvData.instr
+            RegNext(
+              io.ibus.recvData.instr,
+            )
+            init(0x0)
           )
         }
-      }
     //}
+  }
+  //startDecode := False
+  //when (
+  //  (
+  //    rSetUpPayloadState(1)
+  //  ) && (
+  //    !RegNext(next=rSetUpPayloadState(1), init=False)
+  //  )
+  //) {
+  //  startDecode := True
+  //  myInstr := (
+  //    RegNext(io.ibus.recvData.instr) init(0x0)
+  //  )
   //}
   //when (
   //  if (cfg.supportUcode) (
@@ -324,14 +400,18 @@ case class SnowHousePipeStageInstrDecode(
   //    True
   //  )
   //) {
-    //when (
-    //  up.isValid
-    //) {
-      when (!rSetUpPayloadState(0)) {
+    when (
+      up.isValid
+      //&& up.isReady
+      //True
+    ) {
+      when (
+        !rSetUpPayloadState(0)
+      ) {
         upPayload := up(pIf)
         nextSetUpPayloadState(0) := True
       }
-    //}
+    }
   //} otherwise {
   //  cId.duplicateIt()
   //  when (down.isFiring) {

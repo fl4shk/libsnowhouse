@@ -14,8 +14,9 @@
 //--------
 cpy r0, 0x0
 cpy r0, 0x0
+cpy r0, 0x0
 cpy r1, _irq_handler
-cpy ids, r1
+//cpy ids, r1
 cpy r1, 0x1
 cpy ie, r1
 lsl r1, r1, 3
@@ -26,11 +27,12 @@ cpy r5, _increment
 cpy sp, 0x800
 cpy r6, 0x20
 str r6, r3, 0x0
-//ldr r5, r3, 0x0
-//str r5, r3, 0x1000
-//ldr r6, r3, 0x1000
+mul r0, r6, r6
+ldr r5, r3, 0x0
+str r5, r3, 0x1000
+ldr r6, r3, 0x1000
 cpy r7, 0x4
-//mul r9, r5, r7
+mul r9, r5, r7
 //--------
 _push_loop:
 str r7, sp, 0
@@ -47,8 +49,21 @@ bne r7, r0, _push_loop
 mul r7, r6, r1
 udiv r7, r6, r1
 umod r8, r6, r1
+beq r0, r0, _loop
+
+.rept 4
+cpy r0, r0
+.endr
 //--------
+//.align 2
+//.align 8
 //--------
+//.rept 2048
+//.rept 7
+//add r1, r1, 3
+//.endr
+//beq r0, r0, _loop
+//cpy r0, r0
 _loop:
 ldr r6, r3, 0x0
 bl _increment
@@ -85,3 +100,7 @@ cpy r0, r0
 cpy r0, r0
 cpy r0, r0
 cpy r0, r0
+
+
+
+

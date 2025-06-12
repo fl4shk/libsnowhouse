@@ -117,10 +117,10 @@ case class SnowHouseInstrDataDualRam(
     val icache = SnowHouseCache(
       cfg=cfg,
       isIcache=true,
-      forFmax=(
-        //false
-        true
-      ),
+      //forFmax=(
+      //  false
+      //  //true
+      //),
     )
     //icache.io.haveHazard := io.icacheHaveHazard
     val m2sTransfers = tilelink.M2sTransfers(
@@ -216,7 +216,7 @@ case class SnowHouseInstrDataDualRam(
     val dcache = SnowHouseCache(
       cfg=cfg,
       isIcache=false,
-      forFmax=true,
+      //forFmax=true,
     )
     //dcache.io.haveHazard := io.dcacheHaveHazard
     val m2sTransfers = tilelink.M2sTransfers(
