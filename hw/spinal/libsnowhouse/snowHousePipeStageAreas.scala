@@ -535,6 +535,9 @@ case class SnowHousePipeStageInstrDecode(
   upPayload.regPcPlusInstrSize := (
     upPayload.regPc + (cfg.instrMainWidth / 8)
   )
+  upPayload.regPcPlusImm := (
+    upPayload.regPc + upPayload.imm(2)
+  )
   val upGprIdxToMemAddrIdxMap = upPayload.gprIdxToMemAddrIdxMap
   for ((gprIdx, zdx) <- upPayload.gprIdxVec.view.zipWithIndex) {
     upPayload.myExt(0).memAddr(zdx) := gprIdx
@@ -566,6 +569,7 @@ case class SnowHousePipeStageInstrDecode(
   //  init=nextDoDecodeState.getZero,
   //)
   //nextDoDecodeState := rDoDecodeState
+
   val tempInstr = UInt(cfg.instrMainWidth bits)
   tempInstr := (
     RegNext(
@@ -2917,33 +2921,33 @@ case class SnowHousePipeStageExecute(
     doModInModFrontParams.getMyRdMemWordFunc(ydx, modIdx)
   )
   when (cMid0Front.up.isValid ) {
-    //outp := inp
-    when (
-      //!rSetOutpState
-      !rSetOutpState(0)
-      //!RegNext(next=nextSetOutpState, init=nextSetOutpState.getZero)
-    ) {
-      outp := inp
-    }
+    outp := inp
     //when (
-    //  !RegNext(next=nextSetOutpState, init=nextSetOutpState.getZero)
+    //  //!rSetOutpState
+    //  !rSetOutpState(0)
+    //  //!RegNext(next=nextSetOutpState, init=nextSetOutpState.getZero)
     //) {
-    //  tempExt := inp.myExt
+    //  outp := inp
     //}
-    when (
-      //!RegNext(next=nextSetOutpState, init=nextSetOutpState.getZero)
-      !rSetOutpState(1)
-    ) {
-      nextSetOutpState.foreach(current => {
-        current := True
-      })
-    }
+    ////when (
+    ////  !RegNext(next=nextSetOutpState, init=nextSetOutpState.getZero)
+    ////) {
+    ////  tempExt := inp.myExt
+    ////}
+    //when (
+    //  //!RegNext(next=nextSetOutpState, init=nextSetOutpState.getZero)
+    //  !rSetOutpState(1)
+    //) {
+    //  nextSetOutpState.foreach(current => {
+    //    current := True
+    //  })
+    //}
   }
-  when (cMid0Front.up.isFiring) {
-    nextSetOutpState.foreach(current => {
-      current := False
-    })
-  }
+  //when (cMid0Front.up.isFiring) {
+  //  nextSetOutpState.foreach(current => {
+  //    current := False
+  //  })
+  //}
   for (ydx <- 0 until outp.myExt.size) {
     outp.myExt(ydx).rdMemWord := (
       inp.myExt(ydx).rdMemWord
@@ -4098,9 +4102,9 @@ case class SnowHousePipeStageExecute(
   //    outp.regPc + outp.imm(2) - (2 * (cfg.instrMainWidth / 8))
   //  )
   //} otherwise {
-    outp.regPcPlusImm := (
-      outp.regPc + outp.imm(2) //- (3 * (cfg.instrMainWidth / 8))
-    )
+  //  outp.regPcPlusImm := (
+  //    outp.regPc + outp.imm(2) //- (3 * (cfg.instrMainWidth / 8))
+  //  )
   //}
 }
 case class SnowHousePipeStageMem(
