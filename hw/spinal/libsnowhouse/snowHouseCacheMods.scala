@@ -1461,7 +1461,8 @@ case class SnowHouseInstrCache(
       //HANDLE_SEND_LINE_TO_BUS_PIPE_1,
       //HANDLE_SEND_LINE_TO_BUS,
       //HANDLE_RECV_LINE_FROM_BUS_PIPE_1,
-      HANDLE_RECV_LINE_FROM_BUS
+      HANDLE_RECV_LINE_FROM_BUS,
+      HANDLE_RECV_LINE_FROM_BUS_POST
       //HANDLE_NON_CACHED_BUS_ACC
       = newElement()
   }
@@ -2002,10 +2003,10 @@ case class SnowHouseInstrCache(
           incrLineBusAddrCnts()
         } otherwise {
           setLineBusAddrCntsToStart()
-          doAllLineRamsReadSync(
-            busAddr=rSavedBusAddr
-          )
-          nextState := State.IDLE
+          //doAllLineRamsReadSync(
+          //  busAddr=rSavedBusAddr
+          //)
+          nextState := State.HANDLE_RECV_LINE_FROM_BUS_POST
         }
         doLineWordRamWrite(
           busAddr=(
@@ -2024,6 +2025,12 @@ case class SnowHouseInstrCache(
       //}
     }
     //--------
+    is (State.HANDLE_RECV_LINE_FROM_BUS_POST) {
+      doAllLineRamsReadSync(
+        busAddr=rSavedBusAddr
+      )
+      nextState := State.IDLE
+    }
     //--------
     //is (State.HANDLE_NON_CACHED_BUS_ACC) {
     //  when (
