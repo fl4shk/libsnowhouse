@@ -578,10 +578,10 @@ case class SnowHouse
     )
   )
   val pcChangeState = (
-    //Bool()
-    UInt(
-      SnowHouseShouldIgnoreInstrState().asBits.getWidth bits
-    )
+    Bool()
+    //UInt(
+    //  SnowHouseShouldIgnoreInstrState().asBits.getWidth bits
+    //)
   )
   val shouldIgnoreInstr = Bool()
   //--------
