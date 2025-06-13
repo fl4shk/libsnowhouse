@@ -531,9 +531,14 @@ object SnowHouseCpuPipeStageInstrDecode {
       )
       .setName(s"InstrDecode_rPrevPreImm16")
     )
+    upPayload.splitOp := upPayload.splitOp.getZero
+    upPayload.splitOp.kind := SnowHouseSplitOpKind.CPY_CPYUI
     upPayload.splitOp.opIsMultiCycle := False
-    upPayload.splitOp.nonMultiCycleOp := (
-      (1 << upPayload.splitOp.nonMultiCycleOp.getWidth) - 1
+    //upPayload.splitOp.nonMultiCycleOp := (
+    //  (1 << upPayload.splitOp.nonMultiCycleOp.getWidth) - 1
+    //)
+    upPayload.splitOp.nonMultiCycleNonJmpOp := (
+      (1 << upPayload.splitOp.nonMultiCycleNonJmpOp.getWidth) - 1
     )
     upPayload.splitOp.multiCycleOp := 0x0
     upPayload.splitOp.opIsMemAccess := False
@@ -563,13 +568,38 @@ object SnowHouseCpuPipeStageInstrDecode {
       ) {
         if (someOp == tuple) {
           for (
-            ((_, nonMultiCycleOpInfo), nonMultiCycleOpInfoIdx)
-            <- cfg.nonMultiCycleOpInfoMap.view.zipWithIndex
+            ((_, jmpOpInfo), jmpOpInfoIdx)
+            <- cfg.jmpBrOpInfoMap.view.zipWithIndex
           ) {
-            if (nonMultiCycleOpInfo == opInfo) {
-              mySplitOp.nonMultiCycleOp := nonMultiCycleOpInfoIdx
+            if (
+              //opInfo == jmpOpInfo
+              //someOp == jmpOpTuple
+              jmpOpInfo == opInfo
+            ) {
+              println(
+                s"jmpBrOp: " // "${opInfoIdx} -> ${jmpOpInfoIdx} "
+                + s"${someOp._3} // ${jmpOpInfoIdx}"
+              )
+              mySplitOp.jmpBrOp := (
+                jmpOpInfoIdx
+              )
+              found = true
+            }
+          }
+          for (
+            ((_, nonMultiCycleNonJmpOpInfo), nonMultiCycleNonJmpOpInfoIdx)
+            <- cfg.nonMultiCycleNonJmpOpInfoMap.view.zipWithIndex
+          ) {
+            if (nonMultiCycleNonJmpOpInfo == opInfo) {
+              assert(
+                !found
+              )
+              //mySplitOp.nonMultiCycleOp := nonMultiCycleNonJmpOpInfoIdx
+              mySplitOp.nonMultiCycleNonJmpOp := (
+                nonMultiCycleNonJmpOpInfoIdx
+              )
               //println(
-              //  s"test: ${nonMultiCycleOpInfoIdx}"
+              //  s"test: ${nonMultiCycleNonJmpOpInfoIdx}"
               //)
               //found = true
               for (
@@ -587,7 +617,7 @@ object SnowHouseCpuPipeStageInstrDecode {
                 <- cfg.cpyCpyuiOpInfoMap.view.zipWithIndex
               ) {
                 if (
-                  //nonMultiCycleOpInfo == cpyOpInfo
+                  //nonMultiCycleNonJmpOpInfo == cpyOpInfo
                   //someOp == cpyOpTuple
                   cpyOpInfo == opInfo
                 ) {
@@ -595,26 +625,7 @@ object SnowHouseCpuPipeStageInstrDecode {
                     //s"pureCpyOp (${cpyOpInfoIdx}): "
                     //+ s"${opInfoIdx}: ${someOp._3}"
                     s"cpyCpyuiOp: " //"${opInfoIdx} -> ${cpyOpInfoIdx} "
-                    + s"${someOp._3} // ${nonMultiCycleOpInfoIdx}"
-                  )
-                  found = true
-                }
-              }
-              for (
-                ((_, jmpOpInfo), jmpOpInfoIdx)
-                <- cfg.jmpBrOpInfoMap.view.zipWithIndex
-              ) {
-                if (
-                  //opInfo == jmpOpInfo
-                  //someOp == jmpOpTuple
-                  jmpOpInfo == opInfo
-                ) {
-                  println(
-                    s"jmpBrOp: " // "${opInfoIdx} -> ${jmpOpInfoIdx} "
-                    + s"${someOp._3} // ${nonMultiCycleOpInfoIdx}"
-                  )
-                  mySplitOp.jmpBrOp := (
-                    jmpOpInfoIdx
+                    + s"${someOp._3} // ${nonMultiCycleNonJmpOpInfoIdx}"
                   )
                   found = true
                 }
@@ -630,7 +641,7 @@ object SnowHouseCpuPipeStageInstrDecode {
                 ) {
                   println(
                     s"aluOp: " //"${opInfoIdx} -> ${aluOpInfoIdx} "
-                    + s"${someOp._3} // ${nonMultiCycleOpInfoIdx}"
+                    + s"${someOp._3} // ${nonMultiCycleNonJmpOpInfoIdx}"
                   )
                   found = true
                 }
@@ -646,7 +657,7 @@ object SnowHouseCpuPipeStageInstrDecode {
                 ) {
                   println(
                     s"aluShiftOp: " //"${opInfoIdx} -> ${aluShiftOpInfoIdx} "
-                    + s"${someOp._3} // ${nonMultiCycleOpInfoIdx}"
+                    + s"${someOp._3} // ${nonMultiCycleNonJmpOpInfoIdx}"
                   )
                   found = true
                 }
@@ -783,8 +794,6 @@ object SnowHouseCpuPipeStageInstrDecode {
     //when (cId.up.isFiring) {
     //  rTempState := False
     //}
-    upPayload.splitOp := upPayload.splitOp.getZero
-    upPayload.splitOp.kind := SnowHouseSplitOpKind.CPY_CPYUI
     switch (rMultiCycleState) {
       is (False) {
         upPayload.imm.foreach(imm => {

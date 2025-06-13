@@ -1100,11 +1100,11 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
   io.opIsJmp := (
     io.psExSetPc.fire
     //&& !rShouldIgnoreInstrState.asBits(0)
-    //&& !io.shouldIgnoreInstr
-    //&& (
-    //  //io.upIsValid
-    //  io.upIsFiring
-    //)
+    && !io.shouldIgnoreInstr
+    && (
+      //io.upIsValid
+      io.upIsFiring
+    )
   )
   //io.shouldIgnoreInstr := (
   //  RegNext(
@@ -2618,10 +2618,10 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
     //if (cfg.allMainLdstUseGprPlusImm) {
     //  io.dbusHostPayload.addr := io.rdMemWord(1) + io.imm(1)
     //}
-    switch (io.splitOp.nonMultiCycleOp) {
+    switch (io.splitOp.nonMultiCycleNonJmpOp) {
       for (
         ((_, opInfo), idx)
-        <- cfg.nonMultiCycleOpInfoMap.view.zipWithIndex
+        <- cfg.nonMultiCycleNonJmpOpInfoMap.view.zipWithIndex
       ) {
         //if (
         //  idx + 1 < cfg.nonMultiCycleOpInfoMap.size
@@ -2633,6 +2633,19 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
             )
           }
         //}
+      }
+    }
+    switch (io.splitOp.jmpBrOp) {
+      for (
+        ((_, opInfo), idx)
+        <- cfg.jmpBrOpInfoMap.view.zipWithIndex
+      ) {
+        is (idx) {
+          innerFunc(
+            opInfo=opInfo,
+            opInfoIdx=idx,
+          )
+        }
       }
     }
   //} otherwise { // when (io.splitOp.opIsMultiCycle)
@@ -3294,6 +3307,10 @@ case class SnowHousePipeStageExecute(
         temp
       }
     }
+  } otherwise {
+    setOutpModMemWord.io.splitOp.jmpBrOp := (
+      (1 << setOutpModMemWord.io.splitOp.jmpBrOp.getWidth) - 1
+    )
   }
 
   setOutpModMemWord.io.regPcSetItCnt := outp.regPcSetItCnt

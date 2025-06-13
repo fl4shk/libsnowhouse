@@ -555,6 +555,7 @@ case class SnowHouseConfig(
   val aluOpInfoMap = LinkedHashMap[Int, OpInfo]()
   val aluShiftOpInfoMap = LinkedHashMap[Int, OpInfo]()
   val nonMultiCycleOpInfoMap = LinkedHashMap[Int, OpInfo]()
+  val nonMultiCycleNonJmpOpInfoMap = LinkedHashMap[Int, OpInfo]()
   val multiCycleOpInfoMap = LinkedHashMap[Int, OpInfo]()
   //val loadOpInfoMap = LinkedHashMap[Int, OpInfo]()
   //val storeOpInfoMap = LinkedHashMap[Int, OpInfo]()
@@ -655,6 +656,7 @@ case class SnowHouseConfig(
             //)
             cpyCpyuiOpInfoMap += (idx -> opInfo)
             nonMultiCycleOpInfoMap += (idx -> opInfo)
+            nonMultiCycleNonJmpOpInfoMap += (idx -> opInfo)
           }
           case CpyOpKind.Cpyu => {
             //assert(
@@ -666,6 +668,7 @@ case class SnowHouseConfig(
             //pureCpyuiOpInfoMap += (idx -> opInfo)
             cpyCpyuiOpInfoMap += (idx -> opInfo)
             nonMultiCycleOpInfoMap += (idx -> opInfo)
+            nonMultiCycleNonJmpOpInfoMap += (idx -> opInfo)
           }
           case CpyOpKind.Jmp => { // non-relative jumps
             //assert(
@@ -695,11 +698,13 @@ case class SnowHouseConfig(
         //)
         aluOpInfoMap += (idx -> opInfo)
         nonMultiCycleOpInfoMap += (idx -> opInfo)
+        nonMultiCycleNonJmpOpInfoMap += (idx -> opInfo)
       }
       case OpSelect.AluShift => {
         checkValidArgs(opInfo.aluShiftOp)
         aluShiftOpInfoMap += (idx -> opInfo)
         nonMultiCycleOpInfoMap += (idx -> opInfo)
+        nonMultiCycleNonJmpOpInfoMap += (idx -> opInfo)
       }
       case OpSelect.MultiCycle => {
         checkValidArgs(opInfo.multiCycleOp)
@@ -874,8 +879,12 @@ case class SnowHouseSplitOp(
   //)
   val opIsMultiCycle = Bool()
   val opIsMemAccess = Bool()
-  val nonMultiCycleOp = /*Flow*/(
-    UInt(log2Up(cfg.nonMultiCycleOpInfoMap.size + 1) bits)
+  //val opIsJmp = Bool()
+  //val nonMultiCycleOp = /*Flow*/(
+  //  UInt(log2Up(cfg.nonMultiCycleOpInfoMap.size + 1) bits)
+  //)
+  val nonMultiCycleNonJmpOp = /*Flow*/(
+    UInt(log2Up(cfg.nonMultiCycleNonJmpOpInfoMap.size + 1) bits)
   )
   val kind = SnowHouseSplitOpKind(
     //binaryOneHot
