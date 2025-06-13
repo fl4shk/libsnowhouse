@@ -58,10 +58,6 @@ cpy r0, r0
 //.align 2
 //.align 8
 //--------
-//.rept 2048
-//.rept 7
-//add r1, r1, 3
-//.endr
 //beq r0, r0, _loop
 //cpy r0, r0
 _loop:

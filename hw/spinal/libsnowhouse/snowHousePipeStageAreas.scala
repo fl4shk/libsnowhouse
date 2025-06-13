@@ -1100,11 +1100,11 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
   io.opIsJmp := (
     io.psExSetPc.fire
     //&& !rShouldIgnoreInstrState.asBits(0)
-    && !io.shouldIgnoreInstr
-    && (
-      //io.upIsValid
-      io.upIsFiring
-    )
+    //&& !io.shouldIgnoreInstr
+    //&& (
+    //  //io.upIsValid
+    //  io.upIsFiring
+    //)
   )
   //io.shouldIgnoreInstr := (
   //  RegNext(
@@ -1169,31 +1169,48 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
   //    io.shouldIgnoreInstr := True
   //  }
   //}
-  val rShouldIgnoreInstrShift = (
-    Reg(UInt(4 bits))
-    init(0x1)
+  //val rShouldIgnoreInstrShift = (
+  //  Reg(UInt(4 bits))
+  //  init(0x0)
+  //)
+  //when (!rShouldIgnoreInstrShift.lsb) {
+  //  io.shouldIgnoreInstr := True
+  //  lowerMyFanoutShouldIgnoreInstr := True
+  //}
+  val rShouldIgnoreInstrCnt = (
+    Reg(SInt(3 bits))
+    init(-1)
   )
-  when (!rShouldIgnoreInstrShift.lsb) {
+  when (!rShouldIgnoreInstrCnt.msb) {
     io.shouldIgnoreInstr := True
     lowerMyFanoutShouldIgnoreInstr := True
   }
   when (io.upIsFiring) {
-    when (!rShouldIgnoreInstrShift.lsb) {
-      rShouldIgnoreInstrShift := (
-        Cat(
-          False,
-          rShouldIgnoreInstrShift(rShouldIgnoreInstrShift.high downto 1)
-        ).asUInt
+    //rShouldIgnoreInstrShift := (
+    //  Cat(
+    //    False,
+    //    rShouldIgnoreInstrShift(rShouldIgnoreInstrShift.high downto 1)
+    //  ).asUInt
+    //)
+    when (
+      //rShouldIgnoreInstrShift.lsb
+      !rShouldIgnoreInstrCnt.msb
+    ) {
+      rShouldIgnoreInstrCnt := (
+        rShouldIgnoreInstrCnt - 1
       )
     } otherwise {
       when (io.opIsJmp) {
-        rShouldIgnoreInstrShift := (
-          U(
-            rShouldIgnoreInstrShift.getWidth bits,
-            rShouldIgnoreInstrShift.high -> True,
-            default -> False
-          )
+        rShouldIgnoreInstrCnt := (
+          2
         )
+        //rShouldIgnoreInstrShift := (
+        //  U(
+        //    rShouldIgnoreInstrShift.getWidth bits,
+        //    rShouldIgnoreInstrShift.high -> True,
+        //    default -> False
+        //  )
+        //)
       }
     }
     //when (!rShouldIgnoreInstrState(0)) {
