@@ -1099,12 +1099,12 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
   io.opIsJmp.allowOverride
   io.opIsJmp := (
     io.psExSetPc.fire
-    //&& !rShouldIgnoreInstrState.asBits(0)
-    && !io.shouldIgnoreInstr
-    && (
-      //io.upIsValid
-      io.upIsFiring
-    )
+    ////&& !rShouldIgnoreInstrState.asBits(0)
+    //&& !io.shouldIgnoreInstr
+    //&& (
+    //  //io.upIsValid
+    //  io.upIsFiring
+    //)
   )
   //io.shouldIgnoreInstr := (
   //  RegNext(
