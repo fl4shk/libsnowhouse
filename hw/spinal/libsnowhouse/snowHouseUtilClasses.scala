@@ -1043,12 +1043,12 @@ case class SnowHousePipePayload(
   ): Unit = {
     myExt(ydx).pipeFlags := inpExt.pipeFlags
     myExt(ydx).main.nonMemAddr := inpExt.main.nonMemAddr
-    //for (
-    //  (myMemAddrFwdCmp, zdx)
-    //  <- myExt(ydx).main.memAddrFwdCmp.view.zipWithIndex
-    //) {
-    //  myMemAddrFwdCmp := inpExt.main.memAddrFwdCmp(zdx)
-    //}
+    for (
+      (myMemAddrFwdCmp, zdx)
+      <- myExt(ydx).main.memAddrFwdCmp.view.zipWithIndex
+    ) {
+      myMemAddrFwdCmp := inpExt.main.memAddrFwdCmp(zdx)
+    }
     for (
       (myMemAddrFwd, zdx) <- myExt(ydx).main.memAddrFwd.view.zipWithIndex
     ) {
@@ -1072,12 +1072,12 @@ case class SnowHousePipePayload(
     //outpExt := myExt(ydx)
     outpExt.pipeFlags := myExt(ydx).pipeFlags
     outpExt.main.nonMemAddr := myExt(ydx).main.nonMemAddr
-    //for (
-    //  (myMemAddrFwdCmp, zdx)
-    //  <- myExt(ydx).main.memAddrFwdCmp.view.zipWithIndex
-    //) {
-    //  outpExt.main.memAddrFwdCmp(zdx) := myMemAddrFwdCmp
-    //}
+    for (
+      (myMemAddrFwdCmp, zdx)
+      <- myExt(ydx).main.memAddrFwdCmp.view.zipWithIndex
+    ) {
+      outpExt.main.memAddrFwdCmp(zdx) := myMemAddrFwdCmp
+    }
     for (
       (myMemAddrFwd, zdx) <- myExt(ydx).main.memAddrFwd.view.zipWithIndex
     ) {
