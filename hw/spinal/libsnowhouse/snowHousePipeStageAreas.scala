@@ -189,7 +189,7 @@ case class SnowHousePipeStageInstrFetch(
       //nextRegPc.asUInt.getZero
 
       //-(3.toLong * (cfg.instrMainWidth.toLong / 8.toLong))
-      myNextRegPcInit //- (1.toLong * (cfg.instrMainWidth / 8.toLong))
+      myNextRegPcInit - (1.toLong * (cfg.instrMainWidth / 8.toLong))
     )
   )
   val rPrevInstrCnt = /*(cfg.optFormal) generate*/ (
@@ -229,61 +229,110 @@ case class SnowHousePipeStageInstrFetch(
   //  myInstrCnt.jmp := rPrevInstrCnt.jmp + 1
   //  upModExt.regPcSetItCnt := 0x1
   //}
+  //io.ibus.sendData.addr := (
+  //  //nextRegPc.asUInt + (2 * (cfg.instrMainWidth / 8))
+  //  RegNext(
+  //    next=io.ibus.sendData.addr,
+  //    init=io.ibus.sendData.addr.getZero,
+  //  )
+  //)
+  io.ibus.sendData.addr := (
+    RegNext(
+      next=io.ibus.sendData.addr,
+      init=io.ibus.sendData.addr.getZero,
+    )
+  )
   when (up.isFiring) {
     myInstrCnt.any := rPrevInstrCnt.any + 1
     when (psExSetPc.fire) {
-      rSavedExSetPc := rSavedExSetPc.getZero
-      nextRegPc.assignFromBits(
-        (
-          psExSetPc.nextPc - (3 * (cfg.instrMainWidth / 8))
-        ).asBits
+      //rSavedExSetPc := rSavedExSetPc.getZero
+      val temp = (
+        psExSetPc.nextPc - (3 * (cfg.instrMainWidth / 8))
+      )
+      //when (io.ibus.ready) {
+        nextRegPc.assignFromBits(
+          temp.asBits
+        )
+      //} otherwise {
+      //  nextRegPc.assignFromBits(
+      //    (temp - 1).asBits
+      //  )
+      //}
+      io.ibus.sendData.addr.assignFromBits(
+        (temp + (2 * (cfg.instrMainWidth / 8))).asBits
       )
       myInstrCnt.jmp := rPrevInstrCnt.jmp + 1
     } elsewhen (rSavedExSetPc.fire) {
-      rSavedExSetPc := rSavedExSetPc.getZero
-      //nextRegPcSetItCnt := 0x1
-      nextRegPc.assignFromBits(
-        (
-          rSavedExSetPc.nextPc - (3 * (cfg.instrMainWidth / 8))
-        ).asBits
+      val temp = (
+        rSavedExSetPc.nextPc - (3 * (cfg.instrMainWidth / 8))
+      )
+      //when (io.ibus.ready) {
+        nextRegPc.assignFromBits(
+          temp.asBits
+        )
+      //} otherwise {
+      //  nextRegPc.assignFromBits(
+      //    (temp - 1).asBits
+      //  )
+      //}
+      io.ibus.sendData.addr.assignFromBits(
+        (temp + (2 * (cfg.instrMainWidth / 8))).asBits
       )
       myInstrCnt.jmp := rPrevInstrCnt.jmp + 1
     } otherwise {
       //when (!psExSetPc.fire && !rSavedExSetPc.fire) {
-        //nextRegPcSetItCnt := 0x0
-        nextRegPc.assignFromBits(
-          (
-            //rPrevRegPcThenNext
-            rPrevRegPc + (cfg.instrMainWidth / 8)
-          ).asBits
+        val temp = (
+          //rPrevRegPcThenNext
+          rPrevRegPc + (cfg.instrMainWidth / 8)
         )
+        //when (io.ibus.ready) {
+          nextRegPc.assignFromBits(
+            temp.asBits
+          )
+          io.ibus.sendData.addr.assignFromBits(
+            (temp + (2 * (cfg.instrMainWidth / 8))).asBits
+          )
+        //} otherwise {
+        //  nextRegPc.assignFromBits(
+        //    (temp - 1).asBits
+        //  )
+        //}
         myInstrCnt.fwd := rPrevInstrCnt.fwd + 1
       //} otherwise {
       //  upModExt.regPcSetItCnt := 0x0
       //}
-      rSavedExSetPc := rSavedExSetPc.getZero
+      //rSavedExSetPc := rSavedExSetPc.getZero
     }
+    rSavedExSetPc := rSavedExSetPc.getZero
   }
   io.ibus.nextValid := (
     True
     //down.isReady
     //up.isFiring
   )
-  //io.ibus.sendData.addr := (
-  //  RegNext(
-  //    next=io.ibus.sendData.addr,
-  //    init=io.ibus.sendData.addr.getZero,
-  //  )
-  //)
-  //when (up.isFiring) {
-    io.ibus.sendData.addr := (
-      nextRegPc.asUInt + (2 * (cfg.instrMainWidth / 8))
-    )
-  //}
   upModExt.regPc.allowOverride
+  //upModExt.regPc := (
+  //  //nextRegPc.asUInt //+ (1 * (cfg.instrMainWidth / 8)) //io.ibus.sendData.addr
+  //  io.ibus.sendData.addr //- (1 * (cfg.instrMainWidth / 8))
+  //)
+  //when (
+  //  up.isFiring
+  //  //down.isReady
+  //  //down.isFiring
+  //) {
+  //  //when (io.ibus.ready) {
+  //    io.ibus.sendData.addr := (
+  //      nextRegPc.asUInt //+ (2 * (cfg.instrMainWidth / 8))
+  //    )
+  //  //} otherwise {
+  //  //  io.ibus.sendData.addr := (
+  //  //    nextRegPc.asUInt + (1 * (cfg.instrMainWidth / 8))
+  //  //  )
+  //  //}
+  //}
   upModExt.regPc := (
-    //nextRegPc.asUInt //+ (1 * (cfg.instrMainWidth / 8)) //io.ibus.sendData.addr
     io.ibus.sendData.addr //- (1 * (cfg.instrMainWidth / 8))
+    //nextRegPc.asUInt + (2 * (cfg.instrMainWidth / 8))
   )
   //upModExt.regPc
 }
@@ -367,7 +416,7 @@ case class SnowHousePipeStageInstrDecode(
         when (
           //!(RegNext(io.ibus.fire) init(False))
           //|| 
-          !io.ibus.fire
+          !io.ibus.ready//fire
           //|| shouldIgnoreInstr
         ) {
           cId.haltIt()
@@ -3980,13 +4029,13 @@ case class SnowHousePipeStageExecute(
   if (cfg.optFormal) {
     outp.psExSetOutpModMemWordIo := setOutpModMemWord.io
   }
-  //when (!outp.imm(2).msb) {
+  //when (!(outp.imm(2) - (3 * (cfg.instrMainWidth / 8))).msb) {
   //  outp.regPcPlusImm := (
-  //    outp.regPc + outp.imm(2) - (cfg.instrMainWidth / 8)
+  //    outp.regPc + outp.imm(2) - (2 * (cfg.instrMainWidth / 8))
   //  )
   //} otherwise {
     outp.regPcPlusImm := (
-      outp.regPc + outp.imm(2) //- (cfg.instrMainWidth / 8)
+      outp.regPc + outp.imm(2) //- (3 * (cfg.instrMainWidth / 8))
     )
   //}
 }
@@ -4186,7 +4235,13 @@ case class SnowHousePipeStageMem(
   if (cfg.optFormal) {
   }
   when (cMidModFront.up.isValid) {
-    midModPayload(extIdxUp) := modFront(modFrontAfterPayload)
+    //when (!rSetMidModPayloadState) {
+      midModPayload(extIdxUp) := modFront(modFrontAfterPayload)
+    //  nextSetMidModPayloadState := True
+    //}
+    //when (cMidModFront.up.isReady) {
+    //  nextSetMidModPayloadState := False
+    //}
   }
   for (ydx <- 0 until cfg.regFileCfg.memArrSize) {
     def tempExtLeft(ydx: Int) = midModPayload(extIdxUp).myExt(ydx)

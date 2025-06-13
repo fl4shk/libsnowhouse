@@ -2268,15 +2268,15 @@ case class SnowHouseCpuTestProgram(
   //  lsl(r1, r1, 3),
   //  cpy(r2, 0x1),             // 0x1c: r2 = 1
   //  cpy(r3, 0x1000),          // 0x20: r3 = 0x1000
-  //  cpy(r4, 0x8),             // 0x24: r4 = 4
+  //  cpy(r4, 0x1000),             // 0x24: r4 = 4
   //  cpy(r5, LbR"increment"),  // 0x28
   //  cpy(sp, 0x800),          // 0x2c
   //  cpy(r6, 0x20),            // 0x30: r6 = 0x20
   //  str(r6, r3, 0x0),         // 0x34: [r0 + r3] = r6
   //  //ldr(r5, r3, 0x4),
   //  ldr(r5, r3, 0x0),         // 0x38
-  //  str(r5, r3, 0x1000),         // 0x3c
-  //  ldr(r6, r3, 0x1000),         // 0x40
+  //  str(r5, r4, 0x1000),         // 0x3c
+  //  ldr(r6, r4, 0x1000),         // 0x40
   //  //add(r7, r6, 4),
   //  cpy(r7, 0x4),             // 0x44
   //  mul(r9, r5, r7),          // 0x48
@@ -2285,10 +2285,10 @@ case class SnowHouseCpuTestProgram(
   //  Lb"push_loop",
   //  str(r7, sp, 0),           // 0x4c
   //  ldr(r8, sp, 0),           // 0x50
-  //  //str(r8, sp, 0)
-  //  ldr(r4, sp, 0),           // 0x54
-  //  //str(r3, sp, 0),
-  //  //ldr(r8, sp, 0),
+  //  ////str(r8, sp, 0)
+  //  //ldr(r4, sp, 0),           // 0x54
+  //  ////str(r3, sp, 0),
+  //  ////ldr(r8, sp, 0),
   //  add(r5, r5, 1),           // 0x58
   //  //mul(r5, r8, r7),
   //  //add(sp, sp, 4),
