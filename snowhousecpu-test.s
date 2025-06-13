@@ -49,10 +49,12 @@ bne r7, r0, _push_loop
 mul r7, r6, r1
 udiv r7, r6, r1
 umod r8, r6, r1
-beq r0, r0, _loop
+//beq r0, r0, _loop
 
-.rept 16
-cpy r0, r0
+//.rept 16
+.rept 20
+//cpy r0, r0
+lsl r0, r0, r0
 .endr
 //--------
 //.align 2
