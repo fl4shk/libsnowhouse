@@ -1043,19 +1043,24 @@ case class SnowHousePipePayload(
   ): Unit = {
     myExt(ydx).pipeFlags := inpExt.pipeFlags
     myExt(ydx).main.nonMemAddr := inpExt.main.nonMemAddr
+    //for (
+    //  (myMemAddrFwdCmp, zdx)
+    //  <- myExt(ydx).main.memAddrFwdCmp.view.zipWithIndex
+    //) {
+    //  myMemAddrFwdCmp := inpExt.main.memAddrFwdCmp(zdx)
+    //}
     for (
-      (myMemAddrFwdCmp, zdx)
-      <- myExt(ydx).main.memAddrFwdCmp.view.zipWithIndex
+      (myMemAddrFwd, zdx) <- myExt(ydx).main.memAddrFwd.view.zipWithIndex
     ) {
-      myMemAddrFwdCmp := inpExt.main.memAddrFwdCmp(zdx)
+      myMemAddrFwd := inpExt.main.memAddrFwd(zdx)
     }
     for ((myMemAddr, zdx) <- myExt(ydx).main.memAddr.view.zipWithIndex) {
       myMemAddr := inpExt.main.memAddr(zdx).resized
     }
     for (
-      (myMemAddrFwd, zdx) <- myExt(ydx).main.memAddrAlt.view.zipWithIndex
+      (myMemAddrAlt, zdx) <- myExt(ydx).main.memAddrAlt.view.zipWithIndex
     ) {
-      myMemAddrFwd := inpExt.main.memAddrAlt(zdx).resized
+      myMemAddrAlt := inpExt.main.memAddrAlt(zdx).resized
     }
   }
   def getPipeMemRmwExt(
@@ -1067,11 +1072,16 @@ case class SnowHousePipePayload(
     //outpExt := myExt(ydx)
     outpExt.pipeFlags := myExt(ydx).pipeFlags
     outpExt.main.nonMemAddr := myExt(ydx).main.nonMemAddr
+    //for (
+    //  (myMemAddrFwdCmp, zdx)
+    //  <- myExt(ydx).main.memAddrFwdCmp.view.zipWithIndex
+    //) {
+    //  outpExt.main.memAddrFwdCmp(zdx) := myMemAddrFwdCmp
+    //}
     for (
-      (myMemAddrFwdCmp, zdx)
-      <- myExt(ydx).main.memAddrFwdCmp.view.zipWithIndex
+      (myMemAddrFwd, zdx) <- myExt(ydx).main.memAddrFwd.view.zipWithIndex
     ) {
-      outpExt.main.memAddrFwdCmp(zdx) := myMemAddrFwdCmp
+      outpExt.main.memAddrFwd(zdx) := myMemAddrFwd.resized
     }
     for ((myMemAddr, zdx) <- myExt(ydx).main.memAddr.view.zipWithIndex) {
       outpExt.main.memAddr(zdx) := myMemAddr.resized
@@ -1080,9 +1090,9 @@ case class SnowHousePipePayload(
       //)
     }
     for (
-      (myMemAddrFwd, zdx) <- myExt(ydx).main.memAddrAlt.view.zipWithIndex
+      (myMemAddrAlt, zdx) <- myExt(ydx).main.memAddrAlt.view.zipWithIndex
     ) {
-      outpExt.main.memAddrAlt(zdx) := myMemAddrFwd.resized
+      outpExt.main.memAddrAlt(zdx) := myMemAddrAlt.resized
     }
   }
   def formalSetPipeMemRmwFwd(
