@@ -169,13 +169,21 @@ case class SnowHousePipeStageInstrFetch(
     temp.setName(s"rSavedExSetPc")
   }
 
+  val rMyPsExSetPcFire = (
+    Reg(Bool(), init=False)
+  )
   when (
-    psExSetPc.fire
-    && 
-    !rSavedExSetPc.fire
+    //psExSetPc.fire
+    //&& 
+    //!rSavedExSetPc.fire
     //psExSetPc.valid1
+    !rMyPsExSetPcFire
   ) {
+    rMyPsExSetPcFire := psExSetPc.fire
     rSavedExSetPc := psExSetPc
+  }
+  when (up.isFiring) {
+    rMyPsExSetPcFire := False
   }
   val myNextRegPcInit = (
     //(
