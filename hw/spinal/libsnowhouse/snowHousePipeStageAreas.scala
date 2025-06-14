@@ -1268,6 +1268,12 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
       } otherwise /*is (True)*/ {
         if (idx == 0) {
           io.shouldIgnoreInstr := True
+          io.modMemWordValid.foreach(current => {
+            current := False
+          })
+          io.modMemWord.foreach(modMemWord => {
+            modMemWord := modMemWord.getZero
+          })
         } else {
           lowerMyFanoutShouldIgnoreInstr := True
           io.opIs := 0x0
@@ -1279,12 +1285,6 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
           )
           io.opIsMultiCycle.foreach(current => {
             current := False
-          })
-          io.modMemWordValid.foreach(current => {
-            current := False
-          })
-          io.modMemWord.foreach(modMemWord => {
-            modMemWord := modMemWord.getZero
           })
         }
         when (
