@@ -762,7 +762,7 @@ case class SnowHousePipeStageExecuteSetOutpModMemWordIo(
     UInt(cfg.mainWidth bits)
   ))
   val regPc = /*in*/(UInt(cfg.mainWidth bits))
-  val regPcSetItCnt = /*in*/(Vec.fill(2)(
+  val regPcSetItCnt = /*in*/(Vec.fill(7)(
     UInt(
       1 bits
     )
@@ -1133,7 +1133,7 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
   io.decodeExt.memAccessSubKind := SnowHouseMemAccessSubKind.Sz8
   io.decodeExt.memAccessIsPush := False
   val nextShouldIgnoreInstrState = (
-    Vec.fill(2)(
+    Vec.fill(io.regPcSetItCnt.size)(
       Bool()
     )
     //SnowHouseShouldIgnoreInstrState()
@@ -1178,7 +1178,7 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
   )
 
   io.multiCycleOpInfoIdx := 0x0
-  val lowerMyFanoutShouldIgnoreInstr = Bool()
+  //val lowerMyFanoutShouldIgnoreInstr = Bool()
   //when (
   //  //io.shouldIgnoreInstr
   //  lowerMyFanoutShouldIgnoreInstr
@@ -1256,9 +1256,10 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
       when /*is*/ (rShouldIgnoreInstrState(idx) === False) {
         if (idx == 0) {
           io.shouldIgnoreInstr := False
-        } else {
-          lowerMyFanoutShouldIgnoreInstr := False
-        }
+        } 
+        //else {
+        //  lowerMyFanoutShouldIgnoreInstr := False
+        //}
         when (io.opIsJmp) {
           nextShouldIgnoreInstrState(idx) := True
         }
@@ -1268,21 +1269,26 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
       } otherwise /*is (True)*/ {
         if (idx == 0) {
           io.shouldIgnoreInstr := True
+        } else if (idx == 1) {
           io.modMemWordValid.foreach(current => {
             current := False
           })
+        } else if (idx == 2) {
           io.modMemWord.foreach(modMemWord => {
             modMemWord := modMemWord.getZero
           })
-        } else {
-          lowerMyFanoutShouldIgnoreInstr := True
+        } else if (idx == 3) {
+          //lowerMyFanoutShouldIgnoreInstr := True
           io.opIs := 0x0
+        } else if (idx == 4) {
           io.opIsMemAccess.foreach(current => {
             current := False
           })
+        } else if (idx == 5) {
           io.opIsAnyMultiCycle := (
             False
           )
+        } else if (idx == 6) {
           io.opIsMultiCycle.foreach(current => {
             current := False
           })
