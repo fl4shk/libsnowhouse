@@ -187,9 +187,9 @@ case class SnowHousePipeStageInstrFetch(
     rMyPsExSetPcFire := psExSetPc.fire
     rSavedExSetPc := psExSetPc
   }
-  when (up.isFiring) {
-    rMyPsExSetPcFire := False
-  }
+  //when (up.isFiring) {
+  //  rMyPsExSetPcFire := False
+  //}
   val myNextRegPcInit = (
     //(
     //  ((3.toLong * (cfg.instrMainWidth.toLong / 8.toLong)).toLong
@@ -266,12 +266,20 @@ case class SnowHousePipeStageInstrFetch(
       init=io.ibus.sendData.addr.getZero,
     )
   )
-  when (rSavedExSetPc.fire) {
-    myRegPcSetItCnt.foreach(current => {
-      current := 0x1
-    })
-  }
+  //myRegPcSetItCnt.foreach(current => {
+  //  current := 0x0
+  //})
   when (up.isFiring) {
+    when (rMyPsExSetPcFire) {
+      rMyPsExSetPcFire := False
+      myRegPcSetItCnt.foreach(current => {
+        current := 0x1
+      })
+    } otherwise {
+      myRegPcSetItCnt.foreach(current => {
+        current := 0x0
+      })
+    }
     myInstrCnt.any := rPrevInstrCnt.any + 1
     //when (psExSetPc.fire) {
     //  rSavedExSetPc := rSavedExSetPc.getZero
@@ -319,9 +327,9 @@ case class SnowHousePipeStageInstrFetch(
       //when (!rPrevRegPcSetItCnt.msb) {
       //  myRegPcSetItCnt := rPrevRegPcSetItCnt - 1
       //}
-      myRegPcSetItCnt.foreach(current => {
-        current := 0x0
-      })
+      //myRegPcSetItCnt.foreach(current => {
+      //  current := 0x0
+      //})
       //nextRegPcSetItCnt := 0x0
       //when (
       //  //RegNext(myRegPcSetItCnt) init(0x0)
