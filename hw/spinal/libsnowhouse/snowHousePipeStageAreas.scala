@@ -617,6 +617,23 @@ case class SnowHousePipeStageInstrDecode(
   ) generate(
     doDecodeFunc(this)
   )
+  val rPrevRegPcSetItCnt = (
+    RegNext/*When*/(
+      next=upPayload.regPcSetItCnt,
+      //cond=up.isFiring,
+    )
+    init(-1)
+  )
+  when (psExSetPc.fire) {
+    upPayload.regPcSetItCnt := 2
+  }
+  when (up.isFiring) {
+    when (!rPrevRegPcSetItCnt.msb) {
+      upPayload.regPcSetItCnt := (
+        rPrevRegPcSetItCnt - 1
+      )
+    }
+  }
   //when (up.isValid) {
     startDecode := True
     tempInstr := myInstr
@@ -1177,49 +1194,58 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
   //  io.shouldIgnoreInstr := True
   //  lowerMyFanoutShouldIgnoreInstr := True
   //}
-  val rShouldIgnoreInstrCnt = (
-    Reg(SInt(3 bits))
-    init(-1)
-  )
-  when (!rShouldIgnoreInstrCnt.msb) {
+
+  //val rShouldIgnoreInstrCnt = (
+  //  Reg(SInt(3 bits))
+  //  init(-1)
+  //)
+  when (
+    //!rShouldIgnoreInstrCnt.msb
+    !io.regPcSetItCnt.msb
+  ) {
     io.shouldIgnoreInstr := True
     lowerMyFanoutShouldIgnoreInstr := True
   }
-  when (io.upIsFiring) {
-    //rShouldIgnoreInstrShift := (
-    //  Cat(
-    //    False,
-    //    rShouldIgnoreInstrShift(rShouldIgnoreInstrShift.high downto 1)
-    //  ).asUInt
-    //)
-    when (
-      //rShouldIgnoreInstrShift.lsb
-      !rShouldIgnoreInstrCnt.msb
-    ) {
-      rShouldIgnoreInstrCnt := (
-        rShouldIgnoreInstrCnt - 1
-      )
-    } otherwise {
-      when (io.opIsJmp) {
-        rShouldIgnoreInstrCnt := (
-          2
-        )
-        //rShouldIgnoreInstrShift := (
-        //  U(
-        //    rShouldIgnoreInstrShift.getWidth bits,
-        //    rShouldIgnoreInstrShift.high -> True,
-        //    default -> False
-        //  )
-        //)
-      }
-    }
-    //when (!rShouldIgnoreInstrState(0)) {
-    //  io.shouldIgnoreInstr := False
-    //  //when (io.opIsJmp) {
-    //  //  io.shouldIgnoreInstr := False
-    //  //}
-    //}
-  }
+
+  //switch (rShouldIgnoreInstrState) {
+  //}
+
+  //when (io.upIsFiring) {
+  //  //rShouldIgnoreInstrShift := (
+  //  //  Cat(
+  //  //    False,
+  //  //    rShouldIgnoreInstrShift(rShouldIgnoreInstrShift.high downto 1)
+  //  //  ).asUInt
+  //  //)
+  //  when (
+  //    //rShouldIgnoreInstrShift.lsb
+  //    //!rShouldIgnoreInstrCnt.msb
+  //    !io.regPcSetItCnt.msb
+  //  ) {
+  //    //rShouldIgnoreInstrCnt := (
+  //    //  rShouldIgnoreInstrCnt - 1
+  //    //)
+  //  } otherwise {
+  //    when (io.opIsJmp) {
+  //      rShouldIgnoreInstrCnt := (
+  //        2
+  //      )
+  //      //rShouldIgnoreInstrShift := (
+  //      //  U(
+  //      //    rShouldIgnoreInstrShift.getWidth bits,
+  //      //    rShouldIgnoreInstrShift.high -> True,
+  //      //    default -> False
+  //      //  )
+  //      //)
+  //    }
+  //  }
+  //  //when (!rShouldIgnoreInstrState(0)) {
+  //  //  io.shouldIgnoreInstr := False
+  //  //  //when (io.opIsJmp) {
+  //  //  //  io.shouldIgnoreInstr := False
+  //  //  //}
+  //  //}
+  //}
   ////io.shouldIgnoreInstr := !rShouldIgnoreInstrState.asBits(0)
   ////lowerMyFanoutShouldIgnoreInstr := !rShouldIgnoreInstrState.asBits(0)
   //switch (rShouldIgnoreInstrState) {
