@@ -178,8 +178,8 @@ case class SnowHousePipeStageInstrFetch(
     Reg(Bool(), init=False)
   )
   when (
-    //psExSetPc.fire
-    //&& 
+    psExSetPc.fire
+    && 
     //!rSavedExSetPc.fire
     //psExSetPc.valid1
     !rMyPsExSetPcFire
@@ -266,6 +266,11 @@ case class SnowHousePipeStageInstrFetch(
       init=io.ibus.sendData.addr.getZero,
     )
   )
+  when (rSavedExSetPc.fire) {
+    myRegPcSetItCnt.foreach(current => {
+      current := 0x1
+    })
+  }
   when (up.isFiring) {
     myInstrCnt.any := rPrevInstrCnt.any + 1
     //when (psExSetPc.fire) {
@@ -290,9 +295,9 @@ case class SnowHousePipeStageInstrFetch(
     //} else
     when (rSavedExSetPc.fire) {
       rSavedExSetPc := rSavedExSetPc.getZero
-      myRegPcSetItCnt.foreach(current => {
-        current := 0x1
-      })
+      //myRegPcSetItCnt.foreach(current => {
+      //  current := 0x1
+      //})
       //myRegPcSetItCnt := 0x1
       val temp = (
         rSavedExSetPc.nextPc - (3 * (cfg.instrMainWidth / 8))
@@ -1239,18 +1244,20 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
   //  lowerMyFanoutShouldIgnoreInstr := True
   //}
   for (idx <- 0 until rShouldIgnoreInstrState.size) {
-    switch (rShouldIgnoreInstrState(idx)) {
-      is (False) {
+    //switch (rShouldIgnoreInstrState(idx)) {
+      when /*is*/ (rShouldIgnoreInstrState(idx) === False) {
         if (idx == 0) {
           io.shouldIgnoreInstr := False
         } else {
           lowerMyFanoutShouldIgnoreInstr := False
         }
-        when (io.opIsJmp) {
-          nextShouldIgnoreInstrState(idx) := True
-        }
-      }
-      is (True) {
+        //when (io.opIsJmp) {
+        //  nextShouldIgnoreInstrState(idx) := True
+        //}
+        //when (io.opIsJmp) {
+        //  nextShouldIgnoreInstrState(idx) := True
+        //}
+      } otherwise /*is (True)*/ {
         if (idx == 0) {
           io.shouldIgnoreInstr := True
         } else {
@@ -1272,13 +1279,26 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
             modMemWord := modMemWord.getZero
           })
         }
-        when (
-          //io.regPcSetItCnt.msb
-          io.regPcSetItCnt(idx)(0)
-        ) {
-          nextShouldIgnoreInstrState(idx) := False
-        }
+        //when (
+        //  ////io.regPcSetItCnt.msb
+        //  io.upIsFiring
+        //  && io.regPcSetItCnt(idx)(0)
+        //) {
+        //  nextShouldIgnoreInstrState(idx) := False
+        //}
       }
+    //}
+    when (io.opIsJmp) {
+      nextShouldIgnoreInstrState(idx) := True
+    }
+    when (
+      ////io.regPcSetItCnt.msb
+      //io.upIsFiring
+      //&& 
+      io.upIsFiring
+      && io.regPcSetItCnt(idx)(0)
+    ) {
+      nextShouldIgnoreInstrState(idx) := False
     }
   }
 
@@ -1852,15 +1872,20 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
             //    current := False
             //  })
             //}
-            io.modMemWord(0) := (
-              //io.regPc + ((cfg.instrMainWidth / 8) * 1)
-              io.regPcPlusInstrSize
-            )
-            io.psExSetPc.valid := True
+            //io.modMemWord(0) := (
+            //  //io.regPc + ((cfg.instrMainWidth / 8) * 1)
+            //  io.regPcPlusInstrSize
+            //)
+            //io.psExSetPc.valid := True
             //when (
             //  //!io.shouldIgnoreInstr
             //  !lowerMyFanoutShouldIgnoreInstr
             //) {
+              io.modMemWord(0) := (
+                //io.regPc + ((cfg.instrMainWidth / 8) * 1)
+                io.regPcPlusInstrSize
+              )
+              io.psExSetPc.valid := True
               opInfo.srcArr(0) match {
                 case SrcKind.Gpr => {
                   io.psExSetPc.nextPc := (

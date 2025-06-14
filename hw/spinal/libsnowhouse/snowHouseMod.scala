@@ -91,26 +91,27 @@ case class SnowHouseInstrDataDualRam(
   //if (fastIbusReady) {
   //  io.ibus.ready := io.ibus.rValid
   //} else {
-  //  //io.ibus.ready.setAsReg() init(False)
+  //  io.ibus.ready.setAsReg() init(False)
   //  io.ibus.ready := False
   //  //rReadyPipe.head := False
   //  //io.ibus.ready := rReadyPipe1
   //  //rReadyPipe1 := False
   //  //io.ibus.recvData.instr.setAsReg() init(0)
-  //  when (/*RegNext*/(io.ibus.rValid)) {
+  //  when (/*RegNext*/(io.ibus.nextValid)) {
   //    when (
   //      rIbusReadyCnt > 0
   //    ) {
   //      rIbusReadyCnt := rIbusReadyCnt - 1
   //    } otherwise {
   //      rIbusReadyState := !rIbusReadyState
+  //      //io.ibus.ready := True
   //      when (!rIbusReadyState) {
   //        rIbusReadyCnt := 5
   //      } otherwise {
   //        rIbusReadyCnt := 0
   //      }
   //    }
-  //    when ((rIbusReadyCnt - 2).msb) {
+  //    when ((rIbusReadyCnt - 1).msb) {
   //      io.ibus.ready := True
   //    }
   //  }
