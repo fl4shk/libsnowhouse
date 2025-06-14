@@ -1244,8 +1244,8 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
   //  lowerMyFanoutShouldIgnoreInstr := True
   //}
   for (idx <- 0 until rShouldIgnoreInstrState.size) {
-    switch (rShouldIgnoreInstrState(idx)) {
-      /*when*/ is (/*rShouldIgnoreInstrState(idx) ===*/ False) {
+    //switch (rShouldIgnoreInstrState(idx)) {
+      when /*is*/ (rShouldIgnoreInstrState(idx) === False) {
         if (idx == 0) {
           io.shouldIgnoreInstr := False
         } else {
@@ -1257,8 +1257,7 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
         //when (io.opIsJmp) {
         //  nextShouldIgnoreInstrState(idx) := True
         //}
-      } 
-      /*otherwise*/ is (True) {
+      } otherwise /*is (True)*/ {
         if (idx == 0) {
           io.shouldIgnoreInstr := True
         } else {
@@ -1288,7 +1287,7 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
           nextShouldIgnoreInstrState(idx) := False
         }
       }
-    }
+    //}
     //when (io.opIsJmp) {
     //  nextShouldIgnoreInstrState(idx) := True
     //}
