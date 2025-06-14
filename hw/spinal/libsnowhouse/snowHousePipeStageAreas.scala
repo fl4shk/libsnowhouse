@@ -4124,18 +4124,53 @@ case class SnowHousePipeStageExecute(
     myDoStall.sFindFirst(_ === True)._1
   ) {
     for (ydx <- 0 until cfg.regFileCfg.memArrSize) {
-      outp.myExt(ydx).valid.foreach(current => {
-        current := False
-      })
+      //outp.myExt(ydx).valid.foreach(current => {
+      //  current := False
+      //})
+      //outp.myExt(ydx).memAddrFwd.foreach(current => {
+      //  current := 
+      //})
       outp.myExt(ydx).modMemWordValid.foreach(current => {
         current := (
           False
         )
       })
     }
+    cfg.haveZeroReg match {
+      case Some(myZeroRegIdx) => {
+        for (ydx <- 0 until cfg.regFileCfg.memArrSize) {
+          outp.myExt(ydx).memAddrAlt.foreach(current => {
+            current := myZeroRegIdx
+          })
+        }
+      }
+      case None => {
+      }
+    }
     //when (myDoStall.sFindFirst(_ === True)._1) {
       cMid0Front.duplicateIt()
     //}
+  }
+  cfg.haveZeroReg match {
+    case Some(myZeroRegIdx) => {
+      when (setOutpModMemWord.io.shouldIgnoreInstr) {
+        for (ydx <- 0 until cfg.regFileCfg.memArrSize) {
+          outp.myExt(ydx).memAddr.foreach(current => {
+            current := myZeroRegIdx
+          })
+          outp.myExt(ydx).memAddrAlt.foreach(current => {
+            current := myZeroRegIdx
+          })
+          outp.myExt(ydx).memAddrFwd.foreach(current => {
+            current.foreach(innerCurrent => {
+              innerCurrent := myZeroRegIdx
+            })
+          })
+        }
+      }
+    }
+    case None => {
+    }
   }
   if (cfg.optFormal) {
     outp.psExSetOutpModMemWordIo := setOutpModMemWord.io
@@ -4451,6 +4486,50 @@ case class SnowHousePipeStageMem(
     //)
     //val myDecodeExt = midModPayload(extIdxUp).decodeExt
   }
+  //cfg.haveZeroReg match {
+  //  case Some(myZeroRegIdx) => {
+  //    val myDecodeExt = midModPayload(extIdxUp).decodeExt
+  //    val mapElem = midModPayload(extIdxUp).gprIdxToMemAddrIdxMap(0)
+  //    val myCurrExt = (
+  //      if (!mapElem.haveHowToSetIdx) (
+  //        midModPayload(extIdxUp).myExt(
+  //          0
+  //        )
+  //      ) else (
+  //        midModPayload(extIdxUp).myExt(
+  //          mapElem.howToSetIdx
+  //        )
+  //      )
+  //    )
+  //    when (
+  //      io.dbusExtraReady(1)
+  //      || cMidModFront.up.isFiring
+  //    ) {
+  //      for (zdx <- 0 until cfg.regFileCfg.modRdPortCnt) {
+  //        //for (idx <- 0 until cfg.regFileCfg.numMyUpExtDel2) 
+  //        //val idx = cfg.regFileCfg.numMyUpExDel2 - 1
+  //        myCurrExt.memAddrAlt(zdx) := (
+  //          myCurrExt.memAddr(PipeMemRmw.modWrIdx)
+  //        )
+  //      }
+  //    } otherwise {
+  //      for (zdx <- 0 until cfg.regFileCfg.modRdPortCnt) {
+  //        //for (idx <- 0 until cfg.regFileCfg.numMyUpExtDel2) {
+  //        myCurrExt.memAddrAlt(zdx) := (
+  //          //myCurrExt.memAddr(PipeMemRmw.modWrIdx)
+  //          //0x0
+  //          myZeroRegIdx
+  //        )
+  //        myCurrExt.modMemWord := (
+  //          0x0
+  //        )
+  //        //}
+  //      }
+  //    }
+  //  }
+  //  case None => {
+  //  }
+  //}
   when (
     //RegNext(io.dbus.nextValid)
     //io.dbus.ready
@@ -4476,7 +4555,9 @@ case class SnowHousePipeStageMem(
     //} otherwise {
     //}
   }
-  when (io.dbusExtraReady(1)) {
+  //if (cfg.haveZeroReg) {
+  //}
+  when (io.dbusExtraReady(2)) {
     val myDecodeExt = midModPayload(extIdxUp).decodeExt
     val mapElem = midModPayload(extIdxUp).gprIdxToMemAddrIdxMap(0)
     val myCurrExt = (

@@ -47,7 +47,7 @@ add r7, r7, -1
 bne r7, r0, _push_loop
 //--------
 mul r7, r6, r1
-udiv r7, r6, r1
+udiv r7, r7, r1
 umod r8, r6, r1
 beq r0, r0, _loop
 

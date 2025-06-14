@@ -415,7 +415,8 @@ case class SnowHouseDataCache(
     nextLineAddrCnt := rLineAddrCnt + 1
     rRevLineAddrCnt := rRevLineAddrCnt - 1
   }
-  def setLineBusAddrCntsToStart(): Unit = {
+  def setLineBusAddrCntsToStart(
+  ): Unit = {
     nextLineAddrCnt := 0x0
     rRevLineAddrCnt := (
       ///*log2Up*/(io.tlCfg.beatMax) - 2
@@ -425,7 +426,7 @@ case class SnowHouseDataCache(
           log2Up(cacheCfg.lineSizeBytes) - log2Up(cacheCfg.wordSizeBytes)
         )
       )
-      - 1 
+      - 1
       //+ (
       //  //if (isIcache) (
       //    - 1

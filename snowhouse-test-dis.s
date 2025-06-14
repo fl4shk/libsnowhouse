@@ -32,7 +32,7 @@ Disassembly of section .text:
   60:	ff ff 70 07 	add	r7, r7, -1
   64:	ec ff 01 97 	bne	r7, r0, -20
   68:	00 00 61 77 	mul	r7, r6, r1
-  6c:	01 00 61 77 	udiv	r7, r6, r1
+  6c:	01 00 71 77 	udiv	r7, r7, r1
   70:	03 00 61 78 	umod	r8, r6, r1
   74:	44 00 00 90 	beq	r0, r0, 68
 	...
