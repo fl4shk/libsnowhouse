@@ -1225,19 +1225,19 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
   //  Reg(SInt(3 bits))
   //  init(-1)
   //)
-  when (
-    //!rShouldIgnoreInstrCnt.msb
-    //!io.regPcSetItCnt.msb
-    //|| 
-    rShouldIgnoreInstrState(0)
-  ) {
-    io.shouldIgnoreInstr := True
-  }
-  when (
-    rShouldIgnoreInstrState(1)
-  ) {
-    lowerMyFanoutShouldIgnoreInstr := True
-  }
+  //when (
+  //  //!rShouldIgnoreInstrCnt.msb
+  //  //!io.regPcSetItCnt.msb
+  //  //|| 
+  //  rShouldIgnoreInstrState(0)
+  //) {
+  //  io.shouldIgnoreInstr := True
+  //}
+  //when (
+  //  rShouldIgnoreInstrState(1)
+  //) {
+  //  lowerMyFanoutShouldIgnoreInstr := True
+  //}
   for (idx <- 0 until rShouldIgnoreInstrState.size) {
     switch (rShouldIgnoreInstrState(idx)) {
       is (False) {
@@ -1246,6 +1246,11 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
         }
       }
       is (True) {
+        if (idx == 0) {
+          io.shouldIgnoreInstr := True
+        } else {
+          lowerMyFanoutShouldIgnoreInstr := True
+        }
         when (
           //io.regPcSetItCnt.msb
           io.regPcSetItCnt(idx)(0)
