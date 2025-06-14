@@ -791,9 +791,9 @@ case class SnowHouseDecodeExt(
   //private val _opIsMemAccessIdx = 0
   private val _opIsCpyNonJmpAluIdx = 0
   private val _opIsAluShiftIdx = 1
-  private val _opIsJmpIdx = 2
+  //private val _opIsJmpIdx = 2
   //private val _opIsMultiCycleIdx = 4
-  val opIsLim = 3
+  val opIsLim = 2
   val opIs = /*out*/(UInt(opIsLim bits))
   //val memAccessLdStKind = SnowHouseDecodeExtLdStKind() //Bool()
   //def memAccessIsLoad = (
@@ -818,8 +818,9 @@ case class SnowHouseDecodeExt(
   )
   def opIsCpyNonJmpAlu = opIs(_opIsCpyNonJmpAluIdx)
   def opIsAluShift = opIs(_opIsAluShiftIdx)
-  def opIsJmp = opIs(_opIsJmpIdx)
+  //def opIsJmp = opIs(_opIsJmpIdx)
   //def opIsMultiCycle = opIs(_opIsMultiCycleIdx)
+  val opIsJmp = Bool()
   val opIsAnyMultiCycle = Bool()
   val opIsMultiCycle = Vec.fill(
     cfg.multiCycleOpInfoMap.size
@@ -1022,7 +1023,7 @@ case class SnowHousePipePayload(
   )
   //psExSetOutpModMemWordIo.simPublic()
   val regPc = UInt(cfg.mainWidth bits)//.simPublic()
-  val regPcSetItCnt = Vec.fill(7)(
+  val regPcSetItCnt = Vec.fill(cfg.lowerMyFanout)(
     UInt(
       //cfg.instrCntWidth bits
       1 bits
