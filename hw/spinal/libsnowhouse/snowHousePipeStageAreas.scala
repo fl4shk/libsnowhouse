@@ -1753,9 +1753,9 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
                     io.dbusHostPayload.accKind := (
                       tempMemAccessKind
                     )
-                    io.dbusHostPayload.data := (
-                      io.dbusHostPayload.data.getZero
-                    )
+                    //io.dbusHostPayload.data := (
+                    //  io.dbusHostPayload.data.getZero
+                    //)
                   } else { // if (isStore)
                     val tempMemAccessKind = (
                       SnowHouseMemAccessKind.Store
