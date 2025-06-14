@@ -1022,10 +1022,12 @@ case class SnowHousePipePayload(
   )
   //psExSetOutpModMemWordIo.simPublic()
   val regPc = UInt(cfg.mainWidth bits)//.simPublic()
-  val regPcSetItCnt = UInt(
-    //cfg.instrCntWidth bits
-    1 bits
-  ) //Bool()
+  val regPcSetItCnt = Vec.fill(2)(
+    UInt(
+      //cfg.instrCntWidth bits
+      1 bits
+    ) //Bool()
+  )
   val regPcPlusInstrSize = UInt(cfg.mainWidth bits)
   val regPcPlusImm = UInt(cfg.mainWidth bits)//.simPublic()
   val imm = Vec.fill(4)(UInt(cfg.mainWidth bits))//.simPublic()
