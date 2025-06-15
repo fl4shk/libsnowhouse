@@ -1252,8 +1252,8 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
   //  lowerMyFanoutShouldIgnoreInstr := True
   //}
   for (idx <- 0 until rShouldIgnoreInstrState.size) {
-    //switch (rShouldIgnoreInstrState(idx)) {
-      when /*is*/ (rShouldIgnoreInstrState(idx) === False) {
+    switch (rShouldIgnoreInstrState(idx)) {
+      /*when*/ is (/*rShouldIgnoreInstrState(idx) ===*/ False) {
         if (idx == 0) {
           io.shouldIgnoreInstr := False
         }
@@ -1266,17 +1266,17 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
         //when (io.opIsJmp) {
         //  nextShouldIgnoreInstrState(idx) := True
         //}
-      } otherwise /*is (True)*/ {
+      }
+      /*otherwise*/ is (True) {
         if (idx == 0) {
           io.shouldIgnoreInstr := True
-        } else if (idx == 1) {
           io.modMemWordValid.foreach(current => {
             current := False
           })
           io.modMemWord.foreach(modMemWord => {
             modMemWord := modMemWord.getZero
           })
-        } else if (idx == 2) {
+        } else if (idx == 1) {
           io.opIs := 0x0
           io.opIsMemAccess.foreach(current => {
             current := False
@@ -1288,6 +1288,8 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
             current := False
           })
         }
+        //else if (idx == 2) {
+        //}
         //else if (idx == 3) {
         //  //lowerMyFanoutShouldIgnoreInstr := True
         //  io.opIsMultiCycle.foreach(current => {
@@ -1306,7 +1308,7 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
           nextShouldIgnoreInstrState(idx) := False
         }
       }
-    //}
+    }
     //when (io.opIsJmp) {
     //  nextShouldIgnoreInstrState(idx) := True
     //}
