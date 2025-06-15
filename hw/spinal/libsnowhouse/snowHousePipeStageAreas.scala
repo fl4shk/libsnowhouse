@@ -174,9 +174,9 @@ case class SnowHousePipeStageInstrFetch(
     temp.setName(s"rSavedExSetPc")
   }
 
-  val rMyPsExSetPcFire = (
-    Reg(Bool(), init=False)
-  )
+  //val rMyPsExSetPcFire = (
+  //  Reg(Bool(), init=False)
+  //)
   when (
     psExSetPc.fire
     //&& 
@@ -184,7 +184,7 @@ case class SnowHousePipeStageInstrFetch(
     ////psExSetPc.valid1
     //!rMyPsExSetPcFire
   ) {
-    rMyPsExSetPcFire := True//psExSetPc.fire
+    //rMyPsExSetPcFire := True//psExSetPc.fire
     rSavedExSetPc.valid := True
     rSavedExSetPc.payload := psExSetPc.payload
   }
@@ -270,61 +270,20 @@ case class SnowHousePipeStageInstrFetch(
   //myRegPcSetItCnt.foreach(current => {
   //  current := 0x0
   //})
-  when (up.isFiring) {
-    when (rMyPsExSetPcFire) {
-      rMyPsExSetPcFire := False
-      myRegPcSetItCnt.foreach(current => {
-        current := 0x1
-      })
-    } otherwise {
+  switch (
+    Cat(
+      List(
+        up.isFiring,
+        rSavedExSetPc.fire
+      ).reverse
+    )
+  ) {
+    is (M"0-") {
+    }
+    is (M"10") {
       myRegPcSetItCnt.foreach(current => {
         current := 0x0
       })
-    }
-    myInstrCnt.any := rPrevInstrCnt.any + 1
-    //when (psExSetPc.fire) {
-    //  rSavedExSetPc := rSavedExSetPc.getZero
-    //  myRegPcSetItCnt := 0x1
-    //  val temp = (
-    //    psExSetPc.nextPc - (3 * (cfg.instrMainWidth / 8))
-    //  )
-    //  //when (io.ibus.ready) {
-    //    nextRegPc.assignFromBits(
-    //      temp.asBits
-    //    )
-    //  //} otherwise {
-    //  //  nextRegPc.assignFromBits(
-    //  //    (temp - 1).asBits
-    //  //  )
-    //  //}
-    //  io.ibus.sendData.addr.assignFromBits(
-    //    (temp + (2 * (cfg.instrMainWidth / 8))).asBits
-    //  )
-    //  myInstrCnt.jmp := rPrevInstrCnt.jmp + 1
-    //} else
-    when (rSavedExSetPc.fire) {
-      rSavedExSetPc := rSavedExSetPc.getZero
-      //myRegPcSetItCnt.foreach(current => {
-      //  current := 0x1
-      //})
-      //myRegPcSetItCnt := 0x1
-      val temp = (
-        rSavedExSetPc.nextPc - (3 * (cfg.instrMainWidth / 8))
-      )
-      //when (io.ibus.ready) {
-        nextRegPc.assignFromBits(
-          temp.asBits
-        )
-      //} otherwise {
-      //  nextRegPc.assignFromBits(
-      //    (temp - 1).asBits
-      //  )
-      //}
-      io.ibus.sendData.addr.assignFromBits(
-        (temp + (2 * (cfg.instrMainWidth / 8))).asBits
-      )
-      myInstrCnt.jmp := rPrevInstrCnt.jmp + 1
-    } otherwise {
       //when (!rPrevRegPcSetItCnt.msb) {
       //  myRegPcSetItCnt := rPrevRegPcSetItCnt - 1
       //}
@@ -362,7 +321,129 @@ case class SnowHousePipeStageInstrFetch(
       //}
       //rSavedExSetPc := rSavedExSetPc.getZero
     }
+    default {
+      myRegPcSetItCnt.foreach(current => {
+        current := 0x1
+      })
+      rSavedExSetPc := rSavedExSetPc.getZero
+      //myRegPcSetItCnt.foreach(current => {
+      //  current := 0x1
+      //})
+      //myRegPcSetItCnt := 0x1
+      val temp = (
+        rSavedExSetPc.nextPc - (3 * (cfg.instrMainWidth / 8))
+      )
+      //when (io.ibus.ready) {
+        nextRegPc.assignFromBits(
+          temp.asBits
+        )
+      //} otherwise {
+      //  nextRegPc.assignFromBits(
+      //    (temp - 1).asBits
+      //  )
+      //}
+      io.ibus.sendData.addr.assignFromBits(
+        (temp + (2 * (cfg.instrMainWidth / 8))).asBits
+      )
+      myInstrCnt.jmp := rPrevInstrCnt.jmp + 1
+    }
   }
+  //when (up.isFiring) {
+  //  when (
+  //    //rMyPsExSetPcFire
+  //    rSavedExSetPc.fire
+  //  ) {
+  //    //rMyPsExSetPcFire := False
+  //    myRegPcSetItCnt.foreach(current => {
+  //      current := 0x1
+  //    })
+  //  } otherwise {
+  //    myRegPcSetItCnt.foreach(current => {
+  //      current := 0x0
+  //    })
+  //  }
+  //  myInstrCnt.any := rPrevInstrCnt.any + 1
+  //  //when (psExSetPc.fire) {
+  //  //  rSavedExSetPc := rSavedExSetPc.getZero
+  //  //  myRegPcSetItCnt := 0x1
+  //  //  val temp = (
+  //  //    psExSetPc.nextPc - (3 * (cfg.instrMainWidth / 8))
+  //  //  )
+  //  //  //when (io.ibus.ready) {
+  //  //    nextRegPc.assignFromBits(
+  //  //      temp.asBits
+  //  //    )
+  //  //  //} otherwise {
+  //  //  //  nextRegPc.assignFromBits(
+  //  //  //    (temp - 1).asBits
+  //  //  //  )
+  //  //  //}
+  //  //  io.ibus.sendData.addr.assignFromBits(
+  //  //    (temp + (2 * (cfg.instrMainWidth / 8))).asBits
+  //  //  )
+  //  //  myInstrCnt.jmp := rPrevInstrCnt.jmp + 1
+  //  //} else
+  //  when (rSavedExSetPc.fire) {
+  //    rSavedExSetPc := rSavedExSetPc.getZero
+  //    //myRegPcSetItCnt.foreach(current => {
+  //    //  current := 0x1
+  //    //})
+  //    //myRegPcSetItCnt := 0x1
+  //    val temp = (
+  //      rSavedExSetPc.nextPc - (3 * (cfg.instrMainWidth / 8))
+  //    )
+  //    //when (io.ibus.ready) {
+  //      nextRegPc.assignFromBits(
+  //        temp.asBits
+  //      )
+  //    //} otherwise {
+  //    //  nextRegPc.assignFromBits(
+  //    //    (temp - 1).asBits
+  //    //  )
+  //    //}
+  //    io.ibus.sendData.addr.assignFromBits(
+  //      (temp + (2 * (cfg.instrMainWidth / 8))).asBits
+  //    )
+  //    myInstrCnt.jmp := rPrevInstrCnt.jmp + 1
+  //  } otherwise {
+  //    //when (!rPrevRegPcSetItCnt.msb) {
+  //    //  myRegPcSetItCnt := rPrevRegPcSetItCnt - 1
+  //    //}
+  //    //myRegPcSetItCnt.foreach(current => {
+  //    //  current := 0x0
+  //    //})
+  //    //nextRegPcSetItCnt := 0x0
+  //    //when (
+  //    //  //RegNext(myRegPcSetItCnt) init(0x0)
+  //    //  //!((rPrevRegPcSetItCnt - 1).msb)
+  //    //  !rPrevRegPcSetItCnt.msb
+  //    //) {
+  //    //  myRegPcSetItCnt := rPrevRegPcSetItCnt - 1
+  //    //}
+  //    //when (!psExSetPc.fire && !rSavedExSetPc.fire) {
+  //      val temp = (
+  //        //rPrevRegPcThenNext
+  //        rPrevRegPc + (cfg.instrMainWidth / 8)
+  //      )
+  //      //when (io.ibus.ready) {
+  //        nextRegPc.assignFromBits(
+  //          temp.asBits
+  //        )
+  //        io.ibus.sendData.addr.assignFromBits(
+  //          (temp + (2 * (cfg.instrMainWidth / 8))).asBits
+  //        )
+  //      //} otherwise {
+  //      //  nextRegPc.assignFromBits(
+  //      //    (temp - 1).asBits
+  //      //  )
+  //      //}
+  //      myInstrCnt.fwd := rPrevInstrCnt.fwd + 1
+  //    //} otherwise {
+  //    //  upModExt.regPcSetItCnt := 0x0
+  //    //}
+  //    //rSavedExSetPc := rSavedExSetPc.getZero
+  //  }
+  //}
   io.ibus.nextValid := (
     True
     //down.isReady
