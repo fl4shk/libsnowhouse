@@ -179,10 +179,10 @@ case class SnowHousePipeStageInstrFetch(
   )
   when (
     psExSetPc.fire
-    && 
-    //!rSavedExSetPc.fire
-    //psExSetPc.valid1
-    !rMyPsExSetPcFire
+    //&& 
+    ////!rSavedExSetPc.fire
+    ////psExSetPc.valid1
+    //!rMyPsExSetPcFire
   ) {
     rMyPsExSetPcFire := True//psExSetPc.fire
     rSavedExSetPc.valid := True
