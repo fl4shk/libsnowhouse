@@ -184,8 +184,9 @@ case class SnowHousePipeStageInstrFetch(
     //psExSetPc.valid1
     !rMyPsExSetPcFire
   ) {
-    rMyPsExSetPcFire := psExSetPc.fire
-    rSavedExSetPc := psExSetPc
+    rMyPsExSetPcFire := True//psExSetPc.fire
+    rSavedExSetPc.valid := True
+    rSavedExSetPc.payload := psExSetPc.payload
   }
   //when (up.isFiring) {
   //  rMyPsExSetPcFire := False
