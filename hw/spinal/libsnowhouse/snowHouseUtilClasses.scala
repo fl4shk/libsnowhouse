@@ -431,7 +431,7 @@ case class SnowHouseConfig(
   optFormal: Boolean=false,
 ) {
   def lowerMyFanout = 4
-  def lowerMyFanoutRegPcSetItCnt = 1
+  def lowerMyFanoutRegPcSetItCnt = 4
   //def lowerMyFanoutDec = multiCycle
   def instrMainWidth = subCfg.instrMainWidth
   def shRegFileCfg = subCfg.shRegFileCfg

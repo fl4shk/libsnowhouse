@@ -722,27 +722,27 @@ case class SnowHousePipeStageInstrDecode(
           nextShouldIgnoreInstrState(idx) := True
           startDecode := False
           tempInstr := tempInstr.getZero
-          cfg.haveZeroReg match {
-            case Some(myZeroRegIdx) => {
-              //when (setOutpModMemWord.io.shouldIgnoreInstr(0)) {
-                for (ydx <- 0 until cfg.regFileCfg.memArrSize) {
-                  upPayload.myExt(ydx).memAddr.foreach(current => {
-                    current := myZeroRegIdx
-                  })
-                  upPayload.myExt(ydx).memAddrAlt.foreach(current => {
-                    current := myZeroRegIdx
-                  })
-                  upPayload.myExt(ydx).memAddrFwd.foreach(current => {
-                    current.foreach(innerCurrent => {
-                      innerCurrent := myZeroRegIdx
-                    })
-                  })
-                }
-              //}
-            }
-            case None => {
-            }
-          }
+          //cfg.haveZeroReg match {
+          //  case Some(myZeroRegIdx) => {
+          //    //when (setOutpModMemWord.io.shouldIgnoreInstr(0)) {
+          //      for (ydx <- 0 until cfg.regFileCfg.memArrSize) {
+          //        upPayload.myExt(ydx).memAddr.foreach(current => {
+          //          current := myZeroRegIdx
+          //        })
+          //        upPayload.myExt(ydx).memAddrAlt.foreach(current => {
+          //          current := myZeroRegIdx
+          //        })
+          //        upPayload.myExt(ydx).memAddrFwd.foreach(current => {
+          //          current.foreach(innerCurrent => {
+          //            innerCurrent := myZeroRegIdx
+          //          })
+          //        })
+          //      }
+          //    //}
+          //  }
+          //  case None => {
+          //  }
+          //}
         } otherwise {
           startDecode := True
           tempInstr := myInstr
@@ -774,6 +774,27 @@ case class SnowHousePipeStageInstrDecode(
           //  current := False
           //})
         })
+        //cfg.haveZeroReg match {
+        //  case Some(myZeroRegIdx) => {
+        //    //when (setOutpModMemWord.io.shouldIgnoreInstr(0)) {
+        //      for (ydx <- 0 until cfg.regFileCfg.memArrSize) {
+        //        upPayload.myExt(ydx).memAddr.foreach(current => {
+        //          current := myZeroRegIdx
+        //        })
+        //        upPayload.myExt(ydx).memAddrAlt.foreach(current => {
+        //          current := myZeroRegIdx
+        //        })
+        //        upPayload.myExt(ydx).memAddrFwd.foreach(current => {
+        //          current.foreach(innerCurrent => {
+        //            innerCurrent := myZeroRegIdx
+        //          })
+        //        })
+        //      }
+        //    //}
+        //  }
+        //  case None => {
+        //  }
+        //}
         //upPayload.splitOp := (
         //  upPayload.splitOp.getZero
         //)
