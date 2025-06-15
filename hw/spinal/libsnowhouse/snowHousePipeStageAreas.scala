@@ -1272,13 +1272,13 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
       /*otherwise*/ is (True) {
         if (idx == 0) {
           io.shouldIgnoreInstr := True
+        } else if (idx == 1) {
           io.modMemWordValid.foreach(current => {
             current := False
           })
           io.modMemWord.foreach(modMemWord => {
             modMemWord := modMemWord.getZero
           })
-        } else if (idx == 1) {
           io.opIs := 0x0
           io.opIsMemAccess.foreach(current => {
             current := False
