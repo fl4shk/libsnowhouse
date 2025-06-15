@@ -52,7 +52,8 @@ umod r8, r6, r1
 beq r0, r0, _loop
 
 .rept 16
-cpy r0, r0
+//cpy r0, r0
+add r10, r1, 3
 .endr
 //--------
 //.align 2
@@ -76,14 +77,16 @@ _infin:
 beq r0, r0, _infin
 ////--------
 .rept 16
-cpy r0, r0
+//cpy r0, r0
+add r11, r1, 3
 .endr
 _increment:
 add r6, r6, 0x1
 jmp lr
 ////--------
 .rept 16
-cpy r0, r0
+//cpy r0, r0
+add r12, r1, 3
 .endr
 _divmod:
 //--------
@@ -91,6 +94,10 @@ udiv r7, r6, r1
 umod r8, r6, r1
 //--------
 jmp lr
+.rept 16
+//cpy r0, r0
+add r4, r1, 3
+.endr
 //--------
 _irq_handler:
 add r10, r10, 1
