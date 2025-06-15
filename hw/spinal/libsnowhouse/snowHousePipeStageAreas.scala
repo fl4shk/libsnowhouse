@@ -762,7 +762,7 @@ case class SnowHousePipeStageExecuteSetOutpModMemWordIo(
     UInt(cfg.mainWidth bits)
   ))
   val regPc = /*in*/(UInt(cfg.mainWidth bits))
-  val regPcSetItCnt = /*in*/(Vec.fill(cfg.lowerMyFanout)(
+  val regPcSetItCnt = /*in*/(Vec.fill(cfg.lowerMyFanoutRegPcSetItCnt)(
     UInt(
       1 bits
     )
@@ -1256,7 +1256,7 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
       when /*is*/ (rShouldIgnoreInstrState(idx) === False) {
         if (idx == 0) {
           io.shouldIgnoreInstr := False
-        } 
+        }
         //else {
         //  lowerMyFanoutShouldIgnoreInstr := False
         //}
@@ -1284,12 +1284,16 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
           io.opIsAnyMultiCycle := (
             False
           )
-        } else if (idx == 3) {
-          //lowerMyFanoutShouldIgnoreInstr := True
           io.opIsMultiCycle.foreach(current => {
             current := False
           })
         }
+        //else if (idx == 3) {
+        //  //lowerMyFanoutShouldIgnoreInstr := True
+        //  io.opIsMultiCycle.foreach(current => {
+        //    current := False
+        //  })
+        //}
         //else if (idx == 4) {
         //} else if (idx == 5) {
         //} else if (idx == 6) {
