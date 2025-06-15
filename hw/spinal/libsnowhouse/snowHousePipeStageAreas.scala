@@ -174,17 +174,30 @@ case class SnowHousePipeStageInstrFetch(
     temp.setName(s"rSavedExSetPc")
   }
 
-  //val rMyPsExSetPcFire = (
-  //  Reg(Bool(), init=False)
-  //)
+  val rMyPsExSetPcFire = {
+    //Reg(Bool(), init=False)
+    val temp = (
+      Reg(
+        Vec.fill(
+          //3
+          cfg.lowerMyFanoutRegPcSetItCnt + 1
+        )(
+          Bool()
+        )
+      )
+    )
+    temp.foreach(x => x.init(x.getZero))
+    temp
+  }
   when (
     psExSetPc.fire
     //&& 
     ////!rSavedExSetPc.fire
     ////psExSetPc.valid1
     //!rMyPsExSetPcFire
+    //&& down.isReady
   ) {
-    //rMyPsExSetPcFire := True//psExSetPc.fire
+    rMyPsExSetPcFire.foreach(x => x := True)//psExSetPc.fire
     rSavedExSetPc.valid := True
     rSavedExSetPc.payload := psExSetPc.payload
   }
@@ -270,6 +283,42 @@ case class SnowHousePipeStageInstrFetch(
   //myRegPcSetItCnt.foreach(current => {
   //  current := 0x0
   //})
+  for (idx <- 0 until rMyPsExSetPcFire.size) {
+    switch (
+      Cat(
+        List(
+          up.isFiring,
+          rMyPsExSetPcFire(idx)
+        ).reverse
+      )
+    ) {
+      is (M"0-") {
+      }
+      is (M"10") {
+        if (
+          idx == 0 || idx == 1
+        ) {
+          //myRegPcSetItCnt.foreach(current => {
+          //  current := 0x0
+          //})
+          myRegPcSetItCnt(idx) := 0x0
+        }
+      }
+      default {
+        rMyPsExSetPcFire(idx) := False
+        if (
+          idx == 0 || idx == 1
+        ) {
+          //myRegPcSetItCnt.foreach(current => {
+          //  current := 0x0
+          //})
+          myRegPcSetItCnt(idx) := 0x1
+        } else {
+          rSavedExSetPc := rSavedExSetPc.getZero
+        }
+      }
+    }
+  }
   switch (
     Cat(
       List(
@@ -281,9 +330,6 @@ case class SnowHousePipeStageInstrFetch(
     is (M"0-") {
     }
     is (M"10") {
-      myRegPcSetItCnt.foreach(current => {
-        current := 0x0
-      })
       //when (!rPrevRegPcSetItCnt.msb) {
       //  myRegPcSetItCnt := rPrevRegPcSetItCnt - 1
       //}
@@ -315,17 +361,17 @@ case class SnowHousePipeStageInstrFetch(
         //    (temp - 1).asBits
         //  )
         //}
-        myInstrCnt.fwd := rPrevInstrCnt.fwd + 1
+        //myInstrCnt.fwd := rPrevInstrCnt.fwd + 1
       //} otherwise {
       //  upModExt.regPcSetItCnt := 0x0
       //}
       //rSavedExSetPc := rSavedExSetPc.getZero
     }
     default {
-      myRegPcSetItCnt.foreach(current => {
-        current := 0x1
-      })
-      rSavedExSetPc := rSavedExSetPc.getZero
+      //myRegPcSetItCnt.foreach(current => {
+      //  current := 0x1
+      //})
+      //rSavedExSetPc := rSavedExSetPc.getZero
       //myRegPcSetItCnt.foreach(current => {
       //  current := 0x1
       //})
@@ -345,7 +391,7 @@ case class SnowHousePipeStageInstrFetch(
       io.ibus.sendData.addr.assignFromBits(
         (temp + (2 * (cfg.instrMainWidth / 8))).asBits
       )
-      myInstrCnt.jmp := rPrevInstrCnt.jmp + 1
+      //myInstrCnt.jmp := rPrevInstrCnt.jmp + 1
     }
   }
   //when (up.isFiring) {
