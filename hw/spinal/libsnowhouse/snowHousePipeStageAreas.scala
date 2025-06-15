@@ -398,8 +398,9 @@ case class SnowHousePipeStageInstrDecode(
   val psIdHaltIt: Bool,
   val psExSetPc: Flow[SnowHousePsExSetPcPayload],
   val pcChangeState: Bool/*UInt*/,
-  val shouldIgnoreInstr: Bool,
+  val shouldIgnoreInstr: Vec[Bool],
   val doDecodeFunc: (SnowHousePipeStageInstrDecode) => Area,
+  //val rShouldIgnoreInstrState: Vec[Bool],
 ) extends Area {
   def cfg = args.cfg
   def modIo = args.io
@@ -663,11 +664,132 @@ case class SnowHousePipeStageInstrDecode(
   //    )
   //  }
   //}
+  val nextShouldIgnoreInstrState = (
+    Vec.fill(
+      //io.regPcSetItCnt.size
+      cfg.lowerMyFanoutRegPcSetItCnt
+    )(
+      Bool()
+    )
+    //SnowHouseShouldIgnoreInstrState()
+  )
+  val rShouldIgnoreInstrState = {
+    val temp = RegNext(nextShouldIgnoreInstrState)
+    //init(
+    //  nextShouldIgnoreInstrState.getZero
+    //  //SnowHouseShouldIgnoreInstrState.Idle
+    //)
+    temp.foreach(current => {
+      current.init(current.getZero)
+    })
+    temp
+  }
+  //for (idx <- 0 until rShouldIgnoreInstrState.size) {
+    nextShouldIgnoreInstrState := rShouldIgnoreInstrState
+  //}
+  val rSavedExSetPcFire = (
+    Reg(Bool(), init=False)
+  )
+  when (psExSetPc.fire) {
+    rSavedExSetPcFire := True
+  }
+  for (idx <- 0 until rShouldIgnoreInstrState.size) {
+    switch (rShouldIgnoreInstrState(idx)) {
+      /*when*/ is (/*rShouldIgnoreInstrState(idx) ===*/ False) {
+        //if (idx == 0) {
+          //io.shouldIgnoreInstr(idx) := False
+          upPayload.instrCnt.shouldIgnoreInstr.foreach(
+            _ := False
+          )
+        //}
+        //else {
+        //  lowerMyFanoutShouldIgnoreInstr := False
+        //}
+        when (
+          //io.opIsJmp
+          up.isFiring
+          && (
+            psExSetPc.fire
+            //|| RegNextWhen(
+            //  next=psExSetPc.fire,
+            //  cond=up.isFiring,
+            //  init=False,
+            //)
+            || rSavedExSetPcFire
+          )
+        ) {
+          rSavedExSetPcFire := False
+          nextShouldIgnoreInstrState(idx) := True
+          startDecode := False
+          tempInstr := tempInstr.getZero
+        } otherwise {
+          startDecode := True
+          tempInstr := myInstr
+        }
+        //when (io.opIsJmp) {
+        //  nextShouldIgnoreInstrState(idx) := True
+        //}
+      }
+      /*otherwise*/ is (True) {
+        //io.shouldIgnoreInstr(idx) := True
+        startDecode := False
+        tempInstr := tempInstr.getZero
+        upPayload.instrCnt.shouldIgnoreInstr.foreach(
+          _ := True
+        )
+        upPayload.myExt.foreach(myExt => {
+          myExt.modMemWordValid.foreach(
+            _ := False
+          )
+          myExt.modMemWord := myExt.modMemWord.getZero
+          //myExt.opIs := 0x0
+          //io.opIsMemAccess.foreach(current => {
+          //  current := False
+          //})
+          //io.opIsAnyMultiCycle := (
+          //  False
+          //)
+          //io.opIsMultiCycle.foreach(current => {
+          //  current := False
+          //})
+        })
+        //upPayload.splitOp := (
+        //  upPayload.splitOp.getZero
+        //)
+        upPayload.splitOp.doSetToNoInstr()
+        when (
+          ////io.regPcSetItCnt.msb
+          //io.upIsFiring
+          //&& io.regPcSetItCnt(idx)(0)
+          up.isFiring
+          && upPayload.regPcSetItCnt(0)(0)
+        ) {
+          nextShouldIgnoreInstrState(idx) := False
+        }
+      }
+    }
+    //when (io.opIsJmp) {
+    //  nextShouldIgnoreInstrState(idx) := True
+    //}
+    //when (
+    //  ////io.regPcSetItCnt.msb
+    //  //io.upIsFiring
+    //  //&& 
+    //  io.upIsFiring
+    //  && io.regPcSetItCnt(idx)(0)
+    //) {
+    //  nextShouldIgnoreInstrState(idx) := False
+    //}
+  }
   //when (up.isValid) {
-    startDecode := True
-    tempInstr := myInstr
-    //startDecode := True
-    //tempInstr := myInstr
+  //when (!rShouldIgnoreInstrState.last) {
+  //  startDecode := True
+  //  tempInstr := myInstr
+  //  //startDecode := True
+  //  //tempInstr := myInstr
+  //} otherwise {
+  //  startDecode := False
+  //  tempInstr := tempInstr.getZero
   //}
   //when (up.isValid) {
   //  when (
@@ -785,7 +907,9 @@ case class SnowHousePipeStageExecuteSetOutpModMemWordIo(
     //)
   ) ///*in*/(Flow(PcChangeState()))
   val shouldIgnoreInstr = (
-    /*out*/(Bool())
+    /*out*/(Vec.fill(regPcSetItCnt.size)(
+      Bool()
+    ))
   )
   val rAluFlags = (
     cfg.myHaveAluFlags
@@ -1132,33 +1256,33 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
   io.decodeExt.memAccessKind := SnowHouseMemAccessKind.LoadU
   io.decodeExt.memAccessSubKind := SnowHouseMemAccessSubKind.Sz8
   io.decodeExt.memAccessIsPush := False
-  val nextShouldIgnoreInstrState = (
-    Vec.fill(
-      io.regPcSetItCnt.size
-    )(
-      Bool()
-    )
-    //SnowHouseShouldIgnoreInstrState()
-  )
-  val rShouldIgnoreInstrState = {
-    val temp = RegNext(nextShouldIgnoreInstrState)
-    //init(
-    //  nextShouldIgnoreInstrState.getZero
-    //  //SnowHouseShouldIgnoreInstrState.Idle
-    //)
-    temp.foreach(current => {
-      current.init(current.getZero)
-    })
-    temp
-  }
-  //for (idx <- 0 until rShouldIgnoreInstrState.size) {
-    nextShouldIgnoreInstrState := rShouldIgnoreInstrState
+  //val nextShouldIgnoreInstrState = (
+  //  Vec.fill(
+  //    io.regPcSetItCnt.size
+  //  )(
+  //    Bool()
+  //  )
+  //  //SnowHouseShouldIgnoreInstrState()
+  //)
+  //val rShouldIgnoreInstrState = {
+  //  val temp = RegNext(nextShouldIgnoreInstrState)
+  //  //init(
+  //  //  nextShouldIgnoreInstrState.getZero
+  //  //  //SnowHouseShouldIgnoreInstrState.Idle
+  //  //)
+  //  temp.foreach(current => {
+  //    current.init(current.getZero)
+  //  })
+  //  temp
   //}
+  ////for (idx <- 0 until rShouldIgnoreInstrState.size) {
+  //  nextShouldIgnoreInstrState := rShouldIgnoreInstrState
+  ////}
   io.opIsJmp.allowOverride
   io.opIsJmp := (
     io.psExSetPc.fire
     //&& !rShouldIgnoreInstrState.asBits(0)
-    //&& !io.shouldIgnoreInstr
+    && !io.shouldIgnoreInstr.head
     && (
       //io.upIsValid
       io.upIsFiring
@@ -1253,77 +1377,96 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
   //) {
   //  lowerMyFanoutShouldIgnoreInstr := True
   //}
-  for (idx <- 0 until rShouldIgnoreInstrState.size) {
-    switch (rShouldIgnoreInstrState(idx)) {
-      /*when*/ is (/*rShouldIgnoreInstrState(idx) ===*/ False) {
-        if (idx == 0) {
-          io.shouldIgnoreInstr := False
-        }
-        //else {
-        //  lowerMyFanoutShouldIgnoreInstr := False
-        //}
-        when (io.opIsJmp) {
-          nextShouldIgnoreInstrState(idx) := True
-        }
-        //when (io.opIsJmp) {
-        //  nextShouldIgnoreInstrState(idx) := True
-        //}
-      }
-      /*otherwise*/ is (True) {
-        if (idx == 0) {
-          io.shouldIgnoreInstr := True
-        } else if (idx == 1) {
-          io.modMemWordValid.foreach(current => {
-            current := False
-          })
-          io.modMemWord.foreach(modMemWord => {
-            modMemWord := modMemWord.getZero
-          })
-          io.opIs := 0x0
-          io.opIsMemAccess.foreach(current => {
-            current := False
-          })
-          io.opIsAnyMultiCycle := (
-            False
-          )
-          io.opIsMultiCycle.foreach(current => {
-            current := False
-          })
-        }
-        //else if (idx == 2) {
-        //}
-        //else if (idx == 3) {
-        //  //lowerMyFanoutShouldIgnoreInstr := True
-        //  io.opIsMultiCycle.foreach(current => {
-        //    current := False
-        //  })
-        //}
-        //else if (idx == 4) {
-        //} else if (idx == 5) {
-        //} else if (idx == 6) {
-        //}
-        when (
-          ////io.regPcSetItCnt.msb
-          io.upIsFiring
-          && io.regPcSetItCnt(idx)(0)
-        ) {
-          nextShouldIgnoreInstrState(idx) := False
-        }
-      }
-    }
-    //when (io.opIsJmp) {
-    //  nextShouldIgnoreInstrState(idx) := True
-    //}
-    //when (
-    //  ////io.regPcSetItCnt.msb
-    //  //io.upIsFiring
-    //  //&& 
-    //  io.upIsFiring
-    //  && io.regPcSetItCnt(idx)(0)
-    //) {
-    //  nextShouldIgnoreInstrState(idx) := False
-    //}
+  when (io.shouldIgnoreInstr(0)) {
+    io.modMemWordValid.foreach(
+      _ := False
+    )
+    io.modMemWord.foreach(current => {
+      current := current.getZero
+    })
+    io.opIs := 0x0
+    io.opIsMemAccess.foreach(current => {
+      current := False
+    })
+    io.opIsAnyMultiCycle := (
+      False
+    )
+    io.opIsMultiCycle.foreach(current => {
+      current := False
+    })
   }
+  //for (idx <- 0 until rShouldIgnoreInstrState.size) {
+  //  switch (rShouldIgnoreInstrState(idx)) {
+  //    /*when*/ is (/*rShouldIgnoreInstrState(idx) ===*/ False) {
+  //      //if (idx == 0) {
+  //        io.shouldIgnoreInstr(idx) := False
+  //      //}
+  //      //else {
+  //      //  lowerMyFanoutShouldIgnoreInstr := False
+  //      //}
+  //      when (io.opIsJmp) {
+  //        nextShouldIgnoreInstrState(idx) := True
+  //      }
+  //      //when (io.opIsJmp) {
+  //      //  nextShouldIgnoreInstrState(idx) := True
+  //      //}
+  //    }
+  //    /*otherwise*/ is (True) {
+  //      io.shouldIgnoreInstr(idx) := True
+  //      if (idx == 0) {
+  //        //io.shouldIgnoreInstr := True
+  //      } else if (idx == 1) {
+  //        io.modMemWordValid.foreach(current => {
+  //          current := False
+  //        })
+  //        io.modMemWord.foreach(modMemWord => {
+  //          modMemWord := modMemWord.getZero
+  //        })
+  //        io.opIs := 0x0
+  //        io.opIsMemAccess.foreach(current => {
+  //          current := False
+  //        })
+  //        io.opIsAnyMultiCycle := (
+  //          False
+  //        )
+  //        io.opIsMultiCycle.foreach(current => {
+  //          current := False
+  //        })
+  //      }
+  //      //else if (idx == 2) {
+  //      //}
+  //      //else if (idx == 3) {
+  //      //  //lowerMyFanoutShouldIgnoreInstr := True
+  //      //  io.opIsMultiCycle.foreach(current => {
+  //      //    current := False
+  //      //  })
+  //      //}
+  //      //else if (idx == 4) {
+  //      //} else if (idx == 5) {
+  //      //} else if (idx == 6) {
+  //      //}
+  //      when (
+  //        ////io.regPcSetItCnt.msb
+  //        io.upIsFiring
+  //        && io.regPcSetItCnt(idx)(0)
+  //      ) {
+  //        nextShouldIgnoreInstrState(idx) := False
+  //      }
+  //    }
+  //  }
+  //  //when (io.opIsJmp) {
+  //  //  nextShouldIgnoreInstrState(idx) := True
+  //  //}
+  //  //when (
+  //  //  ////io.regPcSetItCnt.msb
+  //  //  //io.upIsFiring
+  //  //  //&& 
+  //  //  io.upIsFiring
+  //  //  && io.regPcSetItCnt(idx)(0)
+  //  //) {
+  //  //  nextShouldIgnoreInstrState(idx) := False
+  //  //}
+  //}
 
   //switch (rShouldIgnoreInstrState) {
   //}
@@ -3030,7 +3173,7 @@ case class SnowHousePipeStageExecute(
     PipeMemRmwDualRdTypeDisabled[UInt, Bool],
   ],
   pcChangeState: Bool/*UInt*/,
-  shouldIgnoreInstr: Bool,
+  shouldIgnoreInstr: Vec[Bool],
 ) extends Area {
   def cfg = args.cfg
   def io = args.io
@@ -3668,16 +3811,19 @@ case class SnowHousePipeStageExecute(
   //val condForAssertSetPcValid = (
   //  setOutpModMemWord.io.opIsJmp
   //)
-  outp.instrCnt.shouldIgnoreInstr := (
-    setOutpModMemWord.io.shouldIgnoreInstr
+  setOutpModMemWord.io.shouldIgnoreInstr := (
+   outp.instrCnt.shouldIgnoreInstr 
   )
+  //outp.instrCnt.shouldIgnoreInstr := (
+  //  setOutpModMemWord.io.shouldIgnoreInstr
+  //)
   pcChangeState.assignFromBits(
     setOutpModMemWord.io.pcChangeState.asBits
   )
   psExSetPc.valid := (
     setOutpModMemWord.io.psExSetPc.valid
     //&& !outp.instrCnt.shouldIgnoreInstr
-    && !setOutpModMemWord.io.shouldIgnoreInstr
+    && !setOutpModMemWord.io.shouldIgnoreInstr(0)
     && (
       //cMid0Front.up.isValid
       cMid0Front.up.isFiring
@@ -4318,7 +4464,7 @@ case class SnowHousePipeStageExecute(
   }
   cfg.haveZeroReg match {
     case Some(myZeroRegIdx) => {
-      when (setOutpModMemWord.io.shouldIgnoreInstr) {
+      when (setOutpModMemWord.io.shouldIgnoreInstr(0)) {
         for (ydx <- 0 until cfg.regFileCfg.memArrSize) {
           outp.myExt(ydx).memAddr.foreach(current => {
             current := myZeroRegIdx

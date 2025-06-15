@@ -584,7 +584,9 @@ case class SnowHouse
     //  SnowHouseShouldIgnoreInstrState().asBits.getWidth bits
     //)
   )
-  val shouldIgnoreInstr = Bool()
+  val shouldIgnoreInstr = Vec.fill(cfg.lowerMyFanoutRegPcSetItCnt)(
+    Bool()
+  )
   //--------
   val linkArr = PipeHelper.mkLinkArr()
   cfg.regFileCfg.linkArr = Some(linkArr)

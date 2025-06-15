@@ -431,7 +431,7 @@ case class SnowHouseConfig(
   optFormal: Boolean=false,
 ) {
   def lowerMyFanout = 4
-  def lowerMyFanoutRegPcSetItCnt = 2
+  def lowerMyFanoutRegPcSetItCnt = 1
   //def lowerMyFanoutDec = multiCycle
   def instrMainWidth = subCfg.instrMainWidth
   def shRegFileCfg = subCfg.shRegFileCfg
@@ -774,7 +774,11 @@ case class SnowHouseInstrCnt(
   val any = UInt(cfg.instrCntWidth bits)
   val fwd = UInt(cfg.instrCntWidth bits)
   val jmp = UInt(cfg.instrCntWidth bits)
-  val shouldIgnoreInstr = Bool()
+  val shouldIgnoreInstr = Vec.fill(
+    cfg.lowerMyFanoutRegPcSetItCnt
+  )(
+    Bool()
+  )
   //def shouldIgnoreInstr = (pcChangeState === True)
 }
 //object SnowHouseDecodeExtLdStKind
@@ -849,8 +853,8 @@ case class SnowHouseGprIdxToMemAddrIdxMapElem(
 object SnowHouseSplitOpKind
 extends SpinalEnum(
   defaultEncoding=(
-    binaryOneHot
-    //binarySequential
+    //binaryOneHot
+    binarySequential
   )
 ) {
   val
@@ -917,6 +921,23 @@ case class SnowHouseSplitOp(
   //  SnowHouseSplitOpAluSrcKind()
   //)
   //val lastAluSrcKind = SnowHouseSplitOpAluSrcKind()
+  def doSetToNoInstr(): Unit = {
+    this := this.getZero
+    this.allowOverride
+    kind := SnowHouseSplitOpKind.CPY_CPYUI
+    opIsMultiCycle := False
+    //upPayload.splitOp.nonMultiCycleOp := (
+    //  (1 << upPayload.splitOp.nonMultiCycleOp.getWidth) - 1
+    //)
+    nonMultiCycleNonJmpOp := (
+      (1 << nonMultiCycleNonJmpOp.getWidth) - 1
+    )
+    multiCycleOp := 0x0
+    opIsMemAccess := False
+    jmpBrOp := (
+      (1 << jmpBrOp.getWidth) - 1
+    )
+  }
 }
 case class SnowHousePipePayload(
   cfg: SnowHouseConfig,
