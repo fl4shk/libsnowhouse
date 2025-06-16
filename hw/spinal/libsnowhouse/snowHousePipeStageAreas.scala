@@ -1381,7 +1381,7 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
     ) {
       is (M"00-") {
         io.shouldIgnoreInstr(idx) := False
-        if (idx == 0) {
+        if (idx == 1) {
           io.psExSetPc.nextPc := (
             io.regPcPlusImm 
           )
@@ -1390,7 +1390,7 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
       }
       is (M"01-") {
         io.shouldIgnoreInstr(idx) := False
-        if (idx == 0) {
+        if (idx == 1) {
           //io.shouldIgnoreInstr := False
           io.psExSetPc.nextPc := (
             io.regPcPlusImm 
