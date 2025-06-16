@@ -1353,22 +1353,22 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
       )
     ) {
       is (M"00-") {
-        if (idx == 0) {
+        //if (idx == 0) {
           io.shouldIgnoreInstr := False
-        }
+        //}
       }
       is (M"01-") {
-        if (idx == 0) {
+        //if (idx == 0) {
           io.shouldIgnoreInstr := False
-        }
+        //}
         when (io.upIsFiring) {
           nextShouldIgnoreInstrState(idx) := True
         }
       }
       is (M"1-0") {
-        if (idx == 0) {
+        //if (idx == 0) {
           io.shouldIgnoreInstr := True
-        } else if (idx == 1) {
+        //} else if (idx == 1) {
           io.modMemWordValid.foreach(current => {
             current := False
           })
@@ -1385,12 +1385,12 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
           io.opIsMultiCycle.foreach(current => {
             current := False
           })
-        }
+        //}
       }
       is (M"1-1") {
-        if (idx == 0) {
+        //if (idx == 0) {
           io.shouldIgnoreInstr := True
-        } else if (idx == 1) {
+        //} else if (idx == 1) {
           io.modMemWordValid.foreach(current => {
             current := False
           })
@@ -1407,7 +1407,7 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
           io.opIsMultiCycle.foreach(current => {
             current := False
           })
-        }
+        //}
         when (
           ////io.regPcSetItCnt.msb
           io.upIsFiring
