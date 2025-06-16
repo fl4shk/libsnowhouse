@@ -867,7 +867,11 @@ case class SnowHousePipeStageExecuteSetOutpModMemWordIo(
     //)
   ) ///*in*/(Flow(PcChangeState()))
   val shouldIgnoreInstr = (
-    /*out*/(Bool())
+    /*out*/(
+      Vec.fill(cfg.lowerMyFanoutRegPcSetItCnt)(
+        Bool()
+      )
+    )
   )
   val rAluFlags = (
     cfg.myHaveAluFlags
@@ -1353,22 +1357,25 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
       )
     ) {
       is (M"00-") {
-        //if (idx == 0) {
-          io.shouldIgnoreInstr := False
-        //}
+        io.shouldIgnoreInstr(idx) := False
+        if (idx == 0) {
+          //io.shouldIgnoreInstr := False
+        }
       }
       is (M"01-") {
-        //if (idx == 0) {
-          io.shouldIgnoreInstr := False
-        //}
+        io.shouldIgnoreInstr(idx) := False
+        if (idx == 0) {
+          //io.shouldIgnoreInstr := False
+        }
         when (io.upIsFiring) {
           nextShouldIgnoreInstrState(idx) := True
         }
       }
       is (M"1-0") {
-        //if (idx == 0) {
-          io.shouldIgnoreInstr := True
-        //} else if (idx == 1) {
+        io.shouldIgnoreInstr(idx) := True
+        if (idx == 0) {
+          //io.shouldIgnoreInstr := True
+        } else if (idx == 1) {
           io.modMemWordValid.foreach(current => {
             current := False
           })
@@ -1385,12 +1392,13 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
           io.opIsMultiCycle.foreach(current => {
             current := False
           })
-        //}
+        }
       }
       is (M"1-1") {
-        //if (idx == 0) {
-          io.shouldIgnoreInstr := True
-        //} else if (idx == 1) {
+        io.shouldIgnoreInstr(idx) := True
+        if (idx == 0) {
+          //io.shouldIgnoreInstr := True
+        } else if (idx == 1) {
           io.modMemWordValid.foreach(current => {
             current := False
           })
@@ -1407,7 +1415,7 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
           io.opIsMultiCycle.foreach(current => {
             current := False
           })
-        //}
+        }
         when (
           ////io.regPcSetItCnt.msb
           io.upIsFiring
@@ -1417,7 +1425,8 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
         }
       }
       default {
-        io.shouldIgnoreInstr := True
+        io.shouldIgnoreInstr(idx) := True
+        //io.shouldIgnoreInstr := True
       }
       //is (M"00-") {
       //  if (idx == 0) {
@@ -3898,16 +3907,16 @@ case class SnowHousePipeStageExecute(
   //val condForAssertSetPcValid = (
   //  setOutpModMemWord.io.opIsJmp
   //)
-  outp.instrCnt.shouldIgnoreInstr := (
-    setOutpModMemWord.io.shouldIgnoreInstr
-  )
+  //outp.instrCnt.shouldIgnoreInstr := (
+  //  setOutpModMemWord.io.shouldIgnoreInstr
+  //)
   pcChangeState.assignFromBits(
     setOutpModMemWord.io.pcChangeState.asBits
   )
   psExSetPc.valid := (
     setOutpModMemWord.io.psExSetPc.valid
     //&& !outp.instrCnt.shouldIgnoreInstr
-    && !setOutpModMemWord.io.shouldIgnoreInstr
+    && !setOutpModMemWord.io.shouldIgnoreInstr(0)
     && (
       //cMid0Front.up.isValid
       cMid0Front.up.isFiring
@@ -4548,14 +4557,18 @@ case class SnowHousePipeStageExecute(
   }
   cfg.haveZeroReg match {
     case Some(myZeroRegIdx) => {
-      when (setOutpModMemWord.io.shouldIgnoreInstr) {
-        for (ydx <- 0 until cfg.regFileCfg.memArrSize) {
+      for (ydx <- 0 until cfg.regFileCfg.memArrSize) {
+        when (setOutpModMemWord.io.shouldIgnoreInstr(2)) {
           outp.myExt(ydx).memAddr.foreach(current => {
             current := myZeroRegIdx
           })
+        }
+        when (setOutpModMemWord.io.shouldIgnoreInstr(2)) {
           outp.myExt(ydx).memAddrAlt.foreach(current => {
             current := myZeroRegIdx
           })
+        }
+        when (setOutpModMemWord.io.shouldIgnoreInstr(2)) {
           outp.myExt(ydx).memAddrFwd.foreach(current => {
             current.foreach(innerCurrent => {
               innerCurrent := myZeroRegIdx

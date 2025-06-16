@@ -432,8 +432,9 @@ case class SnowHouseConfig(
 ) {
   def lowerMyFanout = 4
   def lowerMyFanoutRegPcSetItCnt = (
-    //2
-    1
+    3
+    //5
+    //1
   )
   //def lowerMyFanoutDec = multiCycle
   def instrMainWidth = subCfg.instrMainWidth
