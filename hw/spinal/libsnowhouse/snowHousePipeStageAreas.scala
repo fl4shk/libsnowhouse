@@ -110,7 +110,7 @@ case class SnowHousePipeStageArgs(
 case class SnowHousePsExSetPcPayload(
   cfg: SnowHouseConfig
 ) extends Bundle {
-  val valid1 = Bool()
+  //val valid1 = Bool()
   val nextPc = UInt(cfg.mainWidth bits)
 }
 object SnowHouseShouldIgnoreInstrState
@@ -270,6 +270,10 @@ case class SnowHousePipeStageInstrFetch(
   //myRegPcSetItCnt.foreach(current => {
   //  current := 0x0
   //})
+  //myRegPcSetItCnt.foreach(_ := 0x0)
+  for (idx <- 1 until myRegPcSetItCnt.size) {
+    myRegPcSetItCnt(idx) := 0x0
+  }
   switch (
     Cat(
       List(
@@ -281,9 +285,10 @@ case class SnowHousePipeStageInstrFetch(
     is (M"0-") {
     }
     is (M"10") {
-      myRegPcSetItCnt.foreach(current => {
-        current := 0x0
-      })
+      //myRegPcSetItCnt.foreach(current => {
+      //  current := 0x0
+      //})
+      myRegPcSetItCnt(0) := 0x0
       //when (!rPrevRegPcSetItCnt.msb) {
       //  myRegPcSetItCnt := rPrevRegPcSetItCnt - 1
       //}
@@ -322,9 +327,10 @@ case class SnowHousePipeStageInstrFetch(
       //rSavedExSetPc := rSavedExSetPc.getZero
     }
     default {
-      myRegPcSetItCnt.foreach(current => {
-        current := 0x1
-      })
+      //myRegPcSetItCnt.foreach(current => {
+      //  current := 0x1
+      //})
+      myRegPcSetItCnt(0) := 0x1
       rSavedExSetPc := rSavedExSetPc.getZero
       //myRegPcSetItCnt.foreach(current => {
       //  current := 0x1
@@ -646,6 +652,9 @@ case class SnowHousePipeStageInstrDecode(
   //    nextMultiInstrCnt := rMultiInstrCnt - 1
   //  }
   //}
+  for (idx <- 1 until upPayload.regPcSetItCnt.size) {
+    upPayload.regPcSetItCnt(idx) := upPayload.regPcSetItCnt(0)
+  }
   when (up.isFiring) {
     nextSetUpPayloadState(0) := False
     nextSetUpPayloadState(1) := False
@@ -3723,7 +3732,8 @@ case class SnowHousePipeStageExecute(
   setOutpModMemWord.io.regPcPlusImm := outp.regPcPlusImm
   setOutpModMemWord.io.imm := outp.imm
   outp.decodeExt := setOutpModMemWord.io.decodeExt
-  outp.psExSetPc := psExSetPc
+  outp.psExSetPc := outp.psExSetPc.getZero
+  //outp.psExSetPc := psExSetPc
   if (io.haveMultiCycleBusVec) {
     for (
       (multiCycleBus, busIdx) <- io.multiCycleBusVec.view.zipWithIndex
@@ -3902,7 +3912,7 @@ case class SnowHousePipeStageExecute(
       init=psExSetPc.payload.getZero,
     )
   )
-  psExSetPc.valid1.allowOverride
+  //psExSetPc.valid1.allowOverride
   psExSetPc.nextPc.allowOverride
   //val condForAssertSetPcValid = (
   //  setOutpModMemWord.io.opIsJmp
@@ -4557,23 +4567,25 @@ case class SnowHousePipeStageExecute(
   }
   cfg.haveZeroReg match {
     case Some(myZeroRegIdx) => {
-      for (ydx <- 0 until cfg.regFileCfg.memArrSize) {
-        when (setOutpModMemWord.io.shouldIgnoreInstr(2)) {
-          outp.myExt(ydx).memAddr.foreach(current => {
-            current := myZeroRegIdx
-          })
-        }
-        when (setOutpModMemWord.io.shouldIgnoreInstr(2)) {
-          outp.myExt(ydx).memAddrAlt.foreach(current => {
-            current := myZeroRegIdx
-          })
-        }
-        when (setOutpModMemWord.io.shouldIgnoreInstr(2)) {
-          outp.myExt(ydx).memAddrFwd.foreach(current => {
-            current.foreach(innerCurrent => {
-              innerCurrent := myZeroRegIdx
+      when (setOutpModMemWord.io.shouldIgnoreInstr(2)) {
+        for (ydx <- 0 until cfg.regFileCfg.memArrSize) {
+          //when (setOutpModMemWord.io.shouldIgnoreInstr(2)) {
+            outp.myExt(ydx).memAddr.foreach(current => {
+              current := myZeroRegIdx
             })
-          })
+          //}
+          //when (setOutpModMemWord.io.shouldIgnoreInstr(2)) {
+            outp.myExt(ydx).memAddrAlt.foreach(current => {
+              current := myZeroRegIdx
+            })
+          //}
+          //when (setOutpModMemWord.io.shouldIgnoreInstr(2)) {
+            outp.myExt(ydx).memAddrFwd.foreach(current => {
+              current.foreach(innerCurrent => {
+                innerCurrent := myZeroRegIdx
+              })
+            })
+          //}
         }
       }
     }
