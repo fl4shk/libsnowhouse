@@ -3377,6 +3377,7 @@ case class SnowHousePipeStageExecute(
     )
   )
   outp.allowOverride
+  //outp.splitOp.opIsMemAccess := False
   //val tempExt = (
   //  cloneOf(outp.myExt)
   //)
@@ -4043,8 +4044,9 @@ case class SnowHousePipeStageExecute(
   //  && doCheckHazard && myDoHaveHazard1
   //)
   when (/*LcvFastOrR*/(
-    setOutpModMemWord.io.opIsMemAccess.asBits.asUInt
-    .orR
+    setOutpModMemWord.io.opIsMemAccess.head
+    //.asBits.asUInt
+    //.orR
   )) {
     nextPrevTxnWasHazard := True
     when (cMid0Front.up.isFiring) {
@@ -4052,9 +4054,20 @@ case class SnowHousePipeStageExecute(
       //io.dbus.sendData := setOutpModMemWord.io.dbusHostPayload
     }
   }
-  when (cMid0Front.up.isFiring) {
+  when (
+    //cMid0Front.up.isFiring
+    //&&
+    //outp.splitOp.opIsMemAccess
+    cMid0Front.down.isReady
+  ) {
     io.dbus.sendData := setOutpModMemWord.io.dbusHostPayload
   }
+  //when (cMid0Front.up.isFiring)
+  //when (
+  //  cMid0Front.up.isValid && !setOutpModMemWord.io.shouldIgnoreInstr(1)
+  //) {
+  //  io.dbus.sendData := setOutpModMemWord.io.dbusHostPayload
+  //}
   def doMultiCycleStart(
     myPsExStallHost: LcvStallHost[
       MultiCycleHostPayload,
