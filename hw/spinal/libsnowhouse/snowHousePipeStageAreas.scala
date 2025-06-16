@@ -3937,9 +3937,11 @@ case class SnowHousePipeStageExecute(
   //val condForAssertSetPcValid = (
   //  setOutpModMemWord.io.opIsJmp
   //)
-  //outp.instrCnt.shouldIgnoreInstr := (
-  //  setOutpModMemWord.io.shouldIgnoreInstr
-  //)
+  outp.instrCnt.shouldIgnoreInstr.foreach(current => {
+    current := (
+      setOutpModMemWord.io.shouldIgnoreInstr(2)
+    )
+  })
   pcChangeState.assignFromBits(
     setOutpModMemWord.io.pcChangeState.asBits
   )
@@ -4585,33 +4587,33 @@ case class SnowHousePipeStageExecute(
       cMid0Front.duplicateIt()
     //}
   }
-  cfg.haveZeroReg match {
-    case Some(myZeroRegIdx) => {
-      when (setOutpModMemWord.io.shouldIgnoreInstr(2)) {
-        for (ydx <- 0 until cfg.regFileCfg.memArrSize) {
-          //when (setOutpModMemWord.io.shouldIgnoreInstr(2)) {
-            outp.myExt(ydx).memAddr.foreach(current => {
-              current := myZeroRegIdx
-            })
-          //}
-          //when (setOutpModMemWord.io.shouldIgnoreInstr(2)) {
-            outp.myExt(ydx).memAddrAlt.foreach(current => {
-              current := myZeroRegIdx
-            })
-          //}
-          //when (setOutpModMemWord.io.shouldIgnoreInstr(2)) {
-            outp.myExt(ydx).memAddrFwd.foreach(current => {
-              current.foreach(innerCurrent => {
-                innerCurrent := myZeroRegIdx
-              })
-            })
-          //}
-        }
-      }
-    }
-    case None => {
-    }
-  }
+  //cfg.haveZeroReg match {
+  //  case Some(myZeroRegIdx) => {
+  //    when (setOutpModMemWord.io.shouldIgnoreInstr(2)) {
+  //      for (ydx <- 0 until cfg.regFileCfg.memArrSize) {
+  //        //when (setOutpModMemWord.io.shouldIgnoreInstr(2)) {
+  //          outp.myExt(ydx).memAddr.foreach(current => {
+  //            current := myZeroRegIdx
+  //          })
+  //        //}
+  //        //when (setOutpModMemWord.io.shouldIgnoreInstr(2)) {
+  //          outp.myExt(ydx).memAddrAlt.foreach(current => {
+  //            current := myZeroRegIdx
+  //          })
+  //        //}
+  //        //when (setOutpModMemWord.io.shouldIgnoreInstr(2)) {
+  //          outp.myExt(ydx).memAddrFwd.foreach(current => {
+  //            current.foreach(innerCurrent => {
+  //              innerCurrent := myZeroRegIdx
+  //            })
+  //          })
+  //        //}
+  //      }
+  //    }
+  //  }
+  //  case None => {
+  //  }
+  //}
   if (cfg.optFormal) {
     outp.psExSetOutpModMemWordIo := setOutpModMemWord.io
   }
@@ -5020,15 +5022,51 @@ case class SnowHousePipeStageMem(
     })
   }
 
+  cfg.haveZeroReg match {
+    case Some(myZeroRegIdx) => {
+      when (midModPayload(extIdxUp).instrCnt.shouldIgnoreInstr(0)) {
+        for (ydx <- 0 until cfg.regFileCfg.memArrSize) {
+          midModPayload(extIdxUp).myExt(ydx).memAddr.foreach(
+            current => {
+              current := myZeroRegIdx
+            }
+          )
+        }
+      }
+      when (midModPayload(extIdxUp).instrCnt.shouldIgnoreInstr(1)) {
+        for (ydx <- 0 until cfg.regFileCfg.memArrSize) {
+          midModPayload(extIdxUp).myExt(ydx).memAddrAlt.foreach(
+            current => {
+              current := myZeroRegIdx
+            }
+          )
+        }
+      }
+      when (midModPayload(extIdxUp).instrCnt.shouldIgnoreInstr(2)) {
+        for (ydx <- 0 until cfg.regFileCfg.memArrSize) {
+          midModPayload(extIdxUp).myExt(ydx).memAddrFwd.foreach(
+            current => {
+              current.foreach(innerCurrent => {
+                innerCurrent := myZeroRegIdx
+              })
+            }
+          )
+        }
+      }
+    }
+    case None => {
+    }
+  }
+
   def setMidModStages(): Unit = {
     regFile.io.midModStages(0) := midModPayload
   }
   setMidModStages()
 
   modFront(modBackPayload) := midModPayload(extIdxUp)
-  when (modFront.isValid) {
-  } otherwise {
-  }
+  //when (modFront.isValid) {
+  //} otherwise {
+  //}
 }
 case class SnowHousePipeStageWriteBack(
   args: SnowHousePipeStageArgs,

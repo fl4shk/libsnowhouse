@@ -779,7 +779,9 @@ case class SnowHouseInstrCnt(
   val any = UInt(cfg.instrCntWidth bits)
   val fwd = UInt(cfg.instrCntWidth bits)
   val jmp = UInt(cfg.instrCntWidth bits)
-  val shouldIgnoreInstr = Bool()
+  val shouldIgnoreInstr = Vec.fill(cfg.lowerMyFanoutRegPcSetItCnt)(
+    Bool()
+  )
   //def shouldIgnoreInstr = (pcChangeState === True)
 }
 //object SnowHouseDecodeExtLdStKind
