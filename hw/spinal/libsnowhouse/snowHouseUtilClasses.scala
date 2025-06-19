@@ -902,6 +902,9 @@ case class SnowHouseSplitOp(
   val cpyCpyuiOp = /*Flow*/(
     UInt(log2Up(cfg.cpyCpyuiOpInfoMap.size) bits)
   )
+  val exSetNextPcKind = (
+    SnowHousePsExSetNextPcKind()
+  )
   val jmpBrOp = /*Flow*/(
     UInt(log2Up(cfg.jmpBrOpInfoMap.size + 1) bits)
   )
@@ -924,6 +927,32 @@ case class SnowHouseSplitOp(
   //  SnowHouseSplitOpAluSrcKind()
   //)
   //val lastAluSrcKind = SnowHouseSplitOpAluSrcKind()
+  def setToDefault(): Unit = {
+    this := this.getZero
+    kind := SnowHouseSplitOpKind.CPY_CPYUI
+    opIsMultiCycle := False
+    //nonMultiCycleOp := (
+    //  (1 << nonMultiCycleOp.getWidth) - 1
+    //)
+    nonMultiCycleNonJmpOp := (
+      (1 << nonMultiCycleNonJmpOp.getWidth) - 1
+    )
+    multiCycleOp := 0x0
+    opIsMemAccess := False
+    jmpBrOp := (
+      (1 << jmpBrOp.getWidth) - 1
+    )
+    exSetNextPcKind := SnowHousePsExSetNextPcKind.PcPlusImm
+  }
+}
+object SnowHousePsExSetNextPcKind
+extends SpinalEnum(defaultEncoding=binarySequential) {
+  val
+    PcPlusImm,
+    RdMemWord,
+    Ira//,
+    //Ids
+    = newElement()
 }
 case class SnowHousePipePayload(
   cfg: SnowHouseConfig,

@@ -531,20 +531,21 @@ object SnowHouseCpuPipeStageInstrDecode {
       )
       .setName(s"InstrDecode_rPrevPreImm16")
     )
-    upPayload.splitOp := upPayload.splitOp.getZero
-    upPayload.splitOp.kind := SnowHouseSplitOpKind.CPY_CPYUI
-    upPayload.splitOp.opIsMultiCycle := False
-    //upPayload.splitOp.nonMultiCycleOp := (
-    //  (1 << upPayload.splitOp.nonMultiCycleOp.getWidth) - 1
+    //upPayload.splitOp := upPayload.splitOp.getZero
+    //upPayload.splitOp.kind := SnowHouseSplitOpKind.CPY_CPYUI
+    //upPayload.splitOp.opIsMultiCycle := False
+    ////upPayload.splitOp.nonMultiCycleOp := (
+    ////  (1 << upPayload.splitOp.nonMultiCycleOp.getWidth) - 1
+    ////)
+    //upPayload.splitOp.nonMultiCycleNonJmpOp := (
+    //  (1 << upPayload.splitOp.nonMultiCycleNonJmpOp.getWidth) - 1
     //)
-    upPayload.splitOp.nonMultiCycleNonJmpOp := (
-      (1 << upPayload.splitOp.nonMultiCycleNonJmpOp.getWidth) - 1
-    )
-    upPayload.splitOp.multiCycleOp := 0x0
-    upPayload.splitOp.opIsMemAccess := False
-    upPayload.splitOp.jmpBrOp := (
-      (1 << upPayload.splitOp.jmpBrOp.getWidth) - 1
-    )
+    //upPayload.splitOp.multiCycleOp := 0x0
+    //upPayload.splitOp.opIsMemAccess := False
+    //upPayload.splitOp.jmpBrOp := (
+    //  (1 << upPayload.splitOp.jmpBrOp.getWidth) - 1
+    //)
+    upPayload.splitOp.setToDefault()
     def setOp(
       someOp: (Int, (Int, Int), String),
       immShift: Boolean=false,
@@ -904,6 +905,9 @@ object SnowHouseCpuPipeStageInstrDecode {
           is (RetIra._2._1) {
             //psId.nextPrevInstrWasJump := True
             setOp(RetIra)
+            upPayload.splitOp.exSetNextPcKind := (
+              SnowHousePsExSetNextPcKind.Ira
+            )
           }
           default {
             doDefault()
@@ -1050,6 +1054,9 @@ object SnowHouseCpuPipeStageInstrDecode {
               //psId.nextPrevInstrWasJump := True
             //}
             setOp(JlRaRb)
+            upPayload.splitOp.exSetNextPcKind := (
+              SnowHousePsExSetNextPcKind.RdMemWord
+            )
           }
           default {
             doDefault()
