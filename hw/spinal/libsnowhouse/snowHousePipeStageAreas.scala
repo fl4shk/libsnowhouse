@@ -3419,7 +3419,7 @@ case class SnowHousePipeStageExecute(
   ) = (
     doModInModFrontParams.getMyRdMemWordFunc(ydx, modIdx)
   )
-  when (cMid0Front.up.isValid ) {
+  when (cMid0Front.up.isValid) {
     outp := inp
     //when (
     //  //!rSetOutpState
@@ -3816,24 +3816,32 @@ case class SnowHousePipeStageExecute(
     zdx: Int,
   ): Unit = {
     def tempExt = outp.myExt(ydx)
-      if (zdx == PipeMemRmw.modWrIdx) {
-        tempExt.modMemWord := (
-          // TODO: support multiple output `modMemWord`s
-          setOutpModMemWord.io.modMemWord(0)
+    if (zdx == PipeMemRmw.modWrIdx) {
+      tempExt.modMemWord := (
+        // TODO: support multiple output `modMemWord`s
+        setOutpModMemWord.io.modMemWord(0)
+      )
+      for (idx <- 0 until tempExt.modMemWordValid.size) {
+        //tempExt.modMemWordValid.foreach(current =>{
+        //  current := (
+        //    setOutpModMemWord.io.modMemWordValid
+        //  )
+        //})
+        tempExt.modMemWordValid(idx) := (
+          setOutpModMemWord.io.modMemWordValid(idx)
         )
-        for (idx <- 0 until tempExt.modMemWordValid.size) {
-          //tempExt.modMemWordValid.foreach(current =>{
-          //  current := (
-          //    setOutpModMemWord.io.modMemWordValid
-          //  )
-          //})
-          tempExt.modMemWordValid(idx) := (
-            setOutpModMemWord.io.modMemWordValid(idx)
-          )
-        }
       }
+    }
     def tempRdMemWord = setOutpModMemWord.io.rdMemWord(zdx)
-    tempRdMemWord := myRdMemWord(ydx=ydx, modIdx=zdx)
+    //tempRdMemWord := (
+    //  RegNext(
+    //    next=tempRdMemWord,
+    //    init=tempRdMemWord.getZero,
+    //  )
+    //)
+    //when (cMid0Front.up.isValid) {
+      tempRdMemWord := myRdMemWord(ydx=ydx, modIdx=zdx)
+    //}
     // TODO (maybe): support multiple register writes per instruction
   }
   if (cfg.regFileWordCountArr.size == 0) {
