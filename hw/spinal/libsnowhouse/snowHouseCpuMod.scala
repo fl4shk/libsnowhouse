@@ -1006,6 +1006,9 @@ object SnowHouseCpuPipeStageInstrDecode {
       //  }
       //}
       is (BeqRaRbSimm._1) {
+        upPayload.splitOp.exSetNextPcKind := (
+          SnowHousePsExSetNextPcKind.PcPlusImm
+        )
         switch (encInstr.rcIdx(2 downto 0)) {
           is (BeqRaRbSimm._2._1) {
             //when (psId.startDecode) {
@@ -1029,6 +1032,9 @@ object SnowHouseCpuPipeStageInstrDecode {
               //encInstr.rbIdx === 0x0
             ) {
               setOp(AddRaPcSimm16)
+              upPayload.splitOp.exSetNextPcKind := (
+                SnowHousePsExSetNextPcKind.Dont
+              )
             } otherwise {
               //setOp(BnRaSimm)
               setOp(BneRaRbSimm)

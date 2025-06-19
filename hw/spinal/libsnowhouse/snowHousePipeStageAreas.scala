@@ -186,8 +186,9 @@ case class SnowHousePipeStageInstrFetch(
   ) {
     //rMyPsExSetPcFire := True//psExSetPc.fire
     rSavedExSetPc.valid := True
-    rSavedExSetPc.payload := psExSetPc.payload
+    //rSavedExSetPc.payload := psExSetPc.payload
   }
+  rSavedExSetPc.payload := psExSetPc.payload
   //when (rSavedExSetPc.fire) {
   //  rSavedExSetPc.payload := psExSetPc.payload
   //}
@@ -1263,16 +1264,16 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
   //for (idx <- 0 until rShouldIgnoreInstrState.size) {
     nextShouldIgnoreInstrState := rShouldIgnoreInstrState
   //}
-  io.opIsJmp.allowOverride
-  io.opIsJmp := (
-    io.psExSetPc.fire
-    //&& !rShouldIgnoreInstrState.asBits(0)
-    //&& !io.shouldIgnoreInstr
-    && (
-      //io.upIsValid
-      io.upIsFiring
-    )
-  )
+  //io.opIsJmp.allowOverride
+  //io.opIsJmp := (
+  //  io.psExSetPc.fire
+  //  //&& !rShouldIgnoreInstrState.asBits(0)
+  //  //&& !io.shouldIgnoreInstr
+  //  && (
+  //    //io.upIsValid
+  //    io.upIsFiring
+  //  )
+  //)
   //io.shouldIgnoreInstr := (
   //  RegNext(
   //    next=io.shouldIgnoreInstr,
@@ -1362,9 +1363,9 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
   //) {
   //  lowerMyFanoutShouldIgnoreInstr := True
   //}
-  io.psExSetPc.nextPc := (
-    io.regPcPlusImm 
-  )
+  //io.psExSetPc.nextPc := (
+  //  io.regPcPlusImm 
+  //)
 
   for (idx <- 0 until rShouldIgnoreInstrState.size) {
     switch (
@@ -1389,6 +1390,7 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
           //  io.regPcPlusImm 
           //)
           //io.shouldIgnoreInstr := False
+          doHandleSetNextPc()
         }
       }
       is (M"01-") {
@@ -1398,6 +1400,7 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
           //io.psExSetPc.nextPc := (
           //  io.regPcPlusImm 
           //)
+          doHandleSetNextPc()
         }
         when (io.upIsFiring) {
           nextShouldIgnoreInstrState(idx) := True
@@ -3096,23 +3099,39 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
   //  //  )
   //  //}
   //}
-  switch (io.splitOp.exSetNextPcKind) {
-    //is (SnowHousePsExSetNextPcKind.PcPlusImm) {
-    //}
-    is (SnowHousePsExSetNextPcKind.RdMemWord) {
-      io.psExSetPc.nextPc := (
-        io.rdMemWord(io.jmpAddrIdx)
-      )
-    }
-    is (SnowHousePsExSetNextPcKind.Ira) {
-      io.psExSetPc.nextPc := (
-        io.rIra
-      )
-    }
-    default {
-      io.psExSetPc.nextPc := (
-        io.regPcPlusImm 
-      )
+  def doHandleSetNextPc(): Unit = {
+    switch (io.splitOp.exSetNextPcKind) {
+      //is (SnowHousePsExSetNextPcKind.PcPlusImm) {
+      //}
+      is (SnowHousePsExSetNextPcKind.Dont) {
+        io.psExSetPc.nextPc := (
+          //io.regPcPlusImm 
+          RegNext(
+            next=io.psExSetPc.nextPc,
+            init=io.psExSetPc.nextPc.getZero,
+          )
+        )
+      }
+      is (SnowHousePsExSetNextPcKind.PcPlusImm) {
+        io.psExSetPc.nextPc := (
+          io.regPcPlusImm 
+        )
+      }
+      is (SnowHousePsExSetNextPcKind.RdMemWord) {
+        io.psExSetPc.nextPc := (
+          io.rdMemWord(io.jmpAddrIdx)
+        )
+      }
+      is (SnowHousePsExSetNextPcKind.Ira) {
+        io.psExSetPc.nextPc := (
+          io.rIra
+        )
+      }
+      //default {
+      //  io.psExSetPc.nextPc := (
+      //    io.regPcPlusImm 
+      //  )
+      //}
     }
   }
   switch (io.splitOp.multiCycleOp) {

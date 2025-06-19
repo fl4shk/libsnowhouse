@@ -903,7 +903,7 @@ case class SnowHouseSplitOp(
     UInt(log2Up(cfg.cpyCpyuiOpInfoMap.size) bits)
   )
   val exSetNextPcKind = (
-    SnowHousePsExSetNextPcKind()
+    SnowHousePsExSetNextPcKind(encoding=binaryOneHot)
   )
   val jmpBrOp = /*Flow*/(
     UInt(log2Up(cfg.jmpBrOpInfoMap.size + 1) bits)
@@ -942,12 +942,18 @@ case class SnowHouseSplitOp(
     jmpBrOp := (
       (1 << jmpBrOp.getWidth) - 1
     )
-    exSetNextPcKind := SnowHousePsExSetNextPcKind.PcPlusImm
+    exSetNextPcKind := (
+      //SnowHousePsExSetNextPcKind.PcPlusImm
+      //SnowHousePsExSetNextPcKind.PcPlusInstrSize
+      SnowHousePsExSetNextPcKind.Dont
+    )
   }
 }
 object SnowHousePsExSetNextPcKind
-extends SpinalEnum(defaultEncoding=binarySequential) {
+extends SpinalEnum(defaultEncoding=binaryOneHot) {
   val
+    //PcPlusInstrSize,
+    Dont,
     PcPlusImm,
     RdMemWord,
     Ira//,
