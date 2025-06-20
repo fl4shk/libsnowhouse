@@ -877,69 +877,52 @@ case class SnowHouseDataCache(
         //rSavedHaveHit := haveHit
         rSavedBusSendData := rBusSendData
         when (RegNext(io.bus.nextValid) init(False)) {
-          when (if (isIcache) (True) else (!rBusAddrIsNonCached)) {
-            when (
-              if (isIcache) (
-                True
-              ) else (
-                !rBusSendData.accKind.asBits(1)
-              )
-            ) {
+          when (!rBusAddrIsNonCached) {
+            when (!rBusSendData.accKind.asBits(1)) {
               when (haveHit) {
                 // cached load
-                if (isIcache) {
-                  doSetBusReadyEtc(True)
-                  //busDevData := (
-                  //  rdLineWord.resize(busDevData.getWidth)
-                  //)
-                } else {
-                  rPleaseFinish.foreach(current => {
-                    current(0) := True
-                  })
-                }
+                rPleaseFinish.foreach(current => {
+                  current(0) := True
+                })
               } otherwise {
                 // cache miss upon a load
-                when (if (isIcache) (False) else (rdLineAttrs.dirty)) {
+                when (rdLineAttrs.dirty) {
                   nextState := State.HANDLE_SEND_LINE_TO_BUS_PIPE_1
                 } otherwise {
                   nextState := State.HANDLE_RECV_LINE_FROM_BUS
                 }
               }
             } otherwise {
-              if (!isIcache) {
-                when (haveHit) {
-                  // cached store
-                  nextState := State.HANDLE_DCACHE_STORE_HIT
-                  lineAttrsRam.io.rdEn := False
-                  lineWordRam.io.rdEn := False
-                  wrLineAttrs := rdLineAttrs
-                  wrLineAttrs.dirty := True
+              when (haveHit) {
+                // cached store
+                nextState := State.HANDLE_DCACHE_STORE_HIT
+                lineAttrsRam.io.rdEn := False
+                lineWordRam.io.rdEn := False
+                wrLineAttrs := rdLineAttrs
+                wrLineAttrs.dirty := True
+              } otherwise {
+                // cache miss upon a store
+                when (rdLineAttrs.dirty) {
+                  nextState := State.HANDLE_SEND_LINE_TO_BUS_PIPE_1
                 } otherwise {
-                  // cache miss upon a store
-                  when (if (isIcache) (False) else (rdLineAttrs.dirty)) {
-                    nextState := State.HANDLE_SEND_LINE_TO_BUS_PIPE_1
-                  } otherwise {
-                    nextState := State.HANDLE_RECV_LINE_FROM_BUS
-                  }
+                  nextState := State.HANDLE_RECV_LINE_FROM_BUS
                 }
               }
             }
           } otherwise {
-            if (!isIcache) {
-              // non-cached access to the bus
-              nextState := State.HANDLE_NON_CACHED_BUS_ACC
-              myH2dBus.nextValid := True
-              rH2dSendData.isWrite := rBusSendData.accKind.asBits(1)
-              rH2dSendData.addr := (
-                rBusAddr.resize(rH2dSendData.addr.getWidth)
-              )
-              rH2dSendData.data := rBusSendData.data
-              rH2dSendData.size := 1
-              rH2dSendData.mask := (
-                U(rH2dSendData.mask.getWidth bits, default -> True)
-              )
-              //--------
-            }
+            // non-cached access to the bus
+            nextState := State.HANDLE_NON_CACHED_BUS_ACC
+            myH2dBus.nextValid := True
+            rH2dSendData.isWrite := rBusSendData.accKind.asBits(1)
+            rH2dSendData.addr := (
+              rBusAddr.resize(rH2dSendData.addr.getWidth)
+            )
+            rH2dSendData.data := rBusSendData.data
+            rH2dSendData.size := 1
+            rH2dSendData.mask := (
+              U(rH2dSendData.mask.getWidth bits, default -> True)
+            )
+            //--------
           }
         }
       }
@@ -1046,13 +1029,11 @@ case class SnowHouseDataCache(
           rSavedBusAddrTag
         )
         //wrLineAttrs.valid := True
-        if (!isIcache) {
-          wrLineAttrs.dirty := (
-            //False
-            // if it's a store, this line should be marked dirty!
-            rSavedBusSendData.accKind.asBits(1)
-          )
-        }
+        wrLineAttrs.dirty := (
+          //False
+          // if it's a store, this line should be marked dirty!
+          rSavedBusSendData.accKind.asBits(1)
+        )
         doLineAttrsRamWrite(
           busAddr=tempLineBusAddr,
         )
@@ -1101,9 +1082,7 @@ case class SnowHouseDataCache(
         )
       ) {
         myD2hBus.ready := True
-        if (!isIcache) {
-          rBusDevData := myD2hBus.sendData.data
-        }
+        rBusDevData := myD2hBus.sendData.data
         nextState := (
           State.IDLE
         )
