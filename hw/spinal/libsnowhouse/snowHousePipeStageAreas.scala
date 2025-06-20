@@ -1366,9 +1366,7 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
   //io.psExSetPc.nextPc := (
   //  io.regPcPlusImm 
   //)
-  when (
-    !rShouldIgnoreInstrState(1)
-  ) {
+  when (!rShouldIgnoreInstrState(1)) {
     //if (idx == 1) {
       //io.psExSetPc.nextPc := (
       //  io.regPcPlusImm 
@@ -1376,6 +1374,24 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
       //io.shouldIgnoreInstr := False
       doHandleSetNextPc()
     //}
+  }
+  when (rShouldIgnoreInstrState(2)) {
+    io.modMemWordValid.foreach(current => {
+      current := False
+    })
+    io.modMemWord.foreach(modMemWord => {
+      modMemWord := modMemWord.getZero
+    })
+    io.opIs := 0x0
+    io.opIsMemAccess.foreach(current => {
+      current := False
+    })
+    io.opIsAnyMultiCycle := (
+      False
+    )
+    io.opIsMultiCycle.foreach(current => {
+      current := False
+    })
   }
 
   for (idx <- 0 until rShouldIgnoreInstrState.size) {
@@ -1428,22 +1444,22 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
         if (idx == 0) {
           //io.shouldIgnoreInstr := True
         } else if (idx == 1) {
-          io.modMemWordValid.foreach(current => {
-            current := False
-          })
-          io.modMemWord.foreach(modMemWord => {
-            modMemWord := modMemWord.getZero
-          })
-          io.opIs := 0x0
-          io.opIsMemAccess.foreach(current => {
-            current := False
-          })
-          io.opIsAnyMultiCycle := (
-            False
-          )
-          io.opIsMultiCycle.foreach(current => {
-            current := False
-          })
+          //io.modMemWordValid.foreach(current => {
+          //  current := False
+          //})
+          //io.modMemWord.foreach(modMemWord => {
+          //  modMemWord := modMemWord.getZero
+          //})
+          //io.opIs := 0x0
+          //io.opIsMemAccess.foreach(current => {
+          //  current := False
+          //})
+          //io.opIsAnyMultiCycle := (
+          //  False
+          //)
+          //io.opIsMultiCycle.foreach(current => {
+          //  current := False
+          //})
         }
       }
       is (M"1-1") {
@@ -1453,22 +1469,22 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
         if (idx == 0) {
           //io.shouldIgnoreInstr := True
         } else if (idx == 1) {
-          io.modMemWordValid.foreach(current => {
-            current := False
-          })
-          io.modMemWord.foreach(modMemWord => {
-            modMemWord := modMemWord.getZero
-          })
-          io.opIs := 0x0
-          io.opIsMemAccess.foreach(current => {
-            current := False
-          })
-          io.opIsAnyMultiCycle := (
-            False
-          )
-          io.opIsMultiCycle.foreach(current => {
-            current := False
-          })
+          //io.modMemWordValid.foreach(current => {
+          //  current := False
+          //})
+          //io.modMemWord.foreach(modMemWord => {
+          //  modMemWord := modMemWord.getZero
+          //})
+          //io.opIs := 0x0
+          //io.opIsMemAccess.foreach(current => {
+          //  current := False
+          //})
+          //io.opIsAnyMultiCycle := (
+          //  False
+          //)
+          //io.opIsMultiCycle.foreach(current => {
+          //  current := False
+          //})
         }
         when (
           ////io.regPcSetItCnt.msb
