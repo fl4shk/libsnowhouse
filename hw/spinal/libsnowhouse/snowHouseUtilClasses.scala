@@ -433,8 +433,8 @@ case class SnowHouseConfig(
   def lowerMyFanout = 4
   def lowerMyFanoutRegPcSetItCnt = (
     //2
-    //3
-    4
+    3
+    //4
     //5
     //1
   )
@@ -547,7 +547,7 @@ case class SnowHouseConfig(
     },
     memRamStyle=regFileMemRamStyle,
     optModHazardKind=PipeMemRmw.ModHazardKind.Fwd,
-    optFwdHaveZeroReg=haveZeroReg,
+    //optFwdHaveZeroReg=haveZeroReg,
     optIncludeModFrontS2MLink=false,
     optFormal=optFormal,
     numForkJoin=/*2*/1,
@@ -798,12 +798,13 @@ case class SnowHouseDecodeExt(
 ) extends Bundle {
   //--------
   //private val _opIsMemAccessIdx = 0
-  private val _opIsCpyNonJmpAluIdx = 0
-  private val _opIsAluShiftIdx = 1
-  //private val _opIsJmpIdx = 2
-  //private val _opIsMultiCycleIdx = 4
-  val opIsLim = 2
-  val opIs = /*out*/(UInt(opIsLim bits))
+  //private val _opIsCpyNonJmpAluIdx = 0
+  //private val _opIsAluShiftIdx = 1
+  ////private val _opIsJmpIdx = 2
+  ////private val _opIsMultiCycleIdx = 4
+  //val opIsLim = 2
+  //val opIs = /*out*/(UInt(opIsLim bits))
+
   //val memAccessLdStKind = SnowHouseDecodeExtLdStKind() //Bool()
   //def memAccessIsLoad = (
   //  memAccessLdStKind === SnowHouseDecodeExtLdStKind.Load
@@ -825,8 +826,8 @@ case class SnowHouseDecodeExt(
   )(
     Bool()
   )
-  def opIsCpyNonJmpAlu = opIs(_opIsCpyNonJmpAluIdx)
-  def opIsAluShift = opIs(_opIsAluShiftIdx)
+  //def opIsCpyNonJmpAlu = opIs(_opIsCpyNonJmpAluIdx)
+  //def opIsAluShift = opIs(_opIsAluShiftIdx)
   //def opIsJmp = opIs(_opIsJmpIdx)
   //def opIsMultiCycle = opIs(_opIsMultiCycleIdx)
   val opIsJmp = Bool()
@@ -904,7 +905,7 @@ case class SnowHouseSplitOp(
     UInt(log2Up(cfg.cpyCpyuiOpInfoMap.size) bits)
   )
   val exSetNextPcKind = (
-    SnowHousePsExSetNextPcKind(encoding=binaryOneHot)
+    SnowHousePsExSetNextPcKind(encoding=binarySequential)
   )
   val jmpBrOp = /*Flow*/(
     UInt(log2Up(cfg.jmpBrOpInfoMap.size + 1) bits)

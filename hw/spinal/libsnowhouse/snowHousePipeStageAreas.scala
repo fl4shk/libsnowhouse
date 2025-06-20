@@ -1142,10 +1142,10 @@ case class SnowHousePipeStageExecuteSetOutpModMemWordIo(
   val multiCycleOpInfoIdx = /*out*/(
     UInt(log2Up(cfg.multiCycleOpInfoMap.size) bits)
   )
-  def opIs = decodeExt.opIs
+  //def opIs = decodeExt.opIs
   def opIsMemAccess = decodeExt.opIsMemAccess
-  def opIsCpyNonJmpAlu = decodeExt.opIsCpyNonJmpAlu
-  def opIsAluShift = decodeExt.opIsAluShift
+  //def opIsCpyNonJmpAlu = decodeExt.opIsCpyNonJmpAlu
+  //def opIsAluShift = decodeExt.opIsAluShift
   def opIsJmp = decodeExt.opIsJmp
   def opIsAnyMultiCycle = decodeExt.opIsAnyMultiCycle
   def opIsMultiCycle = decodeExt.opIsMultiCycle
@@ -1221,7 +1221,7 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
   )
   io.dbusHostPayload.addr.allowOverride
   io.dbusHostPayload.data.allowOverride
-  io.opIs := 0x0
+  //io.opIs := 0x0
   io.opIsMemAccess.foreach(current => {
     current := (
       //False
@@ -1375,14 +1375,14 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
       doHandleSetNextPc()
     //}
   }
-  when (rShouldIgnoreInstrState(3)) {
+  when (rShouldIgnoreInstrState(2)) {
     io.modMemWordValid.foreach(current => {
       current := False
     })
-    io.modMemWord.foreach(modMemWord => {
-      modMemWord := modMemWord.getZero
-    })
-    io.opIs := 0x0
+    //io.modMemWord.foreach(modMemWord => {
+    //  modMemWord := modMemWord.getZero
+    //})
+    //io.opIs := 0x0
     io.opIsMemAccess.foreach(current => {
       current := False
     })
@@ -1498,6 +1498,12 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
         if (idx != 1) {
           io.shouldIgnoreInstr(idx) := True
         }
+        //io.shouldIgnoreInstr(idx) := (
+        //  RegNext(
+        //    next=io.shouldIgnoreInstr(idx),
+        //    init=io.shouldIgnoreInstr(idx).getZero,
+        //  )
+        //)
         //io.shouldIgnoreInstr := True
       }
       //is (M"00-") {
@@ -1892,7 +1898,7 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
         opInfo.cpyOp.get match {
           case CpyOpKind.Cpy => {
             nextIndexReg := 0x0
-            io.opIsCpyNonJmpAlu := True
+            //io.opIsCpyNonJmpAlu := True
             assert(
               opInfo.cond == CondKind.Always,
               s"not yet implemented: "
@@ -2105,7 +2111,7 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
           }
           case CpyOpKind.Cpyu => {
             nextIndexReg := 0x0
-            io.opIsCpyNonJmpAlu := True
+            //io.opIsCpyNonJmpAlu := True
             assert(
               opInfo.dstArr.size == 1,
               s"not yet implemented: "
@@ -2732,7 +2738,7 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
         }
       }
       case OpSelect.Alu => {
-        io.opIsCpyNonJmpAlu := True
+        //io.opIsCpyNonJmpAlu := True
         assert(
           opInfo.cond == CondKind.Always,
           s"not yet implemented: "
@@ -2946,7 +2952,7 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
         }
       }
       case OpSelect.AluShift => {
-        io.opIsAluShift := True
+        //io.opIsAluShift := True
         assert(
           opInfo.cond == CondKind.Always,
           s"not yet implemented: "
@@ -4675,17 +4681,17 @@ case class SnowHousePipeStageExecute(
         )
       })
     }
-    cfg.haveZeroReg match {
-      case Some(myZeroRegIdx) => {
-        for (ydx <- 0 until cfg.regFileCfg.memArrSize) {
-          outp.myExt(ydx).memAddrAlt.foreach(current => {
-            current := myZeroRegIdx
-          })
-        }
-      }
-      case None => {
-      }
-    }
+    //cfg.haveZeroReg match {
+    //  case Some(myZeroRegIdx) => {
+    //    for (ydx <- 0 until cfg.regFileCfg.memArrSize) {
+    //      outp.myExt(ydx).memAddrAlt.foreach(current => {
+    //        current := myZeroRegIdx
+    //      })
+    //    }
+    //  }
+    //  case None => {
+    //  }
+    //}
     //when (myDoStall.sFindFirst(_ === True)._1) {
       cMid0Front.duplicateIt()
     //}
@@ -5125,41 +5131,41 @@ case class SnowHousePipeStageMem(
     })
   }
 
-  cfg.haveZeroReg match {
-    case Some(myZeroRegIdx) => {
-      when (midModPayload(extIdxUp).instrCnt.shouldIgnoreInstr(0)) {
-        for (ydx <- 0 until cfg.regFileCfg.memArrSize) {
-          midModPayload(extIdxUp).myExt(ydx).memAddr.foreach(
-            current => {
-              current := myZeroRegIdx
-            }
-          )
-        }
-      }
-      when (midModPayload(extIdxUp).instrCnt.shouldIgnoreInstr(1)) {
-        for (ydx <- 0 until cfg.regFileCfg.memArrSize) {
-          midModPayload(extIdxUp).myExt(ydx).memAddrAlt.foreach(
-            current => {
-              current := myZeroRegIdx
-            }
-          )
-        }
-      }
-      when (midModPayload(extIdxUp).instrCnt.shouldIgnoreInstr(2)) {
-        for (ydx <- 0 until cfg.regFileCfg.memArrSize) {
-          midModPayload(extIdxUp).myExt(ydx).memAddrFwd.foreach(
-            current => {
-              current.foreach(innerCurrent => {
-                innerCurrent := myZeroRegIdx
-              })
-            }
-          )
-        }
-      }
-    }
-    case None => {
-    }
-  }
+  //cfg.haveZeroReg match {
+  //  case Some(myZeroRegIdx) => {
+  //    when (midModPayload(extIdxUp).instrCnt.shouldIgnoreInstr(0)) {
+  //      for (ydx <- 0 until cfg.regFileCfg.memArrSize) {
+  //        midModPayload(extIdxUp).myExt(ydx).memAddr.foreach(
+  //          current => {
+  //            current := myZeroRegIdx
+  //          }
+  //        )
+  //      }
+  //    }
+  //    when (midModPayload(extIdxUp).instrCnt.shouldIgnoreInstr(1)) {
+  //      for (ydx <- 0 until cfg.regFileCfg.memArrSize) {
+  //        midModPayload(extIdxUp).myExt(ydx).memAddrAlt.foreach(
+  //          current => {
+  //            current := myZeroRegIdx
+  //          }
+  //        )
+  //      }
+  //    }
+  //    when (midModPayload(extIdxUp).instrCnt.shouldIgnoreInstr(2)) {
+  //      for (ydx <- 0 until cfg.regFileCfg.memArrSize) {
+  //        midModPayload(extIdxUp).myExt(ydx).memAddrFwd.foreach(
+  //          current => {
+  //            current.foreach(innerCurrent => {
+  //              innerCurrent := myZeroRegIdx
+  //            })
+  //          }
+  //        )
+  //      }
+  //    }
+  //  }
+  //  case None => {
+  //  }
+  //}
 
   def setMidModStages(): Unit = {
     regFile.io.midModStages(0) := midModPayload
