@@ -1375,7 +1375,7 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
       doHandleSetNextPc()
     //}
   }
-  when (rShouldIgnoreInstrState(2)) {
+  when (rShouldIgnoreInstrState(3)) {
     io.modMemWordValid.foreach(current => {
       current := False
     })

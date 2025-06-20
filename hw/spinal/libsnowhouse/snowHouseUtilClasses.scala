@@ -433,7 +433,8 @@ case class SnowHouseConfig(
   def lowerMyFanout = 4
   def lowerMyFanoutRegPcSetItCnt = (
     //2
-    3
+    //3
+    4
     //5
     //1
   )
