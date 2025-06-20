@@ -1366,6 +1366,17 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
   //io.psExSetPc.nextPc := (
   //  io.regPcPlusImm 
   //)
+  when (
+    !rShouldIgnoreInstrState(1)
+  ) {
+    //if (idx == 1) {
+      //io.psExSetPc.nextPc := (
+      //  io.regPcPlusImm 
+      //)
+      //io.shouldIgnoreInstr := False
+      doHandleSetNextPc()
+    //}
+  }
 
   for (idx <- 0 until rShouldIgnoreInstrState.size) {
     switch (
@@ -1384,30 +1395,36 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
       )
     ) {
       is (M"00-") {
-        io.shouldIgnoreInstr(idx) := False
-        if (idx == 1) {
-          //io.psExSetPc.nextPc := (
-          //  io.regPcPlusImm 
-          //)
-          //io.shouldIgnoreInstr := False
-          doHandleSetNextPc()
+        if (idx != 1) {
+          io.shouldIgnoreInstr(idx) := False
         }
+        //if (idx == 1) {
+        //  //io.psExSetPc.nextPc := (
+        //  //  io.regPcPlusImm 
+        //  //)
+        //  //io.shouldIgnoreInstr := False
+        //  doHandleSetNextPc()
+        //}
       }
       is (M"01-") {
-        io.shouldIgnoreInstr(idx) := False
-        if (idx == 1) {
-          //io.shouldIgnoreInstr := False
-          //io.psExSetPc.nextPc := (
-          //  io.regPcPlusImm 
-          //)
-          doHandleSetNextPc()
+        if (idx != 1) {
+          io.shouldIgnoreInstr(idx) := False
         }
+        //if (idx == 1) {
+        //  //io.shouldIgnoreInstr := False
+        //  //io.psExSetPc.nextPc := (
+        //  //  io.regPcPlusImm 
+        //  //)
+        //  doHandleSetNextPc()
+        //}
         when (io.upIsFiring) {
           nextShouldIgnoreInstrState(idx) := True
         }
       }
       is (M"1-0") {
-        io.shouldIgnoreInstr(idx) := True
+        if (idx != 1) {
+          io.shouldIgnoreInstr(idx) := True
+        }
         if (idx == 0) {
           //io.shouldIgnoreInstr := True
         } else if (idx == 1) {
@@ -1430,7 +1447,9 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
         }
       }
       is (M"1-1") {
-        io.shouldIgnoreInstr(idx) := True
+        if (idx != 1) {
+          io.shouldIgnoreInstr(idx) := True
+        }
         if (idx == 0) {
           //io.shouldIgnoreInstr := True
         } else if (idx == 1) {
@@ -1460,7 +1479,9 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
         }
       }
       default {
-        io.shouldIgnoreInstr(idx) := True
+        if (idx != 1) {
+          io.shouldIgnoreInstr(idx) := True
+        }
         //io.shouldIgnoreInstr := True
       }
       //is (M"00-") {
