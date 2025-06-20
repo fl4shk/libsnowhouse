@@ -1375,7 +1375,7 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
       doHandleSetNextPc()
     //}
   }
-  when (rShouldIgnoreInstrState(2)) {
+  def doShouldIgnoreState2(): Unit = {
     io.modMemWordValid.foreach(current => {
       current := False
     })
@@ -1393,6 +1393,8 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
       current := False
     })
   }
+  //when (rShouldIgnoreInstrState(2)) {
+  //}
 
   for (idx <- 0 until rShouldIgnoreInstrState.size) {
     switch (
@@ -1443,7 +1445,8 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
         }
         if (idx == 0) {
           //io.shouldIgnoreInstr := True
-        } else if (idx == 1) {
+        } else if (idx == 2) {
+          doShouldIgnoreState2()
           //io.modMemWordValid.foreach(current => {
           //  current := False
           //})
@@ -1468,7 +1471,8 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
         }
         if (idx == 0) {
           //io.shouldIgnoreInstr := True
-        } else if (idx == 1) {
+        } else if (idx == 2) {
+          doShouldIgnoreState2()
           //io.modMemWordValid.foreach(current => {
           //  current := False
           //})
@@ -4034,11 +4038,11 @@ case class SnowHousePipeStageExecute(
   //val condForAssertSetPcValid = (
   //  setOutpModMemWord.io.opIsJmp
   //)
-  outp.instrCnt.shouldIgnoreInstr.foreach(current => {
-    current := (
-      setOutpModMemWord.io.shouldIgnoreInstr(2)
-    )
-  })
+  //outp.instrCnt.shouldIgnoreInstr.foreach(current => {
+  //  current := (
+  //    setOutpModMemWord.io.shouldIgnoreInstr(2)
+  //  )
+  //})
   pcChangeState.assignFromBits(
     setOutpModMemWord.io.pcChangeState.asBits
   )
