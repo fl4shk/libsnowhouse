@@ -641,18 +641,19 @@ case class SnowHousePipeStageInstrDecode(
   //    True
   //  )
   //) {
-    //when (
-    //  up.isValid
-    //  //&& up.isReady
-    //  //True
-    //) {
+    when (
+      //up.isValid
+      //&& up.isReady
+      True
+      //down.isReady
+    ) {
       when (
         !rSetUpPayloadState(0)
       ) {
         upPayload := up(pIf)
         nextSetUpPayloadState(0) := True
       }
-    //}
+    }
   //} otherwise {
   //  cId.duplicateIt()
   //  when (down.isFiring) {
@@ -4679,11 +4680,8 @@ case class SnowHousePipeStageExecute(
       //outp.myExt(ydx).memAddrFwd.foreach(current => {
       //  current := 
       //})
-      outp.myExt(ydx).modMemWordValid.foreach(current => {
-        current := (
-          False
-        )
-      })
+      //outp.myExt(ydx).memAddrFwdCmp.foreach(_.foreach(_ := 0x0))
+      outp.myExt(ydx).modMemWordValid.foreach(_ := False)
     }
     //cfg.haveZeroReg match {
     //  case Some(myZeroRegIdx) => {
@@ -4697,8 +4695,12 @@ case class SnowHousePipeStageExecute(
     //  }
     //}
     //when (myDoStall.sFindFirst(_ === True)._1) {
-      cMid0Front.duplicateIt()
+      //cMid0Front.duplicateIt()
+      cMid0Front.haltIt()
     //}
+  } otherwise {
+    //outp.myExt(ydx).memAddrFwdCmp.forea
+    //outp.myExt.foreach(_.memAddrFwdCmp.foreach(_.foreach(_ := 0x0)))
   }
   //cfg.haveZeroReg match {
   //  case Some(myZeroRegIdx) => {
