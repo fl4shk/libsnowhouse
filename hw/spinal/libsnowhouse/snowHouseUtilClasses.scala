@@ -1108,15 +1108,26 @@ case class SnowHousePipePayload(
       myMemAddrFwdCmp := inpExt.main.memAddrFwdCmp(zdx)
     }
     for (
-      (myMemAddrFwd, zdx) <- myExt(ydx).main.memAddrFwd.view.zipWithIndex
+      (myMemAddrFwd, zdx)
+      <- myExt(ydx).main.memAddrFwd.view.zipWithIndex
     ) {
       myMemAddrFwd := inpExt.main.memAddrFwd(zdx)
     }
-    for ((myMemAddr, zdx) <- myExt(ydx).main.memAddr.view.zipWithIndex) {
+    for (
+      (myMemAddrFwdMmw, zdx)
+      <- myExt(ydx).main.memAddrFwdMmw.view.zipWithIndex
+    ) {
+      myMemAddrFwdMmw := inpExt.main.memAddrFwdMmw(zdx)
+    }
+    for (
+      (myMemAddr, zdx)
+      <- myExt(ydx).main.memAddr.view.zipWithIndex
+    ) {
       myMemAddr := inpExt.main.memAddr(zdx).resized
     }
     for (
-      (myMemAddrAlt, zdx) <- myExt(ydx).main.memAddrAlt.view.zipWithIndex
+      (myMemAddrAlt, zdx)
+      <- myExt(ydx).main.memAddrAlt.view.zipWithIndex
     ) {
       myMemAddrAlt := inpExt.main.memAddrAlt(zdx).resized
     }
@@ -1137,11 +1148,21 @@ case class SnowHousePipePayload(
       outpExt.main.memAddrFwdCmp(zdx) := myMemAddrFwdCmp
     }
     for (
-      (myMemAddrFwd, zdx) <- myExt(ydx).main.memAddrFwd.view.zipWithIndex
+      (myMemAddrFwd, zdx)
+      <- myExt(ydx).main.memAddrFwd.view.zipWithIndex
     ) {
       outpExt.main.memAddrFwd(zdx) := myMemAddrFwd.resized
     }
-    for ((myMemAddr, zdx) <- myExt(ydx).main.memAddr.view.zipWithIndex) {
+    for (
+      (myMemAddrFwdMmw, zdx)
+      <- myExt(ydx).main.memAddrFwdMmw.view.zipWithIndex
+    ) {
+      outpExt.main.memAddrFwdMmw(zdx) := myMemAddrFwdMmw.resized
+    }
+    for (
+      (myMemAddr, zdx)
+      <- myExt(ydx).main.memAddr.view.zipWithIndex
+    ) {
       outpExt.main.memAddr(zdx) := myMemAddr.resized
       //(
       //  outpExt.main.memAddr(zdx).bitsRange
