@@ -12,7 +12,7 @@
 3. NOTE: There is no support implemented yet for virtual memory at the time
   of this writing, but in theory a user of `libsnowhouse` could implement
   **most** of the support needed for that through the instruction/data
-  memory-access "bus"es/"port" of a CPU implemented via this library.
+  memory-access "bus"es/"port"s of a CPU implemented via this library.
 
 4. There is a sample CPU that has been developed with the library, called
   the `SnowHouseCpu`. This CPU, given a, is able to reach clock rates
