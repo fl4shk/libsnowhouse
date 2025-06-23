@@ -1,9 +1,9 @@
 # Lib Snow House
 
 1. This is a SpinalHDL library that primarily exists for developing
-RISC (or RISC-like) CPUs with strictly-in-order pipeline structures.
+  RISC (or RISC-like) CPUs with strictly-in-order pipeline structures.
 2. The primary inputs to this library for creating a new CPU are as
-follows:
+  follows:
   * A data structure indicating the kinds of instructions that your CPU
     supports.
   * A Scala function implementing the SpinalHDL code for your CPU's
@@ -15,9 +15,9 @@ follows:
   memory-access "bus"es/"port" of a CPU implemented via this library.
 
 4. There is a sample CPU that has been developed with the library, called
-the `SnowHouseCpu`. This CPU, given a, is able to reach clock rates
-around 140 MHz in a Speed Grade -1, Xilinx Artix-7 FPGA, at least in a
-version of this CPU that lacks support for interrupts.
+  the `SnowHouseCpu`. This CPU, given a, is able to reach clock rates
+  around 140 MHz in a Speed Grade -1, Xilinx Artix-7 FPGA, at least in a
+  version of this CPU that lacks support for interrupts.
   * This CPU's implementation, besides the generic parts of
     `libsnowhouse`, lives mostly within this source file:
     `hw/gen/libsnowhouse/snowHouseCpuMod.scala`.
@@ -32,8 +32,8 @@ version of this CPU that lacks support for interrupts.
 ## *OLD STUFF*: Initial Notes:
 
 1. It'll always be the same strictly-in-order pipeline structure, and most
-likely some variant of the Classic RISC Pipeline (which you can see on
-Wikipedia).
+  likely some variant of the Classic RISC Pipeline (which you can see on
+  Wikipedia).
 
 1. I'd have (in the SpinalHDL code) configuration things like this (though
   this is a non-exhaustive list):
