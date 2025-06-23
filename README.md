@@ -17,7 +17,7 @@
 4. There is a sample CPU that has been developed with the library, called
   the `SnowHouseCpu`. This CPU, given a, is able to reach clock rates
   around 140 MHz in a Speed Grade -1, Xilinx Artix-7 FPGA, at least in a
-  version of this CPU that lacks support for interrupts.
+  version of this CPU that lacks support for any kind of interrupt.
   * This CPU's implementation, besides the generic parts of
     `libsnowhouse`, lives mostly within this source file:
     `hw/gen/libsnowhouse/snowHouseCpuMod.scala`.
@@ -28,6 +28,10 @@
     [gcc snowhousecpu branch](https://github.com/fl4shk/gcc/tree/snowhousecpu)
   * A Picolibc port has been written for `SnowHouseCpu`:
     [picolibc snowhouse branch](https://github.com/fl4shk/picolibc/tree/snowhousecpu)
+  * This command will simulate a test program running on the CPU if you
+    have `Verilator` installed (you also probably want `gtkwave` or
+    `surfer` to view the simulation output):
+    * `sbt "runMain libsnowhouse.SnowHouseCpuWithDualRamSim"`
 
 ## *OLD STUFF*: Initial Notes:
 
