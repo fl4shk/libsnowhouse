@@ -61,185 +61,208 @@ case class SnowHouseInstrDataDualRam(
   //))
   val io = SnowHouseInstrDataDualRamIo(cfg=cfg)
   //--------
+  val instrRamKind = (
+    //false
+    //true
+    0
+    //5
+    //2
+    //1
+  )
   // BEGIN: old, non-icache code
-  //val instrRamDepth = instrInitBigInt.size
-  //val instrRam = FpgacpuRamSimpleDualPort(
-  //  wordType=UInt(cfg.instrMainWidth bits),
-  //  depth=instrRamDepth,
-  //  initBigInt=Some(instrInitBigInt),
-  //)
-  ////--------
-  //val fastIbusReady = (
-  //  //true
-  //  false
-  //)
-  ////val fastDbusReady = (
-  ////  //true
-  ////  false
-  ////)
-  //val rReadyPipe1 = (
-  //  Reg(Bool())
-  //  init(False)
-  //)
-  //val rInstrPipe1 = (
-  //  Reg(UInt(cfg.instrMainWidth bits))
-  //  init(0x0)
-  //)
+  val myNonIcacheArea = (
+    //noIcache
+    instrRamKind > 0
+  ) generate (
+    new Area {
+      val instrRamDepth = instrInitBigInt.size
+      val instrRam = FpgacpuRamSimpleDualPort(
+        wordType=UInt(cfg.instrMainWidth bits),
+        depth=instrRamDepth,
+        initBigInt=Some(instrInitBigInt),
+      )
+      //--------
+      val fastIbusReady = (
+        //true
+        false
+      )
+      //val fastDbusReady = (
+      //  //true
+      //  false
+      //)
+      val rReadyPipe1 = (
+        Reg(Bool())
+        init(False)
+      )
+      val rInstrPipe1 = (
+        Reg(UInt(cfg.instrMainWidth bits))
+        init(0x0)
+      )
 
-  //val rIbusReadyCnt = Reg(UInt(8 bits)) init(0)
-  //val rIbusReadyState = Reg(Bool()) init(False)
-  //if (fastIbusReady) {
-  //  io.ibus.ready := io.ibus.rValid
-  //} else {
-  //  io.ibus.ready.setAsReg() init(False)
-  //  io.ibus.ready := False
-  //  //rReadyPipe.head := False
-  //  //io.ibus.ready := rReadyPipe1
-  //  //rReadyPipe1 := False
-  //  //io.ibus.recvData.instr.setAsReg() init(0)
-  //  when (/*RegNext*/(io.ibus.nextValid)) {
-  //    when (
-  //      rIbusReadyCnt > 0
-  //    ) {
-  //      rIbusReadyCnt := rIbusReadyCnt - 1
-  //    } otherwise {
-  //      rIbusReadyState := !rIbusReadyState
-  //      //io.ibus.ready := True
-  //      when (!rIbusReadyState) {
-  //        rIbusReadyCnt := 5
-  //      } otherwise {
-  //        rIbusReadyCnt := 0
-  //      }
-  //    }
-  //    when ((rIbusReadyCnt - 1).msb) {
-  //      io.ibus.ready := True
-  //    }
-  //  }
-  //}
-  //instrRam.io.rdEn := /*RegNext*/(io.ibus.nextValid)
-  //instrRam.io.rdAddr := (
-  //  /*RegNext*/(io.ibus.sendData.addr >> 2).resized
-  //)
-  //io.ibus.recvData.instr := /*RegNext*/(instrRam.io.rdData.asUInt)
-  ////--------
-  ////if (fastIbusReady) {
-  ////  //instrRam.io.rdEn := io.ibus.nextValid
-  ////  //instrRam.io.rdAddr := (
-  ////  //  (io.ibus.sendData.addr >> 2).resized
-  ////  //)
-  ////  io.ibus.recvData.instr := instrRam.io.rdData.asUInt
-  ////} else {
-  ////  //instrRam.io.rdEn := /*RegNext*/(io.ibus.nextValid) //init(False)
-  ////  //instrRam.io.rdAddr := (
-  ////  //  (/*RegNext*/((io.ibus.sendData.addr >> 2)) /*init(0x0)*/).resized
-  ////  //)
-  ////  io.ibus.recvData.instr := RegNext(instrRam.io.rdData.asUInt) init(0x0)
-  ////}
-  //instrRam.io.wrEn := False
-  //instrRam.io.wrAddr := instrRam.io.wrAddr.getZero
-  //instrRam.io.wrData := instrRam.io.wrData.getZero
+      val rIbusReadyCnt = Reg(UInt(8 bits)) init(0)
+      val rIbusReadyState = Reg(Bool()) init(False)
+      if (fastIbusReady) {
+        io.ibus.ready := io.ibus.rValid
+      } else {
+        io.ibus.ready.setAsReg() init(False)
+        io.ibus.ready := False
+        //rReadyPipe.head := False
+        //io.ibus.ready := rReadyPipe1
+        //rReadyPipe1 := False
+        //io.ibus.recvData.instr.setAsReg() init(0)
+        when (/*RegNext*/(io.ibus.nextValid)) {
+          when (
+            rIbusReadyCnt > 0
+          ) {
+            rIbusReadyCnt := rIbusReadyCnt - 1
+          } otherwise {
+            rIbusReadyState := !rIbusReadyState
+            //io.ibus.ready := True
+            when (!rIbusReadyState) {
+              rIbusReadyCnt := (
+                //5
+                instrRamKind
+              )
+            } otherwise {
+              rIbusReadyCnt := 0
+            }
+          }
+          when ((rIbusReadyCnt - 1).msb) {
+            io.ibus.ready := True
+          }
+        }
+      }
+      instrRam.io.rdEn := /*RegNext*/(io.ibus.nextValid)
+      instrRam.io.rdAddr := (
+        /*RegNext*/(io.ibus.sendData.addr >> 2).resized
+      )
+      io.ibus.recvData.instr := /*RegNext*/(instrRam.io.rdData.asUInt)
+      //--------
+      //if (fastIbusReady) {
+      //  //instrRam.io.rdEn := io.ibus.nextValid
+      //  //instrRam.io.rdAddr := (
+      //  //  (io.ibus.sendData.addr >> 2).resized
+      //  //)
+      //  io.ibus.recvData.instr := instrRam.io.rdData.asUInt
+      //} else {
+      //  //instrRam.io.rdEn := /*RegNext*/(io.ibus.nextValid) //init(False)
+      //  //instrRam.io.rdAddr := (
+      //  //  (/*RegNext*/((io.ibus.sendData.addr >> 2)) /*init(0x0)*/).resized
+      //  //)
+      //  io.ibus.recvData.instr := RegNext(instrRam.io.rdData.asUInt) init(0x0)
+      //}
+      instrRam.io.wrEn := False
+      instrRam.io.wrAddr := instrRam.io.wrAddr.getZero
+      instrRam.io.wrData := instrRam.io.wrData.getZero
+    }
+  )
   // END: old, non-icache code
   //--------
   //--------
-  val instrRamArea = new Area {
-    setName("SnowHouseInstrDataDualRam_instrRamArea")
-    val depth = instrInitBigInt.size
-    val icache = SnowHouseCache(
-      cfg=cfg,
-      isIcache=true,
-      //forFmax=(
-      //  false
-      //  //true
-      //),
-    )
-    //icache.io.haveHazard := io.icacheHaveHazard
-    val m2sTransfers = tilelink.M2sTransfers(
-      get=tilelink.SizeRange(
-        cfg.mainWidth / 8,
-        //cfg.mainWidth / 8,
-        icache.cacheCfg.lineSizeBytes
-      ),
-      putFull=tilelink.SizeRange(
-        cfg.mainWidth / 8,
-        //cfg.mainWidth / 8
-        icache.cacheCfg.lineSizeBytes
-      ),
-    )
-    val addrMapping = spinal.lib.bus.misc.SizeMapping(
-      base=0x0,
-      size=(
-        //1
-        //cfg.mainWidth / 8
-        //depth
-        //2
-        cfg.subCfg.totalNumBusHosts
-        //icache.bridgeCfg.tlCfg.sizeBytes
-      ),
-    )
-    val m2sSource = tilelink.M2sSource(
-      id=addrMapping,
-      emits=m2sTransfers,
-    )
-    val m2sAgent = tilelink.M2sAgent(
-      name=this,
-      mapping=m2sSource
-    )
-    val m2sCfg = tilelink.M2sParameters(
-      addressWidth=(
-        //cfg.mainWidth
-        log2Up(depth * (cfg.mainWidth / 8))
-      ),
-      dataWidth=cfg.instrMainWidth,
-      masters=Array[tilelink.M2sAgent](m2sAgent),
-    )
-    val myRam = new tilelink.Ram(
-      p=m2sCfg.toNodeParameters(),
-      bytes=(
-        depth * (cfg.instrMainWidth / 8)
-      ),
-    )
-    myRam.mem.initBigInt(instrInitBigInt, allowNegative=true)
+  val instrRamArea = (
+    //!noIcache
+    instrRamKind == 0
+  ) generate (
+    new Area {
+      setName("SnowHouseInstrDataDualRam_instrRamArea")
+      val depth = instrInitBigInt.size
+      val icache = SnowHouseCache(
+        cfg=cfg,
+        isIcache=true,
+        //forFmax=(
+        //  false
+        //  //true
+        //),
+      )
+      //icache.io.haveHazard := io.icacheHaveHazard
+      val m2sTransfers = tilelink.M2sTransfers(
+        get=tilelink.SizeRange(
+          cfg.mainWidth / 8,
+          //cfg.mainWidth / 8,
+          icache.cacheCfg.lineSizeBytes
+        ),
+        putFull=tilelink.SizeRange(
+          cfg.mainWidth / 8,
+          //cfg.mainWidth / 8
+          icache.cacheCfg.lineSizeBytes
+        ),
+      )
+      val addrMapping = spinal.lib.bus.misc.SizeMapping(
+        base=0x0,
+        size=(
+          //1
+          //cfg.mainWidth / 8
+          //depth
+          //2
+          cfg.subCfg.totalNumBusHosts
+          //icache.bridgeCfg.tlCfg.sizeBytes
+        ),
+      )
+      val m2sSource = tilelink.M2sSource(
+        id=addrMapping,
+        emits=m2sTransfers,
+      )
+      val m2sAgent = tilelink.M2sAgent(
+        name=this,
+        mapping=m2sSource
+      )
+      val m2sCfg = tilelink.M2sParameters(
+        addressWidth=(
+          //cfg.mainWidth
+          log2Up(depth * (cfg.mainWidth / 8))
+        ),
+        dataWidth=cfg.instrMainWidth,
+        masters=Array[tilelink.M2sAgent](m2sAgent),
+      )
+      val myRam = new tilelink.Ram(
+        p=m2sCfg.toNodeParameters(),
+        bytes=(
+          depth * (cfg.instrMainWidth / 8)
+        ),
+      )
+      myRam.mem.initBigInt(instrInitBigInt, allowNegative=true)
 
-    icache.io.bus.nextValid := (
-      io.ibus.nextValid
-    )
-    icache.io.bus.sendData := (
-      io.ibus.sendData
-    )
-    io.ibus.recvData := (
-      icache.io.bus.recvData
-    )
-    io.ibus.ready := (
-      icache.io.bus.ready
-    )
-    //io.ibusExtraReady.addAttribute(KeepAttribute.keep)
-    //io.ibusExtraReady := icache.io.busExtraReady
+      icache.io.bus.nextValid := (
+        io.ibus.nextValid
+      )
+      icache.io.bus.sendData := (
+        io.ibus.sendData
+      )
+      io.ibus.recvData := (
+        icache.io.bus.recvData
+      )
+      io.ibus.ready := (
+        icache.io.bus.ready
+      )
+      //io.ibusExtraReady.addAttribute(KeepAttribute.keep)
+      //io.ibusExtraReady := icache.io.busExtraReady
 
-    //myRam.io.up << icache.io.tlBus
-    //myRam.io.up.a << icache.io.tlBus.a
-    myRam.io.up.a.opcode := icache.io.tlBus.a.opcode
-    myRam.io.up.a.param := icache.io.tlBus.a.param
-    myRam.io.up.a.source := icache.io.tlBus.a.source
-    myRam.io.up.a.address := icache.io.tlBus.a.address.resize(
-      myRam.io.up.a.address.getWidth
-    )
-    myRam.io.up.a.size := icache.io.tlBus.a.size
-    myRam.io.up.a.mask := icache.io.tlBus.a.mask
-    myRam.io.up.a.data := icache.io.tlBus.a.data
-    myRam.io.up.a.corrupt := icache.io.tlBus.a.corrupt
-    myRam.io.up.a.debugId := icache.io.tlBus.a.debugId
+      //myRam.io.up << icache.io.tlBus
+      //myRam.io.up.a << icache.io.tlBus.a
+      myRam.io.up.a.opcode := icache.io.tlBus.a.opcode
+      myRam.io.up.a.param := icache.io.tlBus.a.param
+      myRam.io.up.a.source := icache.io.tlBus.a.source
+      myRam.io.up.a.address := icache.io.tlBus.a.address.resize(
+        myRam.io.up.a.address.getWidth
+      )
+      myRam.io.up.a.size := icache.io.tlBus.a.size
+      myRam.io.up.a.mask := icache.io.tlBus.a.mask
+      myRam.io.up.a.data := icache.io.tlBus.a.data
+      myRam.io.up.a.corrupt := icache.io.tlBus.a.corrupt
+      myRam.io.up.a.debugId := icache.io.tlBus.a.debugId
 
-    myRam.io.up.a.valid := icache.io.tlBus.a.valid
-    icache.io.tlBus.a.ready := myRam.io.up.a.ready
+      myRam.io.up.a.valid := icache.io.tlBus.a.valid
+      icache.io.tlBus.a.ready := myRam.io.up.a.ready
 
-    //myRam.io.up.a.address.allowOverride
-    //myRam.io.up.a.address := (
-    //  icache.io.tlBus.a.address.resized
-    //)
-    icache.io.tlBus.d << myRam.io.up.d
-    //myRam.io.up.a <-/< icache.io.tlBus.a
-    //icache.io.tlBus.d <-/< myRam.io.up.d
-  }
+      //myRam.io.up.a.address.allowOverride
+      //myRam.io.up.a.address := (
+      //  icache.io.tlBus.a.address.resized
+      //)
+      icache.io.tlBus.d << myRam.io.up.d
+      //myRam.io.up.a <-/< icache.io.tlBus.a
+      //icache.io.tlBus.d <-/< myRam.io.up.d
+    }
+  )
   val dataRamArea = new Area {
     setName("SnowHouseInstrDataDualRam_dataRamArea")
     val depth = dataInitBigInt.size
