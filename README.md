@@ -4,9 +4,9 @@
 RISC (or RISC-like) CPUs with strictly-in-order pipeline structures.
 2. The primary inputs to this library for creating a new CPU are as
 follows:
-  1. A data structure indicating the kinds of instructions that your CPU
+  * A data structure indicating the kinds of instructions that your CPU
     supports.
-  2. A Scala function implementing the SpinalHDL code for your CPU's
+  * A Scala function implementing the SpinalHDL code for your CPU's
     specific instruction decoder (though not all aspects of the Instruction
     Decode pipeline stage need to be implemented).
 3. NOTE: There is no support implemented yet for virtual memory at the time
@@ -18,15 +18,15 @@ follows:
 the `SnowHouseCpu`. This CPU, given a, is able to reach clock rates
 around 140 MHz in a Speed Grade -1, Xilinx Artix-7 FPGA, at least in a
 version of this CPU that lacks support for interrupts.
-  1. This CPU's implementation, besides the generic parts of
+  * This CPU's implementation, besides the generic parts of
     `libsnowhouse`, lives mostly within this source file:
     `hw/gen/libsnowhouse/snowHouseCpuMod.scala`.
-  2. Other CPUs can be modeled in a similar way.
-  3. A GNU Binutils port has been written for `SnowHouseCpu`:
+  * Other CPUs can be modeled in a similar way.
+  * A GNU Binutils port has been written for `SnowHouseCpu`:
     [binutils-gdb snowhousecpu branch](https://github.com/fl4shk/binutils-gdb/tree/snowhousecpu)
-  4. A GCC port has been written for `SnowHouseCpu`:
+  * A GCC port has been written for `SnowHouseCpu`:
     [gcc snowhousecpu branch](https://github.com/fl4shk/gcc/tree/snowhousecpu)
-  5. A Picolibc port has been written for `SnowHouseCpu`:
+  * A Picolibc port has been written for `SnowHouseCpu`:
     [picolibc snowhouse branch](https://github.com/fl4shk/picolibc/tree/snowhousecpu)
 
 ## *OLD STUFF*: Initial Notes:
