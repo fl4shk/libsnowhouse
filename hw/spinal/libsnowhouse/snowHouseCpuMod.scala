@@ -459,13 +459,25 @@ object SnowHouseCpuPipeStageInstrDecode {
     //  )
     //  .setName(s"InstrDecode_PopRaRb_rTempState")
     //)
-    val nextMultiCycleState = Bool()
+    object MultiCycleState
+    extends SpinalEnum(defaultEncoding=binaryOneHot) {
+      val
+        Idle,
+        DidntSetPc,
+        DidSetPc
+        = newElement()
+    }
+    val nextMultiCycleState = (
+      //Bool()
+      MultiCycleState()
+    )
     val rMultiCycleState = (
       /*KeepAttribute*/(
         RegNext(
           next=nextMultiCycleState,
-          init=nextMultiCycleState.getZero,
+          //init=nextMultiCycleState.getZero,
         )
+        init(MultiCycleState.Idle)
       )
       .setName(s"InstrDecode_rMultiCycleState")
     )
@@ -795,30 +807,67 @@ object SnowHouseCpuPipeStageInstrDecode {
     //when (cId.up.isFiring) {
     //  rTempState := False
     //}
-    switch (rMultiCycleState) {
-      is (False) {
-        upPayload.imm.foreach(imm => {
-          imm := tempImm
-        })
-        //upPayload.blockIrq := False
-      }
-      is (True) {
-        upPayload.imm.foreach(imm => {
-          imm := (
-            Cat(
-              rPrevPreImm,
-              encInstr.imm16,
-            ).asUInt.resized
-          )
-        })
-        when (cId.up.isFiring) {
-          if (cfg.irqCfg != None) {
-            upPayload.blockIrq := False
+
+    //val canStartMultiCycleState = (
+    //  (
+    //    (
+    //      !psId.psExSetPc.fire
+    //    ) && (
+    //      !psId.shouldIgnoreInstr
+    //    )
+    //  )
+    //  //|| (
+    //  //  upPayload.regPcSetItCnt(0) === 0x1
+    //  //)
+    //)
+    //when (canStartMultiCycleState) {
+      switch (rMultiCycleState) {
+        is (MultiCycleState.Idle) {
+          upPayload.imm.foreach(imm => {
+            imm := tempImm
+          })
+          //upPayload.blockIrq := False
+        }
+        is (MultiCycleState.DidntSetPc) {
+          upPayload.imm.foreach(imm => {
+            imm := (
+              Cat(
+                rPrevPreImm,
+                encInstr.imm16,
+              ).asUInt.resized
+            )
+          })
+          when (cId.up.isFiring) {
+            if (cfg.irqCfg != None) {
+              upPayload.blockIrq := False
+            }
+            nextMultiCycleState := (
+              //False
+              MultiCycleState.Idle
+            )
           }
-          nextMultiCycleState := False
+        }
+        is (MultiCycleState.DidSetPc) {
+          when (cId.up.isFiring) {
+            when (upPayload.regPcSetItCnt(0) === 0x1) {
+              if (cfg.irqCfg != None) {
+                upPayload.blockIrq := False
+              }
+              nextMultiCycleState := (
+                MultiCycleState.Idle
+              )
+            }
+          }
         }
       }
-    }
+    //} otherwise {
+    //  //when (cId.up.isFiring) {
+    //    nextMultiCycleState := False
+    //    if (cfg.irqCfg != None) {
+    //      upPayload.blockIrq := False
+    //    }
+    //  //}
+    //}
     switch (encInstr.op) {
       is (AddRaRbRc._1) {
         when (encInstr.rcIdx =/= 0x0) {
@@ -1247,12 +1296,26 @@ object SnowHouseCpuPipeStageInstrDecode {
         )
         //when (!rMultiCycleState) {
           when (cId.up.isFiring) {
-            if (cfg.irqCfg != None) {
-              upPayload.blockIrq := True
+            //if (cfg.irqCfg != None) {
+            //  upPayload.blockIrq := True
+            //}
+            when (rMultiCycleState === MultiCycleState.Idle) {
+              if (cfg.irqCfg != None) {
+                upPayload.blockIrq := True
+              }
+              when (!psId.psExSetPc.fire) {
+                nextMultiCycleState := MultiCycleState.DidntSetPc
+              } otherwise {
+                nextMultiCycleState := MultiCycleState.DidSetPc
+              }
             }
-            when (!rMultiCycleState) {
-              nextMultiCycleState := True
-            }
+            //when (
+            //  //canStartMultiCycleState
+            //) {
+            //  //when (!rMultiCycleState) {
+            //  //  nextMultiCycleState := True
+            //  //}
+            //}
           }
         //} otherwise {
         //  if(cfg.irqCfg != None) {
@@ -2014,6 +2077,8 @@ case class SnowHouseCpuConfig(
           //  true
           //  //false
           //),
+          //doBlockIrqCntWidthMinus1=Some(1)
+          doBlockIrqCntMax=Some(1)
         ),
       )
     ),

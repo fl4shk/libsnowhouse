@@ -99,6 +99,18 @@ case class SnowHouseRegFileConfig(
 //) {
 //}
 sealed trait SnowHouseIrqConfig {
+  private[libsnowhouse] def _doBlockIrqCntMax: Option[Int]
+  private[libsnowhouse] def _doBlockIrqCntWidth: Option[Int] = (
+    _doBlockIrqCntMax match {
+      case Some(myBlockIrqCntMax) => {
+        Some(log2Up(myBlockIrqCntMax) + 1)
+      }
+      case None => {
+        None
+      }
+    }
+  )
+  //private[libsnowhouse] def _doBlockIrqCntWidth: Option[Int]
   //def numIrqs: Int
   //private[libsnowhouse] def _allowIrqStorm: Boolean
 }
@@ -109,9 +121,14 @@ object SnowHouseIrqConfig {
     ////val allowNestedIrqs: Boolean,
     //val allowIrqStorm: Boolean,
     ////val numIrqs: Int
+    //val doBlockIrqCntWidthMinus1: Option[Int]=None,
+    val doBlockIrqCntMax: Option[Int]=None,
   ) extends SnowHouseIrqConfig {
     // TODO: possibly support multiple IRQ lines?
     //def _allowIrqStorm: Boolean = allowIrqStorm
+    private[libsnowhouse] def _doBlockIrqCntMax: Option[Int] = (
+      doBlockIrqCntMax
+    )
   }
   //case class Vector(
   //  val numIrqs: Int,
@@ -433,8 +450,8 @@ case class SnowHouseConfig(
   def lowerMyFanout = 4
   def lowerMyFanoutRegPcSetItCnt = (
     //2
-    3
-    //4
+    //3
+    4
     //5
     //1
   )
@@ -1068,6 +1085,7 @@ case class SnowHousePipePayload(
   )
   //psExSetOutpModMemWordIo.simPublic()
   val regPc = UInt(cfg.mainWidth bits)//.simPublic()
+  val psIfRegPcSetItCnt = UInt(1 bits)
   val regPcSetItCnt = Vec.fill(cfg.lowerMyFanoutRegPcSetItCnt)(
     UInt(
       //cfg.instrCntWidth bits

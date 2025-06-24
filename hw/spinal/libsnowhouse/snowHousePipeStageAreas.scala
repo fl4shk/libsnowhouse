@@ -148,16 +148,19 @@ case class SnowHousePipeStageInstrFetch(
   )
   def myInstrCnt = upModExt.instrCnt
   val nextRegPc = SInt(cfg.mainWidth bits) //cloneOf(upModExt.regPc)
-  def myRegPcSetItCnt = upModExt.regPcSetItCnt
+  def myRegPcSetItCnt = upModExt.psIfRegPcSetItCnt
   val rPrevRegPcSetItCnt = {
-    val temp = RegNextWhen(
-      next=myRegPcSetItCnt,
-      cond=up.isFiring
+    val temp = (
+      RegNextWhen(
+        next=myRegPcSetItCnt,
+        cond=up.isFiring
+      )
+      init(0x0)
     )
     //init(-1)
-    temp.foreach(current => {
-      current.init(0x0)
-    })
+    //temp.foreach(current => {
+    //  current.init(0x0)
+    //})
     //init(0x0)
     temp
   }
@@ -171,13 +174,15 @@ case class SnowHousePipeStageInstrFetch(
       ))
     )
     temp.init(temp.getZero)
-    temp.setName(s"rSavedExSetPc")
+    temp.setName(s"psIf_rSavedExSetPc")
   }
 
   //val rMyPsExSetPcFire = (
   //  Reg(Bool(), init=False)
   //)
   when (
+    //up.isFiring
+    //&&
     psExSetPc.fire
     //&& 
     ////!rSavedExSetPc.fire
@@ -187,8 +192,27 @@ case class SnowHousePipeStageInstrFetch(
     //rMyPsExSetPcFire := True//psExSetPc.fire
     rSavedExSetPc.valid := True
     //rSavedExSetPc.payload := psExSetPc.payload
+    //rSavedExSetPc.payload := psExSetPc.payload
+    //when (
+    //  //up.isFiring
+    //  //down.isReady
+    //  down.isFiring
+    //) {
+    //  rSavedExSetPc.nextPc := (
+    //    psExSetPc.nextPc + (cfg.instrMainWidth.toLong / 8.toLong).toLong
+    //  )
+    //}
+    //rSavedExSetPc.payload := psExSetPc.payload
   }
   rSavedExSetPc.payload := psExSetPc.payload
+  //when (
+  //  //up.isFiring
+  //  down.isReady
+  //) {
+  //  rSavedExSetPc.nextPc := (
+  //    psExSetPc.nextPc + (cfg.instrMainWidth.toLong / 8.toLong).toLong
+  //  )
+  //}
   //when (rSavedExSetPc.fire) {
   //  rSavedExSetPc.payload := psExSetPc.payload
   //}
@@ -276,9 +300,9 @@ case class SnowHousePipeStageInstrFetch(
   //  current := 0x0
   //})
   //myRegPcSetItCnt.foreach(_ := 0x0)
-  for (idx <- 1 until myRegPcSetItCnt.size) {
-    myRegPcSetItCnt(idx) := 0x0
-  }
+  //for (idx <- 1 until myRegPcSetItCnt.size) {
+  //  myRegPcSetItCnt(idx) := 0x0
+  //}
   switch (
     Cat(
       List(
@@ -293,7 +317,7 @@ case class SnowHousePipeStageInstrFetch(
       //myRegPcSetItCnt.foreach(current => {
       //  current := 0x0
       //})
-      myRegPcSetItCnt(0) := 0x0
+      myRegPcSetItCnt := 0x0
       //when (!rPrevRegPcSetItCnt.msb) {
       //  myRegPcSetItCnt := rPrevRegPcSetItCnt - 1
       //}
@@ -335,7 +359,7 @@ case class SnowHousePipeStageInstrFetch(
       //myRegPcSetItCnt.foreach(current => {
       //  current := 0x1
       //})
-      myRegPcSetItCnt(0) := 0x1
+      myRegPcSetItCnt := 0x1
       //rSavedExSetPc := rSavedExSetPc.getZero
       rSavedExSetPc.valid := rSavedExSetPc.valid.getZero
       //myRegPcSetItCnt.foreach(current => {
@@ -513,6 +537,24 @@ case class SnowHousePipeStageInstrDecode(
   )
   val startDecode = Reg(Bool(), init=False)
 
+  val rSavedExSetPc = {
+    val temp = /*KeepAttribute*/(
+      Reg(Flow(
+        SnowHousePsExSetPcPayload(cfg=cfg)
+      ))
+    )
+    temp.init(temp.getZero)
+    temp.setName(s"psId_rSavedExSetPc")
+  }
+  when (
+    //up.isFiring
+    //&& 
+    psExSetPc.fire
+  ) {
+    rSavedExSetPc.valid := True
+  }
+  rSavedExSetPc.payload := psExSetPc.payload
+
   //when (up.isFiring) {
   up(pId) := upPayload//(0)
   //}
@@ -641,27 +683,58 @@ case class SnowHousePipeStageInstrDecode(
   //    True
   //  )
   //) {
-    when (
-      //up.isValid
-      //&& up.isReady
-      True
-      //down.isReady
-    ) {
+    //when (
+    //  //up.isValid
+    //  //&& up.isReady
+    //  True
+    //  //down.isReady
+    //) {
       when (
         !rSetUpPayloadState(0)
       ) {
         upPayload := up(pIf)
         nextSetUpPayloadState(0) := True
       }
-    }
+    //}
   //} otherwise {
   //  cId.duplicateIt()
   //  when (down.isFiring) {
   //    nextMultiInstrCnt := rMultiInstrCnt - 1
   //  }
   //}
-  for (idx <- 1 until upPayload.regPcSetItCnt.size) {
-    upPayload.regPcSetItCnt(idx) := upPayload.regPcSetItCnt(0)
+  for (idx <- 0 until upPayload.regPcSetItCnt.size) {
+    //upPayload.regPcSetItCnt(idx) := upPayload.regPcSetItCnt(0)
+    //upPayload.regPcSetItCnt(idx) := 0x0
+    upPayload.regPcSetItCnt(idx) := (
+      RegNextWhen(
+        next=upPayload.regPcSetItCnt(idx),
+        cond=up.isFiring,
+      )
+      init(0x0)
+    )
+    when (up.isFiring) {
+      when (
+        (
+          rSavedExSetPc.fire
+          && (
+            (
+              upPayload.regPc
+              === (
+                rSavedExSetPc.nextPc
+              )
+            )
+          )
+        )
+        //|| (
+        //  upPayload.psIfRegPcSetItCnt === 0x1
+        //)
+      ) {
+        rSavedExSetPc.valid := False
+        upPayload.regPcSetItCnt(idx) := 0x1
+      } otherwise {
+        upPayload.regPcSetItCnt(idx) := 0x0
+      }
+    }
   }
   when (up.isFiring) {
     nextSetUpPayloadState(0) := False
@@ -669,9 +742,11 @@ case class SnowHousePipeStageInstrDecode(
   }
   upPayload.regPcPlusInstrSize := (
     upPayload.regPc + (cfg.instrMainWidth / 8)
+    - (cfg.instrMainWidth.toLong / 8.toLong)
   )
   upPayload.regPcPlusImm := (
     upPayload.regPc + upPayload.imm(2)
+    - (cfg.instrMainWidth.toLong / 8.toLong)
   )
   val upGprIdxToMemAddrIdxMap = upPayload.gprIdxToMemAddrIdxMap
   for ((gprIdx, zdx) <- upPayload.gprIdxVec.view.zipWithIndex) {
@@ -718,26 +793,31 @@ case class SnowHousePipeStageInstrDecode(
     upPayload.takeIrq := False
   }
   val nextPrevInstrBlockedIrq = (
-    true
+    //true
+    cfg.irqCfg != None
   ) generate (
     Bool()
   )
   val rPrevInstrBlockedIrq = (
-    true
+    //true
+    cfg.irqCfg != None
   ) generate (
-    RegNext(
+    RegNextWhen(
       next=nextPrevInstrBlockedIrq,
+      cond=up.isFiring,
       init=nextPrevInstrBlockedIrq.getZero,
     )
   )
-  nextPrevInstrBlockedIrq := rPrevInstrBlockedIrq
-  val tempIsFiring = (
-    /*KeepAttribute*/(
-      Bool()
-    )
-    .setName(s"GenInstrDecode_tempIsFiring")
-  )
-  tempIsFiring := up.isFiring
+  if (cfg.irqCfg != None) {
+    nextPrevInstrBlockedIrq := rPrevInstrBlockedIrq
+  }
+  //val tempIsFiring = (
+  //  /*KeepAttribute*/(
+  //    Bool()
+  //  )
+  //  .setName(s"GenInstrDecode_tempIsFiring")
+  //)
+  //tempIsFiring := up.isFiring
   val myDecodeAreaWithoutUcode = (
     !cfg.supportUcode
   ) generate(
@@ -767,6 +847,25 @@ case class SnowHousePipeStageInstrDecode(
     tempInstr := myInstr
     //startDecode := True
     //tempInstr := myInstr
+  //}
+  //cfg.irqCfg match {
+  //  case Some(irqCfg) => {
+  //    when (up.isFiring) {
+  //      //irqCfg match {
+  //      //  case iraIds: SnowHouseIrqConfig.IraIds(_) => {
+  //      //  }
+  //      //}
+  //    }
+  //  }
+  //  case None => {
+  //  }
+  //}
+  //if (cfg.irqCfg != None) {
+  //  when (
+  //    up.isFiring
+  //    //&& rPrevInstrBlockedIrq
+  //  ) {
+  //  }
   //}
   //when (up.isValid) {
   //  when (
@@ -1158,7 +1257,7 @@ case class SnowHousePipeStageExecuteSetOutpModMemWordIo(
     cfg.irqCfg match {
       case Some(irqCfg) => {
         irqCfg match {
-          case SnowHouseIrqConfig.IraIds(/*allowIrqStorm*/) => {
+          case SnowHouseIrqConfig.IraIds(_) => {
             true
           }
         }
@@ -4044,6 +4143,7 @@ case class SnowHousePipeStageExecute(
   //    setOutpModMemWord.io.shouldIgnoreInstr(2)
   //  )
   //})
+  shouldIgnoreInstr := setOutpModMemWord.io.shouldIgnoreInstr.last
   pcChangeState.assignFromBits(
     setOutpModMemWord.io.pcChangeState.asBits
   )
