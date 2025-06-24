@@ -455,6 +455,9 @@ case class SnowHouseConfig(
     //5
     //1
   )
+  def lowerMyFanoutNextPc = (
+    2
+  )
   //def lowerMyFanoutDec = multiCycle
   def instrMainWidth = subCfg.instrMainWidth
   def shRegFileCfg = subCfg.shRegFileCfg

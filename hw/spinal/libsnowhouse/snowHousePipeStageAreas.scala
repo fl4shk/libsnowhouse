@@ -205,6 +205,10 @@ case class SnowHousePipeStageInstrFetch(
     //rSavedExSetPc.payload := psExSetPc.payload
   }
   rSavedExSetPc.payload := psExSetPc.payload
+  rSavedExSetPc.nextPc.allowOverride
+  rSavedExSetPc.nextPc := (
+    psExSetPc.nextPc - (cfg.instrMainWidth.toLong / 8.toLong).toLong
+  )
   //when (
   //  //up.isFiring
   //  down.isReady
@@ -554,6 +558,10 @@ case class SnowHousePipeStageInstrDecode(
     rSavedExSetPc.valid := True
   }
   rSavedExSetPc.payload := psExSetPc.payload
+  rSavedExSetPc.nextPc.allowOverride
+  rSavedExSetPc.nextPc := (
+    psExSetPc.nextPc - (cfg.instrMainWidth.toLong / 8.toLong).toLong
+  )
 
   //when (up.isFiring) {
   up(pId) := upPayload//(0)
@@ -741,12 +749,12 @@ case class SnowHousePipeStageInstrDecode(
     nextSetUpPayloadState(1) := False
   }
   upPayload.regPcPlusInstrSize := (
-    upPayload.regPc //+ (cfg.instrMainWidth / 8)
+    upPayload.regPc + (cfg.instrMainWidth / 8)
     //- (cfg.instrMainWidth.toLong / 8.toLong)
   )
   upPayload.regPcPlusImm := (
     upPayload.regPc + upPayload.imm(2)
-    - (cfg.instrMainWidth.toLong / 8.toLong)
+    //- (cfg.instrMainWidth.toLong / 8.toLong)
   )
   val upGprIdxToMemAddrIdxMap = upPayload.gprIdxToMemAddrIdxMap
   for ((gprIdx, zdx) <- upPayload.gprIdxVec.view.zipWithIndex) {
@@ -944,6 +952,14 @@ case class SnowHousePipeStageExecuteSetOutpModMemWordIo(
   val currOp = /*in*/(UInt(log2Up(cfg.opInfoMap.size) bits))
   val splitOp = /*in*/(SnowHouseSplitOp(cfg=cfg))
   val tempVecSize = 3 // TODO: temporary size of `3`
+  val gprIsZeroVec = ( cfg.myHaveZeroReg
+  ) generate (
+    Vec.fill(tempVecSize)(
+      Vec.fill(cfg.regFileCfg.modMemWordValidSize)(
+        Bool()
+      )
+    )
+  )
   val gprIsNonZeroVec = (
     cfg.myHaveZeroReg
   ) generate (
@@ -1466,285 +1482,7 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
   //io.psExSetPc.nextPc := (
   //  io.regPcPlusImm 
   //)
-  when (!rShouldIgnoreInstrState(1)) {
-    //if (idx == 1) {
-      //io.psExSetPc.nextPc := (
-      //  io.regPcPlusImm 
-      //)
-      //io.shouldIgnoreInstr := False
-      doHandleSetNextPc()
-    //}
-  }
-  def doShouldIgnoreState2(): Unit = {
-    io.modMemWordValid.foreach(current => {
-      current := False
-    })
-    //io.modMemWord.foreach(modMemWord => {
-    //  modMemWord := modMemWord.getZero
-    //})
-    //io.opIs := 0x0
-    io.opIsMemAccess.foreach(current => {
-      current := False
-    })
-    io.opIsAnyMultiCycle := (
-      False
-    )
-    io.opIsMultiCycle.foreach(current => {
-      current := False
-    })
-  }
-  //when (rShouldIgnoreInstrState(2)) {
-  //}
-
-  for (idx <- 0 until rShouldIgnoreInstrState.size) {
-    switch (
-      Cat(
-        List(
-          rShouldIgnoreInstrState(idx),
-          //io.opIsJmp,
-          //(
-          //  io.upIsFiring
-          //  && io.regPcSetItCnt(idx)(0)
-          //)
-          //io.upIsFiring,
-          io.psExSetPc.fire,
-          io.regPcSetItCnt(idx)(0)
-        ).reverse
-      )
-    ) {
-      is (M"00-") {
-        if (idx != 1) {
-          io.shouldIgnoreInstr(idx) := False
-        }
-        //if (idx == 1) {
-        //  //io.psExSetPc.nextPc := (
-        //  //  io.regPcPlusImm 
-        //  //)
-        //  //io.shouldIgnoreInstr := False
-        //  doHandleSetNextPc()
-        //}
-      }
-      is (M"01-") {
-        if (idx != 1) {
-          io.shouldIgnoreInstr(idx) := False
-        }
-        //if (idx == 1) {
-        //  //io.shouldIgnoreInstr := False
-        //  //io.psExSetPc.nextPc := (
-        //  //  io.regPcPlusImm 
-        //  //)
-        //  doHandleSetNextPc()
-        //}
-        when (io.upIsFiring) {
-          nextShouldIgnoreInstrState(idx) := True
-        }
-      }
-      is (M"1-0") {
-        if (idx != 1) {
-          io.shouldIgnoreInstr(idx) := True
-        }
-        if (idx == 0) {
-          //io.shouldIgnoreInstr := True
-        } else if (idx == 2) {
-          doShouldIgnoreState2()
-          //io.modMemWordValid.foreach(current => {
-          //  current := False
-          //})
-          //io.modMemWord.foreach(modMemWord => {
-          //  modMemWord := modMemWord.getZero
-          //})
-          //io.opIs := 0x0
-          //io.opIsMemAccess.foreach(current => {
-          //  current := False
-          //})
-          //io.opIsAnyMultiCycle := (
-          //  False
-          //)
-          //io.opIsMultiCycle.foreach(current => {
-          //  current := False
-          //})
-        }
-      }
-      is (M"1-1") {
-        if (idx != 1) {
-          io.shouldIgnoreInstr(idx) := True
-        }
-        if (idx == 0) {
-          //io.shouldIgnoreInstr := True
-        } else if (idx == 2) {
-          doShouldIgnoreState2()
-          //io.modMemWordValid.foreach(current => {
-          //  current := False
-          //})
-          //io.modMemWord.foreach(modMemWord => {
-          //  modMemWord := modMemWord.getZero
-          //})
-          //io.opIs := 0x0
-          //io.opIsMemAccess.foreach(current => {
-          //  current := False
-          //})
-          //io.opIsAnyMultiCycle := (
-          //  False
-          //)
-          //io.opIsMultiCycle.foreach(current => {
-          //  current := False
-          //})
-        }
-        when (
-          ////io.regPcSetItCnt.msb
-          io.upIsFiring
-          //&& io.regPcSetItCnt(idx)(0)
-        ) {
-          nextShouldIgnoreInstrState(idx) := False
-        }
-      }
-      default {
-        if (idx != 1) {
-          io.shouldIgnoreInstr(idx) := True
-        }
-        //io.shouldIgnoreInstr(idx) := (
-        //  RegNext(
-        //    next=io.shouldIgnoreInstr(idx),
-        //    init=io.shouldIgnoreInstr(idx).getZero,
-        //  )
-        //)
-        //io.shouldIgnoreInstr := True
-      }
-      //is (M"00-") {
-      //  if (idx == 0) {
-      //    io.shouldIgnoreInstr := False
-      //  }
-      //}
-      //is (M"01-") {
-      //  if (idx == 0) {
-      //    io.shouldIgnoreInstr := False
-      //  }
-      //  nextShouldIgnoreInstrState(idx) := True
-      //}
-      //is (M"1-0") {
-      //  if (idx == 0) {
-      //    io.shouldIgnoreInstr := True
-      //  } else if (idx == 1) {
-      //    io.modMemWordValid.foreach(current => {
-      //      current := False
-      //    })
-      //    io.modMemWord.foreach(modMemWord => {
-      //      modMemWord := modMemWord.getZero
-      //    })
-      //    io.opIs := 0x0
-      //    io.opIsMemAccess.foreach(current => {
-      //      current := False
-      //    })
-      //    io.opIsAnyMultiCycle := (
-      //      False
-      //    )
-      //    io.opIsMultiCycle.foreach(current => {
-      //      current := False
-      //    })
-      //  }
-      //}
-      //is (M"1-1") {
-      //  if (idx == 0) {
-      //    io.shouldIgnoreInstr := True
-      //  } else if (idx == 1) {
-      //    io.modMemWordValid.foreach(current => {
-      //      current := False
-      //    })
-      //    io.modMemWord.foreach(modMemWord => {
-      //      modMemWord := modMemWord.getZero
-      //    })
-      //    io.opIs := 0x0
-      //    io.opIsMemAccess.foreach(current => {
-      //      current := False
-      //    })
-      //    io.opIsAnyMultiCycle := (
-      //      False
-      //    )
-      //    io.opIsMultiCycle.foreach(current => {
-      //      current := False
-      //    })
-      //  }
-      //  nextShouldIgnoreInstrState(idx) := False
-      //}
-      //default {
-      //  io.shouldIgnoreInstr := (
-      //    RegNext(
-      //      next=io.shouldIgnoreInstr,
-      //      init=io.shouldIgnoreInstr.getZero,
-      //    )
-      //  )
-      //}
-    }
-    //switch (rShouldIgnoreInstrState(idx)) {
-    //  /*when*/ is (/*rShouldIgnoreInstrState(idx) ===*/ False) {
-    //    if (idx == 0) {
-    //      io.shouldIgnoreInstr := False
-    //    }
-    //    //else {
-    //    //  lowerMyFanoutShouldIgnoreInstr := False
-    //    //}
-    //    when (io.opIsJmp) {
-    //      nextShouldIgnoreInstrState(idx) := True
-    //    }
-    //    //when (io.opIsJmp) {
-    //    //  nextShouldIgnoreInstrState(idx) := True
-    //    //}
-    //  }
-    //  /*otherwise*/ is (True) {
-    //    if (idx == 0) {
-    //      io.shouldIgnoreInstr := True
-    //    } else if (idx == 1) {
-    //      io.modMemWordValid.foreach(current => {
-    //        current := False
-    //      })
-    //      io.modMemWord.foreach(modMemWord => {
-    //        modMemWord := modMemWord.getZero
-    //      })
-    //      io.opIs := 0x0
-    //      io.opIsMemAccess.foreach(current => {
-    //        current := False
-    //      })
-    //      io.opIsAnyMultiCycle := (
-    //        False
-    //      )
-    //      io.opIsMultiCycle.foreach(current => {
-    //        current := False
-    //      })
-    //    }
-    //    //else if (idx == 2) {
-    //    //}
-    //    //else if (idx == 3) {
-    //    //  //lowerMyFanoutShouldIgnoreInstr := True
-    //    //  io.opIsMultiCycle.foreach(current => {
-    //    //    current := False
-    //    //  })
-    //    //}
-    //    //else if (idx == 4) {
-    //    //} else if (idx == 5) {
-    //    //} else if (idx == 6) {
-    //    //}
-    //    when (
-    //      ////io.regPcSetItCnt.msb
-    //      io.upIsFiring
-    //      && io.regPcSetItCnt(idx)(0)
-    //    ) {
-    //      nextShouldIgnoreInstrState(idx) := False
-    //    }
-    //  }
-    //}
-    //when (io.opIsJmp) {
-    //  nextShouldIgnoreInstrState(idx) := True
-    //}
-    //when (
-    //  ////io.regPcSetItCnt.msb
-    //  //io.upIsFiring
-    //  //&& 
-    //  io.upIsFiring
-    //  && io.regPcSetItCnt(idx)(0)
-    //) {
-    //  nextShouldIgnoreInstrState(idx) := False
-    //}
-  }
+  // TODO: change this to `io.gprIsZeroVec`
 
   //switch (rShouldIgnoreInstrState) {
   //}
@@ -3448,6 +3186,290 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
   //    }
   //  }
   //}
+  for (idx <- 0 until io.gprIsNonZeroVec.size) {
+    when (!io.gprIsNonZeroVec(0)(0)) {
+      io.modMemWord(0) := 0x0
+    }
+  }
+  when (!rShouldIgnoreInstrState(1)) {
+    //if (idx == 1) {
+      //io.psExSetPc.nextPc := (
+      //  io.regPcPlusImm 
+      //)
+      //io.shouldIgnoreInstr := False
+      doHandleSetNextPc()
+    //}
+  }
+  def doShouldIgnoreState2(): Unit = {
+    io.modMemWordValid.foreach(current => {
+      current := False
+    })
+    io.modMemWord.foreach(modMemWord => {
+      modMemWord := modMemWord.getZero
+    })
+    //io.opIs := 0x0
+    io.opIsMemAccess.foreach(current => {
+      current := False
+    })
+    io.opIsAnyMultiCycle := (
+      False
+    )
+    io.opIsMultiCycle.foreach(current => {
+      current := False
+    })
+  }
+  //when (rShouldIgnoreInstrState(2)) {
+  //}
+
+  for (idx <- 0 until rShouldIgnoreInstrState.size) {
+    switch (
+      Cat(
+        List(
+          rShouldIgnoreInstrState(idx),
+          //io.opIsJmp,
+          //(
+          //  io.upIsFiring
+          //  && io.regPcSetItCnt(idx)(0)
+          //)
+          //io.upIsFiring,
+          io.psExSetPc.fire,
+          io.regPcSetItCnt(idx)(0)
+        ).reverse
+      )
+    ) {
+      is (M"00-") {
+        if (idx != 1) {
+          io.shouldIgnoreInstr(idx) := False
+        }
+        //if (idx == 1) {
+        //  //io.psExSetPc.nextPc := (
+        //  //  io.regPcPlusImm 
+        //  //)
+        //  //io.shouldIgnoreInstr := False
+        //  doHandleSetNextPc()
+        //}
+      }
+      is (M"01-") {
+        if (idx != 1) {
+          io.shouldIgnoreInstr(idx) := False
+        }
+        //if (idx == 1) {
+        //  //io.shouldIgnoreInstr := False
+        //  //io.psExSetPc.nextPc := (
+        //  //  io.regPcPlusImm 
+        //  //)
+        //  doHandleSetNextPc()
+        //}
+        when (io.upIsFiring) {
+          nextShouldIgnoreInstrState(idx) := True
+        }
+      }
+      is (M"1-0") {
+        if (idx != 1) {
+          io.shouldIgnoreInstr(idx) := True
+        }
+        if (idx == 0) {
+          //io.shouldIgnoreInstr := True
+        } else if (idx == 2) {
+          doShouldIgnoreState2()
+          //io.modMemWordValid.foreach(current => {
+          //  current := False
+          //})
+          //io.modMemWord.foreach(modMemWord => {
+          //  modMemWord := modMemWord.getZero
+          //})
+          //io.opIs := 0x0
+          //io.opIsMemAccess.foreach(current => {
+          //  current := False
+          //})
+          //io.opIsAnyMultiCycle := (
+          //  False
+          //)
+          //io.opIsMultiCycle.foreach(current => {
+          //  current := False
+          //})
+        }
+      }
+      is (M"1-1") {
+        if (idx != 1) {
+          io.shouldIgnoreInstr(idx) := True
+        }
+        if (idx == 0) {
+          //io.shouldIgnoreInstr := True
+        } else if (idx == 2) {
+          doShouldIgnoreState2()
+          //io.modMemWordValid.foreach(current => {
+          //  current := False
+          //})
+          //io.modMemWord.foreach(modMemWord => {
+          //  modMemWord := modMemWord.getZero
+          //})
+          //io.opIs := 0x0
+          //io.opIsMemAccess.foreach(current => {
+          //  current := False
+          //})
+          //io.opIsAnyMultiCycle := (
+          //  False
+          //)
+          //io.opIsMultiCycle.foreach(current => {
+          //  current := False
+          //})
+        }
+        when (
+          ////io.regPcSetItCnt.msb
+          io.upIsFiring
+          //&& io.regPcSetItCnt(idx)(0)
+        ) {
+          nextShouldIgnoreInstrState(idx) := False
+        }
+      }
+      default {
+        if (idx != 1) {
+          io.shouldIgnoreInstr(idx) := True
+        }
+        //io.shouldIgnoreInstr(idx) := (
+        //  RegNext(
+        //    next=io.shouldIgnoreInstr(idx),
+        //    init=io.shouldIgnoreInstr(idx).getZero,
+        //  )
+        //)
+        //io.shouldIgnoreInstr := True
+      }
+      //is (M"00-") {
+      //  if (idx == 0) {
+      //    io.shouldIgnoreInstr := False
+      //  }
+      //}
+      //is (M"01-") {
+      //  if (idx == 0) {
+      //    io.shouldIgnoreInstr := False
+      //  }
+      //  nextShouldIgnoreInstrState(idx) := True
+      //}
+      //is (M"1-0") {
+      //  if (idx == 0) {
+      //    io.shouldIgnoreInstr := True
+      //  } else if (idx == 1) {
+      //    io.modMemWordValid.foreach(current => {
+      //      current := False
+      //    })
+      //    io.modMemWord.foreach(modMemWord => {
+      //      modMemWord := modMemWord.getZero
+      //    })
+      //    io.opIs := 0x0
+      //    io.opIsMemAccess.foreach(current => {
+      //      current := False
+      //    })
+      //    io.opIsAnyMultiCycle := (
+      //      False
+      //    )
+      //    io.opIsMultiCycle.foreach(current => {
+      //      current := False
+      //    })
+      //  }
+      //}
+      //is (M"1-1") {
+      //  if (idx == 0) {
+      //    io.shouldIgnoreInstr := True
+      //  } else if (idx == 1) {
+      //    io.modMemWordValid.foreach(current => {
+      //      current := False
+      //    })
+      //    io.modMemWord.foreach(modMemWord => {
+      //      modMemWord := modMemWord.getZero
+      //    })
+      //    io.opIs := 0x0
+      //    io.opIsMemAccess.foreach(current => {
+      //      current := False
+      //    })
+      //    io.opIsAnyMultiCycle := (
+      //      False
+      //    )
+      //    io.opIsMultiCycle.foreach(current => {
+      //      current := False
+      //    })
+      //  }
+      //  nextShouldIgnoreInstrState(idx) := False
+      //}
+      //default {
+      //  io.shouldIgnoreInstr := (
+      //    RegNext(
+      //      next=io.shouldIgnoreInstr,
+      //      init=io.shouldIgnoreInstr.getZero,
+      //    )
+      //  )
+      //}
+    }
+    //switch (rShouldIgnoreInstrState(idx)) {
+    //  /*when*/ is (/*rShouldIgnoreInstrState(idx) ===*/ False) {
+    //    if (idx == 0) {
+    //      io.shouldIgnoreInstr := False
+    //    }
+    //    //else {
+    //    //  lowerMyFanoutShouldIgnoreInstr := False
+    //    //}
+    //    when (io.opIsJmp) {
+    //      nextShouldIgnoreInstrState(idx) := True
+    //    }
+    //    //when (io.opIsJmp) {
+    //    //  nextShouldIgnoreInstrState(idx) := True
+    //    //}
+    //  }
+    //  /*otherwise*/ is (True) {
+    //    if (idx == 0) {
+    //      io.shouldIgnoreInstr := True
+    //    } else if (idx == 1) {
+    //      io.modMemWordValid.foreach(current => {
+    //        current := False
+    //      })
+    //      io.modMemWord.foreach(modMemWord => {
+    //        modMemWord := modMemWord.getZero
+    //      })
+    //      io.opIs := 0x0
+    //      io.opIsMemAccess.foreach(current => {
+    //        current := False
+    //      })
+    //      io.opIsAnyMultiCycle := (
+    //        False
+    //      )
+    //      io.opIsMultiCycle.foreach(current => {
+    //        current := False
+    //      })
+    //    }
+    //    //else if (idx == 2) {
+    //    //}
+    //    //else if (idx == 3) {
+    //    //  //lowerMyFanoutShouldIgnoreInstr := True
+    //    //  io.opIsMultiCycle.foreach(current => {
+    //    //    current := False
+    //    //  })
+    //    //}
+    //    //else if (idx == 4) {
+    //    //} else if (idx == 5) {
+    //    //} else if (idx == 6) {
+    //    //}
+    //    when (
+    //      ////io.regPcSetItCnt.msb
+    //      io.upIsFiring
+    //      && io.regPcSetItCnt(idx)(0)
+    //    ) {
+    //      nextShouldIgnoreInstrState(idx) := False
+    //    }
+    //  }
+    //}
+    //when (io.opIsJmp) {
+    //  nextShouldIgnoreInstrState(idx) := True
+    //}
+    //when (
+    //  ////io.regPcSetItCnt.msb
+    //  //io.upIsFiring
+    //  //&& 
+    //  io.upIsFiring
+    //  && io.regPcSetItCnt(idx)(0)
+    //) {
+    //  nextShouldIgnoreInstrState(idx) := False
+    //}
+  }
   when (io.takeIrq) {
     io.modMemWordValid.foreach(current => {
       current := False

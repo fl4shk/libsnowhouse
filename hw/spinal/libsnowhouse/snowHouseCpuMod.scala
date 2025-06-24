@@ -845,10 +845,12 @@ object SnowHouseCpuPipeStageInstrDecode {
               //False
               MultiCycleState.Idle
             )
+            rPrevPreImm := 0x0
           }
         }
         is (MultiCycleState.DidSetPc) {
           when (cId.up.isFiring) {
+            rPrevPreImm := 0x0
             when (upPayload.regPcSetItCnt(0) === 0x1) {
               if (cfg.irqCfg != None) {
                 upPayload.blockIrq := False
