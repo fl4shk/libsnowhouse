@@ -741,8 +741,8 @@ case class SnowHousePipeStageInstrDecode(
     nextSetUpPayloadState(1) := False
   }
   upPayload.regPcPlusInstrSize := (
-    upPayload.regPc + (cfg.instrMainWidth / 8)
-    - (cfg.instrMainWidth.toLong / 8.toLong)
+    upPayload.regPc //+ (cfg.instrMainWidth / 8)
+    //- (cfg.instrMainWidth.toLong / 8.toLong)
   )
   upPayload.regPcPlusImm := (
     upPayload.regPc + upPayload.imm(2)
