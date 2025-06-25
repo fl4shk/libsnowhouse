@@ -3171,75 +3171,22 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
   //}
 
   for (idx <- 0 until rShouldIgnoreInstrState.size) {
-    switch (
-      Cat(
-        List(
-          rShouldIgnoreInstrState(idx),
-          //io.opIsJmp,
-          //(
-          //  io.upIsFiring
-          //  && io.regPcSetItCnt(idx)(0)
-          //)
-          //io.upIsFiring,
-          io.psExSetPc.fire,
-          io.regPcSetItCnt(idx)(0)
-        ).reverse
-      )
-    ) {
-      is (M"00-") {
+    //if (idx != 1) {
+    //  io.shouldIgnoreInstr(idx) := rShouldIgnoreInstrState(idx)
+    //}
+    switch (rShouldIgnoreInstrState(idx)) {
+      is (False) {
         if (idx != 1) {
           io.shouldIgnoreInstr(idx) := False
         }
-        //if (idx == 1) {
-        //  //io.psExSetPc.nextPc := (
-        //  //  io.regPcPlusImm 
-        //  //)
-        //  //io.shouldIgnoreInstr := False
-        //  doHandleSetNextPc()
-        //}
-      }
-      is (M"01-") {
-        if (idx != 1) {
-          io.shouldIgnoreInstr(idx) := False
-        }
-        //if (idx == 1) {
-        //  //io.shouldIgnoreInstr := False
-        //  //io.psExSetPc.nextPc := (
-        //  //  io.regPcPlusImm 
-        //  //)
-        //  doHandleSetNextPc()
-        //}
-        when (io.upIsFiring) {
+        when (
+          io.upIsFiring
+          && io.psExSetPc.fire
+        ) {
           nextShouldIgnoreInstrState(idx) := True
         }
       }
-      is (M"1-0") {
-        if (idx != 1) {
-          io.shouldIgnoreInstr(idx) := True
-        }
-        if (idx == 0) {
-          //io.shouldIgnoreInstr := True
-        } else if (idx == 2) {
-          doShouldIgnoreState2()
-          //io.modMemWordValid.foreach(current => {
-          //  current := False
-          //})
-          //io.modMemWord.foreach(modMemWord => {
-          //  modMemWord := modMemWord.getZero
-          //})
-          //io.opIs := 0x0
-          //io.opIsMemAccess.foreach(current => {
-          //  current := False
-          //})
-          //io.opIsAnyMultiCycle := (
-          //  False
-          //)
-          //io.opIsMultiCycle.foreach(current => {
-          //  current := False
-          //})
-        }
-      }
-      is (M"1-1") {
+      is (True) {
         if (idx != 1) {
           io.shouldIgnoreInstr(idx) := True
         }
@@ -3265,90 +3212,193 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
           //})
         }
         when (
-          ////io.regPcSetItCnt.msb
           io.upIsFiring
-          //&& io.regPcSetItCnt(idx)(0)
+          && io.regPcSetItCnt(idx)(0)
         ) {
           nextShouldIgnoreInstrState(idx) := False
         }
       }
-      default {
-        if (idx != 1) {
-          io.shouldIgnoreInstr(idx) := True
-        }
-        //io.shouldIgnoreInstr(idx) := (
-        //  RegNext(
-        //    next=io.shouldIgnoreInstr(idx),
-        //    init=io.shouldIgnoreInstr(idx).getZero,
-        //  )
-        //)
-        //io.shouldIgnoreInstr := True
-      }
-      //is (M"00-") {
-      //  if (idx == 0) {
-      //    io.shouldIgnoreInstr := False
-      //  }
-      //}
-      //is (M"01-") {
-      //  if (idx == 0) {
-      //    io.shouldIgnoreInstr := False
-      //  }
-      //  nextShouldIgnoreInstrState(idx) := True
-      //}
-      //is (M"1-0") {
-      //  if (idx == 0) {
-      //    io.shouldIgnoreInstr := True
-      //  } else if (idx == 1) {
-      //    io.modMemWordValid.foreach(current => {
-      //      current := False
-      //    })
-      //    io.modMemWord.foreach(modMemWord => {
-      //      modMemWord := modMemWord.getZero
-      //    })
-      //    io.opIs := 0x0
-      //    io.opIsMemAccess.foreach(current => {
-      //      current := False
-      //    })
-      //    io.opIsAnyMultiCycle := (
-      //      False
-      //    )
-      //    io.opIsMultiCycle.foreach(current => {
-      //      current := False
-      //    })
-      //  }
-      //}
-      //is (M"1-1") {
-      //  if (idx == 0) {
-      //    io.shouldIgnoreInstr := True
-      //  } else if (idx == 1) {
-      //    io.modMemWordValid.foreach(current => {
-      //      current := False
-      //    })
-      //    io.modMemWord.foreach(modMemWord => {
-      //      modMemWord := modMemWord.getZero
-      //    })
-      //    io.opIs := 0x0
-      //    io.opIsMemAccess.foreach(current => {
-      //      current := False
-      //    })
-      //    io.opIsAnyMultiCycle := (
-      //      False
-      //    )
-      //    io.opIsMultiCycle.foreach(current => {
-      //      current := False
-      //    })
-      //  }
-      //  nextShouldIgnoreInstrState(idx) := False
-      //}
-      //default {
-      //  io.shouldIgnoreInstr := (
-      //    RegNext(
-      //      next=io.shouldIgnoreInstr,
-      //      init=io.shouldIgnoreInstr.getZero,
-      //    )
-      //  )
-      //}
     }
+    //switch (
+    //  Cat(
+    //    List(
+    //      rShouldIgnoreInstrState(idx),
+    //      //io.opIsJmp,
+    //      //(
+    //      //  io.upIsFiring
+    //      //  && io.regPcSetItCnt(idx)(0)
+    //      //)
+    //      //io.upIsFiring,
+    //      io.psExSetPc.fire,
+    //      io.regPcSetItCnt(idx)(0)
+    //    ).reverse
+    //  )
+    //) {
+    //  is (M"00-") {
+    //    if (idx != 1) {
+    //      io.shouldIgnoreInstr(idx) := False
+    //    }
+    //    //if (idx == 1) {
+    //    //  //io.psExSetPc.nextPc := (
+    //    //  //  io.regPcPlusImm 
+    //    //  //)
+    //    //  //io.shouldIgnoreInstr := False
+    //    //  doHandleSetNextPc()
+    //    //}
+    //  }
+    //  is (M"01-") {
+    //    if (idx != 1) {
+    //      io.shouldIgnoreInstr(idx) := False
+    //    }
+    //    //if (idx == 1) {
+    //    //  //io.shouldIgnoreInstr := False
+    //    //  //io.psExSetPc.nextPc := (
+    //    //  //  io.regPcPlusImm 
+    //    //  //)
+    //    //  doHandleSetNextPc()
+    //    //}
+    //    when (
+    //      io.upIsFiring
+    //    ) {
+    //      nextShouldIgnoreInstrState(idx) := True
+    //    }
+    //  }
+    //  is (M"1-0") {
+    //    if (idx != 1) {
+    //      io.shouldIgnoreInstr(idx) := True
+    //    }
+    //    if (idx == 0) {
+    //      //io.shouldIgnoreInstr := True
+    //    } else if (idx == 2) {
+    //      doShouldIgnoreState2()
+    //      //io.modMemWordValid.foreach(current => {
+    //      //  current := False
+    //      //})
+    //      //io.modMemWord.foreach(modMemWord => {
+    //      //  modMemWord := modMemWord.getZero
+    //      //})
+    //      //io.opIs := 0x0
+    //      //io.opIsMemAccess.foreach(current => {
+    //      //  current := False
+    //      //})
+    //      //io.opIsAnyMultiCycle := (
+    //      //  False
+    //      //)
+    //      //io.opIsMultiCycle.foreach(current => {
+    //      //  current := False
+    //      //})
+    //    }
+    //  }
+    //  is (M"1-1") {
+    //    if (idx != 1) {
+    //      io.shouldIgnoreInstr(idx) := True
+    //    }
+    //    if (idx == 0) {
+    //      //io.shouldIgnoreInstr := True
+    //    } else if (idx == 2) {
+    //      doShouldIgnoreState2()
+    //      //io.modMemWordValid.foreach(current => {
+    //      //  current := False
+    //      //})
+    //      //io.modMemWord.foreach(modMemWord => {
+    //      //  modMemWord := modMemWord.getZero
+    //      //})
+    //      //io.opIs := 0x0
+    //      //io.opIsMemAccess.foreach(current => {
+    //      //  current := False
+    //      //})
+    //      //io.opIsAnyMultiCycle := (
+    //      //  False
+    //      //)
+    //      //io.opIsMultiCycle.foreach(current => {
+    //      //  current := False
+    //      //})
+    //    }
+    //    when (
+    //      ////io.regPcSetItCnt.msb
+    //      io.upIsFiring
+    //      //&& io.regPcSetItCnt(idx)(0)
+    //    ) {
+    //      nextShouldIgnoreInstrState(idx) := False
+    //    }
+    //  }
+    //  default {
+    //    if (idx != 1) {
+    //      io.shouldIgnoreInstr(idx) := True
+    //    }
+    //    //io.shouldIgnoreInstr(idx) := (
+    //    //  RegNext(
+    //    //    next=io.shouldIgnoreInstr(idx),
+    //    //    init=io.shouldIgnoreInstr(idx).getZero,
+    //    //  )
+    //    //)
+    //    //io.shouldIgnoreInstr := True
+    //  }
+    //  //is (M"00-") {
+    //  //  if (idx == 0) {
+    //  //    io.shouldIgnoreInstr := False
+    //  //  }
+    //  //}
+    //  //is (M"01-") {
+    //  //  if (idx == 0) {
+    //  //    io.shouldIgnoreInstr := False
+    //  //  }
+    //  //  nextShouldIgnoreInstrState(idx) := True
+    //  //}
+    //  //is (M"1-0") {
+    //  //  if (idx == 0) {
+    //  //    io.shouldIgnoreInstr := True
+    //  //  } else if (idx == 1) {
+    //  //    io.modMemWordValid.foreach(current => {
+    //  //      current := False
+    //  //    })
+    //  //    io.modMemWord.foreach(modMemWord => {
+    //  //      modMemWord := modMemWord.getZero
+    //  //    })
+    //  //    io.opIs := 0x0
+    //  //    io.opIsMemAccess.foreach(current => {
+    //  //      current := False
+    //  //    })
+    //  //    io.opIsAnyMultiCycle := (
+    //  //      False
+    //  //    )
+    //  //    io.opIsMultiCycle.foreach(current => {
+    //  //      current := False
+    //  //    })
+    //  //  }
+    //  //}
+    //  //is (M"1-1") {
+    //  //  if (idx == 0) {
+    //  //    io.shouldIgnoreInstr := True
+    //  //  } else if (idx == 1) {
+    //  //    io.modMemWordValid.foreach(current => {
+    //  //      current := False
+    //  //    })
+    //  //    io.modMemWord.foreach(modMemWord => {
+    //  //      modMemWord := modMemWord.getZero
+    //  //    })
+    //  //    io.opIs := 0x0
+    //  //    io.opIsMemAccess.foreach(current => {
+    //  //      current := False
+    //  //    })
+    //  //    io.opIsAnyMultiCycle := (
+    //  //      False
+    //  //    )
+    //  //    io.opIsMultiCycle.foreach(current => {
+    //  //      current := False
+    //  //    })
+    //  //  }
+    //  //  nextShouldIgnoreInstrState(idx) := False
+    //  //}
+    //  //default {
+    //  //  io.shouldIgnoreInstr := (
+    //  //    RegNext(
+    //  //      next=io.shouldIgnoreInstr,
+    //  //      init=io.shouldIgnoreInstr.getZero,
+    //  //    )
+    //  //  )
+    //  //}
+    //}
     //switch (rShouldIgnoreInstrState(idx)) {
     //  /*when*/ is (/*rShouldIgnoreInstrState(idx) ===*/ False) {
     //    if (idx == 0) {
@@ -3975,15 +4025,33 @@ case class SnowHousePipeStageExecute(
       }
     }
     def tempRdMemWord = setOutpModMemWord.io.rdMemWord(zdx)
-    tempRdMemWord := (
-      RegNext(
-        next=tempRdMemWord,
-        init=tempRdMemWord.getZero,
-      )
-    )
-    when (cMid0Front.up.isValid) {
-      tempRdMemWord := myRdMemWord(ydx=ydx, modIdx=zdx)
-    }
+    //val rRdMemWordState = (
+    //  Reg(Bool(), init=False)
+    //  .setName(
+    //    s"${cfg.shRegFileCfg.pipeName}_rRdMemWordState_${ydx}_${zdx}"
+    //  )
+    //)
+
+    tempRdMemWord := myRdMemWord(ydx=ydx, modIdx=zdx)
+    //tempRdMemWord := (
+    //  RegNext(
+    //    next=tempRdMemWord,
+    //    init=tempRdMemWord.getZero,
+    //  )
+    //)
+    //when (
+    //  cMid0Front.up.isValid
+    //  //////&& cMid0Front.down.isValid
+    //  //&& cMid0Front.down.isReady
+    //) {
+    //  //when (!rRdMemWordState) {
+    //    tempRdMemWord := myRdMemWord(ydx=ydx, modIdx=zdx)
+    //  //  rRdMemWordState := True
+    //  //}
+    //}
+    ////when (cMid0Front.up.isFiring) {
+    ////  rRdMemWordState := False
+    ////}
     // TODO (maybe): support multiple register writes per instruction
   }
   if (cfg.regFileWordCountArr.size == 0) {
@@ -4130,6 +4198,7 @@ case class SnowHousePipeStageExecute(
     && (
       //cMid0Front.up.isValid
       cMid0Front.up.isFiring
+      //cMid0Front.down.isFiring
     )
   )
   //psExSetPc.valid1 := (
@@ -4197,20 +4266,22 @@ case class SnowHousePipeStageExecute(
         src.allowOverride
       })
       multiCycleBus.sendData.srcVec(0) := (
-        RegNext(
+        RegNext/*When*/(
           setOutpModMemWord.io.selRdMemWord(
             opInfo=opInfo,
             idx=1,
-          )
+          ),
+          //cond=cMid0Front.down.isReady
         )
         init(0x0)
       )
       multiCycleBus.sendData.srcVec(1) := (
-        RegNext(
+        RegNext/*When*/(
           setOutpModMemWord.io.selRdMemWord(
             opInfo=opInfo,
             idx=2,
-          )
+          ),
+          //cond=cMid0Front.down.isReady,
         )
         init(0x0)
       )
@@ -4269,6 +4340,8 @@ case class SnowHousePipeStageExecute(
         //  //=/= 0x0
         //  //.orR
         //)
+        //cMid0Front.up.isValid
+        //&& 
         setOutpModMemWord.io.opIsAnyMultiCycle
       ) {
         //rMultiCycleOpState := (
@@ -4445,292 +4518,6 @@ case class SnowHousePipeStageExecute(
   //  nextSavedStall.head/*(idx)*/ := False
   //}
   //--------
-  //switch (rOpIsMultiCycle.asBits.asUInt) {
-  //  for (idx <- 0 until cfg.multiCycleOpInfoMap.size) {
-  //    //--------
-  //    // BEGIN: working, slower than desired multi-cycle op handling code
-  //    when /*is*/ (
-  //      //setOutpModMemWord.io.opIsMultiCycle(idx)
-  //      rOpIsMultiCycle(idx)
-  //      //new MaskedLiteral(
-  //      //  value=(
-  //      //    (1 << idx)
-  //      //  ),
-  //      //  careAbout=(
-  //      //    (1 << idx)
-  //      //    | ((1 << idx) - 1)
-  //      //  ),
-  //      //  width=(
-  //      //    cfg.multiCycleOpInfoMap.size
-  //      //  )
-  //      //)
-  //    ) {
-  //      for (
-  //        ((_, opInfo), opInfoIdx)
-  //        <- cfg.multiCycleOpInfoMap.view.zipWithIndex
-  //      ) {
-  //        //is (opInfoIdx)
-  //        if (opInfoIdx == idx) {
-  //          var busIdxFound: Boolean = false
-  //          var busIdx: Int = 0
-  //          for (
-  //            ((_, multiCycleOpInfo), myBusIdx)
-  //            <- cfg.multiCycleOpInfoMap.view.zipWithIndex
-  //          ) {
-  //            if (opInfo == multiCycleOpInfo) {
-  //              busIdxFound = true
-  //              busIdx = myBusIdx
-  //            }
-  //          }
-  //          if (busIdxFound) {
-  //            val psExStallHost = psExStallHostArr(busIdx)
-  //            when (
-  //              /*LcvFastAndR*/(
-  //                Vec[Bool](
-  //                  !rSavedStall,
-  //                  RegNext(next=doCheckHazard, init=False),
-  //                  RegNext(next=myDoHaveHazard, init=False),
-  //                ).asBits.asUInt.andR
-  //              )
-  //            ) {
-  //              psExStallHost.nextValid := False
-  //              //when (
-  //              //  //psMemStallHost.fire
-  //              //  RegNext(psMemStallHost.nextValid, init=False)
-  //              //  && psMemStallHost.ready
-  //              //) {
-  //              //  doMultiCycleStart(psExStallHost)
-  //              //}
-  //            } otherwise {
-  //              //doMultiCycleStart(psExStallHost)
-  //            }
-  //            when (
-  //              (
-  //                Vec[Bool](
-  //                  !rSavedStall,
-  //                  RegNext(next=doCheckHazard, init=False),
-  //                  RegNext(next=myDoHaveHazard, init=False),
-  //                  RegNext(psMemStallHost.nextValid, init=False),
-  //                  psMemStallHost.ready,
-  //                ).asBits.asUInt.andR
-  //              ) || (
-  //                !Vec[Bool](
-  //                  !rSavedStall,
-  //                  RegNext(next=doCheckHazard, init=False),
-  //                  RegNext(next=myDoHaveHazard, init=False),
-  //                ).asBits.asUInt.andR
-  //              )
-  //            ) {
-  //              doMultiCycleStart(psExStallHost)
-  //            }
-  //            when (
-  //              RegNext(psExStallHost.nextValid, init=False)
-  //              && psExStallHost.ready
-  //            ) {
-  //              psExStallHost.nextValid := False
-  //              myDoStall(stallKindMultiCycle) := False
-  //              rMultiCycleOpState := False
-  //              rOpIsMultiCycle(idx) := False
-  //            }
-  //            when (rSavedStall) {
-  //              myDoStall(stallKindMem) := False
-  //            }
-  //            when (cMid0Front.up.isFiring) {
-  //              nextSavedStall := False
-  //            }
-  //          }
-  //        }
-  //      }
-  //    }
-  //    // END: working, slower than desired multi-cycle op handling code
-  //    //--------
-  //  }
-  //}
-  //--------
-  //--------
-  //for (idx <- 0 until cfg.multiCycleOpInfoMap.size) {
-  //  //--------
-  //  // BEGIN: working, slower than desired multi-cycle op handling code
-  //  when /*is*/ (
-  //    //setOutpModMemWord.io.opIsMultiCycle(idx)
-  //    rOpIsMultiCycle(idx)
-  //    //new MaskedLiteral(
-  //    //  value=(
-  //    //    (1 << idx)
-  //    //  ),
-  //    //  careAbout=(
-  //    //    (1 << idx)
-  //    //    | ((1 << idx) - 1)
-  //    //  ),
-  //    //  width=(
-  //    //    cfg.multiCycleOpInfoMap.size
-  //    //  )
-  //    //)
-  //  ) {
-  //    for (
-  //      ((_, opInfo), opInfoIdx)
-  //      <- cfg.multiCycleOpInfoMap.view.zipWithIndex
-  //    ) {
-  //      //is (opInfoIdx)
-  //      if (opInfoIdx == idx) {
-  //        var busIdxFound: Boolean = false
-  //        var busIdx: Int = 0
-  //        for (
-  //          ((_, multiCycleOpInfo), myBusIdx)
-  //          <- cfg.multiCycleOpInfoMap.view.zipWithIndex
-  //        ) {
-  //          if (opInfo == multiCycleOpInfo) {
-  //            busIdxFound = true
-  //            busIdx = myBusIdx
-  //          }
-  //        }
-  //        if (busIdxFound) {
-  //          val psExStallHost = psExStallHostArr(busIdx)
-  //          when (
-  //            /*LcvFastAndR*/(
-  //              Vec[Bool](
-  //                !rSavedStall,
-  //                RegNext(next=doCheckHazard, init=False),
-  //                RegNext(next=myDoHaveHazard, init=False),
-  //              ).asBits.asUInt.andR
-  //            )
-  //          ) {
-  //            psExStallHost.nextValid := False
-  //            //when (
-  //            //  //psMemStallHost.fire
-  //            //  RegNext(psMemStallHost.nextValid, init=False)
-  //            //  && psMemStallHost.ready
-  //            //) {
-  //            //  doMultiCycleStart(psExStallHost)
-  //            //}
-  //          } otherwise {
-  //            //doMultiCycleStart(psExStallHost)
-  //          }
-  //          when (
-  //            (
-  //              Vec[Bool](
-  //                !rSavedStall,
-  //                RegNext(next=doCheckHazard, init=False),
-  //                RegNext(next=myDoHaveHazard, init=False),
-  //                RegNext(psMemStallHost.nextValid, init=False),
-  //                psMemStallHost.ready,
-  //              ).asBits.asUInt.andR
-  //            ) || (
-  //              !Vec[Bool](
-  //                !rSavedStall,
-  //                RegNext(next=doCheckHazard, init=False),
-  //                RegNext(next=myDoHaveHazard, init=False),
-  //              ).asBits.asUInt.andR
-  //            )
-  //          ) {
-  //            doMultiCycleStart(psExStallHost)
-  //          }
-  //          when (
-  //            RegNext(psExStallHost.nextValid, init=False)
-  //            && psExStallHost.ready
-  //          ) {
-  //            psExStallHost.nextValid := False
-  //            myDoStall(stallKindMultiCycle) := False
-  //            rMultiCycleOpState := False
-  //            rO
-  //          }
-  //          when (rSavedStall) {
-  //            myDoStall(stallKindMem) := False
-  //          }
-  //          when (cMid0Front.up.isFiring) {
-  //            nextSavedStall := False
-  //          }
-  //        }
-  //      }
-  //    }
-  //  }
-  //  // END: working, slower than desired multi-cycle op handling code
-  //  //--------
-  //}
-  //--------
-  //when (
-  //  //setOutpModMemWord.io.opIsMultiCycle.orR
-  //  LcvFastOrR(
-  //    setOutpModMemWord.io.opIsMultiCycle.asBits.asUInt
-  //  )
-  //) {
-  //  switch (outp.splitOp.multiCycleOp) {
-  //    for (
-  //      ((_, opInfo), opInfoIdx)
-  //      <- cfg.multiCycleOpInfoMap.view.zipWithIndex
-  //    ) {
-  //      is (opInfoIdx) {
-  //        var busIdxFound: Boolean = false
-  //        var busIdx: Int = 0
-  //        for (
-  //          ((_, multiCycleOpInfo), myBusIdx)
-  //          <- cfg.multiCycleOpInfoMap.view.zipWithIndex
-  //        ) {
-  //          if (opInfo == multiCycleOpInfo) {
-  //            busIdxFound = true
-  //            busIdx = myBusIdx
-  //          }
-  //        }
-  //        if (busIdxFound) {
-  //          val psExStallHost = psExStallHostArr(busIdx)
-  //          def doStart(): Unit = {
-  //            myDoStall(stallKindMem) := False
-  //            myDoStall(stallKindMultiCycle) := True
-  //            psExStallHost.nextValid := True
-  //            nextSavedStall := True
-  //          }
-  //          when (
-  //            LcvFastAndR(
-  //              Vec[Bool](
-  //                !rSavedStall,
-  //                doCheckHazard,
-  //                myDoHaveHazard,
-  //              ).asBits.asUInt
-  //            )
-  //          ) {
-  //            psExStallHost.nextValid := False
-  //            when (
-  //              //psMemStallHost.fire
-  //              RegNext(psMemStallHost.nextValid, init=False)
-  //              && psMemStallHost.ready
-  //            ) {
-  //              doStart()
-  //            }
-  //          } otherwise {
-  //            doStart()
-  //          }
-  //          //when (
-  //          //  LcvFastAndR(
-  //          //    Vec[Bool](
-  //          //      !rSavedStall,
-  //          //      doCheckHazard,
-  //          //      myDoHaveHazard,
-  //          //      RegNext(psMemStallHost.nextValid, init=False),
-  //          //      psMemStallHost.ready,
-  //          //    ).asBits.asUInt
-  //          //  )
-  //          //) {
-  //          //  doStart()
-  //          //}
-  //          when (
-  //            RegNext(psExStallHost.nextValid)
-  //            && psExStallHost.ready
-  //          ) {
-  //            psExStallHost.nextValid := False
-  //            myDoStall(stallKindMultiCycle) := False
-  //          }
-  //          when (rSavedStall) {
-  //            myDoStall(stallKindMem) := False
-  //          }
-  //          when (cMid0Front.up.isFiring) {
-  //            nextSavedStall := False
-  //          }
-  //        }
-  //      }
-  //    }
-  //  }
-  //}
-
   psExStallHostArr.foreach(psExStallHost => {
     when (
       //psExStallHost.fire

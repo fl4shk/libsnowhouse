@@ -66,8 +66,8 @@ case class SnowHouseInstrDataDualRam(
     //true
     //0
     //5
-    2
-    //1
+    //2
+    1
   )
   // BEGIN: old, non-icache code
   val myNonIcacheArea = (
