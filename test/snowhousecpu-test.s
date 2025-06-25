@@ -27,7 +27,7 @@ cpy r5, _increment
 cpy sp, 0x800
 cpy r6, 0x20
 str r6, r3, 0x0
-mul r0, r6, r6
+mul r10, r6, r6
 ldr r5, r3, 0x0
 str r5, r3, 0x1000
 ldr r6, r3, 0x1000
@@ -46,8 +46,8 @@ add r9, r9, 1
 add r7, r7, -1
 //bnz r7, _push_loop
 bne r7, r0, _push_loop
-add r10, r0, 0x12345678
-add r11, r0, 0x56781234
+//add r10, r0, 0x12345678
+//add r11, r0, 0x56781234
 //add r0, r0, 0x5678
 //add r0, r0, 0x1234
 //add r0, r0, r0

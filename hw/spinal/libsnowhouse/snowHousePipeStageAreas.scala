@@ -4148,8 +4148,8 @@ case class SnowHousePipeStageExecute(
   extends SpinalEnum(defaultEncoding=binaryOneHot) {
     val
       Idle,
-      Main//,
-      //NoMoreStall
+      Main,
+      NoMoreStall
       = newElement()
   }
   val rMultiCycleOpState = {
@@ -4404,11 +4404,17 @@ case class SnowHousePipeStageExecute(
                   ) {
                     psExStallHost.nextValid := False
                     myDoStall(stallKindMultiCycle) := False
-                    rMultiCycleOpState := (
-                      //False
-                      MultiCycleOpState.Idle
-                      //MultiCycleOpState.NoMoreStall
-                    )
+                    when (cMid0Front.up.isFiring) {
+                      rMultiCycleOpState := (
+                        //False
+                        MultiCycleOpState.Idle
+                        //MultiCycleOpState.NoMoreStall
+                      )
+                    } otherwise {
+                      rMultiCycleOpState := (
+                        MultiCycleOpState.NoMoreStall
+                      )
+                    }
                   }
                   //when (rSavedStall.head/*(idx)*/) {
                   //  myDoStall(stallKindMem) := False
@@ -4425,12 +4431,12 @@ case class SnowHousePipeStageExecute(
         }
       //}
     }
-    //is (MultiCycleOpState.NoMoreStall) {
-    //  myDoStall(stallKindMultiCycle) := False
-    //  when (cMid0Front.up.isFiring) {
-    //    rMultiCycleOpState := MultiCycleOpState.Idle
-    //  }
-    //}
+    is (MultiCycleOpState.NoMoreStall) {
+      //myDoStall(stallKindMultiCycle) := False
+      when (cMid0Front.up.isFiring) {
+        rMultiCycleOpState := MultiCycleOpState.Idle
+      }
+    }
   }
   //when (rSavedStall.head/*(idx)*/) {
   //  myDoStall(stallKindMem) := False
