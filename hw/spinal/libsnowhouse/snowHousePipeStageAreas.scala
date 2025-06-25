@@ -148,24 +148,24 @@ case class SnowHousePipeStageInstrFetch(
   )
   def myInstrCnt = upModExt.instrCnt
   val nextRegPc = SInt(cfg.mainWidth bits) //cloneOf(upModExt.regPc)
-  def myRegPcSetItCnt = upModExt.psIfRegPcSetItCnt
-  val rPrevRegPcSetItCnt = {
-    val temp = (
-      RegNextWhen(
-        next=myRegPcSetItCnt,
-        cond=up.isFiring
-      )
-      init(0x0)
-    )
-    //init(-1)
-    //temp.foreach(current => {
-    //  current.init(0x0)
-    //})
-    //init(0x0)
-    temp
-  }
-  myRegPcSetItCnt.allowOverride
-  myRegPcSetItCnt := rPrevRegPcSetItCnt
+  //def myRegPcSetItCnt = upModExt.psIfRegPcSetItCnt
+  //val rPrevRegPcSetItCnt = {
+  //  val temp = (
+  //    RegNextWhen(
+  //      next=myRegPcSetItCnt,
+  //      cond=up.isFiring
+  //    )
+  //    init(0x0)
+  //  )
+  //  //init(-1)
+  //  //temp.foreach(current => {
+  //  //  current.init(0x0)
+  //  //})
+  //  //init(0x0)
+  //  temp
+  //}
+  //myRegPcSetItCnt.allowOverride
+  //myRegPcSetItCnt := rPrevRegPcSetItCnt
 
   val rSavedExSetPc = {
     val temp = /*KeepAttribute*/(
@@ -207,7 +207,7 @@ case class SnowHousePipeStageInstrFetch(
   rSavedExSetPc.payload := psExSetPc.payload
   rSavedExSetPc.nextPc.allowOverride
   rSavedExSetPc.nextPc := (
-    psExSetPc.nextPc - (cfg.instrMainWidth.toLong / 8.toLong).toLong
+    psExSetPc.nextPc //- (cfg.instrMainWidth.toLong / 8.toLong).toLong
   )
   //when (
   //  //up.isFiring
@@ -321,7 +321,7 @@ case class SnowHousePipeStageInstrFetch(
       //myRegPcSetItCnt.foreach(current => {
       //  current := 0x0
       //})
-      myRegPcSetItCnt := 0x0
+      //myRegPcSetItCnt := 0x0
       //when (!rPrevRegPcSetItCnt.msb) {
       //  myRegPcSetItCnt := rPrevRegPcSetItCnt - 1
       //}
@@ -339,14 +339,17 @@ case class SnowHousePipeStageInstrFetch(
       //when (!psExSetPc.fire && !rSavedExSetPc.fire) {
         val temp = (
           //rPrevRegPcThenNext
-          rPrevRegPc + (cfg.instrMainWidth / 8)
+          rPrevRegPc + cfg.instrSizeBytes
         )
         //when (io.ibus.ready) {
           nextRegPc.assignFromBits(
             temp.asBits
           )
           io.ibus.sendData.addr.assignFromBits(
-            (temp + (2 * (cfg.instrMainWidth / 8))).asBits
+            (temp + (2 * cfg.instrSizeBytes)).asBits
+          )
+          upModExt.regPcPlus1Instr.assignFromBits(
+            (temp + (3 * cfg.instrSizeBytes)).asBits
           )
         //} otherwise {
         //  nextRegPc.assignFromBits(
@@ -363,7 +366,7 @@ case class SnowHousePipeStageInstrFetch(
       //myRegPcSetItCnt.foreach(current => {
       //  current := 0x1
       //})
-      myRegPcSetItCnt := 0x1
+      //myRegPcSetItCnt := 0x1
       //rSavedExSetPc := rSavedExSetPc.getZero
       rSavedExSetPc.valid := rSavedExSetPc.valid.getZero
       //myRegPcSetItCnt.foreach(current => {
@@ -371,8 +374,9 @@ case class SnowHousePipeStageInstrFetch(
       //})
       //myRegPcSetItCnt := 0x1
       val temp = (
-        rSavedExSetPc.nextPc - (3 * (cfg.instrMainWidth / 8))
-        //psExSetPc.nextPc - (3 * (cfg.instrMainWidth / 8))
+        //rSavedExSetPc.nextPc - (3 * (cfg.instrSizeBytes))
+        rSavedExSetPc.nextPc - (4 * cfg.instrSizeBytes)
+        //psExSetPc.nextPc - (3 * (cfg.instrSizeBytes))
       )
       //when (io.ibus.ready) {
         nextRegPc.assignFromBits(
@@ -384,7 +388,10 @@ case class SnowHousePipeStageInstrFetch(
       //  )
       //}
       io.ibus.sendData.addr.assignFromBits(
-        (temp + (2 * (cfg.instrMainWidth / 8))).asBits
+        (temp + (2 * cfg.instrSizeBytes)).asBits
+      )
+      upModExt.regPcPlus1Instr := (
+        (temp + (3 * cfg.instrSizeBytes))
       )
       myInstrCnt.jmp := rPrevInstrCnt.jmp + 1
     }
@@ -511,9 +518,12 @@ case class SnowHousePipeStageInstrFetch(
   //  //}
   //}
   upModExt.regPc := (
-    io.ibus.sendData.addr //- (1 * (cfg.instrMainWidth / 8))
-    //nextRegPc.asUInt + (2 * (cfg.instrMainWidth / 8))
+    io.ibus.sendData.addr //- (1 * cfg.instrSizeBytes)
+    //nextRegPc.asUInt + (2 * cfg.instrSizeBytes)
   )
+  //upModExt.regPcPlus1Instr := (
+  //  io.ibus.sendData.addr + cfg.instrSizeBytes
+  //)
   //upModExt.regPc
 }
 case class SnowHousePipeStageInstrDecode(
@@ -560,7 +570,7 @@ case class SnowHousePipeStageInstrDecode(
   rSavedExSetPc.payload := psExSetPc.payload
   rSavedExSetPc.nextPc.allowOverride
   rSavedExSetPc.nextPc := (
-    psExSetPc.nextPc - (cfg.instrMainWidth.toLong / 8.toLong).toLong
+    psExSetPc.nextPc //- (cfg.instrMainWidth.toLong / 8.toLong).toLong
   )
 
   //when (up.isFiring) {
@@ -726,9 +736,14 @@ case class SnowHousePipeStageInstrDecode(
           rSavedExSetPc.fire
           && (
             (
-              upPayload.regPc
+              //upPayload.regPc
+              //upPayload.regPcMinus1Instr
+              upPayload.regPcPlus1Instr
               === (
-                rSavedExSetPc.nextPc
+                (
+                  rSavedExSetPc.nextPc
+                  //- (cfg.instrMainWidth.toLong / 8.toLong).toLong
+                )
               )
             )
           )
@@ -749,8 +764,9 @@ case class SnowHousePipeStageInstrDecode(
     nextSetUpPayloadState(1) := False
   }
   upPayload.regPcPlusInstrSize := (
-    upPayload.regPc + (cfg.instrMainWidth / 8)
-    //- (cfg.instrMainWidth.toLong / 8.toLong)
+    upPayload.regPc + cfg.instrSizeBytes
+    ////- (cfg.instrMainWidth.toLong / 8.toLong)
+    //upPayload.regPcPlus1Instr
   )
   upPayload.regPcPlusImm := (
     upPayload.regPc + upPayload.imm(2)
@@ -3186,9 +3202,11 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
   //    }
   //  }
   //}
-  for (idx <- 0 until io.gprIsNonZeroVec.size) {
-    when (!io.gprIsNonZeroVec(0)(0)) {
-      io.modMemWord(0) := 0x0
+  if (cfg.myHaveZeroReg) {
+    for (idx <- 0 until io.gprIsZeroVec.size) {
+      when (io.gprIsZeroVec(0)(0)) {
+        io.modMemWord(0) := 0x0
+      }
     }
   }
   when (!rShouldIgnoreInstrState(1)) {
@@ -3988,6 +4006,11 @@ case class SnowHousePipeStageExecute(
       for (jdx <- 0 until outp.gprIsNonZeroVec(idx).size) {
         setOutpModMemWord.io.gprIsNonZeroVec(idx)(jdx) := (
           outp.gprIsNonZeroVec(idx)(jdx)
+        )
+      }
+      for (jdx <- 0 until outp.gprIsZeroVec(idx).size) {
+        setOutpModMemWord.io.gprIsZeroVec(idx)(jdx) := (
+          outp.gprIsZeroVec(idx)(jdx)
         )
       }
     }

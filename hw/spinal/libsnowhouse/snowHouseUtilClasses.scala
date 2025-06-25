@@ -461,6 +461,7 @@ case class SnowHouseConfig(
   //def lowerMyFanoutDec = multiCycle
   def instrMainWidth = subCfg.instrMainWidth
   def shRegFileCfg = subCfg.shRegFileCfg
+  val instrSizeBytes = (instrMainWidth.toLong / 8.toLong).toLong
   val myHaveIrqIdsIra = (
     irqCfg != None
   )
@@ -1088,6 +1089,7 @@ case class SnowHousePipePayload(
   )
   //psExSetOutpModMemWordIo.simPublic()
   val regPc = UInt(cfg.mainWidth bits)//.simPublic()
+  val regPcPlus1Instr = UInt(cfg.mainWidth bits)
   val psIfRegPcSetItCnt = UInt(1 bits)
   val regPcSetItCnt = Vec.fill(cfg.lowerMyFanoutRegPcSetItCnt)(
     UInt(
