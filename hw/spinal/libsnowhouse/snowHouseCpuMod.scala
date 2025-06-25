@@ -2721,14 +2721,14 @@ case class SnowHouseCpuMul32(
           }
           is (UMul32State.FIRST_ADD) {
             rState := UMul32State.SECOND_ADD
-            //rDst := rPartialSum(1)
+            rDst := rPartialSum(1)
           }
           is (UMul32State.SECOND_ADD) {
             rState := UMul32State.YIELD_RESULT
             //dstVec(0) := (
             //)
             //rDst := rPartialSum(1)
-            rDst := rPartialSum(1)
+            //rDst := rPartialSum(1)
           }
           is (UMul32State.YIELD_RESULT) {
             rState := UMul32State.DO_THREE_MUL16X16
