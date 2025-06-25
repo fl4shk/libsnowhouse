@@ -2643,7 +2643,9 @@ case class SnowHouseCpuMul32(
             = newElement()
         }
         val rState = (
-          Reg(UMul32State()) init(UMul32State.DO_THREE_MUL16X16)
+          Reg(UMul32State())
+          init(UMul32State.DO_THREE_MUL16X16)
+          setName("SnowHouseCpuMul32_Umul_rState")
         )
         val low = (mainWidth >> 1) - 1 downto 0
         val high = (mainWidth - 1 downto (mainWidth >> 1))
@@ -2661,6 +2663,7 @@ case class SnowHouseCpuMul32(
             //cond=mulCond
           )
           init(0x0)
+          setName("SnowHouseCpuMul32_Umul_rY0X0")
         )
         val rY1X0 = (
           RegNext(
@@ -2671,6 +2674,7 @@ case class SnowHouseCpuMul32(
             //cond=mulCond,
           )
           init(0x0)
+          setName("SnowHouseCpuMul32_Umul_rY1X0")
         )
         val rY0X1 = (
           RegNext(
@@ -2681,10 +2685,14 @@ case class SnowHouseCpuMul32(
             //cond=mulCond,
           )
           init(0x0)
+          setName("SnowHouseCpuMul32_Umul_rY0X1")
         )
-        val rPartialSum = Vec.fill(2)(
-          Reg(UInt(mainWidth bits))
-          init(0x0)
+        val rPartialSum = (
+          Vec.fill(2)(
+            Reg(UInt(mainWidth bits))
+            init(0x0)
+          )
+          setName("SnowHouseCpuMul32_Umul_rPartialSum")
         )
         rPartialSum(0) := (
           rY1X0 + rY0X1
@@ -2700,6 +2708,9 @@ case class SnowHouseCpuMul32(
             cloneOf(dstVec(0)),
             init=dstVec(0).getZero
           )
+          setName(
+            "SnowHouseCpuMul32_Umul_rDst"
+          )
         )
         dstVec(0) := rDst
         switch (rState) {
@@ -2710,13 +2721,14 @@ case class SnowHouseCpuMul32(
           }
           is (UMul32State.FIRST_ADD) {
             rState := UMul32State.SECOND_ADD
-            rDst := rPartialSum(1)
+            //rDst := rPartialSum(1)
           }
           is (UMul32State.SECOND_ADD) {
             rState := UMul32State.YIELD_RESULT
             //dstVec(0) := (
             //)
             //rDst := rPartialSum(1)
+            rDst := rPartialSum(1)
           }
           is (UMul32State.YIELD_RESULT) {
             rState := UMul32State.DO_THREE_MUL16X16

@@ -169,7 +169,7 @@ case class SnowHousePipeStageInstrFetch(
 
   val rSavedExSetPc = {
     val temp = /*KeepAttribute*/(
-      Vec.fill(3)(
+      Vec.fill(1)(
         Reg(Flow(
           SnowHousePsExSetPcPayload(cfg=cfg)
         ))
@@ -211,7 +211,7 @@ case class SnowHousePipeStageInstrFetch(
   rSavedExSetPc(0).payload := psExSetPc.payload
   rSavedExSetPc(0).nextPc.allowOverride
   rSavedExSetPc(0).nextPc := (
-    psExSetPc.nextPc //- (cfg.instrMainWidth.toLong / 8.toLong).toLong
+    psExSetPc.nextPc //- cfg.instrSizeBytes
   )
   //when (
   //  //up.isFiring
@@ -351,14 +351,14 @@ case class SnowHousePipeStageInstrFetch(
             nextRegPc.assignFromBits(
               temp.asBits
             )
-          } else if (idx == 1) {
+          //} else if (idx == 1) {
             io.ibus.sendData.addr.assignFromBits(
               (temp + (2 * cfg.instrSizeBytes)).asBits
             )
-          } else if (idx == 2) {
-            upModExt.regPcPlus1Instr.assignFromBits(
-              (temp + (3 * cfg.instrSizeBytes)).asBits
-            )
+          //} else if (idx == 2) {
+            //upModExt.regPcPlus1Instr.assignFromBits(
+            //  (temp + (3 * cfg.instrSizeBytes)).asBits
+            //)
           }
           //} otherwise {
           //  nextRegPc.assignFromBits(
@@ -402,111 +402,15 @@ case class SnowHousePipeStageInstrFetch(
           io.ibus.sendData.addr.assignFromBits(
             (temp + (2 * cfg.instrSizeBytes)).asBits
           )
-          upModExt.regPcPlus1Instr := (
-            (temp + (3 * cfg.instrSizeBytes))
-          )
+          //upModExt.regPcPlus1Instr := (
+          //  (temp + (3 * cfg.instrSizeBytes))
+          //)
         } else if (idx == 3) {
           myInstrCnt.jmp := rPrevInstrCnt.jmp + 1
         }
       }
     }
   }
-  //when (up.isFiring) {
-  //  when (
-  //    //rMyPsExSetPcFire
-  //    rSavedExSetPc.fire
-  //  ) {
-  //    //rMyPsExSetPcFire := False
-  //    myRegPcSetItCnt.foreach(current => {
-  //      current := 0x1
-  //    })
-  //  } otherwise {
-  //    myRegPcSetItCnt.foreach(current => {
-  //      current := 0x0
-  //    })
-  //  }
-  //  myInstrCnt.any := rPrevInstrCnt.any + 1
-  //  //when (psExSetPc.fire) {
-  //  //  rSavedExSetPc := rSavedExSetPc.getZero
-  //  //  myRegPcSetItCnt := 0x1
-  //  //  val temp = (
-  //  //    psExSetPc.nextPc - (3 * (cfg.instrMainWidth / 8))
-  //  //  )
-  //  //  //when (io.ibus.ready) {
-  //  //    nextRegPc.assignFromBits(
-  //  //      temp.asBits
-  //  //    )
-  //  //  //} otherwise {
-  //  //  //  nextRegPc.assignFromBits(
-  //  //  //    (temp - 1).asBits
-  //  //  //  )
-  //  //  //}
-  //  //  io.ibus.sendData.addr.assignFromBits(
-  //  //    (temp + (2 * (cfg.instrMainWidth / 8))).asBits
-  //  //  )
-  //  //  myInstrCnt.jmp := rPrevInstrCnt.jmp + 1
-  //  //} else
-  //  when (rSavedExSetPc.fire) {
-  //    rSavedExSetPc := rSavedExSetPc.getZero
-  //    //myRegPcSetItCnt.foreach(current => {
-  //    //  current := 0x1
-  //    //})
-  //    //myRegPcSetItCnt := 0x1
-  //    val temp = (
-  //      rSavedExSetPc.nextPc - (3 * (cfg.instrMainWidth / 8))
-  //    )
-  //    //when (io.ibus.ready) {
-  //      nextRegPc.assignFromBits(
-  //        temp.asBits
-  //      )
-  //    //} otherwise {
-  //    //  nextRegPc.assignFromBits(
-  //    //    (temp - 1).asBits
-  //    //  )
-  //    //}
-  //    io.ibus.sendData.addr.assignFromBits(
-  //      (temp + (2 * (cfg.instrMainWidth / 8))).asBits
-  //    )
-  //    myInstrCnt.jmp := rPrevInstrCnt.jmp + 1
-  //  } otherwise {
-  //    //when (!rPrevRegPcSetItCnt.msb) {
-  //    //  myRegPcSetItCnt := rPrevRegPcSetItCnt - 1
-  //    //}
-  //    //myRegPcSetItCnt.foreach(current => {
-  //    //  current := 0x0
-  //    //})
-  //    //nextRegPcSetItCnt := 0x0
-  //    //when (
-  //    //  //RegNext(myRegPcSetItCnt) init(0x0)
-  //    //  //!((rPrevRegPcSetItCnt - 1).msb)
-  //    //  !rPrevRegPcSetItCnt.msb
-  //    //) {
-  //    //  myRegPcSetItCnt := rPrevRegPcSetItCnt - 1
-  //    //}
-  //    //when (!psExSetPc.fire && !rSavedExSetPc.fire) {
-  //      val temp = (
-  //        //rPrevRegPcThenNext
-  //        rPrevRegPc + (cfg.instrMainWidth / 8)
-  //      )
-  //      //when (io.ibus.ready) {
-  //        nextRegPc.assignFromBits(
-  //          temp.asBits
-  //        )
-  //        io.ibus.sendData.addr.assignFromBits(
-  //          (temp + (2 * (cfg.instrMainWidth / 8))).asBits
-  //        )
-  //      //} otherwise {
-  //      //  nextRegPc.assignFromBits(
-  //      //    (temp - 1).asBits
-  //      //  )
-  //      //}
-  //      myInstrCnt.fwd := rPrevInstrCnt.fwd + 1
-  //    //} otherwise {
-  //    //  upModExt.regPcSetItCnt := 0x0
-  //    //}
-  //    //rSavedExSetPc := rSavedExSetPc.getZero
-  //  }
-  //}
   io.ibus.nextValid := (
     True
     //down.isReady
@@ -536,6 +440,15 @@ case class SnowHousePipeStageInstrFetch(
     io.ibus.sendData.addr //- (1 * cfg.instrSizeBytes)
     //nextRegPc.asUInt + (2 * cfg.instrSizeBytes)
   )
+  //upModExt.psExSetPc.valid.allowOverride
+  //upModExt.psExSetPc.valid := RegNextWhen(
+  //  next=upModExt.psExSetPc.valid,
+  //  cond=up.isFiring,
+  //  init=upModExt.psExSetPc.valid.getZero,
+  //)
+  //when (up.isFiring) {
+  //  upModExt.psExSetPc.valid := psExSetPc.valid //rSavedExSetPc(0).valid
+  //}
   //upModExt.regPcPlus1Instr := (
   //  io.ibus.sendData.addr + cfg.instrSizeBytes
   //)
@@ -575,6 +488,7 @@ case class SnowHousePipeStageInstrDecode(
     temp.init(temp.getZero)
     temp.setName(s"psId_rSavedExSetPc")
   }
+
   when (
     //up.isFiring
     //&& 
@@ -751,12 +665,13 @@ case class SnowHousePipeStageInstrDecode(
           rSavedExSetPc.fire
           && (
             (
-              //upPayload.regPc
+              upPayload.regPc
               //upPayload.regPcMinus1Instr
-              upPayload.regPcPlus1Instr
+              //upPayload.regPcPlus1Instr
               === (
                 (
                   rSavedExSetPc.nextPc
+                  - cfg.instrSizeBytes
                   //- (cfg.instrMainWidth.toLong / 8.toLong).toLong
                 )
               )
@@ -766,6 +681,7 @@ case class SnowHousePipeStageInstrDecode(
         //|| (
         //  upPayload.psIfRegPcSetItCnt === 0x1
         //)
+        //upPayload.psExSetPc.fire
       ) {
         rSavedExSetPc.valid := False
         upPayload.regPcSetItCnt(idx) := 0x1
@@ -4059,15 +3975,15 @@ case class SnowHousePipeStageExecute(
       }
     }
     def tempRdMemWord = setOutpModMemWord.io.rdMemWord(zdx)
-    //tempRdMemWord := (
-    //  RegNext(
-    //    next=tempRdMemWord,
-    //    init=tempRdMemWord.getZero,
-    //  )
-    //)
-    //when (cMid0Front.up.isValid) {
+    tempRdMemWord := (
+      RegNext(
+        next=tempRdMemWord,
+        init=tempRdMemWord.getZero,
+      )
+    )
+    when (cMid0Front.up.isValid) {
       tempRdMemWord := myRdMemWord(ydx=ydx, modIdx=zdx)
-    //}
+    }
     // TODO (maybe): support multiple register writes per instruction
   }
   if (cfg.regFileWordCountArr.size == 0) {

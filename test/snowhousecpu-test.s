@@ -47,21 +47,22 @@ add r7, r7, -1
 //bnz r7, _push_loop
 bne r7, r0, _push_loop
 add r10, r0, 0x12345678
+add r11, r0, 0x56781234
 //add r0, r0, 0x5678
 //add r0, r0, 0x1234
-add r0, r0, r0
-add r0, r0, r0
-add r0, r0, r0
+//add r0, r0, r0
+//add r0, r0, r0
+//add r0, r0, r0
 //--------
 mul r7, r6, r1
 udiv r7, r7, r1
 umod r8, r6, r1
 beq r0, r0, _loop
 
-.rept 16
-//cpy r0, r0
-add r10, r1, 3
-.endr
+//.rept 16
+////cpy r0, r0
+//add r10, r1, 3
+//.endr
 //--------
 //.align 2
 //.align 8
@@ -83,28 +84,28 @@ _infin:
 //bz r0, _infin
 beq r0, r0, _infin
 ////--------
-.rept 16
-//cpy r0, r0
-add r11, r1, 3
-.endr
+//.rept 16
+////cpy r0, r0
+//add r11, r1, 3
+//.endr
 _increment:
 add r6, r6, 0x1
 jmp lr
 ////--------
-.rept 16
-//cpy r0, r0
-add r12, r1, 3
-.endr
+//.rept 16
+////cpy r0, r0
+//add r12, r1, 3
+//.endr
 _divmod:
 //--------
 udiv r7, r6, r1
 umod r8, r6, r1
 //--------
 jmp lr
-.rept 16
-//cpy r0, r0
-add r4, r1, 3
-.endr
+//.rept 16
+////cpy r0, r0
+//add r4, r1, 3
+//.endr
 //--------
 _irq_handler:
 add r10, r10, 1

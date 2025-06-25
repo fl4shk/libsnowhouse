@@ -64,9 +64,9 @@ case class SnowHouseInstrDataDualRam(
   val instrRamKind = (
     //false
     //true
-    0
+    //0
     //5
-    //2
+    2
     //1
   )
   // BEGIN: old, non-icache code
