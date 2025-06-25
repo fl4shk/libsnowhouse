@@ -4266,22 +4266,20 @@ case class SnowHousePipeStageExecute(
         src.allowOverride
       })
       multiCycleBus.sendData.srcVec(0) := (
-        RegNext/*When*/(
+        RegNext(
           setOutpModMemWord.io.selRdMemWord(
             opInfo=opInfo,
             idx=1,
           ),
-          //cond=cMid0Front.down.isReady
         )
         init(0x0)
       )
       multiCycleBus.sendData.srcVec(1) := (
-        RegNext/*When*/(
+        RegNext(
           setOutpModMemWord.io.selRdMemWord(
             opInfo=opInfo,
             idx=2,
           ),
-          //cond=cMid0Front.down.isReady,
         )
         init(0x0)
       )
@@ -4340,9 +4338,8 @@ case class SnowHousePipeStageExecute(
         //  //=/= 0x0
         //  //.orR
         //)
-        //cMid0Front.up.isValid
-        //&& 
-        setOutpModMemWord.io.opIsAnyMultiCycle
+        cMid0Front.up.isValid
+        && setOutpModMemWord.io.opIsAnyMultiCycle
       ) {
         //rMultiCycleOpState := (
         //  //True

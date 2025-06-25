@@ -1,5 +1,5 @@
 
-snowhousecpu-test.elf:     file format elf32-snowhousecpu
+snowhousecpu-test-0.elf:     file format elf32-snowhousecpu
 
 
 Disassembly of section .text:
