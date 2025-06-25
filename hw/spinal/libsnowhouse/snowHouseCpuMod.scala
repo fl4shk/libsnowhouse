@@ -2333,7 +2333,7 @@ case class SnowHouseCpuTestProgram(
   import libsnowhouse.Label._
   //val tempData: Int = 0x17000
   cfg.program ++= SnowHouseCpuProgramFromBin(
-    "test.bin"
+    "test/test.bin"
   )
   //cfg.program ++= Array[AsmStmt](
   //  //Lb"_main",

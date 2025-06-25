@@ -46,7 +46,7 @@ add r9, r9, 1
 add r7, r7, -1
 //bnz r7, _push_loop
 bne r7, r0, _push_loop
-add r0, r0, 0x12345678
+add r10, r0, 0x12345678
 //add r0, r0, 0x5678
 //add r0, r0, 0x1234
 add r0, r0, r0

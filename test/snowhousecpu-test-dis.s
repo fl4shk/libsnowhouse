@@ -32,8 +32,8 @@ Disassembly of section .text:
   60:	01 00 90 09 	add	r9, r9, 1
   64:	ff ff 70 07 	add	r7, r7, -1
   68:	ec ff 01 97 	bne	r7, r0, -20
-  6c:	34 12 00 a0 	add	r0, r0, 305419896 // pre #0x1234
-  70:	78 56 00 00 
+  6c:	34 12 00 a0 	add	r10, r0, 305419896 // pre #0x1234
+  70:	78 56 00 0a 
 	...
   80:	00 00 61 77 	mul	r7, r6, r1
   84:	01 00 71 77 	udiv	r7, r7, r1

@@ -35,8 +35,8 @@ Disassembly of section .text:
   6c:	ff ff 70 07 	add	r7, r7, -1
   70:	00 00 00 a0 	bne	r7, r0, 0 // pre #0x0
   74:	00 00 01 97 
-  78:	34 12 00 a0 	add	r0, r0, 305419896 // pre #0x1234
-  7c:	78 56 00 00 
+  78:	34 12 00 a0 	add	r10, r0, 305419896 // pre #0x1234
+  7c:	78 56 00 0a 
 	...
   8c:	00 00 61 77 	mul	r7, r6, r1
   90:	01 00 71 77 	udiv	r7, r7, r1
