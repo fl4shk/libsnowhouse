@@ -4301,10 +4301,10 @@ case class SnowHousePipeStageExecute(
     }
   }
   when (
-    //cMid0Front.up.isFiring
+    cMid0Front.up.isFiring
     //&&
     //outp.splitOp.opIsMemAccess
-    cMid0Front.down.isReady
+    //cMid0Front.down.isReady
   ) {
     io.dbus.sendData := setOutpModMemWord.io.dbusHostPayload
   }

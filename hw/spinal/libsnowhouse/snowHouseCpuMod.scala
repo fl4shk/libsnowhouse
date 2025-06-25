@@ -2334,11 +2334,11 @@ case class SnowHouseCpuTestProgram(
   //val tempData: Int = 0x17000
   cfg.program ++= SnowHouseCpuProgramFromBin(
     //"test/snowhousecpu-test-0.bin"
-    "test/snowhousecpu-test-1.bin"
+    //"test/snowhousecpu-test-1.bin"
     //"test/snowhousecpu-test-2.bin"
     //"test/snowhousecpu-test-3.bin"
     //"test/snowhousecpu-test-4.bin"
-    //"test/snowhousecpu-test-5.bin"
+    "test/snowhousecpu-test-5.bin"
   )
   //cfg.program ++= Array[AsmStmt](
   //  //Lb"_main",
