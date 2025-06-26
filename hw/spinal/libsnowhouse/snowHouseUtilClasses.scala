@@ -434,6 +434,8 @@ case class SnowHouseConfig(
   //--------
   doInstrDecodeFunc: (SnowHousePipeStageInstrDecode) => Area,
   //--------
+  instrRamKind: Int,
+  //--------
   //maxNumGprsPerInstr: Int,
   //modOpCntWidth: Int=8,
   supportUcode: Boolean=false, // whether or not to support microcode
@@ -443,7 +445,9 @@ case class SnowHouseConfig(
     3
   ),
   //exposeGprsToIo: Option[Seq[Int]]=None,
-  exposeModMemWordToIo: Boolean=false,
+  exposeRegFileWriteDataToIo: Boolean=false,
+  exposeRegFileWriteAddrToIo: Boolean=false,
+  exposeRegFileWriteEnableToIo: Boolean=false,
   //splitAluOp: Boolean=false,
   optFormal: Boolean=false,
 ) {

@@ -3647,8 +3647,11 @@ case class SnowHousePipeStageExecute(
   //)
   def stallKindMem = 0
   def stallKindMultiCycle = 1
-  def stallKindMultiCycle1 = 2
-  def stallKindLim = 3
+  //def stallKindMultiCycle1 = 2
+  def stallKindLim = (
+    //3
+    2
+  )
 
   val myDoStall = (
     /*KeepAttribute*/(
@@ -3664,9 +3667,9 @@ case class SnowHousePipeStageExecute(
       init=myDoStall(stallKindMultiCycle).getZero,
     )
   )
-  myDoStall(stallKindMultiCycle1) := (
-    False
-  )
+  //myDoStall(stallKindMultiCycle1) := (
+  //  False
+  //)
   val setOutpModMemWord = SnowHousePipeStageExecuteSetOutpModMemWord(
     args=args
   )

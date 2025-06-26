@@ -12,6 +12,8 @@ import libcheesevoyage.general._
 import libcheesevoyage.math._
 import libcheesevoyage.bus.lcvStall._
 
+import java.io._
+
 object SnowHouseCpuInstrEnc {
   val numOps: Int = 16
   val opWidth: Int = log2Up(numOps)
@@ -2052,7 +2054,11 @@ case class SnowHouseCpuConfig(
   //  tempArr += r8.index
   //  tempArr
   //})
-  exposeModMemWordToIo: Boolean=false,
+  instrRamKind: Int,
+  programStr: String,
+  exposeRegFileWriteDataToIo: Boolean=false,
+  exposeRegFileWriteAddrToIo: Boolean=false,
+  exposeRegFileWriteEnableToIo: Boolean=false,
   regFileMemRamStyle: String="distributed",
   icacheMemRamStyle: String="auto",
   dcacheMemRamStyle: String="auto",
@@ -2227,6 +2233,7 @@ case class SnowHouseCpuConfig(
       //true
       false
     ),
+    instrRamKind=instrRamKind,
     //decodeFunc=(
     //  io: SnowHouseIo[SnowHouseCpuEncInstr],
     //  cId: CtrlLink,
@@ -2236,7 +2243,9 @@ case class SnowHouseCpuConfig(
     //},
     //maxNumGprsPerInstr=3,
     //exposeGprsToIo=exposeGprsToIo
-    exposeModMemWordToIo=exposeModMemWordToIo,
+    exposeRegFileWriteDataToIo=exposeRegFileWriteDataToIo,
+    exposeRegFileWriteAddrToIo=exposeRegFileWriteAddrToIo,
+    exposeRegFileWriteEnableToIo=exposeRegFileWriteEnableToIo,
     optFormal=optFormal,
   )
   //--------
@@ -2332,14 +2341,19 @@ case class SnowHouseCpuTestProgram(
   //def program = cfg.program
   import libsnowhouse.Label._
   //val tempData: Int = 0x17000
+
+  //cfg.program ++= SnowHouseCpuProgramFromBin(
+  //  "test/snowhousecpu-test-0.bin"
+  //  //"test/snowhousecpu-test-1.bin"
+  //  //"test/snowhousecpu-test-2.bin"
+  //  //"test/snowhousecpu-test-3.bin"
+  //  //"test/snowhousecpu-test-4.bin"
+  //  //"test/snowhousecpu-test-5.bin"
+  //)
   cfg.program ++= SnowHouseCpuProgramFromBin(
-    //"test/snowhousecpu-test-0.bin"
-    //"test/snowhousecpu-test-1.bin"
-    "test/snowhousecpu-test-2.bin"
-    //"test/snowhousecpu-test-3.bin"
-    //"test/snowhousecpu-test-4.bin"
-    //"test/snowhousecpu-test-5.bin"
+    cfg.programStr
   )
+
   //cfg.program ++= Array[AsmStmt](
   //  //Lb"_main",
   //  //add(r1, r2, r3),
@@ -3227,10 +3241,20 @@ case class SnowHouseCpuWithDualRamIo(
       recvPayloadType=None,
     ))
   )
-  val modMemWord = (
-    cfg.exposeModMemWordToIo
+  val regFileWriteData = (
+    cfg.exposeRegFileWriteDataToIo
   ) generate (
     out(UInt(cfg.shCfg.mainWidth bits))
+  )
+  val regFileWriteAddr = (
+    cfg.exposeRegFileWriteAddrToIo
+  ) generate (
+    out(UInt(log2Up(cfg.shCfg.regFileCfg.wordCountArr(0)) bits))
+  )
+  val regFileWriteEnable = (
+    cfg.exposeRegFileWriteEnableToIo
+  ) generate (
+    out(Bool())
   )
 }
 case class SnowHouseCpuWithDualRam(
@@ -3255,8 +3279,14 @@ case class SnowHouseCpuWithDualRam(
   cpu.io.dbus <> dualRam.io.dbus
   //dualRam.io.dcacheHaveHazard := cpu.io.dcacheHaveHazard
   cpu.io.dbusExtraReady := dualRam.io.dbusExtraReady
-  if (cfg.exposeModMemWordToIo) {
-    cpu.io.modMemWord <> io.modMemWord
+  if (cfg.exposeRegFileWriteDataToIo) {
+    cpu.io.regFileWriteData <> io.regFileWriteData
+  }
+  if (cfg.exposeRegFileWriteAddrToIo) {
+    cpu.io.regFileWriteAddr <> io.regFileWriteAddr
+  }
+  if (cfg.exposeRegFileWriteEnableToIo) {
+    cpu.io.regFileWriteEnable <> io.regFileWriteEnable
   }
   //for ((multiCycleBus, idx) <- cpu.io.multiCycleBusVec.view.zipWithIndex) {
   //  if (idx != 0) {
@@ -3333,7 +3363,21 @@ object SnowHouseCpuWithDualRamToVerilog extends App {
         //true
         false
       ),
-      exposeModMemWordToIo=true,
+      programStr=(
+        "test/snowhousecpu-test-0.bin"
+        //"test/snowhousecpu-test-1.bin"
+        //"test/snowhousecpu-test-2.bin"
+        //"test/snowhousecpu-test-3.bin"
+        //"test/snowhousecpu-test-4.bin"
+        //"test/snowhousecpu-test-5.bin"
+      ),
+      instrRamKind=(
+        0//,
+        //1,
+        //2,
+        //5
+      ),
+      exposeRegFileWriteDataToIo=true,
     )
     val testProgram = SnowHouseCpuTestProgram(cfg=cfg)
     SnowHouseCpuWithDualRam(program=testProgram.program)
@@ -3351,36 +3395,144 @@ object SnowHouseCpuWithDualRamSim extends App {
   //    cfg=cfg.shCfg
   //  )
   //})
-  val cfg = SnowHouseCpuConfig(
-    optFormal=(
-      //true
-      false
-    )
+  val programStrArr = new ArrayBuffer[String]()
+  //(
+  //  //"test/snowhousecpu-test-0.bin",
+  //  //"test/snowhousecpu-test-1.bin",
+  //  //"test/snowhousecpu-test-2.bin",
+  //  //"test/snowhousecpu-test-3.bin",
+  //  //"test/snowhousecpu-test-4.bin",
+  //  //"test/snowhousecpu-test-5.bin",
+  //  "0",
+  //  "1",
+  //  "2",
+  //  "3",
+  //  "4",
+  //  "5",
+  //)
+  val testIdxRange = (
+    0, //0
+    //1, 1,
+    //2, 2,
+    //3, 3,
+    //4, 4,
+    5, //5,
   )
-  val testProgram = SnowHouseCpuTestProgram(cfg=cfg)
-  Config.sim.compile(
-    SnowHouseCpuWithDualRam(
-      program=testProgram.program,
-      doConnExternIrq=false,
+  val instrRamKindArr = Array[Int](
+    0,
+    1,
+    2,
+    5,
+  )
+  for (testIdx <- 0 to 5) {
+    programStrArr += (
+      s"test/snowhousecpu-test-${testIdx}.bin"
     )
-  ).doSim{dut => {
-    dut.clockDomain.forkStimulus(10)
-    for (i <- 0 until 1024) {
-      dut.clockDomain.waitSampling()
-      //for (gprIdx <- 0 until cfg.numGprs) {
-      //  printf(
-      //    "r%i=%x ",
-      //    gprIdx,
-      //    dut.cpu.regFile.modMem(0)(0).readAsync(
-      //      address=gprIdx
-      //    ).toInt
-      //  )
-      //  if (gprIdx % 4 == 3) {
-      //    printf("\n")
-      //  }
-      //}
+  }
+
+  //val grabRegFileOutputs = (
+  //  //false
+  //  true
+  //)
+  //val isKnownGood = (
+  //  //false
+  //  true
+  //)
+  val numClkCycles = (
+    1024
+  )
+  for (
+    //programStr <- programStrArr
+    testIdx <- testIdxRange._1 to testIdxRange._2
+  ) {
+    val programStr = programStrArr(testIdx)
+    for (instrRamKind <- instrRamKindArr) {
+      val cfg = SnowHouseCpuConfig(
+        optFormal=(
+          //true
+          false
+        ),
+        programStr=(
+          programStr
+          //"test/snowhousecpu-test-0.bin"
+          //"test/snowhousecpu-test-1.bin"
+          //"test/snowhousecpu-test-2.bin"
+          //"test/snowhousecpu-test-3.bin"
+          //"test/snowhousecpu-test-4.bin"
+          //"test/snowhousecpu-test-5.bin"
+        ),
+        instrRamKind=(
+          //0//,
+          //1,
+          //2,
+          //5
+          instrRamKind
+        ),
+        exposeRegFileWriteDataToIo=true,
+        exposeRegFileWriteAddrToIo=true,
+        exposeRegFileWriteEnableToIo=true,
+      )
+      val testProgram = SnowHouseCpuTestProgram(cfg=cfg)
+      Config.sim.compile(
+        SnowHouseCpuWithDualRam(
+          program=testProgram.program,
+          doConnExternIrq=false,
+        )
+      ).doSim{dut => {
+        val pw = new PrintWriter(new File(
+          s"test/results/test-${testIdx}-results-${instrRamKind}.txt"
+        ))
+        pw.write(
+          s"Starting test:"
+          + s"programStr:${programStr} instrRamKind:${instrRamKind}"
+          + s"\n"
+        )
+        val mySavedGprArr = new ArrayBuffer[Long]()
+        for (idx <- 0 until cfg.numGprs) {
+          mySavedGprArr += 0.toLong
+        }
+
+        dut.clockDomain.forkStimulus(10)
+        for (i <- 0 until numClkCycles) {
+          dut.clockDomain.waitSampling()
+          val myRegFileWriteEnable = dut.io.regFileWriteEnable.toBoolean
+          val myRegFileWriteAddr = dut.io.regFileWriteAddr.toLong
+          val myRegFileWriteData = dut.io.regFileWriteData.toLong
+
+          if (myRegFileWriteEnable) {
+            if (
+              myRegFileWriteData
+              != mySavedGprArr(myRegFileWriteAddr.toInt)
+            ) {
+              pw.write(
+                s"addr:${myRegFileWriteAddr} data:${myRegFileWriteData}\n"
+              )
+              mySavedGprArr(myRegFileWriteAddr.toInt) = myRegFileWriteData
+            }
+          }
+          //if (!grabRegFileOutputs) {
+          //} else {
+          //}
+          //for (gprIdx <- 0 until cfg.numGprs) {
+          //  printf(
+          //    "r%i=%x ",
+          //    gprIdx,
+          //    dut.cpu.regFile.modMem(0)(0).readAsync(
+          //      address=gprIdx
+          //    ).toInt
+          //  )
+          //  if (gprIdx % 4 == 3) {
+          //    printf("\n")
+          //  }
+          //}
+        }
+        pw.write(
+          s"Ending test.\n\n"
+        )
+        pw.close()
+      }}
     }
-  }}
+  }
 }
 object SnowHouseCpuToVerilog extends App {
   Config.spinal.generateVerilog({
@@ -3388,7 +3540,21 @@ object SnowHouseCpuToVerilog extends App {
       optFormal=(
         //true
         false
-      )
+      ),
+      programStr=(
+        "test/snowhousecpu-test-0.bin"
+        //"test/snowhousecpu-test-1.bin"
+        //"test/snowhousecpu-test-2.bin"
+        //"test/snowhousecpu-test-3.bin"
+        //"test/snowhousecpu-test-4.bin"
+        //"test/snowhousecpu-test-5.bin"
+      ),
+      instrRamKind=(
+        0//,
+        //1,
+        //2,
+        //5
+      ),
     )
     SnowHouse(
       cfg=cfg.shCfg
@@ -3411,7 +3577,21 @@ object SnowHouseCpuFormal extends App {
           optFormal=(
             true
             //false
-          )
+          ),
+          programStr=(
+            "test/snowhousecpu-test-0.bin"
+            //"test/snowhousecpu-test-1.bin"
+            //"test/snowhousecpu-test-2.bin"
+            //"test/snowhousecpu-test-3.bin"
+            //"test/snowhousecpu-test-4.bin"
+            //"test/snowhousecpu-test-5.bin"
+          ),
+          instrRamKind=(
+            0//,
+            //1,
+            //2,
+            //5
+          ),
         ).shCfg
       )
     )

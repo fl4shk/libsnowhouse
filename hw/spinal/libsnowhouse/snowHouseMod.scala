@@ -62,12 +62,13 @@ case class SnowHouseInstrDataDualRam(
   val io = SnowHouseInstrDataDualRamIo(cfg=cfg)
   //--------
   val instrRamKind = (
-    //false
-    //true
-    //0
-    //5
-    //2
-    1
+    ////false
+    ////true
+    ////0
+    ////5
+    ////2
+    //1
+    cfg.instrRamKind
   )
   // BEGIN: old, non-icache code
   val myNonIcacheArea = (
@@ -497,10 +498,20 @@ case class SnowHouseIo(
       recvPayloadType=None,
     ))
   )
-  val modMemWord = (
-    cfg.exposeModMemWordToIo
+  val regFileWriteData = (
+    cfg.exposeRegFileWriteDataToIo
   ) generate (
     out(UInt(cfg.mainWidth bits))
+  )
+  val regFileWriteAddr = (
+    cfg.exposeRegFileWriteAddrToIo
+  ) generate (
+    out(UInt(log2Up(cfg.regFileCfg.wordCountArr(0)) bits))
+  )
+  val regFileWriteEnable = (
+    cfg.exposeRegFileWriteEnableToIo
+  ) generate (
+    out(Bool())
   )
   // instruction bus
   val ibus = new LcvStallIo[BusHostPayload, BusDevPayload ](
@@ -825,9 +836,28 @@ case class SnowHouse
       psMemStallHost=psMemStallHost,
     )
   )
-  if (cfg.exposeModMemWordToIo) {
-    io.modMemWord := (
-      regFile.io.back(regFile.io.modBackPayload).myExt(0).modMemWord
+  if (cfg.exposeRegFileWriteDataToIo) {
+    if (
+      !cfg.exposeRegFileWriteAddrToIo
+      && !cfg.exposeRegFileWriteEnableToIo
+    ) {
+      io.regFileWriteData := (
+        regFile.io.back(regFile.io.modBackPayload).myExt(0).modMemWord
+      )
+    } else {
+      io.regFileWriteData := (
+        regFile.mod.back.myWriteData(1)(0)(0)
+      )
+    }
+  }
+  if (cfg.exposeRegFileWriteAddrToIo) {
+    io.regFileWriteAddr := (
+      regFile.mod.back.myWriteAddr(1)(0)(0)
+    )
+  }
+  if (cfg.exposeRegFileWriteEnableToIo) {
+    io.regFileWriteEnable := (
+      regFile.mod.back.myWriteEnable(0)
     )
   }
   regFile.io.back.ready := True
