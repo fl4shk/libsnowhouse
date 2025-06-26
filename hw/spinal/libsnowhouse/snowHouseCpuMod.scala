@@ -2335,10 +2335,10 @@ case class SnowHouseCpuTestProgram(
   cfg.program ++= SnowHouseCpuProgramFromBin(
     //"test/snowhousecpu-test-0.bin"
     //"test/snowhousecpu-test-1.bin"
-    //"test/snowhousecpu-test-2.bin"
+    "test/snowhousecpu-test-2.bin"
     //"test/snowhousecpu-test-3.bin"
     //"test/snowhousecpu-test-4.bin"
-    "test/snowhousecpu-test-5.bin"
+    //"test/snowhousecpu-test-5.bin"
   )
   //cfg.program ++= Array[AsmStmt](
   //  //Lb"_main",
@@ -2641,6 +2641,7 @@ case class SnowHouseCpuMul32(
         object UMul32State
         extends SpinalEnum(defaultEncoding=binarySequential) {
           val
+            IDLE,
             DO_THREE_MUL16X16,
             FIRST_ADD,
             SECOND_ADD,
@@ -2649,45 +2650,45 @@ case class SnowHouseCpuMul32(
         }
         val rState = (
           Reg(UMul32State())
-          init(UMul32State.DO_THREE_MUL16X16)
+          init(UMul32State.IDLE)
           setName("SnowHouseCpuMul32_Umul_rState")
         )
         val low = (mainWidth >> 1) - 1 downto 0
         val high = (mainWidth - 1 downto (mainWidth >> 1))
         val shiftAmount = mainWidth >> 1
-        //val mulCond = (
-        //  rState === UMul32State.DO_THREE_MUL16X16
-        //  && multiCycleBus.rValid
-        //)
+        val mulCond = (
+          rState === UMul32State.IDLE
+          && multiCycleBus.rValid
+        )
         val rY0X0 = (
-          RegNext(
+          RegNextWhen(
             //UInt(cfg.mainWidth bits)
             next=(
               srcVec(1)(low) * srcVec(0)(low)
             ),
-            //cond=mulCond
+            cond=mulCond
           )
           init(0x0)
           setName("SnowHouseCpuMul32_Umul_rY0X0")
         )
         val rY1X0 = (
-          RegNext(
+          RegNextWhen(
             //UInt(cfg.mainWidth bits)
             next=(
               srcVec(1)(high) * srcVec(0)(low)
             ),
-            //cond=mulCond,
+            cond=mulCond,
           )
           init(0x0)
           setName("SnowHouseCpuMul32_Umul_rY1X0")
         )
         val rY0X1 = (
-          RegNext(
+          RegNextWhen(
             //UInt(cfg.mainWidth bits)
             next=(
               srcVec(1)(low) * srcVec(0)(high)
             ),
-            //cond=mulCond,
+            cond=mulCond,
           )
           init(0x0)
           setName("SnowHouseCpuMul32_Umul_rY0X1")
@@ -2719,24 +2720,34 @@ case class SnowHouseCpuMul32(
         )
         dstVec(0) := rDst
         switch (rState) {
-          is (UMul32State.DO_THREE_MUL16X16) {
+          is (UMul32State.IDLE) {
             when (RegNext(multiCycleBus.nextValid)) {
-              rState := UMul32State.FIRST_ADD
+              rState := UMul32State.DO_THREE_MUL16X16
             }
+            //rPartialSum(0) := (
+            //  rY1X0 + rY0X1
+            //)
+          }
+          is (UMul32State.DO_THREE_MUL16X16) {
+            rState := UMul32State.FIRST_ADD
           }
           is (UMul32State.FIRST_ADD) {
             rState := UMul32State.SECOND_ADD
-            rDst := rPartialSum(1)
+            //rPartialSum(1) := (
+            //  (rPartialSum(0) << shiftAmount)
+            //  + rY0X0
+            //)(rPartialSum(1).bitsRange)
+            //rDst := rPartialSum(1)
           }
           is (UMul32State.SECOND_ADD) {
             rState := UMul32State.YIELD_RESULT
             //dstVec(0) := (
             //)
-            //rDst := rPartialSum(1)
+            rDst := rPartialSum(1)
             //rDst := rPartialSum(1)
           }
           is (UMul32State.YIELD_RESULT) {
-            rState := UMul32State.DO_THREE_MUL16X16
+            rState := UMul32State.IDLE
             multiCycleBus.ready := True
           }
         }
@@ -3347,7 +3358,7 @@ object SnowHouseCpuWithDualRamSim extends App {
     )
   )
   val testProgram = SnowHouseCpuTestProgram(cfg=cfg)
-  SimConfig.withVcdWave.compile(
+  Config.sim.compile(
     SnowHouseCpuWithDualRam(
       program=testProgram.program,
       doConnExternIrq=false,

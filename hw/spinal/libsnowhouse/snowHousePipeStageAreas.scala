@@ -4025,33 +4025,36 @@ case class SnowHousePipeStageExecute(
       }
     }
     def tempRdMemWord = setOutpModMemWord.io.rdMemWord(zdx)
-    //val rRdMemWordState = (
-    //  Reg(Bool(), init=False)
-    //  .setName(
-    //    s"${cfg.shRegFileCfg.pipeName}_rRdMemWordState_${ydx}_${zdx}"
-    //  )
-    //)
+    val rRdMemWordState = (
+      Reg(Bool(), init=False)
+      .setName(
+        s"${cfg.shRegFileCfg.pipeName}_rRdMemWordState_${ydx}_${zdx}"
+      )
+    )
 
-    tempRdMemWord := myRdMemWord(ydx=ydx, modIdx=zdx)
     //tempRdMemWord := (
     //  RegNext(
     //    next=tempRdMemWord,
     //    init=tempRdMemWord.getZero,
     //  )
     //)
+    //when (cMid0Front.down.isReady) {
+      tempRdMemWord := myRdMemWord(ydx=ydx, modIdx=zdx)
+    //}
     //when (
     //  cMid0Front.up.isValid
     //  //////&& cMid0Front.down.isValid
     //  //&& cMid0Front.down.isReady
+    //  && cMid0Front.down.isReady
     //) {
-    //  //when (!rRdMemWordState) {
+    //  when (!rRdMemWordState) {
     //    tempRdMemWord := myRdMemWord(ydx=ydx, modIdx=zdx)
-    //  //  rRdMemWordState := True
-    //  //}
+    //    rRdMemWordState := True
+    //  }
     //}
-    ////when (cMid0Front.up.isFiring) {
-    ////  rRdMemWordState := False
-    ////}
+    //when (cMid0Front.up.isFiring) {
+    //  rRdMemWordState := False
+    //}
     // TODO (maybe): support multiple register writes per instruction
   }
   if (cfg.regFileWordCountArr.size == 0) {
@@ -4301,10 +4304,10 @@ case class SnowHousePipeStageExecute(
     }
   }
   when (
-    cMid0Front.up.isFiring
+    //cMid0Front.up.isFiring
     //&&
     //outp.splitOp.opIsMemAccess
-    //cMid0Front.down.isReady
+    cMid0Front.down.isFiring
   ) {
     io.dbus.sendData := setOutpModMemWord.io.dbusHostPayload
   }
@@ -4350,8 +4353,9 @@ case class SnowHousePipeStageExecute(
             setOutpModMemWord.io.opIsMultiCycle(idx)
           )
         }
-        myDoStall(stallKindMultiCycle1) := True
+        //myDoStall(stallKindMultiCycle1) := True
         //cMid0Front.duplicateIt()
+        cMid0Front.haltIt()
         when (
           /*RegNext*/(
             (

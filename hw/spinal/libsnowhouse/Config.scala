@@ -13,13 +13,16 @@ object Config {
   //  onlyStdLogicVectorAtTopLevelIo = true
   //)
 
-  def spinal = SpinalConfig(
-    targetDirectory="hw/gen",
-    defaultConfigForClockDomains=ClockDomainConfig(
-      resetActiveLevel=HIGH,
-      resetKind=SYNC,
-    ),
-    formalAsserts=true,
+  def spinal = (
+    SpinalConfig(
+      targetDirectory="hw/gen",
+      defaultConfigForClockDomains=ClockDomainConfig(
+        resetActiveLevel=HIGH,
+        resetKind=SYNC,
+      ),
+      formalAsserts=true,
+    )
+      //.addStandardMemBlackboxing(blackboxAllWhatsYouCan)
   )
   def sim = SimConfig.withConfig(spinal).withFstWave
 
