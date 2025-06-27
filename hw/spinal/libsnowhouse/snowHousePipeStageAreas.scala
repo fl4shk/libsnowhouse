@@ -4481,7 +4481,10 @@ case class SnowHousePipeStageExecute(
                   ) {
                     psExStallHost.nextValid := False
                     myDoStall(stallKindMultiCycle) := False
-                    when (cMid0Front.up.isFiring) {
+                    when (
+                      //cMid0Front.up.isFiring
+                      cMid0Front.down.isReady
+                    ) {
                       rMultiCycleOpState := (
                         //False
                         MultiCycleOpState.Idle
@@ -4813,12 +4816,37 @@ case class SnowHousePipeStageMem(
   when (cMidModFront.up.isValid) {
     //when (!rSetMidModPayloadState) {
       midModPayload(extIdxUp) := modFront(modFrontAfterPayload)
-    //  nextSetMidModPayloadState := True
-    //}
-    //when (cMidModFront.up.isReady) {
-    //  nextSetMidModPayloadState := False
+      //nextSetMidModPayloadState := True
     //}
   }
+  //when (
+  //  //cMidModFront.up.isReady
+  //  cMidModFront.up.isFiring
+  //) {
+  //  nextSetMidModPayloadState := False
+  //  midModPayload(extIdxUp).myExt(0).modMemWordValid := (
+  //    //_ := True
+  //    modFront(modFrontAfterPayload).myExt(0).modMemWordValid
+  //  )
+  //  midModPayload(extIdxUp).myExt(0).memAddrAlt := (
+  //    modFront(modFrontAfterPayload).myExt(0).memAddrAlt
+  //  )
+  //  midModPayload(extIdxUp).myExt(0).memAddr := (
+  //    modFront(modFrontAfterPayload).myExt(0).memAddr
+  //  )
+  //  midModPayload(extIdxUp).myExt(0).memAddrFwd := (
+  //    modFront(modFrontAfterPayload).myExt(0).memAddrFwd
+  //  )
+  //  midModPayload(extIdxUp).myExt(0).memAddrFwdMmw := (
+  //    modFront(modFrontAfterPayload).myExt(0).memAddrFwdMmw
+  //  )
+  //  //midModPayload(extIdxUp).myExt(0).modMemWord := 0x0
+  //  when (RegNext(io.dbus.sendData.accKind.asBits(0))) {
+  //    midModPayload(extIdxUp).myExt(0).modMemWord := (
+  //      modFront(modFrontAfterPayload).myExt(0).modMemWord
+  //    )
+  //  }
+  //}
   for (ydx <- 0 until cfg.regFileCfg.memArrSize) {
     def tempExtLeft(ydx: Int) = midModPayload(extIdxUp).myExt(ydx)
     def tempExtRight(ydx: Int) = modFront(modFrontAfterPayload).myExt(ydx)
@@ -4857,7 +4885,40 @@ case class SnowHousePipeStageMem(
       //!io.dbus.ready
       !io.dbusExtraReady(3)
     ) {
-      cMidModFront.duplicateIt()
+      //cMidModFront.duplicateIt()
+      cMidModFront.haltIt()
+      //midModPayload(extIdxUp).myExt(0).modMemWordValid.foreach(
+      //  current => {
+      //    current := False
+      //  }
+      //)
+      //midModPayload(extIdxUp).myExt(0).memAddrAlt.foreach(
+      //  current => {
+      //    current := 0x0
+      //  }
+      //)
+      //midModPayload(extIdxUp).myExt(0).memAddr.foreach(
+      //  current => {
+      //    current := 0x0
+      //  }
+      //)
+      //midModPayload(extIdxUp).myExt(0).memAddrFwd.foreach(
+      //  current => {
+      //    current.foreach(current => {
+      //      current := 0x0
+      //    })
+      //  }
+      //)
+      //midModPayload(extIdxUp).myExt(0).memAddrFwdMmw.foreach(
+      //  current => {
+      //    current.foreach(current => {
+      //      current := 0x0
+      //    })
+      //  }
+      //)
+      ////when (io.dbus.sendData.accKind.asBits(0)) {
+      //  midModPayload(extIdxUp).myExt(0).modMemWord := 0x0
+      ////}
       val mapElem = midModPayload(extIdxUp).gprIdxToMemAddrIdxMap(0)
       val myCurrExt = (
         if (!mapElem.haveHowToSetIdx) (
