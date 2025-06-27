@@ -469,21 +469,21 @@ object SnowHouseCpuPipeStageInstrDecode {
         DidSetPc
         = newElement()
     }
-    val nextMultiCycleState = (
-      //Bool()
-      MultiCycleState()
-    )
-    val rMultiCycleState = (
-      /*KeepAttribute*/(
-        RegNext(
-          next=nextMultiCycleState,
-          //init=nextMultiCycleState.getZero,
-        )
-        init(MultiCycleState.Idle)
-      )
-      .setName(s"InstrDecode_rMultiCycleState")
-    )
-    nextMultiCycleState := rMultiCycleState
+    //val nextMultiCycleState = (
+    //  //Bool()
+    //  MultiCycleState()
+    //)
+    //val rMultiCycleState = (
+    //  /*KeepAttribute*/(
+    //    RegNext(
+    //      next=nextMultiCycleState,
+    //      //init=nextMultiCycleState.getZero,
+    //    )
+    //    init(MultiCycleState.Idle)
+    //  )
+    //  .setName(s"InstrDecode_rMultiCycleState")
+    //)
+    //nextMultiCycleState := rMultiCycleState
     //psId.nextMultiCycleStateIsIdle := nextMultiCycleState
     for (idx <- 0 until cfg.maxNumGprsPerInstr) {
       for (jdx <- 0 until cfg.regFileCfg.modMemWordValidSize) {
@@ -530,21 +530,71 @@ object SnowHouseCpuPipeStageInstrDecode {
       ).asUInt
     )
     tempImm := tempImmNoShift
+    val instrIsPre = (
+      Bool()
+    )
+    instrIsPre := False
+    val myTempPreImm = (
+      Cat(
+        encInstr.raIdx,
+        encInstr.rbIdx,
+        encInstr.rcIdx,
+        encInstr.imm16,
+      ).asUInt,
+    )
     val rPrevPreImm = (
-      /*KeepAttribute*/(
-        RegNextWhen(
-          next=Cat(
-            encInstr.raIdx,
-            encInstr.rbIdx,
-            encInstr.rcIdx,
-            encInstr.imm16
-          ).asUInt,
-          cond=cId.up.isFiring,
-          //init=encInstr.imm16.getZero,
+      ///*KeepAttribute*/(
+      //  RegNextWhen(
+      //    next=(
+      //      Vec.fill(upPayload.imm.size)(
+      //        Cat(
+      //          encInstr.raIdx,
+      //          encInstr.rbIdx,
+      //          encInstr.rcIdx,
+      //          encInstr.imm16
+      //        ).asUInt,
+      //      )
+      //    ),
+      //    cond=(
+      //      cId.up.isFiring
+      //      && instrIsPre
+      //    ),
+      //    //init=encInstr.imm16.getZero,
+      //  )
+      //)
+      Reg(
+        Vec.fill(upPayload.imm.size)(
+          Flow(
+            UInt(myTempPreImm.getWidth bits)
+          )
         )
       )
-      .setName(s"InstrDecode_rPrevPreImm16")
+      .setName(s"InstrDecode_rPrevPreImm")
     )
+    rPrevPreImm.foreach(current => current.init(current.getZero))
+    //when (cId.up.isFiring) {
+      rPrevPreImm.foreach(current => {
+        current.valid := instrIsPre
+        current.payload := myTempPreImm
+      })
+      //when (instrIsPre) {
+      //  rPrevPreImm.foreach(current => {
+      //    current.valid := True
+      //    current.payload := myTempPreImm
+      //  })
+      //} otherwise {
+      //  rPrevPreImm.foreach(_ := _.getZero)
+      //}
+      //for (idx <- 0 until upPayload.imm.size) {
+      //  upPayload.imm(idx) := (
+      //    Cat(
+      //      rPrevPreImm(idx),
+      //      encInstr.imm16,
+      //    ).asUInt.resized
+      //  )
+      //}
+    //}
+
     //upPayload.splitOp := upPayload.splitOp.getZero
     //upPayload.splitOp.kind := SnowHouseSplitOpKind.CPY_CPYUI
     //upPayload.splitOp.opIsMultiCycle := False
@@ -567,9 +617,29 @@ object SnowHouseCpuPipeStageInstrDecode {
     ): Area = new Area {
       setName(s"setOp_${someOp._1}")
       if (immShift) {
-        tempImm := (
-          tempImmWithShift.resized
-        )
+        //tempImm := (
+        //  tempImmWithShift.resized
+        //)
+        upPayload.imm.foreach(imm => {
+          imm := (
+            tempImmWithShift.resized
+          )
+        })
+      } else {
+        for (idx <- 0 until upPayload.imm.size) {
+          when (rPrevPreImm(idx).fire) {
+            upPayload.imm(idx) := (
+              Cat(
+                rPrevPreImm(idx).payload,
+                encInstr.imm16,
+              ).asUInt.resized
+            )
+          } otherwise {
+            upPayload.imm(idx) := (
+              tempImmNoShift
+            )
+          }
+        }
       }
       var found = false
       var didFirstPrint: Boolean = false
@@ -823,47 +893,55 @@ object SnowHouseCpuPipeStageInstrDecode {
     //  //)
     //)
     //when (canStartMultiCycleState) {
-      switch (rMultiCycleState) {
-        is (MultiCycleState.Idle) {
-          upPayload.imm.foreach(imm => {
-            imm := tempImm
-          })
-          //upPayload.blockIrq := False
-        }
-        is (MultiCycleState.DidntSetPc) {
-          upPayload.imm.foreach(imm => {
-            imm := (
-              Cat(
-                rPrevPreImm,
-                encInstr.imm16,
-              ).asUInt.resized
-            )
-          })
-          when (cId.up.isFiring) {
-            if (cfg.irqCfg != None) {
-              upPayload.blockIrq := False
-            }
-            nextMultiCycleState := (
-              //False
-              MultiCycleState.Idle
-            )
-            rPrevPreImm := 0x0
-          }
-        }
-        is (MultiCycleState.DidSetPc) {
-          when (cId.up.isFiring) {
-            rPrevPreImm := 0x0
-            when (upPayload.regPcSetItCnt(0) === 0x1) {
-              if (cfg.irqCfg != None) {
-                upPayload.blockIrq := False
-              }
-              nextMultiCycleState := (
-                MultiCycleState.Idle
-              )
-            }
-          }
-        }
-      }
+      //switch (rMultiCycleState) {
+      //  is (MultiCycleState.Idle) {
+      //    upPayload.imm.foreach(imm => {
+      //      imm := tempImm
+      //    })
+      //    //upPayload.blockIrq := False
+      //  }
+      //  is (MultiCycleState.DidntSetPc) {
+      //    for (idx <- 0 until upPayload.imm.size) {
+      //      upPayload.imm(idx) := (
+      //        Cat(
+      //          rPrevPreImm(idx),
+      //          encInstr.imm16,
+      //        ).asUInt.resized
+      //      )
+      //    }
+      //    //upPayload.imm.foreach(imm => {
+      //    //  imm := (
+      //    //    Cat(
+      //    //      rPrevPreImm,
+      //    //      encInstr.imm16,
+      //    //    ).asUInt.resized
+      //    //  )
+      //    //})
+      //    when (cId.up.isFiring) {
+      //      if (cfg.irqCfg != None) {
+      //        upPayload.blockIrq := False
+      //      }
+      //      nextMultiCycleState := (
+      //        //False
+      //        MultiCycleState.Idle
+      //      )
+      //      //rPrevPreImm := 0x0
+      //    }
+      //  }
+      //  is (MultiCycleState.DidSetPc) {
+      //    when (cId.up.isFiring) {
+      //      //rPrevPreImm.foreach(_ := 0x0)
+      //      when (upPayload.regPcSetItCnt(0) === 0x1) {
+      //        if (cfg.irqCfg != None) {
+      //          upPayload.blockIrq := False
+      //        }
+      //        nextMultiCycleState := (
+      //          MultiCycleState.Idle
+      //        )
+      //      }
+      //    }
+      //  }
+      //}
     //} otherwise {
     //  //when (cId.up.isFiring) {
     //    nextMultiCycleState := False
@@ -871,6 +949,14 @@ object SnowHouseCpuPipeStageInstrDecode {
     //      upPayload.blockIrq := False
     //    }
     //  //}
+    //}
+    //for (idx <- 0 until upPayload.imm.size) {
+    //  upPayload.imm(idx) := (
+    //    Cat(
+    //      rPrevPreImm(idx),
+    //      encInstr.imm16,
+    //    ).asUInt.resized
+    //  )
     //}
     switch (encInstr.op) {
       is (AddRaRbRc._1) {
@@ -1298,29 +1384,32 @@ object SnowHouseCpuPipeStageInstrDecode {
         doDefault(
           //doSetImm=false
         )
+        when (!psId.rSavedExSetPc.fire) {
+          instrIsPre := True
+        }
         //when (!rMultiCycleState) {
-          when (cId.up.isFiring) {
-            //if (cfg.irqCfg != None) {
-            //  upPayload.blockIrq := True
-            //}
-            when (rMultiCycleState === MultiCycleState.Idle) {
-              if (cfg.irqCfg != None) {
-                upPayload.blockIrq := True
-              }
-              when (!psId.psExSetPc.fire) {
-                nextMultiCycleState := MultiCycleState.DidntSetPc
-              } otherwise {
-                nextMultiCycleState := MultiCycleState.DidSetPc
-              }
-            }
-            //when (
-            //  //canStartMultiCycleState
-            //) {
-            //  //when (!rMultiCycleState) {
-            //  //  nextMultiCycleState := True
-            //  //}
-            //}
-          }
+          //when (cId.up.isFiring) {
+          //  //if (cfg.irqCfg != None) {
+          //  //  upPayload.blockIrq := True
+          //  //}
+          //  when (rMultiCycleState === MultiCycleState.Idle) {
+          //    if (cfg.irqCfg != None) {
+          //      upPayload.blockIrq := True
+          //    }
+          //    when (!psId.psExSetPc.fire) {
+          //      nextMultiCycleState := MultiCycleState.DidntSetPc
+          //    } otherwise {
+          //      nextMultiCycleState := MultiCycleState.DidSetPc
+          //    }
+          //  }
+          //  //when (
+          //  //  //canStartMultiCycleState
+          //  //) {
+          //  //  //when (!rMultiCycleState) {
+          //  //  //  nextMultiCycleState := True
+          //  //  //}
+          //  //}
+          //}
         //} otherwise {
         //  if(cfg.irqCfg != None) {
         //    upPayload.blockIrq := False
@@ -3411,12 +3500,13 @@ object SnowHouseCpuWithDualRamSim extends App {
   //  "5",
   //)
   val testIdxRange = (
-    0, //0
+    //0, //0
     //1, 1,
     //2, 2,
     //3, 3,
     //4, 4,
-    5, //5,
+    //5, //5,
+    6, 6
   )
   val instrRamKindArr = Array[Int](
     0,
@@ -3424,7 +3514,7 @@ object SnowHouseCpuWithDualRamSim extends App {
     2,
     5,
   )
-  for (testIdx <- 0 to 5) {
+  for (testIdx <- 0 to 6) {
     programStrArr += (
       s"test/snowhousecpu-test-${testIdx}.bin"
     )
@@ -3508,6 +3598,15 @@ object SnowHouseCpuWithDualRamSim extends App {
                 s"addr:${myRegFileWriteAddr} data:${myRegFileWriteData}\n"
               )
               mySavedGprArr(myRegFileWriteAddr.toInt) = myRegFileWriteData
+              //for (idx <- 0 until mySavedGprArr.size) {
+              //  tempStr += s"r${idx}=${mySavedGprArr(idx)}"
+              //  if (idx + 1 < mySavedGprArr.size) {
+              //    tempStr += " "
+              //  } else {
+              //    tempStr += "\n\n"
+              //  }
+              //}
+              //pw.write(tempStr)
             }
           }
           //if (!grabRegFileOutputs) {

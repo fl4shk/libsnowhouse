@@ -7,9 +7,9 @@ Disassembly of section .text:
 00000000 <_push_loop-0x54>:
 	...
    c:	b0 01 00 01 	add	r1, r0, 432
-  10:	01 00 00 01 	add	r1, r0, 1
-  14:	09 00 10 60 	cpy	ie, r1
-  18:	31 00 10 61 	lsl	r1, r1, 3
+  10:	01 00 00 02 	add	r2, r0, 1
+  14:	09 00 20 60 	cpy	ie, r2
+  18:	31 00 20 61 	lsl	r1, r2, 3
   1c:	01 00 00 02 	add	r2, r0, 1
   20:	00 10 00 03 	add	r3, r0, 4096
   24:	08 00 00 04 	add	r4, r0, 8
@@ -31,11 +31,11 @@ Disassembly of section .text:
   5c:	01 00 80 09 	add	r9, r8, 1
   60:	01 00 90 09 	add	r9, r9, 1
   64:	ff ff 70 07 	add	r7, r7, -1
-  68:	ec ff 01 97 	bne	r7, r0, -20
+  68:	e8 ff 01 97 	bne	r7, r0, -24
   6c:	00 00 61 77 	mul	r7, r6, r1
   70:	01 00 71 77 	udiv	r7, r7, r1
   74:	03 00 61 78 	umod	r8, r6, r1
-  78:	44 00 00 90 	beq	r0, r0, 68
+  78:	40 00 00 90 	beq	r0, r0, 64
   7c:	03 00 10 0a 	add	r10, r1, 3
   80:	03 00 10 0a 	add	r10, r1, 3
   84:	03 00 10 0a 	add	r10, r1, 3
@@ -55,15 +55,15 @@ Disassembly of section .text:
 
 000000bc <_loop>:
   bc:	00 00 30 86 	ldr	r6, r3, 0
-  c0:	5c 00 d0 9d 	bl	lr, 92
+  c0:	58 00 d0 9d 	bl	lr, 88
   c4:	04 00 31 86 	str	r6, r3, 4
   c8:	04 00 30 03 	add	r3, r3, 4
   cc:	ff ff 10 01 	add	r1, r1, -1
-  d0:	94 00 d0 9d 	bl	lr, 148
-  d4:	e8 ff 01 91 	bne	r1, r0, -24
+  d0:	90 00 d0 9d 	bl	lr, 144
+  d4:	e4 ff 01 91 	bne	r1, r0, -28
 
 000000d8 <_infin>:
-  d8:	00 00 00 90 	beq	r0, r0, 0
+  d8:	fc ff 00 90 	beq	r0, r0, -4
   dc:	03 00 10 0b 	add	r11, r1, 3
   e0:	03 00 10 0b 	add	r11, r1, 3
   e4:	03 00 10 0b 	add	r11, r1, 3

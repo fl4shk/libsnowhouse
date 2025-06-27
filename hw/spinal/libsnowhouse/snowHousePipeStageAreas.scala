@@ -386,8 +386,8 @@ case class SnowHousePipeStageInstrFetch(
         //myRegPcSetItCnt := 0x1
         if (idx == 0) {
           val temp = (
-            //rSavedExSetPc.nextPc - (3 * (cfg.instrSizeBytes))
-            rSavedExSetPc(0).nextPc - (4 * cfg.instrSizeBytes)
+            rSavedExSetPc(0).nextPc - (3 * (cfg.instrSizeBytes))
+            //rSavedExSetPc(0).nextPc - (4 * cfg.instrSizeBytes)
             //psExSetPc.nextPc - (3 * (cfg.instrSizeBytes))
           )
           //when (io.ibus.ready) {
@@ -649,6 +649,23 @@ case class SnowHousePipeStageInstrDecode(
   //    nextMultiInstrCnt := rMultiInstrCnt - 1
   //  }
   //}
+  val shouldFinishJump = (
+    rSavedExSetPc.fire
+    && (
+      (
+        upPayload.regPc
+        //upPayload.regPcMinus1Instr
+        //upPayload.regPcPlus1Instr
+        === (
+          (
+            rSavedExSetPc.nextPc
+            //- cfg.instrSizeBytes
+            //- (cfg.instrMainWidth.toLong / 8.toLong).toLong
+          )
+        )
+      )
+    )
+  )
   for (idx <- 0 until upPayload.regPcSetItCnt.size) {
     //upPayload.regPcSetItCnt(idx) := upPayload.regPcSetItCnt(0)
     //upPayload.regPcSetItCnt(idx) := 0x0
@@ -662,21 +679,22 @@ case class SnowHousePipeStageInstrDecode(
     when (up.isFiring) {
       when (
         (
-          rSavedExSetPc.fire
-          && (
-            (
-              upPayload.regPc
-              //upPayload.regPcMinus1Instr
-              //upPayload.regPcPlus1Instr
-              === (
-                (
-                  rSavedExSetPc.nextPc
-                  - cfg.instrSizeBytes
-                  //- (cfg.instrMainWidth.toLong / 8.toLong).toLong
-                )
-              )
-            )
-          )
+          //rSavedExSetPc.fire
+          //&& (
+          //  (
+          //    upPayload.regPc
+          //    //upPayload.regPcMinus1Instr
+          //    //upPayload.regPcPlus1Instr
+          //    === (
+          //      (
+          //        rSavedExSetPc.nextPc
+          //        - cfg.instrSizeBytes
+          //        //- (cfg.instrMainWidth.toLong / 8.toLong).toLong
+          //      )
+          //    )
+          //  )
+          //)
+          shouldFinishJump
         )
         //|| (
         //  upPayload.psIfRegPcSetItCnt === 0x1
@@ -695,7 +713,7 @@ case class SnowHousePipeStageInstrDecode(
     nextSetUpPayloadState(1) := False
   }
   upPayload.regPcPlusInstrSize := (
-    upPayload.regPc + cfg.instrSizeBytes
+    upPayload.regPc //+ cfg.instrSizeBytes
     ////- (cfg.instrMainWidth.toLong / 8.toLong)
     //upPayload.regPcPlus1Instr
   )

@@ -17,9 +17,9 @@ cpy r0, 0x0
 cpy r0, 0x0
 cpy r1, _irq_handler
 //cpy ids, r1
-cpy r1, 0x1
-cpy ie, r1
-lsl r1, r1, 3
+cpy r2, 0x1
+cpy ie, r2
+lsl r1, r2, 3
 cpy r2, 0x1
 cpy r3, 0x1000
 cpy r4, 0x8

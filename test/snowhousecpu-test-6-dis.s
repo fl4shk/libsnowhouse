@@ -1,5 +1,5 @@
 
-snowhousecpu-test-1.elf:     file format elf32-snowhousecpu
+snowhousecpu-test-6.elf:     file format elf32-snowhousecpu
 
 
 Disassembly of section .text:
@@ -32,22 +32,23 @@ Disassembly of section .text:
   60:	01 00 90 09 	add	r9, r9, 1
   64:	ff ff 70 07 	add	r7, r7, -1
   68:	e8 ff 01 97 	bne	r7, r0, -24
-  6c:	34 12 00 a0 	add	r10, r0, 305419896 // pre #0x1234
-  70:	78 56 00 0a 
-	...
-  7c:	00 00 61 77 	mul	r7, r6, r1
-  80:	01 00 71 77 	udiv	r7, r7, r1
-  84:	03 00 61 78 	umod	r8, r6, r1
-  88:	00 00 00 90 	beq	r0, r0, 0
+  6c:	34 12 00 0a 	add	r10, r0, 4660
+  70:	00 00 00 00 	add	r0, r0, 0
+  74:	34 12 00 a0 	bne	r0, r0, 305419772 // pre #0x1234
+  78:	fc 55 01 90 
+  7c:	88 00 00 0b 	add	r11, r0, 136
+  80:	00 00 b6 90 	jl	r0, r11
+  84:	cc ff 00 90 	beq	r0, r0, -52
 
-0000008c <_loop>:
+00000088 <_loop>:
+  88:	03 00 00 02 	add	r2, r0, 3
   8c:	00 00 30 86 	ldr	r6, r3, 0
   90:	18 00 d0 9d 	bl	lr, 24
   94:	04 00 31 86 	str	r6, r3, 4
   98:	04 00 30 03 	add	r3, r3, 4
   9c:	ff ff 10 01 	add	r1, r1, -1
   a0:	10 00 d0 9d 	bl	lr, 16
-  a4:	e4 ff 01 91 	bne	r1, r0, -28
+  a4:	e0 ff 01 91 	bne	r1, r0, -32
 
 000000a8 <_infin>:
   a8:	fc ff 00 90 	beq	r0, r0, -4
