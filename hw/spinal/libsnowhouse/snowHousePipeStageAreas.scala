@@ -4076,9 +4076,9 @@ case class SnowHousePipeStageExecute(
     && !setOutpModMemWord.io.shouldIgnoreInstr(0)
     && (
       //cMid0Front.up.isValid
-      //cMid0Front.up.isFiring
+      cMid0Front.up.isFiring
       //cMid0Front.down.isFiring
-      cMid0Front.down.isReady
+      //cMid0Front.down.isReady
     )
   )
   //psExSetPc.valid1 := (
