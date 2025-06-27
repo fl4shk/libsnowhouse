@@ -3185,58 +3185,16 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
       current := False
     })
   }
-  //when (rShouldIgnoreInstrState(2)) {
-  //}
 
   for (idx <- 0 until rShouldIgnoreInstrState.size) {
-    //if (idx != 1) {
-    //  io.shouldIgnoreInstr(idx) := rShouldIgnoreInstrState(idx)
-    //}
-    //switch (rShouldIgnoreInstrState(idx)) {
-    //  is (False) {
-    //    if (idx != 1) {
-    //      io.shouldIgnoreInstr(idx) := False
-    //    }
-    //    when (
-    //      io.upIsFiring
-    //      && io.psExSetPc.fire
-    //    ) {
-    //      nextShouldIgnoreInstrState(idx) := True
-    //    }
-    //  }
-    //  is (True) {
-    //    if (idx != 1) {
-    //      io.shouldIgnoreInstr(idx) := True
-    //    }
-    //    if (idx == 0) {
-    //      //io.shouldIgnoreInstr := True
-    //    } else if (idx == 2) {
-    //      doShouldIgnoreState2()
-    //      //io.modMemWordValid.foreach(current => {
-    //      //  current := False
-    //      //})
-    //      //io.modMemWord.foreach(modMemWord => {
-    //      //  modMemWord := modMemWord.getZero
-    //      //})
-    //      //io.opIs := 0x0
-    //      //io.opIsMemAccess.foreach(current => {
-    //      //  current := False
-    //      //})
-    //      //io.opIsAnyMultiCycle := (
-    //      //  False
-    //      //)
-    //      //io.opIsMultiCycle.foreach(current => {
-    //      //  current := False
-    //      //})
-    //    }
-    //    when (
-    //      io.upIsFiring
-    //      && io.regPcSetItCnt(idx)(0)
-    //    ) {
-    //      nextShouldIgnoreInstrState(idx) := False
-    //    }
-    //  }
-    //}
+    if (idx != 1) {
+      io.shouldIgnoreInstr(idx) := (
+        RegNext(
+          next=io.shouldIgnoreInstr(idx),
+          init=io.shouldIgnoreInstr(idx).getZero,
+        )
+      )
+    }
     switch (
       Cat(
         List(
@@ -3289,22 +3247,6 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
           //io.shouldIgnoreInstr := True
         } else if (idx == 2) {
           doShouldIgnoreState2()
-          //io.modMemWordValid.foreach(current => {
-          //  current := False
-          //})
-          //io.modMemWord.foreach(modMemWord => {
-          //  modMemWord := modMemWord.getZero
-          //})
-          //io.opIs := 0x0
-          //io.opIsMemAccess.foreach(current => {
-          //  current := False
-          //})
-          //io.opIsAnyMultiCycle := (
-          //  False
-          //)
-          //io.opIsMultiCycle.foreach(current => {
-          //  current := False
-          //})
         }
       }
       is (M"1-1") {
@@ -3315,22 +3257,6 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
           //io.shouldIgnoreInstr := True
         } else if (idx == 2) {
           doShouldIgnoreState2()
-          //io.modMemWordValid.foreach(current => {
-          //  current := False
-          //})
-          //io.modMemWord.foreach(modMemWord => {
-          //  modMemWord := modMemWord.getZero
-          //})
-          //io.opIs := 0x0
-          //io.opIsMemAccess.foreach(current => {
-          //  current := False
-          //})
-          //io.opIsAnyMultiCycle := (
-          //  False
-          //)
-          //io.opIsMultiCycle.foreach(current => {
-          //  current := False
-          //})
         }
         when (
           ////io.regPcSetItCnt.msb
@@ -3340,81 +3266,10 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
           nextShouldIgnoreInstrState(idx) := False
         }
       }
-      default {
-        if (idx != 1) {
-          io.shouldIgnoreInstr(idx) := True
-        }
-        //io.shouldIgnoreInstr(idx) := (
-        //  RegNext(
-        //    next=io.shouldIgnoreInstr(idx),
-        //    init=io.shouldIgnoreInstr(idx).getZero,
-        //  )
-        //)
-        //io.shouldIgnoreInstr := True
-      }
-      //is (M"00-") {
-      //  if (idx == 0) {
-      //    io.shouldIgnoreInstr := False
-      //  }
-      //}
-      //is (M"01-") {
-      //  if (idx == 0) {
-      //    io.shouldIgnoreInstr := False
-      //  }
-      //  nextShouldIgnoreInstrState(idx) := True
-      //}
-      //is (M"1-0") {
-      //  if (idx == 0) {
-      //    io.shouldIgnoreInstr := True
-      //  } else if (idx == 1) {
-      //    io.modMemWordValid.foreach(current => {
-      //      current := False
-      //    })
-      //    io.modMemWord.foreach(modMemWord => {
-      //      modMemWord := modMemWord.getZero
-      //    })
-      //    io.opIs := 0x0
-      //    io.opIsMemAccess.foreach(current => {
-      //      current := False
-      //    })
-      //    io.opIsAnyMultiCycle := (
-      //      False
-      //    )
-      //    io.opIsMultiCycle.foreach(current => {
-      //      current := False
-      //    })
-      //  }
-      //}
-      //is (M"1-1") {
-      //  if (idx == 0) {
-      //    io.shouldIgnoreInstr := True
-      //  } else if (idx == 1) {
-      //    io.modMemWordValid.foreach(current => {
-      //      current := False
-      //    })
-      //    io.modMemWord.foreach(modMemWord => {
-      //      modMemWord := modMemWord.getZero
-      //    })
-      //    io.opIs := 0x0
-      //    io.opIsMemAccess.foreach(current => {
-      //      current := False
-      //    })
-      //    io.opIsAnyMultiCycle := (
-      //      False
-      //    )
-      //    io.opIsMultiCycle.foreach(current => {
-      //      current := False
-      //    })
-      //  }
-      //  nextShouldIgnoreInstrState(idx) := False
-      //}
       //default {
-      //  io.shouldIgnoreInstr := (
-      //    RegNext(
-      //      next=io.shouldIgnoreInstr,
-      //      init=io.shouldIgnoreInstr.getZero,
-      //    )
-      //  )
+      //  if (idx != 1) {
+      //    io.shouldIgnoreInstr(idx) := True
+      //  }
       //}
     }
     //switch (rShouldIgnoreInstrState(idx)) {
@@ -4221,8 +4076,9 @@ case class SnowHousePipeStageExecute(
     && !setOutpModMemWord.io.shouldIgnoreInstr(0)
     && (
       //cMid0Front.up.isValid
-      cMid0Front.up.isFiring
+      //cMid0Front.up.isFiring
       //cMid0Front.down.isFiring
+      cMid0Front.down.isReady
     )
   )
   //psExSetPc.valid1 := (
@@ -4328,7 +4184,8 @@ case class SnowHousePipeStageExecute(
     //cMid0Front.up.isFiring
     //&&
     //outp.splitOp.opIsMemAccess
-    cMid0Front.down.isFiring
+    //cMid0Front.down.isFiring
+    cMid0Front.down.isReady
   ) {
     io.dbus.sendData := setOutpModMemWord.io.dbusHostPayload
   }
