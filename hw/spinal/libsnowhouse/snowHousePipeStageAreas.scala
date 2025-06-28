@@ -148,24 +148,24 @@ case class SnowHousePipeStageInstrFetch(
   )
   def myInstrCnt = upModExt.instrCnt
   val nextRegPc = SInt(cfg.mainWidth bits) //cloneOf(upModExt.regPc)
-  //def myRegPcSetItCnt = upModExt.psIfRegPcSetItCnt
-  //val rPrevRegPcSetItCnt = {
-  //  val temp = (
-  //    RegNextWhen(
-  //      next=myRegPcSetItCnt,
-  //      cond=up.isFiring
-  //    )
-  //    init(0x0)
-  //  )
-  //  //init(-1)
-  //  //temp.foreach(current => {
-  //  //  current.init(0x0)
-  //  //})
-  //  //init(0x0)
-  //  temp
-  //}
-  //myRegPcSetItCnt.allowOverride
-  //myRegPcSetItCnt := rPrevRegPcSetItCnt
+  def myRegPcSetItCnt = upModExt.psIfRegPcSetItCnt
+  val rPrevRegPcSetItCnt = {
+    val temp = (
+      RegNextWhen(
+        next=myRegPcSetItCnt,
+        cond=up.isFiring
+      )
+      init(0x0)
+    )
+    //init(-1)
+    //temp.foreach(current => {
+    //  current.init(0x0)
+    //})
+    //init(0x0)
+    temp
+  }
+  myRegPcSetItCnt.allowOverride
+  myRegPcSetItCnt := rPrevRegPcSetItCnt
 
   val rSavedExSetPc = {
     val temp = /*KeepAttribute*/(
@@ -326,7 +326,7 @@ case class SnowHousePipeStageInstrFetch(
         //myRegPcSetItCnt.foreach(current => {
         //  current := 0x0
         //})
-        //myRegPcSetItCnt := 0x0
+        myRegPcSetItCnt := 0x0
         //when (!rPrevRegPcSetItCnt.msb) {
         //  myRegPcSetItCnt := rPrevRegPcSetItCnt - 1
         //}
@@ -377,7 +377,7 @@ case class SnowHousePipeStageInstrFetch(
         //myRegPcSetItCnt.foreach(current => {
         //  current := 0x1
         //})
-        //myRegPcSetItCnt := 0x1
+        myRegPcSetItCnt := 0x1
         //rSavedExSetPc := rSavedExSetPc.getZero
         rSavedExSetPc(idx).valid := rSavedExSetPc(idx).valid.getZero
         //myRegPcSetItCnt.foreach(current => {
@@ -386,6 +386,7 @@ case class SnowHousePipeStageInstrFetch(
         //myRegPcSetItCnt := 0x1
         if (idx == 0) {
           val temp = (
+            //rSavedExSetPc(0).nextPc - (2 * (cfg.instrSizeBytes))
             rSavedExSetPc(0).nextPc - (3 * (cfg.instrSizeBytes))
             //rSavedExSetPc(0).nextPc - (4 * cfg.instrSizeBytes)
             //psExSetPc.nextPc - (3 * (cfg.instrSizeBytes))
@@ -479,28 +480,28 @@ case class SnowHousePipeStageInstrDecode(
   )
   val startDecode = Reg(Bool(), init=False)
 
-  val rSavedExSetPc = {
-    val temp = /*KeepAttribute*/(
-      Reg(Flow(
-        SnowHousePsExSetPcPayload(cfg=cfg)
-      ))
-    )
-    temp.init(temp.getZero)
-    temp.setName(s"psId_rSavedExSetPc")
-  }
+  //val rSavedExSetPc = {
+  //  val temp = /*KeepAttribute*/(
+  //    Reg(Flow(
+  //      SnowHousePsExSetPcPayload(cfg=cfg)
+  //    ))
+  //  )
+  //  temp.init(temp.getZero)
+  //  temp.setName(s"psId_rSavedExSetPc")
+  //}
 
-  when (
-    //up.isFiring
-    //&& 
-    psExSetPc.fire
-  ) {
-    rSavedExSetPc.valid := True
-  }
-  rSavedExSetPc.payload := psExSetPc.payload
-  rSavedExSetPc.nextPc.allowOverride
-  rSavedExSetPc.nextPc := (
-    psExSetPc.nextPc //- (cfg.instrMainWidth.toLong / 8.toLong).toLong
-  )
+  //when (
+  //  //up.isFiring
+  //  //&& 
+  //  psExSetPc.fire
+  //) {
+  //  rSavedExSetPc.valid := True
+  //}
+  //rSavedExSetPc.payload := psExSetPc.payload
+  //rSavedExSetPc.nextPc.allowOverride
+  //rSavedExSetPc.nextPc := (
+  //  psExSetPc.nextPc //- (cfg.instrMainWidth.toLong / 8.toLong).toLong
+  //)
 
   //when (up.isFiring) {
   up(pId) := upPayload//(0)
@@ -650,20 +651,25 @@ case class SnowHousePipeStageInstrDecode(
   //  }
   //}
   val shouldFinishJump = (
-    rSavedExSetPc.fire
-    && (
-      (
-        upPayload.regPc
-        //upPayload.regPcMinus1Instr
-        //upPayload.regPcPlus1Instr
-        === (
-          (
-            rSavedExSetPc.nextPc
-            //- cfg.instrSizeBytes
-            //- (cfg.instrMainWidth.toLong / 8.toLong).toLong
-          )
-        )
-      )
+    //rSavedExSetPc.fire
+    //&& (
+    //  (
+    //    upPayload.regPc
+    //    //upPayload.regPcMinus1Instr
+    //    //upPayload.regPcPlus1Instr
+    //    === (
+    //      (
+    //        rSavedExSetPc.nextPc
+    //        //- cfg.instrSizeBytes
+    //        //- (cfg.instrMainWidth.toLong / 8.toLong).toLong
+    //      )
+    //    )
+    //  )
+    //)
+    RegNextWhen(
+      next=upPayload.psIfRegPcSetItCnt(0),
+      cond=up.isFiring,
+      init=upPayload.psIfRegPcSetItCnt(0).getZero,
     )
   )
   for (idx <- 0 until upPayload.regPcSetItCnt.size) {
@@ -701,7 +707,7 @@ case class SnowHousePipeStageInstrDecode(
         //)
         //upPayload.psExSetPc.fire
       ) {
-        rSavedExSetPc.valid := False
+        //rSavedExSetPc.valid := False
         upPayload.regPcSetItCnt(idx) := 0x1
       } otherwise {
         upPayload.regPcSetItCnt(idx) := 0x0
@@ -712,13 +718,16 @@ case class SnowHousePipeStageInstrDecode(
     nextSetUpPayloadState(0) := False
     nextSetUpPayloadState(1) := False
   }
+  //when (up.isFiring) {
+  //  upPayload.regPcSetItCnt.foreach(_ := upPayload.psIfRegPcSetItCnt)
+  //}
   upPayload.regPcPlusInstrSize := (
     upPayload.regPc //+ cfg.instrSizeBytes
     ////- (cfg.instrMainWidth.toLong / 8.toLong)
     //upPayload.regPcPlus1Instr
   )
   upPayload.regPcPlusImm := (
-    upPayload.regPc + upPayload.imm(2)
+    upPayload.regPc + upPayload.imm(2) //+ cfg.instrSizeBytes
     //- (cfg.instrMainWidth.toLong / 8.toLong)
   )
   val upGprIdxToMemAddrIdxMap = upPayload.gprIdxToMemAddrIdxMap
@@ -1328,6 +1337,7 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
       io.regPcSetItCnt.size
     )(
       Bool()
+      //SInt(3 bits)
     )
     //SnowHouseShouldIgnoreInstrState()
   )
@@ -1337,8 +1347,11 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
     //  nextShouldIgnoreInstrState.getZero
     //  //SnowHouseShouldIgnoreInstrState.Idle
     //)
-    temp.foreach(current => {
-      current.init(current.getZero)
+    temp.foreach(item => {
+      item.init(
+        item.getZero
+        //-1
+      )
     })
     temp
   }
@@ -2964,12 +2977,12 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
       }
       is (SnowHousePsExSetNextPcKind.PcPlusImm) {
         io.psExSetPc.nextPc := (
-          io.regPcPlusImm 
+          io.regPcPlusImm //- cfg.instrSizeBytes
         )
       }
       is (SnowHousePsExSetNextPcKind.RdMemWord) {
         io.psExSetPc.nextPc := (
-          io.rdMemWord(io.jmpAddrIdx)
+          io.rdMemWord(io.jmpAddrIdx) //- cfg.instrSizeBytes
         )
       }
       is (SnowHousePsExSetNextPcKind.Ira) {
@@ -3158,7 +3171,10 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
       }
     }
   }
-  when (!rShouldIgnoreInstrState(1)) {
+  when (
+    //!rShouldIgnoreInstrState(1)
+    !io.shouldIgnoreInstr(1)
+  ) {
     //if (idx == 1) {
       //io.psExSetPc.nextPc := (
       //  io.regPcPlusImm 
@@ -3187,14 +3203,32 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
   }
 
   for (idx <- 0 until rShouldIgnoreInstrState.size) {
-    if (idx != 1) {
+    //if (idx != 1) {
       io.shouldIgnoreInstr(idx) := (
         RegNext(
           next=io.shouldIgnoreInstr(idx),
           init=io.shouldIgnoreInstr(idx).getZero,
         )
       )
-    }
+    //}
+    //when (!rShouldIgnoreInstrState(idx).msb) {
+    //  when (io.upIsFiring) {
+    //    nextShouldIgnoreInstrState(idx) := (
+    //      rShouldIgnoreInstrState(idx) - 1
+    //    )
+    //  }
+    //  io.shouldIgnoreInstr(idx) := True
+    //  if (idx == 2) {
+    //    doShouldIgnoreState2()
+    //  }
+    //} otherwise {
+    //  io.shouldIgnoreInstr(idx) := False
+    //  when (io.upIsFiring) {
+    //    when (io.psExSetPc.fire) {
+    //      nextShouldIgnoreInstrState(idx) := 2
+    //    }
+    //  }
+    //}
     switch (
       Cat(
         List(
@@ -3211,9 +3245,9 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
       )
     ) {
       is (M"00-") {
-        if (idx != 1) {
+        //if (idx != 1) {
           io.shouldIgnoreInstr(idx) := False
-        }
+        //}
         //if (idx == 1) {
         //  //io.psExSetPc.nextPc := (
         //  //  io.regPcPlusImm 
@@ -3223,9 +3257,9 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
         //}
       }
       is (M"01-") {
-        if (idx != 1) {
+        //if (idx != 1) {
           io.shouldIgnoreInstr(idx) := False
-        }
+        //}
         //if (idx == 1) {
         //  //io.shouldIgnoreInstr := False
         //  //io.psExSetPc.nextPc := (
@@ -3240,9 +3274,9 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
         }
       }
       is (M"1-0") {
-        if (idx != 1) {
+        //if (idx != 1) {
           io.shouldIgnoreInstr(idx) := True
-        }
+        //}
         if (idx == 0) {
           //io.shouldIgnoreInstr := True
         } else if (idx == 2) {
@@ -3250,9 +3284,9 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
         }
       }
       is (M"1-1") {
-        if (idx != 1) {
+        //if (idx != 1) {
           io.shouldIgnoreInstr(idx) := True
-        }
+        //}
         if (idx == 0) {
           //io.shouldIgnoreInstr := True
         } else if (idx == 2) {
@@ -3272,75 +3306,6 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
       //  }
       //}
     }
-    //switch (rShouldIgnoreInstrState(idx)) {
-    //  /*when*/ is (/*rShouldIgnoreInstrState(idx) ===*/ False) {
-    //    if (idx == 0) {
-    //      io.shouldIgnoreInstr := False
-    //    }
-    //    //else {
-    //    //  lowerMyFanoutShouldIgnoreInstr := False
-    //    //}
-    //    when (io.opIsJmp) {
-    //      nextShouldIgnoreInstrState(idx) := True
-    //    }
-    //    //when (io.opIsJmp) {
-    //    //  nextShouldIgnoreInstrState(idx) := True
-    //    //}
-    //  }
-    //  /*otherwise*/ is (True) {
-    //    if (idx == 0) {
-    //      io.shouldIgnoreInstr := True
-    //    } else if (idx == 1) {
-    //      io.modMemWordValid.foreach(current => {
-    //        current := False
-    //      })
-    //      io.modMemWord.foreach(modMemWord => {
-    //        modMemWord := modMemWord.getZero
-    //      })
-    //      io.opIs := 0x0
-    //      io.opIsMemAccess.foreach(current => {
-    //        current := False
-    //      })
-    //      io.opIsAnyMultiCycle := (
-    //        False
-    //      )
-    //      io.opIsMultiCycle.foreach(current => {
-    //        current := False
-    //      })
-    //    }
-    //    //else if (idx == 2) {
-    //    //}
-    //    //else if (idx == 3) {
-    //    //  //lowerMyFanoutShouldIgnoreInstr := True
-    //    //  io.opIsMultiCycle.foreach(current => {
-    //    //    current := False
-    //    //  })
-    //    //}
-    //    //else if (idx == 4) {
-    //    //} else if (idx == 5) {
-    //    //} else if (idx == 6) {
-    //    //}
-    //    when (
-    //      ////io.regPcSetItCnt.msb
-    //      io.upIsFiring
-    //      && io.regPcSetItCnt(idx)(0)
-    //    ) {
-    //      nextShouldIgnoreInstrState(idx) := False
-    //    }
-    //  }
-    //}
-    //when (io.opIsJmp) {
-    //  nextShouldIgnoreInstrState(idx) := True
-    //}
-    //when (
-    //  ////io.regPcSetItCnt.msb
-    //  //io.upIsFiring
-    //  //&& 
-    //  io.upIsFiring
-    //  && io.regPcSetItCnt(idx)(0)
-    //) {
-    //  nextShouldIgnoreInstrState(idx) := False
-    //}
   }
   when (io.takeIrq) {
     io.modMemWordValid.foreach(current => {
@@ -4076,9 +4041,9 @@ case class SnowHousePipeStageExecute(
     && !setOutpModMemWord.io.shouldIgnoreInstr(0)
     && (
       //cMid0Front.up.isValid
-      //cMid0Front.up.isFiring
+      cMid0Front.up.isFiring
       //cMid0Front.down.isFiring
-      cMid0Front.down.isReady
+      //cMid0Front.down.isReady
     )
   )
   //psExSetPc.valid1 := (
@@ -4357,8 +4322,8 @@ case class SnowHousePipeStageExecute(
                     psExStallHost.nextValid := False
                     myDoStall(stallKindMultiCycle) := False
                     when (
-                      //cMid0Front.up.isFiring
-                      cMid0Front.down.isReady
+                      cMid0Front.up.isFiring
+                      //cMid0Front.down.isReady
                     ) {
                       rMultiCycleOpState := (
                         //False
@@ -4389,8 +4354,8 @@ case class SnowHousePipeStageExecute(
     is (MultiCycleOpState.NoMoreStall) {
       //myDoStall(stallKindMultiCycle) := False
       when (
-        //cMid0Front.up.isFiring
-        cMid0Front.down.isReady
+        cMid0Front.up.isFiring
+        //cMid0Front.down.isReady
       ) {
         rMultiCycleOpState := MultiCycleOpState.Idle
       }
