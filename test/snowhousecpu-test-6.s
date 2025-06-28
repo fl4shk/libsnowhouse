@@ -39,10 +39,10 @@ _push_loop:
 str r7, sp, 0
 ldr r8, sp, 0
 //ldr r4, sp, 0
-add r12, r0, 1
-add r7, r7, -1
-add r4, r12, 1
+//add r12, r0, 1
 add r9, r8, 1
+add r7, r7, -1
+add r4, r4, 1
 add r9, r9, 1
 //sub r7, r7, 1
 //bnz r7, _push_loop
