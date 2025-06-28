@@ -39,18 +39,19 @@ _push_loop:
 str r7, sp, 0
 ldr r8, sp, 0
 //ldr r4, sp, 0
-//add r5, r5, 1
+add r12, r0, 1
+add r7, r7, -1
+add r4, r12, 1
 add r9, r8, 1
 add r9, r9, 1
 //sub r7, r7, 1
-add r7, r7, -1
 //bnz r7, _push_loop
 bne r7, r0, _push_loop
 //add r10, r0, 0x12345678
 add r10, r0, 0x1234
 add r0, r0, r0
 bne r0, r0, 0x12345678
-add r11, r0, _loop
+add r11, r0, _pre_loop
 jl r0, r11
 //add r11, r0, 0x56781234
 //add r0, r0, 0x5678
@@ -59,11 +60,12 @@ jl r0, r11
 //add r0, r0, r0
 //add r0, r0, r0
 //--------
-//mul r7, r6, r1
-//udiv r7, r7, r1
-//umod r8, r6, r1
-//beq r0, r0, _loop
-beq r0, r0, _push_loop
+_come_from:
+mul r7, r6, r1
+udiv r7, r7, r1
+umod r8, r6, r1
+beq r0, r0, _loop
+//beq r0, r0, _push_loop
 
 //.rept 16
 ////cpy r0, r0
@@ -75,6 +77,8 @@ beq r0, r0, _push_loop
 //--------
 //beq r0, r0, _loop
 //cpy r0, r0
+_pre_loop:
+beq r0, r0, _come_from
 _loop:
 add r2, r0, 3
 ldr r6, r3, 0x0

@@ -572,7 +572,7 @@ case class SnowHouseConfig(
     },
     memRamStyle=regFileMemRamStyle,
     optModHazardKind=PipeMemRmw.ModHazardKind.Fwd,
-    //optFwdHaveZeroReg=haveZeroReg,
+    optFwdHaveZeroReg=haveZeroReg,
     optIncludeModFrontS2MLink=false,
     optFormal=optFormal,
     numForkJoin=/*2*/1,

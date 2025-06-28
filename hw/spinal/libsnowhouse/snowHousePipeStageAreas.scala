@@ -3194,9 +3194,9 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
     io.opIsMemAccess.foreach(current => {
       current := False
     })
-    io.opIsAnyMultiCycle := (
-      False
-    )
+    //io.opIsAnyMultiCycle := (
+    //  False
+    //)
     io.opIsMultiCycle.foreach(current => {
       current := False
     })
@@ -3374,6 +3374,7 @@ case class SnowHousePipeStageExecute(
       assume(outp.op < cfg.opInfoMap.size)
     }
   }
+  def regFileFwd = doModInModFrontParams.myFwd //args.regFile
   def mkLcvStallHost[
     HostDataT <: Data,
     DevDataT <: Data,
@@ -3873,15 +3874,26 @@ case class SnowHousePipeStageExecute(
       )
     )
 
-    //tempRdMemWord := (
-    //  RegNext(
-    //    next=tempRdMemWord,
-    //    init=tempRdMemWord.getZero,
-    //  )
+    //when (
+    //  cMid0Front.down.isReady
     //)
-    //when (cMid0Front.down.isReady) {
+    tempRdMemWord := (
+      RegNext(
+        next=tempRdMemWord,
+        init=tempRdMemWord.getZero,
+      )
+    )
+    //when (
+    //  outp.gprIsZeroVec(zdx).last
+    //) {
+    //  tempRdMemWord := 0x0
+    //} else
+    when (
+      //tempExt.memAddr(zdx) =/= 0x0
+      regFileFwd.myFwdMmwValidUp(ydx)(zdx)
+    ) {
       tempRdMemWord := myRdMemWord(ydx=ydx, modIdx=zdx)
-    //}
+    }
     //when (
     //  cMid0Front.up.isValid
     //  //////&& cMid0Front.down.isValid
@@ -4146,11 +4158,11 @@ case class SnowHousePipeStageExecute(
     }
   }
   when (
-    //cMid0Front.up.isFiring
+    cMid0Front.up.isFiring
     //&&
     //outp.splitOp.opIsMemAccess
     //cMid0Front.down.isFiring
-    cMid0Front.down.isReady
+    //cMid0Front.down.isReady
   ) {
     io.dbus.sendData := setOutpModMemWord.io.dbusHostPayload
   }
@@ -4186,6 +4198,8 @@ case class SnowHousePipeStageExecute(
         //)
         cMid0Front.up.isValid
         && setOutpModMemWord.io.opIsAnyMultiCycle
+        && !setOutpModMemWord.rShouldIgnoreInstrState(2)
+        //&& !setOutpModMemWord.io.shouldIgnoreInstr(2)
       ) {
         //rMultiCycleOpState := (
         //  //True
