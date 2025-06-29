@@ -63,8 +63,8 @@ ldub r4, r8, 0
 //add r2, r2, 0x4
 
 //add r12, r0, 1
-add r9, r8, 1
 add r4, r4, 1
+add r9, r8, 1
 add r7, r7, -1
 //add r4, r4, 1
 add r9, r9, 1
