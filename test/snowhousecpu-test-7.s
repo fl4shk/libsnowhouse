@@ -25,20 +25,43 @@ cpy r3, 0x1000
 cpy r4, 0x8
 cpy r5, _increment
 cpy sp, 0x800
-cpy r6, 0x20
-str r6, r3, 0x0
-mul r10, r6, r6
-ldr r5, r3, 0x0
-str r5, r3, 0x1000
-ldr r6, r3, 0x1000
+//cpy sp, 0x2000
 cpy r7, 0x4
-ldr r8, r3, 0x1000 //0x0
+cpy r8, 0x4
+
+cpy r6, 0x20
+//cpy r6, 0x4
+
+
+//str r6, r3, 0x0
+//mul r10, r6, r6
+//ldr r5, r3, 0x0
+//str r5, r3, 0x1000
+//ldr r6, r3, 0x1000
+
+//cpy r7, 0x4
+
+_str_loop:
+stb r7, r8, 0x0
+add r7, r7, -1
+//add r8, r8, 0x4
+add r8, r8, -1
+bne r7, r0, _str_loop
+
+cpy r7, 0x4
+//ldr r8, r3, 0x0 //0x1000 //0x0
 mul r9, r5, r7
+//cpy r5, 0x0
+
+//cpy r2, 0x0
 //--------
 _push_loop:
 str r7, sp, 0
 ldr r8, sp, 0
-//ldr r4, sp, 0
+ldub r4, r8, 0
+//ldr r4, r8, 0x0
+//add r2, r2, 0x4
+
 //add r12, r0, 1
 add r9, r8, 1
 add r4, r4, 1

@@ -29,8 +29,8 @@ Disassembly of section .text:
   54:	00 00 f1 87 	str	r7, sp, 0
   58:	00 00 f0 88 	ldr	r8, sp, 0
   5c:	01 00 80 09 	add	r9, r8, 1
-  60:	ff ff 70 07 	add	r7, r7, -1
-  64:	01 00 40 04 	add	r4, r4, 1
+  60:	01 00 40 04 	add	r4, r4, 1
+  64:	ff ff 70 07 	add	r7, r7, -1
   68:	01 00 90 09 	add	r9, r9, 1
   6c:	e4 ff 01 97 	bne	r7, r0, -28
   70:	34 12 00 0a 	add	r10, r0, 4660
