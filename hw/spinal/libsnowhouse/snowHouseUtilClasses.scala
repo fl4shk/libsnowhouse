@@ -817,7 +817,7 @@ case class SnowHouseInstrCnt(
 //    Store
 //    = newElement()
 //}
-object SnowHouseDecodeExt
+//object SnowHouseDecodeExt
 case class SnowHouseDecodeExt(
   cfg: SnowHouseConfig
 ) extends Bundle {
@@ -1005,7 +1005,12 @@ case class SnowHousePipePayload(
     Bool()
   )
   val encInstr = UInt(cfg.instrMainWidth bits)
-  val decodeExt = SnowHouseDecodeExt(cfg=cfg) //simPublic()
+  val inpDecodeExt = (
+    Vec.fill(2)(
+      SnowHouseDecodeExt(cfg=cfg)
+    )
+  )
+  val outpDecodeExt = SnowHouseDecodeExt(cfg=cfg) //simPublic()
   val instrCnt = SnowHouseInstrCnt(cfg=cfg) //simPublic()
   //val opCnt = UInt(cfg.instrCntWidth bits)
   def opCnt = instrCnt.any

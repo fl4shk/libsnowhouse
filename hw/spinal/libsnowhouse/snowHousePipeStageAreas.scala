@@ -1226,19 +1226,24 @@ case class SnowHousePipeStageExecuteSetOutpModMemWordIo(
   val psExSetPc = /*out*/(Flow(
     SnowHousePsExSetPcPayload(cfg=cfg)
   ))
-  val decodeExt = /*out*/(
+  val inpDecodeExt = /*in*/(
+    Vec.fill(2)(
+      SnowHouseDecodeExt(cfg=cfg)
+    )
+  )
+  val outpDecodeExt = /*out*/(
     SnowHouseDecodeExt(cfg=cfg)
   )
   val multiCycleOpInfoIdx = /*out*/(
     UInt(log2Up(cfg.multiCycleOpInfoMap.size) bits)
   )
   //def opIs = decodeExt.opIs
-  def opIsMemAccess = decodeExt.opIsMemAccess
+  def opIsMemAccess = outpDecodeExt.opIsMemAccess
   //def opIsCpyNonJmpAlu = decodeExt.opIsCpyNonJmpAlu
   //def opIsAluShift = decodeExt.opIsAluShift
-  def opIsJmp = decodeExt.opIsJmp
-  def opIsAnyMultiCycle = decodeExt.opIsAnyMultiCycle
-  def opIsMultiCycle = decodeExt.opIsMultiCycle
+  def opIsJmp = outpDecodeExt.opIsJmp
+  def opIsAnyMultiCycle = outpDecodeExt.opIsAnyMultiCycle
+  def opIsMultiCycle = outpDecodeExt.opIsMultiCycle
   def jmpAddrIdx = (
     1
   )
@@ -1311,6 +1316,8 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
   )
   io.dbusHostPayload.addr.allowOverride
   io.dbusHostPayload.data.allowOverride
+  io.dbusHostPayload.accKind.allowOverride
+  io.dbusHostPayload.subKind.allowOverride
   //io.opIs := 0x0
   io.opIsMemAccess.foreach(current => {
     current := (
@@ -1329,9 +1336,9 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
       io.splitOp.multiCycleOp(idx)
     )
   }
-  io.decodeExt.memAccessKind := SnowHouseMemAccessKind.LoadU
-  io.decodeExt.memAccessSubKind := SnowHouseMemAccessSubKind.Sz8
-  io.decodeExt.memAccessIsPush := False
+  //io.outpDecodeExt.memAccessKind := SnowHouseMemAccessKind.LoadU
+  //io.outpDecodeExt.memAccessSubKind := SnowHouseMemAccessSubKind.Sz8
+  //io.outpDecodeExt.memAccessIsPush := False
   val nextShouldIgnoreInstrState = (
     Vec.fill(
       io.regPcSetItCnt.size
@@ -1684,6 +1691,18 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
   if (cfg.allMainLdstUseGprPlusImm) {
     io.dbusHostPayload.addr := io.rdMemWord(1) + io.imm(1)
   }
+  io.dbusHostPayload.subKind := (
+    io.inpDecodeExt(0).memAccessSubKind
+  )
+  io.dbusHostPayload.accKind := (
+    io.inpDecodeExt(0).memAccessKind
+  )
+  io.outpDecodeExt.memAccessSubKind := (
+    io.inpDecodeExt(1).memAccessSubKind
+  )
+  io.outpDecodeExt.memAccessKind := (
+    io.inpDecodeExt(1).memAccessKind
+  )
   println(
     f"cfg.allMainLdstUseGprPlusImm:${cfg.allMainLdstUseGprPlusImm}"
   )
@@ -1832,35 +1851,35 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
                     //})
                     io.modMemWord(0) := selRdMemWord(0)
                   }
-                  val tempSubKind = (
-                    mem.subKind match {
-                      case MemAccessKind.SubKind.Sz8 => {
-                        SnowHouseMemAccessSubKind.Sz8
-                      }
-                      case MemAccessKind.SubKind.Sz16 => {
-                        SnowHouseMemAccessSubKind.Sz16
-                      }
-                      case MemAccessKind.SubKind.Sz32 => {
-                        SnowHouseMemAccessSubKind.Sz32
-                      }
-                      case MemAccessKind.SubKind.Sz64 => {
-                        SnowHouseMemAccessSubKind.Sz64
-                      }
-                    }
-                  )
-                  io.dbusHostPayload.subKind := (
-                    tempSubKind
-                  )
-                  io.decodeExt.memAccessSubKind := (
-                    tempSubKind
-                  )
-                  io.decodeExt.memAccessIsPush := False
+                  //val tempSubKind = (
+                  //  mem.subKind match {
+                  //    case MemAccessKind.SubKind.Sz8 => {
+                  //      SnowHouseMemAccessSubKind.Sz8
+                  //    }
+                  //    case MemAccessKind.SubKind.Sz16 => {
+                  //      SnowHouseMemAccessSubKind.Sz16
+                  //    }
+                  //    case MemAccessKind.SubKind.Sz32 => {
+                  //      SnowHouseMemAccessSubKind.Sz32
+                  //    }
+                  //    case MemAccessKind.SubKind.Sz64 => {
+                  //      SnowHouseMemAccessSubKind.Sz64
+                  //    }
+                  //  }
+                  //)
+                  //io.dbusHostPayload.subKind := (
+                  //  tempSubKind
+                  //)
+                  //io.outpDecodeExt.memAccessSubKind := (
+                  //  tempSubKind
+                  //)
+                  //io.outpDecodeExt.memAccessIsPush := False
                   val tempAddr = (
                     (
                       opInfo.addrCalc match {
                         case AddrCalcKind.AddReduce(
                         ) => (
-                            selRdMemWord(1)
+                          selRdMemWord(1)
                         )
                         case kind:
                         AddrCalcKind.LslThenMaybeAdd => (
@@ -1891,34 +1910,34 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
                       }
                     )
                   }
-                  if (!isStore) {
-                    val tempMemAccessKind = (
-                      if (!mem.isSigned) (
-                        SnowHouseMemAccessKind.LoadU
-                      ) else (
-                        SnowHouseMemAccessKind.LoadS
-                      )
-                    )
-                    io.decodeExt.memAccessKind := (
-                      tempMemAccessKind
-                    )
-                    io.dbusHostPayload.accKind := (
-                      tempMemAccessKind
-                    )
-                    //io.dbusHostPayload.data := (
-                    //  io.dbusHostPayload.data.getZero
-                    //)
-                  } else { // if (isStore)
-                    val tempMemAccessKind = (
-                      SnowHouseMemAccessKind.Store
-                    )
-                    io.decodeExt.memAccessKind := (
-                      tempMemAccessKind
-                    )
-                    io.dbusHostPayload.accKind := (
-                      tempMemAccessKind
-                    )
-                  }
+                  //if (!isStore) {
+                  //  val tempMemAccessKind = (
+                  //    if (!mem.isSigned) (
+                  //      SnowHouseMemAccessKind.LoadU
+                  //    ) else (
+                  //      SnowHouseMemAccessKind.LoadS
+                  //    )
+                  //  )
+                  //  io.outpDecodeExt.memAccessKind := (
+                  //    tempMemAccessKind
+                  //  )
+                  //  io.dbusHostPayload.accKind := (
+                  //    tempMemAccessKind
+                  //  )
+                  //  //io.dbusHostPayload.data := (
+                  //  //  io.dbusHostPayload.data.getZero
+                  //  //)
+                  //} else { // if (isStore)
+                  //  val tempMemAccessKind = (
+                  //    SnowHouseMemAccessKind.Store
+                  //  )
+                  //  io.outpDecodeExt.memAccessKind := (
+                  //    tempMemAccessKind
+                  //  )
+                  //  io.dbusHostPayload.accKind := (
+                  //    tempMemAccessKind
+                  //  )
+                  //}
                 } else {
                   assert(
                     false,
@@ -3807,7 +3826,8 @@ case class SnowHousePipeStageExecute(
   setOutpModMemWord.io.regPcPlusInstrSize := outp.regPcPlusInstrSize
   setOutpModMemWord.io.regPcPlusImm := outp.regPcPlusImm
   setOutpModMemWord.io.imm := outp.imm
-  outp.decodeExt := setOutpModMemWord.io.decodeExt
+  setOutpModMemWord.io.inpDecodeExt := outp.inpDecodeExt
+  outp.outpDecodeExt := setOutpModMemWord.io.outpDecodeExt
   outp.psExSetPc := outp.psExSetPc.getZero
   //outp.psExSetPc := psExSetPc
   if (io.haveMultiCycleBusVec) {
@@ -4883,7 +4903,7 @@ case class SnowHousePipeStageMem(
     //io.dbus.ready
     io.dbusExtraReady(0)
   ) {
-    val myDecodeExt = midModPayload(extIdxUp).decodeExt
+    val myDecodeExt = midModPayload(extIdxUp).outpDecodeExt
     val mapElem = midModPayload(extIdxUp).gprIdxToMemAddrIdxMap(0)
     val myCurrExt = (
       if (!mapElem.haveHowToSetIdx) (
@@ -4906,7 +4926,7 @@ case class SnowHousePipeStageMem(
   //if (cfg.haveZeroReg) {
   //}
   when (io.dbusExtraReady(2)) {
-    val myDecodeExt = midModPayload(extIdxUp).decodeExt
+    val myDecodeExt = midModPayload(extIdxUp).outpDecodeExt
     val mapElem = midModPayload(extIdxUp).gprIdxToMemAddrIdxMap(0)
     val myCurrExt = (
       if (!mapElem.haveHowToSetIdx) (
