@@ -745,7 +745,7 @@ case class SnowHouseDataCache(
     //when (!RegNext(rBusSendData.accKind).asBits(1)) {
       switch (
         /*RegNext*/(
-          /*next=*/rBusSendData.subKind//, init=rBusSendData.subKind
+          /*next=*/rBusSendData.subKind//, init=rBusSendData.subKind.getZero
         )
       ) {
         is (SnowHouseMemAccessSubKind.Sz8) {
