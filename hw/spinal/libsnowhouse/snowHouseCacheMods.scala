@@ -837,10 +837,10 @@ case class SnowHouseDataCache(
               rBusDevData := (
                 rdLineWord(
                   //31 downto 0
-                offset=/*RegNext*/(rBusSendData).addr(
-                  (log2Up(cacheCfg.wordWidth / 8)) - 1 downto 2
-                ) * 32,
-                32 bits
+                  offset=/*RegNext*/(rBusSendData).addr(
+                    (log2Up(cacheCfg.wordWidth / 8)) - 1 downto 2
+                  ) * 32,
+                  32 bits
                 ).asSInt.resize(rBusDevData.getWidth).asUInt
               )
             }
