@@ -57,7 +57,8 @@ mul r9, r5, r7
 //--------
 _push_loop:
 str r7, sp, 0
-ldr r8, sp, 0
+//ldr r8, sp, 0
+ldub r8, sp, 0
 ldub r4, r8, 0
 //ldr r4, r8, 0x0
 //add r2, r2, 0x4

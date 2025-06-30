@@ -132,6 +132,32 @@ extends SpinalEnum(defaultEncoding=binaryOneHot) {
   //  }
   //}
 }
+object SnowHouseMemAccessSubKindToBinSeq {
+  def apply(
+    subKind: SnowHouseMemAccessSubKind.C
+  ): UInt = {
+    //val ret = SnowHouseMemAccessSubKind(binarySequential)
+    //ret := subKind
+    //ret.asBits.asUInt
+    val ret = UInt(log2Up(subKind.asBits.getWidth) bits)
+    switch (subKind) {
+      is (SnowHouseMemAccessSubKind.Sz8) {
+        ret := 0x0
+      }
+      is (SnowHouseMemAccessSubKind.Sz16) {
+        ret := 0x1
+      }
+      is (SnowHouseMemAccessSubKind.Sz32) {
+        ret := 0x2
+      }
+      is (SnowHouseMemAccessSubKind.Sz64) {
+        ret := 0x3
+      }
+    }
+    ret
+    //(1 << tempSubKind.asBits.asUInt)
+  }
+}
 case class BusHostPayload(
   cfg: SnowHouseConfig,
   isIbus: Boolean,
