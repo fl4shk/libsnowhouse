@@ -4898,10 +4898,18 @@ case class SnowHousePipeStageMem(
   //  case None => {
   //  }
   //}
+  val rMemAccessNonWordSizeState = (
+    Reg(Bool(), init=False)
+  )
+  val rTempModMemWord = (
+    Reg(UInt(cfg.mainWidth bits))
+    init(0x0)
+  )
   when (
     //RegNext(io.dbus.nextValid)
     //io.dbus.ready
     io.dbusExtraReady(0)
+    && !rMemAccessNonWordSizeState
   ) {
     val myDecodeExt = midModPayload(extIdxUp).outpDecodeExt
     val mapElem = midModPayload(extIdxUp).gprIdxToMemAddrIdxMap(0)
@@ -4916,16 +4924,163 @@ case class SnowHousePipeStageMem(
         )
       )
     )
+    //switch (rMemAccessNonWordSizeState) {
+    //}
     //when (!myDecodeExt.memAccessKind.asBits(1)) {
-    myCurrExt.modMemWord := (
-      io.dbus.recvData.data.resized
-    )
+      //myCurrExt.modMemWord := (
+      //  io.dbus.recvData.data.resized
+      //)
+    switch (
+      myDecodeExt.memAccessSubKind//.asBits
+    ) {
+      is (SnowHouseMemAccessSubKind.Sz8) {
+        if (cfg.mainWidth > 8) {
+          when (!/*RegNext*/myDecodeExt.memAccessKind.asBits(0)) {
+            rTempModMemWord := (
+              io.dbus.recvData.data(
+                //7 downto 0
+                offset=RegNext(io.dbus.sendData.addr(
+                  (log2Up(cfg.mainWidth / 8)) - 1 downto 0
+                )) * 8,
+                8 bits
+              ).resize(cfg.mainWidth)
+            )
+          } otherwise {
+            rTempModMemWord := (
+              io.dbus.recvData.data(
+                //7 downto 0
+                offset=RegNext(io.dbus.sendData.addr)(
+                  (log2Up(cfg.mainWidth / 8)) - 1 downto 0
+                ) * 8,
+                8 bits
+              ).asSInt.resize(cfg.mainWidth).asUInt
+            )
+          }
+          rMemAccessNonWordSizeState := True
+          cMidModFront.haltIt()
+        } else {
+          myCurrExt.modMemWord := io.dbus.recvData.data.resized.resized
+          myCurrExt.modMemWordValid.foreach(current => {
+            current := (
+              // TODO: support more destination GPRs
+              //!midModPayload(extIdxUp).gprIsZeroVec(0)
+              True
+            )
+          })
+        }
+      }
+      is (SnowHouseMemAccessSubKind.Sz16) {
+        if (cfg.mainWidth > 16) {
+          when (!/*RegNext*/myDecodeExt.memAccessKind.asBits(0)) {
+            rTempModMemWord := (
+              io.dbus.recvData.data(
+                //15 downto 0
+                offset=RegNext(io.dbus.sendData.addr)(
+                  (log2Up(cfg.mainWidth / 8)) - 1 downto 1
+                ) * 16,
+                16 bits
+              ).resize(cfg.mainWidth)
+            )
+          } otherwise {
+            rTempModMemWord := (
+              io.dbus.recvData.data(
+                //15 downto 0
+                offset=RegNext(io.dbus.sendData.addr)(
+                  (log2Up(cfg.mainWidth / 8)) - 1 downto 1
+                ) * 16,
+                16 bits
+              ).asSInt.resize(cfg.mainWidth).asUInt
+            )
+          }
+          rMemAccessNonWordSizeState := True
+          cMidModFront.haltIt()
+        } else {
+          myCurrExt.modMemWord := io.dbus.recvData.data.resized
+          myCurrExt.modMemWordValid.foreach(current => {
+            current := (
+              // TODO: support more destination GPRs
+              //!midModPayload(extIdxUp).gprIsZeroVec(0)
+              True
+            )
+          })
+        }
+      }
+      is (SnowHouseMemAccessSubKind.Sz32) {
+        if (cfg.mainWidth > 32) {
+          when (!/*RegNext*/myDecodeExt.memAccessKind.asBits(0)) {
+            rTempModMemWord := (
+              io.dbus.recvData.data(
+                //31 downto 0
+                offset=RegNext(io.dbus.sendData.addr)(
+                  (log2Up(cfg.mainWidth / 8)) - 1 downto 2
+                ) * 32,
+                32 bits
+              ).resize(cfg.mainWidth)
+            )
+          } otherwise {
+            rTempModMemWord := (
+              io.dbus.recvData.data(
+                //31 downto 0
+                offset=RegNext(io.dbus.sendData.addr)(
+                  (log2Up(cfg.mainWidth / 8)) - 1 downto 2
+                ) * 32,
+                32 bits
+              ).asSInt.resize(cfg.mainWidth).asUInt
+            )
+          }
+          rMemAccessNonWordSizeState := True
+          cMidModFront.haltIt()
+        } else {
+          myCurrExt.modMemWord := io.dbus.recvData.data.resized
+          myCurrExt.modMemWordValid.foreach(current => {
+            current := (
+              // TODO: support more destination GPRs
+              //!midModPayload(extIdxUp).gprIsZeroVec(0)
+              True
+            )
+          })
+        }
+      }
+      is (SnowHouseMemAccessSubKind.Sz64) {
+        if (cfg.mainWidth > 64) {
+          when (!/*RegNext*/myDecodeExt.memAccessKind.asBits(0)) {
+            rTempModMemWord := (
+              io.dbus.recvData.data(
+                //63 downto 0
+                offset=RegNext(io.dbus.sendData.addr)(
+                  (log2Up(cfg.mainWidth / 8)) - 1 downto 3
+                ) * 64,
+                64 bits
+              ).resize(cfg.mainWidth)
+            )
+          } otherwise {
+            rTempModMemWord := (
+              io.dbus.recvData.data(
+                //63 downto 0
+                offset=RegNext(io.dbus.sendData.addr)(
+                  (log2Up(cfg.mainWidth / 8)) - 1 downto 3
+                ) * 64,
+                64 bits
+              ).asSInt.resize(cfg.mainWidth).asUInt
+            )
+          }
+          rMemAccessNonWordSizeState := True
+          cMidModFront.haltIt()
+        } else {
+          myCurrExt.modMemWord := io.dbus.recvData.data.resized
+          myCurrExt.modMemWordValid.foreach(current => {
+            current := (
+              // TODO: support more destination GPRs
+              //!midModPayload(extIdxUp).gprIsZeroVec(0)
+              True
+            )
+          })
+        }
+      }
+    }
     //} otherwise {
     //}
-  }
-  //if (cfg.haveZeroReg) {
-  //}
-  when (io.dbusExtraReady(2)) {
+  } elsewhen (rMemAccessNonWordSizeState) {
     val myDecodeExt = midModPayload(extIdxUp).outpDecodeExt
     val mapElem = midModPayload(extIdxUp).gprIdxToMemAddrIdxMap(0)
     val myCurrExt = (
@@ -4939,6 +5094,7 @@ case class SnowHousePipeStageMem(
         )
       )
     )
+    myCurrExt.modMemWord := rTempModMemWord
     myCurrExt.modMemWordValid.foreach(current => {
       current := (
         // TODO: support more destination GPRs
@@ -4946,7 +5102,34 @@ case class SnowHousePipeStageMem(
         True
       )
     })
+    when (cMidModFront.up.isFiring) {
+      rMemAccessNonWordSizeState := False
+    }
   }
+  //if (cfg.haveZeroReg) {
+  //}
+  //when (io.dbusExtraReady(2)) {
+  //  val myDecodeExt = midModPayload(extIdxUp).outpDecodeExt
+  //  val mapElem = midModPayload(extIdxUp).gprIdxToMemAddrIdxMap(0)
+  //  val myCurrExt = (
+  //    if (!mapElem.haveHowToSetIdx) (
+  //      midModPayload(extIdxUp).myExt(
+  //        0
+  //      )
+  //    ) else (
+  //      midModPayload(extIdxUp).myExt(
+  //        mapElem.howToSetIdx
+  //      )
+  //    )
+  //  )
+  //  myCurrExt.modMemWordValid.foreach(current => {
+  //    current := (
+  //      // TODO: support more destination GPRs
+  //      //!midModPayload(extIdxUp).gprIsZeroVec(0)
+  //      True
+  //    )
+  //  })
+  //}
 
   //cfg.haveZeroReg match {
   //  case Some(myZeroRegIdx) => {
