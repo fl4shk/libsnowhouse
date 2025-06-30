@@ -724,29 +724,49 @@ object SnowHouseCpuPipeStageInstrDecode {
                         })
                       }
                       for (idx <- 0 until upPayload.inpDecodeExt.size) {
-                        val tempSubKind = (
-                          if (idx == 0 || !isStore) {
-                            mem.subKind match {
-                              case MemAccessKind.SubKind.Sz8 => {
+                        //val tempSubKind = SnowHouseMemAccessSubKind()
+                        def mySubKind = (
+                          upPayload.inpDecodeExt(idx).memAccessSubKind
+                        )
+                        def myMemAccessIsLtWordSize = (
+                          upPayload.inpDecodeExt(
+                            idx
+                          ).memAccessIsLtWordWidth
+                        )
+
+                        //if (idx == 0 || !isStore) {
+                          mem.subKind match {
+                            case MemAccessKind.SubKind.Sz8 => {
+                              mySubKind := (
                                 SnowHouseMemAccessSubKind.Sz8
-                              }
-                              case MemAccessKind.SubKind.Sz16 => {
-                                SnowHouseMemAccessSubKind.Sz16
-                              }
-                              case MemAccessKind.SubKind.Sz32 => {
-                                SnowHouseMemAccessSubKind.Sz32
-                              }
-                              case MemAccessKind.SubKind.Sz64 => {
-                                SnowHouseMemAccessSubKind.Sz64
-                              }
+                              )
+                              myMemAccessIsLtWordSize := True
                             }
-                          } else {
-                            SnowHouseMemAccessSubKind.Sz32
+                            case MemAccessKind.SubKind.Sz16 => {
+                              mySubKind := (
+                                SnowHouseMemAccessSubKind.Sz16
+                              )
+                              myMemAccessIsLtWordSize := True
+                            }
+                            case MemAccessKind.SubKind.Sz32 => {
+                              mySubKind := (
+                                SnowHouseMemAccessSubKind.Sz32
+                              )
+                              myMemAccessIsLtWordSize := False
+                            }
+                            case MemAccessKind.SubKind.Sz64 => {
+                              mySubKind := (
+                                SnowHouseMemAccessSubKind.Sz64
+                              )
+                              myMemAccessIsLtWordSize := False
+                            }
                           }
-                        )
-                        upPayload.inpDecodeExt(idx).memAccessSubKind := (
-                          tempSubKind
-                        )
+                        //} else {
+                        //  SnowHouseMemAccessSubKind.Sz32
+                        //}
+                        //upPayload.inpDecodeExt(idx).memAccessSubKind := (
+                        //  tempSubKind
+                        //)
                         //upPayload.inpDecodeExt.foreach(item => {
                         //  item.memAccessSubKind := (
                         //    tempSubKind
@@ -3563,14 +3583,14 @@ object SnowHouseCpuWithDualRamSim extends App {
   //  "5",
   //)
   val testIdxRange = (
-    //0, //0
+    0, //0
     //1, 1,
     //2, //2,
     //3, //3,
     //4, //4,
     //5, 5,
-    //6, //6
-    7, 7
+    6, //6
+    //7, 7
   )
   val instrRamKindArr = Array[Int](
     0,

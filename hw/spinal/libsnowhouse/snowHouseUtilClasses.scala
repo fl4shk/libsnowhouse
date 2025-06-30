@@ -838,8 +838,8 @@ case class SnowHouseDecodeExt(
   //  memAccessLdStKind === SnowHouseDecodeExtLdStKind.Store
   //)
   val memAccessKind = SnowHouseMemAccessKind()
-  val memAccessSubKind = SnowHouseMemAccessSubKind(binaryOneHot)
-  val memAccessIsNonWordSize = Bool()
+  val memAccessSubKind = SnowHouseMemAccessSubKind(/*binaryOneHot*/)
+  val memAccessIsLtWordWidth = Bool()
   val memAccessIsPush = Bool()
   // TODO: add support for atomic operations
   // (probably just read-modify-write)

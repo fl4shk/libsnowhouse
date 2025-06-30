@@ -1318,6 +1318,7 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
   io.dbusHostPayload.data.allowOverride
   io.dbusHostPayload.accKind.allowOverride
   io.dbusHostPayload.subKind.allowOverride
+  io.dbusHostPayload.subKindIsLtWordWidth.allowOverride
   //io.opIs := 0x0
   io.opIsMemAccess.foreach(current => {
     current := (
@@ -1691,17 +1692,23 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
   if (cfg.allMainLdstUseGprPlusImm) {
     io.dbusHostPayload.addr := io.rdMemWord(1) + io.imm(1)
   }
+  io.dbusHostPayload.accKind := (
+    io.inpDecodeExt(0).memAccessKind
+  )
   io.dbusHostPayload.subKind := (
     io.inpDecodeExt(0).memAccessSubKind
   )
-  io.dbusHostPayload.accKind := (
-    io.inpDecodeExt(0).memAccessKind
+  io.dbusHostPayload.subKindIsLtWordWidth := (
+    io.inpDecodeExt(0).memAccessIsLtWordWidth
+  )
+  io.outpDecodeExt.memAccessKind := (
+    io.inpDecodeExt(1).memAccessKind
   )
   io.outpDecodeExt.memAccessSubKind := (
     io.inpDecodeExt(1).memAccessSubKind
   )
-  io.outpDecodeExt.memAccessKind := (
-    io.inpDecodeExt(1).memAccessKind
+  io.outpDecodeExt.memAccessIsLtWordWidth := (
+    io.inpDecodeExt(1).memAccessIsLtWordWidth
   )
   println(
     f"cfg.allMainLdstUseGprPlusImm:${cfg.allMainLdstUseGprPlusImm}"

@@ -761,14 +761,19 @@ case class SnowHouseDataCache(
     when (
       rPleaseFinish(2).sFindFirst(_ === False)._1
     ) {
-      when (
-        SnowHouseMemAccessSubKindToBinSeq(rBusSendData.subKind)
-        >= log2Up(cacheCfg.wordSizeBytes)
-      ) {
+      when (!rBusSendData.subKindIsLtWordWidth) {
         rPastBusSendDataData := rBusSendData.data
       } otherwise {
         rPastBusSendDataData := rdLineWord
       }
+      //when (
+      //  SnowHouseMemAccessSubKindToBinSeq(rBusSendData.subKind)
+      //  >= log2Up(cacheCfg.wordSizeBytes)
+      //) {
+      //  rPastBusSendDataData := rBusSendData.data
+      //} otherwise {
+      //  rPastBusSendDataData := rdLineWord
+      //}
     }
     when (
       rDoLoadHitLtWordWidthPipe1
@@ -976,75 +981,130 @@ case class SnowHouseDataCache(
         rSavedRdLineWord := rdLineWord
         //rSavedHaveHit := haveHit
         rSavedBusSendData := rBusSendData
-        when (RegNext(io.bus.nextValid) init(False)) {
-          when (!rBusAddrIsNonCached) {
-            when (!rBusSendData.accKind.asBits(1)) {
-              when (haveHit) {
-                // cached load
-                when (
-                  SnowHouseMemAccessSubKindToBinSeq(rBusSendData.subKind)
-                  >= log2Up(cacheCfg.wordSizeBytes)
-                ) {
-                  rPleaseFinish.foreach(current => {
-                    current(0) := True
-                  })
-                } otherwise {
-                  nextState := (
-                    State.HANDLE_DCACHE_LOAD_HIT_LT_WORD_WIDTH_PIPE_1
-                  )
-                  rDoLoadHitLtWordWidthPipe1 := True
-                }
+        //when (RegNext(io.bus.nextValid) init(False)) {
+        when (!rBusAddrIsNonCached) {
+          switch (
+            Cat(
+              haveHit,
+              //rBusSendData.accKind.asBits(2 downto 1),
+              rBusSendData.subKindIsLtWordWidth,
+              rBusSendData.accKind.asBits(1),
+            )
+          ) {
+            is (M"0--") {
+              // dcache miss
+              when (rdLineAttrs.dirty) {
+                nextState := State.HANDLE_SEND_LINE_TO_BUS_PIPE_1
               } otherwise {
-                // cache miss upon a load
-                when (rdLineAttrs.dirty) {
-                  nextState := State.HANDLE_SEND_LINE_TO_BUS_PIPE_1
-                } otherwise {
-                  nextState := State.HANDLE_RECV_LINE_FROM_BUS
-                }
-              }
-            } otherwise {
-              when (haveHit) {
-                // cached store
-                when (
-                  SnowHouseMemAccessSubKindToBinSeq(rBusSendData.subKind)
-                  >= log2Up(cacheCfg.wordSizeBytes)
-                ) {
-                  nextState := State.HANDLE_DCACHE_STORE_HIT
-                  wrLineAttrs := rdLineAttrs
-                  wrLineAttrs.dirty := True
-                } otherwise {
-                  nextState := (
-                    State.HANDLE_DCACHE_STORE_HIT_LT_WORD_WIDTH_PIPE_1
-                  )
-                  rDoStoreHitLtWordWidthPipe1 := True
-                }
-                lineAttrsRam.io.rdEn := False
-                lineWordRam.io.rdEn := False
-              } otherwise {
-                // cache miss upon a store
-                when (rdLineAttrs.dirty) {
-                  nextState := State.HANDLE_SEND_LINE_TO_BUS_PIPE_1
-                } otherwise {
-                  nextState := State.HANDLE_RECV_LINE_FROM_BUS
-                }
+                nextState := State.HANDLE_RECV_LINE_FROM_BUS
               }
             }
-          } otherwise {
-            // non-cached access to the bus
-            nextState := State.HANDLE_NON_CACHED_BUS_ACC
-            myH2dBus.nextValid := True
-            rH2dSendData.isWrite := rBusSendData.accKind.asBits(1)
-            rH2dSendData.addr := (
-              rBusAddr.resize(rH2dSendData.addr.getWidth)
-            )
-            rH2dSendData.data := rBusSendData.data
-            rH2dSendData.size := 1
-            rH2dSendData.mask := (
-              U(rH2dSendData.mask.getWidth bits, default -> True)
-            )
-            //--------
+            //is (M"0--") {
+            //  // store - dcache miss
+            //  when (rdLineAttrs.dirty) {
+            //    nextState := State.HANDLE_SEND_LINE_TO_BUS_PIPE_1
+            //  } otherwise {
+            //    nextState := State.HANDLE_RECV_LINE_FROM_BUS
+            //  }
+            //}
+            is (M"100") {
+              // load (word) - dcache hit
+              rPleaseFinish.foreach(current => {
+                current(0) := True
+              })
+            }
+            is (M"110") {
+              // load (smaller-than-word) - dcache hit
+              nextState := (
+                State.HANDLE_DCACHE_LOAD_HIT_LT_WORD_WIDTH_PIPE_1
+              )
+              rDoLoadHitLtWordWidthPipe1 := True
+            }
+            is (M"101") {
+              // store (word) - dcache hit
+              nextState := State.HANDLE_DCACHE_STORE_HIT
+              wrLineAttrs := rdLineAttrs
+              wrLineAttrs.dirty := True
+              lineAttrsRam.io.rdEn := False
+              lineWordRam.io.rdEn := False
+            }
+            is (M"111") {
+              // store (smaller-than-word) - dcache hit
+              nextState := (
+                State.HANDLE_DCACHE_STORE_HIT_LT_WORD_WIDTH_PIPE_1
+              )
+              rDoStoreHitLtWordWidthPipe1 := True
+              lineAttrsRam.io.rdEn := False
+              lineWordRam.io.rdEn := False
+            }
           }
+          //when (!rBusSendData.accKind.asBits(1)) {
+          //  //when (haveHit) {
+          //  //  // cached load
+          //  //  when (
+          //  //    SnowHouseMemAccessSubKindToBinSeq(rBusSendData.subKind)
+          //  //    >= log2Up(cacheCfg.wordSizeBytes)
+          //  //  ) {
+          //  //    rPleaseFinish.foreach(current => {
+          //  //      current(0) := True
+          //  //    })
+          //  //  } otherwise {
+          //  //    nextState := (
+          //  //      State.HANDLE_DCACHE_LOAD_HIT_LT_WORD_WIDTH_PIPE_1
+          //  //    )
+          //  //    rDoLoadHitLtWordWidthPipe1 := True
+          //  //  }
+          //  //} otherwise {
+          //  //  // cache miss upon a load
+          //  //  when (rdLineAttrs.dirty) {
+          //  //    nextState := State.HANDLE_SEND_LINE_TO_BUS_PIPE_1
+          //  //  } otherwise {
+          //  //    nextState := State.HANDLE_RECV_LINE_FROM_BUS
+          //  //  }
+          //  //}
+          //} otherwise {
+          //  when (haveHit) {
+          //    // cached store
+          //    when (
+          //      SnowHouseMemAccessSubKindToBinSeq(rBusSendData.subKind)
+          //      >= log2Up(cacheCfg.wordSizeBytes)
+          //    ) {
+          //      nextState := State.HANDLE_DCACHE_STORE_HIT
+          //      wrLineAttrs := rdLineAttrs
+          //      wrLineAttrs.dirty := True
+          //    } otherwise {
+          //      nextState := (
+          //        State.HANDLE_DCACHE_STORE_HIT_LT_WORD_WIDTH_PIPE_1
+          //      )
+          //      rDoStoreHitLtWordWidthPipe1 := True
+          //    }
+          //    lineAttrsRam.io.rdEn := False
+          //    lineWordRam.io.rdEn := False
+          //  } otherwise {
+          //    // cache miss upon a store
+          //    when (rdLineAttrs.dirty) {
+          //      nextState := State.HANDLE_SEND_LINE_TO_BUS_PIPE_1
+          //    } otherwise {
+          //      nextState := State.HANDLE_RECV_LINE_FROM_BUS
+          //    }
+          //  }
+          //}
+        } otherwise {
+          // non-cached access to the bus
+          nextState := State.HANDLE_NON_CACHED_BUS_ACC
+          myH2dBus.nextValid := True
+          rH2dSendData.isWrite := rBusSendData.accKind.asBits(1)
+          rH2dSendData.addr := (
+            rBusAddr.resize(rH2dSendData.addr.getWidth)
+          )
+          rH2dSendData.data := rBusSendData.data
+          rH2dSendData.size := 1
+          rH2dSendData.mask := (
+            U(rH2dSendData.mask.getWidth bits, default -> True)
+          )
+          //--------
         }
+        //}
       }
     }
     is (State.HANDLE_DCACHE_LOAD_HIT_LT_WORD_WIDTH_PIPE_1) {
