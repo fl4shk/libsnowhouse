@@ -2149,10 +2149,10 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
                     + s"opInfo(${opInfo}) index:${opInfoIdx}"
                   )
                   io.psExSetPc.valid := {
-                    (
-                      io.rdMemWord(io.brCondIdx(0))
-                      === io.rdMemWord(io.brCondIdx(1))
-                    )
+                    //(
+                    //  io.rdMemWord(io.brCondIdx(0))
+                    //  === io.rdMemWord(io.brCondIdx(1))
+                    //)
                     //val q = Bool()
                     //val unusedSumOut = UInt(cfg.mainWidth bits)
                     //(
@@ -2182,10 +2182,11 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
                     //  )
                     //)
                     //q
-                    //LcvFastCmpEq(
-                    //  left=io.rdMemWord(io.brCondIdx(0)),
-                    //  right=io.rdMemWord(io.brCondIdx(1)),
-                    //)
+                    LcvFastCmpEq(
+                      left=io.rdMemWord(io.brCondIdx(0)),
+                      right=io.rdMemWord(io.brCondIdx(1)),
+                      optDsp=true,
+                    )
                   }
                 }
               }
@@ -2205,10 +2206,10 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
                     + s"opInfo(${opInfo}) index:${opInfoIdx}"
                   )
                   io.psExSetPc.valid := {
-                    (
-                      io.rdMemWord(io.brCondIdx(0))
-                      =/= io.rdMemWord(io.brCondIdx(1))
-                    )
+                    //(
+                    //  io.rdMemWord(io.brCondIdx(0))
+                    //  =/= io.rdMemWord(io.brCondIdx(1))
+                    //)
                     //val q = Bool()
                     //val unusedSumOut = UInt(cfg.mainWidth bits)
                     //(
@@ -2238,10 +2239,11 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
                     //  )
                     //)
                     //(!q)
-                    //!LcvFastCmpEq(
-                    //  left=io.rdMemWord(io.brCondIdx(0)),
-                    //  right=io.rdMemWord(io.brCondIdx(1)),
-                    //)
+                    !LcvFastCmpEq(
+                      left=io.rdMemWord(io.brCondIdx(0)),
+                      right=io.rdMemWord(io.brCondIdx(1)),
+                      optDsp=true,
+                    )
                   }
                 }
               }
