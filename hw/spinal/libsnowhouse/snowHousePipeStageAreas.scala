@@ -2185,7 +2185,7 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
                     LcvFastCmpEq(
                       left=io.rdMemWord(io.brCondIdx(0)),
                       right=io.rdMemWord(io.brCondIdx(1)),
-                      optDsp=true,
+                      optDsp=false,
                     )
                   }
                 }
@@ -2242,7 +2242,7 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
                     !LcvFastCmpEq(
                       left=io.rdMemWord(io.brCondIdx(0)),
                       right=io.rdMemWord(io.brCondIdx(1)),
-                      optDsp=true,
+                      optDsp=false,
                     )
                   }
                 }
