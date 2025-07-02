@@ -111,6 +111,7 @@ case class SnowHousePsExSetPcPayload(
   cfg: SnowHouseConfig
 ) extends Bundle {
   //val valid1 = Bool()
+  val extValid = Bool()
   val nextPc = UInt(cfg.mainWidth bits)
 }
 object SnowHouseShouldIgnoreInstrState
@@ -187,14 +188,18 @@ case class SnowHousePipeStageInstrFetch(
   when (
     //up.isFiring
     //&&
-    psExSetPc.fire
+    //psExSetPc.fire
+    psExSetPc.extValid
     //&& 
     ////!rSavedExSetPc.fire
     ////psExSetPc.valid1
     //!rMyPsExSetPcFire
   ) {
     //rMyPsExSetPcFire := True//psExSetPc.fire
-    rSavedExSetPc.foreach(_.valid := True)
+    rSavedExSetPc.foreach(
+      //_.valid := True
+      _.extValid := True
+    )
     //rSavedExSetPc.payload := psExSetPc.payload
     //rSavedExSetPc.payload := psExSetPc.payload
     //when (
@@ -208,11 +213,28 @@ case class SnowHousePipeStageInstrFetch(
     //}
     //rSavedExSetPc.payload := psExSetPc.payload
   }
-  rSavedExSetPc(0).payload := psExSetPc.payload
+  for (idx <- 0 until rSavedExSetPc.size) {
+    when (
+      psExSetPc.fire
+      //&& (
+      //  //!rSavedExSetPc(idx).extValid
+      //  //||
+      //  !rSavedExSetPc(idx).valid
+      //)
+      && rSavedExSetPc(idx).extValid
+    ) {
+      rSavedExSetPc(0).valid := True
+    }
+  }
   rSavedExSetPc(0).nextPc.allowOverride
   rSavedExSetPc(0).nextPc := (
     psExSetPc.nextPc //- cfg.instrSizeBytes
   )
+  //rSavedExSetPc(0).payload := psExSetPc.payload
+  //rSavedExSetPc(0).nextPc.allowOverride
+  //rSavedExSetPc(0).nextPc := (
+  //  psExSetPc.nextPc //- cfg.instrSizeBytes
+  //)
   //when (
   //  //up.isFiring
   //  down.isReady
@@ -316,7 +338,16 @@ case class SnowHousePipeStageInstrFetch(
       Cat(
         List(
           up.isFiring,
-          rSavedExSetPc(idx).fire
+          (
+            (
+              (
+                psExSetPc.fire
+              ) || (
+                rSavedExSetPc(idx).fire
+              )
+            )
+            && rSavedExSetPc(idx).extValid
+          )
         ).reverse
       )
     ) {
@@ -380,6 +411,7 @@ case class SnowHousePipeStageInstrFetch(
         myRegPcSetItCnt := 0x1
         //rSavedExSetPc := rSavedExSetPc.getZero
         rSavedExSetPc(idx).valid := rSavedExSetPc(idx).valid.getZero
+        rSavedExSetPc(idx).extValid := rSavedExSetPc(idx).extValid.getZero
         //myRegPcSetItCnt.foreach(current => {
         //  current := 0x1
         //})
@@ -4056,10 +4088,10 @@ case class SnowHousePipeStageExecute(
     temp
   }
   nextSetPcCnt := rSetPcCnt
-  psExSetPc.payload := (
+  psExSetPc.nextPc := (
     RegNext(
-      next=psExSetPc.payload,
-      init=psExSetPc.payload.getZero,
+      next=psExSetPc.nextPc,
+      init=psExSetPc.nextPc.getZero,
     )
   )
   //psExSetPc.valid1.allowOverride
@@ -4077,9 +4109,11 @@ case class SnowHousePipeStageExecute(
     setOutpModMemWord.io.pcChangeState.asBits
   )
   psExSetPc.valid := (
-    setOutpModMemWord.io.psExSetPc.valid
+    RegNext(next=setOutpModMemWord.io.psExSetPc.valid, init=False)
+  )
+  psExSetPc.extValid := (
     //&& !outp.instrCnt.shouldIgnoreInstr
-    && !setOutpModMemWord.io.shouldIgnoreInstr(0)
+    !setOutpModMemWord.io.shouldIgnoreInstr(0)
     && (
       //cMid0Front.up.isValid
       cMid0Front.up.isFiring

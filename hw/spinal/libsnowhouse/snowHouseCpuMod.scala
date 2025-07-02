@@ -3583,13 +3583,13 @@ object SnowHouseCpuWithDualRamSim extends App {
   //  "5",
   //)
   val testIdxRange = (
-    //0, 0,
+    //0, //0,
     //1, //1,
     //2, //2,
     //3, 3,
     //4, //4,
     //5, 5,
-    //6, //6
+    6, 6,
     7, 7
   )
   val instrRamKindArr = Array[Int](
@@ -3614,6 +3614,7 @@ object SnowHouseCpuWithDualRamSim extends App {
   //)
   val numClkCycles = (
     1024
+    //1024 + 512
   )
   for (
     //programStr <- programStrArr
