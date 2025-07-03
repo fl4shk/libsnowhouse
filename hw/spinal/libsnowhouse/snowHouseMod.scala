@@ -601,7 +601,7 @@ case class SnowHouse
   val psIdHaltIt = Bool()
   val psExSetPc = (
     /*KeepAttribute*/(
-      Flow(SnowHousePsExSetPcPayload(cfg=cfg))
+      Stream(SnowHousePsExSetPcPayload(cfg=cfg))
     )
     .setName(s"SnowHouse_psExSetPc")
   )
