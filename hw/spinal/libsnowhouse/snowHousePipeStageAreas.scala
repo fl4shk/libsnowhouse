@@ -221,16 +221,17 @@ case class SnowHousePipeStageInstrFetch(
   }
   psExSetPc.ready.setAsReg() init(False)
   psExSetPc.ready := False
-  when (
-    up.isFiring
-    && (
-      psExSetPc.valid
-      || RegNext(stickyExSetPc(0).fire, init=False)
-    )
-  ) {
-    psExSetPc.ready := True
-    //stickyExSetPc(0).valid := False
-  }
+  //when (
+  //  up.isFiring
+  //  && (
+  //    psExSetPc.valid
+  //    || RegNext(stickyExSetPc(0).fire, init=False)
+  //  )
+  //) {
+  //  psExSetPc.ready := True
+  //  //stickyExSetPc(0).valid := False
+  //}
+
   //when (
   //  psExSetPc.valid
   //) {
@@ -251,7 +252,11 @@ case class SnowHousePipeStageInstrFetch(
   //}
   stickyExSetPc(0).nextPc.allowOverride
   stickyExSetPc(0).nextPc := (
-    RegNext(psExSetPc.nextPc) init(0x0) //- cfg.instrSizeBytes
+    RegNext(
+      next=psExSetPc.nextPc,
+      init=psExSetPc.nextPc.getZero,
+    )
+    //- cfg.instrSizeBytes
   )
   //stickyExSetPc(0).payload := psExSetPc.payload
   //stickyExSetPc(0).nextPc.allowOverride
@@ -3401,98 +3406,97 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
     //  }
     //}
 
-    switch (rShouldIgnoreInstrState(idx)) {
-      is (False) {
-        //when (
-        //  RegNext(
-        //    io.upIsFiring
-        //    && io.regPcSetItCnt(idx)(0)
-        //  )
-        //) {
-        //   otherwise {
-        //    io.shouldIgnoreInstr(idx) := (
-        //      False
-        //    )
-        //  }
-        //} elsewhen (io.psExSetPc.valid) {
-        //  io.shouldIgnoreInstr(idx) := (
-        //    True
-        //  )
-        //}
-        io.shouldIgnoreInstr(idx) := (
-          False
-        )
-        when (
-          io.psExSetPc.valid
-          && RegNext(
-            next=RegNext(
-              next=io.upIsFiring,
-              init=False,
-            ),
-            init=False
-          )
-          //&& RegNextWhen(
-          //  next=(!io.shouldIgnoreInstr(idx)),
-          //  cond=io.upIsFiring,
-          //  init=False
-          //)
-        ) {
-          io.shouldIgnoreInstr(idx) := (
-            True
-          )
-          nextShouldIgnoreInstrState(idx) := True
-        }
-        //when (io.psExSetPc.ready) {
-        //  //io.shouldIgnoreInstr(idx) := 
-        //  nextShouldIgnoreInstrState(idx) := True
-        //}
-      }
-      is (True) {
-        //when (io.psExSetPc.ready) {
-        //}
-        //when (io.psExSetPc.valid) {
-        //  io.shouldIgnoreInstr(idx) := (
-        //    
-        //  )
-        //}
-        io.shouldIgnoreInstr(idx) := (
-          True
-        )
-        when (
-          io.regPcSetItCnt(idx)(0)
-          && io.upIsFiring
-        ) {
-          nextExSetPcValid := False
-          nextShouldIgnoreInstrState(idx) := False
-        }
-        //when (
-        //  //io.upIsFiring
-        //  //io.upIsFiring
-        //  //&& 
-        //  io.regPcSetItCnt(idx)(0)
-        //  //&& io.downIsFiring
-        //) {
-        //  io.shouldIgnoreInstr(idx) := (
-        //    False
-        //  )
-        //  when (
-        //    io.psExSetPc.valid
-        //    //&& RegNext(!io.shouldIgnoreInstr(idx), init=False)
-        //    //&& io.upIsFiring
-        //  ) {
-        //    when (RegNext(!io.shouldIgnoreInstr(idx), init=False)) {
-        //      io.shouldIgnoreInstr(idx) := (
-        //        True
-        //      )
-        //    }
-        //  } otherwise {
-        //    when (io.upIsFiring) {
-        //      nextShouldIgnoreInstrState(idx) := False
-        //    }
-        //  }
-        //}
-      }
-    }
+    //switch (rShouldIgnoreInstrState(idx)) {
+    //  is (False) {
+    //    //when (
+    //    //  RegNext(
+    //    //    io.upIsFiring
+    //    //    && io.regPcSetItCnt(idx)(0)
+    //    //  )
+    //    //) {
+    //    //   otherwise {
+    //    //    io.shouldIgnoreInstr(idx) := (
+    //    //      False
+    //    //    )
+    //    //  }
+    //    //} elsewhen (io.psExSetPc.valid) {
+    //    //  io.shouldIgnoreInstr(idx) := (
+    //    //    True
+    //    //  )
+    //    //}
+    //    io.shouldIgnoreInstr(idx) := (
+    //      False
+    //    )
+    //    when (
+    //      io.psExSetPc.valid
+    //      && RegNext(
+    //        next=RegNext(
+    //          next=io.upIsFiring,
+    //          init=False,
+    //        )
+    //      )
+    //      //&& RegNextWhen(
+    //      //  next=(!io.shouldIgnoreInstr(idx)),
+    //      //  cond=io.upIsFiring,
+    //      //  init=False
+    //      //)
+    //    ) {
+    //      io.shouldIgnoreInstr(idx) := (
+    //        True
+    //      )
+    //      nextShouldIgnoreInstrState(idx) := True
+    //    }
+    //    //when (io.psExSetPc.ready) {
+    //    //  //io.shouldIgnoreInstr(idx) := 
+    //    //  nextShouldIgnoreInstrState(idx) := True
+    //    //}
+    //  }
+    //  is (True) {
+    //    //when (io.psExSetPc.ready) {
+    //    //}
+    //    //when (io.psExSetPc.valid) {
+    //    //  io.shouldIgnoreInstr(idx) := (
+    //    //    
+    //    //  )
+    //    //}
+    //    io.shouldIgnoreInstr(idx) := (
+    //      True
+    //    )
+    //    when (
+    //      io.regPcSetItCnt(idx)(0)
+    //      && io.upIsFiring
+    //    ) {
+    //      nextExSetPcValid := False
+    //      nextShouldIgnoreInstrState(idx) := False
+    //    }
+    //    //when (
+    //    //  //io.upIsFiring
+    //    //  //io.upIsFiring
+    //    //  //&& 
+    //    //  io.regPcSetItCnt(idx)(0)
+    //    //  //&& io.downIsFiring
+    //    //) {
+    //    //  io.shouldIgnoreInstr(idx) := (
+    //    //    False
+    //    //  )
+    //    //  when (
+    //    //    io.psExSetPc.valid
+    //    //    //&& RegNext(!io.shouldIgnoreInstr(idx), init=False)
+    //    //    //&& io.upIsFiring
+    //    //  ) {
+    //    //    when (RegNext(!io.shouldIgnoreInstr(idx), init=False)) {
+    //    //      io.shouldIgnoreInstr(idx) := (
+    //    //        True
+    //    //      )
+    //    //    }
+    //    //  } otherwise {
+    //    //    when (io.upIsFiring) {
+    //    //      nextShouldIgnoreInstrState(idx) := False
+    //    //    }
+    //    //  }
+    //    //}
+    //  }
+    //}
 
     //when (
     //  //io.upIsFiring
@@ -3516,17 +3520,64 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
     //    nextShouldIgnoreInstrState(idx) := False
     //  }
     //}
+    val myNextShouldIgnoreInstr = Bool()
+    myNextShouldIgnoreInstr := True
+    when (
+      RegNext(
+        next=(
+          io.regPcSetItCnt(idx)(0)
+          && io.upIsFiring
+        ),
+        init=False
+      )
+      ////&& RegNext(
+      ////  next=io.shouldIgnoreInstr(idx),
+      ////  init=False
+      ////)
+      ////&& io.upIsValid
+      ////&& io.upIsValid
+      ////&& io.downIsReady
+      ////&& io.upIsFiring
+      //&& io.upIsValid
+      //&& io.downIsReady
+    ) {
+      //myNextShouldIgnoreInstr := False
+      //io.shouldIgnoreInstr(idx) := RegNextWhen(
+      //  next=myNextShouldIgnoreInstr,
+      //  cond=io.upIsFiring,
+      //  init=myNextShouldIgnoreInstr.getZero,
+      //)
+      io.shouldIgnoreInstr(idx) := False
+    } elsewhen (
+      //RegNext(io.psExSetPc.valid)
+      //&& io.psExSetPc.ready
+      io.psExSetPc.valid
+      //&& RegNext(
+      //  next=(!io.shouldIgnoreInstr(idx)),
+      //  init=False,
+      //)
+      //&& io.upIsFiring
+      //&& io.upIsValid
+      //&& io.upIsValid
+      //&& !io.regPcSetItCnt(idx)(0)
+      //&& io.upIsFiring
+      //&& io.upIsValid
 
-    //when (
-    //  //RegNext(io.psExSetPc.valid)
-    //  //&& io.psExSetPc.ready
-    //  io.psExSetPc.valid
-    //  //&& io.upIsFiring
-    //  //&& io.upIsValid
-    //  //&& io.upIsValid
-    //) {
-    //  io.shouldIgnoreInstr(idx) := True
-    //}
+      //&& io.downIsReady
+      && RegNext(
+        next=(
+          !io.shouldIgnoreInstr(idx)
+          && io.upIsFiring
+        ),
+        init=False,
+      )
+      //&& RegNext(
+      //  next=io.upIsFiring,
+      //  init=False,
+      //)
+    ) {
+      io.shouldIgnoreInstr(idx) := True
+    }
     //when (
     //  io.regPcSetItCnt(idx)(0)
     //  //&& RegNext(
@@ -3534,7 +3585,18 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
     //  //  init=False
     //  //)
     //  //&& io.upIsValid
+    //  //&& io.upIsValid
+    //  //&& io.downIsReady
+    //  //&& io.upIsFiring
+    //  && io.upIsValid
+    //  && io.downIsReady
     //) {
+    //  //myNextShouldIgnoreInstr := False
+    //  //io.shouldIgnoreInstr(idx) := RegNextWhen(
+    //  //  next=myNextShouldIgnoreInstr,
+    //  //  cond=io.upIsFiring,
+    //  //  init=myNextShouldIgnoreInstr.getZero,
+    //  //)
     //  io.shouldIgnoreInstr(idx) := False
     //}
 
@@ -4374,7 +4436,25 @@ case class SnowHousePipeStageExecute(
   psExSetPc.valid := (
     //RegNext(next=setOutpModMemWord.io.psExSetPc.valid, init=False)
     setOutpModMemWord.io.psExSetPc.valid
-    && RegNext(!setOutpModMemWord.io.shouldIgnoreInstr(0), init=False)
+    && RegNext(
+      next=(
+        !setOutpModMemWord.io.shouldIgnoreInstr(0)
+        && cMid0Front.up.isFiring
+      ),
+      init=False,
+    )
+    //&& RegNext(
+    //  next=cMid0Front.up.isFiring,
+    //  init=False,
+    //)
+
+
+    //&& RegNext(!setOutpModMemWord.io.shouldIgnoreInstr(0), init=False)
+    //&& RegNext(
+    //  next=cMid0Front.up.isFiring,
+    //  init=False,
+    //)
+
     //&& !setOutpModMemWord.io.shouldIgnoreInstr(0)
     //&& RegNext(
     //  next=(
