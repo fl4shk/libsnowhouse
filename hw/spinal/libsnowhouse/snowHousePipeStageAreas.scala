@@ -1389,7 +1389,8 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
 
   val nextExSetPcValid = Bool()
   case class SetPcCmp(
-    mulAcc: LcvMulAcc32Del1
+    //mulAcc: LcvMulAcc32Del1
+    adder: LcvAddDel1,
   ) extends Area {
     val rValid = Reg(Bool(), init=False)
     val myCmp = UInt(cfg.mainWidth + 1 bits)
@@ -1414,9 +1415,12 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
         //),
         left=io.rdMemWord(io.brCondIdx(0)),
         right=io.rdMemWord(io.brCondIdx(1)),
-        mulAccIo=(
-          //mulAccIo
-          mulAcc.io
+        //mulAccIo=(
+        //  //mulAccIo
+        //  mulAcc.io
+        //),
+        addIo=(
+          adder.io
         ),
         optDsp=true,
         optReg=true,
@@ -1424,13 +1428,13 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
     )
     //mulAcc.io <> mulAccIo
   }
-  val mySetPcCmpEqMulAcc = LcvMulAcc32Del1()
-  val myPsExSetPcCmpEq = SetPcCmp(mulAcc=mySetPcCmpEqMulAcc)
+  val mySetPcCmpEqAdder = LcvAddDel1(cfg.mainWidth + 1)
+  val myPsExSetPcCmpEq = SetPcCmp(adder=mySetPcCmpEqAdder)
   //val rMyPsExSetPcCmpEqValid = Reg(Bool(), init=False)
   //val myPsExSetPcCmpEq = /*Reg*/(UInt(cfg.mainWidth + 1 bits)) //init(0x0)
   //val myPsExSetPcCmpEq.myStickyCmp = Bool()
-  val mySetPcCmpNeMulAcc = LcvMulAcc32Del1()
-  val myPsExSetPcCmpNe = SetPcCmp(mulAcc=mySetPcCmpNeMulAcc)
+  val mySetPcCmpNeAdder = LcvAddDel1(cfg.mainWidth + 1)
+  val myPsExSetPcCmpNe = SetPcCmp(adder=mySetPcCmpNeAdder)
   //val rMyPsExSetPcCmpNeValid = Reg(Bool(), init=False)
   //val myPsExSetPcCmpNe = /*Reg*/(UInt(cfg.mainWidth + 1 bits)) //init(0x0)
   //val myPsExSetPcCmpNe.myStickyCmp = Bool()
