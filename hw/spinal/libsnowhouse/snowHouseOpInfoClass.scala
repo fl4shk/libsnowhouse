@@ -1134,7 +1134,10 @@ object AluOpKind {
     )
     def validArgsSet = _validArgsSet
     def binopFunc(
-      cfg: SnowHouseConfig, left: UInt, right: UInt, carry: Bool
+      cfg: SnowHouseConfig,
+      left: UInt,
+      right: UInt,
+      carry: Bool
     )(
       width: Int=cfg.mainWidth
     ) = {
