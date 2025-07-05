@@ -1441,7 +1441,8 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
   val nextExSetPcValid = Bool()
   case class SetPcCmp(
     //mulAcc: LcvMulAcc32Del1
-    adder: LcvAddDel1,
+    //adder: LcvAddDel1,
+    cmpEqDel1: LcvCmpEqDel1,
   ) extends Area {
     val rValid = Reg(Bool(), init=False)
     val myCmp = UInt(cfg.mainWidth + 1 bits)
@@ -1470,28 +1471,36 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
         //  //mulAccIo
         //  mulAcc.io
         //),
-        addIo=(
-          adder.io
+        //addIo=(
+        //  adder.io
+        //),
+        cmpEqIo=(
+          //cmpEqIo
+          cmpEqDel1.io
         ),
         optDsp=true,
         optReg=true,
-        kind=LcvFastCmpEq.Kind.UseFastCarryChain,
+        //kind=LcvFastCmpEq.Kind.UseFastCarryChain,
       )
     )
     //mulAcc.io <> mulAccIo
   }
-  val mySetPcCmpEqAdder = LcvAddDel1(cfg.mainWidth + 1)
-  mySetPcCmpEqAdder.io.do_inv := False
-  val myPsExSetPcCmpEq = SetPcCmp(adder=mySetPcCmpEqAdder)
+  //val mySetPcCmpEqAdder = LcvAddDel1(cfg.mainWidth + 1)
+  //mySetPcCmpEqAdder.io.do_inv := False
+  val myCmpEqDel1ForEq = LcvCmpEqDel1(cfg.mainWidth)
+  val myPsExSetPcCmpEq = SetPcCmp(cmpEqDel1=myCmpEqDel1ForEq)
   //val rMyPsExSetPcCmpEqValid = Reg(Bool(), init=False)
   //val myPsExSetPcCmpEq = /*Reg*/(UInt(cfg.mainWidth + 1 bits)) //init(0x0)
   //val myPsExSetPcCmpEq.myStickyCmp = Bool()
-  val mySetPcCmpNeAdder = LcvAddDel1(cfg.mainWidth + 1)
-  mySetPcCmpNeAdder.io.do_inv := True
-  val myPsExSetPcCmpNe = SetPcCmp(adder=mySetPcCmpNeAdder)
+  //val mySetPcCmpNeAdder = LcvAddDel1(cfg.mainWidth + 1)
+  //mySetPcCmpNeAdder.io.do_inv := True
+  //val myCmpEqDel1 = LcvCmpEqDel1(cfg.mainWidth)
+  //val myPsExSetPcCmpNe = SetPcCmp(adder=mySetPcCmpNeAdder)
   //val rMyPsExSetPcCmpNeValid = Reg(Bool(), init=False)
   //val myPsExSetPcCmpNe = /*Reg*/(UInt(cfg.mainWidth + 1 bits)) //init(0x0)
   //val myPsExSetPcCmpNe.myStickyCmp = Bool()
+  val myCmpEqDel1ForNe = LcvCmpEqDel1(cfg.mainWidth)
+  val myPsExSetPcCmpNe = SetPcCmp(cmpEqDel1=myCmpEqDel1ForNe)
   nextExSetPcValid := False
   myPsExSetPcCmpEq.myCmp := (
     0x0
@@ -4046,7 +4055,9 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
   //  })
   //}
 //  }
-  when (myPsExSetPcCmpEq.rValid) {
+  when (
+    rose(myPsExSetPcCmpEq.rValid)
+  ) {
     myPsExSetPcCmpEq.myCmp.msb := (
       //myPsExSetPcCmpEq.cmpEqQ
       //(
@@ -4058,11 +4069,18 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
       //)
       myPsExSetPcCmpEq.cmpEq
     )
+  }
+  when (myPsExSetPcCmpEq.rValid) {
+    when (
+      io.shouldIgnoreInstr(3)
+    ) {
+      myPsExSetPcCmpEq.rValid := False
+    }
     when (io.upIsFiring) {
       myPsExSetPcCmpEq.rValid := False
     }
   }
-  when (myPsExSetPcCmpNe.rValid) {
+  when (rose(myPsExSetPcCmpNe.rValid)) {
     myPsExSetPcCmpNe.myCmp.msb := (
       //~myPsExSetPcCmpNe.cmpEqQ
       //(
@@ -4071,8 +4089,13 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
       //Cat(!myPsExSetPcCmpNe.cmpEq).asSInt.resize(
       //  myPsExSetPcCmpNe.myCmp.getWidth
       //).asUInt
-      myPsExSetPcCmpNe.cmpEq
+      !myPsExSetPcCmpNe.cmpEq
     )
+  }
+  when (myPsExSetPcCmpNe.rValid) {
+    when (io.shouldIgnoreInstr(3)) {
+      myPsExSetPcCmpNe.rValid := False
+    }
     when (io.upIsFiring) {
       myPsExSetPcCmpNe.rValid := False
     }
