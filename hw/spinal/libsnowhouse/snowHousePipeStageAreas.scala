@@ -1394,7 +1394,7 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
   ) extends Area {
     val rValid = Reg(Bool(), init=False)
     val myCmp = UInt(cfg.mainWidth + 1 bits)
-    val myStickyCmp = Bool()
+    //val myStickyCmp = Bool()
     //val mulAccIo = (
     //  LcvMulAcc32Io(
     //    optIncludeClk=true
@@ -1424,7 +1424,7 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
         ),
         optDsp=true,
         optReg=true,
-        kind=LcvFastCmpEq.Kind.UseFastCarryChain,
+        //kind=LcvFastCmpEq.Kind.UseFastCarryChain,
       )
     )
     //mulAcc.io <> mulAccIo
@@ -1476,22 +1476,22 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
     //  init=myPsExSetPcCmpNe.myCmp.getZero,
     //)
   )
-  myPsExSetPcCmpEq.myStickyCmp := (
-    RegNext(
-      next=myPsExSetPcCmpEq.myStickyCmp,
-      init=myPsExSetPcCmpEq.myStickyCmp.getZero,
-    )
-  )
+  //myPsExSetPcCmpEq.myStickyCmp := (
+  //  RegNext(
+  //    next=myPsExSetPcCmpEq.myStickyCmp,
+  //    init=myPsExSetPcCmpEq.myStickyCmp.getZero,
+  //  )
+  //)
   //when (io.shouldIgnoreInstr(2)) {
   //  myPsExSetPcCmpEq.myStickyCmp := False
   //}
 
-  myPsExSetPcCmpNe.myStickyCmp := (
-    RegNext(
-      next=myPsExSetPcCmpNe.myStickyCmp,
-      init=myPsExSetPcCmpNe.myStickyCmp.getZero,
-    )
-  )
+  //myPsExSetPcCmpNe.myStickyCmp := (
+  //  RegNext(
+  //    next=myPsExSetPcCmpNe.myStickyCmp,
+  //    init=myPsExSetPcCmpNe.myStickyCmp.getZero,
+  //  )
+  //)
   val myStickySetPcCond = (
     RegNext(
       next=(
@@ -1546,40 +1546,40 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
   //) {
   //  myPsExSetPcCmpNe.myStickyCmp := True
   //}
-  when (myPsExSetPcCmpEq.myCmp.msb) {
-    myPsExSetPcCmpEq.myStickyCmp := True
-  }
-  when (myPsExSetPcCmpNe.myCmp.msb) {
-    myPsExSetPcCmpNe.myStickyCmp := True
-  }
-  when (
-    //RegNext(
-    //  next=(
-        io.upIsFiring
-        && (
-          myPsExSetPcCmpEq.myCmp.msb
-          || RegNext(next=myPsExSetPcCmpEq.myStickyCmp, init=False)
-        )
-    //  ),
-    //  init=False
-    //)
-  ) {
-    myPsExSetPcCmpEq.myStickyCmp := False
-  }
-  when (
-    //RegNext(
-    //  next=(
-        io.upIsFiring
-        && (
-          myPsExSetPcCmpNe.myCmp.msb
-          || RegNext(next=myPsExSetPcCmpNe.myStickyCmp, init=False)
-        )
-    //  ),
-    //  init=False
-    //)
-  ) {
-    myPsExSetPcCmpNe.myStickyCmp := False
-  }
+  //when (myPsExSetPcCmpEq.myCmp.msb) {
+  //  myPsExSetPcCmpEq.myStickyCmp := True
+  //}
+  //when (myPsExSetPcCmpNe.myCmp.msb) {
+  //  myPsExSetPcCmpNe.myStickyCmp := True
+  //}
+  //when (
+  //  //RegNext(
+  //  //  next=(
+  //      io.upIsFiring
+  //      && (
+  //        myPsExSetPcCmpEq.myCmp.msb
+  //        || RegNext(next=myPsExSetPcCmpEq.myStickyCmp, init=False)
+  //      )
+  //  //  ),
+  //  //  init=False
+  //  //)
+  //) {
+  //  myPsExSetPcCmpEq.myStickyCmp := False
+  //}
+  //when (
+  //  //RegNext(
+  //  //  next=(
+  //      io.upIsFiring
+  //      && (
+  //        myPsExSetPcCmpNe.myCmp.msb
+  //        || RegNext(next=myPsExSetPcCmpNe.myStickyCmp, init=False)
+  //      )
+  //  //  ),
+  //  //  init=False
+  //  //)
+  //) {
+  //  myPsExSetPcCmpNe.myStickyCmp := False
+  //}
 
   io.psExSetPc.valid := (
     /*LcvFastOrR*/(
