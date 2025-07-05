@@ -1424,7 +1424,7 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
         ),
         optDsp=true,
         optReg=true,
-        //kind=LcvFastCmpEq.Kind.UseFastCarryChain,
+        kind=LcvFastCmpEq.Kind.UseFastCarryChain,
       )
     )
     //mulAcc.io <> mulAccIo
