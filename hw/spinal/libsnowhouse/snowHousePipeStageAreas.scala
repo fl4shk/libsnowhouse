@@ -1430,11 +1430,13 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
     //mulAcc.io <> mulAccIo
   }
   val mySetPcCmpEqAdder = LcvAddDel1(cfg.mainWidth + 1)
+  mySetPcCmpEqAdder.io.do_inv := False
   val myPsExSetPcCmpEq = SetPcCmp(adder=mySetPcCmpEqAdder)
   //val rMyPsExSetPcCmpEqValid = Reg(Bool(), init=False)
   //val myPsExSetPcCmpEq = /*Reg*/(UInt(cfg.mainWidth + 1 bits)) //init(0x0)
   //val myPsExSetPcCmpEq.myStickyCmp = Bool()
   val mySetPcCmpNeAdder = LcvAddDel1(cfg.mainWidth + 1)
+  mySetPcCmpNeAdder.io.do_inv := True
   val myPsExSetPcCmpNe = SetPcCmp(adder=mySetPcCmpNeAdder)
   //val rMyPsExSetPcCmpNeValid = Reg(Bool(), init=False)
   //val myPsExSetPcCmpNe = /*Reg*/(UInt(cfg.mainWidth + 1 bits)) //init(0x0)
@@ -4016,7 +4018,7 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
       //Cat(!myPsExSetPcCmpNe.cmpEq).asSInt.resize(
       //  myPsExSetPcCmpNe.myCmp.getWidth
       //).asUInt
-      !myPsExSetPcCmpNe.cmpEq
+      myPsExSetPcCmpNe.cmpEq
     )
     when (io.upIsFiring) {
       myPsExSetPcCmpNe.rValid := False
