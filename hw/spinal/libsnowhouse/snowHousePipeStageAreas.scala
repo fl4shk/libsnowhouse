@@ -1009,49 +1009,93 @@ case class SnowHousePipeStageInstrDecode(
 //}
 case class SnowHousePipeStageExecuteSetOutpModMemWordIo(
   cfg: SnowHouseConfig,
+  isComponentIo: Boolean=false
 ) extends Bundle {
-  val currOp = /*in*/(UInt(log2Up(cfg.opInfoMap.size) bits))
-  val splitOp = /*in*/(SnowHouseSplitOp(cfg=cfg))
-  val tempVecSize = 3 // TODO: temporary size of `3`
-  val gprIsZeroVec = ( cfg.myHaveZeroReg
+  private def setAsInp[T <: Data](
+    signal: T
+  ): T = {
+    if (isComponentIo) (
+      in(signal)
+    ) else (
+      signal
+    )
+  }
+  private def setAsOutp[T <: Data](
+    signal: T
+  ): T = {
+    if (isComponentIo) (
+      out(signal)
+    ) else (
+      signal
+    )
+  }
+  val multiCycleBusRecvDataVec = (
+    cfg.havePsExStall
   ) generate (
-    Vec.fill(tempVecSize)(
-      Vec.fill(cfg.regFileCfg.modMemWordValidSize)(
-        Bool()
+    setAsInp(Vec[MultiCycleDevPayload]{
+      val tempArr = ArrayBuffer[
+        MultiCycleDevPayload
+      ]()
+      for (
+        ((_, opInfo), idx) <- cfg.multiCycleOpInfoMap.view.zipWithIndex
+      ) {
+        assert(
+          opInfo.select == OpSelect.MultiCycle
+        )
+        tempArr += (
+          MultiCycleDevPayload(cfg=cfg, opInfo=opInfo)
+        )
+      }
+      tempArr
+    })
+  )
+  val currOp = setAsInp(UInt(log2Up(cfg.opInfoMap.size) bits))
+  val splitOp = setAsInp(SnowHouseSplitOp(cfg=cfg))
+  val tempVecSize = 3 // TODO: temporary size of `3`
+  val gprIsZeroVec = (
+    cfg.myHaveZeroReg
+  ) generate (
+    setAsInp(
+      Vec.fill(tempVecSize)(
+        Vec.fill(cfg.regFileCfg.modMemWordValidSize)(
+          Bool()
+        )
       )
     )
   )
   val gprIsNonZeroVec = (
     cfg.myHaveZeroReg
   ) generate (
-    Vec.fill(tempVecSize)(
-      Vec.fill(cfg.regFileCfg.modMemWordValidSize)(
-        Bool()
+    setAsInp(
+      Vec.fill(tempVecSize)(
+        Vec.fill(cfg.regFileCfg.modMemWordValidSize)(
+          Bool()
+        )
       )
     )
   )
   val dbusHostPayload = (
-    BusHostPayload(cfg=cfg, isIbus=false)
+    setAsOutp(BusHostPayload(cfg=cfg, isIbus=false))
   )
-  val rdMemWord = /*in*/(Vec.fill(tempVecSize)(
+  val rdMemWord = setAsInp(Vec.fill(tempVecSize)(
     UInt(cfg.mainWidth bits)
   ))
-  val regPc = /*in*/(UInt(cfg.mainWidth bits))
-  val regPcSetItCnt = /*in*/(Vec.fill(cfg.lowerMyFanoutRegPcSetItCnt)(
+  val regPc = setAsInp(UInt(cfg.mainWidth bits))
+  val regPcSetItCnt = setAsInp(Vec.fill(cfg.lowerMyFanoutRegPcSetItCnt)(
     UInt(
       1 bits
     )
   ))
-  val upIsFiring = /*in*/(Bool())
-  val upIsValid = /*in*/(Bool())
-  val upIsReady = /*in*/(Bool())
-  val downIsFiring = /*in*/(Bool())
-  val downIsValid = /*in*/(Bool())
-  val downIsReady = /*in*/(Bool())
-  val regPcPlusInstrSize = /*in*/(UInt(cfg.mainWidth bits))
-  val regPcPlusImm = /*in*/(UInt(cfg.mainWidth bits))
-  val imm = /*in*/(Vec.fill(4)(UInt(cfg.mainWidth bits)))
-  val pcChangeState = /*out*/(
+  val upIsFiring = setAsInp(Bool())
+  val upIsValid = setAsInp(Bool())
+  val upIsReady = setAsInp(Bool())
+  val downIsFiring = setAsInp(Bool())
+  val downIsValid = setAsInp(Bool())
+  val downIsReady = setAsInp(Bool())
+  val regPcPlusInstrSize = setAsInp(UInt(cfg.mainWidth bits))
+  val regPcPlusImm = setAsInp(UInt(cfg.mainWidth bits))
+  val imm = setAsInp(Vec.fill(4)(UInt(cfg.mainWidth bits)))
+  val pcChangeState = setAsOutp(
     Bool()
     //SnowHouseShouldIgnoreInstrState()
     //UInt(
@@ -1060,7 +1104,7 @@ case class SnowHousePipeStageExecuteSetOutpModMemWordIo(
     //)
   ) ///*in*/(Flow(PcChangeState()))
   val shouldIgnoreInstr = (
-    /*out*/(
+    setAsOutp(
       Vec.fill(cfg.lowerMyFanoutRegPcSetItCnt)(
         Bool()
       )
@@ -1069,7 +1113,7 @@ case class SnowHousePipeStageExecuteSetOutpModMemWordIo(
   val rAluFlags = (
     cfg.myHaveAluFlags
   ) generate (
-    /*out*/(UInt(cfg.mainWidth bits))
+    setAsOutp(UInt(cfg.mainWidth bits))
   )
   def aluFlagsIdxZ = 0
   def aluFlagsIdxC = 1
@@ -1080,41 +1124,41 @@ case class SnowHousePipeStageExecuteSetOutpModMemWordIo(
   def rFlagV = rAluFlags(aluFlagsIdxV)
   def rFlagN = rAluFlags(aluFlagsIdxN)
   val rIds = (
-    /*out*/(UInt(cfg.mainWidth bits))
+    setAsOutp(UInt(cfg.mainWidth bits))
   )
   val rIra = (
-    /*out*/(UInt(cfg.mainWidth bits))
+    setAsOutp(UInt(cfg.mainWidth bits))
   )
   val rIe = (
-    /*out*/(
+    setAsOutp(
       Bool()
     )
   )
   val rIty = (
-    /*out*/(UInt(cfg.mainWidth bits))
+    setAsOutp(UInt(cfg.mainWidth bits))
   )
   val rSty = (
-    /*out*/(UInt(cfg.mainWidth bits))
+    setAsOutp(UInt(cfg.mainWidth bits))
   )
   val rHi = (
-    /*out*/(UInt(cfg.mainWidth bits))
+    setAsOutp(UInt(cfg.mainWidth bits))
   )
   val rLo = (
-    /*out*/(UInt(cfg.mainWidth bits))
+    setAsOutp(UInt(cfg.mainWidth bits))
   )
   val rIndexReg = (
-    /*out*/UInt(cfg.mainWidth bits)
+    setAsOutp(UInt(cfg.mainWidth bits))
   )
   val rMulHiOutp = (
-    /*out*/UInt(cfg.mainWidth bits)
+    setAsOutp(UInt(cfg.mainWidth bits))
   )
   val rDivHiOutp = (
-    /*out*/UInt(cfg.mainWidth bits)
+    setAsOutp(UInt(cfg.mainWidth bits))
   )
   val rModHiOutp = (
-    /*out*/UInt(cfg.mainWidth bits)
+    setAsOutp(UInt(cfg.mainWidth bits))
   )
-  val takeIrq = /*in*/(
+  val takeIrq = setAsInp(
     Bool()
   )
   def selRdMemWord(
@@ -1292,36 +1336,39 @@ case class SnowHousePipeStageExecuteSetOutpModMemWordIo(
       }
     }
   }
-  val outpWrMemAddr = /*out*/(
-    UInt(log2Up(cfg.regFileCfg.wordCountMax) bits)
-  )
-  val inpPushMemAddr = /*in*/(
-    Vec.fill(2)(
-      UInt(log2Up(cfg.regFileCfg.wordCountMax) bits)
-    )
-  )
-  val modMemWordValid = /*out*/(
+  //val outpWrMemAddr = setAsOutp(
+  //  UInt(log2Up(cfg.regFileCfg.wordCountMax) bits)
+  //)
+  //val inpPushMemAddr = setAsInp(
+  //  Vec.fill(2)(
+  //    UInt(log2Up(cfg.regFileCfg.wordCountMax) bits)
+  //  )
+  //)
+  val modMemWordValid = setAsOutp(
     Vec.fill(
       cfg.regFileCfg.modMemWordValidSize //+ 1
     )(
       Bool()
     )
   )
-  val modMemWord = /*out*/(Vec.fill(1)( // TODO: temporary size of `1`
+  val modMemWord = setAsOutp(Vec.fill(1)( // TODO: temporary size of `1`
     UInt(cfg.mainWidth bits)
   ))
-  val psExSetPc = /*out*/(Stream(
+  val psExSetPc = (Stream(
     SnowHousePsExSetPcPayload(cfg=cfg)
   ))
-  val inpDecodeExt = /*in*/(
+  if (isComponentIo) {
+    master(psExSetPc)
+  }
+  val inpDecodeExt = setAsInp(
     Vec.fill(2)(
       SnowHouseDecodeExt(cfg=cfg)
     )
   )
-  val outpDecodeExt = /*out*/(
+  val outpDecodeExt = setAsOutp(
     SnowHouseDecodeExt(cfg=cfg)
   )
-  val multiCycleOpInfoIdx = /*out*/(
+  val multiCycleOpInfoIdx = setAsOutp(
     UInt(log2Up(cfg.multiCycleOpInfoMap.size) bits)
   )
   //def opIs = decodeExt.opIs
@@ -1352,15 +1399,19 @@ case class SnowHousePipeStageExecuteSetOutpModMemWordIo(
   val rHadRetIra = (
     haveRetIraState
   ) generate (
-    Reg(Bool(), init=False)
+    //Reg(Bool(), init=False)
+    setAsOutp(Bool())
   )
 }
 case class SnowHousePipeStageExecuteSetOutpModMemWord(
   args: SnowHousePipeStageArgs,
-) extends Area {
+) extends Component {
   def cfg = args.cfg
   val modIo = args.io
-  val io = SnowHousePipeStageExecuteSetOutpModMemWordIo(cfg=cfg)
+  val io = SnowHousePipeStageExecuteSetOutpModMemWordIo(
+    cfg=cfg,
+    isComponentIo=true,
+  )
   io.modMemWord := (
     RegNext(
       next=io.modMemWord,
@@ -1982,6 +2033,7 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
   val nextHadRetIra = Bool()
   nextHadRetIra := False
   if (io.haveRetIraState) {
+    io.rHadRetIra.setAsReg() init(False)
     when (io.upIsFiring) {
       io.rHadRetIra := nextHadRetIra
     }
@@ -3287,7 +3339,8 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
             io.multiCycleOpInfoIdx := idx
             for ((dst, dstIdx) <- opInfo.dstArr.view.zipWithIndex) {
               val tempDst = (
-                modIo.multiCycleBusVec(idx).recvData.dstVec(dstIdx)
+                //modIo.multiCycleBusVec(idx).recvData.dstVec(dstIdx)
+                io.multiCycleBusRecvDataVec(idx).dstVec(dstIdx)
               )
               dst match {
                 case DstKind.Gpr => {
@@ -4093,7 +4146,7 @@ case class SnowHousePipeStageExecute(
     psExStallHostArr += (
       cfg.mkLcvStallHost[MultiCycleHostPayload, MultiCycleDevPayload](
         stallIo=(
-            Some(io.multiCycleBusVec(idx))
+          Some(io.multiCycleBusVec(idx))
         ),
       )
     )
@@ -4203,6 +4256,20 @@ case class SnowHousePipeStageExecute(
   val setOutpModMemWord = SnowHousePipeStageExecuteSetOutpModMemWord(
     args=args
   )
+  for (
+    ((_, opInfo), idx)
+    <- cfg.multiCycleOpInfoMap.view.zipWithIndex
+  ) {
+    for ((dst, dstIdx) <- opInfo.dstArr.view.zipWithIndex) {
+      val tempDst = (
+        //modIo.multiCycleBusVec(idx).recvData.dstVec(dstIdx)
+        setOutpModMemWord.io.multiCycleBusRecvDataVec(idx).dstVec(dstIdx)
+      )
+      tempDst := (
+        args.io.multiCycleBusVec(idx).recvData.dstVec(dstIdx)
+      )
+    }
+  }
   val doCheckHazard = (
     Vec.fill(
       //cfg.multiCycleOpInfoMap.size + 1
@@ -4448,14 +4515,14 @@ case class SnowHousePipeStageExecute(
       ).asBits.asUInt.andR
     )
   }
-  if (cfg.irqCfg != None) {
-    when (reEnableIrqsCond) {
-      setOutpModMemWord.nextIe/*(0)*/ := True//0x1
-      rIrqHndlState/*.valid*/ := False
-      if (setOutpModMemWord.io.haveRetIraState) {
-      }
-    }
-  }
+  //if (cfg.irqCfg != None) {
+  //  when (reEnableIrqsCond) {
+  //    setOutpModMemWord.nextIe/*(0)*/ := True//0x1
+  //    rIrqHndlState/*.valid*/ := False
+  //    if (setOutpModMemWord.io.haveRetIraState) {
+  //    }
+  //  }
+  //}
   setOutpModMemWord.io.splitOp.kind.allowOverride
   setOutpModMemWord.io.splitOp.jmpBrOp.allowOverride
   setOutpModMemWord.io.splitOp := (
