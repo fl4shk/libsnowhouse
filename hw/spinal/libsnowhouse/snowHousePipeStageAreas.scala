@@ -3992,29 +3992,31 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
   //}
 //  }
   when (myPsExSetPcCmpEq.rValid) {
-    myPsExSetPcCmpEq.myCmp := (
+    myPsExSetPcCmpEq.myCmp.msb := (
       //myPsExSetPcCmpEq.cmpEqQ
-      (
-        //Cat(myPsExSetPcCmpEq.cmpEq, myPsExSetPcCmpEq.cmpEqQ).asUInt >> 1
-        //myPsExSetPcCmpEq.cmpEq << myPsExSetPcCmpEq.cmpEqQ.getWidth
-        Cat(myPsExSetPcCmpEq.cmpEq).asSInt.resize(
-          myPsExSetPcCmpEq.myCmp.getWidth
-        ).asUInt
-      )
+      //(
+      //  //Cat(myPsExSetPcCmpEq.cmpEq, myPsExSetPcCmpEq.cmpEqQ).asUInt >> 1
+      //  //myPsExSetPcCmpEq.cmpEq << myPsExSetPcCmpEq.cmpEqQ.getWidth
+      //  Cat(myPsExSetPcCmpEq.cmpEq).asSInt.resize(
+      //    myPsExSetPcCmpEq.myCmp.getWidth
+      //  ).asUInt
+      //)
+      myPsExSetPcCmpEq.cmpEq
     )
     when (io.upIsFiring) {
       myPsExSetPcCmpEq.rValid := False
     }
   }
   when (myPsExSetPcCmpNe.rValid) {
-    myPsExSetPcCmpNe.myCmp := (
+    myPsExSetPcCmpNe.myCmp.msb := (
       //~myPsExSetPcCmpNe.cmpEqQ
       //(
       //  Cat(!myPsExSetPcCmpNe.cmpEq, myPsExSetPcCmpNe.cmpEqQ).asUInt >> 1
       //)
-      Cat(!myPsExSetPcCmpNe.cmpEq).asSInt.resize(
-        myPsExSetPcCmpNe.myCmp.getWidth
-      ).asUInt
+      //Cat(!myPsExSetPcCmpNe.cmpEq).asSInt.resize(
+      //  myPsExSetPcCmpNe.myCmp.getWidth
+      //).asUInt
+      !myPsExSetPcCmpNe.cmpEq
     )
     when (io.upIsFiring) {
       myPsExSetPcCmpNe.rValid := False
