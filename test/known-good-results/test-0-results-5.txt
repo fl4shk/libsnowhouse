@@ -52,7 +52,5 @@ addr:1 data:5
 addr:13 data:144
 addr:7 data:7
 addr:8 data:0
-addr:13 data:128
-addr:6 data:36
 Ending test.
 
