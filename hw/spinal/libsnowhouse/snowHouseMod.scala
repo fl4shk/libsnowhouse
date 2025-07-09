@@ -680,7 +680,8 @@ case class SnowHouse
         //}
       }
     ),
-    doModInModFrontFunc=Some(
+    doModInPreMid0FrontFunc=Some(mkPipeStageInstrDecodePost),
+    doModInMid0FrontFunc=Some(
       //(
       //  doModInModFrontParams,
       //  myRegFile1,
@@ -709,17 +710,17 @@ case class SnowHouse
   )
   linkArr += cIf
   cIf.up.valid := True
-  val sIf = StageLink(
-    up={
-      cIf.down
-    },
-    down={
-      val node = Node()
-      node.setName("sIf_down")
-      node
-    }
-  )
-  linkArr += sIf
+  //val sIf = StageLink(
+  //  up={
+  //    cIf.down
+  //  },
+  //  down={
+  //    val node = Node()
+  //    node.setName("sIf_down")
+  //    node
+  //  }
+  //)
+  //linkArr += sIf
   //val s2mIf = S2MLink(
   //  up={
   //    sIf.down
@@ -746,14 +747,27 @@ case class SnowHouse
 
   val cId = CtrlLink(
     up={
-      sIf.down
+      cIf.down
+      //sIf.down
       //s2mIf.down
     },
     down={
       regFile.io.front
+      //val node = Node()
+      //node.setName("cId_down")
+      //node
     }
   )
   linkArr += cId
+  //val sId = StageLink(
+  //  up={
+  //    cId.down
+  //  },
+  //  down={
+  //    regFile.io.front
+  //  }
+  //)
+  //linkArr += sId
   //val pId = Payload(SnowHouseRegFileModType(cfg=cfg))
   val pipeStageId = SnowHousePipeStageInstrDecode(
     SnowHousePipeStageArgs(
@@ -775,8 +789,33 @@ case class SnowHouse
   )
   //--------
   //val pEx = Payload(SnowHouseRegFileModType(cfg=cfg))
+  def mkPipeStageInstrDecodePost(
+    doModInPreMid0FrontParams: PipeMemRmwDoModInPreMid0FrontFuncParams[
+      UInt,
+      Bool,
+      SnowHousePipePayload,
+      PipeMemRmwDualRdTypeDisabled[UInt, Bool],
+    ]
+  ): SnowHousePipeStageInstrDecodePost = (
+    SnowHousePipeStageInstrDecodePost(
+      args=SnowHousePipeStageArgs(
+        cfg=cfg,
+        io=io,
+        link=null,
+        prevPayload=null,
+        currPayload=null,
+        regFile=null,
+      ),
+      psIdHaltIt=psIdHaltIt,
+      psExSetPc=psExSetPc,
+      pcChangeState=pcChangeState,
+      shouldIgnoreInstr=shouldIgnoreInstr,
+      //doDecodeFunc=cfg.doInstrDecodeFunc,
+      doModInPreMid0FrontParams=doModInPreMid0FrontParams,
+    )
+  )
   def mkPipeStageExecute(
-    doModInModFrontParams: PipeMemRmwDoModInModFrontFuncParams[
+    doModInMid0FrontParams: PipeMemRmwDoModInMid0FrontFuncParams[
       UInt,
       Bool,
       SnowHousePipePayload,
@@ -801,7 +840,7 @@ case class SnowHouse
     psMemStallHost=psMemStallHost,
     pcChangeState=pcChangeState,
     shouldIgnoreInstr=shouldIgnoreInstr,
-    doModInModFrontParams=doModInModFrontParams,
+    doModInMid0FrontParams=doModInMid0FrontParams,
   )
   //--------
   //val pipeStageWb = (

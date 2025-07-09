@@ -433,6 +433,7 @@ case class SnowHouseConfig(
   //irqRetIraOp: Int,
   //--------
   doInstrDecodeFunc: (SnowHousePipeStageInstrDecode) => Area,
+  //doInstrDecodeFuncPost: (SnowHousePipeStageInstrDecodePost) => Area,
   //--------
   instrRamKind: Int,
   //--------
@@ -575,6 +576,7 @@ case class SnowHouseConfig(
     optFwdHaveZeroReg=haveZeroReg,
     optIncludeModFrontS2MLink=false,
     optFormal=optFormal,
+    //optIncludePreMid0Front=true,
     numForkJoin=/*2*/1,
   )
   regFileCfg.linkArr = None

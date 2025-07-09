@@ -518,6 +518,173 @@ case class SnowHousePipeStageInstrFetch(
   //)
   //upModExt.regPc
 }
+case class SnowHousePipeStageInstrDecodePost(
+  val args: SnowHousePipeStageArgs,
+  val psIdHaltIt: Bool,
+  val psExSetPc: Stream[SnowHousePsExSetPcPayload],
+  val pcChangeState: Bool/*UInt*/,
+  val shouldIgnoreInstr: Bool,
+  val doModInPreMid0FrontParams: PipeMemRmwDoModInPreMid0FrontFuncParams[
+    UInt,
+    Bool,
+    SnowHousePipePayload,
+    PipeMemRmwDualRdTypeDisabled[UInt, Bool],
+  ]
+) extends Area {
+  def cfg = args.cfg
+  def modIo = args.io
+  def cPreMid0Front = doModInPreMid0FrontParams.cPreMid0Front
+  def outp = doModInPreMid0FrontParams.outp
+  def inp = doModInPreMid0FrontParams.inp
+  outp := (
+    RegNext(
+      next=outp,
+      init=outp.getZero
+    )
+  )
+  outp.allowOverride
+  when (cPreMid0Front.up.isValid) {
+    outp := inp
+  }
+  val rIbusReadyStallState = Reg(Bool(), init=False)
+  //when (!rIbusReadyStallState) {
+  //  //when (io.ibus.fire) {
+  //  //}
+  //  when (
+  //    //!(RegNext(io.ibus.fire) init(False))
+  //    //|| 
+  //    !modIo.ibus.ready//fire
+  //    //|| shouldIgnoreInstr
+  //  ) {
+  //    //cPreMid0Front.haltIt()
+  //    //cId.duplicateIt()
+  //    //cId.throwIt()
+  //  } otherwise {
+  //    //nextSetUpPayloadState(1) := True
+  //    rIbusReadyStallState := True
+  //    //myInstr := (
+  //    //  io.ibus.recvData.instr
+  //    //)
+  //  }
+  //}
+  //when (cPreMid0Front.up.isFiring) {
+  //  rIbusReadyStallState := False
+  //}
+  val shouldFinishJump = (
+    //rSavedExSetPc.fire
+    //&& (
+    //  (
+    //    upPayload.regPc
+    //    //upPayload.regPcMinus1Instr
+    //    //upPayload.regPcPlus1Instr
+    //    === (
+    //      (
+    //        rSavedExSetPc.nextPc
+    //        //- cfg.instrSizeBytes
+    //        //- (cfg.instrMainWidth.toLong / 8.toLong).toLong
+    //      )
+    //    )
+    //  )
+    //)
+
+    //outp.psIfRegPcSetItCnt(0)
+    //Bool()
+    RegNextWhen(
+      next=outp.psIfRegPcSetItCnt(0),
+      cond=cPreMid0Front.up.isFiring,
+      init=outp.psIfRegPcSetItCnt(0).getZero,
+    )
+    //upPayload.psIfRegPcSetItCnt(0)
+    //Bool()
+  )
+  //shouldFinishJump := (
+  //  RegNext(
+  //    next=shouldFinishJump,
+  //    init=shouldFinishJump.getZero,
+  //  )
+  //)
+  //when (
+  //  cPreMid0Front.up.isValid
+  //) {
+  //  shouldFinishJump := (
+  //    outp.psIfRegPcSetItCnt(0)
+  //  )
+  //}
+  //shouldFinishJump := (
+  //  RegNext(
+  //    next=shouldFinishJump,
+  //    init=False,
+  //  )
+  //)
+  //when (up.isValid) {
+  //  when (!rShouldFinishJumpState) {
+  //    shouldFinishJump := upPayload.psIfRegPcSetItCnt(0)
+  //    rShouldFinishJumpState := True
+  //  }
+  //}
+  //when (up.isFiring) {
+  //  rShouldFinishJumpState := False
+  //}
+
+  //shouldFinishJump := upPayload.psIfRegPcSetItCnt(0)
+
+  for (idx <- 0 until outp.regPcSetItCnt.size) {
+    //upPayload.regPcSetItCnt(idx) := upPayload.regPcSetItCnt(0)
+    //upPayload.regPcSetItCnt(idx) := 0x0
+    outp.regPcSetItCnt(idx) := (
+      RegNextWhen(
+        next=outp.regPcSetItCnt(idx),
+        cond=cPreMid0Front.up.isFiring,
+        init=outp.regPcSetItCnt(idx).getZero,
+      )
+      //init(0x0)
+      //RegNext(
+      //  next=outp.regPcSetItCnt(idx),
+      //  init=outp.regPcSetItCnt(idx).getZero,
+      //)
+    )
+    when (cPreMid0Front.up.isFiring) {
+      when (
+        (
+          //rSavedExSetPc.fire
+          //&& (
+          //  (
+          //    upPayload.regPc
+          //    //upPayload.regPcMinus1Instr
+          //    //upPayload.regPcPlus1Instr
+          //    === (
+          //      (
+          //        rSavedExSetPc.nextPc
+          //        - cfg.instrSizeBytes
+          //        //- (cfg.instrMainWidth.toLong / 8.toLong).toLong
+          //      )
+          //    )
+          //  )
+          //)
+          shouldFinishJump
+        )
+        //|| (
+        //  upPayload.psIfRegPcSetItCnt === 0x1
+        //)
+        //upPayload.psExSetPc.fire
+      ) {
+        //rSavedExSetPc.valid := False
+        outp.regPcSetItCnt(idx) := 0x1
+      } otherwise {
+        outp.regPcSetItCnt(idx) := 0x0
+      }
+    }
+  }
+  outp.regPcPlusInstrSize := (
+    outp.regPc //- cfg.instrSizeBytes //+ cfg.instrSizeBytes
+    ////- (cfg.instrMainWidth.toLong / 8.toLong)
+    //upPayload.regPcPlus1Instr
+  )
+  outp.regPcPlusImm := (
+    outp.regPc + outp.imm(2) //- cfg.instrSizeBytes
+    //- (cfg.instrMainWidth.toLong / 8.toLong)
+  )
+}
 case class SnowHousePipeStageInstrDecode(
   val args: SnowHousePipeStageArgs,
   val psIdHaltIt: Bool,
@@ -592,6 +759,10 @@ case class SnowHousePipeStageInstrDecode(
     init(upPayload.getZero)
   )
   upPayload.allowOverride
+
+  when (up.isValid) {
+    upPayload := up(pIf)
+  }
 
   val multiInstrCntWidth = 3
   val nextMultiInstrCnt = UInt(multiInstrCntWidth bits)
@@ -700,12 +871,12 @@ case class SnowHousePipeStageInstrDecode(
     //  True
     //  //down.isReady
     //) {
-      when (
-        !rSetUpPayloadState(0)
-      ) {
-        upPayload := up(pIf)
-        nextSetUpPayloadState(0) := True
-      }
+      //when (
+      //  !rSetUpPayloadState(0)
+      //) {
+      //  upPayload := up(pIf)
+      //  nextSetUpPayloadState(0) := True
+      //}
     //}
   //} otherwise {
   //  cId.duplicateIt()
@@ -713,110 +884,111 @@ case class SnowHousePipeStageInstrDecode(
   //    nextMultiInstrCnt := rMultiInstrCnt - 1
   //  }
   //}
-  val rShouldFinishJumpState = (
-    Reg(Bool(), init=False)
-  )
-  val shouldFinishJump = (
-    //rSavedExSetPc.fire
-    //&& (
-    //  (
-    //    upPayload.regPc
-    //    //upPayload.regPcMinus1Instr
-    //    //upPayload.regPcPlus1Instr
-    //    === (
-    //      (
-    //        rSavedExSetPc.nextPc
-    //        //- cfg.instrSizeBytes
-    //        //- (cfg.instrMainWidth.toLong / 8.toLong).toLong
-    //      )
-    //    )
-    //  )
-    //)
-
-    RegNextWhen(
-      next=upPayload.psIfRegPcSetItCnt(0),
-      cond=up.isFiring,
-      init=upPayload.psIfRegPcSetItCnt(0).getZero,
-    )
-    //upPayload.psIfRegPcSetItCnt(0)
-    //Bool()
-  )
-  //shouldFinishJump := (
-  //  RegNext(
-  //    next=shouldFinishJump,
-  //    init=False,
-  //  )
+  //val rShouldFinishJumpState = (
+  //  Reg(Bool(), init=False)
   //)
-  //when (up.isValid) {
-  //  when (!rShouldFinishJumpState) {
-  //    shouldFinishJump := upPayload.psIfRegPcSetItCnt(0)
-  //    rShouldFinishJumpState := True
+  //val shouldFinishJump = (
+  //  //rSavedExSetPc.fire
+  //  //&& (
+  //  //  (
+  //  //    upPayload.regPc
+  //  //    //upPayload.regPcMinus1Instr
+  //  //    //upPayload.regPcPlus1Instr
+  //  //    === (
+  //  //      (
+  //  //        rSavedExSetPc.nextPc
+  //  //        //- cfg.instrSizeBytes
+  //  //        //- (cfg.instrMainWidth.toLong / 8.toLong).toLong
+  //  //      )
+  //  //    )
+  //  //  )
+  //  //)
+
+  //  //upPayload.psIfRegPcSetItCnt(0)
+  //  RegNextWhen(
+  //    next=upPayload.psIfRegPcSetItCnt(0),
+  //    cond=up.isFiring,
+  //    init=upPayload.psIfRegPcSetItCnt(0).getZero,
+  //  )
+  //  //upPayload.psIfRegPcSetItCnt(0)
+  //  //Bool()
+  //)
+  ////shouldFinishJump := (
+  ////  RegNext(
+  ////    next=shouldFinishJump,
+  ////    init=False,
+  ////  )
+  ////)
+  ////when (up.isValid) {
+  ////  when (!rShouldFinishJumpState) {
+  ////    shouldFinishJump := upPayload.psIfRegPcSetItCnt(0)
+  ////    rShouldFinishJumpState := True
+  ////  }
+  ////}
+  ////when (up.isFiring) {
+  ////  rShouldFinishJumpState := False
+  ////}
+
+  ////shouldFinishJump := upPayload.psIfRegPcSetItCnt(0)
+
+  //for (idx <- 0 until upPayload.regPcSetItCnt.size) {
+  //  //upPayload.regPcSetItCnt(idx) := upPayload.regPcSetItCnt(0)
+  //  //upPayload.regPcSetItCnt(idx) := 0x0
+  //  upPayload.regPcSetItCnt(idx) := (
+  //    RegNextWhen(
+  //      next=upPayload.regPcSetItCnt(idx),
+  //      cond=up.isFiring,
+  //    )
+  //    init(0x0)
+  //  )
+  //  when (up.isFiring) {
+  //    when (
+  //      (
+  //        //rSavedExSetPc.fire
+  //        //&& (
+  //        //  (
+  //        //    upPayload.regPc
+  //        //    //upPayload.regPcMinus1Instr
+  //        //    //upPayload.regPcPlus1Instr
+  //        //    === (
+  //        //      (
+  //        //        rSavedExSetPc.nextPc
+  //        //        - cfg.instrSizeBytes
+  //        //        //- (cfg.instrMainWidth.toLong / 8.toLong).toLong
+  //        //      )
+  //        //    )
+  //        //  )
+  //        //)
+  //        shouldFinishJump
+  //      )
+  //      //|| (
+  //      //  upPayload.psIfRegPcSetItCnt === 0x1
+  //      //)
+  //      //upPayload.psExSetPc.fire
+  //    ) {
+  //      //rSavedExSetPc.valid := False
+  //      upPayload.regPcSetItCnt(idx) := 0x1
+  //    } otherwise {
+  //      upPayload.regPcSetItCnt(idx) := 0x0
+  //    }
   //  }
   //}
-  //when (up.isFiring) {
-  //  rShouldFinishJumpState := False
-  //}
-
-  //shouldFinishJump := upPayload.psIfRegPcSetItCnt(0)
-
-  for (idx <- 0 until upPayload.regPcSetItCnt.size) {
-    //upPayload.regPcSetItCnt(idx) := upPayload.regPcSetItCnt(0)
-    //upPayload.regPcSetItCnt(idx) := 0x0
-    upPayload.regPcSetItCnt(idx) := (
-      RegNextWhen(
-        next=upPayload.regPcSetItCnt(idx),
-        cond=up.isFiring,
-      )
-      init(0x0)
-    )
-    when (up.isFiring) {
-      when (
-        (
-          //rSavedExSetPc.fire
-          //&& (
-          //  (
-          //    upPayload.regPc
-          //    //upPayload.regPcMinus1Instr
-          //    //upPayload.regPcPlus1Instr
-          //    === (
-          //      (
-          //        rSavedExSetPc.nextPc
-          //        - cfg.instrSizeBytes
-          //        //- (cfg.instrMainWidth.toLong / 8.toLong).toLong
-          //      )
-          //    )
-          //  )
-          //)
-          shouldFinishJump
-        )
-        //|| (
-        //  upPayload.psIfRegPcSetItCnt === 0x1
-        //)
-        //upPayload.psExSetPc.fire
-      ) {
-        //rSavedExSetPc.valid := False
-        upPayload.regPcSetItCnt(idx) := 0x1
-      } otherwise {
-        upPayload.regPcSetItCnt(idx) := 0x0
-      }
-    }
-  }
   when (up.isFiring) {
-    nextSetUpPayloadState(0) := False
+    //nextSetUpPayloadState(0) := False
     nextSetUpPayloadState(1) := False
   }
   //when (up.isFiring) {
   //  upPayload.regPcSetItCnt.foreach(_ := upPayload.psIfRegPcSetItCnt)
   //}
-  upPayload.regPcPlusInstrSize := (
-    upPayload.regPc //- cfg.instrSizeBytes //+ cfg.instrSizeBytes
-    ////- (cfg.instrMainWidth.toLong / 8.toLong)
-    //upPayload.regPcPlus1Instr
-  )
-  upPayload.regPcPlusImm := (
-    upPayload.regPc + upPayload.imm(2) //+ cfg.instrSizeBytes
-    //- (cfg.instrMainWidth.toLong / 8.toLong)
-  )
+  //upPayload.regPcPlusInstrSize := (
+  //  upPayload.regPc - cfg.instrSizeBytes //+ cfg.instrSizeBytes
+  //  ////- (cfg.instrMainWidth.toLong / 8.toLong)
+  //  //upPayload.regPcPlus1Instr
+  //)
+  //upPayload.regPcPlusImm := (
+  //  upPayload.regPc + upPayload.imm(2) - cfg.instrSizeBytes
+  //  //- (cfg.instrMainWidth.toLong / 8.toLong)
+  //)
   val upGprIdxToMemAddrIdxMap = upPayload.gprIdxToMemAddrIdxMap
   for ((gprIdx, zdx) <- upPayload.gprIdxVec.view.zipWithIndex) {
     upPayload.myExt(0).memAddr(zdx) := gprIdx
@@ -3869,6 +4041,8 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
         ),
         init=False
       )
+      //io.regPcSetItCnt(idx)(0)
+      //&& io.upIsValid
       ////&& RegNext(
       ////  next=io.shouldIgnoreInstr(idx),
       ////  init=False
@@ -4100,6 +4274,12 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
       myPsExSetPcCmpNe.rValid := False
     }
   }
+
+  //for (idx <- 0 until io.regPcSetItCnt.size) {
+  //  when (io.regPcSetItCnt(idx)(0)) {
+  //    io.shouldIgnoreInstr(idx) := False
+  //  }
+  //}
 }
 
 case class SnowHousePipeStageExecute(
@@ -4109,7 +4289,7 @@ case class SnowHousePipeStageExecute(
     BusHostPayload,
     BusDevPayload,
   ],
-  doModInModFrontParams: PipeMemRmwDoModInModFrontFuncParams[
+  doModInMid0FrontParams: PipeMemRmwDoModInMid0FrontFuncParams[
     UInt,
     Bool,
     SnowHousePipePayload,
@@ -4121,19 +4301,19 @@ case class SnowHousePipeStageExecute(
   def cfg = args.cfg
   def io = args.io
   def nextPrevTxnWasHazard = (
-    doModInModFrontParams.nextPrevTxnWasHazardVec(0)
+    doModInMid0FrontParams.nextPrevTxnWasHazardVec(0)
   )
   def rPrevTxnWasHazard = (
-    doModInModFrontParams.rPrevTxnWasHazardVec(0)
+    doModInMid0FrontParams.rPrevTxnWasHazardVec(0)
   )
   def rPrevTxnWasHazardAny = (
-    doModInModFrontParams.rPrevTxnWasHazardAny
+    doModInMid0FrontParams.rPrevTxnWasHazardAny
   )
-  def outp = doModInModFrontParams.outp//Vec(ydx)
-  def inp = doModInModFrontParams.inp//Vec(ydx)
-  def cMid0Front = doModInModFrontParams.cMid0Front
+  def outp = doModInMid0FrontParams.outp//Vec(ydx)
+  def inp = doModInMid0FrontParams.inp//Vec(ydx)
+  def cMid0Front = doModInMid0FrontParams.cMid0Front
   def tempModFrontPayload = (
-    doModInModFrontParams.tempModFrontPayload//Vec(ydxr
+    doModInMid0FrontParams.tempModFrontPayload//Vec(ydxr
   )
   if (cfg.optFormal) {
     if ((1 << outp.op.getWidth) != cfg.opInfoMap.size) {
@@ -4141,7 +4321,7 @@ case class SnowHousePipeStageExecute(
       assume(outp.op < cfg.opInfoMap.size)
     }
   }
-  def regFileFwd = doModInModFrontParams.myFwd //args.regFile
+  def regFileFwd = doModInMid0FrontParams.myFwd //args.regFile
   def mkLcvStallHost[
     HostDataT <: Data,
     DevDataT <: Data,
@@ -4210,7 +4390,7 @@ case class SnowHousePipeStageExecute(
     ydx: Int,
     modIdx: Int,
   ) = (
-    doModInModFrontParams.getMyRdMemWordFunc(ydx, modIdx)
+    doModInMid0FrontParams.getMyRdMemWordFunc(ydx, modIdx)
   )
   when (cMid0Front.up.isValid) {
     outp := inp
@@ -4666,16 +4846,41 @@ case class SnowHousePipeStageExecute(
     //  )
     //)
     //when (
+    //  cMid0Front.up.isValid
+    //  //&& cMid0Front.down.isReady
+    //) {
+      tempRdMemWord := (
+        myRdMemWord(ydx=ydx, modIdx=zdx)
+      )
+    //}
+    //when (
+    //  cMid0Front.up.isValid
+    //  && cMid0Front.down.isReady
+    //) {
+    //  when (!rRdMemWordState) {
+    //    tempRdMemWord := (
+    //      myRdMemWord(ydx=ydx, modIdx=zdx)
+    //    )
+    //    rRdMemWordState := True
+    //  }
+    //}
+    //when (
+    //  cMid0Front.up.isFiring
+    //) {
+    //  rRdMemWordState := False
+    //}
+
+    //when (
     //  outp.gprIsZeroVec(zdx).last
     //) {
     //  tempRdMemWord := 0x0
-    //} else
-    //when (
+    //} elsewhen (
     //  //tempExt.memAddr(zdx) =/= 0x0
     //  regFileFwd.myFwdMmwValidUp(ydx)(zdx)
     //) {
-      tempRdMemWord := myRdMemWord(ydx=ydx, modIdx=zdx)
+    //  tempRdMemWord := myRdMemWord(ydx=ydx, modIdx=zdx)
     //}
+
     //when (
     //  cMid0Front.up.isValid
     //  //////&& cMid0Front.down.isValid
