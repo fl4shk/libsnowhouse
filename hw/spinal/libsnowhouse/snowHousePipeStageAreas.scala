@@ -564,7 +564,7 @@ case class SnowHousePipeStageInstrDecodePost(
     outp := inp
   }
   val rIbusReadyStallState = Reg(Bool(), init=False)
-  when (RegNext(modIo.ibus.nextValid, init=False)) {
+  //when (RegNext(modIo.ibus.nextValid, init=False)) {
     when (!rIbusReadyStallState) {
       //when (io.ibus.fire) {
       //}
@@ -587,7 +587,7 @@ case class SnowHousePipeStageInstrDecodePost(
         //)
       }
     }
-  }
+  //}
   when (cPreMid0Front.up.isFiring) {
     rIbusReadyStallState := False
   }
@@ -803,10 +803,10 @@ case class SnowHousePipeStageInstrDecode(
       init=myInstr.getZero
     )
   )
-  when (
-    //up.isValid
-    RegNext(io.ibus.nextValid, init=False)
-  ) {
+  //when (
+  //  //up.isValid
+  //  RegNext(io.ibus.nextValid, init=False)
+  //) {
     //when (
     //  RegNext(next=io.ibus.nextValid, init=False)
     //) {
@@ -819,7 +819,7 @@ case class SnowHousePipeStageInstrDecode(
           !io.ibus.ready//fire
           //|| shouldIgnoreInstr
         ) {
-          cId.haltIt()
+          //cId.haltIt()
           //cId.down.valid := False
           //cId.duplicateIt()
           //cId.terminateIt()
@@ -854,7 +854,7 @@ case class SnowHousePipeStageInstrDecode(
         //}
       }
     //}
-  }
+  //}
   //val tempMyInstrCond = (
   //  (/*RegNext*/(io.ibus.ready) /*init(False)*/)
   //  && !rSetUpPayloadState(1)
