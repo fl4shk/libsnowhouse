@@ -819,7 +819,7 @@ case class SnowHousePipeStageInstrDecode(
           !io.ibus.ready//fire
           //|| shouldIgnoreInstr
         ) {
-          //cId.haltIt()
+          cId.haltIt()
           //cId.down.valid := False
           //cId.duplicateIt()
           //cId.terminateIt()
