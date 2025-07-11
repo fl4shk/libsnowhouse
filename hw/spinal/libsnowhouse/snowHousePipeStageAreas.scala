@@ -252,9 +252,9 @@ case class SnowHousePipeStageInstrFetch(
   //}
   stickyExSetPc(0).nextPc.allowOverride
   stickyExSetPc(0).nextPc := (
-    RegNext(
-      next=psExSetPc.nextPc,
-      init=psExSetPc.nextPc.getZero,
+    /*RegNext*/(
+      /*next=*/psExSetPc.nextPc//,
+      //init=psExSetPc.nextPc.getZero,
     )
     //- cfg.instrSizeBytes
   )
@@ -3676,6 +3676,7 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
   //  //  )
   //  //}
   //}
+  //io.psExSetPc.nextPc.setAsReg() init(io.psExSetPc.nextPc.getZero)
   def doHandleSetNextPc(): Unit = {
     switch (io.splitOp.exSetNextPcKind) {
       //is (SnowHousePsExSetNextPcKind.PcPlusImm) {
@@ -5121,7 +5122,10 @@ case class SnowHousePipeStageExecute(
 
   setOutpModMemWord.io.psExSetPc.ready := psExSetPc.ready
 
-  psExSetPc.nextPc := setOutpModMemWord.io.psExSetPc.nextPc
+  psExSetPc.nextPc := RegNext(
+    next=setOutpModMemWord.io.psExSetPc.nextPc,
+    init=setOutpModMemWord.io.psExSetPc.nextPc.getZero,
+  )
   io.dbus.allowOverride
   io.dbus.sendData := (
     RegNext(
