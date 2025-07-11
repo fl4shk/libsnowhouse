@@ -5054,11 +5054,12 @@ case class SnowHousePipeStageExecute(
   //val condForAssertSetPcValid = (
   //  setOutpModMemWord.io.opIsJmp
   //)
-  //outp.instrCnt.shouldIgnoreInstr.foreach(current => {
-  //  current := (
-  //    setOutpModMemWord.io.shouldIgnoreInstr(2)
-  //  )
-  //})
+  outp.instrCnt.shouldIgnoreInstr.foreach(current => {
+    current := (
+      //setOutpModMemWord.io.shouldIgnoreInstr(2)
+      setOutpModMemWord.io.shouldIgnoreInstr.last
+    )
+  })
   shouldIgnoreInstr := setOutpModMemWord.io.shouldIgnoreInstr.last
   pcChangeState.assignFromBits(
     setOutpModMemWord.io.pcChangeState.asBits
@@ -5534,15 +5535,15 @@ case class SnowHousePipeStageExecute(
   //}
   outp.myExt.foreach(item => {
     for (zdx <- 0 until item.fwdCanDoIt.size) {
-      if (zdx < setOutpModMemWord.io.shouldIgnoreInstr.size) {
-        item.fwdCanDoIt(zdx) := (
-          !setOutpModMemWord.io.shouldIgnoreInstr(zdx)
-        )
-      } else {
+      //if (zdx < setOutpModMemWord.io.shouldIgnoreInstr.size) {
+      //  item.fwdCanDoIt(zdx) := (
+      //    !setOutpModMemWord.io.shouldIgnoreInstr(zdx)
+      //  )
+      //} else {
         item.fwdCanDoIt(zdx) := (
           !setOutpModMemWord.io.shouldIgnoreInstr.last
         )
-      }
+      //}
     }
   })
 }
@@ -6219,6 +6220,24 @@ case class SnowHousePipeStageMem(
   //  case None => {
   //  }
   //}
+  //midModPayload(extIdxUp).myExt.foreach(item => {
+  //  for (zdx <- 0 until item.fwdCanDoIt.size) {
+  //    if (
+  //      //zdx < setOutpModMemWord.io.shouldIgnoreInstr.size
+  //      zdx < midModPayload(extIdxUp).instrCnt.shouldIgnoreInstr.size
+  //    ) {
+  //      item.fwdCanDoIt(zdx) := (
+  //        //!setOutpModMemWord.io.shouldIgnoreInstr(zdx)
+  //        !midModPayload(extIdxUp).instrCnt.shouldIgnoreInstr(zdx)
+  //      )
+  //    } else {
+  //      item.fwdCanDoIt(zdx) := (
+  //        //!setOutpModMemWord.io.shouldIgnoreInstr.last
+  //        !midModPayload(extIdxUp).instrCnt.shouldIgnoreInstr.last
+  //      )
+  //    }
+  //  }
+  //})
 
   def setMidModStages(): Unit = {
     regFile.io.midModStages(0) := midModPayload
