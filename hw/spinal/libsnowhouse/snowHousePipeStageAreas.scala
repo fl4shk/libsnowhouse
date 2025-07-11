@@ -565,32 +565,32 @@ case class SnowHousePipeStageInstrDecodePost(
   }
   val rIbusReadyStallState = Reg(Bool(), init=False)
   //when (RegNext(modIo.ibus.nextValid, init=False)) {
-    when (!rIbusReadyStallState) {
-      //when (io.ibus.fire) {
-      //}
-      when (
-        //!(RegNext(io.ibus.fire) init(False))
-        //|| 
+  //  when (!rIbusReadyStallState) {
+  //    //when (io.ibus.fire) {
+  //    //}
+  //    when (
+  //      //!(RegNext(io.ibus.fire) init(False))
+  //      //|| 
 
-        !modIo.ibus.ready//fire
-        //|| shouldIgnoreInstr
-      ) {
-        cPreMid0Front.haltIt()
-        //cPreMid0Front.duplicateIt()
-        //cId.duplicateIt()
-        //cId.throwIt()
-      } otherwise {
-        //nextSetUpPayloadState(1) := True
-        rIbusReadyStallState := True
-        //myInstr := (
-        //  io.ibus.recvData.instr
-        //)
-      }
-    }
+  //      !modIo.ibus.ready//fire
+  //      //|| shouldIgnoreInstr
+  //    ) {
+  //      //cPreMid0Front.haltIt()
+  //      //cPreMid0Front.duplicateIt()
+  //      //cId.duplicateIt()
+  //      //cId.throwIt()
+  //    } otherwise {
+  //      //nextSetUpPayloadState(1) := True
+  //      rIbusReadyStallState := True
+  //      //myInstr := (
+  //      //  io.ibus.recvData.instr
+  //      //)
+  //    }
+  //  }
+  ////}
+  //when (cPreMid0Front.up.isFiring) {
+  //  rIbusReadyStallState := False
   //}
-  when (cPreMid0Front.up.isFiring) {
-    rIbusReadyStallState := False
-  }
   val shouldFinishJump = (
     //rSavedExSetPc.fire
     //&& (
