@@ -1860,15 +1860,16 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
   )
 
   //io.psExSetPc := io.psExSetPc.getZero
-  io.psExSetPc.payload := io.psExSetPc.payload.getZero
+  //io.psExSetPc.payload := io.psExSetPc.payload.getZero
   io.psExSetPc.nextPc.allowOverride
-  io.psExSetPc.nextPc := (
-    RegNext(
-      next=io.psExSetPc.nextPc,
-      init=io.psExSetPc.nextPc.getZero,
-    )
-    //io.regPcPlusImm 
-  )
+  io.psExSetPc.nextPc.setAsReg() init(0x0)
+  //io.psExSetPc.nextPc := (
+  //  RegNext(
+  //    next=io.psExSetPc.nextPc,
+  //    init=io.psExSetPc.nextPc.getZero,
+  //  )
+  //  //io.regPcPlusImm 
+  //)
   io.dbusHostPayload := (
     RegNext(
       next=io.dbusHostPayload,
@@ -3682,13 +3683,13 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
       //is (SnowHousePsExSetNextPcKind.PcPlusImm) {
       //}
       is (SnowHousePsExSetNextPcKind.Dont) {
-        io.psExSetPc.nextPc := (
-          //io.regPcPlusImm 
-          RegNext(
-            next=io.psExSetPc.nextPc,
-            init=io.psExSetPc.nextPc.getZero,
-          )
-        )
+        //io.psExSetPc.nextPc := (
+        //  //io.regPcPlusImm 
+        //  RegNext(
+        //    next=io.psExSetPc.nextPc,
+        //    init=io.psExSetPc.nextPc.getZero,
+        //  )
+        //)
       }
       is (SnowHousePsExSetNextPcKind.PcPlusImm) {
         io.psExSetPc.nextPc := (
@@ -5122,9 +5123,9 @@ case class SnowHousePipeStageExecute(
 
   setOutpModMemWord.io.psExSetPc.ready := psExSetPc.ready
 
-  psExSetPc.nextPc := RegNext(
-    next=setOutpModMemWord.io.psExSetPc.nextPc,
-    init=setOutpModMemWord.io.psExSetPc.nextPc.getZero,
+  psExSetPc.nextPc := /*RegNext*/(
+    /*next=*/setOutpModMemWord.io.psExSetPc.nextPc//,
+    //init=setOutpModMemWord.io.psExSetPc.nextPc.getZero,
   )
   io.dbus.allowOverride
   io.dbus.sendData := (
