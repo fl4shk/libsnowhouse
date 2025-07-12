@@ -432,7 +432,12 @@ case class SnowHouseConfig(
   irqJmpOp: Int,
   //irqRetIraOp: Int,
   //--------
-  doInstrDecodeFunc: (SnowHousePipeStageInstrDecode) => Area,
+  //doInstrDecodeFunc: (SnowHousePipeStageInstrDecode, Boolean) => Area,
+  // TODO: support both separate IF/ID stages and this post stuff
+  doInstrDecodeFuncNonPost: //Option[
+    (SnowHousePipeStageInstrDecode) => Area
+  /*]*/, 
+  doInstrDecodeFuncPost: (SnowHousePipeStageInstrDecode) => Area,
   //doInstrDecodeFuncPost: (SnowHousePipeStageInstrDecodePost) => Area,
   //--------
   instrRamKind: Int,
@@ -555,6 +560,7 @@ case class SnowHouseConfig(
     modRdPortCnt=regFileModRdPortCnt,
     modStageCnt=regFileModStageCnt,
     pipeName=regFilePipeName,
+    optIncludePreMid0Front=true,
     //linkArr=linkArr
     optDualRd=(
       false

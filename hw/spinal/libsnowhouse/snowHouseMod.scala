@@ -785,7 +785,10 @@ case class SnowHouse
     psExSetPc=psExSetPc,
     pcChangeState=pcChangeState,
     shouldIgnoreInstr=shouldIgnoreInstr,
-    doDecodeFunc=cfg.doInstrDecodeFunc,
+    doDecodeFunc=cfg.doInstrDecodeFuncNonPost,
+    //isPost=false,
+    doModInPreMid0FrontParams=null,
+    isPost=false,
   )
   //--------
   //val pEx = Payload(SnowHouseRegFileModType(cfg=cfg))
@@ -796,8 +799,8 @@ case class SnowHouse
       SnowHousePipePayload,
       PipeMemRmwDualRdTypeDisabled[UInt, Bool],
     ]
-  ): SnowHousePipeStageInstrDecodePost = (
-    SnowHousePipeStageInstrDecodePost(
+  ): SnowHousePipeStageInstrDecode = (
+    SnowHousePipeStageInstrDecode(
       args=SnowHousePipeStageArgs(
         cfg=cfg,
         io=io,
@@ -810,8 +813,9 @@ case class SnowHouse
       psExSetPc=psExSetPc,
       pcChangeState=pcChangeState,
       shouldIgnoreInstr=shouldIgnoreInstr,
-      //doDecodeFunc=cfg.doInstrDecodeFunc,
+      doDecodeFunc=cfg.doInstrDecodeFuncPost,
       doModInPreMid0FrontParams=doModInPreMid0FrontParams,
+      isPost=true,
     )
   )
   def mkPipeStageExecute(
