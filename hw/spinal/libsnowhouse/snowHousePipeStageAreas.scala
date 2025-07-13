@@ -490,7 +490,7 @@ case class SnowHousePipeStageInstrFetch(
           rTakeJumpAddr.payload := (
             //nextRegPc.asUInt
             //io.ibus.sendData.addr
-            stickyExSetPc(0).nextPc //+ (1 * cfg.instrSizeBytes)
+            stickyExSetPc(0).nextPc - (1 * cfg.instrSizeBytes)
           )
           val temp = (
             //psExSetPc.nextPc - (3 * (cfg.instrSizeBytes))
@@ -613,7 +613,8 @@ case class SnowHousePipeStageInstrFetch(
     when (rTakeJumpAddr.fire) {
       when (
         //upModExt.regPc === 
-        nextRegPc.asUInt === rTakeJumpAddr.payload
+        //nextRegPc.asUInt === rTakeJumpAddr.payload
+        rPrevRegPc.asUInt === rTakeJumpAddr.payload
       ) {
         rTakeJumpAddr.valid := False
         myRegPcSetItCnt := 0x1
