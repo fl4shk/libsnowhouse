@@ -4979,23 +4979,23 @@ case class SnowHousePipeStageExecute(
     //when (
     //  cMid0Front.down.isReady
     //)
-    tempRdMemWord := (
-      RegNext(
-        next=tempRdMemWord,
-        init=tempRdMemWord.getZero,
-      )
-    )
+    //tempRdMemWord := (
+    //  RegNext(
+    //    next=tempRdMemWord,
+    //    init=tempRdMemWord.getZero,
+    //  )
+    //)
+    ////when (
+    ////  outp.gprIsZeroVec(zdx).last
+    ////) {
+    ////  tempRdMemWord := 0x0
+    ////} else
     //when (
-    //  outp.gprIsZeroVec(zdx).last
+    //  //tempExt.memAddr(zdx) =/= 0x0
+    //  regFileFwd.myFwdMmwValidUp(ydx)(zdx)
     //) {
-    //  tempRdMemWord := 0x0
-    //} else
-    when (
-      //tempExt.memAddr(zdx) =/= 0x0
-      regFileFwd.myFwdMmwValidUp(ydx)(zdx)
-    ) {
       tempRdMemWord := myRdMemWord(ydx=ydx, modIdx=zdx)
-    }
+    //}
     //when (
     //  cMid0Front.up.isValid
     //  //////&& cMid0Front.down.isValid
