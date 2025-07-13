@@ -102,16 +102,34 @@ case class SnowHouseInstrDataDualRam(
 
       val rIbusReadyCnt = Reg(UInt(8 bits)) init(0)
       val rIbusReadyState = Reg(Bool()) init(False)
+
+      //if (!fastIbusReady) {
+      //  
+      //}
+      val nextReady = Bool()
       if (fastIbusReady) {
-        io.ibus.ready := io.ibus.rValid
+        nextReady := RegNext(
+          next=nextReady,
+          init=nextReady.getZero,
+        )
       } else {
         io.ibus.ready.setAsReg() init(False)
-        io.ibus.ready := False
+        //nextReady := io.ibus.ready
+      }
+      //io.ibus.ready.allowOverride
+
+      if (fastIbusReady) {
+        io.ibus.ready := io.ibus.rValid
+        //nextReady :=
+      } else {
+        //io.ibus.ready := False
+        io.ibus.ready := nextReady
+        nextReady := False
         //rReadyPipe.head := False
         //io.ibus.ready := rReadyPipe1
         //rReadyPipe1 := False
         //io.ibus.recvData.instr.setAsReg() init(0)
-        when (/*RegNext*/(io.ibus.nextValid)) {
+        when (/*RegNext*/(/*next=*/io.ibus.nextValid/*, init=False*/)) {
           when (
             rIbusReadyCnt > 0
           ) {
@@ -129,15 +147,64 @@ case class SnowHouseInstrDataDualRam(
             }
           }
           when ((rIbusReadyCnt - 1).msb) {
-            io.ibus.ready := True
+            //io.ibus.ready := True
+            nextReady := True
           }
         }
       }
-      instrRam.io.rdEn := /*RegNext*/(io.ibus.nextValid)
-      instrRam.io.rdAddr := (
-        /*RegNext*/(io.ibus.sendData.addr >> 2).resized
+      instrRam.io.rdEn := (
+        //RegNext(
+        //  next=io.ibus.nextValid,
+        //  init=io.ibus.nextValid.getZero,
+        //)
+        /*RegNext*/(io.ibus.rValid/*, init=False*/)
+        && nextReady
+        //&& io.ibus.ready
       )
-      io.ibus.recvData.instr := /*RegNext*/(instrRam.io.rdData.asUInt)
+      instrRam.io.rdAddr := (
+        (
+          /*RegNext*/(io.ibus.sendData.addr >> 2)
+          //init(0x0)
+        )
+        .resized
+      )
+      //io.ibus.recvData.instr := (
+      //  RegNext(
+      //    next=io.ibus.recvData.instr,
+      //    init=io.ibus.recvData.instr.getZero,
+      //  )
+      //)
+      val tempInstr = (
+        UInt(instrRam.io.rdData.getWidth bits)
+      )
+      tempInstr := (
+        RegNext(
+          next=tempInstr,
+          init=tempInstr.getZero,
+        )
+      )
+      when (
+        ///*RegNext*/(io.ibus.fire/*, init=False*/)
+        RegNext(
+          next=io.ibus.rValid,
+          init=False,
+        ) && RegNext(
+          next=nextReady,
+          init=False,
+        )
+      ) {
+        tempInstr := (
+          RegNext(
+            /*next=*/instrRam.io.rdData.asUInt//,
+            //init=instrRam.io.rdData.asUInt.getZero,
+          )
+        )
+      }
+      io.ibus.recvData.instr := (
+        ///*RegNext*/(instrRam.io.rdData.asUInt)
+        /*RegNext*/(tempInstr)
+        //instrRam.io.rdData.asUInt
+      )
       //--------
       //if (fastIbusReady) {
       //  //instrRam.io.rdEn := io.ibus.nextValid
@@ -514,7 +581,7 @@ case class SnowHouseIo(
     out(Bool())
   )
   // instruction bus
-  val ibus = new LcvStallIo[BusHostPayload, BusDevPayload ](
+  val ibus = new LcvStallIo[BusHostPayload, BusDevPayload](
     sendPayloadType=Some(BusHostPayload(cfg=cfg, isIbus=true)),
     recvPayloadType=Some(BusDevPayload(cfg=cfg, isIbus=true)),
   )
@@ -680,14 +747,14 @@ case class SnowHouse
         //}
       }
     ),
-    doModInModFrontFunc=Some(
+    doModInMid0FrontFunc=Some(
       //(
-      //  doModInModFrontParams,
+      //  doModInMid0FrontParams,
       //  myRegFile1,
       //) => 
       mkPipeStageExecute
       //(
-      //  doModInModFrontParams=doModInModFrontParams,
+      //  doModInMid0FrontParams=doModInMid0FrontParams,
       //  myRegFile=myRegFile1,
       //)
     )
@@ -776,7 +843,7 @@ case class SnowHouse
   //--------
   //val pEx = Payload(SnowHouseRegFileModType(cfg=cfg))
   def mkPipeStageExecute(
-    doModInModFrontParams: PipeMemRmwDoModInModFrontFuncParams[
+    doModInMid0FrontParams: PipeMemRmwDoModInMid0FrontFuncParams[
       UInt,
       Bool,
       SnowHousePipePayload,
@@ -801,7 +868,7 @@ case class SnowHouse
     psMemStallHost=psMemStallHost,
     pcChangeState=pcChangeState,
     shouldIgnoreInstr=shouldIgnoreInstr,
-    doModInModFrontParams=doModInModFrontParams,
+    doModInMid0FrontParams=doModInMid0FrontParams,
   )
   //--------
   //val pipeStageWb = (

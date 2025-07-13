@@ -554,6 +554,7 @@ case class SnowHouseConfig(
     modRdPortCnt=regFileModRdPortCnt,
     modStageCnt=regFileModStageCnt,
     pipeName=regFilePipeName,
+    optIncludePreMid0Front=false,
     //linkArr=linkArr
     optDualRd=(
       false
@@ -1005,7 +1006,7 @@ case class SnowHousePipePayload(
   ) generate (
     Bool()
   )
-  val encInstr = UInt(cfg.instrMainWidth bits)
+  val encInstr = Flow(UInt(cfg.instrMainWidth bits))
   val inpDecodeExt = (
     Vec.fill(2)(
       SnowHouseDecodeExt(cfg=cfg)
@@ -1100,7 +1101,7 @@ case class SnowHousePipePayload(
   //psExSetOutpModMemWordIo.simPublic()
   val regPc = UInt(cfg.mainWidth bits)//.simPublic()
   val regPcPlus1Instr = UInt(cfg.mainWidth bits)
-  val psIfRegPcSetItCnt = UInt(1 bits)
+  val psIfRegPcSetItCnt = UInt(2 bits)
   val regPcSetItCnt = Vec.fill(cfg.lowerMyFanoutRegPcSetItCnt)(
     UInt(
       //cfg.instrCntWidth bits

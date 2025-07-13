@@ -192,6 +192,7 @@ case class BusDevPayload(
   isIbus: Boolean,
 ) extends Bundle {
   val instr = (isIbus) generate (UInt(cfg.instrMainWidth bits))
+  //val addr = (isIbus) generate (UInt(cfg.mainWidth bits))
   val data = (!isIbus) generate (UInt(cfg.mainWidth bits))
 }
 //--------

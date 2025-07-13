@@ -403,7 +403,7 @@ object SnowHouseCpuPipeStageInstrDecode {
     // defined in this function.
     //--------
     import SnowHouseCpuOp._
-    def upPayload = psId.upPayload
+    def upPayload = psId.upPayload(1)
     def io = psId.io
     def cfg = psId.cfg
     def cId = psId.cId
@@ -1466,7 +1466,8 @@ object SnowHouseCpuPipeStageInstrDecode {
         )
         when (
           //!psId.rSavedExSetPc.fire
-          !psId.upPayload.psIfRegPcSetItCnt(0)
+          //!psId.upPayload.psIfRegPcSetItCnt(0)
+          !upPayload.psIfRegPcSetItCnt(0)
         ) {
           instrIsPre := True
         }
@@ -3588,15 +3589,15 @@ object SnowHouseCpuWithDualRamSim extends App {
     ////2, //2,
     ////3, //3,
     //4, //4,
-    5, 5,
+    //5, 5,
     6, 6,
     7, 7
   )
   val instrRamKindArr = Array[Int](
     0,
     1,
-    2,
-    5,
+    //2,
+    //5,
   )
   for (testIdx <- 0 to 7) {
     programStrArr += (
