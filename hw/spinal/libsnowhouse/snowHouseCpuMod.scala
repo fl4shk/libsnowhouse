@@ -395,6 +395,219 @@ case class SnowHouseCpuEncInstr(
   val op = UInt(SnowHouseCpuInstrEnc.opWidth bits)
 }
 object SnowHouseCpuPipeStageInstrDecode {
+  def decodeBranch(
+    someEncInstr: UInt,
+    upIsFiring: Bool,
+  ) = {
+    import SnowHouseCpuOp._
+    val encInstr = SnowHouseCpuEncInstr()
+    encInstr.assignFromBits(someEncInstr.asBits)
+
+    val ret = Flow(SnowHouseBranchPredictorKind.FwdNotTknBakTknEnum())
+    ret.payload := (
+      SnowHouseBranchPredictorKind.FwdNotTknBakTknEnum.HAVE_BRANCH
+    )
+    //ret.asBits
+
+    //val ret = UInt(1 bits)
+    //ret
+    val myHavePre = Bool()
+    val myHistHavePre = (
+      History(
+        that=myHavePre,
+        length=2,
+        when=upIsFiring,
+        init=myHavePre.getZero,
+      )
+    )
+    myHavePre := False
+    switch (encInstr.op) {
+      is (BeqRaRbSimm._1) {
+        //_commonDecodeBranch(
+        //)
+        ret := (
+          _commonDecodeBranch(
+            encInstr=encInstr,
+            optSetOpFunc=None,
+            optDoDefaultFunc=None,
+            optSplitOp=None,
+            //upIsFiring=upIsFiring,
+            optHavePreDel1=Some(myHistHavePre.last),
+          )
+        )
+      }
+      is (PreImm16._1) {
+        myHavePre := True
+      }
+      default {
+        ret.valid := False
+      }
+    }
+    ret
+  }
+  private def _commonDecodeBranch(
+    encInstr: SnowHouseCpuEncInstr,
+    optSetOpFunc: Option[(
+      (Int, (Int, Int), String),
+      Boolean,
+    ) => Area],
+    optDoDefaultFunc: Option[(Boolean) => Unit],
+    //isMainDecode: Boolean,
+    optSplitOp: Option[SnowHouseSplitOp],
+    //upIsFiring: Bool,
+    optHavePreDel1: Option[Bool],
+  ): Flow[SnowHouseBranchPredictorKind.FwdNotTknBakTknEnum.C] = {
+    import SnowHouseCpuOp._
+    def setOp(
+      someOp: (Int, (Int, Int), String),
+    ): Area = {
+      optSetOpFunc match {
+        case Some(setOpFunc) => {
+          setOpFunc(
+            someOp, false
+          )
+        }
+        case None => {
+          new Area {
+          }
+        }
+      }
+    }
+    def setExSetNextPcKind(
+      exSetNextPcKind: SnowHousePsExSetNextPcKind.C
+    ): Unit = {
+      optSplitOp match {
+        case Some(splitOp) => {
+          splitOp.exSetNextPcKind := (
+            exSetNextPcKind
+          )
+        }
+        case None => {
+        }
+      }
+    }
+    val ret = Flow(SnowHouseBranchPredictorKind.FwdNotTknBakTknEnum())
+    ret.valid := True
+    optHavePreDel1 match {
+      case Some(havePreDel1) => {
+        when (!havePreDel1) {
+          ret.payload := (
+            SnowHouseBranchPredictorKind.FwdNotTknBakTknEnum.HAVE_BRANCH
+          )
+        } otherwise {
+          ret.payload := (
+            SnowHouseBranchPredictorKind.FwdNotTknBakTknEnum
+              .HAVE_PRE_BRANCH
+          )
+        }
+      }
+      case None => {
+        ret.payload := (
+          SnowHouseBranchPredictorKind.FwdNotTknBakTknEnum.HAVE_BRANCH
+        )
+      }
+    }
+    //ret.payload := SnowHouseBranchPredictorKind.FwdNotTknBakTknEnum.
+    //optSplitOp match {
+    //  case Some(splitOp) => {
+    //    splitOp.exSetNextPcKind := (
+    //      SnowHousePsExSetNextPcKind.PcPlusImm
+    //    )
+    //  }
+    //  case None => {
+    //  }
+    //}
+    setExSetNextPcKind(
+      SnowHousePsExSetNextPcKind.PcPlusImm
+    )
+    switch (encInstr.rcIdx(2 downto 0)) {
+      is (BeqRaRbSimm._2._1) {
+        //when (psId.startDecode) {
+          //psId.nextPrevInstrWasJump := True
+        //}
+        when (
+          encInstr.raIdx === encInstr.rbIdx
+          && encInstr.raIdx =/= 0
+          //&& encInstr.rbIdx === 0x0
+        ) {
+          setOp(BlSimm)
+        } otherwise {
+          setOp(BeqRaRbSimm)
+          //setOp(BzRaSimm)
+        }
+      }
+      is (BneRaRbSimm._2._1) {
+        when (
+          encInstr.raIdx === encInstr.rbIdx
+          && encInstr.raIdx =/= 0x0
+          //encInstr.rbIdx === 0x0
+        ) {
+          setOp(AddRaPcSimm16)
+          ret.valid := False
+          //optSplitOp match {
+          //  case Some(splitOp) => {
+          //    splitOp.exSetNextPcKind := (
+          //      SnowHousePsExSetNextPcKind.Dont
+          //    )
+          //  }
+          //  case None => {
+          //  }
+          //}
+          setExSetNextPcKind(
+            exSetNextPcKind=SnowHousePsExSetNextPcKind.Dont
+          )
+        } otherwise {
+          //setOp(BnRaSimm)
+          setOp(BneRaRbSimm)
+          //when (psId.startDecode) {
+            //psId.nextPrevInstrWasJump := True
+          //}
+        }
+      }
+      is (BltuRaRbSimm._2._1) {
+        setOp(BltuRaRbSimm)
+      }
+      is (BgeuRaRbSimm._2._1) {
+        setOp(BgeuRaRbSimm)
+      }
+      is (BltsRaRbSimm._2._1) {
+        setOp(BltsRaRbSimm)
+      }
+      is (BgesRaRbSimm._2._1) {
+        setOp(BgesRaRbSimm)
+      }
+      is (JlRaRb._2._1) {
+        //when (psId.startDecode) {
+          //psId.nextPrevInstrWasJump := True
+        //}
+        setOp(JlRaRb)
+        //optSplitOp match {
+        //  case Some(splitOp) => {
+        //    splitOp.exSetNextPcKind := (
+        //      SnowHousePsExSetNextPcKind.RdMemWord
+        //    )
+        //  }
+        //  case None => {
+        //  }
+        //}
+        setExSetNextPcKind(
+          exSetNextPcKind=SnowHousePsExSetNextPcKind.RdMemWord
+        )
+      }
+      default {
+        optDoDefaultFunc match {
+          case Some(doDefaultFunc) => {
+            doDefaultFunc(true)
+          }
+          case None => {
+          }
+        }
+        ret.valid := False
+      }
+    }
+    //True
+    ret
+  }
   def apply(
     psId: SnowHousePipeStageInstrDecode
   ) = new Area {
@@ -1225,68 +1438,76 @@ object SnowHouseCpuPipeStageInstrDecode {
       //  }
       //}
       is (BeqRaRbSimm._1) {
-        upPayload.splitOp.exSetNextPcKind := (
-          SnowHousePsExSetNextPcKind.PcPlusImm
+        _commonDecodeBranch(
+          encInstr=encInstr,
+          optSetOpFunc=Some(setOp),
+          optDoDefaultFunc=Some(doDefault),
+          optSplitOp=Some(upPayload.splitOp),
+          //upIsFiring=cId.up.isFiring,
+          optHavePreDel1=Some(rPrevPreImm(0).fire),
         )
-        switch (encInstr.rcIdx(2 downto 0)) {
-          is (BeqRaRbSimm._2._1) {
-            //when (psId.startDecode) {
-              //psId.nextPrevInstrWasJump := True
-            //}
-            when (
-              encInstr.raIdx === encInstr.rbIdx
-              && encInstr.raIdx =/= 0
-              //&& encInstr.rbIdx === 0x0
-            ) {
-              setOp(BlSimm)
-            } otherwise {
-              setOp(BeqRaRbSimm)
-              //setOp(BzRaSimm)
-            }
-          }
-          is (BneRaRbSimm._2._1) {
-            when (
-              encInstr.raIdx === encInstr.rbIdx
-              && encInstr.raIdx =/= 0x0
-              //encInstr.rbIdx === 0x0
-            ) {
-              setOp(AddRaPcSimm16)
-              upPayload.splitOp.exSetNextPcKind := (
-                SnowHousePsExSetNextPcKind.Dont
-              )
-            } otherwise {
-              //setOp(BnRaSimm)
-              setOp(BneRaRbSimm)
-              //when (psId.startDecode) {
-                //psId.nextPrevInstrWasJump := True
-              //}
-            }
-          }
-          is (BltuRaRbSimm._2._1) {
-            setOp(BltuRaRbSimm)
-          }
-          is (BgeuRaRbSimm._2._1) {
-            setOp(BgeuRaRbSimm)
-          }
-          is (BltsRaRbSimm._2._1) {
-            setOp(BltsRaRbSimm)
-          }
-          is (BgesRaRbSimm._2._1) {
-            setOp(BgesRaRbSimm)
-          }
-          is (JlRaRb._2._1) {
-            //when (psId.startDecode) {
-              //psId.nextPrevInstrWasJump := True
-            //}
-            setOp(JlRaRb)
-            upPayload.splitOp.exSetNextPcKind := (
-              SnowHousePsExSetNextPcKind.RdMemWord
-            )
-          }
-          default {
-            doDefault()
-          }
-        }
+        //upPayload.splitOp.exSetNextPcKind := (
+        //  SnowHousePsExSetNextPcKind.PcPlusImm
+        //)
+        //switch (encInstr.rcIdx(2 downto 0)) {
+        //  is (BeqRaRbSimm._2._1) {
+        //    //when (psId.startDecode) {
+        //      //psId.nextPrevInstrWasJump := True
+        //    //}
+        //    when (
+        //      encInstr.raIdx === encInstr.rbIdx
+        //      && encInstr.raIdx =/= 0
+        //      //&& encInstr.rbIdx === 0x0
+        //    ) {
+        //      setOp(BlSimm)
+        //    } otherwise {
+        //      setOp(BeqRaRbSimm)
+        //      //setOp(BzRaSimm)
+        //    }
+        //  }
+        //  is (BneRaRbSimm._2._1) {
+        //    when (
+        //      encInstr.raIdx === encInstr.rbIdx
+        //      && encInstr.raIdx =/= 0x0
+        //      //encInstr.rbIdx === 0x0
+        //    ) {
+        //      setOp(AddRaPcSimm16)
+        //      upPayload.splitOp.exSetNextPcKind := (
+        //        SnowHousePsExSetNextPcKind.Dont
+        //      )
+        //    } otherwise {
+        //      //setOp(BnRaSimm)
+        //      setOp(BneRaRbSimm)
+        //      //when (psId.startDecode) {
+        //        //psId.nextPrevInstrWasJump := True
+        //      //}
+        //    }
+        //  }
+        //  is (BltuRaRbSimm._2._1) {
+        //    setOp(BltuRaRbSimm)
+        //  }
+        //  is (BgeuRaRbSimm._2._1) {
+        //    setOp(BgeuRaRbSimm)
+        //  }
+        //  is (BltsRaRbSimm._2._1) {
+        //    setOp(BltsRaRbSimm)
+        //  }
+        //  is (BgesRaRbSimm._2._1) {
+        //    setOp(BgesRaRbSimm)
+        //  }
+        //  is (JlRaRb._2._1) {
+        //    //when (psId.startDecode) {
+        //      //psId.nextPrevInstrWasJump := True
+        //    //}
+        //    setOp(JlRaRb)
+        //    upPayload.splitOp.exSetNextPcKind := (
+        //      SnowHousePsExSetNextPcKind.RdMemWord
+        //    )
+        //  }
+        //  default {
+        //    doDefault()
+        //  }
+        //}
       }
       //is (CpyuRaRb._1) {
       //  switch (encInstr.rcIdx(0 downto 0)) {
@@ -2402,6 +2623,11 @@ case class SnowHouseCpuConfig(
     //  )
     //),
     doInstrDecodeFunc=SnowHouseCpuPipeStageInstrDecode.apply,
+    optBranchPredictorKind=Some(
+      SnowHouseBranchPredictorKind.FwdNotTknBakTkn(
+        doHaveBranchInstr=SnowHouseCpuPipeStageInstrDecode.decodeBranch
+      )
+    ),
     supportUcode=(
       //true
       false
@@ -3590,7 +3816,7 @@ object SnowHouseCpuWithDualRamSim extends App {
     //3, 3,
     //4, 4,
     //5, 5,
-    //6, //6,
+    //6, 6,
     7, 7
   )
   val instrRamKindArr = Array[Int](

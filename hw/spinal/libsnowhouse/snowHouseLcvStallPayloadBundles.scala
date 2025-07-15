@@ -187,11 +187,28 @@ case class BusHostPayload(
   //  Bool()
   //)
 }
+case class InstrBusDevPayload(
+  cfg: SnowHouseConfig,
+) extends Bundle {
+  val instr = UInt(cfg.instrMainWidth bits)
+  val branchKind = (
+    cfg.haveBranchPredictor
+  ) generate (
+    Flow(Bits(cfg.optBranchPredictorKind.get._branchKindEnumWidth bits))
+  )
+  //val branchKind = Flow(Bits())
+}
 case class BusDevPayload(
   cfg: SnowHouseConfig,
   isIbus: Boolean,
 ) extends Bundle {
-  val instr = (isIbus) generate (UInt(cfg.instrMainWidth bits))
+  val instrDevPayload = (isIbus) generate (
+    InstrBusDevPayload(
+      cfg=cfg
+    )
+  )
+  def instr = instrDevPayload.instr
+  //val instrIsBranch = (isIbus) generate (Bool())
   //val addr = (isIbus) generate (UInt(cfg.mainWidth bits))
   val data = (!isIbus) generate (UInt(cfg.mainWidth bits))
 }

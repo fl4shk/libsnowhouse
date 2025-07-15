@@ -419,6 +419,57 @@ case class SnowHouseSubConfig(
   //  )
   //)
 }
+
+sealed trait SnowHouseBranchPredictorKind {
+  private[libsnowhouse] def _doHaveBranchInstr(
+    encInstr: UInt,
+    upIsFiring: Bool,
+  ): Flow[Bits] // should return a `Flow[SpinalEnum.C]` in reality
+  private[libsnowhouse] def _branchKindEnumWidth: Int
+}
+object SnowHouseBranchPredictorKind {
+  //case class AssumeTkn(
+  //  val doHaveBranchInstr: (UInt) => UInt
+  //) extends SnowHouseBranchPredictorKind {
+  //  def _doHaveBranchInstr(
+  //    encInstr: UInt,
+  //  ): UInt = (
+  //    doHaveBranchInstr(encInstr)
+  //  )
+  //}
+  object FwdNotTknBakTknEnum
+  extends SpinalEnum(defaultEncoding=binarySequential) {
+    val
+      //NO_BRANCH,
+      HAVE_BRANCH,
+      HAVE_PRE_BRANCH
+      = newElement()
+  }
+  case class FwdNotTknBakTkn(
+    val doHaveBranchInstr: (
+      UInt,
+      Bool,
+    ) => Flow[FwdNotTknBakTknEnum.C]
+  ) extends SnowHouseBranchPredictorKind {
+    def _doHaveBranchInstr(
+      encInstr: UInt,
+      upIsFiring: Bool,
+    ): Flow[Bits] = {
+      val temp = doHaveBranchInstr(
+        encInstr,
+        upIsFiring,
+      )
+      val ret = Flow(Bits(temp.payload.asBits.getWidth bits))
+      ret.valid := temp.valid
+      ret.payload.assignFromBits(temp.payload.asBits)
+      ret
+    }
+    def _branchKindEnumWidth: Int = (
+      FwdNotTknBakTknEnum().asBits.getWidth
+    )
+  }
+}
+
 case class SnowHouseConfig(
   haveZeroReg: Option[Int],
   irqCfg: Option[SnowHouseIrqConfig],
@@ -433,6 +484,7 @@ case class SnowHouseConfig(
   //irqRetIraOp: Int,
   //--------
   doInstrDecodeFunc: (SnowHousePipeStageInstrDecode) => Area,
+  optBranchPredictorKind: Option[SnowHouseBranchPredictorKind],
   //--------
   instrRamKind: Int,
   //--------
@@ -451,6 +503,9 @@ case class SnowHouseConfig(
   //splitAluOp: Boolean=false,
   optFormal: Boolean=false,
 ) {
+  def haveBranchPredictor = (
+    optBranchPredictorKind != None
+  )
   def lowerMyFanout = 4
   def lowerMyFanoutRegPcSetItCnt = (
     //2
