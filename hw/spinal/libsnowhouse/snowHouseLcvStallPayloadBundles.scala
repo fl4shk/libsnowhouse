@@ -167,6 +167,9 @@ case class BusHostPayload(
   cfg: SnowHouseConfig,
   isIbus: Boolean,
 ) extends Bundle {
+  //val nextAddr = (isIbus) generate (
+  //  UInt(cfg.mainWidth bits)
+  //)
   val addr = UInt(cfg.mainWidth bits)
   val data = (!isIbus) generate (
     UInt(cfg.mainWidth bits)
@@ -180,34 +183,45 @@ case class BusHostPayload(
   val subKindIsLtWordWidth = (!isIbus) generate (
     Bool()
   )
-  val lock = (!isIbus) generate (
-    Bool() // for atomics
-  )
+  //val lock = (!isIbus) generate (
+  //  Bool() // for atomics
+  //)
   //val haveHazard = (!isIbus) generate (
   //  Bool()
   //)
 }
-case class InstrBusDevPayload(
-  cfg: SnowHouseConfig,
-) extends Bundle {
-  val instr = UInt(cfg.instrMainWidth bits)
-  val branchKind = (
-    cfg.haveBranchPredictor
-  ) generate (
-    Flow(Bits(cfg.optBranchPredictorKind.get._branchKindEnumWidth bits))
-  )
-  //val branchKind = Flow(Bits())
-}
+//case class InstrBusDevPayload(
+//  cfg: SnowHouseConfig,
+//) extends Bundle {
+//  val instr = UInt(cfg.instrMainWidth bits)
+//  //val branchTgtBufElem = (
+//  //  cfg.haveBranchPredictor
+//  //) generate (
+//  //  //Flow(Bits(cfg.optBranchPredictorKind.get._branchKindEnumWidth bits))
+//  //  BranchTgtBufElem(
+//  //    //cfg=cfg
+//  //    mainWidth=cfg.mainWidth,
+//  //    //optBranchPredictorKind=cfg.optBranchPredictorKind,
+//  //  )
+//  //)
+//  //val branchKind = (
+//  //  cfg.haveBranchPredictor
+//  //) generate (
+//  //  Bits(cfg.optBranchPredictorKind.get._branchKindEnumWidth bits)
+//  //)
+//  //val branchKind = Flow(Bits())
+//}
 case class BusDevPayload(
   cfg: SnowHouseConfig,
   isIbus: Boolean,
 ) extends Bundle {
-  val instrDevPayload = (isIbus) generate (
-    InstrBusDevPayload(
-      cfg=cfg
-    )
-  )
-  def instr = instrDevPayload.instr
+  //val instrDevPayload = (isIbus) generate (
+  //  InstrBusDevPayload(
+  //    cfg=cfg
+  //  )
+  //)
+  //def instr = instrDevPayload.instr
+  val instr = (isIbus) generate (UInt(cfg.instrMainWidth bits))
   //val instrIsBranch = (isIbus) generate (Bool())
   //val addr = (isIbus) generate (UInt(cfg.mainWidth bits))
   val data = (!isIbus) generate (UInt(cfg.mainWidth bits))

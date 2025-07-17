@@ -421,13 +421,22 @@ case class SnowHouseSubConfig(
 }
 
 sealed trait SnowHouseBranchPredictorKind {
-  private[libsnowhouse] def _doHaveBranchInstr(
-    encInstr: UInt,
-    upIsFiring: Bool,
-  ): Flow[Bits] // should return a `Flow[SpinalEnum.C]` in reality
+  //private[libsnowhouse] def _doHaveBranchInstr(
+  //  mainWidth: Int,
+  //  encInstr: UInt,
+  //  upIsFiring: Bool,
+  //): BranchTgtBufElem
   private[libsnowhouse] def _branchKindEnumWidth: Int
+  private[libsnowhouse] def _branchTgtBufSizeLog2: Int
+  private[libsnowhouse] def _branchTgtBufSize: Int = (
+    1 << _branchTgtBufSizeLog2
+  )
 }
 object SnowHouseBranchPredictorKind {
+  //def branchKindEnumMaxWidth = (
+  //  // subject to change
+  //  4
+  //)
   //case class AssumeTkn(
   //  val doHaveBranchInstr: (UInt) => UInt
   //) extends SnowHouseBranchPredictorKind {
@@ -441,31 +450,43 @@ object SnowHouseBranchPredictorKind {
   extends SpinalEnum(defaultEncoding=binarySequential) {
     val
       //NO_BRANCH,
-      HAVE_BRANCH,
-      HAVE_PRE_BRANCH
+      //HAVE_BRANCH,
+      //HAVE_PRE_BRANCH
+      FWD,
+      BAK,
+      NO_PREDICT
       = newElement()
   }
   case class FwdNotTknBakTkn(
-    val doHaveBranchInstr: (
-      UInt,
-      Bool,
-    ) => Flow[FwdNotTknBakTknEnum.C]
+    //val mainWidth: Int,
+    //val doHaveBranchInstr: (
+    //  Int,
+    //  UInt,
+    //  Bool,
+    //) => BranchTgtBufElem,
+    //val cfg: SnowHouseConfig,
+    val branchTgtBufSizeLog2: Int,
   ) extends SnowHouseBranchPredictorKind {
-    def _doHaveBranchInstr(
-      encInstr: UInt,
-      upIsFiring: Bool,
-    ): Flow[Bits] = {
-      val temp = doHaveBranchInstr(
-        encInstr,
-        upIsFiring,
-      )
-      val ret = Flow(Bits(temp.payload.asBits.getWidth bits))
-      ret.valid := temp.valid
-      ret.payload.assignFromBits(temp.payload.asBits)
-      ret
-    }
+    //def _doHaveBranchInstr(
+    //  mainWidth: Int,
+    //  encInstr: UInt,
+    //  upIsFiring: Bool,
+    //): BranchTgtBufElem = {
+    //  doHaveBranchInstr(
+    //    mainWidth,
+    //    encInstr,
+    //    upIsFiring,
+    //  )
+    //  //val ret = Flow(Bits(temp.payload.asBits.getWidth bits))
+    //  //ret.valid := temp.valid
+    //  //ret.payload.assignFromBits(temp.payload.asBits)
+    //  //ret
+    //}
     def _branchKindEnumWidth: Int = (
       FwdNotTknBakTknEnum().asBits.getWidth
+    )
+    def _branchTgtBufSizeLog2: Int = (
+      branchTgtBufSizeLog2
     )
   }
 }
@@ -1061,7 +1082,24 @@ case class SnowHousePipePayload(
   ) generate (
     Bool()
   )
+  val branchPredictTkn = (
+    cfg.haveBranchPredictor
+  ) generate (
+    // whether the branch predictor predicted the branch would be taken.
+    // This is to be checked in EX,
+    // and if the predictor was correct,
+    // we assert `psExSetPc.valid`,
+    // but otherwise we deassert `psExSetPc.valid`.
+    //
+    // If the predictor was wrong, we can run the the existing code from
+    // when there was only an "assume not not taken" branch predictor.
+    // As such we will effectively be transforming branch mispredicts 
+    // into a pretend "taken jump" from the old "assume not taken" branch
+    // predictor. This enables us to have reuse that old code.
+    Bool()
+  )
   val encInstr = Flow(UInt(cfg.instrMainWidth bits))
+  val branchTgtBufElem = BranchTgtBufElem(cfg=cfg)
   val inpDecodeExt = (
     Vec.fill(2)(
       SnowHouseDecodeExt(cfg=cfg)

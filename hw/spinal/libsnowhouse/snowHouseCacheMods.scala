@@ -1561,20 +1561,24 @@ case class SnowHouseInstrCache(
   //def atLastRecvCnt() = (
   //  rRecvCnt.msb
   //)
-  val busDevData = (
-    //if (isIcache) (
-      //io.bus.recvData.instr
-      Reg(UInt(cfg.instrMainWidth bits))
-      init(0x0)
-    //) else (
-    //  io.bus.recvData.data
-    //)
-  )
+  val busDevData = {
+    val temp = (
+      Reg(
+        UInt(cfg.instrMainWidth bits)
+        //InstrBusDevPayload(cfg=cfg)
+      )
+    )
+    temp.init(
+      //0x0
+      temp.getZero
+    )
+    temp
+  }
   val myReady = (
     Reg(Bool())
     init(False)
   )
-  io.bus.recvData.instr := busDevData
+  io.bus.recvData.instr := busDevData//.instr
   io.bus.ready := myReady
   if (isIcache) {
     //io.bus.recvData.setAsReg()
@@ -1863,7 +1867,7 @@ case class SnowHouseInstrCache(
   //}
 
   //rBusDevData := rdLineWord
-  busDevData := rdLineWord
+  busDevData/*.instr*/ := rdLineWord
   switch (rState) {
     is (State.IDLE) {
       //when (

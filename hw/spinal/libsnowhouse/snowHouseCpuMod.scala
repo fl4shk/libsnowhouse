@@ -393,59 +393,85 @@ case class SnowHouseCpuEncInstr(
   val rbIdx = UInt(SnowHouseCpuInstrEnc.gprIdxWidth bits)
   val raIdx = UInt(SnowHouseCpuInstrEnc.gprIdxWidth bits)
   val op = UInt(SnowHouseCpuInstrEnc.opWidth bits)
+  def myTempPreImm = (
+    Cat(
+      this.raIdx,
+      this.rbIdx,
+      this.rcIdx,
+      this.imm16,
+    ).asUInt
+  )
 }
 object SnowHouseCpuPipeStageInstrDecode {
-  def decodeBranch(
-    someEncInstr: UInt,
-    upIsFiring: Bool,
-  ) = {
-    import SnowHouseCpuOp._
-    val encInstr = SnowHouseCpuEncInstr()
-    encInstr.assignFromBits(someEncInstr.asBits)
+  //def decodeBranch(
+  //  //cfg: SnowHouseConfig,
+  //  mainWidth: Int,
+  //  //optBranchPredictorKind: Option[SnowHouseBranchPredictorKind],
+  //  someEncInstr: UInt,
+  //  upIsFiring: Bool,
+  //) = {
+  //  import SnowHouseCpuOp._
+  //  val encInstr = SnowHouseCpuEncInstr()
+  //  encInstr.assignFromBits(someEncInstr.asBits)
 
-    val ret = Flow(SnowHouseBranchPredictorKind.FwdNotTknBakTknEnum())
-    ret.payload := (
-      SnowHouseBranchPredictorKind.FwdNotTknBakTknEnum.HAVE_BRANCH
-    )
-    //ret.asBits
+  //  //val ret = Flow(SnowHouseBranchPredictorKind.FwdNotTknBakTknEnum())
+  //  val ret = BranchTgtBufElem(
+  //    //cfg=cfg
+  //    mainWidth=mainWidth,
+  //    //optBranchPredictorKind=optBranchPredictorKind,
+  //  )
+  //  ret.branchKind := (
+  //    SnowHouseBranchPredictorKind.FwdNotTknBakTknEnum.HAVE_BRANCH.asBits
+  //  )
+  //  //ret.asBits
 
-    //val ret = UInt(1 bits)
-    //ret
-    val myHavePre = Bool()
-    val myHistHavePre = (
-      History(
-        that=myHavePre,
-        length=2,
-        when=upIsFiring,
-        init=myHavePre.getZero,
-      )
-    )
-    myHavePre := False
-    switch (encInstr.op) {
-      is (BeqRaRbSimm._1) {
-        //_commonDecodeBranch(
-        //)
-        ret := (
-          _commonDecodeBranch(
-            encInstr=encInstr,
-            optSetOpFunc=None,
-            optDoDefaultFunc=None,
-            optSplitOp=None,
-            //upIsFiring=upIsFiring,
-            optHavePreDel1=Some(myHistHavePre.last),
-          )
-        )
-      }
-      is (PreImm16._1) {
-        myHavePre := True
-      }
-      default {
-        ret.valid := False
-      }
-    }
-    ret
-  }
+  //  //val ret = UInt(1 bits)
+  //  //ret
+  //  val myTempPreImm = (
+  //    encInstr.myTempPreImm
+  //  )
+  //  val myHavePre = Flow(UInt(myTempPreImm.getWidth bits)) //Bool()
+  //  val myHistHavePre = (
+  //    History(
+  //      that=myHavePre,
+  //      length=2,
+  //      when=upIsFiring,
+  //      init=myHavePre.getZero,
+  //    )
+  //  )
+  //  myHavePre.valid := False
+  //  switch (encInstr.op) {
+  //    is (BeqRaRbSimm._1) {
+  //      //_commonDecodeBranch(
+  //      //)
+  //      ret := (
+  //        _commonDecodeBranch(
+  //          mainWidth=mainWidth,
+  //          encInstr=encInstr,
+  //          optSetOpFunc=None,
+  //          optDoDefaultFunc=None,
+  //          optSplitOp=None,
+  //          //upIsFiring=upIsFiring,
+  //          rPrevPreImm=myHistHavePre.last,
+  //          isPsId=false,
+  //        )
+  //      )
+  //    }
+  //    is (PreImm16._1) {
+  //      myHavePre.valid := True
+  //      myHavePre.payload := (
+  //        myTempPreImm
+  //      )
+  //    }
+  //    default {
+  //      ret.valid := False
+  //    }
+  //  }
+  //  ret
+  //}
   private def _commonDecodeBranch(
+    cfg: SnowHouseConfig,
+    //mainWidth: Int,
     encInstr: SnowHouseCpuEncInstr,
     optSetOpFunc: Option[(
       (Int, (Int, Int), String),
@@ -454,9 +480,12 @@ object SnowHouseCpuPipeStageInstrDecode {
     optDoDefaultFunc: Option[(Boolean) => Unit],
     //isMainDecode: Boolean,
     optSplitOp: Option[SnowHouseSplitOp],
-    //upIsFiring: Bool,
-    optHavePreDel1: Option[Bool],
-  ): Flow[SnowHouseBranchPredictorKind.FwdNotTknBakTknEnum.C] = {
+    upIsFiring: Bool,
+    rPrevPreImm: Flow[UInt],
+    //isPsId: Boolean
+    regPc: UInt,
+    regPcPlusImm: UInt,
+  ): BranchTgtBufElem = {
     import SnowHouseCpuOp._
     def setOp(
       someOp: (Int, (Int, Int), String),
@@ -486,27 +515,86 @@ object SnowHouseCpuPipeStageInstrDecode {
         }
       }
     }
-    val ret = Flow(SnowHouseBranchPredictorKind.FwdNotTknBakTknEnum())
+    //val ret = Flow(SnowHouseBranchPredictorKind.FwdNotTknBakTknEnum())
+    val ret = BranchTgtBufElem(
+      //mainWidth=mainWidth,
+      //optBranchPredictorKind=optBranchPredictorKind,
+      cfg=cfg,
+    )
+    ret := ret.getZero
+    ret.allowOverride
+    ret.dbgEncInstr.assignFromBits(
+      encInstr.asBits
+    )
     ret.valid := True
-    optHavePreDel1 match {
-      case Some(havePreDel1) => {
-        when (!havePreDel1) {
-          ret.payload := (
-            SnowHouseBranchPredictorKind.FwdNotTknBakTknEnum.HAVE_BRANCH
-          )
-        } otherwise {
-          ret.payload := (
-            SnowHouseBranchPredictorKind.FwdNotTknBakTknEnum
-              .HAVE_PRE_BRANCH
-          )
-        }
-      }
-      case None => {
-        ret.payload := (
-          SnowHouseBranchPredictorKind.FwdNotTknBakTknEnum.HAVE_BRANCH
+    //optHavePreDel1 match {
+    //  case Some(havePreDel1) => {
+        val myTargetDisp = (
+          UInt(cfg.mainWidth bits)
         )
-      }
-    }
+        when (!rPrevPreImm.fire) {
+          //ret.branchKind := (
+          //  SnowHouseBranchPredictorKind.FwdNotTknBakTknEnum
+          //    .HAVE_BRANCH.asBits.resized
+          //)
+          //if (!isPsId) {
+            //ret.targetEtc := (
+            //  encInstr.imm16.as
+            //)
+            myTargetDisp := (
+              Cat(
+                Mux[UInt](
+                  encInstr.imm16.msb,
+                  U"16'hffff",
+                  U"16'h0000",
+                ),
+                encInstr.imm16.asSInt
+              ).asUInt
+            )
+          //}
+        } otherwise {
+          //ret.branchKind := (
+          //  SnowHouseBranchPredictorKind.FwdNotTknBakTknEnum
+          //    .HAVE_PRE_BRANCH.asBits.resized
+          //)
+          //if (!isPsId) {
+            myTargetDisp := (
+              Cat(
+                rPrevPreImm.payload,
+                encInstr.imm16,
+              ).asUInt.resize(ret.dstRegPc.getWidth)
+            )
+          //}
+        }
+        ret.srcRegPc := (
+          regPc //- (2 * cfg.instrSizeBytes)
+        )
+        ret.dstRegPc := (
+          //regPc + myTargetDisp
+          regPcPlusImm //+ (1 * cfg.instrSizeBytes)
+        )
+        ret.branchKind.assignFromBits(
+          // this is only for `FwdNotTknBakTknEnum`!
+          Cat(myTargetDisp.msb).asUInt
+          .resize(ret.branchKind.getWidth).asBits
+        )
+        ret.dontPredict := (
+          False
+        )
+        //when (!myTargetDisp.msb) {
+        //  // forwards
+        //  ret.branchKind
+        //} otherwise {
+        //  // backwards
+        //}
+    //  }
+    //  case None => {
+    //    ret.branchKind := (
+    //      SnowHouseBranchPredictorKind.FwdNotTknBakTknEnum
+    //        .HAVE_BRANCH.asBits.resized
+    //    )
+    //  }
+    //}
     //ret.payload := SnowHouseBranchPredictorKind.FwdNotTknBakTknEnum.
     //optSplitOp match {
     //  case Some(splitOp) => {
@@ -520,6 +608,8 @@ object SnowHouseCpuPipeStageInstrDecode {
     setExSetNextPcKind(
       SnowHousePsExSetNextPcKind.PcPlusImm
     )
+    val tempDontPredict = Bool()
+    tempDontPredict := False
     switch (encInstr.rcIdx(2 downto 0)) {
       is (BeqRaRbSimm._2._1) {
         //when (psId.startDecode) {
@@ -544,6 +634,7 @@ object SnowHouseCpuPipeStageInstrDecode {
         ) {
           setOp(AddRaPcSimm16)
           ret.valid := False
+          tempDontPredict := True
           //optSplitOp match {
           //  case Some(splitOp) => {
           //    splitOp.exSetNextPcKind := (
@@ -580,6 +671,14 @@ object SnowHouseCpuPipeStageInstrDecode {
         //when (psId.startDecode) {
           //psId.nextPrevInstrWasJump := True
         //}
+        // since (as of this writing) we use `FwdNotTknBakTkn`, for the
+        // particular implementation we care about here, we need
+        // to deassert `ret.valid`.
+        // In other words, we don't try to branch predict `Jl`.
+        // It may be of interest to have a function return predictor at
+        // some point.
+        ret.valid := False
+        tempDontPredict := True
         setOp(JlRaRb)
         //optSplitOp match {
         //  case Some(splitOp) => {
@@ -603,9 +702,38 @@ object SnowHouseCpuPipeStageInstrDecode {
           }
         }
         ret.valid := False
+        tempDontPredict := True
       }
     }
     //True
+    //val rPrevRet = (
+    //  RegNextWhen(
+    //    next=ret,
+    //    cond=upIsFiring,
+    //    init=ret.getZero,
+    //  )
+    //)
+    ret.dontPredict := tempDontPredict
+    //when (
+    //  rPrevRet.fire
+    //  && ret.fire
+    //  && !tempDontPredict
+    //  && !rPrevRet.dontPredict
+    //) {
+    //  ret.dontPredict := True
+    //}
+
+
+    //ret.dontPredict := (
+    //  ret.valid
+    //  && rPrevRet.valid
+    //)
+    //when (
+    //  !rPrevRet.dontPredict
+    //  && !ret.dontPredict
+    //) {
+    //  ret.dontPredict := True
+    //}
     ret
   }
   def apply(
@@ -617,6 +745,9 @@ object SnowHouseCpuPipeStageInstrDecode {
     //--------
     import SnowHouseCpuOp._
     def upPayload = psId.upPayload(1)
+    upPayload.branchTgtBufElem := (
+      upPayload.branchTgtBufElem.getZero
+    )
     def io = psId.io
     def cfg = psId.cfg
     def cId = psId.cId
@@ -748,12 +879,13 @@ object SnowHouseCpuPipeStageInstrDecode {
     )
     instrIsPre := False
     val myTempPreImm = (
-      Cat(
-        encInstr.raIdx,
-        encInstr.rbIdx,
-        encInstr.rcIdx,
-        encInstr.imm16,
-      ).asUInt,
+      //Cat(
+      //  encInstr.raIdx,
+      //  encInstr.rbIdx,
+      //  encInstr.rcIdx,
+      //  encInstr.imm16,
+      //).asUInt,
+      encInstr.myTempPreImm
     )
     val rPrevPreImm = (
       ///*KeepAttribute*/(
@@ -784,11 +916,11 @@ object SnowHouseCpuPipeStageInstrDecode {
       )
       .setName(s"InstrDecode_rPrevPreImm")
     )
-    rPrevPreImm.foreach(current => current.init(current.getZero))
+    rPrevPreImm.foreach(item => item.init(item.getZero))
     //when (cId.up.isFiring) {
-      rPrevPreImm.foreach(current => {
-        current.valid := instrIsPre
-        current.payload := myTempPreImm
+      rPrevPreImm.foreach(item => {
+        item.valid := instrIsPre
+        item.payload := myTempPreImm
       })
       //when (instrIsPre) {
       //  rPrevPreImm.foreach(current => {
@@ -1438,13 +1570,18 @@ object SnowHouseCpuPipeStageInstrDecode {
       //  }
       //}
       is (BeqRaRbSimm._1) {
-        _commonDecodeBranch(
+        upPayload.branchTgtBufElem := _commonDecodeBranch(
+          //mainWidth=cfg.mainWidth,
+          cfg=cfg,
           encInstr=encInstr,
           optSetOpFunc=Some(setOp),
           optDoDefaultFunc=Some(doDefault),
           optSplitOp=Some(upPayload.splitOp),
-          //upIsFiring=cId.up.isFiring,
-          optHavePreDel1=Some(rPrevPreImm(0).fire),
+          upIsFiring=cId.up.isFiring,
+          rPrevPreImm=rPrevPreImm(0),
+          //isPsId=true,
+          regPc=upPayload.regPc,
+          regPcPlusImm=upPayload.regPcPlusImm,
         )
         //upPayload.splitOp.exSetNextPcKind := (
         //  SnowHousePsExSetNextPcKind.PcPlusImm
@@ -2625,7 +2762,9 @@ case class SnowHouseCpuConfig(
     doInstrDecodeFunc=SnowHouseCpuPipeStageInstrDecode.apply,
     optBranchPredictorKind=Some(
       SnowHouseBranchPredictorKind.FwdNotTknBakTkn(
-        doHaveBranchInstr=SnowHouseCpuPipeStageInstrDecode.decodeBranch
+        //mainWidth=mainWidth,
+        //doHaveBranchInstr=SnowHouseCpuPipeStageInstrDecode.decodeBranch,
+        branchTgtBufSizeLog2=log2Up(64),
       )
     ),
     supportUcode=(
@@ -3817,15 +3956,16 @@ object SnowHouseCpuWithDualRamSim extends App {
     //4, 4,
     //5, 5,
     //6, 6,
-    7, 7
+    //7, 7
+    8, 8
   )
   val instrRamKindArr = Array[Int](
-    //0,
+    0,
     //1,
     //2,
-    5,
+    //5,
   )
-  for (testIdx <- 0 to 7) {
+  for (testIdx <- 0 to 8) {
     programStrArr += (
       s"test/snowhousecpu-test-${testIdx}.bin"
     )
