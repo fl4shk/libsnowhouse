@@ -9,11 +9,11 @@ add r2, r2, r1
 add r1, r1, -1
 bne r1, r0, _loop
 
-add r0, r0, r0
-add r0, r0, r0
-add r0, r0, r0
-add r0, r0, r0
-add r0, r0, r0
+add r1, r0, 0x33ff
+add r1, r0, 2
+add r1, r0, 3
+add r1, r0, 4
+add r1, r0, 5
 
 _infin:
 beq r0, r0, _infin

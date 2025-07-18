@@ -485,6 +485,7 @@ object SnowHouseCpuPipeStageInstrDecode {
     //isPsId: Boolean
     regPc: UInt,
     regPcPlusImm: UInt,
+    branchPredictTkn: Bool,
   ): BranchTgtBufElem = {
     import SnowHouseCpuOp._
     def setOp(
@@ -566,13 +567,38 @@ object SnowHouseCpuPipeStageInstrDecode {
             )
           //}
         }
-        ret.srcRegPc := (
-          regPc //- (2 * cfg.instrSizeBytes)
-        )
-        ret.dstRegPc := (
-          //regPc + myTargetDisp
-          regPcPlusImm //+ (1 * cfg.instrSizeBytes)
-        )
+        //when (!branchPredictTkn) {
+          ret.srcRegPc := (
+            regPc - (2 * cfg.instrSizeBytes)
+            //+ (1 * cfg.instrSizeBytes)
+            //- (1 * cfg.instrSizeBytes)
+            //+ (3 * cfg.instrSizeBytes)
+            //- (2 * cfg.instrSizeBytes)
+          )
+          ret.dstRegPc := (
+            //regPc + myTargetDisp
+            //regPcPlusImm + (3 * cfg.instrSizeBytes)
+            //regPcPlusImm + (2 * cfg.instrSizeBytes)
+            //regPcPlusImm //+ (2 * cfg.instrSizeBytes)
+            //regPcPlusImm //- (2 * cfg.instrSizeBytes)
+            regPcPlusImm - (1 * cfg.instrSizeBytes)
+            //regPcPlusImm - (1 * cfg.instrSizeBytes)
+            //+ (3 * cfg.instrSizeBytes)
+          )
+        //} otherwise {
+        //  ret.srcRegPc := (
+        //    regPc
+        //    //+ (3 * cfg.instrSizeBytes)
+        //    + (2 * cfg.instrSizeBytes)
+        //    //- (2 * cfg.instrSizeBytes)
+        //  )
+        //  ret.dstRegPc := (
+        //    //regPc + myTargetDisp
+        //    //regPcPlusImm + (3 * cfg.instrSizeBytes)
+        //    //regPcPlusImm + (2 * cfg.instrSizeBytes)
+        //    regPcPlusImm + (1 * cfg.instrSizeBytes)
+        //  )
+        //}
         ret.branchKind.assignFromBits(
           // this is only for `FwdNotTknBakTknEnum`!
           Cat(myTargetDisp.msb).asUInt
@@ -1582,6 +1608,7 @@ object SnowHouseCpuPipeStageInstrDecode {
           //isPsId=true,
           regPc=upPayload.regPc,
           regPcPlusImm=upPayload.regPcPlusImm,
+          branchPredictTkn=upPayload.branchPredictTkn,
         )
         //upPayload.splitOp.exSetNextPcKind := (
         //  SnowHousePsExSetNextPcKind.PcPlusImm
