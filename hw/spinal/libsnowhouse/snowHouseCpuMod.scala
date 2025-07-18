@@ -569,7 +569,18 @@ object SnowHouseCpuPipeStageInstrDecode {
         }
         //when (!branchPredictTkn) {
           ret.srcRegPc := (
+            //regPc - (2 * cfg.instrSizeBytes)
+            //regPc - (2 * cfg.instrSizeBytes)
+            //regPc //- (2 * cfg.instrSizeBytes)
             regPc - (2 * cfg.instrSizeBytes)
+            //regPc - (1 * cfg.instrSizeBytes)
+            //regPc - (1 * cfg.instrSizeBytes)
+            //regPc - (3 * cfg.instrSizeBytes)
+            //regPc - (3 * cfg.instrSizeBytes)
+            //regPc - (3 * cfg.instrSizeBytes)
+            //regPc - (1 * cfg.instrSizeBytes)
+            //regPc - (2 * cfg.instrSizeBytes)
+            //regPc - (3 * cfg.instrSizeBytes)
             //+ (1 * cfg.instrSizeBytes)
             //- (1 * cfg.instrSizeBytes)
             //+ (3 * cfg.instrSizeBytes)
@@ -581,7 +592,15 @@ object SnowHouseCpuPipeStageInstrDecode {
             //regPcPlusImm + (2 * cfg.instrSizeBytes)
             //regPcPlusImm //+ (2 * cfg.instrSizeBytes)
             //regPcPlusImm //- (2 * cfg.instrSizeBytes)
-            regPcPlusImm - (1 * cfg.instrSizeBytes)
+            //regPcPlusImm //- (2 * cfg.instrSizeBytes)
+            //regPcPlusImm + (1 * cfg.instrSizeBytes)
+            regPcPlusImm //+ (1 * cfg.instrSizeBytes)
+            //regPcPlusImm //- (1 * cfg.instrSizeBytes)
+            //regPcPlusImm - (1 * cfg.instrSizeBytes)
+            //regPcPlusImm - (2 * cfg.instrSizeBytes)
+            //regPcPlusImm - (2 * cfg.instrSizeBytes)
+            //regPcPlusImm - (3 * cfg.instrSizeBytes)
+            //regPcPlusImm - (2 * cfg.instrSizeBytes)
             //regPcPlusImm - (1 * cfg.instrSizeBytes)
             //+ (3 * cfg.instrSizeBytes)
           )
@@ -771,8 +790,8 @@ object SnowHouseCpuPipeStageInstrDecode {
     //--------
     import SnowHouseCpuOp._
     def upPayload = psId.upPayload(1)
-    upPayload.branchTgtBufElem := (
-      upPayload.branchTgtBufElem.getZero
+    upPayload.branchTgtBufElem(1) := (
+      upPayload.branchTgtBufElem(1).getZero
     )
     def io = psId.io
     def cfg = psId.cfg
@@ -1596,7 +1615,7 @@ object SnowHouseCpuPipeStageInstrDecode {
       //  }
       //}
       is (BeqRaRbSimm._1) {
-        upPayload.branchTgtBufElem := _commonDecodeBranch(
+        upPayload.branchTgtBufElem(1) := _commonDecodeBranch(
           //mainWidth=cfg.mainWidth,
           cfg=cfg,
           encInstr=encInstr,

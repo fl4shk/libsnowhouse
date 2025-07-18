@@ -1099,7 +1099,9 @@ case class SnowHousePipePayload(
     Bool()
   )
   val encInstr = Flow(UInt(cfg.instrMainWidth bits))
-  val branchTgtBufElem = BranchTgtBufElem(cfg=cfg)
+  val branchTgtBufElem = Vec.fill(2)(
+    BranchTgtBufElem(cfg=cfg)
+  )
   val inpDecodeExt = (
     Vec.fill(2)(
       SnowHouseDecodeExt(cfg=cfg)
