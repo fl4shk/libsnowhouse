@@ -762,12 +762,32 @@ object SnowHouseCpuPipeStageInstrDecode {
     //)
     ret.dontPredict := tempDontPredict
 
-    when (
-      !tempDontPredict
-      && ret.srcRegPc === ret.dstRegPc
-    ) {
-      ret.dontPredict := True
-    }
+    //when (
+    //  !tempDontPredict
+    //  && (
+    //    !RegNextWhen(
+    //      next=RegNextWhen(
+    //        next=ret.valid,
+    //        cond=upIsFiring,
+    //        init=ret.valid.getZero,
+    //      ),
+    //      cond=upIsFiring,
+    //      init=ret.valid.getZero,
+    //    )
+    //    //(
+    //    //  ret.srcRegPc === ret.dstRegPc
+    //    //)
+    //    //|| (
+    //    //  ret.dstRegPc
+    //    //  === ret.srcRegPc - cfg.instrSizeBytes
+    //    //) || (
+    //    //  ret.dstRegPc
+    //    //  === ret.srcRegPc + cfg.instrSizeBytes
+    //    //)
+    //  )
+    //) {
+    //  ret.dontPredict := True
+    //}
     //when (
     //  rPrevRet.fire
     //  && ret.fire
@@ -1878,13 +1898,18 @@ object SnowHouseCpuPipeStageInstrDecode {
         doDefault(
           //doSetImm=false
         )
-        when (
-          //!psId.rSavedExSetPc.fire
-          //!psId.upPayload.psIfRegPcSetItCnt(0)
-          !upPayload.psIfRegPcSetItCnt(0)
-        ) {
+        //when (
+        //  //!psId.rSavedExSetPc.fire
+        //  //!psId.upPayload.psIfRegPcSetItCnt(0)
+        //  //!upPayload.psIfRegPcSetItCnt(0)
+        //  RegNextWhen(
+        //    next=(!upPayload.psIfRegPcSetItCnt(0)),
+        //    cond=cId.up.isFiring,
+        //    init=False
+        //  )
+        //) {
           instrIsPre := True
-        }
+        //}
         //when (!rMultiCycleState) {
           //when (cId.up.isFiring) {
           //  //if (cfg.irqCfg != None) {
@@ -4011,15 +4036,15 @@ object SnowHouseCpuWithDualRamSim extends App {
     //3, 3,
     //4, 4,
     //5, 5,
-    //6, 6,
+    6, 6,
     //7, 7
-    8, 8
+    //8, 8
   )
   val instrRamKindArr = Array[Int](
     0,
-    //1,
-    //2,
-    //5,
+    1,
+    2,
+    5,
   )
   for (testIdx <- 0 to 8) {
     programStrArr += (
