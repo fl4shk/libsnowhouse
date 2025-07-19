@@ -574,7 +574,7 @@ object SnowHouseCpuPipeStageInstrDecode {
             //regPc - (2 * cfg.instrSizeBytes)
             //regPc //- (2 * cfg.instrSizeBytes)
             //regPc - (2 * cfg.instrSizeBytes)
-            laggingRegPc
+            laggingRegPc //+ (1 * cfg.instrSizeBytes)
             //regPc - (1 * cfg.instrSizeBytes)
             //regPc - (1 * cfg.instrSizeBytes)
             //regPc - (3 * cfg.instrSizeBytes)

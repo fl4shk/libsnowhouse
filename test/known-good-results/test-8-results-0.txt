@@ -1,4 +1,4 @@
-Starting test:programStr:test/snowhousecpu-test-8.bin instrRamKind:5
+Starting test:programStr:test/snowhousecpu-test-8.bin instrRamKind:0
 addr:1 data:4
 addr:2 data:4
 addr:1 data:3
