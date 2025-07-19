@@ -21,3 +21,4 @@ Disassembly of section .text:
 
 00000034 <_infin>:
   34:	fc ff 00 90 	beq	r0, r0, -4
+	...

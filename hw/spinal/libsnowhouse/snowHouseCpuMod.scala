@@ -484,6 +484,7 @@ object SnowHouseCpuPipeStageInstrDecode {
     rPrevPreImm: Flow[UInt],
     //isPsId: Boolean
     regPc: UInt,
+    laggingRegPc: UInt,
     regPcPlusImm: UInt,
     branchPredictTkn: Bool,
   ): BranchTgtBufElem = {
@@ -572,8 +573,18 @@ object SnowHouseCpuPipeStageInstrDecode {
             //regPc - (2 * cfg.instrSizeBytes)
             //regPc - (2 * cfg.instrSizeBytes)
             //regPc //- (2 * cfg.instrSizeBytes)
-            regPc - (2 * cfg.instrSizeBytes)
+            //regPc - (2 * cfg.instrSizeBytes)
+
             //regPc - (1 * cfg.instrSizeBytes)
+            //laggingRegPc - (1 * cfg.instrSizeBytes)
+            //RegNextWhen(
+            //  next=regPc,
+            //  cond=upIsFiring,
+            //  init=regPc.getZero
+            //) //+ (1 * cfg.instrSizeBytes)
+            //regPc
+            laggingRegPc //+ (1 * cfg.instrSizeBytes)
+
             //regPc - (1 * cfg.instrSizeBytes)
             //regPc - (3 * cfg.instrSizeBytes)
             //regPc - (3 * cfg.instrSizeBytes)
@@ -594,8 +605,8 @@ object SnowHouseCpuPipeStageInstrDecode {
             //regPcPlusImm //- (2 * cfg.instrSizeBytes)
             //regPcPlusImm //- (2 * cfg.instrSizeBytes)
             //regPcPlusImm + (1 * cfg.instrSizeBytes)
-            regPcPlusImm //+ (1 * cfg.instrSizeBytes)
-            //regPcPlusImm //- (1 * cfg.instrSizeBytes)
+            //regPcPlusImm //+ (1 * cfg.instrSizeBytes)
+            regPcPlusImm //- (1 * cfg.instrSizeBytes)
             //regPcPlusImm - (1 * cfg.instrSizeBytes)
             //regPcPlusImm - (2 * cfg.instrSizeBytes)
             //regPcPlusImm - (2 * cfg.instrSizeBytes)
@@ -1626,6 +1637,7 @@ object SnowHouseCpuPipeStageInstrDecode {
           rPrevPreImm=rPrevPreImm(0),
           //isPsId=true,
           regPc=upPayload.regPc,
+          laggingRegPc=upPayload.laggingRegPc,
           regPcPlusImm=upPayload.regPcPlusImm,
           branchPredictTkn=upPayload.branchPredictTkn,
         )
