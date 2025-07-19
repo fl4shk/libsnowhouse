@@ -484,6 +484,7 @@ object SnowHouseCpuPipeStageInstrDecode {
     rPrevPreImm: Flow[UInt],
     //isPsId: Boolean
     regPc: UInt,
+    laggingRegPc: UInt,
     regPcPlusImm: UInt,
     branchPredictTkn: Bool,
   ): BranchTgtBufElem = {
@@ -572,7 +573,8 @@ object SnowHouseCpuPipeStageInstrDecode {
             //regPc - (2 * cfg.instrSizeBytes)
             //regPc - (2 * cfg.instrSizeBytes)
             //regPc //- (2 * cfg.instrSizeBytes)
-            regPc - (2 * cfg.instrSizeBytes)
+            //regPc - (2 * cfg.instrSizeBytes)
+            laggingRegPc
             //regPc - (1 * cfg.instrSizeBytes)
             //regPc - (1 * cfg.instrSizeBytes)
             //regPc - (3 * cfg.instrSizeBytes)
@@ -759,6 +761,13 @@ object SnowHouseCpuPipeStageInstrDecode {
     //  )
     //)
     ret.dontPredict := tempDontPredict
+
+    when (
+      !tempDontPredict
+      && ret.srcRegPc === ret.dstRegPc
+    ) {
+      ret.dontPredict := True
+    }
     //when (
     //  rPrevRet.fire
     //  && ret.fire
@@ -1626,6 +1635,7 @@ object SnowHouseCpuPipeStageInstrDecode {
           rPrevPreImm=rPrevPreImm(0),
           //isPsId=true,
           regPc=upPayload.regPc,
+          laggingRegPc=upPayload.myHistRegPc(2),
           regPcPlusImm=upPayload.regPcPlusImm,
           branchPredictTkn=upPayload.branchPredictTkn,
         )

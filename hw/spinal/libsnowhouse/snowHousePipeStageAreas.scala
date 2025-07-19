@@ -177,11 +177,11 @@ case class SnowHouseBranchPredictorIo(
   val psExSetPc = slave(
     Flow(SnowHousePsExSetPcPayload(cfg=cfg))
   )
-  val stickyExSetPc = in(
-    Vec.fill(1)(
-      Flow(SnowHousePsExSetPcPayload(cfg=cfg))
-    )
-  )
+  //val stickyExSetPc = in(
+  //  Vec.fill(1)(
+  //    Flow(SnowHousePsExSetPcPayload(cfg=cfg))
+  //  )
+  //)
   //val upModExt = in(
   //  SnowHousePipePayload(cfg=cfg)
   //)
@@ -442,9 +442,9 @@ case class SnowHousePipeStageInstrFetch(
   )
   if (cfg.haveBranchPredictor) {
     branchPredictor.io.psExSetPc := psExSetPc
-    for (idx <- 0 until stickyExSetPc.size) {
-      branchPredictor.io.stickyExSetPc(idx) := stickyExSetPc(idx)
-    }
+    //for (idx <- 0 until stickyExSetPc.size) {
+    //  branchPredictor.io.stickyExSetPc(idx) := stickyExSetPc(idx)
+    //}
     //branchPredictor.io.upModExt := upModExt
     //branchPredictor.io.inpRegPc := 
     //branchPredictor.io.inpRegPc := myRegPc
@@ -578,6 +578,18 @@ case class SnowHousePipeStageInstrFetch(
       init=upModExt.regPc.getZero,
     )
   )
+  val myHistRegPc = (
+    History[UInt](
+      that=upModExt.regPc,
+      length=upModExt.myHistRegPc.size,
+      when=cIf.up.isFiring,
+      init=upModExt.regPc.getZero,
+    )
+  )
+  upModExt.myHistRegPc.allowOverride
+  upModExt.myHistRegPc := (
+    myHistRegPc
+  )
 
   if (cfg.haveBranchPredictor) {
     //branchPredictor.io.inpRegPc := (
@@ -587,7 +599,8 @@ case class SnowHousePipeStageInstrFetch(
     //  )
     //)
     branchPredictor.io.inpRegPc := (
-      myRegPc
+      //myRegPc
+      myHistRegPc(1) + (1 * cfg.instrSizeBytes)
     )
   }
   //if (cfg.haveBranchPredictor) {
@@ -802,6 +815,7 @@ case class SnowHousePipeStageInstrFetch(
           )
           nextRegPc.assignFromBits(
             (temp - (2 * cfg.instrSizeBytes)).asBits
+            //upModExt.myHistRegPc(2).asBits
           )
           io.ibus.sendData.addr := (
             myRegPc
@@ -846,7 +860,8 @@ case class SnowHousePipeStageInstrFetch(
           //psExSetPc.nextPc - (3 * (cfg.instrSizeBytes))
         )
         nextRegPc.assignFromBits(
-          (temp - (2 * cfg.instrSizeBytes)).asBits
+          //(temp - (2 * cfg.instrSizeBytes)).asBits
+          myHistRegPc(2).asBits
         )
         val tempNextRegPc = (
           //(temp + (2 * cfg.instrSizeBytes)).asBits
@@ -1584,6 +1599,7 @@ case class SnowHousePipeStageExecuteSetOutpModMemWordIo(
     UInt(cfg.mainWidth bits)
   ))
   val regPc = setAsInp(UInt(cfg.mainWidth bits))
+  val laggingRegPc = setAsInp(UInt(cfg.mainWidth bits))
   val regPcSetItCnt = setAsInp(Vec.fill(cfg.lowerMyFanoutRegPcSetItCnt)(
     UInt(
       1 bits
@@ -5623,9 +5639,9 @@ case class SnowHousePipeStageExecute(
   //setOutpModMemWord.io.psExSetPc.ready := psExSetPc.ready
 
   //setOutpModMemWord.io.branchTgtBufElem := outp.branchTgtBufElem
-  setOutpModMemWord.io.btbElemValid := outp.branchTgtBufElem(1).valid
+  setOutpModMemWord.io.btbElemValid := outp.branchTgtBufElem(0).valid
   setOutpModMemWord.io.btbElemDontPredict := (
-    outp.branchTgtBufElem(1).dontPredict
+    outp.branchTgtBufElem(0).dontPredict
   )
   setOutpModMemWord.io.branchPredictTkn := (
     outp.branchPredictTkn

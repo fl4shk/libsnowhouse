@@ -17,3 +17,10 @@ add r1, r0, 5
 
 _infin:
 beq r0, r0, _infin
+
+cpy r0, r0 
+cpy r0, r0 
+cpy r0, r0 
+cpy r0, r0 
+cpy r0, r0 
+cpy r0, r0 
