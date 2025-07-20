@@ -486,7 +486,7 @@ object SnowHouseCpuPipeStageInstrDecode {
     regPc: UInt,
     laggingRegPc: UInt,
     regPcPlusImm: UInt,
-    branchPredictTkn: Bool,
+    //branchPredictTkn: Bool,
   ): BranchTgtBufElem = {
     import SnowHouseCpuOp._
     def setOp(
@@ -525,9 +525,9 @@ object SnowHouseCpuPipeStageInstrDecode {
     )
     ret := ret.getZero
     ret.allowOverride
-    ret.dbgEncInstr.assignFromBits(
-      encInstr.asBits
-    )
+    //ret.dbgEncInstr.assignFromBits(
+    //  encInstr.asBits
+    //)
     ret.valid := True
     //optHavePreDel1 match {
     //  case Some(havePreDel1) => {
@@ -1657,7 +1657,7 @@ object SnowHouseCpuPipeStageInstrDecode {
           regPc=upPayload.regPc,
           laggingRegPc=upPayload.myHistRegPc(2),
           regPcPlusImm=upPayload.regPcPlusImm,
-          branchPredictTkn=upPayload.branchPredictTkn,
+          //branchPredictTkn=upPayload.branchPredictTkn,
         )
         //upPayload.splitOp.exSetNextPcKind := (
         //  SnowHousePsExSetNextPcKind.PcPlusImm
@@ -2845,7 +2845,10 @@ case class SnowHouseCpuConfig(
       SnowHouseBranchPredictorKind.FwdNotTknBakTkn(
         //mainWidth=mainWidth,
         //doHaveBranchInstr=SnowHouseCpuPipeStageInstrDecode.decodeBranch,
-        branchTgtBufSizeLog2=log2Up(64),
+        branchTgtBufSizeLog2=(
+          //log2Up(64)
+          log2Up(16)
+        ),
       )
     ),
     supportUcode=(
@@ -4030,23 +4033,24 @@ object SnowHouseCpuWithDualRamSim extends App {
   //  "5",
   //)
   val testIdxRange = (
-    //0, 0,
+    0, 0,
     //1, 1,
     //2, 2,
     //3, 3,
     //4, 4,
     //5, 5,
-    6, 6,
-    //7, 7
-    //8, 8
+    //6, 6,
+    //7, 7,
+    //8, 8,
+    //9, 9,
   )
   val instrRamKindArr = Array[Int](
-    0,
+    //0,
     1,
-    2,
-    5,
+    //2,
+    //5,
   )
-  for (testIdx <- 0 to 8) {
+  for (testIdx <- 0 to 9) {
     programStrArr += (
       s"test/snowhousecpu-test-${testIdx}.bin"
     )

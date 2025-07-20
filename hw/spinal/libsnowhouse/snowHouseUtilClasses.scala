@@ -1096,6 +1096,13 @@ case class SnowHousePipePayload(
     // As such we will effectively be transforming branch mispredicts 
     // into a pretend "taken jump" from the old "assume not taken" branch
     // predictor. This enables us to have reuse that old code.
+    //Vec.fill(2)(
+      Bool()
+    //)
+  )
+  val branchPredictReplaceBtbElem = (
+    cfg.haveBranchPredictor
+  ) generate (
     Bool()
   )
   val encInstr = Flow(UInt(cfg.instrMainWidth bits))
@@ -1198,9 +1205,9 @@ case class SnowHousePipePayload(
   val myHistRegPc = Vec.fill(3)(
     UInt(cfg.mainWidth bits)//.simPublic()
   )
-  val myHistRegPcPlusInstrSize = Vec.fill(myHistRegPc.size)(
-    /*Flow*/(UInt(cfg.mainWidth bits))//.simPublic()
-  )
+  //val myHistRegPcPlusInstrSize = Vec.fill(myHistRegPc.size)(
+  //  /*Flow*/(UInt(cfg.mainWidth bits))//.simPublic()
+  //)
   val regPcPlus1Instr = UInt(cfg.mainWidth bits)
   val psIfRegPcSetItCnt = UInt(2 bits)
   val regPcSetItCnt = Vec.fill(cfg.lowerMyFanoutRegPcSetItCnt)(
