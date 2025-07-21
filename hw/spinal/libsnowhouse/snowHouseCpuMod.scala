@@ -487,7 +487,7 @@ object SnowHouseCpuPipeStageInstrDecode {
     laggingRegPc: UInt,
     regPcPlusImm: UInt,
     //branchPredictTkn: Bool,
-  ): BranchTgtBufElem = {
+  ): BranchTgtBufElemWithBrKind = {
     import SnowHouseCpuOp._
     def setOp(
       someOp: (Int, (Int, Int), String),
@@ -518,7 +518,7 @@ object SnowHouseCpuPipeStageInstrDecode {
       }
     }
     //val ret = Flow(SnowHouseBranchPredictorKind.FwdNotTknBakTknEnum())
-    val ret = BranchTgtBufElem(
+    val ret = BranchTgtBufElemWithBrKind(
       //mainWidth=mainWidth,
       //optBranchPredictorKind=optBranchPredictorKind,
       cfg=cfg,
@@ -528,7 +528,7 @@ object SnowHouseCpuPipeStageInstrDecode {
     //ret.dbgEncInstr.assignFromBits(
     //  encInstr.asBits
     //)
-    ret.valid := True
+    ret.btbElem.valid := True
     //optHavePreDel1 match {
     //  case Some(havePreDel1) => {
         val myTargetDisp = (
@@ -564,12 +564,12 @@ object SnowHouseCpuPipeStageInstrDecode {
               Cat(
                 rPrevPreImm.payload,
                 encInstr.imm16,
-              ).asUInt.resize(ret.dstRegPc.getWidth)
+              ).asUInt.resize(ret.btbElem.dstRegPc.getWidth)
             )
           //}
         }
         //when (!branchPredictTkn) {
-          ret.srcRegPc := (
+          ret.btbElem.srcRegPc := (
             //regPc - (2 * cfg.instrSizeBytes)
             //regPc - (2 * cfg.instrSizeBytes)
             //regPc //- (2 * cfg.instrSizeBytes)
@@ -588,7 +588,7 @@ object SnowHouseCpuPipeStageInstrDecode {
             //+ (3 * cfg.instrSizeBytes)
             //- (2 * cfg.instrSizeBytes)
           )
-          ret.dstRegPc := (
+          ret.btbElem.dstRegPc := (
             //regPc + myTargetDisp
             //regPcPlusImm + (3 * cfg.instrSizeBytes)
             //regPcPlusImm + (2 * cfg.instrSizeBytes)
@@ -625,7 +625,7 @@ object SnowHouseCpuPipeStageInstrDecode {
           Cat(myTargetDisp.msb).asUInt
           .resize(ret.branchKind.getWidth).asBits
         )
-        ret.dontPredict := (
+        ret.btbElem.dontPredict := (
           False
         )
         //when (!myTargetDisp.msb) {
@@ -680,7 +680,7 @@ object SnowHouseCpuPipeStageInstrDecode {
           //encInstr.rbIdx === 0x0
         ) {
           setOp(AddRaPcSimm16)
-          ret.valid := False
+          ret.btbElem.valid := False
           tempDontPredict := True
           //optSplitOp match {
           //  case Some(splitOp) => {
@@ -724,7 +724,7 @@ object SnowHouseCpuPipeStageInstrDecode {
         // In other words, we don't try to branch predict `Jl`.
         // It may be of interest to have a function return predictor at
         // some point.
-        ret.valid := False
+        ret.btbElem.valid := False
         tempDontPredict := True
         setOp(JlRaRb)
         //optSplitOp match {
@@ -748,7 +748,7 @@ object SnowHouseCpuPipeStageInstrDecode {
           case None => {
           }
         }
-        ret.valid := False
+        ret.btbElem.valid := False
         tempDontPredict := True
       }
     }
@@ -760,7 +760,7 @@ object SnowHouseCpuPipeStageInstrDecode {
     //    init=ret.getZero,
     //  )
     //)
-    ret.dontPredict := tempDontPredict
+    ret.btbElem.dontPredict := tempDontPredict
 
     //when (
     //  !tempDontPredict
@@ -1644,7 +1644,7 @@ object SnowHouseCpuPipeStageInstrDecode {
       //  }
       //}
       is (BeqRaRbSimm._1) {
-        upPayload.branchTgtBufElem(1) := _commonDecodeBranch(
+        val tempBtbElemWithBrKind = _commonDecodeBranch(
           //mainWidth=cfg.mainWidth,
           cfg=cfg,
           encInstr=encInstr,
@@ -1659,6 +1659,8 @@ object SnowHouseCpuPipeStageInstrDecode {
           regPcPlusImm=upPayload.regPcPlusImm,
           //branchPredictTkn=upPayload.branchPredictTkn,
         )
+        upPayload.branchTgtBufElem(1) := tempBtbElemWithBrKind.btbElem
+        upPayload.btbElemBranchKind(1) := tempBtbElemWithBrKind.branchKind
         //upPayload.splitOp.exSetNextPcKind := (
         //  SnowHousePsExSetNextPcKind.PcPlusImm
         //)
@@ -2674,7 +2676,7 @@ case class SnowHouseCpuConfig(
   regFileMemRamStyle: String="distributed",
   icacheMemRamStyle: String="auto",
   dcacheMemRamStyle: String="auto",
-  branchTgtBufSizeLog2: Int=log2Up(1024),
+  branchTgtBufSizeLog2: Int=log2Up(256),
 ) {
   //--------
   val instrMainWidth = 32
@@ -4036,17 +4038,17 @@ object SnowHouseCpuWithDualRamSim extends App {
   //  "5",
   //)
   val testIdxRange = (
-    0, 0,
+    //0, 0,
     //1, 1,
-    2, 2,
+    //2, 2,
     //3, 3,
     //4, 4,
     //5, 5,
     //6, 6,
     //7, 7,
-    //8, 8,
+    //8, //8,
     //9, 9,
-    //10, 10
+    10, 10
   )
   val instrRamKindArr = Array[Int](
     0,

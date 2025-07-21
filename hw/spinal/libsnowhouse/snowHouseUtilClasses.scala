@@ -1109,6 +1109,15 @@ case class SnowHousePipePayload(
   val branchTgtBufElem = Vec.fill(2)(
     BranchTgtBufElem(cfg=cfg)
   )
+  val btbElemBranchKind = (
+    cfg.haveBranchPredictor
+  ) generate (
+    Vec.fill(2)(
+      Bits(
+        cfg.optBranchPredictorKind.get._branchKindEnumWidth bits
+      )
+    )
+  )
   val inpDecodeExt = (
     Vec.fill(2)(
       SnowHouseDecodeExt(cfg=cfg)

@@ -115,20 +115,31 @@ case class BranchTgtBufElem(
   // branch target buffer element
   val valid = Bool() // whether or not we even have a branch here.
   def fire = valid
-  val branchKind = (
-    cfg.haveBranchPredictor
-  ) generate (
-    Bits(
-      //SnowHouseBranchPredictorKind.branchKindEnumMaxWidth bits
-      cfg.optBranchPredictorKind.get._branchKindEnumWidth bits
-    )
-  )
+  //val branchKind = (
+  //  cfg.haveBranchPredictor
+  //) generate (
+  //  Bits(
+  //    //SnowHouseBranchPredictorKind.branchKindEnumMaxWidth bits
+  //    cfg.optBranchPredictorKind.get._branchKindEnumWidth bits
+  //  )
+  //)
   val dontPredict = (
     Bool()
   )
   val srcRegPc = UInt(cfg.mainWidth bits)
   val dstRegPc = UInt(cfg.mainWidth bits) 
   //val dbgEncInstr = UInt(cfg.instrMainWidth bits)
+}
+case class BranchTgtBufElemWithBrKind(
+  cfg: SnowHouseConfig
+) extends Bundle {
+  val branchKind = (
+    Bits(
+      //SnowHouseBranchPredictorKind.branchKindEnumMaxWidth bits
+      cfg.optBranchPredictorKind.get._branchKindEnumWidth bits
+    )
+  )
+  val btbElem = BranchTgtBufElem(cfg=cfg)
 }
 case class SnowHousePsExSetPcPayload(
   cfg: SnowHouseConfig
@@ -143,7 +154,10 @@ case class SnowHousePsExSetPcPayload(
 
   val nextPc = UInt(cfg.mainWidth bits)
   //val encInstr = Flow(UInt(cfg.instrMainWidth bits))
-  val branchTgtBufElem = BranchTgtBufElem(cfg=cfg)
+  //val branchTgtBufElem = BranchTgtBufElem(cfg=cfg)
+  val btbElemWithBrKind = BranchTgtBufElemWithBrKind(cfg=cfg)
+  def branchTgtBufElem = btbElemWithBrKind.btbElem
+  def branchKind = btbElemWithBrKind.branchKind
   //val btbWrEn = (
   //  Bool()
   //)
@@ -291,13 +305,15 @@ case class SnowHouseBranchPredictor(
   val wrBtbElem = BranchTgtBufElem(
     cfg=cfg
   )
-  val otherWrBtbElem = BranchTgtBufElem(
+  val otherWrBtbElemWithBrKind = BranchTgtBufElemWithBrKind(
     cfg=cfg,
   )
   val otherWrBranchKind = (
     SnowHouseBranchPredictorKind.FwdNotTknBakTknEnum()
   )
-  otherWrBranchKind.assignFromBits(otherWrBtbElem.branchKind)
+  otherWrBranchKind.assignFromBits(
+    otherWrBtbElemWithBrKind.branchKind
+  )
   val tgtBufWrEn = (
     io.psExSetPc.valid
     //&& io.psExSetPc.btbWrEn
@@ -306,7 +322,7 @@ case class SnowHouseBranchPredictor(
         (
           io.psExSetPc.branchTgtBufElem.fire
         ) && (
-          !otherWrBtbElem.dontPredict
+          !otherWrBtbElemWithBrKind.btbElem.dontPredict
         ) && (
           otherWrBranchKind
           === SnowHouseBranchPredictorKind.FwdNotTknBakTknEnum.BAK
@@ -355,18 +371,18 @@ case class SnowHouseBranchPredictor(
   //val otherWrBtbElem = (
   //  io.psExSetPc.branchTgtBufElem
   //)
-  otherWrBtbElem := (
+  otherWrBtbElemWithBrKind := (
     RegNext(
-      next=otherWrBtbElem,
-      init=otherWrBtbElem.getZero,
+      next=otherWrBtbElemWithBrKind,
+      init=otherWrBtbElemWithBrKind.getZero,
     )
   )
   when (io.psExSetPc.valid) {
-    otherWrBtbElem := io.psExSetPc.branchTgtBufElem
+    otherWrBtbElemWithBrKind := io.psExSetPc.btbElemWithBrKind
     wrBtbElem := (
       RegNext(
-        next=otherWrBtbElem,
-        init=otherWrBtbElem.getZero,
+        next=otherWrBtbElemWithBrKind.btbElem,
+        init=otherWrBtbElemWithBrKind.btbElem.getZero,
       )
     )
     //wrBtbElem.dstRegPc := io.psExSetPc.nextPc
@@ -374,8 +390,8 @@ case class SnowHouseBranchPredictor(
   wrBtbElem.valid.allowOverride
   wrBtbElem.valid := True
 
-  val rdBranchKind = SnowHouseBranchPredictorKind.FwdNotTknBakTknEnum()
-  rdBranchKind.assignFromBits(myRdBtbElem.branchKind)
+  //val rdBranchKind = SnowHouseBranchPredictorKind.FwdNotTknBakTknEnum()
+  //rdBranchKind.assignFromBits(myRdBtbElem.branchKind)
   io.result.valid := (
     myRdBtbElem.fire
     && (
@@ -397,9 +413,9 @@ case class SnowHouseBranchPredictor(
   //  io.psExSetPc.valid
   //) {
   //}
-  io.result.predictTkn := (
-    rdBranchKind === SnowHouseBranchPredictorKind.FwdNotTknBakTknEnum.BAK
-  )
+  //io.result.predictTkn := (
+  //  rdBranchKind === SnowHouseBranchPredictorKind.FwdNotTknBakTknEnum.BAK
+  //)
   //tgtBuf.io.ramIo.wrData := wrBtbElem.asBits
   //tgtBuf.write(
   //  address=tgtBufWrAddr,
@@ -661,7 +677,7 @@ case class SnowHousePipeStageInstrFetch(
     //RegNextWhen(
     //  next=(
         branchPredictor.io.result.fire
-        && branchPredictor.io.result.predictTkn
+        //&& branchPredictor.io.result.predictTkn
         && !rTakeJumpAddr.fire
     //  ),
     //  cond=cIf.up.isFiring,
@@ -692,7 +708,8 @@ case class SnowHousePipeStageInstrFetch(
     branchPredictor.io.inpRegPc := (
       //myRegPc + (1 * cfg.instrSizeBytes)
       //myHistRegPc(1) + (1 * cfg.instrSizeBytes)
-      (nextRegPc + (2 * cfg.instrSizeBytes)).asUInt
+      //(nextRegPc + (2 * cfg.instrSizeBytes)).asUInt
+      myRegPc
       //myHistRegPc(2)
     )
     //when (
@@ -1456,7 +1473,7 @@ case class SnowHousePipeStageInstrDecode(
     && upPayload(1).branchTgtBufElem(1).fire
     && !upPayload(1).branchTgtBufElem(1).dontPredict
 
-    && upPayload(1).branchTgtBufElem(1).branchKind.asBits(0)
+    && upPayload(1).btbElemBranchKind(1).asBits(0)
     && (
       (
         upPayload(1).branchTgtBufElem(0).srcRegPc
@@ -6014,6 +6031,7 @@ case class SnowHousePipeStageExecute(
   )
   psExSetPc.nextPc := setOutpModMemWord.io.psExSetPc.nextPc
   //psExSetPc.encInstr := outp.encInstr
+  psExSetPc.branchKind := outp.btbElemBranchKind(1)
   psExSetPc.branchTgtBufElem := outp.branchTgtBufElem(1)
   psExSetPc.branchTgtBufElem.dontPredict.allowOverride
   psExSetPc.branchTgtBufElem.dontPredict := (
