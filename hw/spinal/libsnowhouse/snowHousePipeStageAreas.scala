@@ -221,35 +221,35 @@ case class SnowHouseBranchPredictor(
   //def myRegPc = io.upModExt.regPc
   //def myRegPc = io.regPc
 
-  val tgtBuf = (
-    Mem(
-      wordType=BranchTgtBufElem(
-        cfg=cfg
-      ),
-      initialContent={
-        Array.fill(branchTgtBufSize)(
-          BranchTgtBufElem(
-            cfg=cfg
-          ).getZero
-        )
-      }
-    )
-    //.addAttribute(
-    //  "asdf", "yes"
-    //)
-  )
   //val tgtBuf = (
-  //  RamSimpleDualPort(
+  //  Mem(
   //    wordType=BranchTgtBufElem(
-  //      //mainWidth=cfg.mainWidth,
-  //      cfg=cfg,
+  //      cfg=cfg
   //    ),
-  //    depth=branchTgtBufSize,
-  //    initBigInt=(
-  //      Some(Array.fill(branchTgtBufSize)(BigInt(0)))
-  //    )
+  //    initialContent={
+  //      Array.fill(branchTgtBufSize)(
+  //        BranchTgtBufElem(
+  //          cfg=cfg
+  //        ).getZero
+  //      )
+  //    }
   //  )
+  //  //.addAttribute(
+  //  //  "asdf", "yes"
+  //  //)
   //)
+  val tgtBuf = (
+    RamSimpleDualPort(
+      wordType=BranchTgtBufElem(
+        //mainWidth=cfg.mainWidth,
+        cfg=cfg,
+      ),
+      depth=branchTgtBufSize,
+      initBigInt=(
+        Some(Array.fill(branchTgtBufSize)(BigInt(0)))
+      )
+    )
+  )
   //tgtBuf.io.ramIo.rdEn := True
   //tgtBuf.readAsync(
   //)
@@ -262,11 +262,13 @@ case class SnowHouseBranchPredictor(
     io.inpRegPc(myPcAddrRange) //- 1//- 2 //- 1 //- 2//- 3
   )
   val myRdBtbElem = BranchTgtBufElem(cfg=cfg)
-  //myRdBtbElem.assignFromBits(tgtBuf.io.ramIo.rdData)
-  myRdBtbElem := tgtBuf.readSync(
-    address=tgtBufRdAddr,
-    enable=io.upIsFiring,
-  )
+  myRdBtbElem.assignFromBits(tgtBuf.io.ramIo.rdData)
+  //myRdBtbElem := tgtBuf.readSync(
+  //  address=tgtBufRdAddr,
+  //  enable=io.upIsFiring,
+  //)
+  tgtBuf.io.ramIo.rdAddr := tgtBufRdAddr
+  tgtBuf.io.ramIo.rdEn := io.upIsFiring
   //myRdBtbElem := (
   //  RegNext(
   //    next=myRdBtbElem,
@@ -289,22 +291,40 @@ case class SnowHouseBranchPredictor(
   val wrBtbElem = BranchTgtBufElem(
     cfg=cfg
   )
-  val wrBranchKind = SnowHouseBranchPredictorKind.FwdNotTknBakTknEnum()
-  wrBranchKind.assignFromBits(wrBtbElem.branchKind)
+  val otherWrBtbElem = BranchTgtBufElem(
+    cfg=cfg,
+  )
+  val otherWrBranchKind = (
+    SnowHouseBranchPredictorKind.FwdNotTknBakTknEnum()
+  )
+  otherWrBranchKind.assignFromBits(otherWrBtbElem.branchKind)
   val tgtBufWrEn = (
     io.psExSetPc.valid
     //&& io.psExSetPc.btbWrEn
     && RegNext(
-      next=io.psExSetPc.branchTgtBufElem.fire,
+      next=(
+        (
+          io.psExSetPc.branchTgtBufElem.fire
+        ) && (
+          !otherWrBtbElem.dontPredict
+        ) && (
+          otherWrBranchKind
+          === SnowHouseBranchPredictorKind.FwdNotTknBakTknEnum.BAK
+        )
+      ),
       init=False,
-    ) //wrBtbElem.fire
-    && !wrBtbElem.dontPredict
-    && (
-      wrBranchKind
-      === SnowHouseBranchPredictorKind.FwdNotTknBakTknEnum.BAK
     )
-    //&& wrBtbElem.branchKind
-    //|| RegNext(next=io.stickyExSetPc(0).valid, init=False)
+    //&& RegNext(
+    //  next=io.psExSetPc.branchTgtBufElem.fire,
+    //  init=False,
+    //) //wrBtbElem.fire
+    //&& !wrBtbElem.dontPredict
+    //&& (
+    //  wrBranchKind
+    //  === SnowHouseBranchPredictorKind.FwdNotTknBakTknEnum.BAK
+    //)
+    ////&& wrBtbElem.branchKind
+    ////|| RegNext(next=io.stickyExSetPc(0).valid, init=False)
   )
   //tgtBuf.io.ramIo.rdAddr := (
   //  tgtBufRdAddr
@@ -318,6 +338,7 @@ case class SnowHouseBranchPredictor(
     )
     init(0x0)
   )
+  //tgtBuf.io.ramIo.wrAddr := tgtBufWrAddr
   //tgtBuf.write(
   //  address=io.stickyExSetPc(0).nextPc,
   //  data=wrBtbElem,
@@ -331,11 +352,21 @@ case class SnowHouseBranchPredictor(
     )
   )
   wrBtbElem.dstRegPc.allowOverride
+  //val otherWrBtbElem = (
+  //  io.psExSetPc.branchTgtBufElem
+  //)
+  otherWrBtbElem := (
+    RegNext(
+      next=otherWrBtbElem,
+      init=otherWrBtbElem.getZero,
+    )
+  )
   when (io.psExSetPc.valid) {
+    otherWrBtbElem := io.psExSetPc.branchTgtBufElem
     wrBtbElem := (
       RegNext(
-        next=io.psExSetPc.branchTgtBufElem,
-        init=io.psExSetPc.branchTgtBufElem.getZero,
+        next=otherWrBtbElem,
+        init=otherWrBtbElem.getZero,
       )
     )
     //wrBtbElem.dstRegPc := io.psExSetPc.nextPc
@@ -370,11 +401,14 @@ case class SnowHouseBranchPredictor(
     rdBranchKind === SnowHouseBranchPredictorKind.FwdNotTknBakTknEnum.BAK
   )
   //tgtBuf.io.ramIo.wrData := wrBtbElem.asBits
-  tgtBuf.write(
-    address=tgtBufWrAddr,
-    data=wrBtbElem,
-    enable=tgtBufWrEn,
-  )
+  //tgtBuf.write(
+  //  address=tgtBufWrAddr,
+  //  data=wrBtbElem,
+  //  enable=tgtBufWrEn,
+  //)
+  tgtBuf.io.ramIo.wrAddr := tgtBufWrAddr
+  tgtBuf.io.ramIo.wrData := wrBtbElem.asBits
+  tgtBuf.io.ramIo.wrEn := tgtBufWrEn
   //when (rRdBtbElem.fire) {
   //}
   //when (tgtBuf.io.ramIo.wrEn) {
