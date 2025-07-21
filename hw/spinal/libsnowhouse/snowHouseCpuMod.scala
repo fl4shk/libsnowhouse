@@ -2674,6 +2674,7 @@ case class SnowHouseCpuConfig(
   regFileMemRamStyle: String="distributed",
   icacheMemRamStyle: String="auto",
   dcacheMemRamStyle: String="auto",
+  branchTgtBufSizeLog2: Int=1024,
 ) {
   //--------
   val instrMainWidth = 32
@@ -2847,7 +2848,9 @@ case class SnowHouseCpuConfig(
         //doHaveBranchInstr=SnowHouseCpuPipeStageInstrDecode.decodeBranch,
         branchTgtBufSizeLog2=(
           //log2Up(64)
-          log2Up(16)
+          //log2Up(16)
+          //log2Up(1024)
+          branchTgtBufSizeLog2
         ),
       )
     ),
@@ -4033,7 +4036,7 @@ object SnowHouseCpuWithDualRamSim extends App {
   //  "5",
   //)
   val testIdxRange = (
-    0, //0,
+    0, 0,
     //1, 1,
     2, 2,
     //3, 3,
