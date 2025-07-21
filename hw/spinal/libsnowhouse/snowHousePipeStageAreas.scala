@@ -347,6 +347,14 @@ case class SnowHouseBranchPredictor(
   rdBranchKind.assignFromBits(myRdBtbElem.branchKind)
   io.result.valid := (
     myRdBtbElem.fire
+    && (
+      myRdBtbElem.srcRegPc
+      === RegNextWhen(
+        next=io.inpRegPc,
+        cond=io.upIsFiring,
+        init=io.inpRegPc.getZero,
+      )
+    )
   )
   val tempNextRegPc = (
     myRdBtbElem.dstRegPc //+ (1 * cfg.instrSizeBytes)
@@ -1412,8 +1420,9 @@ case class SnowHousePipeStageInstrDecode(
     )
     //&& upPayload(0).branchTgtBufElem(0).fire
     && upPayload(1).branchTgtBufElem(1).fire
-    && upPayload(1).branchTgtBufElem(1).branchKind.asBits(0)
     && !upPayload(1).branchTgtBufElem(1).dontPredict
+
+    && upPayload(1).branchTgtBufElem(1).branchKind.asBits(0)
     && (
       (
         upPayload(1).branchTgtBufElem(0).srcRegPc
@@ -2494,7 +2503,10 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
         //)
         nextTempPsExSetPcValid
         //|| tempPsExSetPcTaken
-        || myPsExSetPcValid
+        || (
+          myPsExSetPcValid
+          && !tempReplaceBtbElem
+        )
       )
       tempPsExSetPcTaken := (
         (

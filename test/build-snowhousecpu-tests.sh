@@ -1,4 +1,4 @@
-for ((i=0; i<10; i+=1)); do
+for ((i=0; i<11; i+=1)); do
 	snowhousecpu-unknown-elf-as -c snowhousecpu-test-"$i".s -o snowhousecpu-test-"$i".o
 	snowhousecpu-unknown-elf-ld --relax snowhousecpu-test-"$i".o -o snowhousecpu-test-"$i".elf
 	snowhousecpu-unknown-elf-objcopy -O binary snowhousecpu-test-"$i".elf snowhousecpu-test-"$i".bin
