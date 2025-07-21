@@ -465,7 +465,7 @@ case class SnowHousePipeStageInstrFetch(
   )
   def myInstrCnt = upModExt.instrCnt
   //val nextRegPc = SInt(cfg.mainWidth bits) //cloneOf(upModExt.regPc)
-  val myRegPc = UInt(cfg.mainWidth bits)
+  //val myRegPc = UInt(cfg.mainWidth bits)
   def myRegPcSetItCnt = upModExt.psIfRegPcSetItCnt
   val rPrevRegPcSetItCnt = {
     val temp = (
@@ -588,10 +588,10 @@ case class SnowHousePipeStageInstrFetch(
   //  RegNext(nextRegPc)
   //  init(myNextRegPcInit)
   //)
-  myRegPc := (
-    RegNext(myRegPc)
-    init(myNextRegPcInit)
-  )
+  //myRegPc := (
+  //  RegNext(myRegPc)
+  //  init(myNextRegPcInit)
+  //)
 
   //io.ibus.sendData.addr := (
   //  RegNext(
@@ -713,8 +713,8 @@ case class SnowHousePipeStageInstrFetch(
       //myRegPc + (1 * cfg.instrSizeBytes)
       //myHistRegPc(1) + (1 * cfg.instrSizeBytes)
       //(nextRegPc + (2 * cfg.instrSizeBytes)).asUInt
-      myRegPc
-      //rPrevRegPc.asUInt + (1 * cfg.instrSizeBytes)
+      //myRegPc
+      rPrevRegPc.asUInt + (1 * cfg.instrSizeBytes)
       //myHistRegPc(2)
     )
     //when (
@@ -847,20 +847,20 @@ case class SnowHousePipeStageInstrFetch(
             //nextRegPc + (2 * cfg.instrSizeBytes)
             myPredictedNextPc //+ (2 * cfg.instrSizeBytes)
           )
-          myRegPc.assignFromBits(
-            //(rPrevRegPc + cfg.instrSizeBytes).asBits
-            //temp.asBits
-            (
-              //rPrevRegPc + cfg.instrSizeBytes
-              tempNextRegPc
-              //+ (2 * cfg.instrSizeBytes)
-              //RegNextWhen(
-              //  next=tempNextRegPc,
-              //  cond=cIf.up.isFiring,
-              //  init=tempNextRegPc.getZero,
-              //)
-            ).asBits
-          )
+          //myRegPc.assignFromBits(
+          //  //(rPrevRegPc + cfg.instrSizeBytes).asBits
+          //  //temp.asBits
+          //  (
+          //    //rPrevRegPc + cfg.instrSizeBytes
+          //    tempNextRegPc
+          //    //+ (2 * cfg.instrSizeBytes)
+          //    //RegNextWhen(
+          //    //  next=tempNextRegPc,
+          //    //  cond=cIf.up.isFiring,
+          //    //  init=tempNextRegPc.getZero,
+          //    //)
+          //  ).asBits
+          //)
           //when (predictCond) {
             io.ibus.sendData.addr := (
               //myMuxedRegPc
@@ -934,10 +934,10 @@ case class SnowHousePipeStageInstrFetch(
             //rPrevRegPcThenNext
             rPrevRegPc.asUInt + cfg.instrSizeBytes
           )
-          myRegPc.assignFromBits(
-            //(temp + (2 * cfg.instrSizeBytes)).asBits
-            temp.asBits
-          )
+          //myRegPc.assignFromBits(
+          //  //(temp + (2 * cfg.instrSizeBytes)).asBits
+          //  temp.asBits
+          //)
           //nextRegPc.assignFromBits(
           //  (temp - (2 * cfg.instrSizeBytes)).asBits
           //  //upModExt.myHistRegPc(2).asBits
@@ -1012,10 +1012,10 @@ case class SnowHousePipeStageInstrFetch(
             //(temp + (2 * cfg.instrSizeBytes)).asBits
             temp
           )
-          myRegPc.assignFromBits(
-            tempNextRegPc.asBits
-            //temp.asBits
-          )
+          //myRegPc.assignFromBits(
+          //  tempNextRegPc.asBits
+          //  //temp.asBits
+          //)
           //upModExt.regPcPlus1Instr := (
           //  (temp + (3 * cfg.instrSizeBytes))
           //)
