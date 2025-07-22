@@ -311,8 +311,8 @@ case class SnowHouseBranchPredictor(
         Some(Array.fill(branchTgtBufSize)(BigInt(0)))
       ),
       arrRamStyle=(
-        //"auto"
-        "distributed"
+        "auto"
+        //"distributed"
       ),
     )
   )
@@ -1252,12 +1252,12 @@ case class SnowHousePipeStageInstrFetch(
     }
   }
 
-  when (cIf.down.isReady) {
-    upModExt.encInstr.valid := (
-      //!upModExt.psIfRegPcSetItCnt(0)
-      True
-    )
-  }
+  //when (cIf.down.isReady) {
+  //  upModExt.encInstr.valid := (
+  //    //!upModExt.psIfRegPcSetItCnt(0)
+  //    True
+  //  )
+  //}
 }
 case class SnowHousePipeStageInstrDecode(
   val args: SnowHousePipeStageArgs,
@@ -1380,15 +1380,15 @@ case class SnowHousePipeStageInstrDecode(
     //when (down.isReady) {
         //when (io.ibus.fire) {
         //}
-      when (upPayload(1).encInstr.fire) {
+      //when (upPayload(1).encInstr.fire) {
         myInstr := (
           upPayload(1).encInstr.payload
         )
-      } otherwise {
-        myInstr := (
-          0x0
-        )
-      }
+      //} otherwise {
+      //  myInstr := (
+      //    0x0
+      //  )
+      //}
       //when (!rSetUpPayloadState(1)) {
       //  when (
       //    //!(RegNext(io.ibus.fire) init(False))
