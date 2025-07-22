@@ -252,17 +252,47 @@ case class SnowHouseBranchPredictor(
   //  //  "asdf", "yes"
   //  //)
   //)
-  val tgtBuf = (
+  //val tgtBuf = (
+  //  RamSimpleDualPort(
+  //    wordType=BranchTgtBufElem(
+  //      //mainWidth=cfg.mainWidth,
+  //      cfg=cfg,
+  //    ),
+  //    depth=branchTgtBufSize,
+  //    initBigInt=(
+  //      Some(Array.fill(branchTgtBufSize)(BigInt(0)))
+  //    ),
+  //    arrRamStyle="distributed",
+  //  )
+  //)
+  val tgtSrcRegPcBuf = (
     RamSimpleDualPort(
-      wordType=BranchTgtBufElem(
-        //mainWidth=cfg.mainWidth,
-        cfg=cfg,
-      ),
+      wordType=UInt(cfg.mainWidth bits),
       depth=branchTgtBufSize,
       initBigInt=(
         Some(Array.fill(branchTgtBufSize)(BigInt(0)))
       ),
-      arrRamStyle="distributed",
+      arrRamStyle="auto",
+    )
+  )
+  val tgtDstRegPcBuf = (
+    RamSimpleDualPort(
+      wordType=UInt(cfg.mainWidth bits),
+      depth=branchTgtBufSize,
+      initBigInt=(
+        Some(Array.fill(branchTgtBufSize)(BigInt(0)))
+      ),
+      arrRamStyle="auto",
+    )
+  )
+  val tgtValidBuf = (
+    RamSimpleDualPort(
+      wordType=Bool(),
+      depth=branchTgtBufSize,
+      initBigInt=(
+        Some(Array.fill(branchTgtBufSize)(BigInt(0)))
+      ),
+      arrRamStyle="auto",
     )
   )
   //tgtBuf.io.ramIo.rdEn := True
@@ -277,13 +307,30 @@ case class SnowHouseBranchPredictor(
     io.inpRegPc(myPcAddrRange) //- 1//- 2 //- 1 //- 2//- 3
   )
   val myRdBtbElem = BranchTgtBufElem(cfg=cfg)
-  myRdBtbElem.assignFromBits(tgtBuf.io.ramIo.rdData)
+  //myRdBtbElem.assignFromBits(tgtBuf.io.ramIo.rdData)
+  myRdBtbElem.srcRegPc.assignFromBits(
+    tgtSrcRegPcBuf.io.ramIo.rdData
+  )
+  myRdBtbElem.dstRegPc.assignFromBits(
+    tgtDstRegPcBuf.io.ramIo.rdData
+  )
+  myRdBtbElem.valid.assignFromBits(
+    tgtValidBuf.io.ramIo.rdData
+  )
+  myRdBtbElem.dontPredict := False
   //myRdBtbElem := tgtBuf.readSync(
   //  address=tgtBufRdAddr,
   //  enable=io.upIsFiring,
   //)
-  tgtBuf.io.ramIo.rdAddr := tgtBufRdAddr
-  tgtBuf.io.ramIo.rdEn := io.upIsFiring
+  tgtSrcRegPcBuf.io.ramIo.rdAddr := tgtBufRdAddr
+  tgtDstRegPcBuf.io.ramIo.rdAddr := tgtBufRdAddr
+  tgtValidBuf.io.ramIo.rdAddr := tgtBufRdAddr
+
+  tgtSrcRegPcBuf.io.ramIo.rdEn := io.upIsFiring
+  tgtDstRegPcBuf.io.ramIo.rdEn := io.upIsFiring
+  tgtValidBuf.io.ramIo.rdEn := io.upIsFiring
+
+  //tgtBuf.io.ramIo.rdEn := io.upIsFiring
   //myRdBtbElem := (
   //  RegNext(
   //    next=myRdBtbElem,
@@ -423,9 +470,24 @@ case class SnowHouseBranchPredictor(
   //  data=wrBtbElem,
   //  enable=tgtBufWrEn,
   //)
-  tgtBuf.io.ramIo.wrAddr := tgtBufWrAddr
-  tgtBuf.io.ramIo.wrData := wrBtbElem.asBits
-  tgtBuf.io.ramIo.wrEn := tgtBufWrEn
+  //tgtBuf.io.ramIo.wrAddr := tgtBufWrAddr
+  tgtSrcRegPcBuf.io.ramIo.wrAddr := tgtBufWrAddr
+  tgtDstRegPcBuf.io.ramIo.wrAddr := tgtBufWrAddr
+  tgtValidBuf.io.ramIo.wrAddr := tgtBufWrAddr
+  //tgtBuf.io.ramIo.wrData := wrBtbElem.asBits
+  tgtSrcRegPcBuf.io.ramIo.wrData := (
+    wrBtbElem.srcRegPc.asBits
+  )
+  tgtDstRegPcBuf.io.ramIo.wrData := (
+    wrBtbElem.dstRegPc.asBits
+  )
+  tgtValidBuf.io.ramIo.wrData := (
+    wrBtbElem.valid.asBits
+  )
+  //tgtBuf.io.ramIo.wrEn := tgtBufWrEn
+  tgtSrcRegPcBuf.io.ramIo.wrEn := tgtBufWrEn
+  tgtDstRegPcBuf.io.ramIo.wrEn := tgtBufWrEn
+  tgtValidBuf.io.ramIo.wrEn := tgtBufWrEn
   //when (rRdBtbElem.fire) {
   //}
   //when (tgtBuf.io.ramIo.wrEn) {
