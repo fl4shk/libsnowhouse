@@ -265,9 +265,9 @@ case class SnowHouseBranchPredictor(
   //    arrRamStyle="distributed",
   //  )
   //)
-  val tgtSrcRegPcBuf = (
+  val tgtSrcRegPcAndValidBuf = (
     RamSimpleDualPort(
-      wordType=UInt(cfg.mainWidth bits),
+      wordType=Flow(UInt(cfg.mainWidth bits)),
       depth=branchTgtBufSize,
       initBigInt=(
         Some(Array.fill(branchTgtBufSize)(BigInt(0)))
@@ -285,16 +285,16 @@ case class SnowHouseBranchPredictor(
       arrRamStyle="auto",
     )
   )
-  val tgtValidBuf = (
-    RamSimpleDualPort(
-      wordType=Bool(),
-      depth=branchTgtBufSize,
-      initBigInt=(
-        Some(Array.fill(branchTgtBufSize)(BigInt(0)))
-      ),
-      arrRamStyle="auto",
-    )
-  )
+  //val tgtValidBuf = (
+  //  RamSimpleDualPort(
+  //    wordType=Bool(),
+  //    depth=branchTgtBufSize,
+  //    initBigInt=(
+  //      Some(Array.fill(branchTgtBufSize)(BigInt(0)))
+  //    ),
+  //    arrRamStyle="auto",
+  //  )
+  //)
   //tgtBuf.io.ramIo.rdEn := True
   //tgtBuf.readAsync(
   //)
@@ -308,27 +308,35 @@ case class SnowHouseBranchPredictor(
   )
   val myRdBtbElem = BranchTgtBufElem(cfg=cfg)
   //myRdBtbElem.assignFromBits(tgtBuf.io.ramIo.rdData)
-  myRdBtbElem.srcRegPc.assignFromBits(
-    tgtSrcRegPcBuf.io.ramIo.rdData
+  val myRdSrcRegPcAndValid = Flow(UInt(cfg.mainWidth bits))
+  myRdSrcRegPcAndValid.assignFromBits(
+    tgtSrcRegPcAndValidBuf.io.ramIo.rdData
   )
+  myRdBtbElem.srcRegPc := myRdSrcRegPcAndValid.payload
+  myRdBtbElem.valid := myRdSrcRegPcAndValid.valid
+  //myRdBtbElem.srcRegPc.assignFromBits(
+  //  tgtSrcRegPcBuf.io.ramIo.rdData
+  //)
   myRdBtbElem.dstRegPc.assignFromBits(
     tgtDstRegPcBuf.io.ramIo.rdData
   )
-  myRdBtbElem.valid.assignFromBits(
-    tgtValidBuf.io.ramIo.rdData
-  )
+  //myRdBtbElem.valid.assignFromBits(
+  //  tgtValidBuf.io.ramIo.rdData
+  //)
   myRdBtbElem.dontPredict := False
   //myRdBtbElem := tgtBuf.readSync(
   //  address=tgtBufRdAddr,
   //  enable=io.upIsFiring,
   //)
-  tgtSrcRegPcBuf.io.ramIo.rdAddr := tgtBufRdAddr
+  //tgtSrcRegPcBuf.io.ramIo.rdAddr := tgtBufRdAddr
+  tgtSrcRegPcAndValidBuf.io.ramIo.rdAddr := tgtBufRdAddr
   tgtDstRegPcBuf.io.ramIo.rdAddr := tgtBufRdAddr
-  tgtValidBuf.io.ramIo.rdAddr := tgtBufRdAddr
+  //tgtValidBuf.io.ramIo.rdAddr := tgtBufRdAddr
 
-  tgtSrcRegPcBuf.io.ramIo.rdEn := io.upIsFiring
+  //tgtSrcRegPcBuf.io.ramIo.rdEn := io.upIsFiring
+  tgtSrcRegPcAndValidBuf.io.ramIo.rdEn := io.upIsFiring
   tgtDstRegPcBuf.io.ramIo.rdEn := io.upIsFiring
-  tgtValidBuf.io.ramIo.rdEn := io.upIsFiring
+  //tgtValidBuf.io.ramIo.rdEn := io.upIsFiring
 
   //tgtBuf.io.ramIo.rdEn := io.upIsFiring
   //myRdBtbElem := (
@@ -471,23 +479,31 @@ case class SnowHouseBranchPredictor(
   //  enable=tgtBufWrEn,
   //)
   //tgtBuf.io.ramIo.wrAddr := tgtBufWrAddr
-  tgtSrcRegPcBuf.io.ramIo.wrAddr := tgtBufWrAddr
+  //tgtSrcRegPcBuf.io.ramIo.wrAddr := tgtBufWrAddr
+  tgtSrcRegPcAndValidBuf.io.ramIo.wrAddr := tgtBufWrAddr
   tgtDstRegPcBuf.io.ramIo.wrAddr := tgtBufWrAddr
-  tgtValidBuf.io.ramIo.wrAddr := tgtBufWrAddr
+  //tgtValidBuf.io.ramIo.wrAddr := tgtBufWrAddr
   //tgtBuf.io.ramIo.wrData := wrBtbElem.asBits
-  tgtSrcRegPcBuf.io.ramIo.wrData := (
-    wrBtbElem.srcRegPc.asBits
+  val myWrSrcRegPcAndValid = Flow(UInt(cfg.mainWidth bits))
+  //tgtSrcRegPcBuf.io.ramIo.wrData := (
+  //  wrBtbElem.srcRegPc.asBits
+  //)
+  myWrSrcRegPcAndValid.payload := wrBtbElem.srcRegPc
+  myWrSrcRegPcAndValid.valid := wrBtbElem.valid
+  tgtSrcRegPcAndValidBuf.io.ramIo.wrData := (
+    myWrSrcRegPcAndValid.asBits
   )
   tgtDstRegPcBuf.io.ramIo.wrData := (
     wrBtbElem.dstRegPc.asBits
   )
-  tgtValidBuf.io.ramIo.wrData := (
-    wrBtbElem.valid.asBits
-  )
+  //tgtValidBuf.io.ramIo.wrData := (
+  //  wrBtbElem.valid.asBits
+  //)
   //tgtBuf.io.ramIo.wrEn := tgtBufWrEn
-  tgtSrcRegPcBuf.io.ramIo.wrEn := tgtBufWrEn
+  //tgtSrcRegPcBuf.io.ramIo.wrEn := tgtBufWrEn
+  tgtSrcRegPcAndValidBuf.io.ramIo.wrEn := tgtBufWrEn
   tgtDstRegPcBuf.io.ramIo.wrEn := tgtBufWrEn
-  tgtValidBuf.io.ramIo.wrEn := tgtBufWrEn
+  //tgtValidBuf.io.ramIo.wrEn := tgtBufWrEn
   //when (rRdBtbElem.fire) {
   //}
   //when (tgtBuf.io.ramIo.wrEn) {
