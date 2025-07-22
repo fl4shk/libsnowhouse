@@ -528,7 +528,7 @@ object SnowHouseCpuPipeStageInstrDecode {
     //ret.dbgEncInstr.assignFromBits(
     //  encInstr.asBits
     //)
-    ret.btbElem.valid := True
+    //ret.btbElem.valid := True
     //optHavePreDel1 match {
     //  case Some(havePreDel1) => {
         val myTargetDisp = (
@@ -620,6 +620,7 @@ object SnowHouseCpuPipeStageInstrDecode {
         //    regPcPlusImm + (1 * cfg.instrSizeBytes)
         //  )
         //}
+        ret.btbElem.valid := myTargetDisp.msb 
         ret.branchKind.assignFromBits(
           // this is only for `FwdNotTknBakTknEnum`!
           Cat(myTargetDisp.msb).asUInt
