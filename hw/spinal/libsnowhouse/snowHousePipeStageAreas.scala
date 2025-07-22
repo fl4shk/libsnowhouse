@@ -300,7 +300,10 @@ case class SnowHouseBranchPredictor(
       initBigInt=(
         Some(Array.fill(branchTgtBufSize)(BigInt(0)))
       ),
-      arrRamStyle="auto",
+      arrRamStyle=(
+        //"auto"
+        "block"
+      ),
     )
   )
   val tgtDstRegPcBuf = (

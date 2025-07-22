@@ -2680,6 +2680,7 @@ case class SnowHouseCpuConfig(
   branchTgtBufSizeLog2: Int=(
     //log2Up(256)
     log2Up(64)
+    //log2Up(128)
   ),
 ) {
   //--------
