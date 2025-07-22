@@ -528,6 +528,34 @@ case class SnowHouseConfig(
   def haveBranchPredictor = (
     optBranchPredictorKind != None
   )
+  def branchTgtBufSize = (
+    optBranchPredictorKind match {
+      case Some(myBranchPredictorKind) => {
+        myBranchPredictorKind._branchTgtBufSize
+      }
+      case None => {
+        0
+      }
+    }
+  )
+  def mySrcRegPcWidth = (
+    mainWidth
+    //- (2 * log2Up(cfg.instrSizeBytes))
+    - log2Up(instrSizeBytes)
+    //- log2Up(branchTgtBufSize)
+  )
+  def mySrcRegPcCmpEqWidth = (
+    mySrcRegPcWidth
+    - log2Up(branchTgtBufSize)
+  )
+  def mySrcRegPcRange = (
+    mainWidth - 1
+    downto mainWidth - mySrcRegPcWidth
+  )
+  def mySrcRegPcCmpEqRange = (
+    mainWidth - 1
+    downto mainWidth - mySrcRegPcCmpEqWidth
+  )
   def lowerMyFanout = 4
   def lowerMyFanoutRegPcSetItCnt = (
     //2

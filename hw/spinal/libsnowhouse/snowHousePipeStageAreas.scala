@@ -126,7 +126,10 @@ case class BranchTgtBufElem(
   val dontPredict = (
     Bool()
   )
-  val srcRegPc = UInt(cfg.mainWidth bits)
+  val srcRegPc = UInt(
+    //cfg.mySrcRegPcCmpEqWidth bits
+    cfg.mainWidth bits
+  )
   val dstRegPc = UInt(cfg.mainWidth bits) 
   //val dbgEncInstr = UInt(cfg.instrMainWidth bits)
 }
@@ -276,39 +279,22 @@ case class SnowHouseBranchPredictor(
   //def myDstRegPcRange = (
   //  myRegPcWidth
   //)
-  def mySrcRegPcWidth = (
-    cfg.mainWidth
-    //- (2 * log2Up(cfg.instrSizeBytes))
-    - log2Up(cfg.instrSizeBytes)
-    //- log2Up(branchTgtBufSize)
-  )
-  def mySrcRegPcCmpEqWidth = (
-    mySrcRegPcWidth
-    - log2Up(branchTgtBufSize)
-  )
-  def mySrcRegPcRange = (
-    cfg.mainWidth - 1
-    downto cfg.mainWidth - mySrcRegPcWidth
-  )
-  def mySrcRegPcCmpEqRange = (
-    cfg.mainWidth - 1
-    downto cfg.mainWidth - mySrcRegPcCmpEqWidth
-  )
   def myTgtBufAddrRange: Range = (
     tgtBufRdAddr.high + log2Up(cfg.instrSizeBytes)
     downto log2Up(cfg.instrSizeBytes)
   )
   println(
     s"myDstRegPcWidth:${myDstRegPcWidth} "
-    + s"mySrcRegPcWidth:${mySrcRegPcWidth} "
-    + s"mySrcRegPcRange:${mySrcRegPcRange} "
+    + s"mySrcRegPcWidth:${cfg.mySrcRegPcWidth} "
+    + s"mySrcRegPcRange:${cfg.mySrcRegPcRange} "
     + s"myTgtBufAddrRange:${myTgtBufAddrRange}"
   )
   val tgtSrcRegPcAndValidBuf = (
     RamSimpleDualPort(
       wordType=Flow(UInt(
         //cfg.mainWidth bits
-        mySrcRegPcWidth bits
+        //cfg.mySrcRegPcWidth bits
+        cfg.mySrcRegPcCmpEqWidth bits
       )),
       depth=branchTgtBufSize,
       initBigInt=(
@@ -347,12 +333,14 @@ case class SnowHouseBranchPredictor(
   //myRdBtbElem.assignFromBits(tgtBuf.io.ramIo.rdData)
   val myRdSrcRegPcAndValid = Flow(UInt(
     //cfg.mainWidth bits
-    mySrcRegPcWidth bits
+    //cfg.mySrcRegPcWidth bits
+    cfg.mySrcRegPcCmpEqWidth bits
   ))
   myRdSrcRegPcAndValid.assignFromBits(
     tgtSrcRegPcAndValidBuf.io.ramIo.rdData
   )
   myRdBtbElem.srcRegPc := (
+    //myRdSrcRegPcAndValid.payload
     Cat(
       myRdSrcRegPcAndValid.payload,
       //RegNextWhen(
@@ -360,7 +348,8 @@ case class SnowHouseBranchPredictor(
       //  cond=io.upIsFiring,
       //  init=tgtBufRdAddr.getZero,
       //),
-      U(s"${log2Up(cfg.instrSizeBytes)}'d0"),
+      //U(s"${log2Up(cfg.instrSizeBytes)}'d0"),
+      U(s"${cfg.mainWidth - cfg.mySrcRegPcCmpEqWidth}'d0")
     ).asUInt
   )
   myRdBtbElem.valid := myRdSrcRegPcAndValid.valid
@@ -506,12 +495,15 @@ case class SnowHouseBranchPredictor(
     myRdBtbElem.fire
     && (
       myRdBtbElem.srcRegPc(
-        mySrcRegPcCmpEqRange
+        cfg.mySrcRegPcCmpEqRange
       )
+      //(
+      //  cfg.mySrcRegPcCmpEqRange
+      //)
       === RegNextWhen(
-        next=io.inpRegPc(mySrcRegPcCmpEqRange),
+        next=io.inpRegPc(cfg.mySrcRegPcCmpEqRange),
         cond=io.upIsFiring,
-        init=io.inpRegPc(mySrcRegPcCmpEqRange).getZero,
+        init=io.inpRegPc(cfg.mySrcRegPcCmpEqRange).getZero,
       )
     )
   )
@@ -540,12 +532,17 @@ case class SnowHouseBranchPredictor(
   tgtDstRegPcBuf.io.ramIo.wrAddr := tgtBufWrAddr
   //tgtValidBuf.io.ramIo.wrAddr := tgtBufWrAddr
   //tgtBuf.io.ramIo.wrData := wrBtbElem.asBits
-  val myWrSrcRegPcAndValid = Flow(UInt(mySrcRegPcWidth bits))
+  val myWrSrcRegPcAndValid = (
+    Flow(UInt(
+      //cfg.mySrcRegPcWidth bits
+      cfg.mySrcRegPcCmpEqWidth bits
+    ))
+  )
   //tgtSrcRegPcBuf.io.ramIo.wrData := (
   //  wrBtbElem.srcRegPc.asBits
   //)
   myWrSrcRegPcAndValid.payload := (
-    wrBtbElem.srcRegPc(mySrcRegPcRange)
+    wrBtbElem.srcRegPc(cfg.mySrcRegPcCmpEqRange)
   )
   myWrSrcRegPcAndValid.valid := wrBtbElem.valid
   tgtSrcRegPcAndValidBuf.io.ramIo.wrData := (
@@ -1654,8 +1651,11 @@ case class SnowHousePipeStageInstrDecode(
     && upPayload(1).btbElemBranchKind(1).asBits(0)
     && (
       (
-        upPayload(1).branchTgtBufElem(0).srcRegPc
-        =/= upPayload(1).branchTgtBufElem(1).srcRegPc
+        upPayload(1).branchTgtBufElem(0).srcRegPc(
+          cfg.mySrcRegPcCmpEqRange
+        ) =/= upPayload(1).branchTgtBufElem(1).srcRegPc(
+          cfg.mySrcRegPcCmpEqRange
+        )
       )
       //|| (
       //  upPayload(1).branchTgtBufElem(0).dstRegPc
