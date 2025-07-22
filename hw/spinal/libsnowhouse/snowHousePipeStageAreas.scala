@@ -280,11 +280,19 @@ case class SnowHouseBranchPredictor(
     cfg.mainWidth
     //- (2 * log2Up(cfg.instrSizeBytes))
     - log2Up(cfg.instrSizeBytes)
+    //- log2Up(branchTgtBufSize)
+  )
+  def mySrcRegPcCmpEqWidth = (
+    mySrcRegPcWidth
     - log2Up(branchTgtBufSize)
   )
   def mySrcRegPcRange = (
     cfg.mainWidth - 1
     downto cfg.mainWidth - mySrcRegPcWidth
+  )
+  def mySrcRegPcCmpEqRange = (
+    cfg.mainWidth - 1
+    downto cfg.mainWidth - mySrcRegPcCmpEqWidth
   )
   def myTgtBufAddrRange: Range = (
     tgtBufRdAddr.high + log2Up(cfg.instrSizeBytes)
@@ -347,11 +355,11 @@ case class SnowHouseBranchPredictor(
   myRdBtbElem.srcRegPc := (
     Cat(
       myRdSrcRegPcAndValid.payload,
-      RegNextWhen(
-        next=tgtBufRdAddr,
-        cond=io.upIsFiring,
-        init=tgtBufRdAddr.getZero,
-      ),
+      //RegNextWhen(
+      //  next=tgtBufRdAddr,
+      //  cond=io.upIsFiring,
+      //  init=tgtBufRdAddr.getZero,
+      //),
       U(s"${log2Up(cfg.instrSizeBytes)}'d0"),
     ).asUInt
   )
@@ -424,10 +432,11 @@ case class SnowHouseBranchPredictor(
           io.psExSetPc.branchTgtBufElem.fire
         ) && (
           !otherWrBtbElemWithBrKind.btbElem.dontPredict
-        ) && (
-          otherWrBranchKind
-          === SnowHouseBranchPredictorKind.FwdNotTknBakTknEnum.BAK
         )
+        //&& (
+        //  otherWrBranchKind
+        //  === SnowHouseBranchPredictorKind.FwdNotTknBakTknEnum.BAK
+        //)
       ),
       init=False,
     )
@@ -497,12 +506,12 @@ case class SnowHouseBranchPredictor(
     myRdBtbElem.fire
     && (
       myRdBtbElem.srcRegPc(
-        mySrcRegPcRange
+        mySrcRegPcCmpEqRange
       )
       === RegNextWhen(
-        next=io.inpRegPc(mySrcRegPcRange),
+        next=io.inpRegPc(mySrcRegPcCmpEqRange),
         cond=io.upIsFiring,
-        init=io.inpRegPc(mySrcRegPcRange).getZero,
+        init=io.inpRegPc(mySrcRegPcCmpEqRange).getZero,
       )
     )
   )
