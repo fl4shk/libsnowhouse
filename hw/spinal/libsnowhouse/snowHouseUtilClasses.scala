@@ -511,6 +511,7 @@ case class SnowHouseConfig(
   //--------
   //maxNumGprsPerInstr: Int,
   //modOpCntWidth: Int=8,
+  //supportInstrByteAddressing: Boolean=false,
   supportUcode: Boolean=false, // whether or not to support microcode
   instrCntWidth: Int=(
     //8
@@ -539,6 +540,13 @@ case class SnowHouseConfig(
     2
   )
   //def lowerMyFanoutDec = multiCycle
+  //def regPcWidth = (
+  //  if (!supportInstrByteAddressing) (
+  //    mainWidth - log2Up(instrSizeBytes)
+  //  ) else (
+  //    mainWidth
+  //  )
+  //)
   def instrMainWidth = subCfg.instrMainWidth
   def shRegFileCfg = subCfg.shRegFileCfg
   val instrSizeBytes = (instrMainWidth.toLong / 8.toLong).toLong

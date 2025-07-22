@@ -265,9 +265,43 @@ case class SnowHouseBranchPredictor(
   //    arrRamStyle="distributed",
   //  )
   //)
+  val tgtBufRdAddr = UInt(log2Up(branchTgtBufSize) bits)
+  def myDstRegPcWidth = (
+    //if (!cfg.supportInstrByteAddressing) (
+    cfg.mainWidth - log2Up(cfg.instrSizeBytes)
+    //) else (
+    //  cfg.mainWidth
+    //)
+  )
+  //def myDstRegPcRange = (
+  //  myRegPcWidth
+  //)
+  def mySrcRegPcWidth = (
+    cfg.mainWidth
+    //- (2 * log2Up(cfg.instrSizeBytes))
+    - log2Up(cfg.instrSizeBytes)
+    - log2Up(branchTgtBufSize)
+  )
+  def mySrcRegPcRange = (
+    cfg.mainWidth - 1
+    downto cfg.mainWidth - mySrcRegPcWidth
+  )
+  def myTgtBufAddrRange: Range = (
+    tgtBufRdAddr.high + log2Up(cfg.instrSizeBytes)
+    downto log2Up(cfg.instrSizeBytes)
+  )
+  println(
+    s"myDstRegPcWidth:${myDstRegPcWidth} "
+    + s"mySrcRegPcWidth:${mySrcRegPcWidth} "
+    + s"mySrcRegPcRange:${mySrcRegPcRange} "
+    + s"myTgtBufAddrRange:${myTgtBufAddrRange}"
+  )
   val tgtSrcRegPcAndValidBuf = (
     RamSimpleDualPort(
-      wordType=Flow(UInt(cfg.mainWidth bits)),
+      wordType=Flow(UInt(
+        //cfg.mainWidth bits
+        mySrcRegPcWidth bits
+      )),
       depth=branchTgtBufSize,
       initBigInt=(
         Some(Array.fill(branchTgtBufSize)(BigInt(0)))
@@ -277,7 +311,7 @@ case class SnowHouseBranchPredictor(
   )
   val tgtDstRegPcBuf = (
     RamSimpleDualPort(
-      wordType=UInt(cfg.mainWidth bits),
+      wordType=UInt(myDstRegPcWidth bits),
       depth=branchTgtBufSize,
       initBigInt=(
         Some(Array.fill(branchTgtBufSize)(BigInt(0)))
@@ -298,27 +332,38 @@ case class SnowHouseBranchPredictor(
   //tgtBuf.io.ramIo.rdEn := True
   //tgtBuf.readAsync(
   //)
-  val tgtBufRdAddr = UInt(log2Up(branchTgtBufSize) bits)
-  val myPcAddrRange = (
-    tgtBufRdAddr.high + log2Up(cfg.instrSizeBytes)
-    downto log2Up(cfg.instrSizeBytes)
-  )
   tgtBufRdAddr := (
-    io.inpRegPc(myPcAddrRange) //- 1//- 2 //- 1 //- 2//- 3
+    io.inpRegPc(myTgtBufAddrRange) //- 1//- 2 //- 1 //- 2//- 3
   )
   val myRdBtbElem = BranchTgtBufElem(cfg=cfg)
   //myRdBtbElem.assignFromBits(tgtBuf.io.ramIo.rdData)
-  val myRdSrcRegPcAndValid = Flow(UInt(cfg.mainWidth bits))
+  val myRdSrcRegPcAndValid = Flow(UInt(
+    //cfg.mainWidth bits
+    mySrcRegPcWidth bits
+  ))
   myRdSrcRegPcAndValid.assignFromBits(
     tgtSrcRegPcAndValidBuf.io.ramIo.rdData
   )
-  myRdBtbElem.srcRegPc := myRdSrcRegPcAndValid.payload
+  myRdBtbElem.srcRegPc := (
+    Cat(
+      myRdSrcRegPcAndValid.payload,
+      RegNextWhen(
+        next=tgtBufRdAddr,
+        cond=io.upIsFiring,
+        init=tgtBufRdAddr.getZero,
+      ),
+      U(s"${log2Up(cfg.instrSizeBytes)}'d0"),
+    ).asUInt
+  )
   myRdBtbElem.valid := myRdSrcRegPcAndValid.valid
   //myRdBtbElem.srcRegPc.assignFromBits(
   //  tgtSrcRegPcBuf.io.ramIo.rdData
   //)
   myRdBtbElem.dstRegPc.assignFromBits(
-    tgtDstRegPcBuf.io.ramIo.rdData
+    Cat(
+      tgtDstRegPcBuf.io.ramIo.rdData,
+      U(s"${log2Up(cfg.instrSizeBytes)}'d0"),
+    )
   )
   //myRdBtbElem.valid.assignFromBits(
   //  tgtValidBuf.io.ramIo.rdData
@@ -402,10 +447,10 @@ case class SnowHouseBranchPredictor(
   //  tgtBufRdAddr
   //)
   val tgtBufWrAddr = (
-    //io.stickyExSetPc(0).nextPc(myPcAddrRange)
+    //io.stickyExSetPc(0).nextPc(myTgtBufAddrRange)
     RegNext(
-      //io.psExSetPc.nextPc(myPcAddrRange)
-      io.psExSetPc.branchTgtBufElem.srcRegPc(myPcAddrRange)
+      //io.psExSetPc.nextPc(myTgtBufAddrRange)
+      io.psExSetPc.branchTgtBufElem.srcRegPc(myTgtBufAddrRange)
       //+ (1 * cfg.instrSizeBytes)
     )
     init(0x0)
@@ -451,11 +496,13 @@ case class SnowHouseBranchPredictor(
   io.result.valid := (
     myRdBtbElem.fire
     && (
-      myRdBtbElem.srcRegPc
+      myRdBtbElem.srcRegPc(
+        mySrcRegPcRange
+      )
       === RegNextWhen(
-        next=io.inpRegPc,
+        next=io.inpRegPc(mySrcRegPcRange),
         cond=io.upIsFiring,
-        init=io.inpRegPc.getZero,
+        init=io.inpRegPc(mySrcRegPcRange).getZero,
       )
     )
   )
@@ -484,17 +531,22 @@ case class SnowHouseBranchPredictor(
   tgtDstRegPcBuf.io.ramIo.wrAddr := tgtBufWrAddr
   //tgtValidBuf.io.ramIo.wrAddr := tgtBufWrAddr
   //tgtBuf.io.ramIo.wrData := wrBtbElem.asBits
-  val myWrSrcRegPcAndValid = Flow(UInt(cfg.mainWidth bits))
+  val myWrSrcRegPcAndValid = Flow(UInt(mySrcRegPcWidth bits))
   //tgtSrcRegPcBuf.io.ramIo.wrData := (
   //  wrBtbElem.srcRegPc.asBits
   //)
-  myWrSrcRegPcAndValid.payload := wrBtbElem.srcRegPc
+  myWrSrcRegPcAndValid.payload := (
+    wrBtbElem.srcRegPc(mySrcRegPcRange)
+  )
   myWrSrcRegPcAndValid.valid := wrBtbElem.valid
   tgtSrcRegPcAndValidBuf.io.ramIo.wrData := (
     myWrSrcRegPcAndValid.asBits
   )
   tgtDstRegPcBuf.io.ramIo.wrData := (
-    wrBtbElem.dstRegPc.asBits
+    wrBtbElem.dstRegPc(
+      wrBtbElem.dstRegPc.high
+      downto log2Up(cfg.instrSizeBytes)
+    ).asBits
   )
   //tgtValidBuf.io.ramIo.wrData := (
   //  wrBtbElem.valid.asBits
