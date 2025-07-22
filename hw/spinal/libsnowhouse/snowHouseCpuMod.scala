@@ -2676,7 +2676,10 @@ case class SnowHouseCpuConfig(
   regFileMemRamStyle: String="distributed",
   icacheMemRamStyle: String="auto",
   dcacheMemRamStyle: String="auto",
-  branchTgtBufSizeLog2: Int=log2Up(256),
+  branchTgtBufSizeLog2: Int=(
+    //log2Up(256)
+    log2Up(64)
+  ),
 ) {
   //--------
   val instrMainWidth = 32

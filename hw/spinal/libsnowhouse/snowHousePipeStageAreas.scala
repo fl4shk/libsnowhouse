@@ -261,7 +261,8 @@ case class SnowHouseBranchPredictor(
       depth=branchTgtBufSize,
       initBigInt=(
         Some(Array.fill(branchTgtBufSize)(BigInt(0)))
-      )
+      ),
+      arrRamStyle="distributed",
     )
   )
   //tgtBuf.io.ramIo.rdEn := True
