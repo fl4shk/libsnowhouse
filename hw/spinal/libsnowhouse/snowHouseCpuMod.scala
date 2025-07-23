@@ -596,7 +596,9 @@ object SnowHouseCpuPipeStageInstrDecode {
             //regPcPlusImm //- (2 * cfg.instrSizeBytes)
             //regPcPlusImm //- (2 * cfg.instrSizeBytes)
             //regPcPlusImm + (1 * cfg.instrSizeBytes)
-            regPcPlusImm //+ (1 * cfg.instrSizeBytes)
+            //regPcPlusImm //+ (1 * cfg.instrSizeBytes)
+            regPcPlusImm + (3 * cfg.instrSizeBytes)
+
             //regPcPlusImm //- (1 * cfg.instrSizeBytes)
             //regPcPlusImm - (1 * cfg.instrSizeBytes)
             //regPcPlusImm - (2 * cfg.instrSizeBytes)
@@ -4057,9 +4059,9 @@ object SnowHouseCpuWithDualRamSim extends App {
   )
   val instrRamKindArr = Array[Int](
     0,
-    1,
-    2,
-    5,
+    //1,
+    //2,
+    //5,
   )
   for (testIdx <- 0 to 10) {
     programStrArr += (
