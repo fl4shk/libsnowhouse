@@ -288,13 +288,19 @@ case class SnowHouseSubConfig(
   //--------
   //srcWidth: Int=1,
   haveIcache: Boolean=true,
-  icacheDepth: Int=8192,
+  icacheDepthWords: Int=(
+    //8192
+    1024
+  ),
   icacheLineSizeBytes: Int=64,
   icacheBusSrcNum: Int=0,
   icacheMemRamStyle: String="auto",
   //--------
   haveDcache: Boolean=true,
-  dcacheDepth: Int=8192,
+  dcacheDepthWords: Int=(
+    //8192
+    1024
+  ),
   dcacheLineSizeBytes: Int=64,
   dcacheBusSrcNum: Int=1,
   dcacheMemRamStyle: String="auto",
@@ -316,7 +322,7 @@ case class SnowHouseSubConfig(
       addrWidth=shRegFileCfg.mainWidth,
       wordWidth=instrMainWidth,
       lineSizeBytes=icacheLineSizeBytes,
-      depthWords=icacheDepth,
+      depthWords=icacheDepthWords,
       //srcWidth=srcWidth,
       srcId=icacheBusSrcNum,
       totalNumBusHosts=totalNumBusHosts,
@@ -331,7 +337,7 @@ case class SnowHouseSubConfig(
       addrWidth=shRegFileCfg.mainWidth,
       wordWidth=shRegFileCfg.mainWidth,
       lineSizeBytes=dcacheLineSizeBytes,
-      depthWords=dcacheDepth,
+      depthWords=dcacheDepthWords,
       //srcWidth=srcWidth,
       srcId=dcacheBusSrcNum,
       totalNumBusHosts=totalNumBusHosts,

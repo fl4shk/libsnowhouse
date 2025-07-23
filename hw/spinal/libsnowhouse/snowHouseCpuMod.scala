@@ -2713,10 +2713,10 @@ case class SnowHouseCpuConfig(
     haveAluFlags=false,
     //encInstrType=SnowHouseCpuEncInstr(),
     subCfg={
-      val icacheDepth = /*8192*/ /*1024*/ 2048 // 8 kiB icache
+      val icacheDepthWords = /*8192*/ 1024 //2048 // 4 kiB icache
       val icacheLineSizeBytes = 64
       val icacheBusSrcNum = 0x0
-      val dcacheDepth = /*512*/ /*1024*/ 2048 /*8192*/ // 8 kiB dcache
+      val dcacheDepthWords = /*512*/ 1024 //2048 /*8192*/ // 4 kiB dcache
       val dcacheLineSizeBytes = 64
       val dcacheBusSrcNum = 0x1
       SnowHouseSubConfig(
@@ -2796,12 +2796,12 @@ case class SnowHouseCpuConfig(
           ),
         ),
         haveIcache=true,
-        icacheDepth=icacheDepth,
+        icacheDepthWords=icacheDepthWords,
         icacheLineSizeBytes=icacheLineSizeBytes,
         icacheBusSrcNum=icacheBusSrcNum,
         icacheMemRamStyle=icacheMemRamStyle,
         haveDcache=true,
-        dcacheDepth=dcacheDepth,
+        dcacheDepthWords=dcacheDepthWords,
         dcacheLineSizeBytes=dcacheLineSizeBytes,
         dcacheBusSrcNum=dcacheBusSrcNum,
         dcacheMemRamStyle=dcacheMemRamStyle,
