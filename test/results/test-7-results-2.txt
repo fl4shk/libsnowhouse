@@ -71,5 +71,8 @@ addr:13 data:188
 addr:8 data:3
 addr:13 data:172
 addr:6 data:4
+addr:3 data:4112
+addr:1 data:4
+addr:13 data:188
 Ending test.
 
