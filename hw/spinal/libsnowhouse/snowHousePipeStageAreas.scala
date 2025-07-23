@@ -301,8 +301,8 @@ case class SnowHouseBranchPredictor(
         Some(Array.fill(branchTgtBufSize)(BigInt(0)))
       ),
       arrRamStyle=(
-        //"auto"
-        "block"
+        "auto"
+        //"block"
       ),
     )
   )
