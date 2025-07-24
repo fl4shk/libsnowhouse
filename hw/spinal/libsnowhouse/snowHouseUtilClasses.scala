@@ -440,7 +440,21 @@ sealed trait SnowHouseBranchPredictorKind {
   //private[libsnowhouse] def _branchTgtBufNumRdAddrs: Int = 2
 }
 object SnowHouseBranchPredictorKind {
-  private[libsnowhouse] def _branchTgtBufInpRegPcSize: Int = 3
+  private[libsnowhouse] def _predictorInpRegPcSize: Int = (
+    //3
+    //2
+    1
+  )
+  private[libsnowhouse] def _branchTgtBufRdAddr0: Int = (
+    0
+  )
+  private[libsnowhouse] def _branchTgtBufRdAddr1: Int = (
+    0
+    //1
+  )
+  private[libsnowhouse] def _branchTgtBufRdAddrSize: Int = (
+    _branchTgtBufRdAddr1 + 1
+  )
   //def branchKindEnumMaxWidth = (
   //  // subject to change
   //  4
