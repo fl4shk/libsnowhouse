@@ -439,14 +439,14 @@ case class SnowHouseBranchPredictor(
   tgtSrcRegPcAndValidBuf.io.ramIo.rdAddr := (
     tgtBufRdAddr(
       //0
-      SnowHouseBranchPredictorKind._branchTgtBufRdAddr0
+      SnowHouseBranchPredictorKind._branchTgtBufRdAddrIdx0
     )
   )
   tgtDstRegPcBuf.io.ramIo.rdAddr := (
     tgtBufRdAddr(
       //1
       //0
-      SnowHouseBranchPredictorKind._branchTgtBufRdAddr1
+      SnowHouseBranchPredictorKind._branchTgtBufRdAddrIdx1
     )
   )
   //tgtDstRegPcAndValidBuf.io.ramIo.rdAddr := tgtBufRdAddr(1)
@@ -590,14 +590,16 @@ case class SnowHouseBranchPredictor(
         next=(
           io.inpRegPc(
             //2
-            0
+            //0
+            SnowHouseBranchPredictorKind._predictorInpRegPcIdxCmpEq
           )
           //- cfg.instrSizeBytes
         )(cfg.mySrcRegPcCmpEqRange),
         cond=io.upIsFiring,
         init=io.inpRegPc(
           //2
-          0
+          //0
+          SnowHouseBranchPredictorKind._predictorInpRegPcIdxCmpEq
         )(cfg.mySrcRegPcCmpEqRange).getZero,
       )
     )
@@ -783,6 +785,22 @@ case class SnowHousePipeStageInstrFetch(
     branchPredictor.io.upIsFiring := up.isFiring
   }
 
+  val rTakeJumpCntMaxVal = 2//1//3//2
+  val rTakeJumpCnt = {
+    val temp = Reg(Flow(UInt(
+      //cfg.mainWidth bits
+      log2Up(rTakeJumpCntMaxVal + 1) + 1 bits
+    )))
+    temp.init(temp.getZero)
+    temp
+  }
+
+  when (
+    rTakeJumpCnt.fire
+  ) {
+    stickyExSetPc(0).valid := False
+  }
+
   when (
     psExSetPc.valid
   ) {
@@ -799,18 +817,27 @@ case class SnowHousePipeStageInstrFetch(
       //- cfg.instrSizeBytes
       psExSetPc.btbElemWithBrKind
     )
+    stickyExSetPc(0).nextPc.allowOverride
+    stickyExSetPc(0).nextPc := (
+      //RegNext(
+      //  next=psExSetPc.nextPc,
+      //  init=psExSetPc.nextPc.getZero,
+      //)
+      psExSetPc.nextPc
+      //- cfg.instrSizeBytes
+    )
   }
   //psExSetPc.ready.setAsReg() init(False)
   //psExSetPc.ready := False
 
-  stickyExSetPc(0).nextPc.allowOverride
-  stickyExSetPc(0).nextPc := (
-    RegNext(
-      next=psExSetPc.nextPc,
-      init=psExSetPc.nextPc.getZero,
-    )
-    //- cfg.instrSizeBytes
-  )
+  //stickyExSetPc(0).nextPc.allowOverride
+  //stickyExSetPc(0).nextPc := (
+  //  RegNext(
+  //    next=psExSetPc.nextPc,
+  //    init=psExSetPc.nextPc.getZero,
+  //  )
+  //  //- cfg.instrSizeBytes
+  //)
   val myNextRegPcInit = (
     0
   )
@@ -865,7 +892,7 @@ case class SnowHousePipeStageInstrFetch(
     val temp = RegNextWhen(
       next=(
         Vec.fill(
-          SnowHouseBranchPredictorKind._predictorInpRegPcSize + 1
+          SnowHouseBranchPredictorKind._predictorInpRegPcSize //+ 1
         )(
           //upModExt.regPc.asSInt
           //+ (1 * cfg.instrSizeBytes)
@@ -962,15 +989,6 @@ case class SnowHousePipeStageInstrFetch(
   //    init=io.ibus.sendData.addr.getZero,
   //  )
   //)
-  val rTakeJumpCntMaxVal = 2//1//3//2
-  val rTakeJumpCnt = {
-    val temp = Reg(Flow(UInt(
-      //cfg.mainWidth bits
-      log2Up(rTakeJumpCntMaxVal + 1) + 1 bits
-    )))
-    temp.init(temp.getZero)
-    temp
-  }
   upModExt.encInstr.allowOverride
   upModExt.encInstr := (
     RegNext(
@@ -1115,7 +1133,7 @@ case class SnowHousePipeStageInstrFetch(
     def doPsExSetPcValid(
       useStickyNextPc: Boolean
     ): Unit = {
-      stickyExSetPc(idx).valid := stickyExSetPc(idx).valid.getZero
+      //stickyExSetPc(idx).valid := stickyExSetPc(idx).valid.getZero
       rTakeJumpCnt.valid := True
       rTakeJumpCnt.payload := (
         rTakeJumpCntMaxVal
@@ -1177,16 +1195,17 @@ case class SnowHousePipeStageInstrFetch(
             //  )
             //)
             //&& stickyExSetPc(idx).extValid
-            psExSetPc.valid
+            //psExSetPc.valid
             //|| RegNext(stickyExSetPc(idx).fire, init=False)
+            stickyExSetPc(idx).fire
           ),
-          RegNext(stickyExSetPc(idx).fire, init=False),
+          //RegNext(stickyExSetPc(idx).fire, init=False),
         ).reverse
       )
     ) {
-      is (M"0--") {
+      is (M"0-") {
       }
-      is (M"100") {
+      is (M"10") {
         //myRegPcSetItCnt.foreach(current => {
         //  current := 0x0
         //})
@@ -1384,14 +1403,17 @@ case class SnowHousePipeStageInstrFetch(
           )
         }
       }
-      is (M"1-1") {
-        doPsExSetPcValid(
-          useStickyNextPc=true
-        )
-      }
+      //is (M"1-1") {
+      //  doPsExSetPcValid(
+      //    useStickyNextPc=true
+      //  )
+      //}
       default {
         doPsExSetPcValid(
-          useStickyNextPc=false
+          useStickyNextPc=(
+            //false
+            true
+          )
         )
       }
     }
