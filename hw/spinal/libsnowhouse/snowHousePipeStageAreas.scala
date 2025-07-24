@@ -800,63 +800,79 @@ case class SnowHousePipeStageInstrFetch(
   //    myNextRegPcInit - (1.toLong * cfg.instrSizeBytes.toLong).toLong
   //  )
   //)
-  val myRegPcAddJustCarryDel1 = (
-    Array.fill(
-      SnowHouseBranchPredictorKind._branchTgtBufInpRegPcSize + 1
-    )(
-      LcvAddJustCarryDel1(
-        wordWidth=(
-          upModExt.regPc.getWidth - log2Up(cfg.instrSizeBytes)
-        ),
-      )
-    )
+  //val myRegPcAddJustCarryDel1 = (
+  //  Array.fill(
+  //    SnowHouseBranchPredictorKind._branchTgtBufInpRegPcSize + 1
+  //  )(
+  //    LcvAddJustCarryDel1(
+  //      wordWidth=(
+  //        upModExt.regPc.getWidth - log2Up(cfg.instrSizeBytes)
+  //      ),
+  //    )
+  //  )
+  //)
+  //for (idx <- 0 until myRegPcAddJustCarryDel1.size) {
+  //  //myRegPcAdcDel1.io.inp.a := (
+  //  //  RegNext(
+  //  //    next=myRegPcAdcDel1.io.inp.a,
+  //  //    init=myRegPcAdcDel1.io.inp.a.getZero,
+  //  //  )
+  //  //)
+  //  //when (up.isFiring) {
+  //    myRegPcAddJustCarryDel1(idx).io.inp.a := (
+  //      (
+  //        upModExt.regPc.asSInt(
+  //          upModExt.regPc.high downto log2Up(cfg.instrSizeBytes)
+  //        )
+  //      )
+  //    )
+  //  //}
+  //  //myRegPcAddJustCarryDel1(idx).io.inp.b := (
+  //  //  0x0
+  //  //)
+  //  myRegPcAddJustCarryDel1(idx).io.inp.carry := (
+  //    //S(s"${cfg.mainWidth - log2Up(cfg.instrSizeBytes)}'d1")
+  //    True
+  //  )
+  //}
+  val myRegPcShiftThing = (
+    S(s"${log2Up(cfg.instrSizeBytes)}'d0")
   )
-  for (idx <- 0 until myRegPcAddJustCarryDel1.size) {
-    //myRegPcAdcDel1.io.inp.a := (
-    //  RegNext(
-    //    next=myRegPcAdcDel1.io.inp.a,
-    //    init=myRegPcAdcDel1.io.inp.a.getZero,
-    //  )
-    //)
-    //when (up.isFiring) {
-      myRegPcAddJustCarryDel1(idx).io.inp.a := (
-        (
-          upModExt.regPc.asSInt(
-            upModExt.regPc.high downto log2Up(cfg.instrSizeBytes)
-          )
-        )
-      )
-    //}
-    //myRegPcAddJustCarryDel1(idx).io.inp.b := (
-    //  0x0
-    //)
-    myRegPcAddJustCarryDel1(idx).io.inp.carry := (
-      //S(s"${cfg.mainWidth - log2Up(cfg.instrSizeBytes)}'d1")
-      True
-    )
-  }
   val rPrevRegPcPlusInstrSize = {
-    //val temp = RegNextWhen(
-    //  next=(
-    //    Vec.fill(
-    //      SnowHouseBranchPredictorKind._branchTgtBufInpRegPcSize + 1
-    //    )(
-    //      upModExt.regPc.asSInt
-    //      + (1 * cfg.instrSizeBytes)
-    //    )
-    //    //nextRegPc
-    //    //+ (cfg.instrMainWidth / 8),
-    //    //(myRegPc - (2 * cfg.instrSizeBytes)).asSInt
-    //  ), 
-    //  cond=(
-    //    up.isFiring
-    //  ),
-    //)
-    val temp = Vec.fill(
-      SnowHouseBranchPredictorKind._branchTgtBufInpRegPcSize + 1
-    )(
-      SInt(cfg.mainWidth bits)
+    val temp = RegNextWhen(
+      next=(
+        Vec.fill(
+          SnowHouseBranchPredictorKind._branchTgtBufInpRegPcSize + 1
+        )(
+          //upModExt.regPc.asSInt
+          //+ (1 * cfg.instrSizeBytes)
+          //Cat(
+            (
+              upModExt.regPc.asSInt(
+                upModExt.regPc.high downto log2Up(cfg.instrSizeBytes)
+              ) + (
+                1
+              )
+            ),
+            //S(s"${cfg.mainWidth - log2Up(cfg.instrSizeBytes)}'d0")
+          //).asSInt
+        )
+        //nextRegPc
+        //+ (cfg.instrMainWidth / 8),
+        //(myRegPc - (2 * cfg.instrSizeBytes)).asSInt
+      ), 
+      cond=(
+        up.isFiring
+      ),
     )
+    temp.foreach(item => {
+      item.init(item.getZero)
+    })
+    //val temp = Vec.fill(
+    //  SnowHouseBranchPredictorKind._branchTgtBufInpRegPcSize + 1
+    //)(
+    //  SInt(cfg.mainWidth bits)
+    //)
     //temp.foreach(item => {
     //  //item.init(myNextRegPcInit)
     //  item := (
@@ -876,26 +892,26 @@ case class SnowHousePipeStageInstrFetch(
     //    ).asSInt
     //  }
     //})
-    for (idx <- 0 until temp.size) {
-      val item = temp(idx)
-      //item.init(myNextRegPcInit)
-      item := (
-        RegNext(item)
-        init(
-          myNextRegPcInit //- (1.toLong * cfg.instrSizeBytes.toLong).toLong
-        )
-      )
-      when (RegNext(next=up.isFiring, init=False)) {
-        item := Cat(
-          myRegPcAddJustCarryDel1(idx).io.outp.sum_carry(
-            //item.bitsRange
-            //item.high downto log2Up(cfg.instrSizeBytes)
-            myRegPcAddJustCarryDel1(idx).io.outp.sum_carry.high - 1 downto 0
-          ),
-          S(s"${log2Up(cfg.instrSizeBytes)}'d0"),
-        ).asSInt
-      }
-    }
+    //for (idx <- 0 until temp.size) {
+    //  val item = temp(idx)
+    //  //item.init(myNextRegPcInit)
+    //  item := (
+    //    RegNext(item)
+    //    init(
+    //      myNextRegPcInit //- (1.toLong * cfg.instrSizeBytes.toLong).toLong
+    //    )
+    //  )
+    //  when (RegNext(next=up.isFiring, init=False)) {
+    //    item := Cat(
+    //      myRegPcAddJustCarryDel1(idx).io.outp.sum_carry(
+    //        //item.bitsRange
+    //        //item.high downto log2Up(cfg.instrSizeBytes)
+    //        myRegPcAddJustCarryDel1(idx).io.outp.sum_carry.high - 1 downto 0
+    //      ),
+    //      S(s"${log2Up(cfg.instrSizeBytes)}'d0"),
+    //    ).asSInt
+    //  }
+    //}
     temp
   }
   val rPrevInstrCnt = /*(cfg.optFormal) generate*/ (
@@ -1039,7 +1055,10 @@ case class SnowHousePipeStageInstrFetch(
         //myHistRegPc(1) + (1 * cfg.instrSizeBytes)
         //(nextRegPc + (2 * cfg.instrSizeBytes)).asUInt
         //myRegPc
-        rPrevRegPcPlusInstrSize(idx).asUInt //+ (1 * cfg.instrSizeBytes)
+        Cat(
+          rPrevRegPcPlusInstrSize(idx),
+          myRegPcShiftThing,
+        ).asUInt //+ (1 * cfg.instrSizeBytes)
         //myHistRegPc(2)
       )
     }
@@ -1111,7 +1130,10 @@ case class SnowHousePipeStageInstrFetch(
         //)
         if (cfg.haveBranchPredictor) {
           val tempNextRegPc = (
-            rPrevRegPcPlusInstrSize.last //+ cfg.instrSizeBytes
+            Cat(
+              rPrevRegPcPlusInstrSize.last, //+ cfg.instrSizeBytes
+              myRegPcShiftThing,
+            ).asSInt
             //rPrevRegPc + cfg.instrSizeBytes
           )
           val myPredictedNextPc = (
@@ -1259,7 +1281,11 @@ case class SnowHousePipeStageInstrFetch(
         } else {
           val temp = (
             //rPrevRegPcThenNext
-            rPrevRegPcPlusInstrSize.last.asUInt //+ cfg.instrSizeBytes
+            Cat(
+              rPrevRegPcPlusInstrSize.last,
+              myRegPcShiftThing,
+            ).asUInt
+            //+ cfg.instrSizeBytes
             //rPrevRegPc.asUInt + cfg.instrSizeBytes
           )
           //myRegPc.assignFromBits(
