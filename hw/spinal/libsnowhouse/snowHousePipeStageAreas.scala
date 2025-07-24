@@ -1044,18 +1044,18 @@ case class SnowHousePipeStageInstrFetch(
       init=upModExt.regPc.getZero,
     )
   )
-  val myHistRegPc = (
-    History[UInt](
-      that=upModExt.regPc,
-      length=upModExt.myHistRegPc.size,
-      when=cIf.up.isFiring,
-      init=upModExt.regPc.getZero,
-    )
-  )
-  upModExt.myHistRegPc.allowOverride
-  upModExt.myHistRegPc := (
-    myHistRegPc
-  )
+  //val myHistRegPc = (
+  //  History[UInt](
+  //    that=upModExt.regPc,
+  //    length=upModExt.myHistRegPc.size,
+  //    when=cIf.up.isFiring,
+  //    init=upModExt.regPc.getZero,
+  //  )
+  //)
+  //upModExt.myHistRegPc.allowOverride
+  //upModExt.myHistRegPc := (
+  //  myHistRegPc
+  //)
   val predictCond = (
     cfg.haveBranchPredictor
   ) generate (
@@ -1928,6 +1928,35 @@ case class SnowHousePipeStageInstrDecode(
   //upPayload(1).myHistRegPcPlusInstrSize := (
   //  myHistRegPcPlusInstrSize
   //)
+  val myHistRegPc = (
+    History[UInt](
+      that=upPayload(1).regPc,
+      length=upPayload(1).myHistRegPc.size,
+      when=up.isFiring,
+      init=upPayload(1).regPc.getZero,
+    )
+  )
+  val myHistRegPcMinus2Instrs = (
+    History[UInt](
+      that=(
+        upPayload(1).regPc - (2 * cfg.instrSizeBytes)
+      ),
+      length=upPayload(1).myHistRegPc.size,
+      when=up.isFiring,
+      init=upPayload(1).regPc.getZero,
+    )
+  )
+  val myHistRegPcPlus1Instr = (
+    History[UInt](
+      that=(
+        upPayload(1).regPc + (1 * cfg.instrSizeBytes)
+      ),
+      length=upPayload(1).myHistRegPc.size,
+      when=up.isFiring,
+      init=upPayload(1).regPc.getZero,
+    )
+  )
+  upPayload(1).myHistRegPc := myHistRegPc
   upPayload(1).regPcPlusImm := (
     (
       //Mux[SInt](
@@ -1952,15 +1981,16 @@ case class SnowHousePipeStageInstrDecode(
       //    //upPayload(1).branchTgtBufElem(0).dstRegPc.asSInt
       //  ),
       //  (
-          upPayload(1).branchTgtBufElem(1).srcRegPc.asSInt
+          //upPayload(1).branchTgtBufElem(1).srcRegPc.asSInt
+          myHistRegPcMinus2Instrs.last.asSInt
           + upPayload(1).imm(2).asSInt
-          //+ (1 * cfg.instrSizeBytes)
-          - (2 * cfg.instrSizeBytes)
-          //upPayload(1).regPc.asSInt
-          //upPayload(1).myHistRegPc(2).asSInt
-          //+ upPayload(1).imm(2).asSInt
+          ////+ (1 * cfg.instrSizeBytes)
+          //- (2 * cfg.instrSizeBytes)
+          ////upPayload(1).regPc.asSInt
+          ////upPayload(1).myHistRegPc(2).asSInt
+          ////+ upPayload(1).imm(2).asSInt
+          //////- (1 * cfg.instrSizeBytes)
           ////- (1 * cfg.instrSizeBytes)
-          //- (1 * cfg.instrSizeBytes)
       //  )
       //)
       //+ upPayload(1).imm(2).asSInt

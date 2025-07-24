@@ -484,8 +484,9 @@ object SnowHouseCpuPipeStageInstrDecode {
     rPrevPreImm: Flow[UInt],
     //isPsId: Boolean
     regPc: UInt,
-    laggingRegPc: UInt,
-    regPcPlusImm: UInt,
+    srcRegPc: UInt,
+    dstRegPc: UInt,
+    //regPcPlusImm: UInt,
     //branchPredictTkn: Bool,
   ): BranchTgtBufElemWithBrKind = {
     import SnowHouseCpuOp._
@@ -574,7 +575,7 @@ object SnowHouseCpuPipeStageInstrDecode {
             //regPc - (2 * cfg.instrSizeBytes)
             //regPc //- (2 * cfg.instrSizeBytes)
             //regPc - (2 * cfg.instrSizeBytes)
-            laggingRegPc //+ (1 * cfg.instrSizeBytes)
+            srcRegPc //+ (1 * cfg.instrSizeBytes)
             //regPc - (1 * cfg.instrSizeBytes)
             //regPc - (1 * cfg.instrSizeBytes)
             //regPc - (3 * cfg.instrSizeBytes)
@@ -597,7 +598,9 @@ object SnowHouseCpuPipeStageInstrDecode {
             //regPcPlusImm //- (2 * cfg.instrSizeBytes)
             //regPcPlusImm + (1 * cfg.instrSizeBytes)
             //regPcPlusImm //+ (1 * cfg.instrSizeBytes)
-            regPcPlusImm + (3 * cfg.instrSizeBytes)
+
+            //regPcPlusImm + (3 * cfg.instrSizeBytes)
+            dstRegPc
 
             //regPcPlusImm //- (1 * cfg.instrSizeBytes)
             //regPcPlusImm - (1 * cfg.instrSizeBytes)
@@ -1658,8 +1661,17 @@ object SnowHouseCpuPipeStageInstrDecode {
           rPrevPreImm=rPrevPreImm(0),
           //isPsId=true,
           regPc=upPayload.regPc,
-          laggingRegPc=upPayload.myHistRegPc(2),
-          regPcPlusImm=upPayload.regPcPlusImm,
+          srcRegPc=(
+            upPayload.myHistRegPc
+              //(2)
+              .last
+            //psId.myHistRegPcMinus2Instrs.last
+          ),
+          //regPcPlusImm=upPayload.regPcPlusImm,
+          dstRegPc=(
+            //upPayload.regPcPlusImm + (3 * cfg.instrSizeBytes)
+            psId.myHistRegPcPlus1Instr.last + upPayload.imm(2)
+          ),
           //branchPredictTkn=upPayload.branchPredictTkn,
         )
         upPayload.branchTgtBufElem(1) := tempBtbElemWithBrKind.btbElem
@@ -4055,7 +4067,7 @@ object SnowHouseCpuWithDualRamSim extends App {
     //7, 7,
     //8, 8,
     //9, 9,
-    10, 10
+    10, 10,
   )
   val instrRamKindArr = Array[Int](
     0,
