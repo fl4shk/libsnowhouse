@@ -804,7 +804,7 @@ case class SnowHousePipeStageInstrFetch(
     val temp = RegNextWhen(
       next=(
         Vec.fill(
-          SnowHouseBranchPredictorKind._branchTgtBufInpRegPcSize //+ 1
+          SnowHouseBranchPredictorKind._branchTgtBufInpRegPcSize + 1
         )(
           upModExt.regPc.asSInt
           + (1 * cfg.instrSizeBytes)
