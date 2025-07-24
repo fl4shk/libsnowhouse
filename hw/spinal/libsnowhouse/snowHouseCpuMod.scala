@@ -3428,7 +3428,7 @@ case class SnowHouseCpuDivmod32(
     signedReset=0x0,
   )
   object Divmod32State
-  extends SpinalEnum(defaultEncoding=binarySequential) {
+  extends SpinalEnum(defaultEncoding=binaryOneHot) {
     val
       IDLE,
       CHECK_PREV,
