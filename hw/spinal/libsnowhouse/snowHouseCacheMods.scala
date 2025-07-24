@@ -1412,6 +1412,12 @@ case class SnowHouseInstrCache(
   val tempLineBusAddr = (
     /*KeepAttribute*/(cloneOf(rBusAddr))
   )
+  val rSavedBusAddrHi = (
+    Reg(
+      UInt((rBusAddr.getWidth - log2Up(cacheCfg.lineSizeBytes)) bits)
+    )
+    init(0x0)
+  )
   val nextLineAddrCnt = (
     UInt(
       log2Up(cacheCfg.lineSizeBytes) - log2Up(cacheCfg.wordSizeBytes) //+ 1
@@ -1448,7 +1454,8 @@ case class SnowHouseInstrCache(
   )
   tempLineBusAddr := (
     Cat(
-      rBusAddr(rBusAddr.high downto log2Up(cacheCfg.lineSizeBytes)),
+      //rBusAddr(rBusAddr.high downto log2Up(cacheCfg.lineSizeBytes)),
+      rSavedBusAddrHi,
       //U(log2Up(cacheCfg.lineSizeBytes) bits, default -> False),
       //rLineAddrCnt(rLineAddrCnt.high - 1 downto 0),
       //nextLineAddrCnt,
@@ -1715,20 +1722,21 @@ case class SnowHouseInstrCache(
   //if (!isIcache) {
   //  myBusSendDataData.allowOverride
   //}
-  doLineWordRamWrite(
-    busAddr=(
-      //RegNext(next=rBusAddr, init=rBusAddr.getZero)
-      rBusAddr
-    ),
-    lineWord=(
-      //if (isIcache) (
-        None
-      //) else (
-      //  Some(myBusSendDataData)
-      //)
-    ),
-    setEn=false,
-  )
+  //doLineWordRamWrite(
+  //  busAddr=(
+  //    //RegNext(next=rBusAddr, init=rBusAddr.getZero)
+  //    //rBusAddr
+  //    tempLineBusAddr
+  //  ),
+  //  lineWord=(
+  //    //if (isIcache) (
+  //      None
+  //    //) else (
+  //    //  Some(myBusSendDataData)
+  //    //)
+  //  ),
+  //  setEn=false,
+  //)
 
   val haveHit = (
     rdLineAttrs.fire
@@ -1751,6 +1759,11 @@ case class SnowHouseInstrCache(
       .resize(lineWordRam.io.rdAddr.getWidth)
     )
   }
+  lineWordRam.io.wrAddr := (
+    0x0
+  )
+  //lineWordRam.io.wrEn := False
+  lineWordRam.io.wrData := 0x0
   def doLineWordRamWrite(
     busAddr: UInt,
     lineWord: Option[UInt],
@@ -1883,6 +1896,9 @@ case class SnowHouseInstrCache(
         rSavedBusAddr := rBusAddr
         rSavedRdLineAttrs := rdLineAttrs
         rSavedRdLineWord := rdLineWord
+        rSavedBusAddrHi := (
+          rBusAddr(rBusAddr.high downto log2Up(cacheCfg.lineSizeBytes))
+        )
         //rSavedBusSendData := rBusSendData
         //when (RegNext(io.bus.nextValid) init(False)) {
           //when (if (isIcache) (True) else (!rBusAddrIsNonCached)) {
