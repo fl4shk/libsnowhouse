@@ -800,18 +800,18 @@ case class SnowHousePipeStageInstrFetch(
   //    myNextRegPcInit - (1.toLong * cfg.instrSizeBytes.toLong).toLong
   //  )
   //)
-  val myRegPcAdcDel1 = (
+  val myRegPcAddJustCarryDel1 = (
     Array.fill(
       SnowHouseBranchPredictorKind._branchTgtBufInpRegPcSize + 1
     )(
-      LcvAdcDel1(
+      LcvAddJustCarryDel1(
         wordWidth=(
           upModExt.regPc.getWidth - log2Up(cfg.instrSizeBytes)
         ),
       )
     )
   )
-  for (idx <- 0 until myRegPcAdcDel1.size) {
+  for (idx <- 0 until myRegPcAddJustCarryDel1.size) {
     //myRegPcAdcDel1.io.inp.a := (
     //  RegNext(
     //    next=myRegPcAdcDel1.io.inp.a,
@@ -819,7 +819,7 @@ case class SnowHousePipeStageInstrFetch(
     //  )
     //)
     //when (up.isFiring) {
-      myRegPcAdcDel1(idx).io.inp.a := (
+      myRegPcAddJustCarryDel1(idx).io.inp.a := (
         (
           upModExt.regPc.asSInt(
             upModExt.regPc.high downto log2Up(cfg.instrSizeBytes)
@@ -827,10 +827,10 @@ case class SnowHousePipeStageInstrFetch(
         )
       )
     //}
-    myRegPcAdcDel1(idx).io.inp.b := (
-      0x0
-    )
-    myRegPcAdcDel1(idx).io.inp.carry := (
+    //myRegPcAddJustCarryDel1(idx).io.inp.b := (
+    //  0x0
+    //)
+    myRegPcAddJustCarryDel1(idx).io.inp.carry := (
       //S(s"${cfg.mainWidth - log2Up(cfg.instrSizeBytes)}'d1")
       True
     )
@@ -887,10 +887,10 @@ case class SnowHousePipeStageInstrFetch(
       )
       when (RegNext(next=up.isFiring, init=False)) {
         item := Cat(
-          myRegPcAdcDel1(idx).io.outp.sum_carry(
+          myRegPcAddJustCarryDel1(idx).io.outp.sum_carry(
             //item.bitsRange
             //item.high downto log2Up(cfg.instrSizeBytes)
-            myRegPcAdcDel1(idx).io.outp.sum_carry.high - 1 downto 0
+            myRegPcAddJustCarryDel1(idx).io.outp.sum_carry.high - 1 downto 0
           ),
           S(s"${log2Up(cfg.instrSizeBytes)}'d0"),
         ).asSInt
