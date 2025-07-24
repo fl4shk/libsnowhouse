@@ -800,32 +800,75 @@ case class SnowHousePipeStageInstrFetch(
   //    myNextRegPcInit - (1.toLong * cfg.instrSizeBytes.toLong).toLong
   //  )
   //)
-  val rPrevRegPcPlusInstrSize = {
-    val temp = RegNextWhen(
-      next=(
-        Vec.fill(
-          SnowHouseBranchPredictorKind._branchTgtBufInpRegPcSize + 1
-        )(
-          upModExt.regPc.asSInt
-          + (1 * cfg.instrSizeBytes)
+  val myRegPcAddDel1 = (
+    //Array.fill(
+    //  SnowHouseBranchPredictorKind._branchTgtBufInpRegPcSize + 1
+    //)(
+      LcvAddDel1(
+        wordWidth=(
+          upModExt.regPc.getWidth - log2Up(cfg.instrSizeBytes)
+        ),
+      )
+    //)
+  )
+  myRegPcAddDel1.io.inp.a := (
+    RegNext(
+      next=myRegPcAddDel1.io.inp.a,
+      init=myRegPcAddDel1.io.inp.a.getZero,
+    )
+  )
+  when (up.isFiring) {
+    myRegPcAddDel1.io.inp.a := (
+      (
+        upModExt.regPc.asSInt(
+          upModExt.regPc.high downto log2Up(cfg.instrSizeBytes)
         )
-        //nextRegPc
-        //+ (cfg.instrMainWidth / 8),
-        //(myRegPc - (2 * cfg.instrSizeBytes)).asSInt
-      ), 
-      cond=(
-        up.isFiring
-      ),
+      )
+    )
+  }
+  myRegPcAddDel1.io.inp.b := (
+    S(s"${cfg.mainWidth - log2Up(cfg.instrSizeBytes)}'d1")
+  )
+  val rPrevRegPcPlusInstrSize = {
+    //val temp = RegNextWhen(
+    //  next=(
+    //    Vec.fill(
+    //      SnowHouseBranchPredictorKind._branchTgtBufInpRegPcSize + 1
+    //    )(
+    //      upModExt.regPc.asSInt
+    //      + (1 * cfg.instrSizeBytes)
+    //    )
+    //    //nextRegPc
+    //    //+ (cfg.instrMainWidth / 8),
+    //    //(myRegPc - (2 * cfg.instrSizeBytes)).asSInt
+    //  ), 
+    //  cond=(
+    //    up.isFiring
+    //  ),
+    //)
+    val temp = Vec.fill(
+      SnowHouseBranchPredictorKind._branchTgtBufInpRegPcSize + 1
+    )(
+      SInt(cfg.mainWidth bits)
     )
     temp.foreach(item => {
-      item.init(
-        //nextRegPc.asUInt.getZero
-
-        //-(3.toLong * (cfg.instrMainWidth.toLong / 8.toLong))
-        //myNextRegPcInit - (1.toLong * (cfg.instrMainWidth / 8.toLong))
-        //myNextRegPcInit - (1.toLong * cfg.instrSizeBytes.toLong).toLong
-        myNextRegPcInit //- (1.toLong * cfg.instrSizeBytes.toLong).toLong
-      )
+      //item.init(myNextRegPcInit)
+      //item := (
+      //  RegNext(item)
+      //  init(
+      //    myNextRegPcInit //- (1.toLong * cfg.instrSizeBytes.toLong).toLong
+      //  )
+      //)
+      //when (RegNext(next=up.isFiring, init=False)) {
+        item := Cat(
+          myRegPcAddDel1.io.outp.sum_carry(
+            //item.bitsRange
+            //item.high downto log2Up(cfg.instrSizeBytes)
+            myRegPcAddDel1.io.outp.sum_carry.high - 1 downto 0
+          ),
+          S(s"${log2Up(cfg.instrSizeBytes)}'d0"),
+        ).asSInt
+      //}
     })
     temp
   }
