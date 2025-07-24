@@ -800,35 +800,41 @@ case class SnowHousePipeStageInstrFetch(
   //    myNextRegPcInit - (1.toLong * cfg.instrSizeBytes.toLong).toLong
   //  )
   //)
-  val myRegPcAddDel1 = (
-    //Array.fill(
-    //  SnowHouseBranchPredictorKind._branchTgtBufInpRegPcSize + 1
-    //)(
-      LcvAddDel1(
+  val myRegPcAdcDel1 = (
+    Array.fill(
+      SnowHouseBranchPredictorKind._branchTgtBufInpRegPcSize + 1
+    )(
+      LcvAdcDel1(
         wordWidth=(
           upModExt.regPc.getWidth - log2Up(cfg.instrSizeBytes)
         ),
       )
-    //)
-  )
-  myRegPcAddDel1.io.inp.a := (
-    RegNext(
-      next=myRegPcAddDel1.io.inp.a,
-      init=myRegPcAddDel1.io.inp.a.getZero,
     )
   )
-  when (up.isFiring) {
-    myRegPcAddDel1.io.inp.a := (
-      (
-        upModExt.regPc.asSInt(
-          upModExt.regPc.high downto log2Up(cfg.instrSizeBytes)
+  for (idx <- 0 until myRegPcAdcDel1.size) {
+    //myRegPcAdcDel1.io.inp.a := (
+    //  RegNext(
+    //    next=myRegPcAdcDel1.io.inp.a,
+    //    init=myRegPcAdcDel1.io.inp.a.getZero,
+    //  )
+    //)
+    //when (up.isFiring) {
+      myRegPcAdcDel1(idx).io.inp.a := (
+        (
+          upModExt.regPc.asSInt(
+            upModExt.regPc.high downto log2Up(cfg.instrSizeBytes)
+          )
         )
       )
+    //}
+    myRegPcAdcDel1(idx).io.inp.b := (
+      0x0
+    )
+    myRegPcAdcDel1(idx).io.inp.carry := (
+      //S(s"${cfg.mainWidth - log2Up(cfg.instrSizeBytes)}'d1")
+      True
     )
   }
-  myRegPcAddDel1.io.inp.b := (
-    S(s"${cfg.mainWidth - log2Up(cfg.instrSizeBytes)}'d1")
-  )
   val rPrevRegPcPlusInstrSize = {
     //val temp = RegNextWhen(
     //  next=(
@@ -851,25 +857,45 @@ case class SnowHousePipeStageInstrFetch(
     )(
       SInt(cfg.mainWidth bits)
     )
-    temp.foreach(item => {
+    //temp.foreach(item => {
+    //  //item.init(myNextRegPcInit)
+    //  item := (
+    //    RegNext(item)
+    //    init(
+    //      myNextRegPcInit //- (1.toLong * cfg.instrSizeBytes.toLong).toLong
+    //    )
+    //  )
+    //  when (RegNext(next=up.isFiring, init=False)) {
+    //    item := Cat(
+    //      myRegPcAdcDel1.io.outp.sum_carry(
+    //        //item.bitsRange
+    //        //item.high downto log2Up(cfg.instrSizeBytes)
+    //        myRegPcAdcDel1.io.outp.sum_carry.high - 1 downto 0
+    //      ),
+    //      S(s"${log2Up(cfg.instrSizeBytes)}'d0"),
+    //    ).asSInt
+    //  }
+    //})
+    for (idx <- 0 until temp.size) {
+      val item = temp(idx)
       //item.init(myNextRegPcInit)
-      //item := (
-      //  RegNext(item)
-      //  init(
-      //    myNextRegPcInit //- (1.toLong * cfg.instrSizeBytes.toLong).toLong
-      //  )
-      //)
-      //when (RegNext(next=up.isFiring, init=False)) {
+      item := (
+        RegNext(item)
+        init(
+          myNextRegPcInit //- (1.toLong * cfg.instrSizeBytes.toLong).toLong
+        )
+      )
+      when (RegNext(next=up.isFiring, init=False)) {
         item := Cat(
-          myRegPcAddDel1.io.outp.sum_carry(
+          myRegPcAdcDel1(idx).io.outp.sum_carry(
             //item.bitsRange
             //item.high downto log2Up(cfg.instrSizeBytes)
-            myRegPcAddDel1.io.outp.sum_carry.high - 1 downto 0
+            myRegPcAdcDel1(idx).io.outp.sum_carry.high - 1 downto 0
           ),
           S(s"${log2Up(cfg.instrSizeBytes)}'d0"),
         ).asSInt
-      //}
-    })
+      }
+    }
     temp
   }
   val rPrevInstrCnt = /*(cfg.optFormal) generate*/ (
