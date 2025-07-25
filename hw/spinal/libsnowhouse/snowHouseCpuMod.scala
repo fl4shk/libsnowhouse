@@ -600,7 +600,10 @@ object SnowHouseCpuPipeStageInstrDecode {
             //regPcPlusImm //+ (1 * cfg.instrSizeBytes)
 
             //regPcPlusImm + (3 * cfg.instrSizeBytes)
-            dstRegPc
+            Cat(
+              dstRegPc,
+              U(s"${log2Up(cfg.instrSizeBytes)}'d0")
+            ).asUInt
 
             //regPcPlusImm //- (1 * cfg.instrSizeBytes)
             //regPcPlusImm - (1 * cfg.instrSizeBytes)
@@ -1671,8 +1674,11 @@ object SnowHouseCpuPipeStageInstrDecode {
           //regPcPlusImm=upPayload.regPcPlusImm,
           dstRegPc=(
             //upPayload.regPcPlusImm + (3 * cfg.instrSizeBytes)
-            //psId.myHistRegPcPlus1Instr.last + upPayload.imm(2)
-            upPayload.laggingRegPcPlus1InstrSize + upPayload.imm(2)
+            psId.myHistRegPcPlus1InstrSize.last
+            + upPayload.imm(2)(
+              upPayload.imm(2).high downto log2Up(cfg.instrSizeBytes)
+            )
+            //upPayload.laggingRegPcPlus1InstrSize + upPayload.imm(2)
           ),
           //branchPredictTkn=upPayload.branchPredictTkn,
         )
@@ -4072,10 +4078,10 @@ object SnowHouseCpuWithDualRamSim extends App {
     10, 10,
   )
   val instrRamKindArr = Array[Int](
-    //0,
-    //1,
+    0,
+    1,
     2,
-    //5,
+    5,
   )
   for (testIdx <- 0 to 10) {
     programStrArr += (

@@ -962,6 +962,7 @@ case class SnowHousePipeStageInstrFetch(
     //    ).asSInt
     //  }
     //}
+    KeepAttribute(temp)
     temp
   }
   val rPrevInstrCnt = /*(cfg.optFormal) generate*/ (
@@ -1067,46 +1068,46 @@ case class SnowHousePipeStageInstrFetch(
       init=upModExt.regPc.getZero,
     )
   )
-  val myHistRegPcMinus2InstrSize = (
-    History[UInt](
-      that=(
-        //upModExt.regPc - (2 * cfg.instrSizeBytes)
-        myHistRegPc(1) - (2 * cfg.instrSizeBytes)
-      ),
-      length=(
-        //upModExt.myHistRegPcMinus2InstrSize.size
-        myHistRegPc.size - 1
-      ),
-      when=up.isFiring,
-      init=upModExt.regPc.getZero,
-    )
-  )
-  val myHistRegPcPlus1InstrSize = (
-    History[UInt](
-      that=(
-        //upModExt.regPc + (1 * cfg.instrSizeBytes)
-        myHistRegPc(1) + (1 * cfg.instrSizeBytes)
-      ),
-      length=(
-        //upModExt.myHistRegPcPlus1InstrSize.size
-        myHistRegPcMinus2InstrSize.size
-      ),
-      when=up.isFiring,
-      init=upModExt.regPc.getZero,
-    )
-  )
+  //val myHistRegPcMinus2InstrSize = (
+  //  History[UInt](
+  //    that=(
+  //      //upModExt.regPc - (2 * cfg.instrSizeBytes)
+  //      myHistRegPc(1) - (2 * cfg.instrSizeBytes)
+  //    ),
+  //    length=(
+  //      //upModExt.myHistRegPcMinus2InstrSize.size
+  //      myHistRegPc.size - 1
+  //    ),
+  //    when=up.isFiring,
+  //    init=upModExt.regPc.getZero,
+  //  )
+  //)
+  //val myHistRegPcPlus1InstrSize = (
+  //  History[UInt](
+  //    that=(
+  //      //upModExt.regPc + (1 * cfg.instrSizeBytes)
+  //      myHistRegPc(1) + (1 * cfg.instrSizeBytes)
+  //    ),
+  //    length=(
+  //      //upModExt.myHistRegPcPlus1InstrSize.size
+  //      myHistRegPcMinus2InstrSize.size
+  //    ),
+  //    when=up.isFiring,
+  //    init=upModExt.regPc.getZero,
+  //  )
+  //)
   upModExt.laggingRegPc.allowOverride
-  upModExt.laggingRegPcMinus2InstrSize.allowOverride
-  upModExt.laggingRegPcPlus1InstrSize.allowOverride
+  //upModExt.laggingRegPcMinus2InstrSize.allowOverride
+  //upModExt.laggingRegPcPlus1InstrSize.allowOverride
   upModExt.laggingRegPc := (
     myHistRegPc.last
   )
-  upModExt.laggingRegPcMinus2InstrSize := (
-    myHistRegPcMinus2InstrSize.last
-  )
-  upModExt.laggingRegPcPlus1InstrSize := (
-    myHistRegPcPlus1InstrSize.last
-  )
+  //upModExt.laggingRegPcMinus2InstrSize := (
+  //  myHistRegPcMinus2InstrSize.last
+  //)
+  //upModExt.laggingRegPcPlus1InstrSize := (
+  //  myHistRegPcPlus1InstrSize.last
+  //)
   //upModExt.myHistRegPcMinus2InstrSize
   val predictCond = (
     cfg.haveBranchPredictor
@@ -1980,14 +1981,17 @@ case class SnowHousePipeStageInstrDecode(
   //upPayload(1).myHistRegPcPlusInstrSize := (
   //  myHistRegPcPlusInstrSize
   //)
-  //val myHistRegPc = (
-  //  History[UInt](
-  //    that=upPayload(1).regPc,
-  //    length=upPayload(1).myHistRegPc.size,
-  //    when=up.isFiring,
-  //    init=upPayload(1).regPc.getZero,
-  //  )
-  //)
+  def myRegPcRange = (
+    upPayload(1).regPc.high downto log2Up(cfg.instrSizeBytes)
+  )
+  val myHistRegPc = (
+    History[UInt](
+      that=upPayload(1).regPc(myRegPcRange),
+      length=upPayload(1).myHistRegPcSize,
+      when=up.isFiring,
+      init=upPayload(1).regPc(myRegPcRange).getZero,
+    )
+  )
   //val myHistRegPcMinus2InstrSize = (
   //  History[UInt](
   //    that=(
@@ -2009,7 +2013,79 @@ case class SnowHousePipeStageInstrDecode(
   //  )
   //)
   //upPayload(1).myHistRegPc := myHistRegPc
-  upPayload(1).regPcPlusImm := (
+  //val myHistRegPc = (
+  //  History[UInt](
+  //    that=upPayload(1).regPc,
+  //    length=(
+  //      //upPayload(1).myHistRegPc.size
+  //      //3
+  //      upPayload(1).myHistRegPcSize
+  //    ),
+  //    when=up.isFiring,
+  //    init=upPayload(1).regPc.getZero,
+  //  )
+  //)
+  val myHistRegPcMinus2InstrSize = (
+    History[UInt](
+      that=(
+        //upPayload(1).regPc - (2 * cfg.instrSizeBytes)
+        //myHistRegPc(1) - (2 * cfg.instrSizeBytes)
+        myHistRegPc(1) - 2
+      ),
+      length=(
+        //upPayload(1).myHistRegPcMinus2InstrSize.size
+        //myHistRegPc.size - 1
+        upPayload(1).myHistRegPcSize - 1
+      ),
+      when=up.isFiring,
+      init=(
+        //upPayload(1).regPc.getZero
+        myHistRegPc(1).getZero
+      ),
+    )
+  )
+  val myHistRegPcPlus1InstrSize = (
+    History[UInt](
+      that=(
+        //upPayload(1).regPc + (1 * cfg.instrSizeBytes)
+        //myHistRegPc(1) + (1 * cfg.instrSizeBytes)
+        myHistRegPc(1) + 1
+      ),
+      length=(
+        //upPayload(1).myHistRegPcPlus1InstrSize.size
+        //myHistRegPcMinus2InstrSize.size
+        upPayload(1).myHistRegPcSize - 1
+      ),
+      when=up.isFiring,
+      init=(
+        //upPayload(1).regPc.getZero
+        myHistRegPc(1).getZero
+      ),
+    )
+  )
+  myHistRegPc.addAttribute("use_dsp", "yes")
+  myHistRegPcMinus2InstrSize.addAttribute("use_dsp", "yes")
+  myHistRegPcMinus2InstrSize.addAttribute("use_dsp", "yes")
+  //upPayload(1).laggingRegPc.allowOverride
+  //upPayload(1).laggingRegPcMinus2InstrSize.allowOverride
+  //upPayload(1).laggingRegPcPlus1InstrSize.allowOverride
+  //upPayload(1).laggingRegPc := (
+  //  myHistRegPc.last
+  //)
+  def laggingRegPcMinus2InstrSize = (
+    (
+      myHistRegPcMinus2InstrSize.last
+    )
+  )
+  //upPayload(1).laggingRegPcMinus2InstrSize := (
+  //  myHistRegPcMinus2InstrSize.last
+  //)
+  //upPayload(1).laggingRegPcPlus1InstrSize := (
+  //  myHistRegPcPlus1InstrSize.last
+  //)
+  upPayload(1).regPcPlusImm := 0x0
+  upPayload(1).regPcPlusImm.allowOverride
+  upPayload(1).regPcPlusImm(myRegPcRange) := (
     (
       //Mux[SInt](
       //  (
@@ -2034,8 +2110,11 @@ case class SnowHousePipeStageInstrDecode(
       //  ),
       //  (
           //upPayload(1).branchTgtBufElem(1).srcRegPc.asSInt
-          upPayload(1).laggingRegPcMinus2InstrSize.asSInt
-          + upPayload(1).imm(2).asSInt
+          //upPayload(1).
+          laggingRegPcMinus2InstrSize.asSInt
+          + (
+            upPayload(1).imm(2)(myRegPcRange).asSInt
+          )
           ////+ (1 * cfg.instrSizeBytes)
           //- (2 * cfg.instrSizeBytes)
           ////upPayload(1).regPc.asSInt

@@ -1277,17 +1277,20 @@ case class SnowHousePipePayload(
       UInt(cfg.mainWidth bits)//.simPublic()
     //)
   )
-  val laggingRegPcPlus1InstrSize = (
-    //Vec.fill(myHistRegPc.size - 1)(
-      UInt(cfg.mainWidth bits)
-    //)
+  def myHistRegPcSize = (
+    3
   )
-  val laggingRegPcMinus2InstrSize = (
-    //Vec.fill(myHistRegPc.size - 1)(
-      UInt(cfg.mainWidth bits)
-    //)
-  )
-  //val myHistRegPcPlusInstrSize = Vec.fill(myHistRegPc.size)(
+  //val laggingRegPcPlus1InstrSize = (
+  //  //Vec.fill(myHistRegPc.size - 1)(
+  //    UInt(cfg.mainWidth bits)
+  //  //)
+  //)
+  //val laggingRegPcMinus2InstrSize = (
+  //  //Vec.fill(myHistRegPc.size - 1)(
+  //    UInt(cfg.mainWidth bits)
+  //  //)
+  //)
+  ////val myHistRegPcPlusInstrSize = Vec.fill(myHistRegPc.size)(
   //  /*Flow*/(UInt(cfg.mainWidth bits))//.simPublic()
   //)
   val regPcPlus1Instr = UInt(cfg.mainWidth bits)
