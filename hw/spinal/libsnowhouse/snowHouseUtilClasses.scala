@@ -1272,10 +1272,20 @@ case class SnowHousePipePayload(
   )
   //psExSetOutpModMemWordIo.simPublic()
   val regPc = UInt(cfg.mainWidth bits)//.simPublic()
-  val myHistRegPc = /*Vec.fill(2)*/(
-    Vec.fill(3)(
+  val laggingRegPc = /*Vec.fill(2)*/(
+    //Vec.fill(3)(
       UInt(cfg.mainWidth bits)//.simPublic()
-    )
+    //)
+  )
+  val laggingRegPcPlus1InstrSize = (
+    //Vec.fill(myHistRegPc.size - 1)(
+      UInt(cfg.mainWidth bits)
+    //)
+  )
+  val laggingRegPcMinus2InstrSize = (
+    //Vec.fill(myHistRegPc.size - 1)(
+      UInt(cfg.mainWidth bits)
+    //)
   )
   //val myHistRegPcPlusInstrSize = Vec.fill(myHistRegPc.size)(
   //  /*Flow*/(UInt(cfg.mainWidth bits))//.simPublic()

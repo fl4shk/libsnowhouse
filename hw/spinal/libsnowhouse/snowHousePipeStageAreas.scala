@@ -1056,6 +1056,58 @@ case class SnowHousePipeStageInstrFetch(
   //upModExt.myHistRegPc := (
   //  myHistRegPc
   //)
+  val myHistRegPc = (
+    History[UInt](
+      that=upModExt.regPc,
+      length=(
+        //upModExt.myHistRegPc.size
+        3
+      ),
+      when=up.isFiring,
+      init=upModExt.regPc.getZero,
+    )
+  )
+  val myHistRegPcMinus2InstrSize = (
+    History[UInt](
+      that=(
+        //upModExt.regPc - (2 * cfg.instrSizeBytes)
+        myHistRegPc(1) - (2 * cfg.instrSizeBytes)
+      ),
+      length=(
+        //upModExt.myHistRegPcMinus2InstrSize.size
+        myHistRegPc.size - 1
+      ),
+      when=up.isFiring,
+      init=upModExt.regPc.getZero,
+    )
+  )
+  val myHistRegPcPlus1InstrSize = (
+    History[UInt](
+      that=(
+        //upModExt.regPc + (1 * cfg.instrSizeBytes)
+        myHistRegPc(1) + (1 * cfg.instrSizeBytes)
+      ),
+      length=(
+        //upModExt.myHistRegPcPlus1InstrSize.size
+        myHistRegPcMinus2InstrSize.size
+      ),
+      when=up.isFiring,
+      init=upModExt.regPc.getZero,
+    )
+  )
+  upModExt.laggingRegPc.allowOverride
+  upModExt.laggingRegPcMinus2InstrSize.allowOverride
+  upModExt.laggingRegPcPlus1InstrSize.allowOverride
+  upModExt.laggingRegPc := (
+    myHistRegPc.last
+  )
+  upModExt.laggingRegPcMinus2InstrSize := (
+    myHistRegPcMinus2InstrSize.last
+  )
+  upModExt.laggingRegPcPlus1InstrSize := (
+    myHistRegPcPlus1InstrSize.last
+  )
+  //upModExt.myHistRegPcMinus2InstrSize
   val predictCond = (
     cfg.haveBranchPredictor
   ) generate (
@@ -1928,35 +1980,35 @@ case class SnowHousePipeStageInstrDecode(
   //upPayload(1).myHistRegPcPlusInstrSize := (
   //  myHistRegPcPlusInstrSize
   //)
-  val myHistRegPc = (
-    History[UInt](
-      that=upPayload(1).regPc,
-      length=upPayload(1).myHistRegPc.size,
-      when=up.isFiring,
-      init=upPayload(1).regPc.getZero,
-    )
-  )
-  val myHistRegPcMinus2Instrs = (
-    History[UInt](
-      that=(
-        upPayload(1).regPc - (2 * cfg.instrSizeBytes)
-      ),
-      length=upPayload(1).myHistRegPc.size,
-      when=up.isFiring,
-      init=upPayload(1).regPc.getZero,
-    )
-  )
-  val myHistRegPcPlus1Instr = (
-    History[UInt](
-      that=(
-        upPayload(1).regPc + (1 * cfg.instrSizeBytes)
-      ),
-      length=upPayload(1).myHistRegPc.size,
-      when=up.isFiring,
-      init=upPayload(1).regPc.getZero,
-    )
-  )
-  upPayload(1).myHistRegPc := myHistRegPc
+  //val myHistRegPc = (
+  //  History[UInt](
+  //    that=upPayload(1).regPc,
+  //    length=upPayload(1).myHistRegPc.size,
+  //    when=up.isFiring,
+  //    init=upPayload(1).regPc.getZero,
+  //  )
+  //)
+  //val myHistRegPcMinus2InstrSize = (
+  //  History[UInt](
+  //    that=(
+  //      upPayload(1).regPc - (2 * cfg.instrSizeBytes)
+  //    ),
+  //    length=upPayload(1).myHistRegPc.size,
+  //    when=up.isFiring,
+  //    init=upPayload(1).regPc.getZero,
+  //  )
+  //)
+  //val myHistRegPcPlus1InstrSize = (
+  //  History[UInt](
+  //    that=(
+  //      upPayload(1).regPc + (1 * cfg.instrSizeBytes)
+  //    ),
+  //    length=upPayload(1).myHistRegPc.size,
+  //    when=up.isFiring,
+  //    init=upPayload(1).regPc.getZero,
+  //  )
+  //)
+  //upPayload(1).myHistRegPc := myHistRegPc
   upPayload(1).regPcPlusImm := (
     (
       //Mux[SInt](
@@ -1982,7 +2034,7 @@ case class SnowHousePipeStageInstrDecode(
       //  ),
       //  (
           //upPayload(1).branchTgtBufElem(1).srcRegPc.asSInt
-          myHistRegPcMinus2Instrs.last.asSInt
+          upPayload(1).laggingRegPcMinus2InstrSize.asSInt
           + upPayload(1).imm(2).asSInt
           ////+ (1 * cfg.instrSizeBytes)
           //- (2 * cfg.instrSizeBytes)
