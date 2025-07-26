@@ -1,4 +1,4 @@
-Starting test:programStr:test/snowhousecpu-test-7.bin instrRamKind:5
+Starting test:programStr:test/snowhousecpu-test-7.bin instrRamKind:1
 addr:1 data:216
 addr:2 data:1
 addr:1 data:8
@@ -62,5 +62,19 @@ addr:6 data:2
 addr:3 data:4104
 addr:1 data:6
 addr:13 data:188
+addr:8 data:2
+addr:13 data:172
+addr:6 data:3
+addr:3 data:4108
+addr:1 data:5
+addr:13 data:188
+addr:8 data:3
+addr:13 data:172
+addr:6 data:4
+addr:3 data:4112
+addr:1 data:4
+addr:13 data:188
+addr:7 data:1
+addr:8 data:0
 Ending test.
 
