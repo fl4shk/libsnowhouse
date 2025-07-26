@@ -2110,7 +2110,12 @@ case class SnowHousePipeStageInstrDecode(
     )
   )
   myDspRegPcMinus2InstrSize.io.inp.a := myHistRegPc(1)
-  myDspRegPcMinus2InstrSize.io.inp.b := 2
+  myDspRegPcMinus2InstrSize.io.inp.b := (
+    RegNext(
+      next=S(s"${myDspRegPcMinus2InstrSize.io.inp.b.getWidth}'d2")
+    )
+    init(0x0)
+  )
   myDspRegPcMinus2InstrSize.io.inp.cond := up.isFiring
   myHistRegPcMinus2InstrSize.last := (
     myDspRegPcMinus2InstrSize.io.outp.sum_carry(
