@@ -227,6 +227,7 @@ case class SnowHouseDataCache(
     temp
   }
   myH2dBus.sendData := rH2dSendData
+  myH2dBus.sendData.data.allowOverride
   myD2hBus.ready := (
     False
   )
@@ -599,6 +600,7 @@ case class SnowHouseDataCache(
       init=rdLineWord.getZero,
     )
   )
+  myH2dBus.sendData.data := rRdLineWord
   val wrLineAttrs = SnowHouseCacheLineAttrs(
     cfg=cfg,
     isIcache=isIcache,
@@ -851,10 +853,11 @@ case class SnowHouseDataCache(
         )
       } otherwise {
         myPastBusSendDataData := (
-          RegNext(
-            next=rdLineWord,
-            init=rdLineWord.getZero
-          )
+          //RegNext(
+          //  next=rdLineWord,
+          //  init=rdLineWord.getZero
+          //)
+          rRdLineWord
         )
       }
       //when (
@@ -1384,6 +1387,7 @@ case class SnowHouseDataCache(
     //--------
     //--------
     is (State.HANDLE_NON_CACHED_BUS_ACC) {
+      myH2dBus.sendData.data := rH2dSendData.data
       when (
         RegNext(next=myH2dBus.nextValid, init=False)
         && myH2dBus.ready

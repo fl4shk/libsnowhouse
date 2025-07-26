@@ -2740,7 +2740,7 @@ case class SnowHouseCpuConfig(
       val icacheDepthWords = /*8192*/ 1024 //2048 // 4 kiB icache
       val icacheLineSizeBytes = 64
       val icacheBusSrcNum = 0x0
-      val dcacheDepthWords = /*512*/ 1024 //2048 /*8192*/ // 4 kiB dcache
+      val dcacheDepthWords = /*512*/ /*128*/ 1024 //2048 /*8192*/ // 4 kiB dcache
       val dcacheLineSizeBytes = 64
       val dcacheBusSrcNum = 0x1
       SnowHouseSubConfig(
@@ -4082,8 +4082,8 @@ object SnowHouseCpuWithDualRamSim extends App {
   val instrRamKindArr = Array[Int](
     0,
     1,
-    2,
-    5,
+    //2,
+    //5,
   )
   for (testIdx <- 0 to 10) {
     programStrArr += (
