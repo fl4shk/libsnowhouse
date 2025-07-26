@@ -266,7 +266,8 @@ case class SnowHouseDataCache(
       ) else (
         cfg.subCfg.dcacheCfg.memRamStyle
       )
-    )
+    ),
+    optDblRdReg=true,
   )
   val lineAttrsRam = FpgacpuRamSimpleDualPort(
     wordType=SnowHouseCacheLineAttrs(
@@ -590,17 +591,18 @@ case class SnowHouseDataCache(
       lineWordRam.io.rdData.asUInt
     )
   )
-  val rRdLineWord = (
+  val myRdLineWord = (
     //RegNext(
     //  next=rdLineWord,
     //  init=rdLineWord.getZero,
     //)
-    Reg(
-      cloneOf(rdLineWord),
-      init=rdLineWord.getZero,
-    )
+    //Reg(
+    //  cloneOf(rdLineWord),
+    //  init=rdLineWord.getZero,
+    //)
+    cloneOf(rdLineWord)
   )
-  myH2dBus.sendData.data := rRdLineWord
+  myH2dBus.sendData.data := myRdLineWord
   val wrLineAttrs = SnowHouseCacheLineAttrs(
     cfg=cfg,
     isIcache=isIcache,
@@ -809,7 +811,7 @@ case class SnowHouseDataCache(
     //rPastBusSendDataData := /*RegNext*/(rdLineWord)
     //rBusDevData := rdLineWord
     //when (!RegNext(rBusSendData.accKind).asBits(1))
-    rRdLineWord := rdLineWord
+    myRdLineWord := rdLineWord
     when (
       ///*RegNext*/(rPleaseFinish(2).sFindFirst(_ === False)._1)
       ////&& (!rPleaseFinish(0).sFindFirst(_ === True)._1)
@@ -825,14 +827,14 @@ case class SnowHouseDataCache(
         //  next=rdLineWord,
         //  init=rdLineWord.getZero,
         //)
-        rRdLineWord
+        myRdLineWord
       )
       myTempBusDevData := (
         //RegNext(
         //  next=rdLineWord,
         //  init=rdLineWord.getZero,
         //)
-        rRdLineWord
+        myRdLineWord
       )
     }
     //when (
@@ -857,7 +859,7 @@ case class SnowHouseDataCache(
           //  next=rdLineWord,
           //  init=rdLineWord.getZero
           //)
-          rRdLineWord
+          myRdLineWord
         )
       }
       //when (
