@@ -589,7 +589,7 @@ object SnowHouseCpuPipeStageInstrDecode {
             //+ (3 * cfg.instrSizeBytes)
             //- (2 * cfg.instrSizeBytes)
           )
-          ret.btbElem.dstRegPc := (
+          ret.btbElem.dstRegPc := {
             //regPc + myTargetDisp
             //regPcPlusImm + (3 * cfg.instrSizeBytes)
             //regPcPlusImm + (2 * cfg.instrSizeBytes)
@@ -600,10 +600,11 @@ object SnowHouseCpuPipeStageInstrDecode {
             //regPcPlusImm //+ (1 * cfg.instrSizeBytes)
 
             //regPcPlusImm + (3 * cfg.instrSizeBytes)
-            Cat(
+            val myCat = Cat(
               dstRegPc,
               U(s"${log2Up(cfg.instrSizeBytes)}'d0")
             ).asUInt
+            myCat(myCat.high - 1 downto 0)
 
             //regPcPlusImm //- (1 * cfg.instrSizeBytes)
             //regPcPlusImm - (1 * cfg.instrSizeBytes)
@@ -613,7 +614,7 @@ object SnowHouseCpuPipeStageInstrDecode {
             //regPcPlusImm - (2 * cfg.instrSizeBytes)
             //regPcPlusImm - (1 * cfg.instrSizeBytes)
             //+ (3 * cfg.instrSizeBytes)
-          )
+          }
         //} otherwise {
         //  ret.srcRegPc := (
         //    regPc
@@ -1674,7 +1675,7 @@ object SnowHouseCpuPipeStageInstrDecode {
           //regPcPlusImm=upPayload.regPcPlusImm,
           dstRegPc=(
             //upPayload.regPcPlusImm + (3 * cfg.instrSizeBytes)
-            psId.myHistRegPcPlus1InstrSize.last
+            psId.myHistRegPcPlus1InstrSize.last.asUInt
             + upPayload.imm(2)(
               upPayload.imm(2).high downto log2Up(cfg.instrSizeBytes)
             )
