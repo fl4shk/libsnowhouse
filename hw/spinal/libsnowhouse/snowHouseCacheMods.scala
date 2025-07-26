@@ -589,12 +589,16 @@ case class SnowHouseDataCache(
       lineWordRam.io.rdData.asUInt
     )
   )
-  //val rRdLineWord = (
-  //  RegNext(
-  //    next=rdLineWord,
-  //    init=rdLineWord.getZero,
-  //  )
-  //)
+  val rRdLineWord = (
+    //RegNext(
+    //  next=rdLineWord,
+    //  init=rdLineWord.getZero,
+    //)
+    Reg(
+      cloneOf(rdLineWord),
+      init=rdLineWord.getZero,
+    )
+  )
   val wrLineAttrs = SnowHouseCacheLineAttrs(
     cfg=cfg,
     isIcache=isIcache,
@@ -803,6 +807,7 @@ case class SnowHouseDataCache(
     //rPastBusSendDataData := /*RegNext*/(rdLineWord)
     //rBusDevData := rdLineWord
     //when (!RegNext(rBusSendData.accKind).asBits(1))
+    rRdLineWord := rdLineWord
     when (
       ///*RegNext*/(rPleaseFinish(2).sFindFirst(_ === False)._1)
       ////&& (!rPleaseFinish(0).sFindFirst(_ === True)._1)
@@ -814,16 +819,18 @@ case class SnowHouseDataCache(
     ) {
       myBusDevData := (
         //rdLineWord
-        RegNext(
-          next=rdLineWord,
-          init=rdLineWord.getZero,
-        )
+        //RegNext(
+        //  next=rdLineWord,
+        //  init=rdLineWord.getZero,
+        //)
+        rRdLineWord
       )
       myTempBusDevData := (
-        RegNext(
-          next=rdLineWord,
-          init=rdLineWord.getZero,
-        )
+        //RegNext(
+        //  next=rdLineWord,
+        //  init=rdLineWord.getZero,
+        //)
+        rRdLineWord
       )
     }
     //when (
