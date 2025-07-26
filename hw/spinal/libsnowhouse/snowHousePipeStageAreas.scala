@@ -2095,7 +2095,12 @@ case class SnowHousePipeStageInstrDecode(
   //)
 
   val myDspRegPcMinus2InstrSize = (
-    LcvCondSubDel1(
+    //LcvCondSubDel1(
+    //  wordWidth=(
+    //    cfg.mainWidth - log2Up(cfg.instrSizeBytes)
+    //  )
+    //)
+    LcvSubDel1(
       wordWidth=(
         cfg.mainWidth - log2Up(cfg.instrSizeBytes)
       )
@@ -2109,42 +2114,111 @@ case class SnowHousePipeStageInstrDecode(
       )
     )
   )
-  myDspRegPcMinus2InstrSize.io.inp.a := myHistRegPc(1)
+  myDspRegPcMinus2InstrSize.io.inp.a := (
+    //myHistRegPc(1)
+    myHistRegPc(0)
+  )
   myDspRegPcMinus2InstrSize.io.inp.b := (
     RegNext(
       next=S(s"${myDspRegPcMinus2InstrSize.io.inp.b.getWidth}'d2")
     )
     init(0x0)
   )
-  myDspRegPcMinus2InstrSize.io.inp.cond := up.isFiring
-  myHistRegPcMinus2InstrSize.last := (
-    myDspRegPcMinus2InstrSize.io.outp.sum_carry(
-      myHistRegPcMinus2InstrSize.last.bitsRange
+  //myDspRegPcMinus2InstrSize.io.inp.cond := up.isFiring
+  //myHistRegPcMinus2InstrSize.last := (
+  //  myDspRegPcMinus2InstrSize.io.outp.sum_carry(
+  //    myHistRegPcMinus2InstrSize.last.bitsRange
+  //  )
+  //)
+  //myHistRegPcMinus2InstrSize.last := (
+  //  RegNext(
+  //    next=myHistRegPcMinus2InstrSize.last,
+  //    init=myHistRegPcMinus2InstrSize.last.getZero,
+  //  )
+  //)
+  //when (RegNext(next=up.isFiring, init=False)) {
+  //  myHistRegPcMinus2InstrSize.last := (
+  //    myDspRegPcMinus2InstrSize.io.outp.sum_carry(
+  //      myHistRegPcMinus2InstrSize.last.bitsRange
+  //    )
+  //  )
+  //}
+  for (idx <- 0 until myHistRegPcMinus2InstrSize.size) {
+    myHistRegPcMinus2InstrSize(idx) := (
+      RegNext(
+        next=myHistRegPcMinus2InstrSize(idx),
+        init=myHistRegPcMinus2InstrSize(idx).getZero,
+      )
     )
-  )
+    when (RegNext(next=up.isFiring, init=False)) {
+      if (idx == 0) {
+        myHistRegPcMinus2InstrSize(idx) := (
+          myDspRegPcMinus2InstrSize.io.outp.sum_carry(
+            myHistRegPcMinus2InstrSize(idx).bitsRange
+          )
+        )
+      } else {
+        myHistRegPcMinus2InstrSize(idx) := (
+          RegNext(
+            next=myHistRegPcMinus2InstrSize(idx - 1),
+            init=myHistRegPcMinus2InstrSize(idx - 1).getZero,
+          )
+        )
+      }
+    }
+  }
   val myDspRegPcPlus1InstrSize = (
-    LcvCondAddJustCarryDel1(
+    //LcvCondAddJustCarryDel1(
+    //  wordWidth=(
+    //    cfg.mainWidth - log2Up(cfg.instrSizeBytes)
+    //  )
+    //)
+    LcvAddJustCarryDel1(
       wordWidth=(
         cfg.mainWidth - log2Up(cfg.instrSizeBytes)
       )
     )
   )
   val myHistRegPcPlus1InstrSize = (
-    Vec.fill(upPayload(1).myHistRegPcSize - 1)(
+    Vec.fill(
+      upPayload(1).myHistRegPcSize - 1
+    )(
       SInt(
         cfg.mainWidth - log2Up(cfg.instrSizeBytes)
         bits
       )
     )
   )
-  myDspRegPcPlus1InstrSize.io.inp.a := myHistRegPc(1)
-  myDspRegPcPlus1InstrSize.io.inp.carry := True
-  myDspRegPcPlus1InstrSize.io.inp.cond := up.isFiring
-  myHistRegPcPlus1InstrSize.last := (
-    myDspRegPcPlus1InstrSize.io.outp.sum_carry(
-      myHistRegPcPlus1InstrSize.last.bitsRange
-    )
+  myDspRegPcPlus1InstrSize.io.inp.a := (
+    //myHistRegPc(1)
+    myHistRegPc(0)
   )
+  myDspRegPcPlus1InstrSize.io.inp.carry := True
+  //myDspRegPcPlus1InstrSize.io.inp.cond := up.isFiring
+  for (idx <- 0 until myHistRegPcPlus1InstrSize.size) {
+    myHistRegPcPlus1InstrSize(idx) := (
+      RegNext(
+        next=myHistRegPcPlus1InstrSize(idx),
+        init=myHistRegPcPlus1InstrSize(idx).getZero,
+      )
+    )
+    when (RegNext(next=up.isFiring, init=False)) {
+      if (idx == 0) {
+        myHistRegPcPlus1InstrSize(idx) := (
+          myDspRegPcPlus1InstrSize.io.outp.sum_carry(
+            myHistRegPcPlus1InstrSize(idx).bitsRange
+          )
+        )
+      } else {
+        myHistRegPcPlus1InstrSize(idx) := (
+          RegNext(
+            next=myHistRegPcPlus1InstrSize(idx - 1),
+            init=myHistRegPcPlus1InstrSize(idx - 1).getZero,
+          )
+        )
+      }
+    }
+  }
 
   //val myHistRegPcMinus2InstrSize 
 
