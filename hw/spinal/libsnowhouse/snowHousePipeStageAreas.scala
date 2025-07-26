@@ -2094,37 +2094,79 @@ case class SnowHousePipeStageInstrDecode(
   //  )
   //)
 
-  val myDspRegPcMinus2InstrSize = (
-    //LcvCondSubDel1(
-    //  wordWidth=(
-    //    cfg.mainWidth - log2Up(cfg.instrSizeBytes)
-    //  )
-    //)
-    LcvSubDel1(
-      wordWidth=(
-        cfg.mainWidth - log2Up(cfg.instrSizeBytes)
-      )
+  val myDspRegPcMinus2InstrSize = {
+    val myWordWidth = (
+      cfg.mainWidth - log2Up(cfg.instrSizeBytes) //- 1
     )
-  )
+    //LcvCondSubDel1(
+    //  wordWidth=myWordWidth
+    //)
+    //LcvSubDel1(
+    //  wordWidth=myWordWidth
+    //)
+    new Area {
+      val wordWidth = myWordWidth
+      val io = (
+        //LcvCondAddJustCarryDel1Io(wordWidth=wordWidth)
+        new Bundle {
+          val inp = new Bundle {
+            val a = SInt(wordWidth bits)
+            val carry = Bool()
+            val cond = Bool()
+          }
+          val outp = new Bundle {
+            val sum_carry = SInt(wordWidth + 1 bits)
+          }
+        }
+      )
+      val tempA = Cat(False, io.inp.a(io.inp.a.high downto 1)).asSInt
+      //val tempB = Cat(False, io.inp.b(io.inp.b.high downto 1)).asSInt
+      val tempCarry = Cat(
+        U(s"${wordWidth - 1}'d0"), 
+        io.inp.carry
+      ).asSInt
+
+      io.outp.sum_carry := (
+        RegNextWhen(
+          next=(
+            Cat(
+              //Cat(False, io.inp.a).asSInt - Cat(False, io.inp.b).asSInt
+              (tempA - tempCarry),
+              io.inp.a(0),
+            ).asSInt
+          ),
+          cond=io.inp.cond,
+        )
+        init(0x0)
+      )
+    }
+  }
   val myHistRegPcMinus2InstrSize = (
     Vec.fill(upPayload(1).myHistRegPcSize - 1)(
       SInt(
-        cfg.mainWidth - log2Up(cfg.instrSizeBytes)
+        //cfg.mainWidth - log2Up(cfg.instrSizeBytes)
+        myDspRegPcMinus2InstrSize.wordWidth
         bits
       )
     )
   )
   myDspRegPcMinus2InstrSize.io.inp.a := (
     //myHistRegPc(1)
+    //myHistRegPc(0)(myHistRegPc(0).high downto 1)
     myHistRegPc(0)
   )
-  myDspRegPcMinus2InstrSize.io.inp.b := (
-    RegNext(
-      next=S(s"${myDspRegPcMinus2InstrSize.io.inp.b.getWidth}'d2")
-    )
-    init(0x0)
+  myDspRegPcMinus2InstrSize.io.inp.carry := (
+    True
   )
-  //myDspRegPcMinus2InstrSize.io.inp.cond := up.isFiring
+  //myDspRegPcMinus2InstrSize.io.inp.b := (
+  //  (2 >> 1)
+  //  //2
+  //  //RegNext(
+  //  //  next=S(s"${myDspRegPcMinus2InstrSize.io.inp.b.getWidth}'d2")
+  //  //)
+  //  //init(0x0)
+  //)
+  myDspRegPcMinus2InstrSize.io.inp.cond := up.isFiring
   //myHistRegPcMinus2InstrSize.last := (
   //  myDspRegPcMinus2InstrSize.io.outp.sum_carry(
   //    myHistRegPcMinus2InstrSize.last.bitsRange
@@ -2144,41 +2186,48 @@ case class SnowHousePipeStageInstrDecode(
   //  )
   //}
   for (idx <- 0 until myHistRegPcMinus2InstrSize.size) {
-    myHistRegPcMinus2InstrSize(idx) := (
-      RegNext(
-        next=myHistRegPcMinus2InstrSize(idx),
-        init=myHistRegPcMinus2InstrSize(idx).getZero,
+    if (idx == 0) {
+      myHistRegPcMinus2InstrSize(idx) := (
+        myDspRegPcMinus2InstrSize.io.outp.sum_carry(
+          myHistRegPcMinus2InstrSize(idx).bitsRange
+        )
       )
-    )
-    when (RegNext(next=up.isFiring, init=False)) {
-      if (idx == 0) {
-        myHistRegPcMinus2InstrSize(idx) := (
-          myDspRegPcMinus2InstrSize.io.outp.sum_carry(
-            myHistRegPcMinus2InstrSize(idx).bitsRange
-          )
+    } else {
+      myHistRegPcMinus2InstrSize(idx) := (
+        RegNext(
+          next=myHistRegPcMinus2InstrSize(idx),
+          init=myHistRegPcMinus2InstrSize(idx).getZero,
         )
-      } else {
-        myHistRegPcMinus2InstrSize(idx) := (
-          RegNext(
-            next=myHistRegPcMinus2InstrSize(idx - 1),
-            init=myHistRegPcMinus2InstrSize(idx - 1).getZero,
+      )
+      when (RegNext(next=up.isFiring, init=False)) {
+        //if (idx == 0) {
+        //  myHistRegPcMinus2InstrSize(idx) := (
+        //    myDspRegPcMinus2InstrSize.io.outp.sum_carry(
+        //      myHistRegPcMinus2InstrSize(idx).bitsRange
+        //    )
+        //  )
+        //} else {
+          myHistRegPcMinus2InstrSize(idx) := (
+            RegNext(
+              next=myHistRegPcMinus2InstrSize(idx - 1),
+              init=myHistRegPcMinus2InstrSize(idx - 1).getZero,
+            )
           )
-        )
+        //}
       }
     }
   }
-  val myDspRegPcPlus1InstrSize = (
-    //LcvCondAddJustCarryDel1(
-    //  wordWidth=(
-    //    cfg.mainWidth - log2Up(cfg.instrSizeBytes)
-    //  )
-    //)
-    LcvAddJustCarryDel1(
-      wordWidth=(
-        cfg.mainWidth - log2Up(cfg.instrSizeBytes)
-      )
+  val myDspRegPcPlus1InstrSize = {
+    val myWordWidth = (
+      cfg.mainWidth - log2Up(cfg.instrSizeBytes)
     )
-  )
+    LcvCondAddJustCarryDel1(
+      wordWidth=myWordWidth
+    )
+    //LcvAddJustCarryDel1(
+    //  wordWidth=myWordWidth
+    //)
+  }
   val myHistRegPcPlus1InstrSize = (
     Vec.fill(
       upPayload(1).myHistRegPcSize - 1
@@ -2194,28 +2243,60 @@ case class SnowHousePipeStageInstrDecode(
     myHistRegPc(0)
   )
   myDspRegPcPlus1InstrSize.io.inp.carry := True
-  //myDspRegPcPlus1InstrSize.io.inp.cond := up.isFiring
+  myDspRegPcPlus1InstrSize.io.inp.cond := up.isFiring
+  //for (idx <- 0 until myHistRegPcPlus1InstrSize.size) {
+  //  myHistRegPcPlus1InstrSize(idx) := (
+  //    RegNext(
+  //      next=myHistRegPcPlus1InstrSize(idx),
+  //      init=myHistRegPcPlus1InstrSize(idx).getZero,
+  //    )
+  //  )
+  //  when (RegNext(next=up.isFiring, init=False)) {
+  //    if (idx == 0) {
+  //      myHistRegPcPlus1InstrSize(idx) := (
+  //        myDspRegPcPlus1InstrSize.io.outp.sum_carry(
+  //          myHistRegPcPlus1InstrSize(idx).bitsRange
+  //        )
+  //      )
+  //    } else {
+  //      myHistRegPcPlus1InstrSize(idx) := (
+  //        RegNext(
+  //          next=myHistRegPcPlus1InstrSize(idx - 1),
+  //          init=myHistRegPcPlus1InstrSize(idx - 1).getZero,
+  //        )
+  //      )
+  //    }
+  //  }
+  //}
   for (idx <- 0 until myHistRegPcPlus1InstrSize.size) {
-    myHistRegPcPlus1InstrSize(idx) := (
-      RegNext(
-        next=myHistRegPcPlus1InstrSize(idx),
-        init=myHistRegPcPlus1InstrSize(idx).getZero,
+    if (idx == 0) {
+      myHistRegPcPlus1InstrSize(idx) := (
+        myDspRegPcPlus1InstrSize.io.outp.sum_carry(
+          myHistRegPcPlus1InstrSize(idx).bitsRange
+        )
       )
-    )
-    when (RegNext(next=up.isFiring, init=False)) {
-      if (idx == 0) {
-        myHistRegPcPlus1InstrSize(idx) := (
-          myDspRegPcPlus1InstrSize.io.outp.sum_carry(
-            myHistRegPcPlus1InstrSize(idx).bitsRange
-          )
+    } else {
+      myHistRegPcPlus1InstrSize(idx) := (
+        RegNext(
+          next=myHistRegPcPlus1InstrSize(idx),
+          init=myHistRegPcPlus1InstrSize(idx).getZero,
         )
-      } else {
-        myHistRegPcPlus1InstrSize(idx) := (
-          RegNext(
-            next=myHistRegPcPlus1InstrSize(idx - 1),
-            init=myHistRegPcPlus1InstrSize(idx - 1).getZero,
+      )
+      when (RegNext(next=up.isFiring, init=False)) {
+        //if (idx == 0) {
+        //  myHistRegPcPlus1InstrSize(idx) := (
+        //    myDspRegPcPlus1InstrSize.io.outp.sum_carry(
+        //      myHistRegPcPlus1InstrSize(idx).bitsRange
+        //    )
+        //  )
+        //} else {
+          myHistRegPcPlus1InstrSize(idx) := (
+            RegNext(
+              next=myHistRegPcPlus1InstrSize(idx - 1),
+              init=myHistRegPcPlus1InstrSize(idx - 1).getZero,
+            )
           )
-        )
+        //}
       }
     }
   }
