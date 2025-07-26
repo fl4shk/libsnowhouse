@@ -2221,12 +2221,41 @@ case class SnowHousePipeStageInstrDecode(
     val myWordWidth = (
       cfg.mainWidth - log2Up(cfg.instrSizeBytes)
     )
-    LcvCondAddJustCarryDel1(
-      wordWidth=myWordWidth
-    )
+    //LcvCondAddJustCarryDel1(
+    //  wordWidth=myWordWidth
+    //)
     //LcvAddJustCarryDel1(
     //  wordWidth=myWordWidth
     //)
+    new Area {
+      val wordWidth = myWordWidth
+      val io = new Bundle {
+        val inp = new Bundle {
+          val a = SInt(wordWidth bits)
+          //val b = SInt(wordWidth bits)
+          val carry = Bool()
+          val cond = Bool()
+        }
+        val outp = new Bundle {
+          val sum_carry = SInt(wordWidth + 1 bits)
+        }
+      }
+      val tempA = Cat(False, io.inp.a).asSInt
+      //val tempB = Cat(False, io.inp.b).asSInt
+      val tempCarry = Cat(
+        U(s"${wordWidth}'d0"), 
+        io.inp.carry
+      ).asSInt
+      io.outp.sum_carry := (
+        RegNextWhen(
+          next=(
+            tempA + tempCarry
+          ),
+          cond=io.inp.cond,
+        )
+        init(0x0)
+      )
+    }
   }
   val myHistRegPcPlus1InstrSize = (
     Vec.fill(
