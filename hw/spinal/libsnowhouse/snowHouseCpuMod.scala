@@ -604,7 +604,8 @@ object SnowHouseCpuPipeStageInstrDecode {
               dstRegPc,
               U(s"${log2Up(cfg.instrSizeBytes)}'d0")
             ).asUInt
-            myCat(myCat.high - 1 downto 0)
+            //myCat(myCat.high - 1 downto 0)
+            myCat
 
             //regPcPlusImm //- (1 * cfg.instrSizeBytes)
             //regPcPlusImm - (1 * cfg.instrSizeBytes)

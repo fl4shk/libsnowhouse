@@ -1551,72 +1551,74 @@ case class SnowHousePipeStageInstrFetch(
   //  )
   //}
 }
-case class SnowHouseDspAddSubHistoryIo(
-  width: Int,
-  size: Int,
-  optIncludeCond: Boolean,
-) extends Bundle {
-  val inp = new Bundle {
-    val a = in(SInt(width bits))
-    val b = in(SInt(width bits))
-    val cond = (optIncludeCond) generate (
-      in(Bool())
-    )
-  }
-  val outp = new Bundle {
-    val myHistSumCarry = out(Vec.fill(size)(SInt(width + 1 bits)))
-  }
-}
-case class SnowHouseDspAddSubHistory(
-  width: Int,
-  size: Int,
-  optIncludeCond: Boolean,
-  isSub: Boolean,
-) extends Component {
-  addAttribute("use_dsp", "yes")
-  val io = SnowHouseDspAddSubHistoryIo(
-    width=width,
-    size=size,
-    optIncludeCond=optIncludeCond,
-  )
-  //io.outp.sumCarry.setAsReg() init(io.outp.sumCarry.getZero)
-  val myHistThat = (
-    if (!isSub) (
-      Cat(False, io.inp.a).asSInt + Cat(False, io.inp.b).asSInt
-    ) else (
-      Cat(False, io.inp.a).asSInt - Cat(False, io.inp.b).asSInt
-    )
-  )
-  io.outp.myHistSumCarry := (
-    if (optIncludeCond) (
-      History[SInt](
-        that=myHistThat,
-        length=size,
-        when=io.inp.cond,
-        init=myHistThat.getZero,
-      )
-    ) else (
-      History[SInt](
-        that=myHistThat,
-        length=size,
-        init=myHistThat.getZero,
-      )
-    )
-  )
-  //io.outp.sumCarry := (
-  //  RegNextWhen(
-  //    next=(
-  //      if (!isSub) (
-  //        Cat(False, io.inp.a).asSInt + Cat(False, io.inp.b).asSInt
-  //      ) else (
-  //        Cat(False, io.inp.a).asSInt - Cat(False, io.inp.b).asSInt
-  //      )
-  //    ),
-  //    cond=io.inp.cond,
-  //    init=io.outp.sumCarry.getZero,
-  //  )
-  //)
-}
+//case class SnowHouseDspAddSubHistoryIo(
+//  width: Int,
+//  size: Int,
+//  optIncludeCond: Boolean,
+//) extends Bundle {
+//  val inp = new Bundle {
+//    val a = in(SInt(width bits))
+//    val b = in(SInt(width bits))
+//    val cond = (optIncludeCond) generate (
+//      in(Bool())
+//    )
+//  }
+//  val outp = new Bundle {
+//    val myHistSumCarry = out(Vec.fill(size)(SInt(width + 1 bits)))
+//  }
+//}
+//case class SnowHouseDspAddSubHistory(
+//  width: Int,
+//  size: Int,
+//  optIncludeCond: Boolean,
+//  isSub: Boolean,
+//) extends Component {
+//  addAttribute("use_dsp", "yes")
+//  val io = SnowHouseDspAddSubHistoryIo(
+//    width=width,
+//    size=size,
+//    optIncludeCond=optIncludeCond,
+//  )
+//  //io.outp.sumCarry.setAsReg() init(io.outp.sumCarry.getZero)
+//  val myHistThat = (
+//    if (!isSub) (
+//      Cat(False, io.inp.a).asSInt + Cat(False, io.inp.b).asSInt
+//    ) else (
+//      Cat(False, io.inp.a).asSInt - Cat(False, io.inp.b).asSInt
+//    )
+//  )
+//  myHistThat.addAttribute("use_dsp", "yes")
+//  io.outp.myHistSumCarry := (
+//    if (optIncludeCond) (
+//      History[SInt](
+//        that=myHistThat,
+//        length=size,
+//        when=io.inp.cond,
+//        init=myHistThat.getZero,
+//      )
+//    ) else (
+//      History[SInt](
+//        that=myHistThat,
+//        length=size,
+//        init=myHistThat.getZero,
+//      )
+//    )
+//  )
+//  io.outp.myHistSumCarry.addAttribute("use_dsp", "yes")
+//  //io.outp.sumCarry := (
+//  //  RegNextWhen(
+//  //    next=(
+//  //      if (!isSub) (
+//  //        Cat(False, io.inp.a).asSInt + Cat(False, io.inp.b).asSInt
+//  //      ) else (
+//  //        Cat(False, io.inp.a).asSInt - Cat(False, io.inp.b).asSInt
+//  //      )
+//  //    ),
+//  //    cond=io.inp.cond,
+//  //    init=io.outp.sumCarry.getZero,
+//  //  )
+//  //)
+//}
 case class SnowHousePipeStageInstrDecode(
   val args: SnowHousePipeStageArgs,
   val psIdHaltIt: Bool,
@@ -2091,77 +2093,128 @@ case class SnowHousePipeStageInstrDecode(
   //    init=upPayload(1).regPc.getZero,
   //  )
   //)
-  val myHistDspRegPcMinus2InstrSize = (
-    SnowHouseDspAddSubHistory(
-      width=(
-        cfg.mainWidth - log2Up(cfg.instrSizeBytes)
-      ),
-      size=(
-        upPayload(1).myHistRegPcSize - 1
-      ),
-      optIncludeCond=true,
-      isSub=true,
-    )
-  )
-  myHistDspRegPcMinus2InstrSize.io.inp.a := myHistRegPc(1)
-  myHistDspRegPcMinus2InstrSize.io.inp.b := 2
-  myHistDspRegPcMinus2InstrSize.io.inp.cond := up.isFiring
 
-  val myHistRegPcMinus2InstrSize = (
-    myHistDspRegPcMinus2InstrSize.io.outp.myHistSumCarry
-    //History[SInt](
-    //  that=(
-    //    //upPayload(1).regPc - (2 * cfg.instrSizeBytes)
-    //    //myHistRegPc(1) - (2 * cfg.instrSizeBytes)
-    //    myHistRegPc(1) - 2
-    //  ),
-    //  length=(
-    //    //upPayload(1).myHistRegPcMinus2InstrSize.size
-    //    //myHistRegPc.size - 1
-    //    upPayload(1).myHistRegPcSize - 1
-    //  ),
-    //  when=up.isFiring,
-    //  init=(
-    //    //upPayload(1).regPc.getZero
-    //    myHistRegPc(1).getZero
-    //  ),
-    //)
-  )
-  val myHistDspRegPcPlus1InstrSize = (
-    SnowHouseDspAddSubHistory(
-      width=(
+  val myDspRegPcMinus2InstrSize = (
+    LcvCondSubDel1(
+      wordWidth=(
         cfg.mainWidth - log2Up(cfg.instrSizeBytes)
-      ),
-      size=(
-        upPayload(1).myHistRegPcSize - 1
-      ),
-      optIncludeCond=true,
-      isSub=false,
+      )
     )
   )
-  myHistDspRegPcPlus1InstrSize.io.inp.a := myHistRegPc(1)
-  myHistDspRegPcPlus1InstrSize.io.inp.b := 1
-  myHistDspRegPcPlus1InstrSize.io.inp.cond := up.isFiring
-  val myHistRegPcPlus1InstrSize = (
-    myHistDspRegPcPlus1InstrSize.io.outp.myHistSumCarry
-    //History[SInt](
-    //  that=(
-    //    //upPayload(1).regPc + (1 * cfg.instrSizeBytes)
-    //    //myHistRegPc(1) + (1 * cfg.instrSizeBytes)
-    //    myHistRegPc(1) + 1
-    //  ),
-    //  length=(
-    //    //upPayload(1).myHistRegPcPlus1InstrSize.size
-    //    //myHistRegPcMinus2InstrSize.size
-    //    upPayload(1).myHistRegPcSize - 1
-    //  ),
-    //  when=up.isFiring,
-    //  init=(
-    //    //upPayload(1).regPc.getZero
-    //    myHistRegPc(1).getZero
-    //  ),
-    //)
+  val myHistRegPcMinus2InstrSize = (
+    Vec.fill(upPayload(1).myHistRegPcSize - 1)(
+      SInt(
+        cfg.mainWidth - log2Up(cfg.instrSizeBytes)
+        bits
+      )
+    )
   )
+  myDspRegPcMinus2InstrSize.io.inp.a := myHistRegPc(1)
+  myDspRegPcMinus2InstrSize.io.inp.b := 2
+  myDspRegPcMinus2InstrSize.io.inp.cond := up.isFiring
+  myHistRegPcMinus2InstrSize.last := (
+    myDspRegPcMinus2InstrSize.io.outp.sum_carry(
+      myHistRegPcMinus2InstrSize.last.bitsRange
+    )
+  )
+  val myDspRegPcPlus1InstrSize = (
+    LcvCondAddJustCarryDel1(
+      wordWidth=(
+        cfg.mainWidth - log2Up(cfg.instrSizeBytes)
+      )
+    )
+  )
+  val myHistRegPcPlus1InstrSize = (
+    Vec.fill(upPayload(1).myHistRegPcSize - 1)(
+      SInt(
+        cfg.mainWidth - log2Up(cfg.instrSizeBytes)
+        bits
+      )
+    )
+  )
+  myDspRegPcPlus1InstrSize.io.inp.a := myHistRegPc(1)
+  myDspRegPcPlus1InstrSize.io.inp.carry := True
+  myDspRegPcPlus1InstrSize.io.inp.cond := up.isFiring
+  myHistRegPcPlus1InstrSize.last := (
+    myDspRegPcPlus1InstrSize.io.outp.sum_carry(
+      myHistRegPcPlus1InstrSize.last.bitsRange
+    )
+  )
+
+  //val myHistRegPcMinus2InstrSize 
+
+  //val myDspHistRegPcMinus2InstrSize = (
+  //  SnowHouseDspAddSubHistory(
+  //    width=(
+  //      cfg.mainWidth - log2Up(cfg.instrSizeBytes)
+  //    ),
+  //    size=(
+  //      upPayload(1).myHistRegPcSize - 1
+  //    ),
+  //    optIncludeCond=true,
+  //    isSub=true,
+  //  )
+  //)
+  //myDspHistRegPcMinus2InstrSize.io.inp.a := myHistRegPc(1)
+  //myDspHistRegPcMinus2InstrSize.io.inp.b := 2
+  //myDspHistRegPcMinus2InstrSize.io.inp.cond := up.isFiring
+
+  //val myHistRegPcMinus2InstrSize = (
+  //  myDspHistRegPcMinus2InstrSize.io.outp.myHistSumCarry
+  //  //History[SInt](
+  //  //  that=(
+  //  //    //upPayload(1).regPc - (2 * cfg.instrSizeBytes)
+  //  //    //myHistRegPc(1) - (2 * cfg.instrSizeBytes)
+  //  //    myHistRegPc(1) - 2
+  //  //  ),
+  //  //  length=(
+  //  //    //upPayload(1).myHistRegPcMinus2InstrSize.size
+  //  //    //myHistRegPc.size - 1
+  //  //    upPayload(1).myHistRegPcSize - 1
+  //  //  ),
+  //  //  when=up.isFiring,
+  //  //  init=(
+  //  //    //upPayload(1).regPc.getZero
+  //  //    myHistRegPc(1).getZero
+  //  //  ),
+  //  //)
+  //)
+  //val myDspHistRegPcPlus1InstrSize = (
+  //  SnowHouseDspAddSubHistory(
+  //    width=(
+  //      cfg.mainWidth - log2Up(cfg.instrSizeBytes)
+  //    ),
+  //    size=(
+  //      upPayload(1).myHistRegPcSize - 1
+  //    ),
+  //    optIncludeCond=true,
+  //    isSub=false,
+  //  )
+  //)
+  //myDspHistRegPcPlus1InstrSize.io.inp.a := myHistRegPc(1)
+  //myDspHistRegPcPlus1InstrSize.io.inp.b := 1
+  //myDspHistRegPcPlus1InstrSize.io.inp.cond := up.isFiring
+  //val myHistRegPcPlus1InstrSize = (
+  //  myDspHistRegPcPlus1InstrSize.io.outp.myHistSumCarry
+  //  //History[SInt](
+  //  //  that=(
+  //  //    //upPayload(1).regPc + (1 * cfg.instrSizeBytes)
+  //  //    //myHistRegPc(1) + (1 * cfg.instrSizeBytes)
+  //  //    myHistRegPc(1) + 1
+  //  //  ),
+  //  //  length=(
+  //  //    //upPayload(1).myHistRegPcPlus1InstrSize.size
+  //  //    //myHistRegPcMinus2InstrSize.size
+  //  //    upPayload(1).myHistRegPcSize - 1
+  //  //  ),
+  //  //  when=up.isFiring,
+  //  //  init=(
+  //  //    //upPayload(1).regPc.getZero
+  //  //    myHistRegPc(1).getZero
+  //  //  ),
+  //  //)
+  //)
+
   //myHistRegPc.addAttribute("use_dsp", "yes")
   //myHistRegPcMinus2InstrSize.addAttribute("use_dsp", "yes")
   //myHistRegPcPlus1InstrSize.addAttribute("use_dsp", "yes")
