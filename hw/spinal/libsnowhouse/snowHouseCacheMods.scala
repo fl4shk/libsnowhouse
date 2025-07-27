@@ -267,7 +267,7 @@ case class SnowHouseDataCache(
         cfg.subCfg.dcacheCfg.memRamStyle
       )
     ),
-    optDblRdReg=true,
+    //optDblRdReg=true,
   )
   val lineAttrsRam = FpgacpuRamSimpleDualPort(
     wordType=SnowHouseCacheLineAttrs(
@@ -811,7 +811,7 @@ case class SnowHouseDataCache(
     //rPastBusSendDataData := /*RegNext*/(rdLineWord)
     //rBusDevData := rdLineWord
     //when (!RegNext(rBusSendData.accKind).asBits(1))
-    myRdLineWord := rdLineWord
+    myRdLineWord := RegNext(rdLineWord)
     when (
       ///*RegNext*/(rPleaseFinish(2).sFindFirst(_ === False)._1)
       ////&& (!rPleaseFinish(0).sFindFirst(_ === True)._1)
