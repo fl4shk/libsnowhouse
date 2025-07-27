@@ -262,12 +262,12 @@ case class SnowHouseDataCache(
     initBigInt=Some(Array.fill(depthWords)(BigInt(0))),
     arrRamStyle=(
       if (isIcache) (
-        cfg.subCfg.icacheCfg.memRamStyle
+        cfg.subCfg.icacheCfg.lineWordMemRamStyle
       ) else (
-        cfg.subCfg.dcacheCfg.memRamStyle
+        cfg.subCfg.dcacheCfg.lineWordMemRamStyle
       )
     ),
-    //optDblRdReg=true,
+    optDblRdReg=true,
   )
   val lineAttrsRam = FpgacpuRamSimpleDualPort(
     wordType=SnowHouseCacheLineAttrs(
@@ -278,9 +278,9 @@ case class SnowHouseDataCache(
     initBigInt=Some(Array.fill(depthLines)(BigInt(0))),
     arrRamStyle=(
       if (isIcache) (
-        cfg.subCfg.icacheCfg.memRamStyle
+        cfg.subCfg.icacheCfg.lineAttrsMemRamStyle
       ) else (
-        cfg.subCfg.dcacheCfg.memRamStyle
+        cfg.subCfg.dcacheCfg.lineAttrsMemRamStyle
       )
     )
   )
@@ -811,7 +811,7 @@ case class SnowHouseDataCache(
     //rPastBusSendDataData := /*RegNext*/(rdLineWord)
     //rBusDevData := rdLineWord
     //when (!RegNext(rBusSendData.accKind).asBits(1))
-    myRdLineWord := RegNext(rdLineWord)
+    myRdLineWord := rdLineWord
     when (
       ///*RegNext*/(rPleaseFinish(2).sFindFirst(_ === False)._1)
       ////&& (!rPleaseFinish(0).sFindFirst(_ === True)._1)
@@ -1499,7 +1499,7 @@ case class SnowHouseInstrCache(
     initBigInt=Some(Array.fill(depthWords)(BigInt(0))),
     arrRamStyle=(
       //if (isIcache) (
-        cfg.subCfg.icacheCfg.memRamStyle
+        cfg.subCfg.icacheCfg.lineWordMemRamStyle
       //) else (
       //  cfg.subCfg.dcacheCfg.memRamStyle
       //)
@@ -1514,7 +1514,7 @@ case class SnowHouseInstrCache(
     initBigInt=Some(Array.fill(depthLines)(BigInt(0))),
     arrRamStyle=(
       //if (isIcache) (
-        cfg.subCfg.icacheCfg.memRamStyle
+        cfg.subCfg.icacheCfg.lineAttrsMemRamStyle
       //) else (
       //  cfg.subCfg.dcacheCfg.memRamStyle
       //)

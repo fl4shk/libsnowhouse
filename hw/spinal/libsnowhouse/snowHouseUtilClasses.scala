@@ -154,7 +154,14 @@ case class SnowHouseCacheConfig(
   totalNumBusHosts: Int,
   isIcache: Boolean,
   //var srcStart: Int=0,
-  memRamStyle: String="auto",
+  lineWordMemRamStyle: String=(
+    //"auto"
+    "block"
+  ),
+  lineAttrsMemRamStyle: String=(
+    //"auto"
+    "block"
+  ),
   var bridgeCfg: LcvStallToTilelinkConfig=null,
 ) {
   //--------
@@ -326,7 +333,7 @@ case class SnowHouseSubConfig(
       //srcWidth=srcWidth,
       srcId=icacheBusSrcNum,
       totalNumBusHosts=totalNumBusHosts,
-      memRamStyle=icacheMemRamStyle,
+      lineWordMemRamStyle=icacheMemRamStyle,
       isIcache=true,
     )
   )
@@ -341,7 +348,7 @@ case class SnowHouseSubConfig(
       //srcWidth=srcWidth,
       srcId=dcacheBusSrcNum,
       totalNumBusHosts=totalNumBusHosts,
-      memRamStyle=dcacheMemRamStyle,
+      lineWordMemRamStyle=dcacheMemRamStyle,
       isIcache=false,
     )
   )
