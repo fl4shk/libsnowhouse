@@ -7080,6 +7080,7 @@ case class SnowHousePipeStageExecute(
       //io.dbus.sendData := setOutpModMemWord.io.dbusHostPayload
     }
   }
+  io.dbus.sendData.addr.allowOverride
   when (
     cMid0Front.up.isFiring
     //&&
@@ -7089,6 +7090,13 @@ case class SnowHousePipeStageExecute(
   ) {
     io.dbus.sendData := setOutpModMemWord.io.dbusHostPayload
   }
+  //when (
+  //  //cMid0Front.up.isFiring
+  //  cMid0Front.up.isValid
+  //) {
+  //  io.dbus.sendData.addr := setOutpModMemWord.io.dbusHostPayload.addr
+  //}
+
   //when (cMid0Front.up.isFiring)
   //when (
   //  cMid0Front.up.isValid && !setOutpModMemWord.io.shouldIgnoreInstr(1)

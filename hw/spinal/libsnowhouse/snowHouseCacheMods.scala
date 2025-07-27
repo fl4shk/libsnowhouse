@@ -703,7 +703,7 @@ case class SnowHouseDataCache(
   //}
   //val rTempBusReady = Reg(Bool(), init=False)
   //val rSavedHaveHit = Reg(Bool(), init=False)
-  //val rSavedRdLineWord = Reg(cloneOf(rdLineWord), init=rdLineWord.getZero)
+  val rSavedRdLineWord = Reg(cloneOf(rdLineWord), init=rdLineWord.getZero)
   val rSavedBusSendData = Reg(cloneOf(io.bus.sendData))
   val rPleaseFinish = (
     Vec.fill(3)(
@@ -978,7 +978,7 @@ case class SnowHouseDataCache(
         myH2dBus.nextValid := False
         rSavedBusAddr := rBusAddr
         rSavedRdLineAttrs := rdLineAttrs
-        //rSavedRdLineWord := rdLineWord
+        rSavedRdLineWord := rdLineWord
         //rSavedHaveHit := haveHit
         rSavedBusSendData := rBusSendData
         //when (RegNext(io.bus.nextValid) init(False)) {
@@ -1376,6 +1376,9 @@ case class SnowHouseInstrCache(
       //)
     )
   )
+  //lineWordRam.io.rdEn.setAsReg() init(False)
+  val myLineWordRamRdEn = Reg(Bool(), init=False)
+  lineWordRam.io.rdEn := myLineWordRamRdEn
   val lineAttrsRam = FpgacpuRamSimpleDualPort(
     wordType=SnowHouseCacheLineAttrs(
       cfg=cfg,
@@ -1753,7 +1756,8 @@ case class SnowHouseInstrCache(
   def doLineWordRamReadSync(
     busAddr: UInt,
   ): Unit = {
-    lineWordRam.io.rdEn := True
+    //lineWordRam.io.rdEn := True
+    myLineWordRamRdEn := True
     lineWordRam.io.rdAddr := (
       (busAddr >> myLineRamAddrRshift)
       .resize(lineWordRam.io.rdAddr.getWidth)
@@ -1841,7 +1845,7 @@ case class SnowHouseInstrCache(
     //doLineWordRamReadSync(busAddr=io.bus.sendData.addr)
   ////}
   //val rTempBusReady = Reg(Bool(), init=False)
-  //val rSavedRdLineWord = Reg(cloneOf(rdLineWord), init=rdLineWord.getZero)
+  val rSavedRdLineWord = Reg(cloneOf(rdLineWord), init=rdLineWord.getZero)
   //def doPipe(): Unit = {
   //}
   //val rSavedBusSendData = Reg(cloneOf(io.bus.sendData))
@@ -1895,7 +1899,7 @@ case class SnowHouseInstrCache(
         myH2dBus.nextValid := False
         rSavedBusAddr := rBusAddr
         rSavedRdLineAttrs := rdLineAttrs
-        //rSavedRdLineWord := rdLineWord
+        rSavedRdLineWord := rdLineWord
         rSavedBusAddrHi := (
           rBusAddr(rBusAddr.high downto log2Up(cacheCfg.lineSizeBytes))
         )
@@ -2089,7 +2093,8 @@ case class SnowHouseInstrCache(
       //busDevData := RegNext(
       //  busDevData
       //)
-      lineWordRam.io.rdEn := False
+      //lineWordRam.io.rdEn := False
+      myLineWordRamRdEn := False
       nextState := State.IDLE
     }
     //--------
