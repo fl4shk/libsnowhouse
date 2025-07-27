@@ -386,6 +386,7 @@ case class SnowHouseInstrDataDualRam(
       ),
     )
     myRam.mem.initBigInt(dataInitBigInt)
+    myRam.mem.addAttribute("ram_style", "block")
 
     //val bridgeCfg = LcvStallToTilelinkConfig(
     //  addrWidth=(
