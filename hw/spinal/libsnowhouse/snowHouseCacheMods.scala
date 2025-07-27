@@ -1364,7 +1364,7 @@ case class SnowHouseInstrCache(
     + s"depthBytes:${cacheCfg.depthBytes} "
     + s"depthLines:${cacheCfg.depthLines} "
   )
-  val lineWordRam = FpgacpuRamSimpleDualPort(
+  val lineWordRam = RamSdpPipe(
     wordType=UInt(cacheCfg.wordWidth bits),
     depth=depthWords,
     initBigInt=Some(Array.fill(depthWords)(BigInt(0))),
@@ -1570,15 +1570,15 @@ case class SnowHouseInstrCache(
   //)
   val busDevData = {
     val temp = (
-      Reg(
+      //Reg(
         UInt(cfg.instrMainWidth bits)
         //InstrBusDevPayload(cfg=cfg)
-      )
+      //)
     )
-    temp.init(
-      //0x0
-      temp.getZero
-    )
+    //temp.init(
+    //  //0x0
+    //  temp.getZero
+    //)
     temp
   }
   val myReady = (
