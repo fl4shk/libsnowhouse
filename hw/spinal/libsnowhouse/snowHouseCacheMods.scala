@@ -1518,18 +1518,20 @@ case class SnowHouseInstrCache(
     + s"depthBytes:${cacheCfg.depthBytes} "
     + s"depthLines:${cacheCfg.depthLines} "
   )
-  val lineWordRam = FpgacpuRamSimpleDualPort(
-    wordType=UInt(cacheCfg.wordWidth bits),
-    depth=depthWords,
-    initBigInt=Some(Array.fill(depthWords)(BigInt(0))),
-    arrRamStyle=(
-      //if (isIcache) (
-        cfg.subCfg.icacheCfg.lineWordMemRamStyle
-      //) else (
-      //  cfg.subCfg.dcacheCfg.memRamStyle
-      //)
-    ),
-    //optDblRdReg=true,
+  val lineWordRam = (
+    RamSdpPipe(
+      wordType=UInt(cacheCfg.wordWidth bits),
+      depth=depthWords,
+      initBigInt=Some(Array.fill(depthWords)(BigInt(0))),
+      arrRamStyle=(
+        //if (isIcache) (
+          cfg.subCfg.icacheCfg.lineWordMemRamStyle
+        //) else (
+        //  cfg.subCfg.dcacheCfg.memRamStyle
+        //)
+      ),
+      //optDblRdReg=true,
+    )
   )
   val lineAttrsRam = FpgacpuRamSimpleDualPort(
     wordType=SnowHouseCacheLineAttrs(
@@ -1725,15 +1727,15 @@ case class SnowHouseInstrCache(
   //)
   val busDevData = {
     val temp = (
-      Reg(
+      //Reg(
         UInt(cfg.instrMainWidth bits)
         //InstrBusDevPayload(cfg=cfg)
-      )
+      //)
     )
-    temp.init(
-      //0x0
-      temp.getZero
-    )
+    //temp.init(
+    //  //0x0
+    //  temp.getZero
+    //)
     temp
   }
   val myReady = (
@@ -1914,6 +1916,7 @@ case class SnowHouseInstrCache(
       .resize(lineWordRam.io.rdAddr.getWidth)
     )
   }
+  lineWordRam.io.rdEn.allowOverride
   lineWordRam.io.wrAddr := (
     0x0
   )
@@ -2215,9 +2218,10 @@ case class SnowHouseInstrCache(
           incrLineBusAddrCnts()
         } otherwise {
           setLineBusAddrCntsToStart()
-          doAllLineRamsReadSync(
-            busAddr=rSavedBusAddr
-          )
+          //doAllLineRamsReadSync(
+          //  busAddr=rSavedBusAddr
+          //)
+          //lineWordRam.io.rdEn := False
           nextState := State.HANDLE_RECV_LINE_FROM_BUS_POST
         }
         doLineWordRamWrite(
@@ -2244,7 +2248,10 @@ case class SnowHouseInstrCache(
       //busDevData := RegNext(
       //  busDevData
       //)
-      lineWordRam.io.rdEn := False
+      doAllLineRamsReadSync(
+        busAddr=rSavedBusAddr
+      )
+      //lineWordRam.io.rdEn := True
       nextState := State.IDLE
     }
     //--------
