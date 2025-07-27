@@ -2703,8 +2703,9 @@ case class SnowHouseCpuConfig(
   dcacheMemRamStyle: String="auto",
   branchTgtBufSizeLog2: Int=(
     //log2Up(256)
-    log2Up(64)
+    //log2Up(64)
     //log2Up(128)
+    log2Up(32)
   ),
 ) {
   //--------
