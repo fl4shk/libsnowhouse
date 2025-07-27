@@ -3933,8 +3933,9 @@ case class SnowHouseCpuWithDualRam(
     dataInitBigInt=(
       Array.fill(
         //1 << 16
-        1 << (16 - 2)
-        //1 << (16 - 4)
+        //1 << (16 - 2)
+        1 << (16 - 4)
+        //1 << (16 - 4 - 2)
       )(BigInt(0))
     ),
   )
