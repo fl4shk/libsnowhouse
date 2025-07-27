@@ -255,7 +255,7 @@ case class SnowHouseDataCache(
     + s"depthBytes:${cacheCfg.depthBytes} "
     + s"depthLines:${cacheCfg.depthLines} "
   )
-  val lineWordRam = FpgacpuRamSimpleDualPort(
+  val lineWordRam = RamSdpPipe(
     wordType=UInt(cacheCfg.wordWidth bits),
     depth=depthWords,
     initBigInt=Some(Array.fill(depthWords)(BigInt(0))),
@@ -523,7 +523,9 @@ case class SnowHouseDataCache(
   ) {
     val
       IDLE,
+      HANDLE_DCACHE_LOAD_HIT_LT_WORD_WIDTH_PIPE_2,
       HANDLE_DCACHE_LOAD_HIT_LT_WORD_WIDTH_PIPE_1,
+      HANDLE_DCACHE_STORE_HIT_LT_WORD_WIDTH_PIPE_2,
       HANDLE_DCACHE_STORE_HIT_LT_WORD_WIDTH_PIPE_1,
       HANDLE_DCACHE_STORE_HIT,
       HANDLE_SEND_LINE_TO_BUS_PIPE_1,
@@ -539,9 +541,33 @@ case class SnowHouseDataCache(
     init(State.IDLE)
   )
   nextState := rState
-  val rDoLoadHitLtWordWidthPipe1 = Reg(Bool(), init=False)
-  val rDoStoreHitLtWordWidthPipe1 = Reg(Bool(), init=False)
+  def myLoadLtWordWidthPipeSize = (
+    3
+    //2
+  )
+  def myStoreLtWordWidthPipeSize = (
+    3
+    //2
+  )
+  val rDoLoadHitLtWordWidthPipe = (
+    Vec.fill(myLoadLtWordWidthPipeSize)(
+      Reg(Bool(), init=False)
+    )
+  )
+  val rDoStoreHitLtWordWidthPipe = (
+    Vec.fill(myStoreLtWordWidthPipeSize)(
+      Reg(Bool(), init=False)
+    )
+  )
+  for (idx <- 1 until myLoadLtWordWidthPipeSize) {
+    rDoLoadHitLtWordWidthPipe(idx) := rDoLoadHitLtWordWidthPipe(idx - 1)
+  }
+  for (idx <- 1 until myStoreLtWordWidthPipeSize) {
+    rDoStoreHitLtWordWidthPipe(idx) := rDoStoreHitLtWordWidthPipe(idx - 1)
+  }
   //--------
+  val rMyLineWordRamRdEn = Reg(Bool(), init=False)
+  lineWordRam.io.rdEn := rMyLineWordRamRdEn
   //lineWordRam.io.rdEn := False
   //lineWordRam.io.rdAddr := (
   //  0x0
@@ -624,7 +650,8 @@ case class SnowHouseDataCache(
   def doLineWordRamReadSync(
     busAddr: UInt,
   ): Unit = {
-    lineWordRam.io.rdEn := True
+    //lineWordRam.io.rdEn := True
+    rMyLineWordRamRdEn := True
     lineWordRam.io.rdAddr := (
       (busAddr >> myLineRamAddrRshift)
       .resize(lineWordRam.io.rdAddr.getWidth)
@@ -703,7 +730,7 @@ case class SnowHouseDataCache(
   //}
   //val rTempBusReady = Reg(Bool(), init=False)
   //val rSavedHaveHit = Reg(Bool(), init=False)
-  val rSavedRdLineWord = Reg(cloneOf(rdLineWord), init=rdLineWord.getZero)
+  //val rSavedRdLineWord = Reg(cloneOf(rdLineWord), init=rdLineWord.getZero)
   val rSavedBusSendData = Reg(cloneOf(io.bus.sendData))
   val rPleaseFinish = (
     Vec.fill(3)(
@@ -740,7 +767,15 @@ case class SnowHouseDataCache(
       when (rSavedBusSendData.accKind.asBits(1)) {
         busDevData := rSavedBusSendData.data //RegNext(rBusSendData.data)
       } otherwise {
-        busDevData := rBusDevData
+        busDevData := (
+          //rBusDevData
+          Mux[UInt](
+            //RegNext(rDoLoadHitLtWordWidthPipe.last),
+            rDoLoadHitLtWordWidthPipe.last,
+            rBusDevData,
+            rdLineWord
+          )
+        )
       }
     }
 
@@ -748,11 +783,13 @@ case class SnowHouseDataCache(
     //rPastBusSendDataData := /*RegNext*/(rdLineWord)
     //rBusDevData := rdLineWord
     //when (!RegNext(rBusSendData.accKind).asBits(1))
-    when (
-      rPleaseFinish(2).sFindFirst(_ === False)._1
-    ) {
-      rBusDevData := rdLineWord
-    }
+
+    //when (
+    //  rPleaseFinish(2).sFindFirst(_ === False)._1
+    //) {
+    //  rBusDevData := rdLineWord
+    //}
+
     //when (
     //  !RegNext(io.bus.nextValid) && io.bus.nextValid
     //) {
@@ -776,7 +813,8 @@ case class SnowHouseDataCache(
       //}
     }
     when (
-      rDoLoadHitLtWordWidthPipe1
+      //rDoLoadHitLtWordWidthPipe.last
+      rDoLoadHitLtWordWidthPipe(rDoLoadHitLtWordWidthPipe.size - 2)
       //rState === State.HANDLE_DCACHE_LOAD_HIT_LT_WORD_WIDTH_PIPE_1
       //|| rState === State.HANDLE_DCACHE_STORE_HIT_LT_WORD_WIDTH_PIPE_1
     ) {
@@ -789,7 +827,7 @@ case class SnowHouseDataCache(
           if (rBusDevData.getWidth > 8) {
             when (!RegNext(rBusSendData).accKind.asBits(0)) {
               rBusDevData := (
-                rBusDevData(
+                rdLineWord(
                   //7 downto 0
                   offset=RegNext(rBusSendData).addr(
                     (log2Up(cacheCfg.wordWidth / 8)) - 1 downto 0
@@ -799,7 +837,7 @@ case class SnowHouseDataCache(
               )
             } otherwise {
               rBusDevData := (
-                rBusDevData(
+                rdLineWord(
                   //7 downto 0
                   offset=RegNext(rBusSendData).addr(
                     (log2Up(cacheCfg.wordWidth / 8)) - 1 downto 0
@@ -809,14 +847,17 @@ case class SnowHouseDataCache(
               )
             }
           } else {
-            rBusDevData := rBusDevData.resized
+            rBusDevData := (
+              //rBusDevData.resized
+              rdLineWord.resized
+            )
           }
         }
         is (SnowHouseMemAccessSubKind.Sz16) {
           if (rBusDevData.getWidth > 16) {
             when (!RegNext(rBusSendData).accKind.asBits(0)) {
               rBusDevData := (
-                rBusDevData(
+                rdLineWord(
                   //15 downto 0
                   offset=RegNext(rBusSendData).addr(
                     (log2Up(cacheCfg.wordWidth / 8)) - 1 downto 1
@@ -826,7 +867,7 @@ case class SnowHouseDataCache(
               )
             } otherwise {
               rBusDevData := (
-                rBusDevData(
+                rdLineWord(
                   //15 downto 0
                   offset=RegNext(rBusSendData).addr(
                     (log2Up(cacheCfg.wordWidth / 8)) - 1 downto 1
@@ -836,14 +877,17 @@ case class SnowHouseDataCache(
               )
             }
           } else {
-            rBusDevData := rBusDevData.resized
+            rBusDevData := (
+              //rBusDevData.resized
+              rdLineWord.resized
+            )
           }
         }
         is (SnowHouseMemAccessSubKind.Sz32) {
           if (rBusDevData.getWidth > 32) {
             when (!RegNext(rBusSendData).accKind.asBits(0)) {
               rBusDevData := (
-                rBusDevData(
+                rdLineWord(
                   //31 downto 0
                   offset=RegNext(rBusSendData).addr(
                     (log2Up(cacheCfg.wordWidth / 8)) - 1 downto 2
@@ -853,7 +897,7 @@ case class SnowHouseDataCache(
               )
             } otherwise {
               rBusDevData := (
-                rBusDevData(
+                rdLineWord(
                   //31 downto 0
                   offset=RegNext(rBusSendData).addr(
                     (log2Up(cacheCfg.wordWidth / 8)) - 1 downto 2
@@ -863,14 +907,17 @@ case class SnowHouseDataCache(
               )
             }
           } else {
-            rBusDevData := rBusDevData.resized
+            rBusDevData := (
+              //rBusDevData.resized
+              rdLineWord.resized
+            )
           }
         }
         is (SnowHouseMemAccessSubKind.Sz64) {
           if (rBusDevData.getWidth > 64) {
             when (!RegNext(rBusSendData).accKind.asBits(0)) {
               rBusDevData := (
-                rBusDevData(
+                rdLineWord(
                   //63 downto 0
                   offset=RegNext(rBusSendData).addr(
                     (log2Up(cacheCfg.wordWidth / 8)) - 1 downto 3
@@ -880,7 +927,7 @@ case class SnowHouseDataCache(
               )
             } otherwise {
               rBusDevData := (
-                rBusDevData(
+                rdLineWord(
                   //63 downto 0
                   offset=RegNext(rBusSendData).addr(
                     (log2Up(cacheCfg.wordWidth / 8)) - 1 downto 3
@@ -890,7 +937,10 @@ case class SnowHouseDataCache(
               )
             }
           } else {
-            rBusDevData := rBusDevData.resized
+            rBusDevData := (
+              //rBusDevData.resized
+              rdLineWord.resized
+            )
             //rPastBusSendDataData := RegNext(rBusSendData).data.resized
           }
         }
@@ -900,7 +950,8 @@ case class SnowHouseDataCache(
     }
     when (
       //rState === State.HANDLE_DCACHE_STORE_HIT_LT_WORD_WIDTH_PIPE_1
-      rDoStoreHitLtWordWidthPipe1
+      //rDoStoreHitLtWordWidthPipe.last
+      rDoStoreHitLtWordWidthPipe(rDoStoreHitLtWordWidthPipe.size - 2)
     ) {
       switch (
         RegNext(
@@ -978,7 +1029,7 @@ case class SnowHouseDataCache(
         myH2dBus.nextValid := False
         rSavedBusAddr := rBusAddr
         rSavedRdLineAttrs := rdLineAttrs
-        rSavedRdLineWord := rdLineWord
+        //rSavedRdLineWord := rdLineWord
         //rSavedHaveHit := haveHit
         rSavedBusSendData := rBusSendData
         //when (RegNext(io.bus.nextValid) init(False)) {
@@ -1016,9 +1067,10 @@ case class SnowHouseDataCache(
             is (M"110") {
               // load (smaller-than-word) - dcache hit
               nextState := (
-                State.HANDLE_DCACHE_LOAD_HIT_LT_WORD_WIDTH_PIPE_1
+                //State.HANDLE_DCACHE_LOAD_HIT_LT_WORD_WIDTH_PIPE_1
+                State.HANDLE_DCACHE_LOAD_HIT_LT_WORD_WIDTH_PIPE_2
               )
-              rDoLoadHitLtWordWidthPipe1 := True
+              rDoLoadHitLtWordWidthPipe.head := True
             }
             is (M"101") {
               // store (word) - dcache hit
@@ -1026,16 +1078,19 @@ case class SnowHouseDataCache(
               wrLineAttrs := rdLineAttrs
               wrLineAttrs.dirty := True
               lineAttrsRam.io.rdEn := False
-              lineWordRam.io.rdEn := False
+              //lineWordRam.io.rdEn := False
+              rMyLineWordRamRdEn := False
             }
             is (M"111") {
               // store (smaller-than-word) - dcache hit
               nextState := (
-                State.HANDLE_DCACHE_STORE_HIT_LT_WORD_WIDTH_PIPE_1
+                //State.HANDLE_DCACHE_STORE_HIT_LT_WORD_WIDTH_PIPE_1
+                State.HANDLE_DCACHE_STORE_HIT_LT_WORD_WIDTH_PIPE_2
               )
-              rDoStoreHitLtWordWidthPipe1 := True
+              rDoStoreHitLtWordWidthPipe.head := True
               lineAttrsRam.io.rdEn := False
-              lineWordRam.io.rdEn := False
+              //lineWordRam.io.rdEn := False
+              rMyLineWordRamRdEn := False
             }
           }
           //when (!rBusSendData.accKind.asBits(1)) {
@@ -1107,18 +1162,27 @@ case class SnowHouseDataCache(
         //}
       }
     }
+    is (State.HANDLE_DCACHE_LOAD_HIT_LT_WORD_WIDTH_PIPE_2) {
+      nextState := State.HANDLE_DCACHE_LOAD_HIT_LT_WORD_WIDTH_PIPE_1
+      rDoLoadHitLtWordWidthPipe.head := False
+    }
     is (State.HANDLE_DCACHE_LOAD_HIT_LT_WORD_WIDTH_PIPE_1) {
       rPleaseFinish.foreach(current => {
         current(0) := True
       })
       nextState := State.IDLE
-      rDoLoadHitLtWordWidthPipe1 := False
-      wrLineAttrs := RegNext(rdLineAttrs)
+      //rDoLoadHitLtWordWidthPipe.head := False
+      wrLineAttrs := RegNext(RegNext(rdLineAttrs))
       wrLineAttrs.dirty := True
+    }
+    is (State.HANDLE_DCACHE_STORE_HIT_LT_WORD_WIDTH_PIPE_2) {
+      nextState := State.HANDLE_DCACHE_STORE_HIT_LT_WORD_WIDTH_PIPE_1
+      rDoStoreHitLtWordWidthPipe.head := False
     }
     is (State.HANDLE_DCACHE_STORE_HIT_LT_WORD_WIDTH_PIPE_1) {
       nextState := State.HANDLE_DCACHE_STORE_HIT
       //rDoStoreHitLtWordWidthPipe1 := False
+      //rDoStoreHitLtWordWidthPipe.head := False
     }
     is (State.HANDLE_DCACHE_STORE_HIT) {
       nextState := State.IDLE
@@ -1127,7 +1191,7 @@ case class SnowHouseDataCache(
       })
       lineAttrsRam.io.wrEn := True
       lineWordRam.io.wrEn := True
-      rDoStoreHitLtWordWidthPipe1 := False
+      //rDoStoreHitLtWordWidthPipe.head := False
     }
     is (State.HANDLE_SEND_LINE_TO_BUS_PIPE_1) {
       nextState := State.HANDLE_SEND_LINE_TO_BUS 
@@ -1377,8 +1441,8 @@ case class SnowHouseInstrCache(
     )
   )
   //lineWordRam.io.rdEn.setAsReg() init(False)
-  val myLineWordRamRdEn = Reg(Bool(), init=False)
-  lineWordRam.io.rdEn := myLineWordRamRdEn
+  val rMyLineWordRamRdEn = Reg(Bool(), init=False)
+  lineWordRam.io.rdEn := rMyLineWordRamRdEn
   val lineAttrsRam = FpgacpuRamSimpleDualPort(
     wordType=SnowHouseCacheLineAttrs(
       cfg=cfg,
@@ -1757,7 +1821,7 @@ case class SnowHouseInstrCache(
     busAddr: UInt,
   ): Unit = {
     //lineWordRam.io.rdEn := True
-    myLineWordRamRdEn := True
+    rMyLineWordRamRdEn := True
     lineWordRam.io.rdAddr := (
       (busAddr >> myLineRamAddrRshift)
       .resize(lineWordRam.io.rdAddr.getWidth)
@@ -1845,7 +1909,7 @@ case class SnowHouseInstrCache(
     //doLineWordRamReadSync(busAddr=io.bus.sendData.addr)
   ////}
   //val rTempBusReady = Reg(Bool(), init=False)
-  val rSavedRdLineWord = Reg(cloneOf(rdLineWord), init=rdLineWord.getZero)
+  //val rSavedRdLineWord = Reg(cloneOf(rdLineWord), init=rdLineWord.getZero)
   //def doPipe(): Unit = {
   //}
   //val rSavedBusSendData = Reg(cloneOf(io.bus.sendData))
@@ -1899,7 +1963,7 @@ case class SnowHouseInstrCache(
         myH2dBus.nextValid := False
         rSavedBusAddr := rBusAddr
         rSavedRdLineAttrs := rdLineAttrs
-        rSavedRdLineWord := rdLineWord
+        //rSavedRdLineWord := rdLineWord
         rSavedBusAddrHi := (
           rBusAddr(rBusAddr.high downto log2Up(cacheCfg.lineSizeBytes))
         )
@@ -2094,7 +2158,7 @@ case class SnowHouseInstrCache(
       //  busDevData
       //)
       //lineWordRam.io.rdEn := False
-      myLineWordRamRdEn := False
+      rMyLineWordRamRdEn := False
       nextState := State.IDLE
     }
     //--------
