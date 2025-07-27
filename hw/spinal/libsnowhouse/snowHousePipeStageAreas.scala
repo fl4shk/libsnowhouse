@@ -313,8 +313,9 @@ case class SnowHouseBranchPredictor(
         Some(Array.fill(branchTgtBufSize)(BigInt(0)))
       ),
       arrRamStyle=(
-        "auto"
+        //"auto"
         //"block"
+        "distributed"
       ),
     )
   )
@@ -343,8 +344,8 @@ case class SnowHouseBranchPredictor(
         Some(Array.fill(branchTgtBufSize)(BigInt(0)))
       ),
       arrRamStyle=(
-        "auto"
-        //"distributed"
+        //"auto"
+        "distributed"
       ),
     )
   )
