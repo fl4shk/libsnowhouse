@@ -257,7 +257,7 @@ case class SnowHouseDataCache(
     + s"depthLines:${cacheCfg.depthLines} "
   )
   val lineWordRam = (
-    FpgacpuRamSimpleDualPort(
+    RamSdpPipe(
       wordType=UInt(cacheCfg.wordWidth bits),
       depth=depthWords,
       initBigInt=Some(Array.fill(depthWords)(BigInt(0))),
@@ -818,10 +818,11 @@ case class SnowHouseDataCache(
       //  next=myRdLineWord,
       //  init=myRdLineWord.getZero,
       //)
-      RegNext(
-        next=rdLineWord,
-        //init=rdLineWord.getZero,
-      )
+      //RegNext(
+      //  next=rdLineWord,
+      //  //init=rdLineWord.getZero,
+      //)
+      rdLineWord
     )
     //when (
     //  //RegNext(
