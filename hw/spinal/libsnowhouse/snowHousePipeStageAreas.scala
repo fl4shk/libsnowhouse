@@ -345,7 +345,8 @@ case class SnowHouseBranchPredictor(
       ),
       arrRamStyle=(
         //"auto"
-        "distributed"
+        //"distributed"
+        "block"
       ),
     )
   )
