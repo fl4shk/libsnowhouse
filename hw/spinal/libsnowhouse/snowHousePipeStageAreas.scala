@@ -5481,7 +5481,12 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
   //  //}
   //}
   def doHandleSetNextPc(): Unit = {
-    switch (io.splitOp.exSetNextPcKind) {
+    switch (
+      RegNext(
+        next=io.splitOp.exSetNextPcKind,
+        init=io.splitOp.exSetNextPcKind.getZero
+      )
+    ) {
       //is (SnowHousePsExSetNextPcKind.PcPlusImm) {
       //}
       is (SnowHousePsExSetNextPcKind.Dont) {
@@ -5497,7 +5502,10 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
         io.psExSetPc.nextPc := (
           //Mux[UInt](
           //  tempPsExSetPcTaken,
-            io.regPcPlusImm, //+ cfg.instrSizeBytes
+            RegNext(
+              next=io.regPcPlusImm,
+              init=io.regPcPlusImm.getZero,
+            ) //+ cfg.instrSizeBytes
             //io.regPcPlusImmRealDst//, //+ cfg.instrSizeBytes
           //  io.mySavedRegPcPlusInstrSize/*.payload*/,
           //  //RegNextWhen(
@@ -5528,14 +5536,20 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
       }
       is (SnowHousePsExSetNextPcKind.RdMemWord) {
         io.psExSetPc.nextPc := (
-          io.rdMemWord(io.jmpAddrIdx) //- (1 * cfg.instrSizeBytes)
-          - (3 * cfg.instrSizeBytes)
+          RegNext(
+            io.rdMemWord(io.jmpAddrIdx) //- (1 * cfg.instrSizeBytes)
+            - (3 * cfg.instrSizeBytes)
+          )
+          init(0x0)
         )
       }
       is (SnowHousePsExSetNextPcKind.Ira) {
         io.psExSetPc.nextPc := (
-          io.rIra
-          - (3 * cfg.instrSizeBytes)
+          RegNext(
+            io.rIra
+            - (3 * cfg.instrSizeBytes)
+          )
+          init(0x0)
         )
       }
       //default {
@@ -5721,7 +5735,10 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
   }
   when (
     //!rShouldIgnoreInstrState(1)
-    !io.shouldIgnoreInstr(1)
+    RegNext(
+      next=(!io.shouldIgnoreInstr(1)),
+      init=False,
+    )
   ) {
     //if (idx == 1) {
       //io.psExSetPc.nextPc := (
