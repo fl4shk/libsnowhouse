@@ -256,18 +256,20 @@ case class SnowHouseDataCache(
     + s"depthBytes:${cacheCfg.depthBytes} "
     + s"depthLines:${cacheCfg.depthLines} "
   )
-  val lineWordRam = FpgacpuRamSimpleDualPort(
-    wordType=UInt(cacheCfg.wordWidth bits),
-    depth=depthWords,
-    initBigInt=Some(Array.fill(depthWords)(BigInt(0))),
-    arrRamStyle=(
-      if (isIcache) (
-        cfg.subCfg.icacheCfg.lineWordMemRamStyle
-      ) else (
-        cfg.subCfg.dcacheCfg.lineWordMemRamStyle
-      )
-    ),
-    optDblRdReg=true,
+  val lineWordRam = (
+    FpgacpuRamSimpleDualPort(
+      wordType=UInt(cacheCfg.wordWidth bits),
+      depth=depthWords,
+      initBigInt=Some(Array.fill(depthWords)(BigInt(0))),
+      arrRamStyle=(
+        if (isIcache) (
+          cfg.subCfg.icacheCfg.lineWordMemRamStyle
+        ) else (
+          cfg.subCfg.dcacheCfg.lineWordMemRamStyle
+        )
+      ),
+      //optDblRdReg=true,
+    )
   )
   val lineAttrsRam = FpgacpuRamSimpleDualPort(
     wordType=SnowHouseCacheLineAttrs(
@@ -811,7 +813,29 @@ case class SnowHouseDataCache(
     //rPastBusSendDataData := /*RegNext*/(rdLineWord)
     //rBusDevData := rdLineWord
     //when (!RegNext(rBusSendData.accKind).asBits(1))
-    myRdLineWord := rdLineWord
+    myRdLineWord := (
+      //RegNext(
+      //  next=myRdLineWord,
+      //  init=myRdLineWord.getZero,
+      //)
+      RegNext(
+        next=rdLineWord,
+        //init=rdLineWord.getZero,
+      )
+    )
+    //when (
+    //  //RegNext(
+    //  //  next=lineWordRam.io.rdEn,
+    //  //  init=False,
+    //  //)
+    //  rState === State.IDLE
+    //  //|| rState === State.HANDLE_SEND_LINE_TO_BUS
+    //) {
+    //  myRdLineWord := (
+    //    //RegNext(rdLineWord)
+    //    rdLineWord
+    //  )
+    //}
     when (
       ///*RegNext*/(rPleaseFinish(2).sFindFirst(_ === False)._1)
       ////&& (!rPleaseFinish(0).sFindFirst(_ === True)._1)
@@ -1283,7 +1307,7 @@ case class SnowHouseDataCache(
         log2Up(cacheCfg.lineSizeBytes) //- log2Up(cacheCfg.wordSizeBytes)
       )
       rH2dSendData.src := cacheCfg.srcId
-      rH2dSendData.data := rdLineWord
+      //rH2dSendData.data := rdLineWord
       rH2dSendData.mask := (
         U(rH2dSendData.mask.getWidth bits, default -> True)
       )
@@ -1503,7 +1527,8 @@ case class SnowHouseInstrCache(
       //) else (
       //  cfg.subCfg.dcacheCfg.memRamStyle
       //)
-    )
+    ),
+    //optDblRdReg=true,
   )
   val lineAttrsRam = FpgacpuRamSimpleDualPort(
     wordType=SnowHouseCacheLineAttrs(
@@ -1970,7 +1995,7 @@ case class SnowHouseInstrCache(
     //doLineWordRamReadSync(busAddr=io.bus.sendData.addr)
   ////}
   //val rTempBusReady = Reg(Bool(), init=False)
-  val rSavedRdLineWord = Reg(cloneOf(rdLineWord), init=rdLineWord.getZero)
+  //val rSavedRdLineWord = Reg(cloneOf(rdLineWord), init=rdLineWord.getZero)
   //def doPipe(): Unit = {
   //}
   //val rSavedBusSendData = Reg(cloneOf(io.bus.sendData))
@@ -2024,7 +2049,7 @@ case class SnowHouseInstrCache(
         myH2dBus.nextValid := False
         rSavedBusAddr := rBusAddr
         rSavedRdLineAttrs := rdLineAttrs
-        rSavedRdLineWord := rdLineWord
+        //rSavedRdLineWord := rdLineWord
         rSavedBusAddrHi := (
           rBusAddr(rBusAddr.high downto log2Up(cacheCfg.lineSizeBytes))
         )
