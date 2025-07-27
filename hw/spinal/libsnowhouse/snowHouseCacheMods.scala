@@ -703,7 +703,7 @@ case class SnowHouseDataCache(
   //}
   //val rTempBusReady = Reg(Bool(), init=False)
   //val rSavedHaveHit = Reg(Bool(), init=False)
-  val rSavedRdLineWord = Reg(cloneOf(rdLineWord), init=rdLineWord.getZero)
+  //val rSavedRdLineWord = Reg(cloneOf(rdLineWord), init=rdLineWord.getZero)
   val rSavedBusSendData = Reg(cloneOf(io.bus.sendData))
   val rPleaseFinish = (
     Vec.fill(3)(
@@ -978,7 +978,7 @@ case class SnowHouseDataCache(
         myH2dBus.nextValid := False
         rSavedBusAddr := rBusAddr
         rSavedRdLineAttrs := rdLineAttrs
-        rSavedRdLineWord := rdLineWord
+        //rSavedRdLineWord := rdLineWord
         //rSavedHaveHit := haveHit
         rSavedBusSendData := rBusSendData
         //when (RegNext(io.bus.nextValid) init(False)) {
@@ -1841,7 +1841,7 @@ case class SnowHouseInstrCache(
     //doLineWordRamReadSync(busAddr=io.bus.sendData.addr)
   ////}
   //val rTempBusReady = Reg(Bool(), init=False)
-  val rSavedRdLineWord = Reg(cloneOf(rdLineWord), init=rdLineWord.getZero)
+  //val rSavedRdLineWord = Reg(cloneOf(rdLineWord), init=rdLineWord.getZero)
   //def doPipe(): Unit = {
   //}
   //val rSavedBusSendData = Reg(cloneOf(io.bus.sendData))
@@ -1895,7 +1895,7 @@ case class SnowHouseInstrCache(
         myH2dBus.nextValid := False
         rSavedBusAddr := rBusAddr
         rSavedRdLineAttrs := rdLineAttrs
-        rSavedRdLineWord := rdLineWord
+        //rSavedRdLineWord := rdLineWord
         rSavedBusAddrHi := (
           rBusAddr(rBusAddr.high downto log2Up(cacheCfg.lineSizeBytes))
         )
