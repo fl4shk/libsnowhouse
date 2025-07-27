@@ -2699,8 +2699,14 @@ case class SnowHouseCpuConfig(
   exposeRegFileWriteAddrToIo: Boolean=false,
   exposeRegFileWriteEnableToIo: Boolean=false,
   regFileMemRamStyle: String="distributed",
-  icacheMemRamStyle: String="auto",
-  dcacheMemRamStyle: String="auto",
+  icacheMemRamStyle: String=(
+    //"auto"
+    "block"
+  ),
+  dcacheMemRamStyle: String=(
+    //"auto"
+    "block"
+  ),
   branchTgtBufSizeLog2: Int=(
     //log2Up(256)
     //log2Up(64)
@@ -4069,7 +4075,7 @@ object SnowHouseCpuWithDualRamSim extends App {
   //)
   val testIdxRange = (
     //0, 0,
-    1, 1,
+    //1, 1,
     //2, 2,
     //3, 3,
     //4, 4,
@@ -4078,10 +4084,10 @@ object SnowHouseCpuWithDualRamSim extends App {
     //7, 7,
     //8, 8,
     //9, 9,
-    //10, 10,
+    10, 10,
   )
   val instrRamKindArr = Array[Int](
-    //0,
+    0,
     1,
     2,
     5,
