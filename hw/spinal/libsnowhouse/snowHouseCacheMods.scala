@@ -328,7 +328,9 @@ case class SnowHouseDataCache(
   )
   tempLineBusAddr := (
     Cat(
-      rBusAddr(rBusAddr.high downto log2Up(cacheCfg.lineSizeBytes)),
+      RegNext(
+        rBusAddr(rBusAddr.high downto log2Up(cacheCfg.lineSizeBytes)),
+      ),
       //U(log2Up(cacheCfg.lineSizeBytes) bits, default -> False),
       //rLineAddrCnt(rLineAddrCnt.high - 1 downto 0),
       //nextLineAddrCnt,
@@ -358,13 +360,69 @@ case class SnowHouseDataCache(
     )
   )
   rdLineAttrs.assignFromBits(lineAttrsRam.io.rdData)
+  object State extends SpinalEnum(
+    defaultEncoding=(
+      //binarySequential
+      binaryOneHot
+    )
+  ) {
+    val
+      IDLE,
+      HANDLE_DCACHE_LOAD_HIT_LT_WORD_WIDTH_PIPE_2,
+      HANDLE_DCACHE_LOAD_HIT_LT_WORD_WIDTH_PIPE_1,
+      HANDLE_DCACHE_STORE_HIT_LT_WORD_WIDTH_PIPE_2,
+      HANDLE_DCACHE_STORE_HIT_LT_WORD_WIDTH_PIPE_1,
+      HANDLE_DCACHE_STORE_HIT,
+      HANDLE_SEND_LINE_TO_BUS_PIPE_1,
+      HANDLE_SEND_LINE_TO_BUS,
+      HANDLE_RECV_LINE_FROM_BUS_PIPE_1,
+      HANDLE_RECV_LINE_FROM_BUS,
+      HANDLE_NON_CACHED_BUS_ACC
+      = newElement()
+  }
+  val nextState = State()
+  val rState = (
+    RegNext(nextState)
+    init(State.IDLE)
+  )
+  nextState := rState
+  def rBusSendData = (
+    RegNext(
+      next=io.bus.sendData,
+      init=io.bus.sendData.getZero,
+    )
+  )
+  def rBusAddr = (
+    rBusSendData.addr
+    ////if (isIcache) (
+    //  RegNext(
+    //    next=io.bus.sendData.addr,
+    //    init=io.bus.sendData.addr.getZero
+    //  )
+    ////) else (
+    //  io.bus.sendData.addr
+    //)
+  )
+  val rSavedBusAddr = (
+    Reg(cloneOf(rBusAddr), init=rBusAddr.getZero)
+  )
   val tempRdLineAttrsAddr = (
     Cat(
       rSavedRdLineAttrs.tag,
-      rBusAddr(
-        rBusAddr.high - cacheCfg.tagWidth - 1
+      //RegNextWhen(
+      //  rBusAddr(
+      //    rBusAddr.high - cacheCfg.tagWidth - 1
+      //    downto log2Up(cacheCfg.lineSizeBytes)
+      //  ),
+      //  cond=(
+      //    rState === State.IDLE
+      //  )
+      //),
+      rSavedBusAddr(
+        rSavedBusAddr.high - cacheCfg.tagWidth - 1
         downto log2Up(cacheCfg.lineSizeBytes)
       ),
+
       nextLineAddrCnt,
       U(log2Up(cacheCfg.wordSizeBytes) bits, default -> False),
     ).asUInt
@@ -375,8 +433,17 @@ case class SnowHouseDataCache(
       //U(log2Up(cacheCfg.lineSizeBytes) bits, default -> False),
       //rLineAddrCnt(rLineAddrCnt.high - 1 downto 0),
       //nextLineAddrCnt,
-      rBusAddr(
-        rBusAddr.high - cacheCfg.tagWidth - 1
+      //RegNextWhen(
+      //  rBusAddr(
+      //    rBusAddr.high - cacheCfg.tagWidth - 1
+      //    downto log2Up(cacheCfg.lineSizeBytes)
+      //  ),
+      //  cond=(
+      //    rState === State.IDLE
+      //  )
+      //),
+      rSavedBusAddr(
+        rSavedBusAddr.high - cacheCfg.tagWidth - 1
         downto log2Up(cacheCfg.lineSizeBytes)
       ),
       rLineAddrCnt,
@@ -390,8 +457,17 @@ case class SnowHouseDataCache(
       //U(log2Up(cacheCfg.lineSizeBytes) bits, default -> False),
       //rLineAddrCnt(rLineAddrCnt.high - 1 downto 0),
       //nextLineAddrCnt,
-      rBusAddr(
-        rBusAddr.high - cacheCfg.tagWidth - 1
+      //RegNextWhen(
+      //  rBusAddr(
+      //    rBusAddr.high - cacheCfg.tagWidth - 1
+      //    downto log2Up(cacheCfg.lineSizeBytes)
+      //  ),
+      //  cond=(
+      //    rState === State.IDLE
+      //  )
+      //),
+      rSavedBusAddr(
+        rSavedBusAddr.high - cacheCfg.tagWidth - 1
         downto log2Up(cacheCfg.lineSizeBytes)
       ),
       rLineAddrCnt,
@@ -445,23 +521,6 @@ case class SnowHouseDataCache(
   //def atLastRecvCnt() = (
   //  rRecvCnt.msb
   //)
-  def rBusSendData = (
-    RegNext(
-      next=io.bus.sendData,
-      init=io.bus.sendData.getZero,
-    )
-  )
-  def rBusAddr = (
-    rBusSendData.addr
-    ////if (isIcache) (
-    //  RegNext(
-    //    next=io.bus.sendData.addr,
-    //    init=io.bus.sendData.addr.getZero
-    //  )
-    ////) else (
-    //  io.bus.sendData.addr
-    //)
-  )
   def busDevData = (
     if (isIcache) (
       io.bus.recvData.instr
@@ -515,32 +574,6 @@ case class SnowHouseDataCache(
   //} else {
   //  //busDevData := rBusDevData
   //}
-  object State extends SpinalEnum(
-    defaultEncoding=(
-      //binarySequential
-      binaryOneHot
-    )
-  ) {
-    val
-      IDLE,
-      HANDLE_DCACHE_LOAD_HIT_LT_WORD_WIDTH_PIPE_2,
-      HANDLE_DCACHE_LOAD_HIT_LT_WORD_WIDTH_PIPE_1,
-      HANDLE_DCACHE_STORE_HIT_LT_WORD_WIDTH_PIPE_2,
-      HANDLE_DCACHE_STORE_HIT_LT_WORD_WIDTH_PIPE_1,
-      HANDLE_DCACHE_STORE_HIT,
-      HANDLE_SEND_LINE_TO_BUS_PIPE_1,
-      HANDLE_SEND_LINE_TO_BUS,
-      //HANDLE_RECV_LINE_FROM_BUS_PIPE_1,
-      HANDLE_RECV_LINE_FROM_BUS,
-      HANDLE_NON_CACHED_BUS_ACC
-      = newElement()
-  }
-  val nextState = State()
-  val rState = (
-    RegNext(nextState)
-    init(State.IDLE)
-  )
-  nextState := rState
   def myLoadLtWordWidthPipeSize = (
     3
     //2
@@ -711,9 +744,6 @@ case class SnowHouseDataCache(
   def rBusAddrTag = (
     (rBusAddr(cacheCfg.tagRange))
     //init(0x0)
-  )
-  val rSavedBusAddr = (
-    Reg(cloneOf(rBusAddr), init=rBusAddr.getZero)
   )
   def rSavedBusAddrTag = (
     rSavedBusAddr(cacheCfg.tagRange)
@@ -1020,6 +1050,7 @@ case class SnowHouseDataCache(
   }
   switch (rState) {
     is (State.IDLE) {
+      rSavedBusAddr := rBusAddr
       when (
         (RegNext(io.bus.nextValid) init(False))
         && !rPleaseFinish(1).sFindFirst(_ === True)._1
@@ -1027,7 +1058,7 @@ case class SnowHouseDataCache(
         nextBridgeSavedFires := 0x0
         setLineBusAddrCntsToStart()
         myH2dBus.nextValid := False
-        rSavedBusAddr := rBusAddr
+        //rSavedBusAddr := rBusAddr
         rSavedRdLineAttrs := rdLineAttrs
         //rSavedRdLineWord := rdLineWord
         //rSavedHaveHit := haveHit
@@ -1047,7 +1078,10 @@ case class SnowHouseDataCache(
               when (rdLineAttrs.dirty) {
                 nextState := State.HANDLE_SEND_LINE_TO_BUS_PIPE_1
               } otherwise {
-                nextState := State.HANDLE_RECV_LINE_FROM_BUS
+                nextState := (
+                  //State.HANDLE_RECV_LINE_FROM_BUS
+                  State.HANDLE_RECV_LINE_FROM_BUS_PIPE_1
+                )
               }
             }
             //is (M"0--") {
@@ -1262,8 +1296,16 @@ case class SnowHouseDataCache(
         myD2hBus.ready := True
         setLineBusAddrCntsToStart()
         nextBridgeSavedFires := 0x0
-        nextState := State.HANDLE_RECV_LINE_FROM_BUS
+        nextState := (
+          //State.HANDLE_RECV_LINE_FROM_BUS
+          State.HANDLE_RECV_LINE_FROM_BUS_PIPE_1
+        )
       }
+    }
+    is (State.HANDLE_RECV_LINE_FROM_BUS_PIPE_1) {
+      nextState := (
+        State.HANDLE_RECV_LINE_FROM_BUS
+      )
     }
     is (State.HANDLE_RECV_LINE_FROM_BUS) {
       rH2dSendData.isWrite := False
