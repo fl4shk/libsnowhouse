@@ -5976,8 +5976,8 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
     } elsewhen (
       //RegNext(io.psExSetPc.valid)
       //&& io.psExSetPc.ready
-      io.psExSetPc.valid
-      //tempPsExSetPcValid
+      //io.psExSetPc.valid
+      tempPsExSetPcValid
       //&& RegNext(
       //  next=(!io.shouldIgnoreInstr(idx)),
       //  init=False,
@@ -6939,11 +6939,16 @@ case class SnowHousePipeStageExecute(
   //}
   psExSetPc.valid := (
     //RegNext(next=setOutpModMemWord.io.psExSetPc.valid, init=False)
-    setOutpModMemWord.io.psExSetPc.valid
-    && RegNext(
+    RegNext(
       next=(
-        !setOutpModMemWord.io.shouldIgnoreInstr(0)
-        && cMid0Front.up.isFiring
+        setOutpModMemWord.io.psExSetPc.valid
+        && RegNext(
+          next=(
+            !setOutpModMemWord.io.shouldIgnoreInstr(0)
+            && cMid0Front.up.isFiring
+          ),
+          init=False,
+        )
       ),
       init=False,
     )
@@ -7004,13 +7009,31 @@ case class SnowHousePipeStageExecute(
   setOutpModMemWord.io.branchPredictReplaceBtbElem := (
     outp.branchPredictReplaceBtbElem
   )
-  psExSetPc.nextPc := setOutpModMemWord.io.psExSetPc.nextPc
+  psExSetPc.nextPc := (
+    RegNext(
+      next=setOutpModMemWord.io.psExSetPc.nextPc,
+      init=setOutpModMemWord.io.psExSetPc.nextPc.getZero,
+    )
+  )
   //psExSetPc.encInstr := outp.encInstr
-  psExSetPc.branchKind := outp.btbElemBranchKind(1)
-  psExSetPc.branchTgtBufElem := outp.branchTgtBufElem(1)
+  psExSetPc.branchKind := (
+    RegNext(
+      next=outp.btbElemBranchKind(1),
+      init=outp.btbElemBranchKind(1).getZero,
+    )
+  )
+  psExSetPc.branchTgtBufElem := (
+    RegNext(
+      next=outp.branchTgtBufElem(1),
+      init=outp.branchTgtBufElem(1).getZero,
+    )
+  )
   psExSetPc.branchTgtBufElem.dontPredict.allowOverride
   psExSetPc.branchTgtBufElem.dontPredict := (
-    setOutpModMemWord.io.psExSetPc.branchTgtBufElem.dontPredict
+    RegNext(
+      next=setOutpModMemWord.io.psExSetPc.branchTgtBufElem.dontPredict,
+      init=False
+    )
   )
   io.dbus.allowOverride
   io.dbus.sendData := (
