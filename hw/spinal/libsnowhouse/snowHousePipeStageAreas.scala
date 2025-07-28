@@ -972,7 +972,7 @@ case class SnowHousePipeStageInstrFetch(
     //KeepAttribute(temp)
     temp
   }
-  rPrevRegPcPlusInstrSize.addAttribute("use_dsp", "yes")
+  //rPrevRegPcPlusInstrSize.addAttribute("use_dsp", "yes")
   val rPrevInstrCnt = /*(cfg.optFormal) generate*/ (
     RegNextWhen(
       next=myInstrCnt,
