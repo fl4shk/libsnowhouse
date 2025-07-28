@@ -392,6 +392,16 @@ case class SnowHouseDataCache(
       init=io.bus.sendData.getZero,
     )
   )
+  val rHaveLoadWordFromCache = (
+    RegNext(
+      next=(
+        !io.bus.sendData.subKindIsLtWordWidth
+        && !io.bus.sendData.accKind.asBits(1)
+        && !nextBusAddrIsNonCached
+      ),
+      init=False
+    )
+  )
   def rBusAddr = (
     rBusSendData.addr
     ////if (isIcache) (
@@ -746,6 +756,9 @@ case class SnowHouseDataCache(
   //--------
   //io.bus.ready := False
   doSetBusReadyEtc(False)
+  def nextBusAddrIsNonCached = (
+    io.bus.sendData.addr(cacheCfg.nonCachedRange) =/= 0x0
+  )
   def rBusAddrIsNonCached = (
     (rBusAddr(cacheCfg.nonCachedRange) =/= 0x0)
     //init(False)
@@ -1073,6 +1086,14 @@ case class SnowHouseDataCache(
         //rSavedHaveHit := haveHit
         rSavedBusSendData := rBusSendData
         //when (RegNext(io.bus.nextValid) init(False)) {
+        when (
+          haveHit && rHaveLoadWordFromCache
+        ) {
+          // load (word) - dcache hit
+          rPleaseFinish.foreach(current => {
+            current(0) := True
+          })
+        }
         when (!rBusAddrIsNonCached) {
           switch (
             Cat(
@@ -1103,9 +1124,9 @@ case class SnowHouseDataCache(
             //}
             is (M"100") {
               // load (word) - dcache hit
-              rPleaseFinish.foreach(current => {
-                current(0) := True
-              })
+              //rPleaseFinish.foreach(current => {
+              //  current(0) := True
+              //})
             }
             is (M"110") {
               // load (smaller-than-word) - dcache hit
