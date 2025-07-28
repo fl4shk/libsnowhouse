@@ -969,7 +969,7 @@ case class SnowHousePipeStageInstrFetch(
     //    ).asSInt
     //  }
     //}
-    KeepAttribute(temp)
+    //KeepAttribute(temp)
     temp
   }
   rPrevRegPcPlusInstrSize.addAttribute("use_dsp", "yes")
