@@ -722,7 +722,10 @@ case class SnowHouseDataCache(
   }
   def doLineAttrsRamWrite(
     busAddr: UInt,
-    lineAttrs: SnowHouseCacheLineAttrs=wrLineAttrs,
+    lineAttrs: /*Option[*/SnowHouseCacheLineAttrs/*]*/=(
+      wrLineAttrs
+      //None
+    ),
     setEn: Boolean=true,
   ): Unit = {
     if (setEn) {
@@ -733,6 +736,12 @@ case class SnowHouseDataCache(
       .resize(lineAttrsRam.io.wrAddr.getWidth)
     )
     lineAttrsRam.io.wrData := lineAttrs.asBits
+    //lineAttrs match {
+    //  case Some(myLineAttrs) => {
+    //  }
+    //  case None => {
+    //  }
+    //}
   }
   //--------
   //io.bus.ready := False
@@ -1109,8 +1118,8 @@ case class SnowHouseDataCache(
             is (M"101") {
               // store (word) - dcache hit
               nextState := State.HANDLE_DCACHE_STORE_HIT
-              wrLineAttrs := rdLineAttrs
-              wrLineAttrs.dirty := True
+              //wrLineAttrs := rdLineAttrs
+              //wrLineAttrs.dirty := True
               lineAttrsRam.io.rdEn := False
               //lineWordRam.io.rdEn := False
               rMyLineWordRamRdEn := False
@@ -1223,6 +1232,13 @@ case class SnowHouseDataCache(
       rPleaseFinish.foreach(current => {
         current(1) := True
       })
+      wrLineAttrs := (
+        RegNext(
+          next=rdLineAttrs,
+          init=rdLineAttrs.getZero,
+        )
+      )
+      wrLineAttrs.dirty := True
       lineAttrsRam.io.wrEn := True
       lineWordRam.io.wrEn := True
       //rDoStoreHitLtWordWidthPipe.head := False
@@ -1306,6 +1322,19 @@ case class SnowHouseDataCache(
       nextState := (
         State.HANDLE_RECV_LINE_FROM_BUS
       )
+      setLineBusAddrCntsToStart()
+      wrLineAttrs.tag := (
+        rSavedBusAddrTag
+      )
+      //wrLineAttrs.valid := True
+      wrLineAttrs.dirty := (
+        //False
+        // if it's a store, this line should be marked dirty!
+        rSavedBusSendData.accKind.asBits(1)
+      )
+      doLineAttrsRamWrite(
+        busAddr=tempLineBusAddr,
+      )
     }
     is (State.HANDLE_RECV_LINE_FROM_BUS) {
       rH2dSendData.isWrite := False
@@ -1324,19 +1353,19 @@ case class SnowHouseDataCache(
         && !rBridgeSavedFires(1)
       ) {
         myH2dBus.nextValid := True
-        setLineBusAddrCntsToStart()
-        wrLineAttrs.tag := (
-          rSavedBusAddrTag
-        )
-        //wrLineAttrs.valid := True
-        wrLineAttrs.dirty := (
-          //False
-          // if it's a store, this line should be marked dirty!
-          rSavedBusSendData.accKind.asBits(1)
-        )
-        doLineAttrsRamWrite(
-          busAddr=tempLineBusAddr,
-        )
+        //setLineBusAddrCntsToStart()
+        //wrLineAttrs.tag := (
+        //  rSavedBusAddrTag
+        //)
+        ////wrLineAttrs.valid := True
+        //wrLineAttrs.dirty := (
+        //  //False
+        //  // if it's a store, this line should be marked dirty!
+        //  rSavedBusSendData.accKind.asBits(1)
+        //)
+        //doLineAttrsRamWrite(
+        //  busAddr=tempLineBusAddr,
+        //)
       }
       when (
         RegNext(next=myH2dBus.nextValid, init=False)
