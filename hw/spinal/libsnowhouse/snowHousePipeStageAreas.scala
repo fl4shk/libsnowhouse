@@ -7106,7 +7106,8 @@ case class SnowHousePipeStageExecute(
           ),
           cond=(
             //True
-            !myDoStall(stallKindMultiCycle)
+            //!myDoStall(stallKindMultiCycle)
+            rMultiCycleOpState === MultiCycleOpState.Idle
           ),
         )
         init(0x0)
@@ -7119,7 +7120,8 @@ case class SnowHousePipeStageExecute(
           ),
           cond=(
             //True
-            !myDoStall(stallKindMultiCycle)
+            //!myDoStall(stallKindMultiCycle)
+            rMultiCycleOpState === MultiCycleOpState.Idle
           ),
         )
         init(0x0)
