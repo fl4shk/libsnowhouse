@@ -398,6 +398,7 @@ case class SnowHouseDataCache(
         !io.bus.sendData.subKindIsLtWordWidth
         && !io.bus.sendData.accKind.asBits(1)
         && !nextBusAddrIsNonCached
+        && io.bus.nextValid
       ),
       init=False
     )
@@ -1074,6 +1075,15 @@ case class SnowHouseDataCache(
     is (State.IDLE) {
       rSavedBusAddr := rBusAddr
       when (
+        haveHit && rHaveLoadWordFromCache
+        && !rPleaseFinish(1).sFindFirst(_ === True)._1
+      ) {
+        // load (word) - dcache hit
+        rPleaseFinish.foreach(current => {
+          current(0) := True
+        })
+      }
+      when (
         (RegNext(io.bus.nextValid) init(False))
         && !rPleaseFinish(1).sFindFirst(_ === True)._1
       ) {
@@ -1086,14 +1096,14 @@ case class SnowHouseDataCache(
         //rSavedHaveHit := haveHit
         rSavedBusSendData := rBusSendData
         //when (RegNext(io.bus.nextValid) init(False)) {
-        when (
-          haveHit && rHaveLoadWordFromCache
-        ) {
-          // load (word) - dcache hit
-          rPleaseFinish.foreach(current => {
-            current(0) := True
-          })
-        }
+        //when (
+        //  haveHit && rHaveLoadWordFromCache
+        //) {
+        //  // load (word) - dcache hit
+        //  rPleaseFinish.foreach(current => {
+        //    current(0) := True
+        //  })
+        //}
         when (!rBusAddrIsNonCached) {
           switch (
             Cat(
