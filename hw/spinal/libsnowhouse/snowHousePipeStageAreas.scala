@@ -4112,13 +4112,16 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
                 //myMemAccIdx += 1
                 if (!mem.isAtomic) {
                   val isStore = mem.isStore
+                  io.modMemWordValid.foreach(current => {
+                    current := False
+                  })
                   if (!isStore) {
-                    io.modMemWordValid.foreach(current => {
-                      current := False
-                    })
-                    //io.modMemWord.foreach(modMemWord => {
-                    //  modMemWord := modMemWord.getZero
+                    //io.modMemWordValid.foreach(current => {
+                    //  current := False
                     //})
+                    ////io.modMemWord.foreach(modMemWord => {
+                    ////  modMemWord := modMemWord.getZero
+                    ////})
                   } else {
                     //io.modMemWordValid.foreach(current => {
                     //  current := True
@@ -6406,52 +6409,52 @@ case class SnowHousePipeStageExecute(
   //  myNextPrevTxnWasHazardVec(idx) :=
   //}
 
-  val myDoHaveHazardAddrCheckVec = Vec[Bool](
-    {
-      assert(
-        outp.myExt.size == cfg.regFileCfg.memArrSize
-      )
-      val temp = ArrayBuffer[Bool]()
-      // TODO: support multiple register writes per instruction
-      //val tempArr = ArrayBuffer[Bool]()
-      //for (idx <- 0 until outp.gprIdxVec.size) {
-      //  tempArr += (
-      //    //(
-      //    //  //outp.gprIdxVec(idx)
-      //    //  outp.myExt(0).memAddr(idx)
-      //    //  === (
-      //    //    //tempModFrontPayload.gprIdxVec(0)
-      //    //    // TODO: *maybe* support multiple output registers!
-      //    //    tempModFrontPayload.myExt(0).memAddr(0)
-      //    //  )
-      //    //) ||
-      //    (
-      //      //True
-      //      //outp.gprIdxVec(idx)
-      //      outp.myExt(0).memAddr(idx)
-      //      === RegNextWhen(
-      //        next=(
-      //          //outp.gprIdxVec(0)
-      //          outp.myExt(0).memAddr(0)
-      //        ),
-      //        cond=cMid0Front.up.isFiring,
-      //        init=(
-      //          //outp.gprIdxVec(0).getZero
-      //          outp.myExt(0).memAddr(0).getZero
-      //        ),
-      //      )
-      //    )
-      //  )
-      //}
-      // TODO: support multiple register writes per instruction
-      temp += (
-        outp.myDoHaveHazardAddrCheckVec(0)
-      )
+  //val myDoHaveHazardAddrCheckVec = Vec[Bool](
+  //  {
+  //    assert(
+  //      outp.myExt.size == cfg.regFileCfg.memArrSize
+  //    )
+  //    val temp = ArrayBuffer[Bool]()
+  //    // TODO: support multiple register writes per instruction
+  //    //val tempArr = ArrayBuffer[Bool]()
+  //    //for (idx <- 0 until outp.gprIdxVec.size) {
+  //    //  tempArr += (
+  //    //    //(
+  //    //    //  //outp.gprIdxVec(idx)
+  //    //    //  outp.myExt(0).memAddr(idx)
+  //    //    //  === (
+  //    //    //    //tempModFrontPayload.gprIdxVec(0)
+  //    //    //    // TODO: *maybe* support multiple output registers!
+  //    //    //    tempModFrontPayload.myExt(0).memAddr(0)
+  //    //    //  )
+  //    //    //) ||
+  //    //    (
+  //    //      //True
+  //    //      //outp.gprIdxVec(idx)
+  //    //      outp.myExt(0).memAddr(idx)
+  //    //      === RegNextWhen(
+  //    //        next=(
+  //    //          //outp.gprIdxVec(0)
+  //    //          outp.myExt(0).memAddr(0)
+  //    //        ),
+  //    //        cond=cMid0Front.up.isFiring,
+  //    //        init=(
+  //    //          //outp.gprIdxVec(0).getZero
+  //    //          outp.myExt(0).memAddr(0).getZero
+  //    //        ),
+  //    //      )
+  //    //    )
+  //    //  )
+  //    //}
+  //    // TODO: support multiple register writes per instruction
+  //    temp += (
+  //      outp.myDoHaveHazardAddrCheckVec(0)
+  //    )
 
-      temp
-    },
-    Bool()
-  )
+  //    temp
+  //  },
+  //  Bool()
+  //)
   val myDoHaveHazardValidCheckVec = Vec[Bool](
     {
       val temp = ArrayBuffer[Bool]()
@@ -6474,24 +6477,25 @@ case class SnowHousePipeStageExecute(
   val myDoHaveHazardVec = /*KeepAttribute*/(
     Vec[Bool]{
       val tempArr = ArrayBuffer[Bool]()
-      assert(
-        myDoHaveHazardAddrCheckVec.size
-        == myDoHaveHazardValidCheckVec.size,
-        s"${myDoHaveHazardAddrCheckVec.size} "
-        + s"${myDoHaveHazardValidCheckVec.size}"
-      )
+      //assert(
+      //  myDoHaveHazardAddrCheckVec.size
+      //  == myDoHaveHazardValidCheckVec.size,
+      //  s"${myDoHaveHazardAddrCheckVec.size} "
+      //  + s"${myDoHaveHazardValidCheckVec.size}"
+      //)
       for (ydx <- 0 until cfg.regFileCfg.memArrSize) {
         tempArr += (
-          myDoHaveHazardAddrCheckVec(ydx)
-          && myDoHaveHazardValidCheckVec(ydx)
+          //myDoHaveHazardAddrCheckVec(ydx)
+          //&& 
+          myDoHaveHazardValidCheckVec(ydx)
         )
       }
       tempArr
     }
   )
-  val myDoHaveHazard1 = (
-    myDoHaveHazardVec.reduceLeft(_ || _)
-  )
+  //val myDoHaveHazard1 = (
+  //  myDoHaveHazardVec.reduceLeft(_ || _)
+  //)
   val myDoHaveHazard = /*KeepAttribute*/(
     Vec.fill(
       //cfg.multiCycleOpInfoMap.size + 1
@@ -6858,15 +6862,15 @@ case class SnowHousePipeStageExecute(
     when (myDoHaveHazard.head) {
       myDoStall(stallKindMem) := True
     }
-    if (cfg.optFormal) {
-      cover(
-        (
-          myDoHaveHazardAddrCheckVec.reduceLeft(_ || _)
-        ) && (
-          cMid0Front.up.isFiring
-        )
-      )
-    }
+    //if (cfg.optFormal) {
+    //  cover(
+    //    (
+    //      myDoHaveHazardAddrCheckVec.reduceLeft(_ || _)
+    //    ) && (
+    //      cMid0Front.up.isFiring
+    //    )
+    //  )
+    //}
   }
   when (
     RegNext(psMemStallHost.nextValid)
@@ -7095,19 +7099,27 @@ case class SnowHousePipeStageExecute(
         src.allowOverride
       })
       multiCycleBus.sendData.srcVec(0) := (
-        RegNext(
+        RegNextWhen(
           setOutpModMemWord.io.selRdMemWord(
             opInfo=opInfo,
             idx=1,
+          ),
+          cond=(
+            //True
+            !myDoStall(stallKindMultiCycle)
           ),
         )
         init(0x0)
       )
       multiCycleBus.sendData.srcVec(1) := (
-        RegNext(
+        RegNextWhen(
           setOutpModMemWord.io.selRdMemWord(
             opInfo=opInfo,
             idx=2,
+          ),
+          cond=(
+            //True
+            !myDoStall(stallKindMultiCycle)
           ),
         )
         init(0x0)
