@@ -3181,22 +3181,44 @@ case class SnowHouseCpuShift32(
         //  carry=False
         //)
 
-        multiCycleBus.ready := False
-        //val rTempDst0 = (
-        //  Reg(UInt(cfg.mainWidth bits)) init(0x0)
+        //val rBusReady = Reg(Bool(), init=False)
+        val rBusReady = Reg(Bool(), init=False)
+        //multiCycleBus.ready.setAsReg() init(False)
+        //multiCycleBus.ready := False
+        multiCycleBus.ready := rBusReady
+        rBusReady := False
+        //dstVec(0) := RegNext(
+        //  next=dstVec(0),
+        //  init=dstVec(0).getZero
         //)
-
-        //dstVec(0) := rTempDst0
-        dstVec(0) := RegNext(
-          next=dstVec(0),
-          init=dstVec(0).getZero
+        //dstVec(0).setAsReg() init(0x0)
+        val rDst = (
+          Reg(UInt(dstVec(0).getWidth bits))
+          init(0x0)
         )
+        dstVec(0) := rDst
 
-        when (RegNext(multiCycleBus.nextValid) init(False)) {
+        when (
+          RegNext(
+            next=rose(RegNext(multiCycleBus.nextValid, init=False)),
+            init=False
+          )
+        ) {
           val width: Int=cfg.mainWidth
           val binop = InstrResult(cfg=cfg)(width=width)
-          val left = /*RegNext*/(srcVec(0)) //init(0x0)
-          val right = /*RegNext*/(srcVec(1)) //init(0x0)
+          val left = (
+            RegNext(
+              next=srcVec(0),
+              init=srcVec(0).getZero,
+            )
+            //init(0x0)
+          )
+          val right = (
+            RegNext(
+              next=srcVec(1),
+              init=srcVec(1).getZero,
+            ) //init(0x0)
+          )
           val tempLeft = Cat(left).asUInt(width - 1 downto 0)
           val tempRight = Cat(right).asUInt(width - 1 downto 0)
           //binop.leftMsb := left(width - 1)
@@ -3208,9 +3230,8 @@ case class SnowHouseCpuShift32(
           //binop.flagV := False
           //binop.flagC := False
 
-          dstVec(0) := binop.main
-
-          multiCycleBus.ready := True
+          rDst := binop.main
+          rBusReady := True
         }
       }
       case MultiCycleOpKind.Lsr => {
@@ -3219,16 +3240,42 @@ case class SnowHouseCpuShift32(
         def srcVec = multiCycleBus.sendData.srcVec
         def mainWidth = cfg.mainWidth
 
-        multiCycleBus.ready := False
-        dstVec(0) := RegNext(
-          next=dstVec(0),
-          init=dstVec(0).getZero
+        val rBusReady = Reg(Bool(), init=False)
+        //multiCycleBus.ready.setAsReg() init(False)
+        //multiCycleBus.ready := False
+        multiCycleBus.ready := rBusReady
+        rBusReady := False
+        //dstVec(0) := RegNext(
+        //  next=dstVec(0),
+        //  init=dstVec(0).getZero
+        //)
+        //dstVec(0).setAsReg() init(0x0)
+        val rDst = (
+          Reg(UInt(dstVec(0).getWidth bits))
+          init(0x0)
         )
-        when (RegNext(multiCycleBus.nextValid) init(False)) {
+        dstVec(0) := rDst
+        when (
+          RegNext(
+            next=rose(RegNext(multiCycleBus.nextValid, init=False)),
+            init=False,
+          )
+        ) {
           val width: Int = cfg.mainWidth
           val binop = InstrResult(cfg=cfg)(width=width)
-          val left = /*RegNext*/(srcVec(0)) //init(0x0)
-          val right = /*RegNext*/(srcVec(1)) //init(0x0)
+          val left = (
+            RegNext(
+              next=srcVec(0),
+              init=srcVec(0).getZero,
+            )
+            //init(0x0)
+          )
+          val right = (
+            RegNext(
+              next=srcVec(1),
+              init=srcVec(1).getZero,
+            ) //init(0x0)
+          )
           val tempLeft = Cat(left).asUInt(width - 1 downto 0)
           val tempRight = Cat(right).asUInt(width - 1 downto 0)
           //binop.leftMsb := left(width - 1)
@@ -3240,9 +3287,8 @@ case class SnowHouseCpuShift32(
           //binop.flagV := False
           //binop.flagC := False
 
-          dstVec(0) := binop.main
-
-          multiCycleBus.ready := True
+          rDst := binop.main
+          rBusReady := True
         }
       }
       case MultiCycleOpKind.Asr => {
@@ -3250,16 +3296,42 @@ case class SnowHouseCpuShift32(
         def dstVec = multiCycleBus.recvData.dstVec
         def srcVec = multiCycleBus.sendData.srcVec
         def mainWidth = cfg.mainWidth
-        multiCycleBus.ready := False
-        dstVec(0) := RegNext(
-          next=dstVec(0),
-          init=dstVec(0).getZero
+        val rBusReady = Reg(Bool(), init=False)
+        //multiCycleBus.ready.setAsReg() init(False)
+        //multiCycleBus.ready := False
+        multiCycleBus.ready := rBusReady
+        rBusReady := False
+        //dstVec(0) := RegNext(
+        //  next=dstVec(0),
+        //  init=dstVec(0).getZero
+        //)
+        //dstVec(0).setAsReg() init(0x0)
+        val rDst = (
+          Reg(UInt(dstVec(0).getWidth bits))
+          init(0x0)
         )
-        when (RegNext(multiCycleBus.nextValid) init(False)) {
+        dstVec(0) := rDst
+        when (
+          RegNext(
+            next=rose(RegNext(multiCycleBus.nextValid, init=False)),
+            init=False,
+          )
+        ) {
           val width: Int = cfg.mainWidth
           val binop = InstrResult(cfg=cfg)(width=width)
-          val left = /*RegNext*/(srcVec(0)) //init(0x0)
-          val right = /*RegNext*/(srcVec(1)) //init(0x0)
+          val left = (
+            RegNext(
+              next=srcVec(0),
+              init=srcVec(0).getZero,
+            )
+            //init(0x0)
+          )
+          val right = (
+            RegNext(
+              next=srcVec(1),
+              init=srcVec(1).getZero,
+            ) //init(0x0)
+          )
           val tempLeft = Cat(left).asUInt(width - 1 downto 0)
           val tempRight = Cat(right).asUInt(width - 1 downto 0)
           //binop.leftMsb := left(width - 1)
@@ -3271,9 +3343,11 @@ case class SnowHouseCpuShift32(
           //binop.flagV := False
           //binop.flagC := False
 
-          dstVec(0) := binop.main
+          //dstVec(0) := binop.main
 
-          multiCycleBus.ready := True
+          //multiCycleBus.ready := True
+          rDst := binop.main
+          rBusReady := True
         }
       }
       case _ => {
@@ -3334,14 +3408,25 @@ case class SnowHouseCpuMul32(
         val high = (mainWidth - 1 downto (mainWidth >> 1))
         val shiftAmount = mainWidth >> 1
         val mulCond = (
-          rState === UMul32State.IDLE
-          && multiCycleBus.rValid
+          /*rose*/(
+            rState === UMul32State.IDLE
+            && (
+              rose(multiCycleBus.rValid)
+            )
+          )
+          .setName("SnowHouseCpuMul32_Umul_mulCond")
         )
         val rY0X0 = (
           RegNextWhen(
             //UInt(cfg.mainWidth bits)
             next=(
-              srcVec(1)(low) * srcVec(0)(low)
+              (
+                RegNext(srcVec(1)(low))
+                init(0x0)
+              ) * (
+                RegNext(srcVec(0)(low))
+                init(0x0)
+              )
             ),
             cond=mulCond
           )
@@ -3352,7 +3437,13 @@ case class SnowHouseCpuMul32(
           RegNextWhen(
             //UInt(cfg.mainWidth bits)
             next=(
-              srcVec(1)(high) * srcVec(0)(low)
+              (
+                RegNext(srcVec(1)(high))
+                init(0x0)
+              ) * (
+                RegNext(srcVec(0)(low))
+                init(0x0)
+              )
             ),
             cond=mulCond,
           )
@@ -3363,7 +3454,13 @@ case class SnowHouseCpuMul32(
           RegNextWhen(
             //UInt(cfg.mainWidth bits)
             next=(
-              srcVec(1)(low) * srcVec(0)(high)
+              (
+                RegNext(srcVec(1)(low))
+                init(0x0)
+              ) * (
+                RegNext(srcVec(0)(high))
+                init(0x0)
+              )
             ),
             cond=mulCond,
           )
@@ -3398,7 +3495,7 @@ case class SnowHouseCpuMul32(
         dstVec(0) := rDst
         switch (rState) {
           is (UMul32State.IDLE) {
-            when (RegNext(multiCycleBus.nextValid)) {
+            when (rose(RegNext(multiCycleBus.nextValid, init=False))) {
               rState := UMul32State.DO_THREE_MUL16X16
             }
             //rPartialSum(0) := (
@@ -3506,7 +3603,14 @@ case class SnowHouseCpuDivmod32(
               cpuIo.multiCycleBusVec(busIdx)
             )
           } else {
-            when (RegNext(cpuIo.multiCycleBusVec(busIdx).nextValid)) {
+            when (
+              rose(
+                RegNext(
+                  next=cpuIo.multiCycleBusVec(busIdx).nextValid,
+                  init=False,
+                )
+              )
+            ) {
               if (setKind) {
                 rKind := Divmod32Kind.UDIV
               }
@@ -3526,7 +3630,14 @@ case class SnowHouseCpuDivmod32(
               cpuIo.multiCycleBusVec(busIdx)
             )
           } else {
-            when (RegNext(cpuIo.multiCycleBusVec(busIdx).nextValid)) {
+            when (
+              rose(
+                RegNext(
+                  next=cpuIo.multiCycleBusVec(busIdx).nextValid,
+                  init=False,
+                )
+              )
+            ) {
               if (setKind) {
                 rKind := Divmod32Kind.SDIV
               }
@@ -3546,7 +3657,14 @@ case class SnowHouseCpuDivmod32(
               cpuIo.multiCycleBusVec(busIdx)
             )
           } else {
-            when (RegNext(cpuIo.multiCycleBusVec(busIdx).nextValid)) {
+            when (
+              rose(
+                RegNext(
+                  next=cpuIo.multiCycleBusVec(busIdx).nextValid,
+                  init=False
+                )
+              )
+            ) {
               if (setKind) {
                 rKind := Divmod32Kind.UMOD
               }
@@ -3566,7 +3684,14 @@ case class SnowHouseCpuDivmod32(
               cpuIo.multiCycleBusVec(busIdx)
             )
           } else {
-            when (RegNext(cpuIo.multiCycleBusVec(busIdx).nextValid)) {
+            when (
+              rose(
+                RegNext(
+                  next=cpuIo.multiCycleBusVec(busIdx).nextValid,
+                  init=False,
+                )
+              )
+            ) {
               if (setKind) {
                 rKind := Divmod32Kind.SMOD
               }
@@ -3726,8 +3851,18 @@ case class SnowHouseCpuDivmod32(
           rState := Divmod32State.CHECK_PREV
           def dstVec = stallIo.recvData.dstVec
           def srcVec = stallIo.sendData.srcVec
-          rSavedSrcVec(0) := srcVec(0)
-          rSavedSrcVec(1) := srcVec(1)
+          rSavedSrcVec(0) := (
+            RegNext(
+              next=srcVec(0),
+              init=srcVec(0).getZero,
+            )
+          )
+          rSavedSrcVec(1) := (
+            RegNext(
+              next=srcVec(1),
+              init=srcVec(1).getZero,
+            )
+          )
         },
         setKind=true,
       )
@@ -4085,8 +4220,8 @@ object SnowHouseCpuWithDualRamSim extends App {
     //6, 6,
     //7, 7,
     //8, 8,
-    9, 9,
-    //10, 10,
+    //9, 9,
+    10, 10,
   )
   val instrRamKindArr = Array[Int](
     0,

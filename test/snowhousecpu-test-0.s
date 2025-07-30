@@ -18,16 +18,21 @@ cpy r0, 0x0
 cpy r1, _irq_handler
 //cpy ids, r1
 cpy r2, 0x1
-cpy ie, r2
+//cpy ie, r2
 lsl r1, r2, 3
-cpy r2, 0x1
+lsl r3, r1, r2
 cpy r3, 0x1000
 cpy r4, 0x8
 cpy r5, _increment
 cpy sp, 0x800
+ldr r6, r3, 0x0
 cpy r6, 0x20
 str r6, r3, 0x0
-mul r10, r6, r6
+//ldr r5, r3, 0x0
+//mul r10, r6, r6
+//lsl r10, r5, 3
+lsl r10, r6, 3
+//lsr r10, r5, 1
 ldr r5, r3, 0x0
 str r5, r3, 0x1000
 ldr r6, r3, 0x1000

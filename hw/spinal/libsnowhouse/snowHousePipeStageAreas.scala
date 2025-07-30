@@ -7099,30 +7099,30 @@ case class SnowHousePipeStageExecute(
         src.allowOverride
       })
       multiCycleBus.sendData.srcVec(0) := (
-        RegNextWhen(
+        RegNext/*When*/(
           setOutpModMemWord.io.selRdMemWord(
             opInfo=opInfo,
             idx=1,
           ),
-          cond=(
-            //True
-            //!myDoStall(stallKindMultiCycle)
-            rMultiCycleOpState === MultiCycleOpState.Idle
-          ),
+          //cond=(
+          //  //True
+          //  //!myDoStall(stallKindMultiCycle)
+          //  rMultiCycleOpState === MultiCycleOpState.Idle
+          //),
         )
         init(0x0)
       )
       multiCycleBus.sendData.srcVec(1) := (
-        RegNextWhen(
+        RegNext/*When*/(
           setOutpModMemWord.io.selRdMemWord(
             opInfo=opInfo,
             idx=2,
           ),
-          cond=(
-            //True
-            //!myDoStall(stallKindMultiCycle)
-            rMultiCycleOpState === MultiCycleOpState.Idle
-          ),
+          //cond=(
+          //  //True
+          //  //!myDoStall(stallKindMultiCycle)
+          //  rMultiCycleOpState === MultiCycleOpState.Idle
+          //),
         )
         init(0x0)
       )
