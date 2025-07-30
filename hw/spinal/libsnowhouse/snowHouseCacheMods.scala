@@ -551,17 +551,17 @@ case class SnowHouseDataCache(
   //}
   def doSetBusReadyEtc(
     someReady: Bool,
-    doSetBusLdReady: Boolean//=false,
+    //doSetBusLdReady: Boolean//=false,
   ): Unit = {
     io.bus.ready := someReady
     io.busExtraReady.foreach(extraReady => {
       extraReady := someReady
     })
-    if (doSetBusLdReady) {
-      io.busLdReady := (
-        !rSavedBusSendData.accKind.asBits(1)
-      )
-    }
+    //if (doSetBusLdReady) {
+    //  io.busLdReady := (
+    //    !rSavedBusSendData.accKind.asBits(1)
+    //  )
+    //}
   }
   if (!isIcache) {
     //busDevData := (
@@ -763,10 +763,11 @@ case class SnowHouseDataCache(
   }
   //--------
   //io.bus.ready := False
-  io.busLdReady := False
+  //io.busLdReady := False
+  io.busLdReady.setAsReg() init(False)
   doSetBusReadyEtc(
     someReady=False,
-    doSetBusLdReady=false,
+    //doSetBusLdReady=false,
   )
   def nextBusAddrIsNonCached = (
     io.bus.sendData.addr(cacheCfg.nonCachedRange) =/= 0x0
@@ -796,6 +797,9 @@ case class SnowHouseDataCache(
   //val rSavedHaveHit = Reg(Bool(), init=False)
   //val rSavedRdLineWord = Reg(cloneOf(rdLineWord), init=rdLineWord.getZero)
   val rSavedBusSendData = Reg(cloneOf(io.bus.sendData))
+  //io.busLdReady := (
+  //  !rSavedBusSendData.accKind.asBits(1)
+  //)
   val rPleaseFinish = (
     Vec.fill(3)(
       Vec.fill(3)(
@@ -810,7 +814,7 @@ case class SnowHouseDataCache(
     //io.bus.ready := True
     doSetBusReadyEtc(
       someReady=True,
-      doSetBusLdReady=true,
+      //doSetBusLdReady=true,
     )
   }
   when (
@@ -1085,9 +1089,17 @@ case class SnowHouseDataCache(
     } otherwise {
     }
   }
+  io.busLdReady := False
+  when (
+    (RegNext(io.bus.nextValid) init(False))
+    && !rPleaseFinish(1).sFindFirst(_ === True)._1
+  ) {
+    io.busLdReady := !rBusSendData.accKind.asBits(1)
+  }
   switch (rState) {
     is (State.IDLE) {
       rSavedBusAddr := rBusAddr
+      //io.busLdReady := !rBusSendData.accKind.asBits(1)
       when (
         haveHit && rHaveLoadWordFromCache
         && !rPleaseFinish(1).sFindFirst(_ === True)._1
@@ -1108,6 +1120,7 @@ case class SnowHouseDataCache(
         rSavedRdLineAttrs := rdLineAttrs
         //rSavedRdLineWord := rdLineWord
         //rSavedHaveHit := haveHit
+        //io.busLdReady := !rBusSendData.accKind.asBits(1)
         rSavedBusSendData := rBusSendData
         //when (RegNext(io.bus.nextValid) init(False)) {
         //when (
