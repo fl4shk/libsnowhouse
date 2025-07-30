@@ -34,11 +34,13 @@ case class SnowHouseInstrDataDualRamIo(
   )(
     Bool()
   )
+  val dbusLdReady = Bool()
   slave(
     ibus,
     dbus,
   )
   out(dbusExtraReady)
+  out(dbusLdReady)
   //in(dcacheHaveHazard)
 }
 //case class SnowHouseDirectMappedIcacheIo(
@@ -431,6 +433,7 @@ case class SnowHouseInstrDataDualRam(
     )
     io.dbusExtraReady.addAttribute(KeepAttribute.keep)
     io.dbusExtraReady := dcache.io.busExtraReady
+    io.dbusLdReady := dcache.io.busLdReady
 
     //myRam.io.up << dcache.io.tlBus
     //myRam.io.up.a << dcache.io.tlBus.a
@@ -631,6 +634,7 @@ case class SnowHouseIo(
   val dbusExtraReady = Vec.fill(cfg.lowerMyFanout)(
     Bool()
   )
+  val dbusLdReady = Bool()
   //val dcacheHaveHazard = Bool()
   master(
     ibus,
@@ -643,6 +647,7 @@ case class SnowHouseIo(
   }
   //out(dcacheHaveHazard)
   in(dbusExtraReady)
+  in(dbusLdReady)
 }
 case class SnowHouse
 //[

@@ -7894,7 +7894,8 @@ case class SnowHousePipeStageMem(
   when (
     //RegNext(io.dbus.nextValid)
     //io.dbus.ready
-    io.dbusExtraReady(0)
+    //io.dbusExtraReady(0)
+    io.dbusLdReady
     //&& !rMemAccessNonWordSizeState
   ) {
     val myDecodeExt = midModPayload(extIdxUp).outpDecodeExt

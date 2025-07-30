@@ -4079,6 +4079,7 @@ case class SnowHouseCpuWithDualRam(
   cpu.io.dbus <> dualRam.io.dbus
   //dualRam.io.dcacheHaveHazard := cpu.io.dcacheHaveHazard
   cpu.io.dbusExtraReady := dualRam.io.dbusExtraReady
+  cpu.io.dbusLdReady := dualRam.io.dbusLdReady
   if (cfg.exposeRegFileWriteDataToIo) {
     cpu.io.regFileWriteData <> io.regFileWriteData
   }
@@ -4211,7 +4212,7 @@ object SnowHouseCpuWithDualRamSim extends App {
   //  "5",
   //)
   val testIdxRange = (
-    //0, 0,
+    0, 0,
     //1, 1,
     //2, 2,
     //3, 3,

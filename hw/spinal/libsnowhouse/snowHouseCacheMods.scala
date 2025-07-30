@@ -58,6 +58,7 @@ case class SnowHouseCacheIo(
   )(
     Bool()
   ))
+  val busLdReady = out(Bool())
   //val bridgeCfg = (
   //  LcvStallToTilelinkConfig(
   //    addrWidth=(
@@ -549,20 +550,26 @@ case class SnowHouseDataCache(
   //  io.busExtraReady.addAttribute(KeepAttribute.keep)
   //}
   def doSetBusReadyEtc(
-    someReady: Bool
+    someReady: Bool,
+    doSetBusLdReady: Boolean//=false,
   ): Unit = {
     io.bus.ready := someReady
     io.busExtraReady.foreach(extraReady => {
       extraReady := someReady
     })
+    if (doSetBusLdReady) {
+      io.busLdReady := (
+        !rSavedBusSendData.accKind.asBits(1)
+      )
+    }
   }
   if (!isIcache) {
-    busDevData := (
-      RegNext(
-        next=busDevData,
-        init=busDevData.getZero,
-      )
-    )
+    //busDevData := (
+    //  RegNext(
+    //    next=busDevData,
+    //    init=busDevData.getZero,
+    //  )
+    //)
   }
   //doSetBusReadyEtc(
   //  someReady=False
@@ -756,7 +763,11 @@ case class SnowHouseDataCache(
   }
   //--------
   //io.bus.ready := False
-  doSetBusReadyEtc(False)
+  io.busLdReady := False
+  doSetBusReadyEtc(
+    someReady=False,
+    doSetBusLdReady=false,
+  )
   def nextBusAddrIsNonCached = (
     io.bus.sendData.addr(cacheCfg.nonCachedRange) =/= 0x0
   )
@@ -797,7 +808,10 @@ case class SnowHouseDataCache(
   )
   when (rPleaseFinish(2).sFindFirst(_ === True)._1) {
     //io.bus.ready := True
-    doSetBusReadyEtc(True)
+    doSetBusReadyEtc(
+      someReady=True,
+      doSetBusLdReady=true,
+    )
   }
   when (
     //io.bus.fire
@@ -817,9 +831,9 @@ case class SnowHouseDataCache(
     busDevData := rdLineWord
   } else { // if (!isIcache)
     //when (rPleaseFinish(0).sFindFirst(_ === True)._1) {
-      when (rSavedBusSendData.accKind.asBits(1)) {
-        busDevData := rSavedBusSendData.data //RegNext(rBusSendData.data)
-      } otherwise {
+      //when (rSavedBusSendData.accKind.asBits(1)) {
+      //  busDevData := rSavedBusSendData.data //RegNext(rBusSendData.data)
+      //} otherwise {
         busDevData := (
           //rBusDevData
           Mux[UInt](
@@ -829,7 +843,7 @@ case class SnowHouseDataCache(
             rdLineWord
           )
         )
-      }
+      //}
     //}
 
     //rBusDevData := rdLineWord
