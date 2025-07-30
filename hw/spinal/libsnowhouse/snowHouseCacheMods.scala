@@ -816,7 +816,7 @@ case class SnowHouseDataCache(
   if (isIcache) {
     busDevData := rdLineWord
   } else { // if (!isIcache)
-    when (rPleaseFinish(0).sFindFirst(_ === True)._1) {
+    //when (rPleaseFinish(0).sFindFirst(_ === True)._1) {
       when (rSavedBusSendData.accKind.asBits(1)) {
         busDevData := rSavedBusSendData.data //RegNext(rBusSendData.data)
       } otherwise {
@@ -830,7 +830,7 @@ case class SnowHouseDataCache(
           )
         )
       }
-    }
+    //}
 
     //rBusDevData := rdLineWord
     //rPastBusSendDataData := /*RegNext*/(rdLineWord)
