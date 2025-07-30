@@ -6345,11 +6345,12 @@ case class SnowHousePipeStageExecute(
   //  )
   //)
   def stallKindMem = 0
-  def stallKindMultiCycle = 1
+  //def stallKindMultiCycle = 1
   //def stallKindMultiCycle1 = 2
   def stallKindLim = (
     //3
-    2
+    //2
+    1
   )
 
   val myDoStall = (
@@ -6360,12 +6361,12 @@ case class SnowHousePipeStageExecute(
     )
   )
   myDoStall(stallKindMem) := False
-  myDoStall(stallKindMultiCycle) := (
-    RegNext(
-      next=myDoStall(stallKindMultiCycle),
-      init=myDoStall(stallKindMultiCycle).getZero,
-    )
-  )
+  //myDoStall(stallKindMultiCycle) := (
+  //  RegNext(
+  //    next=myDoStall(stallKindMultiCycle),
+  //    init=myDoStall(stallKindMultiCycle).getZero,
+  //  )
+  //)
   //myDoStall(stallKindMultiCycle1) := (
   //  False
   //)
@@ -7174,7 +7175,7 @@ case class SnowHousePipeStageExecute(
     idx: Int,
   ): Unit = {
     //myDoStall(stallKindMem) := False
-    myDoStall(stallKindMultiCycle) := True
+    //myDoStall(stallKindMultiCycle) := True
     myPsExStallHost.nextValid := True
     //nextSavedStall(idx) := True
     //nextSavedStall.head := True
@@ -7243,6 +7244,8 @@ case class SnowHousePipeStageExecute(
     ) {
       myDoStall(stallKindMem) := False
       //myDoStall(stallKindMultiCycle) := True
+      cMid0Front.haltIt()
+      //myDoStall(stallKindMultiCycle) := True
       //switch (rOpIsMultiCycle.asBits.asUInt) {
         for (idx <- 0 until cfg.multiCycleOpInfoMap.size) {
           //--------
@@ -7282,73 +7285,72 @@ case class SnowHousePipeStageExecute(
                 }
                 if (busIdxFound) {
                   val psExStallHost = psExStallHostArr(busIdx)
-                  //psExStallHost.nextValid := True
+                  doMultiCycleStart(psExStallHost, idx=idx)
                   //when (
-                  //  /*LcvFastAndR*/(
-                  //    Vec[Bool](
-                  //      !rSavedStall.head/*(idx)*/,
-                  //      RegNext(next=doCheckHazard).head/*(idx)*/,
-                  //      RegNext(next=myDoHaveHazard).head/*(idx)*/,
-                  //    ).asBits.asUInt.andR
-                  //  )
+                  //  RegNext(psExStallHost.nextValid, init=False)
+                  //  && psExStallHost.ready
                   //) {
                   //  psExStallHost.nextValid := False
-                  //  //when (
-                  //  //  //psMemStallHost.fire
-                  //  //  RegNext(psMemStallHost.nextValid, init=False)
-                  //  //  && psMemStallHost.ready
-                  //  //) {
-                  //  //  doMultiCycleStart(psExStallHost)
-                  //  //}
-                  //} otherwise {
-                  //  //doMultiCycleStart(psExStallHost)
+                  //  myDoStall(stallKindMultiCycle) := False
+                  //  when (
+                  //    cMid0Front.up.isFiring
+                  //    //cMid0Front.down.isReady
+                  //  ) {
+                  //    rMultiCycleOpState := (
+                  //      //False
+                  //      MultiCycleOpState.Idle
+                  //      //MultiCycleOpState.NoMoreStall
+                  //    )
+                  //  } otherwise {
+                  //    rMultiCycleOpState := (
+                  //      MultiCycleOpState.NoMoreStall
+                  //    )
+                  //  }
                   //}
+                }
+              }
+            }
+          }
+          for (
+            ((_, opInfo), opInfoIdx)
+            <- cfg.multiCycleOpInfoMap.view.zipWithIndex
+          ) {
+            //is (opInfoIdx)
+            if (opInfoIdx == idx) {
+              var busIdxFound: Boolean = false
+              var busIdx: Int = 0
+              for (
+                ((_, multiCycleOpInfo), myBusIdx)
+                <- cfg.multiCycleOpInfoMap.view.zipWithIndex
+              ) {
+                if (opInfo == multiCycleOpInfo) {
+                  busIdxFound = true
+                  busIdx = myBusIdx
+                }
+              }
+              if (busIdxFound) {
+                val psExStallHost = psExStallHostArr(busIdx)
+                //doMultiCycleStart(psExStallHost, idx=idx)
+                when (
+                  RegNext(psExStallHost.nextValid, init=False)
+                  && psExStallHost.ready
+                ) {
+                  psExStallHost.nextValid := False
+                  rMultiCycleOpState := MultiCycleOpState.NoMoreStall
+                  //myDoStall(stallKindMultiCycle) := False
                   //when (
-                  //  (
-                  //    Vec[Bool](
-                  //      !rSavedStall.head/*(idx)*/,
-                  //      RegNext(next=doCheckHazard).head/*(idx)*/,
-                  //      RegNext(next=myDoHaveHazard).head/*(idx)*/,
-                  //      RegNext(psMemStallHost.nextValid, init=False),
-                  //      psMemStallHost.ready,
-                  //    ).asBits.asUInt.andR
-                  //  ) || (
-                  //    !Vec[Bool](
-                  //      !rSavedStall.head/*(idx)*/,
-                  //      RegNext(next=doCheckHazard).head/*(idx)*/,
-                  //      RegNext(next=myDoHaveHazard).head/*(idx)*/,
-                  //    ).asBits.asUInt.andR
-                  //  )
+                  //  cMid0Front.up.isFiring
+                  //  //cMid0Front.down.isReady
                   //) {
-                  //  //doMultiCycleStart(psExStallHost, idx=idx)
-                  //}
-                  doMultiCycleStart(psExStallHost, idx=idx)
-                  when (
-                    RegNext(psExStallHost.nextValid, init=False)
-                    && psExStallHost.ready
-                  ) {
-                    psExStallHost.nextValid := False
-                    myDoStall(stallKindMultiCycle) := False
-                    when (
-                      cMid0Front.up.isFiring
-                      //cMid0Front.down.isReady
-                    ) {
-                      rMultiCycleOpState := (
-                        //False
-                        MultiCycleOpState.Idle
-                        //MultiCycleOpState.NoMoreStall
-                      )
-                    } otherwise {
-                      rMultiCycleOpState := (
-                        MultiCycleOpState.NoMoreStall
-                      )
-                    }
-                  }
-                  //when (rSavedStall.head/*(idx)*/) {
-                  //  myDoStall(stallKindMem) := False
-                  //}
-                  //when (cMid0Front.up.isFiring) {
-                  //  nextSavedStall.head/*(idx)*/ := False
+                  //  rMultiCycleOpState := (
+                  //    //False
+                  //    MultiCycleOpState.Idle
+                  //    //MultiCycleOpState.NoMoreStall
+                  //  )
+                  //} otherwise {
+                  //  rMultiCycleOpState := (
+                  //    MultiCycleOpState.NoMoreStall
+                  //  )
                   //}
                 }
               }
