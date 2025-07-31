@@ -23,7 +23,7 @@ Disassembly of section .text:
   44:	00 10 30 86 	ldr	r6, r3, 4096
   48:	04 00 00 07 	add	r7, r0, 4
   4c:	00 10 30 88 	ldr	r8, r3, 4096
-  50:	00 00 57 79 	mul	r9, r5, r7
+  50:	00 00 87 79 	mul	r9, r8, r7
 
 00000054 <_push_loop>:
   54:	00 00 f1 87 	str	r7, sp, 0

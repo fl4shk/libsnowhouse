@@ -38,7 +38,8 @@ str r5, r3, 0x1000
 ldr r6, r3, 0x1000
 cpy r7, 0x4
 ldr r8, r3, 0x1000 //0x0
-mul r9, r5, r7
+//mul r9, r5, r7
+mul r9, r8, r7
 //--------
 _push_loop:
 str r7, sp, 0

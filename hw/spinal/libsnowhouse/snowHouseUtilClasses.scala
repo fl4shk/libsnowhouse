@@ -733,7 +733,7 @@ case class SnowHouseConfig(
   val aluOpInfoMap = LinkedHashMap[Int, OpInfo]()
   val aluShiftOpInfoMap = LinkedHashMap[Int, OpInfo]()
   val nonMultiCycleOpInfoMap = LinkedHashMap[Int, OpInfo]()
-  val nonMultiCycleNonJmpOpInfoMap = LinkedHashMap[Int, OpInfo]()
+  val cpyCpyuiAluNonShiftOpInfoMap = LinkedHashMap[Int, OpInfo]()
   val multiCycleOpInfoMap = LinkedHashMap[Int, OpInfo]()
   //val loadOpInfoMap = LinkedHashMap[Int, OpInfo]()
   //val storeOpInfoMap = LinkedHashMap[Int, OpInfo]()
@@ -834,7 +834,7 @@ case class SnowHouseConfig(
             //)
             cpyCpyuiOpInfoMap += (idx -> opInfo)
             nonMultiCycleOpInfoMap += (idx -> opInfo)
-            nonMultiCycleNonJmpOpInfoMap += (idx -> opInfo)
+            cpyCpyuiAluNonShiftOpInfoMap += (idx -> opInfo)
           }
           case CpyOpKind.Cpyu => {
             //assert(
@@ -846,7 +846,7 @@ case class SnowHouseConfig(
             //pureCpyuiOpInfoMap += (idx -> opInfo)
             cpyCpyuiOpInfoMap += (idx -> opInfo)
             nonMultiCycleOpInfoMap += (idx -> opInfo)
-            nonMultiCycleNonJmpOpInfoMap += (idx -> opInfo)
+            cpyCpyuiAluNonShiftOpInfoMap += (idx -> opInfo)
           }
           case CpyOpKind.Jmp => { // non-relative jumps
             //assert(
@@ -876,13 +876,13 @@ case class SnowHouseConfig(
         //)
         aluOpInfoMap += (idx -> opInfo)
         nonMultiCycleOpInfoMap += (idx -> opInfo)
-        nonMultiCycleNonJmpOpInfoMap += (idx -> opInfo)
+        cpyCpyuiAluNonShiftOpInfoMap += (idx -> opInfo)
       }
       case OpSelect.AluShift => {
         checkValidArgs(opInfo.aluShiftOp)
         aluShiftOpInfoMap += (idx -> opInfo)
         nonMultiCycleOpInfoMap += (idx -> opInfo)
-        nonMultiCycleNonJmpOpInfoMap += (idx -> opInfo)
+        //cpyCpyuiAluNonShiftOpInfoMap += (idx -> opInfo)
       }
       case OpSelect.MultiCycle => {
         checkValidArgs(opInfo.multiCycleOp)
@@ -1066,8 +1066,8 @@ case class SnowHouseSplitOp(
   //val nonMultiCycleOp = /*Flow*/(
   //  UInt(log2Up(cfg.nonMultiCycleOpInfoMap.size + 1) bits)
   //)
-  val nonMultiCycleNonJmpOp = /*Flow*/(
-    UInt(log2Up(cfg.nonMultiCycleNonJmpOpInfoMap.size + 1) bits)
+  val cpyCpyuiAluNonShiftOp = /*Flow*/(
+    UInt(log2Up(cfg.cpyCpyuiAluNonShiftOpInfoMap.size + 1) bits)
   )
   val kind = SnowHouseSplitOpKind(
     //binaryOneHot
@@ -1088,7 +1088,7 @@ case class SnowHouseSplitOp(
     UInt(log2Up(cfg.aluOpInfoMap.size) bits)
   )
   val aluShiftOp = /*Flow*/(
-    UInt(log2Up(cfg.aluShiftOpInfoMap.size) bits)
+    UInt(log2Up(cfg.aluShiftOpInfoMap.size + 1) bits)
   )
   val multiCycleOp = /*Flow*/(
     UInt(/*log2Up*/(cfg.multiCycleOpInfoMap.size) bits)
@@ -1107,8 +1107,11 @@ case class SnowHouseSplitOp(
     //nonMultiCycleOp := (
     //  (1 << nonMultiCycleOp.getWidth) - 1
     //)
-    nonMultiCycleNonJmpOp := (
-      (1 << nonMultiCycleNonJmpOp.getWidth) - 1
+    cpyCpyuiAluNonShiftOp := (
+      (1 << cpyCpyuiAluNonShiftOp.getWidth) - 1
+    )
+    aluShiftOp := (
+      (1 << aluShiftOp.getWidth) - 1
     )
     multiCycleOp := 0x0
     opIsMemAccess := False
@@ -1224,7 +1227,8 @@ case class SnowHousePipePayload(
     }
     myArr
   } //simPublic()
-  val shiftModMemWordValid = Bool()
+  //val shiftModMemWordValid = Bool()
+  //val nonShiftModMemWord = UInt(cfg.mainWidth bits)
   val shiftModMemWord = UInt(cfg.mainWidth bits)
   // `gprIdxVec` is to be driven by the class derived from
   // `SnowHousePipeStageInstrDecode`

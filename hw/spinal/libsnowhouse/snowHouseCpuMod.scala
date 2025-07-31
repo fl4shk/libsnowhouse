@@ -1104,19 +1104,40 @@ object SnowHouseCpuPipeStageInstrDecode {
             }
           }
           for (
-            ((_, nonMultiCycleNonJmpOpInfo), nonMultiCycleNonJmpOpInfoIdx)
-            <- cfg.nonMultiCycleNonJmpOpInfoMap.view.zipWithIndex
+            ((_, aluShiftOpInfo), aluShiftOpInfoIdx)
+            <- cfg.aluShiftOpInfoMap.view.zipWithIndex
           ) {
-            if (nonMultiCycleNonJmpOpInfo == opInfo) {
+            if (aluShiftOpInfo == opInfo) {
+              if (
+                //opInfo == aluShiftOpInfo
+                //someOp == aluShiftOpTuple
+                aluShiftOpInfo == opInfo
+              ) {
+                println(
+                  s"aluShiftOp: " //"${opInfoIdx} -> ${aluShiftOpInfoIdx} "
+                  + s"${someOp._3} // ${aluShiftOpInfoIdx}"
+                )
+                mySplitOp.aluShiftOp := (
+                  aluShiftOpInfoIdx
+                )
+                found = true
+              }
+            }
+          }
+          for (
+            ((_, cpyCpyuiAluNonShiftOpInfo), cpyCpyuiAluNonShiftOpInfoIdx)
+            <- cfg.cpyCpyuiAluNonShiftOpInfoMap.view.zipWithIndex
+          ) {
+            if (cpyCpyuiAluNonShiftOpInfo == opInfo) {
               assert(
                 !found
               )
               //mySplitOp.nonMultiCycleOp := nonMultiCycleNonJmpOpInfoIdx
-              mySplitOp.nonMultiCycleNonJmpOp := (
-                nonMultiCycleNonJmpOpInfoIdx
+              mySplitOp.cpyCpyuiAluNonShiftOp := (
+                cpyCpyuiAluNonShiftOpInfoIdx
               )
               //println(
-              //  s"test: ${nonMultiCycleNonJmpOpInfoIdx}"
+              //  s"test: ${cpyCpyuiAluNonShiftOpInfoIdx}"
               //)
               //found = true
               for (
@@ -1222,7 +1243,7 @@ object SnowHouseCpuPipeStageInstrDecode {
                     //s"pureCpyOp (${cpyOpInfoIdx}): "
                     //+ s"${opInfoIdx}: ${someOp._3}"
                     s"cpyCpyuiOp: " //"${opInfoIdx} -> ${cpyOpInfoIdx} "
-                    + s"${someOp._3} // ${nonMultiCycleNonJmpOpInfoIdx}"
+                    + s"${someOp._3} // ${cpyCpyuiAluNonShiftOpInfoIdx}"
                   )
                   found = true
                 }
@@ -1238,27 +1259,27 @@ object SnowHouseCpuPipeStageInstrDecode {
                 ) {
                   println(
                     s"aluOp: " //"${opInfoIdx} -> ${aluOpInfoIdx} "
-                    + s"${someOp._3} // ${nonMultiCycleNonJmpOpInfoIdx}"
+                    + s"${someOp._3} // ${cpyCpyuiAluNonShiftOpInfoIdx}"
                   )
                   found = true
                 }
               }
-              for (
-                ((_, aluShiftOpInfo), aluShiftOpInfoIdx)
-                <- cfg.aluShiftOpInfoMap.view.zipWithIndex
-              ) {
-                if (
-                  //opInfo == aluShiftOpInfo
-                  //someOp == aluShiftOpTuple
-                  aluShiftOpInfo == opInfo
-                ) {
-                  println(
-                    s"aluShiftOp: " //"${opInfoIdx} -> ${aluShiftOpInfoIdx} "
-                    + s"${someOp._3} // ${nonMultiCycleNonJmpOpInfoIdx}"
-                  )
-                  found = true
-                }
-              }
+              //for (
+              //  ((_, aluShiftOpInfo), aluShiftOpInfoIdx)
+              //  <- cfg.aluShiftOpInfoMap.view.zipWithIndex
+              //) {
+              //  if (
+              //    //opInfo == aluShiftOpInfo
+              //    //someOp == aluShiftOpTuple
+              //    aluShiftOpInfo == opInfo
+              //  ) {
+              //    println(
+              //      s"aluShiftOp: " //"${opInfoIdx} -> ${aluShiftOpInfoIdx} "
+              //      + s"${someOp._3} // ${cpyCpyuiAluNonShiftOpInfoIdx}"
+              //    )
+              //    found = true
+              //  }
+              //}
             }
           }
           for (
@@ -4227,7 +4248,7 @@ object SnowHouseCpuWithDualRamSim extends App {
     10, 10,
   )
   val instrRamKindArr = Array[Int](
-    //0,
+    0,
     1,
     2,
     5,
