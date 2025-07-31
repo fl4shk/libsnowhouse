@@ -2146,77 +2146,77 @@ object SnowHouseCpuOpInfoMap {
   //--------
   opInfoMap += (
     // lsl rA, rB, rC
-    SnowHouseCpuOp.LslRaRbRc -> OpInfo./*mkAluShift*/mkMultiCycle(
+    SnowHouseCpuOp.LslRaRbRc -> OpInfo.mkAluShift/*mkMultiCycle*/(
       dstArr=Array[DstKind](DstKind.Gpr),
       srcArr=Array[SrcKind](SrcKind.Gpr, SrcKind.Gpr),
-      //aluShiftOp=AluShiftOpKind.Lsl,
-      multiCycleOp=(
-        MultiCycleOpKind.Lsl
-      ),
+      aluShiftOp=AluShiftOpKind.Lsl,
+      //multiCycleOp=(
+      //  MultiCycleOpKind.Lsl
+      //),
     )
   )
   opInfoMap += (
     // lsl rA, rB, imm5
-    SnowHouseCpuOp.LslRaRbImm5 -> OpInfo./*mkAluShift*/mkMultiCycle(
+    SnowHouseCpuOp.LslRaRbImm5 -> OpInfo.mkAluShift/*mkMultiCycle*/(
       dstArr=Array[DstKind](DstKind.Gpr),
       srcArr=Array[SrcKind](SrcKind.Gpr, SrcKind.Imm()),
-      //aluShiftOp=(
-      //  AluShiftOpKind.Lsl
-      //  //AluShiftOpKind.Add
-      //),
-      multiCycleOp=(
-        MultiCycleOpKind.Lsl
+      aluShiftOp=(
+        AluShiftOpKind.Lsl
+        //AluShiftOpKind.Add
       ),
+      //multiCycleOp=(
+      //  MultiCycleOpKind.Lsl
+      //),
     )
   )
   opInfoMap += (
     // lsr rA, rB, rC
-    SnowHouseCpuOp.LsrRaRbRc -> OpInfo./*mkAluShift*/mkMultiCycle(
+    SnowHouseCpuOp.LsrRaRbRc -> OpInfo.mkAluShift/*mkMultiCycle*/(
       dstArr=Array[DstKind](DstKind.Gpr),
       srcArr=Array[SrcKind](SrcKind.Gpr, SrcKind.Gpr),
-      //aluShiftOp=AluShiftOpKind.Lsr,
-      multiCycleOp=(
-        MultiCycleOpKind.Lsr
-      ),
+      aluShiftOp=AluShiftOpKind.Lsr,
+      //multiCycleOp=(
+      //  MultiCycleOpKind.Lsr
+      //),
     )
   )
   opInfoMap += (
     // lsr rA, rB, imm5
-    SnowHouseCpuOp.LsrRaRbImm5 -> OpInfo./*mkAluShift*/mkMultiCycle(
+    SnowHouseCpuOp.LsrRaRbImm5 -> OpInfo.mkAluShift/*mkMultiCycle*/(
       dstArr=Array[DstKind](DstKind.Gpr),
       srcArr=Array[SrcKind](SrcKind.Gpr, SrcKind.Imm()),
-      //aluShiftOp=(
-      //  AluShiftOpKind.Lsr
-      //  //AluShiftOpKind.Add
-      //),
-      multiCycleOp=(
-        MultiCycleOpKind.Lsr
+      aluShiftOp=(
+        AluShiftOpKind.Lsr
+        //AluShiftOpKind.Add
       ),
+      //multiCycleOp=(
+      //  MultiCycleOpKind.Lsr
+      //),
     )
   )
   opInfoMap += (
     // asr rA, rB, rC
-    SnowHouseCpuOp.AsrRaRbRc -> OpInfo./*mkAluShift*/mkMultiCycle(
+    SnowHouseCpuOp.AsrRaRbRc -> OpInfo.mkAluShift/*mkMultiCycle*/(
       dstArr=Array[DstKind](DstKind.Gpr),
       srcArr=Array[SrcKind](SrcKind.Gpr, SrcKind.Gpr),
-      //aluShiftOp=AluShiftOpKind.Asr,
-      multiCycleOp=(
-        MultiCycleOpKind.Asr
-      ),
+      aluShiftOp=AluShiftOpKind.Asr,
+      //multiCycleOp=(
+      //  MultiCycleOpKind.Asr
+      //),
     )
   )
   opInfoMap += (
     // asr rA, rB, imm5
-    SnowHouseCpuOp.AsrRaRbImm5 -> OpInfo.mkMultiCycle(
+    SnowHouseCpuOp.AsrRaRbImm5 -> OpInfo.mkAluShift/*mkMultiCycle*/(
       dstArr=Array[DstKind](DstKind.Gpr),
       srcArr=Array[SrcKind](SrcKind.Gpr, SrcKind.Imm()),
-      //aluShiftOp=(
-      //  AluShiftOpKind.Asr
-      //  //AluShiftOpKind.Add
-      //),
-      multiCycleOp=(
-        MultiCycleOpKind.Asr
+      aluShiftOp=(
+        AluShiftOpKind.Asr
+        //AluShiftOpKind.Add
       ),
+      //multiCycleOp=(
+      //  MultiCycleOpKind.Asr
+      //),
     )
   )
   opInfoMap += (
@@ -4103,7 +4103,7 @@ case class SnowHouseCpuWithDualRam(
   //val lsrImm = SnowHouseCpuLsr32(cpuIo=cpu.io, immShift=true)
   //val asrRc = SnowHouseCpuAsr32(cpuIo=cpu.io, immShift=false)
   //val asrImm = SnowHouseCpuAsr32(cpuIo=cpu.io, immShift=true)
-  val shift32 = SnowHouseCpuShift32(cpuIo=cpu.io)
+  //val shift32 = SnowHouseCpuShift32(cpuIo=cpu.io)
   val mul32 = SnowHouseCpuMul32(cpuIo=cpu.io)
   val divmod32 = SnowHouseCpuDivmod32(cpuIo=cpu.io)
 
@@ -4212,7 +4212,7 @@ object SnowHouseCpuWithDualRamSim extends App {
   //  "5",
   //)
   val testIdxRange = (
-    //0, 0,
+    0, 0,
     //1, 1,
     //2, 2,
     //3, 3,
@@ -4226,9 +4226,9 @@ object SnowHouseCpuWithDualRamSim extends App {
   )
   val instrRamKindArr = Array[Int](
     0,
-    1,
-    2,
-    5,
+    //1,
+    //2,
+    //5,
   )
   for (testIdx <- 0 to 10) {
     programStrArr += (
