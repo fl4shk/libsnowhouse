@@ -3046,12 +3046,12 @@ case class SnowHousePipeStageExecuteSetOutpModMemWordIo(
   val modMemWord = setAsOutp(Vec.fill(1)( // TODO: temporary size of `1`
     UInt(cfg.mainWidth bits)
   ))
-  //val shiftModMemWordValid = setAsOutp(
-  //  Bool()
-  //)
   //val nonShiftModMemWord = setAsOutp(
   //  UInt(cfg.mainWidth bits)
   //)
+  val shiftModMemWordValid = setAsOutp(
+    Bool()
+  )
   val shiftModMemWord = setAsOutp(
     UInt(cfg.mainWidth bits)
   )
@@ -3137,9 +3137,9 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
   //io.modMemWord.foreach(item => {
   //  item := 0x0
   //})
-  //io.shiftModMemWordValid := (
-  //  False
-  //)
+  io.shiftModMemWordValid := (
+    False
+  )
   io.shiftModMemWord := (
     RegNext(
       next=io.shiftModMemWord,
@@ -5521,7 +5521,7 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
               opInfo=opInfo,
               opInfoIdx=idx,
             )
-            io.shiftModMemWord := 0x0
+            //io.shiftModMemWord := 0x0
           }
         //}
       }
@@ -5538,9 +5538,10 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
             opInfo=opInfo,
             opInfoIdx=idx,
           )
-          io.modMemWord.foreach(item => {
-            item := 0x0
-          })
+          //io.modMemWord.foreach(item => {
+          //  item := 0x0
+          //})
+          io.shiftModMemWordValid := True
         }
       }
       default {
@@ -5556,7 +5557,7 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
             opInfo=opInfo,
             opInfoIdx=idx,
           )
-          io.shiftModMemWord := 0x0
+          //io.shiftModMemWord := 0x0
         }
       }
       default {
@@ -5868,8 +5869,8 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
     io.modMemWord.foreach(modMemWord => {
       modMemWord := modMemWord.getZero
     })
-    //io.shiftModMemWordValid := False
-    io.shiftModMemWord := 0x0
+    io.shiftModMemWordValid := False
+    //io.shiftModMemWord := 0x0
     //io.opIs := 0x0
     io.opIsMemAccess.foreach(current => {
       current := False
@@ -6842,9 +6843,9 @@ case class SnowHousePipeStageExecute(
       outp.shiftModMemWord := (
         setOutpModMemWord.io.shiftModMemWord
       )
-      //outp.shiftModMemWordValid := (
-      //  setOutpModMemWord.io.shiftModMemWordValid
-      //)
+      outp.shiftModMemWordValid := (
+        setOutpModMemWord.io.shiftModMemWordValid
+      )
     }
     def tempRdMemWord = setOutpModMemWord.io.rdMemWord(zdx)
     val rRdMemWordState = (
@@ -7978,7 +7979,7 @@ case class SnowHousePipeStageMem(
   //  Reg(UInt(cfg.mainWidth bits))
   //  init(0x0)
   //)
-  val maybeShiftArea = new Area {
+  val changeMmwArea = new Area {
     val mapElem = midModPayload(extIdxUp).gprIdxToMemAddrIdxMap(0)
     val myCurrExt = (
       if (!mapElem.haveHowToSetIdx) (
@@ -7991,66 +7992,69 @@ case class SnowHousePipeStageMem(
         )
       )
     )
-    val myPrevExt = (
-      if (!mapElem.haveHowToSetIdx) (
-        modFront(modFrontAfterPayload).myExt(
-          0
-        )
-      ) else (
-        modFront(modFrontAfterPayload).myExt(
-          mapElem.howToSetIdx
-        )
-      )
-    )
-    val tempModMemWordValid = cloneOf(myPrevExt.modMemWordValid(0))
-    val tempModMemWord = cloneOf(myPrevExt.modMemWord)
-    tempModMemWordValid := (
-      RegNext(
-        next=tempModMemWordValid,
-        init=tempModMemWordValid.getZero,
-      )
-    )
-    tempModMemWord := (
-      RegNext(
-        next=tempModMemWord,
-        init=tempModMemWord.getZero,
-      )
-    )
-    when (cMidModFront.up.isValid) {
-      tempModMemWord := myPrevExt.modMemWord
-      tempModMemWordValid := myPrevExt.modMemWordValid(0)
-    }
+    //val myPrevExt = (
+    //  if (!mapElem.haveHowToSetIdx) (
+    //    modFront(modFrontAfterPayload).myExt(
+    //      0
+    //    )
+    //  ) else (
+    //    modFront(modFrontAfterPayload).myExt(
+    //      mapElem.howToSetIdx
+    //    )
+    //  )
+    //)
+    //val tempModMemWordValid = cloneOf(myPrevExt.modMemWordValid(0))
+    //val tempModMemWord = cloneOf(myPrevExt.modMemWord)
+    //tempModMemWordValid := (
+    //  RegNext(
+    //    next=tempModMemWordValid,
+    //    init=tempModMemWordValid.getZero,
+    //  )
+    //)
+    //tempModMemWord := (
+    //  RegNext(
+    //    next=tempModMemWord,
+    //    init=tempModMemWord.getZero,
+    //  )
+    //)
+    //when (cMidModFront.up.isValid) {
+    //  tempModMemWord := myPrevExt.modMemWord
+    //  tempModMemWordValid := myPrevExt.modMemWordValid(0)
+    //}
 
-    when (
-      //!io.dbus.rValid
-      //myCurrExt.modMemWordValid(0)
-      //&& cMidModFront.up.isFiring
-      tempModMemWordValid
-    ) {
-      myCurrExt.modMemWord := (
-        // it might make more sense to do an OR instead of an ADD because
-        // there's no carry here, and mathematically, they are equivalent.
-        //midModPayload(extIdxUp).nonShiftModMemWord
-        //myPrevExt.modMemWord
-        tempModMemWord
-        | midModPayload(extIdxUp).shiftModMemWord
-      )
+    //when (
+    //  //!io.dbus.rValid
+    //  //myCurrExt.modMemWordValid(0)
+    //  //&& cMidModFront.up.isFiring
+    //  tempModMemWordValid
+    //) {
+    //  myCurrExt.modMemWord := (
+    //    // it might make more sense to do an OR instead of an ADD because
+    //    // there's no carry here, and mathematically, they are equivalent.
+    //    //midModPayload(extIdxUp).nonShiftModMemWord
+    //    //myPrevExt.modMemWord
+    //    tempModMemWord
+    //    | midModPayload(extIdxUp).shiftModMemWord
+    //  )
+    //}
+    when (midModPayload(extIdxUp).shiftModMemWordValid) {
+      myCurrExt.modMemWord := midModPayload(extIdxUp).shiftModMemWord
     }
-  }
-  when (io.dbusLdReady) {
-    val mapElem = midModPayload(extIdxUp).gprIdxToMemAddrIdxMap(0)
-    val myCurrExt = (
-      if (!mapElem.haveHowToSetIdx) (
-        midModPayload(extIdxUp).myExt(
-          0
-        )
-      ) else (
-        midModPayload(extIdxUp).myExt(
-          mapElem.howToSetIdx
-        )
-      )
-    )
-    myCurrExt.modMemWord := io.dbus.recvData.data.resized
+    when (io.dbusLdReady) {
+      //val mapElem = midModPayload(extIdxUp).gprIdxToMemAddrIdxMap(0)
+      //val myCurrExt = (
+      //  if (!mapElem.haveHowToSetIdx) (
+      //    midModPayload(extIdxUp).myExt(
+      //      0
+      //    )
+      //  ) else (
+      //    midModPayload(extIdxUp).myExt(
+      //      mapElem.howToSetIdx
+      //    )
+      //  )
+      //)
+      myCurrExt.modMemWord := io.dbus.recvData.data.resized
+    }
   }
   //switch (
   //  //RegNext(io.dbus.nextValid)

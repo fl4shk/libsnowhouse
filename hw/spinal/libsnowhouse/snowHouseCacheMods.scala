@@ -1090,6 +1090,19 @@ case class SnowHouseDataCache(
     }
   }
   io.busLdReady := False
+  when (
+    (RegNext(io.bus.nextValid) init(False))
+    && !rPleaseFinish(1).sFindFirst(_ === True)._1
+  ) {
+    io.busLdReady := /*RegNext*/(
+      //!rBusSendData.accKind.asBits(1)
+      RegNext(
+        next=(!io.bus.sendData.accKind.asBits(1)),
+        init=False,
+      )//,
+      //init=False
+    )
+  }
   switch (rState) {
     is (State.IDLE) {
       rSavedBusAddr := rBusAddr
@@ -1114,7 +1127,7 @@ case class SnowHouseDataCache(
         rSavedRdLineAttrs := rdLineAttrs
         //rSavedRdLineWord := rdLineWord
         //rSavedHaveHit := haveHit
-        io.busLdReady := !rBusSendData.accKind.asBits(1)
+        //io.busLdReady := !rBusSendData.accKind.asBits(1)
         rSavedBusSendData := rBusSendData
         //when (RegNext(io.bus.nextValid) init(False)) {
         //when (

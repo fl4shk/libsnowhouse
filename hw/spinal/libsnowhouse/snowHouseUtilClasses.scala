@@ -1227,8 +1227,8 @@ case class SnowHousePipePayload(
     }
     myArr
   } //simPublic()
-  //val shiftModMemWordValid = Bool()
   //val nonShiftModMemWord = UInt(cfg.mainWidth bits)
+  val shiftModMemWordValid = Bool()
   val shiftModMemWord = UInt(cfg.mainWidth bits)
   // `gprIdxVec` is to be driven by the class derived from
   // `SnowHousePipeStageInstrDecode`
