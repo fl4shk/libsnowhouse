@@ -919,6 +919,8 @@ object SnowHouseCpuPipeStageInstrDecode {
         upPayload.gprIsZeroVec(idx)(jdx) := (
           upPayload.gprIdxVec(idx) === 0x0
         )
+      }
+      for (jdx <- 0 until cfg.regFileCfg.modMemWordValidSize + 1) {
         upPayload.gprIsNonZeroVec(idx)(jdx) := (
           upPayload.gprIdxVec(idx) =/= 0x0
         )
@@ -4225,10 +4227,10 @@ object SnowHouseCpuWithDualRamSim extends App {
     10, 10,
   )
   val instrRamKindArr = Array[Int](
-    0,
-    //1,
-    //2,
-    //5,
+    //0,
+    1,
+    2,
+    5,
   )
   for (testIdx <- 0 to 10) {
     programStrArr += (

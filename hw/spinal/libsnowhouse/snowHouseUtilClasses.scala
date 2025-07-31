@@ -1224,6 +1224,8 @@ case class SnowHousePipePayload(
     }
     myArr
   } //simPublic()
+  val shiftModMemWordValid = Bool()
+  val shiftModMemWord = UInt(cfg.mainWidth bits)
   // `gprIdxVec` is to be driven by the class derived from
   // `SnowHousePipeStageInstrDecode`
   val gprIdxVec = Vec.fill(cfg.maxNumGprsPerInstr)(
@@ -1235,7 +1237,7 @@ case class SnowHousePipePayload(
     )
   )
   val gprIsNonZeroVec = Vec.fill(cfg.maxNumGprsPerInstr)(
-    Vec.fill(cfg.regFileCfg.modMemWordValidSize)(
+    Vec.fill(cfg.regFileCfg.modMemWordValidSize + 1)(
       Bool()
     )
   )

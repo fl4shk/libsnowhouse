@@ -2755,7 +2755,7 @@ case class SnowHousePipeStageExecuteSetOutpModMemWordIo(
   ) generate (
     setAsInp(
       Vec.fill(tempVecSize)(
-        Vec.fill(cfg.regFileCfg.modMemWordValidSize)(
+        Vec.fill(cfg.regFileCfg.modMemWordValidSize + 1)(
           Bool()
         )
       )
@@ -3046,6 +3046,12 @@ case class SnowHousePipeStageExecuteSetOutpModMemWordIo(
   val modMemWord = setAsOutp(Vec.fill(1)( // TODO: temporary size of `1`
     UInt(cfg.mainWidth bits)
   ))
+  val shiftModMemWordValid = setAsOutp(
+    Bool()
+  )
+  val shiftModMemWord = setAsOutp(
+    UInt(cfg.mainWidth bits)
+  )
   //val branchTgtBufElem = setAsInp(
   //  BranchTgtBufElem(cfg=cfg)
   //)
@@ -3123,6 +3129,15 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
     RegNext(
       next=io.modMemWord,
       init=io.modMemWord.getZero,
+    )
+  )
+  io.shiftModMemWordValid := (
+    False
+  )
+  io.shiftModMemWord := (
+    RegNext(
+      next=io.shiftModMemWord,
+      init=io.shiftModMemWord.getZero,
     )
   )
   //val myModMemWordValid = (
@@ -5361,7 +5376,17 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
               nextFlagC := binop.flagC
               nextFlagZ := binop.flagZ
             }
-            io.modMemWord(0) := binop.main
+            //io.modMemWord(0) := binop.main
+            io.shiftModMemWord := binop.main
+            io.shiftModMemWordValid := (
+              //True
+              if (cfg.myHaveZeroReg) (
+                //!io.gprIsZeroVec(0)(idx)
+                io.gprIsNonZeroVec(0).last
+              ) else (
+                True
+              )
+            )
             nextIndexReg := 0x0
           }
         }
@@ -5803,6 +5828,8 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
     io.modMemWord.foreach(modMemWord => {
       modMemWord := modMemWord.getZero
     })
+    io.shiftModMemWordValid := False
+    io.shiftModMemWord := 0x0
     //io.opIs := 0x0
     io.opIsMemAccess.foreach(current => {
       current := False
@@ -6771,6 +6798,12 @@ case class SnowHousePipeStageExecute(
           setOutpModMemWord.io.modMemWordValid(idx)
         )
       }
+      outp.shiftModMemWord := (
+        setOutpModMemWord.io.shiftModMemWord
+      )
+      outp.shiftModMemWordValid := (
+        setOutpModMemWord.io.shiftModMemWordValid
+      )
     }
     def tempRdMemWord = setOutpModMemWord.io.rdMemWord(zdx)
     val rRdMemWordState = (
@@ -7904,14 +7937,17 @@ case class SnowHousePipeStageMem(
   //  Reg(UInt(cfg.mainWidth bits))
   //  init(0x0)
   //)
-  when (
+  switch (
     //RegNext(io.dbus.nextValid)
     //io.dbus.ready
     //io.dbusExtraReady(0)
-    io.dbusLdReady
+    Cat(
+      io.dbusLdReady,
+      midModPayload(extIdxUp).shiftModMemWordValid
+    )
     //&& !rMemAccessNonWordSizeState
   ) {
-    val myDecodeExt = midModPayload(extIdxUp).outpDecodeExt
+    //val myDecodeExt = midModPayload(extIdxUp).outpDecodeExt
     val mapElem = midModPayload(extIdxUp).gprIdxToMemAddrIdxMap(0)
     val myCurrExt = (
       if (!mapElem.haveHowToSetIdx) (
@@ -7924,7 +7960,14 @@ case class SnowHousePipeStageMem(
         )
       )
     )
-    myCurrExt.modMemWord := io.dbus.recvData.data.resized
+    is (M"00") {
+    }
+    is (M"1-") {
+      myCurrExt.modMemWord := io.dbus.recvData.data.resized
+    }
+    default {
+      myCurrExt.modMemWord := midModPayload(extIdxUp).shiftModMemWord
+    }
     //switch (rMemAccessNonWordSizeState) {
     //}
     //when (!myDecodeExt.memAccessKind.asBits(1)) {
