@@ -6491,52 +6491,52 @@ case class SnowHousePipeStageExecute(
   //  myNextPrevTxnWasHazardVec(idx) :=
   //}
 
-  val myDoHaveHazardAddrCheckVec = Vec[Bool](
-    {
-      assert(
-        outp.myExt.size == cfg.regFileCfg.memArrSize
-      )
-      val temp = ArrayBuffer[Bool]()
-      // TODO: support multiple register writes per instruction
-      //val tempArr = ArrayBuffer[Bool]()
-      //for (idx <- 0 until outp.gprIdxVec.size) {
-      //  tempArr += (
-      //    //(
-      //    //  //outp.gprIdxVec(idx)
-      //    //  outp.myExt(0).memAddr(idx)
-      //    //  === (
-      //    //    //tempModFrontPayload.gprIdxVec(0)
-      //    //    // TODO: *maybe* support multiple output registers!
-      //    //    tempModFrontPayload.myExt(0).memAddr(0)
-      //    //  )
-      //    //) ||
-      //    (
-      //      //True
-      //      //outp.gprIdxVec(idx)
-      //      outp.myExt(0).memAddr(idx)
-      //      === RegNextWhen(
-      //        next=(
-      //          //outp.gprIdxVec(0)
-      //          outp.myExt(0).memAddr(0)
-      //        ),
-      //        cond=cMid0Front.up.isFiring,
-      //        init=(
-      //          //outp.gprIdxVec(0).getZero
-      //          outp.myExt(0).memAddr(0).getZero
-      //        ),
-      //      )
-      //    )
-      //  )
-      //}
-      // TODO: support multiple register writes per instruction
-      temp += (
-        outp.myDoHaveHazardAddrCheckVec(0)
-      )
+  //val myDoHaveHazardAddrCheckVec = Vec[Bool](
+  //  {
+  //    assert(
+  //      outp.myExt.size == cfg.regFileCfg.memArrSize
+  //    )
+  //    val temp = ArrayBuffer[Bool]()
+  //    // TODO: support multiple register writes per instruction
+  //    //val tempArr = ArrayBuffer[Bool]()
+  //    //for (idx <- 0 until outp.gprIdxVec.size) {
+  //    //  tempArr += (
+  //    //    //(
+  //    //    //  //outp.gprIdxVec(idx)
+  //    //    //  outp.myExt(0).memAddr(idx)
+  //    //    //  === (
+  //    //    //    //tempModFrontPayload.gprIdxVec(0)
+  //    //    //    // TODO: *maybe* support multiple output registers!
+  //    //    //    tempModFrontPayload.myExt(0).memAddr(0)
+  //    //    //  )
+  //    //    //) ||
+  //    //    (
+  //    //      //True
+  //    //      //outp.gprIdxVec(idx)
+  //    //      outp.myExt(0).memAddr(idx)
+  //    //      === RegNextWhen(
+  //    //        next=(
+  //    //          //outp.gprIdxVec(0)
+  //    //          outp.myExt(0).memAddr(0)
+  //    //        ),
+  //    //        cond=cMid0Front.up.isFiring,
+  //    //        init=(
+  //    //          //outp.gprIdxVec(0).getZero
+  //    //          outp.myExt(0).memAddr(0).getZero
+  //    //        ),
+  //    //      )
+  //    //    )
+  //    //  )
+  //    //}
+  //    // TODO: support multiple register writes per instruction
+  //    temp += (
+  //      outp.myDoHaveHazardAddrCheckVec(0)
+  //    )
 
-      temp
-    },
-    Bool()
-  )
+  //    temp
+  //  },
+  //  Bool()
+  //)
   val myDoHaveHazardValidCheckVec = Vec[Bool](
     {
       val temp = ArrayBuffer[Bool]()
@@ -6567,8 +6567,9 @@ case class SnowHousePipeStageExecute(
       //)
       for (ydx <- 0 until cfg.regFileCfg.memArrSize) {
         tempArr += (
-          myDoHaveHazardAddrCheckVec(ydx)
-          && myDoHaveHazardValidCheckVec(ydx)
+          //myDoHaveHazardAddrCheckVec(ydx)
+          //&&
+          myDoHaveHazardValidCheckVec(ydx)
         )
       }
       tempArr
@@ -8001,7 +8002,14 @@ case class SnowHousePipeStageMem(
         )
       )
     )
+    val tempModMemWordValid = cloneOf(myPrevExt.modMemWordValid(0))
     val tempModMemWord = cloneOf(myPrevExt.modMemWord)
+    tempModMemWordValid := (
+      RegNext(
+        next=tempModMemWordValid,
+        init=tempModMemWordValid.getZero,
+      )
+    )
     tempModMemWord := (
       RegNext(
         next=tempModMemWord,
@@ -8010,12 +8018,14 @@ case class SnowHousePipeStageMem(
     )
     when (cMidModFront.up.isValid) {
       tempModMemWord := myPrevExt.modMemWord
+      tempModMemWordValid := myPrevExt.modMemWordValid(0)
     }
 
     when (
       //!io.dbus.rValid
-      myCurrExt.modMemWordValid(0)
-      && cMidModFront.up.isFiring
+      //myCurrExt.modMemWordValid(0)
+      //&& cMidModFront.up.isFiring
+      tempModMemWordValid
     ) {
       myCurrExt.modMemWord := (
         // it might make more sense to do an OR instead of an ADD because
