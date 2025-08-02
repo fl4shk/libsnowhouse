@@ -3246,10 +3246,51 @@ case class SnowHouseCpuTestProgram(
 //  def cfg = cpuIo.cfg
 //}
 
+
 case class SnowHouseCpuShift32LowLatency(
   cpuIo: SnowHouseIo,
 ) extends Area {
   def cfg = cpuIo.cfg
+  val lslDel1 = SnowHouseLslDel1(mainWidth=cfg.mainWidth)
+  val lsrDel1 = SnowHouseLsrDel1(mainWidth=cfg.mainWidth)
+  val asrDel1 = SnowHouseAsrDel1(mainWidth=cfg.mainWidth)
+  lslDel1.io.inpToShift := (
+    RegNext(
+      next=lslDel1.io.inpToShift,
+      init=lslDel1.io.inpToShift.getZero
+    )
+  )
+  lslDel1.io.inpAmount := (
+    RegNext(
+      next=lslDel1.io.inpAmount,
+      init=lslDel1.io.inpAmount.getZero
+    )
+  )
+  lsrDel1.io.inpToShift := (
+    RegNext(
+      next=lsrDel1.io.inpToShift,
+      init=lsrDel1.io.inpToShift.getZero
+    )
+  )
+  lsrDel1.io.inpAmount := (
+    RegNext(
+      next=lsrDel1.io.inpAmount,
+      init=lsrDel1.io.inpAmount.getZero
+    )
+  )
+  asrDel1.io.inpToShift := (
+    RegNext(
+      next=asrDel1.io.inpToShift,
+      init=asrDel1.io.inpToShift.getZero
+    )
+  )
+  asrDel1.io.inpAmount := (
+    RegNext(
+      next=asrDel1.io.inpAmount,
+      init=asrDel1.io.inpAmount.getZero
+    )
+  )
+
   for (
     //(multiCycleBus, busIdx) <- cpuIo.multiCycleBusVec.view.zipWithIndex
     ((_, opInfo), busIdx)
@@ -3263,7 +3304,7 @@ case class SnowHouseCpuShift32LowLatency(
         def mainWidth = cfg.mainWidth
 
         val width: Int=cfg.mainWidth
-        val binop = InstrResult(cfg=cfg)(width=width)
+        //val binop = InstrResult(cfg=cfg)(width=width)
         val left = (
           //RegNext(
           //  next=srcVec(0),
@@ -3282,10 +3323,10 @@ case class SnowHouseCpuShift32LowLatency(
         val tempRight = Cat(right).asUInt(width - 1 downto 0)
         //binop.leftMsb := left(width - 1)
         //binop.rightMsb := right(width - 1)
-        binop.main.setAsReg() init(binop.main.getZero)
-        binop.main := (
-          tempLeft << tempRight(log2Up(width) downto 0)
-        )(binop.main.bitsRange)
+        //binop.main.setAsReg() init(binop.main.getZero)
+        //binop.main := (
+        //  tempLeft << tempRight(log2Up(width) downto 0)
+        //)(binop.main.bitsRange)
         dstVec(0) := (
           RegNext(
             next=dstVec(0),
@@ -3301,8 +3342,13 @@ case class SnowHouseCpuShift32LowLatency(
             )
           )
         )
+        when (multiCycleBus.nextValid) {
+          lslDel1.io.inpToShift := tempLeft
+          lslDel1.io.inpAmount := tempRight
+        }
         when (rBusValidVec(0)) {
-          dstVec(0) := binop.main
+          //dstVec(0) := binop.main
+          dstVec(0) := lslDel1.io.outpResult
         }
         multiCycleBus.ready := (
           rBusValidVec(1)
@@ -3332,12 +3378,33 @@ case class SnowHouseCpuShift32LowLatency(
         )
         val tempLeft = Cat(left).asUInt(width - 1 downto 0)
         val tempRight = Cat(right).asUInt(width - 1 downto 0)
-        //binop.leftMsb := left(width - 1)
-        //binop.rightMsb := right(width - 1)
-        binop.main.setAsReg() init(binop.main.getZero)
-        binop.main := (
-          tempLeft >> tempRight//(log2Up(cfg.mainWidth) downto 0)
-        ).resized
+        ////binop.leftMsb := left(width - 1)
+        ////binop.rightMsb := right(width - 1)
+        //binop.main.setAsReg() init(binop.main.getZero)
+        //binop.main := (
+        //  tempLeft >> tempRight//(log2Up(cfg.mainWidth) downto 0)
+        //).resized
+        //dstVec(0) := (
+        //  RegNext(
+        //    next=dstVec(0),
+        //    init=dstVec(0).getZero,
+        //  )
+        //)
+        ////dstVec(0) := binop.main
+        //val rBusValidVec = (
+        //  Vec.fill(2)(
+        //    RegNext(
+        //      next=multiCycleBus.nextValid,
+        //      init=False
+        //    )
+        //  )
+        //)
+        //when (rBusValidVec(0)) {
+        //  dstVec(0) := binop.main
+        //}
+        //multiCycleBus.ready := (
+        //  rBusValidVec(1)
+        //)
         dstVec(0) := (
           RegNext(
             next=dstVec(0),
@@ -3353,8 +3420,13 @@ case class SnowHouseCpuShift32LowLatency(
             )
           )
         )
+        when (multiCycleBus.nextValid) {
+          lsrDel1.io.inpToShift := tempLeft
+          lsrDel1.io.inpAmount := tempRight
+        }
         when (rBusValidVec(0)) {
-          dstVec(0) := binop.main
+          //dstVec(0) := binop.main
+          dstVec(0) := lsrDel1.io.outpResult
         }
         multiCycleBus.ready := (
           rBusValidVec(1)
@@ -3384,12 +3456,33 @@ case class SnowHouseCpuShift32LowLatency(
         )
         val tempLeft = Cat(left).asUInt(width - 1 downto 0)
         val tempRight = Cat(right).asUInt(width - 1 downto 0)
-        //binop.leftMsb := left(width - 1)
-        //binop.rightMsb := right(width - 1)
-        binop.main.setAsReg() init(binop.main.getZero)
-        binop.main := (
-          tempLeft.asSInt >> tempRight//(log2Up(cfg.mainWidth) downto 0)
-        ).asUInt.resized
+        ////binop.leftMsb := left(width - 1)
+        ////binop.rightMsb := right(width - 1)
+        //binop.main.setAsReg() init(binop.main.getZero)
+        //binop.main := (
+        //  tempLeft.asSInt >> tempRight//(log2Up(cfg.mainWidth) downto 0)
+        //).asUInt.resized
+        //dstVec(0) := (
+        //  RegNext(
+        //    next=dstVec(0),
+        //    init=dstVec(0).getZero,
+        //  )
+        //)
+        ////dstVec(0) := binop.main
+        //val rBusValidVec = (
+        //  Vec.fill(2)(
+        //    RegNext(
+        //      next=multiCycleBus.nextValid,
+        //      init=False
+        //    )
+        //  )
+        //)
+        //when (rBusValidVec(0)) {
+        //  dstVec(0) := binop.main
+        //}
+        //multiCycleBus.ready := (
+        //  rBusValidVec(1)
+        //)
         dstVec(0) := (
           RegNext(
             next=dstVec(0),
@@ -3405,8 +3498,13 @@ case class SnowHouseCpuShift32LowLatency(
             )
           )
         )
+        when (multiCycleBus.nextValid) {
+          asrDel1.io.inpToShift := tempLeft
+          asrDel1.io.inpAmount := tempRight
+        }
         when (rBusValidVec(0)) {
-          dstVec(0) := binop.main
+          //dstVec(0) := binop.main
+          dstVec(0) := asrDel1.io.outpResult
         }
         multiCycleBus.ready := (
           rBusValidVec(1)
@@ -4475,7 +4573,7 @@ object SnowHouseCpuWithDualRamSim extends App {
   //  "5",
   //)
   val testIdxRange = (
-    //0, 0,
+    0, 0,
     //1, 1,
     //2, 2,
     //3, 3,
@@ -4488,7 +4586,7 @@ object SnowHouseCpuWithDualRamSim extends App {
     10, 10,
   )
   val instrRamKindArr = Array[Int](
-    //0,
+    0,
     1,
     2,
     5,

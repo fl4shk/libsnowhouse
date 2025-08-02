@@ -107,6 +107,55 @@ case class SnowHousePipeStageArgs(
 //  cfg: SnowHouseConfig,
 //) extends Area {
 //}
+
+
+case class SnowHouseShiftIo(
+  //cfg: SnowHouseConfig,
+  mainWidth: Int,
+) extends Bundle {
+  val inpToShift = in(UInt(mainWidth bits))
+  val inpAmount = in(UInt(mainWidth bits))
+  val outpResult = out(UInt(mainWidth bits))
+}
+case class SnowHouseLslDel1(
+  mainWidth: Int,
+) extends Component {
+  val io = SnowHouseShiftIo(mainWidth=mainWidth)
+  io.outpResult.setAsReg() init(0x0)
+  io.outpResult := (
+    (
+      io.inpToShift << io.inpAmount(log2Up(mainWidth) downto 0)
+    )(
+      io.outpResult.bitsRange
+    )
+  )
+}
+case class SnowHouseLsrDel1(
+  mainWidth: Int,
+) extends Component {
+  val io = SnowHouseShiftIo(mainWidth=mainWidth)
+  io.outpResult.setAsReg() init(0x0)
+  io.outpResult := (
+    (
+      io.inpToShift >> io.inpAmount(log2Up(mainWidth) downto 0)
+    ).resize(io.outpResult.getWidth)
+    //(
+    //  io.outpResult.bitsRange
+    //)
+  )
+}
+case class SnowHouseAsrDel1(
+  mainWidth: Int,
+) extends Component {
+  val io = SnowHouseShiftIo(mainWidth=mainWidth)
+  io.outpResult.setAsReg() init(0x0)
+  io.outpResult := (
+    (
+      io.inpToShift.asSInt >> io.inpAmount(log2Up(mainWidth) downto 0)
+    ).resize(io.outpResult.getWidth).asUInt
+  )
+}
+
 case class BranchTgtBufElem(
   //mainWidth: Int,
   cfg: SnowHouseConfig,
