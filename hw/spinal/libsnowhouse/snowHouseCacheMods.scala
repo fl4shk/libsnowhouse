@@ -843,7 +843,10 @@ case class SnowHouseDataCache(
           Mux[UInt](
             //RegNext(rDoLoadHitLtWordWidthPipe.last),
             rDoLoadHitLtWordWidthPipe.last,
-            rBusDevData,
+            RegNext(
+              next=rBusDevData,
+              init=rBusDevData.getZero,
+            ),
             rdLineWord
           )
         )
@@ -885,7 +888,8 @@ case class SnowHouseDataCache(
     }
     when (
       //rDoLoadHitLtWordWidthPipe.last
-      rDoLoadHitLtWordWidthPipe(rDoLoadHitLtWordWidthPipe.size - 2)
+      //rDoLoadHitLtWordWidthPipe(rDoLoadHitLtWordWidthPipe.size - 2)
+      rDoLoadHitLtWordWidthPipe(rDoLoadHitLtWordWidthPipe.size - 3)
       //rState === State.HANDLE_DCACHE_LOAD_HIT_LT_WORD_WIDTH_PIPE_1
       //|| rState === State.HANDLE_DCACHE_STORE_HIT_LT_WORD_WIDTH_PIPE_1
     ) {
