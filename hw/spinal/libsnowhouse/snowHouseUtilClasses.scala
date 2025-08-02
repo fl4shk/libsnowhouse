@@ -997,6 +997,11 @@ case class SnowHouseDecodeExt(
   )(
     Bool()
   )
+  //val opIsAluShift = Vec.fill(
+  //  1
+  //)(
+  //  Bool()
+  //)
   //def opIsCpyNonJmpAlu = opIs(_opIsCpyNonJmpAluIdx)
   //def opIsAluShift = opIs(_opIsAluShiftIdx)
   //def opIsJmp = opIs(_opIsJmpIdx)
@@ -1087,9 +1092,9 @@ case class SnowHouseSplitOp(
   val aluOp = /*Flow*/(
     UInt(log2Up(cfg.aluOpInfoMap.size) bits)
   )
-  val aluShiftOp = /*Flow*/(
-    UInt(log2Up(cfg.aluShiftOpInfoMap.size + 1) bits)
-  )
+  //val aluShiftOp = /*Flow*/(
+  //  UInt(log2Up(cfg.aluShiftOpInfoMap.size + 1) bits)
+  //)
   val multiCycleOp = /*Flow*/(
     UInt(/*log2Up*/(cfg.multiCycleOpInfoMap.size) bits)
   )
@@ -1110,9 +1115,9 @@ case class SnowHouseSplitOp(
     cpyCpyuiAluNonShiftOp := (
       (1 << cpyCpyuiAluNonShiftOp.getWidth) - 1
     )
-    aluShiftOp := (
-      (1 << aluShiftOp.getWidth) - 1
-    )
+    //aluShiftOp := (
+    //  (1 << aluShiftOp.getWidth) - 1
+    //)
     multiCycleOp := 0x0
     opIsMemAccess := False
     jmpBrOp := (
@@ -1228,8 +1233,20 @@ case class SnowHousePipePayload(
     myArr
   } //simPublic()
   //val nonShiftModMemWord = UInt(cfg.mainWidth bits)
-  val shiftModMemWordValid = Bool()
-  val shiftModMemWord = UInt(cfg.mainWidth bits)
+  //val shiftModMemWordValid = (
+  //  Vec.fill(
+  //    //cfg.regFileCfg.modMemWordValidSize //+ 1
+  //    1
+  //  )(
+  //    Bool()
+  //  )
+  //)
+
+  //val shiftModMemWord = (
+  //  //Vec.fill(3)(
+  //    UInt(cfg.mainWidth bits)
+  //  //)
+  //)
   // `gprIdxVec` is to be driven by the class derived from
   // `SnowHousePipeStageInstrDecode`
   val gprIdxVec = Vec.fill(cfg.maxNumGprsPerInstr)(

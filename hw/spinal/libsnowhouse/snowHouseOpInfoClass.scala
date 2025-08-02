@@ -1846,7 +1846,9 @@ object AluShiftOpKind {
     }
   }
 }
-sealed trait MultiCycleOpKind extends OpKindBase
+sealed trait MultiCycleOpKind extends OpKindBase {
+  def isMultiCycleShift: Boolean
+}
 object MultiCycleOpKind {
   //--------
   case object Lsl extends MultiCycleOpKind {
@@ -1867,6 +1869,7 @@ object MultiCycleOpKind {
       )
     )
     def validArgsSet = _validArgsSet
+    def isMultiCycleShift: Boolean = true
   }
   case object Lsr extends MultiCycleOpKind {
     private val _validArgsSet = LinkedHashSet[
@@ -1886,6 +1889,7 @@ object MultiCycleOpKind {
       )
     )
     def validArgsSet = _validArgsSet
+    def isMultiCycleShift: Boolean = true
   }
   case object Asr extends MultiCycleOpKind {
     private val _validArgsSet = LinkedHashSet[
@@ -1905,6 +1909,7 @@ object MultiCycleOpKind {
       )
     )
     def validArgsSet = _validArgsSet
+    def isMultiCycleShift: Boolean = true
   }
   //--------
   case object Umul extends MultiCycleOpKind {
@@ -1948,6 +1953,7 @@ object MultiCycleOpKind {
       ),
     )
     def validArgsSet = _validArgsSet
+    def isMultiCycleShift: Boolean = false
   }
   case object Smul extends MultiCycleOpKind {
     private[libsnowhouse] val _validArgsSet = LinkedHashSet[
@@ -1975,6 +1981,7 @@ object MultiCycleOpKind {
       ),
     )
     def validArgsSet = _validArgsSet
+    def isMultiCycleShift: Boolean = false
   }
   case object Udiv extends MultiCycleOpKind {
     private[libsnowhouse] val _validArgsSet = LinkedHashSet[
@@ -2030,6 +2037,7 @@ object MultiCycleOpKind {
       //),
     )
     def validArgsSet = _validArgsSet
+    def isMultiCycleShift: Boolean = false
   }
   case object Sdiv extends MultiCycleOpKind {
     private[libsnowhouse] val _validArgsSet = LinkedHashSet[
@@ -2085,6 +2093,7 @@ object MultiCycleOpKind {
       //),
     )
     def validArgsSet = _validArgsSet
+    def isMultiCycleShift: Boolean = false
   }
   case object Umod extends MultiCycleOpKind {
     private[libsnowhouse] val _validArgsSet = LinkedHashSet[
@@ -2140,6 +2149,7 @@ object MultiCycleOpKind {
       //),
     )
     def validArgsSet = _validArgsSet
+    def isMultiCycleShift: Boolean = false
   }
   case object Smod extends MultiCycleOpKind {
     private[libsnowhouse] val _validArgsSet = LinkedHashSet[
@@ -2199,6 +2209,7 @@ object MultiCycleOpKind {
       //),
     )
     def validArgsSet = _validArgsSet
+    def isMultiCycleShift: Boolean = false
   }
   //case object UdivHiGprOutp extends MultiCycleOpKind {
   //  private[libsnowhouse] val _validArgsSet = LinkedHashSet[
