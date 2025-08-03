@@ -14,14 +14,15 @@
 //--------
 cpy r0, 0x0
 cpy r0, 0x0
-cpy r0, 0x0
+//cpy r0, 0x0
 cpy r1, _irq_handler
-//cpy ids, r1
+cpy ids, r1
 cpy r2, 0x1
-//cpy ie, r2
+cpy ie, r2
 lsl r1, r2, 3
-lsl r3, r1, r2
-cpy r3, 0x1000
+//lsl r3, r1, r2
+lsl r3, r2, 12
+//cpy r3, 0x1000
 cpy r4, 0x8
 cpy r5, _increment
 cpy sp, 0x800
@@ -115,6 +116,7 @@ jmp lr
 //--------
 _irq_handler:
 add r10, r10, 1
+//add r0, r0, r0
 ret ira 
 cpy r0, r0
 cpy r0, r0

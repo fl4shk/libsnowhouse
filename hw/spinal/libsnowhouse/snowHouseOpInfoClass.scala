@@ -916,6 +916,20 @@ object CpyOpKind {
           CondKind.Always
         ),
       ),
+      // taking an interrupt with Ids/Ira style interrupts
+      OpKindValidArgs(
+        dst=Array[HashSet[DstKind]](
+          HashSet(DstKind.Pc),
+          HashSet(DstKind.Ie),
+          HashSet(DstKind.Ira),
+        ),
+        src=Array[HashSet[SrcKind]](
+          HashSet(SrcKind.Ids),
+        ),
+        cond=HashSet[CondKind](
+          CondKind.Always
+        ),
+      ),
       OpKindValidArgs(
         // The Flare CPU's "ret ira" instruction.
         dst=Array[HashSet[DstKind]](

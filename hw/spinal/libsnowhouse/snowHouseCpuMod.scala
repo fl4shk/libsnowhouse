@@ -164,14 +164,14 @@ object SnowHouseCpuOp {
   def ShiftEtcSprKindAsrRc = (0x4, 0x0)
   def ShiftEtcSprKindAsrRaRbImm5 = (0x5, 0x0)
   def ShiftEtcSprKindAndRc = (0x6, 0x0)
-  def ShiftEtcSprKindAndReserved = (0x7, 0x0)
+  //def ShiftEtcSprKindAndReserved = (0x7, 0x0)
   //def ShiftEtcSprKindCpyRaIds = (0x7, 0x0)
-  def ShiftEtcSprKindCpyIdsRb = (0x8, 0x0)
-  def ShiftEtcSprKindCpyRaIra = (0x9, 0x0)
+  def ShiftEtcSprKindCpyIdsRb = (0x7, 0x0)
+  def ShiftEtcSprKindCpyRaIra = (0x8, 0x0)
   //def ShiftEtcSprKindCpyIraRb = (0xa, 0x0)
   //def ShiftEtcSprKindCpyRaIe = (0xb, 0x0)
-  def ShiftEtcSprKindCpyIeRb = (0xa, 0x0)
-  def ShiftEtcSprKindRetIra = (0xb, 0x0)
+  def ShiftEtcSprKindCpyIeRb = (0x9, 0x0)
+  def ShiftEtcSprKindRetIra = (0xa, 0x0)
   //def ShiftEtcSprKindReserved = (0xc, 0x0)
 
   //val AddRaPcSimm16 = mkOp(                   // 7, 0
@@ -304,7 +304,10 @@ object SnowHouseCpuOp {
   )
 
   val JlRaRb = mkOp(                          // 9, 2
-    "jl rA, rB", JmpKindJlRaRb, true
+    "jl rA, rB", JmpKindJlRaRb, false
+  )
+  val JmpieIds = mkOp(
+    "jmpie ids", JmpKindJmpieIds, true
   )
   //val JmpReserved = mkOp(                     // 9, 3
   //  "<JmpReserved>", JmpKindReserved, true
@@ -317,6 +320,7 @@ object SnowHouseCpuOp {
   def JmpKindBlts = (0x4, 0x0)
   def JmpKindBges = (0x5, 0x0)
   def JmpKindJlRaRb = (0x6, 0x0)
+  def JmpKindJmpieIds = (0x7, 0x0)
   //def AddPcKindMain = 0x3
   //def JmpKindReserved = (0x3, 0x0)
 
@@ -995,7 +999,7 @@ object SnowHouseCpuPipeStageInstrDecode {
       //  )
       //)
       Reg(
-        Vec.fill(upPayload.imm.size)(
+        Vec.fill(upPayload.imm.size + 1)(
           Flow(
             UInt(myTempPreImm.getWidth bits)
           )
@@ -1043,6 +1047,22 @@ object SnowHouseCpuPipeStageInstrDecode {
     //)
     upPayload.splitOp.setToDefault()
     //val rDoAluShiftPost = Reg(Bool(), init=False)
+    when (
+      //rPrevPreImm.last.fire
+      RegNextWhen(
+        next=instrIsPre,
+        cond=psId.up.isFiring,
+        init=instrIsPre.getZero,
+      )
+    ) {
+      upPayload.irqIraRegPc := (
+        RegNextWhen(
+          next=upPayload.irqIraRegPc,
+          cond=psId.up.isFiring,
+          init=upPayload.irqIraRegPc.getZero,
+        )
+      )
+    }
     def setOp(
       someOp: (Int, (Int, Int), String),
       immShift: Boolean=false,
@@ -1698,7 +1718,7 @@ object SnowHouseCpuPipeStageInstrDecode {
           optDoDefaultFunc=Some(doDefault),
           optSplitOp=Some(upPayload.splitOp),
           upIsFiring=cId.up.isFiring,
-          rPrevPreImm=rPrevPreImm(0),
+          rPrevPreImm=rPrevPreImm(rPrevPreImm.size - 2),
           //isPsId=true,
           regPc=upPayload.regPc,
           srcRegPc=(
@@ -1960,18 +1980,19 @@ object SnowHouseCpuPipeStageInstrDecode {
         doDefault(
           //doSetImm=false
         )
-        //when (
-        //  //!psId.rSavedExSetPc.fire
-        //  //!psId.upPayload.psIfRegPcSetItCnt(0)
-        //  //!upPayload.psIfRegPcSetItCnt(0)
-        //  RegNextWhen(
-        //    next=(!upPayload.psIfRegPcSetItCnt(0)),
-        //    cond=cId.up.isFiring,
-        //    init=False
-        //  )
-        //) {
+        when (
+          //!psId.rSavedExSetPc.fire
+          //!psId.upPayload.psIfRegPcSetItCnt(0)
+          //!upPayload.psIfRegPcSetItCnt(0)
+          //RegNextWhen(
+          //  next=(!upPayload.psIfRegPcSetItCnt(0)),
+          //  cond=cId.up.isFiring,
+          //  init=False
+          //)
+          !psId.shouldFinishJump
+        ) {
           instrIsPre := True
-        //}
+        }
         //when (!rMultiCycleState) {
           //when (cId.up.isFiring) {
           //  //if (cfg.irqCfg != None) {
@@ -2690,6 +2711,13 @@ object SnowHouseCpuOpInfoMap {
     )
   )
   opInfoMap += (
+    SnowHouseCpuOp.JmpieIds -> OpInfo.mkCpy(
+      dstArr=Array[DstKind](DstKind.Pc, DstKind.Ie, DstKind.Ira),
+      srcArr=Array[SrcKind](SrcKind.Ids),
+      cpyOp=CpyOpKind.Jmp,
+    )
+  )
+  opInfoMap += (
     SnowHouseCpuOp.RetIra -> OpInfo.mkCpy(
       dstArr=Array[DstKind](DstKind.Pc, DstKind.Ie),
       srcArr=Array[SrcKind](SrcKind.Ira),
@@ -2786,7 +2814,9 @@ case class SnowHouseCpuConfig(
   exposeRegFileWriteDataToIo: Boolean=false,
   exposeRegFileWriteAddrToIo: Boolean=false,
   exposeRegFileWriteEnableToIo: Boolean=false,
-  regFileMemRamStyle: String="distributed",
+  regFileMemRamStyle: String=(
+    "distributed"
+  ),
   icacheMemRamStyle: String=(
     //"auto"
     "block"
@@ -2935,7 +2965,10 @@ case class SnowHouseCpuConfig(
         ((tuple, opInfo), opInfoIdx)
         <- SnowHouseCpuOpInfoMap.opInfoMap.view.zipWithIndex
       ) {
-        if (tuple == SnowHouseCpuOp.JlRaRb) {
+        if (
+          //tuple == SnowHouseCpuOp.JlRaRb
+          tuple == SnowHouseCpuOp.JmpieIds
+        ) {
           myIrqJmpOp = opInfoIdx
         }
       }
@@ -2980,6 +3013,9 @@ case class SnowHouseCpuConfig(
         ),
       )
     ),
+    //supportPre=(
+    //  true,
+    //),
     supportUcode=(
       //true
       false

@@ -544,6 +544,7 @@ case class SnowHouseConfig(
   //maxNumGprsPerInstr: Int,
   //modOpCntWidth: Int=8,
   //supportInstrByteAddressing: Boolean=false,
+  //supportPre: Boolean=false,
   supportUcode: Boolean=false, // whether or not to support microcode
   instrCntWidth: Int=(
     //8
@@ -1137,8 +1138,8 @@ extends SpinalEnum(defaultEncoding=binaryOneHot) {
     Dont,
     PcPlusImm,
     RdMemWord,
-    Ira//,
-    //Ids
+    Ira,
+    Ids
     = newElement()
 }
 case class SnowHousePipePayload(
@@ -1323,6 +1324,9 @@ case class SnowHousePipePayload(
   ////val myHistRegPcPlusInstrSize = Vec.fill(myHistRegPc.size)(
   //  /*Flow*/(UInt(cfg.mainWidth bits))//.simPublic()
   //)
+
+  val irqIraRegPc = UInt(cfg.mainWidth bits)
+
   val regPcPlus1Instr = UInt(cfg.mainWidth bits)
   val psIfRegPcSetItCnt = UInt(2 bits)
   val regPcSetItCnt = Vec.fill(cfg.lowerMyFanoutRegPcSetItCnt)(

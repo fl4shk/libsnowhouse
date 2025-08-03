@@ -6,11 +6,12 @@ Disassembly of section .text:
 
 00000000 <_push_loop-0x54>:
 	...
-   c:	b0 00 00 01 	add	r1, r0, 176
+   8:	b0 00 00 01 	add	r1, r0, 176
+   c:	07 00 10 60 	cpy	ids, r1
   10:	01 00 00 02 	add	r2, r0, 1
-  14:	31 00 20 61 	lsl	r1, r2, 3
-  18:	00 00 12 63 	lsl	r3, r1, r2
-  1c:	00 10 00 03 	add	r3, r0, 4096
+  14:	09 00 20 60 	cpy	ie, r2
+  18:	31 00 20 61 	lsl	r1, r2, 3
+  1c:	c1 00 20 63 	lsl	r3, r2, 12
   20:	08 00 00 04 	add	r4, r0, 8
   24:	9c 00 00 05 	add	r5, r0, 156
   28:	00 08 00 0f 	add	sp, r0, 2048

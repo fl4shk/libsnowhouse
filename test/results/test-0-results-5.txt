@@ -2,7 +2,6 @@ Starting test:programStr:test/snowhousecpu-test-0.bin instrRamKind:5
 addr:1 data:176
 addr:2 data:1
 addr:1 data:8
-addr:3 data:16
 addr:3 data:4096
 addr:4 data:8
 addr:5 data:156
@@ -25,6 +24,7 @@ addr:8 data:2
 addr:9 data:3
 addr:9 data:4
 addr:7 data:1
+addr:10 data:257
 addr:8 data:1
 addr:9 data:2
 addr:9 data:3
@@ -36,6 +36,7 @@ addr:13 data:132
 addr:6 data:33
 addr:3 data:4100
 addr:1 data:7
+addr:10 data:258
 addr:13 data:148
 addr:7 data:4
 addr:8 data:5
@@ -43,13 +44,8 @@ addr:13 data:132
 addr:6 data:34
 addr:3 data:4104
 addr:1 data:6
+addr:10 data:259
 addr:13 data:148
 addr:7 data:5
-addr:8 data:4
-addr:13 data:132
-addr:6 data:35
-addr:3 data:4108
-addr:1 data:5
-addr:13 data:148
 Ending test.
 
