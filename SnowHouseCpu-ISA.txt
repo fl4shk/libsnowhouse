@@ -1,0 +1,115 @@
+--------
+Before:
+
+add rA, rB, rC
+add rA, rB, simm16
+sub rA, rB, rC
+sltu rA, rB, rC
+slts rA, rB, rC
+xor rA, rB, rC
+xor rA, rB, imm16
+or rA, rB, rC
+or rA, rB, simm16
+and rA, rB, simm16
+lsl rA, rB, rC
+lsl rA, rB, imm5
+lsr rA, rB, rC
+lsr rA, rB, imm5
+asr rA, rB, rC
+asr rA, rB, imm5
+and rA, rB, rC
+cpy ids, rB
+cpy rA, ira
+cpy ie, rB
+ret ira
+mul rA, rB, rC
+udiv rA, rB, rC
+sdiv rA, rB, rC
+umod rA, rB, rC
+smod rA, rB, rC
+ldr rA, rB, simm16
+str rA, rB, simm16
+lduh rA, rB, simm16
+ldsh rA, rB, simm16
+ldub rA, rB, simm16
+ldsb rA, rB, simm16
+sth rA, rB, simm16
+stb rA, rB, simm16
+bl rA, simm16
+beq rA, rB, simm16
+add rA, pc, simm16
+bne rA, rB, simm16
+bltu rA, rB, simm16
+bgeu rA, rB, simm16
+blts rA, rB, simm16
+bges rA, rB, simm16
+jl rA, rB
+pre simm16
+--------
+After:
+add rA, rB, rC
+add rA, rB, simm16
+sub rA, rB, rC
+sltu rA, rB, rC
+slts rA, rB, rC
+sltu rA, rB, imm16
+slts rA, rB, simm16
+xor rA, rB, rC
+xor rA, rB, imm16
+or rA, rB, rC
+or rA, rB, imm16
+and rA, rB, simm16
+lsl rA, rB, rC
+lsl rA, rB, imm5
+lsr rA, rB, rC
+lsr rA, rB, imm5
+asr rA, rB, rC
+asr rA, rB, imm5
+and rA, rB, rC
+cpy ids, rB
+cpy rA, ira
+cpy ie, rB
+ret ira
+mul rA, rB, rC
+udiv rA, rB, rC
+sdiv rA, rB, rC
+umod rA, rB, rC
+smod rA, rB, rC
+ldr rA, rB, simm16
+str rA, rB, simm16
+lduh rA, rB, simm16
+ldsh rA, rB, simm16
+ldub rA, rB, simm16
+ldsb rA, rB, simm16
+sth rA, rB, simm16
+stb rA, rB, simm16
+beq rA, rB, simm16
+add rA, pc, simm16
+bne rA, rB, simm16
+bltu rA, rB, simm16
+bgeu rA, rB, simm16
+blts rA, rB, simm16
+bges rA, rB, simm16
+jl rA, rB
+bl rA, simm24
+--------
+
+Notes on Changes (August 2025):
+* `sltu`/`slts`
+	* Support versions of these two with an immediate value argument
+		* `sltu` immediate should be `uint16_t`
+	* This change requires changing the GCC backend.
+* `or` immediate:
+	* change immediate value argument to `uint16_t`
+* pc-relative branches (including `bl`)
+	* increase size of immediates for branches (including `bl`)
+	* left shift the immediate value by 2
+	* these two changes need to be supported in the Binutils port.
+* add full product instructions and 64-bit div/mod
+	* This change requires changing the GCC backend.
+* Interrupts stuff:
+	* support both "to" and "from" versions of `cpy` 
+	* `ie` will be store inside of `ids`
+* Possible idea:
+	* Support 64-bit add/sub/sltu/slts/shifts
+	* These could use register pairs.

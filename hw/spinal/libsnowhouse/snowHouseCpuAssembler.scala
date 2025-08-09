@@ -661,7 +661,7 @@ object xor {
     imm: SnowHouseCpuExpr
   ) = {
     InstructionAsmStmt(
-      op=SnowHouseCpuOp.XorRaRbImm16,
+      op=SnowHouseCpuOp.XorRaRbSimm16,
       rA=rA,
       rB=rB,
       rC=SnowHouseCpuRegs.r0,
@@ -960,33 +960,33 @@ object bz {
   //  )
   //}
 }
-object bl {
-  def apply(
-    rA: Gpr,
-    imm: SnowHouseCpuExpr,
-  ) = {
-    InstructionAsmStmt(
-      op=SnowHouseCpuOp.BlSimm,
-      rA=rA,
-      rB=(
-        rA
-        //SnowHouseCpuRegs.r0
-      ),
-      rC=Gpr(SnowHouseCpuOp.BlSimm._2._1),
-      imm=(
-        imm - SnowHouseCpuExpr.Dot //- 4
-      ),
-    )
-  }
-  def apply(
-    imm: SnowHouseCpuExpr,
-  ): AsmStmt = {
-    apply(
-      rA=SnowHouseCpuRegs.lr,
-      imm=imm,
-    )
-  }
-}
+//object bl {
+//  def apply(
+//    rA: Gpr,
+//    imm: SnowHouseCpuExpr,
+//  ) = {
+//    InstructionAsmStmt(
+//      op=SnowHouseCpuOp.BlRaSimm24,
+//      rA=rA,
+//      rB=(
+//        rA
+//        //SnowHouseCpuRegs.r0
+//      ),
+//      rC=Gpr(SnowHouseCpuOp.BlRaSimm24._2._1),
+//      imm=(
+//        imm - SnowHouseCpuExpr.Dot //- 4
+//      ),
+//    )
+//  }
+//  def apply(
+//    imm: SnowHouseCpuExpr,
+//  ): AsmStmt = {
+//    apply(
+//      rA=SnowHouseCpuRegs.lr,
+//      imm=imm,
+//    )
+//  }
+//}
 object bne {
   def apply(
     rA: Gpr,

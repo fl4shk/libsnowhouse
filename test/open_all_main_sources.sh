@@ -1,0 +1,1 @@
+nvim ./snowhousecpu-test-0.s ./snowhousecpu-test-1.s ./snowhousecpu-test-2.s ./snowhousecpu-test-3.s ./snowhousecpu-test-4.s ./snowhousecpu-test-5.s ./snowhousecpu-test-6.s ./snowhousecpu-test-7.s ./snowhousecpu-test-8.s ./snowhousecpu-test-9.s ./snowhousecpu-test-10.s

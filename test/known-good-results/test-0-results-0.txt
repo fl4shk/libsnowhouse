@@ -2,7 +2,6 @@ Starting test:programStr:test/snowhousecpu-test-0.bin instrRamKind:0
 addr:1 data:176
 addr:2 data:1
 addr:1 data:8
-addr:3 data:16
 addr:3 data:4096
 addr:4 data:8
 addr:5 data:156

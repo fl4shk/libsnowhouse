@@ -418,6 +418,13 @@ case class SnowHouseDataCache(
   val rSavedBusAddr = (
     Reg(cloneOf(rBusAddr), init=rBusAddr.getZero)
   )
+  val mySetRange = (
+    rSavedBusAddr.high - cacheCfg.tagWidth - 1
+    downto log2Up(cacheCfg.lineSizeBytes)
+  )
+  println(
+    s"mySetRange:${mySetRange} "
+  )
   val tempRdLineAttrsAddr = (
     Cat(
       rSavedRdLineAttrs.tag,

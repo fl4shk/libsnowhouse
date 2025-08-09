@@ -62,6 +62,12 @@ object SprKind {
   case object Lo extends SprKind {
     def idx: Int = 7
   }
+  case object LlScHi extends SprKind {
+    def idx: Int = 8
+  }
+  case object LlScLo extends SprKind {
+    def idx: Int = 9
+  }
   //case object Modhi extends SprKind {
   //  def idx: Int = 6
   //}
@@ -78,10 +84,26 @@ object HiddenRegKind {
   case object ModHiOutp extends HiddenRegKind
   //case object PopData extends HiddenRegKind
 }
+
+//sealed trait AtomicGprKind {
+//}
+//object AtomicGprKind {
+//  case object CmpxchgMemAddr extends AtomicGprKind
+//  case object CmpxchgOld extends AtomicGprKind
+//  case object CmpxchgNew extends AtomicGprKind
+//}
+
 // kinds of source operands of instructions
 sealed trait SrcKind
 object SrcKind {
   case object Gpr extends SrcKind
+  //case class AtomicGpr(
+  //  kind: AtomicGprKind
+  //) extends SrcKind
+  //def AtomicCmpxchgMemAddr = AtomicGpr(AtomicGprKind.CmpxchgMemAddr)
+  //def AtomicCmpxchgOld = AtomicGpr(AtomicGprKind.CmpxchgOld)
+  //def AtomicCmpxchgNew = AtomicGpr(AtomicGprKind.CmpxchgNew)
+
   // TODO: support `MultiGpr`
   //case object MultiGpr extends SrcKind
   //case object ZeroExtGpr extends SrcKind  // zero-extended
@@ -109,6 +131,8 @@ object SrcKind {
   def Sty = Spr(SprKind.Sty)
   def Hi = Spr(SprKind.Hi)
   def Lo = Spr(SprKind.Lo)
+  def LlScHi = Spr(SprKind.LlScHi)
+  def LlScLo = Spr(SprKind.LlScLo)
   //def Modhi = Spr(SprKind.Modhi)
   //def Modlo = Spr(SprKind.Modlo)
   //case object IndexReg extends SrcKind
@@ -139,6 +163,19 @@ object SrcKind {
 sealed trait DstKind
 object DstKind {
   case object Gpr extends DstKind
+  //case class AtomicGpr(
+  //  kind: AtomicGprKind
+  //) extends DstKind
+  //def AtomicCmpxchgMemAddrOverwriteGpr = (
+  //  AtomicGpr(AtomicGprKind.CmpxchgMemAddr)
+  //)
+  //def AtomicCmpxchgOldOverwriteGpr = (
+  //  AtomicGpr(AtomicGprKind.CmpxchgOld)
+  //)
+  //def AtomicCmpxchgNewOverwriteGpr = (
+  //  AtomicGpr(AtomicGprKind.CmpxchgNew)
+  //)
+
   // TODO: support `MultiGpr`
   //case object MultiGpr extends DstKind 
   case object Pc extends DstKind
@@ -160,6 +197,8 @@ object DstKind {
   def Sty = Spr(SprKind.Sty)
   def Hi = Spr(SprKind.Hi)
   def Lo = Spr(SprKind.Lo)
+  def LlScHi = Spr(SprKind.LlScHi)
+  def LlScLo = Spr(SprKind.LlScLo)
   //def Modhi = Spr(SprKind.Modhi)
   //def Modlo = Spr(SprKind.Modlo)
   //case object IndexReg extends DstKind
@@ -189,7 +228,7 @@ object MemAccessKind {
     isStore: Boolean,   // `None` means this is atomic
     //isPush: Boolean,            // `true` means to post-decrement
                                 // the register indicating an address
-    isAtomic: Boolean,
+    //isAtomicLlSc: Boolean,
     subKind: SubKind,
   ) extends MemAccessKind {
     //if (!isStore) {
@@ -215,48 +254,48 @@ object MemAccessKind {
     isSigned: Boolean,
     isStore: Boolean,
     //isPush: Boolean=false,
-    isAtomic: Boolean=false,
+    //isAtomicLlSc: Boolean=false,
   ) = Mem(
     isSigned=isSigned,
     isStore=isStore,
     //isPush=isPush,
-    isAtomic=isAtomic,
+    //isAtomicLlSc=isAtomicLlSc,
     subKind=SubKind.Sz8,
   )
   def Mem16(
     isSigned: Boolean,
     isStore: Boolean,
     //isPush: Boolean=false,
-    isAtomic: Boolean=false,
+    //isAtomicLlSc: Boolean=false,
   ) = Mem(
     isSigned=isSigned,
     isStore=isStore,
     //isPush=isPush,
-    isAtomic=isAtomic,
+    //isAtomicLlSc=isAtomicLlSc,
     subKind=SubKind.Sz16,
   )
   def Mem32(
     isSigned: Boolean,
     isStore: Boolean,
     //isPush: Boolean=false,
-    isAtomic: Boolean=false,
+    //isAtomicLlSc: Boolean=false,
   ) = Mem(
     isSigned=isSigned,
     isStore=isStore,
     //isPush=isPush,
-    isAtomic=isAtomic,
+    //isAtomicLlSc=isAtomicLlSc,
     subKind=SubKind.Sz32,
   )
   def Mem64(
     isSigned: Boolean,
     isStore: Boolean,
     //isPush: Boolean=false,
-    isAtomic: Boolean=false,
+    //isAtomicLlSc: Boolean=false,
   ) = Mem(
     isSigned=isSigned,
     isStore=isStore,
     //isPush=isPush,
-    isAtomic=isAtomic,
+    //isAtomicLlSc=isAtomicLlSc,
     subKind=SubKind.Sz64,
   )
 }
@@ -264,6 +303,7 @@ case class AddrCalcKindOptions(
   minNum: Int,
   maxNum: Option[Int],
   lslAmount: Option[Int],
+  startSrcIdx: Int=0,
 )
 sealed trait AddrCalcKind {
   //def limits: (Int, Option[Int]) // min, max
@@ -271,6 +311,23 @@ sealed trait AddrCalcKind {
   def options: AddrCalcKindOptions
 }
 object AddrCalcKind {
+  private[libsnowhouse] case class AtomicLlSc(
+    startSrcIdx: Int
+  ) extends AddrCalcKind {
+    private[libsnowhouse] val _options = AddrCalcKindOptions(
+      minNum=1,
+      maxNum=Some(1),
+      lslAmount=None,
+      startSrcIdx=startSrcIdx,
+    )
+    def options: AddrCalcKindOptions = _options
+  }
+  def AtomicLl() = (
+    AtomicLlSc(startSrcIdx=1)
+  )
+  def AtomicSc() = (
+    AtomicLlSc(startSrcIdx=2)
+  )
   case class AddReduce(
     //toIndexReg: Boolean,
     //fromIndexReg: Boolean,
@@ -555,13 +612,13 @@ object OpInfo {
     ret._multiCycleOp = multiCycleOp
     ret
   }
-  def mkLdSt(
+  private[libsnowhouse] def _innerMkLdSt(
     dstArr: Seq[DstKind],
     srcArr: Seq[SrcKind],
-    //loadOp: LoadOpKind,
     modify: MemAccessKind,
     cond: CondKind=CondKind.Always,
     addrCalc: AddrCalcKind=AddrCalcKind.AddReduce(),
+    cpyOp: CpyOpKind,
   ): OpInfo = {
     val ret = new OpInfo(
       dstArr=dstArr,
@@ -578,10 +635,70 @@ object OpInfo {
       },
       addrCalc=addrCalc,
     )
-    ret._cpyOp = CpyOpKind.Cpy
-    //ret._loadOp = loadOp
+    //ret._cpyOp = CpyOpKind.Cpy
+    ret._cpyOp = cpyOp
     ret
   }
+  def mkLdSt(
+    dstArr: Seq[DstKind],
+    srcArr: Seq[SrcKind],
+    //loadOp: LoadOpKind,
+    modify: MemAccessKind,
+    cond: CondKind=CondKind.Always,
+    addrCalc: AddrCalcKind=AddrCalcKind.AddReduce(),
+  ): OpInfo = {
+    //ret._loadOp = loadOp
+    _innerMkLdSt(
+      dstArr=dstArr,
+      srcArr=srcArr,
+      modify=modify,
+      cond=cond,
+      addrCalc=addrCalc,
+      cpyOp=CpyOpKind.Cpy,
+    )
+  }
+  //def mkAtomicCmpxchg(
+  //  dstArr: Seq[DstKind],
+  //  srcArr: Seq[SrcKind],
+  //  modify: MemAccessKind,
+  //  //cond: CondKind=CondKind.Always,
+  //  //addrCalc: AddrCalcKind=AddrCalcKind.AddReduce()
+  //): OpInfo = {
+  //  mkLdSt(
+  //    dstArr=dstArr,
+  //    srcArr=srcArr,
+  //    modify=modify,
+  //  )
+  //}
+  def mkAtomicLl(
+    dstArr: Seq[DstKind],
+    srcArr: Seq[SrcKind],
+    modify: MemAccessKind,
+  ): OpInfo = {
+    _innerMkLdSt(
+      dstArr=dstArr,
+      srcArr=srcArr,
+      modify=modify,
+      cond=CondKind.Always,
+      addrCalc=AddrCalcKind.AtomicLl(),
+      cpyOp=CpyOpKind.AtomicLl,
+    )
+  }
+  def mkAtomicSc(
+    dstArr: Seq[DstKind],
+    srcArr: Seq[SrcKind],
+    modify: MemAccessKind,
+  ): OpInfo = {
+    _innerMkLdSt(
+      dstArr=dstArr,
+      srcArr=srcArr,
+      modify=modify,
+      cond=CondKind.Always,
+      addrCalc=AddrCalcKind.AtomicSc(),
+      cpyOp=CpyOpKind.AtomicSc,
+    )
+  }
+
   //def mkStore(
   //  dstArr: Seq[DstKind],
   //  srcArr: Seq[SrcKind],
@@ -729,7 +846,7 @@ object CpyOpKind {
     ](
       OpKindValidArgs(
         // word
-        // load/store/atomic
+        // load/store
         dst=Array[HashSet[DstKind]](
           HashSet(
             DstKind.Gpr, //DstKind.AluFlags
@@ -758,6 +875,84 @@ object CpyOpKind {
           CondKind.Always
         ),
       ),
+      //OpKindValidArgs(
+      //  // word
+      //  // atomic cmpxchg rA:memAddr, rB:old, rC:new
+      //  dst=Array[HashSet[DstKind]](
+      //    HashSet(
+      //      DstKind.Gpr,
+      //      //DstKind.AtomicCmpxchgMemAddrOverwriteGpr,
+      //      //DstKind.AtomicCmpxchgOldOverwriteGpr,
+      //      //DstKind.AtomicCmpxchgNewOverwriteGpr,
+      //    ),
+      //  ),
+      //  src=Array[HashSet[SrcKind]](
+      //    HashSet(
+      //      SrcKind.AtomicCmpxchgMemAddr
+      //    ),
+      //    HashSet(
+      //      SrcKind.AtomicCmpxchgOld
+      //    ),
+      //    HashSet(
+      //      SrcKind.AtomicCmpxchgNew
+      //    ),
+      //  ),
+      //  cond=HashSet[CondKind](
+      //    CondKind.Always
+      //  ),
+      //),
+      //OpKindValidArgs(
+      //  // word
+      //  // atomic cmpxchg rA:new, rB:old, rC:memAddr
+      //  dst=Array[HashSet[DstKind]](
+      //    HashSet(
+      //      DstKind.Gpr,
+      //      //DstKind.AtomicCmpxchgMemAddrOverwriteGpr,
+      //      //DstKind.AtomicCmpxchgOldOverwriteGpr,
+      //      //DstKind.AtomicCmpxchgNewOverwriteGpr,
+      //    ),
+      //  ),
+      //  src=Array[HashSet[SrcKind]](
+      //    HashSet(
+      //      SrcKind.AtomicCmpxchgNew
+      //    ),
+      //    HashSet(
+      //      SrcKind.AtomicCmpxchgOld
+      //    ),
+      //    HashSet(
+      //      SrcKind.AtomicCmpxchgMemAddr
+      //    ),
+      //  ),
+      //  cond=HashSet[CondKind](
+      //    CondKind.Always
+      //  ),
+      //),
+      //OpKindValidArgs(
+      //  // word
+      //  // atomic cmpxchg rA:old, rB:new, rC:memAddr
+      //  dst=Array[HashSet[DstKind]](
+      //    HashSet(
+      //      DstKind.Gpr,
+      //      //DstKind.AtomicCmpxchgMemAddrOverwriteGpr,
+      //      //DstKind.AtomicCmpxchgOldOverwriteGpr,
+      //      //DstKind.AtomicCmpxchgNewOverwriteGpr,
+      //    ),
+      //  ),
+      //  src=Array[HashSet[SrcKind]](
+      //    HashSet(
+      //      SrcKind.AtomicCmpxchgOld
+      //    ),
+      //    HashSet(
+      //      SrcKind.AtomicCmpxchgNew
+      //    ),
+      //    HashSet(
+      //      SrcKind.AtomicCmpxchgMemAddr
+      //    ),
+      //  ),
+      //  cond=HashSet[CondKind](
+      //    CondKind.Always
+      //  ),
+      //),
       OpKindValidArgs(
         // word
         dst=Array[HashSet[DstKind]](
@@ -872,6 +1067,59 @@ object CpyOpKind {
       //  src=Array[HashSet[SrcKind]](
       //  ),
       //),
+    )
+    def validArgsSet = _validArgsSet
+  }
+  case object AtomicLl extends CpyOpKind {
+    // load-link
+    private[libsnowhouse] val _validArgsSet = LinkedHashSet[
+      OpKindValidArgs
+    ](
+      OpKindValidArgs(
+        // word
+        //dstSize=1, srcSize=1
+        dst=Array[HashSet[DstKind]](
+          HashSet(
+            DstKind.Gpr
+          )
+        ),
+        src=Array[HashSet[SrcKind]](
+          HashSet(
+            SrcKind.Gpr
+          )
+        ),
+        cond=HashSet[CondKind](
+          CondKind.Always
+        ),
+      )
+    )
+    def validArgsSet = _validArgsSet
+  }
+  case object AtomicSc extends CpyOpKind {
+    // load-link
+    private[libsnowhouse] val _validArgsSet = LinkedHashSet[
+      OpKindValidArgs
+    ](
+      OpKindValidArgs(
+        // word
+        //dstSize=1, srcSize=1
+        dst=Array[HashSet[DstKind]](
+          HashSet(
+            DstKind.Gpr,
+          ),
+        ),
+        src=Array[HashSet[SrcKind]](
+          HashSet(
+            SrcKind.Gpr,
+          ),
+          HashSet(
+            SrcKind.Gpr,
+          ),
+        ),
+        cond=HashSet[CondKind](
+          CondKind.Always
+        ),
+      )
     )
     def validArgsSet = _validArgsSet
   }

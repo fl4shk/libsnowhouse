@@ -15,7 +15,7 @@ Disassembly of section .text:
 
 00000020 <_start_loop>:
   20:	ff ff 70 07 	add	r7, r7, -1
-  24:	f8 ff 01 97 	bne	r7, r0, -8
+  24:	fe ff 01 a7 	bne	r7, r0, -8
 	...
 
 00000054 <_loop>:
@@ -25,7 +25,7 @@ Disassembly of section .text:
   60:	ff ff 20 02 	add	r2, r2, -1
 
 00000064 <_post_loop>:
-  64:	ec ff 01 92 	bne	r2, r0, -20
+  64:	fb ff 01 a2 	bne	r2, r0, -20
   68:	01 00 10 01 	add	r1, r1, 1
   6c:	01 00 20 02 	add	r2, r2, 1
   70:	01 00 30 03 	add	r3, r3, 1
@@ -34,7 +34,7 @@ Disassembly of section .text:
   7c:	01 00 60 06 	add	r6, r6, 1
   80:	01 00 70 07 	add	r7, r7, 1
 	...
-  a4:	68 ff 00 90 	beq	r0, r0, -152
+  a4:	da ff 00 a0 	beq	r0, r0, -152
   a8:	00 00 80 08 	add	r8, r8, 0
   ac:	00 00 80 08 	add	r8, r8, 0
   b0:	00 00 80 08 	add	r8, r8, 0

@@ -219,11 +219,20 @@ case class SnowHouseCacheConfig(
   val nonCachedRange = (
     addrWidth - 1 downto addrWidth - 1
   )
+  val setWidth = (
+    addrWidth - tagWidth - 1
+  )
+  val setRange = (
+    addrWidth - 1 - tagWidth - 1
+    downto log2Up(lineSizeBytes)
+  )
   println(
     s"isIcache:${isIcache}: "
     + s"tagWidth:${tagWidth} "
     + s"tagRange:${tagRange} "
-    + s"nonCachedRange:${nonCachedRange}"
+    + s"nonCachedRange:${nonCachedRange} "
+    + s"setWidth:${setWidth} "
+    + s"setRange:${setRange}"
   )
   //--------
   //--------
@@ -658,7 +667,7 @@ case class SnowHouseConfig(
   )
   // TODO: support more than 3 general purpose registers per instruction
   // (probably going up to 4 or 5 or something at max?)
-  val maxNumGprsPerInstr = regFileModRdPortCnt
+  val maxNumGprsPerInstr = regFileModRdPortCnt + 1
   assert(
     //4 >= (1 << instrCntWidth),
     instrCntWidth >= 3,
@@ -746,23 +755,23 @@ case class SnowHouseConfig(
       case MemAccessKind.NoMemAccess => {
       }
       case MemAccessKind.Mem(
-        isSigned, isStore, isAtomic, accSize
+        isSigned, isStore, /*isAtomicCmpxchg,*/ accSize
       ) => {
-        if (!isAtomic) {
+        //if (!isAtomicCmpxchg) {
           //if (!isStore) {
           //  loadOpInfoMap += (idx -> opInfo)
           //} else { // if (isStore)
           //  storeOpInfoMap += (idx -> opInfo)
           //}
           memAccOpInfoMap += (idx -> opInfo)
-        } else {
-          assert(
-            false,
-            s"Error: Atomic operations are not yet implemented: "
-            + s"opInfo(${opInfo}), instructionIndex:${idx}"
-          )
-          false
-        }
+        //} else {
+        //  assert(
+        //    false,
+        //    s"Error: Atomic operations are not yet implemented: "
+        //    + s"opInfo(${opInfo}), instructionIndex:${idx}"
+        //  )
+        //  false
+        //}
         //accSize match {
         //  case MemAccessSize.Sz8 => {
         //  }
@@ -849,6 +858,16 @@ case class SnowHouseConfig(
             nonMultiCycleOpInfoMap += (idx -> opInfo)
             cpyCpyuiAluNonShiftOpInfoMap += (idx -> opInfo)
           }
+          case CpyOpKind.AtomicLl => {
+            cpyCpyuiOpInfoMap += (idx -> opInfo)
+            nonMultiCycleOpInfoMap += (idx -> opInfo)
+            cpyCpyuiAluNonShiftOpInfoMap += (idx -> opInfo)
+          }
+          case CpyOpKind.AtomicSc => {
+            cpyCpyuiOpInfoMap += (idx -> opInfo)
+            nonMultiCycleOpInfoMap += (idx -> opInfo)
+            cpyCpyuiAluNonShiftOpInfoMap += (idx -> opInfo)
+          }
           case CpyOpKind.Jmp => { // non-relative jumps
             //assert(
             //  opInfo.dstArr.find(_ == DstKind.Pc) != None,
@@ -915,24 +934,36 @@ case class SnowHouseConfig(
           case MemAccessKind.NoMemAccess => {
           }
           case mem: MemAccessKind.Mem => {
-            if (cpyOpInfo.srcArr.size == 2) {
-              cpyOpInfo.srcArr(0) match {
-                case SrcKind.Gpr => {
-                  cpyOpInfo.srcArr(1) match {
-                    case imm: SrcKind.Imm => {
-                    }
+            cpyOpInfo._cpyOp match {
+              case CpyOpKind.AtomicLl => {
+              }
+              case CpyOpKind.AtomicSc => {
+              }
+              case _ => {
+                if (
+                  //!mem.isAtomicLlSc
+                  //&& 
+                  cpyOpInfo.srcArr.size == 2
+                ) {
+                  cpyOpInfo.srcArr(0) match {
                     case SrcKind.Gpr => {
-                      found = true
+                      cpyOpInfo.srcArr(1) match {
+                        case imm: SrcKind.Imm => {
+                        }
+                        case SrcKind.Gpr => {
+                          found = true
+                        }
+                        case _ => {
+                        }
+                      }
                     }
                     case _ => {
                     }
                   }
-                }
-                case _ => {
+                } else {
+                  found = true
                 }
               }
-            } else {
-              found = true
             }
           }
         }

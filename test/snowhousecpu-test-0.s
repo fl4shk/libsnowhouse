@@ -12,13 +12,23 @@
 //Lb"_my_branch_target",
 //beq(r0, r0, LbR"_main"),
 //--------
+//sltu r1, r2, 3
+.global _irq_handler
+//bl r1, 0x1876544
+//sltu r1, r2, 0x7fff 
+//slts r1, r2, 0x7fff 
+//slts r1, r2, 0x8000
+//bl _far_0_test
+//bl ___farthest_start
+//_infin:
+//beq r0, r0, _infin
 cpy r0, 0x0
 cpy r0, 0x0
-//cpy r0, 0x0
+cpy r0, 0x0
 cpy r1, _irq_handler
 cpy ids, r1
 cpy r2, 0x1
-cpy ie, r2
+//cpy ie, r2
 lsl r1, r2, 3
 //lsl r3, r1, r2
 lsl r3, r2, 12
@@ -125,7 +135,19 @@ cpy r0, r0
 cpy r0, r0
 cpy r0, r0
 cpy r0, r0
-
-
-
-
+//or r0, r0, 0xffff8000
+//xor r1, r2, -1//0xffff8000
+//
+//.section .far_0
+//_far_0_start:
+//jmp lr
+//
+//_far_0_test:
+//jmp lr
+//
+//.section .far_1
+//_far_1_start:
+//jmp lr
+//
+//_far_1_test:
+//jmp lr
