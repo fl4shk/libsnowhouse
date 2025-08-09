@@ -92,9 +92,9 @@ object SnowHouseCpuOp {
     "slts rA, rB, simm16", SltImmKindSltsSimm16, true
   )
   //def SltKindSltuRc = (0x0, 0x0)
-  def SltImmKindSltuImm16 = (0x0, 0x1)
+  def SltImmKindSltuImm16 = (0x0, 0x0)
   //def SltKindSltsRc = (0x1, 0x0)
-  def SltImmKindSltsSimm16 = (0x1, 0x1)
+  def SltImmKindSltsSimm16 = (0x1, 0x0)
   //--------
   val XorRaRbRc = mkOp(                     // 4, 0
     "xor rA, rB, rC", XorKindRc, false
@@ -1661,7 +1661,7 @@ object SnowHouseCpuPipeStageInstrDecode {
         //}
       }
       is (SltuRaRbImm16._1) {
-        switch (encInstr.imm16(0 downto 0)) {
+        switch (encInstr.rcIdx(0 downto 0)) {
           is (SltuRaRbImm16._2._1) {
             setOp(
               SltuRaRbImm16,
@@ -4784,8 +4784,8 @@ object SnowHouseCpuWithDualRamSim extends App {
     //5, 5,
     //6, 6,
     //7, 7,
-    8, 8,
-    9, 9,
+    //8, 8,
+    //9, 9,
     10, 10,
   )
   val instrRamKindArr = Array[Int](
