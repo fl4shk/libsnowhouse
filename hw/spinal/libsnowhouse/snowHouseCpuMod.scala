@@ -2981,11 +2981,19 @@ case class SnowHouseCpuConfig(
   regFileMemRamStyle: String=(
     "distributed"
   ),
-  icacheMemRamStyle: String=(
+  icacheWordMemRamStyle: String=(
     //"auto"
     "block"
   ),
-  dcacheMemRamStyle: String=(
+  icacheAttrsMemRamStyle: String=(
+    //"auto"
+    "block"
+  ),
+  dcacheWordMemRamStyle: String=(
+    //"auto"
+    "block"
+  ),
+  dcacheAttrsMemRamStyle: String=(
     //"auto"
     "block"
   ),
@@ -3115,12 +3123,14 @@ case class SnowHouseCpuConfig(
         icacheDepthWords=icacheDepthWords,
         icacheLineSizeBytes=icacheLineSizeBytes,
         icacheBusSrcNum=icacheBusSrcNum,
-        icacheMemRamStyle=icacheMemRamStyle,
+        icacheWordMemRamStyle=icacheWordMemRamStyle,
+        icacheAttrsMemRamStyle=icacheAttrsMemRamStyle,
         haveDcache=true,
         dcacheDepthWords=dcacheDepthWords,
         dcacheLineSizeBytes=dcacheLineSizeBytes,
         dcacheBusSrcNum=dcacheBusSrcNum,
-        dcacheMemRamStyle=dcacheMemRamStyle,
+        dcacheWordMemRamStyle=dcacheWordMemRamStyle,
+        dcacheAttrsMemRamStyle=dcacheAttrsMemRamStyle,
         totalNumBusHosts=2,
         optCacheBusSrcWidth=None,
       )

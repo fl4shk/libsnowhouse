@@ -9,7 +9,7 @@ Disassembly of section .text:
    c:	d8 00 00 01 	add	r1, r0, 216
   10:	07 00 10 70 	cpy	ids, r1
   14:	01 00 00 02 	add	r2, r0, 1
-  18:	31 00 20 71 	lsl	r1, r2, 49
+  18:	31 00 20 71 	lsl	r1, r2, 3
   1c:	01 00 00 02 	add	r2, r0, 1
   20:	00 10 00 03 	add	r3, r0, 4096
   24:	08 00 00 04 	add	r4, r0, 8

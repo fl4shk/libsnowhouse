@@ -310,7 +310,8 @@ case class SnowHouseSubConfig(
   ),
   icacheLineSizeBytes: Int=64,
   icacheBusSrcNum: Int=0,
-  icacheMemRamStyle: String="auto",
+  icacheWordMemRamStyle: String="auto",
+  icacheAttrsMemRamStyle: String="auto",
   //--------
   haveDcache: Boolean=true,
   dcacheDepthWords: Int=(
@@ -319,7 +320,8 @@ case class SnowHouseSubConfig(
   ),
   dcacheLineSizeBytes: Int=64,
   dcacheBusSrcNum: Int=1,
-  dcacheMemRamStyle: String="auto",
+  dcacheWordMemRamStyle: String="auto",
+  dcacheAttrsMemRamStyle: String="auto",
   //--------
   totalNumBusHosts: Int=2,
   optCacheBusSrcWidth: Option[Int]=None,
@@ -342,7 +344,8 @@ case class SnowHouseSubConfig(
       //srcWidth=srcWidth,
       srcId=icacheBusSrcNum,
       totalNumBusHosts=totalNumBusHosts,
-      lineWordMemRamStyle=icacheMemRamStyle,
+      lineWordMemRamStyle=icacheWordMemRamStyle,
+      lineAttrsMemRamStyle=icacheAttrsMemRamStyle,
       isIcache=true,
     )
   )
@@ -357,7 +360,8 @@ case class SnowHouseSubConfig(
       //srcWidth=srcWidth,
       srcId=dcacheBusSrcNum,
       totalNumBusHosts=totalNumBusHosts,
-      lineWordMemRamStyle=dcacheMemRamStyle,
+      lineWordMemRamStyle=dcacheWordMemRamStyle,
+      lineAttrsMemRamStyle=dcacheAttrsMemRamStyle,
       isIcache=false,
     )
   )
