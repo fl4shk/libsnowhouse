@@ -3223,7 +3223,7 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
   case class SetPcCmp(
     //mulAcc: LcvMulAcc32Del1
     //adder: LcvAddDel1,
-    cmpEqDel1: LcvCmpEqDel1,
+    //cmpEqDel1: LcvCmpEqDel1,
   ) extends Area {
     val rValid = (
       Reg(Bool(), init=False)
@@ -3272,12 +3272,12 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
         //),
         cmpEqIo=(
           //cmpEqIo
-          cmpEqDel1.io
-          //null
+          //cmpEqDel1.io
+          null
         ),
         optDsp=(
-          true
-          //false
+          //true
+          false
         ),
         optReg=true,
         //kind=LcvFastCmpEq.Kind.UseFastCarryChain,
@@ -3288,12 +3288,12 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
   //val mySetPcCmpEqAdder = LcvAddDel1(cfg.mainWidth + 1)
   //mySetPcCmpEqAdder.io.do_inv := False
 
-  val myCmpEqDel1ForEq = LcvCmpEqDel1(cfg.mainWidth)
+  //val myCmpEqDel1ForEq = LcvCmpEqDel1(cfg.mainWidth)
   val myPsExSetPcCmpEq = SetPcCmp(
-    cmpEqDel1=(
-      myCmpEqDel1ForEq
-      //null
-    )
+    //cmpEqDel1=(
+    //  myCmpEqDel1ForEq
+    //  //null
+    //)
   )
 
   //val rMyPsExSetPcCmpEqValid = Reg(Bool(), init=False)
@@ -3307,12 +3307,12 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
   //val myPsExSetPcCmpNe = /*Reg*/(UInt(cfg.mainWidth + 1 bits)) //init(0x0)
   //val myPsExSetPcCmpNe.myStickyCmp = Bool()
 
-  val myCmpEqDel1ForNe = LcvCmpEqDel1(cfg.mainWidth)
+  //val myCmpEqDel1ForNe = LcvCmpEqDel1(cfg.mainWidth)
   val myPsExSetPcCmpNe = SetPcCmp(
-    cmpEqDel1=(
-      myCmpEqDel1ForNe
-      //null
-    )
+    //cmpEqDel1=(
+    //  myCmpEqDel1ForNe
+    //  //null
+    //)
   )
 
   nextExSetPcValid := False
