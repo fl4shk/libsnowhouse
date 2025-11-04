@@ -3458,7 +3458,7 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
   //}
 
   val myPsExSetPcValid = (
-    /*LcvFastOrR*/(
+    LcvFastOrR(
       /*self=*/Vec[Bool](
         RegNext/*When*/(
           next=nextExSetPcValid,
@@ -3469,7 +3469,7 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
         //RegNext(myPsExSetPcCmpEq.myStickyCmp, init=False),
         myPsExSetPcCmpNe.myCmp.msb,
         //RegNext(myPsExSetPcCmpNe.myStickyCmp, init=False),
-      ).asBits.asUInt.orR
+      ).asBits.asUInt//.orR
       //optDsp=false
     )
   )
@@ -6933,7 +6933,7 @@ case class SnowHousePipeStageExecute(
   val tempTakeIrqCond = (
     cfg.irqCfg != None
   ) generate (
-    /*LcvFastAndR*/(
+    LcvFastAndR(
       Vec[Bool](
         cMid0Front.up.isValid,
         //RegNextWhen(
@@ -6944,7 +6944,7 @@ case class SnowHousePipeStageExecute(
         setOutpModMemWord.io.rIe,
         !setOutpModMemWord.io.shouldIgnoreInstr(0),
         //cMid0Front.up.isFiring,
-      ).asBits.asUInt.andR
+      ).asBits.asUInt//.andR
     )
   )
   val rHadIrqReady = (
@@ -7806,12 +7806,14 @@ case class SnowHousePipeStageExecute(
         //  //=/= 0x0
         //  //.orR
         //)
-        (
-          !rHaveDoneMultiCycleOp
-          && cMid0Front.up.isValid
-          && setOutpModMemWord.io.opIsAnyMultiCycle
-          //&& !setOutpModMemWord.rShouldIgnoreInstrState(2)
-          && !setOutpModMemWord.io.shouldIgnoreInstr(2)
+        LcvFastAndR(
+          Vec[Bool](
+            !rHaveDoneMultiCycleOp,
+            cMid0Front.up.isValid,
+            setOutpModMemWord.io.opIsAnyMultiCycle,
+            //&& !setOutpModMemWord.rShouldIgnoreInstrState(2)
+            !setOutpModMemWord.io.shouldIgnoreInstr(2),
+          ).asBits.asUInt
         )
       ) {
         //rMultiCycleOpState := (
