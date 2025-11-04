@@ -3458,8 +3458,8 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
   //}
 
   val myPsExSetPcValid = (
-    LcvFastOrR(
-      self=Vec[Bool](
+    /*LcvFastOrR*/(
+      /*self=*/Vec[Bool](
         RegNext/*When*/(
           next=nextExSetPcValid,
           //cond=(!io.shouldIgnoreInstr.last),
@@ -3469,7 +3469,7 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
         //RegNext(myPsExSetPcCmpEq.myStickyCmp, init=False),
         myPsExSetPcCmpNe.myCmp.msb,
         //RegNext(myPsExSetPcCmpNe.myStickyCmp, init=False),
-      ).asBits.asUInt//.orR
+      ).asBits.asUInt.orR
       //optDsp=false
     )
   )
