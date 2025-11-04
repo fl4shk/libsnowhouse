@@ -6933,7 +6933,7 @@ case class SnowHousePipeStageExecute(
   val tempTakeIrqCond = (
     cfg.irqCfg != None
   ) generate (
-    LcvFastAndR(
+    /*LcvFastAndR*/(
       Vec[Bool](
         cMid0Front.up.isValid,
         //RegNextWhen(
@@ -6944,7 +6944,7 @@ case class SnowHousePipeStageExecute(
         setOutpModMemWord.io.rIe,
         !setOutpModMemWord.io.shouldIgnoreInstr(0),
         //cMid0Front.up.isFiring,
-      ).asBits.asUInt//.andR
+      ).asBits.asUInt.andR
     )
   )
   val rHadIrqReady = (
@@ -7806,14 +7806,14 @@ case class SnowHousePipeStageExecute(
         //  //=/= 0x0
         //  //.orR
         //)
-        LcvFastAndR(
+        /*LcvFastAndR*/(
           Vec[Bool](
             !rHaveDoneMultiCycleOp,
             cMid0Front.up.isValid,
             setOutpModMemWord.io.opIsAnyMultiCycle,
             //&& !setOutpModMemWord.rShouldIgnoreInstrState(2)
             !setOutpModMemWord.io.shouldIgnoreInstr(2),
-          ).asBits.asUInt
+          ).asBits.asUInt.andR
         )
       ) {
         //rMultiCycleOpState := (
