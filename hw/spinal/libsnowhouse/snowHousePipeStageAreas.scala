@@ -2858,6 +2858,7 @@ case class SnowHousePipeStageExecuteSetOutpModMemWordIo(
   def selRdMemWord(
     opInfo: OpInfo,
     idx: Int,
+    gprIdxAddend: Int=0,
   ): UInt = {
     def innerFunc(
       idx: Int,
@@ -2930,7 +2931,7 @@ case class SnowHousePipeStageExecuteSetOutpModMemWordIo(
         val tempIdx = idx
         opInfo.srcArr(tempIdx) match {
           case SrcKind.Gpr => {
-            rdMemWord(idx)
+            rdMemWord(idx + gprIdxAddend)
           }
           case SrcKind.Pc => {
             regPc
@@ -4072,9 +4073,9 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
   //io.psExSetPc.nextPc := (
   //  io.regPcPlusImm 
   //)
-  io.dbusHostPayload.data := io.rdMemWord(0) //selRdMemWord(0)
+  io.dbusHostPayload.data := io.rdMemWord(1) //selRdMemWord(0)
   if (cfg.allMainLdstUseGprPlusImm) {
-    io.dbusHostPayload.addr := io.rdMemWord(1) + io.imm(1)
+    io.dbusHostPayload.addr := io.rdMemWord(0) + io.imm(1)
   }
   io.dbusHostPayload.accKind := (
     io.inpDecodeExt(0).memAccessKind
@@ -4106,9 +4107,14 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
     opInfoIdx: Int,
   ): Unit = {
     def selRdMemWord(
-      srcArrIdx: Int
+      srcArrIdx: Int,
+      gprIdxAddend: Int=0,
     ): UInt = {
-      io.selRdMemWord(opInfo=opInfo, idx=srcArrIdx)
+      io.selRdMemWord(
+        opInfo=opInfo,
+        idx=srcArrIdx,
+        gprIdxAddend=gprIdxAddend,
+      )
     }
     assert(
       //opInfo.dstArr.size == 1 || opInfo.dstArr.size == 2
@@ -4248,7 +4254,7 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
                     io.modMemWordValid.foreach(current => {
                       current := True
                     })
-                    io.modMemWord(0) := selRdMemWord(0)
+                    io.modMemWord(0) := selRdMemWord(0, 1)
                   }
                   //val tempSubKind = (
                   //  mem.subKind match {

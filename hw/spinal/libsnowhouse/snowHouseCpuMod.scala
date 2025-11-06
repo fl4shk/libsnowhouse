@@ -1793,8 +1793,8 @@ object SnowHouseCpuPipeStageInstrDecode {
         //  setOp(LdrRaRbSimm16)
         //}
         //upPayload.gprIdxVec(0) := 0x0
-        upPayload.gprIdxVec(0) := encInstr.raIdx
-        upPayload.gprIdxVec(1) := encInstr.rbIdx
+        upPayload.gprIdxVec(0) := encInstr.rbIdx
+        upPayload.gprIdxVec(1) := encInstr.raIdx
         upPayload.gprIdxVec(2) := encInstr.raIdx
 
         switch (encInstr.rcIdx(2 downto 0)) {
@@ -4805,7 +4805,8 @@ object SnowHouseCpuWithDualRamSim extends App {
     //7, 7,
     //8, 8,
     //9, 9,
-    10, 10,
+    //10, 10,
+    11, 11
   )
   val instrRamKindArr = Array[Int](
     0,
@@ -4813,7 +4814,7 @@ object SnowHouseCpuWithDualRamSim extends App {
     2,
     5,
   )
-  for (testIdx <- 0 to 10) {
+  for (testIdx <- 0 to 11) {
     programStrArr += (
       s"test/snowhousecpu-test-${testIdx}.bin"
     )
