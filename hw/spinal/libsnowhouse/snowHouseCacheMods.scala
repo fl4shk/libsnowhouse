@@ -695,8 +695,12 @@ case class SnowHouseDataCache(
 
   def haveHit = (
     rdLineAttrs.fire
-    //currLineValid
-    && rdLineAttrs.tag === rBusAddrTag
+    //&& rdLineAttrs.tag === rBusAddrTag
+    && LcvFastCmpEq(
+      left=rdLineAttrs.tag,
+      right=rBusAddrTag,
+      cmpEqIo=null,
+    )._1
   )
 
   def doAllLineRamsReadSync(
@@ -777,10 +781,12 @@ case class SnowHouseDataCache(
     //doSetBusLdReady=false,
   )
   def nextBusAddrIsNonCached = (
-    io.bus.sendData.addr(cacheCfg.nonCachedRange) =/= 0x0
+    //io.bus.sendData.addr(cacheCfg.nonCachedRange) =/= 0x0
+    LcvFastOrR(io.bus.sendData.addr(cacheCfg.nonCachedRange))
   )
   def rBusAddrIsNonCached = (
-    (rBusAddr(cacheCfg.nonCachedRange) =/= 0x0)
+    //(rBusAddr(cacheCfg.nonCachedRange) =/= 0x0)
+    LcvFastOrR(rBusAddr(cacheCfg.nonCachedRange))
     //init(False)
   )
   def rBusAddrTag = (
@@ -1121,6 +1127,13 @@ case class SnowHouseDataCache(
       when (
         haveHit && rHaveLoadWordFromCache
         && !rPleaseFinish(1).sFindFirst(_ === True)._1
+        //LcvFastAndR(
+        //  Vec[Bool](
+        //    haveHit,
+        //    rHaveLoadWordFromCache,
+        //    !rPleaseFinish(1).sFindFirst(_ === True)._1
+        //  ).asBits.asUInt
+        //)
       ) {
         // load (word) - dcache hit
         rPleaseFinish.foreach(current => {
@@ -1954,8 +1967,12 @@ case class SnowHouseInstrCache(
 
   val haveHit = (
     rdLineAttrs.fire
-    //currLineValid
-    && rdLineAttrs.tag === rBusAddrTag
+    //&& rdLineAttrs.tag === rBusAddrTag
+    && LcvFastCmpEq(
+      left=rdLineAttrs.tag,
+      right=rBusAddrTag,
+      cmpEqIo=null,
+    )._1
   )
 
   def doAllLineRamsReadSync(
@@ -2027,7 +2044,8 @@ case class SnowHouseInstrCache(
   //io.bus.ready := False
   doSetBusReadyEtc(False)
   def rBusAddrIsNonCached = (
-    (rBusAddr(cacheCfg.nonCachedRange) =/= 0x0)
+    //(rBusAddr(cacheCfg.nonCachedRange) =/= 0x0)
+    (LcvFastOrR(rBusAddr(cacheCfg.nonCachedRange)))
     //init(False)
   )
   def rBusAddrTag = (
