@@ -2487,64 +2487,10 @@ case class SnowHousePipeStageInstrDecode(
   upPayload(1).regPcPlusImm.allowOverride
   upPayload(1).regPcPlusImm(myRegPcRange) := (
     (
-      //Mux[SInt](
-      //  (
-      //    //RegNextWhen(
-      //    //  next=(
-      //        myPredictTkn
-      //    //  ),
-      //    //  cond=up.isFiring,
-      //    //  init=False,
-      //    //)
-      //  ),
-      //  (
-      //    //upPayload(1).myHistRegPc(1).asSInt
-      //    //upPayload(1).regPc.asSInt
-      //    //+ (2 * cfg.instrSizeBytes)
-      //    //RegNextWhen(
-      //    //  next=upPayload(1).branchTgtBufElem(0).dstRegPc.asSInt,
-      //    //  cond=up.isFiring,
-      //    //  init=upPayload(1).branchTgtBufElem(0).dstRegPc.asSInt.getZero,
-      //    //)
-      //    //upPayload(1).branchTgtBufElem(0).dstRegPc.asSInt
-      //  ),
-      //  (
-          //upPayload(1).branchTgtBufElem(1).srcRegPc.asSInt
-          //upPayload(1).
-          laggingRegPcMinus2InstrSize//.asSInt
-          + (
-            //upPayload(1).imm(2)(myRegPcRange).asSInt
-            upPayload(1).imm(2).asSInt
-          )
-          ////+ (1 * cfg.instrSizeBytes)
-          //- (2 * cfg.instrSizeBytes)
-          ////upPayload(1).regPc.asSInt
-          ////upPayload(1).myHistRegPc(2).asSInt
-          ////+ upPayload(1).imm(2).asSInt
-          //////- (1 * cfg.instrSizeBytes)
-          ////- (1 * cfg.instrSizeBytes)
-      //  )
-      //)
-      //+ upPayload(1).imm(2).asSInt
-      ////- (2 * cfg.instrSizeBytes)
-      //- (1 * cfg.instrSizeBytes)
-      ////- Mux[SInt](
-      ////  (
-      ////    upPayload(1).branchPredictTkn
-      ////    && upPayload(1).branchTgtBufElem(0).valid
-      ////    && !upPayload(1).branchTgtBufElem(0).dontPredict
-      ////  ),
-      ////  S(s"${cfg.mainWidth}'d2"),
-      ////  S(s"${cfg.mainWidth}'d0"),
-      ////)
-      ////+ Mux[SInt](
-      ////  upPayload(1).branchPredictTkn,
-      ////  (
-      ////    S(s"${cfg.mainWidth}'d0")
-      ////    //S(s"${cfg.mainWidth}'d${3 * cfg.instrSizeBytes}"),
-      ////  ),
-      ////  -S(s"${cfg.mainWidth}'d${(2 * cfg.instrSizeBytes)}"),
-      ////)
+      laggingRegPcMinus2InstrSize//.asSInt
+      + (
+        upPayload(1).imm(2).asSInt
+      )
     ).asUInt.resize(upPayload(1).regPcPlusImm(myRegPcRange).getWidth)
     //- (cfg.instrMainWidth.toLong / 8.toLong)
   )
@@ -3168,7 +3114,15 @@ case class SnowHousePipeStageExecuteSetOutpModMemWordIo(
     //1
     0
   )
-  def brCondIdx = Array[Int](0, 1)
+  def brCondIdx = (
+    if (
+      !cfg.optInvertTwoRegCmp
+    ) (
+      Array[Int](0, 1)
+    ) else (
+      Array[Int](1, 0)
+    )
+  )
   val haveRetIraState = (
     cfg.irqCfg match {
       case Some(irqCfg) => {

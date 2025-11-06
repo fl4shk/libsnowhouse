@@ -540,6 +540,7 @@ case class SnowHouseConfig(
   haveZeroReg: Option[Int],
   irqCfg: Option[SnowHouseIrqConfig],
   haveAluFlags: Boolean,
+  optInvertTwoRegCmp: Boolean=false,
   //encInstrType: HardType,
   //gprFileDepth: Int,
   //sprFileDepth: Int,

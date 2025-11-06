@@ -725,8 +725,10 @@ object SnowHouseCpuPipeStageInstrDecode {
     )
     val tempDontPredict = Bool()
     tempDontPredict := False
-    upPayload.gprIdxVec(0) := encInstr.raIdx.resized
-    upPayload.gprIdxVec(1) := encInstr.rbIdx.resized
+    //upPayload.gprIdxVec(0) := encInstr.raIdx.resized
+    //upPayload.gprIdxVec(1) := encInstr.rbIdx.resized
+    upPayload.gprIdxVec(0) := encInstr.rbIdx.resized
+    upPayload.gprIdxVec(1) := encInstr.raIdx.resized
     upPayload.gprIdxVec(2) := 0x0
     if (!isBl) {
       switch (encInstr.rcIdx(2 downto 0)) {
@@ -752,8 +754,14 @@ object SnowHouseCpuPipeStageInstrDecode {
             //encInstr.rbIdx === 0x0
           ) {
             setOp(AddRaPcSimm16)
-            upPayload.gprIdxVec(0) := 0x0
-            upPayload.gprIdxVec(1) := 0x0
+            //upPayload.gprIdxVec(0) := (
+            //  0x0
+            //  //encInstr.rbIdx.resized
+            //)
+            //upPayload.gprIdxVec(1) := (
+            //  0x0
+            //  //encInstr.raIdx.resized
+            //)
             upPayload.gprIdxVec(2) := encInstr.raIdx.resized
             ret.btbElem.valid := False
             tempDontPredict := True
@@ -831,7 +839,7 @@ object SnowHouseCpuPipeStageInstrDecode {
         }
       }
     } else {
-      upPayload.gprIdxVec(0) := 0x0
+      upPayload.gprIdxVec(0) := 0x0 //encInstr.rbIdx
       upPayload.gprIdxVec(1) := 0x0
       upPayload.gprIdxVec(2) := encInstr.raIdx
       setOp(
@@ -3035,6 +3043,7 @@ case class SnowHouseCpuConfig(
       )
     ),
     haveAluFlags=false,
+    optInvertTwoRegCmp=true,
     //encInstrType=SnowHouseCpuEncInstr(),
     subCfg={
       val icacheDepthWords = /*8192*/ 1024 //2048 // 4 kiB icache
