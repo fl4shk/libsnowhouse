@@ -2051,13 +2051,32 @@ case class SnowHousePipeStageInstrDecode(
 
     && upPayload(1).btbElemBranchKind(1).asBits(0)
     && (
-      (
-        upPayload(1).branchTgtBufElem(0).srcRegPc(
-          cfg.mySrcRegPcCmpEqRange
-        ) =/= upPayload(1).branchTgtBufElem(1).srcRegPc(
-          cfg.mySrcRegPcCmpEqRange
-        )
-      )
+      !LcvFastCmpEq(
+        left=(
+          upPayload(1).branchTgtBufElem(0).srcRegPc(
+            cfg.mySrcRegPcCmpEqRange
+          )
+        ),
+        right=(
+          upPayload(1).branchTgtBufElem(1).srcRegPc(
+            cfg.mySrcRegPcCmpEqRange
+          )
+        ),
+        cmpEqIo=(
+          null
+        ),
+        optDsp=(
+          false,
+        ),
+        optReg=false,
+      )._1
+      //(
+      //  upPayload(1).branchTgtBufElem(0).srcRegPc(
+      //    cfg.mySrcRegPcCmpEqRange
+      //  ) =/= upPayload(1).branchTgtBufElem(1).srcRegPc(
+      //    cfg.mySrcRegPcCmpEqRange
+      //  )
+      //)
       //|| (
       //  upPayload(1).branchTgtBufElem(0).dstRegPc
       //  =/= upPayload(1).branchTgtBufElem(1).srcRegPc
