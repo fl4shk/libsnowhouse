@@ -3,11 +3,12 @@ cpy r0, 0x0
 cpy r0, 0x0
 cpy r0, 0x0
 cpy r2, 0x1
-cpy r3, 0x800
+cpy r3, 0x400
 str r2, r3, 0x8
 ldr r4, r3, 0x8
 
 infin:
+//cpy r5, r2
 beq r0, r0, infin
 .rept 200
 //beq r0, r0, infin
