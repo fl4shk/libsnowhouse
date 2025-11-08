@@ -4,17 +4,15 @@ snowhousecpu-test-11.elf:     file format elf32-snowhousecpu
 
 Disassembly of section .text:
 
-00000000 <infin-0x20>:
+00000000 <fwd_br_dst-0x348>:
 	...
-   c:	00 02 00 01 	add	r1, r0, 512
-  10:	02 00 00 02 	add	r2, r0, 2
+   c:	02 00 00 02 	add	r2, r0, 2
+  10:	00 00 20 05 	add	r5, r2, 0
   14:	00 04 00 03 	add	r3, r0, 1024
-  18:	08 00 31 92 	str	r2, r3, 8
-  1c:	08 00 30 94 	ldr	r4, r3, 8
-
-00000020 <infin>:
-  20:	ff ff 00 a0 	beq	r0, r0, -4
-  24:	00 00 20 01 	add	r1, r2, 0
+  18:	00 02 00 01 	add	r1, r0, 512
+  1c:	08 00 31 92 	str	r2, r3, 8
+  20:	08 00 10 94 	ldr	r4, r1, 8
+  24:	c8 00 00 a0 	beq	r0, r0, 800
   28:	00 00 20 01 	add	r1, r2, 0
   2c:	00 00 20 01 	add	r1, r2, 0
   30:	00 00 20 01 	add	r1, r2, 0
@@ -214,3 +212,10 @@ Disassembly of section .text:
  338:	00 00 20 01 	add	r1, r2, 0
  33c:	00 00 20 01 	add	r1, r2, 0
  340:	00 00 20 01 	add	r1, r2, 0
+ 344:	00 00 20 01 	add	r1, r2, 0
+
+00000348 <fwd_br_dst>:
+ 348:	00 00 15 01 	add	r1, r1, r5
+
+0000034c <infin>:
+ 34c:	ff ff 00 a0 	beq	r0, r0, -4

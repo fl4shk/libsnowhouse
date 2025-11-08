@@ -836,11 +836,11 @@ case class SnowHousePipeStageInstrFetch(
     branchPredictor.io.upIsFiring := up.isFiring
   }
 
-  val rTakeJumpCntMaxVal = 2//1//3//2
+  val takeJumpCntMaxVal = cfg.takeJumpCntMaxVal
   val rTakeJumpCnt = {
     val temp = Reg(Flow(UInt(
       //cfg.mainWidth bits
-      log2Up(rTakeJumpCntMaxVal + 1) + 1 bits
+      log2Up(takeJumpCntMaxVal + 1) + 1 bits
     )))
     temp.init(temp.getZero)
     temp
@@ -1252,7 +1252,7 @@ case class SnowHousePipeStageInstrFetch(
       //stickyExSetPc(idx).valid := stickyExSetPc(idx).valid.getZero
       rTakeJumpCnt.valid := True
       rTakeJumpCnt.payload := (
-        rTakeJumpCntMaxVal
+        takeJumpCntMaxVal
       )
       val temp = (
         //--------
@@ -1942,6 +1942,9 @@ case class SnowHousePipeStageInstrDecode(
 
     //upPayload(1).psIfRegPcSetItCnt(0)
     //|| 
+
+    //--------
+    //upPayload(1).psIfRegPcSetItCnt(0)
     RegNextWhen(
       next=upPayload(1).psIfRegPcSetItCnt(0),
       cond=(
@@ -1950,6 +1953,7 @@ case class SnowHousePipeStageInstrDecode(
       ),
       init=upPayload(1).psIfRegPcSetItCnt(0).getZero,
     )
+    //--------
     //upPayload.psIfRegPcSetItCnt(0)
     //Bool()
   )
@@ -1972,45 +1976,38 @@ case class SnowHousePipeStageInstrDecode(
   //shouldFinishJump := upPayload.psIfRegPcSetItCnt(0)
 
   for (idx <- 0 until upPayload(1).regPcSetItCnt.size) {
-    //upPayload.regPcSetItCnt(idx) := upPayload.regPcSetItCnt(0)
-    //upPayload.regPcSetItCnt(idx) := 0x0
-    //upPayload.regPcSetItCnt(idx) := (
-    //  RegNextWhen(
-    //    next=upPayload.regPcSetItCnt(idx),
-    //    cond=up.isFiring,
-    //  )
-    //  init(0x0)
-    //)
+    val rPrevRegPcSetItCnt = (
+      RegNextWhen(
+        next=upPayload(1).regPcSetItCnt(idx),
+        cond=up.isFiring,
+        init=upPayload(1).regPcSetItCnt(idx).getZero,
+      )
+    )
     when (up.isFiring) {
       when (
         (
-          //rSavedExSetPc.fire
-          //&& (
-          //  (
-          //    upPayload.regPc
-          //    //upPayload.regPcMinus1Instr
-          //    //upPayload.regPcPlus1Instr
-          //    === (
-          //      (
-          //        rSavedExSetPc.nextPc
-          //        - cfg.instrSizeBytes
-          //        //- (cfg.instrMainWidth.toLong / 8.toLong).toLong
-          //      )
-          //    )
-          //  )
-          //)
           shouldFinishJump
         )
-        //|| (
-        //  upPayload.psIfRegPcSetItCnt === 0x1
-        //)
-        //upPayload.psExSetPc.fire
       ) {
-        //rSavedExSetPc.valid := False
-        //rSavedExSetPc.payload := rSavedExSetPc.payload.getZero
-        upPayload(1).regPcSetItCnt(idx) := 0x1
-      } otherwise {
+        upPayload(1).regPcSetItCnt(idx) := (
+          //0x2
+          0x1
+        )
+      } 
+      //elsewhen (
+      //  //RegNextWhen(
+      //  //  next=(upPayload(1).regPcSetItCnt(idx) > 0),
+      //  //  cond=up.isFiring,
+      //  //  init=False,
+      //  //)
+      //  rPrevRegPcSetItCnt > 0
+      //)
+      .otherwise {
         upPayload(1).regPcSetItCnt(idx) := 0x0
+        //upPayload(1).regPcSetItCnt(idx)
+        //upPayload(1).regPcSetItCnt(idx) := (
+        //  rPrevRegPcSetItCnt - 1
+        //)
       }
     }
   }
@@ -2773,7 +2770,8 @@ case class SnowHousePipeStageExecuteSetOutpModMemWordIo(
   val laggingRegPc = setAsInp(UInt(cfg.mainWidth bits))
   val regPcSetItCnt = setAsInp(Vec.fill(cfg.lowerMyFanoutRegPcSetItCnt)(
     UInt(
-      1 bits
+      //1 bits
+      cfg.regPcSetItCntWidth bits
     )
   ))
   val upIsFiring = setAsInp(Bool())
@@ -2794,8 +2792,10 @@ case class SnowHousePipeStageExecuteSetOutpModMemWordIo(
     //  SnowHouseShouldIgnoreInstrState().asBits.getWidth bits
     //)
   ) ///*in*/(Flow(PcChangeState()))
+
   val shouldIgnoreInstr = (
-    setAsOutp(
+    /*setAsOutp*/
+    setAsInp(
       Vec.fill(cfg.lowerMyFanoutRegPcSetItCnt)(
         Bool()
       )
@@ -3087,6 +3087,11 @@ case class SnowHousePipeStageExecuteSetOutpModMemWordIo(
   val branchPredictReplaceBtbElem = setAsInp(
     Bool()
   )
+  //val psExSetPcStateVec = setAsOutp(
+  //  Vec.fill(2)(
+  //    Bool()
+  //  )
+  //)
   val psExSetPc = (Flow(
     SnowHousePsExSetPcPayload(cfg=cfg)
   ))
@@ -3459,6 +3464,25 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
   //  Mux
   //)
   val tempPsExSetPcValid = Bool() //Reg(Bool(), init=False)
+  val rSavedTempPsExSetPcValid = Reg(Bool(), init=False)
+  val stickyTempPsExSetPcValid = (
+    tempPsExSetPcValid
+    || rSavedTempPsExSetPcValid
+  )
+  when (io.upIsValid) {
+    when (tempPsExSetPcValid) {
+      rSavedTempPsExSetPcValid := True
+    }
+  }
+  when (
+    //RegNext(
+    //  next=
+      io.upIsFiring,
+    //  init=False,
+    //)
+  ) {
+    rSavedTempPsExSetPcValid := False
+  }
   val tempBranchMispredictNotTaken = Bool()
   val tempBranchPredictTkn = (
     rose(
@@ -3534,43 +3558,11 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
     )
   ) {
     when (
-      //rose(
-        //RegNext(
-        //  next=(
-        //    //rose(
-        //      io.btbElemValid
-        //      && !io.btbElemDontPredict
-        //    //)
-        //  ),
-        //  init=False
-        //)
-        //|| (
-        //  /*RegNext*/(
-        //    /*next=*/io.branchPredictReplaceBtbElem//,
-        //    //init=io.branchPredictReplaceBtbElem.getZero
-        //  )
-        //)
-        //tempReplaceBtbElem
-      //)
       tempBtbFire
     ) {
       tempPsExSetPcValid := (
-        //RegNext(
-        //  next=nextTempPsExSetPcValid,
-        //  init=nextTempPsExSetPcValid.getZero,
-        //)
         nextTempPsExSetPcValid
         || tempBranchMispredictNotTaken
-        //|| tempPsExSetPcTaken
-        //|| (
-        //  //(
-        //  //  myPsExSetPcValid
-        //  //  ===
-        //  //)
-        //  //&& !tempReplaceBtbElem
-        //  //myPsExSetPcValid && tempBranchPredictTkn
-        //  tempBranchMispredictNotTaken
-        //)
       )
       tempBranchMispredictNotTaken := (
         (
@@ -3645,7 +3637,10 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
   //)
   io.psExSetPc.valid := (
     //RegNext(
-      /*next=*/tempPsExSetPcValid,
+      /*next=*/(
+        tempPsExSetPcValid
+        //stickyTempPsExSetPcValid
+      ),
     //  init=tempPsExSetPcValid.getZero,
     //)
   )
@@ -6122,12 +6117,12 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
 
   for (idx <- 0 until rShouldIgnoreInstrState.size) {
     //if (idx != 1) {
-      io.shouldIgnoreInstr(idx) := (
-        RegNext(
-          next=io.shouldIgnoreInstr(idx),
-          init=io.shouldIgnoreInstr(idx).getZero,
-        )
-      )
+      //io.shouldIgnoreInstr(idx) := (
+      //  RegNext(
+      //    next=io.shouldIgnoreInstr(idx),
+      //    init=io.shouldIgnoreInstr(idx).getZero,
+      //  )
+      //)
     //}
     //when (!rShouldIgnoreInstrState(idx).msb) {
     //  when (io.upIsFiring) {
@@ -6262,79 +6257,44 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
     //    nextShouldIgnoreInstrState(idx) := False
     //  }
     //}
-    val myNextShouldIgnoreInstr = Bool()
-    myNextShouldIgnoreInstr := True
+
+    //val myNextShouldIgnoreInstr = Bool()
+    //myNextShouldIgnoreInstr := True
+
     when (
-      //RegNext(
-      //  next=(
-      //    io.regPcSetItCnt(idx)(0)
-      //    && io.upIsFiring
-      //  ),
-      //  init=False
-      //)
       io.regPcSetItCnt(idx)(0)
-      //&& io.upIsFiring
       && io.upIsValid
-      //io.regPcSetItCnt(idx)(0)
-      ////&& RegNext(
-      ////  next=io.shouldIgnoreInstr(idx),
-      ////  init=False
-      ////)
-      ////&& io.upIsValid
-      ////&& io.upIsValid
-      ////&& io.downIsReady
-      ////&& io.upIsFiring
-      //&& io.upIsValid
-      //&& io.downIsReady
     ) {
-      //myNextShouldIgnoreInstr := False
-      //io.shouldIgnoreInstr(idx) := RegNextWhen(
-      //  next=myNextShouldIgnoreInstr,
-      //  cond=io.upIsFiring,
-      //  init=myNextShouldIgnoreInstr.getZero,
-      //)
-      io.shouldIgnoreInstr(idx) := False
+      //io.shouldIgnoreInstr(idx) := False
       when (
         io.rHadRetIra
       ) {
         nextIe := True
       }
-    } elsewhen (
-      //RegNext(io.psExSetPc.valid)
-      //&& io.psExSetPc.ready
-      //io.psExSetPc.valid
-      tempPsExSetPcValid
-      //&& RegNext(
-      //  next=(!io.shouldIgnoreInstr(idx)),
-      //  init=False,
-      //)
-      //&& io.upIsFiring
-      //&& io.upIsValid
-      //&& io.upIsValid
-      //&& !io.regPcSetItCnt(idx)(0)
-      //&& io.upIsFiring
-      //&& io.upIsValid
+    } 
+    //elsewhen (
+    //  tempPsExSetPcValid
+    //  //fell(
+    //  //stickyTempPsExSetPcValid
+    //  //)
+    //  //&& io.upIsValid
+    //  //&& io.upIsFiring
+    //  && (
+    //    RegNext(
+    //      next=(
+    //        !io.shouldIgnoreInstr(idx)
+    //        && io.upIsFiring
+    //      ),
+    //      init=False,
+    //    )
+    //    //|| (
+    //    //  io.takeIrq
+    //    //)
+    //  )
+    //) {
+    //  io.shouldIgnoreInstr(idx) := True
+    //}
 
-      //&& io.downIsReady
-      && (
-        RegNext(
-          next=(
-            !io.shouldIgnoreInstr(idx)
-            && io.upIsFiring
-          ),
-          init=False,
-        )
-        //|| (
-        //  io.takeIrq
-        //)
-      )
-      //&& RegNext(
-      //  next=io.upIsFiring,
-      //  init=False,
-      //)
-    ) {
-      io.shouldIgnoreInstr(idx) := True
-    }
     //when (
     //  io.regPcSetItCnt(idx)(0)
     //  //&& RegNext(
@@ -6607,21 +6567,55 @@ case class SnowHousePipeStageExecute(
       )
     )
   }
-  val nextSetOutpState = (
-    Vec.fill(3)(
+  //val nextSetOutpState = (
+  //  Vec.fill(3)(
+  //    Bool()
+  //  )
+  //)
+  //val rSetOutpState = (
+  //  RegNext(
+  //    next=nextSetOutpState,
+  //    //init=nextSetOutpState.getZero,
+  //  )
+  //)
+  //for (idx <- 0 until nextSetOutpState.size) {
+  //  rSetOutpState(idx).init(nextSetOutpState(idx).getZero)
+  //  nextSetOutpState(idx) := rSetOutpState(idx)
+  //}
+  val myShouldIgnoreInstr = (
+    Vec.fill(cfg.lowerMyFanoutRegPcSetItCnt)(
       Bool()
     )
   )
-  val rSetOutpState = (
-    RegNext(
-      next=nextSetOutpState,
-      //init=nextSetOutpState.getZero,
+  //val rTakeJumpState /*rTakeJumpCnt*/ = {
+  //  //val temp = Reg(Flow(UInt(
+  //  //  log2Up(cfg.takeJumpCntMaxVal + 1 /*+ 3*/) + 1 bits
+  //  //)))
+  //  //temp.init(temp.getZero)
+  //  //temp
+  //  Vec.fill(cfg.lowerMyFanoutRegPcSetItCnt)(
+  //    Reg(Bool(), init=False)
+  //  )
+  //}
+  //when (
+  //  rTakeJumpCnt.fire
+  //) {
+  //}
+  for (idx <- 0 until cfg.lowerMyFanoutRegPcSetItCnt) {
+    myShouldIgnoreInstr(idx) := (
+      //rTakeJumpState(idx)
+      RegNext(
+        next=myShouldIgnoreInstr(idx),
+        init=myShouldIgnoreInstr(idx).getZero,
+      )
     )
-  )
-  for (idx <- 0 until nextSetOutpState.size) {
-    rSetOutpState(idx).init(nextSetOutpState(idx).getZero)
-    nextSetOutpState(idx) := rSetOutpState(idx)
   }
+  //shouldIgnoreInstr := (
+  //  rTakeJumpState
+  //  //rTakeJumpCnt.fire
+  //  //&& 
+  //  //rTakeJumpCnt.payload.msb
+  //)
   outp := (
     RegNext(
       next=outp,
@@ -6929,7 +6923,9 @@ case class SnowHousePipeStageExecute(
         //  init=False,
         //),
         setOutpModMemWord.io.rIe,
-        !setOutpModMemWord.io.shouldIgnoreInstr(0),
+        //!setOutpModMemWord.io.shouldIgnoreInstr(0),
+        //!shouldIgnoreInstr
+        !myShouldIgnoreInstr(0)
         //cMid0Front.up.isFiring,
       ).asBits.asUInt.andR
     )
@@ -6996,7 +6992,9 @@ case class SnowHousePipeStageExecute(
     val tempCond = (
       //setOutpModMemWord.io.regPcSetItCnt(0)(0)
       //&& setOutpModMemWord.io.upIsValid
-      !setOutpModMemWord.io.shouldIgnoreInstr(0)
+      //!setOutpModMemWord.io.shouldIgnoreInstr(0)
+      //!shouldIgnoreInstr
+      !myShouldIgnoreInstr(0)
     )
     when (
       (
@@ -7436,63 +7434,275 @@ case class SnowHousePipeStageExecute(
   //    setOutpModMemWord.io.shouldIgnoreInstr(2)
   //  )
   //})
-  shouldIgnoreInstr := setOutpModMemWord.io.shouldIgnoreInstr.last
+
+  //shouldIgnoreInstr := setOutpModMemWord.io.shouldIgnoreInstr.last
+  //setOutpModMemWord.io.shouldIgnoreInstr.foreach(item => {
+  //  item := shouldIgnoreInstr
+  //})
+  for (idx <- 0 until cfg.lowerMyFanoutRegPcSetItCnt) {
+    setOutpModMemWord.io.shouldIgnoreInstr(idx) := (
+      myShouldIgnoreInstr(idx)
+    )
+  }
+
   pcChangeState.assignFromBits(
     setOutpModMemWord.io.pcChangeState.asBits
   )
   //when (setOutpModMemWord.io.psExSetPc.valid) {
   //}
-  val rPsExSetPcValid = (
-    //RegNext(next=setOutpModMemWord.io.psExSetPc.valid, init=False)
-    RegNext(
-      next=(
-        setOutpModMemWord.io.psExSetPc.valid
-        && (
-          RegNext(
+
+  //val rPsExSetPcStateVec = (
+  //  Vec.fill(setOutpModMemWord.io.psExSetPcStateVec.size)(
+  //    Reg(
+  //      Bool(),
+  //      init=False,
+  //    )
+  //  )
+  //)
+  //for (idx <- 0 until rPsExSetPcStateVec.size) {
+  //  setOutpModMemWord.io.psExSetPcStateVec(idx) := (
+  //    rPsExSetPcStateVec(idx)
+  //  )
+  //}
+  val nextPsExSetPcValid = Vec.fill(cfg.lowerMyFanoutRegPcSetItCnt)(
+    Bool()
+  )
+  for (idx <- 0 until cfg.lowerMyFanoutRegPcSetItCnt) {
+    nextPsExSetPcValid(idx) := (
+      setOutpModMemWord.io.psExSetPc.valid
+      //&& (
+      //  //!myShouldIgnoreInstr(idx)
+      //  //!rTakeJumpState(idx)
+      //  //&& cMid0Front.up.isValid
+      //  //&& 
+      //  RegNext(
+      //    next=(
+      //      !myShouldIgnoreInstr(idx)
+      //      && cMid0Front.up.isFiring
+      //    ),
+      //    init=False,
+      //  )
+      //  //&& RegNext(
+      //  //  next=cMid0Front.up.isFiring,
+      //  //  init=False,
+      //  //)
+      //  //&& RegNext(
+      //  //  next=cMid0Front.up.isFiring,
+      //  //  init=False,
+      //  //)
+      //  //RegNext(
+      //  //  next=(
+      //  //    //!setOutpModMemWord.io.shouldIgnoreInstr(0)
+      //  //    !shouldIgnoreInstr
+      //  //    && cMid0Front.up.isFiring
+      //  //  ),
+      //  //  init=False,
+      //  //)
+      //  //|| (
+      //  //  io.idsIraIrq.ready
+      //  //)
+      //)
+    )
+  }
+  //val nextPsExSetPcValid = (
+  //  setOutpModMemWord.io.psExSetPc.valid
+  //  && (
+  //    !shouldIgnoreInstr
+  //    && cMid0Front.up.isFiring
+  //    //RegNext(
+  //    //  next=(
+  //    //    //!setOutpModMemWord.io.shouldIgnoreInstr(0)
+  //    //    !shouldIgnoreInstr
+  //    //    && cMid0Front.up.isFiring
+  //    //  ),
+  //    //  init=False,
+  //    //)
+  //    //|| (
+  //    //  io.idsIraIrq.ready
+  //    //)
+  //  )
+  //)
+  //val rPsExSetPcValid = (
+  //  ////RegNext(next=setOutpModMemWord.io.psExSetPc.valid, init=False)
+  //  //RegNext(
+  //  //  next=(
+  //  //    nextPsExSetPcValid
+  //  //    //setOutpModMemWord.io.psExSetPc.valid
+  //  //    //&& (
+  //  //    //  !shouldIgnoreInstr
+  //  //    //  && cMid0Front.up.isFiring
+  //  //    //  //RegNext(
+  //  //    //  //  next=(
+  //  //    //  //    //!setOutpModMemWord.io.shouldIgnoreInstr(0)
+  //  //    //  //    !shouldIgnoreInstr
+  //  //    //  //    && cMid0Front.up.isFiring
+  //  //    //  //  ),
+  //  //    //  //  init=False,
+  //  //    //  //)
+  //  //    //  //|| (
+  //  //    //  //  io.idsIraIrq.ready
+  //  //    //  //)
+  //  //    //)
+  //  //  ),
+  //  //  init=False,
+  //  //)
+  //)
+
+  psExSetPc.valid := (
+    //rose(
+      RegNext(
+        next=(
+          nextPsExSetPcValid(0)
+          && RegNext(
             next=(
-              !setOutpModMemWord.io.shouldIgnoreInstr(0)
-              && cMid0Front.up.isFiring
+              !myShouldIgnoreInstr(0)
+              //&& cMid0Front.up.isFiring
+              //&& cMid0Front.up.isValid
             ),
             init=False,
           )
-          //|| (
-          //  io.idsIraIrq.ready
-          //)
-        )
-      ),
-      init=False,
-    )
+        ),
+        init=False
+      )
+    //)
+    //rPsExSetPcValid(0)
+    //RegNext(
+    //  next=psExSetPc.valid,
+    //  init=psExSetPc.valid.getZero,
+    //)
+    //False
+  )
+  val rSavedPsExSetPcValid = (
+    Reg(Bool(), init=False)
+  )
+  val stickyPsExSetPcValid = (
+    psExSetPc.valid
+    || rSavedPsExSetPcValid
+  )
+  when (
+    psExSetPc.valid
+    && !rSavedPsExSetPcValid
+  ) {
+    rSavedPsExSetPcValid := True
+  }
+  when (
+    rSavedPsExSetPcValid
     //&& RegNext(
     //  next=cMid0Front.up.isFiring,
     //  init=False,
     //)
+    && cMid0Front.up.isFiring
+  ) {
+    rSavedPsExSetPcValid := False
+  }
+  for (idx <- 0 until cfg.lowerMyFanoutRegPcSetItCnt) {
+    when (
+      psExSetPc.valid
+      //rose(stickyPsExSetPcValid)
+      //rSavedPsExSetPcValid
+      //RegNext(
+      //  next=psExSetPc.valid,
+      //  init=False,
+      //)
+      //rose(
+      //  RegNext(
+      //    next=(
+      //      nextPsExSetPcValid(idx)
+      //      && !myShouldIgnoreInstr(idx)
+      //      //&& cMid0Front.up.isFiring
+      //    ),
+      //    init=False,
+      //  )
+      //)
+    ) {
+      //rTakeJumpCnt.valid := True 
+      //rTakeJumpCnt.payload := cfg.takeJumpCntMaxVal //+ 3//- 1
+      ////rTakeJumpCnt.payload := 
+      myShouldIgnoreInstr(idx) := True
+      //rTakeJumpState(idx) := True
+    }
+    when (
+      cMid0Front.up.isValid
+      && RegNext(
+        next=myShouldIgnoreInstr(idx),
+        init=False,
+      )
+    ) {
+      when (outp.regPcSetItCnt(idx)(0)) {
+        myShouldIgnoreInstr(idx) := False
+      }
+    }
+    //when (cMid0Front.up.isFiring) {
+    //  when (
+    //    outp.regPcSetItCnt(idx)(1)
+    //  ) {
+    //    rTakeJumpState(idx) := False
+    //  }
+    //  //when (rTakeJumpCnt.fire) {
+    //  //  rTakeJumpCnt.payload := rTakeJumpCnt.payload - 1
+    //  //  when (rTakeJumpCnt.payload.msb) {
+    //  //    rTakeJumpCnt.valid := False
+    //  //    rTakeJumpCnt.payload := 0x0
+    //  //  }
+    //  //}
+    //}
+  }
 
+  //val rPsExSetPcValidState = (
+  //  Reg(Bool(), init=False)
+  //)
+  //when (cMid0Front.up.isValid) {
+  //  when (
+  //    !rPsExSetPcValidState
+  //    //&& psExSetPc.valid
+  //    && rPsExSetPcValid
+  //  ) {
+  //    rPsExSetPcValidState := True
+  //  }
+  //  when (cMid0Front.up.isFiring) {
+  //    when (
+  //      rPsExSetPcValidState
+  //      || rPsExSetPcValid
+  //    ) {
+  //      psExSetPc.valid := True
+  //    }
+  //    rPsExSetPcValidState := False
+  //  }
+  //}
 
-    //&& RegNext(!setOutpModMemWord.io.shouldIgnoreInstr(0), init=False)
-    //&& RegNext(
-    //  next=cMid0Front.up.isFiring,
-    //  init=False,
-    //)
+  //otherwise {
+  //  psExSetPc.valid := False
+  //}
 
-    //&& !setOutpModMemWord.io.shouldIgnoreInstr(0)
-    //&& RegNext(
-    //  next=(
-    //    //!setOutpModMemWord.io.shouldIgnoreInstr(0)
-    //    //&&
-    //    //(
-    //    //  //cMid0Front.up.isValid
-    //      cMid0Front.up.isFiring
-    //    //  //cMid0Front.down.isFiring
-    //    //  //cMid0Front.down.isReady
-    //    //)
-    //  ),
-    //  init=False
-    //)
-    //&& cMid0Front.down.isReady
-  )
-  psExSetPc.valid := (
-    rPsExSetPcValid
-  )
+  //when (
+  //  RegNext(
+  //    next=cMid0Front.up.isFiring,
+  //    init=False,
+  //  )
+  //  && psExSetPc.valid
+  //) {
+  //}
+
+  //when (cMid0Front.up.isValid) {
+  //  //when (cMid0Front.up.isFiring) {
+  //  //  psExSetPc.valid := (
+  //  //    //False
+  //  //    rPsExSetPcValid
+  //  //  )
+  //  //}
+
+  //  when (
+  //    !rPsExSetPcValidState
+  //    && rPsExSetPcValid
+  //  ) {
+  //    psExSetPc.valid := True
+  //    rPsExSetPcValidState := True
+  //  }
+  //  when (cMid0Front.up.isFiring) {
+  //    rPsExSetPcValidState := False
+  //  }
+  //}
+
   //psExSetPc.extValid := (
   //  //&& !outp.instrCnt.shouldIgnoreInstr
   //  !setOutpModMemWord.io.shouldIgnoreInstr(0)
@@ -7798,7 +8008,9 @@ case class SnowHousePipeStageExecute(
           && cMid0Front.up.isValid
           && setOutpModMemWord.io.opIsAnyMultiCycle
           //&& !setOutpModMemWord.rShouldIgnoreInstrState(2)
-          && !setOutpModMemWord.io.shouldIgnoreInstr(2)
+          //&& !setOutpModMemWord.io.shouldIgnoreInstr(2)
+          && !myShouldIgnoreInstr(2)
+          //&& !shouldIgnoreInstr
         )
       ) {
         //rMultiCycleOpState := (
@@ -8104,7 +8316,9 @@ case class SnowHousePipeStageExecute(
     outp.myExt.foreach(item => {
       item.fwdCanDoIt.foreach(item => {
         item := (
-          !setOutpModMemWord.io.shouldIgnoreInstr.last
+          //!setOutpModMemWord.io.shouldIgnoreInstr.last
+          !myShouldIgnoreInstr.last
+          //!shouldIgnoreInstr
           //&& !outp.shiftModMemWordValid.last
           //&& setOutpModMemWord.io.modMemWordValid(0)
         )

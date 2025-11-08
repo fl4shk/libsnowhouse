@@ -572,6 +572,13 @@ case class SnowHouseConfig(
   //splitAluOp: Boolean=false,
   optFormal: Boolean=false,
 ) {
+  def regPcSetItCntWidth = (
+    //2
+    1
+  )
+  def takeJumpCntMaxVal = (
+     2//1//3//2
+  )
   def haveBranchPredictor = (
     optBranchPredictorKind != None
   )
@@ -1368,7 +1375,8 @@ case class SnowHousePipePayload(
   val regPcSetItCnt = Vec.fill(cfg.lowerMyFanoutRegPcSetItCnt)(
     UInt(
       //cfg.instrCntWidth bits
-      1 bits
+      //2 bits
+      cfg.regPcSetItCntWidth bits
     ) //Bool()
   )
   val regPcPlusInstrSize = UInt(cfg.mainWidth bits)
