@@ -4100,6 +4100,7 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
   def innerFunc(
     opInfo: OpInfo,
     opInfoIdx: Int,
+    fullOpInfoIdx: Option[Int]=None,
   ): Unit = {
     def selRdMemWord(
       srcArrIdx: Int,
@@ -4503,16 +4504,20 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
             //  //!io.shouldIgnoreInstr
             //  !lowerMyFanoutShouldIgnoreInstr
             //) {
-              if (opInfo.dstArr.size > 1) {
-                when (io.gprIsNonZeroVec.last(0)) {
-                  io.modMemWord(0) := (
-                    //io.regPc + ((cfg.instrMainWidth / 8) * 1)
-                    io.regPcPlusInstrSize
-                  )
-                } otherwise {
-                  io.modMemWord(0) := (
-                    0x0
-                  )
+              if (
+                opInfo.dstArr.size > 1
+              ) {
+                if (fullOpInfoIdx.get != cfg.irqJmpOp) {
+                  when (io.gprIsNonZeroVec.last(0)) {
+                    io.modMemWord(0) := (
+                      //io.regPc + ((cfg.instrMainWidth / 8) * 1)
+                      io.regPcPlusInstrSize
+                    )
+                  } otherwise {
+                    io.modMemWord(0) := (
+                      0x0
+                    )
+                  }
                 }
               } else {
                 //io.modMemWord.foreach(item => {
@@ -5651,6 +5656,15 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
                     case SprKind.Lo => {
                       nextLo := tempDst
                     }
+                    case SprKind.Ids => {
+                      nextIds := tempDst
+                    }
+                    case SprKind.Ira => {
+                      nextIra := tempDst
+                    }
+                    case SprKind.Ie => {
+                      nextIe := tempDst(0)
+                    }
                     case _ => {
                       assert(
                         false,
@@ -5757,13 +5771,14 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
     //})
     switch (io.splitOp.jmpBrOp) {
       for (
-        ((_, opInfo), idx)
+        ((fullOpInfoIdx, opInfo), idx)
         <- cfg.jmpBrOpInfoMap.view.zipWithIndex
       ) {
         is (idx) {
           innerFunc(
             opInfo=opInfo,
             opInfoIdx=idx,
+            fullOpInfoIdx=Some(fullOpInfoIdx),
           )
           //io.shiftModMemWord := 0x0
         }

@@ -2113,6 +2113,121 @@ sealed trait MultiCycleOpKind extends OpKindBase {
 }
 object MultiCycleOpKind {
   //--------
+  case object CpyIdsGpr extends MultiCycleOpKind {
+    private val _validArgsSet = LinkedHashSet[
+      OpKindValidArgs
+    ](
+      OpKindValidArgs(
+        dst=Array[HashSet[DstKind]](
+          HashSet(DstKind.Ids)
+        ),
+        src=Array[HashSet[SrcKind]](
+          HashSet(SrcKind.Gpr),
+        ),
+        cond=HashSet[CondKind](
+          CondKind.Always
+        )
+      )
+    )
+    def validArgsSet = _validArgsSet
+    def isMultiCycleShift: Boolean = false
+  }
+  //case object CpyGprIds extends MultiCycleOpKind {
+  //  private val _validArgsSet = LinkedHashSet[
+  //    OpKindValidArgs
+  //  ](
+  //    OpKindValidArgs(
+  //      dst=Array[HashSet[DstKind]](
+  //        HashSet(DstKind.Gpr)
+  //      ),
+  //      src=Array[HashSet[SrcKind]](
+  //        HashSet(SrcKind.Ids),
+  //      ),
+  //      cond=HashSet[CondKind](
+  //        CondKind.Always
+  //      )
+  //    )
+  //  )
+  //  def validArgsSet = _validArgsSet
+  //  def isMultiCycleShift: Boolean = false
+  //}
+  case object CpyIraGpr extends MultiCycleOpKind {
+    private val _validArgsSet = LinkedHashSet[
+      OpKindValidArgs
+    ](
+      OpKindValidArgs(
+        dst=Array[HashSet[DstKind]](
+          HashSet(DstKind.Ira)
+        ),
+        src=Array[HashSet[SrcKind]](
+          HashSet(SrcKind.Gpr),
+        ),
+        cond=HashSet[CondKind](
+          CondKind.Always
+        )
+      )
+    )
+    def validArgsSet = _validArgsSet
+    def isMultiCycleShift: Boolean = false
+  }
+  //case object CpyGprIra extends MultiCycleOpKind {
+  //  private val _validArgsSet = LinkedHashSet[
+  //    OpKindValidArgs
+  //  ](
+  //    OpKindValidArgs(
+  //      dst=Array[HashSet[DstKind]](
+  //        HashSet(DstKind.Gpr)
+  //      ),
+  //      src=Array[HashSet[SrcKind]](
+  //        HashSet(SrcKind.Ira),
+  //      ),
+  //      cond=HashSet[CondKind](
+  //        CondKind.Always
+  //      )
+  //    )
+  //  )
+  //  def validArgsSet = _validArgsSet
+  //  def isMultiCycleShift: Boolean = false
+  //}
+  case object CpyIeGpr extends MultiCycleOpKind {
+    private val _validArgsSet = LinkedHashSet[
+      OpKindValidArgs
+    ](
+      OpKindValidArgs(
+        dst=Array[HashSet[DstKind]](
+          HashSet(DstKind.Ie)
+        ),
+        src=Array[HashSet[SrcKind]](
+          HashSet(SrcKind.Gpr),
+        ),
+        cond=HashSet[CondKind](
+          CondKind.Always
+        )
+      )
+    )
+    def validArgsSet = _validArgsSet
+    def isMultiCycleShift: Boolean = false
+  }
+  //case object CpyGprIe extends MultiCycleOpKind {
+  //  private val _validArgsSet = LinkedHashSet[
+  //    OpKindValidArgs
+  //  ](
+  //    OpKindValidArgs(
+  //      dst=Array[HashSet[DstKind]](
+  //        HashSet(DstKind.Gpr)
+  //      ),
+  //      src=Array[HashSet[SrcKind]](
+  //        HashSet(SrcKind.Ie),
+  //      ),
+  //      cond=HashSet[CondKind](
+  //        CondKind.Always
+  //      )
+  //    )
+  //  )
+  //  def validArgsSet = _validArgsSet
+  //  def isMultiCycleShift: Boolean = false
+  //}
+  //--------
   case object Lsl extends MultiCycleOpKind {
     private val _validArgsSet = LinkedHashSet[
       OpKindValidArgs
