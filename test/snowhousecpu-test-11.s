@@ -10,11 +10,11 @@ str r2, r3, 0x8
 ldr r4, r1, 0x8
 //mul r4, r3, r2
 
-//infin:
+infin:
 //cpy r5, r2
 //add r5, r5, 1
-//beq r0, r0, infin
-beq r0, r0, fwd_br_dst
+beq r0, r0, infin
+//beq r0, r0, fwd_br_dst
 .rept 200
 //beq r0, r0, infin
 cpy r1, r2
@@ -23,7 +23,7 @@ cpy r1, r2
 fwd_br_dst:
 add r1, r1, r5
 
-infin:
-//cpy r5, r2
-//add r5, r5, 1
-beq r0, r0, infin
+//infin:
+////cpy r5, r2
+////add r5, r5, 1
+//beq r0, r0, infin
