@@ -983,6 +983,43 @@ case class SnowHouseConfig(
     }
     (!found)
   }
+  val onlyOneMultiCycleWriteToIdsOpInfo = {
+    var result: Option[OpInfo] = None
+    var foundMultiCycleCnt: Int = 0
+    var foundNonMultiCycle: Boolean = false
+    for ((_, opInfo) <- opInfoMap.view) {
+      if (
+        foundMultiCycleCnt < 2
+        && !foundNonMultiCycle
+      ) {
+        for (dst <- opInfo.dstArr.view) {
+          dst match {
+            case DstKind.Spr(sprKind) => {
+              if (sprKind == SprKind.Ids) {
+                opInfo.select match {
+                  case OpSelect.MultiCycle => {
+                    foundMultiCycleCnt += 1
+                    if (result != None) {
+                      result = Some(opInfo)
+                    }
+                  }
+                  case _ => {
+                    foundNonMultiCycle = true
+                  }
+                }
+              }
+            }
+            case _ => {
+            }
+          }
+        }
+      }
+    }
+    if (!(foundMultiCycleCnt == 1 && !foundNonMultiCycle)) {
+      result = None
+    }
+    result
+  }
 }
 
 //object SnowHouseFormalInstrCnt {

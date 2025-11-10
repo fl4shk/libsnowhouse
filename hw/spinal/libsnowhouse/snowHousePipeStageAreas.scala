@@ -5882,6 +5882,19 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
       //}
     }
   }
+  if (cfg.onlyOneMultiCycleWriteToIdsOpInfo != None) {
+    for (
+      ((_, opInfo), idx)
+      <- cfg.multiCycleOpInfoMap.view.zipWithIndex
+    ) {
+      if (opInfo == cfg.onlyOneMultiCycleWriteToIdsOpInfo.get) {
+        innerFunc(
+          opInfo=opInfo,
+          opInfoIdx=idx,
+        )
+      }
+    }
+  }
   switch (io.splitOp.multiCycleOp) {
     for (
       ((_, opInfo), idx)
@@ -5903,10 +5916,22 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
           )
         )
       ) {
-        innerFunc(
-          opInfo=opInfo,
-          opInfoIdx=idx,
-        )
+        cfg.onlyOneMultiCycleWriteToIdsOpInfo match {
+          case Some(writeToIdsOpInfo) => {
+            if (opInfo != writeToIdsOpInfo) {
+              innerFunc(
+                opInfo=opInfo,
+                opInfoIdx=idx,
+              )
+            }
+          }
+          case None => {
+            innerFunc(
+              opInfo=opInfo,
+              opInfoIdx=idx,
+            )
+          }
+        }
       }
     }
   }
