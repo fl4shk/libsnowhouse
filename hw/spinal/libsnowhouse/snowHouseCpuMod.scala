@@ -2715,11 +2715,18 @@ object SnowHouseCpuOpInfoMap {
   //  )
   //)
   opInfoMap += (
-    SnowHouseCpuOp.CpyIdsRb -> OpInfo.mkCpy(
+    SnowHouseCpuOp.CpyIdsRb -> OpInfo.mkMultiCycle(
       dstArr=Array[DstKind](DstKind.Ids),
       srcArr=Array[SrcKind](SrcKind.Gpr),
-      cpyOp=CpyOpKind.Cpy,
+      multiCycleOp=(
+        MultiCycleOpKind.CpyIdsGpr
+      ),
     )
+    //SnowHouseCpuOp.CpyIdsRb -> OpInfo.mkCpy(
+    //  dstArr=Array[DstKind](DstKind.Ids),
+    //  srcArr=Array[SrcKind](SrcKind.Gpr),
+    //  cpyOp=CpyOpKind.Cpy,
+    //)
     //SnowHouseCpuOp.CpyIdsRb -> OpInfo.mkAlu(
     //  dstArr=Array[DstKind](DstKind.Ids),
     //  srcArr=Array[SrcKind](SrcKind.Gpr, SrcKind.Gpr),
@@ -3935,6 +3942,60 @@ case class SnowHouseCpuShift32(
     }
   }
 }
+case class SnowHouseCpuCpy32(
+  cpuIo: SnowHouseIo,
+) extends Area {
+  def cfg = cpuIo.cfg
+  for (
+    ((_, opInfo), busIdx)
+    <- cfg.multiCycleOpInfoMap.view.zipWithIndex
+  ) {
+    opInfo.multiCycleOp.get match {
+      case MultiCycleOpKind.CpyIdsGpr => {
+        val multiCycleBus = cpuIo.multiCycleBusVec(busIdx)
+        def dstVec = multiCycleBus.recvData.dstVec
+        def srcVec = multiCycleBus.sendData.srcVec
+        def mainWidth = cfg.mainWidth
+        val rSrc0 = (
+          RegNextWhen(
+            next=(
+              RegNext(srcVec(0))
+              init(0x0)
+            ),
+            cond=rose(multiCycleBus.rValid)
+          )
+          init(0x0)
+        )
+        val rDst = (
+          Reg(
+            cloneOf(dstVec(0)),
+            init=dstVec(0).getZero,
+          )
+          setName(
+            "SnowHouseCpuCpy32_rDst"
+          )
+        )
+        multiCycleBus.ready := False
+        dstVec(0) := rDst
+        rDst := rSrc0
+        when (
+          RegNext(
+            next=RegNext(
+              next=rose(multiCycleBus.rValid),
+              init=False,
+            ),
+            init=False,
+          )
+        ) {
+          multiCycleBus.ready := True
+        }
+      }
+      case _ => {
+      }
+    }
+  }
+}
+
 case class SnowHouseCpuMul32(
   cpuIo: SnowHouseIo,
 ) extends Area {
@@ -4687,6 +4748,7 @@ case class SnowHouseCpuWithDualRam(
     //SnowHouseCpuShift32(cpuIo=cpu.io)
     SnowHouseCpuShift32LowLatency(cpuIo=cpu.io)
   )
+  val cpy32 = SnowHouseCpuCpy32(cpuIo=cpu.io)
   val mul32 = SnowHouseCpuMul32(cpuIo=cpu.io)
   val divmod32 = SnowHouseCpuDivmod32(cpuIo=cpu.io)
 
@@ -4810,7 +4872,7 @@ object SnowHouseCpuWithDualRamSim extends App {
   )
   val instrRamKindArr = Array[Int](
     //0,
-    //1,
+    1,
     2,
     5,
   )

@@ -3228,48 +3228,48 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
     //val cmpEq = (
     //  left === right
     //)
-    //val cmpEq = (
-    //  RegNext(
-    //    next=(
-    //      io.rdMemWord(io.brCondIdx(0)) === io.rdMemWord(io.brCondIdx(1))
-    //    ),
-    //    init=False
-    //  )
-    //)
-    val (cmpEq, cmpEqQ) = (
-      LcvFastCmpEq(
-        //left=RegNext/*When*/(
-        //  next=io.rdMemWord(io.brCondIdx(0)),
-        //  //cond=io.upIsValid,
-        //  init=io.rdMemWord(io.brCondIdx(0)).getZero,
-        //),
-        //right=RegNext/*When*/(
-        //  next=io.rdMemWord(io.brCondIdx(1)),
-        //  //cond=io.upIsValid,
-        //  init=io.rdMemWord(io.brCondIdx(1)).getZero,
-        //),
-        left=io.rdMemWord(io.brCondIdx(0)),
-        right=io.rdMemWord(io.brCondIdx(1)),
-        //mulAccIo=(
-        //  //mulAccIo
-        //  mulAcc.io
-        //),
-        //addIo=(
-        //  adder.io
-        //),
-        cmpEqIo=(
-          //cmpEqIo
-          //cmpEqDel1.io
-          null
+    val cmpEq = (
+      RegNext(
+        next=(
+          io.rdMemWord(io.brCondIdx(0)) === io.rdMemWord(io.brCondIdx(1))
         ),
-        optDsp=(
-          //true
-          false
-        ),
-        optReg=true,
-        //kind=LcvFastCmpEq.Kind.UseFastCarryChain,
+        init=False
       )
     )
+    //val (cmpEq, cmpEqQ) = (
+    //  LcvFastCmpEq(
+    //    //left=RegNext/*When*/(
+    //    //  next=io.rdMemWord(io.brCondIdx(0)),
+    //    //  //cond=io.upIsValid,
+    //    //  init=io.rdMemWord(io.brCondIdx(0)).getZero,
+    //    //),
+    //    //right=RegNext/*When*/(
+    //    //  next=io.rdMemWord(io.brCondIdx(1)),
+    //    //  //cond=io.upIsValid,
+    //    //  init=io.rdMemWord(io.brCondIdx(1)).getZero,
+    //    //),
+    //    left=io.rdMemWord(io.brCondIdx(0)),
+    //    right=io.rdMemWord(io.brCondIdx(1)),
+    //    //mulAccIo=(
+    //    //  //mulAccIo
+    //    //  mulAcc.io
+    //    //),
+    //    //addIo=(
+    //    //  adder.io
+    //    //),
+    //    cmpEqIo=(
+    //      //cmpEqIo
+    //      //cmpEqDel1.io
+    //      null
+    //    ),
+    //    optDsp=(
+    //      //true
+    //      false
+    //    ),
+    //    optReg=true,
+    //    //kind=LcvFastCmpEq.Kind.UseFastCarryChain,
+    //  )
+    //)
     //mulAcc.io <> mulAccIo
   }
   //val mySetPcCmpEqAdder = LcvAddDel1(cfg.mainWidth + 1)
@@ -6310,117 +6310,11 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
     //  io.shouldIgnoreInstr(idx) := True
     //}
 
-    //when (
-    //  io.regPcSetItCnt(idx)(0)
-    //  //&& RegNext(
-    //  //  next=io.shouldIgnoreInstr(idx),
-    //  //  init=False
-    //  //)
-    //  //&& io.upIsValid
-    //  //&& io.upIsValid
-    //  //&& io.downIsReady
-    //  //&& io.upIsFiring
-    //  && io.upIsValid
-    //  && io.downIsReady
-    //) {
-    //  //myNextShouldIgnoreInstr := False
-    //  //io.shouldIgnoreInstr(idx) := RegNextWhen(
-    //  //  next=myNextShouldIgnoreInstr,
-    //  //  cond=io.upIsFiring,
-    //  //  init=myNextShouldIgnoreInstr.getZero,
-    //  //)
-    //  io.shouldIgnoreInstr(idx) := False
-    //}
-
-    //when (!rShouldIgnoreInstrState(idx)) {
-    //}
     if (idx == 2) {
       when (io.shouldIgnoreInstr(idx)) {
         doShouldIgnoreState2()
       }
     }
-    //when (!rShouldIgnoreInstrState(idx)) {
-    //} otherwise {
-    //  when (io.psExSetPc.fire) {
-    //  }
-    //}
-    //switch (
-    //  Cat(
-    //    List(
-    //      rShouldIgnoreInstrState(idx),
-    //      //io.opIsJmp,
-    //      //(
-    //      //  io.upIsFiring
-    //      //  && io.regPcSetItCnt(idx)(0)
-    //      //)
-    //      //io.upIsFiring,
-    //      io.psExSetPc.fire,
-    //      io.regPcSetItCnt(idx)(0)
-    //    ).reverse
-    //  )
-    //) {
-    //  is (M"00-") {
-    //    //if (idx != 1) {
-    //      io.shouldIgnoreInstr(idx) := False
-    //    //}
-    //    //if (idx == 1) {
-    //    //  //io.psExSetPc.nextPc := (
-    //    //  //  io.regPcPlusImm 
-    //    //  //)
-    //    //  //io.shouldIgnoreInstr := False
-    //    //  doHandleSetNextPc()
-    //    //}
-    //  }
-    //  is (M"01-") {
-    //    //if (idx != 1) {
-    //      io.shouldIgnoreInstr(idx) := False
-    //    //}
-    //    //if (idx == 1) {
-    //    //  //io.shouldIgnoreInstr := False
-    //    //  //io.psExSetPc.nextPc := (
-    //    //  //  io.regPcPlusImm 
-    //    //  //)
-    //    //  doHandleSetNextPc()
-    //    //}
-    //    when (
-    //      io.upIsFiring
-    //    ) {
-    //      nextShouldIgnoreInstrState(idx) := True
-    //    }
-    //  }
-    //  is (M"1-0") {
-    //    //if (idx != 1) {
-    //      io.shouldIgnoreInstr(idx) := True
-    //    //}
-    //    if (idx == 0) {
-    //      //io.shouldIgnoreInstr := True
-    //    } else if (idx == 2) {
-    //      doShouldIgnoreState2()
-    //    }
-    //  }
-    //  is (M"1-1") {
-    //    //if (idx != 1) {
-    //      io.shouldIgnoreInstr(idx) := True
-    //    //}
-    //    if (idx == 0) {
-    //      //io.shouldIgnoreInstr := True
-    //    } else if (idx == 2) {
-    //      doShouldIgnoreState2()
-    //    }
-    //    when (
-    //      ////io.regPcSetItCnt.msb
-    //      io.upIsFiring
-    //      //&& io.regPcSetItCnt(idx)(0)
-    //    ) {
-    //      nextShouldIgnoreInstrState(idx) := False
-    //    }
-    //  }
-    //  //default {
-    //  //  if (idx != 1) {
-    //  //    io.shouldIgnoreInstr(idx) := True
-    //  //  }
-    //  //}
-    //}
   }
   //--------
   //when (io.takeIrq) {
@@ -7875,20 +7769,22 @@ case class SnowHousePipeStageExecute(
         )
         init(0x0)
       )
-      multiCycleBus.sendData.srcVec(1) := (
-        RegNext/*When*/(
-          setOutpModMemWord.io.selRdMemWord(
-            opInfo=opInfo,
-            idx=1,
-          ),
-          //cond=(
-          //  //True
-          //  //!myDoStall(stallKindMultiCycle)
-          //  rMultiCycleOpState === MultiCycleOpState.Idle
-          //),
+      if (multiCycleBus.sendData.srcVec.size > 1) {
+        multiCycleBus.sendData.srcVec(1) := (
+          RegNext/*When*/(
+            setOutpModMemWord.io.selRdMemWord(
+              opInfo=opInfo,
+              idx=1,
+            ),
+            //cond=(
+            //  //True
+            //  //!myDoStall(stallKindMultiCycle)
+            //  rMultiCycleOpState === MultiCycleOpState.Idle
+            //),
+          )
+          init(0x0)
         )
-        init(0x0)
-      )
+      }
     }
   }
   //io.dcacheHaveHazard := (
@@ -8675,7 +8571,7 @@ case class SnowHousePipeStageMem(
   //    ) {
   //      for (zdx <- 0 until cfg.regFileCfg.modRdPortCnt) {
   //        //for (idx <- 0 until cfg.regFileCfg.numMyUpExtDel2) 
-  //        //val idx = cfg.regFileCfg.numMyUpExDel2 - 1
+  //        //val idx = cfg.regFileCfg.numMyUpExtDel2 - 1
   //        myCurrExt.memAddrAlt(zdx) := (
   //          myCurrExt.memAddr(PipeMemRmw.modWrIdx)
   //        )
