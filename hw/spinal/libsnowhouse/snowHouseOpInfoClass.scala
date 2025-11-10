@@ -1867,11 +1867,14 @@ object AluOpKind {
       width: Int=cfg.mainWidth
     ) = {
       val ret = InstrResult(cfg=cfg)(width=width)
-      when (left < right) {
-        ret.main := 1
-      } otherwise {
-        ret.main := 0
-      }
+      //when (left < right) {
+      //  ret.main := 1
+      //} otherwise {
+      //  ret.main := 0
+      //}
+      ret.main := Cat(
+        left < right
+      ).asUInt.resize(ret.main.getWidth)
       ret.flagV := False
       ret.flagC := False
       ret
@@ -1904,11 +1907,14 @@ object AluOpKind {
       width: Int=cfg.mainWidth
     ) = {
       val ret = InstrResult(cfg=cfg)(width=width)
-      when (left.asSInt < right.asSInt) {
-        ret.main := 1
-      } otherwise {
-        ret.main := 0
-      }
+      //when (left.asSInt < right.asSInt) {
+      //  ret.main := 1
+      //} otherwise {
+      //  ret.main := 0
+      //}
+      ret.main := Cat(
+        left.asSInt < right.asSInt
+      ).asUInt.resize(ret.main.getWidth)
       ret.flagV := False
       ret.flagC := False
       ret
