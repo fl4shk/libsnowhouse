@@ -3228,48 +3228,48 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
     //val cmpEq = (
     //  left === right
     //)
-    val cmpEq = (
-      RegNext(
-        next=(
-          io.rdMemWord(io.brCondIdx(0)) === io.rdMemWord(io.brCondIdx(1))
-        ),
-        init=False
-      )
-    )
-    //val (cmpEq, cmpEqQ) = (
-    //  LcvFastCmpEq(
-    //    //left=RegNext/*When*/(
-    //    //  next=io.rdMemWord(io.brCondIdx(0)),
-    //    //  //cond=io.upIsValid,
-    //    //  init=io.rdMemWord(io.brCondIdx(0)).getZero,
-    //    //),
-    //    //right=RegNext/*When*/(
-    //    //  next=io.rdMemWord(io.brCondIdx(1)),
-    //    //  //cond=io.upIsValid,
-    //    //  init=io.rdMemWord(io.brCondIdx(1)).getZero,
-    //    //),
-    //    left=io.rdMemWord(io.brCondIdx(0)),
-    //    right=io.rdMemWord(io.brCondIdx(1)),
-    //    //mulAccIo=(
-    //    //  //mulAccIo
-    //    //  mulAcc.io
-    //    //),
-    //    //addIo=(
-    //    //  adder.io
-    //    //),
-    //    cmpEqIo=(
-    //      //cmpEqIo
-    //      //cmpEqDel1.io
-    //      null
+    //val cmpEq = (
+    //  RegNext(
+    //    next=(
+    //      io.rdMemWord(io.brCondIdx(0)) === io.rdMemWord(io.brCondIdx(1))
     //    ),
-    //    optDsp=(
-    //      //true
-    //      false
-    //    ),
-    //    optReg=true,
-    //    //kind=LcvFastCmpEq.Kind.UseFastCarryChain,
+    //    init=False
     //  )
     //)
+    val (cmpEq, cmpEqQ) = (
+      LcvFastCmpEq(
+        //left=RegNext/*When*/(
+        //  next=io.rdMemWord(io.brCondIdx(0)),
+        //  //cond=io.upIsValid,
+        //  init=io.rdMemWord(io.brCondIdx(0)).getZero,
+        //),
+        //right=RegNext/*When*/(
+        //  next=io.rdMemWord(io.brCondIdx(1)),
+        //  //cond=io.upIsValid,
+        //  init=io.rdMemWord(io.brCondIdx(1)).getZero,
+        //),
+        left=io.rdMemWord(io.brCondIdx(0)),
+        right=io.rdMemWord(io.brCondIdx(1)),
+        //mulAccIo=(
+        //  //mulAccIo
+        //  mulAcc.io
+        //),
+        //addIo=(
+        //  adder.io
+        //),
+        cmpEqIo=(
+          //cmpEqIo
+          //cmpEqDel1.io
+          null
+        ),
+        optDsp=(
+          //true
+          false
+        ),
+        optReg=true,
+        //kind=LcvFastCmpEq.Kind.UseFastCarryChain,
+      )
+    )
     //mulAcc.io <> mulAccIo
   }
   //val mySetPcCmpEqAdder = LcvAddDel1(cfg.mainWidth + 1)
