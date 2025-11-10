@@ -3934,7 +3934,10 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
       init=nextIds.getZero
     )
   )
-  nextIds := io.rIds
+  if (cfg.onlyOneMultiCycleWriteToIdsOpInfo == None) {
+    nextIds := io.rIds
+  }
+
   val nextIra = UInt(cfg.mainWidth bits)
   io.rIra := (
     RegNextWhen(
@@ -4101,6 +4104,7 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
     opInfo: OpInfo,
     opInfoIdx: Int,
     fullOpInfoIdx: Option[Int]=None,
+    isSingleWriteToIds: Boolean=false,
   ): Unit = {
     def selRdMemWord(
       srcArrIdx: Int,
@@ -5609,13 +5613,17 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
       }
       case OpSelect.MultiCycle => {
         //io.shiftModMemWord := 0x0
-        nextIndexReg := 0x0
+        if (!isSingleWriteToIds) {
+          nextIndexReg := 0x0
+        }
         for (
           ((_, innerOpInfo), idx)
           <- cfg.multiCycleOpInfoMap.view.zipWithIndex
         ) {
           if (opInfo == innerOpInfo) {
-            io.multiCycleOpInfoIdx := idx
+            if (!isSingleWriteToIds) {
+              io.multiCycleOpInfoIdx := idx
+            }
             for ((dst, dstIdx) <- opInfo.dstArr.view.zipWithIndex) {
               val tempDst = (
                 //modIo.multiCycleBusVec(idx).recvData.dstVec(dstIdx)
@@ -5657,7 +5665,12 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
                       nextLo := tempDst
                     }
                     case SprKind.Ids => {
-                      nextIds := tempDst
+                      if (
+                        isSingleWriteToIds
+                        || cfg.onlyOneMultiCycleWriteToIdsOpInfo == None
+                      ) {
+                        nextIds := tempDst
+                      }
                     }
                     case SprKind.Ira => {
                       nextIra := tempDst
@@ -5891,6 +5904,7 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
         innerFunc(
           opInfo=opInfo,
           opInfoIdx=idx,
+          isSingleWriteToIds=true,
         )
       }
     }
@@ -5916,22 +5930,29 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
           )
         )
       ) {
-        cfg.onlyOneMultiCycleWriteToIdsOpInfo match {
-          case Some(writeToIdsOpInfo) => {
-            if (opInfo != writeToIdsOpInfo) {
-              innerFunc(
-                opInfo=opInfo,
-                opInfoIdx=idx,
-              )
-            }
-          }
-          case None => {
-            innerFunc(
-              opInfo=opInfo,
-              opInfoIdx=idx,
-            )
-          }
-        }
+        innerFunc(
+          opInfo=opInfo,
+          opInfoIdx=idx,
+          isSingleWriteToIds=false,
+        )
+        //cfg.onlyOneMultiCycleWriteToIdsOpInfo match {
+        //  case Some(writeToIdsOpInfo) => {
+        //    if (opInfo != writeToIdsOpInfo) {
+        //      innerFunc(
+        //        opInfo=opInfo,
+        //        opInfoIdx=idx,
+        //        isSingleWriteToIds=false,
+        //      )
+        //    }
+        //  }
+        //  case None => {
+        //    innerFunc(
+        //      opInfo=opInfo,
+        //      opInfoIdx=idx,
+        //      isSingleWriteToIds=false,
+        //    )
+        //  }
+        //}
       }
     }
   }

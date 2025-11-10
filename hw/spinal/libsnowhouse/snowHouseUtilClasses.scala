@@ -993,13 +993,16 @@ case class SnowHouseConfig(
         && !foundNonMultiCycle
       ) {
         for (dst <- opInfo.dstArr.view) {
+          //println(
+          //  s"dst: ${dst}"
+          //)
           dst match {
             case DstKind.Spr(sprKind) => {
               if (sprKind == SprKind.Ids) {
                 opInfo.select match {
                   case OpSelect.MultiCycle => {
                     foundMultiCycleCnt += 1
-                    if (result != None) {
+                    if (result == None) {
                       result = Some(opInfo)
                     }
                   }
@@ -1016,8 +1019,14 @@ case class SnowHouseConfig(
       }
     }
     if (!(foundMultiCycleCnt == 1 && !foundNonMultiCycle)) {
+      //println(
+      //  s"I found this: ${result}" 
+      //)
       result = None
     }
+    //println(
+    //  s"final `result`: ${result}" 
+    //)
     result
   }
 }
