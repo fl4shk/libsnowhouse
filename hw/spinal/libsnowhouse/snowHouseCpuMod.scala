@@ -2760,16 +2760,23 @@ object SnowHouseCpuOpInfoMap {
   //  )
   //)
   opInfoMap += (
-    SnowHouseCpuOp.CpyIeRb -> OpInfo.mkCpy(
-      dstArr=Array[DstKind](DstKind.Ie),
-      srcArr=Array[SrcKind](SrcKind.Gpr),
-      cpyOp=CpyOpKind.Cpy,
-    )
+    //SnowHouseCpuOp.CpyIeRb -> OpInfo.mkCpy(
+    //  dstArr=Array[DstKind](DstKind.Ie),
+    //  srcArr=Array[SrcKind](SrcKind.Gpr),
+    //  cpyOp=CpyOpKind.Cpy,
+    //)
     //SnowHouseCpuOp.CpyIeRb -> OpInfo.mkAlu(
     //  dstArr=Array[DstKind](DstKind.Ie),
     //  srcArr=Array[SrcKind](SrcKind.Gpr, SrcKind.Gpr),
     //  aluOp=AluOpKind.Add,
     //)
+    SnowHouseCpuOp.CpyIeRb -> OpInfo.mkMultiCycle(
+      dstArr=Array[DstKind](DstKind.Ie),
+      srcArr=Array[SrcKind](SrcKind.Gpr),
+      multiCycleOp=(
+        MultiCycleOpKind.CpyIeGpr
+      ),
+    )
   )
   //opInfoMap += (
   //  SnowHouseCpuOp.RetIra -> OpInfo.mkCpy(
@@ -3972,7 +3979,46 @@ case class SnowHouseCpuCpy32(
             init=dstVec(0).getZero,
           )
           setName(
-            "SnowHouseCpuCpy32_rDst"
+            "SnowHouseCpuCpy32_CpyIdsGpr_rDst"
+          )
+        )
+        multiCycleBus.ready := False
+        dstVec(0) := rDst
+        rDst := rSrc0
+        when (
+          RegNext(
+            next=RegNext(
+              next=rose(multiCycleBus.rValid),
+              init=False,
+            ),
+            init=False,
+          )
+        ) {
+          multiCycleBus.ready := True
+        }
+      }
+      case MultiCycleOpKind.CpyIeGpr => {
+        val multiCycleBus = cpuIo.multiCycleBusVec(busIdx)
+        def dstVec = multiCycleBus.recvData.dstVec
+        def srcVec = multiCycleBus.sendData.srcVec
+        def mainWidth = cfg.mainWidth
+        val rSrc0 = (
+          RegNextWhen(
+            next=(
+              RegNext(srcVec(0))
+              init(0x0)
+            ),
+            cond=rose(multiCycleBus.rValid)
+          )
+          init(0x0)
+        )
+        val rDst = (
+          Reg(
+            cloneOf(dstVec(0)),
+            init=dstVec(0).getZero,
+          )
+          setName(
+            "SnowHouseCpuCpy32_CpyIeGpr_rDst"
           )
         )
         multiCycleBus.ready := False
@@ -4857,7 +4903,7 @@ object SnowHouseCpuWithDualRamSim extends App {
   //  "5",
   //)
   val testIdxRange = (
-    0, 0,
+    //0, 0,
     //1, 1,
     //2, 2,
     //3, 3,
@@ -4868,7 +4914,7 @@ object SnowHouseCpuWithDualRamSim extends App {
     //8, 8,
     //9, 9,
     //10, 10,
-    //11, 11,
+    11, 11,
   )
   val instrRamKindArr = Array[Int](
     0,
