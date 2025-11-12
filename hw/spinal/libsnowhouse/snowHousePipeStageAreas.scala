@@ -7734,10 +7734,13 @@ case class SnowHousePipeStageMem(
       )
     }
   }
+  //midModPayload(extIdxUp).allowOverride
   when (cMidModFront.up.isValid) {
     midModPayload(extIdxUp) := modFront(modFrontAfterPayload)
   }
+  //val temp = midModPayload(extIdxUp).myExt
   for (ydx <- 0 until cfg.regFileCfg.memArrSize) {
+    val tempMyExt = midModPayload(extIdxUp).myExt
     def tempExtLeft(ydx: Int) = midModPayload(extIdxUp).myExt(ydx)
     def tempExtRight(ydx: Int) = modFront(modFrontAfterPayload).myExt(ydx)
     val myExtLeft = tempExtLeft(ydx=ydx)

@@ -1231,9 +1231,9 @@ extends SpinalEnum(defaultEncoding=binaryOneHot) {
     Ids
     = newElement()
 }
-case class SnowHousePipePayload(
-  cfg: SnowHouseConfig,
-) extends Bundle with PipeMemRmwPayloadBase[UInt, Bool] {
+case class SnowHousePipePayloadNonExt(
+  cfg: SnowHouseConfig
+) extends Bundle {
   def myHaveFormalFwd = (
     cfg.optFormal
   )
@@ -1315,13 +1315,6 @@ case class SnowHousePipePayload(
       }
     }
   }
-  val myExt = Vec[PipeMemRmwPayloadExt[UInt, Bool]]{
-    val myArr = ArrayBuffer[PipeMemRmwPayloadExt[UInt, Bool]]()
-    for (ydx <- 0 until cfg.regFileCfg.memArrSize) {
-      myArr += mkOneExt(ydx=ydx)
-    }
-    myArr
-  } //simPublic()
   //val nonShiftModMemWord = UInt(cfg.mainWidth bits)
   //val shiftModMemWordValid = (
   //  Vec.fill(
@@ -1429,12 +1422,6 @@ case class SnowHousePipePayload(
   val regPcPlusImm = UInt(cfg.mainWidth bits)//.simPublic()
   val imm = Vec.fill(4)(UInt(cfg.mainWidth bits))//.simPublic()
   //val op = UInt(log2Up(cfg.opInfoMap.size) bits)
-  def mkOneExt(ydx: Int) = (
-    PipeMemRmwPayloadExt(
-      cfg=cfg.regFileCfg,
-      wordCount=cfg.regFileCfg.wordCountArr(ydx),
-    )
-  )
   //val myExt = Vec.fill(cfg.regFileCfg.memArrSize)(
   //  mkOneExt()
   //)
@@ -1445,6 +1432,67 @@ case class SnowHousePipePayload(
       cfg=cfg.regFileCfg,
     )
   )
+}
+case class SnowHousePipePayload(
+  cfg: SnowHouseConfig,
+) extends Bundle with PipeMemRmwPayloadBase[UInt, Bool] {
+  val nonExt = SnowHousePipePayloadNonExt(cfg=cfg)
+  def blockIrq = nonExt.blockIrq
+  def takeIrq = nonExt.takeIrq
+  def branchPredictTkn = nonExt.branchPredictTkn
+
+  def branchPredictReplaceBtbElem = nonExt.branchPredictReplaceBtbElem
+  def encInstr = nonExt.encInstr
+  def branchTgtBufElem = nonExt.branchTgtBufElem
+  def btbElemBranchKind = nonExt.btbElemBranchKind
+  def inpDecodeExt = nonExt.inpDecodeExt
+  def outpDecodeExt = nonExt.outpDecodeExt
+  def instrCnt = nonExt.instrCnt
+  def opCnt = nonExt.opCnt
+  def op = nonExt.op
+  def splitOp = nonExt.splitOp
+  def myDoHaveHazardAddrCheckVec = nonExt.myDoHaveHazardAddrCheckVec
+
+  def irqJmpOp = nonExt.irqJmpOp
+  def formalAssumes() = nonExt.formalAssumes()
+  def gprIdxVec = nonExt.gprIdxVec
+  def gprIsZeroVec = nonExt.gprIsZeroVec
+  def gprIsNonZeroVec = nonExt.gprIsNonZeroVec
+  def gprIdxToMemAddrIdxMap = nonExt.gprIdxToMemAddrIdxMap
+  def psExSetPc = nonExt.psExSetPc
+  def psExSetOutpModMemWordIo = nonExt.psExSetOutpModMemWordIo
+  def regPc = nonExt.regPc
+  def laggingRegPc = nonExt.laggingRegPc
+  def myHistRegPcSize = (
+    nonExt.myHistRegPcSize
+  )
+
+  def irqIraRegPc = nonExt.irqIraRegPc
+
+  def regPcPlus1Instr = nonExt.regPcPlus1Instr
+  def psIfRegPcSetItCnt = nonExt.psIfRegPcSetItCnt
+  def regPcSetItCnt = nonExt.regPcSetItCnt
+  def regPcPlusInstrSize = nonExt.regPcPlusInstrSize
+  def regPcPlusImm = nonExt.regPcPlusImm
+  def imm = nonExt.imm
+
+  def myHaveFormalFwd = nonExt.myHaveFormalFwd
+
+  def myFwd = nonExt.myFwd
+
+  def mkOneExt(ydx: Int) = (
+    PipeMemRmwPayloadExt(
+      cfg=cfg.regFileCfg,
+      wordCount=cfg.regFileCfg.wordCountArr(ydx),
+    )
+  )
+  val myExt = Vec[PipeMemRmwPayloadExt[UInt, Bool]]{
+    val myArr = ArrayBuffer[PipeMemRmwPayloadExt[UInt, Bool]]()
+    for (ydx <- 0 until cfg.regFileCfg.memArrSize) {
+      myArr += mkOneExt(ydx=ydx)
+    }
+    myArr
+  } //simPublic()
   def setPipeMemRmwExt(
     inpExt: PipeMemRmwPayloadExt[UInt, Bool],
     ydx: Int,
