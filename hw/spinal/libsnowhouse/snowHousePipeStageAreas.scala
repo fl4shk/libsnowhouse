@@ -4136,7 +4136,7 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
                   //io.modMemWordValid.foreach(current => {
                   //  current := False
                   //})
-                  //if (!isStore) {
+                  if (!isStore) {
                     io.modMemWordValid.foreach(current => {
                       current := False
                     })
@@ -4146,13 +4146,13 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
                     ////io.modMemWord.foreach(modMemWord => {
                     ////  modMemWord := modMemWord.getZero
                     ////})
-                  //}
-                  //else 
-                  if (isStore)
+                  }
+                  else 
+                  //if (isStore)
                   {
-                    //io.modMemWordValid.foreach(current => {
-                    //  current := True
-                    //})
+                    io.modMemWordValid.foreach(current => {
+                      current := True
+                    })
                     io.modMemWord(0) := selRdMemWord(0, 1)
                   }
 
@@ -7952,13 +7952,13 @@ case class SnowHousePipeStageMem(
       io.dbusLdReady
     ) {
       myCurrExt.modMemWord := io.dbus.recvData.data.resized
-      myCurrExt.modMemWordValid.foreach(current => {
-        current := (
-          // TODO: support more destination GPRs
-          //!midModPayload(extIdxUp).gprIsZeroVec(0)
-          True
-        )
-      })
+      //myCurrExt.modMemWordValid.foreach(current => {
+      //  current := (
+      //    // TODO: support more destination GPRs
+      //    //!midModPayload(extIdxUp).gprIsZeroVec(0)
+      //    True
+      //  )
+      //})
     }
   }
   //for (idx <- 0 until cfg.regFileCfg.memArrSize) {
@@ -7984,28 +7984,28 @@ case class SnowHousePipeStageMem(
   //    })
   //  })
   //}
-  //when (io.dbusExtraReady(2)) {
-  //  val myDecodeExt = midModPayload(extIdxUp).outpDecodeExt
-  //  val mapElem = midModPayload(extIdxUp).gprIdxToMemAddrIdxMap(0)
-  //  val myCurrExt = (
-  //    if (!mapElem.haveHowToSetIdx) (
-  //      midModPayload(extIdxUp).myExt(
-  //        0
-  //      )
-  //    ) else (
-  //      midModPayload(extIdxUp).myExt(
-  //        mapElem.howToSetIdx
-  //      )
-  //    )
-  //  )
-  //  myCurrExt.modMemWordValid.foreach(current => {
-  //    current := (
-  //      // TODO: support more destination GPRs
-  //      //!midModPayload(extIdxUp).gprIsZeroVec(0)
-  //      True
-  //    )
-  //  })
-  //}
+  when (io.dbusExtraReady(2)) {
+    val myDecodeExt = midModPayload(extIdxUp).outpDecodeExt
+    val mapElem = midModPayload(extIdxUp).gprIdxToMemAddrIdxMap(0)
+    val myCurrExt = (
+      if (!mapElem.haveHowToSetIdx) (
+        midModPayload(extIdxUp).myExt(
+          0
+        )
+      ) else (
+        midModPayload(extIdxUp).myExt(
+          mapElem.howToSetIdx
+        )
+      )
+    )
+    myCurrExt.modMemWordValid.foreach(current => {
+      current := (
+        // TODO: support more destination GPRs
+        //!midModPayload(extIdxUp).gprIsZeroVec(0)
+        True
+      )
+    })
+  }
 
   def setMidModStages(): Unit = {
     regFile.io.midModStages(0) := midModPayload
