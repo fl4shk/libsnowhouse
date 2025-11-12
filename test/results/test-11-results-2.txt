@@ -2,5 +2,6 @@ Starting test:programStr:test/snowhousecpu-test-11.bin instrRamKind:2
 addr:2 data:2
 addr:3 data:4
 addr:4 data:4
+addr:4 data:2
 Ending test.
 
