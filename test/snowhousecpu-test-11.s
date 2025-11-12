@@ -9,9 +9,9 @@ cpy r2, 0x2
 
 lsl r3, r2, 1
 lsl r4, r2, 1
-//str r2, r3, 0x8
+str r2, r3, 0x8
 ////ldr r4, r1, 0x8
-//ldr r4, r3, 0x8
+ldr r4, r3, 0x8
 ////mul r4, r3, r2
 ////mul r5, r4, r2
 //add r5, r4, 1
