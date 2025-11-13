@@ -668,11 +668,31 @@ case class SnowHouseConfig(
     if (foundAnyDst) {
       assert(
         foundAnySrc,
-        s"Can't only destinations for AluFlags"
+        s"Can't have only destinations for AluFlags"
       )
     }
     found
   }
+  val myHaveLcvAlu: Boolean = {
+    var found: Boolean = false
+    for (((_, opInfo), opInfoIdx) <- opInfoMap.view.zipWithIndex) {
+      opInfo.select match {
+        case OpSelect.Alu => {
+          opInfo.aluOp.get match {
+            case AluOpKind.LcvAlu(op) => {
+              found = true
+            }
+            case _ => {
+            }
+          }
+        }
+        case _ => {
+        }
+      }
+    }
+    found
+  }
+
   assert(
     (instrMainWidth / 8) * 8 == instrMainWidth,
     s"instrMainWidth must be a multiple of 8"
@@ -1324,7 +1344,8 @@ case class SnowHousePipePayloadNonExt(
   //    Bool()
   //  )
   //)
-  val aluModMemWord = UInt(cfg.mainWidth bits)
+  //val aluModMemWord = UInt(cfg.mainWidth bits)
+  //val aluOp = UInt(LcvAluDel1InpOpEnum.OP_WIDTH bits)
   val aluModMemWordValid = (
     Vec.fill(
       //cfg.regFileCfg.modMemWordValidSize //+ 1
@@ -1464,7 +1485,7 @@ case class SnowHousePipePayload(
 
   def irqJmpOp = nonExt.irqJmpOp
   def formalAssumes() = nonExt.formalAssumes()
-  def aluModMemWord = nonExt.aluModMemWord
+  //def aluModMemWord = nonExt.aluModMemWord
   def aluModMemWordValid = nonExt.aluModMemWordValid
   def gprIdxVec = nonExt.gprIdxVec
   def gprIsZeroVec = nonExt.gprIsZeroVec

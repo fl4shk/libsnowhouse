@@ -694,6 +694,7 @@ case class SnowHouse
   )
   val shouldIgnoreInstr = Bool()
   //--------
+  val aluModMemWord = SInt(cfg.mainWidth bits)
   val linkArr = PipeHelper.mkLinkArr()
   cfg.regFileCfg.linkArr = Some(linkArr)
   val regFile = new PipeMemRmw[
@@ -873,9 +874,10 @@ case class SnowHouse
     ),
     psExSetPc=psExSetPc,
     psMemStallHost=psMemStallHost,
+    doModInMid0FrontParams=doModInMid0FrontParams,
     pcChangeState=pcChangeState,
     shouldIgnoreInstr=shouldIgnoreInstr,
-    doModInMid0FrontParams=doModInMid0FrontParams,
+    aluModMemWord=aluModMemWord,
   )
   //--------
   //val pipeStageWb = (
@@ -908,6 +910,7 @@ case class SnowHouse
       //  null
       //),
       psMemStallHost=psMemStallHost,
+      aluModMemWord=aluModMemWord,
     )
   )
   if (cfg.exposeRegFileWriteDataToIo) {

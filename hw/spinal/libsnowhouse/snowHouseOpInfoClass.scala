@@ -1331,6 +1331,42 @@ sealed trait AluOpKind extends OpKindBase {
 }
 object AluOpKind {
   //--------
+  case class LcvAlu(
+    op: Int,
+  ) extends AluOpKind {
+    assert(
+      op >= 0 && op < (1 << LcvAluDel1InpOpEnum.OP_WIDTH),
+      "eek!"
+    )
+    private[libsnowhouse] val _validArgsSet = LinkedHashSet[
+      OpKindValidArgs
+    ](
+      OpKindValidArgs(
+        dst=Array[HashSet[DstKind]](
+          HashSet(DstKind.Gpr)
+        ),
+        src=Array[HashSet[SrcKind]](
+          HashSet(SrcKind.Gpr),
+          HashSet(SrcKind.Gpr, SrcKind.Imm())
+        ),
+        cond=HashSet[CondKind](
+          CondKind.Always
+        )
+      )
+    )
+    def validArgsSet = _validArgsSet
+    def binopFunc(
+      cfg: SnowHouseConfig,
+      left: UInt,
+      right: UInt,
+      carry: Bool,
+    )(
+      width: Int=cfg.mainWidth
+    ) = {
+      val ret = InstrResult(cfg=cfg)(width=width)
+      ret
+    }
+  }
   case object Add extends AluOpKind {
     private[libsnowhouse] val _validArgsSet = LinkedHashSet[
       OpKindValidArgs
