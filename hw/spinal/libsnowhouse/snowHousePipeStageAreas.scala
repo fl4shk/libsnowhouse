@@ -3226,7 +3226,7 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
   io.aluOp := (
     RegNext(
       next=io.aluOp,
-      init=LcvAluDel1InpOpEnum.ZERO,
+      init=LcvAluDel1InpOpEnum.ZERO_UINT,
     )
   )
   io.aluInpA := (
@@ -5302,6 +5302,7 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
           + s"opInfo(${opInfo}) index:${opInfoIdx}"
         )
         io.aluModMemWordValid.foreach(_ := False)
+        io.aluOp := LcvAluDel1InpOpEnum.ZERO
         /*val binop: InstrResult =*/ opInfo.aluOp.get match {
           case AluOpKind.Add => {
             val myBinop = AluOpKind.Add.binopFunc(
@@ -5507,7 +5508,7 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
                   io.aluOp := (
                     RegNext(
                       next=io.aluOp,
-                      init=LcvAluDel1InpOpEnum.ZERO,
+                      init=LcvAluDel1InpOpEnum.ZERO_UINT,
                     )
                   )
                 }
@@ -8025,17 +8026,18 @@ case class SnowHousePipeStageMem(
       //myExtRight.modMemWordValid.last
     ) {
       //myExtLeft.main.modMemWord := myExtRight.main.modMemWord
-      //myExtLeft.main.modMemWord := Mux[UInt](
-      //  tempPayloadRight.aluModMemWordValid.head,
-      //  tempPayloadRight.aluModMemWord,
-      //  myExtRight.main.modMemWord
-      //)
-      myExtLeft.modMemWord := (
-        //tempPayloadRight.aluModMemWord
-        //| 
-        aluModMemWord.asUInt
-        | myExtRight.modMemWord
+      myExtLeft.main.modMemWord := Mux[UInt](
+        tempPayloadRight.aluModMemWordValid.head,
+        //tempPayloadRight.aluModMemWord,
+        aluModMemWord.asUInt,
+        myExtRight.main.modMemWord
       )
+      //myExtLeft.modMemWord := (
+      //  //tempPayloadRight.aluModMemWord
+      //  //| 
+      //  aluModMemWord.asUInt
+      //  | myExtRight.modMemWord
+      //)
     }
     //when (
     //  tempPayloadRight.aluModMemWordValid.head
