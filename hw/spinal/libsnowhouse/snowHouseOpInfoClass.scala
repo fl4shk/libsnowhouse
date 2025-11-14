@@ -1346,8 +1346,8 @@ object AluOpKind {
           HashSet(DstKind.Gpr)
         ),
         src=Array[HashSet[SrcKind]](
-          HashSet(SrcKind.Gpr, SrcKind.Pc),
-          HashSet(SrcKind.Gpr, SrcKind.Pc, SrcKind.Imm())
+          HashSet(SrcKind.Gpr),
+          HashSet(SrcKind.Gpr, SrcKind.Imm())
         ),
         cond=HashSet[CondKind](
           CondKind.Always
