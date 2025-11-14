@@ -7084,9 +7084,9 @@ case class SnowHousePipeStageExecute(
       } else if (zdx == 1) {
         alu.io.inp_b_sel := True
         when (cMid0Front.down.isReady) {
-          alu.io.inp_b(1) := tempMyRdMemWord.asSInt
+          alu.io.inp_b(0) := tempMyRdMemWord.asSInt
           when (setOutpModMemWord.io.aluModMemWordValid.head) {
-            alu.io.inp_b(0) := outp.imm.last.asSInt
+            alu.io.inp_b(1) := outp.imm.last.asSInt
             alu.io.inp_b_sel := outp.aluInpBIsImm
             //when (!outp.aluInpBIsImm) {
             //  alu.io.inp_b := tempMyRdMemWord.asSInt
@@ -7095,7 +7095,7 @@ case class SnowHousePipeStageExecute(
             //}
           } otherwise {
             //alu.io.inp_b := 0x0 
-            alu.io.inp_b(0) := 0x0
+            alu.io.inp_b(1) := 0x0
             //alu.io.inp_b.foreach(_ := 0x0)
             //alu.io.inp_b_sel := False
           }
