@@ -7072,7 +7072,7 @@ case class SnowHousePipeStageExecute(
       val tempMyRdMemWord = myRdMemWord(ydx=ydx, modIdx=zdx)
 
       if (zdx == 0) {
-        when (cMid0Front.up.isFiring) {
+        when (cMid0Front.down.isReady) {
           when (setOutpModMemWord.io.aluModMemWordValid.head) {
             alu.io.inp_a := tempMyRdMemWord.asSInt
             alu.io.inp_op := outp.aluOp
@@ -7080,9 +7080,9 @@ case class SnowHousePipeStageExecute(
             alu.io.inp_a := 0x0
             alu.io.inp_op := LcvAluDel1InpOpEnum.ADD
           }
-        } 
+        }
       } else if (zdx == 1) {
-        when (cMid0Front.up.isFiring) {
+        when (cMid0Front.down.isReady) {
           when (setOutpModMemWord.io.aluModMemWordValid.head) {
             when (!outp.aluInpBIsImm) {
               alu.io.inp_b := tempMyRdMemWord.asSInt
