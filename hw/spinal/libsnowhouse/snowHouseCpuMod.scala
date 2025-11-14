@@ -2369,8 +2369,8 @@ object SnowHouseCpuOpInfoMap {
       dstArr=Array[DstKind](DstKind.Gpr),
       srcArr=Array[SrcKind](SrcKind.Gpr, SrcKind.Gpr),
       aluOp=(
-        AluOpKind.Sltu
-        //AluOpKind.LcvAlu(LcvAluDel1InpOpEnum.SLTU)
+        //AluOpKind.Sltu
+        AluOpKind.LcvAlu(LcvAluDel1InpOpEnum.SLTU)
       ),
     )
   )
@@ -2380,8 +2380,8 @@ object SnowHouseCpuOpInfoMap {
       dstArr=Array[DstKind](DstKind.Gpr),
       srcArr=Array[SrcKind](SrcKind.Gpr, SrcKind.Gpr),
       aluOp=(
-        AluOpKind.Slts
-        //AluOpKind.LcvAlu(LcvAluDel1InpOpEnum.SLTS)
+        //AluOpKind.Slts
+        AluOpKind.LcvAlu(LcvAluDel1InpOpEnum.SLTS)
       ),
     )
   )
@@ -2392,8 +2392,8 @@ object SnowHouseCpuOpInfoMap {
       dstArr=Array[DstKind](DstKind.Gpr),
       srcArr=Array[SrcKind](SrcKind.Gpr, SrcKind.Imm()),
       aluOp=(
-        AluOpKind.Sltu
-        //AluOpKind.LcvAlu(LcvAluDel1InpOpEnum.SLTU)
+        //AluOpKind.Sltu
+        AluOpKind.LcvAlu(LcvAluDel1InpOpEnum.SLTU)
       ),
     )
   )
@@ -2403,8 +2403,8 @@ object SnowHouseCpuOpInfoMap {
       dstArr=Array[DstKind](DstKind.Gpr),
       srcArr=Array[SrcKind](SrcKind.Gpr, SrcKind.Imm()),
       aluOp=(
-        AluOpKind.Slts
-        //AluOpKind.LcvAlu(LcvAluDel1InpOpEnum.SLTS)
+        //AluOpKind.Slts
+        AluOpKind.LcvAlu(LcvAluDel1InpOpEnum.SLTS)
       ),
     )
   )
@@ -2421,8 +2421,8 @@ object SnowHouseCpuOpInfoMap {
       dstArr=Array[DstKind](DstKind.Gpr),
       srcArr=Array[SrcKind](SrcKind.Gpr, SrcKind.Gpr),
       aluOp=(
-        AluOpKind.Xor
-        //AluOpKind.LcvAlu(LcvAluDel1InpOpEnum.XOR)
+        //AluOpKind.Xor
+        AluOpKind.LcvAlu(LcvAluDel1InpOpEnum.XOR)
       ),
     )
   )
@@ -2431,8 +2431,8 @@ object SnowHouseCpuOpInfoMap {
       dstArr=Array[DstKind](DstKind.Gpr),
       srcArr=Array[SrcKind](SrcKind.Gpr, SrcKind.Imm(/*Some(true)*/)),
       aluOp=(
-        AluOpKind.Xor
-        //AluOpKind.LcvAlu(LcvAluDel1InpOpEnum.XOR)
+        //AluOpKind.Xor
+        AluOpKind.LcvAlu(LcvAluDel1InpOpEnum.XOR)
       ),
     )
   )
@@ -2442,8 +2442,8 @@ object SnowHouseCpuOpInfoMap {
       dstArr=Array[DstKind](DstKind.Gpr),
       srcArr=Array[SrcKind](SrcKind.Gpr, SrcKind.Gpr),
       aluOp=(
-        AluOpKind.Or
-        //AluOpKind.LcvAlu(LcvAluDel1InpOpEnum.OR)
+        //AluOpKind.Or
+        AluOpKind.LcvAlu(LcvAluDel1InpOpEnum.OR)
       ),
     )
   )
@@ -2452,8 +2452,8 @@ object SnowHouseCpuOpInfoMap {
       dstArr=Array[DstKind](DstKind.Gpr),
       srcArr=Array[SrcKind](SrcKind.Gpr, SrcKind.Imm(/*Some(true)*/)),
       aluOp=(
-        AluOpKind.Or
-        //AluOpKind.LcvAlu(LcvAluDel1InpOpEnum.OR)
+        //AluOpKind.Or
+        AluOpKind.LcvAlu(LcvAluDel1InpOpEnum.OR)
       ),
     )
   )
@@ -2464,8 +2464,8 @@ object SnowHouseCpuOpInfoMap {
       dstArr=Array[DstKind](DstKind.Gpr),
       srcArr=Array[SrcKind](SrcKind.Gpr, SrcKind.Gpr),
       aluOp=(
-        AluOpKind.And
-        //AluOpKind.LcvAlu(LcvAluDel1InpOpEnum.AND)
+        //AluOpKind.And
+        AluOpKind.LcvAlu(LcvAluDel1InpOpEnum.AND)
       ),
     )
   )
@@ -2475,8 +2475,8 @@ object SnowHouseCpuOpInfoMap {
       dstArr=Array[DstKind](DstKind.Gpr),
       srcArr=Array[SrcKind](SrcKind.Gpr, SrcKind.Imm()),
       aluOp=(
-        AluOpKind.And
-        //AluOpKind.LcvAlu(LcvAluDel1InpOpEnum.AND)
+        //AluOpKind.And
+        AluOpKind.LcvAlu(LcvAluDel1InpOpEnum.AND)
       ),
     )
   )
@@ -4980,7 +4980,7 @@ object SnowHouseCpuWithDualRamSim extends App {
   //  "5",
   //)
   val testIdxRange = (
-    0, 0,
+    //0, 0,
     //1, 1,
     //2, 2,
     //3, 3,
@@ -4990,7 +4990,7 @@ object SnowHouseCpuWithDualRamSim extends App {
     //7, 7,
     //8, 8,
     //9, 9,
-    //10, 10,
+    10, 10,
     //11, 11,
   )
   val instrRamKindArr = Array[Int](
