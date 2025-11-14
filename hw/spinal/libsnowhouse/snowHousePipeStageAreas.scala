@@ -8058,14 +8058,14 @@ case class SnowHousePipeStageMem(
       myExtLeft.main.memAddr := myExtRight.main.memAddr
       myExtLeft.main.nonMemAddrMost := myExtRight.main.nonMemAddrMost
     }
-    //when (
-    //  ////cMidModFront.up.isValid
-    //  ////myExtRight.modMemWordValid.last
-    //  cMidModFront.up.isValid
-    //  ////&& rMmwState(ydx) === MmwState.WAIT_DATA
-    //  //&& 
-    //  //myExtRight.modMemWordValid.last
-    //) {
+    when (
+      ////cMidModFront.up.isValid
+      ////myExtRight.modMemWordValid.last
+      cMidModFront.up.isValid
+      ////&& rMmwState(ydx) === MmwState.WAIT_DATA
+      //&& 
+      //myExtRight.modMemWordValid.last
+    ) {
       //myExtLeft.main.modMemWord := myExtRight.main.modMemWord
       //myExtLeft.main.modMemWord := Mux[UInt](
       //  tempPayloadRight.aluModMemWordValid.head,
@@ -8079,7 +8079,7 @@ case class SnowHousePipeStageMem(
         aluModMemWord.asUInt
         | myExtRight.modMemWord
       )
-    //}
+    }
     //when (
     //  tempPayloadRight.aluModMemWordValid.head
     //) {
