@@ -1347,14 +1347,14 @@ case class SnowHousePipePayloadNonExt(
   //val aluModMemWord = UInt(cfg.mainWidth bits)
   val aluInpBIsImm = Bool()
   val aluOp = UInt(LcvAluDel1InpOpEnum.OP_WIDTH bits)
-  val aluModMemWordValid = (
-    Vec.fill(
-      //cfg.regFileCfg.modMemWordValidSize //+ 1
-      1
-    )(
-      Bool()
-    )
-  )
+  //val aluModMemWordValid = (
+  //  Vec.fill(
+  //    //cfg.regFileCfg.modMemWordValidSize //+ 1
+  //    1
+  //  )(
+  //    Bool()
+  //  )
+  //)
 
   //val shiftModMemWord = (
   //  //Vec.fill(3)(
@@ -1489,7 +1489,7 @@ case class SnowHousePipePayload(
   //def aluModMemWord = nonExt.aluModMemWord
   def aluInpBIsImm = nonExt.aluInpBIsImm
   def aluOp = nonExt.aluOp
-  def aluModMemWordValid = nonExt.aluModMemWordValid
+  //def aluModMemWordValid = nonExt.aluModMemWordValid
   def gprIdxVec = nonExt.gprIdxVec
   def gprIsZeroVec = nonExt.gprIsZeroVec
   def gprIsNonZeroVec = nonExt.gprIsNonZeroVec

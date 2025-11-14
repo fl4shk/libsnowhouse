@@ -1167,6 +1167,8 @@ object SnowHouseCpuPipeStageInstrDecode {
         )
       )
     }
+    upPayload.aluOp := LcvAluDel1InpOpEnum.ZERO
+    upPayload.aluOp.allowOverride
     def setOp(
       someOp: (Int, (Int, Int), String),
       immShift: Boolean=false,
@@ -4994,7 +4996,7 @@ object SnowHouseCpuWithDualRamSim extends App {
     //11, 11,
   )
   val instrRamKindArr = Array[Int](
-    0,
+    //0,
     1,
     2,
     5,
