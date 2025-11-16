@@ -261,6 +261,12 @@ case class SnowHouseBranchPredictorIo(
   val upIsFiring = in(
     Bool()
   )
+  val upIsReady = in(
+    Bool()
+  )
+  //val downIsReady = in(
+  //  Bool()
+  //)
   //val psIfDoStall = out(
   //  Bool()
   //)
@@ -362,8 +368,8 @@ case class SnowHouseBranchPredictor(
         Some(Array.fill(branchTgtBufSize)(BigInt(0)))
       ),
       arrRamStyle=(
-        //"auto"
-        "block"
+        "auto"
+        //"block"
         //"distributed"
       ),
     )
@@ -504,8 +510,16 @@ case class SnowHouseBranchPredictor(
   //tgtValidBuf.io.ramIo.rdAddr := tgtBufRdAddr
 
   //tgtSrcRegPcBuf.io.ramIo.rdEn := io.upIsFiring
-  tgtSrcRegPcAndValidBuf.io.ramIo.rdEn := io.upIsFiring
-  tgtDstRegPcBuf.io.ramIo.rdEn := io.upIsFiring
+  tgtSrcRegPcAndValidBuf.io.ramIo.rdEn := (
+    //io.upIsFiring
+    //io.downIsReady
+    io.upIsReady
+  )
+  tgtDstRegPcBuf.io.ramIo.rdEn := (
+    //io.upIsFiring
+    //io.downIsReady
+    io.upIsReady
+  )
   //tgtDstRegPcAndValidBuf.io.ramIo.rdEn := io.upIsFiring
   //tgtValidBuf.io.ramIo.rdEn := io.upIsFiring
 
@@ -646,7 +660,10 @@ case class SnowHouseBranchPredictor(
           )
           //- cfg.instrSizeBytes
         )(cfg.mySrcRegPcCmpEqRange),
-        cond=io.upIsFiring,
+        cond=(
+          //io.upIsFiring
+          io.upIsReady
+        ),
         init=io.inpRegPc(
           //2
           //0
@@ -834,6 +851,8 @@ case class SnowHousePipeStageInstrFetch(
     //branchPredictor.io.inpRegPc := 
     //branchPredictor.io.inpRegPc := myRegPc
     branchPredictor.io.upIsFiring := up.isFiring
+    branchPredictor.io.upIsReady := up.isReady
+    //branchPredictor.io.downIsReady := down.isReady
   }
 
   val takeJumpCntMaxVal = cfg.takeJumpCntMaxVal
