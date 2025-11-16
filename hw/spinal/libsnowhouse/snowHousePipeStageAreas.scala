@@ -1045,7 +1045,10 @@ case class SnowHousePipeStageInstrFetch(
   val rPrevInstrCnt = /*(cfg.optFormal) generate*/ (
     RegNextWhen(
       next=myInstrCnt,
-      cond=up.isFiring,
+      cond=(
+        //up.isFiring
+        up.isReady
+      ),
       init=myInstrCnt.getZero,
     )
   )
@@ -1141,7 +1144,10 @@ case class SnowHousePipeStageInstrFetch(
         //upModExt.myHistRegPc.size
         3
       ),
-      when=up.isFiring,
+      when=(
+        //up.isFiring
+        up.isReady
+      ),
       init=upModExt.regPc.getZero,
     )
   )
@@ -1320,7 +1326,8 @@ case class SnowHousePipeStageInstrFetch(
     switch (
       Cat(
         List(
-          up.isFiring,
+          //up.isFiring,
+          up.isReady,
           (
             //(
             //  (
@@ -1580,11 +1587,17 @@ case class SnowHousePipeStageInstrFetch(
       rStallState := True
     }
   }
-  when (cIf.up.isFiring) {
+  when (
+    //cIf.up.isFiring
+    cIf.up.isReady
+  ) {
     rStallState := False
   }
 
-  when (up.isFiring) {
+  when (
+    //up.isFiring
+    up.isReady
+  ) {
     //upModExt.encInstr.valid := True
     myRegPcSetItCnt := 0x0
     when (
