@@ -7131,14 +7131,29 @@ case class SnowHousePipeStageExecute(
       if (zdx == 0) {
         when (cMid0Front.down.isReady) {
           alu.io.inp_a := tempMyRdMemWord.asSInt
-          when (alu.io.inp_op === LcvAluDel1InpOpEnum.OP_GET_INP_A) {
-            alu.io.inp_a := setOutpModMemWord.io.modMemWord(0).asSInt
-          }
+          //when (
+          //  //!myShouldIgnoreInstr(0)
+          //  //&& 
+          //  alu.io.inp_op === LcvAluDel1InpOpEnum.OP_GET_INP_A
+          //) {
+          //  alu.io.inp_a := setOutpModMemWord.io.modMemWord(0).asSInt
+          //}
           when (setOutpModMemWord.io.modMemWordValid.head) {
             alu.io.inp_op := outp.aluOp
           } otherwise {
-            alu.io.inp_op := LcvAluDel1InpOpEnum.ZERO
           }
+
+          when (
+            //outp.aluOp === LcvAluDel1InpOpEnum.OP_GET_INP_A
+            alu.io.inp_op === LcvAluDel1InpOpEnum.OP_GET_INP_A
+          ) {
+            //alu.io.inp_op := LcvAluDel1InpOpEnum.ZERO
+            //alu.io.inp_op := LcvAluDel1InpOpEnum.OP_GET_INP_A
+            alu.io.inp_a := setOutpModMemWord.io.modMemWord(0).asSInt
+          }
+          //when (alu.io.inp_op === LcvAluDel1InpOpEnum.OP_GET_INP_A) {
+          //  alu.io.inp_a := setOutpModMemWord.io.modMemWord(0).asSInt
+          //}
           //when (setOutpModMemWord.io.aluModMemWordValid.head) {
           //  alu.io.inp_a := tempMyRdMemWord.asSInt
           //  alu.io.inp_op := outp.aluOp
@@ -7146,7 +7161,11 @@ case class SnowHousePipeStageExecute(
           //  alu.io.inp_a := 0x0
           //  alu.io.inp_op := LcvAluDel1InpOpEnum.ADD
           //}
-        }
+        } 
+        //when (myShouldIgnoreInstr.last) {
+        //  //alu.io.inp_op := LcvAluDel1InpOpEnum.ZERO
+        //  alu.io.inp_op := 
+        //}
       } else if (zdx == 1) {
         alu.io.inp_b_sel := True
         when (cMid0Front.down.isReady) {
