@@ -155,6 +155,27 @@ case class SnowHouseAsrDel1(
     ).resize(io.outpResult.getWidth).asUInt
   )
 }
+case class SnowHouseSltIo(
+  mainWidth: Int,
+) extends Bundle {
+  val inpA = in(UInt(mainWidth bits))
+  val inpB = in(UInt(mainWidth bits))
+  val outpResult = out(UInt(mainWidth bits))
+}
+case class SnowHouseSltDel1(
+  mainWidth: Int,
+  isSigned: Boolean,
+) extends Component {
+  val io = SnowHouseSltIo(mainWidth=mainWidth)
+  io.outpResult.setAsReg() init(0x0)
+  io.outpResult := (
+    if (!isSigned) (
+      Cat(io.inpA < io.inpB).asUInt.resize(mainWidth bits)
+    ) else (
+      Cat(io.inpA.asSInt < io.inpB.asSInt).asUInt.resize(mainWidth bits)
+    )
+  )
+}
 
 case class BranchTgtBufElem(
   //mainWidth: Int,
@@ -7072,7 +7093,8 @@ case class SnowHousePipeStageExecute(
       //when (cMid0Front.up.isFiring) {
         tempExt.modMemWord := (
           // TODO: support multiple output `modMemWord`s
-          setOutpModMemWord.io.modMemWord(0)
+          //setOutpModMemWord.io.modMemWord(0)
+          tempExt.modMemWord.getZero
         )
         for (idx <- 0 until tempExt.modMemWordValid.size) {
           //tempExt.modMemWordValid.foreach(current =>{
@@ -7109,9 +7131,10 @@ case class SnowHousePipeStageExecute(
       if (zdx == 0) {
         when (cMid0Front.down.isReady) {
           alu.io.inp_a := tempMyRdMemWord.asSInt
-          when (
-            setOutpModMemWord.io.modMemWordValid.head
-          ) {
+          when (alu.io.inp_op === LcvAluDel1InpOpEnum.OP_GET_INP_A) {
+            alu.io.inp_a := setOutpModMemWord.io.modMemWord(0).asSInt
+          }
+          when (setOutpModMemWord.io.modMemWordValid.head) {
             alu.io.inp_op := outp.aluOp
           } otherwise {
             alu.io.inp_op := LcvAluDel1InpOpEnum.ZERO
@@ -8113,14 +8136,14 @@ case class SnowHousePipeStageMem(
       myExtLeft.main.memAddr := myExtRight.main.memAddr
       myExtLeft.main.nonMemAddrMost := myExtRight.main.nonMemAddrMost
     }
-    when (
-      ////cMidModFront.up.isValid
-      ////myExtRight.modMemWordValid.last
-      cMidModFront.up.isValid
-      ////&& rMmwState(ydx) === MmwState.WAIT_DATA
-      //&& 
-      //myExtRight.modMemWordValid.last
-    ) {
+    //when (
+    //  ////cMidModFront.up.isValid
+    //  ////myExtRight.modMemWordValid.last
+    //  cMidModFront.up.isValid
+    //  ////&& rMmwState(ydx) === MmwState.WAIT_DATA
+    //  //&& 
+    //  //myExtRight.modMemWordValid.last
+    //) {
       //myExtLeft.main.modMemWord := myExtRight.main.modMemWord
       //myExtLeft.main.modMemWord := Mux[UInt](
       //  tempPayloadRight.aluModMemWordValid.head,
@@ -8132,9 +8155,10 @@ case class SnowHousePipeStageMem(
         //tempPayloadRight.aluModMemWord
         //| 
         aluModMemWord.asUInt
-        | myExtRight.modMemWord
+        //| myExtRight.modMemWord
       )
-    }
+    //}
+
     //when (
     //  tempPayloadRight.aluModMemWordValid.head
     //) {
