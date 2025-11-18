@@ -3485,11 +3485,13 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
     rose(
       //RegNext(next=io.branchPredictTkn, init=False)
       RegNextWhen(
-        next=RegNext(
+        next=RegNextWhen(
           next=(
             io.branchPredictTkn
             //|| io.branchPredictReplaceBtbElem
-          ), init=False
+          ),
+          cond=io.upIsReady,
+          init=False
         ),
         cond=io.upIsFiring,
         init=False,
@@ -3512,7 +3514,7 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
     rose(
       RegNextWhen(
         next=(
-          RegNext(
+          RegNextWhen(
             next=(
               //rose(
                 (
@@ -3524,6 +3526,7 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
                 )
               //)
             ),
+            cond=io.upIsReady,
             init=False
           )
         ),
