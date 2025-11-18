@@ -7130,6 +7130,33 @@ case class SnowHousePipeStageExecute(
     } else {
       def tempRdMemWord = setOutpModMemWord.io.rdMemWord(zdx)
       val tempMyRdMemWord = myRdMemWord(ydx=ydx, modIdx=zdx)
+      when (
+        //outp.aluOp === LcvAluDel1InpOpEnum.OP_GET_INP_A
+        RegNextWhen(
+          next=(
+            //(
+            //  cMid0Front.down.isReady
+            //) && 
+            (
+              alu.io.inp_op === LcvAluDel1InpOpEnum.OP_GET_INP_A
+            )
+            //&& (
+            //  setOutpModMemWord.io.modMemWordValid.head
+            //)
+          ),
+          cond=cMid0Front.down.isReady,
+          init=False,
+        )
+      ) {
+        //alu.io.inp_op := LcvAluDel1InpOpEnum.ZERO
+        //alu.io.inp_op := LcvAluDel1InpOpEnum.OP_GET_INP_A
+        //alu.io.inp_a := setOutpModMemWord.io.modMemWord(0).asSInt
+        aluModMemWord := RegNextWhen(
+          next=setOutpModMemWord.io.modMemWord(0).asSInt,
+          cond=cMid0Front.down.isReady,
+          init=setOutpModMemWord.io.modMemWord(0).asSInt.getZero,
+        )
+      }
 
       if (zdx == 0) {
         when (cMid0Front.down.isReady) {
@@ -7146,14 +7173,15 @@ case class SnowHousePipeStageExecute(
           } otherwise {
           }
 
-          when (
-            //outp.aluOp === LcvAluDel1InpOpEnum.OP_GET_INP_A
-            alu.io.inp_op === LcvAluDel1InpOpEnum.OP_GET_INP_A
-          ) {
-            //alu.io.inp_op := LcvAluDel1InpOpEnum.ZERO
-            //alu.io.inp_op := LcvAluDel1InpOpEnum.OP_GET_INP_A
-            alu.io.inp_a := setOutpModMemWord.io.modMemWord(0).asSInt
-          }
+          //when (
+          //  //outp.aluOp === LcvAluDel1InpOpEnum.OP_GET_INP_A
+          //  alu.io.inp_op === LcvAluDel1InpOpEnum.OP_GET_INP_A
+          //) {
+          //  //alu.io.inp_op := LcvAluDel1InpOpEnum.ZERO
+          //  //alu.io.inp_op := LcvAluDel1InpOpEnum.OP_GET_INP_A
+          //  alu.io.inp_a := setOutpModMemWord.io.modMemWord(0).asSInt
+          //}
+
           //when (alu.io.inp_op === LcvAluDel1InpOpEnum.OP_GET_INP_A) {
           //  alu.io.inp_a := setOutpModMemWord.io.modMemWord(0).asSInt
           //}
