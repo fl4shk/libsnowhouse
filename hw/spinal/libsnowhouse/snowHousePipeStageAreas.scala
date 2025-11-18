@@ -7061,18 +7061,18 @@ case class SnowHousePipeStageExecute(
   //alu.io.inp_a := setOutpModMemWord.io.aluInpA
   //alu.io.inp_b := setOutpModMemWord.io.aluInpB
   //alu.io.inp_op := setOutpModMemWord.io.aluOp
-  alu.io.inp_a := (
-    RegNext(
-      next=alu.io.inp_a,
-      init=alu.io.inp_a.getZero,
-    )
-  )
-  alu.io.inp_b := (
-    RegNext(
-      next=alu.io.inp_b,
-      init=alu.io.inp_b.getZero,
-    )
-  )
+  //alu.io.inp_a := (
+  //  RegNext(
+  //    next=alu.io.inp_a,
+  //    init=alu.io.inp_a.getZero,
+  //  )
+  //)
+  //alu.io.inp_b := (
+  //  RegNext(
+  //    next=alu.io.inp_b,
+  //    init=alu.io.inp_b.getZero,
+  //  )
+  //)
   alu.io.inp_op := (
     RegNext(
       next=alu.io.inp_op,
@@ -7082,12 +7082,12 @@ case class SnowHousePipeStageExecute(
       ),
     )
   )
-  alu.io.inp_b_sel := (
-    RegNext(
-      next=alu.io.inp_b_sel,
-      init=alu.io.inp_b_sel.getZero,
-    )
-  )
+  //alu.io.inp_b_sel := (
+  //  RegNext(
+  //    next=alu.io.inp_b_sel,
+  //    init=alu.io.inp_b_sel.getZero,
+  //  )
+  //)
   aluModMemWord := (
     RegNext(
       next=aluModMemWord,
@@ -7201,11 +7201,12 @@ case class SnowHousePipeStageExecute(
       //}
 
       if (zdx == 0) {
+        alu.io.inp_a := tempMyRdMemWord.asSInt
         when (
           cMid0Front.down.isReady
           //cMid0Front.up.isFiring
         ) {
-          alu.io.inp_a := tempMyRdMemWord.asSInt
+          //alu.io.inp_a := tempMyRdMemWord.asSInt
           //when (
           //  //!myShouldIgnoreInstr(0)
           //  //&& 
@@ -7245,10 +7246,10 @@ case class SnowHousePipeStageExecute(
         //}
       } else if (zdx == 1) {
         //alu.io.inp_b_sel := True
-        when (
-          cMid0Front.down.isReady
-          //cMid0Front.up.isFiring
-        ) {
+        //when (
+        //  cMid0Front.down.isReady
+        //  //cMid0Front.up.isFiring
+        //) {
           alu.io.inp_b(0) := tempMyRdMemWord.asSInt
           alu.io.inp_b(1) := outp.imm.last.asSInt
           alu.io.inp_b_sel := outp.aluInpBIsImm
@@ -7269,7 +7270,7 @@ case class SnowHousePipeStageExecute(
           //  //alu.io.inp_b.foreach(_ := 0x0)
           //  //alu.io.inp_b_sel := False
           //}
-        }
+        //}
       }
       //val rRdMemWordState = (
       //  Reg(Bool(), init=False)
