@@ -7099,48 +7099,107 @@ case class SnowHousePipeStageExecute(
   //  //  init=alu.io.inp_a.getZero,
   //  //)
   //)
-  when (
-    RegNext(
-      next=(
-        cMid0Front.up.isFiring
-        && setOutpModMemWord.io.modMemWordValid.head
-        && alu.io.inp_op =/= LcvAluDel1InpOpEnum.OP_GET_INP_A
-      ),
-      init=False,
-    )
-  ) {
-    aluModMemWord := alu.io.outp_data
-  } elsewhen (
-    RegNext(
-      next=(
-        cMid0Front.up.isFiring
-        && setOutpModMemWord.io.modMemWordValid.head
-        && alu.io.inp_op === LcvAluDel1InpOpEnum.OP_GET_INP_A
-      ),
-      init=False,
-    )
-  ) {
-    aluModMemWord := (
+
+  //aluModMemWord := (
+  //  RegNext(
+  //    next=aluModMemWord,
+  //    init=aluModMemWord.getZero,
+  //  )
+  //  //RegNextWhen(
+  //  //  next=alu.io.inp_a,
+  //  //  cond=cMid0Front.up.isFiring,
+  //  //  init=alu.io.inp_a.getZero,
+  //  //)
+  //)
+  switch (
+    (
       RegNext(
         next=(
-          setOutpModMemWord.io.modMemWord(0).asSInt
+          cMid0Front.up.isFiring
+          && setOutpModMemWord.io.modMemWordValid.head
+          //&& alu.io.inp_op =/= LcvAluDel1InpOpEnum.OP_GET_INP_A
         ),
-        init=setOutpModMemWord.io.modMemWord(0).asSInt.getZero
+        init=False,
       )
-    )
-  } otherwise {
-    aluModMemWord := (
+    ) ## (
       RegNext(
-        next=aluModMemWord,
-        init=aluModMemWord.getZero,
+        next=(alu.io.inp_op === LcvAluDel1InpOpEnum.OP_GET_INP_A),
+        init=False,
       )
-      //RegNextWhen(
-      //  next=alu.io.inp_a,
-      //  cond=cMid0Front.up.isFiring,
-      //  init=alu.io.inp_a.getZero,
-      //)
     )
+  ) {
+    is (M"10") {
+      aluModMemWord := alu.io.outp_data
+    }
+    is (M"11") {
+      aluModMemWord := (
+        RegNext(
+          next=(
+            setOutpModMemWord.io.modMemWord(0).asSInt
+          ),
+          init=setOutpModMemWord.io.modMemWord(0).asSInt.getZero
+        )
+      )
+    }
+    default {
+      aluModMemWord := (
+        RegNext(
+          next=aluModMemWord,
+          init=aluModMemWord.getZero,
+        )
+        //RegNextWhen(
+        //  next=alu.io.inp_a,
+        //  cond=cMid0Front.up.isFiring,
+        //  init=alu.io.inp_a.getZero,
+        //)
+      )
+    }
   }
+
+  //when (
+  //  RegNext(
+  //    next=(
+  //      cMid0Front.up.isFiring
+  //      && setOutpModMemWord.io.modMemWordValid.head
+  //      && alu.io.inp_op =/= LcvAluDel1InpOpEnum.OP_GET_INP_A
+  //    ),
+  //    init=False,
+  //  )
+  //) {
+  //  aluModMemWord := alu.io.outp_data
+  //} elsewhen (
+  //  RegNext(
+  //    next=(
+  //      cMid0Front.up.isFiring
+  //      && setOutpModMemWord.io.modMemWordValid.head
+  //      && alu.io.inp_op === LcvAluDel1InpOpEnum.OP_GET_INP_A
+  //    ),
+  //    init=False,
+  //  )
+  //) {
+  //  aluModMemWord := (
+  //    RegNext(
+  //      next=(
+  //        setOutpModMemWord.io.modMemWord(0).asSInt
+  //      ),
+  //      init=setOutpModMemWord.io.modMemWord(0).asSInt.getZero
+  //    )
+  //  )
+  //} otherwise {
+  //  aluModMemWord := (
+  //    RegNext(
+  //      next=aluModMemWord,
+  //      init=aluModMemWord.getZero,
+  //    )
+  //    //RegNextWhen(
+  //    //  next=alu.io.inp_a,
+  //    //  cond=cMid0Front.up.isFiring,
+  //    //  init=alu.io.inp_a.getZero,
+  //    //)
+  //  )
+  //}
+
+
   //when (
   //  io.dbusLdReady
   //) {
@@ -8163,7 +8222,7 @@ case class SnowHousePipeStageMem(
   val rMmwState = {
     val temp = Reg(
       Vec.fill(cfg.regFileCfg.memArrSize)(
-        Vec.fill(/*2*/ 1)(
+        Vec.fill(2 /*1*/)(
           MmwState()
         )
       )
