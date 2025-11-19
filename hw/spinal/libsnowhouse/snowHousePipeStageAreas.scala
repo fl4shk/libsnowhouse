@@ -7073,15 +7073,15 @@ case class SnowHousePipeStageExecute(
   //    init=alu.io.inp_b.getZero,
   //  )
   //)
-  alu.io.inp_op := (
-    RegNext(
-      next=alu.io.inp_op,
-      init=(
-        LcvAluDel1InpOpEnum.ZERO_UINT
-        //alu.io.inp_op.getZero
-      ),
-    )
-  )
+  //alu.io.inp_op := (
+  //  RegNext(
+  //    next=alu.io.inp_op,
+  //    init=(
+  //      LcvAluDel1InpOpEnum.ZERO_UINT
+  //      //alu.io.inp_op.getZero
+  //    ),
+  //  )
+  //)
   //alu.io.inp_b_sel := (
   //  RegNext(
   //    next=alu.io.inp_b_sel,
@@ -7230,44 +7230,45 @@ case class SnowHousePipeStageExecute(
 
       if (zdx == 0) {
         alu.io.inp_a := tempMyRdMemWord.asSInt
-        when (
-          cMid0Front.down.isReady
-          //cMid0Front.up.isFiring
-        ) {
-          //alu.io.inp_a := tempMyRdMemWord.asSInt
-          //when (
-          //  //!myShouldIgnoreInstr(0)
-          //  //&& 
-          //  alu.io.inp_op === LcvAluDel1InpOpEnum.OP_GET_INP_A
-          //) {
-          //  alu.io.inp_a := setOutpModMemWord.io.modMemWord(0).asSInt
-          //}
-          when (setOutpModMemWord.io.modMemWordValid.head) {
-            alu.io.inp_op := outp.aluOp
-          } otherwise {
-            alu.io.inp_op := LcvAluDel1InpOpEnum.OP_GET_INP_A
-          }
+        alu.io.inp_op := outp.aluOp
+        //when (
+        //  cMid0Front.down.isReady
+        //  //cMid0Front.up.isFiring
+        //) {
+        //  //alu.io.inp_a := tempMyRdMemWord.asSInt
+        //  //when (
+        //  //  //!myShouldIgnoreInstr(0)
+        //  //  //&& 
+        //  //  alu.io.inp_op === LcvAluDel1InpOpEnum.OP_GET_INP_A
+        //  //) {
+        //  //  alu.io.inp_a := setOutpModMemWord.io.modMemWord(0).asSInt
+        //  //}
+        //  when (setOutpModMemWord.io.modMemWordValid.head) {
+        //    alu.io.inp_op := outp.aluOp
+        //  } otherwise {
+        //    alu.io.inp_op := LcvAluDel1InpOpEnum.OP_GET_INP_A
+        //  }
 
-          //when (
-          //  //outp.aluOp === LcvAluDel1InpOpEnum.OP_GET_INP_A
-          //  alu.io.inp_op === LcvAluDel1InpOpEnum.OP_GET_INP_A
-          //) {
-          //  //alu.io.inp_op := LcvAluDel1InpOpEnum.ZERO
-          //  //alu.io.inp_op := LcvAluDel1InpOpEnum.OP_GET_INP_A
-          //  alu.io.inp_a := setOutpModMemWord.io.modMemWord(0).asSInt
-          //}
+        //  //when (
+        //  //  //outp.aluOp === LcvAluDel1InpOpEnum.OP_GET_INP_A
+        //  //  alu.io.inp_op === LcvAluDel1InpOpEnum.OP_GET_INP_A
+        //  //) {
+        //  //  //alu.io.inp_op := LcvAluDel1InpOpEnum.ZERO
+        //  //  //alu.io.inp_op := LcvAluDel1InpOpEnum.OP_GET_INP_A
+        //  //  alu.io.inp_a := setOutpModMemWord.io.modMemWord(0).asSInt
+        //  //}
 
-          //when (alu.io.inp_op === LcvAluDel1InpOpEnum.OP_GET_INP_A) {
-          //  alu.io.inp_a := setOutpModMemWord.io.modMemWord(0).asSInt
-          //}
-          //when (setOutpModMemWord.io.aluModMemWordValid.head) {
-          //  alu.io.inp_a := tempMyRdMemWord.asSInt
-          //  alu.io.inp_op := outp.aluOp
-          //} otherwise {
-          //  alu.io.inp_a := 0x0
-          //  alu.io.inp_op := LcvAluDel1InpOpEnum.ADD
-          //}
-        } 
+        //  //when (alu.io.inp_op === LcvAluDel1InpOpEnum.OP_GET_INP_A) {
+        //  //  alu.io.inp_a := setOutpModMemWord.io.modMemWord(0).asSInt
+        //  //}
+        //  //when (setOutpModMemWord.io.aluModMemWordValid.head) {
+        //  //  alu.io.inp_a := tempMyRdMemWord.asSInt
+        //  //  alu.io.inp_op := outp.aluOp
+        //  //} otherwise {
+        //  //  alu.io.inp_a := 0x0
+        //  //  alu.io.inp_op := LcvAluDel1InpOpEnum.ADD
+        //  //}
+        //} 
         //when (myShouldIgnoreInstr.last) {
         //  //alu.io.inp_op := LcvAluDel1InpOpEnum.ZERO
         //  alu.io.inp_op := 
