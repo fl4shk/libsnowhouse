@@ -7104,48 +7104,31 @@ case class SnowHousePipeStageExecute(
       next=(
         cMid0Front.up.isFiring
         && setOutpModMemWord.io.modMemWordValid.head
+        && alu.io.inp_op =/= LcvAluDel1InpOpEnum.OP_GET_INP_A
       ),
       init=False,
     )
   ) {
-    when (
+    aluModMemWord := alu.io.outp_data
+  } 
+  when (
+    RegNext(
+      next=(
+        cMid0Front.up.isFiring
+        && setOutpModMemWord.io.modMemWordValid.head
+        && alu.io.inp_op === LcvAluDel1InpOpEnum.OP_GET_INP_A
+      ),
+      init=False,
+    )
+  ) {
+    aluModMemWord := (
       RegNext(
         next=(
-          alu.io.inp_op =/= LcvAluDel1InpOpEnum.OP_GET_INP_A
+          setOutpModMemWord.io.modMemWord(0).asSInt
         ),
-        init=False
+        init=setOutpModMemWord.io.modMemWord(0).asSInt.getZero
       )
-    ) {
-      aluModMemWord := alu.io.outp_data
-    } otherwise {
-      aluModMemWord := (
-        RegNext(
-          next=(
-            setOutpModMemWord.io.modMemWord(0).asSInt
-          ),
-          init=setOutpModMemWord.io.modMemWord(0).asSInt.getZero
-        )
-      )
-    }
-    //when (
-    //  RegNext(
-    //    next=(
-    //      //alu.io.inp_op === LcvAluDel1InpOpEnum.OP_GET_INP_A
-    //      //&& 
-    //      setOutpModMemWord.io.modMemWordValid.head
-    //    ),
-    //    init=False
-    //  )
-    //) {
-    //  aluModMemWord := (
-    //    RegNext(
-    //      next=(
-    //        setOutpModMemWord.io.modMemWord(0).asSInt
-    //      ),
-    //      init=setOutpModMemWord.io.modMemWord(0).asSInt.getZero
-    //    )
-    //  )
-    //}
+    )
   }
 
   def doFinishSetOutpModMemWord(
