@@ -18,10 +18,10 @@ addr:9 data:6
 addr:7 data:3
 addr:8 data:3
 addr:9 data:4
+addr:10 data:1025
 addr:9 data:5
 addr:7 data:2
 addr:8 data:2
-addr:10 data:1025
 addr:9 data:3
 addr:9 data:4
 addr:7 data:1
@@ -54,6 +54,5 @@ addr:6 data:35
 addr:3 data:4108
 addr:1 data:5
 addr:13 data:232
-addr:7 data:7
 Ending test.
 
