@@ -7110,7 +7110,7 @@ case class SnowHousePipeStageExecute(
     )
   ) {
     aluModMemWord := alu.io.outp_data
-  } 
+  }
   when (
     RegNext(
       next=(
@@ -7128,6 +7128,13 @@ case class SnowHousePipeStageExecute(
         ),
         init=setOutpModMemWord.io.modMemWord(0).asSInt.getZero
       )
+    )
+  }
+  when (
+    io.dbusLdReady
+  ) {
+    aluModMemWord := (
+      io.dbus.recvData.data.asSInt.resized
     )
   }
 
@@ -8357,18 +8364,18 @@ case class SnowHousePipeStageMem(
         )
       )
     )
-    when (
-      io.dbusLdReady
-    ) {
-      myCurrExt.modMemWord := io.dbus.recvData.data.resized
-      //myCurrExt.modMemWordValid.foreach(current => {
-      //  current := (
-      //    // TODO: support more destination GPRs
-      //    //!midModPayload(extIdxUp).gprIsZeroVec(0)
-      //    True
-      //  )
-      //})
-    }
+    //when (
+    //  io.dbusLdReady
+    //) {
+    //  myCurrExt.modMemWord := io.dbus.recvData.data.resized
+    //  //myCurrExt.modMemWordValid.foreach(current => {
+    //  //  current := (
+    //  //    // TODO: support more destination GPRs
+    //  //    //!midModPayload(extIdxUp).gprIsZeroVec(0)
+    //  //    True
+    //  //  )
+    //  //})
+    //}
   }
   //for (idx <- 0 until cfg.regFileCfg.memArrSize) {
   //  midModPayload(extIdxUp).myExt.foreach(item => {
