@@ -6708,6 +6708,11 @@ case class SnowHousePipeStageExecute(
     outp.myExt(ydx).rdMemWord := (
       inp.myExt(ydx).rdMemWord
     )
+    //for (zdx <- 0 until outp.myExt(ydx).fwdIdx.size) {
+    //  outp.myExt(ydx).fwdIdx(zdx) := (
+    //    inp.myExt(ydx).fwdIdx(zdx)
+    //  )
+    //}
   }
   //val savedPsMemStallHost = (
   //  LcvStallHostSaved(
