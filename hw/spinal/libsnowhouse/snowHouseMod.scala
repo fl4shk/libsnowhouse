@@ -437,26 +437,27 @@ case class SnowHouseInstrDataDualRam(
 
     //myRam.io.up << dcache.io.tlBus
     //myRam.io.up.a << dcache.io.tlBus.a
-    myRam.io.up.a.opcode := dcache.io.tlBus.a.opcode
-    myRam.io.up.a.param := dcache.io.tlBus.a.param
-    myRam.io.up.a.source := dcache.io.tlBus.a.source
-    myRam.io.up.a.address := dcache.io.tlBus.a.address.resize(
-      myRam.io.up.a.address.getWidth
-    )
-    myRam.io.up.a.size := dcache.io.tlBus.a.size
-    myRam.io.up.a.mask := dcache.io.tlBus.a.mask
-    myRam.io.up.a.data := dcache.io.tlBus.a.data
-    myRam.io.up.a.corrupt := dcache.io.tlBus.a.corrupt
-    myRam.io.up.a.debugId := dcache.io.tlBus.a.debugId
+    myRam.io.up.a <-< dcache.io.tlBus.a
+    //myRam.io.up.a.opcode := dcache.io.tlBus.a.opcode
+    //myRam.io.up.a.param := dcache.io.tlBus.a.param
+    //myRam.io.up.a.source := dcache.io.tlBus.a.source
+    //myRam.io.up.a.address := dcache.io.tlBus.a.address.resize(
+    //  myRam.io.up.a.address.getWidth
+    //)
+    //myRam.io.up.a.size := dcache.io.tlBus.a.size
+    //myRam.io.up.a.mask := dcache.io.tlBus.a.mask
+    //myRam.io.up.a.data := dcache.io.tlBus.a.data
+    //myRam.io.up.a.corrupt := dcache.io.tlBus.a.corrupt
+    //myRam.io.up.a.debugId := dcache.io.tlBus.a.debugId
 
-    myRam.io.up.a.valid := dcache.io.tlBus.a.valid
-    dcache.io.tlBus.a.ready := myRam.io.up.a.ready
+    //myRam.io.up.a.valid := dcache.io.tlBus.a.valid
+    //dcache.io.tlBus.a.ready := myRam.io.up.a.ready
 
     //myRam.io.up.a.address.allowOverride
     //myRam.io.up.a.address := (
     //  dcache.io.tlBus.a.address.resized
     //)
-    dcache.io.tlBus.d << myRam.io.up.d
+    dcache.io.tlBus.d <-< myRam.io.up.d
     //myRam.io.up.a <-/< dcache.io.tlBus.a
     //dcache.io.tlBus.d <-/< myRam.io.up.d
   }
