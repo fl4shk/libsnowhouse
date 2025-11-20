@@ -5859,7 +5859,21 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
         ((fullOpInfoIdx, opInfo), idx)
         <- cfg.jmpBrOpInfoMap.view.zipWithIndex
       ) {
-        is (idx) {
+        is (
+          //idx
+          new MaskedLiteral(
+            value=(
+              (1 << idx)
+            ),
+            careAbout=(
+              (1 << idx)
+              | ((1 << idx) - 1)
+            ),
+            width=(
+              cfg.jmpBrOpInfoMap.size + 1
+            )
+          )
+        ) {
           innerFunc(
             opInfo=opInfo,
             opInfoIdx=idx,
@@ -7705,13 +7719,19 @@ case class SnowHousePipeStageExecute(
       )
       setOutpModMemWord.io.splitOp.jmpBrOp.allowOverride
       setOutpModMemWord.io.splitOp.jmpBrOp := {
-        val temp = UInt(log2Up(cfg.jmpBrOpInfoMap.size) bits)
+        val temp = UInt(
+          //log2Up(cfg.jmpBrOpInfoMap.size) bits
+          (cfg.jmpBrOpInfoMap.size + 1) bits
+        )
         for (
           ((idx, pureJmpOpInfo), jmpBrOp)
           <- cfg.jmpBrOpInfoMap.view.zipWithIndex
         ) {
           if (idx == cfg.irqJmpOp) {
-            temp := jmpBrOp
+            temp := (
+              //jmpBrOp
+              1 << jmpBrOp
+            )
           }
         }
         temp
@@ -7719,7 +7739,8 @@ case class SnowHousePipeStageExecute(
     }
   } otherwise {
     setOutpModMemWord.io.splitOp.jmpBrOp := (
-      (1 << setOutpModMemWord.io.splitOp.jmpBrOp.getWidth) - 1
+      //(1 << setOutpModMemWord.io.splitOp.jmpBrOp.getWidth) - 1
+      1 << (setOutpModMemWord.io.splitOp.jmpBrOp.getWidth - 1)
     )
   }
   psExSetPc.nextPc := (

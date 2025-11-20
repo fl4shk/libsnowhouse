@@ -24,4 +24,7 @@ Disassembly of section .text:
 
 00000044 <_infin>:
   44:	ff ff 00 a0 	beq	r0, r0, -4
-	...
+  48:	01 00 00 01 	add	r1, r0, 1
+  4c:	02 00 00 02 	add	r2, r0, 2
+  50:	03 00 00 03 	add	r3, r0, 3
+  54:	04 00 00 04 	add	r4, r0, 4

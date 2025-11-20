@@ -1194,8 +1194,12 @@ case class SnowHouseSplitOp(
     SnowHousePsExSetNextPcKind(encoding=binarySequential)
   )
   val jmpBrOp = /*Flow*/(
-    UInt(log2Up(cfg.jmpBrOpInfoMap.size + 1) bits)
+    //UInt(log2Up(cfg.jmpBrOpInfoMap.size + 1) bits)
+    UInt((cfg.jmpBrOpInfoMap.size + 1) bits)
   )
+  //val jmpBrOpOneHot = (
+  //  UInt((cfg.jmpBrOpInfoMap.size + 1) bits)
+  //)
   //val pureJmpOp = /*Flow*/(
   //  UInt(log2Up(cfg.pureJmpOpInfoMap.size) bits)
   //)
@@ -1231,8 +1235,12 @@ case class SnowHouseSplitOp(
     multiCycleOp := 0x0
     opIsMemAccess := False
     jmpBrOp := (
-      (1 << jmpBrOp.getWidth) - 1
+      //(1 << jmpBrOp.getWidth) - 1
+      1 << (jmpBrOp.getWidth - 1)
     )
+    //jmpBrOpOneHot := (
+    //  1 << (jmpBrOpOneHot.getWidth - 1)
+    //)
     exSetNextPcKind := (
       //SnowHousePsExSetNextPcKind.PcPlusImm
       //SnowHousePsExSetNextPcKind.PcPlusInstrSize
