@@ -1,4 +1,4 @@
-for ((i=0; i<12; i+=1)); do
+for ((i=0; i<13; i+=1)); do
 #for ((i=0; i<1; i+=1)); do
 	snowhousecpu-unknown-elf-as -c snowhousecpu-test-"$i".s -o snowhousecpu-test-"$i".o
 	snowhousecpu-unknown-elf-ld --relax snowhousecpu-test-"$i".o -o snowhousecpu-test-"$i".elf
