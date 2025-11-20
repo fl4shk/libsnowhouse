@@ -1241,8 +1241,8 @@ object SnowHouseCpuPipeStageInstrDecode {
                 + s"${someOp._3} // ${jmpOpInfoIdx}"
               )
               mySplitOp.jmpBrOp := (
-                //jmpOpInfoIdx
-                1 << jmpOpInfoIdx
+                jmpOpInfoIdx
+                //1 << jmpOpInfoIdx
               )
               found = true
             }
