@@ -5909,19 +5909,19 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
         <- cfg.jmpBrOtherOpInfoMap.view.zipWithIndex
       ) {
         is (
-          idx
-          //new MaskedLiteral(
-          //  value=(
-          //    (1 << idx)
-          //  ),
-          //  careAbout=(
-          //    (1 << idx)
-          //    | ((1 << idx) - 1)
-          //  ),
-          //  width=(
-          //    cfg.jmpBrOtherOpInfoMap.size + 1
-          //  )
-          //)
+          //idx
+          new MaskedLiteral(
+            value=(
+              (1 << idx)
+            ),
+            careAbout=(
+              (1 << idx)
+              | ((1 << idx) - 1)
+            ),
+            width=(
+              cfg.jmpBrOtherOpInfoMap.size + 1
+            )
+          )
         ) {
           innerFunc(
             opInfo=opInfo,
@@ -7785,11 +7785,19 @@ case class SnowHousePipeStageExecute(
         }
         temp
       }
+      setOutpModMemWord.io.splitOp.jmpBrOtherOp := (
+        //(1 << setOutpModMemWord.io.splitOp.jmpBrOtherOp.getWidth) - 1
+        1 << (setOutpModMemWord.io.splitOp.jmpBrOtherOp.getWidth - 1)
+      )
     }
   } otherwise {
     setOutpModMemWord.io.splitOp.jmpBrAlwaysEqNeOp := (
       (1 << setOutpModMemWord.io.splitOp.jmpBrAlwaysEqNeOp.getWidth) - 1
       //1 << (setOutpModMemWord.io.splitOp.jmpBrAlwaysEqNeOp.getWidth - 1)
+    )
+    setOutpModMemWord.io.splitOp.jmpBrOtherOp := (
+      //(1 << setOutpModMemWord.io.splitOp.jmpBrOtherOp.getWidth) - 1
+      1 << (setOutpModMemWord.io.splitOp.jmpBrOtherOp.getWidth - 1)
     )
   }
   psExSetPc.nextPc := (
