@@ -5872,25 +5872,56 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
     //    =/= ((1 << io.splitOp.aluShiftOp.getWidth) - 1)
     //  )
     //})
-    switch (io.splitOp.jmpBrOp) {
+    switch (io.splitOp.jmpBrAlwaysEqNeOp) {
       for (
         ((fullOpInfoIdx, opInfo), idx)
-        <- cfg.jmpBrOpInfoMap.view.zipWithIndex
+        <- cfg.jmpBrAlwaysEqNeOpInfoMap.view.zipWithIndex
       ) {
         is (
-          //idx
-          new MaskedLiteral(
-            value=(
-              (1 << idx)
-            ),
-            careAbout=(
-              (1 << idx)
-              | ((1 << idx) - 1)
-            ),
-            width=(
-              cfg.jmpBrOpInfoMap.size + 1
-            )
+          idx
+          //new MaskedLiteral(
+          //  value=(
+          //    (1 << idx)
+          //  ),
+          //  careAbout=(
+          //    (1 << idx)
+          //    | ((1 << idx) - 1)
+          //  ),
+          //  width=(
+          //    cfg.jmpBrAlwaysEqNeOpInfoMap.size + 1
+          //  )
+          //)
+        ) {
+          innerFunc(
+            opInfo=opInfo,
+            opInfoIdx=idx,
+            fullOpInfoIdx=Some(fullOpInfoIdx),
           )
+          //io.shiftModMemWord := 0x0
+        }
+      }
+      default {
+      }
+    }
+    switch (io.splitOp.jmpBrOtherOp) {
+      for (
+        ((fullOpInfoIdx, opInfo), idx)
+        <- cfg.jmpBrOtherOpInfoMap.view.zipWithIndex
+      ) {
+        is (
+          idx
+          //new MaskedLiteral(
+          //  value=(
+          //    (1 << idx)
+          //  ),
+          //  careAbout=(
+          //    (1 << idx)
+          //    | ((1 << idx) - 1)
+          //  ),
+          //  width=(
+          //    cfg.jmpBrOtherOpInfoMap.size + 1
+          //  )
+          //)
         ) {
           innerFunc(
             opInfo=opInfo,
@@ -6082,7 +6113,7 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
   //      }
   //      for (
   //        ((_, jmpOpInfo), idx)
-  //        <- cfg.jmpBrOpInfoMap.view.zipWithIndex
+  //        <- cfg.jmpBrAlwaysEqNeOpInfoMap.view.zipWithIndex
   //      ) {
   //        if (opInfo == jmpOpInfo) {
   //          innerFunc(
@@ -6143,9 +6174,9 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
   //    }
   //  }
   //  is (SnowHouseSplitOpKind.JMP_BR) {
-  //    switch (io.splitOp.jmpBrOp) {
+  //    switch (io.splitOp.jmpBrAlwaysEqNeOp) {
   //      for (
-  //        ((_, opInfo), idx) <- cfg.jmpBrOpInfoMap.view.zipWithIndex
+  //        ((_, opInfo), idx) <- cfg.jmpBrAlwaysEqNeOpInfoMap.view.zipWithIndex
   //      ) {
   //        is (idx) {
   //          innerFunc(
@@ -7709,7 +7740,7 @@ case class SnowHousePipeStageExecute(
   )
   setOutpModMemWord.io.splitOp.kind.allowOverride
   setOutpModMemWord.io.splitOp.allowOverride
-  setOutpModMemWord.io.splitOp.jmpBrOp.allowOverride
+  setOutpModMemWord.io.splitOp.jmpBrAlwaysEqNeOp.allowOverride
   setOutpModMemWord.io.splitOp := (
     RegNext(
       next=setOutpModMemWord.io.splitOp,
@@ -7735,20 +7766,20 @@ case class SnowHousePipeStageExecute(
       setOutpModMemWord.io.splitOp.exSetNextPcKind := (
         SnowHousePsExSetNextPcKind.Ids
       )
-      setOutpModMemWord.io.splitOp.jmpBrOp.allowOverride
-      setOutpModMemWord.io.splitOp.jmpBrOp := {
+      setOutpModMemWord.io.splitOp.jmpBrAlwaysEqNeOp.allowOverride
+      setOutpModMemWord.io.splitOp.jmpBrAlwaysEqNeOp := {
         val temp = UInt(
-          //log2Up(cfg.jmpBrOpInfoMap.size) bits
-          (cfg.jmpBrOpInfoMap.size + 1) bits
+          log2Up(cfg.jmpBrAlwaysEqNeOpInfoMap.size) bits
+          //(cfg.jmpBrAlwaysEqNeOpInfoMap.size + 1) bits
         )
         for (
-          ((idx, pureJmpOpInfo), jmpBrOp)
-          <- cfg.jmpBrOpInfoMap.view.zipWithIndex
+          ((idx, pureJmpOpInfo), jmpBrAlwaysEqNeOp)
+          <- cfg.jmpBrAlwaysEqNeOpInfoMap.view.zipWithIndex
         ) {
           if (idx == cfg.irqJmpOp) {
             temp := (
-              //jmpBrOp
-              1 << jmpBrOp
+              jmpBrAlwaysEqNeOp
+              //1 << jmpBrAlwaysEqNeOp
             )
           }
         }
@@ -7756,9 +7787,9 @@ case class SnowHousePipeStageExecute(
       }
     }
   } otherwise {
-    setOutpModMemWord.io.splitOp.jmpBrOp := (
-      //(1 << setOutpModMemWord.io.splitOp.jmpBrOp.getWidth) - 1
-      1 << (setOutpModMemWord.io.splitOp.jmpBrOp.getWidth - 1)
+    setOutpModMemWord.io.splitOp.jmpBrAlwaysEqNeOp := (
+      (1 << setOutpModMemWord.io.splitOp.jmpBrAlwaysEqNeOp.getWidth) - 1
+      //1 << (setOutpModMemWord.io.splitOp.jmpBrAlwaysEqNeOp.getWidth - 1)
     )
   }
   psExSetPc.nextPc := (

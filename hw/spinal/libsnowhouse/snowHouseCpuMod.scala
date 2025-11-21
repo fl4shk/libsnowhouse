@@ -1146,8 +1146,8 @@ object SnowHouseCpuPipeStageInstrDecode {
     //)
     //upPayload.splitOp.multiCycleOp := 0x0
     //upPayload.splitOp.opIsMemAccess := False
-    //upPayload.splitOp.jmpBrOp := (
-    //  (1 << upPayload.splitOp.jmpBrOp.getWidth) - 1
+    //upPayload.splitOp.jmpBrAlwaysEqNeOp := (
+    //  (1 << upPayload.splitOp.jmpBrAlwaysEqNeOp.getWidth) - 1
     //)
     upPayload.splitOp.setToDefault()
     //val rDoAluShiftPost = Reg(Bool(), init=False)
@@ -1229,7 +1229,7 @@ object SnowHouseCpuPipeStageInstrDecode {
         if (someOp == tuple) {
           for (
             ((_, jmpOpInfo), jmpOpInfoIdx)
-            <- cfg.jmpBrOpInfoMap.view.zipWithIndex
+            <- cfg.jmpBrAlwaysEqNeOpInfoMap.view.zipWithIndex
           ) {
             if (
               //opInfo == jmpOpInfo
@@ -1237,12 +1237,34 @@ object SnowHouseCpuPipeStageInstrDecode {
               jmpOpInfo == opInfo
             ) {
               println(
-                s"jmpBrOp: " // "${opInfoIdx} -> ${jmpOpInfoIdx} "
+                s"jmpBrAlwaysEqNeOp: "
+                  // "${opInfoIdx} -> ${jmpOpInfoIdx} "
                 + s"${someOp._3} // ${jmpOpInfoIdx}"
               )
-              mySplitOp.jmpBrOp := (
-                //jmpOpInfoIdx
-                1 << jmpOpInfoIdx
+              mySplitOp.jmpBrAlwaysEqNeOp := (
+                jmpOpInfoIdx
+                //1 << jmpOpInfoIdx
+              )
+              found = true
+            }
+          }
+          for (
+            ((_, jmpOpInfo), jmpOpInfoIdx)
+            <- cfg.jmpBrOtherOpInfoMap.view.zipWithIndex
+          ) {
+            if (
+              //opInfo == jmpOpInfo
+              //someOp == jmpOpTuple
+              jmpOpInfo == opInfo
+            ) {
+              println(
+                s"jmpBrOtherOp: "
+                  // "${opInfoIdx} -> ${jmpOpInfoIdx} "
+                + s"${someOp._3} // ${jmpOpInfoIdx}"
+              )
+              mySplitOp.jmpBrOtherOp := (
+                jmpOpInfoIdx
+                //1 << jmpOpInfoIdx
               )
               found = true
             }
@@ -5130,7 +5152,7 @@ object SnowHouseCpuWithDualRamSim extends App {
     //1, 1,
     //2, 2,
     //3, 3,
-    4, 4,
+    //4, 4,
     //5, 5,
     //6, 6,
     //7, 7,
@@ -5141,8 +5163,8 @@ object SnowHouseCpuWithDualRamSim extends App {
     12, 12,
   )
   val instrRamKindArr = Array[Int](
-    0,
-    1,
+    //0,
+    //1,
     2,
     5,
   )

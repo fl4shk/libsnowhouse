@@ -769,7 +769,8 @@ case class SnowHouseConfig(
   //--------
   val cpyCpyuiOpInfoMap = LinkedHashMap[Int, OpInfo]()
   //val pureCpyOpInfoMap = LinkedHashMap[Int, OpInfo]()
-  val jmpBrOpInfoMap = LinkedHashMap[Int, OpInfo]()
+  val jmpBrAlwaysEqNeOpInfoMap = LinkedHashMap[Int, OpInfo]()
+  val jmpBrOtherOpInfoMap = LinkedHashMap[Int, OpInfo]()
   //val pureJmpOpInfoMap = LinkedHashMap[Int, OpInfo]()
   //val cpyOpInfoMap = LinkedHashMap[Int, OpInfo]()
   val aluOpInfoMap = LinkedHashMap[Int, OpInfo]()
@@ -908,12 +909,39 @@ case class SnowHouseConfig(
             //  + s"instruction: "
             //  + s"opInfo(${opInfo}), instructionIndex:${idx}"
             //)
-            jmpBrOpInfoMap += (idx -> opInfo)
+            opInfo.cond match {
+              case CondKind.Always => {
+                jmpBrAlwaysEqNeOpInfoMap += (idx -> opInfo)
+              }
+              case CondKind.Eq => {
+                jmpBrAlwaysEqNeOpInfoMap += (idx -> opInfo)
+              }
+              case CondKind.Ne => {
+                jmpBrAlwaysEqNeOpInfoMap += (idx -> opInfo)
+              }
+              case _ => {
+                jmpBrOtherOpInfoMap += (idx -> opInfo)
+              }
+            }
             nonMultiCycleOpInfoMap += (idx -> opInfo)
           }
           case CpyOpKind.Br => { // relative branches
             //pureBrOpInfoMap += (idx -> opInfo)
-            jmpBrOpInfoMap += (idx -> opInfo)
+            //jmpBrAlwaysEqNeOpInfoMap += (idx -> opInfo)
+            opInfo.cond match {
+              case CondKind.Always => {
+                jmpBrAlwaysEqNeOpInfoMap += (idx -> opInfo)
+              }
+              case CondKind.Eq => {
+                jmpBrAlwaysEqNeOpInfoMap += (idx -> opInfo)
+              }
+              case CondKind.Ne => {
+                jmpBrAlwaysEqNeOpInfoMap += (idx -> opInfo)
+              }
+              case _ => {
+                jmpBrOtherOpInfoMap += (idx -> opInfo)
+              }
+            }
             nonMultiCycleOpInfoMap += (idx -> opInfo)
           }
         }
@@ -1193,12 +1221,16 @@ case class SnowHouseSplitOp(
   val exSetNextPcKind = (
     SnowHousePsExSetNextPcKind(encoding=binarySequential)
   )
-  val jmpBrOp = /*Flow*/(
-    //UInt(log2Up(cfg.jmpBrOpInfoMap.size + 1) bits)
-    UInt((cfg.jmpBrOpInfoMap.size + 1) bits)
+  val jmpBrAlwaysEqNeOp = /*Flow*/(
+    UInt(log2Up(cfg.jmpBrAlwaysEqNeOpInfoMap.size + 1) bits)
+    //UInt((cfg.jmpBrAlwaysEqNeOpInfoMap.size + 1) bits)
   )
-  //val jmpBrOpOneHot = (
-  //  UInt((cfg.jmpBrOpInfoMap.size + 1) bits)
+  val jmpBrOtherOp = (
+    UInt(log2Up(cfg.jmpBrOtherOpInfoMap.size + 1) bits)
+    //UInt((cfg.jmpBrOtherOpInfoMap.size + 1) bits)
+  )
+  //val jmpBrAlwaysEqNeOpOneHot = (
+  //  UInt((cfg.jmpBrAlwaysEqNeOpInfoMap.size + 1) bits)
   //)
   //val pureJmpOp = /*Flow*/(
   //  UInt(log2Up(cfg.pureJmpOpInfoMap.size) bits)
@@ -1234,12 +1266,16 @@ case class SnowHouseSplitOp(
     //)
     multiCycleOp := 0x0
     opIsMemAccess := False
-    jmpBrOp := (
-      //(1 << jmpBrOp.getWidth) - 1
-      1 << (jmpBrOp.getWidth - 1)
+    jmpBrAlwaysEqNeOp := (
+      (1 << jmpBrAlwaysEqNeOp.getWidth) - 1
+      //1 << (jmpBrAlwaysEqNeOp.getWidth - 1)
     )
-    //jmpBrOpOneHot := (
-    //  1 << (jmpBrOpOneHot.getWidth - 1)
+    jmpBrOtherOp := (
+      (1 << jmpBrOtherOp.getWidth) - 1
+      //1 << (jmpBrOtherOp.getWidth - 1)
+    )
+    //jmpBrAlwaysEqNeOpOneHot := (
+    //  1 << (jmpBrAlwaysEqNeOpOneHot.getWidth - 1)
     //)
     exSetNextPcKind := (
       //SnowHousePsExSetNextPcKind.PcPlusImm
