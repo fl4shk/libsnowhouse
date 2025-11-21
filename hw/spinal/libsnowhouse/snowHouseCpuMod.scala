@@ -1241,8 +1241,8 @@ object SnowHouseCpuPipeStageInstrDecode {
                 + s"${someOp._3} // ${jmpOpInfoIdx}"
               )
               mySplitOp.jmpBrOp := (
-                jmpOpInfoIdx
-                //1 << jmpOpInfoIdx
+                //jmpOpInfoIdx
+                1 << jmpOpInfoIdx
               )
               found = true
             }
@@ -5130,7 +5130,7 @@ object SnowHouseCpuWithDualRamSim extends App {
     //1, 1,
     //2, 2,
     //3, 3,
-    //4, 4,
+    4, 4,
     //5, 5,
     //6, 6,
     //7, 7,
