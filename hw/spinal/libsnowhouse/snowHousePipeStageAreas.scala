@@ -3171,6 +3171,11 @@ case class SnowHousePipeStageExecuteSetOutpModMemWordIo(
   if (isComponentIo) {
     master(psExSetPc)
   }
+  val nextPsExSetPcValid = setAsInp(
+    Vec.fill(cfg.lowerMyFanoutRegPcSetItCnt)(
+      Bool()
+    )
+  )
   val inpDecodeExt = setAsInp(
     Vec.fill(2)(
       SnowHouseDecodeExt(cfg=cfg)
@@ -4600,7 +4605,17 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
                     + s"opInfo(${opInfo}) index:${opInfoIdx}"
                   )
                   if (opInfo.dstArr(1) == DstKind.Ie) {
-                    when (!io.shouldIgnoreInstr(2)) {
+                    when (
+                      !io.shouldIgnoreInstr(2)
+                      //|| (
+                      //  outp.regPcSetItCnt(idx)(0)
+                      //)
+                      //RegNext(
+                      //  next=io.nextPsExSetPcValid(2),
+                      //  init=False,
+                      //)
+                      //io.nextPsExSetPcValid(2)
+                    ) {
                       nextHadRetIra := True
                     }
                   }
@@ -7022,9 +7037,9 @@ case class SnowHousePipeStageExecute(
     //val rIrqWasDelayed = (
     //  Reg(Bool(), init=False)
     //)
-    val rStickyTakeIrq = (
-      Reg(Bool(), init=False)
-    )
+    //val rStickyTakeIrq = (
+    //  Reg(Bool(), init=False)
+    //)
     val tempCond = (
       //setOutpModMemWord.io.regPcSetItCnt(0)(0)
       //&& setOutpModMemWord.io.upIsValid
@@ -7033,7 +7048,7 @@ case class SnowHousePipeStageExecute(
       !myShouldIgnoreInstr(0)
       //|| rIrqWasDelayed
     )
-    when (
+    val myTakeIrq = (
       (
         rHaveIrqValid
       ) && (
@@ -7043,10 +7058,29 @@ case class SnowHousePipeStageExecute(
           init=tempTakeIrqCond.getZero,
         )
       )
+      //&& (
+      //  cMid0Front.up.isValid
+      //)
+    )
+    //when (
+    //  cMid0Front.up.isFiring
+    //  && myTakeIrq
+    //) {
+    //  rStickyTakeIrq := True
+    //}
+    when (
+      //(
+      //  rHaveIrqValid
+      //) && (
+      //  RegNext/*When*/(
+      //    next=tempTakeIrqCond,
+      //    //cond=cMid0Front.up.isFiring,
+      //    init=tempTakeIrqCond.getZero,
+      //  )
+      //)
+      myTakeIrq
+      //|| rStickyTakeIrq
     ) {
-      rStickyTakeIrq := True
-    }
-    when (rStickyTakeIrq) {
       when (cMid0Front.up.isFiring) {
         //rStickyTakeIrq := False
         //when (myShouldIgnoreInstr(0)) {
@@ -7054,12 +7088,12 @@ case class SnowHousePipeStageExecute(
         //}
         nextMyTakeIrq := (
           //rTempTakeIrq
-          //True
-          tempCond
+          True
+          //tempCond
         )
-        when (nextMyTakeIrq) {
-          rStickyTakeIrq := False
-        }
+        //when (nextMyTakeIrq) {
+        //  rStickyTakeIrq := False
+        //}
       }
     }
     setOutpModMemWord.io.irqIraRegPc := (
@@ -7655,6 +7689,9 @@ case class SnowHousePipeStageExecute(
         init=False
       )
     )
+    setOutpModMemWord.io.nextPsExSetPcValid(idx) := (
+      nextPsExSetPcValid(idx)
+    )
   }
 
   psExSetPc.valid := (
@@ -7681,13 +7718,13 @@ case class SnowHousePipeStageExecute(
     }
     when (
       cMid0Front.up.isValid
-      && (
-        RegNext(
-          next=myShouldIgnoreInstr(idx),
-          init=False,
-        )
-        //|| psExSetPc.valid
-      )
+      //&& (
+      //  RegNext(
+      //    next=myShouldIgnoreInstr(idx),
+      //    init=False,
+      //  )
+      //  //|| psExSetPc.valid
+      //)
       //True
     ) {
       when (outp.regPcSetItCnt(idx)(0)) {
@@ -7792,45 +7829,48 @@ case class SnowHousePipeStageExecute(
   )
   when (cMid0Front.up.isValid) {
     setOutpModMemWord.io.splitOp := outp.splitOp
-    when (
-      (
-        rMyTakeIrq
-        //&& cMid0Front.up.isFiring
-        //&& RegNext(
-        //  next=cMid0Front.up.isFiring,
-        //  init=False
-        //)
-      )
-      //&& cMid0Front.up.isFiring
-    ) {
-      setOutpModMemWord.io.btbElemDontPredict := True
-      setOutpModMemWord.io.splitOp.setToDefault()
-      setOutpModMemWord.io.splitOp.exSetNextPcKind := (
-        SnowHousePsExSetNextPcKind.Ids
-      )
-      setOutpModMemWord.io.splitOp.jmpBrAlwaysEqNeOp.allowOverride
-      setOutpModMemWord.io.splitOp.jmpBrAlwaysEqNeOp := {
-        val temp = UInt(
-          log2Up(cfg.jmpBrAlwaysEqNeOpInfoMap.size) bits
-          //(cfg.jmpBrAlwaysEqNeOpInfoMap.size + 1) bits
+    if (cfg.irqCfg != None) {
+      when (
+        (
+          rMyTakeIrq
+          //io.idsIraIrq.ready
+          //&& cMid0Front.up.isFiring
+          //&& RegNext(
+          //  next=cMid0Front.up.isFiring,
+          //  init=False
+          //)
         )
-        for (
-          ((idx, pureJmpOpInfo), jmpBrAlwaysEqNeOp)
-          <- cfg.jmpBrAlwaysEqNeOpInfoMap.view.zipWithIndex
-        ) {
-          if (idx == cfg.irqJmpOp) {
-            temp := (
-              jmpBrAlwaysEqNeOp
-              //1 << jmpBrAlwaysEqNeOp
-            )
+        //&& cMid0Front.up.isFiring
+      ) {
+        setOutpModMemWord.io.btbElemDontPredict := True
+        setOutpModMemWord.io.splitOp.setToDefault()
+        setOutpModMemWord.io.splitOp.exSetNextPcKind := (
+          SnowHousePsExSetNextPcKind.Ids
+        )
+        setOutpModMemWord.io.splitOp.jmpBrAlwaysEqNeOp.allowOverride
+        setOutpModMemWord.io.splitOp.jmpBrAlwaysEqNeOp := {
+          val temp = UInt(
+            log2Up(cfg.jmpBrAlwaysEqNeOpInfoMap.size) bits
+            //(cfg.jmpBrAlwaysEqNeOpInfoMap.size + 1) bits
+          )
+          for (
+            ((idx, pureJmpOpInfo), jmpBrAlwaysEqNeOp)
+            <- cfg.jmpBrAlwaysEqNeOpInfoMap.view.zipWithIndex
+          ) {
+            if (idx == cfg.irqJmpOp) {
+              temp := (
+                jmpBrAlwaysEqNeOp
+                //1 << jmpBrAlwaysEqNeOp
+              )
+            }
           }
+          temp
         }
-        temp
+        setOutpModMemWord.io.splitOp.jmpBrOtherOp := (
+          //(1 << setOutpModMemWord.io.splitOp.jmpBrOtherOp.getWidth) - 1
+          1 << (setOutpModMemWord.io.splitOp.jmpBrOtherOp.getWidth - 1)
+        )
       }
-      setOutpModMemWord.io.splitOp.jmpBrOtherOp := (
-        //(1 << setOutpModMemWord.io.splitOp.jmpBrOtherOp.getWidth) - 1
-        1 << (setOutpModMemWord.io.splitOp.jmpBrOtherOp.getWidth - 1)
-      )
     }
   } otherwise {
     setOutpModMemWord.io.splitOp.jmpBrAlwaysEqNeOp := (
