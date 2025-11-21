@@ -5927,7 +5927,7 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
               | ((1 << idx) - 1)
             ),
             width=(
-              cfg.jmpBrOtherOpInfoMap.size + 1
+              cfg.jmpBrOtherOpInfoMap.size //+ 1
             )
           )
         ) {
@@ -7783,14 +7783,14 @@ case class SnowHousePipeStageExecute(
   setOutpModMemWord.io.splitOp.kind.allowOverride
   setOutpModMemWord.io.splitOp.allowOverride
   setOutpModMemWord.io.splitOp.jmpBrAlwaysEqNeOp.allowOverride
-  //setOutpModMemWord.io.splitOp := (
-  //  RegNext(
-  //    next=setOutpModMemWord.io.splitOp,
-  //    init=setOutpModMemWord.io.splitOp.getZero,
-  //  )
-  //  //init(SnowHouseSplitOpKind.CPY_CPYUI)
-  //)
-  //when (cMid0Front.up.isValid) {
+  setOutpModMemWord.io.splitOp := (
+    RegNext(
+      next=setOutpModMemWord.io.splitOp,
+      init=setOutpModMemWord.io.splitOp.getZero,
+    )
+    //init(SnowHouseSplitOpKind.CPY_CPYUI)
+  )
+  when (cMid0Front.up.isValid) {
     setOutpModMemWord.io.splitOp := outp.splitOp
     when (
       (
@@ -7832,16 +7832,17 @@ case class SnowHousePipeStageExecute(
         1 << (setOutpModMemWord.io.splitOp.jmpBrOtherOp.getWidth - 1)
       )
     }
-  //} otherwise {
-  //  setOutpModMemWord.io.splitOp.jmpBrAlwaysEqNeOp := (
-  //    (1 << setOutpModMemWord.io.splitOp.jmpBrAlwaysEqNeOp.getWidth) - 1
-  //    //1 << (setOutpModMemWord.io.splitOp.jmpBrAlwaysEqNeOp.getWidth - 1)
-  //  )
-  //  setOutpModMemWord.io.splitOp.jmpBrOtherOp := (
-  //    //(1 << setOutpModMemWord.io.splitOp.jmpBrOtherOp.getWidth) - 1
-  //    1 << (setOutpModMemWord.io.splitOp.jmpBrOtherOp.getWidth - 1)
-  //  )
-  //}
+  } otherwise {
+    setOutpModMemWord.io.splitOp.jmpBrAlwaysEqNeOp := (
+      (1 << setOutpModMemWord.io.splitOp.jmpBrAlwaysEqNeOp.getWidth) - 1
+      //1 << (setOutpModMemWord.io.splitOp.jmpBrAlwaysEqNeOp.getWidth - 1)
+    )
+    setOutpModMemWord.io.splitOp.jmpBrOtherOp := (
+      //(1 << setOutpModMemWord.io.splitOp.jmpBrOtherOp.getWidth) - 1
+      //1 << (setOutpModMemWord.io.splitOp.jmpBrOtherOp.getWidth - 1)
+      0x0
+    )
+  }
   psExSetPc.nextPc := (
     RegNext(
       next=setOutpModMemWord.io.psExSetPc.nextPc,

@@ -1227,7 +1227,7 @@ case class SnowHouseSplitOp(
   )
   val jmpBrOtherOp = (
     //UInt(log2Up(cfg.jmpBrOtherOpInfoMap.size + 1) bits)
-    UInt((cfg.jmpBrOtherOpInfoMap.size + 1) bits)
+    UInt((cfg.jmpBrOtherOpInfoMap.size /*+ 1*/) bits)
   )
   //val jmpBrAlwaysEqNeOpOneHot = (
   //  UInt((cfg.jmpBrAlwaysEqNeOpInfoMap.size + 1) bits)
@@ -1272,7 +1272,8 @@ case class SnowHouseSplitOp(
     )
     jmpBrOtherOp := (
       //(1 << jmpBrOtherOp.getWidth) - 1
-      1 << (jmpBrOtherOp.getWidth - 1)
+      //1 << (jmpBrOtherOp.getWidth - 1)
+      0x0
     )
     //jmpBrAlwaysEqNeOpOneHot := (
     //  1 << (jmpBrAlwaysEqNeOpOneHot.getWidth - 1)

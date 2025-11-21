@@ -41,7 +41,7 @@ cpy r4, 0x4
 
 
 _irq_handler:
-add r7, r7, 0x1
+//add r7, r7, 0x1
 ret ira
 
 cpy r1, 0x1
