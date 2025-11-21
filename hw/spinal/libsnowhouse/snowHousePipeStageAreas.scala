@@ -3303,7 +3303,14 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
   //  )
   //})
 
-  val nextExSetPcValid = Bool()
+  def enumExSetPcValidCond = 0
+  def enumExSetPcValidNonCond = 1
+  def enumExSetPcValidLim = 2
+  val nextExSetPcValid = (
+    Vec.fill(enumExSetPcValidLim)(
+      Bool()
+    )
+  )
   case class SetPcCmp(
     //mulAcc: LcvMulAcc32Del1
     //adder: LcvAddDel1,
@@ -3407,7 +3414,7 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
     //)
   )
 
-  nextExSetPcValid := False
+  nextExSetPcValid.foreach(_ := False)
   myPsExSetPcCmpEq.myCmp := (
     0x0
     //False
@@ -3447,7 +3454,18 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
 
   val myPsExSetPcValid = (
     /*LcvFastOrR*/(
-      /*self=*/Vec[Bool](
+      ///*self=*/Vec[Bool](
+      //  RegNext/*When*/(
+      //    next=nextExSetPcValid,
+      //    //cond=(!io.shouldIgnoreInstr.last),
+      //    init=nextExSetPcValid.getZero
+      //  ),
+      //  myPsExSetPcCmpEq.myCmp.msb,
+      //  //RegNext(myPsExSetPcCmpEq.myStickyCmp, init=False),
+      //  myPsExSetPcCmpNe.myCmp.msb,
+      //  //RegNext(myPsExSetPcCmpNe.myStickyCmp, init=False),
+      //).asBits.asUInt.orR
+      Cat(
         RegNext/*When*/(
           next=nextExSetPcValid,
           //cond=(!io.shouldIgnoreInstr.last),
@@ -3457,7 +3475,7 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
         //RegNext(myPsExSetPcCmpEq.myStickyCmp, init=False),
         myPsExSetPcCmpNe.myCmp.msb,
         //RegNext(myPsExSetPcCmpNe.myStickyCmp, init=False),
-      ).asBits.asUInt.orR
+      ).asUInt.orR
       //optDsp=false
     )
   )
@@ -4541,7 +4559,7 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
                   item := False
                 })
               }
-              nextExSetPcValid := True
+              nextExSetPcValid(enumExSetPcValidNonCond) := True
               myPsExSetPcCmpEq.rValid := (
                 False
                 //0x0
@@ -4605,7 +4623,7 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
             nextIndexReg := 0x0
             opInfo.cond match {
               case CondKind.Always => {
-                nextExSetPcValid := True
+                nextExSetPcValid(enumExSetPcValidNonCond) := True
                 myPsExSetPcCmpEq.rValid := (
                   False
                   //0x0
@@ -4660,7 +4678,7 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
                   opInfo.srcArr(0) == SrcKind.Spr(SprKind.AluFlags)
                   && opInfo.srcArr(1) == SrcKind.Imm()
                 ) {
-                  nextExSetPcValid := (
+                  nextExSetPcValid(enumExSetPcValidCond) := (
                     (io.rFlagZ) //init(False)
                   )
                 } else {
@@ -4670,10 +4688,10 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
                     s"not yet implemented: "
                     + s"opInfo(${opInfo}) index:${opInfoIdx}"
                   )
-                  nextExSetPcValid := (
-                    //io.psExSetPc.valid
-                    False
-                  )
+                  //nextExSetPcValid := (
+                  //  //io.psExSetPc.valid
+                  //  False
+                  //)
                   if (opInfo.dstArr.size == 1) {
                     //io.modMemWord.foreach(item => {
                     //  item := io.rdMemWord(0)
@@ -4765,7 +4783,7 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
                   opInfo.srcArr(0) == SrcKind.Spr(SprKind.AluFlags)
                   && opInfo.srcArr(1) == SrcKind.Imm()
                 ) {
-                  nextExSetPcValid := (
+                  nextExSetPcValid(enumExSetPcValidCond) := (
                     (!io.rFlagZ) //init(False)
                   )
                 } else {
@@ -4775,51 +4793,51 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
                     s"not yet implemented: "
                     + s"opInfo(${opInfo}) index:${opInfoIdx}"
                   )
-                  nextExSetPcValid := {
-                    False
-                    //(
-                    //  (
-                    //    io.rdMemWord(io.brCondIdx(0))
-                    //    =/= io.rdMemWord(io.brCondIdx(1))
-                    //  )
-                    //  //init(False)
-                    //)
-                    //val q = Bool()
-                    //val unusedSumOut = UInt(cfg.mainWidth bits)
-                    //(
-                    //  q,
-                    //  unusedSumOut
-                    //) := (
-                    //  (
-                    //    Cat(
-                    //      False,
-                    //      (
-                    //        io.rdMemWord(io.brCondIdx(0))
-                    //        ^ (
-                    //          ~io.rdMemWord(io.brCondIdx(1))
-                    //        )
-                    //      )
-                    //    ).asUInt
-                    //  ) + (
-                    //    Cat(
-                    //      U{
-                    //        val myWidth = (
-                    //          io.rdMemWord(io.brCondIdx(0)).getWidth
-                    //        )
-                    //        f"${myWidth}'d0"
-                    //      },
-                    //      True
-                    //    ).asUInt
-                    //  )
-                    //)
-                    //(!q)
-                    //!LcvFastCmpEq(
-                    //  left=io.rdMemWord(io.brCondIdx(0)),
-                    //  right=io.rdMemWord(io.brCondIdx(1)),
-                    //  optDsp=true,
-                    //  optReg=true,
-                    //)._1
-                  }
+                  //nextExSetPcValid := {
+                  //  False
+                  //  //(
+                  //  //  (
+                  //  //    io.rdMemWord(io.brCondIdx(0))
+                  //  //    =/= io.rdMemWord(io.brCondIdx(1))
+                  //  //  )
+                  //  //  //init(False)
+                  //  //)
+                  //  //val q = Bool()
+                  //  //val unusedSumOut = UInt(cfg.mainWidth bits)
+                  //  //(
+                  //  //  q,
+                  //  //  unusedSumOut
+                  //  //) := (
+                  //  //  (
+                  //  //    Cat(
+                  //  //      False,
+                  //  //      (
+                  //  //        io.rdMemWord(io.brCondIdx(0))
+                  //  //        ^ (
+                  //  //          ~io.rdMemWord(io.brCondIdx(1))
+                  //  //        )
+                  //  //      )
+                  //  //    ).asUInt
+                  //  //  ) + (
+                  //  //    Cat(
+                  //  //      U{
+                  //  //        val myWidth = (
+                  //  //          io.rdMemWord(io.brCondIdx(0)).getWidth
+                  //  //        )
+                  //  //        f"${myWidth}'d0"
+                  //  //      },
+                  //  //      True
+                  //  //    ).asUInt
+                  //  //  )
+                  //  //)
+                  //  //(!q)
+                  //  //!LcvFastCmpEq(
+                  //  //  left=io.rdMemWord(io.brCondIdx(0)),
+                  //  //  right=io.rdMemWord(io.brCondIdx(1)),
+                  //  //  optDsp=true,
+                  //  //  optReg=true,
+                  //  //)._1
+                  //}
                   myPsExSetPcCmpEq.rValid := (
                     False
                     //0x0
@@ -4859,7 +4877,7 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
                   //  item := False
                   //})
                 }
-                nextExSetPcValid := (
+                nextExSetPcValid(enumExSetPcValidCond) := (
                   (io.rFlagN) //init(False)
                 )
               }
@@ -4872,7 +4890,7 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
                   //  item := False
                   //})
                 }
-                nextExSetPcValid := (
+                nextExSetPcValid(enumExSetPcValidCond) := (
                   (!io.rFlagN) //init(False)
                 )
               }
@@ -4885,7 +4903,7 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
                   //  item := False
                   //})
                 }
-                nextExSetPcValid := (
+                nextExSetPcValid(enumExSetPcValidCond) := (
                   (io.rFlagV) //init(False)
                 )
               }
@@ -4898,7 +4916,7 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
                   //  item := False
                   //})
                 }
-                nextExSetPcValid := (
+                nextExSetPcValid(enumExSetPcValidCond) := (
                   (!io.rFlagV) //init(False)
                 )
               }
@@ -4915,7 +4933,7 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
                   opInfo.srcArr(0) == SrcKind.Spr(SprKind.AluFlags)
                   && opInfo.srcArr(1) == SrcKind.Imm()
                 ) {
-                  nextExSetPcValid := (
+                  nextExSetPcValid(enumExSetPcValidCond) := (
                     (io.rFlagC)
                     //init(False)
                   )
@@ -4926,7 +4944,7 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
                     s"not yet implemented: "
                     + s"opInfo(${opInfo}) index:${opInfoIdx}"
                   )
-                  nextExSetPcValid := {
+                  nextExSetPcValid(enumExSetPcValidCond) := {
                     (
                       (
                         io.rdMemWord(io.brCondIdx(0))
@@ -4974,7 +4992,7 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
                   opInfo.srcArr(0) == SrcKind.Spr(SprKind.AluFlags)
                   && opInfo.srcArr(1) == SrcKind.Imm()
                 ) {
-                  nextExSetPcValid := (
+                  nextExSetPcValid(enumExSetPcValidCond) := (
                     (!io.rFlagC)
                     //init(False)
                   )
@@ -4985,7 +5003,7 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
                     s"not yet implemented: "
                     + s"opInfo(${opInfo}) index:${opInfoIdx}"
                   )
-                  nextExSetPcValid := {
+                  nextExSetPcValid(enumExSetPcValidCond) := {
                     (
                       (
                         io.rdMemWord(io.brCondIdx(0))
@@ -5020,7 +5038,7 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
                   opInfo.srcArr(0) == SrcKind.Spr(SprKind.AluFlags)
                   && opInfo.srcArr(1) == SrcKind.Imm()
                 ) {
-                  nextExSetPcValid := (
+                  nextExSetPcValid(enumExSetPcValidCond) := (
                     (io.rFlagC && !io.rFlagZ)
                     //init(False)
                   )
@@ -5031,7 +5049,7 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
                     s"not yet implemented: "
                     + s"opInfo(${opInfo}) index:${opInfoIdx}"
                   )
-                  nextExSetPcValid := {
+                  nextExSetPcValid(enumExSetPcValidCond) := {
                     (
                       (
                         io.rdMemWord(io.brCondIdx(0))
@@ -5067,7 +5085,7 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
                   opInfo.srcArr(0) == SrcKind.Spr(SprKind.AluFlags)
                   && opInfo.srcArr(1) == SrcKind.Imm()
                 ) {
-                  nextExSetPcValid := (
+                  nextExSetPcValid(enumExSetPcValidCond) := (
                     (!io.rFlagC || io.rFlagZ)
                     //init(False)
                   )
@@ -5078,7 +5096,7 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
                     s"not yet implemented: "
                     + s"opInfo(${opInfo}) index:${opInfoIdx}"
                   )
-                  nextExSetPcValid := {
+                  nextExSetPcValid(enumExSetPcValidCond) := {
                     (
                       (
                         io.rdMemWord(io.brCondIdx(0))
@@ -5113,7 +5131,7 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
                   opInfo.srcArr(0) == SrcKind.Spr(SprKind.AluFlags)
                   && opInfo.srcArr(1) == SrcKind.Imm()
                 ) {
-                  nextExSetPcValid := (
+                  nextExSetPcValid(enumExSetPcValidCond) := (
                     (!(io.rFlagN ^ io.rFlagV))
                     //init(False)
                   )
@@ -5124,7 +5142,7 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
                     s"not yet implemented: "
                     + s"opInfo(${opInfo}) index:${opInfoIdx}"
                   )
-                  nextExSetPcValid := {
+                  nextExSetPcValid(enumExSetPcValidCond) := {
                     (
                       (
                         io.rdMemWord(io.brCondIdx(0)).asSInt
@@ -5159,7 +5177,7 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
                   opInfo.srcArr(0) == SrcKind.Spr(SprKind.AluFlags)
                   && opInfo.srcArr(1) == SrcKind.Imm()
                 ) {
-                  nextExSetPcValid := (
+                  nextExSetPcValid(enumExSetPcValidCond) := (
                     (io.rFlagN ^ io.rFlagV)
                     //init(False)
                   )
@@ -5170,7 +5188,7 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
                     s"not yet implemented: "
                     + s"opInfo(${opInfo}) index:${opInfoIdx}"
                   )
-                  nextExSetPcValid := {
+                  nextExSetPcValid(enumExSetPcValidCond) := {
                     (
                       (
                         io.rdMemWord(io.brCondIdx(0)).asSInt
@@ -5205,7 +5223,7 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
                   opInfo.srcArr(0) == SrcKind.Spr(SprKind.AluFlags)
                   && opInfo.srcArr(1) == SrcKind.Imm()
                 ) {
-                  nextExSetPcValid := (
+                  nextExSetPcValid(enumExSetPcValidCond) := (
                     ((!(io.rFlagN ^ io.rFlagV)) & !io.rFlagZ)
                     //init(False)
                   )
@@ -5216,7 +5234,7 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
                     s"not yet implemented: "
                     + s"opInfo(${opInfo}) index:${opInfoIdx}"
                   )
-                  nextExSetPcValid := {
+                  nextExSetPcValid(enumExSetPcValidCond) := {
                     (
                       (
                         io.rdMemWord(io.brCondIdx(0)).asSInt
@@ -5251,7 +5269,7 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
                   opInfo.srcArr(0) == SrcKind.Spr(SprKind.AluFlags)
                   && opInfo.srcArr(1) == SrcKind.Imm()
                 ) {
-                  nextExSetPcValid := (
+                  nextExSetPcValid(enumExSetPcValidCond) := (
                     ((io.rFlagN ^ io.rFlagV) | io.rFlagZ)
                     //init(False)
                   )
@@ -5262,7 +5280,7 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
                     s"not yet implemented: "
                     + s"opInfo(${opInfo}) index:${opInfoIdx}"
                   )
-                  nextExSetPcValid := {
+                  nextExSetPcValid(enumExSetPcValidCond) := {
                     (
                       (
                         io.rdMemWord(io.brCondIdx(0)).asSInt
@@ -5298,7 +5316,7 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
                   s"not yet implemented: "
                   + s"opInfo(${opInfo}) index:${opInfoIdx}"
                 )
-                nextExSetPcValid := (
+                nextExSetPcValid(enumExSetPcValidCond) := (
                   (io.rdMemWord(io.brCondIdx(0)) === 0)
                   //init(False)
                   //!(io.rdMemWord(io.brCondIdx(0)).orR)
@@ -5318,7 +5336,7 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
                   s"not yet implemented: "
                   + s"opInfo(${opInfo}) index:${opInfoIdx}"
                 )
-                nextExSetPcValid := (
+                nextExSetPcValid(enumExSetPcValidCond) := (
                   (io.rdMemWord(io.brCondIdx(0)) =/= 0)
                   //init(False)
                   //io.rdMemWord(io.brCondIdx(0)).orR
@@ -7130,9 +7148,9 @@ case class SnowHousePipeStageExecute(
   //  //  init=alu.io.inp_a.getZero,
   //  //)
   //)
-  myModMemWord := (
-    alu.io.outp_data
-  )
+  //myModMemWord := (
+  //  alu.io.outp_data
+  //)
   //--------
   // BEGIN: this worked pretty well for fmax, so let's try another approach
   switch (
