@@ -6963,7 +6963,7 @@ case class SnowHousePipeStageExecute(
   ) generate (
     /*LcvFastAndR*/(
       Vec[Bool](
-        cMid0Front.up.isValid,
+        //cMid0Front.up.isValid,
         //RegNextWhen(
         //  next=setOutpModMemWord.nextIe,
         //  cond=cMid0Front.up.isFiring,
@@ -7019,7 +7019,10 @@ case class SnowHousePipeStageExecute(
   ) generate (new Area {
     nextMyTakeIrq := rMyTakeIrq
     io.idsIraIrq.ready := False
-    val rIrqWasDelayed = (
+    //val rIrqWasDelayed = (
+    //  Reg(Bool(), init=False)
+    //)
+    val rStickyTakeIrq = (
       Reg(Bool(), init=False)
     )
     val tempCond = (
@@ -7028,7 +7031,7 @@ case class SnowHousePipeStageExecute(
       //!setOutpModMemWord.io.shouldIgnoreInstr(0)
       //!shouldIgnoreInstr
       !myShouldIgnoreInstr(0)
-      || rIrqWasDelayed
+      //|| rIrqWasDelayed
     )
     when (
       (
@@ -7041,17 +7044,22 @@ case class SnowHousePipeStageExecute(
         )
       )
     ) {
-      when (
-        cMid0Front.up.isFiring
-      ) {
-        when (myShouldIgnoreInstr(0)) {
-          rIrqWasDelayed := True
-        }
+      rStickyTakeIrq := True
+    }
+    when (rStickyTakeIrq) {
+      when (cMid0Front.up.isFiring) {
+        //rStickyTakeIrq := False
+        //when (myShouldIgnoreInstr(0)) {
+        //  rIrqWasDelayed := True
+        //}
         nextMyTakeIrq := (
           //rTempTakeIrq
           //True
           tempCond
         )
+        when (nextMyTakeIrq) {
+          rStickyTakeIrq := False
+        }
       }
     }
     setOutpModMemWord.io.irqIraRegPc := (
@@ -7065,14 +7073,14 @@ case class SnowHousePipeStageExecute(
         outp.irqIraRegPc
       )
     }
-    when (
-      cMid0Front.up.isFiring
-      && !myShouldIgnoreInstr(0)
-      && rIrqWasDelayed
-    ) {
-      rIrqWasDelayed := False
-      nextMyTakeIrq := True
-    }
+    //when (
+    //  cMid0Front.up.isFiring
+    //  && !myShouldIgnoreInstr(0)
+    //  //&& rIrqWasDelayed
+    //) {
+    //  //rIrqWasDelayed := False
+    //  nextMyTakeIrq := True
+    //}
     when (
       rMyTakeIrq
       && /*RegNext*/(
