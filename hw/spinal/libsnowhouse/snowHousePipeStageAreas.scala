@@ -4085,6 +4085,14 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
       )
     )
     nextHadRetIra := io.rHadRetIra
+    //when (
+    //  RegNext(
+    //    next=nextHadRetIra,
+    //    init=nextHadRetIra.getZero,
+    //  )
+    //) {
+    //  nextHadRetIra := False
+    //}
   }
   //io.psExSetPc.nextPc.allowOverride
   //io.psExSetPc.nextPc := (
@@ -6472,6 +6480,7 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
       when (
         io.rHadRetIra
       ) {
+        nextHadRetIra := False
         nextIe := True
       }
     } 
@@ -6942,16 +6951,13 @@ case class SnowHousePipeStageExecute(
       myDoHaveHazardVec.reduceLeft(_ || _)
     )
   )
-  setOutpModMemWord.io.irqIraRegPc := (
-    outp.irqIraRegPc
-  )
-  val rIrqHndlState = {
-    val temp = Reg(
-      Bool()
-    )
-    temp.init(temp.getZero)
-    temp
-  }
+  //val rIrqHndlState = {
+  //  val temp = Reg(
+  //    Bool()
+  //  )
+  //  temp.init(temp.getZero)
+  //  temp
+  //}
   val tempTakeIrqCond = (
     cfg.irqCfg != None
   ) generate (
@@ -7008,15 +7014,21 @@ case class SnowHousePipeStageExecute(
       init=nextMyTakeIrq.getZero,
     )
   )
-  if (cfg.irqCfg != None) {
+  val myIrqArea = (
+    cfg.irqCfg != None
+  ) generate (new Area {
     nextMyTakeIrq := rMyTakeIrq
     io.idsIraIrq.ready := False
+    val rIrqWasDelayed = (
+      Reg(Bool(), init=False)
+    )
     val tempCond = (
       //setOutpModMemWord.io.regPcSetItCnt(0)(0)
       //&& setOutpModMemWord.io.upIsValid
       //!setOutpModMemWord.io.shouldIgnoreInstr(0)
       //!shouldIgnoreInstr
       !myShouldIgnoreInstr(0)
+      || rIrqWasDelayed
     )
     when (
       (
@@ -7032,12 +7044,34 @@ case class SnowHousePipeStageExecute(
       when (
         cMid0Front.up.isFiring
       ) {
+        when (myShouldIgnoreInstr(0)) {
+          rIrqWasDelayed := True
+        }
         nextMyTakeIrq := (
           //rTempTakeIrq
           //True
           tempCond
         )
       }
+    }
+    setOutpModMemWord.io.irqIraRegPc := (
+      RegNext(
+        next=setOutpModMemWord.io.irqIraRegPc,
+        init=setOutpModMemWord.io.irqIraRegPc.getZero,
+      )
+    )
+    when (!myShouldIgnoreInstr(0)) {
+      setOutpModMemWord.io.irqIraRegPc := (
+        outp.irqIraRegPc
+      )
+    }
+    when (
+      cMid0Front.up.isFiring
+      && !myShouldIgnoreInstr(0)
+      && rIrqWasDelayed
+    ) {
+      rIrqWasDelayed := False
+      nextMyTakeIrq := True
     }
     when (
       rMyTakeIrq
@@ -7061,7 +7095,7 @@ case class SnowHousePipeStageExecute(
     ) {
       io.idsIraIrq.ready := False
     }
-  }
+  })
 
   setOutpModMemWord.io.regPcSetItCnt := outp.regPcSetItCnt
   setOutpModMemWord.io.mySavedRegPcPlusInstrSize := (
@@ -7741,14 +7775,14 @@ case class SnowHousePipeStageExecute(
   setOutpModMemWord.io.splitOp.kind.allowOverride
   setOutpModMemWord.io.splitOp.allowOverride
   setOutpModMemWord.io.splitOp.jmpBrAlwaysEqNeOp.allowOverride
-  setOutpModMemWord.io.splitOp := (
-    RegNext(
-      next=setOutpModMemWord.io.splitOp,
-      init=setOutpModMemWord.io.splitOp.getZero,
-    )
-    //init(SnowHouseSplitOpKind.CPY_CPYUI)
-  )
-  when (cMid0Front.up.isValid) {
+  //setOutpModMemWord.io.splitOp := (
+  //  RegNext(
+  //    next=setOutpModMemWord.io.splitOp,
+  //    init=setOutpModMemWord.io.splitOp.getZero,
+  //  )
+  //  //init(SnowHouseSplitOpKind.CPY_CPYUI)
+  //)
+  //when (cMid0Front.up.isValid) {
     setOutpModMemWord.io.splitOp := outp.splitOp
     when (
       (
@@ -7790,16 +7824,16 @@ case class SnowHousePipeStageExecute(
         1 << (setOutpModMemWord.io.splitOp.jmpBrOtherOp.getWidth - 1)
       )
     }
-  } otherwise {
-    setOutpModMemWord.io.splitOp.jmpBrAlwaysEqNeOp := (
-      (1 << setOutpModMemWord.io.splitOp.jmpBrAlwaysEqNeOp.getWidth) - 1
-      //1 << (setOutpModMemWord.io.splitOp.jmpBrAlwaysEqNeOp.getWidth - 1)
-    )
-    setOutpModMemWord.io.splitOp.jmpBrOtherOp := (
-      //(1 << setOutpModMemWord.io.splitOp.jmpBrOtherOp.getWidth) - 1
-      1 << (setOutpModMemWord.io.splitOp.jmpBrOtherOp.getWidth - 1)
-    )
-  }
+  //} otherwise {
+  //  setOutpModMemWord.io.splitOp.jmpBrAlwaysEqNeOp := (
+  //    (1 << setOutpModMemWord.io.splitOp.jmpBrAlwaysEqNeOp.getWidth) - 1
+  //    //1 << (setOutpModMemWord.io.splitOp.jmpBrAlwaysEqNeOp.getWidth - 1)
+  //  )
+  //  setOutpModMemWord.io.splitOp.jmpBrOtherOp := (
+  //    //(1 << setOutpModMemWord.io.splitOp.jmpBrOtherOp.getWidth) - 1
+  //    1 << (setOutpModMemWord.io.splitOp.jmpBrOtherOp.getWidth - 1)
+  //  )
+  //}
   psExSetPc.nextPc := (
     RegNext(
       next=setOutpModMemWord.io.psExSetPc.nextPc,

@@ -4,6 +4,13 @@ cpy r0, 0x0
 cpy r0, 0x0
 cpy r0, 0x0
 
+cpy r7, _irq_handler
+cpy ids, r7
+cpy r8, 0x1
+cpy ie, r8
+cpy r7, r0
+
+
 cpy r1, 0x1
 cpy r2, 0x2
 cpy r3, 0x10
@@ -31,3 +38,15 @@ cpy r1, 0x1
 cpy r2, 0x2
 cpy r3, 0x3
 cpy r4, 0x4
+
+
+_irq_handler:
+add r7, r7, 0x1
+ret ira
+
+cpy r1, 0x1
+cpy r2, 0x2
+cpy r3, 0x3
+cpy r4, 0x4
+cpy r5, 0x5
+cpy r6, 0x6
