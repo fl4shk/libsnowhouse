@@ -4608,7 +4608,13 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
                     when (
                       !io.shouldIgnoreInstr(2)
                       //|| (
-                      //  outp.regPcSetItCnt(idx)(0)
+                      //  RegNext(
+                      //    next=(
+                      //      io.regPcSetItCnt(2)(0)
+                      //      && io.upIsValid
+                      //    ),
+                      //    init=False
+                      //  )
                       //)
                       //RegNext(
                       //  next=io.nextPsExSetPcValid(2),
@@ -6985,10 +6991,10 @@ case class SnowHousePipeStageExecute(
         //  init=False,
         //),
         setOutpModMemWord.io.rIe,
-        //!setOutpModMemWord.io.shouldIgnoreInstr(0),
-        //!shouldIgnoreInstr
-        !myShouldIgnoreInstr(0)
-        //cMid0Front.up.isFiring,
+        ////!setOutpModMemWord.io.shouldIgnoreInstr(0),
+        ////!shouldIgnoreInstr
+        //!myShouldIgnoreInstr(0)
+        ////cMid0Front.up.isFiring,
       ).asBits.asUInt.andR
     )
   )
@@ -7040,6 +7046,7 @@ case class SnowHousePipeStageExecute(
     //val rStickyTakeIrq = (
     //  Reg(Bool(), init=False)
     //)
+
     val tempCond = (
       //setOutpModMemWord.io.regPcSetItCnt(0)(0)
       //&& setOutpModMemWord.io.upIsValid
@@ -7047,6 +7054,13 @@ case class SnowHousePipeStageExecute(
       //!shouldIgnoreInstr
       !myShouldIgnoreInstr(0)
       //|| rIrqWasDelayed
+    )
+    val rSavedTempCond = (
+      Reg(Bool(), init=False)
+    )
+    val stickyTempCond = (
+      tempCond
+      || rSavedTempCond
     )
     val myTakeIrq = (
       (
@@ -7081,15 +7095,23 @@ case class SnowHousePipeStageExecute(
       myTakeIrq
       //|| rStickyTakeIrq
     ) {
+      //nextMyTakeIrq := True
+      when (tempCond) {
+        rSavedTempCond := True
+      }
       when (cMid0Front.up.isFiring) {
         //rStickyTakeIrq := False
         //when (myShouldIgnoreInstr(0)) {
         //  rIrqWasDelayed := True
         //}
+        rSavedTempCond := False
         nextMyTakeIrq := (
           //rTempTakeIrq
-          True
+          //True
+
           //tempCond
+          //|| rSavedTempCond
+          stickyTempCond
         )
         //when (nextMyTakeIrq) {
         //  rStickyTakeIrq := False
@@ -7124,7 +7146,8 @@ case class SnowHousePipeStageExecute(
       //&& cMid0Front.up.isFiring
       //&& !setOutpModMemWord.io.psExSetPc.valid
       //&& !setOutpModMemWord.io.shouldIgnoreInstr
-      && tempCond
+      //&& tempCond
+      //&& stickyTempCond
     ) {
       nextMyTakeIrq := False
       io.idsIraIrq.ready := True
@@ -7718,13 +7741,13 @@ case class SnowHousePipeStageExecute(
     }
     when (
       cMid0Front.up.isValid
-      //&& (
-      //  RegNext(
-      //    next=myShouldIgnoreInstr(idx),
-      //    init=False,
-      //  )
-      //  //|| psExSetPc.valid
-      //)
+      && (
+        RegNext(
+          next=myShouldIgnoreInstr(idx),
+          init=False,
+        )
+        //|| psExSetPc.valid
+      )
       //True
     ) {
       when (outp.regPcSetItCnt(idx)(0)) {
