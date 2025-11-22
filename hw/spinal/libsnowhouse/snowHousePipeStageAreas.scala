@@ -6957,17 +6957,17 @@ case class SnowHousePipeStageExecute(
   ) generate (
     /*LcvFastAndR*/(
       Vec[Bool](
-        cMid0Front.up.isValid,
-        //RegNextWhen(
-        //  next=setOutpModMemWord.nextIe,
-        //  cond=cMid0Front.up.isFiring,
-        //  init=False,
-        //),
+        //cMid0Front.up.isValid,
+        ////RegNextWhen(
+        ////  next=setOutpModMemWord.nextIe,
+        ////  cond=cMid0Front.up.isFiring,
+        ////  init=False,
+        ////),
         setOutpModMemWord.io.rIe,
-        //!setOutpModMemWord.io.shouldIgnoreInstr(0),
-        //!shouldIgnoreInstr
-        !myShouldIgnoreInstr(0)
-        //cMid0Front.up.isFiring,
+        ////!setOutpModMemWord.io.shouldIgnoreInstr(0),
+        ////!shouldIgnoreInstr
+        //!myShouldIgnoreInstr(0)
+        ////cMid0Front.up.isFiring,
       ).asBits.asUInt.andR
     )
   )
@@ -7017,6 +7017,11 @@ case class SnowHousePipeStageExecute(
       //!setOutpModMemWord.io.shouldIgnoreInstr(0)
       //!shouldIgnoreInstr
       !myShouldIgnoreInstr(0)
+      || (
+        //cMid0Front.
+        cMid0Front.up.isValid
+        && setOutpModMemWord.io.regPcSetItCnt(0)(0)
+      )
     )
     when (
       (
@@ -7031,6 +7036,7 @@ case class SnowHousePipeStageExecute(
     ) {
       when (
         cMid0Front.up.isFiring
+        && !rMyTakeIrq
       ) {
         nextMyTakeIrq := (
           //rTempTakeIrq
@@ -7049,6 +7055,7 @@ case class SnowHousePipeStageExecute(
       //&& !setOutpModMemWord.io.psExSetPc.valid
       //&& !setOutpModMemWord.io.shouldIgnoreInstr
       && tempCond
+      //&& psExSetPc.valid
     ) {
       nextMyTakeIrq := False
       io.idsIraIrq.ready := True
