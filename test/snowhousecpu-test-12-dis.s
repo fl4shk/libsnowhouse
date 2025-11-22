@@ -35,11 +35,10 @@ Disassembly of section .text:
   68:	04 00 00 04 	add	r4, r0, 4
 
 0000006c <_irq_handler>:
-  6c:	01 00 70 07 	add	r7, r7, 1
-  70:	0a 00 00 70 	ret	ira
-  74:	01 00 00 01 	add	r1, r0, 1
-  78:	02 00 00 02 	add	r2, r0, 2
-  7c:	03 00 00 03 	add	r3, r0, 3
-  80:	04 00 00 04 	add	r4, r0, 4
-  84:	05 00 00 05 	add	r5, r0, 5
-  88:	06 00 00 06 	add	r6, r0, 6
+  6c:	0a 00 00 70 	ret	ira
+  70:	01 00 00 01 	add	r1, r0, 1
+  74:	02 00 00 02 	add	r2, r0, 2
+  78:	03 00 00 03 	add	r3, r0, 3
+  7c:	04 00 00 04 	add	r4, r0, 4
+  80:	05 00 00 05 	add	r5, r0, 5
+  84:	06 00 00 06 	add	r6, r0, 6
