@@ -8,7 +8,7 @@ cpy r7, _irq_handler
 cpy ids, r7
 cpy r8, 0x1
 cpy ie, r8
-cpy r7, r0
+cpy r7, 0x4
 
 
 cpy r1, 0x1
@@ -22,6 +22,11 @@ _loop_0:
 mul r1, r1, r2
 //bne r1, r3, _loop_0
 bltu r1, r3, _loop_0
+
+add r4, r4, 1
+//add r5, r4, 1
+add r9, r9, 1
+bne r4, r7, _loop_0
 
 add r2, r2, 1
 add r3, r3, 1
@@ -41,7 +46,7 @@ cpy r4, 0x4
 
 
 _irq_handler:
-//add r7, r7, 0x1
+//add r10, r10, 0x1
 ret ira
 
 cpy r1, 0x1

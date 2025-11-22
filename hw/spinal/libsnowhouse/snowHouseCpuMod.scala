@@ -5225,9 +5225,9 @@ object SnowHouseCpuWithDualRamSim extends App {
             doConnExternIrq=false,
           )
         )
-        toComp.setDefinitionName(
-          s"SnowHouseCpuWithDualRam_${testIdx}_${instrRamKind}"
-        )
+        //toComp.setDefinitionName(
+        //  s"SnowHouseCpuWithDualRam_${testIdx}_${instrRamKind}"
+        //)
         toComp
       }).doSim{dut => {
         val pw = new PrintWriter(new File(
