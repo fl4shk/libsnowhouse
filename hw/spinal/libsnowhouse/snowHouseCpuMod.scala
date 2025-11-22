@@ -5152,7 +5152,7 @@ object SnowHouseCpuWithDualRamSim extends App {
     //1, 1,
     //2, 2,
     //3, 3,
-    4, 4,
+    //4, 4,
     //5, 5,
     //6, 6,
     //7, 7,
@@ -5163,8 +5163,8 @@ object SnowHouseCpuWithDualRamSim extends App {
     12, 12,
   )
   val instrRamKindArr = Array[Int](
-    //0,
-    //1,
+    0,
+    1,
     2,
     5,
   )
@@ -5218,12 +5218,18 @@ object SnowHouseCpuWithDualRamSim extends App {
         exposeRegFileWriteEnableToIo=true,
       )
       val testProgram = SnowHouseCpuTestProgram(cfg=cfg)
-      Config.sim.compile(
-        SnowHouseCpuWithDualRam(
-          program=testProgram.program,
-          doConnExternIrq=false,
+      Config.sim.compile({
+        val toComp = (
+          SnowHouseCpuWithDualRam(
+            program=testProgram.program,
+            doConnExternIrq=false,
+          )
         )
-      ).doSim{dut => {
+        toComp.setDefinitionName(
+          s"SnowHouseCpuWithDualRam_${testIdx}_${instrRamKind}"
+        )
+        toComp
+      }).doSim{dut => {
         val pw = new PrintWriter(new File(
           s"test/results/test-${testIdx}-results-${instrRamKind}.txt"
         ))
