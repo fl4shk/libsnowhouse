@@ -1227,7 +1227,8 @@ case class SnowHouseSplitOp(
   )
   val jmpBrOtherOp = (
     //UInt(log2Up(cfg.jmpBrOtherOpInfoMap.size + 1) bits)
-    UInt((cfg.jmpBrOtherOpInfoMap.size + 1) bits)
+    //UInt((cfg.jmpBrOtherOpInfoMap.size + 1) bits)
+    UInt(cfg.jmpBrOtherOpInfoMap.size bits)
   )
   //val jmpBrAlwaysEqNeOpOneHot = (
   //  UInt((cfg.jmpBrAlwaysEqNeOpInfoMap.size + 1) bits)
@@ -1251,7 +1252,23 @@ case class SnowHouseSplitOp(
   //  SnowHouseSplitOpAluSrcKind()
   //)
   //val lastAluSrcKind = SnowHouseSplitOpAluSrcKind()
-  def setToDefault(): Unit = {
+  def setJmpBrAlwaysEqNeOpToDefault(
+  ): Unit = {
+    jmpBrAlwaysEqNeOp := (
+      (1 << jmpBrAlwaysEqNeOp.getWidth) - 1
+      //1 << (jmpBrAlwaysEqNeOp.getWidth - 1)
+    )
+  }
+  def setJmpBrOtherOpToDefault(
+  ): Unit = {
+    jmpBrOtherOp := (
+      //(1 << jmpBrOtherOp.getWidth) - 1
+      //1 << (jmpBrOtherOp.getWidth - 1)
+      0x0
+    )
+  }
+  def setToDefault(
+  ): Unit = {
     this := this.getZero
     kind := SnowHouseSplitOpKind.CPY_CPYUI
     opIsMultiCycle := False
@@ -1266,14 +1283,8 @@ case class SnowHouseSplitOp(
     //)
     multiCycleOp := 0x0
     opIsMemAccess := False
-    jmpBrAlwaysEqNeOp := (
-      (1 << jmpBrAlwaysEqNeOp.getWidth) - 1
-      //1 << (jmpBrAlwaysEqNeOp.getWidth - 1)
-    )
-    jmpBrOtherOp := (
-      //(1 << jmpBrOtherOp.getWidth) - 1
-      1 << (jmpBrOtherOp.getWidth - 1)
-    )
+    setJmpBrAlwaysEqNeOpToDefault()
+    setJmpBrOtherOpToDefault()
     //jmpBrAlwaysEqNeOpOneHot := (
     //  1 << (jmpBrAlwaysEqNeOpOneHot.getWidth - 1)
     //)
