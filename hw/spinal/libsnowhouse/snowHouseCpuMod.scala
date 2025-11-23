@@ -1168,8 +1168,8 @@ object SnowHouseCpuPipeStageInstrDecode {
       )
     }
     upPayload.aluOp := (
-      //LcvAluDel1InpOpEnum.ZERO
-      LcvAluDel1InpOpEnum.OP_GET_INP_A
+      LcvAluDel1InpOpEnum.ZERO
+      //LcvAluDel1InpOpEnum.OP_GET_INP_A
     )
     upPayload.aluOp.allowOverride
     def setOp(
@@ -2393,76 +2393,76 @@ object SnowHouseCpuOpInfoMap {
   //--------
   opInfoMap += (
     // sltu rA, rB, rC
-    //SnowHouseCpuOp.SltuRaRbRc -> OpInfo.mkAlu(
-    //  dstArr=Array[DstKind](DstKind.Gpr),
-    //  srcArr=Array[SrcKind](SrcKind.Gpr, SrcKind.Gpr),
-    //  aluOp=(
-    //    AluOpKind.Sltu
-    //    //AluOpKind.LcvAlu(LcvAluDel1InpOpEnum.SLTU)
-    //  ),
-    //)
-    SnowHouseCpuOp.SltuRaRbRc -> OpInfo.mkMultiCycle(
+    SnowHouseCpuOp.SltuRaRbRc -> OpInfo.mkAlu(
       dstArr=Array[DstKind](DstKind.Gpr),
       srcArr=Array[SrcKind](SrcKind.Gpr, SrcKind.Gpr),
-      multiCycleOp=(
-        MultiCycleOpKind.Sltu
+      aluOp=(
+        //AluOpKind.Sltu
+        AluOpKind.LcvAlu(LcvAluDel1InpOpEnum.SLTU)
       ),
     )
+    //SnowHouseCpuOp.SltuRaRbRc -> OpInfo.mkMultiCycle(
+    //  dstArr=Array[DstKind](DstKind.Gpr),
+    //  srcArr=Array[SrcKind](SrcKind.Gpr, SrcKind.Gpr),
+    //  multiCycleOp=(
+    //    MultiCycleOpKind.Sltu
+    //  ),
+    //)
   )
   opInfoMap += (
     // slts rA, rB, rC
-    //SnowHouseCpuOp.SltsRaRbRc -> OpInfo.mkAlu(
-    //  dstArr=Array[DstKind](DstKind.Gpr),
-    //  srcArr=Array[SrcKind](SrcKind.Gpr, SrcKind.Gpr),
-    //  aluOp=(
-    //    AluOpKind.Slts
-    //    //AluOpKind.LcvAlu(LcvAluDel1InpOpEnum.SLTS)
-    //  ),
-    //)
-    SnowHouseCpuOp.SltsRaRbRc -> OpInfo.mkMultiCycle(
+    SnowHouseCpuOp.SltsRaRbRc -> OpInfo.mkAlu(
       dstArr=Array[DstKind](DstKind.Gpr),
       srcArr=Array[SrcKind](SrcKind.Gpr, SrcKind.Gpr),
-      multiCycleOp=(
-        MultiCycleOpKind.Slts
+      aluOp=(
+        //AluOpKind.Slts
+        AluOpKind.LcvAlu(LcvAluDel1InpOpEnum.SLTS)
       ),
     )
+    //SnowHouseCpuOp.SltsRaRbRc -> OpInfo.mkMultiCycle(
+    //  dstArr=Array[DstKind](DstKind.Gpr),
+    //  srcArr=Array[SrcKind](SrcKind.Gpr, SrcKind.Gpr),
+    //  multiCycleOp=(
+    //    MultiCycleOpKind.Slts
+    //  ),
+    //)
   )
   //--------
   opInfoMap += (
     // sltu rA, rB, imm16
-    //SnowHouseCpuOp.SltuRaRbImm16 -> OpInfo.mkAlu(
-    //  dstArr=Array[DstKind](DstKind.Gpr),
-    //  srcArr=Array[SrcKind](SrcKind.Gpr, SrcKind.Imm()),
-    //  aluOp=(
-    //    AluOpKind.Sltu
-    //    //AluOpKind.LcvAlu(LcvAluDel1InpOpEnum.SLTU)
-    //  ),
-    //)
-    SnowHouseCpuOp.SltuRaRbImm16 -> OpInfo.mkMultiCycle(
+    SnowHouseCpuOp.SltuRaRbImm16 -> OpInfo.mkAlu(
       dstArr=Array[DstKind](DstKind.Gpr),
       srcArr=Array[SrcKind](SrcKind.Gpr, SrcKind.Imm()),
-      multiCycleOp=(
-        MultiCycleOpKind.Sltu
+      aluOp=(
+        //AluOpKind.Sltu
+        AluOpKind.LcvAlu(LcvAluDel1InpOpEnum.SLTU)
       ),
     )
+    //SnowHouseCpuOp.SltuRaRbImm16 -> OpInfo.mkMultiCycle(
+    //  dstArr=Array[DstKind](DstKind.Gpr),
+    //  srcArr=Array[SrcKind](SrcKind.Gpr, SrcKind.Imm()),
+    //  multiCycleOp=(
+    //    MultiCycleOpKind.Sltu
+    //  ),
+    //)
   )
   opInfoMap += (
     // slts rA, rB, simm16
-    //SnowHouseCpuOp.SltsRaRbSimm16 -> OpInfo.mkAlu(
-    //  dstArr=Array[DstKind](DstKind.Gpr),
-    //  srcArr=Array[SrcKind](SrcKind.Gpr, SrcKind.Imm()),
-    //  aluOp=(
-    //    AluOpKind.Slts
-    //    //AluOpKind.LcvAlu(LcvAluDel1InpOpEnum.SLTS)
-    //  ),
-    //)
-    SnowHouseCpuOp.SltsRaRbSimm16 -> OpInfo.mkMultiCycle(
+    SnowHouseCpuOp.SltsRaRbSimm16 -> OpInfo.mkAlu(
       dstArr=Array[DstKind](DstKind.Gpr),
       srcArr=Array[SrcKind](SrcKind.Gpr, SrcKind.Imm()),
-      multiCycleOp=(
-        MultiCycleOpKind.Slts
+      aluOp=(
+        //AluOpKind.Slts
+        AluOpKind.LcvAlu(LcvAluDel1InpOpEnum.SLTS)
       ),
     )
+    //SnowHouseCpuOp.SltsRaRbSimm16 -> OpInfo.mkMultiCycle(
+    //  dstArr=Array[DstKind](DstKind.Gpr),
+    //  srcArr=Array[SrcKind](SrcKind.Gpr, SrcKind.Imm()),
+    //  multiCycleOp=(
+    //    MultiCycleOpKind.Slts
+    //  ),
+    //)
   )
   //opInfoMap += (
   //  SnowHouseCpuOp.SltsRaRbRc -> OpInfo.mkAlu(
@@ -2546,77 +2546,95 @@ object SnowHouseCpuOpInfoMap {
   //--------
   opInfoMap += (
     // lsl rA, rB, rC
-    SnowHouseCpuOp.LslRaRbRc -> OpInfo./*mkAluShift*/mkMultiCycle(
+    SnowHouseCpuOp.LslRaRbRc -> OpInfo.mkAlu/*mkAluShift*//*mkMultiCycle*/(
       dstArr=Array[DstKind](DstKind.Gpr),
       srcArr=Array[SrcKind](SrcKind.Gpr, SrcKind.Gpr),
       //aluShiftOp=AluShiftOpKind.Lsl,
-      multiCycleOp=(
-        MultiCycleOpKind.Lsl
-      ),
+      //multiCycleOp=(
+      //  MultiCycleOpKind.Lsl
+      //),
+      aluOp=(
+        AluOpKind.LcvAlu(LcvAluDel1InpOpEnum.LSL)
+      )
     )
   )
   opInfoMap += (
     // lsl rA, rB, imm5
-    SnowHouseCpuOp.LslRaRbImm5 -> OpInfo./*mkAluShift*/mkMultiCycle(
+    SnowHouseCpuOp.LslRaRbImm5 -> OpInfo.mkAlu/*mkAluShift*//*mkMultiCycle*/(
       dstArr=Array[DstKind](DstKind.Gpr),
       srcArr=Array[SrcKind](SrcKind.Gpr, SrcKind.Imm()),
       //aluShiftOp=(
       //  AluShiftOpKind.Lsl
       //  //AluShiftOpKind.Add
       //),
-      multiCycleOp=(
-        MultiCycleOpKind.Lsl
-      ),
+      //multiCycleOp=(
+      //  MultiCycleOpKind.Lsl
+      //),
+      aluOp=(
+        AluOpKind.LcvAlu(LcvAluDel1InpOpEnum.LSL)
+      )
     )
   )
   opInfoMap += (
     // lsr rA, rB, rC
-    SnowHouseCpuOp.LsrRaRbRc -> OpInfo./*mkAluShift*/mkMultiCycle(
+    SnowHouseCpuOp.LsrRaRbRc -> OpInfo.mkAlu/*mkAluShift*//*mkMultiCycle*/(
       dstArr=Array[DstKind](DstKind.Gpr),
       srcArr=Array[SrcKind](SrcKind.Gpr, SrcKind.Gpr),
       //aluShiftOp=AluShiftOpKind.Lsr,
-      multiCycleOp=(
-        MultiCycleOpKind.Lsr
-      ),
+      //multiCycleOp=(
+      //  MultiCycleOpKind.Lsr
+      //),
+      aluOp=(
+        AluOpKind.LcvAlu(LcvAluDel1InpOpEnum.LSR)
+      )
     )
   )
   opInfoMap += (
     // lsr rA, rB, imm5
-    SnowHouseCpuOp.LsrRaRbImm5 -> OpInfo./*mkAluShift*/mkMultiCycle(
+    SnowHouseCpuOp.LsrRaRbImm5 -> OpInfo.mkAlu/*mkAluShift*//*mkMultiCycle*/(
       dstArr=Array[DstKind](DstKind.Gpr),
       srcArr=Array[SrcKind](SrcKind.Gpr, SrcKind.Imm()),
       //aluShiftOp=(
       //  AluShiftOpKind.Lsr
       //  //AluShiftOpKind.Add
       //),
-      multiCycleOp=(
-        MultiCycleOpKind.Lsr
-      ),
+      //multiCycleOp=(
+      //  MultiCycleOpKind.Lsr
+      //),
+      aluOp=(
+        AluOpKind.LcvAlu(LcvAluDel1InpOpEnum.LSR)
+      )
     )
   )
   opInfoMap += (
     // asr rA, rB, rC
-    SnowHouseCpuOp.AsrRaRbRc -> OpInfo./*mkAluShift*/mkMultiCycle(
+    SnowHouseCpuOp.AsrRaRbRc -> OpInfo.mkAlu/*mkAluShift*//*mkMultiCycle*/(
       dstArr=Array[DstKind](DstKind.Gpr),
       srcArr=Array[SrcKind](SrcKind.Gpr, SrcKind.Gpr),
       //aluShiftOp=AluShiftOpKind.Asr,
-      multiCycleOp=(
-        MultiCycleOpKind.Asr
-      ),
+      //multiCycleOp=(
+      //  MultiCycleOpKind.Asr
+      //),
+      aluOp=(
+        AluOpKind.LcvAlu(LcvAluDel1InpOpEnum.ASR)
+      )
     )
   )
   opInfoMap += (
     // asr rA, rB, imm5
-    SnowHouseCpuOp.AsrRaRbImm5 -> OpInfo./*mkAluShift*/mkMultiCycle(
+    SnowHouseCpuOp.AsrRaRbImm5 -> OpInfo.mkAlu/*mkAluShift*//*mkMultiCycle*/(
       dstArr=Array[DstKind](DstKind.Gpr),
       srcArr=Array[SrcKind](SrcKind.Gpr, SrcKind.Imm()),
       //aluShiftOp=(
       //  AluShiftOpKind.Asr
       //  //AluShiftOpKind.Add
       //),
-      multiCycleOp=(
-        MultiCycleOpKind.Asr
-      ),
+      //multiCycleOp=(
+      //  MultiCycleOpKind.Asr
+      //),
+      aluOp=(
+        AluOpKind.LcvAlu(LcvAluDel1InpOpEnum.ASR)
+      )
     )
   )
   //opInfoMap += (
@@ -5035,10 +5053,10 @@ case class SnowHouseCpuWithDualRam(
   //val lsrImm = SnowHouseCpuLsr32(cpuIo=cpu.io, immShift=true)
   //val asrRc = SnowHouseCpuAsr32(cpuIo=cpu.io, immShift=false)
   //val asrImm = SnowHouseCpuAsr32(cpuIo=cpu.io, immShift=true)
-  val shiftSlt32 = (
-    //SnowHouseCpuShift32(cpuIo=cpu.io)
-    SnowHouseCpuShiftSlt32LowLatency(cpuIo=cpu.io)
-  )
+  //val shiftSlt32 = (
+  //  //SnowHouseCpuShift32(cpuIo=cpu.io)
+  //  SnowHouseCpuShiftSlt32LowLatency(cpuIo=cpu.io)
+  //)
   val cpy32 = SnowHouseCpuCpy32(cpuIo=cpu.io)
   val mul32 = SnowHouseCpuMul32(cpuIo=cpu.io)
   val divmod32 = SnowHouseCpuDivmod32(cpuIo=cpu.io)
@@ -5149,23 +5167,23 @@ object SnowHouseCpuWithDualRamSim extends App {
   //)
   val testIdxRange = Array[Int](
     //0, 0,
-    //1, 1,
-    //2, 2,
-    //3, 3,
-    //4, 4,
-    //5, 5,
-    //6, 6,
-    //7, 7,
-    //8, 8,
-    //9, 9,
-    //10, 10,
-    //11, 11,
+    1, 1,
+    2, 2,
+    3, 3,
+    4, 4,
+    5, 5,
+    6, 6,
+    7, 7,
+    8, 8,
+    9, 9,
+    10, 10,
+    11, 11,
     12, 12,
   )
   val instrRamKindArr = Array[Int](
-    //0,
-    //1,
-    //2,
+    0,
+    1,
+    2,
     5,
   )
   for (testIdx <- 0 to 12) {

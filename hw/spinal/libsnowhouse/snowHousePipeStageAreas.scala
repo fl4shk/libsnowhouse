@@ -7203,7 +7203,10 @@ case class SnowHousePipeStageExecute(
       )
     ) ## (
       RegNext(
-        next=(alu.io.inp_op === LcvAluDel1InpOpEnum.OP_GET_INP_A),
+        next=(
+          //alu.io.inp_op === LcvAluDel1InpOpEnum.OP_GET_INP_A
+          alu.io.inp_op === LcvAluDel1InpOpEnum.ZERO
+        ),
         init=False,
       )
     ) ## (
