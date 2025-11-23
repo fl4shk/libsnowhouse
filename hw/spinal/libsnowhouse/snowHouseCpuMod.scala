@@ -5015,15 +5015,20 @@ case class SnowHouseCpuWithDualRam(
   val dualRam = SnowHouseInstrDataDualRam(
     cfg=cfg.shCfg,
     instrInitBigInt=program.outpArr,
-    dataInitBigInt=(
-      Array.fill(
-        //1 << 16
-        //1 << (16 - 2)
-        //1 << (16 - 3)
-        1 << (16 - 4)
-        //1 << (16 - 4 - 2)
-      )(BigInt(0))
-    ),
+    dataInitBigInt=({
+      //Array.fill(
+      //  //1 << 16
+      //  //1 << (16 - 2)
+      //  //1 << (16 - 3)
+      //  1 << (16 - 4)
+      //  //1 << (16 - 4 - 2)
+      //)(BigInt(0))
+      val temp = new ArrayBuffer[BigInt]()
+      for (idx <- 0 until (1 << (16 - 4))) {
+        temp += BigInt(idx)
+      }
+      temp
+    }),
   )
   cpu.io.ibus <> dualRam.io.ibus
   cpu.io.dbus <> dualRam.io.dbus
@@ -5177,14 +5182,14 @@ object SnowHouseCpuWithDualRamSim extends App {
     //8, 8,
     //9, 9,
     //10, 10,
-    11, 11,
+    //11, 11,
     12, 12,
   )
   val instrRamKindArr = Array[Int](
-    0,
-    1,
+    //0,
+    //1,
     2,
-    5,
+    //5,
   )
   for (testIdx <- 0 to 12) {
     programStrArr += (
@@ -5200,15 +5205,19 @@ object SnowHouseCpuWithDualRamSim extends App {
   //  //false
   //  true
   //)
-  val numClkCycles = (
-    1024
-    //1024 + 512
-  )
   for (
     //programStr <- programStrArr
     testIdx <- testIdxRange(0) to testIdxRange(1)
   ) {
     val programStr = programStrArr(testIdx)
+
+    val numClkCycles = (
+      if (testIdx != 12) (
+        1024
+      ) else (
+        1024 + 512
+      )
+    )
     for (instrRamKind <- instrRamKindArr) {
       val cfg = SnowHouseCpuConfig(
         optFormal=(

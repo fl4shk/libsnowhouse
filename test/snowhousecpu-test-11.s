@@ -19,20 +19,23 @@ ldr r4, r3, 0x8
 //add r7, r6, 1
 //add r8, r7, 1
 
-infin:
+
+
+
+_infin:
 //cpy r5, r2
 //add r5, r5, 1
-beq r0, r0, infin
-//beq r0, r0, fwd_br_dst
+beq r0, r0, _infin
+//beq r0, r0, _fwd_br_dst
 .rept 200
-//beq r0, r0, infin
+//beq r0, r0, _infin
 cpy r1, r2
 .endr
 
-fwd_br_dst:
+_fwd_br_dst:
 add r1, r1, r5
 
-//infin:
+//_infin:
 ////cpy r5, r2
 ////add r5, r5, 1
-//beq r0, r0, infin
+//beq r0, r0, _infin

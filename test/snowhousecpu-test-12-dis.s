@@ -6,7 +6,7 @@ Disassembly of section .text:
 
 00000000 <_loop_0-0x3c>:
 	...
-  10:	78 00 00 07 	add	r7, r0, 120
+  10:	9c 00 00 07 	add	r7, r0, 156
   14:	07 00 70 70 	cpy	ids, r7
   18:	01 00 00 08 	add	r8, r0, 1
   1c:	09 00 80 70 	cpy	ie, r8
@@ -29,19 +29,32 @@ Disassembly of section .text:
   58:	01 00 40 04 	add	r4, r4, 1
   5c:	01 00 50 05 	add	r5, r5, 1
   60:	01 00 60 06 	add	r6, r6, 1
+  64:	10 00 00 07 	add	r7, r0, 16
+  68:	00 00 00 08 	add	r8, r0, 0
 
-00000064 <_infin>:
-  64:	ff ff 63 a6 	bgeu	r6, r6, -4
-  68:	01 00 00 01 	add	r1, r0, 1
-  6c:	02 00 00 02 	add	r2, r0, 2
-  70:	03 00 00 03 	add	r3, r0, 3
-  74:	04 00 00 04 	add	r4, r0, 4
+0000006c <_loop_2>:
+  6c:	fc ff 70 07 	add	r7, r7, -4
+  70:	00 00 70 9b 	ldr	r11, r7, 0
+  74:	fd ff b4 a8 	blts	r8, r11, -12
+  78:	10 00 00 07 	add	r7, r0, 16
 
-00000078 <_irq_handler>:
-  78:	0a 00 00 70 	ret	ira
-  7c:	01 00 00 01 	add	r1, r0, 1
-  80:	02 00 00 02 	add	r2, r0, 2
-  84:	03 00 00 03 	add	r3, r0, 3
-  88:	04 00 00 04 	add	r4, r0, 4
-  8c:	05 00 00 05 	add	r5, r0, 5
-  90:	06 00 00 06 	add	r6, r0, 6
+0000007c <_loop_3>:
+  7c:	fc ff 70 07 	add	r7, r7, -4
+  80:	00 00 70 9a 	ldr	r10, r7, 0
+  84:	fd ff 74 a8 	blts	r8, r7, -12
+
+00000088 <_infin>:
+  88:	ff ff 63 a6 	bgeu	r6, r6, -4
+  8c:	01 00 00 01 	add	r1, r0, 1
+  90:	02 00 00 02 	add	r2, r0, 2
+  94:	03 00 00 03 	add	r3, r0, 3
+  98:	04 00 00 04 	add	r4, r0, 4
+
+0000009c <_irq_handler>:
+  9c:	0a 00 00 70 	ret	ira
+  a0:	11 00 00 01 	add	r1, r0, 17
+  a4:	12 00 00 02 	add	r2, r0, 18
+  a8:	13 00 00 03 	add	r3, r0, 19
+  ac:	14 00 00 04 	add	r4, r0, 20
+  b0:	15 00 00 05 	add	r5, r0, 21
+  b4:	16 00 00 06 	add	r6, r0, 22
