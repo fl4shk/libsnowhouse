@@ -5025,7 +5025,11 @@ case class SnowHouseCpuWithDualRam(
       //)(BigInt(0))
       val temp = new ArrayBuffer[BigInt]()
       for (idx <- 0 until (1 << (16 - 4))) {
-        temp += BigInt(idx)
+        if (idx < /*1024*/0x800) {
+          temp += BigInt(idx)
+        } else {
+          temp += BigInt(0)
+        }
       }
       temp
     }),
@@ -5177,19 +5181,19 @@ object SnowHouseCpuWithDualRamSim extends App {
     //3, 3,
     //4, 4,
     //5, 5,
-    //6, 6,
+    6, 6,
     //7, 7,
     //8, 8,
     //9, 9,
     //10, 10,
     //11, 11,
-    12, 12,
+    //12, 12,
   )
   val instrRamKindArr = Array[Int](
-    //0,
-    //1,
+    0,
+    1,
     2,
-    //5,
+    5,
   )
   for (testIdx <- 0 to 12) {
     programStrArr += (
@@ -5212,10 +5216,12 @@ object SnowHouseCpuWithDualRamSim extends App {
     val programStr = programStrArr(testIdx)
 
     val numClkCycles = (
-      if (testIdx != 12) (
-        1024
-      ) else (
+      if (testIdx == 7) (
+        2048 + 512
+      ) else if (testIdx == 12) (
         1024 + 512
+      ) else (
+        1024
       )
     )
     for (instrRamKind <- instrRamKindArr) {

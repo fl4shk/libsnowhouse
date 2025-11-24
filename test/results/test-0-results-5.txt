@@ -6,6 +6,7 @@ addr:3 data:4096
 addr:4 data:8
 addr:5 data:156
 addr:15 data:2048
+addr:6 data:1024
 addr:6 data:32
 addr:10 data:256
 addr:5 data:32
