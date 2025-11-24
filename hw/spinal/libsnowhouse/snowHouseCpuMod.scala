@@ -3146,6 +3146,7 @@ case class SnowHouseCpuConfig(
   //  tempArr += r8.index
   //  tempArr
   //})
+  targetAltera: Boolean=false,
   instrRamKind: Int,
   programStr: String,
   exposeRegFileWriteDataToIo: Boolean=false,
@@ -3384,6 +3385,7 @@ case class SnowHouseCpuConfig(
     exposeRegFileWriteDataToIo=exposeRegFileWriteDataToIo,
     exposeRegFileWriteAddrToIo=exposeRegFileWriteAddrToIo,
     exposeRegFileWriteEnableToIo=exposeRegFileWriteEnableToIo,
+    targetAltera=targetAltera,
     optFormal=optFormal,
   )
   //--------

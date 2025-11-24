@@ -3452,6 +3452,20 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
     //)
   )
 
+  val myPsExSetPcValidToOrReduce = (
+    Cat(
+      RegNext/*When*/(
+        next=nextExSetPcValid,
+        //cond=(!io.shouldIgnoreInstr.last),
+        init=nextExSetPcValid.getZero
+      ),
+      myPsExSetPcCmpEq.myCmp.msb,
+      //RegNext(myPsExSetPcCmpEq.myStickyCmp, init=False),
+      myPsExSetPcCmpNe.myCmp.msb,
+      //RegNext(myPsExSetPcCmpNe.myStickyCmp, init=False),
+    ).asUInt
+  )
+
   val myPsExSetPcValid = (
     /*LcvFastOrR*/(
       ///*self=*/Vec[Bool](
@@ -3465,17 +3479,13 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
       //  myPsExSetPcCmpNe.myCmp.msb,
       //  //RegNext(myPsExSetPcCmpNe.myStickyCmp, init=False),
       //).asBits.asUInt.orR
-      Cat(
-        RegNext/*When*/(
-          next=nextExSetPcValid,
-          //cond=(!io.shouldIgnoreInstr.last),
-          init=nextExSetPcValid.getZero
-        ),
-        myPsExSetPcCmpEq.myCmp.msb,
-        //RegNext(myPsExSetPcCmpEq.myStickyCmp, init=False),
-        myPsExSetPcCmpNe.myCmp.msb,
-        //RegNext(myPsExSetPcCmpNe.myStickyCmp, init=False),
-      ).asUInt.orR
+      if (cfg.targetAltera) (
+        LcvFastOrR(
+          myPsExSetPcValidToOrReduce
+        )
+      ) else (
+        myPsExSetPcValidToOrReduce.orR
+      )
       //optDsp=false
     )
   )
@@ -8022,7 +8032,7 @@ case class SnowHousePipeStageExecute(
             mmwValidItem := False
           })
         })
-        when (
+        val toOrReduce = (
           /*RegNext*/(
             Vec[Bool](
               (
@@ -8041,9 +8051,16 @@ case class SnowHousePipeStageExecute(
                   /*RegNext*/(myDoHaveHazard).head/*(idx)*/,
                 ).asBits.asUInt.andR
               )
-            ).asBits.asUInt.orR
+            ).asBits.asUInt//.orR
           )
           //init(False)
+        )
+        when (
+          if (cfg.targetAltera) (
+            LcvFastOrR(toOrReduce)
+          ) else (
+            toOrReduce.orR
+          )
         ) {
           //doMultiCycleStart(psExStallHost, idx=idx)
           rMultiCycleOpState := (

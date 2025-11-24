@@ -570,6 +570,7 @@ case class SnowHouseConfig(
   exposeRegFileWriteAddrToIo: Boolean=false,
   exposeRegFileWriteEnableToIo: Boolean=false,
   //splitAluOp: Boolean=false,
+  targetAltera: Boolean=false,
   optFormal: Boolean=false,
 ) {
   def regPcSetItCntWidth = (
