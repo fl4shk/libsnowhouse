@@ -3479,13 +3479,13 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
       //  myPsExSetPcCmpNe.myCmp.msb,
       //  //RegNext(myPsExSetPcCmpNe.myStickyCmp, init=False),
       //).asBits.asUInt.orR
-      if (cfg.targetAltera) (
-        LcvFastOrR(
-          myPsExSetPcValidToOrReduce
-        )
-      ) else (
+      //if (cfg.targetAltera) (
+      //  LcvFastOrR(
+      //    myPsExSetPcValidToOrReduce
+      //  )
+      //) else (
         myPsExSetPcValidToOrReduce.orR
-      )
+      //)
       //optDsp=false
     )
   )
@@ -8057,11 +8057,11 @@ case class SnowHousePipeStageExecute(
           //init(False)
         )
         when (
-          if (cfg.targetAltera) (
-            LcvFastOrR(toOrReduce)
-          ) else (
+          //if (cfg.targetAltera) (
+          //  LcvFastOrR(toOrReduce)
+          //) else (
             toOrReduce.orR
-          )
+          //)
         ) {
           //doMultiCycleStart(psExStallHost, idx=idx)
           rMultiCycleOpState := (
