@@ -2546,95 +2546,95 @@ object SnowHouseCpuOpInfoMap {
   //--------
   opInfoMap += (
     // lsl rA, rB, rC
-    SnowHouseCpuOp.LslRaRbRc -> OpInfo.mkAlu/*mkAluShift*//*mkMultiCycle*/(
+    SnowHouseCpuOp.LslRaRbRc -> OpInfo./*mkAlu*//*mkAluShift*/mkMultiCycle(
       dstArr=Array[DstKind](DstKind.Gpr),
       srcArr=Array[SrcKind](SrcKind.Gpr, SrcKind.Gpr),
       //aluShiftOp=AluShiftOpKind.Lsl,
-      //multiCycleOp=(
-      //  MultiCycleOpKind.Lsl
-      //),
-      aluOp=(
-        AluOpKind.LcvAlu(LcvAluDel1InpOpEnum.LSL)
-      )
+      multiCycleOp=(
+        MultiCycleOpKind.Lsl
+      ),
+      //aluOp=(
+      //  AluOpKind.LcvAlu(LcvAluDel1InpOpEnum.LSL)
+      //)
     )
   )
   opInfoMap += (
     // lsl rA, rB, imm5
-    SnowHouseCpuOp.LslRaRbImm5 -> OpInfo.mkAlu/*mkAluShift*//*mkMultiCycle*/(
+    SnowHouseCpuOp.LslRaRbImm5 -> OpInfo./*mkAlu*//*mkAluShift*/mkMultiCycle(
       dstArr=Array[DstKind](DstKind.Gpr),
       srcArr=Array[SrcKind](SrcKind.Gpr, SrcKind.Imm()),
       //aluShiftOp=(
       //  AluShiftOpKind.Lsl
       //  //AluShiftOpKind.Add
       //),
-      //multiCycleOp=(
-      //  MultiCycleOpKind.Lsl
-      //),
-      aluOp=(
-        AluOpKind.LcvAlu(LcvAluDel1InpOpEnum.LSL)
-      )
+      multiCycleOp=(
+        MultiCycleOpKind.Lsl
+      ),
+      //aluOp=(
+      //  AluOpKind.LcvAlu(LcvAluDel1InpOpEnum.LSL)
+      //)
     )
   )
   opInfoMap += (
     // lsr rA, rB, rC
-    SnowHouseCpuOp.LsrRaRbRc -> OpInfo.mkAlu/*mkAluShift*//*mkMultiCycle*/(
+    SnowHouseCpuOp.LsrRaRbRc -> OpInfo./*mkAlu*//*mkAluShift*/mkMultiCycle(
       dstArr=Array[DstKind](DstKind.Gpr),
       srcArr=Array[SrcKind](SrcKind.Gpr, SrcKind.Gpr),
       //aluShiftOp=AluShiftOpKind.Lsr,
-      //multiCycleOp=(
-      //  MultiCycleOpKind.Lsr
-      //),
-      aluOp=(
-        AluOpKind.LcvAlu(LcvAluDel1InpOpEnum.LSR)
-      )
+      multiCycleOp=(
+        MultiCycleOpKind.Lsr
+      ),
+      //aluOp=(
+      //  AluOpKind.LcvAlu(LcvAluDel1InpOpEnum.LSL)
+      //)
     )
   )
   opInfoMap += (
     // lsr rA, rB, imm5
-    SnowHouseCpuOp.LsrRaRbImm5 -> OpInfo.mkAlu/*mkAluShift*//*mkMultiCycle*/(
+    SnowHouseCpuOp.LsrRaRbImm5 -> OpInfo./*mkAlu*//*mkAluShift*/mkMultiCycle(
       dstArr=Array[DstKind](DstKind.Gpr),
       srcArr=Array[SrcKind](SrcKind.Gpr, SrcKind.Imm()),
       //aluShiftOp=(
       //  AluShiftOpKind.Lsr
       //  //AluShiftOpKind.Add
       //),
-      //multiCycleOp=(
-      //  MultiCycleOpKind.Lsr
-      //),
-      aluOp=(
-        AluOpKind.LcvAlu(LcvAluDel1InpOpEnum.LSR)
-      )
+      multiCycleOp=(
+        MultiCycleOpKind.Lsr
+      ),
+      //aluOp=(
+      //  AluOpKind.LcvAlu(LcvAluDel1InpOpEnum.LSL)
+      //)
     )
   )
   opInfoMap += (
     // asr rA, rB, rC
-    SnowHouseCpuOp.AsrRaRbRc -> OpInfo.mkAlu/*mkAluShift*//*mkMultiCycle*/(
+    SnowHouseCpuOp.AsrRaRbRc -> OpInfo./*mkAlu*//*mkAluShift*/mkMultiCycle(
       dstArr=Array[DstKind](DstKind.Gpr),
       srcArr=Array[SrcKind](SrcKind.Gpr, SrcKind.Gpr),
       //aluShiftOp=AluShiftOpKind.Asr,
-      //multiCycleOp=(
-      //  MultiCycleOpKind.Asr
-      //),
-      aluOp=(
-        AluOpKind.LcvAlu(LcvAluDel1InpOpEnum.ASR)
-      )
+      multiCycleOp=(
+        MultiCycleOpKind.Asr
+      ),
+      //aluOp=(
+      //  AluOpKind.LcvAlu(LcvAluDel1InpOpEnum.LSL)
+      //)
     )
   )
   opInfoMap += (
     // asr rA, rB, imm5
-    SnowHouseCpuOp.AsrRaRbImm5 -> OpInfo.mkAlu/*mkAluShift*//*mkMultiCycle*/(
+    SnowHouseCpuOp.AsrRaRbImm5 -> OpInfo./*mkAlu*//*mkAluShift*/mkMultiCycle(
       dstArr=Array[DstKind](DstKind.Gpr),
       srcArr=Array[SrcKind](SrcKind.Gpr, SrcKind.Imm()),
       //aluShiftOp=(
       //  AluShiftOpKind.Asr
       //  //AluShiftOpKind.Add
       //),
-      //multiCycleOp=(
-      //  MultiCycleOpKind.Asr
-      //),
-      aluOp=(
-        AluOpKind.LcvAlu(LcvAluDel1InpOpEnum.ASR)
-      )
+      multiCycleOp=(
+        MultiCycleOpKind.Asr
+      ),
+      //aluOp=(
+      //  AluOpKind.LcvAlu(LcvAluDel1InpOpEnum.LSL)
+      //)
     )
   )
   //opInfoMap += (
@@ -3634,21 +3634,23 @@ case class SnowHouseCpuTestProgram(
 //}
 
 
-case class SnowHouseCpuShiftSlt32LowLatency(
+case class SnowHouseCpuShift32LowLatency
+/*SnowHouseCpuShiftSlt32LowLatency*/
+(
   cpuIo: SnowHouseIo,
 ) extends Area {
   def cfg = cpuIo.cfg
   val lslDel1 = SnowHouseLslDel1(mainWidth=cfg.mainWidth)
   val lsrDel1 = SnowHouseLsrDel1(mainWidth=cfg.mainWidth)
   val asrDel1 = SnowHouseAsrDel1(mainWidth=cfg.mainWidth)
-  val sltuDel1 = SnowHouseSltDel1(
-    mainWidth=cfg.mainWidth, 
-    isSigned=false,
-  )
-  val sltsDel1 = SnowHouseSltDel1(
-    mainWidth=cfg.mainWidth, 
-    isSigned=true,
-  )
+  //val sltuDel1 = SnowHouseSltDel1(
+  //  mainWidth=cfg.mainWidth, 
+  //  isSigned=false,
+  //)
+  //val sltsDel1 = SnowHouseSltDel1(
+  //  mainWidth=cfg.mainWidth, 
+  //  isSigned=true,
+  //)
   lslDel1.io.inpToShift := (
     RegNext(
       next=lslDel1.io.inpToShift,
@@ -3685,30 +3687,30 @@ case class SnowHouseCpuShiftSlt32LowLatency(
       init=asrDel1.io.inpAmount.getZero
     )
   )
-  sltuDel1.io.inpA := (
-    RegNext(
-      next=sltuDel1.io.inpA,
-      init=sltuDel1.io.inpA.getZero
-    )
-  )
-  sltuDel1.io.inpB := (
-    RegNext(
-      next=sltuDel1.io.inpB,
-      init=sltuDel1.io.inpB.getZero
-    )
-  )
-  sltsDel1.io.inpA := (
-    RegNext(
-      next=sltsDel1.io.inpA,
-      init=sltsDel1.io.inpA.getZero
-    )
-  )
-  sltsDel1.io.inpB := (
-    RegNext(
-      next=sltsDel1.io.inpB,
-      init=sltsDel1.io.inpB.getZero
-    )
-  )
+  //sltuDel1.io.inpA := (
+  //  RegNext(
+  //    next=sltuDel1.io.inpA,
+  //    init=sltuDel1.io.inpA.getZero
+  //  )
+  //)
+  //sltuDel1.io.inpB := (
+  //  RegNext(
+  //    next=sltuDel1.io.inpB,
+  //    init=sltuDel1.io.inpB.getZero
+  //  )
+  //)
+  //sltsDel1.io.inpA := (
+  //  RegNext(
+  //    next=sltsDel1.io.inpA,
+  //    init=sltsDel1.io.inpA.getZero
+  //  )
+  //)
+  //sltsDel1.io.inpB := (
+  //  RegNext(
+  //    next=sltsDel1.io.inpB,
+  //    init=sltsDel1.io.inpB.getZero
+  //  )
+  //)
 
   for (
     //(multiCycleBus, busIdx) <- cpuIo.multiCycleBusVec.view.zipWithIndex
@@ -3929,86 +3931,86 @@ case class SnowHouseCpuShiftSlt32LowLatency(
           rBusValidVec(1)
         )
       }
-      case MultiCycleOpKind.Sltu => {
-        val multiCycleBus = cpuIo.multiCycleBusVec(busIdx)
-        def dstVec = multiCycleBus.recvData.dstVec
-        def srcVec = multiCycleBus.sendData.srcVec
-        def mainWidth = cfg.mainWidth
+      //case MultiCycleOpKind.Sltu => {
+      //  val multiCycleBus = cpuIo.multiCycleBusVec(busIdx)
+      //  def dstVec = multiCycleBus.recvData.dstVec
+      //  def srcVec = multiCycleBus.sendData.srcVec
+      //  def mainWidth = cfg.mainWidth
 
-        val width: Int=cfg.mainWidth
-        val left = (
-          srcVec(0)
-        )
-        val right = (
-          srcVec(1)
-        )
-        val tempLeft = Cat(left).asUInt(width - 1 downto 0)
-        val tempRight = Cat(right).asUInt(width - 1 downto 0)
-        dstVec(0) := (
-          RegNext(
-            next=dstVec(0),
-            init=dstVec(0).getZero,
-          )
-        )
-        val rBusValidVec = (
-          Vec.fill(2)(
-            RegNext(
-              next=multiCycleBus.nextValid,
-              init=False
-            )
-          )
-        )
-        when (multiCycleBus.nextValid) {
-          sltuDel1.io.inpA := tempLeft
-          sltuDel1.io.inpB := tempRight
-        }
-        when (rBusValidVec(0)) {
-          dstVec(0) := sltuDel1.io.outpResult
-        }
-        multiCycleBus.ready := (
-          rBusValidVec(1)
-        )
-      }
-      case MultiCycleOpKind.Slts => {
-        val multiCycleBus = cpuIo.multiCycleBusVec(busIdx)
-        def dstVec = multiCycleBus.recvData.dstVec
-        def srcVec = multiCycleBus.sendData.srcVec
-        def mainWidth = cfg.mainWidth
+      //  val width: Int=cfg.mainWidth
+      //  val left = (
+      //    srcVec(0)
+      //  )
+      //  val right = (
+      //    srcVec(1)
+      //  )
+      //  val tempLeft = Cat(left).asUInt(width - 1 downto 0)
+      //  val tempRight = Cat(right).asUInt(width - 1 downto 0)
+      //  dstVec(0) := (
+      //    RegNext(
+      //      next=dstVec(0),
+      //      init=dstVec(0).getZero,
+      //    )
+      //  )
+      //  val rBusValidVec = (
+      //    Vec.fill(2)(
+      //      RegNext(
+      //        next=multiCycleBus.nextValid,
+      //        init=False
+      //      )
+      //    )
+      //  )
+      //  when (multiCycleBus.nextValid) {
+      //    sltuDel1.io.inpA := tempLeft
+      //    sltuDel1.io.inpB := tempRight
+      //  }
+      //  when (rBusValidVec(0)) {
+      //    dstVec(0) := sltuDel1.io.outpResult
+      //  }
+      //  multiCycleBus.ready := (
+      //    rBusValidVec(1)
+      //  )
+      //}
+      //case MultiCycleOpKind.Slts => {
+      //  val multiCycleBus = cpuIo.multiCycleBusVec(busIdx)
+      //  def dstVec = multiCycleBus.recvData.dstVec
+      //  def srcVec = multiCycleBus.sendData.srcVec
+      //  def mainWidth = cfg.mainWidth
 
-        val width: Int=cfg.mainWidth
-        val left = (
-          srcVec(0)
-        )
-        val right = (
-          srcVec(1)
-        )
-        val tempLeft = Cat(left).asUInt(width - 1 downto 0)
-        val tempRight = Cat(right).asUInt(width - 1 downto 0)
-        dstVec(0) := (
-          RegNext(
-            next=dstVec(0),
-            init=dstVec(0).getZero,
-          )
-        )
-        val rBusValidVec = (
-          Vec.fill(2)(
-            RegNext(
-              next=multiCycleBus.nextValid,
-              init=False
-            )
-          )
-        )
-        when (multiCycleBus.nextValid) {
-          sltsDel1.io.inpA := tempLeft
-          sltsDel1.io.inpB := tempRight
-        }
-        when (rBusValidVec(0)) {
-          dstVec(0) := sltsDel1.io.outpResult
-        }
-        multiCycleBus.ready := (
-          rBusValidVec(1)
-        )
-      }
+      //  val width: Int=cfg.mainWidth
+      //  val left = (
+      //    srcVec(0)
+      //  )
+      //  val right = (
+      //    srcVec(1)
+      //  )
+      //  val tempLeft = Cat(left).asUInt(width - 1 downto 0)
+      //  val tempRight = Cat(right).asUInt(width - 1 downto 0)
+      //  dstVec(0) := (
+      //    RegNext(
+      //      next=dstVec(0),
+      //      init=dstVec(0).getZero,
+      //    )
+      //  )
+      //  val rBusValidVec = (
+      //    Vec.fill(2)(
+      //      RegNext(
+      //        next=multiCycleBus.nextValid,
+      //        init=False
+      //      )
+      //    )
+      //  )
+      //  when (multiCycleBus.nextValid) {
+      //    sltsDel1.io.inpA := tempLeft
+      //    sltsDel1.io.inpB := tempRight
+      //  }
+      //  when (rBusValidVec(0)) {
+      //    dstVec(0) := sltsDel1.io.outpResult
+      //  }
+      //  multiCycleBus.ready := (
+      //    rBusValidVec(1)
+      //  )
+      //}
       case _ => {
       }
     }
@@ -5062,10 +5064,11 @@ case class SnowHouseCpuWithDualRam(
   //val lsrImm = SnowHouseCpuLsr32(cpuIo=cpu.io, immShift=true)
   //val asrRc = SnowHouseCpuAsr32(cpuIo=cpu.io, immShift=false)
   //val asrImm = SnowHouseCpuAsr32(cpuIo=cpu.io, immShift=true)
-  //val shiftSlt32 = (
-  //  //SnowHouseCpuShift32(cpuIo=cpu.io)
-  //  SnowHouseCpuShiftSlt32LowLatency(cpuIo=cpu.io)
-  //)
+  val shift32/*shiftSlt32*/ = (
+    //SnowHouseCpuShift32(cpuIo=cpu.io)
+    //SnowHouseCpuShiftSlt32LowLatency(cpuIo=cpu.io)
+    SnowHouseCpuShift32LowLatency(cpuIo=cpu.io)
+  )
   val cpy32 = SnowHouseCpuCpy32(cpuIo=cpu.io)
   val mul32 = SnowHouseCpuMul32(cpuIo=cpu.io)
   val divmod32 = SnowHouseCpuDivmod32(cpuIo=cpu.io)
@@ -5190,10 +5193,10 @@ object SnowHouseCpuWithDualRamSim extends App {
     //12, 12,
   )
   val instrRamKindArr = Array[Int](
-    0,
+    //0,
     1,
-    2,
-    5,
+    //2,
+    //5,
   )
   for (testIdx <- 0 to 12) {
     programStrArr += (
