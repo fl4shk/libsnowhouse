@@ -4050,7 +4050,8 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
       init=nextIndexReg.getZero
     )
   )
-  nextIndexReg := io.rIndexReg
+  //nextIndexReg := io.rIndexReg
+  nextIndexReg := 0x0
   val nextMulHiOutp = UInt(cfg.mainWidth bits)
   io.rMulHiOutp := (
     RegNextWhen(
@@ -4166,7 +4167,7 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
         //io.shiftModMemWord := 0x0
         opInfo.cpyOp.get match {
           case CpyOpKind.Cpy => {
-            nextIndexReg := 0x0
+            //nextIndexReg := 0x0
             //io.opIsCpyNonJmpAlu := True
             assert(
               opInfo.cond == CondKind.Always,
@@ -4238,7 +4239,7 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
                     //})
                     kind match {
                       case HiddenRegKind.IndexReg => {
-                        nextIndexReg := selRdMemWord(0)
+                        //nextIndexReg := selRdMemWord(0)
                       }
                       case HiddenRegKind.MulHiOutp => {
                         nextMulHiOutp := selRdMemWord(0)
@@ -4396,7 +4397,7 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
             }
           }
           case CpyOpKind.Cpyu => {
-            nextIndexReg := 0x0
+            //nextIndexReg := 0x0
             //io.opIsCpyNonJmpAlu := True
             assert(
               opInfo.dstArr.size == 1,
@@ -4444,7 +4445,7 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
             )
           }
           case CpyOpKind.AtomicLl => {
-            nextIndexReg := 0x0
+            //nextIndexReg := 0x0
             assert(
               //opInfo.dstArr.size
               false,
@@ -4453,7 +4454,7 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
             )
           }
           case CpyOpKind.AtomicSc => {
-            nextIndexReg := 0x0
+            //nextIndexReg := 0x0
             assert(
               //opInfo.dstArr.size
               false,
@@ -4462,7 +4463,7 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
             )
           }
           case CpyOpKind.Jmp => {
-            nextIndexReg := 0x0
+            //nextIndexReg := 0x0
             assert(
               opInfo.dstArr.size == 1
               || opInfo.dstArr.size == 2
@@ -4630,7 +4631,7 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
                 current := False
               })
             )
-            nextIndexReg := 0x0
+            //nextIndexReg := 0x0
             opInfo.cond match {
               case CondKind.Always => {
                 nextExSetPcValid(enumExSetPcValidNonCond) := True
@@ -5407,7 +5408,7 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
             )
             opInfo.dstArr(0) match {
               case DstKind.Spr(kind) => {
-                nextIndexReg := 0x0
+                //nextIndexReg := 0x0
                 kind match {
                   case SprKind.AluFlags => {
                     if (opInfo.dstArr.size == 1) {
@@ -5521,7 +5522,7 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
                 }
               }
               case DstKind.HiddenReg(HiddenRegKind.IndexReg) => {
-                nextIndexReg := myBinop.main
+                //nextIndexReg := myBinop.main
                 io.modMemWordValid.foreach(current => {
                   current := False
                 })
@@ -5533,7 +5534,7 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
                 //})
               }
               case _ => {
-                nextIndexReg := 0x0
+                //nextIndexReg := 0x0
               }
             }
             io.modMemWord(0) := (
@@ -5576,7 +5577,7 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
                 selRdMemWord(0).getZero
               }
             )
-            nextIndexReg := 0x0
+            //nextIndexReg := 0x0
           }
           case AluOpKind.LcvAlu(aluOp) => {
             io.modMemWord(0) := (
@@ -5634,7 +5635,7 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
               nextFlagZ := binop.flagZ
             }
             io.modMemWord(0) := binop.main
-            nextIndexReg := 0x0
+            //nextIndexReg := 0x0
           }
         }
       }
@@ -5705,7 +5706,7 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
             //    True
             //  )
             //)
-            nextIndexReg := 0x0
+            //nextIndexReg := 0x0
           }
         }
       }
@@ -5714,7 +5715,7 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
         if (!isSingleWriteToIds) {
           //io.aluModMemWordValid.foreach(_ := False)
           //io.aluOp := LcvAluDel1InpOpEnum.ZERO
-          nextIndexReg := 0x0
+          //nextIndexReg := 0x0
         }
         for (
           ((_, innerOpInfo), idx)
