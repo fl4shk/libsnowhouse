@@ -677,33 +677,47 @@ case class SnowHouseBranchPredictor(
 
   //val rdBranchKind = SnowHouseBranchPredictorKind.FwdNotTknBakTknEnum()
   //rdBranchKind.assignFromBits(myRdBtbElem.branchKind)
-  io.result.valid := (
-    myRdBtbElem.fire
-    && (
-      myRdBtbElem.srcRegPc(
-        cfg.mySrcRegPcCmpEqRange
-      )
-      //(
-      //  cfg.mySrcRegPcCmpEqRange
-      //)
-      === RegNextWhen(
-        next=(
-          io.inpRegPc(
-            //2
-            //0
-            SnowHouseBranchPredictorKind._predictorInpRegPcIdxCmpEq
-          )
-          //- cfg.instrSizeBytes
-        )(cfg.mySrcRegPcCmpEqRange),
-        cond=(
-          //io.upIsFiring
-          io.upIsReady
-        ),
-        init=io.inpRegPc(
+  val myResultValidCmpEqLeft = (
+    myRdBtbElem.srcRegPc(
+      cfg.mySrcRegPcCmpEqRange
+    )
+  )
+  val myResultValidCmpEqRight = (
+    RegNextWhen(
+      next=(
+        io.inpRegPc(
           //2
           //0
           SnowHouseBranchPredictorKind._predictorInpRegPcIdxCmpEq
-        )(cfg.mySrcRegPcCmpEqRange).getZero,
+        )
+        //- cfg.instrSizeBytes
+      )(cfg.mySrcRegPcCmpEqRange),
+      cond=(
+        //io.upIsFiring
+        io.upIsReady
+      ),
+      init=io.inpRegPc(
+        //2
+        //0
+        SnowHouseBranchPredictorKind._predictorInpRegPcIdxCmpEq
+      )(cfg.mySrcRegPcCmpEqRange).getZero,
+    )
+  )
+  io.result.valid := (
+    myRdBtbElem.fire
+    && (
+      //(
+      //  cfg.mySrcRegPcCmpEqRange
+      //)
+      if (!cfg.targetAltera) (
+        myResultValidCmpEqLeft
+        === myResultValidCmpEqRight
+      ) else (
+        LcvFastCmpEq(
+          left=myResultValidCmpEqLeft,
+          right=myResultValidCmpEqRight,
+          cmpEqIo=null,
+        )._1
       )
     )
   )
