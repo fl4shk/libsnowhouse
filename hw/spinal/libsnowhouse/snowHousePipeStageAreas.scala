@@ -8028,11 +8028,11 @@ case class SnowHousePipeStageExecute(
           )
         }
         cMid0Front.haltIt()
-        outp.myExt.foreach(item => {
-          item.modMemWordValid.foreach(mmwValidItem => {
-            mmwValidItem := False
-          })
-        })
+        //outp.myExt.foreach(item => {
+        //  item.modMemWordValid.foreach(mmwValidItem => {
+        //    mmwValidItem := False
+        //  })
+        //})
         val toOrReduce = (
           /*RegNext*/(
             Vec[Bool](
@@ -8157,11 +8157,11 @@ case class SnowHousePipeStageExecute(
                   rMultiCycleOpState := MultiCycleOpState.Idle
                 } elsewhen (rOpIsMultiCycle(idx)) {
                   cMid0Front.haltIt()
-                  outp.myExt.foreach(item => {
-                    item.modMemWordValid.foreach(mmwValidItem => {
-                      mmwValidItem := False
-                    })
-                  })
+                  //outp.myExt.foreach(item => {
+                  //  item.modMemWordValid.foreach(mmwValidItem => {
+                  //    mmwValidItem := False
+                  //  })
+                  //})
                 }
               }
             }
