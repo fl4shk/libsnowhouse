@@ -392,8 +392,8 @@ case class SnowHouseBranchPredictor(
         if (!cfg.targetAltera) (
           "auto"
         ) else (
-          //"no_rw_check, logic"
-          "no_rw_check, MLAB"
+          "no_rw_check, logic"
+          //"no_rw_check, MLAB"
           //"MLAB"
         )
         //"block"
@@ -433,8 +433,8 @@ case class SnowHouseBranchPredictor(
           //"auto"
           "distributed"
         ) else (
-          //"no_rw_check, logic"
-          "no_rw_check, MLAB"
+          "no_rw_check, logic"
+          //"no_rw_check, MLAB"
           //"MLAB"
         )
       ),
