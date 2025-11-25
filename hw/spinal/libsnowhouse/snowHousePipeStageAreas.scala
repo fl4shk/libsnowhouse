@@ -3253,10 +3253,10 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
   //  )
   //})
 
-  def enumExSetPcValidCondU = 0
-  def enumExSetPcValidCondS = 1
-  def enumExSetPcValidOther = 2
-  def enumExSetPcValidLim = 3
+  def enumExSetPcValidCond/*U*/ = 0
+  //def enumExSetPcValidCondS = 1
+  def enumExSetPcValidOther = 1
+  def enumExSetPcValidLim = 2
   val rExSetPcValid = {
     val temp = (
       Reg(
@@ -4906,7 +4906,7 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
                   opInfo.srcArr(0) == SrcKind.Spr(SprKind.AluFlags)
                   && opInfo.srcArr(1) == SrcKind.Imm()
                 ) {
-                  rExSetPcValid(enumExSetPcValidCondU) := (
+                  rExSetPcValid(enumExSetPcValidCond) := (
                     (io.rFlagC)
                     //init(False)
                   )
@@ -4917,7 +4917,7 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
                     s"not yet implemented: "
                     + s"opInfo(${opInfo}) index:${opInfoIdx}"
                   )
-                  rExSetPcValid(enumExSetPcValidCondU) := {
+                  rExSetPcValid(enumExSetPcValidCond) := {
                     (
                       (
                         io.rdMemWord(io.brCondIdx(0))
@@ -4965,7 +4965,7 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
                   opInfo.srcArr(0) == SrcKind.Spr(SprKind.AluFlags)
                   && opInfo.srcArr(1) == SrcKind.Imm()
                 ) {
-                  rExSetPcValid(enumExSetPcValidCondU) := (
+                  rExSetPcValid(enumExSetPcValidCond) := (
                     (!io.rFlagC)
                     //init(False)
                   )
@@ -4976,7 +4976,7 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
                     s"not yet implemented: "
                     + s"opInfo(${opInfo}) index:${opInfoIdx}"
                   )
-                  rExSetPcValid(enumExSetPcValidCondU) := {
+                  rExSetPcValid(enumExSetPcValidCond) := {
                     (
                       (
                         io.rdMemWord(io.brCondIdx(0))
@@ -5011,7 +5011,7 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
                   opInfo.srcArr(0) == SrcKind.Spr(SprKind.AluFlags)
                   && opInfo.srcArr(1) == SrcKind.Imm()
                 ) {
-                  rExSetPcValid(enumExSetPcValidCondU) := (
+                  rExSetPcValid(enumExSetPcValidCond) := (
                     (io.rFlagC && !io.rFlagZ)
                     //init(False)
                   )
@@ -5022,7 +5022,7 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
                     s"not yet implemented: "
                     + s"opInfo(${opInfo}) index:${opInfoIdx}"
                   )
-                  rExSetPcValid(enumExSetPcValidCondU) := {
+                  rExSetPcValid(enumExSetPcValidCond) := {
                     (
                       (
                         io.rdMemWord(io.brCondIdx(0))
@@ -5058,7 +5058,7 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
                   opInfo.srcArr(0) == SrcKind.Spr(SprKind.AluFlags)
                   && opInfo.srcArr(1) == SrcKind.Imm()
                 ) {
-                  rExSetPcValid(enumExSetPcValidCondU) := (
+                  rExSetPcValid(enumExSetPcValidCond) := (
                     (!io.rFlagC || io.rFlagZ)
                     //init(False)
                   )
@@ -5069,7 +5069,7 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
                     s"not yet implemented: "
                     + s"opInfo(${opInfo}) index:${opInfoIdx}"
                   )
-                  rExSetPcValid(enumExSetPcValidCondU) := {
+                  rExSetPcValid(enumExSetPcValidCond) := {
                     (
                       (
                         io.rdMemWord(io.brCondIdx(0))
@@ -5104,7 +5104,7 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
                   opInfo.srcArr(0) == SrcKind.Spr(SprKind.AluFlags)
                   && opInfo.srcArr(1) == SrcKind.Imm()
                 ) {
-                  rExSetPcValid(enumExSetPcValidCondS) := (
+                  rExSetPcValid(enumExSetPcValidCond) := (
                     (!(io.rFlagN ^ io.rFlagV))
                     //init(False)
                   )
@@ -5115,7 +5115,7 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
                     s"not yet implemented: "
                     + s"opInfo(${opInfo}) index:${opInfoIdx}"
                   )
-                  rExSetPcValid(enumExSetPcValidCondS) := {
+                  rExSetPcValid(enumExSetPcValidCond) := {
                     (
                       (
                         io.rdMemWord(io.brCondIdx(0)).asSInt
@@ -5150,7 +5150,7 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
                   opInfo.srcArr(0) == SrcKind.Spr(SprKind.AluFlags)
                   && opInfo.srcArr(1) == SrcKind.Imm()
                 ) {
-                  rExSetPcValid(enumExSetPcValidCondS) := (
+                  rExSetPcValid(enumExSetPcValidCond) := (
                     (io.rFlagN ^ io.rFlagV)
                     //init(False)
                   )
@@ -5161,7 +5161,7 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
                     s"not yet implemented: "
                     + s"opInfo(${opInfo}) index:${opInfoIdx}"
                   )
-                  rExSetPcValid(enumExSetPcValidCondS) := {
+                  rExSetPcValid(enumExSetPcValidCond) := {
                     (
                       (
                         io.rdMemWord(io.brCondIdx(0)).asSInt
@@ -5196,7 +5196,7 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
                   opInfo.srcArr(0) == SrcKind.Spr(SprKind.AluFlags)
                   && opInfo.srcArr(1) == SrcKind.Imm()
                 ) {
-                  rExSetPcValid(enumExSetPcValidCondS) := (
+                  rExSetPcValid(enumExSetPcValidCond) := (
                     ((!(io.rFlagN ^ io.rFlagV)) & !io.rFlagZ)
                     //init(False)
                   )
@@ -5207,7 +5207,7 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
                     s"not yet implemented: "
                     + s"opInfo(${opInfo}) index:${opInfoIdx}"
                   )
-                  rExSetPcValid(enumExSetPcValidCondS) := {
+                  rExSetPcValid(enumExSetPcValidCond) := {
                     (
                       (
                         io.rdMemWord(io.brCondIdx(0)).asSInt
@@ -5242,7 +5242,7 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
                   opInfo.srcArr(0) == SrcKind.Spr(SprKind.AluFlags)
                   && opInfo.srcArr(1) == SrcKind.Imm()
                 ) {
-                  rExSetPcValid(enumExSetPcValidCondS) := (
+                  rExSetPcValid(enumExSetPcValidCond) := (
                     ((io.rFlagN ^ io.rFlagV) | io.rFlagZ)
                     //init(False)
                   )
@@ -5253,7 +5253,7 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
                     s"not yet implemented: "
                     + s"opInfo(${opInfo}) index:${opInfoIdx}"
                   )
-                  rExSetPcValid(enumExSetPcValidCondS) := {
+                  rExSetPcValid(enumExSetPcValidCond) := {
                     (
                       (
                         io.rdMemWord(io.brCondIdx(0)).asSInt
