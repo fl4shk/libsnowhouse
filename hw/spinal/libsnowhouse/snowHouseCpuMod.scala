@@ -3146,7 +3146,10 @@ case class SnowHouseCpuConfig(
   //  tempArr += r8.index
   //  tempArr
   //})
-  targetAltera: Boolean=false,
+  targetAltera: Boolean=(
+    //false
+    true
+  ),
   instrRamKind: Int,
   programStr: String,
   exposeRegFileWriteDataToIo: Boolean=false,
@@ -5132,6 +5135,9 @@ object SnowHouseCpuWithDualRamToVerilog extends App {
         //true
         false
       ),
+      //targetAltera=(
+      //  true
+      //),
       programStr=(
         "test/snowhousecpu-test-0.bin"
         //"test/snowhousecpu-test-1.bin"
@@ -5191,8 +5197,8 @@ object SnowHouseCpuWithDualRamSim extends App {
     //8, 8,
     //9, 9,
     //10, 10,
-    11, 11,
-    //12, 12,
+    //11, 11,
+    12, 12,
   )
   val instrRamKindArr = Array[Int](
     0,

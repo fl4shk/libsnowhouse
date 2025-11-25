@@ -6055,7 +6055,10 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
       }
     }
   }
-  switch (io.splitOp.multiCycleOp) {
+  switch (
+    RegNext(io.splitOp.multiCycleOp)
+    init(0x1) // arbitrarily chosen, but still set to something one-hot
+  ) {
     for (
       ((_, opInfo), idx)
       <- cfg.multiCycleOpInfoMap.view.zipWithIndex
