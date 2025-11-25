@@ -5542,9 +5542,9 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
             //nextIndexReg := 0x0
           }
           case AluOpKind.LcvAlu(aluOp) => {
-            io.modMemWord(0) := (
-              io.modMemWord(0).getZero
-            )
+            //io.modMemWord(0) := (
+            //  io.modMemWord(0).getZero
+            //)
             //for (idx <- 0 until io.aluModMemWordValid.size) {
             //  when (io.upIsValid) {
             //    //if (idx == 0) {
