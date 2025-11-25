@@ -389,7 +389,12 @@ case class SnowHouseBranchPredictor(
         Some(Array.fill(branchTgtBufSize)(BigInt(0)))
       ),
       arrRamStyle=(
-        "auto"
+        if (!cfg.targetAltera) (
+          "auto"
+        ) else (
+          //"no_rw_check, logic"
+          "logic"
+        )
         //"block"
         //"distributed"
       ),
@@ -421,8 +426,15 @@ case class SnowHouseBranchPredictor(
       ),
       arrRamStyle=(
         //"auto"
-        "distributed"
+        //"distributed"
         //"block"
+        if (!cfg.targetAltera) (
+          //"auto"
+          "distributed"
+        ) else (
+          //"no_rw_check, logic"
+          "logic"
+        )
       ),
     )
   )
