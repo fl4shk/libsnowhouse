@@ -2786,6 +2786,7 @@ case class SnowHousePipeStageExecuteSetOutpModMemWordIo(
     })
   )
   val currOp = setAsInp(UInt(log2Up(cfg.opInfoMap.size) bits))
+  val inMultiCycleOp = setAsInp(Bool())
   val splitOp = setAsInp(SnowHouseSplitOp(cfg=cfg))
   val tempVecSize = 2 // TODO: temporary size of `2`
   val gprIsZeroVec = (
@@ -6056,8 +6057,11 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
     }
   }
   switch (
-    RegNext(io.splitOp.multiCycleOp)
-    init(0x1) // arbitrarily chosen, but still set to something one-hot
+    io.inMultiCycleOp
+    ## (
+      RegNext(io.splitOp.multiCycleOp)
+      init(0x1) // arbitrarily chosen, but still set to something one-hot
+    )
   ) {
     for (
       ((_, opInfo), idx)
@@ -6069,13 +6073,15 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
         new MaskedLiteral(
           value=(
             (1 << idx)
+            | (1 << io.splitOp.multiCycleOp.getWidth)
           ),
           careAbout=(
             (1 << idx)
             | ((1 << idx) - 1)
+            | (1 << io.splitOp.multiCycleOp.getWidth)
           ),
           width=(
-            cfg.multiCycleOpInfoMap.size
+            cfg.multiCycleOpInfoMap.size + 1
           )
         )
       ) {
@@ -8005,6 +8011,7 @@ case class SnowHousePipeStageExecute(
       //False
       MultiCycleOpState.Idle
     ) {
+      setOutpModMemWord.io.inMultiCycleOp := False
       when (
         //LcvFastOrR(
         //  setOutpModMemWord.io.opIsMultiCycle.asBits.asUInt
@@ -8083,6 +8090,7 @@ case class SnowHousePipeStageExecute(
       //True
       MultiCycleOpState.Main
     ) {
+      setOutpModMemWord.io.inMultiCycleOp := True
       myDoStall(stallKindMem) := False
       //myDoStall(stallKindMultiCycle) := True
       //cMid0Front.haltIt()
