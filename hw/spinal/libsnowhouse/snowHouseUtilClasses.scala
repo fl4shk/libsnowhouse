@@ -1211,7 +1211,8 @@ case class SnowHouseSplitOp(
   //  UInt(log2Up(cfg.nonMultiCycleOpInfoMap.size + 1) bits)
   //)
   val cpyCpyuiAluNonShiftOp = /*Flow*/(
-    UInt(log2Up(cfg.cpyCpyuiAluNonShiftOpInfoMap.size + 1) bits)
+    //UInt(log2Up(cfg.cpyCpyuiAluNonShiftOpInfoMap.size + 1) bits)
+    UInt((cfg.cpyCpyuiAluNonShiftOpInfoMap.size + 1) bits)
   )
   val kind = SnowHouseSplitOpKind(
     //binaryOneHot
@@ -1228,8 +1229,8 @@ case class SnowHouseSplitOp(
   )
   val jmpBrOtherOp = (
     //UInt(log2Up(cfg.jmpBrOtherOpInfoMap.size + 1) bits)
-    //UInt((cfg.jmpBrOtherOpInfoMap.size + 1) bits)
-    UInt(cfg.jmpBrOtherOpInfoMap.size bits)
+    UInt((cfg.jmpBrOtherOpInfoMap.size + 1) bits)
+    //UInt(cfg.jmpBrOtherOpInfoMap.size bits)
   )
   //val jmpBrAlwaysEqNeOpOneHot = (
   //  UInt((cfg.jmpBrAlwaysEqNeOpInfoMap.size + 1) bits)
@@ -1264,8 +1265,8 @@ case class SnowHouseSplitOp(
   ): Unit = {
     jmpBrOtherOp := (
       //(1 << jmpBrOtherOp.getWidth) - 1
-      //1 << (jmpBrOtherOp.getWidth - 1)
-      0x0
+      1 << (jmpBrOtherOp.getWidth - 1)
+      //0x0
     )
   }
   def setToDefault(
@@ -1277,7 +1278,8 @@ case class SnowHouseSplitOp(
     //  (1 << nonMultiCycleOp.getWidth) - 1
     //)
     cpyCpyuiAluNonShiftOp := (
-      (1 << cpyCpyuiAluNonShiftOp.getWidth) - 1
+      //(1 << cpyCpyuiAluNonShiftOp.getWidth) - 1
+      1 << (cpyCpyuiAluNonShiftOp.getWidth - 1)
     )
     //aluShiftOp := (
     //  (1 << aluShiftOp.getWidth) - 1

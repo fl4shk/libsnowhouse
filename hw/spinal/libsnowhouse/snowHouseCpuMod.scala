@@ -1307,7 +1307,8 @@ object SnowHouseCpuPipeStageInstrDecode {
               )
               //mySplitOp.nonMultiCycleOp := nonMultiCycleNonJmpOpInfoIdx
               mySplitOp.cpyCpyuiAluNonShiftOp := (
-                cpyCpyuiAluNonShiftOpInfoIdx
+                //cpyCpyuiAluNonShiftOpInfoIdx
+                1 << cpyCpyuiAluNonShiftOpInfoIdx
               )
               //println(
               //  s"test: ${cpyCpyuiAluNonShiftOpInfoIdx}"

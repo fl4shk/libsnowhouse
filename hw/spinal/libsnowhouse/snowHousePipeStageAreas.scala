@@ -5802,7 +5802,21 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
         //if (
         //  idx + 1 < cfg.nonMultiCycleOpInfoMap.size
         //) {
-          is (idx) {
+          is (
+            //idx
+            new MaskedLiteral(
+              value=(
+                (1 << idx)
+              ),
+              careAbout=(
+                (1 << idx)
+                | ((1 << idx) - 1)
+              ),
+              width=(
+                cfg.cpyCpyuiAluNonShiftOpInfoMap.size + 1
+              )
+            )
+          ) {
             innerFunc(
               opInfo=opInfo,
               opInfoIdx=idx,
@@ -5892,7 +5906,7 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
               | ((1 << idx) - 1)
             ),
             width=(
-              cfg.jmpBrOtherOpInfoMap.size //+ 1
+              cfg.jmpBrOtherOpInfoMap.size + 1
             )
           )
         ) {
