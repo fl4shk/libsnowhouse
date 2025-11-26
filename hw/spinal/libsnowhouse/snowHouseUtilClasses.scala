@@ -776,6 +776,7 @@ case class SnowHouseConfig(
   //val cpyOpInfoMap = LinkedHashMap[Int, OpInfo]()
   val aluOpInfoMap = LinkedHashMap[Int, OpInfo]()
   val aluShiftOpInfoMap = LinkedHashMap[Int, OpInfo]()
+  val aluLcvDel1OpInfoMap = LinkedHashMap[Int, OpInfo]()
   val nonMultiCycleOpInfoMap = LinkedHashMap[Int, OpInfo]()
   val cpyCpyuiAluNonShiftOpInfoMap = LinkedHashMap[Int, OpInfo]()
   val multiCycleOpInfoMap = LinkedHashMap[Int, OpInfo]()
@@ -958,6 +959,13 @@ case class SnowHouseConfig(
         aluOpInfoMap += (idx -> opInfo)
         nonMultiCycleOpInfoMap += (idx -> opInfo)
         cpyCpyuiAluNonShiftOpInfoMap += (idx -> opInfo)
+        opInfo.aluOp.get match {
+          case AluOpKind.LcvAlu(_) => {
+            aluLcvDel1OpInfoMap += (idx -> opInfo)
+          }
+          case _ => {
+          }
+        }
       }
       case OpSelect.AluShift => {
         checkValidArgs(opInfo.aluShiftOp)
@@ -977,6 +985,11 @@ case class SnowHouseConfig(
       }
     }
   }
+  val allAluOpsUseLcvAluDel1 = (
+    aluShiftOpInfoMap.size == 0
+    && aluOpInfoMap.size == aluLcvDel1OpInfoMap.size
+    && aluLcvDel1OpInfoMap.size > 0
+  )
   val havePsExStall = (
     multiCycleOpInfoMap.size > 0
   )
@@ -1210,15 +1223,20 @@ case class SnowHouseSplitOp(
   //val nonMultiCycleOp = /*Flow*/(
   //  UInt(log2Up(cfg.nonMultiCycleOpInfoMap.size + 1) bits)
   //)
-  val cpyCpyuiAluNonShiftOp = /*Flow*/(
+  val cpyCpyuiAluNonShiftOp = (
+    !cfg.allAluOpsUseLcvAluDel1
+  ) generate /*Flow*/(
     //UInt(log2Up(cfg.cpyCpyuiAluNonShiftOpInfoMap.size + 1) bits)
     UInt((cfg.cpyCpyuiAluNonShiftOpInfoMap.size + 1) bits)
   )
   val kind = SnowHouseSplitOpKind(
     //binaryOneHot
   )
-  val cpyCpyuiOp = /*Flow*/(
-    UInt(log2Up(cfg.cpyCpyuiOpInfoMap.size) bits)
+  val cpyCpyuiOp = (
+    cfg.allAluOpsUseLcvAluDel1
+  ) generate /*Flow*/(
+    //UInt(log2Up(cfg.cpyCpyuiOpInfoMap.size) bits)
+    UInt((cfg.cpyCpyuiOpInfoMap.size + 1) bits)
   )
   val exSetNextPcKind = (
     SnowHousePsExSetNextPcKind(encoding=binarySequential)
@@ -1238,9 +1256,19 @@ case class SnowHouseSplitOp(
   //val pureJmpOp = /*Flow*/(
   //  UInt(log2Up(cfg.pureJmpOpInfoMap.size) bits)
   //)
-  val aluOp = /*Flow*/(
-    UInt(log2Up(cfg.aluOpInfoMap.size) bits)
-  )
+  //val aluOp = (
+  //  //!cfg.allAluOpsUseLcvAluDel1
+  //  true
+  //) generate /*Flow*/(
+  //  UInt(log2Up(cfg.aluOpInfoMap.size) bits)
+  //)
+
+  //val aluLcvDel1Op = (
+  //  cfg.allAluOpsUseLcvAluDel1
+  //) generate (
+  //  UInt(log2Up(cfg.aluLcvDel1OpInfoMap.size) bits)
+  //)
+
   //val aluShiftOp = /*Flow*/(
   //  UInt(log2Up(cfg.aluShiftOpInfoMap.size + 1) bits)
   //)
@@ -1277,10 +1305,17 @@ case class SnowHouseSplitOp(
     //nonMultiCycleOp := (
     //  (1 << nonMultiCycleOp.getWidth) - 1
     //)
-    cpyCpyuiAluNonShiftOp := (
-      //(1 << cpyCpyuiAluNonShiftOp.getWidth) - 1
-      1 << (cpyCpyuiAluNonShiftOp.getWidth - 1)
-    )
+    if (!cfg.allAluOpsUseLcvAluDel1) {
+      cpyCpyuiAluNonShiftOp := (
+        //(1 << cpyCpyuiAluNonShiftOp.getWidth) - 1
+        1 << (cpyCpyuiAluNonShiftOp.getWidth - 1)
+      )
+    } else {
+      cpyCpyuiOp := (
+        //(1 << cpyCpyuiOp.getWidth) - 1
+        1 << (cpyCpyuiOp.getWidth - 1)
+      )
+    }
     //aluShiftOp := (
     //  (1 << aluShiftOp.getWidth) - 1
     //)

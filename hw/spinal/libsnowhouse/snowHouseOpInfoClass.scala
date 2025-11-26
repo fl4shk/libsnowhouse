@@ -2155,6 +2155,27 @@ sealed trait MultiCycleOpKind extends OpKindBase {
 }
 object MultiCycleOpKind {
   //--------
+  case object AddRaPcImm extends MultiCycleOpKind {
+    private val _validArgsSet = LinkedHashSet[
+      OpKindValidArgs
+    ](
+      OpKindValidArgs(
+        dst=Array[HashSet[DstKind]](
+          HashSet(DstKind.Gpr)
+        ),
+        src=Array[HashSet[SrcKind]](
+          HashSet(SrcKind.Pc),
+          HashSet(SrcKind.Imm()),
+        ),
+        cond=HashSet[CondKind](
+          CondKind.Always
+        )
+      )
+    )
+    def validArgsSet = _validArgsSet
+    def isMultiCycleFastOp: Boolean = false
+  }
+  //--------
   case object CpyIdsGpr extends MultiCycleOpKind {
     private val _validArgsSet = LinkedHashSet[
       OpKindValidArgs

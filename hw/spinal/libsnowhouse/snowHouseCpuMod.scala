@@ -1306,10 +1306,12 @@ object SnowHouseCpuPipeStageInstrDecode {
                 !found
               )
               //mySplitOp.nonMultiCycleOp := nonMultiCycleNonJmpOpInfoIdx
-              mySplitOp.cpyCpyuiAluNonShiftOp := (
-                //cpyCpyuiAluNonShiftOpInfoIdx
-                1 << cpyCpyuiAluNonShiftOpInfoIdx
-              )
+              if (!cfg.allAluOpsUseLcvAluDel1) {
+                mySplitOp.cpyCpyuiAluNonShiftOp := (
+                  //cpyCpyuiAluNonShiftOpInfoIdx
+                  1 << cpyCpyuiAluNonShiftOpInfoIdx
+                )
+              }
               //println(
               //  s"test: ${cpyCpyuiAluNonShiftOpInfoIdx}"
               //)
@@ -1419,6 +1421,12 @@ object SnowHouseCpuPipeStageInstrDecode {
                     s"cpyCpyuiOp: " //"${opInfoIdx} -> ${cpyOpInfoIdx} "
                     + s"${someOp._3} // ${cpyCpyuiAluNonShiftOpInfoIdx}"
                   )
+                  if (cfg.allAluOpsUseLcvAluDel1) {
+                    mySplitOp.cpyCpyuiOp := (
+                      //cpyOpInfoIdx
+                      1 << cpyOpInfoIdx
+                    )
+                  }
                   found = true
                 }
               }
@@ -2366,13 +2374,24 @@ object SnowHouseCpuOpInfoMap {
   )
   opInfoMap += (
     // add rA, pc, simm16
-    SnowHouseCpuOp.AddRaPcSimm16 -> OpInfo.mkAlu(
+    //SnowHouseCpuOp.AddRaPcSimm16 -> OpInfo.mkAlu(
+    //  dstArr=Array[DstKind](DstKind.Gpr),
+    //  srcArr=Array[SrcKind](SrcKind.Pc, SrcKind.Imm(/*Some(true)*/)),
+    //  aluOp=(
+    //    AluOpKind.Add
+    //    //AluOpKind.LcvAlu(LcvAluDel1InpOpEnum.ADD)
+    //  ),
+    //)
+    SnowHouseCpuOp.AddRaPcSimm16 -> OpInfo.mkMultiCycle(
       dstArr=Array[DstKind](DstKind.Gpr),
       srcArr=Array[SrcKind](SrcKind.Pc, SrcKind.Imm(/*Some(true)*/)),
-      aluOp=(
-        AluOpKind.Add
-        //AluOpKind.LcvAlu(LcvAluDel1InpOpEnum.ADD)
-      ),
+      //aluOp=(
+      //  AluOpKind.Add
+      //  //AluOpKind.LcvAlu(LcvAluDel1InpOpEnum.ADD)
+      //),
+      multiCycleOp=(
+        MultiCycleOpKind.AddRaPcImm
+      )
     )
   )
   //opInfoMap += (
@@ -4220,7 +4239,7 @@ case class SnowHouseCpuShift32(
     }
   }
 }
-case class SnowHouseCpuCpy32(
+case class SnowHouseCpuCpyAdd32(
   cpuIo: SnowHouseIo,
 ) extends Area {
   def cfg = cpuIo.cfg
@@ -4229,6 +4248,55 @@ case class SnowHouseCpuCpy32(
     <- cfg.multiCycleOpInfoMap.view.zipWithIndex
   ) {
     opInfo.multiCycleOp.get match {
+      case MultiCycleOpKind.AddRaPcImm => {
+        val multiCycleBus = cpuIo.multiCycleBusVec(busIdx)
+        def dstVec = multiCycleBus.recvData.dstVec
+        def srcVec = multiCycleBus.sendData.srcVec
+        def mainWidth = cfg.mainWidth
+        val rSrc0 = (
+          RegNextWhen(
+            next=(
+              RegNext(srcVec(0))
+              init(0x0)
+            ),
+            cond=rose(multiCycleBus.rValid)
+          )
+          init(0x0)
+        )
+        val rSrc1 = (
+          RegNextWhen(
+            next=(
+              RegNext(srcVec(1))
+              init(0x0)
+            ),
+            cond=rose(multiCycleBus.rValid)
+          )
+          init(0x0)
+        )
+        val rDst = (
+          Reg(
+            cloneOf(dstVec(0)),
+            init=dstVec(0).getZero,
+          )
+          setName(
+            "SnowHouseCpuCpy32_AddRaPcImm_rDst"
+          )
+        )
+        multiCycleBus.ready := False
+        dstVec(0) := rDst
+        rDst := rSrc0 + rSrc1
+        when (
+          RegNext(
+            next=RegNext(
+              next=rose(multiCycleBus.rValid),
+              init=False,
+            ),
+            init=False,
+          )
+        ) {
+          multiCycleBus.ready := True
+        }
+      }
       case MultiCycleOpKind.CpyIdsGpr => {
         val multiCycleBus = cpuIo.multiCycleBusVec(busIdx)
         def dstVec = multiCycleBus.recvData.dstVec
@@ -5075,7 +5143,7 @@ case class SnowHouseCpuWithDualRam(
     //SnowHouseCpuShiftSlt32LowLatency(cpuIo=cpu.io)
     SnowHouseCpuShift32LowLatency(cpuIo=cpu.io)
   )
-  val cpy32 = SnowHouseCpuCpy32(cpuIo=cpu.io)
+  val cpyAdd32 = SnowHouseCpuCpyAdd32(cpuIo=cpu.io)
   val mul32 = SnowHouseCpuMul32(cpuIo=cpu.io)
   val divmod32 = SnowHouseCpuDivmod32(cpuIo=cpu.io)
 

@@ -5794,38 +5794,78 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
     //if (cfg.allMainLdstUseGprPlusImm) {
     //  io.dbusHostPayload.addr := io.rdMemWord(1) + io.imm(1)
     //}
-    switch (io.splitOp.cpyCpyuiAluNonShiftOp) {
-      for (
-        ((_, opInfo), idx)
-        <- cfg.cpyCpyuiAluNonShiftOpInfoMap.view.zipWithIndex
-      ) {
-        //if (
-        //  idx + 1 < cfg.nonMultiCycleOpInfoMap.size
-        //) {
-          is (
-            //idx
-            new MaskedLiteral(
-              value=(
-                (1 << idx)
-              ),
-              careAbout=(
-                (1 << idx)
-                | ((1 << idx) - 1)
-              ),
-              width=(
-                cfg.cpyCpyuiAluNonShiftOpInfoMap.size + 1
+    if (!cfg.allAluOpsUseLcvAluDel1) {
+      switch (io.splitOp.cpyCpyuiAluNonShiftOp) {
+        for (
+          ((_, opInfo), idx)
+          <- cfg.cpyCpyuiAluNonShiftOpInfoMap.view.zipWithIndex
+        ) {
+          //if (
+          //  idx + 1 < cfg.nonMultiCycleOpInfoMap.size
+          //) {
+            is (
+              //idx
+              new MaskedLiteral(
+                value=(
+                  (1 << idx)
+                ),
+                careAbout=(
+                  (1 << idx)
+                  | ((1 << idx) - 1)
+                ),
+                width=(
+                  cfg.cpyCpyuiAluNonShiftOpInfoMap.size + 1
+                )
               )
-            )
-          ) {
-            innerFunc(
-              opInfo=opInfo,
-              opInfoIdx=idx,
-            )
-            //io.shiftModMemWord := 0x0
-          }
-        //}
+            ) {
+              innerFunc(
+                opInfo=opInfo,
+                opInfoIdx=idx,
+              )
+              //io.shiftModMemWord := 0x0
+            }
+          //}
+        }
+        default {
+        }
       }
-      default {
+    } else {
+      println(
+        "we do have allAluOpsUseLcvAluDel1 == true"
+      )
+      switch (io.splitOp.cpyCpyuiOp) {
+        for (
+          ((_, opInfo), idx)
+          <- cfg.cpyCpyuiOpInfoMap.view.zipWithIndex
+        ) {
+          //if (
+          //  idx + 1 < cfg.nonMultiCycleOpInfoMap.size
+          //) {
+            is (
+              //idx
+              new MaskedLiteral(
+                value=(
+                  (1 << idx)
+                ),
+                careAbout=(
+                  (1 << idx)
+                  | ((1 << idx) - 1)
+                ),
+                width=(
+                  cfg.cpyCpyuiOpInfoMap.size + 1
+                )
+              )
+            ) {
+              innerFunc(
+                opInfo=opInfo,
+                opInfoIdx=idx,
+              )
+              //io.shiftModMemWord := 0x0
+            }
+          //}
+        }
+        default {
+        }
       }
     }
     //switch (io.splitOp.aluShiftOp) {
