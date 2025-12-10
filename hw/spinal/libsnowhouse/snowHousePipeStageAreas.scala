@@ -377,29 +377,30 @@ case class SnowHouseBranchPredictor(
     + s"mySrcRegPcRange:${cfg.mySrcRegPcRange} "
     + s"myTgtBufAddrRange:${myTgtBufAddrRange}"
   )
+  val tgtSrcRegPcAndValidBufCfg = RamSimpleDualPortConfig(
+    wordType=Flow(UInt(
+      //cfg.mainWidth bits
+      //cfg.mySrcRegPcWidth bits
+      cfg.mySrcRegPcCmpEqWidth bits
+    )),
+    depth=branchTgtBufSize,
+    initBigInt=(
+      Some(Array.fill(branchTgtBufSize)(BigInt(0)))
+    ),
+    arrRamStyle=(
+      if (!cfg.targetAltera) (
+        "auto"
+      ) else (
+        "no_rw_check, logic"
+        //"no_rw_check, MLAB"
+        //"MLAB"
+      )
+      //"block"
+      //"distributed"
+    ),
+  )
   val tgtSrcRegPcAndValidBuf = (
-    RamSimpleDualPort(
-      wordType=Flow(UInt(
-        //cfg.mainWidth bits
-        //cfg.mySrcRegPcWidth bits
-        cfg.mySrcRegPcCmpEqWidth bits
-      )),
-      depth=branchTgtBufSize,
-      initBigInt=(
-        Some(Array.fill(branchTgtBufSize)(BigInt(0)))
-      ),
-      arrRamStyle=(
-        if (!cfg.targetAltera) (
-          "auto"
-        ) else (
-          "no_rw_check, logic"
-          //"no_rw_check, MLAB"
-          //"MLAB"
-        )
-        //"block"
-        //"distributed"
-      ),
-    )
+    RamSimpleDualPort(cfg=tgtSrcRegPcAndValidBufCfg)
   )
   //val tgtSrcRegPcBuf = (
   //  RamSimpleDualPort(
@@ -418,28 +419,27 @@ case class SnowHouseBranchPredictor(
   //    ),
   //  )
   //)
-  val tgtDstRegPcBuf = (
-    RamSimpleDualPort(
-      wordType=UInt(myDstRegPcWidth bits),
-      depth=branchTgtBufSize,
-      initBigInt=(
-        Some(Array.fill(branchTgtBufSize)(BigInt(0)))
-      ),
-      arrRamStyle=(
+  val tgtDstRegPcBufCfg = RamSimpleDualPortConfig(
+    wordType=UInt(myDstRegPcWidth bits),
+    depth=branchTgtBufSize,
+    initBigInt=(
+      Some(Array.fill(branchTgtBufSize)(BigInt(0)))
+    ),
+    arrRamStyle=(
+      //"auto"
+      //"distributed"
+      //"block"
+      if (!cfg.targetAltera) (
         //"auto"
-        //"distributed"
-        //"block"
-        if (!cfg.targetAltera) (
-          //"auto"
-          "distributed"
-        ) else (
-          "no_rw_check, logic"
-          //"no_rw_check, MLAB"
-          //"MLAB"
-        )
-      ),
-    )
+        "distributed"
+      ) else (
+        "no_rw_check, logic"
+        //"no_rw_check, MLAB"
+        //"MLAB"
+      )
+    ),
   )
+  val tgtDstRegPcBuf = RamSimpleDualPort(cfg=tgtDstRegPcBufCfg)
   //val tgtDstRegPcAndValidBuf = (
   //  RamSimpleDualPort(
   //    wordType=Flow(UInt(myDstRegPcWidth bits)),

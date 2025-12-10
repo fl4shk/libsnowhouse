@@ -256,7 +256,7 @@ case class SnowHouseDataCache(
     + s"depthBytes:${cacheCfg.depthBytes} "
     + s"depthLines:${cacheCfg.depthLines} "
   )
-  val lineWordRam = RamSdpPipe(
+  val lineWordRamCfg = RamSdpPipeConfig(
     wordType=UInt(cacheCfg.wordWidth bits),
     depth=depthWords,
     initBigInt=Some(Array.fill(depthWords)(BigInt(0))),
@@ -268,6 +268,7 @@ case class SnowHouseDataCache(
       )
     )
   )
+  val lineWordRam = RamSdpPipe(cfg=lineWordRamCfg)
   val lineAttrsRam = FpgacpuRamSimpleDualPort(
     wordType=SnowHouseCacheLineAttrs(
       cfg=cfg,
@@ -1588,7 +1589,7 @@ case class SnowHouseInstrCache(
     + s"depthBytes:${cacheCfg.depthBytes} "
     + s"depthLines:${cacheCfg.depthLines} "
   )
-  val lineWordRam = RamSdpPipe(
+  val lineWordRamCfg = RamSdpPipeConfig(
     wordType=UInt(cacheCfg.wordWidth bits),
     depth=depthWords,
     initBigInt=Some(Array.fill(depthWords)(BigInt(0))),
@@ -1600,6 +1601,7 @@ case class SnowHouseInstrCache(
       //)
     )
   )
+  val lineWordRam = RamSdpPipe(cfg=lineWordRamCfg)
   //lineWordRam.io.rdEn.setAsReg() init(False)
   val rMyLineWordRamRdEn = Reg(Bool(), init=False)
   lineWordRam.io.rdEn := rMyLineWordRamRdEn
