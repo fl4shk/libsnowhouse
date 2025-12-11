@@ -260,7 +260,14 @@ case class SnowHouseDataCache(
     wordType=UInt(cacheCfg.wordWidth bits),
     depth=depthWords,
     initBigInt=Some(Array.fill(depthWords)(BigInt(0))),
-    arrRamStyle=(
+    arrRamStyleAltera=(
+      if (isIcache) (
+        cfg.subCfg.icacheCfg.lineWordMemRamStyle
+      ) else (
+        cfg.subCfg.dcacheCfg.lineWordMemRamStyle
+      )
+    ),
+    arrRamStyleXilinx=(
       if (isIcache) (
         cfg.subCfg.icacheCfg.lineWordMemRamStyle
       ) else (
@@ -269,14 +276,21 @@ case class SnowHouseDataCache(
     )
   )
   val lineWordRam = RamSdpPipe(cfg=lineWordRamCfg)
-  val lineAttrsRam = FpgacpuRamSimpleDualPort(
+  val lineAttrsRamCfg = FpgacpuRamSimpleDualPortConfig(
     wordType=SnowHouseCacheLineAttrs(
       cfg=cfg,
       isIcache=isIcache,
     ),
     depth=depthLines,
     initBigInt=Some(Array.fill(depthLines)(BigInt(0))),
-    arrRamStyle=(
+    arrRamStyleAltera=(
+      if (isIcache) (
+        cfg.subCfg.icacheCfg.lineAttrsMemRamStyle
+      ) else (
+        cfg.subCfg.dcacheCfg.lineAttrsMemRamStyle
+      )
+    ),
+    arrRamStyleXilinx=(
       if (isIcache) (
         cfg.subCfg.icacheCfg.lineAttrsMemRamStyle
       ) else (
@@ -284,6 +298,7 @@ case class SnowHouseDataCache(
       )
     )
   )
+  val lineAttrsRam = FpgacpuRamSimpleDualPort(cfg=lineAttrsRamCfg)
   val tempLineBusAddr = (
     /*KeepAttribute*/(cloneOf(rBusAddr))
   )
@@ -1593,26 +1608,40 @@ case class SnowHouseInstrCache(
     wordType=UInt(cacheCfg.wordWidth bits),
     depth=depthWords,
     initBigInt=Some(Array.fill(depthWords)(BigInt(0))),
-    arrRamStyle=(
+    arrRamStyleAltera=(
       //if (isIcache) (
         cfg.subCfg.icacheCfg.lineWordMemRamStyle
       //) else (
       //  cfg.subCfg.dcacheCfg.memRamStyle
       //)
-    )
+    ),
+    arrRamStyleXilinx=(
+      //if (isIcache) (
+        cfg.subCfg.icacheCfg.lineWordMemRamStyle
+      //) else (
+      //  cfg.subCfg.dcacheCfg.memRamStyle
+      //)
+    ),
   )
   val lineWordRam = RamSdpPipe(cfg=lineWordRamCfg)
   //lineWordRam.io.rdEn.setAsReg() init(False)
   val rMyLineWordRamRdEn = Reg(Bool(), init=False)
   lineWordRam.io.rdEn := rMyLineWordRamRdEn
-  val lineAttrsRam = FpgacpuRamSimpleDualPort(
+  val lineAttrsRamCfg = FpgacpuRamSimpleDualPortConfig(
     wordType=SnowHouseCacheLineAttrs(
       cfg=cfg,
       isIcache=isIcache,
     ),
     depth=depthLines,
     initBigInt=Some(Array.fill(depthLines)(BigInt(0))),
-    arrRamStyle=(
+    arrRamStyleAltera=(
+      //if (isIcache) (
+        cfg.subCfg.icacheCfg.lineAttrsMemRamStyle
+      //) else (
+      //  cfg.subCfg.dcacheCfg.memRamStyle
+      //)
+    ),
+    arrRamStyleXilinx=(
       //if (isIcache) (
         cfg.subCfg.icacheCfg.lineAttrsMemRamStyle
       //) else (
@@ -1620,6 +1649,7 @@ case class SnowHouseInstrCache(
       //)
     )
   )
+  val lineAttrsRam = FpgacpuRamSimpleDualPort(cfg=lineAttrsRamCfg)
   val rBusSendData = (
     RegNextWhen(
       next=io.bus.sendData,

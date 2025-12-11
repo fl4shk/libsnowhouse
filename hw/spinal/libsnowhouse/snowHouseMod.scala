@@ -80,9 +80,11 @@ case class SnowHouseInstrDataDualRam(
     new Area {
       val instrRamDepth = instrInitBigInt.size
       val instrRam = FpgacpuRamSimpleDualPort(
-        wordType=UInt(cfg.instrMainWidth bits),
-        depth=instrRamDepth,
-        initBigInt=Some(instrInitBigInt),
+        cfg=FpgacpuRamSimpleDualPortConfig(
+          wordType=UInt(cfg.instrMainWidth bits),
+          depth=instrRamDepth,
+          initBigInt=Some(instrInitBigInt),
+        )
       )
       //--------
       val fastIbusReady = (

@@ -3312,7 +3312,7 @@ case class SnowHouseCpuConfig(
               tempArr
             })
           ),
-          memRamStyle=(
+          memRamStyleXilinx=(
             //"distributed"
             regFileMemRamStyle
           ),

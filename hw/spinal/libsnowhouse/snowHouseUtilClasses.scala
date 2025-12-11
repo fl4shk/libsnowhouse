@@ -20,7 +20,8 @@ case class SnowHouseRegFileConfig(
   modRdPortCnt: Int,
   pipeName: String,
   private val optHowToSlice: Option[Seq[LinkedHashSet[Int]]],
-  memRamStyle: String="auto",
+  memRamStyleAltera: String="MLAB",
+  memRamStyleXilinx: String="auto",
   //linkArr: Option[ArrayBuffer[Link]]=None,
 ) {
   assert(
@@ -733,7 +734,8 @@ case class SnowHouseConfig(
   def regFileModRdPortCnt = shRegFileCfg.modRdPortCnt
   def regFileModStageCnt = shRegFileCfg.modStageCnt
   def regFilePipeName = shRegFileCfg.pipeName
-  def regFileMemRamStyle = shRegFileCfg.memRamStyle
+  def regFileMemRamStyleAltera = shRegFileCfg.memRamStyleAltera
+  def regFileMemRamStyleXilinx = shRegFileCfg.memRamStyleXilinx
   val regFileCfg = PipeMemRmwConfig[UInt, Bool](
     wordType=UInt(mainWidth bits),
     wordCountArr=regFileWordCountArr,
@@ -758,7 +760,8 @@ case class SnowHouseConfig(
       }
       Some(myInitBigInt)
     },
-    memRamStyle=regFileMemRamStyle,
+    memRamStyleAltera=regFileMemRamStyleAltera,
+    memRamStyleXilinx=regFileMemRamStyleXilinx,
     optModHazardKind=PipeMemRmw.ModHazardKind.Fwd,
     optFwdHaveZeroReg=haveZeroReg,
     optIncludeModFrontS2MLink=false,

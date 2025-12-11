@@ -387,14 +387,13 @@ case class SnowHouseBranchPredictor(
     initBigInt=(
       Some(Array.fill(branchTgtBufSize)(BigInt(0)))
     ),
-    arrRamStyle=(
-      if (!cfg.targetAltera) (
-        "auto"
-      ) else (
-        "no_rw_check, logic"
-        //"no_rw_check, MLAB"
-        //"MLAB"
-      )
+    arrRamStyleAltera=(
+      "no_rw_check, logic"
+      //"no_rw_check, MLAB"
+      //"MLAB"
+    ),
+    arrRamStyleXilinx=(
+      "auto"
       //"block"
       //"distributed"
     ),
@@ -425,18 +424,23 @@ case class SnowHouseBranchPredictor(
     initBigInt=(
       Some(Array.fill(branchTgtBufSize)(BigInt(0)))
     ),
-    arrRamStyle=(
-      //"auto"
-      //"distributed"
-      //"block"
-      if (!cfg.targetAltera) (
-        //"auto"
+    arrRamStyleAltera=(
+      "no_rw_check, logic"
+      //"no_rw_check, MLAB"
+      //"MLAB"
+    ),
+    arrRamStyleXilinx=(
+      ////"auto"
+      ////"distributed"
+      ////"block"
+      //if (!cfg.targetAltera) (
+      //  //"auto"
         "distributed"
-      ) else (
-        "no_rw_check, logic"
-        //"no_rw_check, MLAB"
-        //"MLAB"
-      )
+      //) else (
+      //  "no_rw_check, logic"
+      //  //"no_rw_check, MLAB"
+      //  //"MLAB"
+      //)
     ),
   )
   val tgtDstRegPcBuf = RamSimpleDualPort(cfg=tgtDstRegPcBufCfg)
