@@ -482,7 +482,7 @@ case class SnowHouseBranchPredictor(
     //cfg.mySrcRegPcWidth bits
     cfg.mySrcRegPcCmpEqWidth bits
   ))
-  myRdSrcRegPcAndValid.assignFromBits(
+  myRdSrcRegPcAndValid := (
     tgtSrcRegPcAndValidBuf.io.ramIo.rdData
   )
   myRdBtbElem.srcRegPc := (
@@ -776,7 +776,7 @@ case class SnowHouseBranchPredictor(
     True
   )
   tgtSrcRegPcAndValidBuf.io.ramIo.wrData := (
-    myWrSrcRegPcAndValid.asBits
+    myWrSrcRegPcAndValid
   )
   //tgtSrcRegPcBuf.io.ramIo.wrData := (
   //  wrBtbElem.srcRegPc(cfg.mySrcRegPcCmpEqRange).asBits
@@ -797,7 +797,7 @@ case class SnowHouseBranchPredictor(
     wrBtbElem.dstRegPc(
       wrBtbElem.dstRegPc.high
       downto log2Up(cfg.instrSizeBytes)
-    ).asBits
+    )
   )
   //tgtValidBuf.io.ramIo.wrData := (
   //  wrBtbElem.valid.asBits

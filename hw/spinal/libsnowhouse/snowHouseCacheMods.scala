@@ -665,9 +665,9 @@ case class SnowHouseDataCache(
   )
   rdLineWord := (
     if (isIcache) (
-      RegNext(lineWordRam.io.rdData.asUInt) init(0x0)
+      RegNext(lineWordRam.io.rdData.asBits.asUInt) init(0x0)
     ) else (
-      lineWordRam.io.rdData.asUInt
+      lineWordRam.io.rdData.asBits.asUInt
     )
   )
   val wrLineAttrs = SnowHouseCacheLineAttrs(
@@ -749,10 +749,10 @@ case class SnowHouseDataCache(
     )
     lineWord match {
       case Some(myLineWord) => {
-        lineWordRam.io.wrData := myLineWord.asBits
+        lineWordRam.io.wrData := myLineWord
       }
       case None => {
-        lineWordRam.io.wrData := myD2hBus.sendData.data.asBits
+        lineWordRam.io.wrData := myD2hBus.sendData.data
       }
     }
   }
@@ -1948,7 +1948,7 @@ case class SnowHouseInstrCache(
       UInt(cacheCfg.wordWidth bits)
     )
   )
-  rdLineWord := lineWordRam.io.rdData.asUInt
+  rdLineWord := lineWordRam.io.rdData
   val wrLineAttrs = SnowHouseCacheLineAttrs(
     cfg=cfg,
     isIcache=isIcache,
@@ -2042,10 +2042,10 @@ case class SnowHouseInstrCache(
     )
     lineWord match {
       case Some(myLineWord) => {
-        lineWordRam.io.wrData := myLineWord.asBits
+        lineWordRam.io.wrData := myLineWord
       }
       case None => {
-        lineWordRam.io.wrData := myD2hBus.sendData.data.asBits
+        lineWordRam.io.wrData := myD2hBus.sendData.data
       }
     }
   }
