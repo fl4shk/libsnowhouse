@@ -743,7 +743,7 @@ case class SnowHouseConfig(
     modRdPortCnt=regFileModRdPortCnt,
     modStageCnt=regFileModStageCnt,
     pipeName=regFilePipeName,
-    optIncludePreMid0Front=false,
+    optIncludePreMid0Front=true,
     //linkArr=linkArr
     optDualRd=(
       false

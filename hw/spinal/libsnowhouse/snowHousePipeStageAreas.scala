@@ -7064,7 +7064,12 @@ case class SnowHousePipeStageExecute(
         init=False,
       )
     ) ## (
-      io.dbusLdReady
+      //rose(
+        io.dbusLdReady
+      //)
+      && rose(
+        io.dbus.ready
+      )
       //RegNext(
       //  next=(
       //  ),
@@ -7073,17 +7078,31 @@ case class SnowHousePipeStageExecute(
     )
   ) {
     is (M"100") {
-      myModMemWord := alu.io.outp_data
+      myModMemWord := (
+        RegNext(
+          next=myModMemWord,
+          init=myModMemWord.getZero,
+        )
+      )
+      when (RegNext(cMid0Front.up.isFiring, init=False)) {
+        myModMemWord := alu.io.outp_data
+      }
     }
     is (M"110") {
       myModMemWord := (
         RegNext(
-          next=(
-            setOutpModMemWord.io.modMemWord(0).asSInt
-          ),
-          init=setOutpModMemWord.io.modMemWord(0).asSInt.getZero
+          next=myModMemWord,
+          init=myModMemWord.getZero,
         )
       )
+      when (RegNext(cMid0Front.up.isFiring, init=False)) {
+        myModMemWord := (
+          RegNext(
+            next=setOutpModMemWord.io.modMemWord(0).asSInt,
+            init=setOutpModMemWord.io.modMemWord(0).asSInt.getZero
+          )
+        )
+      }
     }
     is (M"--1") {
       myModMemWord := (
