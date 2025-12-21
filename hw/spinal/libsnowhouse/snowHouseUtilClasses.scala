@@ -13,6 +13,7 @@ import spinal.core.fiber.Fiber
 import libcheesevoyage.general._
 import libcheesevoyage.math._
 import libcheesevoyage.bus.lcvStall._
+import libcheesevoyage.bus.lcvBus._
 
 case class SnowHouseRegFileConfig(
   mainWidth: Int,
@@ -155,11 +156,19 @@ case class SnowHouseCacheConfig(
   totalNumBusHosts: Int,
   isIcache: Boolean,
   //var srcStart: Int=0,
-  lineWordMemRamStyle: String=(
+  lineWordMemRamStyleAltera: String=(
+    //"auto"
+    //"block"
+    "no_rw_check, M10K"
+  ),
+  lineWordMemRamStyleXilinx: String=(
     //"auto"
     "block"
   ),
-  lineAttrsMemRamStyle: String=(
+  lineAttrsMemRamStyleAltera: String=(
+    "no_rw_check, M10K"
+  ),
+  lineAttrsMemRamStyleXilinx: String=(
     //"auto"
     "block"
   ),
@@ -311,8 +320,10 @@ case class SnowHouseSubConfig(
   ),
   icacheLineSizeBytes: Int=64,
   icacheBusSrcNum: Int=0,
-  icacheWordMemRamStyle: String="auto",
-  icacheAttrsMemRamStyle: String="auto",
+  icacheLineWordMemRamStyleAltera: String="no_rw_check, M10K",
+  icacheLineWordMemRamStyleXilinx: String="auto",
+  icacheLineAttrsMemRamStyleAltera: String="no_rw_check, MLAB",
+  icacheLineAttrsMemRamStyleXilinx: String="auto",
   //--------
   haveDcache: Boolean=true,
   dcacheDepthWords: Int=(
@@ -321,8 +332,10 @@ case class SnowHouseSubConfig(
   ),
   dcacheLineSizeBytes: Int=64,
   dcacheBusSrcNum: Int=1,
-  dcacheWordMemRamStyle: String="auto",
-  dcacheAttrsMemRamStyle: String="auto",
+  dcacheLineWordMemRamStyleAltera: String="no_rw_check, M10K",
+  dcacheLineWordMemRamStyleXilinx: String="auto",
+  dcacheLineAttrsMemRamStyleAltera: String="no_rw_check, MLAB",
+  dcacheLineAttrsMemRamStyleXilinx: String="auto",
   //--------
   totalNumBusHosts: Int=2,
   optCacheBusSrcWidth: Option[Int]=None,
@@ -345,9 +358,42 @@ case class SnowHouseSubConfig(
       //srcWidth=srcWidth,
       srcId=icacheBusSrcNum,
       totalNumBusHosts=totalNumBusHosts,
-      lineWordMemRamStyle=icacheWordMemRamStyle,
-      lineAttrsMemRamStyle=icacheAttrsMemRamStyle,
+      lineWordMemRamStyleAltera=icacheLineWordMemRamStyleAltera,
+      lineWordMemRamStyleXilinx=icacheLineWordMemRamStyleXilinx,
+      lineAttrsMemRamStyleAltera=icacheLineAttrsMemRamStyleAltera,
+      lineAttrsMemRamStyleXilinx=icacheLineAttrsMemRamStyleXilinx,
       isIcache=true,
+    )
+  )
+  val lcvIbusMainCfg = (
+    LcvBusMainConfig(
+      dataWidth=instrMainWidth,
+      addrWidth=shRegFileCfg.mainWidth,
+      allowBurst=false,
+      burstAlwaysMaxSize=false,
+      srcWidth=(
+        //if (haveIcache) (
+          4
+        //) else (
+        //  1
+        //)
+      ),
+    )
+  )
+  val lcvIbusEtcCfg = (
+    LcvBusCacheBusPairConfig(
+      mainCfg=lcvIbusMainCfg,
+      loBusCacheCfg=LcvBusCacheConfig(
+        kind=LcvCacheKind.I,
+        lineSizeBytes=icacheLineSizeBytes,
+        depthWords=icacheDepthWords,
+        numCpus=1,
+        lineWordMemRamStyleAltera=icacheLineWordMemRamStyleAltera,
+        lineWordMemRamStyleXilinx=icacheLineWordMemRamStyleXilinx,
+        lineAttrsMemRamStyleAltera=icacheLineAttrsMemRamStyleAltera,
+        lineAttrsMemRamStyleXilinx=icacheLineAttrsMemRamStyleXilinx,
+      ),
+      hiBusCacheCfg=None,
     )
   )
   val dcacheCfg = (
@@ -361,9 +407,36 @@ case class SnowHouseSubConfig(
       //srcWidth=srcWidth,
       srcId=dcacheBusSrcNum,
       totalNumBusHosts=totalNumBusHosts,
-      lineWordMemRamStyle=dcacheWordMemRamStyle,
-      lineAttrsMemRamStyle=dcacheAttrsMemRamStyle,
+      lineWordMemRamStyleAltera=dcacheLineWordMemRamStyleAltera,
+      lineWordMemRamStyleXilinx=dcacheLineWordMemRamStyleXilinx,
+      lineAttrsMemRamStyleAltera=dcacheLineAttrsMemRamStyleAltera,
+      lineAttrsMemRamStyleXilinx=dcacheLineAttrsMemRamStyleXilinx,
       isIcache=false,
+    )
+  )
+  val lcvDbusMainCfg = (
+    LcvBusMainConfig(
+      dataWidth=shRegFileCfg.mainWidth,
+      addrWidth=shRegFileCfg.mainWidth,
+      allowBurst=false,
+      burstAlwaysMaxSize=false,
+      srcWidth=1,
+    )
+  )
+  val lcvDbusEtcCfg = (
+    LcvBusCacheBusPairConfig(
+      mainCfg=lcvDbusMainCfg,
+      loBusCacheCfg=LcvBusCacheConfig(
+        kind=LcvCacheKind.D,
+        lineSizeBytes=dcacheLineSizeBytes,
+        depthWords=dcacheDepthWords,
+        numCpus=1,
+        lineWordMemRamStyleAltera=dcacheLineWordMemRamStyleAltera,
+        lineWordMemRamStyleXilinx=dcacheLineWordMemRamStyleXilinx,
+        lineAttrsMemRamStyleAltera=dcacheLineAttrsMemRamStyleAltera,
+        lineAttrsMemRamStyleXilinx=dcacheLineAttrsMemRamStyleXilinx,
+      ),
+      hiBusCacheCfg=None,
     )
   )
   val cacheBusSrcWidth = (
@@ -385,66 +458,20 @@ case class SnowHouseSubConfig(
       }
     }
   )
-  //icacheCfg.srcStart = (
-  //  //(
-  //  //  log2Up(icacheCfg.numWordsPerLine)
-  //  //  .max(log2Up(dcacheCfg.numWordsPerLine))
-  //  //) * (
-  //    icacheCfg.srcNum
-  //  //)
-  //)
-  //dcacheCfg.srcStart = (
-  //  //(
-  //  //  log2Up(icacheCfg.numWordsPerLine)
-  //  //  .max(log2Up(dcacheCfg.numWordsPerLine))
-  //  //) * (
-  //    dcacheCfg.srcNum
-  //  //)
-  //)
-  icacheCfg.bridgeCfg = (
-    icacheCfg._mkBridgeCfg(
-      srcWidth=cacheBusSrcWidth
+  if (haveIcache) {
+    icacheCfg.bridgeCfg = (
+      icacheCfg._mkBridgeCfg(
+        srcWidth=cacheBusSrcWidth
+      )
     )
-    //LcvStallToTilelinkConfig(
-    //  addrWidth=icacheCfg.addrWidth,
-    //  dataWidth=icacheCfg.wordWidth,
-    //  sizeBytes=(icacheCfg.wordWidth / 8),
-    //  srcWidth=cacheBusSrcWidth,
-    //  isDual=true,
-    //)
-  )
-  dcacheCfg.bridgeCfg = (
-    dcacheCfg._mkBridgeCfg(
-      srcWidth=cacheBusSrcWidth
+  }
+  if (haveDcache) {
+    dcacheCfg.bridgeCfg = (
+      dcacheCfg._mkBridgeCfg(
+        srcWidth=cacheBusSrcWidth
+      )
     )
-    //LcvStallToTilelinkConfig(
-    //  addrWidth=dcacheCfg.addrWidth,
-    //  dataWidth=dcacheCfg.wordWidth,
-    //  sizeBytes=(dcacheCfg.wordWidth / 8),
-    //  srcWidth=cacheBusSrcWidth,
-    //  isDual=true,
-    //)
-  )
-  //val icacheBridgeCfg = (
-  //  haveIcache
-  //) generate (
-  //  LcvStallToTilelinkConfig(
-  //    addrWidth=log2Up(icacheDepth),
-  //    dataWidth=instrMainWidth,
-  //    sizeBytes=instrMainWidth / 8,
-  //    srcWidth=srcWidth,
-  //  )
-  //)
-  //val dcacheBridgeCfg = (
-  //  haveDcache
-  //) generate (
-  //  LcvStallToTilelinkConfig(
-  //    addrWidth=log2Up(dcacheDepth),
-  //    dataWidth=shRegFileCfg.mainWidth,
-  //    sizeBytes=shRegFileCfg.mainWidth / 8,
-  //    srcWidth=srcWidth,
-  //  )
-  //)
+  }
 }
 
 sealed trait SnowHouseBranchPredictorKind {
@@ -570,6 +597,8 @@ case class SnowHouseConfig(
   exposeRegFileWriteDataToIo: Boolean=false,
   exposeRegFileWriteAddrToIo: Boolean=false,
   exposeRegFileWriteEnableToIo: Boolean=false,
+  useLcvInstrBus: Boolean=false,
+  useLcvDataBus: Boolean=false,
   //splitAluOp: Boolean=false,
   targetAltera: Boolean=false,
   optFormal: Boolean=false,
@@ -579,7 +608,12 @@ case class SnowHouseConfig(
     1
   )
   def takeJumpCntMaxVal = (
-     2//1//3//2
+    //if (!useLcvInstrBus) (
+      2//1//3//2
+    //) else (
+    //  4//3
+    //)
+     //+ (if (!useLcvInstrBus) (0) else (1))
   )
   def haveBranchPredictor = (
     optBranchPredictorKind != None
@@ -743,7 +777,10 @@ case class SnowHouseConfig(
     modRdPortCnt=regFileModRdPortCnt,
     modStageCnt=regFileModStageCnt,
     pipeName=regFilePipeName,
-    optIncludePreMid0Front=true,
+    optIncludePreMid0Front=(
+      true
+      //false
+    ),
     //linkArr=linkArr
     optDualRd=(
       false
@@ -1253,6 +1290,7 @@ case class SnowHouseSplitOp(
     UInt((cfg.jmpBrOtherOpInfoMap.size + 1) bits)
     //UInt(cfg.jmpBrOtherOpInfoMap.size bits)
   )
+  val havePredictableJmpBr = Bool()
   //val jmpBrAlwaysEqNeOpOneHot = (
   //  UInt((cfg.jmpBrAlwaysEqNeOpInfoMap.size + 1) bits)
   //)
@@ -1285,19 +1323,23 @@ case class SnowHouseSplitOp(
   //  SnowHouseSplitOpAluSrcKind()
   //)
   //val lastAluSrcKind = SnowHouseSplitOpAluSrcKind()
+  def getJmpBrAlwaysEqNeOpDefault() = (
+    (1 << jmpBrAlwaysEqNeOp.getWidth) - 1
+    //1 << (jmpBrAlwaysEqNeOp.getWidth - 1)
+  )
   def setJmpBrAlwaysEqNeOpToDefault(
   ): Unit = {
-    jmpBrAlwaysEqNeOp := (
-      (1 << jmpBrAlwaysEqNeOp.getWidth) - 1
-      //1 << (jmpBrAlwaysEqNeOp.getWidth - 1)
-    )
+    jmpBrAlwaysEqNeOp := getJmpBrAlwaysEqNeOpDefault()
   }
+  def getJmpBrOtherOpToDefault() = (
+    //(1 << jmpBrOtherOp.getWidth) - 1
+    1 << (jmpBrOtherOp.getWidth - 1)
+    //0x0
+  )
   def setJmpBrOtherOpToDefault(
   ): Unit = {
     jmpBrOtherOp := (
-      //(1 << jmpBrOtherOp.getWidth) - 1
-      1 << (jmpBrOtherOp.getWidth - 1)
-      //0x0
+      getJmpBrOtherOpToDefault()
     )
   }
   def setToDefault(
@@ -1326,6 +1368,7 @@ case class SnowHouseSplitOp(
     opIsMemAccess := False
     setJmpBrAlwaysEqNeOpToDefault()
     setJmpBrOtherOpToDefault()
+    havePredictableJmpBr := False
     //jmpBrAlwaysEqNeOpOneHot := (
     //  1 << (jmpBrAlwaysEqNeOpOneHot.getWidth - 1)
     //)
@@ -1350,6 +1393,7 @@ extends SpinalEnum(defaultEncoding=binaryOneHot) {
 case class SnowHousePipePayloadNonExt(
   cfg: SnowHouseConfig
 ) extends Bundle {
+  val shouldFinishJump = Bool()
   def myHaveFormalFwd = (
     cfg.optFormal
   )
@@ -1564,6 +1608,7 @@ case class SnowHousePipePayload(
   cfg: SnowHouseConfig,
 ) extends Bundle with PipeMemRmwPayloadBase[UInt, Bool] {
   val nonExt = SnowHousePipePayloadNonExt(cfg=cfg)
+  def shouldFinishJump = nonExt.shouldFinishJump
   def blockIrq = nonExt.blockIrq
   def takeIrq = nonExt.takeIrq
   def branchPredictTkn = nonExt.branchPredictTkn

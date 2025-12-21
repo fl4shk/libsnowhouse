@@ -262,16 +262,16 @@ case class SnowHouseDataCache(
     initBigInt=Some(Array.fill(depthWords)(BigInt(0))),
     arrRamStyleAltera=(
       if (isIcache) (
-        cfg.subCfg.icacheCfg.lineWordMemRamStyle
+        cfg.subCfg.icacheCfg.lineWordMemRamStyleAltera
       ) else (
-        cfg.subCfg.dcacheCfg.lineWordMemRamStyle
+        cfg.subCfg.dcacheCfg.lineWordMemRamStyleAltera
       )
     ),
     arrRamStyleXilinx=(
       if (isIcache) (
-        cfg.subCfg.icacheCfg.lineWordMemRamStyle
+        cfg.subCfg.icacheCfg.lineWordMemRamStyleXilinx
       ) else (
-        cfg.subCfg.dcacheCfg.lineWordMemRamStyle
+        cfg.subCfg.dcacheCfg.lineWordMemRamStyleXilinx
       )
     )
   )
@@ -285,16 +285,16 @@ case class SnowHouseDataCache(
     initBigInt=Some(Array.fill(depthLines)(BigInt(0))),
     arrRamStyleAltera=(
       if (isIcache) (
-        cfg.subCfg.icacheCfg.lineAttrsMemRamStyle
+        cfg.subCfg.icacheCfg.lineAttrsMemRamStyleAltera
       ) else (
-        cfg.subCfg.dcacheCfg.lineAttrsMemRamStyle
+        cfg.subCfg.dcacheCfg.lineAttrsMemRamStyleAltera
       )
     ),
     arrRamStyleXilinx=(
       if (isIcache) (
-        cfg.subCfg.icacheCfg.lineAttrsMemRamStyle
+        cfg.subCfg.icacheCfg.lineAttrsMemRamStyleXilinx
       ) else (
-        cfg.subCfg.dcacheCfg.lineAttrsMemRamStyle
+        cfg.subCfg.dcacheCfg.lineAttrsMemRamStyleXilinx
       )
     )
   )
@@ -1654,14 +1654,14 @@ case class SnowHouseInstrCache(
     initBigInt=Some(Array.fill(depthWords)(BigInt(0))),
     arrRamStyleAltera=(
       //if (isIcache) (
-        cfg.subCfg.icacheCfg.lineWordMemRamStyle
+        cfg.subCfg.icacheCfg.lineWordMemRamStyleAltera
       //) else (
       //  cfg.subCfg.dcacheCfg.memRamStyle
       //)
     ),
     arrRamStyleXilinx=(
       //if (isIcache) (
-        cfg.subCfg.icacheCfg.lineWordMemRamStyle
+        cfg.subCfg.icacheCfg.lineWordMemRamStyleXilinx
       //) else (
       //  cfg.subCfg.dcacheCfg.memRamStyle
       //)
@@ -1680,14 +1680,14 @@ case class SnowHouseInstrCache(
     initBigInt=Some(Array.fill(depthLines)(BigInt(0))),
     arrRamStyleAltera=(
       //if (isIcache) (
-        cfg.subCfg.icacheCfg.lineAttrsMemRamStyle
+        cfg.subCfg.icacheCfg.lineAttrsMemRamStyleAltera
       //) else (
       //  cfg.subCfg.dcacheCfg.memRamStyle
       //)
     ),
     arrRamStyleXilinx=(
       //if (isIcache) (
-        cfg.subCfg.icacheCfg.lineAttrsMemRamStyle
+        cfg.subCfg.icacheCfg.lineAttrsMemRamStyleXilinx
       //) else (
       //  cfg.subCfg.dcacheCfg.memRamStyle
       //)

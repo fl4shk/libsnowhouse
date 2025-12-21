@@ -388,8 +388,8 @@ case class SnowHouseBranchPredictor(
       Some(Array.fill(branchTgtBufSize)(BigInt(0)))
     ),
     arrRamStyleAltera=(
-      "no_rw_check, logic"
-      //"no_rw_check, MLAB"
+      //"no_rw_check, logic"
+      "no_rw_check, MLAB"
       //"MLAB"
     ),
     arrRamStyleXilinx=(
@@ -425,8 +425,8 @@ case class SnowHouseBranchPredictor(
       Some(Array.fill(branchTgtBufSize)(BigInt(0)))
     ),
     arrRamStyleAltera=(
-      "no_rw_check, logic"
-      //"no_rw_check, MLAB"
+      //"no_rw_check, logic"
+      "no_rw_check, MLAB"
       //"MLAB"
     ),
     arrRamStyleXilinx=(
