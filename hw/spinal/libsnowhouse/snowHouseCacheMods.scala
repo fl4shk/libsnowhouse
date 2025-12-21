@@ -1582,17 +1582,8 @@ case class SnowHouseInstrCache(
     isIcache=isIcache,
   )
   def bridgeCfg = io.bridgeCfg
-  def cacheCfg = (
-    io.cacheCfg
-    //if (isIcache) (
-    //  subCfg.icacheCfg
-    //) else (
-    //  subCfg.dcacheCfg
-    //)
-  )
-  val bridge = LcvStallDualToTilelink(
-    cfg=bridgeCfg
-  )
+  def cacheCfg = io.cacheCfg
+  val bridge = LcvStallDualToTilelink(cfg=bridgeCfg)
   def myH2dBus = bridge.io.h2dBus
   def myD2hBus = bridge.io.d2hBus
   myH2dBus.nextValid := (
@@ -1601,27 +1592,13 @@ case class SnowHouseInstrCache(
       init=myH2dBus.nextValid.getZero,
     )
   )
-  //myH2dBus.sendData := (
-  //  RegNext(
-  //    next=myH2dBus.sendData,
-  //    init=myH2dBus.sendData.getZero
-  //  )
-  //)
-  //myH2dBus.sendData.setAsReg
-  //myH2dBus.sendData.init(myH2dBus.sendData.getZero)
   val rH2dSendData = {
     val temp = Reg(cloneOf(myH2dBus.sendData))
     temp.init(temp.getZero)
     temp
   }
   myH2dBus.sendData := rH2dSendData
-  myD2hBus.ready := (
-    //RegNext(
-    //  next=myD2hBus.ready,
-    //  init=myD2hBus.ready.getZero,
-    //)
-    False
-  )
+  myD2hBus.ready := False
   io.tlBus << bridge.io.tlBus
   val nextBridgeSavedFires = UInt(2 bits)
   val rBridgeSavedFires = (
@@ -1678,20 +1655,8 @@ case class SnowHouseInstrCache(
     ),
     depth=depthLines,
     initBigInt=Some(Array.fill(depthLines)(BigInt(0))),
-    arrRamStyleAltera=(
-      //if (isIcache) (
-        cfg.subCfg.icacheCfg.lineAttrsMemRamStyleAltera
-      //) else (
-      //  cfg.subCfg.dcacheCfg.memRamStyle
-      //)
-    ),
-    arrRamStyleXilinx=(
-      //if (isIcache) (
-        cfg.subCfg.icacheCfg.lineAttrsMemRamStyleXilinx
-      //) else (
-      //  cfg.subCfg.dcacheCfg.memRamStyle
-      //)
-    )
+    arrRamStyleAltera=cfg.subCfg.icacheCfg.lineAttrsMemRamStyleAltera,
+    arrRamStyleXilinx=cfg.subCfg.icacheCfg.lineAttrsMemRamStyleXilinx
   )
   val lineAttrsRam = FpgacpuRamSimpleDualPort(cfg=lineAttrsRamCfg)
   val rBusSendData = (
@@ -1802,30 +1767,22 @@ case class SnowHouseInstrCache(
   val tempRdLineAttrsAddr1 = (
     Cat(
       rSavedRdLineAttrs.tag,
-      //U(log2Up(cacheCfg.lineSizeBytes) bits, default -> False),
-      //rLineAddrCnt(rLineAddrCnt.high - 1 downto 0),
-      //nextLineAddrCnt,
       rBusAddr(
         rBusAddr.high - cacheCfg.tagWidth - 1
         downto log2Up(cacheCfg.lineSizeBytes)
       ),
       rLineAddrCnt,
-      //nextLineAddrCnt,
       U(log2Up(cacheCfg.wordSizeBytes) bits, default -> False),
     ).asUInt
   )
   val tempRdLineAttrsAddr2 = (
     Cat(
       rdLineAttrs.tag,
-      //U(log2Up(cacheCfg.lineSizeBytes) bits, default -> False),
-      //rLineAddrCnt(rLineAddrCnt.high - 1 downto 0),
-      //nextLineAddrCnt,
       rBusAddr(
         rBusAddr.high - cacheCfg.tagWidth - 1
         downto log2Up(cacheCfg.lineSizeBytes)
       ),
       rLineAddrCnt,
-      //nextLineAddrCnt,
       U(log2Up(cacheCfg.wordSizeBytes) bits, default -> False),
     ).asUInt
   )
@@ -1884,12 +1841,12 @@ case class SnowHouseInstrCache(
     //)
     temp
   }
-  val myReady = (
+  val rReady = (
     Reg(Bool())
     init(False)
   )
   io.bus.recvData.instr := busDevData//.instr
-  io.bus.ready := myReady
+  io.bus.ready := rReady
   if (isIcache) {
     //io.bus.recvData.setAsReg()
     //io.bus.ready.setAsReg() init(False)
@@ -1902,7 +1859,7 @@ case class SnowHouseInstrCache(
   def doSetBusReadyEtc(
     someReady: Bool
   ): Unit = {
-    myReady := someReady
+    rReady := someReady
     //io.busExtraReady.foreach(extraReady => {
     //  extraReady := someReady
     //})

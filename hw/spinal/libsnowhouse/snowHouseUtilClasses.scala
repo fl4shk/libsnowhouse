@@ -341,6 +341,7 @@ case class SnowHouseSubConfig(
   optCacheBusSrcWidth: Option[Int]=None,
   //--------
 ) {
+  val instrSizeBytes = (instrMainWidth.toLong / 8.toLong).toLong
   //val haveIcache = icacheDepth > 0
   //val haveDcache = dcacheDepth > 0
   //val cacheMaxWordWidth = (
@@ -373,6 +374,7 @@ case class SnowHouseSubConfig(
       burstAlwaysMaxSize=false,
       srcWidth=(
         //if (haveIcache) (
+          //shRegFileCfg.mainWidth - log2Up(instrSizeBytes)
           4
         //) else (
         //  1
@@ -597,7 +599,10 @@ case class SnowHouseConfig(
   exposeRegFileWriteDataToIo: Boolean=false,
   exposeRegFileWriteAddrToIo: Boolean=false,
   exposeRegFileWriteEnableToIo: Boolean=false,
-  useLcvInstrBus: Boolean=false,
+  useLcvInstrBus: Boolean=(
+    //false
+    true
+  ),
   useLcvDataBus: Boolean=false,
   //splitAluOp: Boolean=false,
   targetAltera: Boolean=false,
@@ -611,7 +616,7 @@ case class SnowHouseConfig(
     //if (!useLcvInstrBus) (
       2//1//3//2
     //) else (
-    //  4//3
+    //  4//1//4//3
     //)
      //+ (if (!useLcvInstrBus) (0) else (1))
   )
