@@ -616,7 +616,7 @@ case class SnowHouseConfig(
     //if (!useLcvInstrBus) (
       2//1//3//2
     //) else (
-    //  3//1//3//4//1//4//3
+    //  1//3//1//3//4//1//4//3
     //)
      //+ (if (!useLcvInstrBus) (0) else (1))
   )

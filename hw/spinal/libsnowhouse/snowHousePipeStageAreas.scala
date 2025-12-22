@@ -854,14 +854,21 @@ case class SnowHousePipeStageInstrFetch(
       //  up.isReady
       //  //|| !rStallState
       //) && (
-        RegNext(
+        //RegNext(
           (
             io.lcvIbus.h2dBus.fire
             && !rStallState
-          ),
-          init=False,
-        )
+          )
+        //  init=False,
+        //)
       //)
+    )
+  )
+  val myReadyIshCondMaybeDel1 = (
+    if (!cfg.useLcvInstrBus) (
+      myReadyIshCond
+    ) else (
+      RegNext(myReadyIshCond, init=myReadyIshCond.getZero)
     )
   )
   def myRegPcSetItCnt = upModExt.psIfRegPcSetItCnt
@@ -904,7 +911,14 @@ case class SnowHousePipeStageInstrFetch(
     branchPredictor.io.upIsFiring := up.isFiring
     branchPredictor.io.upIsReady := (
       //up.isReady
-      myReadyIshCond
+      //myReadyIshCond
+      //if (!cfg.useLcvInstrBus) (
+        myReadyIshCond
+      //) else (
+      //  RegNext(
+      //    myReadyIshCond, init=False
+      //  )
+      //)
     )
   }
 
