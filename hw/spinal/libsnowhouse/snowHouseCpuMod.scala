@@ -1952,6 +1952,7 @@ object SnowHouseCpuPipeStageInstrDecode {
             //  //(2)
             //  .last
             upPayload.laggingRegPc
+            //+ (if (!cfg.useLcvInstrBus) (0) else (cfg.instrSizeBytes))
             //psId.myHistRegPcMinus2Instrs.last
           ),
           //regPcPlusImm=upPayload.regPcPlusImm,
@@ -1966,6 +1967,7 @@ object SnowHouseCpuPipeStageInstrDecode {
               //  )
               //)
               psId.myHistRegPcPlus1InstrSize.last.asUInt
+              //+ (if (!cfg.useLcvInstrBus) (0) else (1))
               + upPayload.imm(2)
               //(
               //  //upPayload.imm(2).high downto log2Up(cfg.instrSizeBytes)
