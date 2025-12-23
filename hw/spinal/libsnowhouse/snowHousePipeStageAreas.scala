@@ -897,69 +897,146 @@ private[libsnowhouse] case class SnowHouseIbusToLcvIbusBridge(
     io.lcvIbus.h2dBus.addr := io.ibus.sendData.addr
   }
 
-  val rHaveOutstandingTxn = {
+  val myHaveOutstandingTxn = Flow(cloneOf(io.lcvIbus.h2dBus.src))
+  myHaveOutstandingTxn.valid := False
+  myHaveOutstandingTxn.payload := 0x0
+  val rSavedHaveOutstandingTxn = {
     //Reg(Bool(), init=False)
     val temp = Reg(Flow(cloneOf(io.lcvIbus.h2dBus.src)))
     temp.init(temp.getZero)
     temp
   }
+  //val mySavedHaveOutstandingTxnClearCond = Bool()
+  //mySavedHaveOutstandingTxnClearCond := False
+  //when (mySavedHaveOutstandingTxnClearCond) {
+  //  rSavedHaveOutstandingTxn.valid := False
+  //}
+  //when (myHaveOutstandingTxn.fire) {
+  //  rSavedHaveOutstandingTxn.valid := True
+  //  rSavedHaveOutstandingTxn.payload := myHaveOutstandingTxn.payload
+  //}
+  //val stickyHaveOutstandingTxn = Flow(cloneOf(io.lcvIbus.h2dBus.src))
+  //stickyHaveOutstandingTxn.valid := (
+  //  myHaveOutstandingTxn.fire
+  //  || rSavedHaveOutstandingTxn.fire
+  //)
+  //stickyHaveOutstandingTxn.payload := (
+  //  RegNext(
+  //    stickyHaveOutstandingTxn.payload,
+  //    init=stickyHaveOutstandingTxn.payload.getZero,
+  //  )
+  //)
+  //when (myHaveOutstandingTxn.fire) {
+  //  stickyHaveOutstandingTxn.payload := myHaveOutstandingTxn.payload
+  //} elsewhen (rSavedHaveOutstandingTxn.fire) {
+  //  stickyHaveOutstandingTxn.payload := rSavedHaveOutstandingTxn.payload
+  //}
 
   io.lcvIbus.h2dBus.valid := (
     io.ibus.nextValid
     && (
-      !rHaveOutstandingTxn.fire
+      //!stickyHaveOutstandingTxn.fire
+      !rSavedHaveOutstandingTxn.fire
+      //!rSavedHaveOutstandingTxn.fire
+      //|| (
+      //  rSavedHaveOutstandingTxn.fire
+      //  && stable(rSavedHaveOutstandingTxn.fire)
+      //)
       || myD2hPopStm.fire //io.lcvIbus.d2hBus.fire
     )
   )
-  io.lcvIbus.h2dBus.src := rHaveOutstandingTxn.payload
-  when (io.lcvIbus.h2dBus.fire) {
-    rHaveOutstandingTxn.valid := True
-    //rHaveOutstandingTxn.payload := rHaveOutstandingTxn.payload + 1
+  //io.lcvIbus.h2dBus.src := rSavedHaveOutstandingTxn.payload
+  val rLaggingSrc = (
+    RegNextWhen(
+      next=RegNextWhen(
+        next=io.ibus.sendData.srcLcvIbus,
+        cond=io.lcvIbus.h2dBus.fire,
+        init=io.ibus.sendData.srcLcvIbus.getZero,
+      ),
+      cond=io.lcvIbus.h2dBus.fire,
+      init=io.ibus.sendData.srcLcvIbus.getZero,
+    )
+  )
+  io.lcvIbus.h2dBus.src := rLaggingSrc
+
+  when (
+    io.lcvIbus.h2dBus.fire
+  ) {
+    //myHaveOutstandingTxn.valid := True
+    rSavedHaveOutstandingTxn.valid := True
+    //myHaveOutstandingTxn.payload := io.ibus.sendData.srcLcvIbus //+ 1
+    //rSavedHaveOutstandingTxn.payload := rSavedHaveOutstandingTxn.payload + 1
   }
   when (myD2hPopStm.fire) {
-    rHaveOutstandingTxn.valid := False
-    //rHaveOutstandingTxn.payload := rHaveOutstandingTxn.payload + 1
+    rSavedHaveOutstandingTxn.valid := False
+    //rSavedHaveOutstandingTxn.payload := rSavedHaveOutstandingTxn.payload + 1
   }
   //myD2hPopStm.ready := True
   myD2hPopStm.ready := False
+  val rTempCnt = Reg(UInt(2 bits), init=U"2'd1")
 
   io.ibus.recvData.instr := (
     RegNext(io.ibus.recvData.instr)
     init(0x0)
   )
   when (
-    RegNext(io.ibus.nextValid, init=False)
-    && myD2hPopStm.valid
-    //&& rHaveOutstandingTxn
-    && (
-      RegNext(io.lcvIbus.h2dBus.fire, init=False)
-      || (
-        rHaveOutstandingTxn.fire
-        //&& (
-        //  myD2hPopStm.src
-        //  === RegNextWhen
-        //)
-      )
-    )
+    //RegNext(io.ibus.nextValid, init=False)
+    //&& 
+    myD2hPopStm.valid
+    //&& rSavedHaveOutstandingTxn
+    //&& (
+    //  (
+    //    //RegNext(io.lcvIbus.h2dBus.fire, init=False)
+    //    io.lcvIbus.h2dBus.fire
+    //    //&& (
+    //    //  RegNext(
+    //    //    io.lcvIbus.h2dBus.src, //- 1,
+    //    //    init=io.lcvIbus.h2dBus.src.getZero
+    //    //  ) === myD2hPopStm.src
+    //    //)
+    //    //io.lcvIbus.h2dBus.fire
+    //    //&& (
+    //    //  io.lcvIbus.h2dBus.src
+    //    //  === myD2hPopStm.src
+    //    //)
+    //  ) || (
+    //    rSavedHaveOutstandingTxn.fire
+    //    //&& rSavedHaveOutstandingTxn.payload === myD2hPopStm.src
+    //    //&& (
+    //    //  myD2hPopStm.src
+    //    //  === RegNextWhen
+    //    //)
+    //  )
+    //)
     //&& myD2hPopStm.src === io.lcvIbus.h2dBus.src
   ) {
     myD2hPopStm.ready := True
-    //when (myD2hPopStm.src === io.lcvIbus.h2dBus.src) {
+    when (
+      //myD2hPopStm.src === io.lcvIbus.h2dBus.src
+      //myD2hPopStm.src === io.ibus.sendData.srcLcvIbus - 1
+      //myD2hPopStm.src === io.ibus.sendData.srcLcvIbus - 2
+      rTempCnt.msb
+    ) {
       io.ibus.ready := True
       io.ibus.recvData.instr := myD2hPopStm.data
-    //}
+    } otherwise {
+      rTempCnt := rTempCnt - 1
+    }
+    //mySavedHaveOutstandingTxnClearCond := True
   }
   //when (io.ibus.fire) {
-  //  rHaveOutstandingTxn.payload := rHaveOutstandingTxn.payload + 1
+  //  rSavedHaveOutstandingTxn.payload := rSavedHaveOutstandingTxn.payload + 1
   //}
-  myD2hFifo.io.flush := False
-  when (
-    //!io.ibus.nextValid
-    RegNext(io.ibus.nextValid, init=False)
-    && !io.ibus.ready
-  ) {
-    myD2hFifo.io.flush := True
-  }
+
+  //myD2hFifo.io.flush := False
+  //when (
+  //  //!io.ibus.nextValid
+  //  RegNext(io.ibus.nextValid, init=False)
+  //  && !io.ibus.ready
+  //) {
+  //  myD2hFifo.io.flush := True
+  //}
+
   //when (
   //  RegNext(
   //    !io.ibus.nextValid,
@@ -1360,9 +1437,9 @@ case class SnowHousePipeStageInstrFetch(
       //!myIbus.ready
       //!myIbus.fire
       //|| up.isReady
-      //True
-      !rStallState
-      || up.isReady
+      True
+      //!rStallState
+      //|| up.isReady
     )
     //io.lcvIbus.h2dBus.valid := True
     //myLcvIbusD2hFifo.io.push << io.lcvIbus.d2hBus
@@ -1614,8 +1691,23 @@ case class SnowHousePipeStageInstrFetch(
   //) generate (
   //  Reg(MyLcvIbusState()) init(MyLcvIbusState.IDLE)
   //)
+  val rSrcLcvIbus = (
+    cfg.useLcvInstrBus
+  ) generate (
+    Reg(cloneOf(myIbus.sendData.srcLcvIbus))
+    init(0x0)
+  )
 
   //if (!cfg.useLcvInstrBus) {
+    if (cfg.useLcvInstrBus) {
+      myIbus.sendData.srcLcvIbus := (
+        rSrcLcvIbus
+        //RegNext(
+        //  myIbus.sendData.srcLcvIbus,
+        //  init=myIbus.sendData.srcLcvIbus.getZero
+        //)
+      )
+    }
     when (!rStallState) {
       when (
         //if (!cfg.useLcvInstrBus) (
@@ -1636,6 +1728,16 @@ case class SnowHousePipeStageInstrFetch(
         }
       } otherwise {
         upModExt.encInstr.payload := myIbus.recvData.instr
+        if (cfg.useLcvInstrBus) {
+          //myIbus.sendData.srcLcvIbus := (
+          //  RegNext(
+          //    myIbus.sendData.srcLcvIbus,
+          //    init=myIbus.sendData.srcLcvIbus.getZero
+          //  )
+          //  + 1
+          //)
+          rSrcLcvIbus := rSrcLcvIbus + 1
+        }
         rStallState := True
         //if (cfg.useLcvInstrBus) {
         //  myIbus.nextValid := False
@@ -1646,10 +1748,28 @@ case class SnowHousePipeStageInstrFetch(
       //  myIbus.nextValid := False
       //}
     }
+    //if (cfg.useLcvInstrBus) {
+    //  myIbus.sendData.srcLcvIbus := (
+    //    RegNext(
+    //      myIbus.sendData.srcLcvIbus,
+    //      init=myIbus.sendData.srcLcvIbus.getZero
+    //    )
+    //  )
+    //}
     when (cIf.up.isReady) {
       //if (cfg.useLcvInstrBus) {
       //  myIbus.nextValid := True
       //}
+      if (cfg.useLcvInstrBus) {
+        //myIbus.sendData.srcLcvIbus := (
+        //  RegNext(
+        //    myIbus.sendData.srcLcvIbus,
+        //    init=myIbus.sendData.srcLcvIbus.getZero
+        //  )
+        //  + 1
+        //)
+        //rSrcLcvIbus := rSrcLcvIbus + 1
+      }
       rStallState := False
     }
   //} else {
