@@ -1437,9 +1437,9 @@ case class SnowHousePipeStageInstrFetch(
       //!myIbus.ready
       //!myIbus.fire
       //|| up.isReady
-      True
-      //!rStallState
-      //|| up.isReady
+      //True
+      !rStallState
+      || up.isReady
     )
     //io.lcvIbus.h2dBus.valid := True
     //myLcvIbusD2hFifo.io.push << io.lcvIbus.d2hBus
