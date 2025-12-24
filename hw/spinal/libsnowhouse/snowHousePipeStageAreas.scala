@@ -850,8 +850,18 @@ private[libsnowhouse] case class SnowHouseIbusToLcvIbusBridge(
   //io.ibus.recvData.instr := 0x0
   io.ibus.ready := False
   //--------
+  //val myH2dFifo = (
+  //  StreamFifo(
+  //    dataType=cloneOf(io.lcvIbus.h2dBus.payload),
+  //    depth=8,
+  //    latency=0,
+  //    forFMax=true
+  //  )
+  //)
+  //io.lcvIbus.h2dBus << myH2dFifo.io.pop
   def myH2dPushStm = (
     io.lcvIbus.h2dBus
+    //myH2dFifo.io.push
   )
   val myD2hFifo = (
     StreamFifo(
@@ -1036,53 +1046,54 @@ private[libsnowhouse] case class SnowHouseIbusToLcvIbusBridge(
   //when (myD2hPopStm.fire) {
   //  mySeenD2hFire := True
   //}
-  def myTempCntInitVal = 1
-  val rTempCnt = (
-    Reg(UInt(2 bits))
-    init(myTempCntInitVal)
-  )
-  when (myH2dPushStm.fire) {
-    when (!rTempCnt.msb) {
-      rTempCnt := rTempCnt - 1
-      io.ibus.ready := True
-    } otherwise {
-    }
-  }
+  def myTempCntInitVal = 3//0//1
+  //val rTempCnt = (
+  //  Reg(UInt(2 bits))
+  //  init(myTempCntInitVal)
+  //)
+  //when (myH2dPushStm.fire) {
+  //  when (!rTempCnt.msb) {
+  //    rTempCnt := rTempCnt - 1
+  //    io.ibus.ready := True
+  //  } otherwise {
+  //  }
+  //}
 
   myH2dPushStm.valid := (
     (
       io.ibus.nextValid
-      //&& (
-      //  ////!stickyHaveOutstandingTxn.fire
-      //  !rSavedHaveOutstandingTxn.fire
-      //  ////!rSavedHaveOutstandingTxn.fire
-      //  ////|| (
-      //  ////  rSavedHaveOutstandingTxn.fire
-      //  ////  && stable(rSavedHaveOutstandingTxn.fire)
-      //  ////)
-      //  //|| (
-      //  //  myD2hPopStm.fire //io.lcvIbus.d2hBus.fire
-      //  //  && (
-      //  //    myD2hPopStm.src
-      //  //    === RegNextWhen(
-      //  //      next=myH2dPushStm.src,
-      //  //      cond=myH2dPushStm.fire,
-      //  //      init=myH2dPushStm.src.getZero,
-      //  //    )
-      //  //  )
+      && (
+        ////!stickyHaveOutstandingTxn.fire
+        !rSavedHaveOutstandingTxn.fire
+        ////!rSavedHaveOutstandingTxn.fire
+        ////|| (
+        ////  rSavedHaveOutstandingTxn.fire
+        ////  && stable(rSavedHaveOutstandingTxn.fire)
+        ////)
+        //|| (
+        //  myD2hPopStm.fire //io.lcvIbus.d2hBus.fire
+        //  && (
+        //    myD2hPopStm.src
+        //    === RegNextWhen(
+        //      next=myH2dPushStm.src,
+        //      cond=myH2dPushStm.fire,
+        //      init=myH2dPushStm.src.getZero,
+        //    )
+        //  )
 
-      //  //|| (
-      //  //  RegNext(io.ibus.nextValid, init=False)
-      //  //  && io.ibus.ready
-      //  //)
-      //  //|| (
-      //  //  RegNext(myH2dPushStm.fire, init=False)
-      //  //  && myH2dPushStm.ready
-      //  //)
-      //  || myD2hPopStm.fire
+        || (
+          RegNext(io.ibus.nextValid, init=False)
+          && io.ibus.ready
+        )
+        || myH2dPushStm.ready
+        //|| (
+        //  RegNext(myH2dPushStm.fire, init=False)
+        //  && myH2dPushStm.ready
+        //)
+        //|| myD2hPopStm.fire
 
-      //  //)
-      //)
+        //)
+      )
     )
   )
 
@@ -1134,10 +1145,10 @@ private[libsnowhouse] case class SnowHouseIbusToLcvIbusBridge(
   ) {
     myD2hPopStm.ready := True
     //io.ibus.recvData.instr := myD2hPopStm.data
-    when (rTempCnt.msb) {
+    //when (rTempCnt.msb) {
       io.ibus.recvData.instr := myD2hPopStm.data
       io.ibus.ready := True
-    }
+    //}
 
     //when (
     //  ////myD2hPopStm.src === myH2dPushStm.src
