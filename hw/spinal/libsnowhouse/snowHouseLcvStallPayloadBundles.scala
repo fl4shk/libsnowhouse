@@ -239,11 +239,11 @@ case class BusDevPayload(
   //val addr = (isIbus) generate (UInt(cfg.mainWidth bits))
   val data = (!isIbus) generate (UInt(cfg.mainWidth bits))
 
-  //val srcLcvIbus = (
-  //  cfg.useLcvInstrBus
-  //  && isIbus
-  //) generate (
-  //  UInt(cfg.subCfg.lcvIbusMainCfg.srcWidth bits)
-  //)
+  val srcLcvIbus = (
+    cfg.useLcvInstrBus
+    && isIbus
+  ) generate (
+    UInt(cfg.subCfg.lcvIbusMainCfg.srcWidth bits)
+  )
 }
 //--------
