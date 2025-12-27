@@ -1952,6 +1952,7 @@ object SnowHouseCpuPipeStageInstrDecode {
             //  //(2)
             //  .last
             upPayload.laggingRegPc
+            //+ (if (!cfg.useLcvInstrBus) (0) else (1))
             //+ (if (!cfg.useLcvInstrBus) (0) else (cfg.instrSizeBytes))
             //psId.myHistRegPcMinus2Instrs.last
           ),
@@ -2007,6 +2008,8 @@ object SnowHouseCpuPipeStageInstrDecode {
             //  //(2)
             //  .last
             upPayload.laggingRegPc
+            //+ (if (!cfg.useLcvInstrBus) (0) else (cfg.instrSizeBytes))
+            //+ (if (!cfg.useLcvInstrBus) (0) else (1))
             //psId.myHistRegPcMinus2Instrs.last
           ),
           //regPcPlusImm=upPayload.regPcPlusImm,
@@ -2021,6 +2024,7 @@ object SnowHouseCpuPipeStageInstrDecode {
               //    psId.myHistRegPcPlus2InstrSize.last.asUInt
               //  )
               //)
+              //+ (if (!cfg.useLcvInstrBus) (0) else (1))
               + upPayload.imm(2)
               //(
               //  //upPayload.imm(2).high downto log2Up(cfg.instrSizeBytes)
@@ -5349,8 +5353,8 @@ object SnowHouseCpuWithDualRamSim extends App {
     //12, 12,
   )
   val instrRamKindArr = Array[Int](
-    0,
-    //1,
+    //0,
+    1,
     //2,
     //5,
   )
