@@ -849,7 +849,7 @@ private[libsnowhouse] case class SnowHouseIbusToLcvIbusBridge(
   require(cfg.useLcvInstrBus)
   //--------
   val io = SnowHouseIbusToLcvIbusBridgeIo(cfg=cfg)
-  io.ibus.ready := RegNext(io.ibus.ready, init=False)
+  io.ibus.ready := False//RegNext(io.ibus.ready, init=False)
   io.ibus.recvData := (
     RegNext(io.ibus.recvData, init=io.ibus.recvData.getZero)
   )
@@ -864,12 +864,27 @@ private[libsnowhouse] case class SnowHouseIbusToLcvIbusBridge(
     io.lcvIbus.d2hBus
   )
   //--------
+  val rSeenSecondInstr = Reg(Bool(), init=False)
+  when (
+    !rSeenSecondInstr
+    && io.ibus.sendData.addr === cfg.instrSizeBytes
+    && io.ibus.nextValid
+  ) {
+    rSeenSecondInstr := True
+  }
+
   when (!rH2dFireCnt.msb) {
-    when (myH2dPushStm.fire) {
+    when (
+      myH2dPushStm.fire
+      && rSeenSecondInstr
+    ) {
       rH2dFireCnt := rH2dFireCnt - 1
     }
   } otherwise {
-    when (!io.ibus.nextValid) {
+    when (
+      !io.ibus.nextValid
+      && !myD2hPopStm.fire
+    ) {
       rH2dFireCnt := myH2dFireCntInitVal
     }
   }
@@ -938,8 +953,15 @@ case class SnowHousePipeStageInstrFetch(
   if (cfg.useLcvInstrBus) {
     io.lcvIbus <> myBridge.io.lcvIbus
   }
-  val myReadyIshCond = up.isReady
-  val myReadyIshCondMaybeDel1 = myReadyIshCond
+  //val myReadyIshCond = up.isReady
+  //val myReadyIshCondMaybeDel1 = myReadyIshCond
+  val myReadyIshCond = (
+    //if (!cfg.useLcvInstrBus) (
+      up.isReady
+    //) else (
+    //  myIbus.nextValid
+    //)
+  )
   def myRegPcSetItCnt = upModExt.psIfRegPcSetItCnt
   val rPrevRegPcSetItCnt = {
     val temp = (
@@ -1118,8 +1140,17 @@ case class SnowHousePipeStageInstrFetch(
     myIbus.nextValid := True
   } else {
     myIbus.nextValid := (
-      !rStallState
-      || myReadyIshCond
+      True
+      //(
+      //  (
+      //    !rStallState
+      //    //&& stable(rStallState)
+      //    //&& !stable(rStallState)
+      //    //fell(rStallState)
+      //  )
+      //  || myReadyIshCond //up.isReady //
+      //)
+      //&& down.isReady
     )
   }
 
@@ -1238,7 +1269,17 @@ case class SnowHousePipeStageInstrFetch(
 
   //if (!cfg.useLcvInstrBus) {
     when (!rStallState) {
-      when (!myIbus.ready) {
+      when (
+        if (!cfg.useLcvInstrBus) (
+          !myIbus.ready
+        ) else (
+          (!RegNext(myIbus.nextValid, init=False))
+          || (
+            RegNext(myIbus.nextValid, init=False)
+            && !myIbus.ready
+          )
+        )
+      ) {
         cIf.haltIt()
       } otherwise {
         upModExt.encInstr.payload := myIbus.recvData.instr
