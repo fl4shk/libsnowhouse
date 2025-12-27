@@ -903,7 +903,8 @@ private[libsnowhouse] case class SnowHouseIbusToLcvIbusBridge(
     )
   )
   tempD2hStmVec.head << io.lcvIbus.d2hBus
-  tempD2hStmVec.last << tempD2hStmVec.head.throwWhen(
+  tempD2hStmVec.last << tempD2hStmVec.head
+  .throwWhen(
     tempD2hStmVec.head.src.asSInt
     === (
       RegNextWhen(
@@ -1106,8 +1107,34 @@ private[libsnowhouse] case class SnowHouseIbusToLcvIbusBridge(
   //  } otherwise {
   //  }
   //}
+  val myH2dPushValid = Bool()
+  val rSavedH2dPushValid = Reg(Bool(), init=False)
+  val stickyMyH2dPushValid = (
+    myH2dPushValid
+    || rSavedH2dPushValid
+  )
+  myH2dPushStm.valid := stickyMyH2dPushValid
+  when (myH2dPushValid) {
+    rSavedH2dPushValid := True
+  }
+  when (myH2dPushStm.fire) {
+    rSavedH2dPushValid := False
+  }
 
-  myH2dPushStm.valid := (
+  val myD2hPopState = Bool() //Reg(Bool(), init=False)
+  myD2hPopState := RegNext(myD2hPopState, init=True)
+  when (!io.ibus.nextValid) {
+    myD2hPopState := False
+  } otherwise {
+    //when (myD2hPopStm.valid) {
+    //  myD2hPopState := True
+    //}
+  }
+  when (myD2hPopStm.valid) {
+    myD2hPopState := True
+  }
+
+  myH2dPushValid := (
     (
       io.ibus.nextValid
       && (
@@ -1130,16 +1157,18 @@ private[libsnowhouse] case class SnowHouseIbusToLcvIbusBridge(
         //  )
 
         || (
-          RegNext(io.ibus.nextValid, init=False)
-          && io.ibus.ready
+          //RegNext(io.ibus.nextValid, init=False)
+          //&& 
+          io.ibus.ready
         )
-        || RegNext(myH2dPushStm.fire, init=False)
+        //|| RegNext(myH2dPushStm.fire, init=False)
         //|| RegNext(rose(myH2dPushStm.ready), init=False)
         //|| (
         //  RegNext(myH2dPushStm.fire, init=False)
         //  && myH2dPushStm.ready
         //)
-        //|| myD2hPopStm.fire
+        || myD2hPopState
+        || myD2hPopStm.fire
 
         //)
       )
@@ -1150,6 +1179,10 @@ private[libsnowhouse] case class SnowHouseIbusToLcvIbusBridge(
   )
 
   io.d2hPopValidIsh := myD2hPopStm.valid
+  //def myIbusReadyCntInitVal = 0x1
+  //val rIbusReadyCnt = (
+  //  Reg(UInt(2 bits)) init(myIbusReadyCntInitVal)
+  //)
 
   //val rSavedD2hSrc = (
   //  Reg(cloneOf(myD2hPopStm.src))
@@ -1159,6 +1192,17 @@ private[libsnowhouse] case class SnowHouseIbusToLcvIbusBridge(
   //when (myD2hPopStm.fire) {
   //  rHadFirstD2hFire := True
   //  rSavedD2hSrc := myD2hPopStm.src
+  //}
+  //when (!rIbusReadyCnt.msb) {
+  //  when (myD2hPopStm.fire) {
+  //    rIbusReadyCnt := rIbusReadyCnt - 1
+  //  }
+  //} otherwise {
+  //  when (
+  //    !io.upIsReadyIsh
+  //  ) {
+  //    rIbusReadyCnt := myIbusReadyCntInitVal
+  //  }
   //}
   when (
     //RegNext(io.ibus.nextValid, init=False)
@@ -1211,6 +1255,7 @@ private[libsnowhouse] case class SnowHouseIbusToLcvIbusBridge(
     myD2hPopStm.ready := (
       //True
       io.upIsReadyIsh
+      //|| !rIbusReadyCnt.msb
       //&& (
       //  !rHadFirstD2hFire
       //)
@@ -1239,6 +1284,14 @@ private[libsnowhouse] case class SnowHouseIbusToLcvIbusBridge(
     //RegNext(io.ibus.nextValid, init=False)
     //&& 
     myD2hPopStm.fire
+    //|| (
+    //  //RegNext(
+    //  //  io.ibus.nextValid,
+    //  //  init=False
+    //  //)
+    //  //&& 
+    //  !rIbusReadyCnt.msb
+    //)
     //&& (
     //  io.upIsReadyIsh
     //  //&& (
@@ -1326,18 +1379,18 @@ case class SnowHousePipeStageInstrFetch(
       //!rStallState
       //|| 
 
-      RegNext(
-        myIbus.nextValid,
-        init=False
-      )
+      //RegNext(
+      //  myIbus.nextValid,
+      //  init=False
+      //)
       //&& myBridge.io.h2dPushReadyIsh
-      && (
-        !rStallState
-        || up.isReady
-      )
+      //&& (
+      //  !rStallState
+      //  || up.isReady
+      //)
 
-      //up.isReady
-      //&& myBridge.io.h2dPushReadyIsh
+      up.isReady
+      && myBridge.io.h2dPushReadyIsh
       //|| (
       //  down.isReady
       //  && myBridge.io.h2dPushFireIsh
@@ -1418,9 +1471,9 @@ case class SnowHousePipeStageInstrFetch(
     branchPredictor.io.upIsFiring := up.isFiring
     branchPredictor.io.upIsReady := (
       //up.isReady
-      //myReadyIshCond
+      myReadyIshCond
       //if (!cfg.useLcvInstrBus) (
-        myReadyIshCond
+        //myReadyIshCond
         //myReadyIshCondMaybeDel1
       //) else (
       //  RegNext(
@@ -1699,7 +1752,12 @@ case class SnowHousePipeStageInstrFetch(
   if (!cfg.useLcvInstrBus) {
     myIbus.nextValid := True
   } else {
-    myIbus.nextValid := False
+    myIbus.nextValid := (
+      //False
+      True
+      //RegNext(myIbus.nextValid, init=True)
+    )
+    //myIbus.nextValid := False
     //when (!rIbusNextValidState) {
     //  myIbus.nextValid := (
     //    //!myIbus.ready
@@ -2027,7 +2085,12 @@ case class SnowHousePipeStageInstrFetch(
     myBridge.io.upIsReadyIsh := (
       //True
       //False
-      myReadyIshCond
+      up.isReady
+      //|| (
+      //  down.isReady
+      //  && myBridge.io.d2hPopValidIsh
+      //)
+      //myReadyIshCond
       //RegNext(myIbus.nextValid, init=False)
       //&& myBridge.io.h2dPushReadyIsh
       //&& (
@@ -2047,10 +2110,10 @@ case class SnowHousePipeStageInstrFetch(
           //True
 
           myBridge.io.h2dPushReadyIsh
-          && (
-            !rStallState
-            || up.isReady
-          )
+          //&& (
+          //  !rStallState
+          //  || up.isReady
+          //)
 
           //!rStallState
           ////|| 
@@ -2059,8 +2122,16 @@ case class SnowHousePipeStageInstrFetch(
           //  //|| down.isReady
           //  //&& down.isValid
           //)
-
         )
+        //when (
+        //  RegNext(
+        //    !rStallState && myReadyIshCond,
+        //    init=False
+        //  )
+        //  && !myBridge.io.d2hPopValidIsh
+        //) {
+        //  myIbus.nextValid := False
+        //}
       }
       when (
         if (!cfg.useLcvInstrBus) (
@@ -2079,6 +2150,21 @@ case class SnowHousePipeStageInstrFetch(
             cIf.haltIt()
           //} otherwise {
           //}
+
+          //when (
+          //  //RegNext(rStallState, init=False)
+          //  //RegNext(myReadyIshCond, init=False)
+          //  //RegNext(up.isReady)
+          //  //&& 
+          //  (
+          //    RegNext(rStallState, init=False)
+          //    && RegNext(myIbus.nextValid, init=False)
+          //    && fell(myIbus.ready)
+          //  )
+          //  //|| !myReadyIshCond
+          //) {
+          //  myIbus.nextValid := False
+          //}
         }
       } otherwise {
         if (!cfg.useLcvInstrBus) {
@@ -2089,6 +2175,8 @@ case class SnowHousePipeStageInstrFetch(
           //  rSrcLcvIbus := rSrcLcvIbus + 1
           //}
           myIbus.nextValid := False
+          upModExt.encInstr.payload := myIbus.recvData.instr
+          rStallState := True
 
           //when (myIbus.ready) {
           //  //rSrcLcvIbus := rSrcLcvIbus + 1
@@ -2126,10 +2214,10 @@ case class SnowHousePipeStageInstrFetch(
         //  myIbus.nextValid := False
         //}
       }
-    } otherwise {
-      //if (cfg.useLcvInstrBus) {
-      //  myIbus.nextValid := False
-      //}
+    } otherwise { // when (rStallState)
+      if (cfg.useLcvInstrBus) {
+        myIbus.nextValid := False
+      }
     }
     if (cfg.useLcvInstrBus) {
       when (
@@ -2137,14 +2225,18 @@ case class SnowHousePipeStageInstrFetch(
         ////&& myBridge.io.h2dPushFireIsh
         //&& 
         myBridge.io.h2dPushFireIsh
-        && (
-          //!rStallState
-          //|| up.isReady
-          //down.isReady
-          !rStallState
-          //|| down.isFiring
-          || up.isReady
-        )
+        //&& 
+        //(
+        //  //!rStallState
+        //  //|| up.isReady
+        //  //down.isReady
+        //  //!rStallState
+        //  ////|| down.isFiring
+        //  //|| up.isReady
+        //  myReadyIshCond
+        //  || myIbus.ready
+        //)
+
         //&& (
         //  !rStallState
         //  || up.isReady
@@ -2160,45 +2252,45 @@ case class SnowHousePipeStageInstrFetch(
       //) {
       //  cIf.haltIt()
       //}
-      when (
-        //RegNext(myIbus.nextValid, init=False)
-        //&& 
-        myIbus.ready
-      ) {
-        //rSrcLcvIbus := rSrcLcvIbus + 1
-        rStallState := True
-        upModExt.encInstr.payload := myIbus.recvData.instr
-        //rSrcLcvIbus := rSrcLcvIbus + 1
-        //rSrcLcvIbus := rSrcLcvIbus + 1
-        //myBridge.io.upIsReadyIsh := (
-        //  //up.isReady
-        //  True
-        //)
-      } otherwise {
-        //cIf.terminateIt()
-      }
+
+      //when (
+      //  //RegNext(myIbus.nextValid, init=False)
+      //  //&& 
+      //  myIbus.ready
+      //) {
+      //  //rSrcLcvIbus := rSrcLcvIbus + 1
+      //  rStallState := True
+      //  upModExt.encInstr.payload := myIbus.recvData.instr
+      //  //rSrcLcvIbus := rSrcLcvIbus + 1
+      //  //rSrcLcvIbus := rSrcLcvIbus + 1
+      //  //myBridge.io.upIsReadyIsh := (
+      //  //  //up.isReady
+      //  //  True
+      //  //)
+      //} otherwise {
+      //  //cIf.terminateIt()
+      //}
     }
-    //if (cfg.useLcvInstrBus) {
-    //  myIbus.sendData.srcLcvIbus := (
-    //    RegNext(
-    //      myIbus.sendData.srcLcvIbus,
-    //      init=myIbus.sendData.srcLcvIbus.getZero
-    //    )
-    //  )
-    //}
     when (
-      cIf.up.isReady
+      //cIf.up.isReady
       //cIf.down.isValid
       //if (!cfg.useLcvInstrBus) (
         //cIf.up.isReady
-        //myReadyIshCond
+        myReadyIshCond
       //) else (
       //  cIf.down.isFiring
       //)
     ) {
       if (cfg.useLcvInstrBus) {
-        myIbus.nextValid := True
+        //when (myIbus.ready) {
+          myIbus.nextValid := (
+            //True
+            //myBridge.io.h2dPushReadyIsh
+            True
+          )
+        //}
       }
+
       //if (cfg.useLcvInstrBus) {
       //  rSrcLcvIbus := rSrcLcvIbus + 1
       //  //myIbus.sendData.srcLcvIbus := (
@@ -2221,6 +2313,13 @@ case class SnowHousePipeStageInstrFetch(
   //    }
   //  }
   //}
+  if (cfg.useLcvInstrBus) {
+    //when (
+    //  !down.isReady
+    //) {
+    //  myIbus.nextValid := False
+    //}
+  }
   when (
     //up.isReady
     myReadyIshCond
