@@ -600,8 +600,8 @@ case class SnowHouseConfig(
   exposeRegFileWriteAddrToIo: Boolean=false,
   exposeRegFileWriteEnableToIo: Boolean=false,
   useLcvInstrBus: Boolean=(
-    false
-    //true
+    //false
+    true
   ),
   useLcvDataBus: Boolean=false,
   //splitAluOp: Boolean=false,

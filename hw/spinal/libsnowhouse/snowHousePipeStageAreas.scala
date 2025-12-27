@@ -849,7 +849,54 @@ private[libsnowhouse] case class SnowHouseIbusToLcvIbusBridge(
   require(cfg.useLcvInstrBus)
   //--------
   val io = SnowHouseIbusToLcvIbusBridgeIo(cfg=cfg)
-  io.ibus.ready := False
+  io.ibus.ready := RegNext(io.ibus.ready, init=False)
+  io.ibus.recvData := (
+    RegNext(io.ibus.recvData, init=io.ibus.recvData.getZero)
+  )
+  //--------
+  def myH2dFireCntInitVal = U"2'd1"
+  val rH2dFireCnt = Reg(UInt(2 bits), init=myH2dFireCntInitVal)
+  //--------
+  def myH2dPushStm = (
+    io.lcvIbus.h2dBus
+  )
+  def myD2hPopStm = (
+    io.lcvIbus.d2hBus
+  )
+  //--------
+  when (!rH2dFireCnt.msb) {
+    when (myH2dPushStm.fire) {
+      rH2dFireCnt := rH2dFireCnt - 1
+    }
+  } otherwise {
+    when (!io.ibus.nextValid) {
+      rH2dFireCnt := myH2dFireCntInitVal
+    }
+  }
+  //--------
+  myH2dPushStm.valid := (
+    io.ibus.nextValid
+    && (
+      //RegNext(myH2dPushStm.fire, init=False)
+      !rH2dFireCnt.msb
+      || RegNext(myD2hPopStm.fire, init=False)
+    )
+  )
+  myH2dPushStm.payload := myH2dPushStm.payload.getZero
+  myH2dPushStm.addr.allowOverride
+  myH2dPushStm.addr := io.ibus.sendData.addr
+  //--------
+  myD2hPopStm.ready := False
+  when (myD2hPopStm.valid) {
+    myD2hPopStm.ready := (
+      RegNext(io.ibus.nextValid, init=False)
+      || !rH2dFireCnt.msb
+    )
+  }
+  when (myD2hPopStm.fire) {
+    io.ibus.ready := RegNext(io.ibus.nextValid, init=False)
+    io.ibus.recvData.instr := myD2hPopStm.data
+  }
   //--------
 }
 
@@ -888,6 +935,9 @@ case class SnowHousePipeStageInstrFetch(
       myBridge.io.ibus
     )
   )
+  if (cfg.useLcvInstrBus) {
+    io.lcvIbus <> myBridge.io.lcvIbus
+  }
   val myReadyIshCond = up.isReady
   val myReadyIshCondMaybeDel1 = myReadyIshCond
   def myRegPcSetItCnt = upModExt.psIfRegPcSetItCnt
@@ -1064,7 +1114,14 @@ case class SnowHousePipeStageInstrFetch(
     rTakeJumpCnt.valid := True
     rTakeJumpCnt.payload := takeJumpCntMaxVal
   }
-  myIbus.nextValid := True
+  if (!cfg.useLcvInstrBus) {
+    myIbus.nextValid := True
+  } else {
+    myIbus.nextValid := (
+      !rStallState
+      || myReadyIshCond
+    )
+  }
 
   val myUpdateRegPcCondUInt = (
     Cat(
