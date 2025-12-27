@@ -183,12 +183,12 @@ case class BusHostPayload(
   val subKindIsLtWordWidth = (!isIbus) generate (
     Bool()
   )
-  //val srcLcvIbus = (
-  //  cfg.useLcvInstrBus
-  //  && isIbus
-  //) generate (
-  //  UInt(cfg.subCfg.lcvIbusMainCfg.srcWidth bits)
-  //)
+  val srcLcvIbus = (
+    cfg.useLcvInstrBus
+    && isIbus
+  ) generate (
+    UInt(cfg.subCfg.lcvIbusMainCfg.srcWidth bits)
+  )
   //val srcLcvDbus = (
   //  cfg.useLcvDataBus
   //  && !isIbus
