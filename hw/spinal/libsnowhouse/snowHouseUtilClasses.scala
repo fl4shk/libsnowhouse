@@ -1399,6 +1399,11 @@ case class SnowHousePipePayloadNonExt(
   cfg: SnowHouseConfig
 ) extends Bundle {
   val shouldFinishJump = Bool()
+  //val psIfReadyIshCond = (
+  //  cfg.useLcvInstrBus
+  //) generate (
+  //  Bool()
+  //)
   def myHaveFormalFwd = (
     cfg.optFormal
   )
@@ -1614,6 +1619,7 @@ case class SnowHousePipePayload(
 ) extends Bundle with PipeMemRmwPayloadBase[UInt, Bool] {
   val nonExt = SnowHousePipePayloadNonExt(cfg=cfg)
   def shouldFinishJump = nonExt.shouldFinishJump
+  //def psIfReadyIshCond = nonExt.psIfReadyIshCond
   def blockIrq = nonExt.blockIrq
   def takeIrq = nonExt.takeIrq
   def branchPredictTkn = nonExt.branchPredictTkn
