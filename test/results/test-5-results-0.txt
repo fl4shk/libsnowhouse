@@ -1,3 +1,35 @@
 Starting test:programStr:test/snowhousecpu-test-5.bin instrRamKind:0
+addr:1 data:440
+addr:2 data:1
+addr:1 data:8
+addr:3 data:4096
+addr:15 data:2048
+addr:6 data:32
+addr:10 data:1024
+addr:5 data:32
+addr:6 data:0
+addr:7 data:4
+addr:9 data:128
+addr:9 data:129
+addr:9 data:130
+addr:9 data:128
+addr:8 data:4
+addr:9 data:5
+addr:9 data:6
+addr:9 data:5
+addr:1 data:440
+addr:1 data:8
+addr:6 data:32
+addr:9 data:128
+addr:1 data:440
+addr:1 data:8
+addr:9 data:5
+addr:9 data:128
+addr:1 data:440
+addr:1 data:8
+addr:9 data:5
+addr:9 data:128
+addr:1 data:440
+addr:1 data:8
 Ending test.
 
