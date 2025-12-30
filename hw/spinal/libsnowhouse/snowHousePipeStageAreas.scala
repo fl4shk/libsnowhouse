@@ -834,10 +834,12 @@ private[libsnowhouse] case class SnowHouseIbusToLcvIbusBridgeIo(
       recvPayloadType=Some(BusDevPayload(cfg=cfg, isIbus=true)),
     )
   )
-  val doRstIbusReadyCnt = in(Bool())
   val lcvIbus = master(
     LcvBusIo(cfg=cfg.subCfg.lcvIbusEtcCfg.loBusCfg)
   )
+
+  val doRstIbusReadyCnt = in(Bool())
+  val h2dPushDelay = out(Bool())
 }
 private[libsnowhouse] case class SnowHouseIbusToLcvIbusBridge(
   cfg: SnowHouseConfig
@@ -942,6 +944,14 @@ private[libsnowhouse] case class SnowHouseIbusToLcvIbusBridge(
     default {
     }
   }
+  io.h2dPushDelay := False
+  //when (io.ibus.nextValid) {
+  //  io.h2dPushDelay := (
+  //    //myH2dPushStm.valid
+  //    //&& 
+  //    !myH2dPushStm.ready
+  //  )
+  //}
 
   when (
     myD2hPopStm.fire
@@ -1005,20 +1015,26 @@ case class SnowHousePipeStageInstrFetch(
   //)
 
   val myUpdatePcCond = (
-    up.isReady
+    if (!cfg.useLcvInstrBus) (
+      up.isReady
+    ) else (
+      up.isReady
+      //&& !myBridge.io.h2dPushDelay
+    )
   )
-  val myReadyIshCondNonFifo = (
-    up.isReady
-  )
+  //val myReadyIshCondNonFifo = (
+  //  up.isReady
+  //)
   val myReadyIshCond = (
-    myReadyIshCondNonFifo
+    //myReadyIshCondNonFifo
+    if (!cfg.useLcvInstrBus) (
+      up.isReady
+    ) else (
+      up.isReady
+      //&& !myBridge.io.h2dPushDelay
+    )
   )
 
-  val myPsIfReadyIsh = (
-    cfg.useLcvInstrBus
-  ) generate (
-    Bool()
-  )
   def myRegPcSetItCnt = upModExt.psIfRegPcSetItCnt
   val rPrevRegPcSetItCnt = {
     val temp = (
@@ -1238,7 +1254,17 @@ case class SnowHousePipeStageInstrFetch(
     myIbus.nextValid := True
   } else {
     myIbus.nextValid := (
-      down.isReady
+      //(
+      //  down.isReady
+      //  && fell(rStallState)
+      //)
+      //|| up.isReady
+      //fell(rStallState)
+      //|| up.isReady
+      !rStallState
+      || up.isReady
+
+      //&& !myBridge.io.h2dPushDelay
       //True
       //(
       //  (

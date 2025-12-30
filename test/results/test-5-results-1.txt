@@ -40,5 +40,6 @@ addr:13 data:220
 addr:7 data:4
 addr:8 data:5
 addr:13 data:204
+addr:6 data:34
 Ending test.
 
