@@ -856,8 +856,24 @@ private[libsnowhouse] case class SnowHouseIbusToLcvIbusBridge(
   def myH2dPushStm = (
     io.lcvIbus.h2dBus
   )
+  val myD2hExtraIgnoreCond = Bool()
+  val myD2hStmIgnoreDupSrc = io.lcvIbus.d2hBus.throwWhen(
+    (
+      io.lcvIbus.d2hBus.src.asSInt
+      === (
+        RegNextWhen(
+          next=io.lcvIbus.d2hBus.src.asSInt,
+          cond=io.lcvIbus.d2hBus.fire,
+          //init=io.ibus.sendData.srcLcvIbus.asSInt.getZero,
+        )
+        init(-1)
+      )
+    )
+    && myD2hExtraIgnoreCond
+  )
   def myD2hPopStm = (
-    io.lcvIbus.d2hBus
+    //io.lcvIbus.d2hBus
+    myD2hStmIgnoreDupSrc
   )
   //--------
   //val tempH2dSrcLcvIbusCond = (
@@ -874,17 +890,88 @@ private[libsnowhouse] case class SnowHouseIbusToLcvIbusBridge(
   //)
 
   //--------
-  myH2dPushStm.valid := (
+  case class MyTempIbusSendDataPayload(
+  ) extends Bundle {
+    val addr = cloneOf(myH2dPushStm.addr)
+    val src = cloneOf(myH2dPushStm.src)
+  }
+  val myTempIbusSendData = Flow(MyTempIbusSendDataPayload())
+  val rSavedTempIbusSendData = {
+    val temp = Reg(Flow(MyTempIbusSendDataPayload()))
+    temp.init(temp.getZero)
+    temp
+  }
+  val stickyTempIbusSendData = Flow(MyTempIbusSendDataPayload())
+
+  myTempIbusSendData.valid := (
+    //rose(io.ibus.nextValid)
+    //|| myH2dPushStm.fire
     io.ibus.nextValid
+  )
+  myTempIbusSendData.src := io.ibus.sendData.srcLcvIbus
+  myTempIbusSendData.addr := io.ibus.sendData.addr
+  when (myTempIbusSendData.fire) {
+    rSavedTempIbusSendData.valid := True
+    rSavedTempIbusSendData.payload := myTempIbusSendData.payload
+  }
+  when (myH2dPushStm.fire) {
+    rSavedTempIbusSendData.valid := False
+  }
+  switch (
+    myTempIbusSendData.fire
+    ## rSavedTempIbusSendData.fire
+  ) {
+    is (M"1-") {
+      stickyTempIbusSendData.valid := True
+      stickyTempIbusSendData.payload := myTempIbusSendData.payload
+    }
+    is (M"01") {
+      stickyTempIbusSendData.valid := True
+      stickyTempIbusSendData.payload := rSavedTempIbusSendData.payload
+    }
+    default {
+      stickyTempIbusSendData.valid := False
+      stickyTempIbusSendData.payload := (
+        RegNext(stickyTempIbusSendData.payload)
+        init(stickyTempIbusSendData.payload.getZero)
+      )
+    }
+  }
+
+  io.h2dPushDelay := False
+  when (
+    //io.ibus.nextValid
+    myH2dPushStm.valid && !myH2dPushStm.ready
+  ) {
+    io.h2dPushDelay := (
+      //myH2dPushStm.valid
+      //&& 
+      //!myH2dPushStm.ready
+      True
+    )
+  }
+
+  myH2dPushStm.valid := (
+    //io.ibus.nextValid
+    stickyTempIbusSendData.fire
   )
   myH2dPushStm.payload := myH2dPushStm.payload.getZero
   myH2dPushStm.src.allowOverride
+  //myH2dPushStm.src := (
+  //  stickyTempIbusSendData.src
+  //  //RegNextWhen(
+  //  //  next=stickyTempIbusSendData.src,
+  //  //  cond=myH2dPushStm.fire,
+  //  //  init=stickyTempIbusSendData.src.getZero,
+  //  //)
+  //)
   myH2dPushStm.src := (
     RegNext(myH2dPushStm.src, init=myH2dPushStm.src.getZero)
   )
   when (myH2dPushStm.fire) {
     myH2dPushStm.src := (
-      io.ibus.sendData.srcLcvIbus
+      stickyTempIbusSendData.src
+      //io.ibus.sendData.srcLcvIbus
       //RegNextWhen(
       //  next=io.ibus.sendData.srcLcvIbus,
       //  cond=myH2dPushStm.fire,
@@ -893,12 +980,22 @@ private[libsnowhouse] case class SnowHouseIbusToLcvIbusBridge(
     )
   }
   myH2dPushStm.addr.allowOverride
+  //myH2dPushStm.addr := stickyTempIbusSendData.addr
+  //myH2dPushStm.addr := (
+  //  stickyTempIbusSendData.addr
+  //  //RegNextWhen(
+  //  //  next=stickyTempIbusSendData.addr,
+  //  //  cond=myH2dPushStm.fire,
+  //  //  init=stickyTempIbusSendData.addr.getZero,
+  //  //)
+  //)
   myH2dPushStm.addr := (
     RegNext(myH2dPushStm.addr, init=myH2dPushStm.addr.getZero)
   )
   when (myH2dPushStm.fire) {
     myH2dPushStm.addr := (
-      io.ibus.sendData.addr
+      stickyTempIbusSendData.addr
+      //io.ibus.sendData.addr
       //RegNextWhen(
       //  next=io.ibus.sendData.addr,
       //  cond=myH2dPushStm.fire,
@@ -907,44 +1004,76 @@ private[libsnowhouse] case class SnowHouseIbusToLcvIbusBridge(
     )
   }
   //--------
-  myD2hPopStm.ready := False
-  when (myD2hPopStm.valid) {
-    myD2hPopStm.ready := (
-      (
-        RegNext(io.ibus.nextValid, init=False)
-        //|| !rH2dFireCnt.msb
-      )
-      //&& io.psIfReadyIsh
-    )
-  }
+  //myD2hPopStm.ready := False
+  //when (myD2hPopStm.valid) {
+  //  myD2hPopStm.ready := (
+  //    True
+  //    //(
+  //    //  RegNext(io.ibus.nextValid, init=False)
+  //    //  //|| !rH2dFireCnt.msb
+  //    //)
+  //    //&& io.psIfReadyIsh
+  //  )
+  //}
+  myD2hPopStm.ready := True
   def myIbusReadyCntInit = 1
   val rIbusReadyCnt = (
     Reg(UInt(2 bits))
     init(myIbusReadyCntInit)
   )
+
+  myD2hExtraIgnoreCond := False
   switch (
     io.doRstIbusReadyCnt
     ## rIbusReadyCnt.msb
-    ## myD2hPopStm.fire
   ) {
-    is (M"1--") {
-      // io.doRstIbusReadyCnt, others don't care
-      io.ibus.ready := RegNext(io.ibus.nextValid, init=True)//False//RegNext(io.ibus.nextValid, init=True)
-      rIbusReadyCnt := myIbusReadyCntInit
+    is (M"1-") {
+      myD2hExtraIgnoreCond := True
     }
-    is (M"001") {
-      // !io.doRstIbusReadyCnt, !rIbusReadyCnt.msb, myD2hPopStm.fire
-      io.ibus.ready := RegNext(io.ibus.nextValid, init=True)
-      rIbusReadyCnt := rIbusReadyCnt - 1
-    }
-    is (M"011") {
-      // !io.doRstIbusReadyCnt, rIbusReadyCnt.msb, myD2hPopStm.fire
-      io.ibus.ready := RegNext(io.ibus.nextValid, init=True)
+    is (M"01") {
+      myD2hExtraIgnoreCond := False
     }
     default {
     }
   }
-  io.h2dPushDelay := False
+  switch (
+    io.doRstIbusReadyCnt
+    ## rIbusReadyCnt.msb
+    ## (
+      //myD2hPopStm.fire
+      myD2hPopStm.valid
+    )
+  ) {
+    is (M"1--") {
+      // io.doRstIbusReadyCnt, others don't care
+      myH2dPushStm.valid := False
+      io.ibus.ready := False//True//RegNext(io.ibus.nextValid, init=True)//False//RegNext(io.ibus.nextValid, init=True)
+      rIbusReadyCnt := myIbusReadyCntInit
+    }
+    is (M"001") {
+      // !io.doRstIbusReadyCnt, !rIbusReadyCnt.msb, myD2hPopStm.fire
+      io.ibus.ready := True//RegNext(io.ibus.nextValid, init=True)
+      io.ibus.recvData.instr := myD2hPopStm.data
+      io.ibus.recvData.srcLcvIbus := myD2hPopStm.src
+      rIbusReadyCnt := rIbusReadyCnt - 1
+    }
+    is (M"000") {
+      myH2dPushStm.valid := True
+      //io.ibus.ready := True//RegNext(io.ibus.nextValid, init=True)
+      //io.ibus.recvData.instr := myD2hPopStm.data
+      //io.ibus.recvData.srcLcvIbus := myD2hPopStm.src
+      //rIbusReadyCnt := rIbusReadyCnt - 1
+    }
+    is (M"011") {
+      // !io.doRstIbusReadyCnt, rIbusReadyCnt.msb, myD2hPopStm.fire
+      io.ibus.ready := True//RegNext(io.ibus.nextValid, init=True)
+      io.ibus.recvData.instr := myD2hPopStm.data
+      io.ibus.recvData.srcLcvIbus := myD2hPopStm.src
+    }
+    default {
+    }
+  }
+  //io.h2dPushDelay := False
   //when (io.ibus.nextValid) {
   //  io.h2dPushDelay := (
   //    //myH2dPushStm.valid
@@ -953,14 +1082,14 @@ private[libsnowhouse] case class SnowHouseIbusToLcvIbusBridge(
   //  )
   //}
 
-  when (
-    myD2hPopStm.fire
-    //myD2hPopStm.valid
-  ) {
-    io.ibus.ready := RegNext(io.ibus.nextValid, init=False)
-    io.ibus.recvData.instr := myD2hPopStm.data
-    io.ibus.recvData.srcLcvIbus := myD2hPopStm.src
-  }
+  //when (
+  //  myD2hPopStm.fire
+  //  //myD2hPopStm.valid
+  //) {
+  //  io.ibus.ready := RegNext(io.ibus.nextValid, init=False)
+  //  io.ibus.recvData.instr := myD2hPopStm.data
+  //  io.ibus.recvData.srcLcvIbus := myD2hPopStm.src
+  //}
   //--------
 }
 
@@ -984,9 +1113,21 @@ case class SnowHousePipeStageInstrFetch(
   up(pIf) := upModExt
   upModExt := RegNext(upModExt, init=upModExt.getZero)
   def myInstrCnt = upModExt.instrCnt
-  val rStallState = (
+  val rDidFirstStallStateFall = (
+    cfg.useLcvInstrBus
+  ) generate (
     Reg(Bool(), init=False)
   )
+  val rStallState = (
+    Reg(Bool(), init=True)
+  )
+  if (cfg.useLcvInstrBus) {
+    when (!rDidFirstStallStateFall && rStallState) {
+      cIf.haltIt()
+      rDidFirstStallStateFall := True
+      rStallState := False
+    }
+  }
   val myBridge = (
     cfg.useLcvInstrBus
   ) generate (
@@ -1250,9 +1391,28 @@ case class SnowHousePipeStageInstrFetch(
       //myBridge.io.doRstIbusReadyCnt := True
     }
   }
+  def myStallStateH2dFireCntInit = U"2'd1"
+  val rStallStateH2dFireCnt = (
+    cfg.useLcvInstrBus
+  ) generate (
+    Reg(UInt(2 bits), init=myStallStateH2dFireCntInit)
+  )
   if (!cfg.useLcvInstrBus) {
     myIbus.nextValid := True
   } else {
+    when (
+      myIbus.nextValid
+      && !myBridge.io.h2dPushDelay
+      && !rStallStateH2dFireCnt.msb
+    ) {
+      rStallStateH2dFireCnt := rStallStateH2dFireCnt - 1
+    }
+    when (
+      //myIbus.ready
+      up.isReady
+    ) {
+      rStallStateH2dFireCnt := myStallStateH2dFireCntInit
+    }
     myIbus.nextValid := (
       //(
       //  down.isReady
@@ -1261,7 +1421,16 @@ case class SnowHousePipeStageInstrFetch(
       //|| up.isReady
       //fell(rStallState)
       //|| up.isReady
-      !rStallState
+
+      (
+        //!rDidFirstStallStateFall
+        //|| 
+        //fell(rStallState)
+        //!rStallState
+        //&& down.isReady
+        !rStallState
+        && !rStallStateH2dFireCnt.msb
+      )
       || up.isReady
 
       //&& !myBridge.io.h2dPushDelay
@@ -1292,8 +1461,18 @@ case class SnowHousePipeStageInstrFetch(
   )
   if (cfg.useLcvInstrBus) {
     nextSrcLcvIbus := rSrcLcvIbus
-    myIbus.sendData.srcLcvIbus := rSrcLcvIbus // + 1//mySrcLcvIbus//nextSrcLcvIbus 
-    when (myUpdatePcCond) {
+    myIbus.sendData.srcLcvIbus := (
+      rSrcLcvIbus // + 1//mySrcLcvIbus//nextSrcLcvIbus 
+      //RegNextWhen(
+      //  next=rSrcLcvIbus,
+      //  cond=myUpdatePcCond,
+      //  init=rSrcLcvIbus.getZero,
+      //)
+    )
+    when (
+      myUpdatePcCond
+      //myIbus.ready
+    ) {
       //mySrcLcvIbus := rPrevSrcLcvIbus + 1
       nextSrcLcvIbus := rSrcLcvIbus + 1
     } otherwise {
@@ -1427,11 +1606,12 @@ case class SnowHousePipeStageInstrFetch(
           !myIbus.ready
         ) else (
           (
-            (!RegNext(myIbus.nextValid, init=False))
-            || (
-              RegNext(myIbus.nextValid, init=False)
-              && !myIbus.ready
-            )
+            //(!RegNext(myIbus.nextValid, init=False))
+            //|| (
+            //  RegNext(myIbus.nextValid, init=False)
+            //  && !myIbus.ready
+            //)
+            !myIbus.ready
             //|| (!myReadyIshCondLcvMostCmpSrc)
           )
           //&& (
