@@ -1246,7 +1246,8 @@ case class SnowHousePipeStageInstrFetch(
         next=myRegPcSetItCnt,
         cond=(
           //up.isFiring
-          myReadyIshCond
+          //myReadyIshCond
+          myUpdatePcCond
         )
       )
       init(0x0)
@@ -1444,7 +1445,8 @@ case class SnowHousePipeStageInstrFetch(
     Reg(Bool(), init=False)
   )
   if (cfg.useLcvInstrBus) {
-    myBridge.io.doRstIbusReadyCnt := rBridgeDoRstIbusReadyCnt
+    //myBridge.io.doRstIbusReadyCnt := rBridgeDoRstIbusReadyCnt
+    myBridge.io.doRstIbusReadyCnt := False
     when (
       myIbus.nextValid
       && !myBridge.io.h2dPushDelay
@@ -1463,7 +1465,7 @@ case class SnowHousePipeStageInstrFetch(
     rTakeJumpCnt.valid := True
     rTakeJumpCnt.payload := takeJumpCntMaxVal
     if (cfg.useLcvInstrBus) {
-      rBridgeDoRstIbusReadyCnt := True
+      //rBridgeDoRstIbusReadyCnt := True
       //rStallStateH2dFireCnt := myStallStateH2dFireCntInit
       //myBridge.io.doRstIbusReadyCnt := True
     }
@@ -1854,19 +1856,26 @@ case class SnowHousePipeStageInstrFetch(
     //when (rose(rTakeJumpCnt.fire)) {
     //  myBridge.io.doRstIbusReadyCnt := True
     //}
-    when (rBridgeDoRstIbusReadyCnt) {
-      rBridgeDoRstIbusReadyCnt := False
-    }
+    //when (rBridgeDoRstIbusReadyCnt) {
+    //  rBridgeDoRstIbusReadyCnt := False
+    //}
   }
-  when (myReadyIshCond) {
+  when (
+    myReadyIshCond
+    //myUpdatePcCond
+  ) {
     myRegPcSetItCnt := 0x0
     when (rTakeJumpCnt.fire) {
-      rTakeJumpCnt.payload := rTakeJumpCnt.payload - 1
-      when (rTakeJumpCnt.payload.msb) {
-        rTakeJumpCnt.valid := False
-        myRegPcSetItCnt := 0x1
-      } otherwise {
-      }
+      //if (!cfg.useLcvInstrBus) {
+        rTakeJumpCnt.payload := rTakeJumpCnt.payload - 1
+        when (rTakeJumpCnt.payload.msb) {
+          rTakeJumpCnt.valid := False
+          myRegPcSetItCnt := 0x1
+        } otherwise {
+        }
+      //} else { // if (cfg.useLcvInstrBus)
+      //  
+      //}
     }
   }
 }
