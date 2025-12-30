@@ -5,25 +5,5 @@ addr:4 data:8
 addr:15 data:2048
 addr:6 data:1024
 addr:8 data:1024
-addr:8 data:0
-addr:9 data:1
-addr:7 data:4294967295
-addr:10 data:305419896
-addr:7 data:9761289
-addr:1 data:439
-addr:1 data:438
-addr:1 data:437
-addr:1 data:436
-addr:1 data:435
-addr:1 data:434
-addr:1 data:433
-addr:1 data:432
-addr:1 data:431
-addr:1 data:430
-addr:1 data:429
-addr:1 data:428
-addr:1 data:427
-addr:1 data:426
-addr:1 data:425
 Ending test.
 

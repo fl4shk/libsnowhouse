@@ -1791,8 +1791,8 @@ case class SnowHousePipeStageInstrFetch(
       //  !myIbus.ready
       //  || !fifo.io.push.ready
       //)
-      //rStallState
-      False
+      rStallState
+      //False
     )
     myReadyIshCond := (
       myReadyIshCondShared
@@ -1805,9 +1805,9 @@ case class SnowHousePipeStageInstrFetch(
       )
     ) {
       //cIf.haltIt()
-      myStallStateCond := False
+      //myStallStateCond := False
     } otherwise {
-      myStallStateCond := True
+      //myStallStateCond := True
       fifo.io.push.valid := True
       fifo.io.push.payload := myIbus.recvData.instr
     }
