@@ -949,6 +949,8 @@ private[libsnowhouse] case class SnowHouseIbusToLcvIbusBridge(
 
   io.h2dPushDelay := (
     False
+    //!myH2dPushStm.valid
+    //|| !myH2dPushStm.ready
   )
   when (
     //io.ibus.nextValid
@@ -1201,19 +1203,23 @@ case class SnowHousePipeStageInstrFetch(
       up.isReady
     ) else (
       (
-        //!rDidFirstStallStateFall
-        //|| 
-        //fell(rStallState)
-        //!rStallState
-        //&& down.isReady
-        //!rStallState
-        !myStallStateCond
-        && myIbus.nextValid
-        && !myBridge.io.h2dPushDelay
-        && !rStallStateH2dFireCnt.msb
-        && down.isReady
+        (
+          //!rDidFirstStallStateFall
+          //|| 
+          //fell(rStallState)
+          //!rStallState
+          //&& down.isReady
+          //!rStallState
+          !myStallStateCond
+          && myIbus.nextValid
+          //&& !myBridge.io.h2dPushDelay
+          && !rStallStateH2dFireCnt.msb
+          && down.isReady
+          //&& !up.isReady
+        )
+        || up.isReady
       )
-      || up.isReady
+      && !myBridge.io.h2dPushDelay
       //up.isReady
       //myIbus.nextValid
       //&& !myBridge.io.h2dPushDelay
@@ -1443,11 +1449,13 @@ case class SnowHousePipeStageInstrFetch(
       myIbus.nextValid
       && !myBridge.io.h2dPushDelay
       && !rStallStateH2dFireCnt.msb
-      //&& down.isReady
+      && down.isReady
     ) {
       rStallStateH2dFireCnt := rStallStateH2dFireCnt - 1
     }
-    when (up.isReady) {
+    when (
+      !up.isReady
+    ) {
       rStallStateH2dFireCnt := myStallStateH2dFireCntInit
     }
   }
@@ -1456,7 +1464,7 @@ case class SnowHousePipeStageInstrFetch(
     rTakeJumpCnt.payload := takeJumpCntMaxVal
     if (cfg.useLcvInstrBus) {
       rBridgeDoRstIbusReadyCnt := True
-      rStallStateH2dFireCnt := myStallStateH2dFireCntInit
+      //rStallStateH2dFireCnt := myStallStateH2dFireCntInit
       //myBridge.io.doRstIbusReadyCnt := True
     }
   }
@@ -1774,7 +1782,10 @@ case class SnowHousePipeStageInstrFetch(
     val fifo = (
       StreamFifo(
         dataType=UInt(cfg.instrMainWidth bits),
-        depth=4,
+        depth=(
+          //4
+          2
+        ),
         latency=0,
         forFMax=true,
       )
