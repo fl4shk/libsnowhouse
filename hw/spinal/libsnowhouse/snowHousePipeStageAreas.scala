@@ -1172,18 +1172,18 @@ case class SnowHousePipeStageInstrFetch(
     if (!cfg.useLcvInstrBus) (
       up.isReady
     ) else (
-      //(
-      //  //!rDidFirstStallStateFall
-      //  //|| 
-      //  //fell(rStallState)
-      //  //!rStallState
-      //  //&& down.isReady
-      //  !rStallState
-      //  && !rStallStateH2dFireCnt.msb
-      //  && down.isReady
-      //)
-      //|| up.isReady
-      up.isReady
+      (
+        //!rDidFirstStallStateFall
+        //|| 
+        //fell(rStallState)
+        //!rStallState
+        //&& down.isReady
+        !rStallState
+        && !rStallStateH2dFireCnt.msb
+        && down.isReady
+      )
+      || up.isReady
+      //up.isReady
       //myIbus.nextValid
       //&& !myBridge.io.h2dPushDelay
     )
