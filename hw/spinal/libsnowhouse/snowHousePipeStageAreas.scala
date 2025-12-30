@@ -1310,15 +1310,15 @@ case class SnowHousePipeStageInstrFetch(
     val temp = RegNextWhen(
       next=(
         Vec.fill(2)(
-          //if (!cfg.useLcvInstrBus) (
+          if (!cfg.useLcvInstrBus) (
             upModExt.regPc.asSInt(
               upModExt.regPc.high downto log2Up(cfg.instrSizeBytes)
             )
-          //) else (
-          //  myIbus.sendData.addr.asSInt(
-          //    myIbus.sendData.addr.high downto log2Up(cfg.instrSizeBytes)
-          //  )
-          //)
+          ) else (
+            myIbus.sendData.addr.asSInt(
+              myIbus.sendData.addr.high downto log2Up(cfg.instrSizeBytes)
+            )
+          )
         )
       ), 
       cond=(
@@ -1360,11 +1360,11 @@ case class SnowHousePipeStageInstrFetch(
     History[UInt](
       that=(
         // TODO: check that this is correct
-        //if (!cfg.useLcvInstrBus) (
+        if (!cfg.useLcvInstrBus) (
           upModExt.regPc
-        //) else (
-        //  myIbus.sendData.addr
-        //)
+        ) else (
+          myIbus.sendData.addr
+        )
       ),
       length=3,
       when=(
@@ -1372,11 +1372,11 @@ case class SnowHousePipeStageInstrFetch(
         myUpdatePcCond
       ),
       init=(
-        //if (!cfg.useLcvInstrBus) (
+        if (!cfg.useLcvInstrBus) (
           upModExt.regPc.getZero
-        //) else (
-        //  myIbus.sendData.addr.getZero
-        //)
+        ) else (
+          myIbus.sendData.addr.getZero
+        )
       ),
     )
   )
@@ -1650,7 +1650,9 @@ case class SnowHousePipeStageInstrFetch(
       if (cfg.haveBranchPredictor) {
         myIbusRegPcInfo.branchPredictTkn := False
       }
-      myIbusRegPcInfo.setUpModExt()
+      //if (!cfg.useLcvInstrBus) {
+        myIbusRegPcInfo.setUpModExt()
+      //}
       myIbus.sendData.addr := tempNextRegPc//.asUInt
     }
     switch (myUpdateRegPcCondUInt) {
@@ -1679,7 +1681,9 @@ case class SnowHousePipeStageInstrFetch(
           myIbus.sendData.addr := temp
           myIbusRegPcInfo.regPc := temp
         }
-        myIbusRegPcInfo.setUpModExt()
+        //if (!cfg.useLcvInstrBus) {
+          myIbusRegPcInfo.setUpModExt()
+        //}
       }
       //is (M"1-1") {
       //  doPsExSetPcValid(
@@ -1787,7 +1791,8 @@ case class SnowHousePipeStageInstrFetch(
       //  !myIbus.ready
       //  || !fifo.io.push.ready
       //)
-      rStallState
+      //rStallState
+      False
     )
     myReadyIshCond := (
       myReadyIshCondShared
@@ -1800,7 +1805,9 @@ case class SnowHousePipeStageInstrFetch(
       )
     ) {
       //cIf.haltIt()
+      myStallStateCond := False
     } otherwise {
+      myStallStateCond := True
       fifo.io.push.valid := True
       fifo.io.push.payload := myIbus.recvData.instr
     }
