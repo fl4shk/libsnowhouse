@@ -1246,8 +1246,8 @@ case class SnowHousePipeStageInstrFetch(
         next=myRegPcSetItCnt,
         cond=(
           //up.isFiring
-          //myReadyIshCond
-          myUpdatePcCond
+          myReadyIshCond
+          //myUpdatePcCond
         )
       )
       init(0x0)
@@ -1454,9 +1454,9 @@ case class SnowHousePipeStageInstrFetch(
       && down.isReady
     ) {
       rStallStateH2dFireCnt := rStallStateH2dFireCnt - 1
-    }
-    when (
-      !up.isReady
+    } elsewhen (
+      //!up.isReady
+      !down.isReady
     ) {
       rStallStateH2dFireCnt := myStallStateH2dFireCntInit
     }
@@ -1506,7 +1506,7 @@ case class SnowHousePipeStageInstrFetch(
         //&& down.isReady
         //!rStallState
         !myStallStateCond
-        && !rStallStateH2dFireCnt.msb
+        //&& !rStallStateH2dFireCnt.msb
         && down.isReady
       )
       || (
@@ -1778,15 +1778,82 @@ case class SnowHousePipeStageInstrFetch(
       rStallState := False
     }
   })
+  //val myUseLcvIbusStallStateArea = (
+  //  cfg.useLcvInstrBus
+  //) generate (new Area {
+  //  myReadyIshCond := (
+  //    myReadyIshCondShared
+  //  )
+  //  myStallStateCond := (
+  //    rStallState
+  //  )
+  //  when (!rStallState) {
+  //    when (
+  //      //if (!cfg.useLcvInstrBus) (
+  //        !myIbus.ready
+  //      //) else (
+  //      //  (
+  //      //    //(!RegNext(myIbus.nextValid, init=False))
+  //      //    //|| (
+  //      //    //  RegNext(myIbus.nextValid, init=False)
+  //      //    //  && !myIbus.ready
+  //      //    //)
+  //      //    !myIbus.ready
+  //      //    //|| (!myReadyIshCondLcvMostCmpSrc)
+  //      //  )
+  //      //  //&& (
+  //      //  //  !myPsIfReadyIshOtherCond
+  //      //  //)
+  //      //)
+  //    ) {
+  //      cIf.haltIt()
+  //    } otherwise {
+  //      def doGrabInstr(): Unit = {
+  //        upModExt.encInstr.payload := myIbus.recvData.instr
+  //        rStallState := True
+  //      }
+  //      //if (!cfg.useLcvInstrBus) {
+  //        doGrabInstr()
+  //      //} else {
+  //      //  when (!myReadyIshCondLcvMostCmpSrc) {
+  //      //    cIf.haltIt()
+  //      //  } otherwise {
+  //      //    doGrabInstr()
+  //      //  }
+  //      //}
+  //    }
+  //  } otherwise { // when (rStallState)
+  //  }
+  //  when (
+  //    //if (!cfg.useLcvInstrBus) (
+  //    //  myReadyIshCond
+  //    //) else (
+  //    //  //myReadyIshCondLcvMost
+  //    //  myReadyIshCond
+  //    //  //|| up.isReady
+  //    //)
+  //    myReadyIshCond
+  //  ) {
+  //    rStallState := False
+  //  }
+  //})
+
   val myUseLcvIbusStallStateArea = (
     cfg.useLcvInstrBus
   ) generate (new Area {
+    def myFifoDepth = 2
+    //def myFifoCntInitVal = myFifoDepth - 1
+    //val rFifoCnt = (
+    //  Reg(UInt(2 bits))
+    //  init(myFifoCntInitVal)
+    //)
     val fifo = (
       StreamFifo(
         dataType=UInt(cfg.instrMainWidth bits),
         depth=(
           //4
-          2
+          //2
+          myFifoDepth
         ),
         latency=0,
         forFMax=true,
@@ -1806,11 +1873,16 @@ case class SnowHousePipeStageInstrFetch(
       //)
       rStallState
       //False
+      //rFifoCnt.msb
     )
     myReadyIshCond := (
       myReadyIshCondShared
+      //&& rStallStateH2dFireCnt.msb
       //&& fifo.io.pop.fire
     )
+    when (!rStallStateH2dFireCnt.msb) {
+      cIf.haltIt()
+    }
     when (
       !(
         myIbus.ready
@@ -1824,11 +1896,56 @@ case class SnowHousePipeStageInstrFetch(
       fifo.io.push.valid := True
       fifo.io.push.payload := myIbus.recvData.instr
     }
+    //when (!rStallStateH2dFireCnt.msb) {
+    //  cIf.haltIt()
+    //}
+
+    //when (fifo.io.push.fire) {
+    //  when (
+    //    !fifo.io.pop.fire
+    //    //!rFifoCnt.msb
+    //  ) {
+    //    rFifoCnt := rFifoCnt - 1
+    //  }
+    //} otherwise {
+    //  when (
+    //    RegNext(!fifo.io.push.fire, init=False)
+    //    && fifo.io.pop.fire
+    //  ) {
+    //    rFifoCnt := rFifoCnt + 1
+    //  }
+    //}
+    //when (
+    //  //!myIbus.ready
+    //  //|| !fifo.io.push.ready
+    //  !fifo.io.pop.valid
+    //  || !rFifoCnt.msb
+    //  //|| !rFileDepth
+    //  //|| fifo.io.occupancy =/= 2
+    //) {
+    //  cIf.haltIt()
+    //} otherwise {
+    //}
+    //when (
+    //  myReadyIshCond
+    //  && fifo.io.pop.valid
+    //  //&& rFifoCnt.msb
+    //) {
+    //  //rStallState := True
+    //  ////rStallState := True
+    //  //fifo.io.push.valid := True
+    //  //fifo.io.push.payload := myIbus.recvData.instr
+    //  fifo.io.pop.ready := True
+    //  upModExt.encInstr.payload := fifo.io.pop.payload
+    //}
     when (!rStallState) {
       when (
         //!myIbus.ready
         //|| !fifo.io.push.ready
         !fifo.io.pop.valid
+        //|| !rFifoCnt.msb
+        //|| !rFileDepth
+        //|| fifo.io.occupancy =/= 2
       ) {
         cIf.haltIt()
       } otherwise {
