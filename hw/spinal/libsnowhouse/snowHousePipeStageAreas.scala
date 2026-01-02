@@ -861,14 +861,15 @@ private[libsnowhouse] case class SnowHouseIbusToLcvIbusBridge(
   //val myH2dStmIgnoreDupSrc = cloneOf(io.lcvIbus.h2dBus)
   val myH2dFrontStm = cloneOf(io.lcvIbus.h2dBus)
   val myTempH2dSrcRnw = cloneOf(io.lcvIbus.h2dBus.src.asSInt)
-  val myH2dStmIgnoreDupSrc = myH2dFrontStm.throwWhen(
-    (
-      myH2dFrontStm.src.asSInt
-      =/= myTempH2dSrcRnw //+ 1 
-    )
-    && rIbusReadyCnt.msb
-    && !io.doRstIbusReadyCnt
-  )
+  val myH2dStmIgnoreDupSrc = myH2dFrontStm
+  //.throwWhen(
+  //  (
+  //    myH2dFrontStm.src.asSInt
+  //    =/= myTempH2dSrcRnw //+ 1 
+  //  )
+  //  && rIbusReadyCnt.msb
+  //  && !io.doRstIbusReadyCnt
+  //)
   myTempH2dSrcRnw := (
     //RegNextWhen(
     //  next=myH2dStmIgnoreDupSrc.src.asSInt,
@@ -1277,7 +1278,7 @@ case class SnowHousePipeStageInstrFetch(
 
   if (cfg.useLcvInstrBus) {
     when (!rDidFirstStallStateFall && rStallState) {
-      cIf.haltIt()
+      //cIf.haltIt()
       rDidFirstStallStateFall := True
       rStallState := False
     }
@@ -1532,7 +1533,18 @@ case class SnowHousePipeStageInstrFetch(
       //down.isReady
       //up.isReady
       //|| 
-      !rStallState
+      //!rStallState
+      //fell(rStallState)
+      (
+        //!rStallState
+        //&& down.isReady
+        //|| rose(rStallState)
+        //fell(rStallState)
+        !rStallState
+      )
+      || (
+        up.isReady
+      )
     )
   )
   val nextSrcLcvIbus = (
@@ -1560,6 +1572,10 @@ case class SnowHousePipeStageInstrFetch(
     when (
       myReadyIshCond
       //myIbus.ready
+      //RegNext(
+      //  next=myIbus.nextValid,
+      //  init=
+      //)
     ) {
       nextSrcLcvIbus := rSrcLcvIbus + 1
     } 
@@ -1697,21 +1713,71 @@ case class SnowHousePipeStageInstrFetch(
   myReadyIshCond := (
     myReadyIshCondShared
   )
-  when (!rStallState) {
-    when (!myIbus.ready) {
-      cIf.haltIt()
-      //cIf.duplicateIt()
-    } otherwise {
-      def doGrabInstr(): Unit = {
+  val myInstrFifo = (
+    cfg.useLcvInstrBus
+  ) generate (
+    StreamFifo(
+      dataType=UInt(cfg.instrMainWidth bits),
+      depth=2,
+      latency=0,
+      forFMax=true,
+    )
+  )
+  if (!cfg.useLcvInstrBus) {
+    when (!rStallState) {
+      when (!myIbus.ready) {
+        cIf.haltIt()
+        //cIf.duplicateIt()
+      } otherwise {
         upModExt.encInstr.payload := myIbus.recvData.instr
         rStallState := True
       }
-      doGrabInstr()
     }
-  } otherwise { // when (rStallState)
-  }
-  when (myReadyIshCond) {
-    rStallState := False
+    when (myReadyIshCond) {
+      rStallState := False
+    }
+  } else { // if (cfg.useLcvInstrBus)
+    myInstrFifo.io.push.valid := False
+    myInstrFifo.io.push.payload := myInstrFifo.io.push.payload.getZero
+    myInstrFifo.io.pop.ready := False
+    when (myInstrFifo.io.pop.valid) {
+      myIbus.nextValid := False
+    }
+    //when (
+    //  myIbus.ready
+    //  //&& down.isReady
+    //) {
+    //  //when (down.isReady) {
+    //  //  upModExt.encInstr.payload := myIbus.recvData.instr
+    //  //} otherwise {
+    //  //  myInstrFifo.io.push.valid := True
+    //  //}
+    //}
+
+    when (!rStallState) {
+      when (!myInstrFifo.io.pop.valid) {
+        when (!myIbus.ready) {
+          cIf.haltIt()
+          //cIf.duplicateIt()
+        } otherwise {
+          upModExt.encInstr.payload := myIbus.recvData.instr
+          rStallState := True
+        }
+      } otherwise {
+        when (myReadyIshCond) {
+          myInstrFifo.io.pop.ready := True
+          upModExt.encInstr.payload := myInstrFifo.io.pop.payload
+        }
+      }
+    } otherwise { // when (rStallState)
+      when (myIbus.ready) {
+        myInstrFifo.io.push.valid := True
+        myInstrFifo.io.push.payload := myIbus.recvData.instr
+      }
+    }
+    when (myReadyIshCond) {
+      rStallState := False
+    }
   }
   when (
     myReadyIshCond
