@@ -839,7 +839,8 @@ private[libsnowhouse] case class SnowHouseIbusToLcvIbusBridgeIo(
   )
 
   val doRstIbusReadyCnt = in(Bool())
-  //val h2dPushDelay = out(Bool())
+  val h2dPushDelay = out(Bool())
+  //val haveNextSrcRose = in(Bool())
 }
 private[libsnowhouse] case class SnowHouseIbusToLcvIbusBridge(
   cfg: SnowHouseConfig
@@ -1001,6 +1002,18 @@ private[libsnowhouse] case class SnowHouseIbusToLcvIbusBridge(
   //  }
   //}
 
+  io.h2dPushDelay := (
+    !myH2dPushStm.ready
+    //&& io.haveNextSrcRose
+    //&& (
+    //  io.ibus.sendData.srcLcvIbus
+    //  === RegNext(
+    //    io.ibus.sendData.srcLcvIbus + 1,
+    //    init=io.ibus.sendData.srcLcvIbus.getZero
+    //  )
+    //)
+  )
+
   //io.h2dPushDelay := (
   //  False
   //  //!myH2dPushStm.valid
@@ -1136,6 +1149,7 @@ private[libsnowhouse] case class SnowHouseIbusToLcvIbusBridge(
     ## (
       //myD2hPopStm.fire
       myD2hPopStm.valid
+      //&& myH2dPushStm.ready
     )
   ) {
     //is (M"1--") {
@@ -1234,7 +1248,10 @@ private[libsnowhouse] case class SnowHouseIbusToLcvIbusBridge(
       ////}
     }
   }
-  when (io.doRstIbusReadyCnt) {
+  when (
+    io.doRstIbusReadyCnt
+    //&& !io.h2dPushDelay
+  ) {
     rIbusReadyCnt := myIbusReadyCntInitVal
   }
   //io.h2dPushDelay := False
@@ -1777,7 +1794,7 @@ case class SnowHousePipeStageInstrFetch(
   //    forFMax=true,
   //  )
   //)
-  //if (!cfg.useLcvInstrBus) {
+  if (!cfg.useLcvInstrBus) {
     when (!rStallState) {
       when (!myIbus.ready) {
         cIf.haltIt()
@@ -1790,111 +1807,37 @@ case class SnowHousePipeStageInstrFetch(
     when (myReadyIshCond) {
       rStallState := False
     }
-  //} else { // if (cfg.useLcvInstrBus)
-  //  myInstrFifo.io.push.valid := False
-  //  myInstrFifo.io.push.payload := myInstrFifo.io.push.payload.getZero
-  //  myInstrFifo.io.pop.ready := False
-
-  //  when (myInstrFifo.io.pop.valid) {
-  //    myIbus.nextValid := False
-  //    myStallStateCond := True
-  //  }
-
-  //  //when (
-  //  //  myIbus.ready
-  //  //  //&& down.isReady
-  //  //) {
-  //  //  //when (down.isReady) {
-  //  //  //  upModExt.encInstr.payload := myIbus.recvData.instr
-  //  //  //} otherwise {
-  //  //  //  myInstrFifo.io.push.valid := True
-  //  //  //}
-  //  //}
-  //  //when (!rStallState) {
-  //  //  when (!myInstrFifo.io.pop.valid) {
-  //  //    when (!myIbus.ready) {
-  //  //      cIf.haltIt()
-  //  //      //cIf.duplicateIt()
-  //  //    } otherwise {
-  //  //      upModExt.encInstr.payload := myIbus.recvData.instr
-  //  //      rStallState := True
-  //  //    }
-  //  //  } otherwise {
-  //  //    when (myReadyIshCond) {
-  //  //      myInstrFifo.io.pop.ready := True
-  //  //      upModExt.encInstr.payload := myInstrFifo.io.pop.payload
-  //  //    }
-  //  //  }
-  //  //} otherwise { // when (rStallState)
-  //  //  when (myIbus.ready) {
-  //  //    myInstrFifo.io.push.valid := True
-  //  //    myInstrFifo.io.push.payload := myIbus.recvData.instr
-  //  //  }
-  //  //}
-
-  //  when (!rStallState) {
-  //    when (
-  //      //(
-  //      //  RegNext(!myIbus.nextValid, init=False)
-  //      //  && myInstrFifo.io.pop.valid
-  //      //)
-  //      //|| 
-  //      (
-  //        RegNext(myIbus.nextValid, init=False)
-  //        && !myIbus.ready
-  //      )
-  //    ) {
-  //      cIf.haltIt()
-  //      //myStallStateCond := True
-  //      //when (!fell(rStallState)) {
-  //      //  myIbus.nextValid := False
-  //      //  rStallState
-  //      //}
-  //      //cIf.duplicateIt()
-  //    } otherwise {
-  //      upModExt.encInstr.payload := myIbus.recvData.instr
-  //      rStallState := True
-  //      //myInstrFifo.io.push.valid := True 
-  //    }
-  //  }
-
-  //  when (!myInstrFifo.io.pop.valid) {
-  //  } otherwise { // when (myInstrFifo.io.pop.valid)
-  //    //rStallState := False
-  //    when (myReadyIshCond) {
-  //      myInstrFifo.io.pop.ready := True
-  //      upModExt.encInstr.payload := myInstrFifo.io.pop.payload
-  //    }
-  //  }
-
-  //  when (myReadyIshCond) {
-  //    rStallState := False
-  //  } otherwise {
-  //    //when (
-  //    //  rStallState
-  //    //  && myIbus.ready
-  //    //) {
-  //    //  myInstrFifo.io.push.valid := True
-  //    //  myInstrFifo.io.push.payload := myIbus.recvData.instr
-  //    //}
-  //  }
-  //  when (
-  //    rStallState
-  //    && (
-  //      RegNext(
-  //        (
-  //          myIbus.nextValid
-  //          || myInstrFifo.io.push.fire
-  //        ),
-  //        init=False
-  //      )
-  //      && myIbus.ready
-  //    )
-  //  ) {
-  //    myInstrFifo.io.push.valid := True
-  //    myInstrFifo.io.push.payload := myIbus.recvData.instr
-  //  }
-  //}
+  } else { // if (cfg.useLcvInstrBus)
+    when (!rStallState) {
+      when (
+        !myIbus.ready
+      ) {
+        cIf.haltIt()
+        //cIf.duplicateIt()
+      } otherwise {
+        upModExt.encInstr.payload := myIbus.recvData.instr
+        rStallState := True
+      }
+    }
+    when (myReadyIshCond) {
+      rStallState := False
+    }
+    when (
+      RegNext(
+        myBridge.io.h2dPushDelay
+        && up.isReady
+      )
+      //&& (
+      //  rSrcLcvIbus
+      //  === RegNext(
+      //    rSrcLcvIbus,
+      //    init=rSrcLcvIbus.getZero,
+      //  ) + 1
+      //)
+    ) {
+      cIf.haltIt()
+    }
+  }
   when (
     myReadyIshCond
     //myUpdatePcCond
