@@ -842,7 +842,7 @@ private[libsnowhouse] case class SnowHouseIbusToLcvIbusBridgeIo(
   val doRstIbusReadyCnt = in(Bool())
   val h2dPushDelay = out(Bool())
   val someStallState = in(Bool())
-  val someOtherStallState = in(Bool())
+  val someVecStallState = in(Vec.fill(3)(Bool()))
   val haveNextSrcRose = in(Bool())
 }
 private[libsnowhouse] case class SnowHouseIbusToLcvIbusBridge(
@@ -859,8 +859,8 @@ private[libsnowhouse] case class SnowHouseIbusToLcvIbusBridge(
   def myIbusReadyCntInitVal = 1
   def rIbusReadyCnt = io.myIbusReadyCnt
   rIbusReadyCnt.setAsReg() init(
-    //0x3
-    myIbusReadyCntInitVal
+    0x3
+    //myIbusReadyCntInitVal
   )
   
   //val rIbusReadyCnt = (
@@ -871,37 +871,102 @@ private[libsnowhouse] case class SnowHouseIbusToLcvIbusBridge(
   //  )
   //)
   //--------
-  //val myH2dStmIgnoreDupSrc = cloneOf(io.lcvIbus.h2dBus)
+  ////val myH2dStmIgnoreDupSrc = cloneOf(io.lcvIbus.h2dBus)
   //val myH2dFrontStm = cloneOf(io.lcvIbus.h2dBus)
-  //val myTempH2dSrcRnw = cloneOf(io.lcvIbus.h2dBus.src.asSInt)
-  //val myH2dStmIgnoreDupSrc = myH2dFrontStm
+  ////val myTempH2dSrcRnw = cloneOf(io.lcvIbus.h2dBus.src.asSInt)
+  ////val myH2dStmIgnoreDupSrc = myH2dFrontStm.throwWhen(
+  ////  (
+  ////    myH2dFrontStm.src.asSInt
+  ////    =/= myTempH2dSrcRnw //+ 1 
+  ////  )
+  ////  && rIbusReadyCnt.msb
+  ////  && !io.doRstIbusReadyCnt
+  ////)
+  ////myTempH2dSrcRnw := (
+  ////  //RegNextWhen(
+  ////  //  next=myH2dStmIgnoreDupSrc.src.asSInt,
+  ////  //  cond=myH2dStmIgnoreDupSrc.fire,
+  ////  //)
+  ////  //init(-1)
+  ////  RegNextWhen(
+  ////    next=(
+  ////      io.lcvIbus.h2dBus.src.asSInt
+  ////      + 1
+  ////    ),
+  ////    cond=io.lcvIbus.h2dBus.fire,
+  ////    //init=io.ibus.sendData.srcLcvIbus.asSInt.getZero,
+  ////  )
+  ////  init(
+  ////    //-1
+  ////    0x0
+  ////  )
+  ////)
+
+  val myH2dFrontStm = cloneOf(io.lcvIbus.h2dBus)
+  val myH2dMainIgnoreCond = Bool()
+  val myH2dStmIgnoreDupSrc = myH2dFrontStm
   //.throwWhen(
-  //  (
-  //    myH2dFrontStm.src.asSInt
-  //    =/= myTempH2dSrcRnw //+ 1 
-  //  )
-  //  && rIbusReadyCnt.msb
-  //  && !io.doRstIbusReadyCnt
+  //  myH2dMainIgnoreCond
   //)
-  //myTempH2dSrcRnw := (
-  //  //RegNextWhen(
-  //  //  next=myH2dStmIgnoreDupSrc.src.asSInt,
-  //  //  cond=myH2dStmIgnoreDupSrc.fire,
-  //  //)
-  //  //init(-1)
-  //  RegNextWhen(
-  //    next=(
-  //      io.lcvIbus.h2dBus.src.asSInt
-  //      + 1
-  //    ),
-  //    cond=io.lcvIbus.h2dBus.fire,
-  //    //init=io.ibus.sendData.srcLcvIbus.asSInt.getZero,
-  //  )
-  //  init(
-  //    //-1
-  //    0x0
-  //  )
-  //)
+  val myHistH2dSrcIgnore = History[Bool](
+    that=True,
+    length=3,
+    when=myH2dStmIgnoreDupSrc.fire,
+    init=False,
+  )
+  val myH2dCmpSrcCond = (
+    io.ibus.sendData.srcLcvIbus.asSInt
+    //io.lcvIbus.h2dBus.src.asSInt
+    //myH2dFrontStm.src.asSInt
+    === RegNextWhen(
+      myH2dStmIgnoreDupSrc.src.asSInt,
+      cond=myH2dStmIgnoreDupSrc.fire,
+    )
+  )
+  myH2dMainIgnoreCond := (
+    (
+      (
+        (
+          myH2dCmpSrcCond
+          //&&
+          //|| (
+          //  io.someStallState
+          //)
+        )
+        //&& io.someOtherStallState
+        //|| (
+        //  stable(io.lcvIbus.h2dBus.src)
+        //)
+      )
+      && myHistH2dSrcIgnore.last
+      //&& (
+      //  RegNextWhen(
+      //    next=True,
+      //    cond=(
+      //      io.ibus.sendData.addr(
+      //        io.ibus.sendData.addr.high
+      //        downto log2Up(cfg.instrSizeBytes)
+      //      )
+      //      >= 0x4 
+      //    ),
+      //    init=False,
+      //  )
+      //)
+      //&& (
+      //  rIbusReadyCnt.msb
+      //)
+      && (
+        !rIbusReadyCnt.msb
+        //|| (
+        //  rIbusReadyCnt.msb
+        //  && !stable(rIbusReadyCnt.msb)
+        //)
+      )
+    )
+    || (
+      io.someStallState
+    )
+  )
 
   def myH2dPushStm = (
     io.lcvIbus.h2dBus
@@ -920,9 +985,10 @@ private[libsnowhouse] case class SnowHouseIbusToLcvIbusBridge(
   //    False,
   //  )
   //)
-  val myD2hStmIgnoreDupSrc = io.lcvIbus.d2hBus.throwWhen(
-    myD2hMainIgnoreCond
-  )
+  val myD2hStmIgnoreDupSrc = io.lcvIbus.d2hBus
+  //.throwWhen(
+  //  myD2hMainIgnoreCond
+  //)
   val myHistD2hSrcIgnore = History[Bool](
     that=True,
     length=6,
@@ -936,20 +1002,26 @@ private[libsnowhouse] case class SnowHouseIbusToLcvIbusBridge(
       cond=myD2hStmIgnoreDupSrc.fire,
     )
   )
-  myD2hMainIgnoreCond := (
+  val myD2hInnerIgnoreCond = (
     (
       (
         myD2hCmpSrcCond
-        &&
-        //|| 
-        (
+        //&&
+        || (
           io.someStallState
         )
       )
+      //|| rose(io.someStallState)
       //&& io.someOtherStallState
       //|| (
       //  stable(io.lcvIbus.d2hBus.src)
       //)
+    )
+  )
+  myD2hMainIgnoreCond := (
+    (
+      myD2hInnerIgnoreCond
+      //|| fell(myD2hInnerIgnoreCond)
     )
     && myHistD2hSrcIgnore.last
     //&& (
@@ -959,14 +1031,22 @@ private[libsnowhouse] case class SnowHouseIbusToLcvIbusBridge(
     //    && !stable(rIbusReadyCnt.msb)
     //  )
     //)
+    && (
+      !rIbusReadyCnt.msb
+      //|| (
+      //  rIbusReadyCnt.msb
+      //  && !stable(rIbusReadyCnt.msb)
+      //)
+    )
   )
   def myD2hPopStm = (
-    //io.lcvIbus.d2hBus
-    myD2hStmIgnoreDupSrc
+    io.lcvIbus.d2hBus
+    //myD2hStmIgnoreDupSrc
   )
 
   io.h2dPushDelay := (
-    myH2dPushStm.valid && !myH2dPushStm.ready
+    //myH2dPushStm.valid && 
+    !myH2dPushStm.ready
   )
   //val rH2dPushState = Reg(Bool(), init=False)
 
@@ -1117,10 +1197,41 @@ private[libsnowhouse] case class SnowHouseIbusToLcvIbusBridge(
     Bool()
   )
   myIbusReadyCond := (
-    //!io.h2dPushDelay
-    //!io.someStallState
-    !myD2hMainIgnoreCond
-    //!myD2hCmpSrcCond
+    True
+    ////!io.h2dPushDelay
+    ////!io.someStallState
+    //!myD2hMainIgnoreCond
+    ////(
+    ////  (
+    ////    !myD2hCmpSrcCond
+    ////    && (
+    ////      (
+    ////        !io.someVecStallState(0)
+    ////        && !io.someVecStallState(1)
+    ////      )
+    ////      //|| (
+    ////      //  io.someVecStallState(0)
+    ////      //  //&& io.someVecStallState(1)
+    ////      //  && io.someVecStallState(2)
+    ////      //)
+    ////    )
+    ////  )
+    ////  || (
+    ////    !myD2hCmpSrcCond
+    ////    && (
+    ////      io.someVecStallState(0)
+    ////      //&& !io.someVecStallState(1)
+    ////      && io.someVecStallState(2)
+    ////    )
+    ////  )
+    ////  //|| (
+    ////  //  io.someOtherStallState
+    ////  //)
+    ////  //|| (
+    ////  //  !io.someStallState
+    ////  //  && io.someOtherStallState
+    ////  //)
+    ////)
     ////&& myHistD2hSrcIgnore.last
     //|| !History[Bool](
     //  that=True,
@@ -1824,6 +1935,20 @@ case class SnowHousePipeStageInstrFetch(
     val myZeroStallStateHaltItCond = (
       (
         !myIbus.ready
+        //|| (
+        //  //myIbus.ready
+        //  //&& 
+        //  (
+        //    myIbus.recvData.srcLcvIbus
+        //    === RegNextWhen(
+        //      myIbus.recvData.srcLcvIbus,
+        //      cond=(
+        //        !rStallState
+        //        && myIbus.ready
+        //      )
+        //    )
+        //  )
+        //)
         //|| myBridge.io.h2dPushDelay
         //|| (
         //  tempCond(0)
@@ -1961,17 +2086,27 @@ case class SnowHousePipeStageInstrFetch(
     myBridge.io.someStallState := (
       //!rStallState
       //&& !myBridge.io.h2dPushDelay
-      rStallState
-      || myBridge.io.h2dPushDelay
+      (
+        rStallState
+        || (
+          !rStallState
+          && !down.isReady
+        )
+        //|| myBridge.io.h2dPushDelay
+      )
+      //|| !down.isReady
       //|| !down.isReady
       //&& down.isReady
       //|| myReadyIshCond
       //|| down.isReady
     )
-    myBridge.io.someOtherStallState := (
-      //rStallState
-      down.isReady
-    )
+    //myBridge.io.someOtherStallState := (
+    //  //rStallState
+    //  down.isReady
+    //)
+    myBridge.io.someVecStallState(0) := rStallState
+    myBridge.io.someVecStallState(1) := myBridge.io.h2dPushDelay
+    myBridge.io.someVecStallState(2) := down.isReady
   })
   when (
     myReadyIshCond
