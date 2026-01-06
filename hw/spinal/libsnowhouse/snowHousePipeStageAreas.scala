@@ -2077,10 +2077,15 @@ case class SnowHousePipeStageInstrFetch(
       //) {
       //  rTempSrcLcvIbus := myIbus.recvData.srcLcvIbus.asSInt + 1
       //}
+      when (rHadSecondIbusReady.fire && rTakeJumpCnt.fire) {
+        rHadSecondIbusReady.valid := False
+      }
       when (
         //RegNext(rStallState, init=False)
         //&& 
         rHadSecondIbusReady.fire
+        && !stickyExSetPc(0).fire
+        //&& !rTakeJumpCnt.fire
       ) {
         when (myReadyIshCond) {
           rHadSecondIbusReady.valid := False
@@ -2125,9 +2130,17 @@ case class SnowHousePipeStageInstrFetch(
         !rHadSecondIbusReady.fire
         && myIbus.ready
         //&& !myZeroStallStateHaltItCond.last
+        //&& !rTakeJumpCnt.fire
+        //&& !stickyExSetPc(0).fire
       ) {
         rHadSecondIbusReady.valid := True
         rHadSecondIbusReady.payload := myIbus.recvData.instr
+      }
+      when (
+        stickyExSetPc(0).fire
+        || rTakeJumpCnt.fire
+      ) {
+        rHadSecondIbusReady.valid := False
       }
     }
 
