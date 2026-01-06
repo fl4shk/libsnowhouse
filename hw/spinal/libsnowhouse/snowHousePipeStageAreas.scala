@@ -1006,7 +1006,8 @@ private[libsnowhouse] case class SnowHouseIbusToLcvIbusBridge(
       (
         myD2hCmpSrcCond
         //&&
-        || (
+        || 
+        (
           io.someStallState
         )
       )
@@ -1663,21 +1664,21 @@ case class SnowHousePipeStageInstrFetch(
   //  Reg(Bool(), init=False)
   //)
 
-  if (cfg.useLcvInstrBus) {
-    myBridge.io.doRstIbusReadyCnt := (
-      //!down.isReady
-      //False
-      rose(!(
-        !rStallState
-        || up.isReady
-      ))
-      //|| myBridge.io.h2dPushDelay
-      //&& !myIbus.nextValid
-      //!down.isFiring
-      //!down.isReady
-      //!myReadyIshCond
-    )
-  }
+  //if (cfg.useLcvInstrBus) {
+  //  myBridge.io.doRstIbusReadyCnt := (
+  //    //!down.isReady
+  //    //False
+  //    rose(!(
+  //      !rStallState
+  //      || up.isReady
+  //    ))
+  //    //|| myBridge.io.h2dPushDelay
+  //    //&& !myIbus.nextValid
+  //    //!down.isFiring
+  //    //!down.isReady
+  //    //!myReadyIshCond
+  //  )
+  //}
   def doInitTakeJumpCnt(): Unit = {
     rTakeJumpCnt.valid := True
     rTakeJumpCnt.payload := takeJumpCntMaxVal
@@ -2109,6 +2110,22 @@ case class SnowHousePipeStageInstrFetch(
       rStallState := False
     }
 
+    myBridge.io.doRstIbusReadyCnt := (
+      //!down.isReady
+      //False
+      //rose
+      (!(
+        //!rStallState
+        //(!rStallState || !rHadSecondIbusReady.fire)
+        (!(rStallState || rHadSecondIbusReady.fire))
+        || up.isReady
+      ))
+      //|| myBridge.io.h2dPushDelay
+      //&& !myIbus.nextValid
+      //!down.isFiring
+      //!down.isReady
+      //!myReadyIshCond
+    )
     myBridge.io.someStallState := (
       //!rStallState
       //&& !myBridge.io.h2dPushDelay
