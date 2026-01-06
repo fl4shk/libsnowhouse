@@ -985,10 +985,9 @@ private[libsnowhouse] case class SnowHouseIbusToLcvIbusBridge(
   //    False,
   //  )
   //)
-  val myD2hStmIgnoreDupSrc = io.lcvIbus.d2hBus
-  //.throwWhen(
-  //  myD2hMainIgnoreCond
-  //)
+  val myD2hStmIgnoreDupSrc = io.lcvIbus.d2hBus.throwWhen(
+    myD2hMainIgnoreCond
+  )
   val myHistD2hSrcIgnore = History[Bool](
     that=True,
     length=6,
@@ -1033,6 +1032,7 @@ private[libsnowhouse] case class SnowHouseIbusToLcvIbusBridge(
     //)
     && (
       !rIbusReadyCnt.msb
+      || rose(rIbusReadyCnt.msb)
       //|| (
       //  rIbusReadyCnt.msb
       //  && !stable(rIbusReadyCnt.msb)
@@ -1040,8 +1040,8 @@ private[libsnowhouse] case class SnowHouseIbusToLcvIbusBridge(
     )
   )
   def myD2hPopStm = (
-    io.lcvIbus.d2hBus
-    //myD2hStmIgnoreDupSrc
+    //io.lcvIbus.d2hBus
+    myD2hStmIgnoreDupSrc
   )
 
   io.h2dPushDelay := (
@@ -1197,10 +1197,14 @@ private[libsnowhouse] case class SnowHouseIbusToLcvIbusBridge(
     Bool()
   )
   myIbusReadyCond := (
-    True
+    //True
     ////!io.h2dPushDelay
     ////!io.someStallState
-    //!myD2hMainIgnoreCond
+    //(
+      !myD2hMainIgnoreCond
+      //&& !myD2hCmpSrcCond
+    //)
+    //|| !myHistD2hSrcIgnore.last
     ////(
     ////  (
     ////    !myD2hCmpSrcCond
@@ -1932,6 +1936,11 @@ case class SnowHousePipeStageInstrFetch(
     //val myTempCondRnw 
 
     val tempCond = Vec.fill(2)(Bool())
+    val rHadSecondIbusReady = {
+      val temp = Reg(Flow(UInt(cfg.instrMainWidth bits)))
+      temp.init(temp.getZero)
+      temp
+    }
     val myZeroStallStateHaltItCond = (
       (
         !myIbus.ready
@@ -2038,6 +2047,15 @@ case class SnowHousePipeStageInstrFetch(
       //  rTempSrcLcvIbus := myIbus.recvData.srcLcvIbus.asSInt + 1
       //}
       when (
+        //RegNext(rStallState, init=False)
+        //&& 
+        rHadSecondIbusReady.fire
+      ) {
+        when (myReadyIshCond) {
+          rHadSecondIbusReady.valid := False
+          upModExt.encInstr.payload := rHadSecondIbusReady.payload
+        }
+      } elsewhen (
         myZeroStallStateHaltItCond
         //|| (
         //  //stable(rStallState)
@@ -2066,6 +2084,14 @@ case class SnowHousePipeStageInstrFetch(
       //when (myBridge.io.h2dPushDelay) {
       //  cIf.haltIt()
       //}
+      when (
+        //rose(rStallState) && 
+        !rHadSecondIbusReady.fire
+        && myIbus.ready
+      ) {
+        rHadSecondIbusReady.valid := True
+        rHadSecondIbusReady.payload := myIbus.recvData.instr
+      }
     }
 
     //when (
@@ -2088,10 +2114,11 @@ case class SnowHousePipeStageInstrFetch(
       //&& !myBridge.io.h2dPushDelay
       (
         rStallState
-        || (
-          !rStallState
-          && !down.isReady
-        )
+        || rHadSecondIbusReady.fire
+        //|| (
+        //  !rStallState
+        //  && !down.isReady
+        //)
         //|| myBridge.io.h2dPushDelay
       )
       //|| !down.isReady
