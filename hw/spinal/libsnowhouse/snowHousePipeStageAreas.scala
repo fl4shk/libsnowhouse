@@ -1119,15 +1119,15 @@ private[libsnowhouse] case class SnowHouseIbusToLcvIbusBridge(
   myIbusReadyCond := (
     //!io.h2dPushDelay
     //!io.someStallState
-    //!myD2hMainIgnoreCond
-    !myD2hCmpSrcCond
-    //&& myHistD2hSrcIgnore.last
-    || !History[Bool](
-      that=True,
-      when=io.ibus.ready,
-      length=8,
-      init=False
-    ).last
+    !myD2hMainIgnoreCond
+    //!myD2hCmpSrcCond
+    ////&& myHistD2hSrcIgnore.last
+    //|| !History[Bool](
+    //  that=True,
+    //  when=io.ibus.ready,
+    //  length=8,
+    //  init=False
+    //).last
   )
   //myIbusReadyCond := (
   //  //True
