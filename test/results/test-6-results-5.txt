@@ -43,14 +43,5 @@ addr:6 data:33
 addr:3 data:4100
 addr:1 data:7
 addr:13 data:184
-addr:7 data:4
-addr:8 data:5
-addr:13 data:168
-addr:6 data:34
-addr:3 data:4104
-addr:1 data:6
-addr:13 data:184
-addr:7 data:5
-addr:8 data:4
 Ending test.
 
