@@ -3008,9 +3008,9 @@ case class SnowHousePipeStageExecuteSetOutpModMemWordIo(
   val rModHiOutp = (
     setAsOutp(UInt(cfg.mainWidth bits))
   )
-  //val takeIrq = setAsInp(
-  //  Bool()
-  //)
+  val takeIrq = setAsInp(
+    Bool()
+  )
   val irqIraRegPc = setAsInp(
     UInt(cfg.mainWidth bits)
   )
@@ -3745,6 +3745,56 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
       )
     }
   //}
+  val myTakeIrq = (
+    //rose(
+    //  io.takeIrq
+    //  && io.upIsFiring
+    //  && io.rIe
+    //)
+    Bool()
+  )
+  myTakeIrq := (
+    io.takeIrq
+    //&& io.upIsFiring
+    && io.upIsValid
+    && io.rIe
+  )
+  val rSavedTakeIrq = Reg(Bool(), init=False)
+  val stickyTakeIrq = (
+    //io.takeIrq
+    myTakeIrq
+    || rSavedTakeIrq
+  )
+  //myTakeIrq := False
+  when (
+    //io.upIsValid
+    io.upIsFiring
+  ) {
+    when (myTakeIrq) {
+      rSavedTakeIrq := True
+      //myTakeIrq := True
+      //tempPsExSetPcValid := True
+      //tempBranchMispredictNotTaken := False
+    }
+  }
+  when (
+    RegNext(io.upIsFiring, init=False)
+    //&& rSavedTakeIrq
+  ) {
+    rSavedTakeIrq := False
+  }
+  when (
+    //stickyTakeIrq
+    rose(RegNext(
+      (
+        io.upIsFiring
+        && stickyTakeIrq
+      ),
+      init=False
+    ))
+  ) {
+    tempPsExSetPcValid := True
+  }
   //val rTakeIrqTempPsExSetPcValid = (
   //  Reg(
   //    Bool(),
@@ -7781,6 +7831,7 @@ case class SnowHousePipeStageExecute(
     )
     //init(SnowHouseSplitOpKind.CPY_CPYUI)
   )
+  setOutpModMemWord.io.takeIrq := False
   when (cMid0Front.up.isValid) {
     setOutpModMemWord.io.splitOp := outp.splitOp
     when (
@@ -7818,6 +7869,7 @@ case class SnowHousePipeStageExecute(
         }
         temp
       }
+      setOutpModMemWord.io.takeIrq := True
       //setOutpModMemWord.io.splitOp.jmpBrOtherOp := (
       //  //(1 << setOutpModMemWord.io.splitOp.jmpBrOtherOp.getWidth) - 1
       //  1 << (setOutpModMemWord.io.splitOp.jmpBrOtherOp.getWidth - 1)
