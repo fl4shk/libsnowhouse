@@ -783,8 +783,8 @@ case class SnowHouseConfig(
     modStageCnt=regFileModStageCnt,
     pipeName=regFilePipeName,
     optIncludePreMid0Front=(
-      true
-      //false
+      //true
+      false
     ),
     //linkArr=linkArr
     optDualRd=(
