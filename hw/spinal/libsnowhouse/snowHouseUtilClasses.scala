@@ -21,7 +21,7 @@ case class SnowHouseRegFileConfig(
   modRdPortCnt: Int,
   pipeName: String,
   private val optHowToSlice: Option[Seq[LinkedHashSet[Int]]],
-  memRamStyleAltera: String="MLAB",
+  memRamStyleAltera: String="no_rw_check, MLAB",
   memRamStyleXilinx: String="auto",
   //linkArr: Option[ArrayBuffer[Link]]=None,
 ) {
@@ -585,8 +585,8 @@ case class SnowHouseConfig(
   //--------
   instrRamKind: Int,
   optTwoCycleRegFileReads: Boolean=(
-    //false
-    true
+    false
+    //true
   ),
   //--------
   //maxNumGprsPerInstr: Int,

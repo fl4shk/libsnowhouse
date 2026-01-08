@@ -3218,6 +3218,10 @@ case class SnowHouseCpuConfig(
   exposeRegFileWriteDataToIo: Boolean=false,
   exposeRegFileWriteAddrToIo: Boolean=false,
   exposeRegFileWriteEnableToIo: Boolean=false,
+  optTwoCycleRegFileReads: Boolean=(
+    //true
+    false
+  ),
   regFileMemRamStyleAltera: String=(
     "no_rw_check, M10K"
   ),
@@ -3293,6 +3297,7 @@ case class SnowHouseCpuConfig(
     haveAluFlags=false,
     optInvertTwoRegCmp=true,
     //encInstrType=SnowHouseCpuEncInstr(),
+    optTwoCycleRegFileReads=optTwoCycleRegFileReads,
     subCfg={
       val icacheDepthWords = /*8192*/ 1024 //2048 // 4 kiB icache
       val icacheLineSizeBytes = 64
@@ -3370,6 +3375,9 @@ case class SnowHouseCpuConfig(
               //}
               tempArr
             })
+          ),
+          memRamStyleAltera=(
+            regFileMemRamStyleAltera
           ),
           memRamStyleXilinx=(
             //"distributed"
@@ -5338,7 +5346,7 @@ object SnowHouseCpuWithDualRamSim extends App {
   //  "5",
   //)
   val testIdxRange = Array[Int](
-    //0, //0,
+    0, //0,
     //1, 1,
     //2, 2,
     //3, 3,
@@ -5349,7 +5357,7 @@ object SnowHouseCpuWithDualRamSim extends App {
     //8, 8,
     //9, //9,
     //10, 10,
-    //11, 11,
+    11, 11,
     12, 12,
   )
   val instrRamKindArr = Array[Int](
