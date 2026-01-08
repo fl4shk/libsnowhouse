@@ -5347,7 +5347,7 @@ object SnowHouseCpuWithDualRamSim extends App {
     //6, 6,
     //7, 7,
     //8, 8,
-    //9, 9,
+    //9, //9,
     //10, 10,
     //11, 11,
     12, 12,
@@ -5356,7 +5356,7 @@ object SnowHouseCpuWithDualRamSim extends App {
     0,
     //1,
     //2,
-    //5,
+    5,
   )
   for (testIdx <- 0 to 12) {
     programStrArr += (

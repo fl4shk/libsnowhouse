@@ -584,6 +584,10 @@ case class SnowHouseConfig(
   optBranchPredictorKind: Option[SnowHouseBranchPredictorKind],
   //--------
   instrRamKind: Int,
+  optTwoCycleRegFileReads: Boolean=(
+    //false
+    true
+  ),
   //--------
   //maxNumGprsPerInstr: Int,
   //modOpCntWidth: Int=8,
@@ -782,10 +786,7 @@ case class SnowHouseConfig(
     modRdPortCnt=regFileModRdPortCnt,
     modStageCnt=regFileModStageCnt,
     pipeName=regFilePipeName,
-    optIncludePreMid0Front=(
-      //true
-      false
-    ),
+    optIncludePreMid0Front=optTwoCycleRegFileReads,
     //linkArr=linkArr
     optDualRd=(
       false
