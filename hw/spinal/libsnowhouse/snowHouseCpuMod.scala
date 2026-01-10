@@ -3219,8 +3219,8 @@ case class SnowHouseCpuConfig(
   exposeRegFileWriteAddrToIo: Boolean=false,
   exposeRegFileWriteEnableToIo: Boolean=false,
   optTwoCycleRegFileReads: Boolean=(
-    //true
-    false
+    true
+    //false
   ),
   regFileMemRamStyleAltera: String=(
     "no_rw_check, M10K"
@@ -5357,7 +5357,7 @@ object SnowHouseCpuWithDualRamSim extends App {
     //8, 8,
     //9, //9,
     //10, 10,
-    11, 11,
+    //11, 11,
     12, 12,
   )
   val instrRamKindArr = Array[Int](
