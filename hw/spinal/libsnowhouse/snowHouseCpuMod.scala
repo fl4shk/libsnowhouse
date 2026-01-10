@@ -3219,8 +3219,8 @@ case class SnowHouseCpuConfig(
   exposeRegFileWriteAddrToIo: Boolean=false,
   exposeRegFileWriteEnableToIo: Boolean=false,
   optTwoCycleRegFileReads: Boolean=(
-    true
-    //false
+    //true
+    false
   ),
   regFileMemRamStyleAltera: String=(
     "no_rw_check, M10K"
