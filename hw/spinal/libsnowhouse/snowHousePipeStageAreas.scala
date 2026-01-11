@@ -523,7 +523,7 @@ case class SnowHouseBranchPredictor(
       U(s"${log2Up(cfg.instrSizeBytes)}'d0"),
     )
   )
- 1
+
   //myRdBtbElem.valid.assignFromBits(
   //  tgtValidBuf.io.ramIo.rdData
   //)
@@ -7995,7 +7995,16 @@ case class SnowHousePipeStageExecute(
       //  //(1 << setOutpModMemWord.io.splitOp.jmpBrOtherOp.getWidth) - 1
       //  1 << (setOutpModMemWord.io.splitOp.jmpBrOtherOp.getWidth - 1)
       //)
-      setOutpModMemWord.io.splitOp.setJmpBrOtherOpToDefault()
+
+      // Due to how jumps/branches are handled, I'm pretty sure we can just
+      // leave this value as whatever we got from `outp.splitOp` because
+      // the lt, ge, etc. comparison is ignored due to there also being a
+      // forced unconditional jump from the IRQ being responded to.
+      // See these signals in
+      // `SnowHousePipeStageExecuteSetOutpModMemWord`: 
+      // * `myPsExSetPcValid`
+      // * `myPsExSetPcValidToOrReduce`
+      //setOutpModMemWord.io.splitOp.setJmpBrOtherOpToDefault()
     }
   } otherwise {
     //setOutpModMemWord.io.splitOp.jmpBrAlwaysEqNeOp := (

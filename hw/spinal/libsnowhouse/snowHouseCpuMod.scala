@@ -5345,18 +5345,22 @@ object SnowHouseCpuWithDualRamSim extends App {
   //  "4",
   //  "5",
   //)
+  val testOptTwoCycleRegFileReads = (
+    //true
+    false
+  )
   val testIdxRange = Array[Int](
-    //0, //0,
+    0, //0,
     //1, 1,
     //2, 2,
     //3, 3,
     //4, 4,
     //5, //5,
-    //6, 6,
+    //6, //6,
     //7, //7,
     //8, 8,
-    9, //9,
-    //10, 10,
+    //9, //9,
+    //10, //10,
     //11, 11,
     12, 12,
   )
@@ -5421,7 +5425,8 @@ object SnowHouseCpuWithDualRamSim extends App {
         exposeRegFileWriteAddrToIo=true,
         exposeRegFileWriteEnableToIo=true,
         optTwoCycleRegFileReads=(
-          true
+          //true
+          testOptTwoCycleRegFileReads
         ),
       )
       val testProgram = SnowHouseCpuTestProgram(cfg=cfg)
