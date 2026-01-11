@@ -375,7 +375,8 @@ case class SnowHouseSubConfig(
       srcWidth=(
         //if (haveIcache) (
           //shRegFileCfg.mainWidth - log2Up(instrSizeBytes)
-          4
+          //4
+          3
         //) else (
         //  1
         //)

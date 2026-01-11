@@ -1894,10 +1894,10 @@ case class SnowHousePipeStageInstrFetch(
       )
     )
     nextSrcLcvIbus := rSrcLcvIbus
-    val rTempSrcLcvIbus = (
-      Reg(cloneOf(myIbus.recvData.srcLcvIbus.asSInt))
-      init(-5)
-    )
+    //val rTempSrcLcvIbus = (
+    //  Reg(cloneOf(myIbus.recvData.srcLcvIbus.asSInt))
+    //  init(-5)
+    //)
     myIbus.sendData.srcLcvIbus := (
       //rTempSrcLcvIbus.asUInt
       //nextSrcLcvIbus.asUInt
@@ -2219,7 +2219,7 @@ case class SnowHousePipeStageInstrFetch(
         //when (up.isReady) {
         //  nextSrcLcvIbus := rSrcLcvIbus + 1
         //}
-        rTempSrcLcvIbus := myIbus.recvData.srcLcvIbus.asSInt + 1
+        //rTempSrcLcvIbus := myIbus.recvData.srcLcvIbus.asSInt + 1
         //when (down.isReady) {
           //rTempSrcLcvIbus := myIbus.recvData.srcLcvIbus.asSInt + 1
           upModExt.encInstr.payload := myIbus.recvData.instr
