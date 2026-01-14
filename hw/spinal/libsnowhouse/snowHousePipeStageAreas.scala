@@ -6619,6 +6619,8 @@ case class SnowHousePipeStageExecute(
     BusHostPayload,
     BusDevPayload,
   ],
+  myDbusExtraReady: Vec[Bool],
+  myDbusLdReady: Bool,
   doModInMid0FrontParams: PipeMemRmwDoModInMid0FrontFuncParams[
     UInt,
     Bool,
@@ -6653,6 +6655,9 @@ case class SnowHousePipeStageExecute(
     }
   }
   def regFileFwd = doModInMid0FrontParams.myFwd //args.regFile
+  def myDbus = (
+    psMemStallHost.stallIo.get
+  )
   def mkLcvStallHost[
     HostDataT <: Data,
     DevDataT <: Data,
@@ -7201,7 +7206,7 @@ case class SnowHousePipeStageExecute(
   //)
   //--------
   // BEGIN: this worked pretty well for fmax, so let's try another approach
-  switch (
+  val mostTempToSwitchMyModMemWord = (
     (
       RegNext(
         next=(
@@ -7219,21 +7224,36 @@ case class SnowHousePipeStageExecute(
         ),
         init=False,
       )
-    ) ## (
-      //rose(
-        io.dbusLdReady
-      //)
-      && rose(
-        io.dbus.ready
-      )
-      //RegNext(
-      //  next=(
-      //  ),
-      //  init=False
-      //)
     )
-  ) {
-    is (M"100") {
+  )
+  val tempToSwitchMyModMemWord = (
+    if (!cfg.useLcvDataBus) (
+      mostTempToSwitchMyModMemWord
+      ## (
+        //rose(
+          myDbusLdReady
+        //)
+        && rose(
+          myDbus.ready
+        )
+        //RegNext(
+        //  next=(
+        //  ),
+        //  init=False
+        //)
+      )
+    ) else (
+      mostTempToSwitchMyModMemWord
+    )
+  )
+  switch (tempToSwitchMyModMemWord) {
+    is (
+      if (!cfg.useLcvDataBus) (
+        M"100"
+      ) else (
+        M"10"
+      )
+    ) {
       myModMemWord := (
         RegNext(
           next=myModMemWord,
@@ -7244,7 +7264,13 @@ case class SnowHousePipeStageExecute(
         myModMemWord := alu.io.outp_data
       }
     }
-    is (M"110") {
+    is (
+      if (!cfg.useLcvDataBus) (
+        M"110"
+      ) else (
+        M"11"
+      )
+    ) {
       myModMemWord := (
         RegNext(
           next=myModMemWord,
@@ -7260,10 +7286,10 @@ case class SnowHousePipeStageExecute(
         )
       }
     }
-    is (M"--1") {
-      myModMemWord := (
-        io.dbus.recvData.data.asSInt.resized
-      )
+    if (!cfg.useLcvDataBus) {
+      is (M"--1") {
+        myModMemWord := myDbus.recvData.data.asSInt.resized
+      }
     }
     default {
       myModMemWord := (
@@ -7279,6 +7305,84 @@ case class SnowHousePipeStageExecute(
       )
     }
   }
+  //switch (
+  //  (
+  //    RegNext(
+  //      next=(
+  //        cMid0Front.up.isFiring
+  //        && setOutpModMemWord.io.modMemWordValid.head
+  //        //&& alu.io.inp_op =/= LcvAluDel1InpOpEnum.OP_GET_INP_A
+  //      ),
+  //      init=False,
+  //    )
+  //  ) ## (
+  //    RegNext(
+  //      next=(
+  //        //alu.io.inp_op === LcvAluDel1InpOpEnum.OP_GET_INP_A
+  //        alu.io.inp_op === LcvAluDel1InpOpEnum.ZERO
+  //      ),
+  //      init=False,
+  //    )
+  //  ) ## (
+  //    //rose(
+  //      myDbusLdReady
+  //    //)
+  //    && rose(
+  //      myDbus.ready
+  //    )
+  //    //RegNext(
+  //    //  next=(
+  //    //  ),
+  //    //  init=False
+  //    //)
+  //  )
+  //) {
+  //  is (M"100") {
+  //    myModMemWord := (
+  //      RegNext(
+  //        next=myModMemWord,
+  //        init=myModMemWord.getZero,
+  //      )
+  //    )
+  //    when (RegNext(cMid0Front.up.isFiring, init=False)) {
+  //      myModMemWord := alu.io.outp_data
+  //    }
+  //  }
+  //  is (M"110") {
+  //    myModMemWord := (
+  //      RegNext(
+  //        next=myModMemWord,
+  //        init=myModMemWord.getZero,
+  //      )
+  //    )
+  //    when (RegNext(cMid0Front.up.isFiring, init=False)) {
+  //      myModMemWord := (
+  //        RegNext(
+  //          next=setOutpModMemWord.io.modMemWord(0).asSInt,
+  //          init=setOutpModMemWord.io.modMemWord(0).asSInt.getZero
+  //        )
+  //      )
+  //    }
+  //  }
+  //  is (M"--1") {
+  //    myModMemWord := (
+  //      myDbus.recvData.data.asSInt.resized
+  //    )
+  //  }
+  //  default {
+  //    myModMemWord := (
+  //      RegNext(
+  //        next=myModMemWord,
+  //        init=myModMemWord.getZero,
+  //      )
+  //      //RegNextWhen(
+  //      //  next=alu.io.inp_a,
+  //      //  cond=cMid0Front.up.isFiring,
+  //      //  init=alu.io.inp_a.getZero,
+  //      //)
+  //    )
+  //  }
+  //}
   // END: this worked pretty well for fmax, so let's try another approach
   //--------
 
@@ -7327,10 +7431,10 @@ case class SnowHousePipeStageExecute(
 
 
   //when (
-  //  io.dbusLdReady
+  //  myDbusLdReady
   //) {
   //  myModMemWord := (
-  //    io.dbus.recvData.data.asSInt.resized
+  //    myDbus.recvData.data.asSInt.resized
   //  )
   //}
 
@@ -7879,11 +7983,11 @@ case class SnowHousePipeStageExecute(
       init=False
     )
   )
-  io.dbus.allowOverride
-  io.dbus.sendData := (
+  myDbus.allowOverride
+  myDbus.sendData := (
     RegNext(
-      next=io.dbus.sendData,
-      init=io.dbus.sendData.getZero,
+      next=myDbus.sendData,
+      init=myDbus.sendData.getZero,
     )
   )
   object MultiCycleOpState
@@ -7983,10 +8087,10 @@ case class SnowHousePipeStageExecute(
     nextPrevTxnWasHazard := True
     when (cMid0Front.up.isFiring) {
       psMemStallHost.nextValid := True
-      //io.dbus.sendData := setOutpModMemWord.io.dbusHostPayload
+      //myDbus.sendData := setOutpModMemWord.io.dbusHostPayload
     }
   }
-  io.dbus.sendData.addr.allowOverride
+  myDbus.sendData.addr.allowOverride
   when (
     cMid0Front.up.isFiring
     //&&
@@ -7994,20 +8098,20 @@ case class SnowHousePipeStageExecute(
     //cMid0Front.down.isFiring
     //cMid0Front.down.isReady
   ) {
-    io.dbus.sendData := setOutpModMemWord.io.dbusHostPayload
+    myDbus.sendData := setOutpModMemWord.io.dbusHostPayload
   }
   //when (
   //  //cMid0Front.up.isFiring
   //  cMid0Front.up.isValid
   //) {
-  //  io.dbus.sendData.addr := setOutpModMemWord.io.dbusHostPayload.addr
+  //  myDbus.sendData.addr := setOutpModMemWord.io.dbusHostPayload.addr
   //}
 
   //when (cMid0Front.up.isFiring)
   //when (
   //  cMid0Front.up.isValid && !setOutpModMemWord.io.shouldIgnoreInstr(1)
   //) {
-  //  io.dbus.sendData := setOutpModMemWord.io.dbusHostPayload
+  //  myDbus.sendData := setOutpModMemWord.io.dbusHostPayload
   //}
   def doMultiCycleStart(
     myPsExStallHost: LcvStallHost[
@@ -8280,6 +8384,8 @@ case class SnowHousePipeStageMem(
     BusHostPayload,
     BusDevPayload,
   ],
+  myDbusExtraReady: Vec[Bool],
+  myDbusLdReady: Bool,
   myModMemWord: SInt,
 ) extends Area {
   def cfg = args.cfg
@@ -8306,6 +8412,9 @@ case class SnowHousePipeStageMem(
     Vec.fill(extIdxLim)(
       SnowHousePipePayload(cfg=cfg)
     )
+  )
+  def myDbus = (
+    psMemStallHost.stallIo.get
   )
   //val myShouldIgnoreInstr = (
   //  modFront(modFrontPayload).instrCnt.shouldIgnoreInstr
@@ -8571,7 +8680,7 @@ case class SnowHousePipeStageMem(
     Reg(Bool(), init=False)
   )
   when (
-    RegNext(io.dbus.nextValid) init(False)
+    RegNext(myDbus.nextValid) init(False)
     //midModPayload(extIdxUp).decodeExt.opIsMemAccess.sFindFirst(
     //  _ === True
     //)._1
@@ -8579,8 +8688,8 @@ case class SnowHousePipeStageMem(
     def tempExtLeft(ydx: Int) = midModPayload(extIdxUp).myExt(ydx)
     def tempExtRight(ydx: Int) = modFront(modFrontAfterPayload).myExt(ydx)
     when (
-      //!io.dbus.ready
-      !io.dbusExtraReady(3)
+      //!myDbus.ready
+      !myDbusExtraReady(3)
     ) {
       //cMidModFront.duplicateIt()
       cMidModFront.haltIt()
@@ -8615,9 +8724,9 @@ case class SnowHousePipeStageMem(
       )
     )
     //when (
-    //  io.dbusLdReady
+    //  myDbusLdReady
     //) {
-    //  myCurrExt.modMemWord := io.dbus.recvData.data.resized
+    //  myCurrExt.modMemWord := myDbus.recvData.data.resized
     //  //myCurrExt.modMemWordValid.foreach(current => {
     //  //  current := (
     //  //    // TODO: support more destination GPRs
@@ -8651,7 +8760,7 @@ case class SnowHousePipeStageMem(
   //    })
   //  })
   //}
-  when (io.dbusExtraReady(2)) {
+  when (myDbusExtraReady(2)) {
     val myDecodeExt = midModPayload(extIdxUp).outpDecodeExt
     val mapElem = midModPayload(extIdxUp).gprIdxToMemAddrIdxMap(0)
     val myCurrExt = (

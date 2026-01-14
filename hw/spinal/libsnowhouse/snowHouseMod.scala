@@ -811,12 +811,35 @@ case class SnowHouse
     .setName(s"SnowHouse_psExSetPc")
   )
   val psMemStallHost = (
-    !cfg.useLcvDataBus
-  ) generate (
     cfg.mkLcvStallHost(
       stallIo=(
-        Some(io.dbus)
+        Some(
+          if (!cfg.useLcvDataBus) (
+            io.dbus
+          ) else (
+            new LcvStallIo[BusHostPayload, BusDevPayload](
+              sendPayloadType=Some(BusHostPayload(cfg=cfg, isIbus=false)),
+              recvPayloadType=Some(BusDevPayload(cfg=cfg, isIbus=false)),
+            )
+          )
+        )
       ),
+    )
+  )
+  val myDbusExtraReady = (
+    if (!cfg.useLcvDataBus) (
+      io.dbusExtraReady
+    ) else (
+      Vec.fill(cfg.lowerMyFanout)(
+        Bool()
+      )
+    )
+  )
+  val myDbusLdReady = (
+    if (!cfg.useLcvDataBus) (
+      io.dbusLdReady
+    ) else (
+      Bool()
     )
   )
   val pcChangeState = (
@@ -1039,6 +1062,8 @@ case class SnowHouse
     psExSetPc=psExSetPc,
     psMemStallHost=psMemStallHost,
     doModInMid0FrontParams=doModInMid0FrontParams,
+    myDbusExtraReady=myDbusExtraReady,
+    myDbusLdReady=myDbusLdReady,
     pcChangeState=pcChangeState,
     shouldIgnoreInstr=shouldIgnoreInstr,
     myModMemWord=myModMemWord,
@@ -1074,6 +1099,8 @@ case class SnowHouse
       //  null
       //),
       psMemStallHost=psMemStallHost,
+      myDbusExtraReady=myDbusExtraReady,
+      myDbusLdReady=myDbusLdReady,
       myModMemWord=myModMemWord,
     )
   )

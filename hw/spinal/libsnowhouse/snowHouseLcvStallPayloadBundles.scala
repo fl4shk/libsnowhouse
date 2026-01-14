@@ -245,5 +245,11 @@ case class BusDevPayload(
   ) generate (
     UInt(cfg.subCfg.lcvIbusMainCfg.srcWidth bits)
   )
+  val srcLcvDbus = (
+    cfg.useLcvDataBus
+    && !isIbus
+  ) generate (
+    UInt(cfg.subCfg.lcvDbusMainCfg.srcWidth bits)
+  )
 }
 //--------
