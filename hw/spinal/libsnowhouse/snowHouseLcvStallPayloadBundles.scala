@@ -183,18 +183,21 @@ case class BusHostPayload(
   val subKindIsLtWordWidth = (!isIbus) generate (
     Bool()
   )
-  val srcLcvIbus = (
-    cfg.useLcvInstrBus
-    && isIbus
+  val src = (
+    (
+      cfg.useLcvInstrBus
+      && isIbus
+    ) || (
+      cfg.useLcvDataBus
+      && !isIbus
+    )
   ) generate (
-    UInt(cfg.subCfg.lcvIbusMainCfg.srcWidth bits)
+    UInt(
+      //cfg.subCfg.lcvIbusMainCfg.srcWidth
+      cfg.subCfg.myLcvBusSrcWidth
+      bits
+    )
   )
-  //val srcLcvDbus = (
-  //  cfg.useLcvDataBus
-  //  && !isIbus
-  //) generate (
-  //  UInt(cfg.subCfg.lcvDbusMainCfg.srcWidth bits)
-  //)
 
   //val lock = (!isIbus) generate (
   //  Bool() // for atomics
@@ -239,17 +242,20 @@ case class BusDevPayload(
   //val addr = (isIbus) generate (UInt(cfg.mainWidth bits))
   val data = (!isIbus) generate (UInt(cfg.mainWidth bits))
 
-  val srcLcvIbus = (
-    cfg.useLcvInstrBus
-    && isIbus
+  val src = (
+    (
+      cfg.useLcvInstrBus
+      && isIbus
+    ) || (
+      cfg.useLcvDataBus
+      && !isIbus
+    )
   ) generate (
-    UInt(cfg.subCfg.lcvIbusMainCfg.srcWidth bits)
-  )
-  val srcLcvDbus = (
-    cfg.useLcvDataBus
-    && !isIbus
-  ) generate (
-    UInt(cfg.subCfg.lcvDbusMainCfg.srcWidth bits)
+    UInt(
+      //cfg.subCfg.lcvIbusMainCfg.srcWidth
+      cfg.subCfg.myLcvBusSrcWidth
+      bits
+    )
   )
 }
 //--------

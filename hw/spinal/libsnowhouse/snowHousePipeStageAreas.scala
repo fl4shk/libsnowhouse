@@ -900,7 +900,7 @@ private[libsnowhouse] case class SnowHouseIbusToLcvIbusBridge(
     //myH2dPushStm.valid
   ) {
     myH2dPushStm.src := (
-      io.ibus.sendData.srcLcvIbus
+      io.ibus.sendData.src
     )
   }
   myH2dPushStm.addr.allowOverride
@@ -921,7 +921,7 @@ private[libsnowhouse] case class SnowHouseIbusToLcvIbusBridge(
   when (myD2hPopStm.valid) {
     io.ibus.ready := True
     io.ibus.recvData.instr := myD2hPopStm.data
-    io.ibus.recvData.srcLcvIbus := myD2hPopStm.src
+    io.ibus.recvData.src := myD2hPopStm.src
     myD2hPopStm.ready := True
   }
   //--------
@@ -1001,12 +1001,12 @@ case class SnowHousePipeStageInstrFetch(
   //val myReadyIshCondLcvMostCmpSrc = (
   //  cfg.useLcvInstrBus
   //) generate (
-  //  //myIbus.recvData.srcLcvIbus
-  //  myIbus.sendData.srcLcvIbus
-  //  === myIbus.recvData.srcLcvIbus + 2
+  //  //myIbus.recvData.src
+  //  myIbus.sendData.src
+  //  === myIbus.recvData.src + 2
   //  //=== myUseLcvIbusFifo.io.pop.src + 2
   //  //myUseLcvIbusFifo.io.pop.src 
-  //  //=== myIbus.recvData.srcLcvIbus //+ 2
+  //  //=== myIbus.recvData.src //+ 2
   //)
 
   //val myReadyIshCondNonFifo = (
@@ -1412,7 +1412,7 @@ case class SnowHousePipeStageInstrFetch(
       )
     )
     nextSrcLcvIbus := rSrcLcvIbus
-    myIbus.sendData.srcLcvIbus := rSrcLcvIbus.asUInt
+    myIbus.sendData.src := rSrcLcvIbus.asUInt
     when (myReadyIshCond) {
       nextSrcLcvIbus := rSrcLcvIbus + 1
     } otherwise {
@@ -1423,7 +1423,7 @@ case class SnowHousePipeStageInstrFetch(
         )
         init(-2)
       )
-      myIbus.sendData.srcLcvIbus := tempRnw.asUInt
+      myIbus.sendData.src := tempRnw.asUInt
     }
 
     val tempCond = Vec.fill(2)(Bool())
@@ -1432,8 +1432,8 @@ case class SnowHousePipeStageInstrFetch(
       val instr = Vec.fill(2)(
         Flow(cloneOf(myIbus.recvData.instr))
       )
-      val srcLcvIbus = Vec.fill(2)(
-        cloneOf(myIbus.recvData.srcLcvIbus)
+      val src = Vec.fill(2)(
+        cloneOf(myIbus.recvData.src)
       )
 
       val myCurrIdx = UInt(log2Up(instr.size) bits)
@@ -1444,8 +1444,8 @@ case class SnowHousePipeStageInstrFetch(
       def myCurrFire = instr(myCurrIdx).valid
       def myOtherFire = instr(myOtherIdx).valid
 
-      def myCurrSrc = srcLcvIbus(myCurrIdx)
-      def myOtherSrc = srcLcvIbus(myOtherIdx)
+      def myCurrSrc = src(myCurrIdx)
+      def myOtherSrc = src(myOtherIdx)
     }
     val rHadExtraIbusReady = {
       val temp = Reg(ExtraIbusReadyPayload())
@@ -1458,9 +1458,9 @@ case class SnowHousePipeStageInstrFetch(
     )
     //myZeroStallStateHaltItCond.last := (
     //  (
-    //    myIbus.recvData.srcLcvIbus
+    //    myIbus.recvData.src
     //    === RegNextWhen(
-    //      myIbus.recvData.srcLcvIbus,
+    //      myIbus.recvData.src,
     //      cond=myIbus.ready
     //    )
     //  )
@@ -1479,12 +1479,12 @@ case class SnowHousePipeStageInstrFetch(
     val myTempCond = Bool()
     val rMyTempSrc = (
       //Vec.fill(2)(
-        Reg(cloneOf(myIbus.recvData.srcLcvIbus))
+        Reg(cloneOf(myIbus.recvData.src))
         init(0x0)
       //)
     )
     myTempCond := (
-      myIbus.recvData.srcLcvIbus
+      myIbus.recvData.src
       =/= rMyTempSrc
     )
 
@@ -1514,13 +1514,13 @@ case class SnowHousePipeStageInstrFetch(
         }
         when (
           !rHadExtraIbusReady.myOtherFire
-          && rMyTempSrc =/= myIbus.recvData.srcLcvIbus
-          && rHadExtraIbusReady.myCurrSrc =/= myIbus.recvData.srcLcvIbus
+          && rMyTempSrc =/= myIbus.recvData.src
+          && rHadExtraIbusReady.myCurrSrc =/= myIbus.recvData.src
         ) {
           rHadExtraIbusReady.myOtherFire := True
           rHadExtraIbusReady.myOtherInstr := myIbus.recvData.instr
-          rHadExtraIbusReady.myOtherSrc := myIbus.recvData.srcLcvIbus
-          rMyTempSrc := myIbus.recvData.srcLcvIbus
+          rHadExtraIbusReady.myOtherSrc := myIbus.recvData.src
+          rMyTempSrc := myIbus.recvData.src
         }
       }
       is (M"001") {
@@ -1530,7 +1530,7 @@ case class SnowHousePipeStageInstrFetch(
         rHadExtraIbusReady.myCurrFire := False
         rHadExtraIbusReady.myOtherFire := False
         
-        rMyTempSrc := myIbus.recvData.srcLcvIbus
+        rMyTempSrc := myIbus.recvData.src
         upModExt.encInstr.payload := myIbus.recvData.instr
         rStallState := True
       }
@@ -1538,11 +1538,11 @@ case class SnowHousePipeStageInstrFetch(
         when (
           !rHadExtraIbusReady.myCurrFire
           && myIbus.ready
-          && rMyTempSrc =/= myIbus.recvData.srcLcvIbus
+          && rMyTempSrc =/= myIbus.recvData.src
         ) {
           rHadExtraIbusReady.myCurrFire := True
           rHadExtraIbusReady.myCurrInstr := myIbus.recvData.instr
-          rHadExtraIbusReady.myCurrSrc := myIbus.recvData.srcLcvIbus
+          rHadExtraIbusReady.myCurrSrc := myIbus.recvData.src
         }
       }
     }
