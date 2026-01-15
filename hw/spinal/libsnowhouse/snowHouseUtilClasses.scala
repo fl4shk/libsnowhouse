@@ -366,6 +366,7 @@ case class SnowHouseSubConfig(
       isIcache=true,
     )
   )
+  def myLcvBusSrcWidth = 2
   val lcvIbusMainCfg = (
     LcvBusMainConfig(
       dataWidth=instrMainWidth,
@@ -376,7 +377,8 @@ case class SnowHouseSubConfig(
         //if (haveIcache) (
           //shRegFileCfg.mainWidth - log2Up(instrSizeBytes)
           //4
-          3
+          //3
+          myLcvBusSrcWidth
         //) else (
         //  1
         //)
@@ -423,7 +425,7 @@ case class SnowHouseSubConfig(
       addrWidth=shRegFileCfg.mainWidth,
       allowBurst=false,
       burstAlwaysMaxSize=false,
-      srcWidth=1,
+      srcWidth=myLcvBusSrcWidth,
     )
   )
   val lcvDbusEtcCfg = (
@@ -586,8 +588,8 @@ case class SnowHouseConfig(
   //--------
   instrRamKind: Int,
   optTwoCycleRegFileReads: Boolean=(
-    false
-    //true
+    //false
+    true
   ),
   //--------
   //maxNumGprsPerInstr: Int,
