@@ -1064,7 +1064,8 @@ private[libsnowhouse] case class SnowHouseBusBridgeCtrl(
     RegNext(io.cpuBus.recvData, init=io.cpuBus.recvData.getZero)
   )
   io.cpuBus.ready := (
-    io.bridgeBus.ready
+    //io.bridgeBus.ready
+    True
   )
 
   switch (
