@@ -163,7 +163,7 @@ object SnowHouseMemAccessSubKindToBinSeq {
     //(1 << tempSubKind.asBits.asUInt)
   }
 }
-case class BusHostPayload(
+case class BusHostNonSrcPayload(
   cfg: SnowHouseConfig,
   isIbus: Boolean,
 ) extends Bundle {
@@ -183,14 +183,32 @@ case class BusHostPayload(
   val subKindIsLtWordWidth = (!isIbus) generate (
     Bool()
   )
+}
+case class BusHostPayload(
+  cfg: SnowHouseConfig,
+  isIbus: Boolean,
+  inCpu: Boolean=false,
+) extends Bundle {
+  val nonSrc = BusHostNonSrcPayload(
+    cfg=cfg,
+    isIbus=isIbus,
+  )
+  def addr = nonSrc.addr
+  def data = nonSrc.data
+  def accKind = nonSrc.accKind
+  def subKind = nonSrc.subKind
+  def subKindIsLtWordWidth = nonSrc.subKindIsLtWordWidth
   val src = (
     (
-      cfg.useLcvInstrBus
-      && isIbus
-    ) || (
-      cfg.useLcvDataBus
-      && !isIbus
+      (
+        cfg.useLcvInstrBus
+        && isIbus
+      ) || (
+        cfg.useLcvDataBus
+        && !isIbus
+      )
     )
+    && !inCpu
   ) generate (
     UInt(
       //cfg.subCfg.lcvIbusMainCfg.srcWidth
@@ -230,6 +248,7 @@ case class BusHostPayload(
 case class BusDevPayload(
   cfg: SnowHouseConfig,
   isIbus: Boolean,
+  inCpu: Boolean=false,
 ) extends Bundle {
   //val instrDevPayload = (isIbus) generate (
   //  InstrBusDevPayload(
@@ -241,15 +260,25 @@ case class BusDevPayload(
   //val instrIsBranch = (isIbus) generate (Bool())
   //val addr = (isIbus) generate (UInt(cfg.mainWidth bits))
   val data = (!isIbus) generate (UInt(cfg.mainWidth bits))
+  def word = (
+    if (isIbus) (
+      instr
+    ) else (
+      data
+    )
+  )
 
   val src = (
     (
-      cfg.useLcvInstrBus
-      && isIbus
-    ) || (
-      cfg.useLcvDataBus
-      && !isIbus
+      (
+        cfg.useLcvInstrBus
+        && isIbus
+      ) || (
+        cfg.useLcvDataBus
+        && !isIbus
+      )
     )
+    && !inCpu
   ) generate (
     UInt(
       //cfg.subCfg.lcvIbusMainCfg.srcWidth
