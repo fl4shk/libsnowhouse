@@ -5199,7 +5199,8 @@ case class SnowHouseCpuWithDualRam(
     cpu.io.lcvIbus <> dualRam.io.lcvIbus
   }
   if (!cfg.shCfg.useLcvDataBus) {
-    cpu.io.dbus <> dualRam.io.dbus
+    //cpu.io.dbus <> dualRam.io.dbus
+    cpu.io.dbus >> dualRam.io.dbus
     //dualRam.io.dcacheHaveHazard := cpu.io.dcacheHaveHazard
     cpu.io.dbusExtraReady := dualRam.io.dbusExtraReady
     cpu.io.dbusLdReady := dualRam.io.dbusLdReady
@@ -5346,8 +5347,8 @@ object SnowHouseCpuWithDualRamSim extends App {
   //  "5",
   //)
   val testOptTwoCycleRegFileReads = (
-    true
-    //false
+    //true
+    false
   )
   val testIdxRange = Array[Int](
     0, //0,

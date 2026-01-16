@@ -410,7 +410,6 @@ case class SnowHouseInstrDataDualRam(
     mem.io.bus.d2hBus.ready := io.lcvIbus.d2hBus.ready
   })
   val lcvInstrRamArea = (
-    //!noIcache
     instrRamKind == 0
     && cfg.useLcvInstrBus
   ) generate (new Area {
@@ -428,8 +427,27 @@ case class SnowHouseInstrDataDualRam(
     io.lcvIbus <> icache.io.loBus
     mem.io.bus <> icache.io.hiBus
   })
+  val lcvDataRamArea = (
+    cfg.useLcvDataBus
+  ) generate (new Area {
+    val depth = dataInitBigInt.size
+    val dcache = LcvBusCache(cfg=cfg.subCfg.lcvDbusEtcCfg)
+    val mem = LcvBusMem(
+      cfg=LcvBusMemConfig(
+        busCfg=cfg.subCfg.lcvDbusEtcCfg.hiBusCfg,
+        depth=depth,
+        initBigInt=Some(dataInitBigInt),
+        arrRamStyleAltera="no_rw_check, M10K",
+        arrRamStyleXilinx="block",
+      )
+    )
+    io.lcvDbus <> dcache.io.loBus
+    mem.io.bus <> dcache.io.hiBus
+  })
 
-  val dataRamArea = new Area {
+  val dataRamArea = (
+    !cfg.useLcvDataBus
+  ) generate (new Area {
     setName("SnowHouseInstrDataDualRam_dataRamArea")
     val depth = dataInitBigInt.size
     val dcache = SnowHouseCache(
@@ -556,7 +574,7 @@ case class SnowHouseInstrDataDualRam(
     dcache.io.tlBus.d <-< myRam.io.up.d
     //myRam.io.up.a <-/< dcache.io.tlBus.a
     //dcache.io.tlBus.d <-/< myRam.io.up.d
-  }
+  })
 
   //val dataRamDepth = dataInitBigInt.size
   //val dataRam = FpgacpuRamSimpleDualPort(
@@ -643,6 +661,72 @@ case class SnowHouseInstrDataDualRam(
   
 }
 //--------
+private[libsnowhouse] case class SnowHouseDbus(
+  cfg: SnowHouseConfig,
+  inSnowHouseIo: Boolean,
+) extends Bundle {
+  val nextValid = Bool()
+  val ready = Bool()
+  val sendData = BusHostPayload(cfg=cfg, isIbus=false)
+  val recvData = BusDevPayload(cfg=cfg, isIbus=false)
+
+  if (inSnowHouseIo) {
+    out(nextValid)
+    in(ready)
+    out(sendData)
+    in(recvData)
+  }
+  def >>(
+    that: LcvStallIo[BusHostPayload, BusDevPayload]
+  ): Unit = {
+    require(inSnowHouseIo)
+    that.nextValid := this.nextValid
+    this.ready := that.ready
+    that.sendData := this.sendData
+    this.recvData := that.recvData
+  }
+  def <<(
+    that: LcvStallIo[BusHostPayload, BusDevPayload],
+  ): Unit = {
+    require(inSnowHouseIo)
+    this.nextValid := that.nextValid
+    that.ready := this.ready
+    this.sendData := that.sendData
+    that.recvData := this.recvData
+  }
+}
+
+private[libsnowhouse] case class SnowHouseDbusIo(
+  cfg: SnowHouseConfig,
+  inSnowHouseIo: Boolean=false,
+) extends Bundle {
+  //val dbus = (
+  //  new LcvStallIo[BusHostPayload, BusDevPayload](
+  //    sendPayloadType=Some(BusHostPayload(cfg=cfg, isIbus=false)),
+  //    recvPayloadType=Some(BusDevPayload(cfg=cfg, isIbus=false)),
+  //  )
+  //)
+  val dbus = SnowHouseDbus(
+    cfg=cfg,
+    inSnowHouseIo=inSnowHouseIo,
+  )
+
+  val dbusExtraReady = (
+    Vec.fill(cfg.lowerMyFanout)(
+      Bool()
+    )
+  )
+  val dbusLdReady = (
+    Bool()
+  )
+  if (inSnowHouseIo) {
+    //master(dbus)
+    //out(dcacheHaveHazard)
+
+    in(dbusExtraReady)
+    in(dbusLdReady)
+  }
+}
 case class SnowHouseIo(
   cfg: SnowHouseConfig
 ) extends Bundle {
@@ -735,26 +819,17 @@ case class SnowHouseIo(
       tempArr
     }
   )
-  val dbus = (
+  val myDbusIo = (
     !cfg.useLcvDataBus
   ) generate (
-    new LcvStallIo[BusHostPayload, BusDevPayload](
-      sendPayloadType=Some(BusHostPayload(cfg=cfg, isIbus=false)),
-      recvPayloadType=Some(BusDevPayload(cfg=cfg, isIbus=false)),
+    SnowHouseDbusIo(
+      cfg=cfg,
+      inSnowHouseIo=true,
     )
   )
-  val dbusExtraReady = (
-    !cfg.useLcvDataBus
-  ) generate (
-    Vec.fill(cfg.lowerMyFanout)(
-      Bool()
-    )
-  )
-  val dbusLdReady = (
-    !cfg.useLcvDataBus
-  ) generate (
-    Bool()
-  )
+  def dbus = myDbusIo.dbus
+  def dbusExtraReady = myDbusIo.dbusExtraReady
+  def dbusLdReady = myDbusIo.dbusLdReady
   val lcvDbus = (
     cfg.useLcvDataBus
   ) generate (
@@ -766,18 +841,10 @@ case class SnowHouseIo(
   if (!cfg.useLcvInstrBus) {
     master(ibus)
   }
-  if (!cfg.useLcvDataBus) {
-    master(dbus)
-  }
   if (haveMultiCycleBusVec) {
     for (idx <- 0 until multiCycleBusVec.size) {
       master(multiCycleBusVec(idx))
     }
-  }
-  if (!cfg.useLcvDataBus) {
-    //out(dcacheHaveHazard)
-    in(dbusExtraReady)
-    in(dbusLdReady)
   }
 }
 case class SnowHouse
@@ -810,38 +877,54 @@ case class SnowHouse
     )
     .setName(s"SnowHouse_psExSetPc")
   )
-  val psMemStallHost = (
-    cfg.mkLcvStallHost(
-      stallIo=(
-        Some(
-          if (!cfg.useLcvDataBus) (
-            io.dbus
-          ) else (
-            new LcvStallIo[BusHostPayload, BusDevPayload](
-              sendPayloadType=Some(BusHostPayload(cfg=cfg, isIbus=false)),
-              recvPayloadType=Some(BusDevPayload(cfg=cfg, isIbus=false)),
-            )
-          )
-        )
-      ),
-    )
-  )
-  val myDbusExtraReady = (
-    if (!cfg.useLcvDataBus) (
-      io.dbusExtraReady
-    ) else (
-      Vec.fill(cfg.lowerMyFanout)(
-        Bool()
-      )
-    )
-  )
-  val myDbusLdReady = (
-    if (!cfg.useLcvDataBus) (
-      io.dbusLdReady
-    ) else (
-      Bool()
-    )
-  )
+  //val myDbus = (
+  //  if (!cfg.useLcvDataBus) (
+  //    io.dbus
+  //  ) else (
+  //    new LcvStallIo[BusHostPayload, BusDevPayload](
+  //      sendPayloadType=Some(BusHostPayload(cfg=cfg, isIbus=false)),
+  //      recvPayloadType=Some(BusDevPayload(cfg=cfg, isIbus=false)),
+  //    )
+  //  )
+  //)
+  //val psMemStallHost = (
+  //  cfg.mkLcvStallHost(
+  //    stallIo=Some(
+  //      //myDbus
+  //      if (!cfg.useLcvDataBus) (
+  //        io.dbus
+  //      ) else (
+  //        new LcvStallIo[BusHostPayload, BusDevPayload](
+  //          sendPayloadType=Some(BusHostPayload(cfg=cfg, isIbus=false)),
+  //          recvPayloadType=Some(BusDevPayload(cfg=cfg, isIbus=false)),
+  //        )
+  //      )
+  //    ),
+  //  )
+  //)
+  //val myDbusExtraReady = (
+  //  if (!cfg.useLcvDataBus) (
+  //    io.dbusExtraReady
+  //  ) else (
+  //    Vec.fill(cfg.lowerMyFanout)(
+  //      Bool()
+  //    )
+  //  )
+  //)
+  //val myDbusLdReady = (
+  //  if (!cfg.useLcvDataBus) (
+  //    io.dbusLdReady
+  //  ) else (
+  //    Bool()
+  //  )
+  //)
+  val myDbusIo = SnowHouseDbusIo(cfg=cfg)
+  if (!cfg.useLcvDataBus) {
+    //io.myDbusIo <> myDbusIo
+    //io.myDbusIo.nextValid := myDbus
+    io.myDbusIo <> myDbusIo
+  }
+
   val pcChangeState = (
     Bool()
     //UInt(
@@ -969,6 +1052,7 @@ case class SnowHouse
       link=cIf,
       prevPayload=null,
       currPayload=pIf,
+      myDbusIo=myDbusIo,
       regFile=regFile,
     ),
     psIdHaltIt=psIdHaltIt,
@@ -1027,6 +1111,7 @@ case class SnowHouse
         //pId
         regFile.io.frontPayload
       ),
+      myDbusIo=myDbusIo,
       regFile=regFile,
     ),
     psIdHaltIt=psIdHaltIt,
@@ -1057,13 +1142,14 @@ case class SnowHouse
       link=null,
       prevPayload=null,
       currPayload=null,
+      myDbusIo=myDbusIo,
       regFile=null,
     ),
     psExSetPc=psExSetPc,
-    psMemStallHost=psMemStallHost,
+    //psMemStallHost=psMemStallHost,
     doModInMid0FrontParams=doModInMid0FrontParams,
-    myDbusExtraReady=myDbusExtraReady,
-    myDbusLdReady=myDbusLdReady,
+    //myDbusExtraReady=myDbusExtraReady,
+    //myDbusLdReady=myDbusLdReady,
     pcChangeState=pcChangeState,
     shouldIgnoreInstr=shouldIgnoreInstr,
     myModMemWord=myModMemWord,
@@ -1084,23 +1170,82 @@ case class SnowHouse
   //    ),
   //  )
   //)
+  val cMem = (
+    CtrlLink(
+      up=regFile.io.modFront,
+      down={
+        val temp = Node()
+        temp.setName(s"cMem_down")
+        temp
+      },
+    )
+  )
+  linkArr += cMem
+  //val pMem = regFile.io.modFrontAfterPayload
+  val pMem = (
+    if (!cfg.useLcvDataBus) (
+      regFile.io.modBackPayload
+    ) else (
+      Payload(SnowHousePipePayload(cfg=cfg))
+    )
+  )
   val pipeStageMem = (
     SnowHousePipeStageMem(
       args=SnowHousePipeStageArgs(
         cfg=cfg,
         io=io,
-        link=null,
-        prevPayload=null,
-        currPayload=null,
+        link=cMem,
+        prevPayload=(
+          //null
+          regFile.io.modFrontAfterPayload
+        ),
+        currPayload=(
+          pMem
+        ),
+        myDbusIo=myDbusIo,
         regFile=regFile,
       ),
       //psWb=(
       //  //pipeStageWb
       //  null
       //),
-      psMemStallHost=psMemStallHost,
-      myDbusExtraReady=myDbusExtraReady,
-      myDbusLdReady=myDbusLdReady,
+      //psMemStallHost=psMemStallHost,
+      //myDbusExtraReady=myDbusExtraReady,
+      //myDbusLdReady=myDbusLdReady,
+      myModMemWord=myModMemWord,
+    )
+  )
+  val cWb = (
+    cfg.useLcvDataBus
+  ) generate (
+    CtrlLink(
+      up=pipeStageMem.sMem.down,
+      down={
+        val temp = Node()
+        temp.setName(s"cWb_down")
+        temp
+      }
+    )
+  )
+  if (cfg.useLcvDataBus) {
+    linkArr += cWb
+  }
+  val pipeStageWb = (
+    cfg.useLcvDataBus
+  ) generate (
+    SnowHousePipeStageWriteBack(
+      args=SnowHousePipeStageArgs(
+        cfg=cfg,
+        io=io,
+        link=cWb,
+        prevPayload=pMem,
+        currPayload=regFile.io.modBackPayload,
+        myDbusIo=myDbusIo,
+        regFile=regFile,
+      ),
+      //psMemStallHost=psMemStallHost,
+      //myDbusExtraReady=myDbusExtraReady,
+      //myDbusLdReady=myDbusLdReady,
       myModMemWord=myModMemWord,
     )
   )
