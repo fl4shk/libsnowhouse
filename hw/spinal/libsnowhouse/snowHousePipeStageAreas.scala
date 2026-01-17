@@ -1075,20 +1075,51 @@ private[libsnowhouse] case class SnowHouseBusBridgeCtrl(
   io.bridgeBus.sendData.nonSrc := io.cpuBus.sendData.nonSrc
   io.bridgeBus.sendData.src.allowOverride
   io.bridgeBus.sendData.src := rSrc.asUInt
+  val tempSrcRnw = (
+    RegNextWhen(
+      next=rSrc,
+      cond=io.myUpFireIshUpdateSrcCond,
+    )
+    init(-2)
+  )
   when (io.myUpFireIshUpdateSrcCond) {
     nextSrc := rSrc + 1
   } otherwise {
     if (isIbus) {
-      val tempRnw = (
-        RegNextWhen(
-          next=rSrc,
-          cond=io.myUpFireIshUpdateSrcCond,
-        )
-        init(-2)
-      )
-      io.bridgeBus.sendData.src := tempRnw.asUInt
+      io.bridgeBus.sendData.src := tempSrcRnw.asUInt
+    } else {
+      //when (io.bridgeH2dPushDelay) {
+      //} otherwise {
+      //}
+      //when (
+      //  io.cpuDbusExtraValid
+      //  && io.bridgeH2dPushDelay
+      //) {
+      //  io.bridgeBus.nextValid := False
+      //  //nextSrc := rSrc
+      //  //io.bridgeBus.sendData.src := tempSrcRnw.asUInt
+      //}
+      //nextSrc := rSrc
+      //io.bridgeBus.sendData.src := tempSrcRnw.asUInt
     }
   }
+  //if (!isIbus) {
+  //  when (
+  //    io.cpuDbusExtraValid
+  //    && io.bridgeH2dPushDelay
+  //  ) {
+  //    io.bridgeBus.nextValid := False
+  //    //nextSrc := rSrc
+  //    //io.bridgeBus.sendData.src := tempSrcRnw.asUInt
+  //  }
+  //  //when (
+  //  //  io.bridgeH2dPushDelay
+  //  //) {
+  //  //  io.bridgeBus.nextValid := False
+  //  //  nextSrc := rSrc
+  //  //  io.bridgeBus.sendData.src := tempSrcRnw.asUInt
+  //  //}
+  //}
 
   val tempCond = Vec.fill(2)(Bool())
   case class ExtraBusReadyPayload(
@@ -7636,6 +7667,12 @@ case class SnowHousePipeStageExecute(
   //  !rSavedStall
   //  && doCheckHazard && myDoHaveHazard1
   //)
+  //myDbusIo.myUpFireIshUpdateSrcCond := (
+  //  cWb.up.isFiring
+  //  //&& myWbPayload.outpDecodeExt.opIsMemAccess.last
+  //  //False
+  //)
+  myDbusIo.myUpFireIshUpdateSrcCond := False
   when (/*LcvFastOrR*/(
     setOutpModMemWord.io.opIsMemAccess.head
     //|| setOutpModMemWord.io.opIsAluShift.head
@@ -7646,6 +7683,11 @@ case class SnowHousePipeStageExecute(
     when (cMid0Front.up.isFiring) {
       //psMemStallHost.nextValid := True
       myDbus.nextValid := True
+      myDbusIo.myUpFireIshUpdateSrcCond := (
+        True
+        //&& myWbPayload.outpDecodeExt.opIsMemAccess.last
+        //False
+      )
       //myDbus.sendData := setOutpModMemWord.io.dbusHostPayload
     }
   }
@@ -7892,9 +7934,7 @@ case class SnowHousePipeStageExecute(
       )
     )
   }
-  when (
-    myDoStall.sFindFirst(_ === True)._1
-  ) {
+  when (myDoStall.sFindFirst(_ === True)._1) {
     for (ydx <- 0 until cfg.regFileCfg.memArrSize) {
       //outp.myExt(ydx).valid.foreach(current => {
       //  current := False
@@ -8442,11 +8482,11 @@ case class SnowHousePipeStageWriteBack(
     //&& myWbPayload.outpDecodeExt.opIsMemAccess.last
     //False
   )
-  myDbusIo.myUpFireIshUpdateSrcCond := (
-    cWb.up.isFiring
-    //&& myWbPayload.outpDecodeExt.opIsMemAccess.last
-    //False
-  )
+  //myDbusIo.myUpFireIshUpdateSrcCond := (
+  //  cWb.up.isFiring
+  //  //&& myWbPayload.outpDecodeExt.opIsMemAccess.last
+  //  //False
+  //)
 
   when (
     ////RegNext(
@@ -8540,17 +8580,24 @@ case class SnowHousePipeStageWriteBack(
       //  )
       //})
     }
-    myCurrExt.modMemWordValid.foreach(current => {
-      current := (
-        // TODO: support more destination GPRs
-        //!myWbPayload.gprIsZeroVec(0)
-        True
+    for (idx <- 0 until cfg.regFileCfg.modMemWordValidSize) {
+      myCurrExt.modMemWordValid(idx) := (
+        !myWbPayload.gprIsZeroVec.last(idx)
       )
-    })
+      //when (!myWbPayload.gprIsZeroVec.last(idx)) {
+      //  //myCurrExt.modMemWordValid.foreach(current => {
+      //  //  current := (
+      //  //    // TODO: support more destination GPRs
+      //  //    //!myWbPayload.gprIsZeroVec(0)
+      //  //    True
+      //  //  )
+      //  //})
+      //}
+    }
   }
-  //myDbusIo.myDbusExtraValid := (
-  //  myWbPayload.outpDecodeExt.opIsMemAccess.last
-  //)
+  myDbusIo.myDbusExtraValid := (
+    myWbPayload.outpDecodeExt.opIsMemAccess.last
+  )
   //when (
   //  //myDbusExtraReady(2)
   //  myDbus.ready
