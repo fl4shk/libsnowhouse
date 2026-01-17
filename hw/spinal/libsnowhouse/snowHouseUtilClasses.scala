@@ -611,8 +611,8 @@ case class SnowHouseConfig(
     true
   ),
   useLcvDataBus: Boolean=(
-    //false
-    true
+    false
+    //true
   ),
   //splitAluOp: Boolean=false,
   targetAltera: Boolean=false,
