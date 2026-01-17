@@ -431,7 +431,7 @@ case class SnowHouseInstrDataDualRam(
     cfg.useLcvDataBus
   ) generate (new Area {
     val depth = dataInitBigInt.size
-    //val dcache = LcvBusCache(cfg=cfg.subCfg.lcvDbusEtcCfg)
+    val dcache = LcvBusCache(cfg=cfg.subCfg.lcvDbusEtcCfg)
     val mem = LcvBusMem(
       cfg=LcvBusMemConfig(
         busCfg=(
@@ -443,23 +443,23 @@ case class SnowHouseInstrDataDualRam(
         arrRamStyleXilinx="block",
       )
     )
-    io.lcvDbus.h2dBus.translateInto(mem.io.bus.h2dBus)(
-      dataAssignment=(
-        thatPayload, selfPayload
-      ) => {
-        thatPayload.mainNonBurstInfo := selfPayload.mainNonBurstInfo
-        thatPayload.mainBurstInfo := thatPayload.mainBurstInfo.getZero
-      }
-    )
-    mem.io.bus.d2hBus.translateInto(io.lcvDbus.d2hBus)(
-      dataAssignment=(
-        thatPayload, selfPayload
-      ) => {
-        thatPayload.mainNonBurstInfo := selfPayload.mainNonBurstInfo
-      }
-    )
-    //io.lcvDbus <> dcache.io.loBus
-    //mem.io.bus <> dcache.io.hiBus
+    //io.lcvDbus.h2dBus.translateInto(mem.io.bus.h2dBus)(
+    //  dataAssignment=(
+    //    thatPayload, selfPayload
+    //  ) => {
+    //    thatPayload.mainNonBurstInfo := selfPayload.mainNonBurstInfo
+    //    thatPayload.mainBurstInfo := thatPayload.mainBurstInfo.getZero
+    //  }
+    //)
+    //mem.io.bus.d2hBus.translateInto(io.lcvDbus.d2hBus)(
+    //  dataAssignment=(
+    //    thatPayload, selfPayload
+    //  ) => {
+    //    thatPayload.mainNonBurstInfo := selfPayload.mainNonBurstInfo
+    //  }
+    //)
+    io.lcvDbus <> dcache.io.loBus
+    mem.io.bus <> dcache.io.hiBus
   })
 
   val dataRamArea = (
@@ -770,6 +770,11 @@ private[libsnowhouse] case class SnowHouseDbusIo(
   ) generate (
     Bool()
   )
+  val myDbusUpFireIshUpdateSrcCond = (
+    cfg.useLcvDataBus
+  ) generate (
+    Bool()
+  )
   //val myDbusExtraValid = (
   //  cfg.useLcvDataBus
   //) generate (
@@ -995,6 +1000,9 @@ case class SnowHouse
     myBridgeCtrl.io.bridgeBus <> myBridge.io.bus
     myBridgeCtrl.io.bridgeH2dPushDelay := myBridge.io.h2dPushDelay
     myBridgeCtrl.io.myUpFireIshCond := myDbusIo.myUpFireIshCond
+    myBridgeCtrl.io.myUpFireIshUpdateSrcCond := (
+      myDbusIo.myDbusUpFireIshUpdateSrcCond
+    )
     //myBridgeCtrl.io.cpuDbusExtraValid := myDbusIo.myDbusExtraValid
     myDbusIo.dbus >> myBridgeCtrl.io.cpuBus
     //myBridgeCtrl.io.cpuBus := myDbusIo.dbus.nextValid

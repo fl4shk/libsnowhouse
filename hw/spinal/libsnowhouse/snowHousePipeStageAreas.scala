@@ -967,8 +967,8 @@ private[libsnowhouse] case class SnowHouseDbusToLcvDbusBridge(
     U(myH2dPushStm.byteEn.getWidth bits, default -> True)
   )
   when (
-    //myH2dPushStm.fire
-    myH2dPushStm.valid
+    myH2dPushStm.fire
+    //myH2dPushStm.valid
   ) {
     myH2dPushStm.src := io.bus.sendData.src
     myH2dPushStm.addr := io.bus.sendData.addr
@@ -1007,6 +1007,7 @@ private[libsnowhouse] case class SnowHouseBusBridgeCtrlIo(
   val bridgeH2dPushDelay = in(Bool())
 
   val myUpFireIshCond = in(Bool())
+  val myUpFireIshUpdateSrcCond = in(Bool())
   //val myHaltIt = out(Bool())
 
   //val cpuDbusExtraValid = in(Bool())
@@ -1061,14 +1062,14 @@ private[libsnowhouse] case class SnowHouseBusBridgeCtrl(
   io.bridgeBus.sendData.nonSrc := io.cpuBus.sendData.nonSrc
   io.bridgeBus.sendData.src.allowOverride
   io.bridgeBus.sendData.src := rSrc.asUInt
-  when (io.myUpFireIshCond) {
+  when (io.myUpFireIshUpdateSrcCond) {
     nextSrc := rSrc + 1
   } otherwise {
     if (isIbus) {
       val tempRnw = (
         RegNextWhen(
           next=rSrc,
-          cond=io.myUpFireIshCond,
+          cond=io.myUpFireIshUpdateSrcCond,
         )
         init(-2)
       )
@@ -1314,6 +1315,7 @@ case class SnowHousePipeStageInstrFetch(
     myBridgeCtrl.io.bridgeBus <> myBridge.io.bus
     myBridgeCtrl.io.bridgeH2dPushDelay := myBridge.io.h2dPushDelay
     myBridgeCtrl.io.myUpFireIshCond := myReadyIshCond
+    myBridgeCtrl.io.myUpFireIshUpdateSrcCond := myReadyIshCond
     when (!myBridgeCtrl.io.cpuBus.ready) {
       cIf.haltIt()
     }
@@ -8420,7 +8422,14 @@ case class SnowHousePipeStageWriteBack(
   //def tempExtRight(ydx: Int) = cWb.up(pMem).myExt(ydx)
   //val rDbusState = Reg(Bool(), init=False)
 
-  myDbusIo.myUpFireIshCond := cWb.up.isFiring
+  myDbusIo.myUpFireIshCond := (
+    cWb.up.isFiring
+    //False
+  )
+  myDbusIo.myDbusUpFireIshUpdateSrcCond := (
+    cWb.up.isFiring
+    //False
+  )
 
   when (
     ////RegNext(
@@ -8434,6 +8443,11 @@ case class SnowHousePipeStageWriteBack(
     //&& 
     myWbPayload.outpDecodeExt.opIsMemAccess.last
   ) {
+    //myDbusIo.myUpFireIshCond := cWb.up.isFiring
+
+    //myDbusIo.myDbusUpFireIshUpdateSrcCond := (
+    //  cWb.up.isFiring
+    //)
     //def tempExtLeft(ydx: Int) = myWbPayload.myExt(ydx)
     //def tempExtRight(ydx: Int) = cWb.up(pMem).myExt(ydx)
     when (
@@ -8506,7 +8520,11 @@ case class SnowHousePipeStageWriteBack(
   //    )
   //  })
   //}
+  //cWb.up(modBackPayload) := (
+  //  RegNext(myWbPayload, init=myWbPayload.getZero)
+  //)
   //when (cWb.up.isFiring) {
-    cWb.up(modBackPayload) := myWbPayload
+  //  cWb.up(modBackPayload) := myWbPayload
   //}
+  cWb.up(modBackPayload) := myWbPayload
 }
