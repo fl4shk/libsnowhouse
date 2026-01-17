@@ -679,20 +679,48 @@ private[libsnowhouse] case class SnowHouseDbus(
   def >>(
     that: LcvStallIo[BusHostPayload, BusDevPayload]
   ): Unit = {
-    require(inSnowHouseIo)
+    //require(inSnowHouseIo)
     that.nextValid := this.nextValid
     this.ready := that.ready
-    that.sendData := this.sendData
-    this.recvData := that.recvData
+    //that.sendData := this.sendData
+    //this.recvData := that.recvData
+    that.sendData.nonSrc := this.sendData.nonSrc
+    if (
+      that.sendData.src != null
+      && this.sendData.src != null
+    ) {
+      that.sendData.src := this.sendData.src
+    }
+    this.recvData.word := that.recvData.word
+    if (
+      that.recvData.src != null
+      && this.recvData.src != null
+    ) {
+      that.recvData.src := this.recvData.src
+    }
   }
   def <<(
     that: LcvStallIo[BusHostPayload, BusDevPayload],
   ): Unit = {
-    require(inSnowHouseIo)
+    //require(inSnowHouseIo)
     this.nextValid := that.nextValid
     that.ready := this.ready
-    this.sendData := that.sendData
-    that.recvData := this.recvData
+    //this.sendData := that.sendData
+    //that.recvData := this.recvData
+    this.sendData.nonSrc := that.sendData.nonSrc
+    if (
+      this.sendData.src != null
+      && that.sendData.src != null
+    ) {
+      this.sendData.src := that.sendData.src
+    }
+    that.recvData.word := this.recvData.word
+    if (
+      this.recvData.src != null
+      && that.recvData.src != null
+    ) {
+      this.recvData.src := that.recvData.src
+    }
   }
 }
 
@@ -708,7 +736,10 @@ private[libsnowhouse] case class SnowHouseDbusIo(
   //)
   val dbus = SnowHouseDbus(
     cfg=cfg,
-    inSnowHouseIo=inSnowHouseIo,
+    inSnowHouseIo=(
+      !cfg.useLcvDataBus
+      && inSnowHouseIo
+    ),
   )
 
   val dbusExtraReady = (
@@ -716,10 +747,16 @@ private[libsnowhouse] case class SnowHouseDbusIo(
       Bool()
     )
   )
-  val dbusLdReady = (
+  val dbusLdReady = Bool()
+  val myUpFireIshCond = (
+    cfg.useLcvDataBus
+  ) generate (
     Bool()
   )
-  if (inSnowHouseIo) {
+  if (
+    !cfg.useLcvDataBus
+    && inSnowHouseIo
+  ) {
     //master(dbus)
     //out(dcacheHaveHazard)
 
@@ -924,6 +961,21 @@ case class SnowHouse
     //io.myDbusIo.nextValid := myDbus
     io.myDbusIo <> myDbusIo
   }
+  val myLcvDbusArea = (
+    cfg.useLcvDataBus
+  ) generate (new Area {
+    val myBridge = SnowHouseDbusToLcvDbusBridge(cfg=cfg)
+    val myBridgeCtrl = SnowHouseBusBridgeCtrl(
+      cfg=cfg,
+      isIbus=false,
+    )
+    io.lcvDbus <> myBridge.io.lcvBus
+    myBridgeCtrl.io.bridgeBus <> myBridge.io.bus
+    myBridgeCtrl.io.bridgeH2dPushDelay := myBridge.io.h2dPushDelay
+    myBridgeCtrl.io.myUpFireIshCond := myDbusIo.myUpFireIshCond
+    myDbusIo.dbus >> myBridgeCtrl.io.cpuBus
+    //myBridgeCtrl.io.cpuBus := myDbusIo.dbus.nextValid
+  })
 
   val pcChangeState = (
     Bool()
@@ -1246,7 +1298,7 @@ case class SnowHouse
       //psMemStallHost=psMemStallHost,
       //myDbusExtraReady=myDbusExtraReady,
       //myDbusLdReady=myDbusLdReady,
-      myModMemWord=myModMemWord,
+      //myModMemWord=myModMemWord,
     )
   )
   if (cfg.exposeRegFileWriteDataToIo) {
