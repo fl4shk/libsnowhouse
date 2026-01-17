@@ -611,8 +611,8 @@ case class SnowHouseConfig(
     true
   ),
   useLcvDataBus: Boolean=(
-    false
-    //true
+    //false
+    true
   ),
   //splitAluOp: Boolean=false,
   targetAltera: Boolean=false,
@@ -1405,6 +1405,11 @@ extends SpinalEnum(defaultEncoding=binaryOneHot) {
 case class SnowHousePipePayloadNonExt(
   cfg: SnowHouseConfig
 ) extends Bundle {
+  val lcvDataBusSrc = (
+    cfg.useLcvDataBus
+  ) generate (
+    UInt(cfg.subCfg.myLcvBusSrcWidth bits)
+  )
   val shouldFinishJump = Bool()
   //val psIfReadyIshCond = (
   //  cfg.useLcvInstrBus
