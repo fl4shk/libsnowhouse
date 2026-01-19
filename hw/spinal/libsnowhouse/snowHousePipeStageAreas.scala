@@ -1174,8 +1174,11 @@ private[libsnowhouse] case class SnowHouseBusBridgeCtrl(
     RegNext(io.cpuBus.recvData, init=io.cpuBus.recvData.getZero)
   )
   io.cpuBus.ready := (
-    //io.bridgeBus.ready
-    True
+    //if (isIbus) (
+      True
+    //) else (
+    //  io.bridgeBus.ready
+    //)
   )
 
   switch (
@@ -1225,7 +1228,7 @@ private[libsnowhouse] case class SnowHouseBusBridgeCtrl(
       //if (isIbus) {
         io.cpuBus.ready := False//io.bridgeBus.ready//False
       //} else {
-      //  io.cpuBus.ready := io.bridgeBus.ready
+      //  //io.cpuBus.ready := io.bridgeBus.ready
       //}
     }
     is (M"000") {
@@ -8650,8 +8653,7 @@ case class SnowHousePipeStageWriteBack(
 
     when (
       cWb.up.isValid
-      && 
-      rMmwState(ydx)(0) === MmwState.WAIT_DATA
+      && rMmwState(ydx)(0) === MmwState.WAIT_DATA
       //&& (
       //  RegNext(
       //    next=(rMmwState(ydx) == MmwState.WAIT_UP_FIRE),
