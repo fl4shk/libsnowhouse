@@ -1121,7 +1121,7 @@ private[libsnowhouse] case class SnowHouseBusBridgeCtrl(
   //  //}
   //}
 
-  val tempCond = Vec.fill(2)(Bool())
+  //val tempCond = Vec.fill(2)(Bool())
   case class ExtraBusReadyPayload(
   ) extends Bundle {
     val busRdWord = Vec.fill(2)(
@@ -1142,23 +1142,23 @@ private[libsnowhouse] case class SnowHouseBusBridgeCtrl(
     def myCurrSrc = src(myCurrIdx)
     def myOtherSrc = src(myOtherIdx)
   }
-  val rHadExtraIbusReady = {
+  val rHadExtraBusReady = {
     val temp = Reg(ExtraBusReadyPayload())
     temp.init(temp.getZero)
     temp
   }
   val myZeroStallStateHaltItCond = Bool()
   myZeroStallStateHaltItCond := !io.bridgeBus.ready
-  tempCond(1) := (
-    !History[Bool](
-      that=False,
-      when=(
-        io.myUpFireIshCond
-      ),
-      length=8,
-      init=True,
-    ).last
-  )
+  //tempCond(1) := (
+  //  !History[Bool](
+  //    that=False,
+  //    when=(
+  //      io.myUpFireIshCond
+  //    ),
+  //    length=8,
+  //    init=True,
+  //  ).last
+  //)
   val myTempCond = Bool()
   val rMyTempSrc = (
     Reg(cloneOf(io.bridgeBus.recvData.src))
@@ -1180,47 +1180,57 @@ private[libsnowhouse] case class SnowHouseBusBridgeCtrl(
 
   switch (
     rStallState
-    ## rHadExtraIbusReady.myCurrFire
+    ## rHadExtraBusReady.myCurrFire
     ## (
       myZeroStallStateHaltItCond
       || (
-        !myTempCond
-        && History[Bool](
-          that=True,
-          when=io.myUpFireIshCond,
-          length=5,
-          init=False,
-        ).last
+        if (isIbus) (
+          !myTempCond
+          && (
+            History[Bool](
+              that=True,
+              when=io.myUpFireIshCond,
+              length=5,
+              init=False,
+            ).last
+          )
+        ) else (
+          !myTempCond
+        )
       )
     )
   ) {
     is (M"01-") {
       when (io.myUpFireIshCond) {
-        io.cpuBus.recvData.word := rHadExtraIbusReady.myCurrBusRdWord
-        rHadExtraIbusReady.myCurrFire := False
-        rHadExtraIbusReady.myCurrIdx.lsb := (
-          !rHadExtraIbusReady.myCurrIdx.lsb
+        io.cpuBus.recvData.word := rHadExtraBusReady.myCurrBusRdWord
+        rHadExtraBusReady.myCurrFire := False
+        rHadExtraBusReady.myCurrIdx.lsb := (
+          !rHadExtraBusReady.myCurrIdx.lsb
         )
       }
       when (
-        !rHadExtraIbusReady.myOtherFire
+        !rHadExtraBusReady.myOtherFire
         && rMyTempSrc =/= io.bridgeBus.recvData.src
-        && rHadExtraIbusReady.myCurrSrc =/= io.bridgeBus.recvData.src
+        && rHadExtraBusReady.myCurrSrc =/= io.bridgeBus.recvData.src
       ) {
-        rHadExtraIbusReady.myOtherFire := True
-        rHadExtraIbusReady.myOtherBusRdWord := io.bridgeBus.recvData.word
-        rHadExtraIbusReady.myOtherSrc := io.bridgeBus.recvData.src
+        rHadExtraBusReady.myOtherFire := True
+        rHadExtraBusReady.myOtherBusRdWord := io.bridgeBus.recvData.word
+        rHadExtraBusReady.myOtherSrc := io.bridgeBus.recvData.src
         rMyTempSrc := io.bridgeBus.recvData.src
       }
     }
     is (M"001") {
       //cIf.haltIt()
       //io.myHaltIt := True
-      io.cpuBus.ready := False
+      //if (isIbus) {
+        io.cpuBus.ready := False//io.bridgeBus.ready//False
+      //} else {
+      //  io.cpuBus.ready := io.bridgeBus.ready
+      //}
     }
     is (M"000") {
-      rHadExtraIbusReady.myCurrFire := False
-      rHadExtraIbusReady.myOtherFire := False
+      rHadExtraBusReady.myCurrFire := False
+      rHadExtraBusReady.myOtherFire := False
       
       rMyTempSrc := io.bridgeBus.recvData.src
       io.cpuBus.recvData.word := io.bridgeBus.recvData.word
@@ -1228,13 +1238,14 @@ private[libsnowhouse] case class SnowHouseBusBridgeCtrl(
     }
     default {
       when (
-        !rHadExtraIbusReady.myCurrFire
+        !rHadExtraBusReady.myCurrFire
         && io.bridgeBus.ready
         && rMyTempSrc =/= io.bridgeBus.recvData.src
       ) {
-        rHadExtraIbusReady.myCurrFire := True
-        rHadExtraIbusReady.myCurrBusRdWord := io.bridgeBus.recvData.word
-        rHadExtraIbusReady.myCurrSrc := io.bridgeBus.recvData.src
+        rMyTempSrc := io.bridgeBus.recvData.src
+        rHadExtraBusReady.myCurrFire := True
+        rHadExtraBusReady.myCurrBusRdWord := io.bridgeBus.recvData.word
+        rHadExtraBusReady.myCurrSrc := io.bridgeBus.recvData.src
       }
     }
   }
@@ -1891,13 +1902,7 @@ case class SnowHousePipeStageInstrDecode(
     nextSetUpPayloadState(idx) := rSetUpPayloadState(idx)
   }
   upPayload.foreach(item => {
-    item := (
-      RegNext(
-        next=item,
-        init=item.getZero,
-      )
-      init(item.getZero)
-    )
+    item := RegNext(item, init=item.getZero)
   })
   upPayload.allowOverride
 
@@ -1973,30 +1978,13 @@ case class SnowHousePipeStageInstrDecode(
     //  )
     //)
     when (up.isFiring) {
-      when (
-        (
-          shouldFinishJump
-        )
-      ) {
+      when (shouldFinishJump) {
         upPayload(1).regPcSetItCnt(idx) := (
           //0x2
           0x1
         )
-      } 
-      //elsewhen (
-      //  //RegNextWhen(
-      //  //  next=(upPayload(1).regPcSetItCnt(idx) > 0),
-      //  //  cond=up.isFiring,
-      //  //  init=False,
-      //  //)
-      //  rPrevRegPcSetItCnt > 0
-      //)
-      .otherwise {
+      } otherwise {
         upPayload(1).regPcSetItCnt(idx) := 0x0
-        //upPayload(1).regPcSetItCnt(idx)
-        //upPayload(1).regPcSetItCnt(idx) := (
-        //  rPrevRegPcSetItCnt - 1
-        //)
       }
     }
   }
@@ -2359,17 +2347,169 @@ case class SnowHousePipeStageInstrDecode(
   if (cfg.irqCfg != None) {
     upPayload(1).takeIrq := False
   }
-  upPayload(1).irqIraRegPc := (
-    //upPayload(1).regPc
-    upPayload(1).laggingRegPc
+  upPayload(1).irqIraRegPc.head := (
+    //upPayload(1).laggingRegPc
+    Cat(
+      (
+        upPayload(1).laggingRegPc(
+          upPayload(1).laggingRegPc.high
+          downto log2Up(cfg.instrSizeBytes)
+        )
+      ),
+      U(s"${log2Up(cfg.instrSizeBytes)}'d0"),
+    ).asUInt
   )
+  if (!cfg.useLcvDataBus) {
+    //upPayload(1).irqIraRegPc.last := (
+    //  upPayload(1).laggingRegPc
+    //)
+  } else {
+    //for (idx <- 0 until upPayload(1).irqIraRegPc
+    //upPayload(1).irqIraRegPc.head := (
+    //  upPayload(1).laggingRegPc
+    //)
+    upPayload(1).irqIraRegPc.last := (
+      //upPayload(1).laggingRegPc + cfg.instrSizeBytes
+      Cat(
+        (
+          upPayload(1).laggingRegPc(
+            upPayload(1).laggingRegPc.high
+            downto log2Up(cfg.instrSizeBytes)
+          ) + 1
+        ),
+        U(s"${log2Up(cfg.instrSizeBytes)}'d0"),
+      ).asUInt
+    )
+  }
+  //  when (!upPayload(1).haveLcvDbusMemAccDelay) {
+  //    upPayload(1).irqIraRegPc := (
+  //      //upPayload(1).regPc
+  //      upPayload(1).laggingRegPc
+  //    )
+  //  } otherwise {
+  //    upPayload(1).irqIraRegPc(
+  //      upPayload(1).irqIraRegPc.high
+  //      downto log2Up(cfg.instrSizeBytes)
+  //    ) := (
+  //      upPayload(1).laggingRegPc(
+  //        upPayload(1).laggingRegPc.high
+  //        downto log2Up(cfg.instrSizeBytes)
+  //      ) + 1
+  //    )
+  //  }
+  //}
+  //if (!cfg.useLcvDataBus) {
+  //} else { // if (cfg.useLcvDataBus)
+  //}
+
   val myDecodeAreaWithoutUcode = (
     !cfg.supportUcode
-  ) generate(
+  ) generate (
     doDecodeFunc(this)
   )
   startDecode := True
   tempInstr := myInstr
+
+  val myLcvDbusPartAArea = (
+    cfg.useLcvDataBus
+  ) generate (new Area {
+    down(pId).allowOverride
+    //val mySeenDownFire = Bool()
+    //val rSavedSeenDownFire
+    val rStallState = Reg(Bool(), init=False)
+
+    val myTempCondRnw = (
+      RegNextWhen(
+        (
+          //setOutpModMemWord.io.opIsMemAccess.last
+          upPayload(1).splitOp.opIsMemAccess
+          && !upPayload(1).inpDecodeExt.head.memAccessKind.asBits(1)
+        ),
+        cond=up.isFiring,
+        init=False,
+      )
+    )
+    when (up.isValid) {
+      when (
+        upPayload(1).myDoHaveHazardAddrCheckVec(0)
+        && myTempCondRnw
+      ) {
+        when (!rStallState) {
+          // TODO: determine way to have the effect of this
+          // `cMid0Front.duplicateIt()`
+          // while still having `fwdIdx` be updated properly.
+          // `cMid0Front.duplicateIt()` will mess up the `fwdIdx`
+          // Maybe another pipeline stage should be added that handles the
+          // load "delay slot" pipeline bubbles?
+          // I am not currently sure how to handle this from within
+          // SpinalHDL's `lib.misc.pipeline` API, but I'll need to come
+          // back to this.
+          //cMid0Front.duplicateIt()
+
+          cId.duplicateIt()
+
+          //myShouldIgnoreInstr.foreach(item => {
+          //  item := True
+          //})
+          upPayload(1).instrCnt.myPsIdBubble.foreach(item => {
+            item := True
+          })
+          down(pId) := upPayload(1)
+          //// TODO: need to insert a bubble here
+          ////when (cMid0Front.down.isValid) {
+          //  cMid0Front.down(outpPipePayloadA).instrCnt.shouldIgnoreInstr
+          //    .foreach(item => {
+          //      // := False
+          //      item := True
+          //    })
+          //  cMid0Front.down(outpPipePayloadA).myExt.foreach(item => {
+          //    item.modMemWordValid.foreach(innerItem => {
+          //      innerItem := False
+          //    })
+          //    item.fwdCanDoIt.foreach(innerItem => {
+          //      innerItem := False
+          //    })
+          //  })
+          //  cMid0Front.down(outpPipePayloadA).outpDecodeExt.opIsMemAccess
+          //    .foreach(item => {
+          //      item := False
+          //    })
+          ////}
+          when (down.isFiring) {
+            rStallState := True
+          }
+        }
+      } otherwise {
+        //setOutpModMemWord.io.irqIraRegPc := outp.irqIraRegPc.head
+      }
+    }
+    when (rose(rStallState)) {
+      upPayload(1).instrCnt.myPsIdBubble.foreach(item => {
+        item := False
+      })
+      //cMid0Front.down(midPipePayload(1)).foreach(outerItem => {
+      //  outerItem.instrCnt.shouldIgnoreInstr.foreach(item => {
+      //    // := False
+      //    item := False
+      //  })
+      //  outerItem.myExt.foreach(item => {
+      //    item.fwdCanDoIt.foreach(innerItem => {
+      //      innerItem := (
+      //        //False
+      //        !myShouldIgnoreInstr.last
+      //      )
+      //    })
+      //  })
+      //})
+    }
+    when (up.isFiring) {
+      rStallState := False
+      //myShouldIgnoreInstr.foreach(item => {
+      //  item := False
+      //})
+    }
+  })
+
 }
 //private[libsnowhouse] object PcChangeState
 //extends SpinalEnum(defaultEncoding=binarySequential) {
@@ -2860,9 +3000,10 @@ case class SnowHousePipeStageExecuteSetOutpModMemWordIo(
   )
 }
 case class SnowHousePipeStageExecuteSetOutpModMemWord(
-  args: SnowHousePipeStageArgs,
+  //args: SnowHousePipeStageArgs,
+  cfg: SnowHouseConfig,
 ) extends Component {
-  def cfg = args.cfg
+  //def cfg = args.cfg
   //val modIo = args.io
   val io = SnowHousePipeStageExecuteSetOutpModMemWordIo(
     cfg=cfg,
@@ -3982,11 +4123,11 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
                   else 
                   //if (isStore)
                   {
-                    //if (!cfg.useLcvDataBus) {
+                    if (!cfg.useLcvDataBus) {
                       io.modMemWordValid.foreach(current => {
                         current := True
                       })
-                    //}
+                    }
                     io.modMemWord(0) := selRdMemWord(0, 1)
                   }
 
@@ -5705,7 +5846,8 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
   //  //  )
   //  //}
   //}
-  def doHandleSetNextPc(): Unit = {
+  def doHandleSetNextPc(
+  ): Unit = {
     switch (
       RegNext(
         next=io.splitOp.exSetNextPcKind,
@@ -6081,9 +6223,7 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
     io.opIsMemAccess.foreach(item => {
       item := False
     })
-    io.opIsAnyMultiCycle := (
-      False
-    )
+    io.opIsAnyMultiCycle := False
     io.opIsMultiCycle.foreach(item => {
       item := False
     })
@@ -6095,9 +6235,7 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
       && io.upIsValid
     ) {
       //io.shouldIgnoreInstr(idx) := False
-      when (
-        io.rHadRetIra
-      ) {
+      when (io.rHadRetIra) {
         nextIe := True
       }
     } 
@@ -6224,6 +6362,8 @@ case class SnowHousePipeStageExecute(
   def outp = doModInMid0FrontParams.outp//Vec(ydx)
   def inp = doModInMid0FrontParams.inp//Vec(ydx)
   def cMid0Front = doModInMid0FrontParams.cMid0Front
+  //def outpPipePayload = doModInMid0FrontParams.outpPipePayload
+  //def outpPipePayloadA = doModInMid0FrontParams.modFrontAfterPayloadA
   def tempModFrontPayload = (
     doModInMid0FrontParams.tempModFrontPayload//Vec(ydxr
   )
@@ -6405,7 +6545,8 @@ case class SnowHousePipeStageExecute(
   //  False
   //)
   val setOutpModMemWord = SnowHousePipeStageExecuteSetOutpModMemWord(
-    args=args
+    //args=args
+    cfg=cfg
   )
   for (
     ((_, opInfo), idx)
@@ -6536,9 +6677,57 @@ case class SnowHousePipeStageExecute(
       myDoHaveHazardVec.reduceLeft(_ || _)
     )
   )
-  setOutpModMemWord.io.irqIraRegPc := (
-    outp.irqIraRegPc
-  )
+  //val myNonLcvDbusTempArea = (
+  //  !cfg.useLcvDataBus
+  //) generate (new Area{
+  //  setOutpModMemWord.io.irqIraRegPc := outp.irqIraRegPc.head
+  //})
+  //val myLcvDusTempArea = (
+  //  cfg.useLcvDataBus
+  //) generate (new Area {
+  //  //val mySeenDownFire = Bool()
+  //  //val rSavedSeenDownFire
+  //  val rStallState = Reg(Bool(), init=False)
+  //  setOutpModMemWord.io.irqIraRegPc := outp.irqIraRegPc.head
+  //  when (cMid0Front.up.isValid) {
+  //    when (
+  //      outp.myDoHaveHazardAddrCheckVec(0)
+  //      && RegNextWhen(
+  //        (
+  //          setOutpModMemWord.io.opIsMemAccess.last
+  //          && !outp.outpDecodeExt.memAccessKind.asBits(1)
+  //        ),
+  //        cond=cMid0Front.up.isFiring,
+  //        init=False,
+  //      )
+  //    ) {
+  //      setOutpModMemWord.io.irqIraRegPc := outp.irqIraRegPc.last
+  //      when (!rStallState) {
+  //        cMid0Front.duplicateIt()
+  //        myShouldIgnoreInstr.foreach(item => {
+  //          item := True
+  //        })
+  //        // TODO: need to insert a bubble here
+  //        when (cMid0Front.down.isFiring) {
+  //          rStallState := True
+  //        }
+  //      }
+  //    } otherwise {
+  //      //setOutpModMemWord.io.irqIraRegPc := outp.irqIraRegPc.head
+  //    }
+  //  }
+  //  when (rose(rStallState)) {
+  //    myShouldIgnoreInstr.foreach(item => {
+  //      item := False
+  //    })
+  //  }
+  //  when (cMid0Front.up.isFiring) {
+  //    rStallState := False
+  //    //myShouldIgnoreInstr.foreach(item => {
+  //    //  item := False
+  //    //})
+  //  }
+  //})
   val rIrqHndlState = {
     val temp = Reg(
       Bool()
@@ -7265,54 +7454,158 @@ case class SnowHousePipeStageExecute(
   //    myDoStall(stallKindMem) := True
   //  }
   //}
-  myDbus.nextValid := (
-    RegNext(myDbus.nextValid, init=False)
-  )
-  when (
-    RegNext(
-      next=(
-        //psMemStallHost.nextValid
-        myDbus.nextValid
-      ),
-      init=False,
-    )
-  ) {
-    when (
-      //psMemStallHost.ready
-      myDbus.ready
-    ) {
-      //psMemStallHost.nextValid := False
-      myDbus.nextValid := False
-      //myDoStall(stallKindMem) := False
-    } otherwise {
-      myDoStall(stallKindMem) := True
-    }
-  }
   when (cMid0Front.up.isFiring) {
     nextPrevTxnWasHazard := False
   }
-  val rSavedJmpCnt = {
-    val temp = Reg(
-      SnowHouseInstrCnt(cfg=cfg)
-    )
-    temp.init(temp.getZero)
-    temp
-  }
-  val nextSetPcCnt = (
-    Flow(UInt(
-      cfg.mainWidth bits
-    ))
-  )
-  val rSetPcCnt = {
-    val temp = /*KeepAttribute*/(
-      RegNext(next=nextSetPcCnt)
-    )
-    temp.valid.init(False)
-    temp.payload.init(0x0)
 
-    temp
+  def doHandleMyDbusPartA(
+  ): Unit = {
+    myDbus.nextValid := RegNext(myDbus.nextValid, init=False)
+    when (RegNext(myDbus.nextValid, init=False)) {
+      when (myDbus.ready) {
+        myDbus.nextValid := False
+        //myDoStall(stallKindMem) := False
+      } otherwise {
+        myDoStall(stallKindMem) := True
+      }
+    }
   }
-  nextSetPcCnt := rSetPcCnt
+  val myNonLcvDbusPartAArea = (
+    !cfg.useLcvDataBus
+  ) generate (new Area{
+    setOutpModMemWord.io.irqIraRegPc := outp.irqIraRegPc.head
+    //cMid0Front.up(outpPipePayloadA) := outp
+    doHandleMyDbusPartA()
+  })
+  val myLcvDbusPartAArea = (
+    cfg.useLcvDataBus
+  ) generate (new Area {
+    //val mySeenDownFire = Bool()
+    //val rSavedSeenDownFire
+    //val rStallState = Reg(Bool(), init=False)
+
+    //myDbus.nextValid := RegNext(myDbus.nextValid, init=False)
+    //when (RegNext(myDbus.nextValid, init=False)) {
+    //  when (myDbus.ready) {
+    //    myDbus.nextValid := False
+    //    //myDoStall(stallKindMem) := False
+    //  } otherwise {
+    //    myDoStall(stallKindMem) := True
+    //  }
+    //}
+    doHandleMyDbusPartA()
+
+    setOutpModMemWord.io.irqIraRegPc := outp.irqIraRegPc.head
+    //cMid0Front.down(outpPipePayloadA).allowOverride
+    //cMid0Front.down(outpPipePayloadA) := outp
+    val myTempCondRnw = (
+      RegNextWhen(
+        (
+          setOutpModMemWord.io.opIsMemAccess.last
+          && !outp.outpDecodeExt.memAccessKind.asBits(1)
+        ),
+        cond=cMid0Front.up.isFiring,
+        init=False,
+      )
+    )
+    when (cMid0Front.up.isValid) {
+      when (
+        outp.myDoHaveHazardAddrCheckVec(0)
+        && myTempCondRnw
+      ) {
+        setOutpModMemWord.io.irqIraRegPc := outp.irqIraRegPc.last
+        //when (!rStallState) {
+        //  // TODO: determine way to have the effect of this
+        //  // `cMid0Front.duplicateIt()`
+        //  // while still having `fwdIdx` be updated properly.
+        //  // `cMid0Front.duplicateIt()` will mess up the `fwdIdx`
+        //  // Maybe another pipeline stage should be added that handles the
+        //  // load delay slots?
+        //  // I am not currently sure how to handle this from within
+        //  // SpinalHDL's `lib.misc.pipeline` API, but I'll need to come
+        //  // back to this.
+        //  cMid0Front.duplicateIt()
+        //  myShouldIgnoreInstr.foreach(item => {
+        //    item := True
+        //  })
+        //  // TODO: need to insert a bubble here
+        //  //when (cMid0Front.down.isValid) {
+        //    cMid0Front.down(outpPipePayloadA).instrCnt.shouldIgnoreInstr
+        //      .foreach(item => {
+        //        // := False
+        //        item := True
+        //      })
+        //    cMid0Front.down(outpPipePayloadA).myExt.foreach(item => {
+        //      item.modMemWordValid.foreach(innerItem => {
+        //        innerItem := False
+        //      })
+        //      item.fwdCanDoIt.foreach(innerItem => {
+        //        innerItem := False
+        //      })
+        //    })
+        //    cMid0Front.down(outpPipePayloadA).outpDecodeExt.opIsMemAccess
+        //      .foreach(item => {
+        //        item := False
+        //      })
+        //  //}
+        //  when (cMid0Front.down.isFiring) {
+        //    rStallState := True
+        //  }
+        //}
+      } otherwise {
+        //setOutpModMemWord.io.irqIraRegPc := outp.irqIraRegPc.head
+      }
+    }
+    //when (rose(rStallState)) {
+    //  myShouldIgnoreInstr.foreach(item => {
+    //    item := False
+    //  })
+    //  //cMid0Front.down(midPipePayload(1)).foreach(outerItem => {
+    //  //  outerItem.instrCnt.shouldIgnoreInstr.foreach(item => {
+    //  //    // := False
+    //  //    item := False
+    //  //  })
+    //  //  outerItem.myExt.foreach(item => {
+    //  //    item.fwdCanDoIt.foreach(innerItem => {
+    //  //      innerItem := (
+    //  //        //False
+    //  //        !myShouldIgnoreInstr.last
+    //  //      )
+    //  //    })
+    //  //  })
+    //  //})
+    //}
+    //when (cMid0Front.up.isFiring) {
+    //  rStallState := False
+    //  //myShouldIgnoreInstr.foreach(item => {
+    //  //  item := False
+    //  //})
+    //}
+  })
+
+
+  //val rSavedJmpCnt = {
+  //  val temp = Reg(
+  //    SnowHouseInstrCnt(cfg=cfg)
+  //  )
+  //  temp.init(temp.getZero)
+  //  temp
+  //}
+  //val nextSetPcCnt = (
+  //  Flow(UInt(
+  //    cfg.mainWidth bits
+  //  ))
+  //)
+  //val rSetPcCnt = {
+  //  val temp = /*KeepAttribute*/(
+  //    RegNext(next=nextSetPcCnt)
+  //  )
+  //  temp.valid.init(False)
+  //  temp.payload.init(0x0)
+
+  //  temp
+  //}
+  //nextSetPcCnt := rSetPcCnt
   psExSetPc.nextPc := (
     RegNext(
       next=psExSetPc.nextPc,
@@ -7347,114 +7640,20 @@ case class SnowHousePipeStageExecute(
     )
   }
 
-  psExSetPc.valid := (
-    RegNext(
-      next=(
-        nextPsExSetPcValid(0)
-        //&& cMid0Front.up.isFiring
-        //&& RegNext(
-        //  next=(
-        //    !myShouldIgnoreInstr(0)
-        //    && cMid0Front.up.isFiring
-        //  ),
-        //  init=False
-        //)
-      ),
-      init=False,
-    )
-  )
+  psExSetPc.valid := RegNext(nextPsExSetPcValid(0), init=False)
   for (idx <- 0 until cfg.lowerMyFanoutRegPcSetItCnt) {
-    when (
-      nextPsExSetPcValid(idx)
-    ) {
+    when (nextPsExSetPcValid(idx)) {
       myShouldIgnoreInstr(idx) := True
     }
     when (
       cMid0Front.up.isValid
-      && (
-        RegNext(
-          next=myShouldIgnoreInstr(idx),
-          init=False,
-        )
-        //|| psExSetPc.valid
-      )
-      //True
+      && RegNext(myShouldIgnoreInstr(idx), init=False)
     ) {
       when (outp.regPcSetItCnt(idx)(0)) {
         myShouldIgnoreInstr(idx) := False
       }
     }
   }
-
-  //val rPsExSetPcValidState = (
-  //  Reg(Bool(), init=False)
-  //)
-  //when (cMid0Front.up.isValid) {
-  //  when (
-  //    !rPsExSetPcValidState
-  //    //&& psExSetPc.valid
-  //    && rPsExSetPcValid
-  //  ) {
-  //    rPsExSetPcValidState := True
-  //  }
-  //  when (cMid0Front.up.isFiring) {
-  //    when (
-  //      rPsExSetPcValidState
-  //      || rPsExSetPcValid
-  //    ) {
-  //      psExSetPc.valid := True
-  //    }
-  //    rPsExSetPcValidState := False
-  //  }
-  //}
-
-  //otherwise {
-  //  psExSetPc.valid := False
-  //}
-
-  //when (
-  //  RegNext(
-  //    next=cMid0Front.up.isFiring,
-  //    init=False,
-  //  )
-  //  && psExSetPc.valid
-  //) {
-  //}
-
-  //when (cMid0Front.up.isValid) {
-  //  //when (cMid0Front.up.isFiring) {
-  //  //  psExSetPc.valid := (
-  //  //    //False
-  //  //    rPsExSetPcValid
-  //  //  )
-  //  //}
-
-  //  when (
-  //    !rPsExSetPcValidState
-  //    && rPsExSetPcValid
-  //  ) {
-  //    psExSetPc.valid := True
-  //    rPsExSetPcValidState := True
-  //  }
-  //  when (cMid0Front.up.isFiring) {
-  //    rPsExSetPcValidState := False
-  //  }
-  //}
-
-  //psExSetPc.extValid := (
-  //  //&& !outp.instrCnt.shouldIgnoreInstr
-  //  !setOutpModMemWord.io.shouldIgnoreInstr(0)
-  //  && (
-  //    //cMid0Front.up.isValid
-  //    cMid0Front.up.isFiring
-  //    //cMid0Front.down.isFiring
-  //    //cMid0Front.down.isReady
-  //  )
-  //)
-  //psExSetPc.valid1 := (
-  //  !outp.instrCnt.shouldIgnoreInstr
-  //  && cMid0Front.up.isValid
-  //)
 
   //setOutpModMemWord.io.psExSetPc.ready := psExSetPc.ready
 
@@ -7574,10 +7773,7 @@ case class SnowHousePipeStageExecute(
   )
   myDbus.allowOverride
   myDbus.sendData := (
-    RegNext(
-      next=myDbus.sendData,
-      init=myDbus.sendData.getZero,
-    )
+    RegNext(myDbus.sendData, init=myDbus.sendData.getZero)
   )
   object MultiCycleOpState
   extends SpinalEnum(defaultEncoding=binaryOneHot) {
@@ -7588,16 +7784,8 @@ case class SnowHousePipeStageExecute(
       = newElement()
   }
   val rMultiCycleOpState = {
-    val temp = (
-      Reg(
-        //Bool()
-        MultiCycleOpState()
-      )
-    )
-    temp.init(
-      //temp.getZero
-      MultiCycleOpState.Idle
-    )
+    val temp = Reg(MultiCycleOpState())
+    temp.init(MultiCycleOpState.Idle)
     temp
   }
   val rOpIsMultiCycle = {
@@ -7606,9 +7794,10 @@ case class SnowHousePipeStageExecute(
         Bool()
       ))
     )
-    for ((elem, tempIdx) <- temp.view.zipWithIndex) {
-      elem.init(elem.getZero)
-    }
+    temp.foreach(elem => elem.init(elem.getZero))
+    //for ((elem, tempIdx) <- temp.view.zipWithIndex) {
+    //  elem.init(elem.getZero)
+    //}
     temp
   }
   var busIdxFound: Boolean = false
@@ -7672,48 +7861,54 @@ case class SnowHousePipeStageExecute(
   //  //&& myWbPayload.outpDecodeExt.opIsMemAccess.last
   //  //False
   //)
-  myDbusIo.myUpFireIshUpdateSrcCond := False
-  when (/*LcvFastOrR*/(
-    setOutpModMemWord.io.opIsMemAccess.head
-    //|| setOutpModMemWord.io.opIsAluShift.head
-    //.asBits.asUInt
-    //.orR
-  )) {
-    nextPrevTxnWasHazard := True
-    when (cMid0Front.up.isFiring) {
-      //psMemStallHost.nextValid := True
-      myDbus.nextValid := True
-      myDbusIo.myUpFireIshUpdateSrcCond := (
-        True
-        //&& myWbPayload.outpDecodeExt.opIsMemAccess.last
-        //False
-      )
-      //myDbus.sendData := setOutpModMemWord.io.dbusHostPayload
+  def doHandleMyDbusPartB(
+  ): Unit = {
+    myDbusIo.myUpFireIshUpdateSrcCond := False
+    when (/*LcvFastOrR*/(
+      setOutpModMemWord.io.opIsMemAccess.head
+      //|| setOutpModMemWord.io.opIsAluShift.head
+      //.asBits.asUInt
+      //.orR
+    )) {
+      nextPrevTxnWasHazard := True
+      when (cMid0Front.up.isFiring) {
+        //psMemStallHost.nextValid := True
+        myDbus.nextValid := True
+        myDbusIo.myUpFireIshUpdateSrcCond := True
+        //myDbus.sendData := setOutpModMemWord.io.dbusHostPayload
+      }
     }
   }
+  val myNonLcvDbusPartBArea = (
+    !cfg.useLcvDataBus
+  ) generate (new Area {
+    doHandleMyDbusPartB()
+  })
+  val myLcvDbusPartBArea = (
+    cfg.useLcvDataBus
+  ) generate (new Area {
+    doHandleMyDbusPartB()
+  })
+  //myDbusIo.myUpFireIshUpdateSrcCond := False
+  //when (/*LcvFastOrR*/(
+  //  setOutpModMemWord.io.opIsMemAccess.head
+  //  //|| setOutpModMemWord.io.opIsAluShift.head
+  //  //.asBits.asUInt
+  //  //.orR
+  //)) {
+  //  nextPrevTxnWasHazard := True
+  //  when (cMid0Front.up.isFiring) {
+  //    //psMemStallHost.nextValid := True
+  //    myDbus.nextValid := True
+  //    myDbusIo.myUpFireIshUpdateSrcCond := True
+  //    //myDbus.sendData := setOutpModMemWord.io.dbusHostPayload
+  //  }
+  //}
   myDbus.sendData.addr.allowOverride
-  when (
-    cMid0Front.up.isFiring
-    //&&
-    //outp.splitOp.opIsMemAccess
-    //cMid0Front.down.isFiring
-    //cMid0Front.down.isReady
-  ) {
+  when (cMid0Front.up.isFiring) {
     myDbus.sendData := setOutpModMemWord.io.dbusHostPayload
   }
-  //when (
-  //  //cMid0Front.up.isFiring
-  //  cMid0Front.up.isValid
-  //) {
-  //  myDbus.sendData.addr := setOutpModMemWord.io.dbusHostPayload.addr
-  //}
 
-  //when (cMid0Front.up.isFiring)
-  //when (
-  //  cMid0Front.up.isValid && !setOutpModMemWord.io.shouldIgnoreInstr(1)
-  //) {
-  //  myDbus.sendData := setOutpModMemWord.io.dbusHostPayload
-  //}
   def doMultiCycleStart(
     myPsExStallHost: LcvStallHost[
       MultiCycleHostPayload,
@@ -7725,17 +7920,9 @@ case class SnowHousePipeStageExecute(
     //myDoStall(stallKindMultiCycle) := True
     myPsExStallHost.nextValid := True
   }
-  val rHaveDoneMultiCycleOp = (
-    Reg(
-      Bool(),
-      init=False,
-    )
-  )
+  val rHaveDoneMultiCycleOp = Reg(Bool(), init=False)
   switch (rMultiCycleOpState) {
-    is (
-      //False
-      MultiCycleOpState.Idle
-    ) {
+    is (MultiCycleOpState.Idle) {
       setOutpModMemWord.io.inMultiCycleOp := False
       when (
         //LcvFastOrR(
@@ -7815,10 +8002,7 @@ case class SnowHousePipeStageExecute(
         rHaveDoneMultiCycleOp := False
       }
     }
-    is (
-      //True
-      MultiCycleOpState.Main
-    ) {
+    is (MultiCycleOpState.Main) {
       setOutpModMemWord.io.inMultiCycleOp := True
       myDoStall(stallKindMem) := False
       //myDoStall(stallKindMultiCycle) := True
@@ -7959,7 +8143,7 @@ case class SnowHousePipeStageExecute(
   //    outp.regPc + outp.imm(2) //- (3 * (cfg.instrMainWidth / 8))
   //  )
   //}
-  for (idx <- 0 until cfg.regFileCfg.memArrSize) {
+  //for (idx <- 0 until cfg.regFileCfg.memArrSize) {
     outp.myExt.foreach(item => {
       item.fwdCanDoIt.foreach(item => {
         item := (
@@ -7978,7 +8162,7 @@ case class SnowHousePipeStageExecute(
         )
       })
     })
-  }
+  //}
 }
 case class SnowHousePipeStageMem(
   args: SnowHousePipeStageArgs,
@@ -8183,10 +8367,13 @@ case class SnowHousePipeStageMem(
   for (ydx <- 0 until cfg.regFileCfg.memArrSize) {
     //val tempMyExt = midModPayload(extIdxUp).myExt
     def tempPayloadRight = cMem.up(prevPayload)
+    //def tempPayloadRightA = cMem.up(regFile.io.modFrontAfterPayloadA)
     def tempExtLeft(ydx: Int) = midModPayload(extIdxUp).myExt(ydx)
     def tempExtRight(ydx: Int) = tempPayloadRight.myExt(ydx)
+    //def tempExtRightA(ydx: Int) = tempPayloadRightA.myExt(ydx)
     val myExtLeft = tempExtLeft(ydx=ydx)
     val myExtRight = tempExtRight(ydx=ydx)
+    //val myExtRightA = tempExtRightA(ydx=ydx)
     myExtLeft.allowOverride
 
     when (
@@ -8203,11 +8390,37 @@ case class SnowHousePipeStageMem(
     ) {
       midModPayload(extIdxUp).nonExt := (
         cMem.up(prevPayload).nonExt
+        //tempPayloadRightA.nonExt
       )
       myExtLeft.main.memAddr := myExtRight.main.memAddr
       myExtLeft.main.nonMemAddrMost := myExtRight.main.nonMemAddrMost
+      //for (idx <- 0 until myExtLeft.modMemWordValid.size) {
+      //  myExtLeft.modMemWordValid(idx) := (
+      //    myExtRight.modMemWordValid(idx)
+      //  )
+      //}
     }
-    myExtLeft.modMemWord := myModMemWord.asUInt
+    if (!cfg.useLcvDataBus) {
+      myExtLeft.modMemWord := myModMemWord.asUInt
+    } else { // if (cfg.useLcvDataBus)
+      //when (
+      //  RegNextWhen(
+      //    midModPayload(extIdxUp).instrCnt.myPsIdBubble.last,
+      //    cond=cMem.up.isFiring,
+      //    init=False,
+      //  )
+      //) {
+      //  myExtLeft.modMemWord := (
+      //    RegNextWhen(
+      //      myDbus.recvData.word,
+      //      cond=cMem.up.isFiring,
+      //      init=myDbus.recvData.word.getZero,
+      //    )
+      //  )
+      //} otherwise {
+      myExtLeft.modMemWord := myModMemWord.asUInt
+      //}
+    }
 
     when (cMem.up.isValid) {
       rMmwState(ydx)(0) := MmwState.WAIT_UP_FIRE
@@ -8227,7 +8440,6 @@ case class SnowHousePipeStageMem(
   val myNonLcvDbusArea = (
     !cfg.useLcvDataBus
   ) generate (new Area {
-
     def tempExtLeft(ydx: Int) = midModPayload(extIdxUp).myExt(ydx)
     def tempExtRight(ydx: Int) = cMem.up(prevPayload).myExt(ydx)
     val rDbusState = (
@@ -8437,8 +8649,8 @@ case class SnowHousePipeStageWriteBack(
     myExtLeft.allowOverride
 
     when (
-      //cWb.up.isValid
-      //&& 
+      cWb.up.isValid
+      && 
       rMmwState(ydx)(0) === MmwState.WAIT_DATA
       //&& (
       //  RegNext(
@@ -8496,9 +8708,8 @@ case class SnowHousePipeStageWriteBack(
     ////myWbPayload.decodeExt.opIsMemAccess.sFindFirst(
     ////  _ === True
     ////)._1
-    //cWb.up.isValid
-    //&& 
-    myWbPayload.outpDecodeExt.opIsMemAccess.last
+    cWb.up.isValid
+    && myWbPayload.outpDecodeExt.opIsMemAccess.last
   ) {
     //myDbusIo.myUpFireIshCond := cWb.up.isFiring
 
@@ -8524,77 +8735,132 @@ case class SnowHousePipeStageWriteBack(
         mmwValidItem := False
       })
     } otherwise {
-      //val myDecodeExt = myWbPayload.outpDecodeExt
-      //val mapElem = myWbPayload.gprIdxToMemAddrIdxMap(0)
-      //val myCurrExt = (
-      //  if (!mapElem.haveHowToSetIdx) (
-      //    myWbPayload.myExt(
-      //      0
-      //    )
-      //  ) else (
-      //    myWbPayload.myExt(
-      //      mapElem.howToSetIdx
-      //    )
-      //  )
-      //)
-      //when (!myWbPayload.outpDecodeExt.memAccessKind.asBits(1)) {
-      //  myCurrExt.modMemWord := myDbus.recvData.word
-      //  //myCurrExt.modMemWordValid.foreach(current => {
-      //  //  current := (
-      //  //    // TODO: support more destination GPRs
-      //  //    //!myWbPayload.gprIsZeroVec(0)
-      //  //    True
-      //  //  )
-      //  //})
-      //}
-      //myCurrExt.modMemWordValid.foreach(current => {
-      //  current := (
-      //    // TODO: support more destination GPRs
-      //    //!myWbPayload.gprIsZeroVec(0)
-      //    True
-      //  )
-      //})
-    }
-  }
-  when (myDbus.ready) {
-    val myDecodeExt = myWbPayload.outpDecodeExt
-    val mapElem = myWbPayload.gprIdxToMemAddrIdxMap(0)
-    val myCurrExt = (
-      if (!mapElem.haveHowToSetIdx) (
-        myWbPayload.myExt(
-          0
-        )
-      ) else (
-        myWbPayload.myExt(
-          mapElem.howToSetIdx
+      val myDecodeExt = myWbPayload.outpDecodeExt
+      val mapElem = myWbPayload.gprIdxToMemAddrIdxMap(0)
+      val myCurrExt = (
+        if (!mapElem.haveHowToSetIdx) (
+          myWbPayload.myExt(
+            0
+          )
+        ) else (
+          myWbPayload.myExt(
+            mapElem.howToSetIdx
+          )
         )
       )
-    )
-    when (!myWbPayload.outpDecodeExt.memAccessKind.asBits(1)) {
-      myCurrExt.modMemWord := myDbus.recvData.word
-      //myCurrExt.modMemWordValid.foreach(current => {
-      //  current := (
-      //    // TODO: support more destination GPRs
-      //    //!myWbPayload.gprIsZeroVec(0)
-      //    True
-      //  )
-      //})
-    }
-    for (idx <- 0 until cfg.regFileCfg.modMemWordValidSize) {
-      myCurrExt.modMemWordValid(idx) := (
-        !myWbPayload.gprIsZeroVec.last(idx)
-      )
-      //when (!myWbPayload.gprIsZeroVec.last(idx)) {
-      //  //myCurrExt.modMemWordValid.foreach(current => {
-      //  //  current := (
-      //  //    // TODO: support more destination GPRs
-      //  //    //!myWbPayload.gprIsZeroVec(0)
-      //  //    True
-      //  //  )
-      //  //})
-      //}
+      when (!myWbPayload.outpDecodeExt.memAccessKind.asBits(1)) {
+        myCurrExt.modMemWord := myDbus.recvData.word
+        //myCurrExt.modMemWordValid.foreach(current => {
+        //  current := (
+        //    // TODO: support more destination GPRs
+        //    //!myWbPayload.gprIsZeroVec(0)
+        //    True
+        //  )
+        //})
+        for (idx <- 0 until cfg.regFileCfg.modMemWordValidSize) {
+          myCurrExt.modMemWordValid(idx) := (
+            !myWbPayload.gprIsZeroVec.last(idx)
+          )
+          //when (!myWbPayload.gprIsZeroVec.last(idx)) {
+          //  //myCurrExt.modMemWordValid.foreach(current => {
+          //  //  current := (
+          //  //    // TODO: support more destination GPRs
+          //  //    //!myWbPayload.gprIsZeroVec(0)
+          //  //    True
+          //  //  )
+          //  //})
+          //}
+        }
+        //val myDecodeExt = myWbPayload.outpDecodeExt
+        //val mapElem = myWbPayload.gprIdxToMemAddrIdxMap(0)
+        //val myCurrExt = (
+        //  if (!mapElem.haveHowToSetIdx) (
+        //    myWbPayload.myExt(
+        //      0
+        //    )
+        //  ) else (
+        //    myWbPayload.myExt(
+        //      mapElem.howToSetIdx
+        //    )
+        //  )
+        //)
+        //when (!myWbPayload.outpDecodeExt.memAccessKind.asBits(1)) {
+        //  myCurrExt.modMemWord := myDbus.recvData.word
+        //  //myCurrExt.modMemWordValid.foreach(current => {
+        //  //  current := (
+        //  //    // TODO: support more destination GPRs
+        //  //    //!myWbPayload.gprIsZeroVec(0)
+        //  //    True
+        //  //  )
+        //  //})
+        //}
+        //myCurrExt.modMemWordValid.foreach(current => {
+        //  current := (
+        //    // TODO: support more destination GPRs
+        //    //!myWbPayload.gprIsZeroVec(0)
+        //    True
+        //  )
+        //})
+      }
     }
   }
+  //when (
+  //  //cWb.up.isValid
+  //  //&& 
+  //  myDbus.ready
+  //) {
+  //  val myDecodeExt = myWbPayload.outpDecodeExt
+  //  val mapElem = myWbPayload.gprIdxToMemAddrIdxMap(0)
+  //  val myCurrExt = (
+  //    if (!mapElem.haveHowToSetIdx) (
+  //      myWbPayload.myExt(
+  //        0
+  //      )
+  //    ) else (
+  //      myWbPayload.myExt(
+  //        mapElem.howToSetIdx
+  //      )
+  //    )
+  //  )
+  //  when (!myWbPayload.outpDecodeExt.memAccessKind.asBits(1)) {
+  //    myCurrExt.modMemWord := myDbus.recvData.word
+  //    //myCurrExt.modMemWordValid.foreach(current => {
+  //    //  current := (
+  //    //    // TODO: support more destination GPRs
+  //    //    //!myWbPayload.gprIsZeroVec(0)
+  //    //    True
+  //    //  )
+  //    //})
+  //    for (idx <- 0 until cfg.regFileCfg.modMemWordValidSize) {
+  //      myCurrExt.modMemWordValid(idx) := (
+  //        !myWbPayload.gprIsZeroVec.last(idx)
+  //      )
+  //      //when (!myWbPayload.gprIsZeroVec.last(idx)) {
+  //      //  //myCurrExt.modMemWordValid.foreach(current => {
+  //      //  //  current := (
+  //      //  //    // TODO: support more destination GPRs
+  //      //  //    //!myWbPayload.gprIsZeroVec(0)
+  //      //  //    True
+  //      //  //  )
+  //      //  //})
+  //      //}
+  //    }
+  //  }
+  //  //for (idx <- 0 until cfg.regFileCfg.modMemWordValidSize) {
+  //  //  myCurrExt.modMemWordValid(idx) := (
+  //  //    !myWbPayload.gprIsZeroVec.last(idx)
+  //  //  )
+  //  //  //when (!myWbPayload.gprIsZeroVec.last(idx)) {
+  //  //  //  //myCurrExt.modMemWordValid.foreach(current => {
+  //  //  //  //  current := (
+  //  //  //  //    // TODO: support more destination GPRs
+  //  //  //  //    //!myWbPayload.gprIsZeroVec(0)
+  //  //  //  //    True
+  //  //  //  //  )
+  //  //  //  //})
+  //  //  //}
+  //  //}
+  //}
   myDbusIo.myDbusExtraValid := (
     myWbPayload.outpDecodeExt.opIsMemAccess.last
   )

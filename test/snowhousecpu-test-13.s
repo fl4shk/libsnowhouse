@@ -52,34 +52,34 @@ cpy r4, 0x8
 cpy r5, _increment
 cpy sp, 0x800
 ldr r6, r3, 0x0
-//cpy r0, r0
+cpy r0, r0
 cpy r6, 0x20
 str r6, r3, 0x0
-//cpy r0, r0
+cpy r0, r0
 //ldr r5, r3, 0x0
 //mul r10, r6, r6
 //lsl r10, r5, 3
 lsl r10, r6, 3
 //lsr r10, r5, 1
-//cpy r0, r0
+cpy r0, r0
 ldr r5, r3, 0x0
-//cpy r0, r0
+cpy r0, r0
 str r5, r3, 0x1000
-//cpy r0, r0
+cpy r0, r0
 ldr r6, r3, 0x1000
 cpy r7, 0x4
 ldr r8, r3, 0x1000 //0x0
 //ldr r9, r0, 0x408
 //ldr r10, r0, 0x40c
 //mul r9, r5, r7
-//cpy r0, r0
+cpy r0, r0
 mul r9, r8, r7
 //--------
 _push_loop:
 str r7, sp, 0
-//cpy r0, r0
+cpy r0, r0
 ldr r8, sp, 0
-//cpy r0, r0
+cpy r0, r0
 //ldr r4, sp, 0
 //add r5, r5, 1
 add r9, r8, 1
@@ -113,11 +113,11 @@ beq r0, r0, _loop
 //cpy r0, r0
 _loop:
 ldr r6, r3, 0x0
-//cpy r0, r0
+cpy r0, r0
 
 bl _increment
 str r6, r3, 0x4
-//cpy r0, r0
+cpy r0, r0
 add r3, r3, 0x4
 //sub r1, r1, 0x1
 add r1, r1, -1

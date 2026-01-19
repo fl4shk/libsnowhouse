@@ -1157,6 +1157,9 @@ case class SnowHouseInstrCnt(
   val shouldIgnoreInstr = Vec.fill(cfg.lowerMyFanoutRegPcSetItCnt)(
     Bool()
   )
+  val myPsIdBubble = Vec.fill(cfg.lowerMyFanoutRegPcSetItCnt)(
+    Bool()
+  )
   //def shouldIgnoreInstr = (pcChangeState === True)
 }
 //object SnowHouseDecodeExtLdStKind
@@ -1600,7 +1603,14 @@ case class SnowHousePipePayloadNonExt(
   //  /*Flow*/(UInt(cfg.mainWidth bits))//.simPublic()
   //)
 
-  val irqIraRegPc = UInt(cfg.mainWidth bits)
+  val irqIraRegPc = Vec.fill(2)(
+    UInt(cfg.mainWidth bits)
+  )
+  //val haveLcvDbusMemAccDelay = (
+  //  cfg.useLcvDataBus
+  //) generate (
+  //  Bool()
+  //)
 
   val regPcPlus1Instr = UInt(cfg.mainWidth bits)
   val psIfRegPcSetItCnt = UInt(2 bits)
@@ -1667,6 +1677,7 @@ case class SnowHousePipePayload(
   )
 
   def irqIraRegPc = nonExt.irqIraRegPc
+  //def haveLcvDbusMemAccDelay = nonExt.haveLcvDbusMemAccDelay
 
   def regPcPlus1Instr = nonExt.regPcPlus1Instr
   def psIfRegPcSetItCnt = nonExt.psIfRegPcSetItCnt

@@ -430,8 +430,16 @@ case class SnowHouseInstrDataDualRam(
   val lcvDataRamArea = (
     cfg.useLcvDataBus
   ) generate (new Area {
+    val haveDcache = (
+      true
+      //false
+    )
     val depth = dataInitBigInt.size
-    //val dcache = LcvBusCache(cfg=cfg.subCfg.lcvDbusEtcCfg)
+    val dcache = (
+      haveDcache
+    ) generate (
+      LcvBusCache(cfg=cfg.subCfg.lcvDbusEtcCfg)
+    )
     val mem = LcvBusMem(
       cfg=LcvBusMemConfig(
         busCfg=(
@@ -443,23 +451,26 @@ case class SnowHouseInstrDataDualRam(
         arrRamStyleXilinx="block",
       )
     )
-    io.lcvDbus.h2dBus.translateInto(mem.io.bus.h2dBus)(
-      dataAssignment=(
-        thatPayload, selfPayload
-      ) => {
-        thatPayload.mainNonBurstInfo := selfPayload.mainNonBurstInfo
-        thatPayload.mainBurstInfo := thatPayload.mainBurstInfo.getZero
-      }
-    )
-    mem.io.bus.d2hBus.translateInto(io.lcvDbus.d2hBus)(
-      dataAssignment=(
-        thatPayload, selfPayload
-      ) => {
-        thatPayload.mainNonBurstInfo := selfPayload.mainNonBurstInfo
-      }
-    )
-    //io.lcvDbus <> dcache.io.loBus
-    //mem.io.bus <> dcache.io.hiBus
+    if (!haveDcache) {
+      io.lcvDbus.h2dBus.translateInto(mem.io.bus.h2dBus)(
+        dataAssignment=(
+          thatPayload, selfPayload
+        ) => {
+          thatPayload.mainNonBurstInfo := selfPayload.mainNonBurstInfo
+          thatPayload.mainBurstInfo := thatPayload.mainBurstInfo.getZero
+        }
+      )
+      mem.io.bus.d2hBus.translateInto(io.lcvDbus.d2hBus)(
+        dataAssignment=(
+          thatPayload, selfPayload
+        ) => {
+          thatPayload.mainNonBurstInfo := selfPayload.mainNonBurstInfo
+        }
+      )
+    } else { // if (haveDcache)
+      io.lcvDbus <> dcache.io.loBus
+      mem.io.bus <> dcache.io.hiBus
+    }
   })
 
   val dataRamArea = (
