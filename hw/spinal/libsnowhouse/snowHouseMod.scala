@@ -1028,6 +1028,8 @@ case class SnowHouse
   val shouldIgnoreInstr = Bool()
   //--------
   val myModMemWord = SInt(cfg.mainWidth bits)
+  //val psIdFoundBubble = Bool()
+  //val psIdPostFoundBubble = Bool()
   val linkArr = PipeHelper.mkLinkArr()
   cfg.regFileCfg.linkArr = Some(linkArr)
   val regFile = new PipeMemRmw[
@@ -1213,6 +1215,7 @@ case class SnowHouse
     pcChangeState=pcChangeState,
     shouldIgnoreInstr=shouldIgnoreInstr,
     doDecodeFunc=cfg.doInstrDecodeFunc,
+    //psIdFoundBubble=psIdFoundBubble,
   )
   //--------
   //val pEx = Payload(SnowHouseRegFileModType(cfg=cfg))
@@ -1247,6 +1250,13 @@ case class SnowHouse
     pcChangeState=pcChangeState,
     shouldIgnoreInstr=shouldIgnoreInstr,
     myModMemWord=myModMemWord,
+    //prevStageFoundBubble=(
+    //  if (!cfg.optTwoCycleRegFileReads) (
+    //    psIdFoundBubble
+    //  ) else (
+    //    psIdPostFoundBubble
+    //  )
+    //)
   )
   //--------
   //val pipeStageWb = (

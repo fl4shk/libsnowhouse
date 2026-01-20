@@ -16,5 +16,23 @@ cpy r0, r0
 cpy r0, r0
 cpy r0, r0
 cpy r0, r0
+//--------
+cpy r7, 0x10
+//cpy r8, 0x10 >> 2
+cpy r8, 0x0
+
+_loop_2:
+add r7, r7, -4
+ldr r11, r7, 0x0
+bgts r11, r8, _loop_2
+
 _infin:
 beq r0, r0, _infin
+
+cpy r0, r0
+cpy r0, r0
+cpy r0, r0
+
+cpy r0, r0
+cpy r0, r0
+cpy r0, r0

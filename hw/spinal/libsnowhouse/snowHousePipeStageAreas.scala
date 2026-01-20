@@ -195,6 +195,11 @@ case class BranchTgtBufElem(
   //    cfg.optBranchPredictorKind.get._branchKindEnumWidth bits
   //  )
   //)
+  val includesLdBubble = (
+    cfg.useLcvDataBus
+  ) generate (
+    Bool()
+  )
   val dontPredict = (
     Bool()
   )
@@ -421,7 +426,16 @@ case class SnowHouseBranchPredictor(
   //  )
   //)
   val tgtDstRegPcBufCfg = RamSimpleDualPortConfig(
-    wordType=UInt(myDstRegPcWidth bits),
+    wordType=UInt(
+      (
+        if (!cfg.useLcvDataBus) (
+          myDstRegPcWidth
+        ) else (
+          myDstRegPcWidth + 1
+        )
+      )
+      bits
+    ),
     depth=branchTgtBufSize,
     initBigInt=(
       Some(Array.fill(branchTgtBufSize)(BigInt(0)))
@@ -517,13 +531,26 @@ case class SnowHouseBranchPredictor(
   //)
   //myRdBtbElem.valid := myRdDstRegPcAndValid.valid
 
-  myRdBtbElem.dstRegPc.assignFromBits(
-    Cat(
-      tgtDstRegPcBuf.io.ramIo.rdData,
-      //myRdDstRegPcAndValid.payload,
-      U(s"${log2Up(cfg.instrSizeBytes)}'d0"),
+  if (!cfg.useLcvDataBus) {
+    myRdBtbElem.dstRegPc.assignFromBits(
+      Cat(
+        tgtDstRegPcBuf.io.ramIo.rdData,
+        //myRdDstRegPcAndValid.payload,
+        U(s"${log2Up(cfg.instrSizeBytes)}'d0"),
+      )
     )
-  )
+  } else { // if (cfg.useLcvDataBus)
+    myRdBtbElem.includesLdBubble := tgtDstRegPcBuf.io.ramIo.rdData.msb
+    myRdBtbElem.dstRegPc.assignFromBits(
+      Cat(
+        tgtDstRegPcBuf.io.ramIo.rdData(
+          tgtDstRegPcBuf.io.ramIo.rdData.high - 1 downto 0
+        ),
+        //myRdDstRegPcAndValid.payload,
+        U(s"${log2Up(cfg.instrSizeBytes)}'d0"),
+      )
+    )
+  }
 
   //myRdBtbElem.valid.assignFromBits(
   //  tgtValidBuf.io.ramIo.rdData
@@ -795,10 +822,20 @@ case class SnowHouseBranchPredictor(
   //tgtDstRegPcAndValidBuf.io.ramIo.wrData := (
   //  myWrDstRegPcAndValid.asBits
   //)
-  tgtDstRegPcBuf.io.ramIo.wrData := (
+  def myTempDstRegPc = (
     wrBtbElem.dstRegPc(
       wrBtbElem.dstRegPc.high
       downto log2Up(cfg.instrSizeBytes)
+    )
+  )
+  tgtDstRegPcBuf.io.ramIo.wrData := (
+    if (!cfg.useLcvDataBus) (
+      myTempDstRegPc
+    ) else (
+      Cat(
+        wrBtbElem.includesLdBubble,
+        myTempDstRegPc,
+      ).asUInt
     )
   )
   //tgtValidBuf.io.ramIo.wrData := (
@@ -1165,8 +1202,14 @@ private[libsnowhouse] case class SnowHouseBusBridgeCtrl(
     init(0x0)
   )
   myTempCond := (
-    io.bridgeBus.recvData.src
-    =/= rMyTempSrc
+    //if (isIbus) (
+      io.bridgeBus.recvData.src
+      =/= rMyTempSrc
+    //) else (
+    //  True
+    //  //io.bridgeBus.recvData.src
+    //  //=/= 
+    //)
   )
   //io.busRdWord := RegNext(io.busRdWord, init=io.busRdWord.getZero)
   //io.myHaltIt := RegNext(io.myHaltIt, init=io.myHaltIt.getZero)
@@ -1830,6 +1873,7 @@ case class SnowHousePipeStageInstrDecode(
   val pcChangeState: Bool/*UInt*/,
   val shouldIgnoreInstr: Bool,
   val doDecodeFunc: (SnowHousePipeStageInstrDecode) => Area,
+  //val psIdFoundBubble: Bool,
 ) extends Area {
   def cfg = args.cfg
   def modIo = args.io
@@ -1846,6 +1890,9 @@ case class SnowHousePipeStageInstrDecode(
   val upPayload = Vec.fill(2)(
     SnowHousePipePayload(cfg=cfg)
   )
+
+  val myTempBtbElem = BranchTgtBufElem(cfg=cfg)
+
   val startDecode = Reg(Bool(), init=False)
 
   //val rSavedExSetPc = {
@@ -2417,13 +2464,23 @@ case class SnowHousePipeStageInstrDecode(
   startDecode := True
   tempInstr := myInstr
 
+  val myNonLcvDbusPartAArea = (
+    !cfg.useLcvDataBus
+  ) generate (new Area {
+    upPayload(1).branchTgtBufElem(1) := myTempBtbElem
+  })
+
   val myLcvDbusPartAArea = (
     cfg.useLcvDataBus
   ) generate (new Area {
+    //psIdFoundBubble := RegNext(psIdFoundBubble, init=False)
     down(pId).allowOverride
     //val mySeenDownFire = Bool()
     //val rSavedSeenDownFire
     val rStallState = Reg(Bool(), init=False)
+    upPayload(1).branchTgtBufElem(1) := (
+      upPayload(1).branchTgtBufElem(1).getZero
+    )
 
     val myTempCondRnw = (
       RegNextWhen(
@@ -2442,25 +2499,25 @@ case class SnowHousePipeStageInstrDecode(
         && myTempCondRnw
       ) {
         when (!rStallState) {
-          // TODO: determine way to have the effect of this
-          // `cMid0Front.duplicateIt()`
-          // while still having `fwdIdx` be updated properly.
-          // `cMid0Front.duplicateIt()` will mess up the `fwdIdx`
-          // Maybe another pipeline stage should be added that handles the
-          // load "delay slot" pipeline bubbles?
-          // I am not currently sure how to handle this from within
-          // SpinalHDL's `lib.misc.pipeline` API, but I'll need to come
-          // back to this.
-          //cMid0Front.duplicateIt()
-
           cId.duplicateIt()
 
           //myShouldIgnoreInstr.foreach(item => {
           //  item := True
           //})
+          //upPayload(1).branchTgtBufElem(0).valid := False
+          //upPayload(1).branchTgtBufElem(1).valid := False
           upPayload(1).instrCnt.myPsIdBubble.foreach(item => {
             item := True
           })
+          //psIdFoundBubble := True
+          upPayload(1).splitOp.setToDefault()
+          upPayload(1).branchTgtBufElem(1) := (
+            RegNextWhen(
+              myTempBtbElem,
+              cond=up.isFiring,
+              init=myTempBtbElem.getZero,
+            )
+          )
           down(pId) := upPayload(1)
           //// TODO: need to insert a bubble here
           ////when (cMid0Front.down.isValid) {
@@ -2487,6 +2544,7 @@ case class SnowHousePipeStageInstrDecode(
           }
         }
       } otherwise {
+        upPayload(1).branchTgtBufElem(1) := myTempBtbElem
         //setOutpModMemWord.io.irqIraRegPc := outp.irqIraRegPc.head
       }
     }
@@ -2494,6 +2552,12 @@ case class SnowHousePipeStageInstrDecode(
       upPayload(1).instrCnt.myPsIdBubble.foreach(item => {
         item := False
       })
+      //when (
+      //  !upPayload(0).branchTgtBufElem(0).valid
+      //) {
+      //  upPayload(0)
+      //}
+      //psIdFoundBubble := False
       //cMid0Front.down(midPipePayload(1)).foreach(outerItem => {
       //  outerItem.instrCnt.shouldIgnoreInstr.foreach(item => {
       //    // := False
@@ -2511,6 +2575,10 @@ case class SnowHousePipeStageInstrDecode(
     }
     when (up.isFiring) {
       rStallState := False
+      //when (upPayload(1).branchTgtBufElem(0).includesLdBubble) {
+      //  upPayload(1).branchTgtBufElem(0).valid := False
+      //  upPayload(1).branchTgtBufElem(1).valid := False
+      //}
       //myShouldIgnoreInstr.foreach(item => {
       //  item := False
       //})
@@ -2567,6 +2635,7 @@ case class SnowHousePipeStageExecuteSetOutpModMemWordIo(
       tempArr
     })
   )
+  //val bubble = setAsInp(Bool())
   val currOp = setAsInp(UInt(log2Up(cfg.opInfoMap.size) bits))
   val inMultiCycleOp = setAsInp(Bool())
   val splitOp = setAsInp(SnowHouseSplitOp(cfg=cfg))
@@ -3347,6 +3416,7 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
                     !io.btbElemDontPredict
                     //|| io.branchPredictReplaceBtbElem
                   )
+                  //&& !io.shouldIgnoreInstr.last
                 )
               //)
             ),
@@ -6350,6 +6420,7 @@ case class SnowHousePipeStageExecute(
   pcChangeState: Bool/*UInt*/,
   shouldIgnoreInstr: Bool,
   myModMemWord: SInt,
+  //prevStageFoundBubble: Bool,
 ) extends Area {
   def myDbusIo = args.myDbusIo
   def myDbus = myDbusIo.dbus
@@ -7489,7 +7560,7 @@ case class SnowHousePipeStageExecute(
   ) generate (new Area {
     //val mySeenDownFire = Bool()
     //val rSavedSeenDownFire
-    //val rStallState = Reg(Bool(), init=False)
+    val rStallState = Reg(Bool(), init=False)
 
     //myDbus.nextValid := RegNext(myDbus.nextValid, init=False)
     //when (RegNext(myDbus.nextValid, init=False)) {
@@ -7521,6 +7592,14 @@ case class SnowHousePipeStageExecute(
         && myTempCondRnw
       ) {
         setOutpModMemWord.io.irqIraRegPc := outp.irqIraRegPc.last
+        // TODO: maybe insert a second bubble when the instruction
+        // following a load is a branch using that load result?
+        // The main reason for this is that the timing for
+        // branch mispredicts, granting an IRQ, etc. is very specific
+        // (it's done via a bunch of `RegNext(...)` calls)
+        // It might need different logic from that.
+
+        //cMid0Front.duplicateIt()
         //when (!rStallState) {
         //  // TODO: determine way to have the effect of this
         //  // `cMid0Front.duplicateIt()`
@@ -7665,9 +7744,18 @@ case class SnowHousePipeStageExecute(
   //setOutpModMemWord.io.psExSetPc.ready := psExSetPc.ready
 
   //setOutpModMemWord.io.branchTgtBufElem := outp.branchTgtBufElem
-  setOutpModMemWord.io.btbElemValid := outp.branchTgtBufElem(0).valid
+  setOutpModMemWord.io.btbElemValid := (
+    //if (!cfg.useLcvDataBus) (
+      outp.branchTgtBufElem(0).valid
+    //) else (
+    //  outp.branchTgtBufElem(0).valid
+    //  && !outp.instrCnt.myPsIdBubble.last
+    //  //&& !prevStageFoundBubble
+    //)
+  )
   setOutpModMemWord.io.btbElemDontPredict := (
     outp.branchTgtBufElem(1).dontPredict
+    //|| myShouldIgnoreInstr.last
   )
   setOutpModMemWord.io.branchPredictTkn := (
     outp.branchPredictTkn

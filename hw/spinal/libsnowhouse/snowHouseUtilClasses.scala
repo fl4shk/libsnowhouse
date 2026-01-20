@@ -588,8 +588,8 @@ case class SnowHouseConfig(
   //--------
   instrRamKind: Int,
   optTwoCycleRegFileReads: Boolean=(
-    //false
-    true
+    false
+    //true
   ),
   //--------
   //maxNumGprsPerInstr: Int,

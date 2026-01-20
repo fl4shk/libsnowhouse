@@ -522,6 +522,7 @@ object SnowHouseCpuPipeStageInstrDecode {
     //isMainDecode: Boolean,
     optSplitOp: Option[SnowHouseSplitOp],
     upIsFiring: Bool,
+    downIsFiring: Bool,
     rPrevPreImm: Flow[UInt],
     //isPsId: Boolean
     regPc: UInt,
@@ -866,6 +867,15 @@ object SnowHouseCpuPipeStageInstrDecode {
     //  )
     //)
     ret.btbElem.dontPredict := tempDontPredict
+    if (cfg.useLcvDataBus) {
+      ret.btbElem.includesLdBubble := (
+        RegNextWhen(
+          upPayload.instrCnt.myPsIdBubble.last,
+          cond=downIsFiring,
+          init=False,
+        )
+      )
+    }
 
     //when (
     //  !tempDontPredict
@@ -924,10 +934,11 @@ object SnowHouseCpuPipeStageInstrDecode {
     //--------
     import SnowHouseCpuOp._
     def upPayload = psId.upPayload(1)
-    upPayload.branchTgtBufElem(1) := (
-      upPayload.branchTgtBufElem(1).getZero
+    def myTempBtbElem = psId.myTempBtbElem
+    myTempBtbElem := (
+      myTempBtbElem.getZero
     )
-    //upPayload.branchTgtBufElem(1).dontPredict := True
+    //myTempBtbElem.dontPredict := True
 
     def io = psId.io
     def cfg = psId.cfg
@@ -1955,6 +1966,7 @@ object SnowHouseCpuPipeStageInstrDecode {
           optDoDefaultFunc=Some(doDefault),
           optSplitOp=Some(upPayload.splitOp),
           upIsFiring=cId.up.isFiring,
+          downIsFiring=cId.down.isFiring,
           rPrevPreImm=rPrevPreImm(rPrevPreImm.size - 2),
           //isPsId=true,
           regPc=upPayload.regPc,
@@ -1998,7 +2010,7 @@ object SnowHouseCpuPipeStageInstrDecode {
           isBl=false,
           someTempSimmNoShift=tempSimmNoShift,
         )
-        upPayload.branchTgtBufElem(1) := tempBtbElemWithBrKind.btbElem
+        myTempBtbElem := tempBtbElemWithBrKind.btbElem
         upPayload.btbElemBranchKind(1) := tempBtbElemWithBrKind.branchKind
       }
       is (BlRaSimm24._1) {
@@ -2011,6 +2023,7 @@ object SnowHouseCpuPipeStageInstrDecode {
           optDoDefaultFunc=Some(doDefault),
           optSplitOp=Some(upPayload.splitOp),
           upIsFiring=cId.up.isFiring,
+          downIsFiring=cId.down.isFiring,
           rPrevPreImm=rPrevPreImm(rPrevPreImm.size - 2),
           //isPsId=true,
           regPc=upPayload.regPc,
@@ -2054,7 +2067,7 @@ object SnowHouseCpuPipeStageInstrDecode {
           isBl=true,
           someTempSimmNoShift=tempBlSimm,
         )
-        upPayload.branchTgtBufElem(1) := tempBtbElemWithBrKind.btbElem
+        myTempBtbElem := tempBtbElemWithBrKind.btbElem
         upPayload.btbElemBranchKind(1) := tempBtbElemWithBrKind.branchKind
       }
       //is (CpyuRaRb._1) {
@@ -5367,14 +5380,14 @@ object SnowHouseCpuWithDualRamSim extends App {
     //2, //2,
     //3, 3,
     //4, 4,
-    5, //5,
+    //5, //5,
     //6, //6,
-    ////7, //7,
+    //7, //7,
     //8, 8,
     //9, //9,
     //10, //10,
-    //11, 11,
-    12, 12,
+    //11, //11,
+    //12, 12,
     14, 14,
   )
   val instrRamKindArr = Array[Int](
