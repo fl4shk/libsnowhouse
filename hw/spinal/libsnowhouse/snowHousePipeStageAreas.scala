@@ -1174,11 +1174,12 @@ private[libsnowhouse] case class SnowHouseBusBridgeCtrl(
     RegNext(io.cpuBus.recvData, init=io.cpuBus.recvData.getZero)
   )
   io.cpuBus.ready := (
-    //if (isIbus) (
+    if (isIbus) (
       True
-    //) else (
-    //  io.bridgeBus.ready
-    //)
+    ) else (
+      //io.bridgeBus.ready
+      io.cpuDbusExtraValid
+    )
   )
 
   switch (
@@ -1198,7 +1199,10 @@ private[libsnowhouse] case class SnowHouseBusBridgeCtrl(
             ).last
           )
         ) else (
+          //io.cpuDbusExtraValid
+          //&& 
           !myTempCond
+          //False
         )
       )
     )
@@ -8701,6 +8705,10 @@ case class SnowHousePipeStageWriteBack(
   //  //&& myWbPayload.outpDecodeExt.opIsMemAccess.last
   //  //False
   //)
+  myDbusIo.myDbusExtraValid := (
+    cWb.up.isValid
+    && myWbPayload.outpDecodeExt.opIsMemAccess.last
+  )
 
   when (
     ////RegNext(
@@ -8710,8 +8718,10 @@ case class SnowHousePipeStageWriteBack(
     ////myWbPayload.decodeExt.opIsMemAccess.sFindFirst(
     ////  _ === True
     ////)._1
-    cWb.up.isValid
-    && myWbPayload.outpDecodeExt.opIsMemAccess.last
+
+    //cWb.up.isValid
+    //&& myWbPayload.outpDecodeExt.opIsMemAccess.last
+    myDbusIo.myDbusExtraValid
   ) {
     //myDbusIo.myUpFireIshCond := cWb.up.isFiring
 
@@ -8863,9 +8873,12 @@ case class SnowHousePipeStageWriteBack(
   //  //  //}
   //  //}
   //}
-  myDbusIo.myDbusExtraValid := (
-    myWbPayload.outpDecodeExt.opIsMemAccess.last
-  )
+
+  //--------
+  //myDbusIo.myDbusExtraValid := (
+  //  myWbPayload.outpDecodeExt.opIsMemAccess.last
+  //)
+  //--------
   //when (
   //  //myDbusExtraReady(2)
   //  myDbus.ready
