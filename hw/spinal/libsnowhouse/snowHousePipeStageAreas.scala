@@ -6923,7 +6923,7 @@ case class SnowHousePipeStageExecute(
   if (cfg.irqCfg != None) {
     nextMyTakeIrq := rMyTakeIrq
     io.idsIraIrq.ready := False
-    val tempCond = (
+    val tempCondNonLcvDbus = (
       //setOutpModMemWord.io.regPcSetItCnt(0)(0)
       //&& setOutpModMemWord.io.upIsValid
       //!setOutpModMemWord.io.shouldIgnoreInstr(0)
@@ -6933,6 +6933,16 @@ case class SnowHousePipeStageExecute(
         //cMid0Front.
         cMid0Front.up.isValid
         && setOutpModMemWord.io.regPcSetItCnt(0)(0)
+      )
+    )
+    val tempCond = (
+      if (!cfg.useLcvDataBus) (
+        tempCondNonLcvDbus
+      ) else (
+        tempCondNonLcvDbus
+        && (
+          !outp.instrCnt.myPsIdBubble.head
+        )
       )
     )
     when (
@@ -6966,7 +6976,7 @@ case class SnowHousePipeStageExecute(
       //&& cMid0Front.up.isFiring
       //&& !setOutpModMemWord.io.psExSetPc.valid
       //&& !setOutpModMemWord.io.shouldIgnoreInstr
-      && tempCond
+      && tempCondNonLcvDbus
       //&& psExSetPc.valid
     ) {
       nextMyTakeIrq := False
@@ -7625,74 +7635,74 @@ case class SnowHousePipeStageExecute(
     doHandleMyDbusPartA()
 
     setOutpModMemWord.io.irqIraRegPc := outp.irqIraRegPc.head
-    //cMid0Front.down(outpPipePayloadA).allowOverride
-    //cMid0Front.down(outpPipePayloadA) := outp
-    val myTempCondRnw = (
-      RegNextWhen(
-        (
-          setOutpModMemWord.io.opIsMemAccess.last
-          && !outp.outpDecodeExt.memAccessKind.asBits(1)
-        ),
-        cond=cMid0Front.up.isFiring,
-        init=False,
-      )
-    )
-    when (cMid0Front.up.isValid) {
-      when (
-        outp.myDoHaveHazardAddrCheckVec(0)
-        && myTempCondRnw
-      ) {
-        setOutpModMemWord.io.irqIraRegPc := outp.irqIraRegPc.last
-        // TODO: maybe insert a second bubble when the instruction
-        // following a load is a branch using that load result?
-        // The main reason for this is that the timing for
-        // branch mispredicts, granting an IRQ, etc. is very specific
-        // (it's done via a bunch of `RegNext(...)` calls)
-        // It might need different logic from that.
+    ////cMid0Front.down(outpPipePayloadA).allowOverride
+    ////cMid0Front.down(outpPipePayloadA) := outp
+    //val myTempCondRnw = (
+    //  RegNextWhen(
+    //    (
+    //      setOutpModMemWord.io.opIsMemAccess.last
+    //      && !outp.outpDecodeExt.memAccessKind.asBits(1)
+    //    ),
+    //    cond=cMid0Front.up.isFiring,
+    //    init=False,
+    //  )
+    //)
+    //when (cMid0Front.up.isValid) {
+    //  when (
+    //    outp.myDoHaveHazardAddrCheckVec(0)
+    //    && myTempCondRnw
+    //  ) {
+    //    setOutpModMemWord.io.irqIraRegPc := outp.irqIraRegPc.last
+    //    // TODO: maybe insert a second bubble when the instruction
+    //    // following a load is a branch using that load result?
+    //    // The main reason for this is that the timing for
+    //    // branch mispredicts, granting an IRQ, etc. is very specific
+    //    // (it's done via a bunch of `RegNext(...)` calls)
+    //    // It might need different logic from that.
 
-        //cMid0Front.duplicateIt()
-        //when (!rStallState) {
-        //  // TODO: determine way to have the effect of this
-        //  // `cMid0Front.duplicateIt()`
-        //  // while still having `fwdIdx` be updated properly.
-        //  // `cMid0Front.duplicateIt()` will mess up the `fwdIdx`
-        //  // Maybe another pipeline stage should be added that handles the
-        //  // load delay slots?
-        //  // I am not currently sure how to handle this from within
-        //  // SpinalHDL's `lib.misc.pipeline` API, but I'll need to come
-        //  // back to this.
-        //  cMid0Front.duplicateIt()
-        //  myShouldIgnoreInstr.foreach(item => {
-        //    item := True
-        //  })
-        //  // TODO: need to insert a bubble here
-        //  //when (cMid0Front.down.isValid) {
-        //    cMid0Front.down(outpPipePayloadA).instrCnt.shouldIgnoreInstr
-        //      .foreach(item => {
-        //        // := False
-        //        item := True
-        //      })
-        //    cMid0Front.down(outpPipePayloadA).myExt.foreach(item => {
-        //      item.modMemWordValid.foreach(innerItem => {
-        //        innerItem := False
-        //      })
-        //      item.fwdCanDoIt.foreach(innerItem => {
-        //        innerItem := False
-        //      })
-        //    })
-        //    cMid0Front.down(outpPipePayloadA).outpDecodeExt.opIsMemAccess
-        //      .foreach(item => {
-        //        item := False
-        //      })
-        //  //}
-        //  when (cMid0Front.down.isFiring) {
-        //    rStallState := True
-        //  }
-        //}
-      } otherwise {
-        //setOutpModMemWord.io.irqIraRegPc := outp.irqIraRegPc.head
-      }
-    }
+    //    //cMid0Front.duplicateIt()
+    //    //when (!rStallState) {
+    //    //  // TODO: determine way to have the effect of this
+    //    //  // `cMid0Front.duplicateIt()`
+    //    //  // while still having `fwdIdx` be updated properly.
+    //    //  // `cMid0Front.duplicateIt()` will mess up the `fwdIdx`
+    //    //  // Maybe another pipeline stage should be added that handles the
+    //    //  // load delay slots?
+    //    //  // I am not currently sure how to handle this from within
+    //    //  // SpinalHDL's `lib.misc.pipeline` API, but I'll need to come
+    //    //  // back to this.
+    //    //  cMid0Front.duplicateIt()
+    //    //  myShouldIgnoreInstr.foreach(item => {
+    //    //    item := True
+    //    //  })
+    //    //  // TODO: need to insert a bubble here
+    //    //  //when (cMid0Front.down.isValid) {
+    //    //    cMid0Front.down(outpPipePayloadA).instrCnt.shouldIgnoreInstr
+    //    //      .foreach(item => {
+    //    //        // := False
+    //    //        item := True
+    //    //      })
+    //    //    cMid0Front.down(outpPipePayloadA).myExt.foreach(item => {
+    //    //      item.modMemWordValid.foreach(innerItem => {
+    //    //        innerItem := False
+    //    //      })
+    //    //      item.fwdCanDoIt.foreach(innerItem => {
+    //    //        innerItem := False
+    //    //      })
+    //    //    })
+    //    //    cMid0Front.down(outpPipePayloadA).outpDecodeExt.opIsMemAccess
+    //    //      .foreach(item => {
+    //    //        item := False
+    //    //      })
+    //    //  //}
+    //    //  when (cMid0Front.down.isFiring) {
+    //    //    rStallState := True
+    //    //  }
+    //    //}
+    //  } otherwise {
+    //    //setOutpModMemWord.io.irqIraRegPc := outp.irqIraRegPc.head
+    //  }
+    //}
     //when (rose(rStallState)) {
     //  myShouldIgnoreInstr.foreach(item => {
     //    item := False
