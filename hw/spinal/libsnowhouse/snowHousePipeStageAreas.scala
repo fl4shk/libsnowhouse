@@ -1023,13 +1023,14 @@ private[libsnowhouse] case class SnowHouseDbusToLcvDbusBridge(
     // TODO: support smaller-than-word-size loads/stores
   }
   //--------
-  myD2hPopStm.ready := False//True
+  //myD2hPopStm.ready := False//True
+  myD2hPopStm.ready := True
 
   when (myD2hPopStm.valid) {
     io.bus.ready := True
     io.bus.recvData.word := myD2hPopStm.data
     io.bus.recvData.src := myD2hPopStm.src
-    myD2hPopStm.ready := True
+    //myD2hPopStm.ready := True
   }
   //--------
 }
@@ -1122,23 +1123,23 @@ private[libsnowhouse] case class SnowHouseBusBridgeCtrl(
   when (io.myUpFireIshUpdateSrcCond) {
     nextSrc := rSrc + 1
   } otherwise {
-    if (isIbus) {
+    //if (isIbus) {
       io.bridgeBus.sendData.src := tempSrcRnw.asUInt
-    } else {
-      //when (io.bridgeH2dPushDelay) {
-      //} otherwise {
-      //}
-      //when (
-      //  io.cpuDbusExtraValid
-      //  && io.bridgeH2dPushDelay
-      //) {
-      //  io.bridgeBus.nextValid := False
-      //  //nextSrc := rSrc
-      //  //io.bridgeBus.sendData.src := tempSrcRnw.asUInt
-      //}
-      //nextSrc := rSrc
-      //io.bridgeBus.sendData.src := tempSrcRnw.asUInt
-    }
+    //} else {
+    //  //when (io.bridgeH2dPushDelay) {
+    //  //} otherwise {
+    //  //}
+    //  //when (
+    //  //  io.cpuDbusExtraValid
+    //  //  && io.bridgeH2dPushDelay
+    //  //) {
+    //  //  io.bridgeBus.nextValid := False
+    //  //  //nextSrc := rSrc
+    //  //  //io.bridgeBus.sendData.src := tempSrcRnw.asUInt
+    //  //}
+    //  //nextSrc := rSrc
+    //  //io.bridgeBus.sendData.src := tempSrcRnw.asUInt
+    //}
   }
   //if (!isIbus) {
   //  when (
@@ -1262,6 +1263,7 @@ private[libsnowhouse] case class SnowHouseBusBridgeCtrl(
         !rHadExtraBusReady.myOtherFire
         && rMyTempSrc =/= io.bridgeBus.recvData.src
         && rHadExtraBusReady.myCurrSrc =/= io.bridgeBus.recvData.src
+        //&& rHadExtraBusReady.myOtherSrc =/= io.bridgeBus.recvData.src
       ) {
         rHadExtraBusReady.myOtherFire := True
         rHadExtraBusReady.myOtherBusRdWord := io.bridgeBus.recvData.word
@@ -3416,7 +3418,15 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
             io.branchPredictTkn
             //|| io.branchPredictReplaceBtbElem
           ),
-          cond=io.upIsReady,
+          cond=(
+            // TODO:
+            // maybe change this back to `io.upIsReady` once the logic
+            // for branch prediction plus load "delay slot" bubbles
+            // is put into the `SnowHousePipeStageInstrDecode`
+            // pipeline stage
+            //io.upIsReady
+            io.upIsFiring
+          ),
           init=False
         ),
         cond=io.upIsFiring,
@@ -3453,7 +3463,15 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
                 )
               //)
             ),
-            cond=io.upIsReady,
+            cond=(
+              // TODO:
+              // maybe change this back to `io.upIsReady` once the logic
+              // for branch prediction plus load "delay slot" bubbles
+              // is put into the `SnowHousePipeStageInstrDecode`
+              // pipeline stage
+              //io.upIsReady
+              io.upIsFiring
+            ),
             init=False
           )
         ),
@@ -7850,9 +7868,9 @@ case class SnowHousePipeStageExecute(
     //) {
     //} otherwise {
     //}
-    when (cMid0Front.up.isFiring) {
-      rState := False
-    }
+    //when (cMid0Front.up.isFiring) {
+    //  rState := False
+    //}
     setOutpModMemWord.io.btbElemValid := False
     setOutpModMemWord.io.btbElemDontPredict := (
       //outp.branchTgtBufElem(1).dontPredict
@@ -7877,11 +7895,13 @@ case class SnowHousePipeStageExecute(
             // when `includesLdBubble === True`
             // because of how previous pipeline stages function
 
-            //outp.branchTgtBufElem(0).valid
-            //&& 
-            outp.branchTgtBufElem(0).includesLdBubble
+            outp.branchTgtBufElem(0).valid
+            && outp.branchTgtBufElem(0).includesLdBubble
           )
-          ## outp.instrCnt.myPsIdBubble.last
+          ## (
+            outp.branchTgtBufElem(0).valid
+            && outp.instrCnt.myPsIdBubble.last
+          )
         ) {
           is (M"1-") {
             when (cMid0Front.up.isFiring) {
@@ -7934,6 +7954,9 @@ case class SnowHousePipeStageExecute(
           }
         }
       } otherwise {
+        when (cMid0Front.up.isFiring) {
+          rState := False
+        }
         setOutpModMemWord.io.btbElemValid := True
         doSetOtherSetOutpMmwBranchPredictorInputs(true)
       }
