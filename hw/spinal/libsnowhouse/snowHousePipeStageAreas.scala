@@ -9112,139 +9112,6 @@ case class SnowHousePipeStageWriteBack(
 
 
   //--------
-  // BEGIN: old code, don't use
-  //val myNonLcvDbusArea = (
-  //  !cfg.useLcvDataBus
-  //) generate (new Area {
-  //  // old code, don't use
-  //  //def tempExtLeft(ydx: Int) = myWbPayload.myExt(ydx)
-  //  //def tempExtRight(ydx: Int) = cWb.up(pMem).myExt(ydx)
-  //  //val rDbusState = Reg(Bool(), init=False)
-
-  //  myDbusIo.myUpFireIshCond := (
-  //    cWb.up.isFiring
-  //    //&& myWbPayload.outpDecodeExt.opIsMemAccess.last
-  //    //False
-  //  )
-  //  //myDbusIo.myUpFireIshUpdateSrcCond := (
-  //  //  cWb.up.isFiring
-  //  //  //&& myWbPayload.outpDecodeExt.opIsMemAccess.last
-  //  //  //False
-  //  //)
-  //  myDbusIo.myDbusExtraValid := (
-  //    cWb.up.isValid
-  //    && myWbPayload.outpDecodeExt.opIsMemAccess.last
-  //  )
-
-  //  when (
-  //    ////RegNext(
-  //    //  RegNext(myDbus.nextValid, init=False),
-  //    ////  init=False
-  //    ////)
-  //    ////myWbPayload.decodeExt.opIsMemAccess.sFindFirst(
-  //    ////  _ === True
-  //    ////)._1
-
-  //    //cWb.up.isValid
-  //    //&& myWbPayload.outpDecodeExt.opIsMemAccess.last
-  //    myDbusIo.myDbusExtraValid
-  //  ) {
-  //    //myDbusIo.myUpFireIshCond := cWb.up.isFiring
-
-  //    //myDbusIo.myDbusUpFireIshUpdateSrcCond := (
-  //    //  cWb.up.isFiring
-  //    //)
-  //    //def tempExtLeft(ydx: Int) = myWbPayload.myExt(ydx)
-  //    //def tempExtRight(ydx: Int) = cWb.up(pMem).myExt(ydx)
-  //    when (
-  //      !myDbus.ready
-  //      //!myDbusExtraReady(3)
-  //    ) {
-  //      cWb.haltIt()
-  //      val mapElem = myWbPayload.gprIdxToMemAddrIdxMap(0)
-  //      val myCurrExt = (
-  //        if (!mapElem.haveHowToSetIdx) (
-  //          myWbPayload.myExt(0)
-  //        ) else (
-  //          myWbPayload.myExt(mapElem.howToSetIdx)
-  //        )
-  //      )
-  //      myCurrExt.modMemWordValid.foreach(mmwValidItem => {
-  //        mmwValidItem := False
-  //      })
-  //    } otherwise {
-  //      val myDecodeExt = myWbPayload.outpDecodeExt
-  //      val mapElem = myWbPayload.gprIdxToMemAddrIdxMap(0)
-  //      val myCurrExt = (
-  //        if (!mapElem.haveHowToSetIdx) (
-  //          myWbPayload.myExt(
-  //            0
-  //          )
-  //        ) else (
-  //          myWbPayload.myExt(
-  //            mapElem.howToSetIdx
-  //          )
-  //        )
-  //      )
-  //      when (!myWbPayload.outpDecodeExt.memAccessKind.asBits(1)) {
-  //        myCurrExt.modMemWord := myDbus.recvData.word
-  //        //myCurrExt.modMemWordValid.foreach(current => {
-  //        //  current := (
-  //        //    // TODO: support more destination GPRs
-  //        //    //!myWbPayload.gprIsZeroVec(0)
-  //        //    True
-  //        //  )
-  //        //})
-  //        for (idx <- 0 until cfg.regFileCfg.modMemWordValidSize) {
-  //          myCurrExt.modMemWordValid(idx) := (
-  //            !myWbPayload.gprIsZeroVec.last(idx)
-  //          )
-  //          //when (!myWbPayload.gprIsZeroVec.last(idx)) {
-  //          //  //myCurrExt.modMemWordValid.foreach(current => {
-  //          //  //  current := (
-  //          //  //    // TODO: support more destination GPRs
-  //          //  //    //!myWbPayload.gprIsZeroVec(0)
-  //          //  //    True
-  //          //  //  )
-  //          //  //})
-  //          //}
-  //        }
-  //        //val myDecodeExt = myWbPayload.outpDecodeExt
-  //        //val mapElem = myWbPayload.gprIdxToMemAddrIdxMap(0)
-  //        //val myCurrExt = (
-  //        //  if (!mapElem.haveHowToSetIdx) (
-  //        //    myWbPayload.myExt(
-  //        //      0
-  //        //    )
-  //        //  ) else (
-  //        //    myWbPayload.myExt(
-  //        //      mapElem.howToSetIdx
-  //        //    )
-  //        //  )
-  //        //)
-  //        //when (!myWbPayload.outpDecodeExt.memAccessKind.asBits(1)) {
-  //        //  myCurrExt.modMemWord := myDbus.recvData.word
-  //        //  //myCurrExt.modMemWordValid.foreach(current => {
-  //        //  //  current := (
-  //        //  //    // TODO: support more destination GPRs
-  //        //  //    //!myWbPayload.gprIsZeroVec(0)
-  //        //  //    True
-  //        //  //  )
-  //        //  //})
-  //        //}
-  //        //myCurrExt.modMemWordValid.foreach(current => {
-  //        //  current := (
-  //        //    // TODO: support more destination GPRs
-  //        //    //!myWbPayload.gprIsZeroVec(0)
-  //        //    True
-  //        //  )
-  //        //})
-  //      }
-  //    }
-  //  }
-  //})
-  // END: old code, don't use
-  //--------
   val myLcvDbusArea = (
     cfg.useLcvDataBus
   ) generate (new Area {
@@ -9279,75 +9146,133 @@ case class SnowHousePipeStageWriteBack(
           mmwValidItem := False
         })
       } otherwise {
-        val myDecodeExt = myWbPayload.outpDecodeExt
-        val mapElem = myWbPayload.gprIdxToMemAddrIdxMap(0)
-        val myCurrExt = (
-          if (!mapElem.haveHowToSetIdx) (
-            myWbPayload.myExt(
-              0
-            )
-          ) else (
-            myWbPayload.myExt(
-              mapElem.howToSetIdx
-            )
+        //when (!myWbPayload.outpDecodeExt.memAccessKind.asBits(1)) {
+        //  //myCurrExt.modMemWord := myDbus.recvData.word
+        //  myCurrExt.modMemWord := myD2hBus.data
+        //  //myCurrExt.modMemWordValid.foreach(current => {
+        //  //  current := (
+        //  //    // TODO: support more destination GPRs
+        //  //    //!myWbPayload.gprIsZeroVec(0)
+        //  //    True
+        //  //  )
+        //  //})
+        //  for (idx <- 0 until cfg.regFileCfg.modMemWordValidSize) {
+        //    myCurrExt.modMemWordValid(idx) := (
+        //      !myWbPayload.gprIsZeroVec.last(idx)
+        //    )
+        //    //when (!myWbPayload.gprIsZeroVec.last(idx)) {
+        //    //  //myCurrExt.modMemWordValid.foreach(current => {
+        //    //  //  current := (
+        //    //  //    // TODO: support more destination GPRs
+        //    //  //    //!myWbPayload.gprIsZeroVec(0)
+        //    //  //    True
+        //    //  //  )
+        //    //  //})
+        //    //}
+        //  }
+        //  //val myDecodeExt = myWbPayload.outpDecodeExt
+        //  //val mapElem = myWbPayload.gprIdxToMemAddrIdxMap(0)
+        //  //val myCurrExt = (
+        //  //  if (!mapElem.haveHowToSetIdx) (
+        //  //    myWbPayload.myExt(
+        //  //      0
+        //  //    )
+        //  //  ) else (
+        //  //    myWbPayload.myExt(
+        //  //      mapElem.howToSetIdx
+        //  //    )
+        //  //  )
+        //  //)
+        //  //when (!myWbPayload.outpDecodeExt.memAccessKind.asBits(1)) {
+        //  //  myCurrExt.modMemWord := myDbus.recvData.word
+        //  //  //myCurrExt.modMemWordValid.foreach(current => {
+        //  //  //  current := (
+        //  //  //    // TODO: support more destination GPRs
+        //  //  //    //!myWbPayload.gprIsZeroVec(0)
+        //  //  //    True
+        //  //  //  )
+        //  //  //})
+        //  //}
+        //  //myCurrExt.modMemWordValid.foreach(current => {
+        //  //  current := (
+        //  //    // TODO: support more destination GPRs
+        //  //    //!myWbPayload.gprIsZeroVec(0)
+        //  //    True
+        //  //  )
+        //  //})
+        //}
+      }
+    }
+    when (
+      !myWbPayload.outpDecodeExt.memAccessKind.asBits(1)
+      && myD2hBus.valid
+    ) {
+      val myDecodeExt = myWbPayload.outpDecodeExt
+      val mapElem = myWbPayload.gprIdxToMemAddrIdxMap(0)
+      val myCurrExt = (
+        if (!mapElem.haveHowToSetIdx) (
+          myWbPayload.myExt(
+            0
+          )
+        ) else (
+          myWbPayload.myExt(
+            mapElem.howToSetIdx
           )
         )
-        when (!myWbPayload.outpDecodeExt.memAccessKind.asBits(1)) {
-          //myCurrExt.modMemWord := myDbus.recvData.word
-          myCurrExt.modMemWord := myD2hBus.data
-          //myCurrExt.modMemWordValid.foreach(current => {
-          //  current := (
-          //    // TODO: support more destination GPRs
-          //    //!myWbPayload.gprIsZeroVec(0)
-          //    True
-          //  )
-          //})
-          for (idx <- 0 until cfg.regFileCfg.modMemWordValidSize) {
-            myCurrExt.modMemWordValid(idx) := (
-              !myWbPayload.gprIsZeroVec.last(idx)
-            )
-            //when (!myWbPayload.gprIsZeroVec.last(idx)) {
-            //  //myCurrExt.modMemWordValid.foreach(current => {
-            //  //  current := (
-            //  //    // TODO: support more destination GPRs
-            //  //    //!myWbPayload.gprIsZeroVec(0)
-            //  //    True
-            //  //  )
-            //  //})
-            //}
-          }
-          //val myDecodeExt = myWbPayload.outpDecodeExt
-          //val mapElem = myWbPayload.gprIdxToMemAddrIdxMap(0)
-          //val myCurrExt = (
-          //  if (!mapElem.haveHowToSetIdx) (
-          //    myWbPayload.myExt(
-          //      0
-          //    )
-          //  ) else (
-          //    myWbPayload.myExt(
-          //      mapElem.howToSetIdx
-          //    )
-          //  )
-          //)
-          //when (!myWbPayload.outpDecodeExt.memAccessKind.asBits(1)) {
-          //  myCurrExt.modMemWord := myDbus.recvData.word
-          //  //myCurrExt.modMemWordValid.foreach(current => {
-          //  //  current := (
-          //  //    // TODO: support more destination GPRs
-          //  //    //!myWbPayload.gprIsZeroVec(0)
-          //  //    True
-          //  //  )
-          //  //})
-          //}
-          //myCurrExt.modMemWordValid.foreach(current => {
-          //  current := (
-          //    // TODO: support more destination GPRs
-          //    //!myWbPayload.gprIsZeroVec(0)
-          //    True
-          //  )
-          //})
-        }
+      )
+      //myCurrExt.modMemWord := myDbus.recvData.word
+      myCurrExt.modMemWord := myD2hBus.data
+      //myCurrExt.modMemWordValid.foreach(current => {
+      //  current := (
+      //    // TODO: support more destination GPRs
+      //    //!myWbPayload.gprIsZeroVec(0)
+      //    True
+      //  )
+      //})
+      for (idx <- 0 until cfg.regFileCfg.modMemWordValidSize) {
+        myCurrExt.modMemWordValid(idx) := (
+          !myWbPayload.gprIsZeroVec.last(idx)
+        )
+        //when (!myWbPayload.gprIsZeroVec.last(idx)) {
+        //  //myCurrExt.modMemWordValid.foreach(current => {
+        //  //  current := (
+        //  //    // TODO: support more destination GPRs
+        //  //    //!myWbPayload.gprIsZeroVec(0)
+        //  //    True
+        //  //  )
+        //  //})
+        //}
       }
+      //val myDecodeExt = myWbPayload.outpDecodeExt
+      //val mapElem = myWbPayload.gprIdxToMemAddrIdxMap(0)
+      //val myCurrExt = (
+      //  if (!mapElem.haveHowToSetIdx) (
+      //    myWbPayload.myExt(
+      //      0
+      //    )
+      //  ) else (
+      //    myWbPayload.myExt(
+      //      mapElem.howToSetIdx
+      //    )
+      //  )
+      //)
+      //when (!myWbPayload.outpDecodeExt.memAccessKind.asBits(1)) {
+      //  myCurrExt.modMemWord := myDbus.recvData.word
+      //  //myCurrExt.modMemWordValid.foreach(current => {
+      //  //  current := (
+      //  //    // TODO: support more destination GPRs
+      //  //    //!myWbPayload.gprIsZeroVec(0)
+      //  //    True
+      //  //  )
+      //  //})
+      //}
+      //myCurrExt.modMemWordValid.foreach(current => {
+      //  current := (
+      //    // TODO: support more destination GPRs
+      //    //!myWbPayload.gprIsZeroVec(0)
+      //    True
+      //  )
+      //})
     }
   })
   //when (
