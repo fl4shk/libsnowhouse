@@ -1002,21 +1002,21 @@ case class SnowHouse
   val myLcvDbusArea = (
     cfg.useLcvDataBus
   ) generate (new Area {
-    val myBridge = SnowHouseDbusToLcvDbusBridge(cfg=cfg)
-    val myBridgeCtrl = SnowHouseBusBridgeCtrl(
-      cfg=cfg,
-      isIbus=false,
-    )
-    io.lcvDbus <> myBridge.io.lcvBus
-    myBridgeCtrl.io.bridgeBus <> myBridge.io.bus
-    myBridgeCtrl.io.bridgeH2dPushDelay := myBridge.io.h2dPushDelay
-    myBridgeCtrl.io.myUpFireIshCond := myDbusIo.myUpFireIshCond
-    myBridgeCtrl.io.myUpFireIshUpdateSrcCond := (
-      myDbusIo.myUpFireIshUpdateSrcCond
-    )
-    myBridgeCtrl.io.cpuDbusExtraValid := myDbusIo.myDbusExtraValid
-    myDbusIo.dbus >> myBridgeCtrl.io.cpuBus
-    //myBridgeCtrl.io.cpuBus := myDbusIo.dbus.nextValid
+    //val myBridge = SnowHouseDbusToLcvDbusBridge(cfg=cfg)
+    //val myBridgeCtrl = SnowHouseBusBridgeCtrl(
+    //  cfg=cfg,
+    //  isIbus=false,
+    //)
+    //io.lcvDbus <> myBridge.io.lcvBus
+    //myBridgeCtrl.io.bridgeBus <> myBridge.io.bus
+    //myBridgeCtrl.io.bridgeH2dPushDelay := myBridge.io.h2dPushDelay
+    //myBridgeCtrl.io.myUpFireIshCond := myDbusIo.myUpFireIshCond
+    //myBridgeCtrl.io.myUpFireIshUpdateSrcCond := (
+    //  myDbusIo.myUpFireIshUpdateSrcCond
+    //)
+    //myBridgeCtrl.io.cpuDbusExtraValid := myDbusIo.myDbusExtraValid
+    //myDbusIo.dbus >> myBridgeCtrl.io.cpuBus
+    ////myBridgeCtrl.io.cpuBus := myDbusIo.dbus.nextValid
   })
 
   val pcChangeState = (
@@ -1148,7 +1148,13 @@ case class SnowHouse
       link=cIf,
       prevPayload=null,
       currPayload=pIf,
-      myDbusIo=myDbusIo,
+      myDbusIo=(
+        if (!cfg.useLcvDataBus) (
+          myDbusIo
+        ) else (
+          null.asInstanceOf[SnowHouseDbusIo]
+        )
+      ),
       regFile=regFile,
     ),
     psIdHaltIt=psIdHaltIt,
@@ -1207,7 +1213,13 @@ case class SnowHouse
         //pId
         regFile.io.frontPayload
       ),
-      myDbusIo=myDbusIo,
+      myDbusIo=(
+        if (!cfg.useLcvDataBus) (
+          myDbusIo
+        ) else (
+          null.asInstanceOf[SnowHouseDbusIo]
+        )
+      ),
       regFile=regFile,
     ),
     psIdHaltIt=psIdHaltIt,
@@ -1239,7 +1251,13 @@ case class SnowHouse
       link=null,
       prevPayload=null,
       currPayload=null,
-      myDbusIo=myDbusIo,
+      myDbusIo=(
+        if (!cfg.useLcvDataBus) (
+          myDbusIo
+        ) else (
+          null.asInstanceOf[SnowHouseDbusIo]
+        )
+      ),
       regFile=null,
     ),
     psExSetPc=psExSetPc,
@@ -1306,7 +1324,13 @@ case class SnowHouse
         currPayload=(
           pMem
         ),
-        myDbusIo=myDbusIo,
+        myDbusIo=(
+          if (!cfg.useLcvDataBus) (
+            myDbusIo
+          ) else (
+            null.asInstanceOf[SnowHouseDbusIo]
+          )
+        ),
         regFile=regFile,
       ),
       //psWb=(
@@ -1344,7 +1368,13 @@ case class SnowHouse
         link=cWb,
         prevPayload=pMem,
         currPayload=regFile.io.modBackPayload,
-        myDbusIo=myDbusIo,
+        myDbusIo=(
+          if (!cfg.useLcvDataBus) (
+            myDbusIo
+          ) else (
+            null.asInstanceOf[SnowHouseDbusIo]
+          )
+        ),
         regFile=regFile,
       ),
       //psMemStallHost=psMemStallHost,
