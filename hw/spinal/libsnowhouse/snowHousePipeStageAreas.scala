@@ -900,7 +900,27 @@ private[libsnowhouse] case class SnowHouseIbusToLcvIbusBridge(
   )
   //--------
   def myH2dPushStm = io.lcvBus.h2dBus
-  def myD2hPopStm = io.lcvBus.d2hBus
+  //def myD2hPopStm = io.lcvBus.d2hBus
+  val myThrowCond = Bool()
+  val myD2hPopStm = io.lcvBus.d2hBus.throwWhen(
+    myThrowCond
+  )
+  myThrowCond := (
+    io.lcvBus.d2hBus.src.asSInt
+    =/= (
+      RegNextWhen(
+        myD2hPopStm.src.asSInt + 1,
+        cond=myD2hPopStm.fire
+      )
+      init(1)
+    )
+    && History[Bool](
+      that=True,
+      when=myD2hPopStm.fire,
+      length=4,
+      init=False,
+    ).last
+  )
 
   io.h2dPushDelay := (
     //myH2dPushStm.valid && 
@@ -1141,23 +1161,6 @@ private[libsnowhouse] case class SnowHouseBusBridgeCtrl(
     //  //io.bridgeBus.sendData.src := tempSrcRnw.asUInt
     //}
   }
-  //if (!isIbus) {
-  //  when (
-  //    io.cpuDbusExtraValid
-  //    && io.bridgeH2dPushDelay
-  //  ) {
-  //    io.bridgeBus.nextValid := False
-  //    //nextSrc := rSrc
-  //    //io.bridgeBus.sendData.src := tempSrcRnw.asUInt
-  //  }
-  //  //when (
-  //  //  io.bridgeH2dPushDelay
-  //  //) {
-  //  //  io.bridgeBus.nextValid := False
-  //  //  nextSrc := rSrc
-  //  //  io.bridgeBus.sendData.src := tempSrcRnw.asUInt
-  //  //}
-  //}
 
   //val tempCond = Vec.fill(2)(Bool())
   case class ExtraBusReadyPayload(
@@ -1165,9 +1168,9 @@ private[libsnowhouse] case class SnowHouseBusBridgeCtrl(
     val busRdWord = Vec.fill(2)(
       Flow(cloneOf(io.bridgeBus.recvData.word))
     )
-    val src = Vec.fill(2)(
-      cloneOf(io.bridgeBus.recvData.src)
-    )
+    //val src = Vec.fill(2)(
+    //  cloneOf(io.bridgeBus.recvData.src)
+    //)
 
     val myCurrIdx = UInt(log2Up(busRdWord.size) bits)
 
@@ -1177,8 +1180,8 @@ private[libsnowhouse] case class SnowHouseBusBridgeCtrl(
     def myCurrFire = busRdWord(myCurrIdx).valid
     def myOtherFire = busRdWord(myOtherIdx).valid
 
-    def myCurrSrc = src(myCurrIdx)
-    def myOtherSrc = src(myOtherIdx)
+    //def myCurrSrc = src(myCurrIdx)
+    //def myOtherSrc = src(myOtherIdx)
   }
   val rHadExtraBusReady = {
     val temp = Reg(ExtraBusReadyPayload())
@@ -1197,21 +1200,21 @@ private[libsnowhouse] case class SnowHouseBusBridgeCtrl(
   //    init=True,
   //  ).last
   //)
-  val myTempCond = Bool()
-  val rMyTempSrc = (
-    Reg(cloneOf(io.bridgeBus.recvData.src))
-    init(0x0)
-  )
-  myTempCond := (
-    //if (isIbus) (
-      io.bridgeBus.recvData.src
-      =/= rMyTempSrc
-    //) else (
-    //  True
-    //  //io.bridgeBus.recvData.src
-    //  //=/= 
-    //)
-  )
+  //val myTempCond = Bool()
+  //val rMyTempSrc = (
+  //  Reg(cloneOf(io.bridgeBus.recvData.src))
+  //  init(0x0)
+  //)
+  //myTempCond := (
+  //  //if (isIbus) (
+  //    io.bridgeBus.recvData.src
+  //    =/= rMyTempSrc
+  //  //) else (
+  //  //  True
+  //  //  //io.bridgeBus.recvData.src
+  //  //  //=/= 
+  //  //)
+  //)
   //io.busRdWord := RegNext(io.busRdWord, init=io.busRdWord.getZero)
   //io.myHaltIt := RegNext(io.myHaltIt, init=io.myHaltIt.getZero)
   io.cpuBus.recvData := (
@@ -1231,24 +1234,24 @@ private[libsnowhouse] case class SnowHouseBusBridgeCtrl(
     ## rHadExtraBusReady.myCurrFire
     ## (
       myZeroStallStateHaltItCond
-      || (
-        if (isIbus) (
-          !myTempCond
-          && (
-            History[Bool](
-              that=True,
-              when=io.myUpFireIshCond,
-              length=5,
-              init=False,
-            ).last
-          )
-        ) else (
-          //io.cpuDbusExtraValid
-          //&& 
-          !myTempCond
-          //False
-        )
-      )
+      //|| (
+      //  if (isIbus) (
+      //    !myTempCond
+      //    && (
+      //      History[Bool](
+      //        that=True,
+      //        when=io.myUpFireIshCond,
+      //        length=5,
+      //        init=False,
+      //      ).last
+      //    )
+      //  ) else (
+      //    //io.cpuDbusExtraValid
+      //    //&& 
+      //    !myTempCond
+      //    //False
+      //  )
+      //)
     )
   ) {
     is (M"01-") {
@@ -1261,14 +1264,15 @@ private[libsnowhouse] case class SnowHouseBusBridgeCtrl(
       }
       when (
         !rHadExtraBusReady.myOtherFire
-        && rMyTempSrc =/= io.bridgeBus.recvData.src
-        && rHadExtraBusReady.myCurrSrc =/= io.bridgeBus.recvData.src
-        //&& rHadExtraBusReady.myOtherSrc =/= io.bridgeBus.recvData.src
+        && io.bridgeBus.ready // NOTE: this is for no-`src`-checks
+        //&& rMyTempSrc =/= io.bridgeBus.recvData.src
+        //&& rHadExtraBusReady.myCurrSrc =/= io.bridgeBus.recvData.src
+        ////&& rHadExtraBusReady.myOtherSrc =/= io.bridgeBus.recvData.src
       ) {
         rHadExtraBusReady.myOtherFire := True
         rHadExtraBusReady.myOtherBusRdWord := io.bridgeBus.recvData.word
-        rHadExtraBusReady.myOtherSrc := io.bridgeBus.recvData.src
-        rMyTempSrc := io.bridgeBus.recvData.src
+        //rHadExtraBusReady.myOtherSrc := io.bridgeBus.recvData.src
+        //rMyTempSrc := io.bridgeBus.recvData.src
       }
     }
     is (M"001") {
@@ -1284,7 +1288,7 @@ private[libsnowhouse] case class SnowHouseBusBridgeCtrl(
       rHadExtraBusReady.myCurrFire := False
       rHadExtraBusReady.myOtherFire := False
       
-      rMyTempSrc := io.bridgeBus.recvData.src
+      //rMyTempSrc := io.bridgeBus.recvData.src
       io.cpuBus.recvData.word := io.bridgeBus.recvData.word
       rStallState := True
     }
@@ -1292,12 +1296,12 @@ private[libsnowhouse] case class SnowHouseBusBridgeCtrl(
       when (
         !rHadExtraBusReady.myCurrFire
         && io.bridgeBus.ready
-        && rMyTempSrc =/= io.bridgeBus.recvData.src
+        //&& rMyTempSrc =/= io.bridgeBus.recvData.src
       ) {
-        rMyTempSrc := io.bridgeBus.recvData.src
+        //rMyTempSrc := io.bridgeBus.recvData.src
         rHadExtraBusReady.myCurrFire := True
         rHadExtraBusReady.myCurrBusRdWord := io.bridgeBus.recvData.word
-        rHadExtraBusReady.myCurrSrc := io.bridgeBus.recvData.src
+        //rHadExtraBusReady.myCurrSrc := io.bridgeBus.recvData.src
       }
     }
   }
