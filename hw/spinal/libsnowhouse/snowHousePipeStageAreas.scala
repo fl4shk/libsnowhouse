@@ -1648,12 +1648,18 @@ case class SnowHousePipeStageInstrFetch(
     when (
       myBusH2dValid
       && !io.lcvIbus.h2dBus.ready
+      ////&& History[Bool](
+      ////  that=True,
+      ////  length=3,
+      ////  when=myReadyIshCond,
+      ////  init=False
+      ////).last
       //&& !io.lcvIbus.d2hBus.valid
-      //&& !down.isReady
+      ////&& !down.isReady
     ) {
       //cIf.terminateIt()
-      //cIf.haltIt()
-      cIf.duplicateIt()
+      cIf.haltIt()
+      //cIf.duplicateIt()
     }
   }
 
@@ -2029,43 +2035,87 @@ case class SnowHousePipeStageInstrDecode(
       upPayload(1) := upPayload(0)
     }
   })
+  object MyLcvIbusState extends SpinalEnum(
+    defaultEncoding=binaryOneHot
+  ) {
+    val
+      WAIT_INSTR,
+      WAIT_UP_FIRE
+      = newElement();
+  }
   val myLcvIbusUpPayloadArea = (
     cfg.useLcvInstrBus
   ) generate (new Area {
-    val instrRecv = SnowHouseInstrRecv(cfg=cfg)
+    //val instrRecv = SnowHouseInstrRecv(cfg=cfg)
+    def myD2hBus = io.lcvIbus.d2hBus
+    val rState = (
+      Reg(MyLcvIbusState())
+      init(MyLcvIbusState.WAIT_INSTR)
+    )
 
     upPayload(0) := up(pIf)
-    io.lcvIbus.d2hBus.ready := (
+    myD2hBus.ready := (
       False
       //True
     )
     when (up.isValid) {
-      io.lcvIbus.d2hBus.ready := (
-        //False
-        //True
-        io.lcvIbus.d2hBus.valid
-        ///&& down.isReady
-        //&& up.isReady
-        && down.isReady
-      )
       upPayload(1) := upPayload(0)
-      //io.lcvIbus.d2hBus.ready := (
-      //  //up.isReady
-      //  //|| 
-      //  (
-      //    !instrRecv.io.myHaltIt
-      //    //&& down.isReady
-      //  )
-      //)
     }
-    instrRecv.io.someIbusHaveInstr := io.lcvIbus.d2hBus.valid
-    instrRecv.io.someIbusEncInstr := io.lcvIbus.d2hBus.data
-    instrRecv.io.myUpFireIshCond := up.isFiring
 
-    upPayload(1).encInstr.payload := instrRecv.io.encInstr
-    when (instrRecv.io.myHaltIt) {
+    upPayload(1).encInstr.payload := (
+      RegNext(
+        upPayload(1).encInstr.payload,
+        init=upPayload(1).encInstr.payload.getZero,
+      )
+    )
+    when (
+      up.isValid
+      && rState === MyLcvIbusState.WAIT_INSTR
+      && !myD2hBus.valid
+    ) {
       cId.haltIt()
     }
+    when (
+      up.isValid
+      && rState === MyLcvIbusState.WAIT_INSTR
+      && myD2hBus.valid
+    ) {
+      rState := MyLcvIbusState.WAIT_UP_FIRE
+      upPayload(1).encInstr.payload := myD2hBus.data
+    }
+    when (
+      up.isFiring
+    ) {
+      rState := MyLcvIbusState.WAIT_INSTR
+    }
+
+    //when (up.isValid) {
+    //  myD2hBus.ready := (
+    //    //False
+    //    //True
+    //    myD2hBus.valid
+    //    ///&& down.isReady
+    //    //&& up.isReady
+    //    && down.isReady
+    //  )
+    //  upPayload(1) := upPayload(0)
+    //  //myD2hBus.ready := (
+    //  //  //up.isReady
+    //  //  //|| 
+    //  //  (
+    //  //    !instrRecv.io.myHaltIt
+    //  //    //&& down.isReady
+    //  //  )
+    //  //)
+    //}
+    ////instrRecv.io.someIbusHaveInstr := myD2hBus.valid
+    ////instrRecv.io.someIbusEncInstr := myD2hBus.data
+    ////instrRecv.io.myUpFireIshCond := up.isFiring
+
+    ////upPayload(1).encInstr.payload := instrRecv.io.encInstr
+    ////when (instrRecv.io.myHaltIt) {
+    ////  cId.haltIt()
+    ////}
   })
 
   val shouldFinishJump = (
