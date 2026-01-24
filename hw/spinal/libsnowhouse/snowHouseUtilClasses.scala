@@ -1157,6 +1157,9 @@ case class SnowHouseInstrCnt(
   val shouldIgnoreInstr = Vec.fill(cfg.lowerMyFanoutRegPcSetItCnt)(
     Bool()
   )
+  val fwdCanDoItInfo = Vec.fill(cfg.lowerMyFanoutRegPcSetItCnt)(
+    Bool()
+  )
   val myPsIdBubble = Vec.fill(cfg.lowerMyFanoutRegPcSetItCnt)(
     Bool()
   )

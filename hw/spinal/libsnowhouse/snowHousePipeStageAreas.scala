@@ -8426,7 +8426,18 @@ case class SnowHousePipeStageExecute(
       }
       //myDoStall(stallKindMultiCycle) := False
       when (cMid0Front.up.isFiring) {
+        //outp.myExt.foreach(myExt => {
+        //  myExt.modMemWordValid.foreach(mmwValidItem => {
+        //    mmwValidItem := True
+        //  })
+        //})
         rHaveDoneMultiCycleOp := False
+      } otherwise {
+        //outp.myExt.foreach(myExt => {
+        //  myExt.modMemWordValid.foreach(mmwValidItem => {
+        //    mmwValidItem := False
+        //  })
+        //})
       }
     }
     is (MultiCycleOpState.Main) {
@@ -8575,7 +8586,15 @@ case class SnowHousePipeStageExecute(
       item.fwdCanDoIt.foreach(item => {
         item := (
           //!setOutpModMemWord.io.shouldIgnoreInstr.last
-          !myShouldIgnoreInstr.last
+          //if (!cfg.useLcvDataBus) (
+            !myShouldIgnoreInstr.last
+          //) else (
+          //  !(
+          //    myShouldIgnoreInstr.last
+          //    //|| setOutpModMemWord.io.opIsMemAccess.last
+          //    || outp.outpDecodeExt.opIsMemAccess.last
+          //  )
+          //)
           //&& (
           //  if (idx < outp.myExt(0).modMemWordValid.size) (
           //    outp.myExt(0).modMemWordValid(idx)
@@ -8590,6 +8609,11 @@ case class SnowHousePipeStageExecute(
       })
     })
   //}
+  if (cfg.useLcvDataBus) {
+    outp.instrCnt.shouldIgnoreInstr.foreach(item => {
+      item := myShouldIgnoreInstr.last
+    })
+  }
 }
 case class SnowHousePipeStageMem(
   args: SnowHousePipeStageArgs,
@@ -8953,14 +8977,55 @@ case class SnowHousePipeStageMem(
 
   def setMidModStages(): Unit = {
     regFile.io.midModStages(0) := midModPayload
+    //when (
+    //  midModPayload(extIdxUp).fwdCanDoIt
+    //) {
+    //  regFile.io.midModStages(0)(extIdxUp).myExt.foreach(item => {
+    //    item.fwdCanDoIt.foreach(item => {
+    //      
+    //    })
+    //  })
+    //}
   }
   setMidModStages()
 
   //modFront(pMem) := midModPayload(extIdxUp)
-  cMem.up(pMem) := midModPayload(extIdxUp)
   //when (modFront.isValid) {
   //} otherwise {
   //}
+  if (!cfg.useLcvDataBus) {
+    cMem.up(pMem) := midModPayload(extIdxUp)
+  } else { // if (cfg.useLcvDataBus)
+    cMem.up(pMem) := midModPayload(extIdxUp)
+    //for (idx <- 0 until midModPayload(extIdxUp).myExt.size) {
+    //  //val tempExtLeft = regFile.io.midModStages(0)(extIdxUp).myExt(idx)
+    //  val tempPayloadRight = midModPayload(extIdxUp)
+    //  val tempExtRight = tempPayloadRight.myExt(idx)
+    //  for (jdx <- 0 until tempExtRight.fwdCanDoIt.size) {
+    //    //tempExtRight.fwdCanDoIt(jdx) := tempExtRight.fwdCanDoIt(jdx)
+    //    cMem.up(pMem).myExt(idx).fwdCanDoIt(jdx).allowOverride
+    //    when (cMem.up.isFiring) {
+    //      cMem.up(pMem).myExt(idx).fwdCanDoIt(jdx) := (
+    //        tempPayloadRight.instrCnt.shouldIgnoreInstr.last
+    //        //tempExtRight.fwdCanDoIt(jdx)
+    //        //|| tempPayloadRight.outpDecodeExt.opIsMemAccess.last
+    //        //&& !tempPayloadRight.outpDecodeExt.opIsMemAccess.last
+    //        //&& !tempPayloadRight.outpDecodeExt.memAccessKind.asBits(1)
+    //      )
+    //    }
+    //    //when (tempExtRight.fwdCanDoIt(jdx)) {
+    //    //  //tempExtRight.fwdCanDoIt
+    //    //  cMem.up(pMem).myExt(idx).fwdCanDoIt(jdx) := (
+    //    //    tempExtRight.fwdCanDoIt(jdx)
+    //    //  )
+    //    //} otherwise {
+    //    //  cMem.up(pMem).myExt(idx).fwdCanDoIt(jdx) := (
+    //    //    tempExtRight.fwdCanDoIt(jdx)
+    //    //  )
+    //    //}
+    //  }
+    //}
+  }
 }
 case class SnowHousePipeStageWriteBack(
   args: SnowHousePipeStageArgs,
@@ -9040,9 +9105,10 @@ case class SnowHousePipeStageWriteBack(
     RegNext(myWbPayload(1), init=myWbPayload(1).getZero)
   )
 
-  when (cWb.up.isValid) {
-    myWbPayload(1) := myWbPayload(0)
-  }
+  //when (cWb.up.isValid) {
+  //  myWbPayload(1) := myWbPayload(0)
+  //}
+
   //when (cWb.up.isFiring) {
   //  myWbPayload.last := myWbPayload.head
   //}
@@ -9071,49 +9137,72 @@ case class SnowHousePipeStageWriteBack(
     })
     temp
   }
-  //for (ydx <- 0 until cfg.regFileCfg.memArrSize) {
-  //  //val tempMyExt = myWbPayload.myExt
-  //  def tempPayloadRight = cWb.up(pMem)
-  //  def tempExtLeft(ydx: Int) = myWbPayload.myExt(ydx)
-  //  def tempExtRight(ydx: Int) = tempPayloadRight.myExt(ydx)
-  //  val myExtLeft = tempExtLeft(ydx=ydx)
-  //  val myExtRight = tempExtRight(ydx=ydx)
-  //  myExtLeft.allowOverride
+  for (ydx <- 0 until cfg.regFileCfg.memArrSize) {
+    //val tempMyExt = myWbPayload.myExt
+    def tempPayloadRight = myWbPayload(0)//cWb.up(pMem)
+    def tempExtLeft(ydx: Int) = myWbPayload(1).myExt(ydx)
+    def tempExtRight(ydx: Int) = tempPayloadRight.myExt(ydx)
+    val myExtLeft = tempExtLeft(ydx=ydx)
+    val myExtRight = tempExtRight(ydx=ydx)
+    myExtLeft.allowOverride
 
-  //  when (
-  //    cWb.up.isValid
-  //    //&& rMmwState(ydx)(0) === MmwState.WAIT_DATA
-  //    //&& (
-  //    //  RegNext(
-  //    //    next=(rMmwState(ydx) == MmwState.WAIT_UP_FIRE),
-  //    //    init=False
-  //    //  )
-  //    //)
-  //    //&& myExtRight.modMemWordValid.last
-  //  ) {
-  //    myWbPayload.nonExt := (
-  //      cWb.up(pMem).nonExt
-  //    )
-  //    myExtLeft.main.memAddr := myExtRight.main.memAddr
-  //    myExtLeft.main.nonMemAddrMost := myExtRight.main.nonMemAddrMost
-  //    myExtLeft.main.modMemWord := myExtRight.main.modMemWord
-  //  }
-  //  //myExtLeft.modMemWord := myModMemWord.asUInt
+    when (
+      //cWb.up.isValid
+      //&& 
+      rMmwState(ydx)(0) === MmwState.WAIT_DATA
+      //&& (
+      //  RegNext(
+      //    next=(rMmwState(ydx) == MmwState.WAIT_UP_FIRE),
+      //    init=False
+      //  )
+      //)
+      //&& myExtRight.modMemWordValid.last
+    ) {
+      myWbPayload(1).nonExt := (
+        cWb.up(pMem).nonExt
+      )
+      myExtLeft.main.memAddr := myExtRight.main.memAddr
+      myExtLeft.main.nonMemAddrMost := myExtRight.main.nonMemAddrMost
+      if (!cfg.useLcvDataBus) {
+        myExtLeft.main.modMemWord := myExtRight.main.modMemWord
+      }
+    }
+    if (cfg.useLcvDataBus) {
+      when (
+        cWb.up.isValid
+        && rMmwState(ydx)(0) === MmwState.WAIT_DATA
+      ) {
+        myExtLeft.main.modMemWord := myExtRight.main.modMemWord
+      }
+    }
+    //myExtLeft.modMemWord := myModMemWord.asUInt
 
-  //  //when (cWb.up.isValid) {
-  //  //  rMmwState(ydx)(0) := MmwState.WAIT_UP_FIRE
-  //  //}
-  //  //when (cWb.up.isFiring) {
-  //  //  rMmwState(ydx).foreach(item => item := MmwState.WAIT_DATA)
-  //  //}
-  //  //myExtLeft.valid.foreach(current => {
-  //  //  current := (
-  //  //    cWb.up.isValid
-  //  //  )
-  //  //})
-  //  //myExtLeft.ready := cWb.up.isReady
-  //  //myExtLeft.fire := cWb.up.isFiring
-  //}
+    when (
+      if (!cfg.useLcvDataBus) (
+        cWb.up.isValid
+      ) else ( // if (cfg.useLcvDataBus)
+        cWb.up.isValid
+        //|| RegNext(io.lcvDbus.d2hBus.valid, init=False)
+      )
+    ) {
+      rMmwState(ydx)(0) := MmwState.WAIT_UP_FIRE
+    }
+    when (cWb.up.isFiring) {
+      rMmwState(ydx).foreach(item => item := MmwState.WAIT_DATA)
+    }
+    //if (cfg.useLcvDataBus) {
+    //  when (io.lcvDbus.d2hBus.valid) {
+    //    rMmwState(ydx)(0) := MmwState.WAIT_UP_FIRE
+    //  }
+    //}
+    myExtLeft.valid.foreach(current => {
+      current := (
+        cWb.up.isValid
+      )
+    })
+    myExtLeft.ready := cWb.up.isReady
+    myExtLeft.fire := cWb.up.isFiring
+  }
 
 
   //--------
