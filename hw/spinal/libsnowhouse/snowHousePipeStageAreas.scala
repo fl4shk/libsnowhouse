@@ -1391,7 +1391,7 @@ case class SnowHousePipeStageInstrFetch(
       isIbus=true,
     )
   )
-  def myBusNextValid = (
+  def myBusH2dValid = (
     if (!cfg.useLcvInstrBus) (
       io.ibus.nextValid
     ) else (
@@ -1637,7 +1637,7 @@ case class SnowHousePipeStageInstrFetch(
   //    True
   //  )
   //)
-  myBusNextValid := True
+  myBusH2dValid := True
 
   val myUpdateRegPcCondUInt = (
     Cat(
