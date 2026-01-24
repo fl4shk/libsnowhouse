@@ -1254,7 +1254,8 @@ private[libsnowhouse] case class SnowHouseBusBridgeCtrl(
       //)
     )
   ) {
-    is (M"01-") {
+    def doSharedUpFireIshStuff(
+    ): Unit = {
       when (io.myUpFireIshCond) {
         io.cpuBus.recvData.word := rHadExtraBusReady.myCurrBusRdWord
         rHadExtraBusReady.myCurrFire := False
@@ -1262,12 +1263,18 @@ private[libsnowhouse] case class SnowHouseBusBridgeCtrl(
           !rHadExtraBusReady.myCurrIdx.lsb
         )
       }
+    }
+    is (M"011") {
+      doSharedUpFireIshStuff()
+    }
+    is (M"010") {
+      doSharedUpFireIshStuff()
       when (
         !rHadExtraBusReady.myOtherFire
-        && io.bridgeBus.ready // NOTE: this is for no-`src`-checks
-        //&& rMyTempSrc =/= io.bridgeBus.recvData.src
-        //&& rHadExtraBusReady.myCurrSrc =/= io.bridgeBus.recvData.src
-        ////&& rHadExtraBusReady.myOtherSrc =/= io.bridgeBus.recvData.src
+        //&& io.bridgeBus.ready // NOTE: this is for no-`src`-checks
+        ////&& rMyTempSrc =/= io.bridgeBus.recvData.src
+        ////&& rHadExtraBusReady.myCurrSrc =/= io.bridgeBus.recvData.src
+        //////&& rHadExtraBusReady.myOtherSrc =/= io.bridgeBus.recvData.src
       ) {
         rHadExtraBusReady.myOtherFire := True
         rHadExtraBusReady.myOtherBusRdWord := io.bridgeBus.recvData.word
