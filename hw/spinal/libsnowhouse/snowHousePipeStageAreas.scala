@@ -9025,19 +9025,24 @@ case class SnowHousePipeStageWriteBack(
   //regFile.myLinkArr += sWbFwd
   //regFile.myLinkArr += sWb
   val myWbPayload = (
-    //Vec.fill(2)(
+    Vec.fill(2)(
       SnowHousePipePayload(cfg=cfg)
-    //)
+    )
   )
-  myWbPayload := (
-    RegNext(myWbPayload, init=myWbPayload.getZero)
-  )
+  //myWbPayload := (
+  //  RegNext(myWbPayload, init=myWbPayload.getZero)
+  //)
   //when (cWb.up.isValid) {
   //  myWbPayload.head := cWb.up(pMem)
   //}
-  ////myWbPayload.last := (
-  ////  RegNext(myWbPayload.last, init=myWbPayload.last.getZero)
-  ////)
+  myWbPayload(0) := cWb.up(pMem)
+  myWbPayload(1) := (
+    RegNext(myWbPayload(1), init=myWbPayload(1).getZero)
+  )
+
+  when (cWb.up.isValid) {
+    myWbPayload(1) := myWbPayload(0)
+  }
   //when (cWb.up.isFiring) {
   //  myWbPayload.last := myWbPayload.head
   //}
@@ -9066,49 +9071,49 @@ case class SnowHousePipeStageWriteBack(
     })
     temp
   }
-  for (ydx <- 0 until cfg.regFileCfg.memArrSize) {
-    //val tempMyExt = myWbPayload.myExt
-    def tempPayloadRight = cWb.up(pMem)
-    def tempExtLeft(ydx: Int) = myWbPayload.myExt(ydx)
-    def tempExtRight(ydx: Int) = tempPayloadRight.myExt(ydx)
-    val myExtLeft = tempExtLeft(ydx=ydx)
-    val myExtRight = tempExtRight(ydx=ydx)
-    myExtLeft.allowOverride
+  //for (ydx <- 0 until cfg.regFileCfg.memArrSize) {
+  //  //val tempMyExt = myWbPayload.myExt
+  //  def tempPayloadRight = cWb.up(pMem)
+  //  def tempExtLeft(ydx: Int) = myWbPayload.myExt(ydx)
+  //  def tempExtRight(ydx: Int) = tempPayloadRight.myExt(ydx)
+  //  val myExtLeft = tempExtLeft(ydx=ydx)
+  //  val myExtRight = tempExtRight(ydx=ydx)
+  //  myExtLeft.allowOverride
 
-    when (
-      cWb.up.isValid
-      && rMmwState(ydx)(0) === MmwState.WAIT_DATA
-      //&& (
-      //  RegNext(
-      //    next=(rMmwState(ydx) == MmwState.WAIT_UP_FIRE),
-      //    init=False
-      //  )
-      //)
-      //&& myExtRight.modMemWordValid.last
-    ) {
-      myWbPayload.nonExt := (
-        cWb.up(pMem).nonExt
-      )
-      myExtLeft.main.memAddr := myExtRight.main.memAddr
-      myExtLeft.main.nonMemAddrMost := myExtRight.main.nonMemAddrMost
-      myExtLeft.main.modMemWord := myExtRight.main.modMemWord
-    }
-    //myExtLeft.modMemWord := myModMemWord.asUInt
+  //  when (
+  //    cWb.up.isValid
+  //    //&& rMmwState(ydx)(0) === MmwState.WAIT_DATA
+  //    //&& (
+  //    //  RegNext(
+  //    //    next=(rMmwState(ydx) == MmwState.WAIT_UP_FIRE),
+  //    //    init=False
+  //    //  )
+  //    //)
+  //    //&& myExtRight.modMemWordValid.last
+  //  ) {
+  //    myWbPayload.nonExt := (
+  //      cWb.up(pMem).nonExt
+  //    )
+  //    myExtLeft.main.memAddr := myExtRight.main.memAddr
+  //    myExtLeft.main.nonMemAddrMost := myExtRight.main.nonMemAddrMost
+  //    myExtLeft.main.modMemWord := myExtRight.main.modMemWord
+  //  }
+  //  //myExtLeft.modMemWord := myModMemWord.asUInt
 
-    when (cWb.up.isValid) {
-      rMmwState(ydx)(0) := MmwState.WAIT_UP_FIRE
-    }
-    when (cWb.up.isFiring) {
-      rMmwState(ydx).foreach(item => item := MmwState.WAIT_DATA)
-    }
-    myExtLeft.valid.foreach(current => {
-      current := (
-        cWb.up.isValid
-      )
-    })
-    myExtLeft.ready := cWb.up.isReady
-    myExtLeft.fire := cWb.up.isFiring
-  }
+  //  //when (cWb.up.isValid) {
+  //  //  rMmwState(ydx)(0) := MmwState.WAIT_UP_FIRE
+  //  //}
+  //  //when (cWb.up.isFiring) {
+  //  //  rMmwState(ydx).foreach(item => item := MmwState.WAIT_DATA)
+  //  //}
+  //  //myExtLeft.valid.foreach(current => {
+  //  //  current := (
+  //  //    cWb.up.isValid
+  //  //  )
+  //  //})
+  //  //myExtLeft.ready := cWb.up.isReady
+  //  //myExtLeft.fire := cWb.up.isFiring
+  //}
 
 
   //--------
@@ -9121,11 +9126,27 @@ case class SnowHousePipeStageWriteBack(
     //)
     def myD2hBus = io.lcvDbus.d2hBus
     myD2hBus.ready := False
+    when (
+      myWbPayload(0).outpDecodeExt.opIsMemAccess.last
+      && !myD2hBus.valid
+    ) {
+      val mapElem = myWbPayload(1).gprIdxToMemAddrIdxMap(0)
+      val myCurrExt = (
+        if (!mapElem.haveHowToSetIdx) (
+          myWbPayload(1).myExt(0)
+        ) else (
+          myWbPayload(1).myExt(mapElem.howToSetIdx)
+        )
+      )
+      myCurrExt.modMemWordValid.foreach(mmwValidItem => {
+        mmwValidItem := False
+      })
+    }
 
     when (
       //myDbusIo.myDbusExtraValid
       cWb.up.isValid
-      && myWbPayload.outpDecodeExt.opIsMemAccess.last
+      && myWbPayload(1).outpDecodeExt.opIsMemAccess.last
     ) {
       myD2hBus.ready := True
       when (
@@ -9134,17 +9155,17 @@ case class SnowHousePipeStageWriteBack(
         !myD2hBus.valid
       ) {
         cWb.haltIt()
-        val mapElem = myWbPayload.gprIdxToMemAddrIdxMap(0)
-        val myCurrExt = (
-          if (!mapElem.haveHowToSetIdx) (
-            myWbPayload.myExt(0)
-          ) else (
-            myWbPayload.myExt(mapElem.howToSetIdx)
-          )
-        )
-        myCurrExt.modMemWordValid.foreach(mmwValidItem => {
-          mmwValidItem := False
-        })
+        //val mapElem = myWbPayload.gprIdxToMemAddrIdxMap(0)
+        //val myCurrExt = (
+        //  if (!mapElem.haveHowToSetIdx) (
+        //    myWbPayload.myExt(0)
+        //  ) else (
+        //    myWbPayload.myExt(mapElem.howToSetIdx)
+        //  )
+        //)
+        //myCurrExt.modMemWordValid.foreach(mmwValidItem => {
+        //  mmwValidItem := False
+        //})
       } otherwise {
         //when (!myWbPayload.outpDecodeExt.memAccessKind.asBits(1)) {
         //  //myCurrExt.modMemWord := myDbus.recvData.word
@@ -9204,18 +9225,18 @@ case class SnowHousePipeStageWriteBack(
       }
     }
     when (
-      !myWbPayload.outpDecodeExt.memAccessKind.asBits(1)
+      !myWbPayload(0).outpDecodeExt.memAccessKind.asBits(1)
       && myD2hBus.valid
     ) {
-      val myDecodeExt = myWbPayload.outpDecodeExt
-      val mapElem = myWbPayload.gprIdxToMemAddrIdxMap(0)
+      val myDecodeExt = myWbPayload(1).outpDecodeExt
+      val mapElem = myWbPayload(1).gprIdxToMemAddrIdxMap(0)
       val myCurrExt = (
         if (!mapElem.haveHowToSetIdx) (
-          myWbPayload.myExt(
+          myWbPayload(1).myExt(
             0
           )
         ) else (
-          myWbPayload.myExt(
+          myWbPayload(1).myExt(
             mapElem.howToSetIdx
           )
         )
@@ -9231,7 +9252,7 @@ case class SnowHousePipeStageWriteBack(
       //})
       for (idx <- 0 until cfg.regFileCfg.modMemWordValidSize) {
         myCurrExt.modMemWordValid(idx) := (
-          !myWbPayload.gprIsZeroVec.last(idx)
+          !myWbPayload(0).gprIsZeroVec.last(idx)
         )
         //when (!myWbPayload.gprIsZeroVec.last(idx)) {
         //  //myCurrExt.modMemWordValid.foreach(current => {
@@ -9369,5 +9390,5 @@ case class SnowHousePipeStageWriteBack(
   //when (cWb.up.isFiring) {
   //  cWb.up(modBackPayload) := myWbPayload
   //}
-  cWb.up(modBackPayload) := myWbPayload
+  cWb.up(modBackPayload) := myWbPayload(1)
 }

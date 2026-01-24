@@ -1160,6 +1160,12 @@ case class SnowHouseInstrCnt(
   val myPsIdBubble = Vec.fill(cfg.lowerMyFanoutRegPcSetItCnt)(
     Bool()
   )
+  //val myPsIdPreBubble = Vec.fill(cfg.lowerMyFanoutRegPcSetItCnt)(
+  //  Bool()
+  //)
+  //val myPsIdEitherBubble = Vec.fill(cfg.lowerMyFanoutRegPcSetItCnt)(
+  //  Bool()
+  //)
   //def shouldIgnoreInstr = (pcChangeState === True)
 }
 //object SnowHouseDecodeExtLdStKind
