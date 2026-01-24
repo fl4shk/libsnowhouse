@@ -28,8 +28,8 @@ addr:7 data:1
 addr:8 data:1
 addr:9 data:2
 addr:9 data:3
-addr:10 data:1026
 addr:7 data:0
+addr:10 data:1026
 addr:10 data:305419896
 addr:7 data:256
 addr:7 data:32
@@ -37,21 +37,21 @@ addr:8 data:0
 addr:10 data:305419897
 addr:13 data:216
 addr:6 data:33
-addr:10 data:305419898
 addr:3 data:4100
 addr:1 data:7
 addr:13 data:232
 addr:7 data:4
+addr:10 data:305419898
 addr:8 data:5
-addr:10 data:305419899
 addr:13 data:216
 addr:6 data:34
+addr:10 data:305419899
 addr:3 data:4104
 addr:1 data:6
 addr:13 data:232
 addr:7 data:5
-addr:10 data:305419900
 addr:8 data:4
+addr:10 data:305419900
 addr:13 data:216
 addr:6 data:35
 addr:10 data:305419901
@@ -63,5 +63,8 @@ addr:8 data:0
 addr:10 data:305419902
 addr:13 data:216
 addr:6 data:36
+addr:3 data:4112
+addr:1 data:4
+addr:13 data:232
 Ending test.
 
