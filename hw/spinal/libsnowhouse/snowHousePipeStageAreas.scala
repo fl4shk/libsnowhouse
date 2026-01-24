@@ -1323,6 +1323,45 @@ private[libsnowhouse] case class SnowHouseBusBridgeCtrl(
   }
 }
 
+case class SnowHouseInstrRecvIo(
+  cfg: SnowHouseConfig,
+) extends Bundle {
+  val someIbusHaveInstr = in(Bool())
+  val someIbusEncInstr = in(UInt(cfg.instrMainWidth bits))
+  val myUpFireIshCond = in(Bool())
+  val myHaltIt = out(Bool())
+  val encInstr = out(UInt(cfg.instrMainWidth bits))
+}
+case class SnowHouseInstrRecv(
+  cfg: SnowHouseConfig
+) extends Component {
+  val io = SnowHouseInstrRecvIo(cfg=cfg)
+  val rStallState = (
+    Reg(Bool(), init=False)
+  )
+  io.myHaltIt := False
+  io.encInstr := RegNext(io.encInstr, io.encInstr.getZero)
+  when (!rStallState) {
+    when (
+      //!io.ibus.ready
+      !io.someIbusHaveInstr
+    ) {
+      //cIf.haltIt()
+      io.myHaltIt := True
+      //cIf.duplicateIt()
+    } otherwise {
+      //upModExt.encInstr.payload := io.ibus.recvData.word
+      io.encInstr := io.someIbusEncInstr
+      rStallState := True
+    }
+  }
+  when (
+    //myReadyIshCond
+    io.myUpFireIshCond
+  ) {
+    rStallState := False
+  }
+}
 case class SnowHousePipeStageInstrFetch(
   args: SnowHousePipeStageArgs,
   psIdHaltIt: Bool,
@@ -1343,89 +1382,61 @@ case class SnowHousePipeStageInstrFetch(
   up(pIf) := upModExt
   upModExt := RegNext(upModExt, init=upModExt.getZero)
   def myInstrCnt = upModExt.instrCnt
-  //val myUseLcvIbusFifo = (
+
+  //val myBridge = (
   //  cfg.useLcvInstrBus
   //) generate (
-  //  StreamFifo(
-  //    dataType=UInt(cfg.instrMainWidth bits),
-  //    depth=4,
-  //    latency=0,
-  //    forFMax=true,
+  //  SnowHouseIbusToLcvIbusBridge(cfg=cfg)
+  //)
+  //val myBridgeCtrl = (
+  //  cfg.useLcvInstrBus
+  //) generate (
+  //  SnowHouseBusBridgeCtrl(
+  //    cfg=cfg,
+  //    isIbus=true,
   //  )
   //)
-  //val rDidFirstStallStateFall = (
-  //  cfg.useLcvInstrBus
-  //) generate (
-  //  Reg(Bool(), init=False)
-  //)
-  //val myStallStateCond = (
-  //  Bool()
-  //)
-  //val rStallState = (
-  //  Reg(Bool(), init=False)
-  //)
-  //val myStallStateCond = Bool()
-  //if (!cfg.useLcvInstrBus) {
-  //  myStallStateCond := rStallState
-  //} else {
-  //  myStallStateCond := rStallState
-  //}
-
-  //if (cfg.useLcvInstrBus) {
-  //  when (!rDidFirstStallStateFall && rStallState) {
-  //    cIf.haltIt()
-  //    rDidFirstStallStateFall := True
-  //    rStallState := False
-  //  }
-  //}
-  val myBridge = (
-    cfg.useLcvInstrBus
-  ) generate (
-    SnowHouseIbusToLcvIbusBridge(cfg=cfg)
-  )
-  val myBridgeCtrl = (
-    cfg.useLcvInstrBus
-  ) generate (
-    SnowHouseBusBridgeCtrl(
-      cfg=cfg,
-      isIbus=true,
-    )
-  )
-  def myBusNextValid = (
+  def myBusH2dValid = (
     if (!cfg.useLcvInstrBus) (
       io.ibus.nextValid
     ) else (
-      myBridgeCtrl.io.cpuBus.nextValid
+      //myBridgeCtrl.io.cpuBus.nextValid
+      io.lcvIbus.h2dBus.valid
     )
   )
   def myBusAddr = (
     if (!cfg.useLcvInstrBus) (
       io.ibus.sendData.addr
     ) else (
-      myBridgeCtrl.io.cpuBus.sendData.addr
+      //myBridgeCtrl.io.cpuBus.sendData.addr
+      io.lcvIbus.h2dBus.addr
     )
   )
 
-  //def myIbus = (
-  //  if (!cfg.useLcvInstrBus) (
-  //    io.ibus
-  //  ) else (
-  //    //myBridge.io.bus
-  //    myBridgeCtrl.io.bridgeBus
-  //  )
-  //)
   val myReadyIshCond = Bool()
   val myReadyIshCondShared = up.isReady
 
   if (cfg.useLcvInstrBus) {
-    io.lcvIbus <> myBridge.io.lcvBus
-    myBridgeCtrl.io.bridgeBus <> myBridge.io.bus
-    myBridgeCtrl.io.bridgeH2dPushDelay := myBridge.io.h2dPushDelay
-    myBridgeCtrl.io.myUpFireIshCond := myReadyIshCond
-    myBridgeCtrl.io.myUpFireIshUpdateSrcCond := myReadyIshCond
-    when (!myBridgeCtrl.io.cpuBus.ready) {
-      cIf.haltIt()
-    }
+    //io.lcvIbus <> myBridge.io.lcvBus
+    //myBridgeCtrl.io.bridgeBus <> myBridge.io.bus
+    //myBridgeCtrl.io.bridgeH2dPushDelay := myBridge.io.h2dPushDelay
+    //myBridgeCtrl.io.myUpFireIshCond := myReadyIshCond
+    //myBridgeCtrl.io.myUpFireIshUpdateSrcCond := myReadyIshCond
+    //when (!myBridgeCtrl.io.cpuBus.ready) {
+    //  cIf.haltIt()
+    //}
+    io.lcvIbus.h2dBus.src := (
+      (
+        RegNextWhen(
+          io.lcvIbus.h2dBus.src.asSInt + 1,
+          cond=io.lcvIbus.h2dBus.fire,
+        )
+        init(-2)
+      ).asUInt
+    )
+    io.lcvIbus.h2dBus.byteEn := 0x0
+    io.lcvIbus.h2dBus.isWrite := False
+    io.lcvIbus.h2dBus.data := 0x0
   }
 
   //val myReadyIshCondLcvMostCmpSrc = (
@@ -1526,22 +1537,13 @@ case class SnowHousePipeStageInstrFetch(
           )
         )
       ), 
-      cond=(
-        //up.isFiring
-        //up.isReady
-        myReadyIshCond
-        //myReadyIshCondMaybeDel1
-        //myUpdatePcCond
-      ),
+      cond=myReadyIshCond,
     )
     temp.foreach(item => {
       item.init(item.getZero)
-      //item.init(-(1 * cfg.instrSizeBytes))
-      //item.init(-1)
     })
     temp
   }
-  //rPrevRegPcPlusInstrSize.addAttribute("use_dsp", "yes")
   upModExt.encInstr.allowOverride
   upModExt.encInstr := (
     RegNext(
@@ -1549,12 +1551,6 @@ case class SnowHousePipeStageInstrFetch(
       init=upModExt.encInstr.getZero,
     )
   )
-  //myIbus.sendData.addr := (
-  //  RegNext(
-  //    next=myIbus.sendData.addr,
-  //    init=myIbus.sendData.addr.getZero,
-  //  )
-  //)
   myBusAddr := RegNext(myBusAddr, init=myBusAddr.getZero)
   upModExt.regPc := (
     RegNext(
@@ -1563,23 +1559,27 @@ case class SnowHousePipeStageInstrFetch(
     )
   )
   val myHistRegPc = (
+    !cfg.useLcvInstrBus
+  ) generate (
     History[UInt](
       that=(
         // TODO: check that this is correct
         upModExt.regPc
       ),
       length=3,
-      when=(
-        myReadyIshCond
-        //myUpdatePcCond
-      ),
+      when=myReadyIshCond,
       init=upModExt.regPc.getZero,
     )
   )
   upModExt.laggingRegPc.allowOverride
   upModExt.laggingRegPc := (
-    myHistRegPc.last
+    if (!cfg.useLcvInstrBus) (
+      myHistRegPc.last
+    ) else (
+      upModExt.regPc
+    )
   )
+
   val myMainPredictCond = (
     branchPredictor.io.result.fire
     && !rTakeJumpCnt.fire
@@ -1637,7 +1637,25 @@ case class SnowHousePipeStageInstrFetch(
   //    True
   //  )
   //)
-  myBusNextValid := True
+  if (!cfg.useLcvInstrBus) {
+    myBusH2dValid := True
+  } else {
+    myBusH2dValid := (
+      down.isReady//myReadyIshCond
+    )
+    //io.lcvIbus.d2hBus.ready := myReadyIshCond
+    //myBusH2dValid := True
+    when (
+      myBusH2dValid
+      && !io.lcvIbus.h2dBus.ready
+      //&& !io.lcvIbus.d2hBus.valid
+      //&& !down.isReady
+    ) {
+      //cIf.terminateIt()
+      //cIf.haltIt()
+      cIf.duplicateIt()
+    }
+  }
 
   val myUpdateRegPcCondUInt = (
     Cat(
@@ -1766,27 +1784,42 @@ case class SnowHousePipeStageInstrFetch(
   val myNonLcvIbusStallArea = (
     !cfg.useLcvInstrBus
   ) generate (new Area {
-    val rStallState = (
-      Reg(Bool(), init=False)
-    )
-    when (!rStallState) {
-      when (!io.ibus.ready) {
-        cIf.haltIt()
-        //cIf.duplicateIt()
-      } otherwise {
-        upModExt.encInstr.payload := io.ibus.recvData.word
-        rStallState := True
-      }
-    }
-    when (myReadyIshCond) {
-      rStallState := False
+    //val rStallState = (
+    //  Reg(Bool(), init=False)
+    //)
+    //when (!rStallState) {
+    //  when (!io.ibus.ready) {
+    //    cIf.haltIt()
+    //    //cIf.duplicateIt()
+    //  } otherwise {
+    //    upModExt.encInstr.payload := io.ibus.recvData.word
+    //    rStallState := True
+    //  }
+    //}
+    //when (myReadyIshCond) {
+    //  rStallState := False
+    //}
+    val instrRecv = SnowHouseInstrRecv(cfg=cfg)
+    instrRecv.io.someIbusHaveInstr := io.ibus.ready
+    instrRecv.io.someIbusEncInstr := io.ibus.recvData.word
+    instrRecv.io.myUpFireIshCond := myReadyIshCond
+    upModExt.encInstr.payload := instrRecv.io.encInstr
+
+    when (instrRecv.io.myHaltIt) {
+      cIf.haltIt()
     }
   })
 
   val myLcvIbusStallStateArea = (
     cfg.useLcvInstrBus   
   ) generate (new Area {
-    upModExt.encInstr.payload := myBridgeCtrl.io.cpuBus.recvData.word
+    //upModExt.encInstr.payload := (
+    //  //myBridgeCtrl.io.cpuBus.recvData.word
+    //  io.lcvIbus.d2hBus.data
+    //)
+    //when (!io.lcvIbus.h2dBus.ready) {
+    //  cIf.haltIt()
+    //}
   })
   when (myReadyIshCond) {
     myRegPcSetItCnt := 0x0
@@ -1988,10 +2021,53 @@ case class SnowHousePipeStageInstrDecode(
   //  //myInstr := myInstr.getZero
   //  cId.throwIt()
   //}
-  upPayload(0) := up(pIf)
-  when (up.isValid) {
-    upPayload(1) := upPayload(0)
-  }
+  val myNonLcvIbusUpPayloadArea = (
+    !cfg.useLcvInstrBus
+  ) generate (new Area {
+    upPayload(0) := up(pIf)
+    when (up.isValid) {
+      upPayload(1) := upPayload(0)
+    }
+  })
+  val myLcvIbusUpPayloadArea = (
+    cfg.useLcvInstrBus
+  ) generate (new Area {
+    val instrRecv = SnowHouseInstrRecv(cfg=cfg)
+
+    upPayload(0) := up(pIf)
+    io.lcvIbus.d2hBus.ready := (
+      False
+      //True
+    )
+    when (up.isValid) {
+      io.lcvIbus.d2hBus.ready := (
+        //False
+        //True
+        io.lcvIbus.d2hBus.valid
+        ///&& down.isReady
+        //&& up.isReady
+        && down.isReady
+      )
+      upPayload(1) := upPayload(0)
+      //io.lcvIbus.d2hBus.ready := (
+      //  //up.isReady
+      //  //|| 
+      //  (
+      //    !instrRecv.io.myHaltIt
+      //    //&& down.isReady
+      //  )
+      //)
+    }
+    instrRecv.io.someIbusHaveInstr := io.lcvIbus.d2hBus.valid
+    instrRecv.io.someIbusEncInstr := io.lcvIbus.d2hBus.data
+    instrRecv.io.myUpFireIshCond := up.isFiring
+
+    upPayload(1).encInstr.payload := instrRecv.io.encInstr
+    when (instrRecv.io.myHaltIt) {
+      cId.haltIt()
+    }
+  })
+
   val shouldFinishJump = (
     //--------
     //upPayload(1).psIfRegPcSetItCnt(0)

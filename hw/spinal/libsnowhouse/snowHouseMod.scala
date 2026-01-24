@@ -414,7 +414,7 @@ case class SnowHouseInstrDataDualRam(
     && cfg.useLcvInstrBus
   ) generate (new Area {
     val depth = instrInitBigInt.size
-    val icache = LcvBusCache(cfg=cfg.subCfg.lcvIbusEtcCfg)
+    val icache = LcvBusCache(cfg=cfg.subCfg.lcvDbusEtcCfg)
     val mem = LcvBusMem(
       cfg=LcvBusMemConfig(
         busCfg=cfg.subCfg.lcvIbusEtcCfg.hiBusCfg,
@@ -1161,40 +1161,40 @@ case class SnowHouse
     psExSetPc=psExSetPc,
   )
 
-  //val cIfPostLcvIbus = (
-  //  cfg.useLcvInstrBus
-  //) generate (CtrlLink(
-  //  up=sIf.down,
-  //  down={
-  //    val node = Node()
-  //    node.setName("cIfPostLcvIbus_down")
-  //    node
-  //  }
-  //))
-  //if (cfg.useLcvInstrBus) {
-  //  linkArr += cIfPostLcvIbus
-  //}
-  //val sIfPostLcvIbus = (
-  //  cfg.useLcvInstrBus
-  //) generate (StageLink(
-  //  up=cIfPostLcvIbus.down,
-  //  down={
-  //    val node = Node()
-  //    node.setName("sIfPostLcvIbus_down")
-  //    node
-  //  }
-  //))
-  //if (cfg.useLcvInstrBus) {
-  //  linkArr += sIfPostLcvIbus
-  //}
+  val cIfPostLcvIbus = (
+    cfg.useLcvInstrBus
+  ) generate (CtrlLink(
+    up=sIf.down,
+    down={
+      val node = Node()
+      node.setName("cIfPostLcvIbus_down")
+      node
+    }
+  ))
+  if (cfg.useLcvInstrBus) {
+    linkArr += cIfPostLcvIbus
+  }
+  val sIfPostLcvIbus = (
+    cfg.useLcvInstrBus
+  ) generate (StageLink(
+    up=cIfPostLcvIbus.down,
+    down={
+      val node = Node()
+      node.setName("sIfPostLcvIbus_down")
+      node
+    }
+  ))
+  if (cfg.useLcvInstrBus) {
+    linkArr += sIfPostLcvIbus
+  }
 
   val cId = CtrlLink(
     up={
-      //if (!cfg.useLcvInstrBus) (
+      if (!cfg.useLcvInstrBus) (
         sIf.down
-      //) else (
-      //  sIfPostLcvIbus.down
-      //)
+      ) else (
+        sIfPostLcvIbus.down
+      )
       //s2mIf.down
     },
     down={
