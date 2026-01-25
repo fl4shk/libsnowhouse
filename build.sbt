@@ -1,5 +1,5 @@
 ThisBuild / version := "1.0"
-ThisBuild / scalaVersion := "2.12.17"
+ThisBuild / scalaVersion := "2.12.21"
 ThisBuild / organization := "org.example"
 
 //ThisBuild / semanticdbVersion := scalafixSemanticdb.revision
