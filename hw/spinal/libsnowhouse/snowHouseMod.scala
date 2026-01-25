@@ -1130,17 +1130,25 @@ case class SnowHouse
     }
   )
   linkArr += sIf
-  //val s2mIf = S2MLink(
-  //  up={
-  //    sIf.down
-  //  },
-  //  down={
-  //    val node = Node()
-  //    node.setName("s2mIf_down")
-  //    node
-  //  }
-  //)
-  //linkArr += s2mIf
+  def myHaveS2mIf = (
+    cfg.useLcvInstrBus
+    && cfg.useLcvDataBus
+  )
+  val s2mIf = (
+    myHaveS2mIf
+  ) generate (S2MLink(
+    up={
+      sIf.down
+    },
+    down={
+      val node = Node()
+      node.setName("s2mIf_down")
+      node
+    }
+  ))
+  if (myHaveS2mIf) {
+    linkArr += s2mIf
+  }
   val pipeStageIf = SnowHousePipeStageInstrFetch(
     args=SnowHousePipeStageArgs(
       cfg=cfg,
@@ -1190,11 +1198,15 @@ case class SnowHouse
 
   val cId = CtrlLink(
     up={
-      //if (!cfg.useLcvInstrBus) (
+      if (
+        //!cfg.useLcvInstrBus
+        !myHaveS2mIf
+      ) (
         sIf.down
-      //) else (
-      //  sIfPostLcvIbus.down
-      //)
+      ) else ( // if (myHaveS2mIf)
+        s2mIf.down
+        //sIfPostLcvIbus.down
+      )
       //s2mIf.down
     },
     down={
