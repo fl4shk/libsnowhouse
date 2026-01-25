@@ -1135,12 +1135,12 @@ case class SnowHouse
     }
   )
   linkArr += sIf
-  def myHaveS2mIf = (
+  def myHaveS2mIfId = (
     cfg.useLcvInstrBus
     && cfg.useLcvDataBus
   )
   val s2mIf = (
-    myHaveS2mIf
+    myHaveS2mIfId
   ) generate (S2MLink(
     up={
       sIf.down
@@ -1151,7 +1151,7 @@ case class SnowHouse
       node
     }
   ))
-  if (myHaveS2mIf) {
+  if (myHaveS2mIfId) {
     linkArr += s2mIf
   }
   val pipeStageIf = SnowHousePipeStageInstrFetch(
@@ -1205,20 +1205,48 @@ case class SnowHouse
     up={
       if (
         //!cfg.useLcvInstrBus
-        !myHaveS2mIf
+        !myHaveS2mIfId
       ) (
         sIf.down
-      ) else ( // if (myHaveS2mIf)
+      ) else ( // if (myHaveS2mIfId)
         s2mIf.down
         //sIfPostLcvIbus.down
       )
       //s2mIf.down
     },
     down={
-      regFile.io.front
+      if (!myHaveS2mIfId) (
+        regFile.io.front
+      ) else {
+        val node = Node()
+        node.setName("cId_down")
+        node
+      }
     }
   )
   linkArr += cId
+  val sId = (
+    myHaveS2mIfId
+  ) generate (StageLink(
+    up=cId.down,
+    down={
+      val node = Node()
+      node.setName("sId_down")
+      node
+    }
+  ))
+  if (myHaveS2mIfId) {
+    linkArr += sId
+  }
+  val s2mId = (
+    myHaveS2mIfId
+  ) generate (StageLink(
+    up=sId.down,
+    down=regFile.io.front,
+  ))
+  if (myHaveS2mIfId) {
+    linkArr += s2mId
+  }
   //val pId = Payload(SnowHouseRegFileModType(cfg=cfg))
   val pipeStageId = SnowHousePipeStageInstrDecode(
     SnowHousePipeStageArgs(
