@@ -813,6 +813,13 @@ case class SnowHouseConfig(
     memRamStyleXilinx=regFileMemRamStyleXilinx,
     optModHazardKind=PipeMemRmw.ModHazardKind.Fwd,
     optFwdHaveZeroReg=haveZeroReg,
+    fwdForFmaxStageMax=(
+      if (!useLcvDataBus) (
+        0
+      ) else (
+        2
+      )
+    ),
     optIncludeModFrontS2MLink=false,
     optFormal=optFormal,
     numForkJoin=/*2*/1,
