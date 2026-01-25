@@ -9239,27 +9239,29 @@ case class SnowHousePipeStageWriteBack(
     //)
     def myD2hBus = io.lcvDbus.d2hBus
     myD2hBus.ready := False
-    when (
-      myWbPayload(0).outpDecodeExt.opIsMemAccess.last
-      && !myD2hBus.valid
-    ) {
-      val mapElem = myWbPayload(1).gprIdxToMemAddrIdxMap(0)
-      val myCurrExt = (
-        if (!mapElem.haveHowToSetIdx) (
-          myWbPayload(1).myExt(0)
-        ) else (
-          myWbPayload(1).myExt(mapElem.howToSetIdx)
-        )
-      )
-      myCurrExt.modMemWordValid.foreach(mmwValidItem => {
-        mmwValidItem := False
-      })
-    }
+
+    //when (
+    //  myWbPayload(0).outpDecodeExt.opIsMemAccess.last
+    //  && !myD2hBus.valid
+    //) {
+    //  val mapElem = myWbPayload(1).gprIdxToMemAddrIdxMap(0)
+    //  val myCurrExt = (
+    //    if (!mapElem.haveHowToSetIdx) (
+    //      myWbPayload(1).myExt(0)
+    //    ) else (
+    //      myWbPayload(1).myExt(mapElem.howToSetIdx)
+    //    )
+    //  )
+    //  myCurrExt.modMemWordValid.foreach(mmwValidItem => {
+    //    mmwValidItem := False
+    //  })
+    //}
 
     when (
       //myDbusIo.myDbusExtraValid
-      cWb.up.isValid
-      && myWbPayload(1).outpDecodeExt.opIsMemAccess.last
+      //cWb.up.isValid
+      //&& 
+      myWbPayload(1).outpDecodeExt.opIsMemAccess.last
     ) {
       myD2hBus.ready := True
       when (
@@ -9267,7 +9269,8 @@ case class SnowHousePipeStageWriteBack(
         ////!myDbusExtraReady(3)
         !myD2hBus.valid
       ) {
-        cWb.haltIt()
+        cWb.duplicateIt()
+        //cWb.haltIt()
         //val mapElem = myWbPayload.gprIdxToMemAddrIdxMap(0)
         //val myCurrExt = (
         //  if (!mapElem.haveHowToSetIdx) (
