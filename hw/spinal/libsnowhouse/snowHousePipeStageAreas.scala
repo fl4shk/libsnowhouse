@@ -8957,34 +8957,34 @@ case class SnowHousePipeStageMem(
       })
     }
   })
-  val myLcvDbusArea = (
-    cfg.useLcvDataBus
-  ) generate (new Area {
-    when (
-      ////RegNext(
-      //  RegNext(myDbus.nextValid, init=False),
-      ////  init=False
-      ////)
-      ////myWbPayload.decodeExt.opIsMemAccess.sFindFirst(
-      ////  _ === True
-      ////)._1
-      //cMem.up.isValid
-      //&& 
-      midModPayload(extIdxUp).outpDecodeExt.opIsMemAccess.last
-    ) {
-      val mapElem = midModPayload(extIdxUp).gprIdxToMemAddrIdxMap(0)
-      val myCurrExt = (
-        if (!mapElem.haveHowToSetIdx) (
-          midModPayload(extIdxUp).myExt(0)
-        ) else (
-          midModPayload(extIdxUp).myExt(mapElem.howToSetIdx)
-        )
-      )
-      myCurrExt.modMemWordValid.foreach(mmwValidItem => {
-        mmwValidItem := False
-      })
-    }
-  })
+  //val myLcvDbusArea = (
+  //  cfg.useLcvDataBus
+  //) generate (new Area {
+  //  when (
+  //    ////RegNext(
+  //    //  RegNext(myDbus.nextValid, init=False),
+  //    ////  init=False
+  //    ////)
+  //    ////myWbPayload.decodeExt.opIsMemAccess.sFindFirst(
+  //    ////  _ === True
+  //    ////)._1
+  //    //cMem.up.isValid
+  //    //&& 
+  //    midModPayload(extIdxUp).outpDecodeExt.opIsMemAccess.last
+  //  ) {
+  //    val mapElem = midModPayload(extIdxUp).gprIdxToMemAddrIdxMap(0)
+  //    val myCurrExt = (
+  //      if (!mapElem.haveHowToSetIdx) (
+  //        midModPayload(extIdxUp).myExt(0)
+  //      ) else (
+  //        midModPayload(extIdxUp).myExt(mapElem.howToSetIdx)
+  //      )
+  //    )
+  //    myCurrExt.modMemWordValid.foreach(mmwValidItem => {
+  //      mmwValidItem := False
+  //    })
+  //  }
+  //})
 
   def setMidModStages(): Unit = {
     regFile.io.midModStages(0) := midModPayload
@@ -9007,7 +9007,19 @@ case class SnowHousePipeStageMem(
   if (!cfg.useLcvDataBus) {
     cMem.up(pMem) := midModPayload(extIdxUp)
   } else { // if (cfg.useLcvDataBus)
-    cMem.up(pMem) := midModPayload(extIdxUp)
+    when (cMem.up.isFiring) {
+      cMem.up(pMem) := midModPayload(extIdxUp)
+    } otherwise {
+      cMem.up(pMem) := midModPayload(extIdxUp).getZero
+      cMem.up(pMem).splitOp.allowOverride
+      cMem.up(pMem).splitOp.setToDefault()
+      cMem.up(pMem).gprIsZeroVec.allowOverride
+      cMem.up(pMem).gprIsZeroVec.foreach(outerItem => {
+        outerItem.foreach(item => {
+          item := True
+        })
+      })
+    }
     //for (idx <- 0 until midModPayload(extIdxUp).myExt.size) {
     //  //val tempExtLeft = regFile.io.midModStages(0)(extIdxUp).myExt(idx)
     //  val tempPayloadRight = midModPayload(extIdxUp)
@@ -9180,8 +9192,9 @@ case class SnowHousePipeStageWriteBack(
     }
     if (cfg.useLcvDataBus) {
       when (
-        cWb.up.isValid
-        && rMmwState(ydx)(0) === MmwState.WAIT_DATA
+        //cWb.up.isValid
+        myExtRight.modMemWordValid.last
+        //&& rMmwState(ydx)(0) === MmwState.WAIT_DATA
       ) {
         myExtLeft.main.modMemWord := myExtRight.main.modMemWord
       }
