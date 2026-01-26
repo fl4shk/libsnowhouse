@@ -9082,9 +9082,21 @@ case class SnowHousePipeStageWriteBack(
   def backPayload = regFile.io.backPayload
   def cWb = args.link
 
+  val sWb = StageLink(
+    up=cWb.down,
+    down={
+      val temp = Node()
+      temp.setName(s"sWb_down")
+      temp
+    }
+  )
+  regFile.myLinkArr += sWb
   val fWb = (
     ForkLink(
-      up=cWb.down,
+      up=(
+        //cWb.down
+        sWb.down
+      ),
       downs={
         //Array.fill(2)(Node())
         List[Node](
@@ -9120,6 +9132,18 @@ case class SnowHousePipeStageWriteBack(
       SnowHousePipePayload(cfg=cfg)
     )
   )
+  def extIdxUp = PipeMemRmw.extIdxUp
+  def extIdxSaved = PipeMemRmw.extIdxSaved
+  def extIdxLim = PipeMemRmw.extIdxLim
+  regFile.io.midModStages(1)(extIdxUp) := myWbPayload(1)
+  regFile.io.midModStages(1)(extIdxSaved) := (
+    RegNextWhen(
+      myWbPayload(1),
+      cond=cWb.up.isFiring,
+      init=myWbPayload(1).getZero,
+    )
+  )
+
   //myWbPayload := (
   //  RegNext(myWbPayload, init=myWbPayload.getZero)
   //)

@@ -42,7 +42,9 @@ case class SnowHouseRegFileConfig(
     s"modRdPortCnt (${modRdPortCnt}) must be >= 2 and <= 3 "
     + s"(different number of GPRs per instruction not yet supported)"
   )
-  val modStageCnt: Int = 1
+  //val modStageCnt: Int = (
+  //  1
+  //)
   val howToSlice: Seq[LinkedHashSet[Int]] = (
     optHowToSlice match {
       case Some(optHowToSlice) => {
@@ -781,7 +783,14 @@ case class SnowHouseConfig(
   def mainWidth = shRegFileCfg.mainWidth
   def regFileWordCountArr = shRegFileCfg.wordCountArr
   def regFileModRdPortCnt = shRegFileCfg.modRdPortCnt
-  def regFileModStageCnt = shRegFileCfg.modStageCnt
+  def regFileModStageCnt = (
+    if (!useLcvDataBus) (
+      1
+    ) else (
+      2
+    )
+    //shRegFileCfg.modStageCnt
+  )
   def regFilePipeName = shRegFileCfg.pipeName
   def regFileMemRamStyleAltera = shRegFileCfg.memRamStyleAltera
   def regFileMemRamStyleXilinx = shRegFileCfg.memRamStyleXilinx
