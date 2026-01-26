@@ -902,21 +902,29 @@ private[libsnowhouse] case class SnowHouseIbusToLcvIbusBridge(
   def myH2dPushStm = io.lcvBus.h2dBus
   //def myD2hPopStm = io.lcvBus.d2hBus
   val myThrowCond = Bool()
-  val myD2hPopStm = io.lcvBus.d2hBus.throwWhen(
+  //def myD2hPopStm = io.lcvBus.d2hBus
+  val myD2hDoThrowStm = io.lcvBus.d2hBus.throwWhen(
     myThrowCond
   )
+  val myD2hPopStm = cloneOf(io.lcvBus.d2hBus)
+  myD2hPopStm << myD2hDoThrowStm
   myThrowCond := (
     io.lcvBus.d2hBus.src.asSInt
     =/= (
       RegNextWhen(
         myD2hPopStm.src.asSInt + 1,
-        cond=myD2hPopStm.fire
+        cond=(
+          myD2hPopStm.valid
+        )
       )
       init(1)
     )
     && History[Bool](
       that=True,
-      when=myD2hPopStm.fire,
+      when=(
+        //myD2hDoThrowStm.fire
+        myD2hPopStm.valid
+      ),
       length=4,
       init=False,
     ).last
@@ -954,13 +962,16 @@ private[libsnowhouse] case class SnowHouseIbusToLcvIbusBridge(
     )
   }
   //--------
-  myD2hPopStm.ready := False//True
+  //myD2hPopStm.ready := False//True
+  myD2hPopStm.ready := True
 
+  //io.bus.recvData.word := myD2hPopStm.data
+  //io.bus.recvData.src := myD2hPopStm.src
   when (myD2hPopStm.valid) {
     io.bus.ready := True
     io.bus.recvData.word := myD2hPopStm.data
     io.bus.recvData.src := myD2hPopStm.src
-    myD2hPopStm.ready := True
+    //myD2hPopStm.ready := True
   }
   //--------
 }
@@ -1537,18 +1548,10 @@ case class SnowHousePipeStageInstrFetch(
           )
         )
       ), 
-      cond=(
-        //up.isFiring
-        //up.isReady
-        myReadyIshCond
-        //myReadyIshCondMaybeDel1
-        //myUpdatePcCond
-      ),
+      cond=myReadyIshCond,
     )
     temp.foreach(item => {
       item.init(item.getZero)
-      //item.init(-(1 * cfg.instrSizeBytes))
-      //item.init(-1)
     })
     temp
   }

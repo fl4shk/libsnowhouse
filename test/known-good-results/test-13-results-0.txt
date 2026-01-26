@@ -1,0 +1,19 @@
+Starting test:programStr:test/snowhousecpu-test-13.bin instrRamKind:0
+addr:7 data:16
+addr:12 data:17
+addr:11 data:15
+addr:7 data:12
+addr:12 data:13
+addr:11 data:11
+addr:7 data:8
+addr:12 data:9
+addr:11 data:7
+addr:7 data:4
+addr:12 data:5
+addr:11 data:3
+addr:7 data:0
+addr:12 data:1
+addr:11 data:4294967295
+addr:7 data:4294967292
+Ending test.
+
