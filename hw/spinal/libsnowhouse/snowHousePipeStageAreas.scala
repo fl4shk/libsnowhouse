@@ -9082,20 +9082,20 @@ case class SnowHousePipeStageWriteBack(
   def backPayload = regFile.io.backPayload
   def cWb = args.link
 
-  val sWb = StageLink(
-    up=cWb.down,
-    down={
-      val temp = Node()
-      temp.setName(s"sWb_down")
-      temp
-    }
-  )
-  regFile.myLinkArr += sWb
+  //val sWb = StageLink(
+  //  up=cWb.down,
+  //  down={
+  //    val temp = Node()
+  //    temp.setName(s"sWb_down")
+  //    temp
+  //  }
+  //)
+  //regFile.myLinkArr += sWb
   val fWb = (
     ForkLink(
       up=(
-        //cWb.down
-        sWb.down
+        cWb.down
+        //sWb.down
       ),
       downs={
         //Array.fill(2)(Node())
