@@ -385,7 +385,7 @@ case class SnowHouseInstrDataDualRam(
     && cfg.useLcvInstrBus
   ) generate (new Area {
     val depth = instrInitBigInt.size
-    val mem = LcvBusMem(
+    val mem = LcvBusMemSlowNonBurst(
       cfg=LcvBusMemConfig(
         busCfg=cfg.subCfg.lcvIbusEtcCfg.hiBusCfg,
         depth=depth,
@@ -417,7 +417,7 @@ case class SnowHouseInstrDataDualRam(
     val icache = LcvBusCache(
       cfg=cfg.subCfg.lcvIbusEtcCfg
     )
-    val mem = LcvBusMem(
+    val mem = LcvBusMemSlowNonBurst(
       cfg=LcvBusMemConfig(
         busCfg=cfg.subCfg.lcvIbusEtcCfg.hiBusCfg,
         depth=depth,
@@ -444,7 +444,7 @@ case class SnowHouseInstrDataDualRam(
     ) generate (
       LcvBusCache(cfg=cfg.subCfg.lcvDbusEtcCfg)
     )
-    val mem = LcvBusMem(
+    val mem = LcvBusMemSlowNonBurst(
       cfg=LcvBusMemConfig(
         busCfg=(
           cfg.subCfg.lcvDbusEtcCfg.hiBusCfg
