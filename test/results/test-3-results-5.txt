@@ -39,5 +39,9 @@ addr:13 data:212
 addr:7 data:4
 addr:8 data:5
 addr:13 data:196
+addr:6 data:34
+addr:3 data:4104
+addr:1 data:6
+addr:13 data:212
 Ending test.
 
