@@ -784,11 +784,11 @@ case class SnowHouseConfig(
   def regFileWordCountArr = shRegFileCfg.wordCountArr
   def regFileModRdPortCnt = shRegFileCfg.modRdPortCnt
   def regFileModStageCnt = (
-    if (!useLcvDataBus) (
+    //if (!useLcvDataBus) (
       1
-    ) else (
-      2
-    )
+    //) else (
+    //  2
+    //)
     //shRegFileCfg.modStageCnt
   )
   def regFilePipeName = shRegFileCfg.pipeName

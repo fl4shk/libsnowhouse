@@ -51,14 +51,8 @@ addr:1 data:140
 addr:5 data:140
 addr:4 data:24
 addr:5 data:141
+addr:10 data:3
 addr:5 data:24
 addr:3 data:6
-addr:1 data:142
-addr:5 data:142
-addr:4 data:28
-addr:5 data:143
-addr:10 data:3
-addr:5 data:28
-addr:3 data:7
 Ending test.
 

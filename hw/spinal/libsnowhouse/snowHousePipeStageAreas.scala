@@ -9132,17 +9132,17 @@ case class SnowHousePipeStageWriteBack(
       SnowHousePipePayload(cfg=cfg)
     )
   )
-  def extIdxUp = PipeMemRmw.extIdxUp
-  def extIdxSaved = PipeMemRmw.extIdxSaved
-  def extIdxLim = PipeMemRmw.extIdxLim
-  regFile.io.midModStages(1)(extIdxUp) := myWbPayload(1)
-  regFile.io.midModStages(1)(extIdxSaved) := (
-    RegNextWhen(
-      myWbPayload(1),
-      cond=cWb.up.isFiring,
-      init=myWbPayload(1).getZero,
-    )
-  )
+  //def extIdxUp = PipeMemRmw.extIdxUp
+  //def extIdxSaved = PipeMemRmw.extIdxSaved
+  //def extIdxLim = PipeMemRmw.extIdxLim
+  //regFile.io.midModStages(1)(extIdxUp) := myWbPayload(1)
+  //regFile.io.midModStages(1)(extIdxSaved) := (
+  //  RegNextWhen(
+  //    myWbPayload(1),
+  //    cond=cWb.up.isFiring,
+  //    init=myWbPayload(1).getZero,
+  //  )
+  //)
 
   //myWbPayload := (
   //  RegNext(myWbPayload, init=myWbPayload.getZero)
