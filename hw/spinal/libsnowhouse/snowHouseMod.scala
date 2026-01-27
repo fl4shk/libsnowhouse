@@ -385,29 +385,48 @@ case class SnowHouseInstrDataDualRam(
     && cfg.useLcvInstrBus
   ) generate (new Area {
     val depth = instrInitBigInt.size
-    val mem = LcvBusMemSlowNonBurst(
-      cfg=LcvBusMemConfig(
-        busCfg=cfg.subCfg.lcvIbusEtcCfg.hiBusCfg,
-        depth=depth,
-        initBigInt=Some(instrInitBigInt),
-        arrRamStyleAltera="no_rw_check, M10K",
-        arrRamStyleXilinx="block",
+    val myMemCfg = LcvBusMemConfig(
+      busCfg=cfg.subCfg.lcvIbusEtcCfg.hiBusCfg,
+      depth=depth,
+      initBigInt=Some(instrInitBigInt),
+      arrRamStyleAltera="no_rw_check, M10K",
+      arrRamStyleXilinx="block",
+    )
+    val memSlowNonBurst = (
+      instrRamKind >= 5
+    ) generate (
+      LcvBusMemSlowNonBurst(
+        cfg=myMemCfg
       )
     )
-    mem.io.bus.h2dBus.valid := io.lcvIbus.h2dBus.valid
-    mem.io.bus.h2dBus.mainNonBurstInfo := (
+    val memFastNonBurst = (
+      instrRamKind < 5
+    ) generate (
+      LcvBusMem(
+        cfg=myMemCfg
+      )
+    )
+    val myMemIo = (
+      if (instrRamKind >= 5) (
+        memSlowNonBurst.io
+      ) else (
+        memFastNonBurst.io
+      )
+    )
+    myMemIo.bus.h2dBus.valid := io.lcvIbus.h2dBus.valid
+    myMemIo.bus.h2dBus.mainNonBurstInfo := (
       io.lcvIbus.h2dBus.mainNonBurstInfo
     )
-    mem.io.bus.h2dBus.mainBurstInfo.burstCnt := 0x0
-    mem.io.bus.h2dBus.mainBurstInfo.burstFirst := False
-    mem.io.bus.h2dBus.mainBurstInfo.burstLast := False
-    io.lcvIbus.h2dBus.ready := mem.io.bus.h2dBus.ready
+    myMemIo.bus.h2dBus.mainBurstInfo.burstCnt := 0x0
+    myMemIo.bus.h2dBus.mainBurstInfo.burstFirst := False
+    myMemIo.bus.h2dBus.mainBurstInfo.burstLast := False
+    io.lcvIbus.h2dBus.ready := myMemIo.bus.h2dBus.ready
 
-    io.lcvIbus.d2hBus.valid := mem.io.bus.d2hBus.valid
+    io.lcvIbus.d2hBus.valid := myMemIo.bus.d2hBus.valid
     io.lcvIbus.d2hBus.mainNonBurstInfo := (
-      mem.io.bus.d2hBus.mainNonBurstInfo
+      myMemIo.bus.d2hBus.mainNonBurstInfo
     )
-    mem.io.bus.d2hBus.ready := io.lcvIbus.d2hBus.ready
+    myMemIo.bus.d2hBus.ready := io.lcvIbus.d2hBus.ready
   })
   val lcvInstrRamArea = (
     instrRamKind == 0
@@ -417,19 +436,42 @@ case class SnowHouseInstrDataDualRam(
     val icache = LcvBusCache(
       cfg=cfg.subCfg.lcvIbusEtcCfg
     )
-    val mem = LcvBusMemSlowNonBurst(
-      cfg=LcvBusMemConfig(
-        busCfg=cfg.subCfg.lcvIbusEtcCfg.hiBusCfg,
-        depth=depth,
-        initBigInt=Some(instrInitBigInt),
-        arrRamStyleAltera="no_rw_check, M10K",
-        arrRamStyleXilinx="block",
+    val haveFastLcvBusMem = (
+      //true
+      false
+    )
+    val myMemCfg = LcvBusMemConfig(
+      busCfg=cfg.subCfg.lcvIbusEtcCfg.hiBusCfg,
+      depth=depth,
+      initBigInt=Some(instrInitBigInt),
+      arrRamStyleAltera="no_rw_check, M10K",
+      arrRamStyleXilinx="block",
+    )
+    val memSlowNonBurst = (
+      !haveFastLcvBusMem
+    ) generate (
+      LcvBusMemSlowNonBurst(
+        cfg=myMemCfg
+      )
+    )
+    val memFastNonBurst = (
+      haveFastLcvBusMem
+    ) generate (
+      LcvBusMem(
+        cfg=myMemCfg
+      )
+    )
+    val myMemIo = (
+      if (!haveFastLcvBusMem) (
+        memSlowNonBurst.io
+      ) else (
+        memFastNonBurst.io
       )
     )
     //io.lcvIbus <> icache.io.loBus
     io.lcvIbus.h2dBus >/-> icache.io.loBus.h2dBus
     io.lcvIbus.d2hBus <-/< icache.io.loBus.d2hBus
-    mem.io.bus <> icache.io.hiBus
+    myMemIo.bus <> icache.io.hiBus
   })
   val lcvDataRamArea = (
     cfg.useLcvDataBus
@@ -438,25 +480,44 @@ case class SnowHouseInstrDataDualRam(
       true
       //false
     )
+    val haveFastLcvBusMem = (
+      //true
+      false
+    )
     val depth = dataInitBigInt.size
     val dcache = (
       haveDcache
     ) generate (
       LcvBusCache(cfg=cfg.subCfg.lcvDbusEtcCfg)
     )
-    val mem = LcvBusMemSlowNonBurst(
-      cfg=LcvBusMemConfig(
-        busCfg=(
-          cfg.subCfg.lcvDbusEtcCfg.hiBusCfg
-        ),
-        depth=depth,
-        initBigInt=Some(dataInitBigInt),
-        arrRamStyleAltera="no_rw_check, M10K",
-        arrRamStyleXilinx="block",
+    val myMemCfg = LcvBusMemConfig(
+      busCfg=cfg.subCfg.lcvDbusEtcCfg.hiBusCfg,
+      depth=depth,
+      initBigInt=Some(dataInitBigInt),
+      arrRamStyleAltera="no_rw_check, M10K",
+      arrRamStyleXilinx="block",
+    )
+    val memSlowNonBurst = (
+      !haveFastLcvBusMem
+    ) generate (LcvBusMemSlowNonBurst(
+      cfg=myMemCfg
+    ))
+    val memFastNonBurst = (
+      haveFastLcvBusMem
+    ) generate (
+      LcvBusMem(
+        cfg=myMemCfg
+      )
+    )
+    val myMemIo = (
+      if (!haveFastLcvBusMem) (
+        memSlowNonBurst.io
+      ) else (
+        memFastNonBurst.io
       )
     )
     if (!haveDcache) {
-      io.lcvDbus.h2dBus.translateInto(mem.io.bus.h2dBus)(
+      io.lcvDbus.h2dBus.translateInto(myMemIo.bus.h2dBus)(
         dataAssignment=(
           thatPayload, selfPayload
         ) => {
@@ -464,7 +525,7 @@ case class SnowHouseInstrDataDualRam(
           thatPayload.mainBurstInfo := thatPayload.mainBurstInfo.getZero
         }
       )
-      mem.io.bus.d2hBus.translateInto(io.lcvDbus.d2hBus)(
+      myMemIo.bus.d2hBus.translateInto(io.lcvDbus.d2hBus)(
         dataAssignment=(
           thatPayload, selfPayload
         ) => {
@@ -476,7 +537,7 @@ case class SnowHouseInstrDataDualRam(
       dcache.io.loBus.h2dBus << io.lcvDbus.h2dBus 
       io.lcvDbus.d2hBus <-/< dcache.io.loBus.d2hBus
 
-      mem.io.bus <> dcache.io.hiBus
+      myMemIo.bus <> dcache.io.hiBus
     }
   })
 
