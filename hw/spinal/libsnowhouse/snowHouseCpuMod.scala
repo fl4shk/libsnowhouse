@@ -5266,8 +5266,8 @@ object SnowHouseCpuWithDualRamSim extends App {
   )
   val testIdxRange = Array[Int](
     //0, //0,
-    1, 1,
-    ////////2, //2,
+    1, //1,
+    //2, //2,
     //////////3, 3,
     //////4, 4,
     //////////5, //5,
@@ -5317,7 +5317,8 @@ object SnowHouseCpuWithDualRamSim extends App {
       ) else if (testIdx == 12) (
         1024 + 512
       ) else (
-        1024
+        1024 + 512
+        //1024
       )
     )
     for (instrRamKind <- instrRamKindArr) {
