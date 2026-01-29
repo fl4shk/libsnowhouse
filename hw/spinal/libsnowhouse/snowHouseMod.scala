@@ -392,41 +392,57 @@ case class SnowHouseInstrDataDualRam(
       arrRamStyleAltera="no_rw_check, M10K",
       arrRamStyleXilinx="block",
     )
+    val myMaxIshInstrRamKind = 5
     val memSlowNonBurst = (
-      instrRamKind >= 5
+      instrRamKind >= myMaxIshInstrRamKind
     ) generate (
-      LcvBusMemSlowNonBurst(
-        cfg=myMemCfg
-      )
+      LcvBusMemSlowNonBurst(cfg=myMemCfg)
     )
     val memFastNonBurst = (
-      instrRamKind < 5
+      instrRamKind < myMaxIshInstrRamKind
     ) generate (
-      LcvBusMem(
-        cfg=myMemCfg
-      )
+      LcvBusMem(cfg=myMemCfg)
     )
     val myMemIo = (
-      if (instrRamKind >= 5) (
+      if (instrRamKind >= myMaxIshInstrRamKind) (
         memSlowNonBurst.io
       ) else (
         memFastNonBurst.io
       )
     )
-    myMemIo.bus.h2dBus.valid := io.lcvIbus.h2dBus.valid
-    myMemIo.bus.h2dBus.mainNonBurstInfo := (
-      io.lcvIbus.h2dBus.mainNonBurstInfo
+    io.lcvIbus.h2dBus.translateInto(
+      myMemIo.bus.h2dBus
+    )(
+      dataAssignment=(
+        outp, inp
+      ) => {
+        outp.mainNonBurstInfo := inp.mainNonBurstInfo
+        outp.mainBurstInfo := outp.mainBurstInfo.getZero
+      }
     )
-    myMemIo.bus.h2dBus.mainBurstInfo.burstCnt := 0x0
-    myMemIo.bus.h2dBus.mainBurstInfo.burstFirst := False
-    myMemIo.bus.h2dBus.mainBurstInfo.burstLast := False
-    io.lcvIbus.h2dBus.ready := myMemIo.bus.h2dBus.ready
+    myMemIo.bus.d2hBus.translateInto(
+      io.lcvIbus.d2hBus
+    )(
+      dataAssignment=(
+        outp, inp
+      ) => {
+        outp.mainNonBurstInfo := inp.mainNonBurstInfo
+      }
+    )
+    //myMemIo.bus.h2dBus.valid := io.lcvIbus.h2dBus.valid
+    //myMemIo.bus.h2dBus.mainNonBurstInfo := (
+    //  io.lcvIbus.h2dBus.mainNonBurstInfo
+    //)
+    //myMemIo.bus.h2dBus.mainBurstInfo.burstCnt := 0x0
+    //myMemIo.bus.h2dBus.mainBurstInfo.burstFirst := False
+    //myMemIo.bus.h2dBus.mainBurstInfo.burstLast := False
+    //io.lcvIbus.h2dBus.ready := myMemIo.bus.h2dBus.ready
 
-    io.lcvIbus.d2hBus.valid := myMemIo.bus.d2hBus.valid
-    io.lcvIbus.d2hBus.mainNonBurstInfo := (
-      myMemIo.bus.d2hBus.mainNonBurstInfo
-    )
-    myMemIo.bus.d2hBus.ready := io.lcvIbus.d2hBus.ready
+    //io.lcvIbus.d2hBus.valid := myMemIo.bus.d2hBus.valid
+    //io.lcvIbus.d2hBus.mainNonBurstInfo := (
+    //  myMemIo.bus.d2hBus.mainNonBurstInfo
+    //)
+    //myMemIo.bus.d2hBus.ready := io.lcvIbus.d2hBus.ready
   })
   val lcvInstrRamArea = (
     instrRamKind == 0
@@ -450,16 +466,12 @@ case class SnowHouseInstrDataDualRam(
     val memSlowNonBurst = (
       !haveFastLcvBusMem
     ) generate (
-      LcvBusMemSlowNonBurst(
-        cfg=myMemCfg
-      )
+      LcvBusMemSlowNonBurst(cfg=myMemCfg)
     )
     val memFastNonBurst = (
       haveFastLcvBusMem
     ) generate (
-      LcvBusMem(
-        cfg=myMemCfg
-      )
+      LcvBusMem(cfg=myMemCfg)
     )
     val myMemIo = (
       if (!haveFastLcvBusMem) (
@@ -477,12 +489,16 @@ case class SnowHouseInstrDataDualRam(
     cfg.useLcvDataBus
   ) generate (new Area {
     val haveDcache = (
-      //true
-      false
+      true
+      //false
     )
     val haveFastLcvBusMem = (
       true
       //false
+    )
+    val haveDebursterForSlowLcvBusMem = (
+      //false
+      true
     )
     val depth = dataInitBigInt.size
     val dcache = (
@@ -499,37 +515,44 @@ case class SnowHouseInstrDataDualRam(
     )
     val memSlowNonBurst = (
       !haveFastLcvBusMem
-    ) generate (LcvBusMemSlowNonBurst(
-      cfg=myMemCfg
-    ))
+    ) generate (
+      LcvBusMemSlowNonBurst(cfg=myMemCfg)
+    )
     val memFastNonBurst = (
       haveFastLcvBusMem
     ) generate (
-      LcvBusMem(
-        cfg=myMemCfg
-      )
+      LcvBusMem(cfg=myMemCfg)
     )
-    val myMemIo = (
+    val myDeburster = (
+      !haveFastLcvBusMem
+      && haveDebursterForSlowLcvBusMem
+    ) generate (
+      LcvBusDeburster(cfg=LcvBusDebursterConfig(
+        loBusCfg=myMemCfg.busCfg
+      ))
+    )
+    val myLoBus = (
       if (!haveFastLcvBusMem) (
-        memSlowNonBurst.io
+        if (!haveDebursterForSlowLcvBusMem) (
+          memSlowNonBurst.io.bus
+        ) else (
+          myDeburster.io.loBus
+        )
       ) else (
-        memFastNonBurst.io
+        memFastNonBurst.io.bus
       )
     )
     if (!haveDcache) {
-      io.lcvDbus.h2dBus.translateInto(myMemIo.bus.h2dBus)(
-        dataAssignment=(
-          thatPayload, selfPayload
-        ) => {
-          thatPayload.mainNonBurstInfo := selfPayload.mainNonBurstInfo
-          thatPayload.mainBurstInfo := thatPayload.mainBurstInfo.getZero
+      io.lcvDbus.h2dBus.translateInto(myLoBus.h2dBus)(
+        dataAssignment=(outp, inp) => {
+          outp.mainNonBurstInfo := inp.mainNonBurstInfo
+          outp.mainBurstInfo := outp.mainBurstInfo.getZero
         }
       )
-      myMemIo.bus.d2hBus.translateInto(io.lcvDbus.d2hBus)(
-        dataAssignment=(
-          thatPayload, selfPayload
-        ) => {
-          thatPayload.mainNonBurstInfo := selfPayload.mainNonBurstInfo
+      //val myTempLoD2hBusStm = cloneOf(myLoBus.d2hBus)
+      myLoBus.d2hBus.translateInto(io.lcvDbus.d2hBus)(
+        dataAssignment=(outp, inp) => {
+          outp.mainNonBurstInfo := inp.mainNonBurstInfo
         }
       )
     } else { // if (haveDcache)
@@ -537,7 +560,28 @@ case class SnowHouseInstrDataDualRam(
       dcache.io.loBus.h2dBus << io.lcvDbus.h2dBus 
       io.lcvDbus.d2hBus <-/< dcache.io.loBus.d2hBus
 
-      myMemIo.bus <> dcache.io.hiBus
+      myLoBus <> dcache.io.hiBus
+    }
+    if (
+      !haveFastLcvBusMem
+      && haveDebursterForSlowLcvBusMem
+    ) {
+      //myDeburster.io.hiBus <> memSlowNonBurst.io.bus
+      myDeburster.io.hiBus.h2dBus.translateInto(
+        memSlowNonBurst.io.bus.h2dBus
+      )(
+        dataAssignment=(outp, inp) => {
+          outp.mainNonBurstInfo := inp.mainNonBurstInfo
+          outp.mainBurstInfo := outp.mainBurstInfo.getZero
+        }
+      )
+      memSlowNonBurst.io.bus.d2hBus.translateInto(
+        myDeburster.io.hiBus.d2hBus
+      )(
+        dataAssignment=(outp, inp) => {
+          outp.mainNonBurstInfo := inp.mainNonBurstInfo
+        }
+      )
     }
   })
 

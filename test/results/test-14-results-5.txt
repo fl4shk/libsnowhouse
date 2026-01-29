@@ -61,10 +61,5 @@ addr:10 data:3
 addr:5 data:28
 addr:3 data:7
 addr:1 data:144
-addr:5 data:144
-addr:4 data:32
-addr:5 data:145
-addr:5 data:32
-addr:3 data:8
 Ending test.
 
