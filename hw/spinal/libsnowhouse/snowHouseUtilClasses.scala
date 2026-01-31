@@ -544,8 +544,8 @@ object SnowHouseBranchPredictorKind {
       //HAVE_BRANCH,
       //HAVE_PRE_BRANCH
       FWD,
-      BAK,
-      NO_PREDICT
+      BAK//,
+      //NO_PREDICT
       = newElement()
   }
   case class FwdNotTknBakTkn(

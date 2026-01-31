@@ -624,16 +624,26 @@ case class SnowHouseBranchPredictor(
     //&& io.psExSetPc.btbWrEn
     && (
       !otherWrBtbElemWithBrKind.btbElem.dontPredict
-    ) && RegNext(
+    ) 
+    //&& (
+    //  io.psExSetPc.branchTgtBufElem.fire
+    //)
+    && RegNext(
       next=(
         (
           io.psExSetPc.branchTgtBufElem.fire
-        ) && (
-          otherWrBranchKind
-          === SnowHouseBranchPredictorKind.FwdNotTknBakTknEnum.BAK
         )
+        //&& 
+        //(
+        //  otherWrBranchKind
+        //  === SnowHouseBranchPredictorKind.FwdNotTknBakTknEnum.BAK
+        //)
       ),
       init=False,
+    )
+    && (
+      otherWrBranchKind
+      === SnowHouseBranchPredictorKind.FwdNotTknBakTknEnum.BAK
     )
     //&& RegNext(
     //  next=io.psExSetPc.branchTgtBufElem.fire,
@@ -684,12 +694,25 @@ case class SnowHouseBranchPredictor(
   //    init=otherWrBtbElemWithBrKind.getZero,
   //  )
   //)
-  otherWrBtbElemWithBrKind := io.psExSetPc.btbElemWithBrKind
-  wrBtbElem := (
+  //otherWrBtbElemWithBrKind := io.psExSetPc.btbElemWithBrKind
+  otherWrBtbElemWithBrKind := (
     RegNext(
-      next=otherWrBtbElemWithBrKind.btbElem,
-      init=otherWrBtbElemWithBrKind.btbElem.getZero,
+      otherWrBtbElemWithBrKind,
+      init=otherWrBtbElemWithBrKind.getZero,
     )
+  )
+  when (io.psExSetPc.valid) {
+    otherWrBtbElemWithBrKind := RegNext(
+      io.psExSetPc.btbElemWithBrKind,
+      init=io.psExSetPc.btbElemWithBrKind.getZero
+    )
+  }
+  wrBtbElem := (
+    otherWrBtbElemWithBrKind.btbElem
+    //RegNext(
+    //  next=otherWrBtbElemWithBrKind.btbElem,
+    //  init=otherWrBtbElemWithBrKind.btbElem.getZero,
+    //)
   )
   //when (io.psExSetPc.valid) {
   //  //otherWrBtbElemWithBrKind := io.psExSetPc.btbElemWithBrKind
@@ -1609,16 +1632,6 @@ case class SnowHousePipeStageInstrFetch(
     myMainPredictCond
   )
 
-  if (cfg.haveBranchPredictor) {
-    for (idx <- 0 until branchPredictor.io.inpRegPc.size) {
-      branchPredictor.io.inpRegPc(idx) := (
-        Cat(
-          (rPrevRegPc(0) + 1),
-          myRegPcShiftThing,
-        ).asUInt
-      )
-    }
-  }
   val tempNextRegPc = (
     cfg.haveBranchPredictor
   ) generate (
@@ -1644,6 +1657,17 @@ case class SnowHousePipeStageInstrFetch(
       ),
     ).asUInt
   )
+  if (cfg.haveBranchPredictor) {
+    for (idx <- 0 until branchPredictor.io.inpRegPc.size) {
+      branchPredictor.io.inpRegPc(idx) := (
+        myPredictedNextPc
+        //Cat(
+        //  (rPrevRegPc(0) + 1),
+        //  myRegPcShiftThing,
+        //).asUInt
+      )
+    }
+  }
   def doInitTakeJumpCnt(): Unit = {
     rTakeJumpCnt.valid := True
     rTakeJumpCnt.payload := takeJumpCntMaxVal
@@ -7901,9 +7925,12 @@ case class SnowHousePipeStageExecute(
         next=(
           !myShouldIgnoreInstr(0)
           && cMid0Front.up.isFiring
+          && !nextPsExSetPcValid(0)
+          //&& !psExSetPc.valid
         ),
         init=False
       )
+      //&& !psExSetPc.valid
     )
   }
 

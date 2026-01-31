@@ -527,7 +527,7 @@ object SnowHouseCpuPipeStageInstrDecode {
     //isPsId: Boolean
     regPc: UInt,
     srcRegPc: UInt,
-    dstRegPcNonLshift: UInt,
+    //dstRegPcNonLshift: UInt,
     //regPcPlusImm: UInt,
     //branchPredictTkn: Bool,
     isBl: Boolean,
@@ -629,13 +629,13 @@ object SnowHouseCpuPipeStageInstrDecode {
         }
         //when (!branchPredictTkn) {
           ret.btbElem.srcRegPc := srcRegPc
-          ret.btbElem.dstRegPc := {
-            val myCat = Cat(
-              dstRegPcNonLshift,
-              U(s"${log2Up(cfg.instrSizeBytes)}'d0")
-            ).asUInt
-            myCat
-          }
+          //ret.btbElem.dstRegPc := {
+          //  val myCat = Cat(
+          //    dstRegPcNonLshift,
+          //    U(s"${log2Up(cfg.instrSizeBytes)}'d0")
+          //  ).asUInt
+          //  myCat
+          //}
         //} otherwise {
         //  ret.srcRegPc := (
         //    regPc
@@ -650,12 +650,23 @@ object SnowHouseCpuPipeStageInstrDecode {
         //    regPcPlusImm + (1 * cfg.instrSizeBytes)
         //  )
         //}
-        ret.btbElem.valid := myTargetDisp.msb 
-        ret.branchKind.assignFromBits(
-          // this is only for `FwdNotTknBakTknEnum`!
-          Cat(myTargetDisp.msb).asUInt
-          .resize(ret.branchKind.getWidth).asBits
-        )
+        if (!isBl) {
+          ret.btbElem.valid := myTargetDisp.msb 
+          ret.branchKind.assignFromBits(
+            // this is only for `FwdNotTknBakTknEnum`!
+            Cat(myTargetDisp.msb).asUInt
+            .resize(ret.branchKind.getWidth).asBits
+          )
+        } else {
+          ret.btbElem.valid := True
+          ret.branchKind := (
+            // this is only for `FwdNotTknBakTknEnum`!
+            Cat(True).asUInt
+            .resize(ret.branchKind.getWidth).asBits
+          )
+          upPayload.branchPredictTkn := True
+          upPayload.branchTgtBufElem(0).valid := True
+        }
         ret.btbElem.dontPredict := (
           False
         )
@@ -938,6 +949,7 @@ object SnowHouseCpuPipeStageInstrDecode {
     myTempBtbElem := (
       myTempBtbElem.getZero
     )
+    myTempBtbElem.dstRegPc.allowOverride
     //myTempBtbElem.dontPredict := True
 
     def io = psId.io
@@ -1878,32 +1890,32 @@ object SnowHouseCpuPipeStageInstrDecode {
             //psId.myHistRegPcMinus2Instrs.last
           ),
           //regPcPlusImm=upPayload.regPcPlusImm,
-          dstRegPcNonLshift=(
-            //upPayload.regPcPlusImm + (3 * cfg.instrSizeBytes)
-            (
-              //(
-              //  if (!cfg.useLcvInstrBus) (
-              //    psId.myHistRegPcPlus1InstrSize.last.asUInt
-              //  ) else (
-              //    psId.myHistRegPcPlus2InstrSize.last.asUInt
-              //  )
-              //)
-              psId.myHistRegPcPlus1InstrSize.last.asUInt
-              //+ (if (!cfg.useLcvInstrBus) (0) else (1))
-              + upPayload.imm(2)
-              //(
-              //  //upPayload.imm(2).high downto log2Up(cfg.instrSizeBytes)
-              //)
-            ).resize(
-              psId.myHistRegPcPlus1InstrSize.last.asUInt.getWidth
-              //if (!cfg.useLcvInstrBus) (
-              //  psId.myHistRegPcPlus1InstrSize.last.asUInt.getWidth
-              //) else (
-              //  psId.myHistRegPcPlus2InstrSize.last.asUInt.getWidth
-              //)
-            )
-            //upPayload.laggingRegPcPlus1InstrSize + upPayload.imm(2)
-          ),
+          //dstRegPcNonLshift=(
+          //  //upPayload.regPcPlusImm + (3 * cfg.instrSizeBytes)
+          //  (
+          //    //(
+          //    //  if (!cfg.useLcvInstrBus) (
+          //    //    psId.myHistRegPcPlus1InstrSize.last.asUInt
+          //    //  ) else (
+          //    //    psId.myHistRegPcPlus2InstrSize.last.asUInt
+          //    //  )
+          //    //)
+          //    psId.myHistRegPcPlus1InstrSize.last.asUInt
+          //    //+ (if (!cfg.useLcvInstrBus) (0) else (1))
+          //    + upPayload.imm(2)
+          //    //(
+          //    //  //upPayload.imm(2).high downto log2Up(cfg.instrSizeBytes)
+          //    //)
+          //  ).resize(
+          //    psId.myHistRegPcPlus1InstrSize.last.asUInt.getWidth
+          //    //if (!cfg.useLcvInstrBus) (
+          //    //  psId.myHistRegPcPlus1InstrSize.last.asUInt.getWidth
+          //    //) else (
+          //    //  psId.myHistRegPcPlus2InstrSize.last.asUInt.getWidth
+          //    //)
+          //  )
+          //  //upPayload.laggingRegPcPlus1InstrSize + upPayload.imm(2)
+          //),
           //branchPredictTkn=upPayload.branchPredictTkn,
           isBl=false,
           someTempSimmNoShift=tempSimmNoShift,
@@ -1935,32 +1947,32 @@ object SnowHouseCpuPipeStageInstrDecode {
             //psId.myHistRegPcMinus2Instrs.last
           ),
           //regPcPlusImm=upPayload.regPcPlusImm,
-          dstRegPcNonLshift=(
-            //upPayload.regPcPlusImm + (3 * cfg.instrSizeBytes)
-            (
-              psId.myHistRegPcPlus1InstrSize.last.asUInt
-              //(
-              //  if (!cfg.useLcvInstrBus) (
-              //    psId.myHistRegPcPlus1InstrSize.last.asUInt
-              //  ) else (
-              //    psId.myHistRegPcPlus2InstrSize.last.asUInt
-              //  )
-              //)
-              //+ (if (!cfg.useLcvInstrBus) (0) else (1))
-              + upPayload.imm(2)
-              //(
-              //  //upPayload.imm(2).high downto log2Up(cfg.instrSizeBytes)
-              //)
-            ).resize(
-              psId.myHistRegPcPlus1InstrSize.last.asUInt.getWidth
-              //if (!cfg.useLcvInstrBus) (
-              //  psId.myHistRegPcPlus1InstrSize.last.asUInt.getWidth
-              //) else (
-              //  psId.myHistRegPcPlus2InstrSize.last.asUInt.getWidth
-              //)
-            )
-            //upPayload.laggingRegPcPlus1InstrSize + upPayload.imm(2)
-          ),
+          //dstRegPcNonLshift=(
+          //  //upPayload.regPcPlusImm + (3 * cfg.instrSizeBytes)
+          //  (
+          //    psId.myHistRegPcPlus1InstrSize.last.asUInt
+          //    //(
+          //    //  if (!cfg.useLcvInstrBus) (
+          //    //    psId.myHistRegPcPlus1InstrSize.last.asUInt
+          //    //  ) else (
+          //    //    psId.myHistRegPcPlus2InstrSize.last.asUInt
+          //    //  )
+          //    //)
+          //    //+ (if (!cfg.useLcvInstrBus) (0) else (1))
+          //    + upPayload.imm(2)
+          //    //(
+          //    //  //upPayload.imm(2).high downto log2Up(cfg.instrSizeBytes)
+          //    //)
+          //  ).resize(
+          //    psId.myHistRegPcPlus1InstrSize.last.asUInt.getWidth
+          //    //if (!cfg.useLcvInstrBus) (
+          //    //  psId.myHistRegPcPlus1InstrSize.last.asUInt.getWidth
+          //    //) else (
+          //    //  psId.myHistRegPcPlus2InstrSize.last.asUInt.getWidth
+          //    //)
+          //  )
+          //  //upPayload.laggingRegPcPlus1InstrSize + upPayload.imm(2)
+          //),
           //branchPredictTkn=upPayload.branchPredictTkn,
           isBl=true,
           someTempSimmNoShift=tempBlSimm,
@@ -2254,6 +2266,39 @@ object SnowHouseCpuPipeStageInstrDecode {
     //when (upPayload.takeIrq) {
     //  setOp(JlRaRb)
     //}
+    val dstRegPcNonLshift = (
+      //upPayload.regPcPlusImm + (3 * cfg.instrSizeBytes)
+      (
+        //(
+        //  if (!cfg.useLcvInstrBus) (
+        //    psId.myHistRegPcPlus1InstrSize.last.asUInt
+        //  ) else (
+        //    psId.myHistRegPcPlus2InstrSize.last.asUInt
+        //  )
+        //)
+        psId.myHistRegPcPlus1InstrSize.last.asUInt
+        //+ (if (!cfg.useLcvInstrBus) (0) else (1))
+        + upPayload.imm(2)
+        //(
+        //  //upPayload.imm(2).high downto log2Up(cfg.instrSizeBytes)
+        //)
+      ).resize(
+        psId.myHistRegPcPlus1InstrSize.last.asUInt.getWidth
+        //if (!cfg.useLcvInstrBus) (
+        //  psId.myHistRegPcPlus1InstrSize.last.asUInt.getWidth
+        //) else (
+        //  psId.myHistRegPcPlus2InstrSize.last.asUInt.getWidth
+        //)
+      )
+      //upPayload.laggingRegPcPlus1InstrSize + upPayload.imm(2)
+    )
+    myTempBtbElem.dstRegPc := {
+      val myCat = Cat(
+        dstRegPcNonLshift,
+        U(s"${log2Up(cfg.instrSizeBytes)}'d0")
+      ).asUInt
+      myCat
+    }
   }
 }
 //case class SnowHouseCpuPipeStageInstrDecode(
@@ -5274,7 +5319,7 @@ object SnowHouseCpuWithDualRamSim extends App {
     false
   )
   val testIdxRange = Array[Int](
-    0, //0,
+    0, 0,
     //1, //1,
     //2, //2,
     //////////3, 3,
@@ -5292,10 +5337,10 @@ object SnowHouseCpuWithDualRamSim extends App {
     15, 15,
   )
   val instrRamKindArr = Array[Int](
-    //0,
+    0,
     //1,
     //2,
-    5,
+    //5,
   )
   for (testIdx <- 0 to testIdxRange(1)) {
     programStrArr += (
