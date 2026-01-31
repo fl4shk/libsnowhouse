@@ -631,6 +631,10 @@ case class SnowHouseConfig(
   targetAltera: Boolean=false,
   optFormal: Boolean=false,
 ) {
+  def myHaveS2mIfId = (
+    useLcvInstrBus
+    && useLcvDataBus
+  )
   def regPcSetItCntWidth = (
     //2
     1

@@ -1911,6 +1911,46 @@ case class SnowHousePipeStageInstrFetch(
 //  //  )
 //  //)
 //}
+case class SnowHousePrePipeStageExSetBranchPredictEtcArea(
+  cfg: SnowHouseConfig,
+  outp: SnowHousePipePayload,
+  inp: SnowHousePipePayload,
+  link: CtrlLink,
+) extends Area {
+  outp.branchPredictReplaceBtbElem := (
+    RegNextWhen(
+      next=outp.branchPredictTkn,
+      cond=link.up.isFiring,
+      init=outp.branchPredictTkn.getZero,
+    )
+    //&& upPayload(0).branchTgtBufElem(0).fire
+    && outp.branchTgtBufElem(1).fire
+    && !outp.branchTgtBufElem(1).dontPredict
+
+    && outp.btbElemBranchKind(1).asBits(0)
+    && (
+      !LcvFastCmpEq(
+        left=outp.branchTgtBufElem(0).srcRegPc(cfg.mySrcRegPcCmpEqRange),
+        right=outp.branchTgtBufElem(1).srcRegPc(cfg.mySrcRegPcCmpEqRange),
+        cmpEqIo=null,
+        optDsp=false,
+        optReg=false,
+      )._1
+      //(
+      //  outp.branchTgtBufElem(0).srcRegPc(
+      //    cfg.mySrcRegPcCmpEqRange
+      //  ) =/= outp.branchTgtBufElem(1).srcRegPc(
+      //    cfg.mySrcRegPcCmpEqRange
+      //  )
+      //)
+      //|| (
+      //  outp.branchTgtBufElem(0).dstRegPc
+      //  =/= outp.branchTgtBufElem(1).srcRegPc
+      //)
+    )
+  )
+  
+}
 case class SnowHousePipeStageInstrDecode(
   val args: SnowHousePipeStageArgs,
   val psIdHaltIt: Bool,
@@ -2098,6 +2138,67 @@ case class SnowHousePipeStageInstrDecode(
     //  rShouldFinishJumpCnt := rShouldFinishJumpCnt - 1
     //}
   }
+  val myPrePipeStageExSetBranchPredictEtcArea = (
+    !cfg.myHaveS2mIfId
+    //!cfg.useLcvInstrBus
+    //|| !cfg.useLcvDataBus
+  ) generate (SnowHousePrePipeStageExSetBranchPredictEtcArea(
+    cfg=cfg,
+    outp=upPayload(1),
+    inp=upPayload(1),
+    link=cId,
+  ))
+  //{
+  //  cfg.myPrePsExSetBranchPredictionStuff(
+  //    outp=upPayload(1),
+  //    inp=upPayload(0),
+  //    link=cId,
+  //  )
+  //  //upPayload(1).branchPredictReplaceBtbElem := (
+  //  //  RegNextWhen(
+  //  //    next=upPayload(1).branchPredictTkn,
+  //  //    cond=cId.up.isFiring,
+  //  //    init=upPayload(1).branchPredictTkn.getZero,
+  //  //  )
+  //  //  //&& upPayload(0).branchTgtBufElem(0).fire
+  //  //  && upPayload(1).branchTgtBufElem(1).fire
+  //  //  && !upPayload(1).branchTgtBufElem(1).dontPredict
+
+  //  //  && upPayload(1).btbElemBranchKind(1).asBits(0)
+  //  //  && (
+  //  //    !LcvFastCmpEq(
+  //  //      left=(
+  //  //        upPayload(1).branchTgtBufElem(0).srcRegPc(
+  //  //          cfg.mySrcRegPcCmpEqRange
+  //  //        )
+  //  //      ),
+  //  //      right=(
+  //  //        upPayload(1).branchTgtBufElem(1).srcRegPc(
+  //  //          cfg.mySrcRegPcCmpEqRange
+  //  //        )
+  //  //      ),
+  //  //      cmpEqIo=(
+  //  //        null
+  //  //      ),
+  //  //      optDsp=(
+  //  //        false,
+  //  //      ),
+  //  //      optReg=false,
+  //  //    )._1
+  //  //    //(
+  //  //    //  upPayload(1).branchTgtBufElem(0).srcRegPc(
+  //  //    //    cfg.mySrcRegPcCmpEqRange
+  //  //    //  ) =/= upPayload(1).branchTgtBufElem(1).srcRegPc(
+  //  //    //    cfg.mySrcRegPcCmpEqRange
+  //  //    //  )
+  //  //    //)
+  //  //    //|| (
+  //  //    //  upPayload(1).branchTgtBufElem(0).dstRegPc
+  //  //    //  =/= upPayload(1).branchTgtBufElem(1).srcRegPc
+  //  //    //)
+  //  //  )
+  //  //)
+  //}
   //when (up.isFiring) {
   //  upPayload.regPcSetItCnt.foreach(_ := upPayload.psIfRegPcSetItCnt)
   //}
@@ -2111,50 +2212,6 @@ case class SnowHousePipeStageInstrDecode(
     //+ (2 * cfg.instrSizeBytes)
     ////- (cfg.instrMainWidth.toLong / 8.toLong)
     //upPayload.regPcPlus1Instr
-  )
-  upPayload(1).branchPredictReplaceBtbElem := (
-    RegNextWhen(
-      next=upPayload(1).branchPredictTkn,
-      cond=cId.up.isFiring,
-      init=upPayload(1).branchPredictTkn.getZero,
-    )
-    //&& upPayload(0).branchTgtBufElem(0).fire
-    && upPayload(1).branchTgtBufElem(1).fire
-    && !upPayload(1).branchTgtBufElem(1).dontPredict
-
-    && upPayload(1).btbElemBranchKind(1).asBits(0)
-    && (
-      !LcvFastCmpEq(
-        left=(
-          upPayload(1).branchTgtBufElem(0).srcRegPc(
-            cfg.mySrcRegPcCmpEqRange
-          )
-        ),
-        right=(
-          upPayload(1).branchTgtBufElem(1).srcRegPc(
-            cfg.mySrcRegPcCmpEqRange
-          )
-        ),
-        cmpEqIo=(
-          null
-        ),
-        optDsp=(
-          false,
-        ),
-        optReg=false,
-      )._1
-      //(
-      //  upPayload(1).branchTgtBufElem(0).srcRegPc(
-      //    cfg.mySrcRegPcCmpEqRange
-      //  ) =/= upPayload(1).branchTgtBufElem(1).srcRegPc(
-      //    cfg.mySrcRegPcCmpEqRange
-      //  )
-      //)
-      //|| (
-      //  upPayload(1).branchTgtBufElem(0).dstRegPc
-      //  =/= upPayload(1).branchTgtBufElem(1).srcRegPc
-      //)
-    )
   )
   //val myPredictTkn = (
   //  upPayload(1).branchPredictTkn

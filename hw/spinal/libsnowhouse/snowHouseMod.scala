@@ -1216,45 +1216,21 @@ case class SnowHouse
         cFront,
         //ydx,
       ) => new Area {
-        //GenerationFlags.formal {
-          if (cfg.optFormal) {
-            when (pastValidAfterReset) {
-              when (
-                cFront.up.isValid
-                && past(cFront.up.isFiring)
-              ) {
-                when (inp.opCnt =/= past(inp.opCnt)) {
-                  assert(inp.opCnt === past(inp.opCnt) + 1)
-                }
-              }
-            }
-            //assume(
-            //  inp.op.asBits.asUInt
-            //  //< PipeMemRmwSimDut.ModOp.MUL_RA_RB.asBits.asUInt
-            //  //< PipeMemRmwSimDut.postMaxModOp.asBits.asUInt
-            //)
-            val temp = inp.formalAssumes()
-            when (pastValidAfterReset) {
-              for ((tempExt, tempIdx) <- inp.myExt.zipWithIndex) {
-                assert(stable(tempExt.hazardCmp))
-                assert(stable(tempExt.modMemWord))
-                assert(
-                  stable(tempExt.rdMemWord)
-                  //=== inp.myExt.rdMemWord.getZero
-                )
-                assert(
-                  tempExt.rdMemWord
-                  === tempExt.rdMemWord.getZero
-                )
-                assert(
-                  stable(tempExt.hazardCmp)
-                  //=== inp.myExt.hazardCmp.getZero
-                )
-                assert(stable(tempExt.modMemWordValid))
-              }
-            }
-          }
-        //}
+        if (myHaveS2mIfId) {
+          val myPrePsExSetBranchPredictEtcArea = (
+            SnowHousePrePipeStageExSetBranchPredictEtcArea(
+              cfg=cfg,
+              outp=outp,
+              inp=inp,
+              link=cFront,
+            )
+          )
+          //cfg.myPrePsExSetBranchPredictionStuff(
+          //  outp=outp,
+          //  inp=inp,
+          //  link=cFront,
+          //)
+        }
       }
     ),
     doModInMid0FrontFunc=Some(
@@ -1298,8 +1274,9 @@ case class SnowHouse
   )
   linkArr += sIf
   def myHaveS2mIfId = (
-    cfg.useLcvInstrBus
-    && cfg.useLcvDataBus
+    cfg.myHaveS2mIfId
+    //cfg.useLcvInstrBus
+    //&& cfg.useLcvDataBus
   )
   val s2mIf = (
     myHaveS2mIfId

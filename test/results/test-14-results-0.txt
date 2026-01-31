@@ -292,5 +292,7 @@ addr:3 data:45
 addr:1 data:220
 addr:5 data:220
 addr:4 data:184
+addr:5 data:221
+addr:5 data:184
 Ending test.
 
