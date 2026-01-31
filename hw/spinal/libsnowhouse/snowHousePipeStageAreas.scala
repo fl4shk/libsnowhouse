@@ -3677,6 +3677,7 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
   io.dbusHostPayload.accKind.allowOverride
   io.dbusHostPayload.subKind.allowOverride
   io.dbusHostPayload.subKindIsLtWordWidth.allowOverride
+  io.dbusHostPayload.myLcvDbusByteSize.allowOverride
   //io.opIs := 0x0
   io.opIsMemAccess.foreach(current => {
     current := (
@@ -4093,6 +4094,9 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
   io.dbusHostPayload.subKindIsLtWordWidth := (
     io.inpDecodeExt(0).memAccessIsLtWordWidth
   )
+  io.dbusHostPayload.myLcvDbusByteSize := (
+    io.inpDecodeExt(0).memAccessLcvDbusByteSize
+  )
   io.outpDecodeExt.memAccessKind := (
     io.inpDecodeExt(1).memAccessKind
   )
@@ -4101,6 +4105,9 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
   )
   io.outpDecodeExt.memAccessIsLtWordWidth := (
     io.inpDecodeExt(1).memAccessIsLtWordWidth
+  )
+  io.outpDecodeExt.memAccessLcvDbusByteSize := (
+    io.inpDecodeExt(1).memAccessLcvDbusByteSize
   )
   println(
     f"cfg.allMainLdstUseGprPlusImm:${cfg.allMainLdstUseGprPlusImm}"
@@ -7671,9 +7678,11 @@ case class SnowHousePipeStageExecute(
       && setOutpModMemWord.io.opIsMemAccess.last
       && cMid0Front.down.isReady
     )
-    myH2dBus.byteEn := (
-      U(myH2dBus.byteEn.getWidth bits, default -> True)
-    )
+    //myH2dBus.byteEn := (
+    //  U(myH2dBus.byteEn.getWidth bits, default -> True)
+    //)
+    //myH2dBus.haveFullWord := !myDbusHostPayload.subKindIsLtWordWidth
+    myH2dBus.byteSize := myDbusHostPayload.myLcvDbusByteSize
     myH2dBus.src.allowOverride
     //myH2dBus.src := 0x0
     //myH2dBus.src.lsb := myH2dBus.isWrite

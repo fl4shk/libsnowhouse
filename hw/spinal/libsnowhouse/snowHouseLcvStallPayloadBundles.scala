@@ -183,6 +183,12 @@ case class BusHostNonSrcPayload(
   val subKindIsLtWordWidth = (!isIbus) generate (
     Bool()
   )
+  val myLcvDbusByteSize = (
+    !isIbus
+    && !cfg.subCfg.lcvDbusEtcCfg.loBusCfg.haveByteEn
+  ) generate (
+    UInt(cfg.subCfg.lcvDbusEtcCfg.loBusCfg.byteSizeWidth bits)
+  )
 }
 case class BusHostPayload(
   cfg: SnowHouseConfig,
@@ -198,6 +204,7 @@ case class BusHostPayload(
   def accKind = nonSrc.accKind
   def subKind = nonSrc.subKind
   def subKindIsLtWordWidth = nonSrc.subKindIsLtWordWidth
+  def myLcvDbusByteSize = nonSrc.myLcvDbusByteSize
   val src = (
     (
       (
@@ -267,6 +274,12 @@ case class BusDevPayload(
       data
     )
   )
+  //val myLcvDbusByteSize = (
+  //  !isIbus
+  //  && !cfg.subCfg.lcvDbusEtcCfg.loBusCfg.haveByteEn
+  //) generate (
+  //  UInt(cfg.subCfg.lcvDbusEtcCfg.loBusCfg.byteSizeWidth bits)
+  //)
 
   val src = (
     (

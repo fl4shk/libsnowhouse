@@ -1397,6 +1397,11 @@ object SnowHouseCpuPipeStageInstrDecode {
                             idx
                           ).memAccessIsLtWordWidth
                         )
+                        def myMemAccessLcvDbusByteSize = (
+                          upPayload.inpDecodeExt(
+                            idx
+                          ).memAccessLcvDbusByteSize
+                        )
 
                         //if (idx == 0 || !isStore) {
                           mem.subKind match {
@@ -1405,24 +1410,28 @@ object SnowHouseCpuPipeStageInstrDecode {
                                 SnowHouseMemAccessSubKind.Sz8
                               )
                               myMemAccessIsLtWordSize := True
+                              myMemAccessLcvDbusByteSize := 0x0
                             }
                             case MemAccessKind.SubKind.Sz16 => {
                               mySubKind := (
                                 SnowHouseMemAccessSubKind.Sz16
                               )
                               myMemAccessIsLtWordSize := True
+                              myMemAccessLcvDbusByteSize := 0x1
                             }
                             case MemAccessKind.SubKind.Sz32 => {
                               mySubKind := (
                                 SnowHouseMemAccessSubKind.Sz32
                               )
                               myMemAccessIsLtWordSize := False
+                              myMemAccessLcvDbusByteSize := 0x2
                             }
                             case MemAccessKind.SubKind.Sz64 => {
                               mySubKind := (
                                 SnowHouseMemAccessSubKind.Sz64
                               )
                               myMemAccessIsLtWordSize := False
+                              myMemAccessLcvDbusByteSize := 0x3
                             }
                           }
                         //} else {
@@ -5265,21 +5274,22 @@ object SnowHouseCpuWithDualRamSim extends App {
     false
   )
   val testIdxRange = Array[Int](
-    0, //0,
+    //0, //0,
     //1, //1,
     //2, //2,
     //////////3, 3,
     //////4, 4,
     //////////5, //5,
     //6, 6,
-    //////////7, //7,
+    //7, 7,
     //8, 8,
     //9, //9,
     //////////10, //10,
     ////////11, 11,
     //12, 12,
     //13, 13,
-    14, 14,
+    //14, 14,
+    15, 15,
   )
   val instrRamKindArr = Array[Int](
     0,

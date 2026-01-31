@@ -385,6 +385,12 @@ case class SnowHouseSubConfig(
         //  1
         //)
       ),
+      haveByteEn=(
+        // TODO: support `instrMainWidth < shRegFileCfg.mainWidth`
+        true
+        //false
+      ),
+      keepByteSize=false
     )
   )
   val lcvIbusEtcCfg = (
@@ -428,6 +434,8 @@ case class SnowHouseSubConfig(
       allowBurst=false,
       burstAlwaysMaxSize=false,
       srcWidth=myLcvBusSrcWidth,
+      haveByteEn=false,
+      keepByteSize=false,
     )
   )
   val lcvDbusEtcCfg = (
@@ -1218,6 +1226,11 @@ case class SnowHouseDecodeExt(
   val memAccessSubKind = SnowHouseMemAccessSubKind(/*binaryOneHot*/)
   val memAccessIsLtWordWidth = Bool()
   val memAccessIsPush = Bool()
+  val memAccessLcvDbusByteSize = (
+    !cfg.subCfg.lcvDbusEtcCfg.loBusCfg.haveByteEn
+  ) generate (
+    UInt(cfg.subCfg.lcvDbusEtcCfg.loBusCfg.byteSizeWidth bits)
+  )
   // TODO: add support for atomic operations
   // (probably just read-modify-write)
   //val memAccessIsAtomic = Bool()
