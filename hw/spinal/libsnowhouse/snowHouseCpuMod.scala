@@ -5319,7 +5319,7 @@ object SnowHouseCpuWithDualRamSim extends App {
     false
   )
   val testIdxRange = Array[Int](
-    0, 0,
+    0, //0,
     //1, //1,
     //2, //2,
     //////////3, 3,
@@ -5340,7 +5340,7 @@ object SnowHouseCpuWithDualRamSim extends App {
     0,
     //1,
     //2,
-    //5,
+    5,
   )
   for (testIdx <- 0 to testIdxRange(1)) {
     programStrArr += (
