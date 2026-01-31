@@ -2226,6 +2226,16 @@ case class SnowHousePipeStageInstrDecode(
   }
 
   //--------
+  val mySeenPsIfRegPcSetItCntLsb = upPayload(1).psIfRegPcSetItCnt(0)
+  val rSavedSeenPsIfRegPcSetItCntLsb = Reg(Bool(), init=False)
+
+  val stickySeenPsIfRegPcSetItCntLsb = (
+    mySeenPsIfRegPcSetItCntLsb
+    || rSavedSeenPsIfRegPcSetItCntLsb
+  )
+  when (mySeenPsIfRegPcSetItCntLsb) {
+    rSavedSeenPsIfRegPcSetItCntLsb := True
+  }
   val shouldFinishJump = (
     ////--------
     ////upPayload(1).psIfRegPcSetItCnt(0)
@@ -2241,17 +2251,18 @@ case class SnowHousePipeStageInstrDecode(
     ////upPayload.psIfRegPcSetItCnt(0)
     //Bool()
     //--------
-    (
-      upPayload(1).psIfRegPcSetItCnt(0)
-      || RegNextWhen(
-        next=upPayload(1).psIfRegPcSetItCnt(0),
-        cond=(
-          up.isFiring
-          //up.isValid
-        ),
-        init=upPayload(1).psIfRegPcSetItCnt(0).getZero,
-      )
-    )
+    //(
+    //  upPayload(1).psIfRegPcSetItCnt(0)
+    //  || RegNextWhen(
+    //    next=upPayload(1).psIfRegPcSetItCnt(0),
+    //    cond=(
+    //      up.isFiring
+    //      //up.isValid
+    //    ),
+    //    init=upPayload(1).psIfRegPcSetItCnt(0).getZero,
+    //  )
+    //)
+    stickySeenPsIfRegPcSetItCntLsb
     && (
       upPayload(1).laggingRegPc(myRegPcRange)
       === RegNextWhen(
@@ -2291,6 +2302,7 @@ case class SnowHousePipeStageInstrDecode(
     //)
     when (up.isFiring) {
       when (shouldFinishJump) {
+        rSavedSeenPsIfRegPcSetItCntLsb := False
         upPayload(1).regPcSetItCnt(idx) := (
           //0x2
           0x1

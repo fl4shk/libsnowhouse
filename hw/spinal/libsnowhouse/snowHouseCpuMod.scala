@@ -5334,10 +5334,10 @@ object SnowHouseCpuWithDualRamSim extends App {
     //12, 12,
     //13, 13,
     14, 14,
-    15, 15,
+    //15, 15,
   )
   val instrRamKindArr = Array[Int](
-    //0,
+    0,
     //1,
     //2,
     5,
