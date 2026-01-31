@@ -1917,6 +1917,136 @@ case class SnowHousePrePipeStageExSetBranchPredictEtcArea(
   inp: SnowHousePipePayload,
   link: CtrlLink,
 ) extends Area {
+  val up = link.up
+  val down = link.down
+
+  def myRegPcRange = (
+    outp.regPc.high downto log2Up(cfg.instrSizeBytes)
+  )
+  val myHistRegPc = (
+    History[SInt](
+      that=outp.regPc(myRegPcRange).asSInt,
+      length=outp.myHistRegPcSize,
+      when=up.isFiring,
+      init=outp.regPc(myRegPcRange).asSInt.getZero,
+    )
+  )
+  val myDspRegPcMinus2InstrSize = {
+    val myWordWidth = (
+      cfg.mainWidth - log2Up(cfg.instrSizeBytes) //- 1
+    )
+    //LcvCondSubDel1(
+    //  wordWidth=myWordWidth
+    //)
+    //LcvSubDel1(
+    //  wordWidth=myWordWidth
+    //)
+    new Area {
+      val wordWidth = myWordWidth
+      val io = (
+        //LcvCondAddJustCarryDel1Io(wordWidth=wordWidth)
+        new Bundle {
+          val inp = new Bundle {
+            val a = SInt(wordWidth bits)
+            val carry = Bool()
+            val cond = Bool()
+          }
+          val outp = new Bundle {
+            val sum_carry = SInt(wordWidth + 1 bits)
+          }
+        }
+      )
+      val tempA = Cat(False, io.inp.a(io.inp.a.high downto 1)).asSInt
+      //val tempB = Cat(False, io.inp.b(io.inp.b.high downto 1)).asSInt
+      val tempCarry = Cat(
+        U(s"${wordWidth - 1}'d0"), 
+        io.inp.carry
+      ).asSInt
+
+      val myTempSumCarry = (
+        Cat(
+          //Cat(False, io.inp.a).asSInt - Cat(False, io.inp.b).asSInt
+          (tempA - tempCarry),
+          io.inp.a(0),
+        ).asSInt
+      )
+      //if (!cfg.useLcvInstrBus) {
+        io.outp.sum_carry := (
+          RegNextWhen(
+            next=myTempSumCarry,
+            cond=io.inp.cond,
+          )
+          init(0x0)
+        )
+      //} else {
+      //  io.outp.sum_carry := (
+      //    RegNext(io.outp.sum_carry, init=io.outp.sum_carry.getZero)
+      //  )
+      //  when (io.inp.cond) {
+      //    io.outp.sum_carry := myTempSumCarry
+      //  }
+      //}
+    }
+  }
+  val myHistRegPcMinus2InstrSize = (
+    Vec.fill(outp.myHistRegPcSize - 1)(
+      SInt(
+        //cfg.mainWidth - log2Up(cfg.instrSizeBytes)
+        myDspRegPcMinus2InstrSize.wordWidth
+        bits
+      )
+    )
+  )
+  myDspRegPcMinus2InstrSize.io.inp.a := (
+    //myHistRegPc(1)
+    //myHistRegPc(0)(myHistRegPc(0).high downto 1)
+    myHistRegPc(0)
+  )
+  myDspRegPcMinus2InstrSize.io.inp.carry := True
+  myDspRegPcMinus2InstrSize.io.inp.cond := up.isFiring
+  for (idx <- 0 until myHistRegPcMinus2InstrSize.size) {
+    if (idx == 0) {
+      myHistRegPcMinus2InstrSize(idx) := (
+        myDspRegPcMinus2InstrSize.io.outp.sum_carry(
+          myHistRegPcMinus2InstrSize(idx).bitsRange
+        )
+      )
+    } else {
+      myHistRegPcMinus2InstrSize(idx) := (
+        RegNext(
+          next=myHistRegPcMinus2InstrSize(idx),
+          init=myHistRegPcMinus2InstrSize(idx).getZero,
+        )
+      )
+      when (RegNext(next=up.isFiring, init=False)) {
+        myHistRegPcMinus2InstrSize(idx) := (
+          RegNext(
+            next=myHistRegPcMinus2InstrSize(idx - 1),
+            init=myHistRegPcMinus2InstrSize(idx - 1).getZero,
+          )
+        )
+      }
+    }
+  }
+  def laggingRegPcMinus2InstrSize = (
+    (
+      myHistRegPcMinus2InstrSize.last(
+        myHistRegPcMinus2InstrSize.last.high - 1 downto 0
+      )
+    )
+  )
+  outp.regPcPlusImm := 0x0
+  outp.regPcPlusImm.allowOverride
+  outp.regPcPlusImm(myRegPcRange) := (
+    (
+      laggingRegPcMinus2InstrSize//.asSInt
+      //+ (if (!cfg.useLcvInstrBus) (0) else (1))
+      + (
+        outp.imm(2).asSInt
+      )
+    ).asUInt.resize(outp.regPcPlusImm(myRegPcRange).getWidth)
+    //- (cfg.instrMainWidth.toLong / 8.toLong)
+  )
   outp.branchPredictReplaceBtbElem := (
     RegNextWhen(
       next=outp.branchPredictTkn,
@@ -1950,6 +2080,43 @@ case class SnowHousePrePipeStageExSetBranchPredictEtcArea(
     )
   )
   
+  if (cfg.irqCfg != None) {
+    outp.takeIrq := False
+  }
+  outp.irqIraRegPc.head := (
+    //outp.laggingRegPc
+    Cat(
+      (
+        outp.laggingRegPc(
+          outp.laggingRegPc.high
+          downto log2Up(cfg.instrSizeBytes)
+        )
+      ),
+      U(s"${log2Up(cfg.instrSizeBytes)}'d0"),
+    ).asUInt
+  )
+  if (!cfg.useLcvDataBus) {
+    //outp.irqIraRegPc.last := (
+    //  outp.laggingRegPc
+    //)
+  } else {
+    //for (idx <- 0 until outp.irqIraRegPc
+    //outp.irqIraRegPc.head := (
+    //  outp.laggingRegPc
+    //)
+    outp.irqIraRegPc.last := (
+      //outp.laggingRegPc + cfg.instrSizeBytes
+      Cat(
+        (
+          outp.laggingRegPc(
+            outp.laggingRegPc.high
+            downto log2Up(cfg.instrSizeBytes)
+          ) + 1
+        ),
+        U(s"${log2Up(cfg.instrSizeBytes)}'d0"),
+      ).asUInt
+    )
+  }
 }
 case class SnowHousePipeStageInstrDecode(
   val args: SnowHousePipeStageArgs,
@@ -2281,103 +2448,6 @@ case class SnowHousePipeStageInstrDecode(
   //  )
   //)
 
-  val myDspRegPcMinus2InstrSize = {
-    val myWordWidth = (
-      cfg.mainWidth - log2Up(cfg.instrSizeBytes) //- 1
-    )
-    //LcvCondSubDel1(
-    //  wordWidth=myWordWidth
-    //)
-    //LcvSubDel1(
-    //  wordWidth=myWordWidth
-    //)
-    new Area {
-      val wordWidth = myWordWidth
-      val io = (
-        //LcvCondAddJustCarryDel1Io(wordWidth=wordWidth)
-        new Bundle {
-          val inp = new Bundle {
-            val a = SInt(wordWidth bits)
-            val carry = Bool()
-            val cond = Bool()
-          }
-          val outp = new Bundle {
-            val sum_carry = SInt(wordWidth + 1 bits)
-          }
-        }
-      )
-      val tempA = Cat(False, io.inp.a(io.inp.a.high downto 1)).asSInt
-      //val tempB = Cat(False, io.inp.b(io.inp.b.high downto 1)).asSInt
-      val tempCarry = Cat(
-        U(s"${wordWidth - 1}'d0"), 
-        io.inp.carry
-      ).asSInt
-
-      val myTempSumCarry = (
-        Cat(
-          //Cat(False, io.inp.a).asSInt - Cat(False, io.inp.b).asSInt
-          (tempA - tempCarry),
-          io.inp.a(0),
-        ).asSInt
-      )
-      //if (!cfg.useLcvInstrBus) {
-        io.outp.sum_carry := (
-          RegNextWhen(
-            next=myTempSumCarry,
-            cond=io.inp.cond,
-          )
-          init(0x0)
-        )
-      //} else {
-      //  io.outp.sum_carry := (
-      //    RegNext(io.outp.sum_carry, init=io.outp.sum_carry.getZero)
-      //  )
-      //  when (io.inp.cond) {
-      //    io.outp.sum_carry := myTempSumCarry
-      //  }
-      //}
-    }
-  }
-  val myHistRegPcMinus2InstrSize = (
-    Vec.fill(upPayload(1).myHistRegPcSize - 1)(
-      SInt(
-        //cfg.mainWidth - log2Up(cfg.instrSizeBytes)
-        myDspRegPcMinus2InstrSize.wordWidth
-        bits
-      )
-    )
-  )
-  myDspRegPcMinus2InstrSize.io.inp.a := (
-    //myHistRegPc(1)
-    //myHistRegPc(0)(myHistRegPc(0).high downto 1)
-    myHistRegPc(0)
-  )
-  myDspRegPcMinus2InstrSize.io.inp.carry := True
-  myDspRegPcMinus2InstrSize.io.inp.cond := up.isFiring
-  for (idx <- 0 until myHistRegPcMinus2InstrSize.size) {
-    if (idx == 0) {
-      myHistRegPcMinus2InstrSize(idx) := (
-        myDspRegPcMinus2InstrSize.io.outp.sum_carry(
-          myHistRegPcMinus2InstrSize(idx).bitsRange
-        )
-      )
-    } else {
-      myHistRegPcMinus2InstrSize(idx) := (
-        RegNext(
-          next=myHistRegPcMinus2InstrSize(idx),
-          init=myHistRegPcMinus2InstrSize(idx).getZero,
-        )
-      )
-      when (RegNext(next=up.isFiring, init=False)) {
-        myHistRegPcMinus2InstrSize(idx) := (
-          RegNext(
-            next=myHistRegPcMinus2InstrSize(idx - 1),
-            init=myHistRegPcMinus2InstrSize(idx - 1).getZero,
-          )
-        )
-      }
-    }
-  }
   val myDspRegPcPlus1InstrSize = {
     val myWordWidth = (
       cfg.mainWidth - log2Up(cfg.instrSizeBytes)
@@ -2467,25 +2537,6 @@ case class SnowHousePipeStageInstrDecode(
       }
     }
   }
-  def laggingRegPcMinus2InstrSize = (
-    (
-      myHistRegPcMinus2InstrSize.last(
-        myHistRegPcMinus2InstrSize.last.high - 1 downto 0
-      )
-    )
-  )
-  upPayload(1).regPcPlusImm := 0x0
-  upPayload(1).regPcPlusImm.allowOverride
-  upPayload(1).regPcPlusImm(myRegPcRange) := (
-    (
-      laggingRegPcMinus2InstrSize//.asSInt
-      //+ (if (!cfg.useLcvInstrBus) (0) else (1))
-      + (
-        upPayload(1).imm(2).asSInt
-      )
-    ).asUInt.resize(upPayload(1).regPcPlusImm(myRegPcRange).getWidth)
-    //- (cfg.instrMainWidth.toLong / 8.toLong)
-  )
   val upGprIdxToMemAddrIdxMap = upPayload(1).gprIdxToMemAddrIdxMap
   for ((gprIdx, zdx) <- upPayload(1).gprIdxVec.view.zipWithIndex) {
     upPayload(1).myExt(0).memAddr(zdx) := gprIdx
@@ -2500,43 +2551,44 @@ case class SnowHousePipeStageInstrDecode(
   )
   tempInstr.allowOverride
   //startDecode := False
-  if (cfg.irqCfg != None) {
-    upPayload(1).takeIrq := False
-  }
-  upPayload(1).irqIraRegPc.head := (
-    //upPayload(1).laggingRegPc
-    Cat(
-      (
-        upPayload(1).laggingRegPc(
-          upPayload(1).laggingRegPc.high
-          downto log2Up(cfg.instrSizeBytes)
-        )
-      ),
-      U(s"${log2Up(cfg.instrSizeBytes)}'d0"),
-    ).asUInt
-  )
-  if (!cfg.useLcvDataBus) {
-    //upPayload(1).irqIraRegPc.last := (
-    //  upPayload(1).laggingRegPc
-    //)
-  } else {
-    //for (idx <- 0 until upPayload(1).irqIraRegPc
-    //upPayload(1).irqIraRegPc.head := (
-    //  upPayload(1).laggingRegPc
-    //)
-    upPayload(1).irqIraRegPc.last := (
-      //upPayload(1).laggingRegPc + cfg.instrSizeBytes
-      Cat(
-        (
-          upPayload(1).laggingRegPc(
-            upPayload(1).laggingRegPc.high
-            downto log2Up(cfg.instrSizeBytes)
-          ) + 1
-        ),
-        U(s"${log2Up(cfg.instrSizeBytes)}'d0"),
-      ).asUInt
-    )
-  }
+
+  //if (cfg.irqCfg != None) {
+  //  upPayload(1).takeIrq := False
+  //}
+  //upPayload(1).irqIraRegPc.head := (
+  //  //upPayload(1).laggingRegPc
+  //  Cat(
+  //    (
+  //      upPayload(1).laggingRegPc(
+  //        upPayload(1).laggingRegPc.high
+  //        downto log2Up(cfg.instrSizeBytes)
+  //      )
+  //    ),
+  //    U(s"${log2Up(cfg.instrSizeBytes)}'d0"),
+  //  ).asUInt
+  //)
+  //if (!cfg.useLcvDataBus) {
+  //  //upPayload(1).irqIraRegPc.last := (
+  //  //  upPayload(1).laggingRegPc
+  //  //)
+  //} else {
+  //  //for (idx <- 0 until upPayload(1).irqIraRegPc
+  //  //upPayload(1).irqIraRegPc.head := (
+  //  //  upPayload(1).laggingRegPc
+  //  //)
+  //  upPayload(1).irqIraRegPc.last := (
+  //    //upPayload(1).laggingRegPc + cfg.instrSizeBytes
+  //    Cat(
+  //      (
+  //        upPayload(1).laggingRegPc(
+  //          upPayload(1).laggingRegPc.high
+  //          downto log2Up(cfg.instrSizeBytes)
+  //        ) + 1
+  //      ),
+  //      U(s"${log2Up(cfg.instrSizeBytes)}'d0"),
+  //    ).asUInt
+  //  )
+  //}
   //  when (!upPayload(1).haveLcvDbusMemAccDelay) {
   //    upPayload(1).irqIraRegPc := (
   //      //upPayload(1).regPc
