@@ -1216,7 +1216,7 @@ case class SnowHouse
         cFront,
         //ydx,
       ) => new Area {
-        if (myHaveS2mIfId) {
+        //if (myHaveS2mIf) {
           val myPrePsExSetBranchPredictEtcArea = (
             SnowHousePrePipeStageExSetBranchPredictEtcArea(
               cfg=cfg,
@@ -1230,7 +1230,7 @@ case class SnowHouse
           //  inp=inp,
           //  link=cFront,
           //)
-        }
+        //}
       }
     ),
     doModInMid0FrontFunc=Some(
@@ -1273,13 +1273,13 @@ case class SnowHouse
     }
   )
   linkArr += sIf
-  def myHaveS2mIfId = (
-    cfg.myHaveS2mIfId
+  def myHaveS2mIf = (
+    cfg.myHaveS2mIf
     //cfg.useLcvInstrBus
     //&& cfg.useLcvDataBus
   )
   val s2mIf = (
-    myHaveS2mIfId
+    myHaveS2mIf
   ) generate (S2MLink(
     up={
       sIf.down
@@ -1290,7 +1290,7 @@ case class SnowHouse
       node
     }
   ))
-  if (myHaveS2mIfId) {
+  if (myHaveS2mIf) {
     linkArr += s2mIf
   }
   val pipeStageIf = SnowHousePipeStageInstrFetch(
@@ -1344,7 +1344,7 @@ case class SnowHouse
     up={
       if (
         //!cfg.useLcvInstrBus
-        !myHaveS2mIfId
+        !myHaveS2mIf
       ) (
         sIf.down
       ) else ( // if (myHaveS2mIfId)
@@ -1354,18 +1354,19 @@ case class SnowHouse
       //s2mIf.down
     },
     down={
-      if (!myHaveS2mIfId) (
-        regFile.io.front
-      ) else {
+      //if (!myHaveS2mIf) (
+      //  regFile.io.front
+      //) else {
         val node = Node()
         node.setName("cId_down")
         node
-      }
+      //}
     }
   )
   linkArr += cId
   val sId = (
-    myHaveS2mIfId
+    //myHaveS2mIf
+    true
   ) generate (StageLink(
     up=cId.down,
     down={
@@ -1374,16 +1375,23 @@ case class SnowHouse
       node
     }
   ))
-  if (myHaveS2mIfId) {
+  if (
+    //myHaveS2mIf
+    true
+  ) {
     linkArr += sId
   }
   val s2mId = (
-    myHaveS2mIfId
+    //myHaveS2mIf
+    true
   ) generate (StageLink(
     up=sId.down,
     down=regFile.io.front,
   ))
-  if (myHaveS2mIfId) {
+  if (
+    //myHaveS2mIf
+    true
+  ) {
     linkArr += s2mId
   }
   //val pId = Payload(SnowHouseRegFileModType(cfg=cfg))

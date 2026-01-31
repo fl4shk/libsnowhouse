@@ -631,7 +631,7 @@ case class SnowHouseConfig(
   targetAltera: Boolean=false,
   optFormal: Boolean=false,
 ) {
-  def myHaveS2mIfId = (
+  def myHaveS2mIf = (
     useLcvInstrBus
     && useLcvDataBus
   )
@@ -1639,11 +1639,11 @@ case class SnowHousePipePayloadNonExt(
   //    UInt(cfg.mainWidth bits)
   //  //)
   //)
-  //val laggingRegPcMinus2InstrSize = (
-  //  //Vec.fill(myHistRegPc.size - 1)(
-  //    UInt(cfg.mainWidth bits)
-  //  //)
-  //)
+  val laggingRegPcMinus1InstrSize = (
+    //Vec.fill(myHistRegPc.size - 1)(
+      UInt(cfg.mainWidth bits)
+    //)
+  )
   ////val myHistRegPcPlusInstrSize = Vec.fill(myHistRegPc.size)(
   //  /*Flow*/(UInt(cfg.mainWidth bits))//.simPublic()
   //)
@@ -1717,6 +1717,7 @@ case class SnowHousePipePayload(
   def psExSetOutpModMemWordIo = nonExt.psExSetOutpModMemWordIo
   def regPc = nonExt.regPc
   def laggingRegPc = nonExt.laggingRegPc
+  def laggingRegPcMinus1InstrSize = nonExt.laggingRegPcMinus1InstrSize
   def myHistRegPcSize = (
     nonExt.myHistRegPcSize
   )
