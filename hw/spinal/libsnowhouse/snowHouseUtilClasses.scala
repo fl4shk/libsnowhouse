@@ -371,7 +371,10 @@ case class SnowHouseSubConfig(
   def myLcvBusSrcWidth = 2
   val lcvIbusMainCfg = (
     LcvBusMainConfig(
-      dataWidth=instrMainWidth,
+      dataWidth=(
+        //instrMainWidth
+        shRegFileCfg.mainWidth
+      ),
       addrWidth=shRegFileCfg.mainWidth,
       allowBurst=false,
       burstAlwaysMaxSize=false,
@@ -387,8 +390,8 @@ case class SnowHouseSubConfig(
       ),
       haveByteEn=(
         // TODO: support `instrMainWidth < shRegFileCfg.mainWidth`
-        true
-        //false
+        //true
+        false
       ),
       keepByteSize=false
     )

@@ -949,6 +949,11 @@ private[libsnowhouse] case class SnowHouseIbusToLcvIbusBridge(
       io.bus.sendData.src
     )
   }
+  myH2dPushStm.byteSize.allowOverride
+  myH2dPushStm.byteSize := (
+    log2Up(cfg.instrMainWidth / 8)
+  )
+
   myH2dPushStm.addr.allowOverride
   myH2dPushStm.addr := (
     RegNext(myH2dPushStm.addr, init=myH2dPushStm.addr.getZero)

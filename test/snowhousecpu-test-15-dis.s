@@ -5,7 +5,10 @@ snowhousecpu-test-15.elf:     file format elf32-snowhousecpu
 Disassembly of section .text:
 
 00000000 <_loop_stb-0x1c>:
-	...
+   0:	00 00 00 00 	add	r0, r0, 0
+   4:	00 00 00 01 	add	r1, r0, 0
+   8:	00 00 00 02 	add	r2, r0, 0
+   c:	00 00 00 03 	add	r3, r0, 0
   10:	00 10 00 04 	add	r4, r0, 4096
   14:	08 00 40 05 	add	r5, r4, 8
   18:	30 00 00 01 	add	r1, r0, 48

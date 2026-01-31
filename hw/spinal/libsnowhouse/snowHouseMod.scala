@@ -385,26 +385,78 @@ case class SnowHouseInstrDataDualRam(
     && cfg.useLcvInstrBus
   ) generate (new Area {
     val depth = instrInitBigInt.size
+
+    val myMaxIshInstrRamKind = 5
+    val haveFastLcvBusMem = (
+      instrRamKind < myMaxIshInstrRamKind
+    )
+
     val myMemCfg = LcvBusMemConfig(
-      busCfg=cfg.subCfg.lcvIbusEtcCfg.hiBusCfg,
+      busCfg=(
+        if (!haveFastLcvBusMem) (
+          //cfg.subCfg.lcvIbusEtcCfg.loBusCfg
+          LcvBusConfig(
+            mainCfg=(
+              cfg.subCfg.lcvIbusEtcCfg.mainCfg
+              .mkCopyWithAllowingBurst()
+              .mkCopyWithoutByteEn(None)
+            ),
+            cacheCfg=Some(cfg.subCfg.lcvIbusEtcCfg.loBusCacheCfg),
+          )
+        ) else (
+          cfg.subCfg.lcvIbusEtcCfg.loBusCfg
+        )
+      ),
       depth=depth,
       initBigInt=Some(instrInitBigInt),
       arrRamStyleAltera="no_rw_check, M10K",
       arrRamStyleXilinx="block",
     )
-    val myMaxIshInstrRamKind = 5
     val memSlowNonBurst = (
-      instrRamKind >= myMaxIshInstrRamKind
+      //instrRamKind >= myMaxIshInstrRamKind
+      !haveFastLcvBusMem
     ) generate (
-      LcvBusMemSlowNonBurst(cfg=myMemCfg)
+      LcvBusMemSlowWhenBurst(cfg=myMemCfg)
     )
+    //val myDeburster = (
+    //  !haveFastLcvBusMem
+    //) generate (
+    //  LcvBusDeburster(cfg=LcvBusDebursterConfig(
+    //    loBusCfg=myMemCfg.busCfg
+    //  ))
+    //)
+
+    //val myH2dShiftedDataStmAdapter = (
+    //  //!cfg.busCfg.haveByteEn
+    //  !haveFastLcvBusMem
+    //) generate (
+    //  LcvBusH2dShiftedDataEtcStreamAdapter(
+    //    cfg=LcvBusH2dShiftedDataEtcStreamAdapterConfig(
+    //      loBusCfg=myMemCfg.busCfg
+    //    )
+    //  )
+    //)
+    //val myD2hShiftedDataStmAdapter = (
+    //  //!cfg.busCfg.haveByteEn
+    //  !haveFastLcvBusMem
+    //) generate (
+    //  LcvBusD2hShiftedDataEtcStreamAdapter(
+    //    cfg=LcvBusD2hShiftedDataEtcStreamAdapterConfig(
+    //      busCfg=myMemCfg.busCfg
+    //    )
+    //  )
+    //)
     val memFastNonBurst = (
-      instrRamKind < myMaxIshInstrRamKind
+      ////instrRamKind < myMaxIshInstrRamKind
+      haveFastLcvBusMem
     ) generate (
       LcvBusMem(cfg=myMemCfg)
     )
     val myMemIo = (
-      if (instrRamKind >= myMaxIshInstrRamKind) (
+      if (
+        //instrRamKind >= myMaxIshInstrRamKind
+        !haveFastLcvBusMem
+      ) (
         memSlowNonBurst.io
       ) else (
         memFastNonBurst.io
@@ -413,19 +465,22 @@ case class SnowHouseInstrDataDualRam(
     io.lcvIbus.h2dBus.translateInto(
       myMemIo.bus.h2dBus
     )(
-      dataAssignment=(
-        outp, inp
-      ) => {
-        outp.mainNonBurstInfo := inp.mainNonBurstInfo
-        outp.mainBurstInfo := outp.mainBurstInfo.getZero
+      dataAssignment=(outp, inp) => {
+        outp.mainNonBurstInfo.infoShared := (
+          inp.mainNonBurstInfo.infoShared
+        )
+        outp.mainNonBurstInfo.infoByteSizeEtc := (
+          inp.mainNonBurstInfo.infoByteSizeEtc
+        )
+        if (outp.mainBurstInfo != null) {
+          outp.mainBurstInfo := outp.mainBurstInfo.getZero
+        }
       }
     )
     myMemIo.bus.d2hBus.translateInto(
       io.lcvIbus.d2hBus
     )(
-      dataAssignment=(
-        outp, inp
-      ) => {
+      dataAssignment=(outp, inp) => {
         outp.mainNonBurstInfo := inp.mainNonBurstInfo
       }
     )
@@ -453,8 +508,8 @@ case class SnowHouseInstrDataDualRam(
       cfg=cfg.subCfg.lcvIbusEtcCfg
     )
     val haveFastLcvBusMem = (
-      //true
-      false
+      true
+      //false
     )
     val myMemCfg = LcvBusMemConfig(
       busCfg=cfg.subCfg.lcvIbusEtcCfg.hiBusCfg,
@@ -466,7 +521,7 @@ case class SnowHouseInstrDataDualRam(
     val memSlowNonBurst = (
       !haveFastLcvBusMem
     ) generate (
-      LcvBusMemSlowNonBurst(cfg=myMemCfg)
+      LcvBusMemSlowWhenBurst(cfg=myMemCfg)
     )
     val memFastNonBurst = (
       haveFastLcvBusMem
@@ -516,7 +571,7 @@ case class SnowHouseInstrDataDualRam(
     val memSlowNonBurst = (
       !haveFastLcvBusMem
     ) generate (
-      LcvBusMemSlowNonBurst(cfg=myMemCfg)
+      LcvBusMemSlowWhenBurst(cfg=myMemCfg)
     )
     val memFastNonBurst = (
       haveFastLcvBusMem
