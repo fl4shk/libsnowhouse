@@ -526,7 +526,7 @@ object SnowHouseCpuPipeStageInstrDecode {
     rPrevPreImm: Flow[UInt],
     //isPsId: Boolean
     regPc: UInt,
-    srcRegPc: UInt,
+    //srcRegPc: UInt,
     //dstRegPcNonLshift: UInt,
     //regPcPlusImm: UInt,
     //branchPredictTkn: Bool,
@@ -628,14 +628,14 @@ object SnowHouseCpuPipeStageInstrDecode {
           //}
         }
         //when (!branchPredictTkn) {
-          ret.btbElem.srcRegPc := srcRegPc
-          //ret.btbElem.dstRegPc := {
-          //  val myCat = Cat(
-          //    dstRegPcNonLshift,
-          //    U(s"${log2Up(cfg.instrSizeBytes)}'d0")
-          //  ).asUInt
-          //  myCat
-          //}
+        //  ret.btbElem.srcRegPc := srcRegPc
+        //  //ret.btbElem.dstRegPc := {
+        //  //  val myCat = Cat(
+        //  //    dstRegPcNonLshift,
+        //  //    U(s"${log2Up(cfg.instrSizeBytes)}'d0")
+        //  //  ).asUInt
+        //  //  myCat
+        //  //}
         //} otherwise {
         //  ret.srcRegPc := (
         //    regPc
@@ -1880,15 +1880,15 @@ object SnowHouseCpuPipeStageInstrDecode {
           rPrevPreImm=rPrevPreImm(rPrevPreImm.size - 2),
           //isPsId=true,
           regPc=upPayload.regPc,
-          srcRegPc=(
-            //upPayload.myHistRegPc
-            //  //(2)
-            //  .last
-            upPayload.laggingRegPc
-            //+ (if (!cfg.useLcvInstrBus) (0) else (1))
-            //+ (if (!cfg.useLcvInstrBus) (0) else (cfg.instrSizeBytes))
-            //psId.myHistRegPcMinus2Instrs.last
-          ),
+          //srcRegPc=(
+          //  //upPayload.myHistRegPc
+          //  //  //(2)
+          //  //  .last
+          //  upPayload.laggingRegPc
+          //  //+ (if (!cfg.useLcvInstrBus) (0) else (1))
+          //  //+ (if (!cfg.useLcvInstrBus) (0) else (cfg.instrSizeBytes))
+          //  //psId.myHistRegPcMinus2Instrs.last
+          //),
           //regPcPlusImm=upPayload.regPcPlusImm,
           //dstRegPcNonLshift=(
           //  //upPayload.regPcPlusImm + (3 * cfg.instrSizeBytes)
@@ -1937,15 +1937,15 @@ object SnowHouseCpuPipeStageInstrDecode {
           rPrevPreImm=rPrevPreImm(rPrevPreImm.size - 2),
           //isPsId=true,
           regPc=upPayload.regPc,
-          srcRegPc=(
-            //upPayload.myHistRegPc
-            //  //(2)
-            //  .last
-            upPayload.laggingRegPc
-            //+ (if (!cfg.useLcvInstrBus) (0) else (cfg.instrSizeBytes))
-            //+ (if (!cfg.useLcvInstrBus) (0) else (1))
-            //psId.myHistRegPcMinus2Instrs.last
-          ),
+          //srcRegPc=(
+          //  //upPayload.myHistRegPc
+          //  //  //(2)
+          //  //  .last
+          //  upPayload.laggingRegPc
+          //  //+ (if (!cfg.useLcvInstrBus) (0) else (cfg.instrSizeBytes))
+          //  //+ (if (!cfg.useLcvInstrBus) (0) else (1))
+          //  //psId.myHistRegPcMinus2Instrs.last
+          //),
           //regPcPlusImm=upPayload.regPcPlusImm,
           //dstRegPcNonLshift=(
           //  //upPayload.regPcPlusImm + (3 * cfg.instrSizeBytes)
@@ -2266,39 +2266,40 @@ object SnowHouseCpuPipeStageInstrDecode {
     //when (upPayload.takeIrq) {
     //  setOp(JlRaRb)
     //}
-    val dstRegPcNonLshift = (
-      //upPayload.regPcPlusImm + (3 * cfg.instrSizeBytes)
-      (
-        //(
-        //  if (!cfg.useLcvInstrBus) (
-        //    psId.myHistRegPcPlus1InstrSize.last.asUInt
-        //  ) else (
-        //    psId.myHistRegPcPlus2InstrSize.last.asUInt
-        //  )
-        //)
-        psId.myHistRegPcPlus1InstrSize.last.asUInt
-        //+ (if (!cfg.useLcvInstrBus) (0) else (1))
-        + upPayload.imm(2)
-        //(
-        //  //upPayload.imm(2).high downto log2Up(cfg.instrSizeBytes)
-        //)
-      ).resize(
-        psId.myHistRegPcPlus1InstrSize.last.asUInt.getWidth
-        //if (!cfg.useLcvInstrBus) (
-        //  psId.myHistRegPcPlus1InstrSize.last.asUInt.getWidth
-        //) else (
-        //  psId.myHistRegPcPlus2InstrSize.last.asUInt.getWidth
-        //)
-      )
-      //upPayload.laggingRegPcPlus1InstrSize + upPayload.imm(2)
-    )
-    myTempBtbElem.dstRegPc := {
-      val myCat = Cat(
-        dstRegPcNonLshift,
-        U(s"${log2Up(cfg.instrSizeBytes)}'d0")
-      ).asUInt
-      myCat
-    }
+
+    //val dstRegPcNonLshift = (
+    //  //upPayload.regPcPlusImm + (3 * cfg.instrSizeBytes)
+    //  (
+    //    //(
+    //    //  if (!cfg.useLcvInstrBus) (
+    //    //    psId.myHistRegPcPlus1InstrSize.last.asUInt
+    //    //  ) else (
+    //    //    psId.myHistRegPcPlus2InstrSize.last.asUInt
+    //    //  )
+    //    //)
+    //    psId.myHistRegPcPlus1InstrSize.last.asUInt
+    //    //+ (if (!cfg.useLcvInstrBus) (0) else (1))
+    //    + upPayload.imm(2)
+    //    //(
+    //    //  //upPayload.imm(2).high downto log2Up(cfg.instrSizeBytes)
+    //    //)
+    //  ).resize(
+    //    psId.myHistRegPcPlus1InstrSize.last.asUInt.getWidth
+    //    //if (!cfg.useLcvInstrBus) (
+    //    //  psId.myHistRegPcPlus1InstrSize.last.asUInt.getWidth
+    //    //) else (
+    //    //  psId.myHistRegPcPlus2InstrSize.last.asUInt.getWidth
+    //    //)
+    //  )
+    //  //upPayload.laggingRegPcPlus1InstrSize + upPayload.imm(2)
+    //)
+    //myTempBtbElem.dstRegPc := {
+    //  val myCat = Cat(
+    //    dstRegPcNonLshift,
+    //    U(s"${log2Up(cfg.instrSizeBytes)}'d0")
+    //  ).asUInt
+    //  myCat
+    //}
   }
 }
 //case class SnowHouseCpuPipeStageInstrDecode(
@@ -5300,20 +5301,7 @@ object SnowHouseCpuWithDualRamSim extends App {
   //  )
   //})
   val programStrArr = new ArrayBuffer[String]()
-  //(
-  //  //"test/snowhousecpu-test-0.bin",
-  //  //"test/snowhousecpu-test-1.bin",
-  //  //"test/snowhousecpu-test-2.bin",
-  //  //"test/snowhousecpu-test-3.bin",
-  //  //"test/snowhousecpu-test-4.bin",
-  //  //"test/snowhousecpu-test-5.bin",
-  //  "0",
-  //  "1",
-  //  "2",
-  //  "3",
-  //  "4",
-  //  "5",
-  //)
+
   val testOptTwoCycleRegFileReads = (
     //true
     false
@@ -5340,7 +5328,7 @@ object SnowHouseCpuWithDualRamSim extends App {
     0,
     //1,
     //2,
-    5,
+    //5,
   )
   for (testIdx <- 0 to testIdxRange(1)) {
     programStrArr += (
@@ -5418,6 +5406,352 @@ object SnowHouseCpuWithDualRamSim extends App {
         )
         //toComp.setDefinitionName(
         //  s"SnowHouseCpuWithDualRam_${testIdx}_${instrRamKind}"
+        //)
+        toComp
+      }).doSim{dut => {
+        val pw = new PrintWriter(new File(
+          s"test/results/test-${testIdx}-results-${instrRamKind}.txt"
+        ))
+        pw.write(
+          s"Starting test:"
+          + s"programStr:${programStr} instrRamKind:${instrRamKind}"
+          + s"\n"
+        )
+        val mySavedGprArr = new ArrayBuffer[Long]()
+        for (idx <- 0 until cfg.numGprs) {
+          mySavedGprArr += 0.toLong
+        }
+
+        dut.clockDomain.forkStimulus(10)
+        for (i <- 0 until numClkCycles) {
+          dut.clockDomain.waitSampling()
+          val myRegFileWriteEnable = dut.io.regFileWriteEnable.toBoolean
+          val myRegFileWriteAddr = dut.io.regFileWriteAddr.toLong
+          val myRegFileWriteData = dut.io.regFileWriteData.toLong
+
+          if (myRegFileWriteEnable) {
+            if (
+              myRegFileWriteData
+              != mySavedGprArr(myRegFileWriteAddr.toInt)
+            ) {
+              pw.write(
+                s"addr:${myRegFileWriteAddr} data:${myRegFileWriteData}\n"
+              )
+              mySavedGprArr(myRegFileWriteAddr.toInt) = myRegFileWriteData
+              //for (idx <- 0 until mySavedGprArr.size) {
+              //  tempStr += s"r${idx}=${mySavedGprArr(idx)}"
+              //  if (idx + 1 < mySavedGprArr.size) {
+              //    tempStr += " "
+              //  } else {
+              //    tempStr += "\n\n"
+              //  }
+              //}
+              //pw.write(tempStr)
+            }
+          }
+          //if (!grabRegFileOutputs) {
+          //} else {
+          //}
+          //for (gprIdx <- 0 until cfg.numGprs) {
+          //  printf(
+          //    "r%i=%x ",
+          //    gprIdx,
+          //    dut.cpu.regFile.modMem(0)(0).readAsync(
+          //      address=gprIdx
+          //    ).toInt
+          //  )
+          //  if (gprIdx % 4 == 3) {
+          //    printf("\n")
+          //  }
+          //}
+        }
+        pw.write(
+          s"Ending test.\n\n"
+        )
+        pw.close()
+      }}
+    }
+  }
+}
+case class SnowHouseCpuWithSharedRamIo(
+  program: SnowHouseCpuProgram,
+) extends Bundle {
+  def cfg = program.cfg
+  val idsIraIrq = (
+    slave(new LcvStallIo[Bool, Bool](
+      sendPayloadType=None,
+      recvPayloadType=None,
+    ))
+  )
+  val regFileWriteData = (
+    cfg.exposeRegFileWriteDataToIo
+  ) generate (
+    out(UInt(cfg.shCfg.mainWidth bits))
+  )
+  val regFileWriteAddr = (
+    cfg.exposeRegFileWriteAddrToIo
+  ) generate (
+    out(UInt(log2Up(cfg.shCfg.regFileCfg.wordCountArr(0)) bits))
+  )
+  val regFileWriteEnable = (
+    cfg.exposeRegFileWriteEnableToIo
+  ) generate (
+    out(Bool())
+  )
+}
+case class SnowHouseCpuWithSharedRam(
+  program: SnowHouseCpuProgram,
+  doConnExternIrq: Boolean=true,
+) extends Component {
+  val io = SnowHouseCpuWithSharedRamIo(program=program)
+  def cfg = program.cfg
+  val cpu = SnowHouse(cfg=cfg.shCfg)
+  val sharedRam = SnowHouseLcvBusInstrDataSharedRam(
+    cfg=cfg.shCfg,
+    sharedInitBigInt={
+      val depth = 1 << (16 - 4)
+      val tempArr = new ArrayBuffer[BigInt]()
+      tempArr ++= program.outpArr.view
+      //while (tempArr.size < depth) {
+      //  tempArr += BigInt(0)
+      //}
+      val programSize = tempArr.size
+      for (idx <- programSize until (1 << (16 - 4))) {
+        if (idx < /*1024*/0x800) {
+          //println(
+          //  s"idx < 0x800: ${idx}"
+          //)
+          tempArr += BigInt(idx)
+        } else {
+          //println(
+          //  s"idx < 0x800: ${idx}"
+          //)
+          tempArr += BigInt(0)
+        }
+      }
+      tempArr
+      //for (elem <- program.outpArr.view) {
+      //  tempArr +=
+      //}
+      //program.outpArr
+    },
+    //dataInitBigInt=({
+    //  //Array.fill(
+    //  //  //1 << 16
+    //  //  //1 << (16 - 2)
+    //  //  //1 << (16 - 3)
+    //  //  1 << (16 - 4)
+    //  //  //1 << (16 - 4 - 2)
+    //  //)(BigInt(0))
+    //  val temp = new ArrayBuffer[BigInt]()
+    //  for (idx <- 0 until (1 << (16 - 4))) {
+    //    if (idx < /*1024*/0x800) {
+    //      temp += BigInt(idx)
+    //    } else {
+    //      temp += BigInt(0)
+    //    }
+    //  }
+    //  temp
+    //}),
+  )
+  cpu.io.lcvIbus <> sharedRam.io.lcvIbus
+  cpu.io.lcvDbus <> sharedRam.io.lcvDbus
+  if (cfg.exposeRegFileWriteDataToIo) {
+    cpu.io.regFileWriteData <> io.regFileWriteData
+  }
+  if (cfg.exposeRegFileWriteAddrToIo) {
+    cpu.io.regFileWriteAddr <> io.regFileWriteAddr
+  }
+  if (cfg.exposeRegFileWriteEnableToIo) {
+    cpu.io.regFileWriteEnable <> io.regFileWriteEnable
+  }
+  //for ((multiCycleBus, idx) <- cpu.io.multiCycleBusVec.view.zipWithIndex) {
+  //  if (idx != 0) {
+  //    multiCycleBus.ready := True
+  //    multiCycleBus.recvData.dstVec.foreach(dst => {
+  //      dst := dst.getZero
+  //    })
+  //  }
+  //}
+  //val lslRc = SnowHouseCpuLsl32(cpuIo=cpu.io, immShift=false)
+  //val lslImm = SnowHouseCpuLsl32(cpuIo=cpu.io, immShift=true)
+  //val lsrRc = SnowHouseCpuLsr32(cpuIo=cpu.io, immShift=false)
+  //val lsrImm = SnowHouseCpuLsr32(cpuIo=cpu.io, immShift=true)
+  //val asrRc = SnowHouseCpuAsr32(cpuIo=cpu.io, immShift=false)
+  //val asrImm = SnowHouseCpuAsr32(cpuIo=cpu.io, immShift=true)
+  val shift32/*shiftSlt32*/ = (
+    //SnowHouseCpuShift32(cpuIo=cpu.io)
+    //SnowHouseCpuShiftSlt32LowLatency(cpuIo=cpu.io)
+    SnowHouseCpuShift32LowLatency(cpuIo=cpu.io)
+  )
+  val cpyAdd32 = SnowHouseCpuCpyAdd32(cpuIo=cpu.io)
+  val mul32 = SnowHouseCpuMul32(cpuIo=cpu.io)
+  val divmod32 = SnowHouseCpuDivmod32(cpuIo=cpu.io)
+
+  if (doConnExternIrq) {
+    cpu.io.idsIraIrq <> io.idsIraIrq
+  } else {
+    io.idsIraIrq.ready := True
+    //cpu.io.idsIraIrq.nextValid := True
+    val cntWidth = (
+      8
+      //6
+      //5
+      //4 
+    )
+    val rIrqValidCnt = (
+      Reg(UInt(cntWidth bits))
+      init(U(cntWidth bits, default -> True))
+    )
+    //cpu.io.idsIraIrq.nextValid := True
+    cpu.io.idsIraIrq.nextValid := False
+    when (rIrqValidCnt =/= 0) {
+      rIrqValidCnt := rIrqValidCnt - 1
+    } otherwise {
+      cpu.io.idsIraIrq.nextValid := True
+      when (cpu.io.idsIraIrq.rValid && cpu.io.idsIraIrq.ready) {
+        cpu.io.idsIraIrq.nextValid := False
+        rIrqValidCnt := U(cntWidth bits, default -> True)
+      }
+    }
+  }
+  //--------
+  //val rMultiCycleBusReadyCnt = (
+  //  Reg(UInt(8 bits))
+  //  init(0x3)
+  //)
+  //val rMultiCycleBusState = (
+  //  Reg(Bool(), init=False)
+  //)
+  //when (rMultiCycleBusReadyCnt > 0) {
+  //  rMultiCycleBusReadyCnt := rMultiCycleBusReadyCnt - 1
+  //} otherwise {
+  //  multiCycleBus.ready := True
+  //  when (!rMultiCycleBusState) {
+  //    rMultiCycleBusReadyCnt := 3
+  //  } otherwise {
+  //    rMultiCycleBusReadyCnt := 5
+  //  }
+  //}
+}
+object SnowHouseCpuWithSharedRamSim extends App {
+  //Config.spinal.generateVerilog({
+  //  val cfg = SnowHouseCpuConfig(
+  //    optFormal=(
+  //      //true
+  //      false
+  //    )
+  //  )
+  //  SnowHouse(
+  //    cfg=cfg.shCfg
+  //  )
+  //})
+  val programStrArr = new ArrayBuffer[String]()
+
+  val testOptTwoCycleRegFileReads = (
+    //true
+    false
+  )
+  val testIdxRange = Array[Int](
+    //0, //0,
+    //1, //1,
+    //2, //2,
+    //////////3, 3,
+    //////4, 4,
+    //////////5, //5,
+    //6, 6,
+    //7, 7,
+    //8, 8,
+    //9, //9,
+    //////////10, //10,
+    ////////11, 11,
+    //12, 12,
+    //13, 13,
+    //14, 14,
+    15, 15,
+  )
+  val instrRamKindArr = Array[Int](
+    0,
+    //1,
+    //2,
+    //5,
+  )
+  for (testIdx <- 0 to testIdxRange(1)) {
+    programStrArr += (
+      s"test/snowhousecpu-test-${testIdx}.bin"
+    )
+  }
+
+  //val grabRegFileOutputs = (
+  //  //false
+  //  true
+  //)
+  //val isKnownGood = (
+  //  //false
+  //  true
+  //)
+  for (
+    //programStr <- programStrArr
+    testIdx <- testIdxRange(0) to testIdxRange(1)
+  ) {
+    val programStr = programStrArr(testIdx)
+
+    val numClkCycles = (
+      if (testIdx == 0) (
+        4096
+      ) else if (testIdx == 4) (
+        2048 + 512
+      ) else if (testIdx == 7) (
+        2048 + 512
+      ) else if (testIdx == 12) (
+        1024 + 512
+      ) else if (testIdx == 15) (
+        4096
+      ) else (
+        1024 + 512
+        //1024
+      )
+    )
+    for (instrRamKind <- instrRamKindArr) {
+      val cfg = SnowHouseCpuConfig(
+        optFormal=(
+          //true
+          false
+        ),
+        programStr=(
+          programStr
+          //"test/snowhousecpu-test-0.bin"
+          //"test/snowhousecpu-test-1.bin"
+          //"test/snowhousecpu-test-2.bin"
+          //"test/snowhousecpu-test-3.bin"
+          //"test/snowhousecpu-test-4.bin"
+          //"test/snowhousecpu-test-5.bin"
+        ),
+        instrRamKind=(
+          //0//,
+          //1,
+          //2,
+          //5
+          instrRamKind
+        ),
+        exposeRegFileWriteDataToIo=true,
+        exposeRegFileWriteAddrToIo=true,
+        exposeRegFileWriteEnableToIo=true,
+        optTwoCycleRegFileReads=(
+          //true
+          testOptTwoCycleRegFileReads
+        ),
+      )
+      val testProgram = SnowHouseCpuTestProgram(cfg=cfg)
+      Config.sim.compile({
+        val toComp = (
+          SnowHouseCpuWithSharedRam(
+            program=testProgram.program,
+            doConnExternIrq=false,
+          )
+        )
+        //toComp.setDefinitionName(
+        //  s"SnowHouseCpuWithSharedRam_${testIdx}_${instrRamKind}"
         //)
         toComp
       }).doSim{dut => {

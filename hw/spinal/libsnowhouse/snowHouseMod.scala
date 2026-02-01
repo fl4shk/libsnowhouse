@@ -412,7 +412,7 @@ case class SnowHouseInstrDataDualRam(
       arrRamStyleAltera="no_rw_check, M10K",
       arrRamStyleXilinx="block",
     )
-    val memSlowNonBurst = (
+    val memSlowWhenBurst = (
       //instrRamKind >= myMaxIshInstrRamKind
       !haveFastLcvBusMem
     ) generate (
@@ -446,7 +446,7 @@ case class SnowHouseInstrDataDualRam(
     //    )
     //  )
     //)
-    val memFastNonBurst = (
+    val memFastWhenBurst = (
       ////instrRamKind < myMaxIshInstrRamKind
       haveFastLcvBusMem
     ) generate (
@@ -457,9 +457,9 @@ case class SnowHouseInstrDataDualRam(
         //instrRamKind >= myMaxIshInstrRamKind
         !haveFastLcvBusMem
       ) (
-        memSlowNonBurst.io
+        memSlowWhenBurst.io
       ) else (
-        memFastNonBurst.io
+        memFastWhenBurst.io
       )
     )
     io.lcvIbus.h2dBus.translateInto(
@@ -518,21 +518,21 @@ case class SnowHouseInstrDataDualRam(
       arrRamStyleAltera="no_rw_check, M10K",
       arrRamStyleXilinx="block",
     )
-    val memSlowNonBurst = (
+    val memSlowWhenBurst = (
       !haveFastLcvBusMem
     ) generate (
       LcvBusMemSlowWhenBurst(cfg=myMemCfg)
     )
-    val memFastNonBurst = (
+    val memFastWhenBurst = (
       haveFastLcvBusMem
     ) generate (
       LcvBusMem(cfg=myMemCfg)
     )
     val myMemIo = (
       if (!haveFastLcvBusMem) (
-        memSlowNonBurst.io
+        memSlowWhenBurst.io
       ) else (
-        memFastNonBurst.io
+        memFastWhenBurst.io
       )
     )
     //io.lcvIbus <> icache.io.loBus
@@ -586,12 +586,12 @@ case class SnowHouseInstrDataDualRam(
       arrRamStyleAltera="no_rw_check, M10K",
       arrRamStyleXilinx="block",
     )
-    val memSlowNonBurst = (
+    val memSlowWhenBurst = (
       !haveFastLcvBusMem
     ) generate (
       LcvBusMemSlowWhenBurst(cfg=myMemCfg)
     )
-    val memFastNonBurst = (
+    val memFastWhenBurst = (
       haveFastLcvBusMem
     ) generate (
       LcvBusMem(cfg=myMemCfg)
@@ -607,12 +607,12 @@ case class SnowHouseInstrDataDualRam(
     val myLoBus = (
       if (!haveFastLcvBusMem) (
         if (!haveDebursterForSlowLcvBusMem) (
-          memSlowNonBurst.io.bus
+          memSlowWhenBurst.io.bus
         ) else (
           myDeburster.io.loBus
         )
       ) else (
-        memFastNonBurst.io.bus
+        memFastWhenBurst.io.bus
       )
     )
     if (!haveDcache) {
@@ -636,7 +636,8 @@ case class SnowHouseInstrDataDualRam(
     } else { // if (haveDcache)
       //io.lcvDbus <> dcache.io.loBus
       dcache.io.loBus.h2dBus << io.lcvDbus.h2dBus 
-      io.lcvDbus.d2hBus <-/< dcache.io.loBus.d2hBus
+      //io.lcvDbus.d2hBus <-/< dcache.io.loBus.d2hBus
+      io.lcvDbus.d2hBus << dcache.io.loBus.d2hBus
 
       myLoBus <> dcache.io.hiBus
     }
@@ -644,16 +645,16 @@ case class SnowHouseInstrDataDualRam(
       !haveFastLcvBusMem
       && haveDebursterForSlowLcvBusMem
     ) {
-      //myDeburster.io.hiBus <> memSlowNonBurst.io.bus
+      //myDeburster.io.hiBus <> memSlowWhenBurst.io.bus
       myDeburster.io.hiBus.h2dBus.translateInto(
-        memSlowNonBurst.io.bus.h2dBus
+        memSlowWhenBurst.io.bus.h2dBus
       )(
         dataAssignment=(outp, inp) => {
           outp.mainNonBurstInfo := inp.mainNonBurstInfo
           outp.mainBurstInfo := outp.mainBurstInfo.getZero
         }
       )
-      memSlowNonBurst.io.bus.d2hBus.translateInto(
+      memSlowWhenBurst.io.bus.d2hBus.translateInto(
         myDeburster.io.hiBus.d2hBus
       )(
         dataAssignment=(outp, inp) => {
@@ -878,7 +879,7 @@ case class SnowHouseInstrDataDualRam(
   ////}
 }
 
-case class SnowHouseInstrDataSharedRamIo(
+case class SnowHouseLcvBusInstrDataSharedRamIo(
   cfg: SnowHouseConfig,
 ) extends Bundle {
   //--------
@@ -893,6 +894,108 @@ case class SnowHouseInstrDataSharedRamIo(
   ))
   //--------
 }
+case class SnowHouseLcvBusInstrDataSharedRam(
+  cfg: SnowHouseConfig,
+  sharedInitBigInt: Seq[BigInt],
+) extends Component {
+  //--------
+  val io = SnowHouseLcvBusInstrDataSharedRamIo(cfg=cfg)
+  //--------
+  val depth = sharedInitBigInt.size
+  val haveFastLcvBusMem = (
+    true
+    //false
+  )
+  val mySharedMemCfg = LcvBusMemConfig(
+    busCfg=(
+      //if (!haveFastLcvBusMem) (
+        LcvBusConfig(
+          mainCfg=(
+            cfg.subCfg.lcvDbusEtcCfg.hiBusCfg.mainCfg
+            //.mkCopyWithAllowingBurst()
+            .mkCopyWithoutByteEn(None)
+          ),
+          cacheCfg=cfg.subCfg.lcvDbusEtcCfg.hiBusCfg.cacheCfg
+        )
+      //) else (
+      //  cfg.subCfg.lcvDbusEtcCfg.loBusCfg
+      //)
+    ),
+    depth=depth,
+    initBigInt=Some(sharedInitBigInt),
+    arrRamStyleAltera="no_rw_check, M10K",
+    arrRamStyleXilinx="block",
+  )
+
+  val mySharedMemSlowWhenBurst = (
+    !haveFastLcvBusMem
+  ) generate (LcvBusMemSlowWhenBurst(cfg=mySharedMemCfg))
+
+  val mySharedMemFastWhenBurst = (
+    haveFastLcvBusMem
+  ) generate (LcvBusMem(cfg=mySharedMemCfg))
+
+  val myArbiter = LcvBusArbiter(
+    LcvBusArbiterConfig(
+      busCfg=(
+        //cfg.subCfg.lcvDbusEtcCfg.loBusCfg
+        mySharedMemCfg.busCfg
+      ),
+      numHosts=2,
+    )
+  )
+  val myDeburster = (
+    LcvBusDeburster(cfg=LcvBusDebursterConfig(
+      loBusCfg=mySharedMemCfg.busCfg
+    ))
+  )
+
+  val myLoBus = (
+    if (!haveFastLcvBusMem) (
+      //if (!haveDebursterForSlowLcvBusMem) (
+        mySharedMemSlowWhenBurst.io.bus
+      //) else (
+      //  myDeburster.io.loBus
+      //)
+    ) else (
+      mySharedMemFastWhenBurst.io.bus
+    )
+  )
+  //myArbiter.io.hostVec(0) << io.lcvIbus
+  //myArbiter.io.hostVec(1) << io.lcvDbus
+  val tempHostList = List[LcvBusIo](
+    io.lcvIbus,
+    io.lcvDbus,
+  )
+  for (idx <- 0 until tempHostList.size) {
+    tempHostList(idx).h2dBus.translateInto(
+      myArbiter.io.hostVec(idx).h2dBus
+    )(
+      dataAssignment=(outp, inp) => {
+        outp.mainNonBurstInfo := inp.mainNonBurstInfo
+        outp.mainBurstInfo := outp.mainBurstInfo.getZero
+      }
+    )
+    val myTempD2hStm = cloneOf(tempHostList(idx).d2hBus)
+    tempHostList(idx).d2hBus << myTempD2hStm
+    myArbiter.io.hostVec(idx).d2hBus.translateInto(
+      //tempHostList(idx).d2hBus
+      myTempD2hStm
+    )(
+      dataAssignment=(outp, inp) => {
+        outp.mainNonBurstInfo := inp.mainNonBurstInfo
+      }
+    )
+  }
+  myLoBus << myArbiter.io.dev
+  //myLoBus.h2dBus << myArbiter.io.dev.h2dBus
+  ////myArbiter.io.dev.d2hBus <-/< myLoBus.d2hBus
+  //myArbiter.io.dev.d2hBus << myLoBus.d2hBus
+
+  //myDeburster.io.loBus << myArbiter.io.dev
+  //myLoBus << myDeburster.io.hiBus
+}
+
 //--------
 private[libsnowhouse] case class SnowHouseDbus(
   cfg: SnowHouseConfig,

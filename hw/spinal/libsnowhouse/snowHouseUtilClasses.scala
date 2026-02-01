@@ -678,6 +678,12 @@ case class SnowHouseConfig(
     mainWidth - 1
     downto mainWidth - mySrcRegPcCmpEqWidth
   )
+  println(
+    s"mySrcRegPcWidth:${mySrcRegPcWidth} "
+    + s"mySrcRegPcCmpEqWidth:${mySrcRegPcCmpEqWidth} "
+    + s"mySrcRegPcRange:${mySrcRegPcRange} "
+    + s"mySrcRegPcCmpEqRange:${mySrcRegPcCmpEqRange}"
+  )
   def lowerMyFanout = 4
   def lowerMyFanoutRegPcSetItCnt = (
     //2
@@ -1639,7 +1645,7 @@ case class SnowHousePipePayloadNonExt(
   //    UInt(cfg.mainWidth bits)
   //  //)
   //)
-  val laggingRegPcMinus1InstrSize = (
+  val laggingRegPcPlus1InstrSize = (
     //Vec.fill(myHistRegPc.size - 1)(
       UInt(cfg.mainWidth bits)
     //)
@@ -1717,7 +1723,7 @@ case class SnowHousePipePayload(
   def psExSetOutpModMemWordIo = nonExt.psExSetOutpModMemWordIo
   def regPc = nonExt.regPc
   def laggingRegPc = nonExt.laggingRegPc
-  def laggingRegPcMinus1InstrSize = nonExt.laggingRegPcMinus1InstrSize
+  def laggingRegPcPlus1InstrSize = nonExt.laggingRegPcPlus1InstrSize
   def myHistRegPcSize = (
     nonExt.myHistRegPcSize
   )
