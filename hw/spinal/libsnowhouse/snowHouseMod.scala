@@ -548,8 +548,8 @@ case class SnowHouseInstrDataDualRam(
       false
     )
     val haveFastLcvBusMem = (
-      true
-      //false
+      //true
+      false
     )
     val haveDebursterForSlowLcvBusMem = (
       //false
@@ -562,7 +562,25 @@ case class SnowHouseInstrDataDualRam(
       LcvBusCache(cfg=cfg.subCfg.lcvDbusEtcCfg)
     )
     val myMemCfg = LcvBusMemConfig(
-      busCfg=cfg.subCfg.lcvDbusEtcCfg.hiBusCfg,
+      busCfg=(
+        if (
+          !haveDcache
+        ) (
+          if (!haveFastLcvBusMem) (
+            LcvBusConfig(
+              mainCfg=(
+                cfg.subCfg.lcvDbusEtcCfg.hiBusCfg.mainCfg
+                .mkCopyWithoutByteEn(None)
+              ),
+              cacheCfg=cfg.subCfg.lcvDbusEtcCfg.hiBusCfg.cacheCfg
+            )
+          ) else (
+            cfg.subCfg.lcvDbusEtcCfg.loBusCfg
+          )
+        ) else (
+          cfg.subCfg.lcvDbusEtcCfg.hiBusCfg
+        )
+      ),
       depth=depth,
       initBigInt=Some(dataInitBigInt),
       arrRamStyleAltera="no_rw_check, M10K",
@@ -601,7 +619,12 @@ case class SnowHouseInstrDataDualRam(
       io.lcvDbus.h2dBus.translateInto(myLoBus.h2dBus)(
         dataAssignment=(outp, inp) => {
           outp.mainNonBurstInfo := inp.mainNonBurstInfo
-          outp.mainBurstInfo := outp.mainBurstInfo.getZero
+          //outp.mainNonBurstInfo.infoShared := (
+          //  inp.mainNonBurstInfo.infoShared
+          //)
+          if (outp.mainBurstInfo != null) {
+            outp.mainBurstInfo := outp.mainBurstInfo.getZero
+          }
         }
       )
       //val myTempLoD2hBusStm = cloneOf(myLoBus.d2hBus)
