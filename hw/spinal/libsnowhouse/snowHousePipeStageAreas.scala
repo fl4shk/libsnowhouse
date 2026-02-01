@@ -9607,6 +9607,73 @@ case class SnowHousePipeStageWriteBack(
         //}
       }
     }
+    switch (
+      (
+        !myWbPayload(0).outpDecodeExt.memAccessKind.asBits(1)
+        && myD2hBus.valid
+      )
+      ## myWbPayload(0).outpDecodeExt.memAccessKind.asBits(0)
+      ## myWbPayload(0).outpDecodeExt.memAccessSubKind.asBits
+    ) {
+      //--------
+      // This stuff might need to be changed for the purposes of
+      // atomic operations that are larger than `cfg.mainWidth`.
+      // It's currently limited to at max 32-bit values, for example, on a
+      // 32-bit `cfg.mainWidth` CPU. More work will be needed later.
+      //--------
+      val myDecodeExt = myWbPayload(1).outpDecodeExt
+      val mapElem = myWbPayload(1).gprIdxToMemAddrIdxMap(0)
+      val myCurrExt = (
+        if (!mapElem.haveHowToSetIdx) (
+          myWbPayload(1).myExt(
+            0
+          )
+        ) else (
+          myWbPayload(1).myExt(
+            mapElem.howToSetIdx
+          )
+        )
+      )
+      //--------
+      is (M"10--") {
+        // zero-extending sub-word load or full-word load
+        myCurrExt.modMemWord := myD2hBus.data
+      }
+      is (M"1100") {
+        // LoadS, Sz8
+        myCurrExt.modMemWord := (
+          myD2hBus.data(
+            (7.min(myD2hBus.data.high)) downto 0
+          ).asSInt.resize(myCurrExt.modMemWord.getWidth).asUInt
+        )
+      }
+      is (M"1101") {
+        // LoadS, Sz16
+        myCurrExt.modMemWord := (
+          myD2hBus.data(
+            (15.min(myD2hBus.data.high)) downto 0
+          ).asSInt.resize(myCurrExt.modMemWord.getWidth).asUInt
+        )
+      }
+      is (M"1110") {
+        // LoadS, Sz32
+        myCurrExt.modMemWord := (
+          myD2hBus.data(
+            (31.min(myD2hBus.data.high)) downto 0
+          ).asSInt.resize(myCurrExt.modMemWord.getWidth).asUInt
+        )
+      }
+      is (M"1111") {
+        // LoadS, Sz64
+        myCurrExt.modMemWord := (
+          myD2hBus.data(
+            (63.min(myD2hBus.data.high)) downto 0
+          ).asSInt.resize(myCurrExt.modMemWord.getWidth).asUInt
+        )
+      }
+      default {
+      }
+    }
     when (
       !myWbPayload(0).outpDecodeExt.memAccessKind.asBits(1)
       && myD2hBus.valid
@@ -9625,7 +9692,7 @@ case class SnowHousePipeStageWriteBack(
         )
       )
       //myCurrExt.modMemWord := myDbus.recvData.word
-      myCurrExt.modMemWord := myD2hBus.data
+      //myCurrExt.modMemWord := myD2hBus.data
       //myCurrExt.modMemWordValid.foreach(current => {
       //  current := (
       //    // TODO: support more destination GPRs
