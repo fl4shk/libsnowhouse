@@ -1,4 +1,5 @@
 .text
+_start:
 cpy r0, 0x0
 cpy r1, 0x0
 cpy r2, 0x0
@@ -9,7 +10,7 @@ cpy r3, 0x0
 cpy r4, 0x1000
 add r5, r4, 0x8
 
-cpy r1, 0x30//0x11223344
+cpy r1, 0xffeedd30//0x11223344
 
 _loop_ldst_ub:
 cpy r2, r0
@@ -27,7 +28,7 @@ bltu r4, r5, _loop_ldst_ub
 cpy r4, 0x800
 add r5, r4, 0x8
 
-cpy r1, 0x4030//0x11223344
+cpy r1, 0xffee4030//0x11223344
 
 _loop_ldst_uh:
 cpy r2, r0
@@ -45,7 +46,7 @@ bltu r4, r5, _loop_ldst_uh
 cpy r4, 0x2000
 add r5, r4, 0x8
 
-cpy r1, 0x80//0x11223344
+cpy r1, 0x44556680//0x11223344
 
 _loop_ldst_sb:
 cpy r2, r0
@@ -64,7 +65,7 @@ bltu r4, r5, _loop_ldst_sb
 cpy r4, 0x1800
 add r5, r4, 0x8
 
-cpy r1, 0x8030//0x11223344
+cpy r1, 0x44558030//0x11223344
 
 _loop_ldst_sh:
 cpy r2, r0

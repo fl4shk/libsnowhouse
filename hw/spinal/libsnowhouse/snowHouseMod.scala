@@ -853,7 +853,22 @@ case class SnowHouseInstrDataDualRam(
   ////    dataRam.io.wrData := io.dbus.sendData.data.asBits
   ////  }
   ////}
-  
+}
+
+case class SnowHouseInstrDataSharedRamIo(
+  cfg: SnowHouseConfig,
+) extends Bundle {
+  //--------
+  require(cfg.useLcvInstrBus)
+  require(cfg.useLcvDataBus)
+  //--------
+  val lcvIbus = slave(LcvBusIo(
+    cfg=cfg.subCfg.lcvIbusEtcCfg.loBusCfg,
+  ))
+  val lcvDbus = slave(LcvBusIo(
+    cfg=cfg.subCfg.lcvDbusEtcCfg.loBusCfg,
+  ))
+  //--------
 }
 //--------
 private[libsnowhouse] case class SnowHouseDbus(

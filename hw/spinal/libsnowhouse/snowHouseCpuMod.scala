@@ -664,8 +664,8 @@ object SnowHouseCpuPipeStageInstrDecode {
             Cat(True).asUInt
             .resize(ret.branchKind.getWidth).asBits
           )
-          upPayload.branchPredictTkn := True
-          upPayload.branchTgtBufElem(0).valid := True
+          //upPayload.branchPredictTkn := True
+          //upPayload.branchTgtBufElem(0).valid := True
         }
         ret.btbElem.dontPredict := (
           False
@@ -5319,7 +5319,7 @@ object SnowHouseCpuWithDualRamSim extends App {
     false
   )
   val testIdxRange = Array[Int](
-    //0, //0,
+    0, //0,
     //1, //1,
     //2, //2,
     //////////3, 3,

@@ -2036,6 +2036,8 @@ case class SnowHousePrePipeStageExSetBranchPredictEtcArea(
       init=outp.branchPredictTkn.getZero,
     )
     //&& upPayload(0).branchTgtBufElem(0).fire
+
+    && outp.branchTgtBufElem(0).fire
     && outp.branchTgtBufElem(1).fire
     && !outp.branchTgtBufElem(1).dontPredict
 
