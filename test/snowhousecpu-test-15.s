@@ -11,7 +11,7 @@ add r5, r4, 0x8
 
 cpy r1, 0x30//0x11223344
 
-_loop_stb:
+_loop_ldst_ub:
 cpy r2, r0
 cpy r3, r0
 ldr r2, r4, 0x0
@@ -20,7 +20,7 @@ ldr r3, r4, 0x0
 ldub r6, r4, 0x0
 add r1, r1, 1
 add r4, r4, 0x1
-bltu r4, r5, _loop_stb
+bltu r4, r5, _loop_ldst_ub
 
 
 //cpy r1, 0x1000
@@ -29,7 +29,7 @@ add r5, r4, 0x8
 
 cpy r1, 0x4030//0x11223344
 
-_loop_sth:
+_loop_ldst_uh:
 cpy r2, r0
 cpy r3, r0
 ldr r2, r4, 0x0
@@ -38,7 +38,44 @@ ldr r3, r4, 0x0
 lduh r6, r4, 0x0
 add r1, r1, 1
 add r4, r4, 0x2
-bltu r4, r5, _loop_sth
+bltu r4, r5, _loop_ldst_uh
+
+
+//cpy r1, 0x1000
+cpy r4, 0x2000
+add r5, r4, 0x8
+
+cpy r1, 0x80//0x11223344
+
+_loop_ldst_sb:
+cpy r2, r0
+cpy r3, r0
+ldr r2, r4, 0x0
+stb r1, r4, 0x0
+ldr r3, r4, 0x0
+ldsb r6, r4, 0x0
+add r1, r1, 1
+add r4, r4, 0x1
+bltu r4, r5, _loop_ldst_sb
+
+
+
+//cpy r1, 0x1000
+cpy r4, 0x1800
+add r5, r4, 0x8
+
+cpy r1, 0x8030//0x11223344
+
+_loop_ldst_sh:
+cpy r2, r0
+cpy r3, r0
+ldr r2, r4, 0x0
+sth r1, r4, 0x0
+ldr r3, r4, 0x0
+ldsh r6, r4, 0x0
+add r1, r1, 1
+add r4, r4, 0x2
+bltu r4, r5, _loop_ldst_sh
 
 
 _infin:
