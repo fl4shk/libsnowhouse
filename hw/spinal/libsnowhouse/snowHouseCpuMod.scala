@@ -5743,8 +5743,8 @@ object SnowHouseCpuWithSharedRamSim extends App {
           instrRamKind
         ),
         instrRamFetchLatency=(
-          //0
-          1
+          0
+          //1
         ),
         exposeRegFileWriteDataToIo=true,
         exposeRegFileWriteAddrToIo=true,

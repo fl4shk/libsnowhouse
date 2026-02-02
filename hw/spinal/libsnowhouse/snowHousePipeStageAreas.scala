@@ -1313,17 +1313,21 @@ private[libsnowhouse] case class SnowHouseBusBridgeCtrl(
   )
 
   myCpuRecvBranchPredictFifo.io.pop.ready := (
-    io.cpuBus.ready
-    && (
-      //io.bridgeBus.recvData.src
-      myCpuRecvBranchPredictFifo.io.pop.src
-      === RegNextWhen(
-        (
-          myCpuRecvBranchPredictFifo.io.push.src //+ 1
-        ),
-        cond=myCpuRecvBranchPredictFifo.io.push.fire,
-        init=myCpuRecvBranchPredictFifo.io.push.src.getZero,
+    if (cfg.instrRamFetchLatency > 0) (
+      io.cpuBus.ready
+      && (
+        //io.bridgeBus.recvData.src
+        myCpuRecvBranchPredictFifo.io.pop.src
+        === RegNextWhen(
+          (
+            myCpuRecvBranchPredictFifo.io.push.src //+ 1
+          ),
+          cond=myCpuRecvBranchPredictFifo.io.push.fire,
+          init=myCpuRecvBranchPredictFifo.io.push.src.getZero,
+        )
       )
+    ) else (
+      io.cpuBus.ready
     )
   )
 
@@ -8558,6 +8562,10 @@ case class SnowHousePipeStageExecute(
     //  RegNextWhen(
     //  )
     //)
+    val myTempBtbElemValid = (
+      outp.branchTgtBufElem(0).valid
+      && !myShouldIgnoreInstr.last
+    )
     when (cMid0Front.up.isValid) {
       when (!rState) {
         switch (
@@ -8567,11 +8575,13 @@ case class SnowHousePipeStageExecute(
             // when `includesLdBubble === True`
             // because of how previous pipeline stages function
 
-            outp.branchTgtBufElem(0).valid
+            //outp.branchTgtBufElem(0).valid
+            myTempBtbElemValid
             && outp.branchTgtBufElem(0).includesLdBubble
           )
           ## (
-            outp.branchTgtBufElem(0).valid
+            //outp.branchTgtBufElem(0).valid
+            myTempBtbElemValid
             && outp.instrCnt.myPsIdBubble.last
           )
         ) {
@@ -8615,7 +8625,9 @@ case class SnowHousePipeStageExecute(
           default {
             setOutpModMemWord.io.btbElemValid := (
               //if (!cfg.useLcvDataBus) (
-                outp.branchTgtBufElem(0).valid
+                //outp.branchTgtBufElem(0).valid
+
+                myTempBtbElemValid
               //) else (
               //  outp.branchTgtBufElem(0).valid
               //  && !outp.instrCnt.myPsIdBubble.last
