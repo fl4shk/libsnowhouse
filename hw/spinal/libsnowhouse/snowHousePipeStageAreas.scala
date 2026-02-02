@@ -3842,16 +3842,17 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
     tempPsExSetPcValid
     || rSavedTempPsExSetPcValid
   )
-  when (io.upIsValid) {
+  //when (io.upIsValid) {
     when (tempPsExSetPcValid) {
       rSavedTempPsExSetPcValid := True
     }
-  }
+  //}
   when (
-    RegNext(
-      next=io.upIsFiring,
-      init=False,
-    )
+    //RegNext(
+    //  next=io.upIsFiring,
+    //  init=False,
+    //)
+    io.upIsFiring
   ) {
     rSavedTempPsExSetPcValid := False
   }
