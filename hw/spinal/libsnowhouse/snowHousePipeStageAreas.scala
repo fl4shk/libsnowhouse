@@ -3895,7 +3895,7 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
   }
   val tempBranchMispredictNotTaken = Bool()
   val tempBranchPredictTkn = (
-    rose(
+    //rose(
       //RegNext(next=io.branchPredictTkn, init=False)
       RegNext/*When*/(
         next=RegNextWhen(
@@ -3918,10 +3918,10 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
         init=False,
       )
       //&& io.upIsReady
-    )
+    //)
   )
   val tempReplaceBtbElem = (
-    rose(
+    //rose(
       RegNext/*When*/(
         next=(
           //RegNext(next=io.branchPredictReplaceBtbElem, init=False)
@@ -3930,10 +3930,10 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
         //cond=io.upIsFiring,
         init=False,
       )
-    )
+    //)
   )
   val tempBtbFire = (
-    rose(
+    //rose(
       RegNext/*When*/(
         next=(
           RegNextWhen(
@@ -3965,7 +3965,7 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
         init=False,
       )
       //&& io.upIsReady
-    )
+    //)
   )
   tempPsExSetPcValid := False
   tempBranchMispredictNotTaken := False
@@ -8630,14 +8630,23 @@ case class SnowHousePipeStageExecute(
   )
   for (idx <- 0 until cfg.lowerMyFanoutRegPcSetItCnt) {
     nextPsExSetPcValid(idx) := (
-      setOutpModMemWord.io.psExSetPc.valid
-      && RegNext(
-        next=(
-          !myShouldIgnoreInstr(0)
-          && cMid0Front.up.isFiring
-        ),
-        init=False
-      )
+      //setOutpModMemWord.io.psExSetPc.valid
+      //&& RegNext(
+      //  next=(
+      //    !myShouldIgnoreInstr(0)
+      //    && cMid0Front.up.isFiring
+      //  ),
+      //  init=False
+      //)
+      rose(
+        setOutpModMemWord.io.psExSetPc.valid
+        && RegNext(
+          !myShouldIgnoreInstr(0),
+          init=False
+        )
+        //&& cMid0Front.up.isFiring
+        && cMid0Front.up.isValid
+      ),
     )
   }
 
