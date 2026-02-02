@@ -1286,7 +1286,10 @@ private[libsnowhouse] case class SnowHouseBusBridgeCtrl(
       //io.bridgeBus.recvData.src
       myCpuRecvAddrFifo.io.pop.src
       === RegNextWhen(
-        (myCpuRecvAddrFifo.io.push.src + 2),
+        (
+          myCpuRecvAddrFifo.io.push.src
+          + cfg.instrRamFetchLatency //2
+        ),
         cond=myCpuRecvAddrFifo.io.push.fire,
         init=myCpuRecvAddrFifo.io.push.src.getZero,
       )

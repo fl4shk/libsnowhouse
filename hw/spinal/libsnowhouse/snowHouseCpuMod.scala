@@ -3182,6 +3182,7 @@ case class SnowHouseCpuConfig(
     true
   ),
   instrRamKind: Int,
+  instrRamFetchLatency: Int,
   programStr: String,
   exposeRegFileWriteDataToIo: Boolean=false,
   exposeRegFileWriteAddrToIo: Boolean=false,
@@ -3435,6 +3436,7 @@ case class SnowHouseCpuConfig(
       false
     ),
     instrRamKind=instrRamKind,
+    instrRamFetchLatency=instrRamFetchLatency,
     //decodeFunc=(
     //  io: SnowHouseIo[SnowHouseCpuEncInstr],
     //  cId: CtrlLink,
@@ -5282,6 +5284,9 @@ object SnowHouseCpuWithDualRamToVerilog extends App {
         //2,
         //5
       ),
+      instrRamFetchLatency=(
+        2
+      ),
       exposeRegFileWriteDataToIo=true,
     )
     val testProgram = SnowHouseCpuTestProgram(cfg=cfg)
@@ -5387,6 +5392,9 @@ object SnowHouseCpuWithDualRamSim extends App {
           //2,
           //5
           instrRamKind
+        ),
+        instrRamFetchLatency=(
+          2
         ),
         exposeRegFileWriteDataToIo=true,
         exposeRegFileWriteAddrToIo=true,
@@ -5734,6 +5742,10 @@ object SnowHouseCpuWithSharedRamSim extends App {
           //5
           instrRamKind
         ),
+        instrRamFetchLatency=(
+          //0
+          1
+        ),
         exposeRegFileWriteDataToIo=true,
         exposeRegFileWriteAddrToIo=true,
         exposeRegFileWriteEnableToIo=true,
@@ -5840,6 +5852,9 @@ object SnowHouseCpuToVerilog extends App {
         //2,
         //5
       ),
+      instrRamFetchLatency=(
+        2
+      ),
     )
     SnowHouse(
       cfg=cfg.shCfg
@@ -5876,6 +5891,9 @@ object SnowHouseCpuFormal extends App {
             //1,
             //2,
             //5
+          ),
+          instrRamFetchLatency=(
+            2
           ),
         ).shCfg
       )

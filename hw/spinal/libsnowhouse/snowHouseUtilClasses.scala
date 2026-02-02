@@ -600,6 +600,7 @@ case class SnowHouseConfig(
   optBranchPredictorKind: Option[SnowHouseBranchPredictorKind],
   //--------
   instrRamKind: Int,
+  instrRamFetchLatency: Int,
   optTwoCycleRegFileReads: Boolean=(
     false
     //true
