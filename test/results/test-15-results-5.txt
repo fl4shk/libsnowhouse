@@ -109,8 +109,5 @@ addr:1 data:1146447490
 addr:4 data:8194
 addr:2 data:0
 addr:3 data:0
-addr:2 data:33152
-addr:3 data:8552832
-addr:6 data:4294967170
 Ending test.
 
