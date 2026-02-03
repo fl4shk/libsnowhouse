@@ -63,5 +63,16 @@ addr:6 data:37
 addr:3 data:4116
 addr:1 data:3
 addr:13 data:212
+addr:7 data:12
+addr:8 data:1
+addr:13 data:196
+addr:6 data:38
+addr:3 data:4120
+addr:1 data:2
+addr:13 data:212
+addr:7 data:19
+addr:8 data:0
+addr:13 data:196
+addr:6 data:39
 Ending test.
 

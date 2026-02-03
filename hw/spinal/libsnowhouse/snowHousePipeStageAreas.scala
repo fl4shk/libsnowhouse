@@ -4971,15 +4971,15 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
                   else 
                   //if (isStore)
                   {
-                    if (!cfg.useLcvDataBus) {
+                    //if (!cfg.useLcvDataBus) {
                       io.modMemWordValid.foreach(current => {
                         current := True
                       })
-                    } else {
-                      io.modMemWordValid.foreach(current => {
-                        current := False
-                      })
-                    }
+                    //} else {
+                    //  io.modMemWordValid.foreach(current => {
+                    //    current := False
+                    //  })
+                    //}
                     io.modMemWord(0) := selRdMemWord(0, 1)
                   }
 

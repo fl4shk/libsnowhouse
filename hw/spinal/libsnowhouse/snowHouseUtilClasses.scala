@@ -848,7 +848,8 @@ case class SnowHouseConfig(
       if (!useLcvDataBus) (
         0
       ) else (
-        2
+        //2
+        1
       )
     ),
     optIncludeModFrontS2MLink=false,
