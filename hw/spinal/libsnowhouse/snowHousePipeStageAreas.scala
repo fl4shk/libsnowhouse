@@ -922,7 +922,17 @@ private[libsnowhouse] case class SnowHouseIbusToLcvIbusBridge(
     RegNext(io.bus.recvData, init=io.bus.recvData.getZero)
   )
   //--------
-  def myH2dPushStm = io.lcvBus.h2dBus
+  val myH2dPushFifo = StreamFifo(
+    dataType=cloneOf(io.lcvBus.h2dBus.payload),
+    depth=8,
+    latency=0,
+    forFMax=true,
+  )
+  def myH2dPushStm = (
+    //io.lcvBus.h2dBus
+    myH2dPushFifo.io.push
+  )
+  io.lcvBus.h2dBus << myH2dPushFifo.io.pop
   //def myD2hPopStm = io.lcvBus.d2hBus
   val myThrowCond = Bool()
   //def myD2hPopStm = io.lcvBus.d2hBus
@@ -959,7 +969,59 @@ private[libsnowhouse] case class SnowHouseIbusToLcvIbusBridge(
     //myH2dPushStm.valid && 
     !myH2dPushStm.ready
   )
-  myH2dPushStm.valid := io.bus.nextValid
+
+  //val myH2dPushFire = myH2dPushStm.fire
+  //val rSavedH2dPushInfo = {
+  //  //Reg(Bool(), init=False)
+  //  val temp = Reg(Flow(cloneOf(io.lcvBus.h2dBus.src)))
+  //  temp.init(temp.getZero)
+  //  temp
+  //}
+  //when (myH2dPushFire) {
+  //  //rSavedH2dPushFire := True
+  //}
+
+  //val stickyH2dPushFire = (
+  //  myH2dPushFire
+  //)
+  val myHistH2dPushFire = (
+    History[Bool](
+      that=False,
+      when=myH2dPushStm.fire,
+      length=5,
+      init=True
+    )
+  )
+
+  myH2dPushStm.valid := (
+    io.bus.nextValid
+    || myHistH2dPushFire.last
+    //&& (
+    //  (
+    //    //io.bus.
+    //    io.bus.sendData.src
+    //    === (
+    //      RegNextWhen(
+    //        myH2dPushStm.src + 1,
+    //        cond=myH2dPushStm.fire,
+    //        //init=(
+    //        //  //myH2dPushStm.src.getZero
+    //        //  0x2
+    //        //)
+    //      )
+    //      init(0x2)
+    //    )
+    //  )
+    //  && History[Bool](
+    //    that=True,
+    //    when=(
+    //      myH2dPushStm.fire
+    //    ),
+    //    length=3,
+    //    init=False,
+    //  ).last
+    //)
+  )
 
   myH2dPushStm.payload := myH2dPushStm.payload.getZero
   myH2dPushStm.src.allowOverride
@@ -967,8 +1029,8 @@ private[libsnowhouse] case class SnowHouseIbusToLcvIbusBridge(
     RegNext(myH2dPushStm.src, init=myH2dPushStm.src.getZero)
   )
   when (
-    myH2dPushStm.fire
-    //myH2dPushStm.valid
+    //myH2dPushStm.fire
+    myH2dPushStm.valid
   ) {
     myH2dPushStm.src := (
       io.bus.sendData.src
@@ -998,7 +1060,7 @@ private[libsnowhouse] case class SnowHouseIbusToLcvIbusBridge(
   //io.bus.recvData.word := myD2hPopStm.data
   //io.bus.recvData.src := myD2hPopStm.src
   when (myD2hPopStm.valid) {
-    io.bus.ready := True
+    io.bus.ready := !myHistH2dPushFire.last//True
     io.bus.recvData.word := myD2hPopStm.data
     io.bus.recvData.src := myD2hPopStm.src
     //myD2hPopStm.ready := True
@@ -1195,6 +1257,7 @@ private[libsnowhouse] case class SnowHouseBusBridgeCtrl(
   io.bridgeBus.nextValid := (
     if (isIbus) (
       io.cpuBus.nextValid
+      //&& !io.bridgeH2dPushDelay
     ) else (
       io.cpuBus.nextValid
       //&& io.myUpFireIshUpdateSrcCond
@@ -3920,6 +3983,19 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
       //&& io.upIsReady
     //)
   )
+  val rSavedTempBranchPredictTkn = Reg(Bool(), init=False)
+  val stickyTempBranchPredictTkn = (
+    tempBranchPredictTkn
+    || rSavedTempBranchPredictTkn
+  )
+  //when (io.upIsValid) {
+    when (tempBranchPredictTkn) {
+      rSavedTempBranchPredictTkn := True
+    }
+  //}
+  when (io.upIsFiring) {
+    rSavedTempBranchPredictTkn := False
+  }
   val tempReplaceBtbElem = (
     //rose(
       RegNext/*When*/(
@@ -3932,6 +4008,19 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
       )
     //)
   )
+  val rSavedTempReplaceBtbElem = Reg(Bool(), init=False)
+  val stickyTempReplaceBtbElem = (
+    tempReplaceBtbElem
+    || rSavedTempReplaceBtbElem
+  )
+  //when (io.upIsValid) {
+    when (tempReplaceBtbElem) {
+      rSavedTempReplaceBtbElem := True
+    }
+  //}
+  when (io.upIsFiring) {
+    rSavedTempReplaceBtbElem := False
+  }
   val tempBtbFire = (
     //rose(
       RegNext/*When*/(
@@ -3967,6 +4056,20 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
       //&& io.upIsReady
     //)
   )
+  val rSavedTempBtbFire = Reg(Bool(), init=False)
+  val stickyTempBtbFire = (
+    tempBtbFire
+    || rSavedTempBtbFire
+  )
+  //when (io.upIsValid) {
+    when (tempBtbFire) {
+      rSavedTempBtbFire := True
+    }
+  //}
+  when (io.upIsFiring) {
+    rSavedTempBtbFire := False
+  }
+
   tempPsExSetPcValid := False
   tempBranchMispredictNotTaken := False
 
@@ -3978,10 +4081,14 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
           stickyMyPsExSetPcValid
         //  init=False
         //)
-        =/= tempBranchPredictTkn
+        =/= (
+          //tempBranchPredictTkn
+          stickyTempBranchPredictTkn
+        )
       ) || (
         //tempBtbFire
-        tempReplaceBtbElem
+        //tempReplaceBtbElem
+        stickyTempReplaceBtbElem
       )
     )
   )
@@ -3997,14 +4104,19 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
   //    init=False
   //  )
   //) {
-    when (tempBtbFire) {
+    when (
+      //tempBtbFire
+      stickyTempBtbFire
+    ) {
       tempPsExSetPcValid := (
         nextTempPsExSetPcValid
         || tempBranchMispredictNotTaken
       )
       tempBranchMispredictNotTaken := (
         (
-          (tempBranchPredictTkn
+          (
+            //tempBranchPredictTkn
+            stickyTempBranchPredictTkn
             && (
               //RegNext(
                 //!myPsExSetPcValid,
