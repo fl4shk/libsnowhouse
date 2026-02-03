@@ -4092,18 +4092,26 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
       )
     )
   )
-  //when (
-  //  //!rose(
-  //  //  RegNext(
-  //  //    next=io.shouldIgnoreInstr.last,
-  //  //    init=io.shouldIgnoreInstr.last.getZero,
-  //  //  )
-  //  //)
-  //  RegNext(
-  //    io.upIsValid,
-  //    init=False
-  //  )
-  //) {
+  when (
+    //!rose(
+    //  RegNext(
+    //    next=io.shouldIgnoreInstr.last,
+    //    init=io.shouldIgnoreInstr.last.getZero,
+    //  )
+    //)
+    //RegNext(
+    //  io.upIsValid,
+    //  init=False
+    //)
+    //io.upIsValid
+    RegNext(
+      (
+        io.splitOp.exSetNextPcKind
+        =/= SnowHousePsExSetNextPcKind.Dont
+      ),
+      init=False
+    )
+  ) {
     when (
       //tempBtbFire
       stickyTempBtbFire
@@ -4164,25 +4172,25 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
         //True
       )
     }
-  //} otherwise {
-  //    tempPsExSetPcValid := (
-  //      //False
-  //      /*rose*/(
-  //        //myPsExSetPcValid
-  //        //stickyMyPsExSetPcValid
-  //        False
-  //        //RegNext(
-  //        //  myPsExSetPcValid,
-  //        //  init=False
-  //        //)
-  //      )
-  //    )
-  //    tempBranchMispredictNotTaken := (
-  //      //myPsExSetPcValid
-  //      False
-  //      //True
-  //    )
-  //}
+  } otherwise {
+    //tempPsExSetPcValid := (
+    //  //False
+    //  /*rose*/(
+    //    //myPsExSetPcValid
+    //    //stickyMyPsExSetPcValid
+    //    False
+    //    //RegNext(
+    //    //  myPsExSetPcValid,
+    //    //  init=False
+    //    //)
+    //  )
+    //)
+    //tempBranchMispredictNotTaken := (
+    //  //myPsExSetPcValid
+    //  False
+    //  //True
+    //)
+  }
   val myTakeIrq = (
     //rose(
     //  io.takeIrq
