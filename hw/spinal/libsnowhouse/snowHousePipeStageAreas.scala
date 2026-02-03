@@ -934,14 +934,14 @@ private[libsnowhouse] case class SnowHouseIbusToLcvIbusBridge(
   )
   io.lcvBus.h2dBus << myH2dPushFifo.io.pop
   //def myD2hPopStm = io.lcvBus.d2hBus
-  val myThrowCond = Bool()
+  val myD2hThrowCond = Bool()
   //def myD2hPopStm = io.lcvBus.d2hBus
   val myD2hDoThrowStm = io.lcvBus.d2hBus.throwWhen(
-    myThrowCond
+    myD2hThrowCond
   )
   val myD2hPopStm = cloneOf(io.lcvBus.d2hBus)
   myD2hPopStm << myD2hDoThrowStm
-  myThrowCond := (
+  myD2hThrowCond := (
     io.lcvBus.d2hBus.src.asSInt
     =/= (
       RegNextWhen(
@@ -8761,7 +8761,7 @@ case class SnowHousePipeStageExecute(
       && RegNext(
         next=(
           !myShouldIgnoreInstr(0)
-          && cMid0Front.up.isFiring
+          //&& cMid0Front.up.isFiring
         ),
         init=False
       )
@@ -8785,15 +8785,24 @@ case class SnowHousePipeStageExecute(
   //)
   psExSetPc.valid := (
     RegNext(
-      rose(
+      (
         //setOutpModMemWord.io.psExSetPc.valid
         //&& myShouldIgnoreInstr(0)
         //&& cMid0Front.up.isFiring
-        nextPsExSetPcValid(0)
+        //nextPsExSetPcValid(0)
         //&& RegNext(
         //  !myShouldIgnoreInstr(0),
         //  init=False
         //)
+        //RegNext(
+        //  (
+        //    setOutpModMemWord.io.psExSetPc.valid
+        //    && !myShouldIgnoreInstr(0)
+        //    && cMid0Front.up.isFiring
+        //  ),
+        //  init=False
+        //)
+        nextPsExSetPcValid(0)
       ), 
       init=False
     )
@@ -8811,7 +8820,9 @@ case class SnowHousePipeStageExecute(
  
   )
   for (idx <- 0 until cfg.lowerMyFanoutRegPcSetItCnt) {
-    when (nextPsExSetPcValid(idx)) {
+    when (
+      nextPsExSetPcValid(idx)
+    ) {
       myShouldIgnoreInstr(idx) := True
     }
     when (
