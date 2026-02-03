@@ -2156,19 +2156,19 @@ object SnowHouseCpuPipeStageInstrDecode {
         doDefault(
           //doSetImm=false
         )
-        when (
-          //!psId.rSavedExSetPc.fire
-          //!psId.upPayload.psIfRegPcSetItCnt(0)
-          //!upPayload.psIfRegPcSetItCnt(0)
-          //RegNextWhen(
-          //  next=(!upPayload.psIfRegPcSetItCnt(0)),
-          //  cond=cId.up.isFiring,
-          //  init=False
-          //)
-          !psId.shouldFinishJump
-        ) {
+        //when (
+        //  //!psId.rSavedExSetPc.fire
+        //  //!psId.upPayload.psIfRegPcSetItCnt(0)
+        //  //!upPayload.psIfRegPcSetItCnt(0)
+        //  //RegNextWhen(
+        //  //  next=(!upPayload.psIfRegPcSetItCnt(0)),
+        //  //  cond=cId.up.isFiring,
+        //  //  init=False
+        //  //)
+        //  !psId.shouldFinishJump
+        //) {
           instrIsPre := True
-        }
+        //}
         //when (!rMultiCycleState) {
           //when (cId.up.isFiring) {
           //  //if (cfg.irqCfg != None) {
@@ -5312,7 +5312,7 @@ object SnowHouseCpuWithDualRamSim extends App {
     false
   )
   val testIdxRange = Array[Int](
-    //0, 0,
+    0, //0,
     ////1, //1,
     ////2, //2,
     ////////////3, 3,
@@ -5326,7 +5326,7 @@ object SnowHouseCpuWithDualRamSim extends App {
     //////////11, 11,
     ////12, 12,
     ////13, 13,
-    //14, 14,
+    14, 14,
     15, 15,
   )
   val instrRamKindArr = Array[Int](
