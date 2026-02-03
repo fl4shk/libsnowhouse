@@ -3231,6 +3231,7 @@ case class SnowHousePipeStageExecuteSetOutpModMemWordIo(
       cfg.regPcSetItCntWidth bits
     )
   ))
+  val myDoStallAny = setAsInp(Bool())
   val upIsFiring = setAsInp(Bool())
   val upIsValid = setAsInp(Bool())
   val upIsReady = setAsInp(Bool())
@@ -4284,6 +4285,31 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
       /*next=*/(
         //tempPsExSetPcValid
         stickyTempPsExSetPcValid
+        && RegNextWhen(
+          !io.shouldIgnoreInstr(0),
+          cond=io.upIsFiring,
+          init=False
+        )
+        //&& RegNext(
+        //  (
+        //    !io.upIsReady
+        //    //|| 
+        //  ),
+        //  init=False
+        //)
+        //&& RegNext(
+        //  (
+        //    !io.shouldIgnoreInstr(0)
+        //    && (
+        //      !io.upIsReady
+        //      || io.upIsValid
+        //    )
+        //    //&& !io.myDoStallAny
+        //  ),
+        //  init=False
+        //)
+
+        //&& !io.upIsReady
         //rSavedTempPsExSetPcValid
       ),
     //  init=tempPsExSetPcValid.getZero,
