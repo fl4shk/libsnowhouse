@@ -9191,6 +9191,17 @@ case class SnowHousePipeStageExecute(
       init=outp.laggingRegPc.getZero,
     )
   )
+  psExSetPc.branchTgtBufElem.includesLdBubble.allowOverride
+  psExSetPc.branchTgtBufElem.includesLdBubble := (
+    RegNext(
+      RegNext(
+        outp.branchTgtBufElem(1).includesLdBubble,
+        //cond=cMid0Front.up.isFiring,
+        init=outp.branchTgtBufElem(1).includesLdBubble.getZero,
+      ),
+      init=outp.branchTgtBufElem(1).includesLdBubble.getZero,
+    )
+  )
   //psExSetPc.branchTgtBufElem.srcRegPc := (
   //  RegNext(
   //    setOutpModMemWord.io.psExSetPc.branchTgtBufElem.srcRegPc,
