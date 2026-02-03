@@ -4975,6 +4975,10 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
                       io.modMemWordValid.foreach(current => {
                         current := True
                       })
+                    } else {
+                      io.modMemWordValid.foreach(current => {
+                        current := False
+                      })
                     }
                     io.modMemWord(0) := selRdMemWord(0, 1)
                   }
