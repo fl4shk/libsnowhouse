@@ -3892,39 +3892,95 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
   )
 
   val myPsExSetPcValid = (
-    /*LcvFastOrR*/(
-      ///*self=*/Vec[Bool](
-      //  RegNext/*When*/(
-      //    next=nextExSetPcValid,
-      //    //cond=(!io.shouldIgnoreInstr.last),
-      //    init=nextExSetPcValid.getZero
-      //  ),
-      //  myPsExSetPcCmpEq.myCmp.msb,
-      //  //RegNext(myPsExSetPcCmpEq.myStickyCmp, init=False),
-      //  myPsExSetPcCmpNe.myCmp.msb,
-      //  //RegNext(myPsExSetPcCmpNe.myStickyCmp, init=False),
-      //).asBits.asUInt.orR
-      //if (cfg.targetAltera) (
-      //  LcvFastOrR(
-      //    myPsExSetPcValidToOrReduce
-      //  )
-      //) else (
-        myPsExSetPcValidToOrReduce.orR
-      //)
-      //optDsp=false
+    ///*LcvFastOrR*/(
+    //  ///*self=*/Vec[Bool](
+    //  //  RegNext/*When*/(
+    //  //    next=nextExSetPcValid,
+    //  //    //cond=(!io.shouldIgnoreInstr.last),
+    //  //    init=nextExSetPcValid.getZero
+    //  //  ),
+    //  //  myPsExSetPcCmpEq.myCmp.msb,
+    //  //  //RegNext(myPsExSetPcCmpEq.myStickyCmp, init=False),
+    //  //  myPsExSetPcCmpNe.myCmp.msb,
+    //  //  //RegNext(myPsExSetPcCmpNe.myStickyCmp, init=False),
+    //  //).asBits.asUInt.orR
+    //  //if (cfg.targetAltera) (
+    //  //  LcvFastOrR(
+    //  //    myPsExSetPcValidToOrReduce
+    //  //  )
+    //  //) else (
+    //    myPsExSetPcValidToOrReduce.orR
+    //  //)
+    //  //optDsp=false
+    //)
+    Bool()
+  )
+  myPsExSetPcValid := (
+    RegNext(
+      myPsExSetPcValid,
+      init=myPsExSetPcValid.getZero,
     )
   )
+
+  val myPastUpIsFiring = (
+    RegNext(
+      io.upIsFiring,
+      init=False
+    )
+  )
+  val rSavedPastUpIsFiring = Reg(Bool(), init=False)
+
+  val stickyPastUpIsFiring = (
+    myPastUpIsFiring
+    || rSavedPastUpIsFiring
+  )
+  when (myPastUpIsFiring) {
+    rSavedPastUpIsFiring := True
+  }
+  
+  when (
+    //RegNext(
+    //  RegNext(
+    //    io.upIsFiring,
+    //    init=False
+    //  ),
+    //  init=False
+    //)
+    RegNext(
+      (
+        stickyPastUpIsFiring
+        && io.upIsValid
+        && io.downIsReady
+      ),
+      init=False
+    )
+    //&& io.upIsValid
+  ) {
+    myPsExSetPcValid := False
+    rSavedPastUpIsFiring := False
+  }
+  when (
+    myPsExSetPcValidToOrReduce.orR
+  ) {
+    myPsExSetPcValid := True
+  }
+
   val rSavedMyPsExSetPcValid = Reg(Bool(), init=False)
   val stickyMyPsExSetPcValid = (
     myPsExSetPcValid
-    || rSavedMyPsExSetPcValid
+    //|| rSavedMyPsExSetPcValid
   )
-  when (myPsExSetPcValid) {
-    rSavedMyPsExSetPcValid := True
-  }
-  when (io.upIsFiring) {
-    rSavedMyPsExSetPcValid := False
-  }
+  //when (myPsExSetPcValid) {
+  //  rSavedMyPsExSetPcValid := True
+  //}
+  //when (
+  //  //RegNext(
+  //    io.upIsFiring,
+  //  //  init=False
+  //  //)
+  //) {
+  //  rSavedMyPsExSetPcValid := False
+  //}
 
   val tempPsExSetPcValid = Bool() //Reg(Bool(), init=False)
   val rSavedTempPsExSetPcValid = Reg(Bool(), init=False)
@@ -7874,7 +7930,10 @@ case class SnowHousePipeStageExecute(
         //- (1 * cfg.instrSizeBytes)
         - (3 * cfg.instrSizeBytes)
       ),
-      cond=cMid0Front.up.isFiring,
+      cond=(
+        //cMid0Front.up.isFiring
+        cMid0Front.up.isValid
+      ),
       init=(
         //outp.branchTgtBufElem(1).srcRegPc.getZero
         outp.laggingRegPc.getZero
@@ -7890,7 +7949,10 @@ case class SnowHousePipeStageExecute(
         //- (1 * cfg.instrSizeBytes)
         //- (3 * cfg.instrSizeBytes)
       ),
-      cond=cMid0Front.up.isFiring,
+      cond=(
+        //cMid0Front.up.isFiring
+        cMid0Front.up.isValid
+      ),
       init=(
         //outp.branchTgtBufElem(1).srcRegPc.getZero
         outp.laggingRegPc.getZero
