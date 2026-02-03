@@ -5312,17 +5312,17 @@ object SnowHouseCpuWithDualRamSim extends App {
     false
   )
   val testIdxRange = Array[Int](
-    //0, //0,
+    0, //0,
     //////1, //1,
     //////2, //2,
     ////3, //3,
     ////4, 4,
     //5, //5,
-    6, //6,
+    //6, //6,
     //7, 7,
-    //8, //8,
-    //////9, //9,
-    //////////////10, //10,
+    //8, 8,
+    //9, //9,
+    //10, //10,
     //11, 11,
     //12, //12,
     //////13, 13,
@@ -5675,14 +5675,14 @@ object SnowHouseCpuWithSharedRamSim extends App {
     ////////11, 11,
     //12, 12,
     //13, 13,
-    //14, 14,
-    15, 15,
+    14, 14,
+    //15, 15,
   )
   val instrRamKindArr = Array[Int](
-    0,
+    //0,
     //1,
     //2,
-    //5,
+    5,
   )
   for (testIdx <- 0 to testIdxRange(1)) {
     programStrArr += (
@@ -5705,20 +5705,21 @@ object SnowHouseCpuWithSharedRamSim extends App {
     val programStr = programStrArr(testIdx)
 
     val numClkCycles = (
-      if (testIdx == 0) (
-        4096
-      ) else if (testIdx == 4) (
-        2048 + 512
-      ) else if (testIdx == 7) (
-        2048 + 512
-      ) else if (testIdx == 12) (
-        1024 + 512
-      ) else if (testIdx == 15) (
-        4096
-      ) else (
-        1024 + 512
-        //1024
-      )
+      //if (testIdx == 0) (
+      //  4096
+      //) else if (testIdx == 4) (
+      //  2048 + 512
+      //) else if (testIdx == 7) (
+      //  2048 + 512
+      //) else if (testIdx == 12) (
+      //  1024 + 512
+      //) else if (testIdx == 15) (
+      //  4096
+      //) else (
+      //  1024 + 512
+      //  //1024
+      //)
+      8192
     )
     for (instrRamKind <- instrRamKindArr) {
       val cfg = SnowHouseCpuConfig(

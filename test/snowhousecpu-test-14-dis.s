@@ -4,15 +4,22 @@ snowhousecpu-test-14.elf:     file format elf32-snowhousecpu
 
 Disassembly of section .text:
 
-00000000 <_loop_2-0x44>:
+00000000 <_mem_init_loop-0x2c>:
 	...
    c:	a4 00 00 01 	add	r1, r0, 164
   10:	07 00 10 70 	cpy	ids, r1
-  14:	80 00 00 01 	add	r1, r0, 128
+  14:	00 01 00 01 	add	r1, r0, 256
   18:	00 00 10 92 	ldr	r2, r1, 0
   1c:	04 00 11 92 	str	r2, r1, 4
   20:	00 00 21 83 	mul	r3, r2, r1
-	...
+  24:	00 00 00 00 	add	r0, r0, 0
+  28:	10 00 00 08 	add	r8, r0, 16
+
+0000002c <_mem_init_loop>:
+  2c:	23 00 80 79 	lsr	r9, r8, 2
+  30:	00 00 81 99 	str	r9, r8, 0
+  34:	fc ff 80 08 	add	r8, r8, -4
+  38:	fc ff 01 a8 	bne	r8, r0, -16
   3c:	10 00 00 07 	add	r7, r0, 16
   40:	00 00 00 08 	add	r8, r0, 0
 

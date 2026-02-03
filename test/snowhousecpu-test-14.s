@@ -4,7 +4,7 @@ cpy r0, 0x0
 cpy r0, 0x0
 cpy r1, _irq_handler
 cpy ids, r1
-cpy r1, 0x80
+cpy r1, 0x100
 
 ldr r2, r1, 0x0
 //cpy r3, 8
@@ -13,12 +13,21 @@ str r2, r1, 0x4
 mul r3, r2, r1
 
 cpy r0, r0
-cpy r0, r0
-cpy r0, r0
+//cpy r0, r0
+//cpy r0, r0
 
-cpy r0, r0
-cpy r0, r0
-cpy r0, r0
+//cpy r0, r0
+//cpy r0, r0
+//cpy r0, r0
+
+cpy r8, 0x10
+_mem_init_loop:
+lsr r9, r8, 2
+str r9, r8, 0x0
+add r8, r8, -4
+bne r8, r0, _mem_init_loop
+
+
 //--------
 cpy r7, 0x10
 //cpy r8, 0x10 >> 2
