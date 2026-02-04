@@ -4,6 +4,8 @@ cpy r0, 0x0
 cpy r0, 0x0
 cpy r0, 0x0
 
+bl _shared_mem_init
+
 cpy r7, _irq_handler
 cpy ids, r7
 cpy r8, 0x1
@@ -78,3 +80,22 @@ cpy r3, 0x13
 cpy r4, 0x14
 cpy r5, 0x15
 cpy r6, 0x16
+
+_shared_mem_init:
+cpy r1, 0x10
+
+_shared_mem_init_loop:
+lsr r2, r1, 2
+str r2, r1, 0x0
+add r1, r1, -4
+bne r1, r0, _shared_mem_init_loop
+
+jmp lr 
+
+
+cpy r1, 0x21
+cpy r2, 0x22
+cpy r3, 0x23
+cpy r4, 0x24
+cpy r5, 0x25
+cpy r6, 0x26

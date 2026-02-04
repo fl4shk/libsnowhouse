@@ -5602,7 +5602,8 @@ case class SnowHouseCpuWithSharedRam(
     io.idsIraIrq.ready := True
     //cpu.io.idsIraIrq.nextValid := True
     val cntWidth = (
-      8
+      10
+      //8
       //6
       //5
       //4 
@@ -5719,7 +5720,13 @@ object SnowHouseCpuWithSharedRamSim extends App {
       //  1024 + 512
       //  //1024
       //)
-      if (testIdx == 12) (
+      if (testIdx == 4) (
+        8192 * 2
+      ) else if (testIdx == 9) (
+        8192 * 2
+      ) else if (testIdx == 12) (
+        8192 * 2
+      ) else if (testIdx == 14) (
         8192 * 2
       ) else (
         8192

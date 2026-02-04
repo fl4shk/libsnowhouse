@@ -386,7 +386,7 @@ case class SnowHouseInstrDataDualRam(
   ) generate (new Area {
     val depth = instrInitBigInt.size
 
-    val myMaxIshInstrRamKind = 6//5
+    val myMaxIshInstrRamKind = 5//6//5
     val haveFastLcvBusMem = (
       instrRamKind < myMaxIshInstrRamKind
     )

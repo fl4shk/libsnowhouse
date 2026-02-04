@@ -86,5 +86,12 @@ addr:1 data:0
 addr:13 data:148
 addr:7 data:4294967295
 addr:8 data:40
+addr:13 data:132
+addr:6 data:41
+addr:3 data:4132
+addr:1 data:4294967295
+addr:13 data:148
+addr:7 data:0
+addr:8 data:41
 Ending test.
 
