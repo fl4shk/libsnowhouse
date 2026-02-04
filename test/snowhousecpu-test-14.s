@@ -1,10 +1,29 @@
+.altmacro
 .text
-cpy r0, 0x0
-cpy r0, 0x0
-cpy r0, 0x0
+
+
+beq r0, r0, _post_const_data
+
+.set i,1
+.rept (0x200 >> 2) - 1
+	.word i
+	.set i,i+1
+.endr
+//cpy r0, r0
+//.endr
+
+_post_const_data:
+str r0, r0, 0x0
+
+//bl r3, _shared_mem_init
+
+
 cpy r1, _irq_handler
 cpy ids, r1
-cpy r1, 0x100
+
+//bl _shared_mem_init
+
+cpy r1, 0x80
 
 ldr r2, r1, 0x0
 //cpy r3, 8
@@ -13,20 +32,12 @@ str r2, r1, 0x4
 mul r3, r2, r1
 
 cpy r0, r0
-//cpy r0, r0
-//cpy r0, r0
+cpy r0, r0
+cpy r0, r0
 
-//cpy r0, r0
-//cpy r0, r0
-//cpy r0, r0
-
-cpy r8, 0x10
-_mem_init_loop:
-lsr r9, r8, 2
-str r9, r8, 0x0
-add r8, r8, -4
-bne r8, r0, _mem_init_loop
-
+cpy r0, r0
+cpy r0, r0
+cpy r0, r0
 
 //--------
 cpy r7, 0x10
@@ -80,6 +91,21 @@ ret ira
 //cpy lr, ira
 //jmp lr
 //jmp ira
+.rept 8
+cpy r0, r0
+.endr
+
+//_shared_mem_init:
+//cpy fp, 0x200
+//_shared_mem_init_loop:
+//lsr r2, fp, 2
+//str r2, fp, 0x0
+//add fp, fp, -4
+//bges r1, r0, _shared_mem_init_loop
+//
+//_shared_mem_init_return:
+//jmp r3
+
 .rept 8
 cpy r0, r0
 .endr
