@@ -92,5 +92,7 @@ addr:1 data:4294967295
 addr:13 data:212
 addr:7 data:0
 addr:8 data:41
+addr:13 data:196
+addr:6 data:42
 Ending test.
 

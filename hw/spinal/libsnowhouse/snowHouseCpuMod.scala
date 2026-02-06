@@ -11,6 +11,7 @@ import spinal.lib.misc.pipeline._
 import libcheesevoyage.general._
 import libcheesevoyage.math._
 import libcheesevoyage.bus.lcvStall._
+import libcheesevoyage.bus.lcvBus._
 
 import java.io._
 
@@ -5096,6 +5097,91 @@ case class SnowHouseCpuDivmod32(
     }
   }
 }
+
+case class SnowHouseCpuMultiCycleInstrArea(
+  cpuIo: SnowHouseIo
+) extends Area {
+  //for ((multiCycleBus, idx) <- cpuIo.multiCycleBusVec.view.zipWithIndex) {
+  //  if (idx != 0) {
+  //    multiCycleBus.ready := True
+  //    multiCycleBus.recvData.dstVec.foreach(dst => {
+  //      dst := dst.getZero
+  //    })
+  //  }
+  //}
+  //val lslRc = SnowHouseCpuLsl32(cpuIo=cpuIo, immShift=false)
+  //val lslImm = SnowHouseCpuLsl32(cpuIo=cpuIo, immShift=true)
+  //val lsrRc = SnowHouseCpuLsr32(cpuIo=cpuIo, immShift=false)
+  //val lsrImm = SnowHouseCpuLsr32(cpuIo=cpuIo, immShift=true)
+  //val asrRc = SnowHouseCpuAsr32(cpuIo=cpuIo, immShift=false)
+  //val asrImm = SnowHouseCpuAsr32(cpuIo=cpuIo, immShift=true)
+  val shift32/*shiftSlt32*/ = (
+    //SnowHouseCpuShift32(cpuIo=cpuIo)
+    //SnowHouseCpuShiftSlt32LowLatency(cpuIo=cpuIo)
+    SnowHouseCpuShift32LowLatency(cpuIo=cpuIo)
+  )
+  val cpyAdd32 = SnowHouseCpuCpyAdd32(cpuIo=cpuIo)
+  val mul32 = SnowHouseCpuMul32(cpuIo=cpuIo)
+  val divmod32 = SnowHouseCpuDivmod32(cpuIo=cpuIo)
+}
+
+
+case class SnowHouseCpuWithoutRamIo(
+  program: SnowHouseCpuProgram,
+) extends Bundle {
+  //--------
+  def cfg = program.cfg
+  require(cfg.shCfg.useLcvInstrBus)
+  require(cfg.shCfg.useLcvDataBus)
+  //--------
+  val idsIraIrq = (
+    slave(new LcvStallIo[Bool, Bool](
+      sendPayloadType=None,
+      recvPayloadType=None,
+    ))
+  )
+  val lcvIbus = (
+    master(LcvBusIo(
+      cfg=cfg.shCfg.subCfg.lcvIbusEtcCfg.loBusCfg,
+    ))
+  )
+  val lcvDbus = (
+    master(LcvBusIo(
+      cfg=cfg.shCfg.subCfg.lcvDbusEtcCfg.loBusCfg,
+    ))
+  )
+  //val regFileWriteData = (
+  //  cfg.exposeRegFileWriteDataToIo
+  //) generate (
+  //  out(UInt(cfg.shCfg.mainWidth bits))
+  //)
+  //val regFileWriteAddr = (
+  //  cfg.exposeRegFileWriteAddrToIo
+  //) generate (
+  //  out(UInt(log2Up(cfg.shCfg.regFileCfg.wordCountArr(0)) bits))
+  //)
+  //val regFileWriteEnable = (
+  //  cfg.exposeRegFileWriteEnableToIo
+  //) generate (
+  //  out(Bool())
+  //)
+}
+case class SnowHouseCpuWithoutRam(
+  program: SnowHouseCpuProgram,
+) extends Bundle {
+  //--------
+  val io = SnowHouseCpuWithoutRamIo(program=program)
+  def cfg = io.cfg
+  val cpu = SnowHouse(cfg=cfg.shCfg)
+  //--------
+  val multiCycleInstrArea = SnowHouseCpuMultiCycleInstrArea(cpuIo=cpu.io)
+  //--------
+  cpu.io.idsIraIrq <> io.idsIraIrq
+  io.lcvIbus << cpu.io.lcvIbus
+  io.lcvDbus << cpu.io.lcvDbus 
+  //--------
+}
+
 case class SnowHouseCpuWithDualRamIo(
   program: SnowHouseCpuProgram,
 ) extends Bundle {
@@ -5186,28 +5272,29 @@ case class SnowHouseCpuWithDualRam(
   if (cfg.exposeRegFileWriteEnableToIo) {
     cpu.io.regFileWriteEnable <> io.regFileWriteEnable
   }
-  //for ((multiCycleBus, idx) <- cpu.io.multiCycleBusVec.view.zipWithIndex) {
-  //  if (idx != 0) {
-  //    multiCycleBus.ready := True
-  //    multiCycleBus.recvData.dstVec.foreach(dst => {
-  //      dst := dst.getZero
-  //    })
-  //  }
-  //}
-  //val lslRc = SnowHouseCpuLsl32(cpuIo=cpu.io, immShift=false)
-  //val lslImm = SnowHouseCpuLsl32(cpuIo=cpu.io, immShift=true)
-  //val lsrRc = SnowHouseCpuLsr32(cpuIo=cpu.io, immShift=false)
-  //val lsrImm = SnowHouseCpuLsr32(cpuIo=cpu.io, immShift=true)
-  //val asrRc = SnowHouseCpuAsr32(cpuIo=cpu.io, immShift=false)
-  //val asrImm = SnowHouseCpuAsr32(cpuIo=cpu.io, immShift=true)
-  val shift32/*shiftSlt32*/ = (
-    //SnowHouseCpuShift32(cpuIo=cpu.io)
-    //SnowHouseCpuShiftSlt32LowLatency(cpuIo=cpu.io)
-    SnowHouseCpuShift32LowLatency(cpuIo=cpu.io)
-  )
-  val cpyAdd32 = SnowHouseCpuCpyAdd32(cpuIo=cpu.io)
-  val mul32 = SnowHouseCpuMul32(cpuIo=cpu.io)
-  val divmod32 = SnowHouseCpuDivmod32(cpuIo=cpu.io)
+  ////for ((multiCycleBus, idx) <- cpu.io.multiCycleBusVec.view.zipWithIndex) {
+  ////  if (idx != 0) {
+  ////    multiCycleBus.ready := True
+  ////    multiCycleBus.recvData.dstVec.foreach(dst => {
+  ////      dst := dst.getZero
+  ////    })
+  ////  }
+  ////}
+  ////val lslRc = SnowHouseCpuLsl32(cpuIo=cpu.io, immShift=false)
+  ////val lslImm = SnowHouseCpuLsl32(cpuIo=cpu.io, immShift=true)
+  ////val lsrRc = SnowHouseCpuLsr32(cpuIo=cpu.io, immShift=false)
+  ////val lsrImm = SnowHouseCpuLsr32(cpuIo=cpu.io, immShift=true)
+  ////val asrRc = SnowHouseCpuAsr32(cpuIo=cpu.io, immShift=false)
+  ////val asrImm = SnowHouseCpuAsr32(cpuIo=cpu.io, immShift=true)
+  //val shift32/*shiftSlt32*/ = (
+  //  //SnowHouseCpuShift32(cpuIo=cpu.io)
+  //  //SnowHouseCpuShiftSlt32LowLatency(cpuIo=cpu.io)
+  //  SnowHouseCpuShift32LowLatency(cpuIo=cpu.io)
+  //)
+  //val cpyAdd32 = SnowHouseCpuCpyAdd32(cpuIo=cpu.io)
+  //val mul32 = SnowHouseCpuMul32(cpuIo=cpu.io)
+  //val divmod32 = SnowHouseCpuDivmod32(cpuIo=cpu.io)
+  val multiCycleInstrArea = SnowHouseCpuMultiCycleInstrArea(cpuIo=cpu.io)
 
   if (doConnExternIrq) {
     cpu.io.idsIraIrq <> io.idsIraIrq
@@ -5215,7 +5302,8 @@ case class SnowHouseCpuWithDualRam(
     io.idsIraIrq.ready := True
     //cpu.io.idsIraIrq.nextValid := True
     val cntWidth = (
-      8
+      10
+      //8
       //6
       //5
       //4 
@@ -5325,9 +5413,9 @@ object SnowHouseCpuWithDualRamSim extends App {
     //10, //10,
     //11, 11,
     //12, //12,
-    13, 13,
+    //13, 13,
     //14, 14,
-    //15, 15,
+    15, 15,
   )
   val instrRamKindArr = Array[Int](
     0,
@@ -5356,20 +5444,21 @@ object SnowHouseCpuWithDualRamSim extends App {
     val programStr = programStrArr(testIdx)
 
     val numClkCycles = (
-      if (testIdx == 0) (
-        4096
-      ) else if (testIdx == 4) (
-        2048 + 512
-      ) else if (testIdx == 7) (
-        2048 + 512
-      ) else if (testIdx == 12) (
-        1024 + 512
-      ) else if (testIdx == 15) (
-        4096
-      ) else (
-        1024 + 512
-        //1024
-      )
+      8192
+      //if (testIdx == 0) (
+      //  4096
+      //) else if (testIdx == 4) (
+      //  2048 + 512
+      //) else if (testIdx == 7) (
+      //  2048 + 512
+      //) else if (testIdx == 12) (
+      //  1024 + 512
+      //) else if (testIdx == 15) (
+      //  4096
+      //) else (
+      //  1024 + 512
+      //  //1024
+      //)
     )
     for (instrRamKind <- instrRamKindArr) {
       val cfg = SnowHouseCpuConfig(
@@ -5573,28 +5662,29 @@ case class SnowHouseCpuWithSharedRam(
   if (cfg.exposeRegFileWriteEnableToIo) {
     cpu.io.regFileWriteEnable <> io.regFileWriteEnable
   }
-  //for ((multiCycleBus, idx) <- cpu.io.multiCycleBusVec.view.zipWithIndex) {
-  //  if (idx != 0) {
-  //    multiCycleBus.ready := True
-  //    multiCycleBus.recvData.dstVec.foreach(dst => {
-  //      dst := dst.getZero
-  //    })
-  //  }
-  //}
-  //val lslRc = SnowHouseCpuLsl32(cpuIo=cpu.io, immShift=false)
-  //val lslImm = SnowHouseCpuLsl32(cpuIo=cpu.io, immShift=true)
-  //val lsrRc = SnowHouseCpuLsr32(cpuIo=cpu.io, immShift=false)
-  //val lsrImm = SnowHouseCpuLsr32(cpuIo=cpu.io, immShift=true)
-  //val asrRc = SnowHouseCpuAsr32(cpuIo=cpu.io, immShift=false)
-  //val asrImm = SnowHouseCpuAsr32(cpuIo=cpu.io, immShift=true)
-  val shift32/*shiftSlt32*/ = (
-    //SnowHouseCpuShift32(cpuIo=cpu.io)
-    //SnowHouseCpuShiftSlt32LowLatency(cpuIo=cpu.io)
-    SnowHouseCpuShift32LowLatency(cpuIo=cpu.io)
-  )
-  val cpyAdd32 = SnowHouseCpuCpyAdd32(cpuIo=cpu.io)
-  val mul32 = SnowHouseCpuMul32(cpuIo=cpu.io)
-  val divmod32 = SnowHouseCpuDivmod32(cpuIo=cpu.io)
+  ////for ((multiCycleBus, idx) <- cpu.io.multiCycleBusVec.view.zipWithIndex) {
+  ////  if (idx != 0) {
+  ////    multiCycleBus.ready := True
+  ////    multiCycleBus.recvData.dstVec.foreach(dst => {
+  ////      dst := dst.getZero
+  ////    })
+  ////  }
+  ////}
+  ////val lslRc = SnowHouseCpuLsl32(cpuIo=cpu.io, immShift=false)
+  ////val lslImm = SnowHouseCpuLsl32(cpuIo=cpu.io, immShift=true)
+  ////val lsrRc = SnowHouseCpuLsr32(cpuIo=cpu.io, immShift=false)
+  ////val lsrImm = SnowHouseCpuLsr32(cpuIo=cpu.io, immShift=true)
+  ////val asrRc = SnowHouseCpuAsr32(cpuIo=cpu.io, immShift=false)
+  ////val asrImm = SnowHouseCpuAsr32(cpuIo=cpu.io, immShift=true)
+  //val shift32/*shiftSlt32*/ = (
+  //  //SnowHouseCpuShift32(cpuIo=cpu.io)
+  //  //SnowHouseCpuShiftSlt32LowLatency(cpuIo=cpu.io)
+  //  SnowHouseCpuShift32LowLatency(cpuIo=cpu.io)
+  //)
+  //val cpyAdd32 = SnowHouseCpuCpyAdd32(cpuIo=cpu.io)
+  //val mul32 = SnowHouseCpuMul32(cpuIo=cpu.io)
+  //val divmod32 = SnowHouseCpuDivmod32(cpuIo=cpu.io)
+  val multiCycleInstrArea = SnowHouseCpuMultiCycleInstrArea(cpuIo=cpu.io)
 
   if (doConnExternIrq) {
     cpu.io.idsIraIrq <> io.idsIraIrq
