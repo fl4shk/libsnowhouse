@@ -60,7 +60,12 @@ case class SnowHouseCpuFramebufferDemoIo(
   cfg: SnowHouseCpuFramebufferDemoConfig,
 ) extends Bundle {
   // framebuffer bus
-  val fbBus = master(LcvBusIo(cfg=cfg.myDbusCfg))
+  val fbBus = master(LcvBusIo(
+    cfg=(
+      //cfg.myDbusCfg
+      cfg.myFbMmapCfg.busCfg
+    )
+  ))
   val phys = out(LcvVgaPhys(rgbConfig=cfg.rgbCfg))
   val misc = out(LcvVgaCtrlMiscIo(
     clkRate=cfg.clkRate,
@@ -79,6 +84,7 @@ case class SnowHouseCpuFramebufferDemo(
   val io = SnowHouseCpuFramebufferDemoIo(cfg=cfg)
   //--------
   val cpu = SnowHouseCpuWithoutRam(program=cfg.program)
+  cpu.io.idsIraIrq.nextValid := False
   //--------
   val vgaCtrl = VgaCtrl(rgbConfig=cfg.rgbCfg)
 
@@ -133,10 +139,30 @@ case class SnowHouseCpuFramebufferDemo(
       numHosts=2,
     )
   )
+
+  cpu.io.lcvDbus.h2dBus.translateInto(myFbDbusSlicer.io.host.h2dBus)(
+    dataAssignment=(outp, inp) => {
+      outp.mainNonBurstInfo := inp.mainNonBurstInfo
+      outp.mainBurstInfo := outp.mainBurstInfo.getZero
+    }
+  )
+  myFbDbusSlicer.io.host.d2hBus.translateInto(cpu.io.lcvDbus.d2hBus)(
+    dataAssignment=(outp, inp) => {
+      outp.mainNonBurstInfo := inp.mainNonBurstInfo
+    }
+  )
+  //myFbDbusSlicer.io.host <-/< (
+  //  //myFbCtrl.io.bus
+  //  cpu.io.lcvDbus
+  //)
+
   myFbArbiter.io.hostVec.head <-/< (
     myFbDbusSlicer.io.devVec(cfg.myFbMmapCfg.optAddrSliceVal.get)
   )
-  //myFbArbiter.io.hostVec.last <-/< 
+  myFbArbiter.io.hostVec.last <-/< myFbCtrl.io.bus
+  io.fbBus <-/< myFbArbiter.io.dev
+
+  vgaCtrl.io.pixels <-/< myFbCtrl.io.pop
   //--------
 }
 

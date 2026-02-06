@@ -5168,7 +5168,7 @@ case class SnowHouseCpuWithoutRamIo(
 }
 case class SnowHouseCpuWithoutRam(
   program: SnowHouseCpuProgram,
-) extends Bundle {
+) extends Component {
   //--------
   val io = SnowHouseCpuWithoutRamIo(program=program)
   def cfg = io.cfg
