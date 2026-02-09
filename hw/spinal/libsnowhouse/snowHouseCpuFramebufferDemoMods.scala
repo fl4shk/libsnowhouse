@@ -50,7 +50,19 @@ case class SnowHouseCpuFramebufferDemoConfig(
     //  //LcvVgaTimingInfoMap.map("320x240@60")
     //  vgaTimingInfo
     //),
-    fbSize2d=vgaTimingInfo.fbSize2d,
+    fbSize2d=(
+      //vgaTimingInfo.fbSize2d
+      ElabVec2[Int](
+        x=(
+          vgaTimingInfo.fbSize2d.x
+          >> (if (fbCnt2dShiftOne.x) (1) else (0))
+        ),
+        y=(
+          vgaTimingInfo.fbSize2d.y
+          >> (if (fbCnt2dShiftOne.y) (1) else (0))
+        ),
+      )
+    ),
     cnt2dShiftOne=fbCnt2dShiftOne,
     dblBuf=true,
   )
@@ -140,6 +152,9 @@ case class SnowHouseCpuFramebufferDemo(
   //  cnt2dShiftOne=cfg.fbCnt2dShiftOne,
   //  dblBuf=true,
   //)
+
+  // bus stuff goes here
+
   val myFbCtrl = LcvBusFramebufferCtrl(
     cfg=(
       cfg.myFbCfg
@@ -147,21 +162,21 @@ case class SnowHouseCpuFramebufferDemo(
     )
   )
 
-  val myBusMemDepth = (
-    (if (cfg.myFbCfg.dblBuf) (2) else (1)) 
+  val myFbMemDepth = (
+    (if (cfg.myFbCfg.dblBuf) (2) else (1))
     * cfg.myFbCfg.fbSize2d.y * cfg.myFbCfg.fbSize2d.x
   )
   def rgbUpWidth = 1 << log2Up(Rgb(c=cfg.rgbCfg).asBits.getWidth)
-  val myBusMem = LcvBusMem(
+  val myFbMem = LcvBusMem(
     cfg=LcvBusMemConfig(
       busCfg=(
         cfg.myFbCfg.busCfg
         //myDbgFbCfg.busCfg
       ),
-      depth=myBusMemDepth,
+      depth=myFbMemDepth,
       initBigInt={
         val myArr = new ArrayBuffer[BigInt]()
-        for (idx <- 0 until myBusMemDepth) {
+        for (idx <- 0 until myFbMemDepth) {
           var toAdd = BigInt(idx)
           myArr += toAdd
           //myArr += BigInt(idx)
@@ -170,57 +185,180 @@ case class SnowHouseCpuFramebufferDemo(
       }
     )
   )
-  myBusMem.io.bus << myFbCtrl.io.bus
+  //myFbMem.io.bus << myFbCtrl.io.bus
 
-  myFbCtrl.io.pop.ready := True
+  //myFbCtrl.io.pop.ready := True
+  val myMainMemInitBigInt = {
+    val depth = 1 << (16 - 4)
+    val tempArr = new ArrayBuffer[BigInt]()
+    tempArr ++= cfg.program.outpArr.view
+    //while (tempArr.size < depth) {
+    //  tempArr += BigInt(0)
+    //}
+    val programSize = tempArr.size
+    for (idx <- programSize until (1 << (16 - 4))) {
+      if (idx < /*1024*/0x800) {
+        //println(
+        //  s"idx < 0x800: ${idx}"
+        //)
+        tempArr += BigInt(idx)
+      } else {
+        //println(
+        //  s"idx < 0x800: ${idx}"
+        //)
+        tempArr += BigInt(0)
+      }
+    }
+    tempArr
+    //for (elem <- program.outpArr.view) {
+    //  tempArr +=
+    //}
+    //program.outpArr
+  }
+  val myMainMemCfg = LcvBusMemConfig(
+    busCfg=(
+      //if (!haveFastLcvBusMem) (
+        LcvBusConfig(
+          mainCfg=(
+            cpuCfg.shCfg.subCfg.lcvDbusEtcCfg.hiBusCfg.mainCfg
+            //.mkCopyWithAllowingBurst()
+            //.mkCopyWithoutByteEn(None)
+            .mkCopyWithByteEn(None)
+          ),
+          cacheCfg=cpuCfg.shCfg.subCfg.lcvDbusEtcCfg.hiBusCfg.cacheCfg
+        )
+      //) else (
+      //  cfg.subCfg.lcvDbusEtcCfg.loBusCfg
+      //)
+    ),
+    depth=myMainMemInitBigInt.size,
+    initBigInt=Some(myMainMemInitBigInt),
+    arrRamStyleAltera="no_rw_check, M10K",
+    arrRamStyleXilinx="block",
+  )
 
-  // bus stuff goes here
-  //val myFbDbusSlicer = LcvBusSlicer(
-  //  cfg=LcvBusSlicerConfig(
-  //    mmapCfg=cfg.myFbMmapCfg,
-  //  )
+  val myMainMem = LcvBusMem(cfg=myMainMemCfg)
+
+  val myFbDbusSlicer = LcvBusSlicer(
+    cfg=LcvBusSlicerConfig(
+      mmapCfg=cfg.myFbMmapCfg,
+    )
+  )
+
+  val myMainMemArbiter = LcvBusArbiter(
+    cfg=LcvBusArbiterConfig(
+      busCfg=myMainMemCfg.busCfg,
+      numHosts=2,
+    ),
+  )
+  myMainMem.io.bus <-/< myMainMemArbiter.io.dev
+
+  val myFbArbiter = LcvBusArbiter(
+    cfg=LcvBusArbiterConfig(
+      busCfg=(
+        //cfg.myDbusCfg
+        cfg.myFbMmapCfg.busCfg
+      ),
+      numHosts=2,
+    )
+  )
+
+  cpu.io.lcvDbus.h2dBus.translateInto(myFbDbusSlicer.io.host.h2dBus)(
+    dataAssignment=(outp, inp) => {
+      outp.mainNonBurstInfo := inp.mainNonBurstInfo
+      outp.mainBurstInfo := outp.mainBurstInfo.getZero
+    }
+  )
+  myFbDbusSlicer.io.host.d2hBus.translateInto(cpu.io.lcvDbus.d2hBus)(
+    dataAssignment=(outp, inp) => {
+      outp.mainNonBurstInfo := inp.mainNonBurstInfo
+    }
+  )
+  //myFbDbusSlicer.io.host <-/< (
+  //  //myFbCtrl.io.bus
+  //  cpu.io.lcvDbus
   //)
+  //myMainMemArbiter.io.hostVec(0) << myFbDbusSlicer.io.devVec(0)
 
-  ////val myFbMem = LcvBusMem(
-  ////  cfg=LcvBusMemConfig(
-  ////    busCfg=myDbusCfg,
-  ////    depth=
-  ////  )
-  ////)
+  val dcache = LcvBusCache(
+    cfg=cpuCfg.shCfg.subCfg.lcvDbusEtcCfg
+  )
+  val icache = LcvBusCache(
+    cfg=cpuCfg.shCfg.subCfg.lcvIbusEtcCfg
+  )
 
-  //val myFbArbiter = LcvBusArbiter(
-  //  cfg=LcvBusArbiterConfig(
-  //    busCfg=(
-  //      //cfg.myDbusCfg
-  //      cfg.myFbMmapCfg.busCfg
-  //    ),
-  //    numHosts=2,
-  //  )
-  //)
-
-  //cpu.io.lcvDbus.h2dBus.translateInto(myFbDbusSlicer.io.host.h2dBus)(
+  myFbDbusSlicer.io.devVec(0).h2dBus.translateInto(
+    dcache.io.loBus.h2dBus
+  )(
+    dataAssignment=(outp, inp) => {
+      outp.mainNonBurstInfo := inp.mainNonBurstInfo
+      //outp.mainBurstInfo := outp.mainBurstInfo.getZero
+    }
+  )
+  dcache.io.loBus.d2hBus.translateInto(
+    myFbDbusSlicer.io.devVec(0).d2hBus
+  )(
+    dataAssignment=(outp, inp) => {
+      outp.mainNonBurstInfo := inp.mainNonBurstInfo
+    }
+  )
+  //dcache.io.loBus << myFbDbusSlicer.io.devVec(0)
+  val myTempDcacheHiBus = cloneOf(dcache.io.hiBus)
+  myTempDcacheHiBus <-/< dcache.io.hiBus
+  //myTempDcacheHiBus.h2dBus.translateInto(
+  //  myMainMemArbiter.io.hostVec(0).h2dBus
+  //)(
   //  dataAssignment=(outp, inp) => {
-  //    outp.mainNonBurstInfo := inp.mainNonBurstInfo
-  //    outp.mainBurstInfo := outp.mainBurstInfo.getZero
   //  }
   //)
-  //myFbDbusSlicer.io.host.d2hBus.translateInto(cpu.io.lcvDbus.d2hBus)(
-  //  dataAssignment=(outp, inp) => {
-  //    outp.mainNonBurstInfo := inp.mainNonBurstInfo
-  //  }
-  //)
-  ////myFbDbusSlicer.io.host <-/< (
-  ////  //myFbCtrl.io.bus
-  ////  cpu.io.lcvDbus
-  ////)
+  myMainMemArbiter.io.hostVec(0) << myTempDcacheHiBus
 
-  //myFbArbiter.io.hostVec.head <-/< (
-  //  myFbDbusSlicer.io.devVec(cfg.myFbMmapCfg.optAddrSliceVal.get)
-  //)
-  //myFbArbiter.io.hostVec.last <-/< myFbCtrl.io.bus
+  //myMainMemArbiter.io.hostVec(0) <-/< dcache.io.hiBus
+
+  //myMainMemArbiter.io.hostVec(1) <-/< cpu.io.lcvIbus
+  //val myTempLcvIbusIo = cloneOf(cpu.io.lcvIbus)
+
+  //myTempLcvIbusIo <-/< cpu.io.lcvIbus
+  icache.io.loBus <-/< cpu.io.lcvIbus
+  //myTempLcvIbusIo <-/< 
+  //val myTempLcvIbusIo = icache.io.hiBus
+
+  val myIcacheDeburster = LcvBusDeburster(
+    cfg=LcvBusDebursterConfig(
+      loBusCfg=icache.io.hiBus.cfg
+    )
+  )
+  myIcacheDeburster.io.loBus <-/< icache.io.hiBus
+  
+  val myTempLcvIbusIo = myIcacheDeburster.io.hiBus
+
+  myTempLcvIbusIo.h2dBus.translateInto(
+    myMainMemArbiter.io.hostVec(1).h2dBus
+  )(
+    dataAssignment=(outp, inp) => {
+      outp.mainNonBurstInfo := inp.mainNonBurstInfo
+      outp.mainBurstInfo := outp.mainBurstInfo.getZero
+    }
+  )
+  myMainMemArbiter.io.hostVec(1).d2hBus.translateInto(
+    myTempLcvIbusIo.d2hBus
+  )(
+    dataAssignment=(outp, inp) => {
+      outp.mainNonBurstInfo := inp.mainNonBurstInfo
+    }
+  )
+
+  myFbArbiter.io.hostVec.head <-/< (
+    myFbDbusSlicer.io.devVec(cfg.myFbMmapCfg.optAddrSliceVal.get)
+  )
+  myFbArbiter.io.hostVec.last <-/< myFbCtrl.io.bus
+  myFbMem.io.bus <-/< myFbArbiter.io.dev
+
+
   //io.fbBus <-/< myFbArbiter.io.dev
 
-  //vgaCtrl.io.pixels <-/< myFbCtrl.io.pop
+  vgaCtrl.io.softReset := RegNext(False) init(True)
+  vgaCtrl.io.pixels <-/< myFbCtrl.io.pop
   //--------
 }
 
@@ -286,7 +424,7 @@ object SnowHouseCpuFramebufferDemoSim extends App {
   )
 
   val programStr = "test/snowhousecpu-framebuffer-demo.bin"
-  val numClkCycles = 8192
+  val numClkCycles = 8192 * 8 //* 4 * 8
   val cpuCfg = SnowHouseCpuConfig(
     optFormal=(
       //true
@@ -326,8 +464,8 @@ object SnowHouseCpuFramebufferDemoSim extends App {
     program=testProgram.program,
     clkRate=100.0 MHz,
     rgbCfg=RgbConfig(
-      rWidth=5, gWidth=5, bWidth=5
-      //rWidth=8, gWidth=8, bWidth=8
+      //rWidth=5, gWidth=5, bWidth=5
+      rWidth=8, gWidth=8, bWidth=8
     ),
     vgaTimingInfo=LcvVgaTimingInfoMap.map("640x480@60"),
     fbCnt2dShiftOne=ElabVec2[Boolean](

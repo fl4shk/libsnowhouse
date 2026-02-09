@@ -832,10 +832,11 @@ case class SnowHouseConfig(
       val myInitBigInt = ArrayBuffer[ArrayBuffer[BigInt]]()
       for ((wordCount, jdx) <- regFileWordCountArr.view.zipWithIndex) {
         val tempArr = ArrayBuffer[BigInt]()
-        for (idx <- 0 until wordCount) {
+        for (idx <- 0 until wordCount - 1) {
           val toAdd: Int = 0x0
           tempArr += toAdd
         }
+        tempArr += BigInt(0x800)
         myInitBigInt += tempArr
       }
       Some(myInitBigInt)

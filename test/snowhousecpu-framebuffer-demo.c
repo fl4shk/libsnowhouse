@@ -10,7 +10,7 @@ int main(int argc, char** argv) {
 	for (;;) {
 		for (uint32_t j=0; j<FB_HEIGHT; ++j) {
 			for (uint32_t i=0; i<FB_WIDTH; ++i) {
-				fb[j * FB_WIDTH + i] = i;
+				fb[j * FB_WIDTH + i] = j * FB_WIDTH + i;//0x88ffdd;//i;
 			}
 		}
 	}
