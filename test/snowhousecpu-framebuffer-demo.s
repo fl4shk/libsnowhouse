@@ -5,25 +5,38 @@
 .global _main
 	.type	_main, @function
 _main:
+	cpy r0, r0
+	cpy r0, r0
+	cpy r0, r0
+	cpy r0, r0
+	cpy sp, 0x800
+	add sp, sp, -12  // addsi3: =r, r, i
+	str r7, sp, 0        // *mov32: =B, r
+	str r8, sp, 4        // *mov32: =B, r
+	str lr, sp, 8        // *mov32: =B, r
 	cpy r1, _fb        // *mov32: =r, i
-	ldr r5, r1, 0x0        // *mov32: =r, B
-	add r6, r5, 1280  // addsi3: =r, r, i
-	add r5, r5, 308480  // addsi3: =r, r, i
+	ldr r8, r1, 0x0        // *mov32: =r, B
+	cpy r5, 320        // *mov32: =r, i
+	cpy r7, 76800        // *mov32: =r, i
 .L4:
-	cpy r3, r6        // *mov32: =r, r
+	cpy lr, r8        // *mov32: =r, r
 	cpy r4, 0        // *mov32: =r, i
-	add r1, r3, -1280  // addsi3: =r, r, i
-	cpy r2, r4        // *mov32: =r, r
+	cpy r6, r4        // *mov32: =r, r
+	cpy r3, lr        // *mov32: =r, r
+	cpy r1, 0        // *mov32: =r, i
 .L3:
-	str r2, r1, 0x0        // *mov32: =B, r
-	add r2, r2, 1  // addsi3: =r, r, i
-	add r1, r1, 4  // addsi3: =r, r, i
-	bne r1, r3, .L3
-	add r4, r4, 320  // addsi3: =r, r, i
-	add r3, r3, 1280  // addsi3: =r, r, i
-	beq r5, r3, .L4
-	add r1, r3, -1280  // addsi3: =r, r, i
-	cpy r2, r4        // *mov32: =r, r
+	and r2, r1, 255
+	add r2, r2, r4  // addsi3: =r, r, r
+	str r2, r3, 0x0        // *mov32: =B, r
+	add r1, r1, 1  // addsi3: =r, r, i
+	add r3, r3, 4  // addsi3: =r, r, i
+	bne r1, r5, .L3
+	add lr, lr, 1280  // addsi3: =r, r, i
+	add r6, r6, 320  // addsi3: =r, r, i
+	add r4, r4, 256  // addsi3: =r, r, i
+	beq r6, r7, .L4
+	cpy r3, lr        // *mov32: =r, r
+	cpy r1, 0        // *mov32: =r, i
 	beq r0, r0, .L3
 	.size	_main, .-_main
 .global _FB_SIZE

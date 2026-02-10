@@ -12,6 +12,26 @@ object Config {
   //  ),
   //  onlyStdLogicVectorAtTopLevelIo = true
   //)
+  def spinalWithFreq(
+    clkRate: HertzNumber
+  ) = (
+    SpinalConfig(
+      targetDirectory="hw/gen",
+      defaultConfigForClockDomains=ClockDomainConfig(
+        resetActiveLevel=HIGH,
+        resetKind=SYNC,
+      ),
+      formalAsserts=true,
+      defaultClockDomainFrequency=FixedFrequency(clkRate),
+    )
+      //.addStandardMemBlackboxing(blackboxAllWhatsYouCan)
+  )
+
+  def simWithFreq(
+    clkRate: HertzNumber,
+  ) = SimConfig.withConfig(spinalWithFreq(clkRate=clkRate)).withFstWave
+
+  //def sim = SimConfig.withConfig(spinal).withFstWave
 
   def spinal = (
     SpinalConfig(
@@ -21,6 +41,7 @@ object Config {
         resetKind=SYNC,
       ),
       formalAsserts=true,
+      defaultClockDomainFrequency=FixedFrequency(100.0 MHz),
     )
       //.addStandardMemBlackboxing(blackboxAllWhatsYouCan)
   )

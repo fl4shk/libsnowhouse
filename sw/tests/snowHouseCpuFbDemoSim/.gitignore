@@ -1,0 +1,12 @@
+gpu2dSim
+gpu2dSim_debug
+objs
+objs_debug
+deps
+deps_debug
+preprocs
+preprocs_debug
+verilated
+verilated_debug
+.clangd
+snowHouseCpuFbDemoSim

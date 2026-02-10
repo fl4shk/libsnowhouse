@@ -16,6 +16,8 @@ import libcheesevoyage.general._
 import libcheesevoyage.gfx._
 import libcheesevoyage.math._
 import libcheesevoyage.bus.lcvBus._
+import libcheesevoyage.hwdev.SnesCtrlIo
+import libcheesevoyage.hwdev.SnesButtons
 
 case class SnowHouseCpuFramebufferDemoConfig(
   program: SnowHouseCpuProgram,
@@ -55,16 +57,21 @@ case class SnowHouseCpuFramebufferDemoConfig(
       ElabVec2[Int](
         x=(
           vgaTimingInfo.fbSize2d.x
+          //320
           >> (if (fbCnt2dShiftOne.x) (1) else (0))
         ),
         y=(
           vgaTimingInfo.fbSize2d.y
+          //240
           >> (if (fbCnt2dShiftOne.y) (1) else (0))
         ),
       )
     ),
     cnt2dShiftOne=fbCnt2dShiftOne,
-    dblBuf=true,
+    dblBuf=(
+      //true
+      false
+    ),
   )
 }
 
@@ -78,12 +85,19 @@ case class SnowHouseCpuFramebufferDemoIo(
   //    cfg.myFbMmapCfg.busCfg
   //  )
   //))
+  val rawSnesButtons = slave(
+    Stream(UInt(SnesButtons.rawButtonsWidth bits))
+  )
   val phys = out(LcvVgaPhys(rgbConfig=cfg.rgbCfg))
   val misc = out(LcvVgaCtrlMiscIo(
     clkRate=cfg.clkRate,
     vgaTimingInfo=cfg.vgaTimingInfo,
-    fifoDepth=1,  // we don't care about this since we're using `VgaCtrl`
-                  // instead of `LcvVgaCtrl`
+    fifoDepth=(
+      //cfg.vgaTimingInfo.htiming.visib
+      //16
+      //32
+      128
+    ),
     optIncludeMiscVgaStates=true,
   ))
 }
@@ -94,37 +108,89 @@ case class SnowHouseCpuFramebufferDemo(
   def cpuCfg = cfg.cpuCfg
 
   val io = SnowHouseCpuFramebufferDemoIo(cfg=cfg)
+  io.rawSnesButtons.ready := True//False
   //--------
   val cpu = SnowHouseCpuWithoutRam(program=cfg.program)
   cpu.io.idsIraIrq.nextValid := False
   //--------
-  val vgaCtrl = VgaCtrl(rgbConfig=cfg.rgbCfg)
-
-  val vgaTimingInfo = cfg.vgaTimingInfo
-  if (vgaTimingInfo == LcvVgaTimingInfoMap.map("640x480@60")) {
-    vgaCtrl.io.timings.setAs_h640_v480_r60
-  } else if (vgaTimingInfo == LcvVgaTimingInfoMap.map("1920x1080@60")) {
-    vgaCtrl.io.timings.setAs_h1920_v1080_r60
-  } else {
-    // TODO: check if this works?
-    vgaTimingInfo.driveSpinalVgaTimings(
+  val vgaClockDomain = ClockDomain.external(
+    name="vgaClk",
+    withReset=true,//false,
+    frequency=FixedFrequency(
+      //25.0 MHz
+      cfg.vgaTimingInfo.pixelClk
+    ),
+  )
+  //val pixelFifo = StreamFifoCC(
+  //  dataType=Rgb(cfg.rgbCfg),
+  //  depth=io.misc.fifoDepth,
+  //  pushClock=ClockDomain.current,
+  //  popClock=vgaClockDomain,
+  //)
+  val lcvVgaCtrl = (
+    LcvVgaCtrl(
       clkRate=cfg.clkRate,
-      spinalVgaTimings=vgaCtrl.io.timings,
+      //rgbConfig=physRgbConfig,
+      rgbConfig=cfg.rgbCfg,
+      vgaTimingInfo=cfg.vgaTimingInfo,
+      fifoDepth=(
+        //cfg.ctrlFifoDepth
+        io.misc.fifoDepth
+      ),
     )
-  }
+  )
+  io.phys := lcvVgaCtrl.io.phys
+  io.misc := lcvVgaCtrl.io.misc
+  lcvVgaCtrl.io.en := True
+  //val vgaClockingArea = new ClockingArea(vgaClockDomain) {
+  //  val vgaCtrl = VgaCtrl(rgbConfig=cfg.rgbCfg)
 
-  //--------
-  when (vgaCtrl.io.vga.colorEn) {
-    io.phys.col := vgaCtrl.io.vga.color
-  } otherwise {
-    io.phys.col := io.phys.col.getZero
-  }
-  io.phys.hsync := vgaCtrl.io.vga.hSync
-  io.phys.vsync := vgaCtrl.io.vga.vSync
-  io.misc := io.misc.getZero
-  io.misc.allowOverride
-  io.misc.pastVisib := RegNext(io.misc.visib) init(False)
-  io.misc.visib := vgaCtrl.io.vga.colorEn
+  //  val vgaTimingInfo = cfg.vgaTimingInfo
+  //  //if (vgaTimingInfo == LcvVgaTimingInfoMap.map("640x480@60")) {
+  //  //  vgaCtrl.io.timings.setAs_h640_v480_r60
+  //  //} else if (vgaTimingInfo == LcvVgaTimingInfoMap.map("1920x1080@60")) {
+  //  //  vgaCtrl.io.timings.setAs_h1920_v1080_r60
+  //  //} else {
+  //    // TODO: check if this works?
+  //    vgaTimingInfo.driveSpinalVgaTimings(
+  //      clkRate=cfg.clkRate,
+  //      spinalVgaTimings=vgaCtrl.io.timings,
+  //    )
+  //  //}
+
+  //  //val lcvVgaCtrl = (
+  //  //  LcvVgaCtrl(
+  //  //    clkRate=cfg.clkRate,
+  //  //    //rgbConfig=physRgbConfig,
+  //  //    rgbConfig=cfg.rgbCfg,
+  //  //    vgaTimingInfo=cfg.vgaTimingInfo,
+  //  //    fifoDepth=(
+  //  //      //cfg.ctrlFifoDepth
+  //  //      io.misc.fifoDepth
+  //  //    ),
+  //  //  )
+  //  //)
+  //  //io.phys := lcvVgaCtrl.io.phys
+  //  //io.misc := lcvVgaCtrl.io.misc
+  //  //lcvVgaCtrl.io.en := True
+
+  //  //--------
+  //  when (vgaCtrl.io.vga.colorEn) {
+  //    io.phys.col := vgaCtrl.io.vga.color
+  //  } otherwise {
+  //    io.phys.col := io.phys.col.getZero
+  //  }
+  //  io.phys.hsync := vgaCtrl.io.vga.hSync
+  //  io.phys.vsync := vgaCtrl.io.vga.vSync
+  //  io.misc := io.misc.getZero
+  //  io.misc.allowOverride
+  //  io.misc.pastVisib := RegNext(io.misc.visib) init(False)
+  //  io.misc.visib := vgaCtrl.io.vga.colorEn
+  //  io.misc.pixelEn := True
+  //  vgaCtrl.io.softReset := RegNext(False) init(True)
+  //  //vgaCtrl.io.pixels <-/< myFbCtrl.io.pop
+  //  vgaCtrl.io.pixels <-/< pixelFifo.io.pop
+  //}
   //--------
   //val myDbgFbCfg = LcvBusFramebufferConfig(
   //  fbMmapCfg=cfg.myFbMmapCfg,
@@ -161,6 +227,8 @@ case class SnowHouseCpuFramebufferDemo(
       //myDbgFbCfg
     )
   )
+  //pixelFifo.io.push <-/< myFbCtrl.io.pop
+  lcvVgaCtrl.io.push <-/< myFbCtrl.io.pop
 
   val myFbMemDepth = (
     (if (cfg.myFbCfg.dblBuf) (2) else (1))
@@ -177,7 +245,8 @@ case class SnowHouseCpuFramebufferDemo(
       initBigInt={
         val myArr = new ArrayBuffer[BigInt]()
         for (idx <- 0 until myFbMemDepth) {
-          var toAdd = BigInt(idx)
+          //var toAdd = BigInt(idx)
+          val toAdd = BigInt(0x0)
           myArr += toAdd
           //myArr += BigInt(idx)
         }
@@ -352,66 +421,78 @@ case class SnowHouseCpuFramebufferDemo(
     myFbDbusSlicer.io.devVec(cfg.myFbMmapCfg.optAddrSliceVal.get)
   )
   myFbArbiter.io.hostVec.last <-/< myFbCtrl.io.bus
-  myFbMem.io.bus <-/< myFbArbiter.io.dev
+  myFbMem.io.bus << myFbArbiter.io.dev
 
 
   //io.fbBus <-/< myFbArbiter.io.dev
 
-  vgaCtrl.io.softReset := RegNext(False) init(True)
-  vgaCtrl.io.pixels <-/< myFbCtrl.io.pop
+  //lcvVgaCtrl.io.push <-/< myFbCtrl.io.pop
   //--------
 }
 
 object SnowHouseCpuFramebufferDemoToVerilog extends App {
-  Config.spinal.generateVerilog({
+  val cpuCfg = SnowHouseCpuConfig(
+    optFormal=(
+      //true
+      false
+    ),
+    //targetAltera=(
+    //  true
+    //),
+    programStr=(
+      "test/snowhousecpu-framebuffer-demo.bin"
+      //"test/snowhousecpu-test-0.bin"
+      //"test/snowhousecpu-test-1.bin"
+      //"test/snowhousecpu-test-2.bin"
+      //"test/snowhousecpu-test-3.bin"
+      //"test/snowhousecpu-test-4.bin"
+      //"test/snowhousecpu-test-5.bin"
+    ),
+    instrRamKind=(
+      0//,
+      //1,
+      //2,
+      //5
+    ),
+    //instrRamFetchLatency=(
+    //  2
+    //),
+    exposeRegFileWriteDataToIo=true,
+  )
+  val testProgram = SnowHouseCpuTestProgram(cfg=cpuCfg)
+  val demoCfg = SnowHouseCpuFramebufferDemoConfig(
+    program=testProgram.program,
+    clkRate=(
+      200 MHz
+      //150 MHz
+      //125 MHz
+      //100 MHz
+      //24.0 MHz
+      //6.0 MHz
+      //25.0 MHz
+    ),
+    rgbCfg=(
+      //RgbConfig(rWidth=5, gWidth=5, bWidth=5)
+      RgbConfig(rWidth=8, gWidth=8, bWidth=8)
+    ),
+    vgaTimingInfo=(
+      LcvVgaTimingInfoMap.map("640x480@60")
+      //LcvVgaTimingInfoMap.map("320x240@60")
+    ),
+    fbCnt2dShiftOne=ElabVec2[Boolean](
+      x=true,
+      y=true,
+    )
+  )
+  Config.spinalWithFreq(clkRate=demoCfg.clkRate).generateVerilog({
     //val cfg = SnowHouseCpuConfig(
     //  optFormal=(
     //    false
     //  )
     //)
-    val cpuCfg = SnowHouseCpuConfig(
-      optFormal=(
-        //true
-        false
-      ),
-      //targetAltera=(
-      //  true
-      //),
-      programStr=(
-        "test/snowhousecpu-test-0.bin"
-        //"test/snowhousecpu-test-1.bin"
-        //"test/snowhousecpu-test-2.bin"
-        //"test/snowhousecpu-test-3.bin"
-        //"test/snowhousecpu-test-4.bin"
-        //"test/snowhousecpu-test-5.bin"
-      ),
-      instrRamKind=(
-        0//,
-        //1,
-        //2,
-        //5
-      ),
-      //instrRamFetchLatency=(
-      //  2
-      //),
-      exposeRegFileWriteDataToIo=true,
-    )
-    val testProgram = SnowHouseCpuTestProgram(cfg=cpuCfg)
     //SnowHouseCpuWithDualRam(program=testProgram.program)
     SnowHouseCpuFramebufferDemo(
-      cfg=SnowHouseCpuFramebufferDemoConfig(
-        program=testProgram.program,
-        clkRate=100 MHz,
-        rgbCfg=(
-          //RgbConfig(rWidth=5, gWidth=5, bWidth=5)
-          RgbConfig(rWidth=8, gWidth=8, bWidth=8)
-        ),
-        vgaTimingInfo=LcvVgaTimingInfoMap.map("640x480@60"),
-        fbCnt2dShiftOne=ElabVec2[Boolean](
-          x=true,
-          y=true,
-        )
-      )
+      cfg=demoCfg
     )
   })
 }
@@ -424,7 +505,7 @@ object SnowHouseCpuFramebufferDemoSim extends App {
   )
 
   val programStr = "test/snowhousecpu-framebuffer-demo.bin"
-  val numClkCycles = 8192 * 8 //* 4 * 8
+  val numClkCycles = 8192 * 8 * 8 // * 8 * 8//2 //* 4//* 8 //* 4 * 8
   val cpuCfg = SnowHouseCpuConfig(
     optFormal=(
       //true
@@ -462,18 +543,61 @@ object SnowHouseCpuFramebufferDemoSim extends App {
   val testProgram = SnowHouseCpuTestProgram(cfg=cpuCfg)
   val demoCfg = SnowHouseCpuFramebufferDemoConfig(
     program=testProgram.program,
-    clkRate=100.0 MHz,
+    clkRate=(
+      //50.0 MHz
+      //125.0 MHz
+      //102.0 MHz
+      96.0 MHz
+      //48.0 MHz
+      //24.0 MHz
+      //12.0 MHz
+      //6.0 MHz
+      //25.0 MHz,
+    ),
     rgbCfg=RgbConfig(
       //rWidth=5, gWidth=5, bWidth=5
       rWidth=8, gWidth=8, bWidth=8
     ),
-    vgaTimingInfo=LcvVgaTimingInfoMap.map("640x480@60"),
+    vgaTimingInfo=(
+      //LcvVgaTimingInfoMap.map("640x480@60")
+      //LcvVgaTimingInfoMap.map("320x240@60")
+      //LcvVgaTimingInfoMap.map("320x240@60")
+      LcvVgaTimingInfo(
+        pixelClk=(
+          //6.0 MHz
+          //48.0 MHz
+          //24.0 MHz
+          //12.0 MHz
+          6.0 MHz
+        ),
+        htiming=LcvVgaTimingHv(
+          visib=(
+            //64
+            //640
+            76
+          ),
+          front=1,
+          sync=1,
+          back=1
+        ),
+        vtiming=LcvVgaTimingHv(
+          visib=(
+            //64
+            //480
+            76
+          ),
+          front=1,
+          sync=1,
+          back=1
+        ),
+      )
+    ),
     fbCnt2dShiftOne=ElabVec2[Boolean](
       x=true,
       y=true,
     ),
   )
-  Config.sim.compile({
+  Config.simWithFreq(demoCfg.clkRate).compile({
     val toComp = (
       SnowHouseCpuFramebufferDemo(
         //program=testProgram.program,
@@ -487,9 +611,40 @@ object SnowHouseCpuFramebufferDemoSim extends App {
     toComp
   }).doSim{dut => {
 
-    dut.clockDomain.forkStimulus(10)
+    //println(
+    //  s"help me out:${(1e9 ns) / demoCfg.clkRate}"
+    //)
+    //println(
+    //  //s"${(((1 sec) / demoCfg.clkRate) * 1e9)} "
+    //  //s"${(((1 sec) / demoCfg.clkRate)) ns}"
+    //  s"${(((1 sec) / demoCfg.clkRate)) sec}"
+    //)
+    dut.clockDomain.forkStimulus(
+      //(((1e9 ns) / demoCfg.clkRate) * 1.0).toInt //ns
+      //8
+      //((1e9) / demoCfg.clkRate)
+      (((1 sec) / demoCfg.clkRate)) sec //ns //ms
+    )
+    //dut.vgaClockDomain.forkStimulus(40)
     for (i <- 0 until numClkCycles) {
       dut.clockDomain.waitSampling()
+      //dut.vgaClockDomain.waitSampling()
+      //var tickVgaClk: Boolean = false
+      //if (
+      //  (
+      //    i
+      //    % (
+      //      //demoCfg.vgaTimingInfo.pixelClk / (1.0 MHz)
+      //      demoCfg.clkRate / demoCfg.vgaTimingInfo.pixelClk /// (1.0 MHz)
+      //    )
+      //  ) == 0
+      //) {
+      //  tickVgaClk = true
+      //  dut.vgaClockDomain.waitSampling()
+      //}
+      //println(
+      //  s"i:${i}, tickVgaClk:${tickVgaClk}"
+      //)
     }
   }}
 }
