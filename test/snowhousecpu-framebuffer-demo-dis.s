@@ -7,7 +7,7 @@ Disassembly of section .text:
 00000000 <_my_text_start>:
 	...
   10:	00 08 00 0f 	add	sp, r0, 2048
-  14:	a6 00 00 b0 	bl	r0, 664
+  14:	8a 00 00 b0 	bl	r0, 552
 	...
 
 00000020 <_deregister_tm_clones>:

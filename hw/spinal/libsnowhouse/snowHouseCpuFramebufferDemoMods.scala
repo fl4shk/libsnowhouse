@@ -30,7 +30,26 @@ case class SnowHouseCpuFramebufferDemoConfig(
   val myDbusCfg = cpuCfg.shCfg.subCfg.lcvDbusEtcCfg.loBusCfg
   //def myDbusCfg = //cpu.io.lcvDbus.cfg
 
-  val myFbMmapCfg = LcvBusMemMapConfig(
+  val myFbAddrSliceHi = 24
+  val myFbAddrSliceLo = 24
+  val myFbOptAddrSliceVal = Some(1)
+  val myFbDbusSlicerMmapCfg = LcvBusMemMapConfig(
+    busCfg=(
+      myDbusCfg
+      //LcvBusConfig(
+      //  mainCfg=myDbusCfg.mainCfg.mkCopyWithAllowingBurst(),
+      //  cacheCfg=myDbusCfg.cacheCfg,
+      //)
+    ),
+    addrSliceHi=myFbAddrSliceHi,//24,
+    addrSliceLo=myFbAddrSliceLo,//24,
+    optAddrSliceVal=(
+      // the framebuffer has bit 24 of the address asserted!
+      //Some(1)
+      myFbOptAddrSliceVal
+    )
+  )
+  val myFbCtrlMmapCfg = LcvBusMemMapConfig(
     busCfg=(
       //myDbusCfg
       LcvBusConfig(
@@ -38,15 +57,16 @@ case class SnowHouseCpuFramebufferDemoConfig(
         cacheCfg=myDbusCfg.cacheCfg,
       )
     ),
-    addrSliceHi=24,
-    addrSliceLo=24,
+    addrSliceHi=myFbAddrSliceHi,//24,
+    addrSliceLo=myFbAddrSliceLo,//24,
     optAddrSliceVal=(
       // the framebuffer has bit 24 of the address asserted!
-      Some(1)
+      //Some(1)
+      myFbOptAddrSliceVal
     )
   )
   val myFbCfg = LcvBusFramebufferConfig(
-    fbMmapCfg=myFbMmapCfg,
+    fbMmapCfg=myFbCtrlMmapCfg,
     rgbCfg=rgbCfg,
     //vgaTimingInfo=(
     //  //LcvVgaTimingInfoMap.map("320x240@60")
@@ -312,7 +332,7 @@ case class SnowHouseCpuFramebufferDemo(
 
   val myFbDbusSlicer = LcvBusSlicer(
     cfg=LcvBusSlicerConfig(
-      mmapCfg=cfg.myFbMmapCfg,
+      mmapCfg=cfg.myFbDbusSlicerMmapCfg,
     )
   )
 
@@ -328,7 +348,7 @@ case class SnowHouseCpuFramebufferDemo(
     cfg=LcvBusArbiterConfig(
       busCfg=(
         //cfg.myDbusCfg
-        cfg.myFbMmapCfg.busCfg
+        cfg.myFbCtrlMmapCfg.busCfg
       ),
       numHosts=2,
     )
@@ -337,7 +357,7 @@ case class SnowHouseCpuFramebufferDemo(
   cpu.io.lcvDbus.h2dBus.translateInto(myFbDbusSlicer.io.host.h2dBus)(
     dataAssignment=(outp, inp) => {
       outp.mainNonBurstInfo := inp.mainNonBurstInfo
-      outp.mainBurstInfo := outp.mainBurstInfo.getZero
+      //outp.mainBurstInfo := outp.mainBurstInfo.getZero
     }
   )
   myFbDbusSlicer.io.host.d2hBus.translateInto(cpu.io.lcvDbus.d2hBus)(
@@ -419,8 +439,23 @@ case class SnowHouseCpuFramebufferDemo(
     }
   )
 
+  def myFbDevBus = (
+    myFbDbusSlicer.io.devVec(cfg.myFbCtrlMmapCfg.optAddrSliceVal.get)
+  )
+  val myTempFbDbusSlicerDevBus = cloneOf(myFbArbiter.io.hostVec.head)
+  myFbDevBus.h2dBus.translateInto(myTempFbDbusSlicerDevBus.h2dBus)(
+    dataAssignment=(outp, inp) => {
+      outp.mainNonBurstInfo := inp.mainNonBurstInfo
+      outp.mainBurstInfo := outp.mainBurstInfo.getZero
+    }
+  )
+  myTempFbDbusSlicerDevBus.d2hBus.translateInto(myFbDevBus.d2hBus)(
+    dataAssignment=(outp, inp) => {
+      outp.mainNonBurstInfo := inp.mainNonBurstInfo
+    }
+  )
   myFbArbiter.io.hostVec.head <-/< (
-    myFbDbusSlicer.io.devVec(cfg.myFbMmapCfg.optAddrSliceVal.get)
+    myTempFbDbusSlicerDevBus
   )
   myFbArbiter.io.hostVec.last <-/< myFbCtrl.io.bus
   myFbMem.io.bus << myFbArbiter.io.dev
