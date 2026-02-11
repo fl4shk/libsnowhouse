@@ -168,7 +168,7 @@ case class SnowHouseCpuFramebufferDemo(
   lcvVgaCtrl.io.en := True
   when (
     //!io.misc.visib
-    lcvVgaCtrl.io.misc.visib
+    !lcvVgaCtrl.io.misc.visib
   ) {
     io.phys.col := io.phys.col.getZero
   }
