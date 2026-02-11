@@ -1159,8 +1159,8 @@ object SnowHouseCpuPipeStageInstrDecode {
       )
       .setName(s"InstrDecode_rPrevPreImm")
     )
-    rPrevPreImm.foreach(item => item.init(item.getZero))
-    //when (cId.up.isFiring) {
+    when (cId.up.isFiring) {
+      //rPrevPreImm.foreach(item => item.init(item.getZero))
       rPrevPreImm.foreach(item => {
         item.valid := instrIsPre
         item.payload := myTempPreImm
@@ -1181,7 +1181,7 @@ object SnowHouseCpuPipeStageInstrDecode {
       //    ).asUInt.resized
       //  )
       //}
-    //}
+    }
 
     //upPayload.splitOp := upPayload.splitOp.getZero
     //upPayload.splitOp.kind := SnowHouseSplitOpKind.CPY_CPYUI

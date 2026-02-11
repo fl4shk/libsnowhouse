@@ -7,3 +7,20 @@ for ((i=0; i<=15; i+=1)); do
 	#snowhousecpu-unknown-elf-objdump -d snowhousecpu-test-"$i".elf > snowhousecpu-test-"$i"-dis.s
 	snowhousecpu-unknown-elf-objdump -D snowhousecpu-test-"$i".elf > snowhousecpu-test-"$i"-dis.s
 done
+
+snowhousecpu-unknown-elf-gcc -O2 \
+	-c snowhousecpu-framebuffer-demo.c \
+	-o snowhousecpu-framebuffer-demo.o
+snowhousecpu-unknown-elf-as \
+	-c snowhousecpu-framebuffer-demo-start.s \
+	-o snowhousecpu-framebuffer-demo-start.o
+snowhousecpu-unknown-elf-gcc -O2 -Wl,--relax \
+	snowhousecpu-framebuffer-demo-start.o \
+	snowhousecpu-framebuffer-demo.o \
+	-o snowhousecpu-framebuffer-demo.elf
+snowhousecpu-unknown-elf-objcopy -O binary \
+	snowhousecpu-framebuffer-demo.elf \
+	snowhousecpu-framebuffer-demo.bin
+snowhousecpu-unknown-elf-objdump \
+	-D snowhousecpu-framebuffer-demo.elf \
+	> snowhousecpu-framebuffer-demo-dis.s

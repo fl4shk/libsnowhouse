@@ -24,7 +24,7 @@ case class SnowHouseCpuFramebufferDemoConfig(
   clkRate: HertzNumber,
   rgbCfg: RgbConfig,
   vgaTimingInfo: LcvVgaTimingInfo,
-  fbCnt2dShiftOne: ElabVec2[Boolean],
+  fbCnt2dShift: ElabVec2[Int],
 ) {
   def cpuCfg = program.cfg
   val myDbusCfg = cpuCfg.shCfg.subCfg.lcvDbusEtcCfg.loBusCfg
@@ -58,16 +58,18 @@ case class SnowHouseCpuFramebufferDemoConfig(
         x=(
           vgaTimingInfo.fbSize2d.x
           //320
-          >> (if (fbCnt2dShiftOne.x) (1) else (0))
+          //>> (if (fbCnt2dShift.x) (1) else (0))
+          >> fbCnt2dShift.x
         ),
         y=(
           vgaTimingInfo.fbSize2d.y
           //240
-          >> (if (fbCnt2dShiftOne.y) (1) else (0))
+          //>> (if (fbCnt2dShift.y) (1) else (0))
+          >> fbCnt2dShift.y
         ),
       )
     ),
-    cnt2dShiftOne=fbCnt2dShiftOne,
+    cnt2dShift=fbCnt2dShift,
     dblBuf=(
       //true
       false
@@ -215,7 +217,7 @@ case class SnowHouseCpuFramebufferDemo(
   //      ),
   //    )
   //  ),
-  //  cnt2dShiftOne=cfg.fbCnt2dShiftOne,
+  //  cnt2dShift=cfg.fbCnt2dShift,
   //  dblBuf=true,
   //)
 
@@ -429,8 +431,7 @@ case class SnowHouseCpuFramebufferDemo(
   //lcvVgaCtrl.io.push <-/< myFbCtrl.io.pop
   //--------
 }
-
-object SnowHouseCpuFramebufferDemoToVerilog extends App {
+object SnowHouseCpuFramebufferDemoSharedInfo {
   val cpuCfg = SnowHouseCpuConfig(
     optFormal=(
       //true
@@ -463,10 +464,10 @@ object SnowHouseCpuFramebufferDemoToVerilog extends App {
   val demoCfg = SnowHouseCpuFramebufferDemoConfig(
     program=testProgram.program,
     clkRate=(
-      200 MHz
+      //200 MHz
       //150 MHz
       //125 MHz
-      //100 MHz
+      100 MHz
       //24.0 MHz
       //6.0 MHz
       //25.0 MHz
@@ -479,11 +480,15 @@ object SnowHouseCpuFramebufferDemoToVerilog extends App {
       LcvVgaTimingInfoMap.map("640x480@60")
       //LcvVgaTimingInfoMap.map("320x240@60")
     ),
-    fbCnt2dShiftOne=ElabVec2[Boolean](
-      x=true,
-      y=true,
+    fbCnt2dShift=ElabVec2[Int](
+      x=1,
+      y=1,
     )
   )
+}
+
+object SnowHouseCpuFramebufferDemoToVerilog extends App {
+  val demoCfg = SnowHouseCpuFramebufferDemoSharedInfo.demoCfg
   Config.spinalWithFreq(clkRate=demoCfg.clkRate).generateVerilog({
     //val cfg = SnowHouseCpuConfig(
     //  optFormal=(
@@ -505,7 +510,7 @@ object SnowHouseCpuFramebufferDemoSim extends App {
   )
 
   val programStr = "test/snowhousecpu-framebuffer-demo.bin"
-  val numClkCycles = 8192 * 8 * 8 // * 8 * 8//2 //* 4//* 8 //* 4 * 8
+  val numClkCycles = 8192 * 8 * 8 * 8 * 8//2 //* 4//* 8 //* 4 * 8
   val cpuCfg = SnowHouseCpuConfig(
     optFormal=(
       //true
@@ -541,7 +546,7 @@ object SnowHouseCpuFramebufferDemoSim extends App {
     ),
   )
   val testProgram = SnowHouseCpuTestProgram(cfg=cpuCfg)
-  val demoCfg = SnowHouseCpuFramebufferDemoConfig(
+  val altDemoCfg = SnowHouseCpuFramebufferDemoConfig(
     program=testProgram.program,
     clkRate=(
       //50.0 MHz
@@ -574,7 +579,8 @@ object SnowHouseCpuFramebufferDemoSim extends App {
           visib=(
             //64
             //640
-            76
+            //76
+            160
           ),
           front=1,
           sync=1,
@@ -592,10 +598,14 @@ object SnowHouseCpuFramebufferDemoSim extends App {
         ),
       )
     ),
-    fbCnt2dShiftOne=ElabVec2[Boolean](
-      x=true,
-      y=true,
+    fbCnt2dShift=ElabVec2[Int](
+      x=1,
+      y=1,
     ),
+  )
+  val demoCfg = (
+    SnowHouseCpuFramebufferDemoSharedInfo.demoCfg
+    //altDemoCfg
   )
   Config.simWithFreq(demoCfg.clkRate).compile({
     val toComp = (

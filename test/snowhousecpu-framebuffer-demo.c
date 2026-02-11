@@ -2,12 +2,23 @@
 
 volatile uint32_t* fb = (volatile uint32_t*)0x1000000ull;
 
-const uint32_t FB_WIDTH = /*64;*/ /*76 >> 1*/ 320;
-const uint32_t FB_HEIGHT = /*64;*/ /*76 >> 1*/ 240;
+const uint32_t FB_WIDTH = (
+	/*64;*/ /*76 >> 1*/
+	320
+	//160 >> 1
+);
+const uint32_t FB_HEIGHT = (
+	/*64;*/ 
+	240
+	//76 >> 1
+);
 const uint32_t FB_SIZE = FB_HEIGHT * FB_WIDTH;
+volatile uint32_t* to_keep_loop_going = (
+	(volatile uint32_t*)0x4ull
+);
 
 int main(int argc, char** argv) {
-	for (;;) {
+	//for (;;) {
 
 		//uint32_t r = 0;
 		//uint32_t g = 0;
@@ -27,5 +38,7 @@ int main(int argc, char** argv) {
 				//fb[j * FB_WIDTH + i]
 			}
 		}
+	//}
+	for (;;) {
 	}
 }

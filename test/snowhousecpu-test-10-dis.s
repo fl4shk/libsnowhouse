@@ -1030,6 +1030,8 @@ Disassembly of section .text:
      ff4:	00 00 30 05 	add	r5, r3, 0
      ff8:	00 00 30 05 	add	r5, r3, 0
      ffc:	00 00 30 05 	add	r5, r3, 0
+
+00001000 <_stack>:
     1000:	00 00 30 05 	add	r5, r3, 0
     1004:	00 00 30 05 	add	r5, r3, 0
     1008:	00 00 30 05 	add	r5, r3, 0

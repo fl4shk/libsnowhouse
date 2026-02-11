@@ -5,40 +5,47 @@
 .global _main
 	.type	_main, @function
 _main:
-	cpy r0, r0
-	cpy r0, r0
-	cpy r0, r0
-	cpy r0, r0
-	cpy sp, 0x800
-	add sp, sp, -12  // addsi3: =r, r, i
+	add sp, sp, -8  // addsi3: =r, r, i
 	str r7, sp, 0        // *mov32: =B, r
-	str r8, sp, 4        // *mov32: =B, r
-	str lr, sp, 8        // *mov32: =B, r
+	str lr, sp, 4        // *mov32: =B, r
+// 47 "snowhousecpu-framebuffer-demo.c" 1
+	cpy r0, r0
+cpy r0, r0
+cpy r0, r0
+cpy r0, r0
+cpy sp, 0x800
+
+// 0 "" 2
 	cpy r1, _fb        // *mov32: =r, i
-	ldr r8, r1, 0x0        // *mov32: =r, B
-	cpy r5, 320        // *mov32: =r, i
-	cpy r7, 76800        // *mov32: =r, i
-.L4:
-	cpy lr, r8        // *mov32: =r, r
-	cpy r4, 0        // *mov32: =r, i
-	cpy r6, r4        // *mov32: =r, r
-	cpy r3, lr        // *mov32: =r, r
+	ldr r3, r1, 0x0        // *mov32: =r, B
+	cpy r5, 0        // *mov32: =r, i
+	cpy r2, r5        // *mov32: =r, r
+	cpy r7, 320        // *mov32: =r, i
+	cpy lr, 76800        // *mov32: =r, i
+.L2:
+	cpy r4, r3        // *mov32: =r, r
 	cpy r1, 0        // *mov32: =r, i
 .L3:
-	and r2, r1, 255
-	add r2, r2, r4  // addsi3: =r, r, r
-	str r2, r3, 0x0        // *mov32: =B, r
+	and r6, r1, 255
+	add r6, r6, r5  // addsi3: =r, r, r
+	str r6, r4, 0x0        // *mov32: =B, r
 	add r1, r1, 1  // addsi3: =r, r, i
-	add r3, r3, 4  // addsi3: =r, r, i
-	bne r1, r5, .L3
-	add lr, lr, 1280  // addsi3: =r, r, i
-	add r6, r6, 320  // addsi3: =r, r, i
-	add r4, r4, 256  // addsi3: =r, r, i
-	beq r6, r7, .L4
-	cpy r3, lr        // *mov32: =r, r
-	cpy r1, 0        // *mov32: =r, i
-	beq r0, r0, .L3
+	add r4, r4, 4  // addsi3: =r, r, i
+	bne r1, r7, .L3
+	add r3, r3, 1280  // addsi3: =r, r, i
+	add r2, r2, 320  // addsi3: =r, r, i
+	add r5, r5, 256  // addsi3: =r, r, i
+	bne r2, lr, .L2
+.L4:
+	beq r0, r0, .L4
 	.size	_main, .-_main
+.global _to_keep_loop_going
+	.section	.data
+	.align 4
+	.type	_to_keep_loop_going, @object
+	.size	_to_keep_loop_going, 4
+_to_keep_loop_going:
+	.long	4
 .global _FB_SIZE
 	.section	.rodata
 	.align 4
