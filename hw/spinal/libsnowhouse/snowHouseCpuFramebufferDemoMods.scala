@@ -133,7 +133,7 @@ case class SnowHouseCpuFramebufferDemo(
   io.rawSnesButtons.ready := True//False
   //--------
   val cpu = SnowHouseCpuWithoutRam(program=cfg.program)
-  cpu.io.idsIraIrq.nextValid := False
+  //cpu.io.idsIraIrq.nextValid := False
   //--------
   val vgaClockDomain = ClockDomain.external(
     name="vgaClk",
@@ -161,9 +161,68 @@ case class SnowHouseCpuFramebufferDemo(
       ),
     )
   )
+  io.phys.setAsReg() init(io.phys.getZero)
+  io.misc.setAsReg() init(io.misc.getZero)
   io.phys := lcvVgaCtrl.io.phys
   io.misc := lcvVgaCtrl.io.misc
   lcvVgaCtrl.io.en := True
+  when (
+    //!io.misc.visib
+    lcvVgaCtrl.io.misc.visib
+  ) {
+    io.phys.col := io.phys.col.getZero
+  }
+
+  object MyIrqState
+  extends SpinalEnum(defaultEncoding=binaryOneHot) {
+    val
+      IDLE,
+      VBLANK
+      = newElement();
+  }
+  val rMyIrqState = (
+    Reg(MyIrqState())
+    init(MyIrqState.IDLE)
+  )
+  //cpu.io.idsIraIrq.nextValid
+  val rIrqValid = Reg(Bool(), init=False)
+  cpu.io.idsIraIrq.nextValid := (
+    rIrqValid
+    //RegNext(
+    //  cpu.io.idsIraIrq.nextValid,
+    //  init=cpu.io.idsIraIrq.nextValid.getZero
+    //)
+  )
+  switch (rMyIrqState) {
+    is (MyIrqState.IDLE) {
+      when (
+        rose(
+          RegNext(
+            lcvVgaCtrl.io.misc.vpipeS =/= LcvVgaState.visib,
+            init=False
+          )
+        )
+      ) {
+        rMyIrqState := MyIrqState.VBLANK
+        rIrqValid := True
+      }
+    }
+    is (MyIrqState.VBLANK) {
+      //cpu.io.idsIraIrq 
+      when (
+        //RegNext(
+        //  cpu.io.idsIraIrq.nextValid
+        //  init=False
+        //)
+        rIrqValid
+        && cpu.io.idsIraIrq.ready
+      ) {
+        rIrqValid := False
+        rMyIrqState := MyIrqState.IDLE
+      }
+    }
+  }
+
   //val vgaClockingArea = new ClockingArea(vgaClockDomain) {
   //  val vgaCtrl = VgaCtrl(rgbConfig=cfg.rgbCfg)
 
