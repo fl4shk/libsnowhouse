@@ -94,88 +94,88 @@ Disassembly of section .text:
  138:	04 00 f0 0f 	add	sp, sp, 4
  13c:	00 00 d6 a0 	jl	r0, lr
 
-00000140 <___libc_init_array>:
- 140:	f4 ff f0 0f 	add	sp, sp, -12
- 144:	00 00 f1 97 	str	r7, sp, 0
- 148:	04 00 f1 98 	str	r8, sp, 4
- 14c:	08 00 f1 9d 	str	lr, sp, 8
- 150:	00 00 00 c0 	add	r7, r0, 0 // pre #0x0
- 154:	00 00 00 07 
- 158:	00 00 00 c0 	add	r7, r7, 0 // pre #0x0
- 15c:	00 00 70 07 
- 160:	25 00 70 77 	asr	r7, r7, 2
- 164:	00 00 00 08 	add	r8, r0, 0
+00000140 <_memcpy>:
+ 140:	08 00 00 a3 	beq	r3, r0, 32
+ 144:	00 00 13 03 	add	r3, r1, r3
+ 148:	00 00 10 04 	add	r4, r1, 0
+ 14c:	00 00 20 05 	add	r5, r2, 0
 
-00000168 <.L2>:
- 168:	12 00 71 a8 	bne	r8, r7, 72
- 16c:	00 00 00 c0 	add	r2, r0, 0 // pre #0x0
- 170:	00 00 00 02 
- 174:	00 00 00 01 	add	r1, r0, 0
- 178:	02 00 10 a2 	beq	r2, r1, 8
- 17c:	ff ff 00 c0 	bl	lr, -388 // pre #0xffff
- 180:	9f ff ff bd 
+00000150 <.Lmemcpy_loop>:
+ 150:	00 00 54 92 	ldub	r2, r5, 0
+ 154:	00 00 47 92 	stb	r2, r4, 0
+ 158:	01 00 40 04 	add	r4, r4, 1
+ 15c:	01 00 50 05 	add	r5, r5, 1
+ 160:	fb ff 31 a4 	bne	r4, r3, -20
 
-00000184 <.L4>:
- 184:	00 00 00 c0 	add	r7, r0, 0 // pre #0x0
- 188:	00 00 00 07 
- 18c:	00 00 00 c0 	add	r7, r7, 0 // pre #0x0
- 190:	00 00 70 07 
- 194:	25 00 70 77 	asr	r7, r7, 2
- 198:	00 00 00 08 	add	r8, r0, 0
+00000164 <.Lmemcpy_end>:
+ 164:	00 00 d6 a0 	jl	r0, lr
 
-0000019c <.L5>:
- 19c:	0b 00 71 a8 	bne	r8, r7, 44
- 1a0:	00 00 f0 9d 	ldr	lr, sp, 0
- 1a4:	04 00 f0 98 	ldr	r8, sp, 4
- 1a8:	08 00 f0 97 	ldr	r7, sp, 8
- 1ac:	0c 00 f0 0f 	add	sp, sp, 12
- 1b0:	00 00 d6 a0 	jl	r0, lr
+00000168 <_memset>:
+ 168:	05 00 00 a3 	beq	r3, r0, 20
+ 16c:	00 00 13 03 	add	r3, r1, r3
+ 170:	00 00 10 04 	add	r4, r1, 0
 
-000001b4 <.L3>:
- 1b4:	21 00 80 71 	lsl	r1, r8, 2
- 1b8:	00 00 00 c0 	ldr	r1, r1, 0 // pre #0x0
- 1bc:	00 00 10 91 
- 1c0:	00 00 16 ad 	jl	lr, r1
- 1c4:	01 00 80 08 	add	r8, r8, 1
- 1c8:	e7 ff 00 a0 	beq	r0, r0, -100
+00000174 <.Lmemset_loop>:
+ 174:	00 00 47 92 	stb	r2, r4, 0
+ 178:	01 00 40 04 	add	r4, r4, 1
+ 17c:	fd ff 31 a4 	bne	r4, r3, -12
 
-000001cc <.L6>:
- 1cc:	21 00 80 71 	lsl	r1, r8, 2
- 1d0:	00 00 00 c0 	ldr	r1, r1, 0 // pre #0x0
- 1d4:	00 00 10 91 
- 1d8:	00 00 16 ad 	jl	lr, r1
- 1dc:	01 00 80 08 	add	r8, r8, 1
- 1e0:	ee ff 00 a0 	beq	r0, r0, -72
+00000180 <.Lmemset_end>:
+ 180:	00 00 d6 a0 	jl	r0, lr
 	...
 
-000001f0 <_memcpy>:
- 1f0:	00 00 00 04 	add	r4, r0, 0
+00000190 <___libc_init_array>:
+ 190:	f4 ff f0 0f 	add	sp, sp, -12
+ 194:	00 00 f1 97 	str	r7, sp, 0
+ 198:	04 00 f1 98 	str	r8, sp, 4
+ 19c:	08 00 f1 9d 	str	lr, sp, 8
+ 1a0:	00 00 00 c0 	add	r7, r0, 0 // pre #0x0
+ 1a4:	00 00 00 07 
+ 1a8:	00 00 00 c0 	add	r7, r7, 0 // pre #0x0
+ 1ac:	00 00 70 07 
+ 1b0:	25 00 70 77 	asr	r7, r7, 2
+ 1b4:	00 00 00 08 	add	r8, r0, 0
 
-000001f4 <.L2>:
- 1f4:	01 00 41 a3 	bne	r3, r4, 4
- 1f8:	00 00 d6 a0 	jl	r0, lr
+000001b8 <.L2>:
+ 1b8:	12 00 71 a8 	bne	r8, r7, 72
+ 1bc:	00 00 00 c0 	add	r2, r0, 0 // pre #0x0
+ 1c0:	00 00 00 02 
+ 1c4:	00 00 00 01 	add	r1, r0, 0
+ 1c8:	02 00 10 a2 	beq	r2, r1, 8
+ 1cc:	ff ff 00 c0 	bl	lr, -468 // pre #0xffff
+ 1d0:	8b ff ff bd 
 
-000001fc <.L3>:
- 1fc:	00 00 14 05 	add	r5, r1, r4
- 200:	00 00 24 06 	add	r6, r2, r4
- 204:	00 00 64 96 	ldub	r6, r6, 0
- 208:	00 00 57 96 	stb	r6, r5, 0
- 20c:	01 00 40 04 	add	r4, r4, 1
- 210:	f8 ff 00 a0 	beq	r0, r0, -32
-	...
+000001d4 <.L4>:
+ 1d4:	00 00 00 c0 	add	r7, r0, 0 // pre #0x0
+ 1d8:	00 00 00 07 
+ 1dc:	00 00 00 c0 	add	r7, r7, 0 // pre #0x0
+ 1e0:	00 00 70 07 
+ 1e4:	25 00 70 77 	asr	r7, r7, 2
+ 1e8:	00 00 00 08 	add	r8, r0, 0
 
-00000220 <_memset>:
- 220:	00 00 10 04 	add	r4, r1, 0
- 224:	00 00 13 03 	add	r3, r1, r3
+000001ec <.L5>:
+ 1ec:	0b 00 71 a8 	bne	r8, r7, 44
+ 1f0:	00 00 f0 9d 	ldr	lr, sp, 0
+ 1f4:	04 00 f0 98 	ldr	r8, sp, 4
+ 1f8:	08 00 f0 97 	ldr	r7, sp, 8
+ 1fc:	0c 00 f0 0f 	add	sp, sp, 12
+ 200:	00 00 d6 a0 	jl	r0, lr
 
-00000228 <.L2>:
- 228:	01 00 31 a4 	bne	r4, r3, 4
- 22c:	00 00 d6 a0 	jl	r0, lr
+00000204 <.L3>:
+ 204:	21 00 80 71 	lsl	r1, r8, 2
+ 208:	00 00 00 c0 	ldr	r1, r1, 0 // pre #0x0
+ 20c:	00 00 10 91 
+ 210:	00 00 16 ad 	jl	lr, r1
+ 214:	01 00 80 08 	add	r8, r8, 1
+ 218:	e7 ff 00 a0 	beq	r0, r0, -100
 
-00000230 <.L3>:
- 230:	00 00 47 92 	stb	r2, r4, 0
- 234:	01 00 40 04 	add	r4, r4, 1
- 238:	fb ff 00 a0 	beq	r0, r0, -20
+0000021c <.L6>:
+ 21c:	21 00 80 71 	lsl	r1, r8, 2
+ 220:	00 00 00 c0 	ldr	r1, r1, 0 // pre #0x0
+ 224:	00 00 10 91 
+ 228:	00 00 16 ad 	jl	lr, r1
+ 22c:	01 00 80 08 	add	r8, r8, 1
+ 230:	ee ff 00 a0 	beq	r0, r0, -72
 
 Disassembly of section .init:
 
@@ -191,12 +191,12 @@ Disassembly of section .init:
  260:	04 04 00 03 	add	r3, r0, 1028
  264:	e0 03 00 02 	add	r2, r0, 992
  268:	e0 03 00 01 	add	r1, r0, 992
- 26c:	e0 ff ff bd 	bl	lr, -128
+ 26c:	b4 ff ff bd 	bl	lr, -304
  270:	11 04 00 03 	add	r3, r0, 1041
  274:	00 00 00 02 	add	r2, r0, 0
  278:	04 04 00 01 	add	r1, r0, 1028
- 27c:	e8 ff ff bd 	bl	lr, -96
- 280:	af ff ff bd 	bl	lr, -324
+ 27c:	ba ff ff bd 	bl	lr, -280
+ 280:	c3 ff ff bd 	bl	lr, -244
  284:	00 00 00 02 	add	r2, r0, 0
  288:	00 00 20 01 	add	r1, r2, 0
  28c:	08 00 00 bd 	bl	lr, 32
@@ -222,27 +222,27 @@ Disassembly of section .text.startup:
  2b8:	04 00 f1 9d 	str	lr, sp, 4
  2bc:	00 04 00 01 	add	r1, r0, 1024
  2c0:	00 00 10 9d 	ldr	lr, r1, 0
- 2c4:	00 00 00 04 	add	r4, r0, 0
- 2c8:	00 00 40 06 	add	r6, r4, 0
- 2cc:	40 01 00 05 	add	r5, r0, 320
- 2d0:	01 00 00 c0 	add	r7, r0, 76800 // pre #0x1
- 2d4:	00 2c 00 07 
+ 2c4:	00 00 00 06 	add	r6, r0, 0
+ 2c8:	40 01 00 05 	add	r5, r0, 320
+ 2cc:	f0 00 00 07 	add	r7, r0, 240
 
-000002d8 <.L2>:
+000002d0 <.L2>:
+ 2d0:	33 00 60 74 	lsr	r4, r6, 3
+ 2d4:	51 00 40 74 	lsl	r4, r4, 5
  2d8:	00 00 d0 03 	add	r3, lr, 0
- 2dc:	00 00 00 01 	add	r1, r0, 0
+ 2dc:	00 00 00 02 	add	r2, r0, 0
 
 000002e0 <.L3>:
- 2e0:	ff 00 10 62 	and	r2, r1, 255
- 2e4:	00 00 24 02 	add	r2, r2, r4
- 2e8:	00 00 31 92 	str	r2, r3, 0
- 2ec:	01 00 10 01 	add	r1, r1, 1
- 2f0:	04 00 30 03 	add	r3, r3, 4
- 2f4:	fa ff 51 a1 	bne	r1, r5, -24
- 2f8:	00 05 d0 0d 	add	lr, lr, 1280
- 2fc:	40 01 60 06 	add	r6, r6, 320
- 300:	00 01 40 04 	add	r4, r4, 256
- 304:	f4 ff 71 a6 	bne	r6, r7, -48
+ 2e0:	33 00 20 71 	lsr	r1, r2, 3
+ 2e4:	1f 00 10 61 	and	r1, r1, 31
+ 2e8:	00 00 14 51 	or	r1, r1, r4
+ 2ec:	00 00 36 91 	sth	r1, r3, 0
+ 2f0:	01 00 20 02 	add	r2, r2, 1
+ 2f4:	02 00 30 03 	add	r3, r3, 2
+ 2f8:	f9 ff 51 a2 	bne	r2, r5, -28
+ 2fc:	01 00 60 06 	add	r6, r6, 1
+ 300:	80 02 d0 0d 	add	lr, lr, 640
+ 304:	f2 ff 71 a6 	bne	r6, r7, -56
 
 00000308 <.L4>:
  308:	ff ff 00 a0 	beq	r0, r0, -4

@@ -818,9 +818,15 @@ protected:		// variables and helper functions
 						//((_top->io_phys_col_r & 0xf) << 20)
 						//+ ((_top->io_phys_col_g & 0xf) << 12)
 						//+ ((_top->io_phys_col_b & 0xf) << 4)
-						((_top->io_phys_col_r & 0xff) << 16)
-						+ ((_top->io_phys_col_g & 0xff) << 8)
-						+ ((_top->io_phys_col_b & 0xff) << 0)
+						//((_top->io_phys_col_r & 0xff) << 16)
+						//+ ((_top->io_phys_col_g & 0xff) << 8)
+						//+ ((_top->io_phys_col_b & 0xff) << 0)
+						//((_top->io_phys_col_r & 0xff) << (16 + 5))
+						//+ ((_top->io_phys_col_g & 0xff) << (8 + 5))
+						//+ ((_top->io_phys_col_b & 0xff) << (0 + 5))
+						((_top->io_phys_col_r & 0x1f) << (16 + 3))
+						+ ((_top->io_phys_col_g & 0x1f) << (8 + 3))
+						+ ((_top->io_phys_col_b & 0x1f) << (0 + 3))
 					)
 					//_top->io_phys_col_r & 0xf,
 					//_top->io_phys_col_g & 0xf,

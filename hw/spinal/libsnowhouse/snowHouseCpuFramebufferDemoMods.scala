@@ -567,8 +567,8 @@ object SnowHouseCpuFramebufferDemoSharedInfo {
       //25.0 MHz
     ),
     rgbCfg=(
-      //RgbConfig(rWidth=5, gWidth=5, bWidth=5)
-      RgbConfig(rWidth=8, gWidth=8, bWidth=8)
+      RgbConfig(rWidth=5, gWidth=5, bWidth=5)
+      //RgbConfig(rWidth=8, gWidth=8, bWidth=8)
     ),
     vgaTimingInfo=(
       LcvVgaTimingInfoMap.map("640x480@60")
@@ -654,8 +654,8 @@ object SnowHouseCpuFramebufferDemoSim extends App {
       //25.0 MHz,
     ),
     rgbCfg=RgbConfig(
-      //rWidth=5, gWidth=5, bWidth=5
-      rWidth=8, gWidth=8, bWidth=8
+      rWidth=5, gWidth=5, bWidth=5
+      //rWidth=8, gWidth=8, bWidth=8
     ),
     vgaTimingInfo=(
       //LcvVgaTimingInfoMap.map("640x480@60")

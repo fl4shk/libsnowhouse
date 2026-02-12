@@ -2046,6 +2046,7 @@ case class SnowHousePipeStageInstrFetch(
           )
           myIbusRegPcInfo.branchTgtBufElem.foreach(item => {
             item := branchPredictor.io.result.rdBtbElem
+            //item.valid := myMainPredictCond
           })
         } else {
           val temp = (
@@ -2362,11 +2363,12 @@ case class SnowHousePrePipeStageExSetBranchPredictEtcArea(
   outp.branchTgtBufElem(1).srcRegPc := outp.laggingRegPc
 
   outp.branchPredictReplaceBtbElem := (
-    RegNextWhen(
-      next=outp.branchPredictTkn,
-      cond=link.up.isFiring,
-      init=outp.branchPredictTkn.getZero,
-    )
+    outp.branchPredictTkn
+    //RegNextWhen(
+    //  next=outp.branchPredictTkn,
+    //  cond=link.up.isFiring,
+    //  init=outp.branchPredictTkn.getZero,
+    //)
     //&& upPayload(0).branchTgtBufElem(0).fire
 
     && outp.branchTgtBufElem(0).fire
