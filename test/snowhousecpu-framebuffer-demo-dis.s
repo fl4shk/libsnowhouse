@@ -222,29 +222,28 @@ Disassembly of section .text.startup:
  2bc:	00 04 00 01 	add	r1, r0, 1024
  2c0:	00 00 10 9d 	ldr	lr, r1, 0
  2c4:	00 00 00 06 	add	r6, r0, 0
- 2c8:	40 01 00 05 	add	r5, r0, 320
- 2cc:	f0 00 00 07 	add	r7, r0, 240
+ 2c8:	a0 00 00 05 	add	r5, r0, 160
+ 2cc:	26 00 00 07 	add	r7, r0, 38
 
 000002d0 <.L2>:
  2d0:	33 00 60 74 	lsr	r4, r6, 3
  2d4:	51 00 40 74 	lsl	r4, r4, 5
  2d8:	00 00 d0 03 	add	r3, lr, 0
- 2dc:	00 00 00 02 	add	r2, r0, 0
+ 2dc:	00 00 00 01 	add	r1, r0, 0
 
 000002e0 <.L3>:
- 2e0:	33 00 20 71 	lsr	r1, r2, 3
- 2e4:	1f 00 10 61 	and	r1, r1, 31
- 2e8:	00 00 14 51 	or	r1, r1, r4
- 2ec:	00 00 36 91 	sth	r1, r3, 0
- 2f0:	01 00 20 02 	add	r2, r2, 1
- 2f4:	02 00 30 03 	add	r3, r3, 2
- 2f8:	f9 ff 51 a2 	bne	r2, r5, -28
- 2fc:	01 00 60 06 	add	r6, r6, 1
- 300:	80 02 d0 0d 	add	lr, lr, 640
- 304:	f2 ff 71 a6 	bne	r6, r7, -56
+ 2e0:	33 00 10 72 	lsr	r2, r1, 3
+ 2e4:	00 00 24 52 	or	r2, r2, r4
+ 2e8:	00 00 36 92 	sth	r2, r3, 0
+ 2ec:	01 00 10 01 	add	r1, r1, 1
+ 2f0:	02 00 30 03 	add	r3, r3, 2
+ 2f4:	fa ff 51 a1 	bne	r1, r5, -24
+ 2f8:	01 00 60 06 	add	r6, r6, 1
+ 2fc:	40 01 d0 0d 	add	lr, lr, 320
+ 300:	f3 ff 71 a6 	bne	r6, r7, -52
 
-00000308 <.L4>:
- 308:	ff ff 00 a0 	beq	r0, r0, -4
+00000304 <.L4>:
+ 304:	ff ff 00 a0 	beq	r0, r0, -4
 
 Disassembly of section .rodata:
 
@@ -270,15 +269,15 @@ Disassembly of section .rodata:
 	...
 
 00000360 <_FB_SIZE>:
- 360:	00 2c 01 00 	add	r0, r0, r1
+ 360:	c0 17 00 00 	add	r0, r0, 6080
 	...
 
 00000370 <_FB_HEIGHT>:
- 370:	f0 00 00 00 	add	r0, r0, 240
+ 370:	26 00 00 00 	add	r0, r0, 38
 	...
 
 00000380 <_FB_WIDTH>:
- 380:	40 01 00 00 	add	r0, r0, 320
+ 380:	a0 00 00 00 	add	r0, r0, 160
 	...
 
 00000390 <_snowhousecpu_regno_to_class>:

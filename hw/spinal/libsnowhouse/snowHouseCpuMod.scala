@@ -1921,8 +1921,14 @@ object SnowHouseCpuPipeStageInstrDecode {
           isBl=false,
           someTempSimmNoShift=tempSimmNoShift,
         )
-        myTempBtbElem := tempBtbElemWithBrKind.btbElem
-        upPayload.btbElemBranchKind(1) := tempBtbElemWithBrKind.branchKind
+        when (cId.up.isFiring) {
+          myTempBtbElem := (
+            tempBtbElemWithBrKind.btbElem
+          )
+          upPayload.btbElemBranchKind(1) := (
+            tempBtbElemWithBrKind.branchKind
+          )
+        }
       }
       is (BlRaSimm24._1) {
         val tempBtbElemWithBrKind = _commonDecodeBranch(
@@ -1978,8 +1984,14 @@ object SnowHouseCpuPipeStageInstrDecode {
           isBl=true,
           someTempSimmNoShift=tempBlSimm,
         )
-        myTempBtbElem := tempBtbElemWithBrKind.btbElem
-        upPayload.btbElemBranchKind(1) := tempBtbElemWithBrKind.branchKind
+        when (cId.up.isFiring) {
+          myTempBtbElem := (
+            tempBtbElemWithBrKind.btbElem
+          )
+          upPayload.btbElemBranchKind(1) := (
+            tempBtbElemWithBrKind.branchKind
+          )
+        }
       }
       //is (CpyuRaRb._1) {
       //  switch (encInstr.last.rcIdx(0 downto 0)) {

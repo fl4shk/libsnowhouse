@@ -4019,6 +4019,48 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
   ) {
     rSavedTempPsExSetPcValid := False
   }
+
+  //val tempBtbElemDontPredict = (
+  //  //rose(
+  //    //RegNext(next=io.branchPredictTkn, init=False)
+  //    RegNext/*When*/(
+  //      next=RegNextWhen(
+  //        next=(
+  //          io.btbElemDontPredict
+  //          //|| io.branchPredictReplaceBtbElem
+  //        ),
+  //        cond=(
+  //          // TODO:
+  //          // maybe change this back to `io.upIsReady` once the logic
+  //          // for branch prediction plus load "delay slot" bubbles
+  //          // is put into the `SnowHousePipeStageInstrDecode`
+  //          // pipeline stage
+  //          //io.upIsReady
+  //          io.upIsFiring
+  //        ),
+  //        init=False
+  //      ),
+  //      //cond=io.upIsFiring,
+  //      init=False,
+  //    )
+  //    //&& io.upIsReady
+  //  //)
+  //)
+  //val rSavedTempBtbElemDontPredict = Reg(Bool(), init=False)
+  //val stickyTempBtbElemDontPredict = (
+  //  tempBtbElemDontPredict
+  //  || rSavedTempBtbElemDontPredict
+  //)
+  //when (io.upIsValid) {
+  //  when (tempBtbElemDontPredict) {
+  //    rSavedTempBtbElemDontPredict := True
+  //  }
+  //}
+  //when (io.upIsFiring) {
+  //  rSavedTempBtbElemDontPredict := False
+  //}
+
+
   val tempBranchMispredictNotTaken = Bool()
   val tempBranchPredictTkn = (
     //rose(
@@ -7213,6 +7255,7 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
   io.psExSetPc.branchTgtBufElem.dontPredict.allowOverride
   io.psExSetPc.branchTgtBufElem.dontPredict := (
     io.btbElemDontPredict
+    //stickyTempBtbElemDontPredict
   )
   when (
     //!io.takeIrq
@@ -9108,7 +9151,9 @@ case class SnowHousePipeStageExecute(
               //  //&& !prevStageFoundBubble
               //)
             )
-            doSetOtherSetOutpMmwBranchPredictorInputs(false)
+            when (!myShouldIgnoreInstr.last) {
+              doSetOtherSetOutpMmwBranchPredictorInputs(false)
+            }
           }
         }
       } otherwise {
