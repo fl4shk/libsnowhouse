@@ -6,6 +6,7 @@ volatile uint16_t* fb = (volatile uint16_t*)0x1000000ull;
 const uint32_t FB_WIDTH = (
 	/*64;*/ /*76 >> 1*/
 	320
+	//160
 	//160 >> 1
 );
 const uint32_t FB_HEIGHT = (

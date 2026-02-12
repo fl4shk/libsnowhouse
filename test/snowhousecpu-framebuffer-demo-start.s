@@ -6,6 +6,6 @@ _my_text_start:
 	cpy r0, r0
 	cpy r0, r0
 	cpy r0, r0
-	cpy sp, 0x800
 	bl r0, _start
+	//cpy sp, 0x800
 	//bl r0, _main

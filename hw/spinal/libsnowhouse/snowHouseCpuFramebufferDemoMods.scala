@@ -604,7 +604,7 @@ object SnowHouseCpuFramebufferDemoSim extends App {
   )
 
   val programStr = "test/snowhousecpu-framebuffer-demo.bin"
-  val numClkCycles = 8192 * 8 * 8 * 8 * 8//2 //* 4//* 8 //* 4 * 8
+  val numClkCycles = 8192 * 8 * 8 //* 8 * 8 * 8//2 //* 4//* 8 //* 4 * 8
   val cpuCfg = SnowHouseCpuConfig(
     optFormal=(
       //true
@@ -646,7 +646,8 @@ object SnowHouseCpuFramebufferDemoSim extends App {
       //50.0 MHz
       //125.0 MHz
       //102.0 MHz
-      96.0 MHz
+      //96.0 MHz
+      100.0 MHz
       //48.0 MHz
       //24.0 MHz
       //12.0 MHz
@@ -667,14 +668,16 @@ object SnowHouseCpuFramebufferDemoSim extends App {
           //48.0 MHz
           //24.0 MHz
           //12.0 MHz
-          6.0 MHz
+          //6.0 MHz
+          25.0 MHz
         ),
         htiming=LcvVgaTimingHv(
           visib=(
             //64
             //640
             //76
-            160
+            //160
+            320
           ),
           front=1,
           sync=1,
@@ -698,8 +701,8 @@ object SnowHouseCpuFramebufferDemoSim extends App {
     ),
   )
   val demoCfg = (
-    SnowHouseCpuFramebufferDemoSharedInfo.demoCfg
-    //altDemoCfg
+    //SnowHouseCpuFramebufferDemoSharedInfo.demoCfg
+    altDemoCfg
   )
   Config.simWithFreq(demoCfg.clkRate).compile({
     val toComp = (
