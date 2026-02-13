@@ -115,9 +115,9 @@ case class SnowHouseCpuFramebufferDemoIo(
     clkRate=cfg.clkRate,
     vgaTimingInfo=cfg.vgaTimingInfo,
     fifoDepth=(
-      1 << log2Up(cfg.vgaTimingInfo.htiming.visib)
+      //1 << log2Up(cfg.vgaTimingInfo.htiming.visib)
       //16
-      //32
+      32
       //128
     ),
     optIncludeMiscVgaStates=true,
