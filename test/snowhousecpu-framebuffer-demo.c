@@ -5,14 +5,14 @@ volatile uint16_t* fb = (volatile uint16_t*)0x1000000ull;
 
 const uint32_t FB_WIDTH = (
 	/*64;*/ /*76 >> 1*/
-	//320
-	160
+	320
+	//160
 	//160 >> 1
 );
 const uint32_t FB_HEIGHT = (
 	/*64;*/ 
-	//240
-	76 >> 1
+	240
+	//76 >> 1
 );
 const uint32_t FB_SIZE = FB_HEIGHT * FB_WIDTH;
 volatile uint32_t* to_keep_loop_going = (
