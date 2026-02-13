@@ -881,8 +881,8 @@ int main(int argc, char** argv) {
 
 	top->clk = 0;
 	top->reset = 1;
-	//top->vgaClk_clk = 0;
-	//top->vgaClk_reset = 1;
+	top->vgaClk_clk = 0;
+	top->vgaClk_reset = 1;
 
 	size_t tick_cnt = 0;
 	auto end_tick = [&]() -> void {
@@ -899,14 +899,14 @@ int main(int argc, char** argv) {
 		//top->clk = tick_cnt % 2;
 		//top->vgaClk_clk = tick_cnt % (2 * CLKS_PER_PIXEL);
 		top->clk = !top->clk;
-		//if (tick_cnt % (2 * CLKS_PER_PIXEL)) {
-		//	top->vgaClk_clk = !top->vgaClk_clk;
-		//}
+		if ((tick_cnt % (2 * CLKS_PER_PIXEL)) == 0) {
+			top->vgaClk_clk = !top->vgaClk_clk;
+		}
 	};
 
 	while (
 		top->reset == !0
-		//|| top->vgaClk_reset == !0
+		|| top->vgaClk_reset == !0
 	) {
 		contextp->timeInc(1);
 		//top->clk = !top->clk;
@@ -917,30 +917,31 @@ int main(int argc, char** argv) {
 
 		if (!top->clk) {
 			if (
-				contextp->time() > 1 && contextp->time() < 10
-			) {
+				contextp->time() > 1
+				&& contextp->time() < 10 * CLKS_PER_PIXEL
+	 		) {
 				top->reset = 1;
 			} else {
 				top->reset = 0;
 			}
 		}
-		//if (!top->vgaClk_clk) {
-		//	//if (
-		//	//	contextp->time() > 1 && contextp->time() < 10
-		//	//) {
-		//	//	top->reset = 1;
-		//	//} else {
-		//	//	top->reset = 0;
-		//	//}
-		//	if (
-		//		contextp->time() > 1
-		//		&& contextp->time() < 10 * CLKS_PER_PIXEL
-		//	) {
-		//		top->vgaClk_reset = 1;
-		//	} else {
-		//		top->vgaClk_reset = 0;
-		//	}
-		//}
+		if (!top->vgaClk_clk) {
+			//if (
+			//	contextp->time() > 1 && contextp->time() < 10
+			//) {
+			//	top->reset = 1;
+			//} else {
+			//	top->reset = 0;
+			//}
+			if (
+				contextp->time() > 1
+				&& contextp->time() < 10  * CLKS_PER_PIXEL
+			) {
+				top->vgaClk_reset = 1;
+			} else {
+				top->vgaClk_reset = 0;
+			}
+		}
 		//top->eval();
 		//trace->dump(1);
 		//if (!top->clk) {
@@ -949,6 +950,7 @@ int main(int argc, char** argv) {
 		end_tick();
 	}
 
+	bool prev_clk = false;
 	//for (;;) 
 	for 
 	//while
@@ -972,20 +974,27 @@ int main(int argc, char** argv) {
 		set_clks_from_tick_cnt();
 
 		if (
-			!top->clk
-			//!top->vgaClk_clk
+			prev_clk != top->vgaClk_clk
+			//top->vgaClk_clk
+			//!top->clk
 		) {
-			vga.pre_cycle();
-		} else {
-			vga.post_cycle();
+			if (
+				//!top->clk
+				!top->vgaClk_clk
+			) {
+				vga.pre_cycle();
+			} else {
+				vga.post_cycle();
+			}
 		}
 		//printf(
-		//	"testificate: %x %x; %lu; %lu %lu\n",
+		//	//"testificate: %x %x; %lu; %lu %lu\n",
+		//	"testificate: %x %x; %lu\n",
 		//	uint32_t(top->clk),
 		//	uint32_t(top->vgaClk_clk),
-		//	tick_cnt,
-		//	(tick_cnt % 2) == 0,
-		//	(tick_cnt % (2 * CLKS_PER_PIXEL)) == 0
+		//	tick_cnt
+		//	//(tick_cnt % 2) == 0,
+		//	//(tick_cnt % (2 * CLKS_PER_PIXEL)) == 0
 		//);
 
 		//top->eval();
@@ -994,6 +1003,7 @@ int main(int argc, char** argv) {
 		//	trace->flush();
 		//}
 		end_tick();
+		prev_clk = top->vgaClk_clk;
 	}
 
 	if (trace) {

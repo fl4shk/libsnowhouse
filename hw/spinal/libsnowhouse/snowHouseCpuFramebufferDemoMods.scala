@@ -229,17 +229,17 @@ case class SnowHouseCpuFramebufferDemo(
     val vgaCtrl = VgaCtrl(rgbConfig=cfg.rgbCfg)
 
     val vgaTimingInfo = cfg.vgaTimingInfo
-    //if (vgaTimingInfo == LcvVgaTimingInfoMap.map("640x480@60")) {
-    //  vgaCtrl.io.timings.setAs_h640_v480_r60
-    //} else if (vgaTimingInfo == LcvVgaTimingInfoMap.map("1920x1080@60")) {
-    //  vgaCtrl.io.timings.setAs_h1920_v1080_r60
-    //} else {
+    if (vgaTimingInfo == LcvVgaTimingInfoMap.map("640x480@60")) {
+      vgaCtrl.io.timings.setAs_h640_v480_r60
+    } else if (vgaTimingInfo == LcvVgaTimingInfoMap.map("1920x1080@60")) {
+      vgaCtrl.io.timings.setAs_h1920_v1080_r60
+    } else {
       // TODO: check if this works?
       vgaTimingInfo.driveSpinalVgaTimings(
         clkRate=cfg.clkRate,
         spinalVgaTimings=vgaCtrl.io.timings,
       )
-    //}
+    }
 
     //val lcvVgaCtrl = (
     //  LcvVgaCtrl(
@@ -269,10 +269,27 @@ case class SnowHouseCpuFramebufferDemo(
     io.misc.allowOverride
     io.misc.pastVisib := RegNext(io.misc.visib) init(False)
     io.misc.visib := vgaCtrl.io.vga.colorEn
-    io.misc.pixelEn := True
+    //io.misc.pixelEn := (
+    //  True
+    //)
     vgaCtrl.io.softReset := RegNext(False) init(True)
     //vgaCtrl.io.pixels <-/< myFbCtrl.io.pop
     vgaCtrl.io.pixels <-/< pixelFifo.io.pop
+  }
+  def cpp = (cfg.clkRate / cfg.vgaTimingInfo.pixelClk).toInt
+  println(
+    s"here we go: cpp:${cpp}"
+  )
+  val rPixelEnCnt = Reg(UInt(
+    log2Up(cpp) bits
+  ))
+  io.misc.pixelEn := (
+    rPixelEnCnt === cpp - 1
+  )
+  when (rPixelEnCnt < cpp - 1) {
+    rPixelEnCnt := rPixelEnCnt + 1
+  } otherwise {
+    rPixelEnCnt := 0x0
   }
   //--------
   //val myDbgFbCfg = LcvBusFramebufferConfig(
@@ -681,9 +698,12 @@ object SnowHouseCpuFramebufferDemoSim extends App {
             //160
             320
           ),
-          front=1,
-          sync=1,
-          back=1
+          //front=1,
+          //sync=1,
+          //back=1
+          front=16,
+          sync=96,
+          back=48
         ),
         vtiming=LcvVgaTimingHv(
           visib=(
@@ -691,9 +711,12 @@ object SnowHouseCpuFramebufferDemoSim extends App {
             //480
             76
           ),
-          front=1,
-          sync=1,
-          back=1
+          //front=1,
+          //sync=1,
+          //back=1
+          front=10,
+          sync=2,
+          back=33
         ),
       )
     ),
