@@ -25,13 +25,13 @@ case class SnowHouseCpuFramebufferDemoConfig(
   rgbCfg: RgbConfig,
   vgaTimingInfo: LcvVgaTimingInfo,
   fbCnt2dShift: ElabVec2[Int],
+  fbAddrSliceHi: Int=24,
+  fbAddrSliceLo: Int=24,
 ) {
   def cpuCfg = program.cfg
   val myDbusCfg = cpuCfg.shCfg.subCfg.lcvDbusEtcCfg.loBusCfg
   //def myDbusCfg = //cpu.io.lcvDbus.cfg
 
-  val myFbAddrSliceHi = 24
-  val myFbAddrSliceLo = 24
   val myFbOptAddrSliceVal = Some(1)
   val myFbDbusSlicerMmapCfg = LcvBusMemMapConfig(
     busCfg=(
@@ -41,8 +41,8 @@ case class SnowHouseCpuFramebufferDemoConfig(
       //  cacheCfg=myDbusCfg.cacheCfg,
       //)
     ),
-    addrSliceHi=myFbAddrSliceHi,//24,
-    addrSliceLo=myFbAddrSliceLo,//24,
+    addrSliceHi=fbAddrSliceHi,//24,
+    addrSliceLo=fbAddrSliceLo,//24,
     optAddrSliceVal=(
       // the framebuffer has bit 24 of the address asserted!
       //Some(1)
@@ -57,8 +57,8 @@ case class SnowHouseCpuFramebufferDemoConfig(
         cacheCfg=myDbusCfg.cacheCfg,
       )
     ),
-    addrSliceHi=myFbAddrSliceHi,//24,
-    addrSliceLo=myFbAddrSliceLo,//24,
+    addrSliceHi=fbAddrSliceHi,//24,
+    addrSliceLo=fbAddrSliceLo,//24,
     optAddrSliceVal=(
       // the framebuffer has bit 24 of the address asserted!
       //Some(1)
