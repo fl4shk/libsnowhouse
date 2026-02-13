@@ -936,12 +936,13 @@ case class SnowHouseLcvBusInstrDataSharedRam(
   ) generate (LcvBusMem(cfg=mySharedMemCfg))
 
   val myArbiter = LcvBusArbiter(
-    LcvBusArbiterConfig(
+    cfg=LcvBusArbiterConfig(
       busCfg=(
         //cfg.subCfg.lcvDbusEtcCfg.loBusCfg
         mySharedMemCfg.busCfg
       ),
       numHosts=2,
+      kind=LcvBusArbiterKind.RoundRobin
     )
   )
   val myDeburster = (

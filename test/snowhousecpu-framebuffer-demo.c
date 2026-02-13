@@ -32,10 +32,11 @@ int main(int argc, char** argv) {
 				fb[fb_idx] = (
 					((j & 0xffu) << 8u)
 					+ ((i & 0xffu) << 0u)
-					//((j & 0x1fu) << 5u)
-					//+ ((i & 0x1fu) << 0u)
 					//(((j >> 3) & 0x1fu) << 5u)
 					//+ (((i >> 3) & 0x1fu) << 0u)
+					//--------
+					//((j & 0x1fu) << 5u)
+					//+ ((i & 0x1fu) << 0u)
 				);
 				//fb[fb_idx] = (
 				//	((r & 0xffu) << 0);

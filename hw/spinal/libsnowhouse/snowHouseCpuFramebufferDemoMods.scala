@@ -418,6 +418,7 @@ case class SnowHouseCpuFramebufferDemo(
     cfg=LcvBusArbiterConfig(
       busCfg=myMainMemCfg.busCfg,
       numHosts=2,
+      kind=LcvBusArbiterKind.RoundRobin
     ),
   )
   myMainMem.io.bus <-/< myMainMemArbiter.io.dev
@@ -429,6 +430,7 @@ case class SnowHouseCpuFramebufferDemo(
         cfg.myFbCtrlMmapCfg.busCfg
       ),
       numHosts=2,
+      kind=LcvBusArbiterKind.Priority
     )
   )
 
