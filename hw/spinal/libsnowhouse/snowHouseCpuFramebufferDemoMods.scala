@@ -140,7 +140,8 @@ case class SnowHouseCpuFramebufferDemo(
     withReset=true,//false,
     frequency=FixedFrequency(
       //25.0 MHz
-      cfg.vgaTimingInfo.pixelClk
+      //cfg.vgaTimingInfo.pixelClk
+      cfg.clkRate
     ),
   )
   val pixelFifo = StreamFifoCC(
@@ -224,22 +225,26 @@ case class SnowHouseCpuFramebufferDemo(
   //    }
   //  }
   //}
+  def cpp = LcvVgaCtrl.cpp(
+    clkRate=cfg.clkRate,
+    vgaTimingInfo=cfg.vgaTimingInfo,
+  )
 
   val vgaClockingArea = new ClockingArea(vgaClockDomain) {
     val vgaCtrl = VgaCtrl(rgbConfig=cfg.rgbCfg)
 
     val vgaTimingInfo = cfg.vgaTimingInfo
-    if (vgaTimingInfo == LcvVgaTimingInfoMap.map("640x480@60")) {
-      vgaCtrl.io.timings.setAs_h640_v480_r60
-    } else if (vgaTimingInfo == LcvVgaTimingInfoMap.map("1920x1080@60")) {
-      vgaCtrl.io.timings.setAs_h1920_v1080_r60
-    } else {
+    //if (vgaTimingInfo == LcvVgaTimingInfoMap.map("640x480@60")) {
+    //  vgaCtrl.io.timings.setAs_h640_v480_r60
+    //} else if (vgaTimingInfo == LcvVgaTimingInfoMap.map("1920x1080@60")) {
+    //  vgaCtrl.io.timings.setAs_h1920_v1080_r60
+    //} else {
       // TODO: check if this works?
       vgaTimingInfo.driveSpinalVgaTimings(
         clkRate=cfg.clkRate,
         spinalVgaTimings=vgaCtrl.io.timings,
       )
-    }
+    //}
 
     //val lcvVgaCtrl = (
     //  LcvVgaCtrl(
@@ -275,11 +280,15 @@ case class SnowHouseCpuFramebufferDemo(
     vgaCtrl.io.softReset := RegNext(False) init(True)
     //vgaCtrl.io.pixels <-/< myFbCtrl.io.pop
     vgaCtrl.io.pixels <-/< pixelFifo.io.pop
+    .repeat(
+      times=cpp
+    )._1
   }
-  def cpp = (cfg.clkRate / cfg.vgaTimingInfo.pixelClk).toInt
+  //def cpp = (cfg.clkRate / cfg.vgaTimingInfo.pixelClk).toInt
   println(
     s"here we go: cpp:${cpp}"
   )
+  //io.misc.pixelEn := True
   val rPixelEnCnt = Reg(UInt(
     log2Up(cpp) bits
   ))
