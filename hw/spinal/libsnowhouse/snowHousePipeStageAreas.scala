@@ -8138,31 +8138,36 @@ case class SnowHousePipeStageExecute(
   //--------
   // BEGIN: this worked pretty well for fmax, so let's try another approach
   val mostTempToSwitchMyModMemWord = (
-    (
-      RegNext(
-        next=(
-          cMid0Front.up.isFiring
-          && setOutpModMemWord.io.modMemWordValid.head
-          //&& alu.io.inp_op =/= LcvAluDel1InpOpEnum.OP_GET_INP_A
-        ),
-        init=False,
-      )
-    ) ## (
-      RegNext(
-        next=(
-          //alu.io.inp_op === LcvAluDel1InpOpEnum.OP_GET_INP_A
-          if (
-           LcvAluDel1InpOpEnum.ZERO
-           != (1 << (LcvAluDel1InpOpEnum.OP_WIDTH - 1))
-          ) (
-            // check for one-hot encoding
-            alu.io.inp_op === LcvAluDel1InpOpEnum.ZERO
-          ) else (
-            alu.io.inp_op(log2Up(LcvAluDel1InpOpEnum.ZERO))
-          )
-        ),
-        init=False,
-      )
+    RegNext(
+      (
+        (
+          //RegNext(
+            //next=(
+              cMid0Front.up.isFiring
+              && setOutpModMemWord.io.modMemWordValid.head
+              //&& alu.io.inp_op =/= LcvAluDel1InpOpEnum.OP_GET_INP_A
+          //  ),
+          //  init=False,
+          //)
+        ) ## (
+          //RegNext(
+          //  next=(
+              //alu.io.inp_op === LcvAluDel1InpOpEnum.OP_GET_INP_A
+              if (
+              LcvAluDel1InpOpEnum.ZERO
+              != (1 << (LcvAluDel1InpOpEnum.OP_WIDTH - 1))
+              ) (
+                // check for one-hot encoding
+                alu.io.inp_op === LcvAluDel1InpOpEnum.ZERO
+              ) else (
+                alu.io.inp_op(log2Up(LcvAluDel1InpOpEnum.ZERO))
+              )
+          //  ),
+          //  init=False,
+          //)
+        )
+      ).asUInt,
+      init=U"2'b00"
     )
   )
   val tempToSwitchMyModMemWord = (
