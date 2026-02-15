@@ -8151,7 +8151,15 @@ case class SnowHousePipeStageExecute(
       RegNext(
         next=(
           //alu.io.inp_op === LcvAluDel1InpOpEnum.OP_GET_INP_A
-          alu.io.inp_op === LcvAluDel1InpOpEnum.ZERO
+          if (
+           LcvAluDel1InpOpEnum.ZERO
+           != (1 << (LcvAluDel1InpOpEnum.OP_WIDTH - 1))
+          ) (
+            // check for one-hot encoding
+            alu.io.inp_op === LcvAluDel1InpOpEnum.ZERO
+          ) else (
+            alu.io.inp_op(log2Up(LcvAluDel1InpOpEnum.ZERO))
+          )
         ),
         init=False,
       )
