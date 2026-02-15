@@ -3190,6 +3190,7 @@ case class SnowHouseCpuConfig(
   //  tempArr += r8.index
   //  tempArr
   //})
+  optMainAddrWidth: Option[Int]=None,
   targetAltera: Boolean=(
     //false
     true
@@ -3289,6 +3290,7 @@ case class SnowHouseCpuConfig(
       val dcacheBusSrcNum = 0x1
       SnowHouseSubConfig(
         instrMainWidth=instrMainWidth,
+        optMainAddrWidth=optMainAddrWidth,
         shRegFileCfg=SnowHouseRegFileConfig(
           mainWidth=mainWidth,
           wordCountArr=(

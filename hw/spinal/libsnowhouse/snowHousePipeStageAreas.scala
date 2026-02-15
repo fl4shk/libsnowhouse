@@ -205,9 +205,13 @@ case class BranchTgtBufElem(
   )
   val srcRegPc = UInt(
     //cfg.mySrcRegPcCmpEqWidth bits
-    cfg.mainWidth bits
+    //cfg.mainWidth bits
+    cfg.mainAddrWidth bits
   )
-  val dstRegPc = UInt(cfg.mainWidth bits) 
+  val dstRegPc = UInt(
+    //cfg.mainWidth bits
+    cfg.mainAddrWidth bits
+  )
   //val dbgEncInstr = UInt(cfg.instrMainWidth bits)
 }
 case class BranchTgtBufElemWithBrKind(
@@ -233,7 +237,10 @@ case class SnowHousePsExSetPcPayload(
   //val predictGood = Bool()
   //val badPredict = Bool()
 
-  val nextPc = UInt(cfg.mainWidth bits)
+  val nextPc = UInt(
+    //cfg.mainWidth bits
+    cfg.mainAddrWidth bits
+  )
   //val dstPc = UInt(cfg.mainWidth bits)
   //val badPredictNextPc = UInt(cfg.mainWidth bits)
   //val encInstr = Flow(UInt(cfg.instrMainWidth bits))
@@ -262,7 +269,10 @@ case class SnowHouseBranchPredictorResult(
   val valid = Bool()
   def fire = valid
 
-  val nextRegPc = UInt(cfg.mainWidth bits)
+  val nextRegPc = UInt(
+    //cfg.mainWidth bits
+    cfg.mainAddrWidth bits
+  )
 
   // whether or not we're predicting the branch is taken
   val predictTkn = Bool()
@@ -284,7 +294,10 @@ case class SnowHouseBranchPredictorIo(
   //)
   val inpRegPc = in(
     Vec.fill(SnowHouseBranchPredictorKind._predictorInpRegPcSize)(
-      UInt(cfg.mainWidth bits)
+      UInt(
+        //cfg.mainWidth bits
+        cfg.mainAddrWidth bits
+      )
     )
   )
   val upIsFiring = in(
@@ -367,7 +380,8 @@ case class SnowHouseBranchPredictor(
   )
   def myDstRegPcWidth = (
     //if (!cfg.supportInstrByteAddressing) (
-    cfg.mainWidth - log2Up(cfg.instrSizeBytes)
+    //cfg.mainWidth - log2Up(cfg.instrSizeBytes)
+    cfg.mainAddrWidth - log2Up(cfg.instrSizeBytes)
     //) else (
     //  cfg.mainWidth
     //)
@@ -1164,7 +1178,10 @@ private[libsnowhouse] case class MyIbusRegPcInfo(
   val regPc = (
     includeRegPc
   ) generate (
-    UInt(cfg.mainWidth bits)
+    UInt(
+      //cfg.mainWidth bits
+      cfg.mainAddrWidth bits
+    )
   )
   val branchPredictTkn = (
     cfg.haveBranchPredictor
@@ -1298,7 +1315,10 @@ private[libsnowhouse] case class SnowHouseBusBridgeCtrl(
   }
   case class MyCpuRecvAddrFifoPayload(
   ) extends Bundle {
-    val addr = UInt(cfg.mainWidth bits)
+    val addr = UInt(
+      //cfg.mainWidth bits
+      cfg.mainAddrWidth bits
+    )
     val src = UInt(cfg.subCfg.myLcvBusSrcWidth bits)
     //val btbElem = BranchTgtBufElem(cfg=cfg)
     //val myIbusInfo = MyIbusRegPcInfo(cfg=cfg)
@@ -1341,7 +1361,7 @@ private[libsnowhouse] case class SnowHouseBusBridgeCtrl(
   //  io.cpuBus.sendData.addr
   //)
   myCpuRecvAddrFifo.io.push.addr := (
-    io.cpuBus.sendData.addr
+    io.cpuBus.sendData.addr.resize(cfg.mainAddrWidth)
   )
   myCpuRecvAddrFifo.io.push.src := (
     io.bridgeBus.sendData.src
@@ -2028,7 +2048,7 @@ case class SnowHousePipeStageInstrFetch(
         upModExt.regPc := myIbusRegPcInfo.regPc
       //}
       //myIbus.sendData.addr := tempNextRegPc//.asUInt
-      myBusAddr := tempNextRegPc//.asUInt
+      myBusAddr := tempNextRegPc.resize(myBusAddr.getWidth)//.asUInt
     }
     switch (myUpdateRegPcCondUInt) {
       is (M"0-") {
@@ -2037,7 +2057,7 @@ case class SnowHousePipeStageInstrFetch(
         if (cfg.haveBranchPredictor) {
           val temp = myPredictedNextPc
           //myIbus.sendData.addr := temp
-          myBusAddr := temp
+          myBusAddr := temp.resize(myBusAddr.getWidth)
           myIbusRegPcInfo.regPc := temp
           myIbusRegPcInfo.branchPredictTkn.allowOverride
           myIbusRegPcInfo.branchPredictTkn := (
@@ -2056,7 +2076,7 @@ case class SnowHousePipeStageInstrFetch(
             ).asUInt
           )
           //myIbus.sendData.addr := temp
-          myBusAddr := temp
+          myBusAddr := temp.resize(myBusAddr.getWidth)
           myIbusRegPcInfo.regPc := temp
         }
         //if (!cfg.useLcvInstrBus) {
@@ -2241,7 +2261,8 @@ case class SnowHousePrePipeStageExSetBranchPredictEtcArea(
   )
   val myDspRegPcMinus2InstrSize = {
     val myWordWidth = (
-      cfg.mainWidth - log2Up(cfg.instrSizeBytes) //- 1
+      //cfg.mainWidth - log2Up(cfg.instrSizeBytes) //- 1
+      cfg.mainAddrWidth - log2Up(cfg.instrSizeBytes) //- 1
     )
     //LcvCondSubDel1(
     //  wordWidth=myWordWidth
@@ -2547,7 +2568,10 @@ case class SnowHousePipeStageInstrDecode(
     )
   )
   nextMultiInstrCnt := rMultiInstrCnt
-  val myIraPc = UInt(cfg.mainWidth bits)
+  //val myIraPc = UInt(
+  //  //cfg.mainWidth bits
+  //  cfg.mainAddrWidth bits
+  //)
   val myInstr = UInt(cfg.instrMainWidth bits)
   //myInstr := myInstr
   //when (upPayload(1).encInstr.fire) {
@@ -2814,7 +2838,8 @@ case class SnowHousePipeStageInstrDecode(
 
   val myDspRegPcPlus1InstrSize = {
     val myWordWidth = (
-      cfg.mainWidth - log2Up(cfg.instrSizeBytes)
+      //cfg.mainWidth - log2Up(cfg.instrSizeBytes)
+      cfg.mainAddrWidth - log2Up(cfg.instrSizeBytes)
     )
     //LcvCondAddJustCarryDel1(
     //  wordWidth=myWordWidth
@@ -2866,7 +2891,8 @@ case class SnowHousePipeStageInstrDecode(
       upPayload(1).myHistRegPcSize - 1
     )(
       SInt(
-        cfg.mainWidth - log2Up(cfg.instrSizeBytes)
+        //cfg.mainWidth - log2Up(cfg.instrSizeBytes)
+        cfg.mainAddrWidth - log2Up(cfg.instrSizeBytes)
         bits
       )
     )
@@ -3219,14 +3245,26 @@ case class SnowHousePipeStageExecuteSetOutpModMemWordIo(
   val rdMemWord = setAsInp(Vec.fill(tempVecSize)(
     UInt(cfg.mainWidth bits)
   ))
-  val regPc = setAsInp(UInt(cfg.mainWidth bits))
+  val regPc = setAsInp(UInt(
+    //cfg.mainWidth bits
+    cfg.mainAddrWidth bits
+  ))
   val mySavedRegPcPlusInstrSize = setAsInp(
     /*Flow*/Vec.fill(2)(
-      UInt(cfg.mainWidth bits)
+      UInt(
+        //cfg.mainWidth bits
+        cfg.mainAddrWidth bits
+      )
     )
   )
-  val laggingRegPc = setAsInp(UInt(cfg.mainWidth bits))
-  val laggingRegPcPlus1InstrSize = setAsInp(UInt(cfg.mainWidth bits))
+  val laggingRegPc = setAsInp(UInt(
+    //cfg.mainWidth bits
+    cfg.mainAddrWidth bits
+  ))
+  val laggingRegPcPlus1InstrSize = setAsInp(UInt(
+    //cfg.mainWidth bits
+    cfg.mainAddrWidth bits
+  ))
   val regPcSetItCnt = setAsInp(Vec.fill(cfg.lowerMyFanoutRegPcSetItCnt)(
     UInt(
       //1 bits
@@ -3240,8 +3278,14 @@ case class SnowHousePipeStageExecuteSetOutpModMemWordIo(
   val downIsFiring = setAsInp(Bool())
   val downIsValid = setAsInp(Bool())
   val downIsReady = setAsInp(Bool())
-  val regPcPlusInstrSize = setAsInp(UInt(cfg.mainWidth bits))
-  val regPcPlusImm = setAsInp(UInt(cfg.mainWidth bits))
+  val regPcPlusInstrSize = setAsInp(UInt(
+    //cfg.mainWidth bits
+    cfg.mainAddrWidth bits
+  ))
+  val regPcPlusImm = setAsInp(UInt(
+    //cfg.mainWidth bits
+    cfg.mainAddrWidth bits
+  ))
   //val regPcPlusImmRealDst = setAsInp(UInt(cfg.mainWidth bits))
   val imm = setAsInp(Vec.fill(4)(UInt(cfg.mainWidth bits)))
   val pcChangeState = setAsOutp(
@@ -3313,7 +3357,10 @@ case class SnowHousePipeStageExecuteSetOutpModMemWordIo(
     Bool()
   )
   val irqIraRegPc = setAsInp(
-    UInt(cfg.mainWidth bits)
+    UInt(
+      //cfg.mainWidth bits
+      cfg.mainAddrWidth bits 
+    )
   )
   def selRdMemWord(
     opInfo: OpInfo,
@@ -4882,7 +4929,14 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
   //)
   io.dbusHostPayload.data := io.rdMemWord(1) //selRdMemWord(0)
   if (cfg.allMainLdstUseGprPlusImm) {
-    io.dbusHostPayload.addr := io.rdMemWord(0) + io.imm(1)
+    io.dbusHostPayload.addr(
+      io.dbusHostPayload.addr.high
+      downto cfg.mainAddrWidth
+    ) := 0x0
+    io.dbusHostPayload.addr(cfg.mainAddrWidth - 1 downto 0) := (
+      io.rdMemWord(0)(cfg.mainAddrWidth - 1 downto 0)
+      + io.imm(1)(cfg.mainAddrWidth - 1 downto 0)
+    )
   }
   io.dbusHostPayload.accKind := (
     io.inpDecodeExt(0).memAccessKind
@@ -5129,24 +5183,41 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
                     ) 
                   )
                   if (!cfg.allMainLdstUseGprPlusImm) {
-                    io.dbusHostPayload.addr := (
-                      opInfo.srcArr.size match {
-                        case 1 => (
-                          tempAddr
-                        )
-                        case 2 => (
-                          tempAddr + selRdMemWord(1)
-                        )
-                        case _ => {
-                          assert(
-                            false,
-                            s"invalid opInfo.srcArr.size: "
-                            + s"opInfo(${opInfo}) "
-                            + s"index:${opInfoIdx}"
+                    
+                    io.dbusHostPayload.addr(
+                      io.dbusHostPayload.addr.high
+                      downto cfg.mainAddrWidth
+                    ) := 0x0
+                    //io.dbusHostPayload.addr(
+                    //  cfg.mainAddrWidth - 1 downto 0
+                    //) := (
+                    //  io.rdMemWord(0)(cfg.mainAddrWidth - 1 downto 0)
+                    //  + io.imm(1)(cfg.mainAddrWidth - 1 downto 0)
+                    //)
+                    io.dbusHostPayload.addr(
+                      cfg.mainAddrWidth - 1 downto 0
+                    ) := (
+                      (
+                        opInfo.srcArr.size match {
+                          case 1 => (
+                            tempAddr
                           )
-                          U(s"${cfg.mainWidth}'d0")
+                          case 2 => (
+                            tempAddr + selRdMemWord(1)
+                          )
+                          case _ => {
+                            assert(
+                              false,
+                              s"invalid opInfo.srcArr.size: "
+                              + s"opInfo(${opInfo}) "
+                              + s"index:${opInfoIdx}"
+                            )
+                            U(s"${cfg.mainWidth}'d0")
+                          }
                         }
-                      }
+                      )(
+                        cfg.mainAddrWidth - 1 downto 0
+                      )
                     )
                   }
                   //if (!isStore) {
@@ -5311,7 +5382,7 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
                   )
                   nextIra := (
                     //io.regPc
-                    io.irqIraRegPc
+                    io.irqIraRegPc.resize(nextIra.getWidth)
                   )
                   nextIe/*(0)*/ := False //0x0
                 }
@@ -5342,7 +5413,9 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
                   //when (io.gprIsNonZeroVec.last(0)) {
                     io.modMemWord(0) := (
                       //io.regPc + ((cfg.instrMainWidth / 8) * 1)
-                      io.regPcPlusInstrSize
+                      io.regPcPlusInstrSize.resize(
+                        io.modMemWord(0).getWidth
+                      )
                     )
                   //} otherwise {
                   //  io.modMemWord(0) := (
@@ -5447,7 +5520,9 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
                   //when (io.gprIsNonZeroVec.last(0)) {
                     io.modMemWord(0) := (
                       //io.regPc + ((cfg.instrMainWidth / 8) * 1)
-                      io.regPcPlusInstrSize
+                      io.regPcPlusInstrSize.resize(
+                        io.modMemWord(0).getWidth
+                      )
                     )
                   //} otherwise {
                   //  io.modMemWord(0) := (
@@ -6934,7 +7009,10 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
         )
         io.psExSetPc.nextPc := (
           RegNext(
-            io.rdMemWord(io.jmpAddrIdx) //- (1 * cfg.instrSizeBytes)
+            io.rdMemWord(io.jmpAddrIdx) (
+              cfg.mainAddrWidth - 1 downto 0
+            )
+            //- (1 * cfg.instrSizeBytes)
             - (3 * cfg.instrSizeBytes)
           )
           init(0x0)
@@ -6944,7 +7022,9 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
         )
         io.psExSetPc.branchTgtBufElem.dstRegPc := (
           RegNext(
-            io.rdMemWord(io.jmpAddrIdx),
+            io.rdMemWord(io.jmpAddrIdx)(
+              cfg.mainAddrWidth - 1 downto 0
+            ),
             init=io.psExSetPc.branchTgtBufElem.dstRegPc.getZero,
           )
         )
@@ -6964,7 +7044,9 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
         )
         io.psExSetPc.nextPc := (
           RegNext(
-            io.rIra
+            io.rIra(
+              cfg.mainAddrWidth - 1 downto 0
+            )
             - (3 * cfg.instrSizeBytes)
           )
           init(0x0)
@@ -6974,7 +7056,9 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
         )
         io.psExSetPc.branchTgtBufElem.dstRegPc := (
           RegNext(
-            io.rIra,
+            io.rIra(
+              cfg.mainAddrWidth - 1 downto 0
+            ),
             init=io.psExSetPc.branchTgtBufElem.dstRegPc.getZero,
           )
         )
@@ -6994,7 +7078,9 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
         )
         io.psExSetPc.nextPc := (
           RegNext(
-            io.rIds
+            io.rIds(
+              cfg.mainAddrWidth - 1 downto 0
+            )
             - (3 * cfg.instrSizeBytes)
           )
           init(0x0)
@@ -7004,7 +7090,9 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
         )
         io.psExSetPc.branchTgtBufElem.dstRegPc := (
           RegNext(
-            io.rIds,
+            io.rIds(
+              cfg.mainAddrWidth - 1 downto 0
+            ),
             init=io.psExSetPc.branchTgtBufElem.dstRegPc.getZero,
           )
         )
@@ -9414,6 +9502,8 @@ case class SnowHousePipeStageExecute(
           setOutpModMemWord.io.selRdMemWord(
             opInfo=opInfo,
             idx=0,
+          ).resize(
+            multiCycleBus.sendData.srcVec(0).getWidth
           ),
           //cond=(
           //  //True

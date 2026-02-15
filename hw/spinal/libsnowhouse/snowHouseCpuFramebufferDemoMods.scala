@@ -640,6 +640,7 @@ object SnowHouseCpuFramebufferDemoSim extends App {
       //true
       false
     ),
+    optMainAddrWidth=Some(27),
     programStr=(
       programStr
       //"test/snowhousecpu-test-0.bin"

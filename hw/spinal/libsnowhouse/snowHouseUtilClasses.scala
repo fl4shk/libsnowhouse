@@ -311,6 +311,7 @@ case class SnowHouseCacheConfig(
 }
 case class SnowHouseSubConfig(
   instrMainWidth: Int,
+  optMainAddrWidth: Option[Int],
   shRegFileCfg: SnowHouseRegFileConfig,
   //haveIcache: Boolean=false,
   //--------
@@ -343,6 +344,18 @@ case class SnowHouseSubConfig(
   optCacheBusSrcWidth: Option[Int]=None,
   //--------
 ) {
+  val mainAddrWidth = (
+    optMainAddrWidth match {
+      case Some(mainAddrWidth) => {
+        require(
+          mainAddrWidth > 0
+          && mainAddrWidth <= shRegFileCfg.mainWidth
+        )
+        mainAddrWidth
+      }
+      case None => shRegFileCfg.mainWidth
+    }
+  )
   val instrSizeBytes = (instrMainWidth.toLong / 8.toLong).toLong
   //val haveIcache = icacheDepth > 0
   //val haveDcache = dcacheDepth > 0
@@ -632,6 +645,7 @@ case class SnowHouseConfig(
   targetAltera: Boolean=false,
   optFormal: Boolean=false,
 ) {
+  def mainAddrWidth = subCfg.mainAddrWidth
   def myHaveS2mIf = (
     useLcvInstrBus
     && useLcvDataBus
@@ -662,7 +676,8 @@ case class SnowHouseConfig(
     }
   )
   def mySrcRegPcWidth = (
-    mainWidth
+    //mainWidth
+    mainAddrWidth
     //- (2 * log2Up(cfg.instrSizeBytes))
     - log2Up(instrSizeBytes)
     //- log2Up(branchTgtBufSize)
@@ -672,12 +687,16 @@ case class SnowHouseConfig(
     - log2Up(branchTgtBufSize)
   )
   def mySrcRegPcRange = (
-    mainWidth - 1
-    downto mainWidth - mySrcRegPcWidth
+    //mainWidth - 1
+    //downto mainWidth - mySrcRegPcWidth
+    mainAddrWidth - 1
+    downto mainAddrWidth - mySrcRegPcWidth
   )
   def mySrcRegPcCmpEqRange = (
-    mainWidth - 1
-    downto mainWidth - mySrcRegPcCmpEqWidth
+    //mainWidth - 1
+    //downto mainWidth - mySrcRegPcCmpEqWidth
+    mainAddrWidth - 1
+    downto mainAddrWidth - mySrcRegPcCmpEqWidth
   )
   println(
     s"mySrcRegPcWidth:${mySrcRegPcWidth} "
@@ -1635,10 +1654,16 @@ case class SnowHousePipePayloadNonExt(
     SnowHousePipeStageExecuteSetOutpModMemWordIo(cfg=cfg) //simPublic()
   )
   //psExSetOutpModMemWordIo.simPublic()
-  val regPc = UInt(cfg.mainWidth bits)//.simPublic()
+  val regPc = UInt(
+    //cfg.mainWidth bits
+    cfg.mainAddrWidth bits
+  )//.simPublic()
   val laggingRegPc = /*Vec.fill(2)*/(
     //Vec.fill(3)(
-      UInt(cfg.mainWidth bits)//.simPublic()
+      UInt(
+        //cfg.mainWidth bits
+        cfg.mainAddrWidth bits
+      )//.simPublic()
     //)
   )
   def myHistRegPcSize = (
@@ -1651,7 +1676,10 @@ case class SnowHousePipePayloadNonExt(
   //)
   val laggingRegPcPlus1InstrSize = (
     //Vec.fill(myHistRegPc.size - 1)(
-      UInt(cfg.mainWidth bits)
+      UInt(
+        //cfg.mainWidth bits
+        cfg.mainAddrWidth bits
+      )
     //)
   )
   ////val myHistRegPcPlusInstrSize = Vec.fill(myHistRegPc.size)(
@@ -1659,7 +1687,10 @@ case class SnowHousePipePayloadNonExt(
   //)
 
   val irqIraRegPc = Vec.fill(2)(
-    UInt(cfg.mainWidth bits)
+    UInt(
+      //cfg.mainWidth bits
+      cfg.mainAddrWidth bits
+    )
   )
   //val haveLcvDbusMemAccDelay = (
   //  cfg.useLcvDataBus
@@ -1667,7 +1698,10 @@ case class SnowHousePipePayloadNonExt(
   //  Bool()
   //)
 
-  val regPcPlus1Instr = UInt(cfg.mainWidth bits)
+  val regPcPlus1Instr = UInt(
+    //cfg.mainWidth bits
+    cfg.mainAddrWidth bits
+  )
   val psIfRegPcSetItCnt = UInt(2 bits)
   val regPcSetItCnt = Vec.fill(cfg.lowerMyFanoutRegPcSetItCnt)(
     UInt(
@@ -1676,8 +1710,14 @@ case class SnowHousePipePayloadNonExt(
       cfg.regPcSetItCntWidth bits
     ) //Bool()
   )
-  val regPcPlusInstrSize = UInt(cfg.mainWidth bits)
-  val regPcPlusImm = UInt(cfg.mainWidth bits)//.simPublic()
+  val regPcPlusInstrSize = UInt(
+    //cfg.mainWidth bits
+    cfg.mainAddrWidth bits
+  )
+  val regPcPlusImm = UInt(
+    //cfg.mainWidth bits
+    cfg.mainAddrWidth bits
+  )//.simPublic()
   val imm = Vec.fill(4)(UInt(cfg.mainWidth bits))//.simPublic()
   //val op = UInt(log2Up(cfg.opInfoMap.size) bits)
   //val myExt = Vec.fill(cfg.regFileCfg.memArrSize)(
