@@ -1056,20 +1056,20 @@ private[libsnowhouse] case class SnowHouseIbusToLcvIbusBridge(
   )
 
   myH2dPushStm.addr.allowOverride
-  myH2dPushStm.addr := (
-    io.bus.sendData.addr
-  )
   //myH2dPushStm.addr := (
-  //  RegNext(myH2dPushStm.addr, init=myH2dPushStm.addr.getZero)
+  //  io.bus.sendData.addr
   //)
-  //when (
-  //  myH2dPushStm.fire
-  //  //myH2dPushStm.valid
-  //) {
-  //  myH2dPushStm.addr := (
-  //    io.bus.sendData.addr
-  //  )
-  //}
+  myH2dPushStm.addr := (
+    RegNext(myH2dPushStm.addr, init=myH2dPushStm.addr.getZero)
+  )
+  when (
+    myH2dPushStm.fire
+    //myH2dPushStm.valid
+  ) {
+    myH2dPushStm.addr := (
+      io.bus.sendData.addr
+    )
+  }
   //--------
   //myD2hPopStm.ready := False//True
   myD2hPopStm.ready := True
@@ -1338,21 +1338,21 @@ private[libsnowhouse] case class SnowHouseBusBridgeCtrl(
 
   val myCpuRecvAddrFifo = StreamFifo(
     dataType=MyCpuRecvAddrFifoPayload(),
-    depth=8,
+    depth=4,
     latency=(
       //2
-      //0
-      1
+      0
+      //1
     ),
     forFMax=true,
   )
   val myCpuRecvBranchPredictFifo = StreamFifo(
     dataType=MyCpuRecvBranchPredictFifoPayload(),
-    depth=8,
+    depth=4,
     latency=(
       //2
-      //0
-      1
+      0
+      //1
     ),
     forFMax=true,
   )
