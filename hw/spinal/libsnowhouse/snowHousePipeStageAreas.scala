@@ -1338,7 +1338,8 @@ private[libsnowhouse] case class SnowHouseBusBridgeCtrl(
     depth=8,
     latency=(
       //2
-      0
+      //0
+      1
     ),
     forFMax=true,
   )
@@ -1347,7 +1348,8 @@ private[libsnowhouse] case class SnowHouseBusBridgeCtrl(
     depth=8,
     latency=(
       //2
-      0
+      //0
+      1
     ),
     forFMax=true,
   )
