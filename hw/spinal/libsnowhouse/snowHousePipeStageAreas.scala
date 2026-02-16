@@ -10786,11 +10786,11 @@ case class SnowHousePipeStageWriteBack(
   //    )
   //  })
   //}
-  cWb.up(modBackPayload) := (
-    RegNext(myWbPayload(1), init=myWbPayload(1).getZero)
-  )
-  when (cWb.up.isFiring) {
-    cWb.up(modBackPayload) := myWbPayload(1)
-  }
-  //cWb.up(modBackPayload) := myWbPayload(1)
+  //cWb.up(modBackPayload) := (
+  //  RegNext(myWbPayload(1), init=myWbPayload(1).getZero)
+  //)
+  //when (cWb.up.isFiring) {
+  //  cWb.up(modBackPayload) := myWbPayload(1)
+  //}
+  cWb.up(modBackPayload) := myWbPayload(1)
 }
