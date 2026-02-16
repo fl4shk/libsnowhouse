@@ -1057,16 +1057,19 @@ private[libsnowhouse] case class SnowHouseIbusToLcvIbusBridge(
 
   myH2dPushStm.addr.allowOverride
   myH2dPushStm.addr := (
-    RegNext(myH2dPushStm.addr, init=myH2dPushStm.addr.getZero)
+    io.bus.sendData.addr
   )
-  when (
-    myH2dPushStm.fire
-    //myH2dPushStm.valid
-  ) {
-    myH2dPushStm.addr := (
-      io.bus.sendData.addr
-    )
-  }
+  //myH2dPushStm.addr := (
+  //  RegNext(myH2dPushStm.addr, init=myH2dPushStm.addr.getZero)
+  //)
+  //when (
+  //  myH2dPushStm.fire
+  //  //myH2dPushStm.valid
+  //) {
+  //  myH2dPushStm.addr := (
+  //    io.bus.sendData.addr
+  //  )
+  //}
   //--------
   //myD2hPopStm.ready := False//True
   myD2hPopStm.ready := True

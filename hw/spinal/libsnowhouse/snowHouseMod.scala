@@ -1455,32 +1455,56 @@ case class SnowHouse
     psExSetPc=psExSetPc,
   )
 
-  //val cIfPostLcvIbus = (
-  //  cfg.useLcvInstrBus
-  //) generate (CtrlLink(
-  //  up=sIf.down,
-  //  down={
-  //    val node = Node()
-  //    node.setName("cIfPostLcvIbus_down")
-  //    node
-  //  }
-  //))
-  //if (cfg.useLcvInstrBus) {
-  //  linkArr += cIfPostLcvIbus
-  //}
-  //val sIfPostLcvIbus = (
-  //  cfg.useLcvInstrBus
-  //) generate (StageLink(
-  //  up=cIfPostLcvIbus.down,
-  //  down={
-  //    val node = Node()
-  //    node.setName("sIfPostLcvIbus_down")
-  //    node
-  //  }
-  //))
-  //if (cfg.useLcvInstrBus) {
-  //  linkArr += sIfPostLcvIbus
-  //}
+  val cIfPostLcvIbus = (
+    //cfg.useLcvInstrBus
+    cfg.myHaveS2mIf
+  ) generate (CtrlLink(
+    up=(
+      //sIf.down
+      s2mIf.down
+    ),
+    down={
+      val node = Node()
+      node.setName("cIfPostLcvIbus_down")
+      node
+    }
+  ))
+  if (
+    //cfg.useLcvInstrBus
+    cfg.myHaveS2mIf
+  ) {
+    linkArr += cIfPostLcvIbus
+  }
+  val sIfPostLcvIbus = (
+    //cfg.useLcvInstrBus
+    cfg.myHaveS2mIf
+  ) generate (StageLink(
+    up=cIfPostLcvIbus.down,
+    down={
+      val node = Node()
+      node.setName("sIfPostLcvIbus_down")
+      node
+    }
+  ))
+  if (
+    //cfg.useLcvInstrBus
+    cfg.myHaveS2mIf
+  ) {
+    linkArr += sIfPostLcvIbus
+  }
+  val s2mIfPostLcvIbus = (
+    cfg.myHaveS2mIf
+  ) generate (S2MLink(
+    up=sIfPostLcvIbus.down,
+    down={
+      val node = Node()
+      node.setName("s2mIfPostLcvIbus_down")
+      node
+    }
+  ))
+  if (cfg.myHaveS2mIf) {
+    linkArr += s2mIfPostLcvIbus
+  }
 
   val cId = CtrlLink(
     up={
@@ -1490,8 +1514,9 @@ case class SnowHouse
       ) (
         sIf.down
       ) else ( // if (myHaveS2mIfId)
-        s2mIf.down
+        //s2mIf.down
         //sIfPostLcvIbus.down
+        s2mIfPostLcvIbus.down
       )
       //s2mIf.down
     },
