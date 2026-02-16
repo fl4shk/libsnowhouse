@@ -10555,75 +10555,8 @@ case class SnowHousePipeStageWriteBack(
         ////!myDbusExtraReady(3)
         !myD2hBus.valid
       ) {
-        cWb.duplicateIt()
-        //cWb.haltIt()
-        //val mapElem = myWbPayload.gprIdxToMemAddrIdxMap(0)
-        //val myCurrExt = (
-        //  if (!mapElem.haveHowToSetIdx) (
-        //    myWbPayload.myExt(0)
-        //  ) else (
-        //    myWbPayload.myExt(mapElem.howToSetIdx)
-        //  )
-        //)
-        //myCurrExt.modMemWordValid.foreach(mmwValidItem => {
-        //  mmwValidItem := False
-        //})
-      } otherwise {
-        //when (!myWbPayload.outpDecodeExt.memAccessKind.asBits(1)) {
-        //  //myCurrExt.modMemWord := myDbus.recvData.word
-        //  myCurrExt.modMemWord := myD2hBus.data
-        //  //myCurrExt.modMemWordValid.foreach(current => {
-        //  //  current := (
-        //  //    // TODO: support more destination GPRs
-        //  //    //!myWbPayload.gprIsZeroVec(0)
-        //  //    True
-        //  //  )
-        //  //})
-        //  for (idx <- 0 until cfg.regFileCfg.modMemWordValidSize) {
-        //    myCurrExt.modMemWordValid(idx) := (
-        //      !myWbPayload.gprIsZeroVec.last(idx)
-        //    )
-        //    //when (!myWbPayload.gprIsZeroVec.last(idx)) {
-        //    //  //myCurrExt.modMemWordValid.foreach(current => {
-        //    //  //  current := (
-        //    //  //    // TODO: support more destination GPRs
-        //    //  //    //!myWbPayload.gprIsZeroVec(0)
-        //    //  //    True
-        //    //  //  )
-        //    //  //})
-        //    //}
-        //  }
-        //  //val myDecodeExt = myWbPayload.outpDecodeExt
-        //  //val mapElem = myWbPayload.gprIdxToMemAddrIdxMap(0)
-        //  //val myCurrExt = (
-        //  //  if (!mapElem.haveHowToSetIdx) (
-        //  //    myWbPayload.myExt(
-        //  //      0
-        //  //    )
-        //  //  ) else (
-        //  //    myWbPayload.myExt(
-        //  //      mapElem.howToSetIdx
-        //  //    )
-        //  //  )
-        //  //)
-        //  //when (!myWbPayload.outpDecodeExt.memAccessKind.asBits(1)) {
-        //  //  myCurrExt.modMemWord := myDbus.recvData.word
-        //  //  //myCurrExt.modMemWordValid.foreach(current => {
-        //  //  //  current := (
-        //  //  //    // TODO: support more destination GPRs
-        //  //  //    //!myWbPayload.gprIsZeroVec(0)
-        //  //  //    True
-        //  //  //  )
-        //  //  //})
-        //  //}
-        //  //myCurrExt.modMemWordValid.foreach(current => {
-        //  //  current := (
-        //  //    // TODO: support more destination GPRs
-        //  //    //!myWbPayload.gprIsZeroVec(0)
-        //  //    True
-        //  //  )
-        //  //})
-        //}
+        //cWb.duplicateIt()
+        cWb.haltIt()
       }
     }
     switch (
@@ -10853,11 +10786,11 @@ case class SnowHousePipeStageWriteBack(
   //    )
   //  })
   //}
-  //cWb.up(modBackPayload) := (
-  //  RegNext(myWbPayload, init=myWbPayload.getZero)
-  //)
-  //when (cWb.up.isFiring) {
-  //  cWb.up(modBackPayload) := myWbPayload
-  //}
-  cWb.up(modBackPayload) := myWbPayload(1)
+  cWb.up(modBackPayload) := (
+    RegNext(myWbPayload(1), init=myWbPayload(1).getZero)
+  )
+  when (cWb.up.isFiring) {
+    cWb.up(modBackPayload) := myWbPayload(1)
+  }
+  //cWb.up(modBackPayload) := myWbPayload(1)
 }

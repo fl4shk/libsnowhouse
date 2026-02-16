@@ -868,8 +868,8 @@ case class SnowHouseConfig(
       if (!useLcvDataBus) (
         0
       ) else (
-        //2
-        1
+        2
+        //1
         //0
       )
     ),
