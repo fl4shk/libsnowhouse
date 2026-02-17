@@ -1,7 +1,7 @@
 #include <stdint.h>
 
-volatile uint32_t* fb = (volatile uint32_t*)0x1000000ull;
-//volatile uint16_t* fb = (volatile uint16_t*)0x1000000ull;
+//volatile uint32_t* fb = (volatile uint32_t*)0x1000000ull;
+volatile uint16_t* fb = (volatile uint16_t*)0x1000000ull;
 
 const uint32_t FB_WIDTH = (
 	/*64;*/ /*76 >> 1*/
@@ -30,10 +30,10 @@ int main(int argc, char** argv) {
 			for (uint32_t i=0; i<FB_WIDTH; ++i) {
 				const uint32_t fb_idx = j * FB_WIDTH + i;
 				fb[fb_idx] = (
-					((j & 0xffu) << 8u)
-					+ ((i & 0xffu) << 0u)
-					//(((j >> 3) & 0x1fu) << 5u)
-					//+ (((i >> 3) & 0x1fu) << 0u)
+					//((j & 0xffu) << 8u)
+					//+ ((i & 0xffu) << 0u)
+					(((j >> 3) & 0x1fu) << 5u)
+					+ (((i >> 3) & 0x1fu) << 0u)
 					//--------
 					//((j & 0x1fu) << 5u)
 					//+ ((i & 0x1fu) << 0u)
