@@ -1345,6 +1345,7 @@ private[libsnowhouse] case class SnowHouseBusBridgeCtrl(
       //1
     ),
     forFMax=true,
+    initPayload=Some(MyCpuRecvAddrFifoPayload().getZero)
   )
   val myCpuRecvBranchPredictFifo = StreamFifo(
     dataType=MyCpuRecvBranchPredictFifoPayload(),
@@ -1355,6 +1356,7 @@ private[libsnowhouse] case class SnowHouseBusBridgeCtrl(
       //1
     ),
     forFMax=true,
+    initPayload=Some(MyCpuRecvBranchPredictFifoPayload().getZero),
   )
 
   myCpuRecvAddrFifo.io.push.valid := (
@@ -1631,6 +1633,7 @@ private[libsnowhouse] case class SnowHouseBusBridgeCtrl(
       0
     ),
     forFMax=true,
+    initPayload=Some(io.cpuBus.recvData.word.getZero),
   )
   myRecvFifo.io.push.valid := (
     io.bridgeBus.ready
@@ -4049,6 +4052,7 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
   when (
     //io.upIsFiring
     io.upIsValid
+    //&& io.downIsReady
     //|| RegNext(io.upIsFiring, init=False)
   ) {
     when (tempPsExSetPcValid) {
@@ -4260,8 +4264,15 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
     //  io.upIsValid,
     //  init=False
     //)
-    //io.upIsValid
     RegNext(
+      //io.upIsValid
+      ////&& io.downIsReady
+      (
+        io.upIsFiring
+      ),
+      init=False
+    )
+    && RegNext(
       (
         io.splitOp.exSetNextPcKind
         =/= SnowHousePsExSetNextPcKind.Dont
@@ -4442,6 +4453,7 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
           cond=io.upIsFiring,
           init=False
         )
+        //&& io.upIsFiring
         //&& RegNext(
         //  (
         //    !io.upIsReady

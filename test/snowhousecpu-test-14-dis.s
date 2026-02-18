@@ -5,11 +5,8 @@ snowhousecpu-test-14.elf:     file format elf32-snowhousecpu
 Disassembly of section .text:
 
 00000000 <_post_const_data-0x200>:
-   0:	7f 00 00 a0 	beq	r0, r0, 508
-   4:	01 00 00 00 	add	r0, r0, 1
-   8:	02 00 00 00 	add	r0, r0, 2
-   c:	03 00 00 00 	add	r0, r0, 3
-  10:	04 00 00 00 	add	r0, r0, 4
+	...
+  10:	7b 00 00 a0 	beq	r0, r0, 492
   14:	05 00 00 00 	add	r0, r0, 5
   18:	06 00 00 00 	add	r0, r0, 6
   1c:	07 00 00 00 	add	r0, r0, 7
@@ -136,42 +133,50 @@ Disassembly of section .text:
 
 00000200 <_post_const_data>:
  200:	00 00 01 90 	str	r0, r0, 0
- 204:	9c 02 00 01 	add	r1, r0, 668
- 208:	07 00 10 70 	cpy	ids, r1
- 20c:	80 00 00 01 	add	r1, r0, 128
- 210:	00 00 10 92 	ldr	r2, r1, 0
- 214:	04 00 11 92 	str	r2, r1, 4
- 218:	00 00 21 83 	mul	r3, r2, r1
+ 204:	01 00 00 01 	add	r1, r0, 1
+ 208:	04 00 01 91 	str	r1, r0, 4
+ 20c:	02 00 00 01 	add	r1, r0, 2
+ 210:	08 00 01 91 	str	r1, r0, 8
+ 214:	03 00 00 01 	add	r1, r0, 3
+ 218:	0c 00 01 91 	str	r1, r0, 12
+ 21c:	04 00 00 01 	add	r1, r0, 4
+ 220:	10 00 01 91 	str	r1, r0, 16
+ 224:	bc 02 00 01 	add	r1, r0, 700
+ 228:	07 00 10 70 	cpy	ids, r1
+ 22c:	80 00 00 01 	add	r1, r0, 128
+ 230:	00 00 10 92 	ldr	r2, r1, 0
+ 234:	04 00 11 92 	str	r2, r1, 4
+ 238:	00 00 21 83 	mul	r3, r2, r1
 	...
- 234:	10 00 00 07 	add	r7, r0, 16
- 238:	00 00 00 08 	add	r8, r0, 0
+ 254:	10 00 00 07 	add	r7, r0, 16
+ 258:	00 00 00 08 	add	r8, r0, 0
 
-0000023c <_loop_2>:
- 23c:	fc ff 70 07 	add	r7, r7, -4
- 240:	00 00 70 9b 	ldr	r11, r7, 0
- 244:	fd ff b4 a8 	blts	r8, r11, -12
+0000025c <_loop_2>:
+ 25c:	fc ff 70 07 	add	r7, r7, -4
+ 260:	00 00 70 9b 	ldr	r11, r7, 0
+ 264:	fd ff b4 a8 	blts	r8, r11, -12
 
-00000248 <_prep_test_irqs>:
- 248:	00 00 00 04 	add	r4, r0, 0
- 24c:	02 00 00 02 	add	r2, r0, 2
- 250:	00 01 00 07 	add	r7, r0, 256
- 254:	01 00 00 06 	add	r6, r0, 1
- 258:	09 00 60 70 	cpy	ie, r6
+00000268 <_prep_test_irqs>:
+ 268:	00 00 00 04 	add	r4, r0, 0
+ 26c:	02 00 00 02 	add	r2, r0, 2
+ 270:	00 01 00 07 	add	r7, r0, 256
+ 274:	01 00 00 06 	add	r6, r0, 1
+ 278:	09 00 60 70 	cpy	ie, r6
 
-0000025c <_test_irqs>:
- 25c:	00 00 12 01 	add	r1, r1, r2
- 260:	00 00 10 05 	add	r5, r1, 0
- 264:	04 00 40 04 	add	r4, r4, 4
- 268:	01 00 50 05 	add	r5, r5, 1
- 26c:	00 00 40 05 	add	r5, r4, 0
- 270:	00 00 50 93 	ldr	r3, r5, 0
- 274:	f9 ff 72 a3 	bltu	r3, r7, -28
+0000027c <_test_irqs>:
+ 27c:	00 00 12 01 	add	r1, r1, r2
+ 280:	00 00 10 05 	add	r5, r1, 0
+ 284:	04 00 40 04 	add	r4, r4, 4
+ 288:	01 00 50 05 	add	r5, r5, 1
+ 28c:	00 00 40 05 	add	r5, r4, 0
+ 290:	00 00 50 93 	ldr	r3, r5, 0
+ 294:	f9 ff 72 a3 	bltu	r3, r7, -28
 
-00000278 <_infin>:
+00000298 <_infin>:
 	...
- 298:	f7 ff 00 a0 	beq	r0, r0, -36
+ 2b8:	f7 ff 00 a0 	beq	r0, r0, -36
 
-0000029c <_irq_handler>:
- 29c:	01 00 a0 0a 	add	r10, r10, 1
- 2a0:	0a 00 00 70 	ret	ira
+000002bc <_irq_handler>:
+ 2bc:	01 00 a0 0a 	add	r10, r10, 1
+ 2c0:	0a 00 00 70 	ret	ira
 	...

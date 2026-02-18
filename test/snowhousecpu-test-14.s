@@ -1,11 +1,14 @@
 .altmacro
 .text
-
+cpy r0, r0
+cpy r0, r0
+cpy r0, r0
+cpy r0, r0
 
 beq r0, r0, _post_const_data
 
-.set i,1
-.rept (0x200 >> 2) - 1
+.set i,5
+.rept (0x200 >> 2) - 5//1
 	.word i
 	.set i,i+1
 .endr
@@ -13,7 +16,19 @@ beq r0, r0, _post_const_data
 //.endr
 
 _post_const_data:
+//cpy r0, r0
+//cpy r0, r0
+//cpy r0, r0
+//cpy r0, r0
 str r0, r0, 0x0
+cpy r1, 0x1
+str r1, r0, 0x4
+cpy r1, 0x2
+str r1, r0, 0x8
+cpy r1, 0x3
+str r1, r0, 0xc
+cpy r1, 0x4
+str r1, r0, 0x10
 
 //bl r3, _shared_mem_init
 

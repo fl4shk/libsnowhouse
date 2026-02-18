@@ -855,7 +855,10 @@ case class SnowHouseConfig(
           val toAdd: Int = 0x0
           tempArr += toAdd
         }
-        tempArr += BigInt(0x800)
+        tempArr += (
+          //BigInt(0x800)
+          BigInt(0x0)
+        )
         myInitBigInt += tempArr
       }
       Some(myInitBigInt)
