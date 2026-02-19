@@ -9395,11 +9395,13 @@ case class SnowHousePipeStageExecute(
   psExSetPc.nextPc := (
     //RegNext(psExSetPc.nextPc, init=psExSetPc.nextPc.getZero)
     //RegNext(psExSetPc.nextPc, init=psExSetPc.nextPc.getZero)
-    RegNextWhen(
-      next=setOutpModMemWord.io.psExSetPc.nextPc,
-      cond=(
-        //setOutpModMemWord.io.psExSetPc.fire
-        nextPsExSetPcValid(0)
+    RegNext(
+      RegNext(
+        next=setOutpModMemWord.io.psExSetPc.nextPc,
+        //cond=(
+        //  //setOutpModMemWord.io.psExSetPc.fire
+        //  nextPsExSetPcValid(0)
+        //),
       ),
       init=setOutpModMemWord.io.psExSetPc.nextPc.getZero,
     )
@@ -9424,9 +9426,11 @@ case class SnowHousePipeStageExecute(
     //  next=outp.btbElemBranchKind(1),
     //  init=outp.btbElemBranchKind(1).getZero,
     //)
-    RegNextWhen(
-      setOutpModMemWord.io.psExSetPc.branchKind,
-      cond=nextPsExSetPcValid(1),
+    RegNext(
+      RegNext(
+        setOutpModMemWord.io.psExSetPc.branchKind,
+        //cond=nextPsExSetPcValid(1),
+      ),
       init=setOutpModMemWord.io.psExSetPc.branchKind.getZero,
     )
   )
@@ -9444,9 +9448,11 @@ case class SnowHousePipeStageExecute(
   //)
   psExSetPc.branchTgtBufElem.allowOverride
   psExSetPc.branchTgtBufElem := (
-    RegNextWhen(
-      setOutpModMemWord.io.psExSetPc.branchTgtBufElem,
-      cond=nextPsExSetPcValid(2),
+    RegNext(
+      RegNext(
+        setOutpModMemWord.io.psExSetPc.branchTgtBufElem,
+        //cond=nextPsExSetPcValid(2),
+      ),
       init=(
         setOutpModMemWord.io.psExSetPc.branchTgtBufElem.getZero
       ),
