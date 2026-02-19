@@ -9082,7 +9082,7 @@ case class SnowHousePipeStageExecute(
         //  ),
         //  init=False
         //)
-        nextPsExSetPcValid.last//(0)
+        nextPsExSetPcValid(0)
       ), 
       init=False
     )
@@ -9393,25 +9393,11 @@ case class SnowHousePipeStageExecute(
     setOutpModMemWord.io.splitOp.setJmpBrOtherOpToDefault()
   }
   psExSetPc.nextPc := (
-    RegNext(psExSetPc.nextPc, init=psExSetPc.nextPc.getZero)
-    //RegNext(psExSetPc.nextPc, init=psExSetPc.nextPc.getZero)
-    //RegNextWhen(
-    //  next=setOutpModMemWord.io.psExSetPc.nextPc,
-    //  cond=(
-    //    //setOutpModMemWord.io.psExSetPc.fire
-    //    nextPsExSetPcValid(0)
-    //  ),
-    //  init=setOutpModMemWord.io.psExSetPc.nextPc.getZero,
-    //)
+    RegNext(
+      next=setOutpModMemWord.io.psExSetPc.nextPc,
+      init=setOutpModMemWord.io.psExSetPc.nextPc.getZero,
+    )
   )
-  when (nextPsExSetPcValid(0)) {
-    psExSetPc.nextPc := setOutpModMemWord.io.psExSetPc.nextPc
-  }
-  //when (
-  //  RegNext(setOutpModMemWord.io.psExSetPc.valid, init=False) 
-  //) {
-  //  psExSetPc.nextPc := setOutpModMemWord.io.psExSetPc.nextPc
-  //}
   //psExSetPc.dstPc := (
   //  RegNext(
   //    next=setOutpModMemWord.io.psExSetPc.dstPc,
@@ -9423,25 +9409,15 @@ case class SnowHousePipeStageExecute(
     outp.btbElemBranchKind(1)
   )
   psExSetPc.branchKind := (
-    RegNext(
-      psExSetPc.branchKind,
-      init=psExSetPc.branchKind.getZero
-    )
     //RegNext(
     //  next=outp.btbElemBranchKind(1),
     //  init=outp.btbElemBranchKind(1).getZero,
     //)
-    //RegNext(
-    //  RegNext(
-    //    setOutpModMemWord.io.psExSetPc.branchKind,
-    //    //cond=nextPsExSetPcValid(1),
-    //  ),
-    //  init=setOutpModMemWord.io.psExSetPc.branchKind.getZero,
-    //)
+    RegNext(
+      setOutpModMemWord.io.psExSetPc.branchKind,
+      init=setOutpModMemWord.io.psExSetPc.branchKind.getZero,
+    )
   )
-  when (nextPsExSetPcValid(1)) {
-    psExSetPc.branchKind := setOutpModMemWord.io.psExSetPc.branchKind
-  }
   //psExSetPc.branchTgtBufElem := (
   //  RegNext(
   //    RegNext(
@@ -9456,23 +9432,13 @@ case class SnowHousePipeStageExecute(
   //)
   psExSetPc.branchTgtBufElem.allowOverride
   psExSetPc.branchTgtBufElem := (
-    //RegNextWhen(
-    //  setOutpModMemWord.io.psExSetPc.branchTgtBufElem,
-    //  cond=nextPsExSetPcValid(2),
-    //  init=(
-    //    setOutpModMemWord.io.psExSetPc.branchTgtBufElem.getZero
-    //  ),
-    //)
     RegNext(
-      psExSetPc.branchTgtBufElem,
-      init=psExSetPc.branchTgtBufElem.getZero
+      setOutpModMemWord.io.psExSetPc.branchTgtBufElem,
+      init=(
+        setOutpModMemWord.io.psExSetPc.branchTgtBufElem.getZero
+      ),
     )
   )
-  when (nextPsExSetPcValid(2)) {
-    psExSetPc.branchTgtBufElem := (
-      setOutpModMemWord.io.psExSetPc.branchTgtBufElem
-    )
-  }
   psExSetPc.branchTgtBufElem.srcRegPc.allowOverride
   psExSetPc.branchTgtBufElem.srcRegPc := (
     RegNext(
