@@ -3977,47 +3977,62 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
       myPsExSetPcValid,
       init=myPsExSetPcValid.getZero,
     )
+    //False
   )
 
-  val myPastUpIsFiring = (
+  //val myPastUpIsFiring = (
+  //  RegNext(
+  //    io.upIsFiring,
+  //    init=False
+  //  )
+  //)
+  //val rSavedPastUpIsFiring = Reg(Bool(), init=False)
+
+  //val stickyPastUpIsFiring = (
+  //  myPastUpIsFiring
+  //  || rSavedPastUpIsFiring
+  //)
+  //when (myPastUpIsFiring) {
+  //  rSavedPastUpIsFiring := True
+  //}
+  
+  //when (
+  //  //RegNext(
+  //  //  RegNext(
+  //  //    io.upIsFiring,
+  //  //    init=False
+  //  //  ),
+  //  //  init=False
+  //  //)
+  //  RegNext(
+  //    (
+  //      stickyPastUpIsFiring
+  //      && io.upIsValid
+  //      && io.downIsReady
+  //    ),
+  //    init=False
+  //  )
+  //  || io.shouldIgnoreInstr.last
+  //  //&& io.upIsValid
+  //) {
+  //  myPsExSetPcValid := False
+  //  rSavedPastUpIsFiring := False
+  //}
+  when (
     RegNext(
       io.upIsFiring,
       init=False
     )
-  )
-  val rSavedPastUpIsFiring = Reg(Bool(), init=False)
-
-  val stickyPastUpIsFiring = (
-    myPastUpIsFiring
-    || rSavedPastUpIsFiring
-  )
-  when (myPastUpIsFiring) {
-    rSavedPastUpIsFiring := True
-  }
-  
-  when (
-    //RegNext(
-    //  RegNext(
-    //    io.upIsFiring,
-    //    init=False
-    //  ),
-    //  init=False
-    //)
-    RegNext(
-      (
-        stickyPastUpIsFiring
-        && io.upIsValid
-        && io.downIsReady
-      ),
-      init=False
-    )
-    //&& io.upIsValid
   ) {
     myPsExSetPcValid := False
-    rSavedPastUpIsFiring := False
   }
   when (
     myPsExSetPcValidToOrReduce.orR
+    //&& RegNextWhen(
+    //  !io.shouldIgnoreInstr.last,
+    //  cond=io.upIsFiring,
+    //  init=False
+    //)
   ) {
     myPsExSetPcValid := True
   }
@@ -4264,15 +4279,21 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
     //  io.upIsValid,
     //  init=False
     //)
-    RegNext(
-      //io.upIsValid
-      ////&& io.downIsReady
-      (
-        io.upIsFiring
-      ),
+    //RegNext(
+    //  //io.upIsValid
+    //  ////&& io.downIsReady
+    //  (
+    //    io.upIsFiring
+    //  ),
+    //  init=False
+    //)
+    RegNextWhen(
+      !io.shouldIgnoreInstr.last,
+      cond=io.upIsFiring,
       init=False
     )
-    && RegNext(
+    && 
+    RegNext(
       (
         io.splitOp.exSetNextPcKind
         =/= SnowHousePsExSetNextPcKind.Dont
