@@ -6,7 +6,7 @@ Disassembly of section .text:
 
 00000000 <_my_text_start>:
 	...
-  10:	a3 00 00 b0 	bl	r0, 652
+  10:	77 00 00 b0 	bl	r0, 476
 	...
 
 00000020 <_deregister_tm_clones>:
@@ -63,8 +63,8 @@ Disassembly of section .text:
   d0:	00 00 77 91 	stb	r1, r7, 0
 
 000000d4 <.L9>:
-  d4:	00 00 f0 9d 	ldr	lr, sp, 0
-  d8:	04 00 f0 97 	ldr	r7, sp, 4
+  d4:	00 00 f0 97 	ldr	r7, sp, 0
+  d8:	04 00 f0 9d 	ldr	lr, sp, 4
   dc:	08 00 f0 0f 	add	sp, sp, 8
   e0:	00 00 d6 a0 	jl	r0, lr
 	...
@@ -149,132 +149,133 @@ Disassembly of section .text:
 
 000001e0 <.Lmemset_end>:
  1e0:	00 00 d6 a0 	jl	r0, lr
-	...
-
-000001f0 <___libc_init_array>:
- 1f0:	f0 ff f0 0f 	add	sp, sp, -16
- 1f4:	00 00 f1 97 	str	r7, sp, 0
- 1f8:	04 00 f1 98 	str	r8, sp, 4
- 1fc:	08 00 f1 99 	str	r9, sp, 8
- 200:	0c 00 f1 9d 	str	lr, sp, 12
- 204:	00 00 00 c0 	add	r9, r0, 0 // pre #0x0
- 208:	00 00 00 09 
- 20c:	00 00 00 c0 	add	r7, r0, 0 // pre #0x0
- 210:	00 00 00 07 
- 214:	08 00 70 a9 	beq	r9, r7, 32
- 218:	00 00 97 19 	sub	r9, r9, r7
- 21c:	25 00 90 79 	asr	r9, r9, 2
- 220:	00 00 00 08 	add	r8, r0, 0
-
-00000224 <.L3>:
- 224:	00 00 70 91 	ldr	r1, r7, 0
- 228:	00 00 16 ad 	jl	lr, r1
- 22c:	01 00 80 08 	add	r8, r8, 1
- 230:	04 00 70 07 	add	r7, r7, 4
- 234:	fb ff 92 a8 	bltu	r8, r9, -20
-
-00000238 <.L2>:
- 238:	00 00 00 c0 	add	r2, r0, 0 // pre #0x0
- 23c:	00 00 00 02 
- 240:	00 00 00 01 	add	r1, r0, 0
- 244:	02 00 10 a2 	beq	r2, r1, 8
- 248:	ff ff 00 c0 	bl	lr, -592 // pre #0xffff
- 24c:	6c ff ff bd 
-
-00000250 <.L4>:
- 250:	00 00 00 c0 	add	r9, r0, 0 // pre #0x0
- 254:	00 00 00 09 
- 258:	00 00 00 c0 	add	r7, r0, 0 // pre #0x0
- 25c:	00 00 00 07 
- 260:	08 00 70 a9 	beq	r9, r7, 32
- 264:	00 00 97 19 	sub	r9, r9, r7
- 268:	25 00 90 79 	asr	r9, r9, 2
- 26c:	00 00 00 08 	add	r8, r0, 0
-
-00000270 <.L6>:
- 270:	00 00 70 91 	ldr	r1, r7, 0
- 274:	00 00 16 ad 	jl	lr, r1
- 278:	01 00 80 08 	add	r8, r8, 1
- 27c:	04 00 70 07 	add	r7, r7, 4
- 280:	fb ff 92 a8 	bltu	r8, r9, -20
-
-00000284 <.L1>:
- 284:	00 00 f0 9d 	ldr	lr, sp, 0
- 288:	04 00 f0 99 	ldr	r9, sp, 4
- 28c:	08 00 f0 98 	ldr	r8, sp, 8
- 290:	0c 00 f0 97 	ldr	r7, sp, 12
- 294:	10 00 f0 0f 	add	sp, sp, 16
- 298:	00 00 d6 a0 	jl	r0, lr
 
 Disassembly of section .init:
 
-000002a0 <_start>:
+000001f0 <_start>:
 	...
- 2a8:	00 10 00 0f 	add	sp, r0, 4096
- 2ac:	02 00 00 a0 	beq	r0, r0, 8
+ 1f8:	00 10 00 0f 	add	sp, r0, 4096
+ 1fc:	02 00 00 a0 	beq	r0, r0, 8
 	...
 
-000002b8 <__cstart>:
- 2b8:	fc ff f0 0f 	add	sp, sp, -4
- 2bc:	00 00 f1 9d 	str	lr, sp, 0
- 2c0:	64 04 00 03 	add	r3, r0, 1124
- 2c4:	40 04 00 02 	add	r2, r0, 1088
- 2c8:	40 04 00 01 	add	r1, r0, 1088
- 2cc:	9c ff ff bd 	bl	lr, -400
- 2d0:	71 04 00 03 	add	r3, r0, 1137
- 2d4:	00 00 00 02 	add	r2, r0, 0
- 2d8:	64 04 00 01 	add	r1, r0, 1124
- 2dc:	ad ff ff bd 	bl	lr, -332
- 2e0:	c3 ff ff bd 	bl	lr, -244
- 2e4:	00 00 00 02 	add	r2, r0, 0
- 2e8:	00 00 20 01 	add	r1, r2, 0
- 2ec:	08 00 00 bd 	bl	lr, 32
+00000208 <__cstart>:
+ 208:	fc ff f0 0f 	add	sp, sp, -4
+ 20c:	00 00 f1 9d 	str	lr, sp, 0
+ 210:	64 04 00 03 	add	r3, r0, 1124
+ 214:	40 04 00 02 	add	r2, r0, 1088
+ 218:	40 04 00 01 	add	r1, r0, 1088
+ 21c:	c8 ff ff bd 	bl	lr, -224
+ 220:	71 04 00 03 	add	r3, r0, 1137
+ 224:	00 00 00 02 	add	r2, r0, 0
+ 228:	64 04 00 01 	add	r1, r0, 1124
+ 22c:	d9 ff ff bd 	bl	lr, -156
+ 230:	23 00 00 bd 	bl	lr, 140
+ 234:	00 00 00 02 	add	r2, r0, 0
+ 238:	00 00 20 01 	add	r1, r2, 0
+ 23c:	08 00 00 bd 	bl	lr, 32
 
-000002f0 <.L2>:
- 2f0:	ff ff 00 a0 	beq	r0, r0, -4
+00000240 <.L2>:
+ 240:	ff ff ff b0 	bl	r0, -4
 
-000002f4 <_init>:
- 2f4:	86 ff ff bd 	bl	lr, -488
- 2f8:	00 00 d6 a0 	jl	r0, lr
+00000244 <_init>:
+ 244:	b2 ff ff bd 	bl	lr, -312
+ 248:	00 00 d6 a0 	jl	r0, lr
 
 Disassembly of section .fini:
 
-000002fc <_fini>:
- 2fc:	6b ff ff bd 	bl	lr, -596
- 300:	00 00 d6 a0 	jl	r0, lr
+0000024c <_fini>:
+ 24c:	97 ff ff bd 	bl	lr, -420
+ 250:	00 00 d6 a0 	jl	r0, lr
 
 Disassembly of section .text.startup:
 
-00000310 <_main>:
- 310:	f8 ff f0 0f 	add	sp, sp, -8
- 314:	00 00 f1 97 	str	r7, sp, 0
- 318:	04 00 f1 9d 	str	lr, sp, 4
- 31c:	60 04 00 01 	add	r1, r0, 1120
- 320:	00 00 10 9d 	ldr	lr, r1, 0
- 324:	00 00 00 06 	add	r6, r0, 0
- 328:	40 01 00 05 	add	r5, r0, 320
- 32c:	f0 00 00 07 	add	r7, r0, 240
+00000260 <_main>:
+ 260:	f8 ff f0 0f 	add	sp, sp, -8
+ 264:	00 00 f1 97 	str	r7, sp, 0
+ 268:	04 00 f1 9d 	str	lr, sp, 4
+ 26c:	60 04 00 01 	add	r1, r0, 1120
+ 270:	00 00 10 9d 	ldr	lr, r1, 0
+ 274:	00 00 00 06 	add	r6, r0, 0
+ 278:	40 01 00 05 	add	r5, r0, 320
+ 27c:	f0 00 00 07 	add	r7, r0, 240
 
-00000330 <.L2>:
- 330:	33 00 60 74 	lsr	r4, r6, 3
- 334:	51 00 40 74 	lsl	r4, r4, 5
- 338:	00 00 d0 03 	add	r3, lr, 0
- 33c:	00 00 00 02 	add	r2, r0, 0
+00000280 <.L2>:
+ 280:	33 00 60 74 	lsr	r4, r6, 3
+ 284:	51 00 40 74 	lsl	r4, r4, 5
+ 288:	00 00 d0 03 	add	r3, lr, 0
+ 28c:	00 00 00 02 	add	r2, r0, 0
 
-00000340 <.L3>:
- 340:	33 00 20 71 	lsr	r1, r2, 3
- 344:	1f 00 10 61 	and	r1, r1, 31
- 348:	00 00 14 51 	or	r1, r1, r4
- 34c:	00 00 36 91 	sth	r1, r3, 0
- 350:	01 00 20 02 	add	r2, r2, 1
- 354:	02 00 30 03 	add	r3, r3, 2
- 358:	f9 ff 51 a2 	bne	r2, r5, -28
- 35c:	01 00 60 06 	add	r6, r6, 1
- 360:	80 02 d0 0d 	add	lr, lr, 640
- 364:	f2 ff 71 a6 	bne	r6, r7, -56
+00000290 <.L3>:
+ 290:	33 00 20 71 	lsr	r1, r2, 3
+ 294:	1f 00 10 61 	and	r1, r1, 31
+ 298:	00 00 14 51 	or	r1, r1, r4
+ 29c:	00 00 36 91 	sth	r1, r3, 0
+ 2a0:	01 00 20 02 	add	r2, r2, 1
+ 2a4:	02 00 30 03 	add	r3, r3, 2
+ 2a8:	f9 ff 51 a2 	bne	r2, r5, -28
+ 2ac:	01 00 60 06 	add	r6, r6, 1
+ 2b0:	80 02 d0 0d 	add	lr, lr, 640
+ 2b4:	f2 ff 71 a6 	bne	r6, r7, -56
 
-00000368 <.L4>:
- 368:	ff ff 00 a0 	beq	r0, r0, -4
+000002b8 <.L4>:
+ 2b8:	ff ff ff b0 	bl	r0, -4
+
+Disassembly of section .text.__libc_init_array:
+
+000002c0 <___libc_init_array>:
+ 2c0:	f0 ff f0 0f 	add	sp, sp, -16
+ 2c4:	00 00 f1 97 	str	r7, sp, 0
+ 2c8:	04 00 f1 98 	str	r8, sp, 4
+ 2cc:	08 00 f1 99 	str	r9, sp, 8
+ 2d0:	0c 00 f1 9d 	str	lr, sp, 12
+ 2d4:	00 00 00 c0 	add	r9, r0, 0 // pre #0x0
+ 2d8:	00 00 00 09 
+ 2dc:	00 00 00 c0 	add	r7, r0, 0 // pre #0x0
+ 2e0:	00 00 00 07 
+ 2e4:	08 00 70 a9 	beq	r9, r7, 32
+ 2e8:	00 00 97 19 	sub	r9, r9, r7
+ 2ec:	25 00 90 79 	asr	r9, r9, 2
+ 2f0:	00 00 00 08 	add	r8, r0, 0
+
+000002f4 <.L3>:
+ 2f4:	00 00 70 91 	ldr	r1, r7, 0
+ 2f8:	00 00 16 ad 	jl	lr, r1
+ 2fc:	01 00 80 08 	add	r8, r8, 1
+ 300:	04 00 70 07 	add	r7, r7, 4
+ 304:	fb ff 92 a8 	bltu	r8, r9, -20
+
+00000308 <.L2>:
+ 308:	00 00 00 c0 	add	r2, r0, 0 // pre #0x0
+ 30c:	00 00 00 02 
+ 310:	00 00 00 01 	add	r1, r0, 0
+ 314:	02 00 10 a2 	beq	r2, r1, 8
+ 318:	ff ff 00 c0 	bl	lr, -800 // pre #0xffff
+ 31c:	38 ff ff bd 
+
+00000320 <.L4>:
+ 320:	00 00 00 c0 	add	r9, r0, 0 // pre #0x0
+ 324:	00 00 00 09 
+ 328:	00 00 00 c0 	add	r7, r0, 0 // pre #0x0
+ 32c:	00 00 00 07 
+ 330:	08 00 70 a9 	beq	r9, r7, 32
+ 334:	00 00 97 19 	sub	r9, r9, r7
+ 338:	25 00 90 79 	asr	r9, r9, 2
+ 33c:	00 00 00 08 	add	r8, r0, 0
+
+00000340 <.L6>:
+ 340:	00 00 70 91 	ldr	r1, r7, 0
+ 344:	00 00 16 ad 	jl	lr, r1
+ 348:	01 00 80 08 	add	r8, r8, 1
+ 34c:	04 00 70 07 	add	r7, r7, 4
+ 350:	fb ff 92 a8 	bltu	r8, r9, -20
+
+00000354 <.L1>:
+ 354:	00 00 f0 97 	ldr	r7, sp, 0
+ 358:	04 00 f0 98 	ldr	r8, sp, 4
+ 35c:	08 00 f0 99 	ldr	r9, sp, 8
+ 360:	0c 00 f0 9d 	ldr	lr, sp, 12
+ 364:	10 00 f0 0f 	add	sp, sp, 16
+ 368:	00 00 d6 a0 	jl	r0, lr
 
 Disassembly of section .rodata:
 
