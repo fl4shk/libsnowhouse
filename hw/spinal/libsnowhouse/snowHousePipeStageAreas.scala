@@ -4292,7 +4292,10 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
       cond=io.upIsFiring,
       init=False
     )
-    && 
+    //&& (
+    //  io.downIsReady
+    //)
+    &&
     RegNext(
       (
         io.splitOp.exSetNextPcKind
@@ -9321,7 +9324,10 @@ case class SnowHousePipeStageExecute(
     //init(SnowHouseSplitOpKind.CPY_CPYUI)
   )
   setOutpModMemWord.io.takeIrq := False
-  when (cMid0Front.up.isValid) {
+  when (
+    cMid0Front.up.isValid
+    && cMid0Front.down.isReady
+  ) {
     setOutpModMemWord.io.splitOp := outp.splitOp
     when (
       (
