@@ -25,8 +25,8 @@ case class SnowHouseCpuFramebufferDemoConfig(
   rgbCfg: RgbConfig,
   vgaTimingInfo: LcvVgaTimingInfo,
   fbCnt2dShift: ElabVec2[Int],
-  fbAddrSliceHi: Int=24,
-  fbAddrSliceLo: Int=24,
+  fbAddrSliceHi: Int=23,
+  fbAddrSliceLo: Int=23,
 ) {
   def cpuCfg = program.cfg
   val myDbusCfg = cpuCfg.shCfg.subCfg.lcvDbusEtcCfg.loBusCfg
@@ -140,8 +140,8 @@ case class SnowHouseCpuFramebufferDemo(
     withReset=true,//false,
     frequency=FixedFrequency(
       //25.0 MHz
-      //cfg.vgaTimingInfo.pixelClk
-      cfg.clkRate
+      cfg.vgaTimingInfo.pixelClk
+      //cfg.clkRate
     ),
   )
   val pixelFifo = StreamFifoCC(
@@ -241,7 +241,10 @@ case class SnowHouseCpuFramebufferDemo(
     //} else {
       // TODO: check if this works?
       vgaTimingInfo.driveSpinalVgaTimings(
-        clkRate=cfg.clkRate,
+        clkRate=(
+          //cfg.clkRate
+          vgaTimingInfo.pixelClk
+        ),
         spinalVgaTimings=vgaCtrl.io.timings,
       )
     //}
@@ -280,9 +283,9 @@ case class SnowHouseCpuFramebufferDemo(
     vgaCtrl.io.softReset := RegNext(False) init(True)
     //vgaCtrl.io.pixels <-/< myFbCtrl.io.pop
     vgaCtrl.io.pixels <-/< pixelFifo.io.pop
-    .repeat(
-      times=cpp
-    )._1
+    //.repeat(
+    //  times=cpp
+    //)._1
   }
   //def cpp = (cfg.clkRate / cfg.vgaTimingInfo.pixelClk).toInt
   println(
@@ -442,6 +445,7 @@ case class SnowHouseCpuFramebufferDemo(
       kind=LcvBusArbiterKind.Priority
     )
   )
+  myFbArbiter.io.en := True
 
   cpu.io.lcvDbus.h2dBus.translateInto(myFbDbusSlicer.io.host.h2dBus)(
     dataAssignment=(outp, inp) => {
@@ -690,47 +694,47 @@ object SnowHouseCpuFramebufferDemoSim extends App {
       //rWidth=8, gWidth=8, bWidth=8
     ),
     vgaTimingInfo=(
-      //LcvVgaTimingInfoMap.map("640x480@60")
+      LcvVgaTimingInfoMap.map("640x480@60")
       //LcvVgaTimingInfoMap.map("320x240@60")
       //LcvVgaTimingInfoMap.map("320x240@60")
-      LcvVgaTimingInfo(
-        pixelClk=(
-          //6.0 MHz
-          //48.0 MHz
-          //24.0 MHz
-          //12.0 MHz
-          //6.0 MHz
-          25.0 MHz
-        ),
-        htiming=LcvVgaTimingHv(
-          visib=(
-            //64
-            //640
-            //76
-            //160
-            320
-          ),
-          //front=1,
-          //sync=1,
-          //back=1
-          front=16,
-          sync=96,
-          back=48
-        ),
-        vtiming=LcvVgaTimingHv(
-          visib=(
-            //64
-            //480
-            76
-          ),
-          //front=1,
-          //sync=1,
-          //back=1
-          front=10,
-          sync=2,
-          back=33
-        ),
-      )
+      //LcvVgaTimingInfo(
+      //  pixelClk=(
+      //    //6.0 MHz
+      //    //48.0 MHz
+      //    //24.0 MHz
+      //    //12.0 MHz
+      //    //6.0 MHz
+      //    25.0 MHz
+      //  ),
+      //  htiming=LcvVgaTimingHv(
+      //    visib=(
+      //      //64
+      //      //640
+      //      //76
+      //      //160
+      //      320
+      //    ),
+      //    //front=1,
+      //    //sync=1,
+      //    //back=1
+      //    front=16,
+      //    sync=96,
+      //    back=48
+      //  ),
+      //  vtiming=LcvVgaTimingHv(
+      //    visib=(
+      //      //64
+      //      //480
+      //      76
+      //    ),
+      //    //front=1,
+      //    //sync=1,
+      //    //back=1
+      //    front=10,
+      //    sync=2,
+      //    back=33
+      //  ),
+      //)
     ),
     fbCnt2dShift=ElabVec2[Int](
       x=1,

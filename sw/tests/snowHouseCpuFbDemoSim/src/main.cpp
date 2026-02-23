@@ -41,8 +41,8 @@ static constexpr double
 		//= 200.0,
 		//= 24.0,
 	PIXEL_CLK
-		= 100.0;
-		//= 25.0;
+		//= 100.0;
+		= 25.0;
 		//= 12.5;
 		//= 6.0;
 static constexpr size_t
@@ -900,9 +900,9 @@ int main(int argc, char** argv) {
 		//top->clk = tick_cnt % 2;
 		//top->vgaClk_clk = tick_cnt % (2 * CLKS_PER_PIXEL);
 		top->clk = !top->clk;
-		//if ((tick_cnt % (2 * CLKS_PER_PIXEL)) == 0) {
+		if ((tick_cnt % (2 * CLKS_PER_PIXEL)) == 0) {
 			top->vgaClk_clk = !top->vgaClk_clk;
-		//}
+		}
 	};
 
 	while (
