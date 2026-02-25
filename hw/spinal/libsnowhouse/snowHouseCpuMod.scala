@@ -1569,27 +1569,35 @@ object SnowHouseCpuPipeStageInstrDecode {
             }
           }
           for (
-            ((_, multiCycleOpInfo), multiCycleOpInfoIdx)
+            ((group, innerMap), groupIdx)
             <- cfg.multiCycleOpInfoMap.view.zipWithIndex
           ) {
-            if (
-              //opInfo == multiCycleOpInfo
-              //someOp == tuple
-              multiCycleOpInfo == opInfo
+            for (
+              ((_, multiCycleOpInfo), multiCycleOpInfoIdx)
+              <- innerMap.view.zipWithIndex
             ) {
-              println(
-                s"multiCycleOp: " // ${opInfoIdx} -> ${multiCycleOpInfoIdx} "
-                + s"${someOp._3} // ${multiCycleOpInfoIdx}"
-              )
-              ////upPayload.op := opInfoIdx
-              ////mySplitOp.multiCycleOp.valid := True
-              //mySplitOp.kind := SnowHouseSplitOpKind.MULTI_CYCLE
-              mySplitOp.opIsMultiCycle := True
-              mySplitOp.multiCycleOp := (
-                1 << multiCycleOpInfoIdx
-              )
-              ////return
-              found = true
+              if (
+                //opInfo == multiCycleOpInfo
+                //someOp == tuple
+                multiCycleOpInfo == opInfo
+              ) {
+                println(
+                  s"multiCycleOp: " // ${opInfoIdx} -> ${multiCycleOpInfoIdx} "
+                  + s"${someOp._3} // ${multiCycleOpInfoIdx}"
+                )
+                ////upPayload.op := opInfoIdx
+                ////mySplitOp.multiCycleOp.valid := True
+                //mySplitOp.kind := SnowHouseSplitOpKind.MULTI_CYCLE
+                mySplitOp.opIsMultiCycle := True
+                mySplitOp.multiCycleOpGroup := (
+                  1 << groupIdx 
+                )
+                mySplitOp.multiCycleOpKind := (
+                  multiCycleOpInfoIdx
+                )
+                ////return
+                found = true
+              }
             }
           }
         }
@@ -3881,305 +3889,321 @@ case class SnowHouseCpuShift32LowLatency
   //)
 
   for (
-    //(multiCycleBus, busIdx) <- cpuIo.multiCycleBusVec.view.zipWithIndex
-    ((_, opInfo), busIdx)
+    ((group, innerMap), busIdx)
     <- cfg.multiCycleOpInfoMap.view.zipWithIndex
   ) {
-    opInfo.multiCycleOp.get match {
-      case MultiCycleOpKind.Lsl => {
-        val multiCycleBus = cpuIo.multiCycleBusVec(busIdx)
-        def dstVec = multiCycleBus.recvData.dstVec
-        def srcVec = multiCycleBus.sendData.srcVec
-        def mainWidth = cfg.mainWidth
+    val multiCycleBus = cpuIo.multiCycleBusVec(busIdx)
+    def dstVec = multiCycleBus.recvData.dstVec
+    def srcVec = multiCycleBus.sendData.srcVec
+    if (multiCycleBus.sendData.kind != null) {
+      switch (multiCycleBus.sendData.kind) {
+        for (
+          //(multiCycleBus, busIdx) <- cpuIo.multiCycleBusVec.view.zipWithIndex
+          ((_, opInfo), kindIdx)
+          <- innerMap.view.zipWithIndex
+        ) {
+          opInfo.multiCycleOp.get match {
+            case MultiCycleOpKind.Lsl => {
+              is (kindIdx) {
+                def mainWidth = cfg.mainWidth
 
-        val width: Int=cfg.mainWidth
-        //val binop = InstrResult(cfg=cfg)(width=width)
-        val left = (
-          //RegNext(
-          //  next=srcVec(0),
-          //  init=srcVec(0).getZero,
-          //) //init(0x0)
-          srcVec(0)
-        )
-        val right = (
-          //RegNext(
-          //  next=srcVec(1),
-          //  init=srcVec(1).getZero,
-          //) //init(0x0)
-          srcVec(1)
-        )
-        val tempLeft = Cat(left).asUInt(width - 1 downto 0)
-        val tempRight = Cat(right).asUInt(width - 1 downto 0)
-        //binop.leftMsb := left(width - 1)
-        //binop.rightMsb := right(width - 1)
-        //binop.main.setAsReg() init(binop.main.getZero)
-        //binop.main := (
-        //  tempLeft << tempRight(log2Up(width) downto 0)
-        //)(binop.main.bitsRange)
-        dstVec(0) := (
-          RegNext(
-            next=dstVec(0),
-            init=dstVec(0).getZero,
-          )
-        )
-        //dstVec(0) := binop.main
-        val rBusValidVec = (
-          Vec.fill(2)(
-            RegNext(
-              next=multiCycleBus.nextValid,
-              init=False
-            )
-          )
-        )
-        when (multiCycleBus.nextValid) {
-          lslDel1.io.inpToShift := tempLeft
-          lslDel1.io.inpAmount := tempRight
-        }
-        when (rBusValidVec(0)) {
-          //dstVec(0) := binop.main
-          dstVec(0) := lslDel1.io.outpResult
-        }
-        multiCycleBus.ready := (
-          rBusValidVec(1)
-        )
-      }
-      case MultiCycleOpKind.Lsr => {
-        val multiCycleBus = cpuIo.multiCycleBusVec(busIdx)
-        def dstVec = multiCycleBus.recvData.dstVec
-        def srcVec = multiCycleBus.sendData.srcVec
-        def mainWidth = cfg.mainWidth
+                val width: Int=cfg.mainWidth
+                //val binop = InstrResult(cfg=cfg)(width=width)
+                val left = (
+                  //RegNext(
+                  //  next=srcVec(0),
+                  //  init=srcVec(0).getZero,
+                  //) //init(0x0)
+                  srcVec(0)
+                )
+                val right = (
+                  //RegNext(
+                  //  next=srcVec(1),
+                  //  init=srcVec(1).getZero,
+                  //) //init(0x0)
+                  srcVec(1)
+                )
+                val tempLeft = Cat(left).asUInt(width - 1 downto 0)
+                val tempRight = Cat(right).asUInt(width - 1 downto 0)
+                //binop.leftMsb := left(width - 1)
+                //binop.rightMsb := right(width - 1)
+                //binop.main.setAsReg() init(binop.main.getZero)
+                //binop.main := (
+                //  tempLeft << tempRight(log2Up(width) downto 0)
+                //)(binop.main.bitsRange)
+                dstVec(0) := (
+                  RegNext(
+                    next=dstVec(0),
+                    init=dstVec(0).getZero,
+                  )
+                )
+                //dstVec(0) := binop.main
+                val rBusValidVec = (
+                  Vec.fill(2)(
+                    RegNext(
+                      next=multiCycleBus.nextValid,
+                      init=False
+                    )
+                  )
+                )
+                when (multiCycleBus.nextValid) {
+                  lslDel1.io.inpToShift := tempLeft
+                  lslDel1.io.inpAmount := tempRight
+                }
+                when (rBusValidVec(0)) {
+                  //dstVec(0) := binop.main
+                  dstVec(0) := lslDel1.io.outpResult
+                }
+                multiCycleBus.ready := (
+                  rBusValidVec(1)
+                )
+              }
+            }
+            case MultiCycleOpKind.Lsr => {
+              is (kindIdx) {
+                def mainWidth = cfg.mainWidth
 
-        val width: Int=cfg.mainWidth
-        val binop = InstrResult(cfg=cfg)(width=width)
-        val left = (
-          //RegNext(
-          //  next=srcVec(0),
-          //  init=srcVec(0).getZero,
-          //) //init(0x0)
-          srcVec(0)
-        )
-        val right = (
-          //RegNext(
-          //  next=srcVec(1),
-          //  init=srcVec(1).getZero,
-          //) //init(0x0)
-          srcVec(1)
-        )
-        val tempLeft = Cat(left).asUInt(width - 1 downto 0)
-        val tempRight = Cat(right).asUInt(width - 1 downto 0)
-        ////binop.leftMsb := left(width - 1)
-        ////binop.rightMsb := right(width - 1)
-        //binop.main.setAsReg() init(binop.main.getZero)
-        //binop.main := (
-        //  tempLeft >> tempRight//(log2Up(cfg.mainWidth) downto 0)
-        //).resized
-        //dstVec(0) := (
-        //  RegNext(
-        //    next=dstVec(0),
-        //    init=dstVec(0).getZero,
-        //  )
-        //)
-        ////dstVec(0) := binop.main
-        //val rBusValidVec = (
-        //  Vec.fill(2)(
-        //    RegNext(
-        //      next=multiCycleBus.nextValid,
-        //      init=False
-        //    )
-        //  )
-        //)
-        //when (rBusValidVec(0)) {
-        //  dstVec(0) := binop.main
-        //}
-        //multiCycleBus.ready := (
-        //  rBusValidVec(1)
-        //)
-        dstVec(0) := (
-          RegNext(
-            next=dstVec(0),
-            init=dstVec(0).getZero,
-          )
-        )
-        //dstVec(0) := binop.main
-        val rBusValidVec = (
-          Vec.fill(2)(
-            RegNext(
-              next=multiCycleBus.nextValid,
-              init=False
-            )
-          )
-        )
-        when (multiCycleBus.nextValid) {
-          lsrDel1.io.inpToShift := tempLeft
-          lsrDel1.io.inpAmount := tempRight
-        }
-        when (rBusValidVec(0)) {
-          //dstVec(0) := binop.main
-          dstVec(0) := lsrDel1.io.outpResult
-        }
-        multiCycleBus.ready := (
-          rBusValidVec(1)
-        )
-      }
-      case MultiCycleOpKind.Asr => {
-        val multiCycleBus = cpuIo.multiCycleBusVec(busIdx)
-        def dstVec = multiCycleBus.recvData.dstVec
-        def srcVec = multiCycleBus.sendData.srcVec
-        def mainWidth = cfg.mainWidth
+                val width: Int=cfg.mainWidth
+                val binop = InstrResult(cfg=cfg)(width=width)
+                val left = (
+                  //RegNext(
+                  //  next=srcVec(0),
+                  //  init=srcVec(0).getZero,
+                  //) //init(0x0)
+                  srcVec(0)
+                )
+                val right = (
+                  //RegNext(
+                  //  next=srcVec(1),
+                  //  init=srcVec(1).getZero,
+                  //) //init(0x0)
+                  srcVec(1)
+                )
+                val tempLeft = Cat(left).asUInt(width - 1 downto 0)
+                val tempRight = Cat(right).asUInt(width - 1 downto 0)
+                ////binop.leftMsb := left(width - 1)
+                ////binop.rightMsb := right(width - 1)
+                //binop.main.setAsReg() init(binop.main.getZero)
+                //binop.main := (
+                //  tempLeft >> tempRight//(log2Up(cfg.mainWidth) downto 0)
+                //).resized
+                //dstVec(0) := (
+                //  RegNext(
+                //    next=dstVec(0),
+                //    init=dstVec(0).getZero,
+                //  )
+                //)
+                ////dstVec(0) := binop.main
+                //val rBusValidVec = (
+                //  Vec.fill(2)(
+                //    RegNext(
+                //      next=multiCycleBus.nextValid,
+                //      init=False
+                //    )
+                //  )
+                //)
+                //when (rBusValidVec(0)) {
+                //  dstVec(0) := binop.main
+                //}
+                //multiCycleBus.ready := (
+                //  rBusValidVec(1)
+                //)
+                dstVec(0) := (
+                  RegNext(
+                    next=dstVec(0),
+                    init=dstVec(0).getZero,
+                  )
+                )
+                //dstVec(0) := binop.main
+                val rBusValidVec = (
+                  Vec.fill(2)(
+                    RegNext(
+                      next=multiCycleBus.nextValid,
+                      init=False
+                    )
+                  )
+                )
+                when (multiCycleBus.nextValid) {
+                  lsrDel1.io.inpToShift := tempLeft
+                  lsrDel1.io.inpAmount := tempRight
+                }
+                when (rBusValidVec(0)) {
+                  //dstVec(0) := binop.main
+                  dstVec(0) := lsrDel1.io.outpResult
+                }
+                multiCycleBus.ready := (
+                  rBusValidVec(1)
+                )
+              }
+            }
+            case MultiCycleOpKind.Asr => {
+              is (kindIdx) {
+                def mainWidth = cfg.mainWidth
 
-        val width: Int=cfg.mainWidth
-        val binop = InstrResult(cfg=cfg)(width=width)
-        val left = (
-          //RegNext(
-          //  next=srcVec(0),
-          //  init=srcVec(0).getZero,
-          //) //init(0x0)
-          srcVec(0)
-        )
-        val right = (
-          //RegNext(
-          //  next=srcVec(1),
-          //  init=srcVec(1).getZero,
-          //) //init(0x0)
-          srcVec(1)
-        )
-        val tempLeft = Cat(left).asUInt(width - 1 downto 0)
-        val tempRight = Cat(right).asUInt(width - 1 downto 0)
-        ////binop.leftMsb := left(width - 1)
-        ////binop.rightMsb := right(width - 1)
-        //binop.main.setAsReg() init(binop.main.getZero)
-        //binop.main := (
-        //  tempLeft.asSInt >> tempRight//(log2Up(cfg.mainWidth) downto 0)
-        //).asUInt.resized
-        //dstVec(0) := (
-        //  RegNext(
-        //    next=dstVec(0),
-        //    init=dstVec(0).getZero,
-        //  )
-        //)
-        ////dstVec(0) := binop.main
-        //val rBusValidVec = (
-        //  Vec.fill(2)(
-        //    RegNext(
-        //      next=multiCycleBus.nextValid,
-        //      init=False
-        //    )
-        //  )
-        //)
-        //when (rBusValidVec(0)) {
-        //  dstVec(0) := binop.main
-        //}
-        //multiCycleBus.ready := (
-        //  rBusValidVec(1)
-        //)
-        dstVec(0) := (
-          RegNext(
-            next=dstVec(0),
-            init=dstVec(0).getZero,
-          )
-        )
-        //dstVec(0) := binop.main
-        val rBusValidVec = (
-          Vec.fill(2)(
-            RegNext(
-              next=multiCycleBus.nextValid,
-              init=False
-            )
-          )
-        )
-        when (multiCycleBus.nextValid) {
-          asrDel1.io.inpToShift := tempLeft
-          asrDel1.io.inpAmount := tempRight
-        }
-        when (rBusValidVec(0)) {
-          //dstVec(0) := binop.main
-          dstVec(0) := asrDel1.io.outpResult
-        }
-        multiCycleBus.ready := (
-          rBusValidVec(1)
-        )
-      }
-      //case MultiCycleOpKind.Sltu => {
-      //  val multiCycleBus = cpuIo.multiCycleBusVec(busIdx)
-      //  def dstVec = multiCycleBus.recvData.dstVec
-      //  def srcVec = multiCycleBus.sendData.srcVec
-      //  def mainWidth = cfg.mainWidth
+                val width: Int=cfg.mainWidth
+                val binop = InstrResult(cfg=cfg)(width=width)
+                val left = (
+                  //RegNext(
+                  //  next=srcVec(0),
+                  //  init=srcVec(0).getZero,
+                  //) //init(0x0)
+                  srcVec(0)
+                )
+                val right = (
+                  //RegNext(
+                  //  next=srcVec(1),
+                  //  init=srcVec(1).getZero,
+                  //) //init(0x0)
+                  srcVec(1)
+                )
+                val tempLeft = Cat(left).asUInt(width - 1 downto 0)
+                val tempRight = Cat(right).asUInt(width - 1 downto 0)
+                ////binop.leftMsb := left(width - 1)
+                ////binop.rightMsb := right(width - 1)
+                //binop.main.setAsReg() init(binop.main.getZero)
+                //binop.main := (
+                //  tempLeft.asSInt >> tempRight//(log2Up(cfg.mainWidth) downto 0)
+                //).asUInt.resized
+                //dstVec(0) := (
+                //  RegNext(
+                //    next=dstVec(0),
+                //    init=dstVec(0).getZero,
+                //  )
+                //)
+                ////dstVec(0) := binop.main
+                //val rBusValidVec = (
+                //  Vec.fill(2)(
+                //    RegNext(
+                //      next=multiCycleBus.nextValid,
+                //      init=False
+                //    )
+                //  )
+                //)
+                //when (rBusValidVec(0)) {
+                //  dstVec(0) := binop.main
+                //}
+                //multiCycleBus.ready := (
+                //  rBusValidVec(1)
+                //)
+                dstVec(0) := (
+                  RegNext(
+                    next=dstVec(0),
+                    init=dstVec(0).getZero,
+                  )
+                )
+                //dstVec(0) := binop.main
+                val rBusValidVec = (
+                  Vec.fill(2)(
+                    RegNext(
+                      next=multiCycleBus.nextValid,
+                      init=False
+                    )
+                  )
+                )
+                when (multiCycleBus.nextValid) {
+                  asrDel1.io.inpToShift := tempLeft
+                  asrDel1.io.inpAmount := tempRight
+                }
+                when (rBusValidVec(0)) {
+                  //dstVec(0) := binop.main
+                  dstVec(0) := asrDel1.io.outpResult
+                }
+                multiCycleBus.ready := (
+                  rBusValidVec(1)
+                )
+              }
+            }
+            //case MultiCycleOpKind.Sltu => {
+            //  val multiCycleBus = cpuIo.multiCycleBusVec(busIdx)
+            //  def dstVec = multiCycleBus.recvData.dstVec
+            //  def srcVec = multiCycleBus.sendData.srcVec
+            //  def mainWidth = cfg.mainWidth
 
-      //  val width: Int=cfg.mainWidth
-      //  val left = (
-      //    srcVec(0)
-      //  )
-      //  val right = (
-      //    srcVec(1)
-      //  )
-      //  val tempLeft = Cat(left).asUInt(width - 1 downto 0)
-      //  val tempRight = Cat(right).asUInt(width - 1 downto 0)
-      //  dstVec(0) := (
-      //    RegNext(
-      //      next=dstVec(0),
-      //      init=dstVec(0).getZero,
-      //    )
-      //  )
-      //  val rBusValidVec = (
-      //    Vec.fill(2)(
-      //      RegNext(
-      //        next=multiCycleBus.nextValid,
-      //        init=False
-      //      )
-      //    )
-      //  )
-      //  when (multiCycleBus.nextValid) {
-      //    sltuDel1.io.inpA := tempLeft
-      //    sltuDel1.io.inpB := tempRight
-      //  }
-      //  when (rBusValidVec(0)) {
-      //    dstVec(0) := sltuDel1.io.outpResult
-      //  }
-      //  multiCycleBus.ready := (
-      //    rBusValidVec(1)
-      //  )
-      //}
-      //case MultiCycleOpKind.Slts => {
-      //  val multiCycleBus = cpuIo.multiCycleBusVec(busIdx)
-      //  def dstVec = multiCycleBus.recvData.dstVec
-      //  def srcVec = multiCycleBus.sendData.srcVec
-      //  def mainWidth = cfg.mainWidth
+            //  val width: Int=cfg.mainWidth
+            //  val left = (
+            //    srcVec(0)
+            //  )
+            //  val right = (
+            //    srcVec(1)
+            //  )
+            //  val tempLeft = Cat(left).asUInt(width - 1 downto 0)
+            //  val tempRight = Cat(right).asUInt(width - 1 downto 0)
+            //  dstVec(0) := (
+            //    RegNext(
+            //      next=dstVec(0),
+            //      init=dstVec(0).getZero,
+            //    )
+            //  )
+            //  val rBusValidVec = (
+            //    Vec.fill(2)(
+            //      RegNext(
+            //        next=multiCycleBus.nextValid,
+            //        init=False
+            //      )
+            //    )
+            //  )
+            //  when (multiCycleBus.nextValid) {
+            //    sltuDel1.io.inpA := tempLeft
+            //    sltuDel1.io.inpB := tempRight
+            //  }
+            //  when (rBusValidVec(0)) {
+            //    dstVec(0) := sltuDel1.io.outpResult
+            //  }
+            //  multiCycleBus.ready := (
+            //    rBusValidVec(1)
+            //  )
+            //}
+            //case MultiCycleOpKind.Slts => {
+            //  val multiCycleBus = cpuIo.multiCycleBusVec(busIdx)
+            //  def dstVec = multiCycleBus.recvData.dstVec
+            //  def srcVec = multiCycleBus.sendData.srcVec
+            //  def mainWidth = cfg.mainWidth
 
-      //  val width: Int=cfg.mainWidth
-      //  val left = (
-      //    srcVec(0)
-      //  )
-      //  val right = (
-      //    srcVec(1)
-      //  )
-      //  val tempLeft = Cat(left).asUInt(width - 1 downto 0)
-      //  val tempRight = Cat(right).asUInt(width - 1 downto 0)
-      //  dstVec(0) := (
-      //    RegNext(
-      //      next=dstVec(0),
-      //      init=dstVec(0).getZero,
-      //    )
-      //  )
-      //  val rBusValidVec = (
-      //    Vec.fill(2)(
-      //      RegNext(
-      //        next=multiCycleBus.nextValid,
-      //        init=False
-      //      )
-      //    )
-      //  )
-      //  when (multiCycleBus.nextValid) {
-      //    sltsDel1.io.inpA := tempLeft
-      //    sltsDel1.io.inpB := tempRight
-      //  }
-      //  when (rBusValidVec(0)) {
-      //    dstVec(0) := sltsDel1.io.outpResult
-      //  }
-      //  multiCycleBus.ready := (
-      //    rBusValidVec(1)
-      //  )
-      //}
-      case _ => {
+            //  val width: Int=cfg.mainWidth
+            //  val left = (
+            //    srcVec(0)
+            //  )
+            //  val right = (
+            //    srcVec(1)
+            //  )
+            //  val tempLeft = Cat(left).asUInt(width - 1 downto 0)
+            //  val tempRight = Cat(right).asUInt(width - 1 downto 0)
+            //  dstVec(0) := (
+            //    RegNext(
+            //      next=dstVec(0),
+            //      init=dstVec(0).getZero,
+            //    )
+            //  )
+            //  val rBusValidVec = (
+            //    Vec.fill(2)(
+            //      RegNext(
+            //        next=multiCycleBus.nextValid,
+            //        init=False
+            //      )
+            //    )
+            //  )
+            //  when (multiCycleBus.nextValid) {
+            //    sltsDel1.io.inpA := tempLeft
+            //    sltsDel1.io.inpB := tempRight
+            //  }
+            //  when (rBusValidVec(0)) {
+            //    dstVec(0) := sltsDel1.io.outpResult
+            //  }
+            //  multiCycleBus.ready := (
+            //    rBusValidVec(1)
+            //  )
+            //}
+            case _ => {
+              //default {
+              //  multiCycleBus.ready := False
+              //}
+            }
+          }
+        }
+        default {
+          dstVec.foreach(dst => dst := dst.getZero)
+          multiCycleBus.ready := False
+        }
       }
     }
   }
@@ -4190,335 +4214,669 @@ case class SnowHouseCpuShift32(
 ) extends Area {
   def cfg = cpuIo.cfg
   for (
-    //(multiCycleBus, busIdx) <- cpuIo.multiCycleBusVec.view.zipWithIndex
-    ((_, opInfo), busIdx)
+    ((group, innerMap), busIdx)
     <- cfg.multiCycleOpInfoMap.view.zipWithIndex
   ) {
-    opInfo.multiCycleOp.get match {
-      case MultiCycleOpKind.Lsl => {
-        val multiCycleBus = cpuIo.multiCycleBusVec(busIdx)
-        def dstVec = multiCycleBus.recvData.dstVec
-        def srcVec = multiCycleBus.sendData.srcVec
-        def mainWidth = cfg.mainWidth
-        //val myLsl = AluShiftOpKind.Lsl
-        //val binop = myLsl.binopFunc(
-        //  cfg=cfg,
-        //  left=srcVec(0),
-        //  right=srcVec(1),
-        //  carry=False
-        //)
-
-        //val rBusReady = Reg(Bool(), init=False)
-        val rBusReady = Reg(Bool(), init=False)
-        //multiCycleBus.ready.setAsReg() init(False)
-        //multiCycleBus.ready := False
-        multiCycleBus.ready := rBusReady
-        rBusReady := False
-        //dstVec(0) := RegNext(
-        //  next=dstVec(0),
-        //  init=dstVec(0).getZero
-        //)
-        //dstVec(0).setAsReg() init(0x0)
-        val rDst = (
-          Reg(UInt(dstVec(0).getWidth bits))
-          init(0x0)
-        )
-        dstVec(0) := rDst
-
-        when (
-          RegNext(
-            next=rose(RegNext(multiCycleBus.nextValid, init=False)),
-            init=False
-          )
+    val multiCycleBus = cpuIo.multiCycleBusVec(busIdx)
+    def dstVec = multiCycleBus.recvData.dstVec
+    def srcVec = multiCycleBus.sendData.srcVec
+    if (multiCycleBus.sendData.kind != null) {
+      switch (multiCycleBus.sendData.kind) {
+        for (
+          //(multiCycleBus, busIdx) <- cpuIo.multiCycleBusVec.view.zipWithIndex
+          ((_, opInfo), kindIdx)
+          <- innerMap.view.zipWithIndex
         ) {
-          val width: Int=cfg.mainWidth
-          val binop = InstrResult(cfg=cfg)(width=width)
-          val left = (
-            RegNext(
-              next=srcVec(0),
-              init=srcVec(0).getZero,
-            )
-            //init(0x0)
-          )
-          val right = (
-            RegNext(
-              next=srcVec(1),
-              init=srcVec(1).getZero,
-            ) //init(0x0)
-          )
-          val tempLeft = Cat(left).asUInt(width - 1 downto 0)
-          val tempRight = Cat(right).asUInt(width - 1 downto 0)
-          //binop.leftMsb := left(width - 1)
-          //binop.rightMsb := right(width - 1)
-          binop.main.setAsReg() init(binop.main.getZero)
-          binop.main := (
-            tempLeft << tempRight(log2Up(width) downto 0)
-          )(binop.main.bitsRange)
-          //binop.flagV := False
-          //binop.flagC := False
+          opInfo.multiCycleOp.get match {
+            case MultiCycleOpKind.Lsl => {
+              is (kindIdx) {
+                def mainWidth = cfg.mainWidth
+                //val myLsl = AluShiftOpKind.Lsl
+                //val binop = myLsl.binopFunc(
+                //  cfg=cfg,
+                //  left=srcVec(0),
+                //  right=srcVec(1),
+                //  carry=False
+                //)
 
-          rDst := binop.main
-          rBusReady := True
+                //val rBusReady = Reg(Bool(), init=False)
+                val rBusReady = Reg(Bool(), init=False)
+                //multiCycleBus.ready.setAsReg() init(False)
+                //multiCycleBus.ready := False
+                multiCycleBus.ready := rBusReady
+                rBusReady := False
+                //dstVec(0) := RegNext(
+                //  next=dstVec(0),
+                //  init=dstVec(0).getZero
+                //)
+                //dstVec(0).setAsReg() init(0x0)
+                val rDst = (
+                  Reg(UInt(dstVec(0).getWidth bits))
+                  init(0x0)
+                )
+                dstVec(0) := rDst
+
+                when (
+                  RegNext(
+                    next=rose(RegNext(multiCycleBus.nextValid, init=False)),
+                    init=False
+                  )
+                ) {
+                  val width: Int=cfg.mainWidth
+                  val binop = InstrResult(cfg=cfg)(width=width)
+                  val left = (
+                    RegNext(
+                      next=srcVec(0),
+                      init=srcVec(0).getZero,
+                    )
+                    //init(0x0)
+                  )
+                  val right = (
+                    RegNext(
+                      next=srcVec(1),
+                      init=srcVec(1).getZero,
+                    ) //init(0x0)
+                  )
+                  val tempLeft = Cat(left).asUInt(width - 1 downto 0)
+                  val tempRight = Cat(right).asUInt(width - 1 downto 0)
+                  //binop.leftMsb := left(width - 1)
+                  //binop.rightMsb := right(width - 1)
+                  binop.main.setAsReg() init(binop.main.getZero)
+                  binop.main := (
+                    tempLeft << tempRight(log2Up(width) downto 0)
+                  )(binop.main.bitsRange)
+                  //binop.flagV := False
+                  //binop.flagC := False
+
+                  rDst := binop.main
+                  rBusReady := True
+                }
+              }
+            }
+            case MultiCycleOpKind.Lsr => {
+              is (kindIdx) {
+                def mainWidth = cfg.mainWidth
+
+                val rBusReady = Reg(Bool(), init=False)
+                //multiCycleBus.ready.setAsReg() init(False)
+                //multiCycleBus.ready := False
+                multiCycleBus.ready := rBusReady
+                rBusReady := False
+                //dstVec(0) := RegNext(
+                //  next=dstVec(0),
+                //  init=dstVec(0).getZero
+                //)
+                //dstVec(0).setAsReg() init(0x0)
+                val rDst = (
+                  Reg(UInt(dstVec(0).getWidth bits))
+                  init(0x0)
+                )
+                dstVec(0) := rDst
+                when (
+                  RegNext(
+                    next=rose(RegNext(multiCycleBus.nextValid, init=False)),
+                    init=False,
+                  )
+                ) {
+                  val width: Int = cfg.mainWidth
+                  val binop = InstrResult(cfg=cfg)(width=width)
+                  val left = (
+                    RegNext(
+                      next=srcVec(0),
+                      init=srcVec(0).getZero,
+                    )
+                    //init(0x0)
+                  )
+                  val right = (
+                    RegNext(
+                      next=srcVec(1),
+                      init=srcVec(1).getZero,
+                    ) //init(0x0)
+                  )
+                  val tempLeft = Cat(left).asUInt(width - 1 downto 0)
+                  val tempRight = Cat(right).asUInt(width - 1 downto 0)
+                  //binop.leftMsb := left(width - 1)
+                  //binop.rightMsb := right(width - 1)
+                  binop.main.setAsReg() init(binop.main.getZero)
+                  binop.main := (
+                    tempLeft >> tempRight//(log2Up(cfg.mainWidth) downto 0)
+                  ).resized
+                  //binop.flagV := False
+                  //binop.flagC := False
+
+                  rDst := binop.main
+                  rBusReady := True
+                }
+              }
+            }
+            case MultiCycleOpKind.Asr => {
+              is (kindIdx) {
+                def mainWidth = cfg.mainWidth
+                val rBusReady = Reg(Bool(), init=False)
+                //multiCycleBus.ready.setAsReg() init(False)
+                //multiCycleBus.ready := False
+                multiCycleBus.ready := rBusReady
+                rBusReady := False
+                //dstVec(0) := RegNext(
+                //  next=dstVec(0),
+                //  init=dstVec(0).getZero
+                //)
+                //dstVec(0).setAsReg() init(0x0)
+                val rDst = (
+                  Reg(UInt(dstVec(0).getWidth bits))
+                  init(0x0)
+                )
+                dstVec(0) := rDst
+                when (
+                  RegNext(
+                    next=rose(RegNext(multiCycleBus.nextValid, init=False)),
+                    init=False,
+                  )
+                ) {
+                  val width: Int = cfg.mainWidth
+                  val binop = InstrResult(cfg=cfg)(width=width)
+                  val left = (
+                    RegNext(
+                      next=srcVec(0),
+                      init=srcVec(0).getZero,
+                    )
+                    //init(0x0)
+                  )
+                  val right = (
+                    RegNext(
+                      next=srcVec(1),
+                      init=srcVec(1).getZero,
+                    ) //init(0x0)
+                  )
+                  val tempLeft = Cat(left).asUInt(width - 1 downto 0)
+                  val tempRight = Cat(right).asUInt(width - 1 downto 0)
+                  //binop.leftMsb := left(width - 1)
+                  //binop.rightMsb := right(width - 1)
+                  binop.main.setAsReg() init(binop.main.getZero)
+                  binop.main := (
+                    tempLeft.asSInt >> tempRight//(log2Up(cfg.mainWidth) downto 0)
+                  ).asUInt.resized
+                  //binop.flagV := False
+                  //binop.flagC := False
+
+                  //dstVec(0) := binop.main
+
+                  //multiCycleBus.ready := True
+                  rDst := binop.main
+                  rBusReady := True
+                }
+              }
+            }
+            case _ => {
+            }
+          }
         }
-      }
-      case MultiCycleOpKind.Lsr => {
-        val multiCycleBus = cpuIo.multiCycleBusVec(busIdx)
-        def dstVec = multiCycleBus.recvData.dstVec
-        def srcVec = multiCycleBus.sendData.srcVec
-        def mainWidth = cfg.mainWidth
-
-        val rBusReady = Reg(Bool(), init=False)
-        //multiCycleBus.ready.setAsReg() init(False)
-        //multiCycleBus.ready := False
-        multiCycleBus.ready := rBusReady
-        rBusReady := False
-        //dstVec(0) := RegNext(
-        //  next=dstVec(0),
-        //  init=dstVec(0).getZero
-        //)
-        //dstVec(0).setAsReg() init(0x0)
-        val rDst = (
-          Reg(UInt(dstVec(0).getWidth bits))
-          init(0x0)
-        )
-        dstVec(0) := rDst
-        when (
-          RegNext(
-            next=rose(RegNext(multiCycleBus.nextValid, init=False)),
-            init=False,
-          )
-        ) {
-          val width: Int = cfg.mainWidth
-          val binop = InstrResult(cfg=cfg)(width=width)
-          val left = (
-            RegNext(
-              next=srcVec(0),
-              init=srcVec(0).getZero,
-            )
-            //init(0x0)
-          )
-          val right = (
-            RegNext(
-              next=srcVec(1),
-              init=srcVec(1).getZero,
-            ) //init(0x0)
-          )
-          val tempLeft = Cat(left).asUInt(width - 1 downto 0)
-          val tempRight = Cat(right).asUInt(width - 1 downto 0)
-          //binop.leftMsb := left(width - 1)
-          //binop.rightMsb := right(width - 1)
-          binop.main.setAsReg() init(binop.main.getZero)
-          binop.main := (
-            tempLeft >> tempRight//(log2Up(cfg.mainWidth) downto 0)
-          ).resized
-          //binop.flagV := False
-          //binop.flagC := False
-
-          rDst := binop.main
-          rBusReady := True
+        default {
+          dstVec.foreach(dst => dst := dst.getZero)
+          multiCycleBus.ready := False
         }
-      }
-      case MultiCycleOpKind.Asr => {
-        val multiCycleBus = cpuIo.multiCycleBusVec(busIdx)
-        def dstVec = multiCycleBus.recvData.dstVec
-        def srcVec = multiCycleBus.sendData.srcVec
-        def mainWidth = cfg.mainWidth
-        val rBusReady = Reg(Bool(), init=False)
-        //multiCycleBus.ready.setAsReg() init(False)
-        //multiCycleBus.ready := False
-        multiCycleBus.ready := rBusReady
-        rBusReady := False
-        //dstVec(0) := RegNext(
-        //  next=dstVec(0),
-        //  init=dstVec(0).getZero
-        //)
-        //dstVec(0).setAsReg() init(0x0)
-        val rDst = (
-          Reg(UInt(dstVec(0).getWidth bits))
-          init(0x0)
-        )
-        dstVec(0) := rDst
-        when (
-          RegNext(
-            next=rose(RegNext(multiCycleBus.nextValid, init=False)),
-            init=False,
-          )
-        ) {
-          val width: Int = cfg.mainWidth
-          val binop = InstrResult(cfg=cfg)(width=width)
-          val left = (
-            RegNext(
-              next=srcVec(0),
-              init=srcVec(0).getZero,
-            )
-            //init(0x0)
-          )
-          val right = (
-            RegNext(
-              next=srcVec(1),
-              init=srcVec(1).getZero,
-            ) //init(0x0)
-          )
-          val tempLeft = Cat(left).asUInt(width - 1 downto 0)
-          val tempRight = Cat(right).asUInt(width - 1 downto 0)
-          //binop.leftMsb := left(width - 1)
-          //binop.rightMsb := right(width - 1)
-          binop.main.setAsReg() init(binop.main.getZero)
-          binop.main := (
-            tempLeft.asSInt >> tempRight//(log2Up(cfg.mainWidth) downto 0)
-          ).asUInt.resized
-          //binop.flagV := False
-          //binop.flagC := False
-
-          //dstVec(0) := binop.main
-
-          //multiCycleBus.ready := True
-          rDst := binop.main
-          rBusReady := True
-        }
-      }
-      case _ => {
       }
     }
   }
 }
-case class SnowHouseCpuCpyAdd32(
+//case class SnowHouseCpuCpyAdd32(
+//  cpuIo: SnowHouseIo,
+//) extends Area {
+//  def cfg = cpuIo.cfg
+//  for (
+//    ((group, innerMap), busIdx)
+//    <- cfg.multiCycleOpInfoMap.view.zipWithIndex
+//  ) {
+//    val multiCycleBus = cpuIo.multiCycleBusVec(busIdx)
+//    def dstVec = multiCycleBus.recvData.dstVec
+//    def srcVec = multiCycleBus.sendData.srcVec
+//    switch (
+//      multiCycleBus.sendData.kind
+//    ) {
+//      for (
+//        ((_, opInfo), kindIdx)
+//        <- innerMap.view.zipWithIndex
+//      ) {
+//        opInfo.multiCycleOp.get match {
+//          case MultiCycleOpKind.AddRaPcImm => {
+//            is (kindIdx) {
+//              def mainWidth = cfg.mainWidth
+//              val rSrc0 = (
+//                RegNextWhen(
+//                  next=(
+//                    RegNext(srcVec(0))
+//                    init(0x0)
+//                  ),
+//                  cond=rose(multiCycleBus.rValid)
+//                )
+//                init(0x0)
+//              )
+//              val rSrc1 = (
+//                RegNextWhen(
+//                  next=(
+//                    RegNext(srcVec(1))
+//                    init(0x0)
+//                  ),
+//                  cond=rose(multiCycleBus.rValid)
+//                )
+//                init(0x0)
+//              )
+//              val rDst = (
+//                Reg(
+//                  cloneOf(dstVec(0)),
+//                  init=dstVec(0).getZero,
+//                )
+//                setName(
+//                  "SnowHouseCpuCpy32_AddRaPcImm_rDst"
+//                )
+//              )
+//              multiCycleBus.ready := False
+//              dstVec(0) := rDst
+//              rDst := rSrc0 + rSrc1
+//              when (
+//                RegNext(
+//                  next=RegNext(
+//                    next=rose(multiCycleBus.rValid),
+//                    init=False,
+//                  ),
+//                  init=False,
+//                )
+//              ) {
+//                multiCycleBus.ready := True
+//              }
+//            }
+//          }
+//          case MultiCycleOpKind.CpyIdsGpr => {
+//            is (kindIdx) {
+//              def mainWidth = cfg.mainWidth
+//              val rSrc0 = (
+//                RegNextWhen(
+//                  next=(
+//                    RegNext(srcVec(0))
+//                    init(0x0)
+//                  ),
+//                  cond=rose(multiCycleBus.rValid)
+//                )
+//                init(0x0)
+//              )
+//              val rDst = (
+//                Reg(
+//                  cloneOf(dstVec(0)),
+//                  init=dstVec(0).getZero,
+//                )
+//                setName(
+//                  "SnowHouseCpuCpy32_CpyIdsGpr_rDst"
+//                )
+//              )
+//              multiCycleBus.ready := False
+//              dstVec(0) := rDst
+//              rDst := rSrc0
+//              when (
+//                RegNext(
+//                  next=RegNext(
+//                    next=rose(multiCycleBus.rValid),
+//                    init=False,
+//                  ),
+//                  init=False,
+//                )
+//              ) {
+//                multiCycleBus.ready := True
+//              }
+//            }
+//          }
+//          case MultiCycleOpKind.CpyIeGpr => {
+//            is (kindIdx) {
+//              def mainWidth = cfg.mainWidth
+//              val rSrc0 = (
+//                RegNextWhen(
+//                  next=(
+//                    RegNext(srcVec(0))
+//                    init(0x0)
+//                  ),
+//                  cond=rose(multiCycleBus.rValid)
+//                )
+//                init(0x0)
+//              )
+//              val rDst = (
+//                Reg(
+//                  cloneOf(dstVec(0)),
+//                  init=dstVec(0).getZero,
+//                )
+//                setName(
+//                  "SnowHouseCpuCpy32_CpyIeGpr_rDst"
+//                )
+//              )
+//              multiCycleBus.ready := False
+//              dstVec(0) := rDst
+//              rDst := rSrc0
+//              when (
+//                RegNext(
+//                  next=RegNext(
+//                    next=rose(multiCycleBus.rValid),
+//                    init=False,
+//                  ),
+//                  init=False,
+//                )
+//              ) {
+//                multiCycleBus.ready := True
+//              }
+//            }
+//          }
+//          case _ => {
+//          }
+//        }
+//      }
+//      //default {
+//      //  dstVec.foreach(dst => dst := dst.getZero)
+//      //  multiCycleBus.ready := False
+//      //}
+//    }
+//  }
+//}
+case class SnowHouseCpuAddMultiCycle(
   cpuIo: SnowHouseIo,
 ) extends Area {
   def cfg = cpuIo.cfg
   for (
-    ((_, opInfo), busIdx)
+    ((group, innerMap), busIdx)
     <- cfg.multiCycleOpInfoMap.view.zipWithIndex
   ) {
-    opInfo.multiCycleOp.get match {
-      case MultiCycleOpKind.AddRaPcImm => {
-        val multiCycleBus = cpuIo.multiCycleBusVec(busIdx)
-        def dstVec = multiCycleBus.recvData.dstVec
-        def srcVec = multiCycleBus.sendData.srcVec
-        def mainWidth = cfg.mainWidth
-        val rSrc0 = (
-          RegNextWhen(
-            next=(
-              RegNext(srcVec(0))
-              init(0x0)
-            ),
-            cond=rose(multiCycleBus.rValid)
-          )
-          init(0x0)
-        )
-        val rSrc1 = (
-          RegNextWhen(
-            next=(
-              RegNext(srcVec(1))
-              init(0x0)
-            ),
-            cond=rose(multiCycleBus.rValid)
-          )
-          init(0x0)
-        )
-        val rDst = (
-          Reg(
-            cloneOf(dstVec(0)),
-            init=dstVec(0).getZero,
-          )
-          setName(
-            "SnowHouseCpuCpy32_AddRaPcImm_rDst"
-          )
-        )
-        multiCycleBus.ready := False
-        dstVec(0) := rDst
-        rDst := rSrc0 + rSrc1
-        when (
-          RegNext(
-            next=RegNext(
-              next=rose(multiCycleBus.rValid),
-              init=False,
-            ),
-            init=False,
-          )
-        ) {
-          multiCycleBus.ready := True
+    val multiCycleBus = cpuIo.multiCycleBusVec(busIdx)
+    def dstVec = multiCycleBus.recvData.dstVec
+    def srcVec = multiCycleBus.sendData.srcVec
+    //switch (
+    //  multiCycleBus.sendData.kind
+    //) {
+      for (
+        ((_, opInfo), kindIdx)
+        <- innerMap.view.zipWithIndex
+      ) {
+        opInfo.multiCycleOp.get match {
+          case MultiCycleOpKind.AddRaPcImm => {
+            //is (kindIdx) {
+              def mainWidth = cfg.mainWidth
+              val rSrc0 = (
+                RegNextWhen(
+                  next=(
+                    RegNext(srcVec(0))
+                    init(0x0)
+                  ),
+                  cond=rose(multiCycleBus.rValid)
+                )
+                init(0x0)
+              )
+              val rSrc1 = (
+                RegNextWhen(
+                  next=(
+                    RegNext(srcVec(1))
+                    init(0x0)
+                  ),
+                  cond=rose(multiCycleBus.rValid)
+                )
+                init(0x0)
+              )
+              val rDst = (
+                Reg(
+                  cloneOf(dstVec(0)),
+                  init=dstVec(0).getZero,
+                )
+                setName(
+                  "SnowHouseCpuCpy32_AddRaPcImm_rDst"
+                )
+              )
+              multiCycleBus.ready := False
+              dstVec(0) := rDst
+              rDst := rSrc0 + rSrc1
+              when (
+                RegNext(
+                  next=RegNext(
+                    next=rose(multiCycleBus.rValid),
+                    init=False,
+                  ),
+                  init=False,
+                )
+              ) {
+                multiCycleBus.ready := True
+              }
+            //}
+          }
+          //case MultiCycleOpKind.CpyIdsGpr => {
+          //  is (kindIdx) {
+          //    def mainWidth = cfg.mainWidth
+          //    val rSrc0 = (
+          //      RegNextWhen(
+          //        next=(
+          //          RegNext(srcVec(0))
+          //          init(0x0)
+          //        ),
+          //        cond=rose(multiCycleBus.rValid)
+          //      )
+          //      init(0x0)
+          //    )
+          //    val rDst = (
+          //      Reg(
+          //        cloneOf(dstVec(0)),
+          //        init=dstVec(0).getZero,
+          //      )
+          //      setName(
+          //        "SnowHouseCpuCpy32_CpyIdsGpr_rDst"
+          //      )
+          //    )
+          //    multiCycleBus.ready := False
+          //    dstVec(0) := rDst
+          //    rDst := rSrc0
+          //    when (
+          //      RegNext(
+          //        next=RegNext(
+          //          next=rose(multiCycleBus.rValid),
+          //          init=False,
+          //        ),
+          //        init=False,
+          //      )
+          //    ) {
+          //      multiCycleBus.ready := True
+          //    }
+          //  }
+          //}
+          //case MultiCycleOpKind.CpyIeGpr => {
+          //  is (kindIdx) {
+          //    def mainWidth = cfg.mainWidth
+          //    val rSrc0 = (
+          //      RegNextWhen(
+          //        next=(
+          //          RegNext(srcVec(0))
+          //          init(0x0)
+          //        ),
+          //        cond=rose(multiCycleBus.rValid)
+          //      )
+          //      init(0x0)
+          //    )
+          //    val rDst = (
+          //      Reg(
+          //        cloneOf(dstVec(0)),
+          //        init=dstVec(0).getZero,
+          //      )
+          //      setName(
+          //        "SnowHouseCpuCpy32_CpyIeGpr_rDst"
+          //      )
+          //    )
+          //    multiCycleBus.ready := False
+          //    dstVec(0) := rDst
+          //    rDst := rSrc0
+          //    when (
+          //      RegNext(
+          //        next=RegNext(
+          //          next=rose(multiCycleBus.rValid),
+          //          init=False,
+          //        ),
+          //        init=False,
+          //      )
+          //    ) {
+          //      multiCycleBus.ready := True
+          //    }
+          //  }
+          //}
+          case _ => {
+          }
         }
       }
-      case MultiCycleOpKind.CpyIdsGpr => {
-        val multiCycleBus = cpuIo.multiCycleBusVec(busIdx)
-        def dstVec = multiCycleBus.recvData.dstVec
-        def srcVec = multiCycleBus.sendData.srcVec
-        def mainWidth = cfg.mainWidth
-        val rSrc0 = (
-          RegNextWhen(
-            next=(
-              RegNext(srcVec(0))
-              init(0x0)
-            ),
-            cond=rose(multiCycleBus.rValid)
-          )
-          init(0x0)
-        )
-        val rDst = (
-          Reg(
-            cloneOf(dstVec(0)),
-            init=dstVec(0).getZero,
-          )
-          setName(
-            "SnowHouseCpuCpy32_CpyIdsGpr_rDst"
-          )
-        )
-        multiCycleBus.ready := False
-        dstVec(0) := rDst
-        rDst := rSrc0
-        when (
-          RegNext(
-            next=RegNext(
-              next=rose(multiCycleBus.rValid),
-              init=False,
-            ),
-            init=False,
-          )
+      //default {
+      //  dstVec.foreach(dst => dst := dst.getZero)
+      //  multiCycleBus.ready := False
+      //}
+    //}
+  }
+}
+case class SnowHouseCpuCpyMultiCycle(
+  cpuIo: SnowHouseIo,
+) extends Area {
+  def cfg = cpuIo.cfg
+  for (
+    ((group, innerMap), busIdx)
+    <- cfg.multiCycleOpInfoMap.view.zipWithIndex
+  ) {
+    val multiCycleBus = cpuIo.multiCycleBusVec(busIdx)
+    def dstVec = multiCycleBus.recvData.dstVec
+    def srcVec = multiCycleBus.sendData.srcVec
+    if (multiCycleBus.sendData.kind != null) {
+      switch (multiCycleBus.sendData.kind) {
+        for (
+          ((_, opInfo), kindIdx)
+          <- innerMap.view.zipWithIndex
         ) {
-          multiCycleBus.ready := True
+          opInfo.multiCycleOp.get match {
+            //case MultiCycleOpKind.AddRaPcImm => {
+            //  is (kindIdx) {
+            //    def mainWidth = cfg.mainWidth
+            //    val rSrc0 = (
+            //      RegNextWhen(
+            //        next=(
+            //          RegNext(srcVec(0))
+            //          init(0x0)
+            //        ),
+            //        cond=rose(multiCycleBus.rValid)
+            //      )
+            //      init(0x0)
+            //    )
+            //    val rSrc1 = (
+            //      RegNextWhen(
+            //        next=(
+            //          RegNext(srcVec(1))
+            //          init(0x0)
+            //        ),
+            //        cond=rose(multiCycleBus.rValid)
+            //      )
+            //      init(0x0)
+            //    )
+            //    val rDst = (
+            //      Reg(
+            //        cloneOf(dstVec(0)),
+            //        init=dstVec(0).getZero,
+            //      )
+            //      setName(
+            //        "SnowHouseCpuCpy32_AddRaPcImm_rDst"
+            //      )
+            //    )
+            //    multiCycleBus.ready := False
+            //    dstVec(0) := rDst
+            //    rDst := rSrc0 + rSrc1
+            //    when (
+            //      RegNext(
+            //        next=RegNext(
+            //          next=rose(multiCycleBus.rValid),
+            //          init=False,
+            //        ),
+            //        init=False,
+            //      )
+            //    ) {
+            //      multiCycleBus.ready := True
+            //    }
+            //  }
+            //}
+            case MultiCycleOpKind.CpyIdsGpr => {
+              is (kindIdx) {
+                def mainWidth = cfg.mainWidth
+                val rSrc0 = (
+                  RegNextWhen(
+                    next=(
+                      RegNext(srcVec(0))
+                      init(0x0)
+                    ),
+                    cond=rose(multiCycleBus.rValid)
+                  )
+                  init(0x0)
+                )
+                val rDst = (
+                  Reg(
+                    cloneOf(dstVec(0)),
+                    init=dstVec(0).getZero,
+                  )
+                  setName(
+                    "SnowHouseCpuCpy32_CpyIdsGpr_rDst"
+                  )
+                )
+                multiCycleBus.ready := False
+                dstVec(0) := rDst
+                rDst := rSrc0
+                when (
+                  RegNext(
+                    next=RegNext(
+                      next=rose(multiCycleBus.rValid),
+                      init=False,
+                    ),
+                    init=False,
+                  )
+                ) {
+                  multiCycleBus.ready := True
+                }
+              }
+            }
+            case MultiCycleOpKind.CpyIeGpr => {
+              is (kindIdx) {
+                def mainWidth = cfg.mainWidth
+                val rSrc0 = (
+                  RegNextWhen(
+                    next=(
+                      RegNext(srcVec(0))
+                      init(0x0)
+                    ),
+                    cond=rose(multiCycleBus.rValid)
+                  )
+                  init(0x0)
+                )
+                val rDst = (
+                  Reg(
+                    cloneOf(dstVec(0)),
+                    init=dstVec(0).getZero,
+                  )
+                  setName(
+                    "SnowHouseCpuCpy32_CpyIeGpr_rDst"
+                  )
+                )
+                multiCycleBus.ready := False
+                dstVec(0) := rDst
+                rDst := rSrc0
+                when (
+                  RegNext(
+                    next=RegNext(
+                      next=rose(multiCycleBus.rValid),
+                      init=False,
+                    ),
+                    init=False,
+                  )
+                ) {
+                  multiCycleBus.ready := True
+                }
+              }
+            }
+            case _ => {
+            }
+          }
         }
-      }
-      case MultiCycleOpKind.CpyIeGpr => {
-        val multiCycleBus = cpuIo.multiCycleBusVec(busIdx)
-        def dstVec = multiCycleBus.recvData.dstVec
-        def srcVec = multiCycleBus.sendData.srcVec
-        def mainWidth = cfg.mainWidth
-        val rSrc0 = (
-          RegNextWhen(
-            next=(
-              RegNext(srcVec(0))
-              init(0x0)
-            ),
-            cond=rose(multiCycleBus.rValid)
-          )
-          init(0x0)
-        )
-        val rDst = (
-          Reg(
-            cloneOf(dstVec(0)),
-            init=dstVec(0).getZero,
-          )
-          setName(
-            "SnowHouseCpuCpy32_CpyIeGpr_rDst"
-          )
-        )
-        multiCycleBus.ready := False
-        dstVec(0) := rDst
-        rDst := rSrc0
-        when (
-          RegNext(
-            next=RegNext(
-              next=rose(multiCycleBus.rValid),
-              init=False,
-            ),
-            init=False,
-          )
-        ) {
-          multiCycleBus.ready := True
-        }
-      }
-      case _ => {
+        //default {
+        //  dstVec.foreach(dst => dst := dst.getZero)
+        //  multiCycleBus.ready := False
+        //}
       }
     }
   }
@@ -4529,173 +4887,178 @@ case class SnowHouseCpuMul32(
 ) extends Area {
   def cfg = cpuIo.cfg
   for (
-    //(multiCycleBus, busIdx) <- cpuIo.multiCycleBusVec.view.zipWithIndex
-    ((_, opInfo), busIdx)
+    ((group, innerMap), busIdx)
     <- cfg.multiCycleOpInfoMap.view.zipWithIndex
   ) {
-    opInfo.multiCycleOp.get match {
-      case MultiCycleOpKind.Umul => {
-        //cpuIo.multiCycleBusVec
-        val multiCycleBus = cpuIo.multiCycleBusVec(busIdx)
-        def dstVec = multiCycleBus.recvData.dstVec
-        //dstVec.setAsReg
-        //dstVec(0) := (
-        //  RegNext(
-        //    next=dstVec(0),
-        //    init=dstVec(0).getZero
-        //  )
-        //)
-        //when (
-        //  multiCycleBus.rValid
-        //  && multiCycleBus.ready
-        //) {
-        //  // TODO: add support for more kinds of operations
-        //  multiCycleBus.recvData.dstVec(0) := (
-        //    multiCycleBus.sendData.srcVec(0)
-        //    * multiCycleBus.sendData.srcVec(1)
-        //  )(cfg.mainWidth - 1 downto 0)
-        //}
-        //multiCycleBus.ready := multiCycleBus.rValid
-        def srcVec = multiCycleBus.sendData.srcVec
-        def mainWidth = cfg.mainWidth
-        object UMul32State
-        extends SpinalEnum(defaultEncoding=binarySequential) {
-          val
-            IDLE,
-            DO_THREE_MUL16X16,
-            FIRST_ADD,
-            SECOND_ADD,
-            YIELD_RESULT
-            = newElement()
-        }
-        val rState = (
-          Reg(UMul32State())
-          init(UMul32State.IDLE)
-          setName("SnowHouseCpuMul32_Umul_rState")
-        )
-        val low = (mainWidth >> 1) - 1 downto 0
-        val high = (mainWidth - 1 downto (mainWidth >> 1))
-        val shiftAmount = mainWidth >> 1
-        val mulCond = (
-          /*rose*/(
-            rState === UMul32State.IDLE
-            && (
-              rose(multiCycleBus.rValid)
+    val multiCycleBus = cpuIo.multiCycleBusVec(busIdx)
+    def dstVec = multiCycleBus.recvData.dstVec
+    def srcVec = multiCycleBus.sendData.srcVec
+    for (
+      //(multiCycleBus, busIdx) <- cpuIo.multiCycleBusVec.view.zipWithIndex
+      ((_, opInfo), kindIdx)
+      <- innerMap.view.zipWithIndex
+    ) {
+      opInfo.multiCycleOp.get match {
+        case MultiCycleOpKind.Umul => {
+          //cpuIo.multiCycleBusVec
+          //dstVec.setAsReg
+          //dstVec(0) := (
+          //  RegNext(
+          //    next=dstVec(0),
+          //    init=dstVec(0).getZero
+          //  )
+          //)
+          //when (
+          //  multiCycleBus.rValid
+          //  && multiCycleBus.ready
+          //) {
+          //  // TODO: add support for more kinds of operations
+          //  multiCycleBus.recvData.dstVec(0) := (
+          //    multiCycleBus.sendData.srcVec(0)
+          //    * multiCycleBus.sendData.srcVec(1)
+          //  )(cfg.mainWidth - 1 downto 0)
+          //}
+          //multiCycleBus.ready := multiCycleBus.rValid
+          def mainWidth = cfg.mainWidth
+          object UMul32State
+          extends SpinalEnum(defaultEncoding=binarySequential) {
+            val
+              IDLE,
+              DO_THREE_MUL16X16,
+              FIRST_ADD,
+              SECOND_ADD,
+              YIELD_RESULT
+              = newElement()
+          }
+          val rState = (
+            Reg(UMul32State())
+            init(UMul32State.IDLE)
+            setName("SnowHouseCpuMul32_Umul_rState")
+          )
+          val low = (mainWidth >> 1) - 1 downto 0
+          val high = (mainWidth - 1 downto (mainWidth >> 1))
+          val shiftAmount = mainWidth >> 1
+          val mulCond = (
+            /*rose*/(
+              rState === UMul32State.IDLE
+              && (
+                rose(multiCycleBus.rValid)
+              )
+            )
+            .setName("SnowHouseCpuMul32_Umul_mulCond")
+          )
+          val rY0X0 = (
+            RegNextWhen(
+              //UInt(cfg.mainWidth bits)
+              next=(
+                (
+                  RegNext(srcVec(1)(low))
+                  init(0x0)
+                ) * (
+                  RegNext(srcVec(0)(low))
+                  init(0x0)
+                )
+              ),
+              cond=mulCond
+            )
+            init(0x0)
+            setName("SnowHouseCpuMul32_Umul_rY0X0")
+          )
+          val rY1X0 = (
+            RegNextWhen(
+              //UInt(cfg.mainWidth bits)
+              next=(
+                (
+                  RegNext(srcVec(1)(high))
+                  init(0x0)
+                ) * (
+                  RegNext(srcVec(0)(low))
+                  init(0x0)
+                )
+              ),
+              cond=mulCond,
+            )
+            init(0x0)
+            setName("SnowHouseCpuMul32_Umul_rY1X0")
+          )
+          val rY0X1 = (
+            RegNextWhen(
+              //UInt(cfg.mainWidth bits)
+              next=(
+                (
+                  RegNext(srcVec(1)(low))
+                  init(0x0)
+                ) * (
+                  RegNext(srcVec(0)(high))
+                  init(0x0)
+                )
+              ),
+              cond=mulCond,
+            )
+            init(0x0)
+            setName("SnowHouseCpuMul32_Umul_rY0X1")
+          )
+          val rPartialSum = (
+            Vec.fill(2)(
+              Reg(UInt(mainWidth bits))
+              init(0x0)
+            )
+            setName("SnowHouseCpuMul32_Umul_rPartialSum")
+          )
+          rPartialSum(0) := (
+            rY1X0 + rY0X1
+          )
+          rPartialSum(1) := (
+            (rPartialSum(0) << shiftAmount)
+            + rY0X0
+          )(rPartialSum(1).bitsRange)
+
+          multiCycleBus.ready := False
+          val rDst = (
+            Reg(
+              cloneOf(dstVec(0)),
+              init=dstVec(0).getZero
+            )
+            setName(
+              "SnowHouseCpuMul32_Umul_rDst"
             )
           )
-          .setName("SnowHouseCpuMul32_Umul_mulCond")
-        )
-        val rY0X0 = (
-          RegNextWhen(
-            //UInt(cfg.mainWidth bits)
-            next=(
-              (
-                RegNext(srcVec(1)(low))
-                init(0x0)
-              ) * (
-                RegNext(srcVec(0)(low))
-                init(0x0)
-              )
-            ),
-            cond=mulCond
-          )
-          init(0x0)
-          setName("SnowHouseCpuMul32_Umul_rY0X0")
-        )
-        val rY1X0 = (
-          RegNextWhen(
-            //UInt(cfg.mainWidth bits)
-            next=(
-              (
-                RegNext(srcVec(1)(high))
-                init(0x0)
-              ) * (
-                RegNext(srcVec(0)(low))
-                init(0x0)
-              )
-            ),
-            cond=mulCond,
-          )
-          init(0x0)
-          setName("SnowHouseCpuMul32_Umul_rY1X0")
-        )
-        val rY0X1 = (
-          RegNextWhen(
-            //UInt(cfg.mainWidth bits)
-            next=(
-              (
-                RegNext(srcVec(1)(low))
-                init(0x0)
-              ) * (
-                RegNext(srcVec(0)(high))
-                init(0x0)
-              )
-            ),
-            cond=mulCond,
-          )
-          init(0x0)
-          setName("SnowHouseCpuMul32_Umul_rY0X1")
-        )
-        val rPartialSum = (
-          Vec.fill(2)(
-            Reg(UInt(mainWidth bits))
-            init(0x0)
-          )
-          setName("SnowHouseCpuMul32_Umul_rPartialSum")
-        )
-        rPartialSum(0) := (
-          rY1X0 + rY0X1
-        )
-        rPartialSum(1) := (
-          (rPartialSum(0) << shiftAmount)
-          + rY0X0
-        )(rPartialSum(1).bitsRange)
-
-        multiCycleBus.ready := False
-        val rDst = (
-          Reg(
-            cloneOf(dstVec(0)),
-            init=dstVec(0).getZero
-          )
-          setName(
-            "SnowHouseCpuMul32_Umul_rDst"
-          )
-        )
-        dstVec(0) := rDst
-        switch (rState) {
-          is (UMul32State.IDLE) {
-            when (rose(RegNext(multiCycleBus.nextValid, init=False))) {
-              rState := UMul32State.DO_THREE_MUL16X16
+          dstVec(0) := rDst
+          switch (rState) {
+            is (UMul32State.IDLE) {
+              when (rose(RegNext(multiCycleBus.nextValid, init=False))) {
+                rState := UMul32State.DO_THREE_MUL16X16
+              }
+              //rPartialSum(0) := (
+              //  rY1X0 + rY0X1
+              //)
             }
-            //rPartialSum(0) := (
-            //  rY1X0 + rY0X1
-            //)
-          }
-          is (UMul32State.DO_THREE_MUL16X16) {
-            rState := UMul32State.FIRST_ADD
-          }
-          is (UMul32State.FIRST_ADD) {
-            rState := UMul32State.SECOND_ADD
-            //rPartialSum(1) := (
-            //  (rPartialSum(0) << shiftAmount)
-            //  + rY0X0
-            //)(rPartialSum(1).bitsRange)
-            //rDst := rPartialSum(1)
-          }
-          is (UMul32State.SECOND_ADD) {
-            rState := UMul32State.YIELD_RESULT
-            //dstVec(0) := (
-            //)
-            rDst := rPartialSum(1)
-            //rDst := rPartialSum(1)
-          }
-          is (UMul32State.YIELD_RESULT) {
-            rState := UMul32State.IDLE
-            multiCycleBus.ready := True
+            is (UMul32State.DO_THREE_MUL16X16) {
+              rState := UMul32State.FIRST_ADD
+            }
+            is (UMul32State.FIRST_ADD) {
+              rState := UMul32State.SECOND_ADD
+              //rPartialSum(1) := (
+              //  (rPartialSum(0) << shiftAmount)
+              //  + rY0X0
+              //)(rPartialSum(1).bitsRange)
+              //rDst := rPartialSum(1)
+            }
+            is (UMul32State.SECOND_ADD) {
+              rState := UMul32State.YIELD_RESULT
+              //dstVec(0) := (
+              //)
+              rDst := rPartialSum(1)
+              //rDst := rPartialSum(1)
+            }
+            is (UMul32State.YIELD_RESULT) {
+              rState := UMul32State.IDLE
+              multiCycleBus.ready := True
+            }
           }
         }
-      }
-      case _ => {
+        case _ => {
+        }
       }
     }
   }
@@ -5723,174 +6086,201 @@ case class SnowHouseCpuDivmod(
     //  rPrevKind.payload := rKind
     //}
     for (
-      //(multiCycleBus, busIdx) <- cpuIo.multiCycleBusVec.view.zipWithIndex
-      ((_, opInfo), busIdx)
+      ((group, innerMap), busIdx)
       <- cfg.multiCycleOpInfoMap.view.zipWithIndex
     ) {
-      opInfo.multiCycleOp.get match {
-        case MultiCycleOpKind.Udiv => {
-          if (!needBusRvalid) {
-            val tempArea = doItFunc(
-              opInfo,
-              busIdx,
-              cpuIo.multiCycleBusVec(busIdx)
-            )
-          } else {
-            when (
-              rose(
-                RegNext(
-                  next=cpuIo.multiCycleBusVec(busIdx).nextValid,
-                  init=False,
-                )
-              )
-            ) {
-              if (setKind) {
-                rKind := DivmodKind.UDIV
+      val multiCycleBus = cpuIo.multiCycleBusVec(busIdx)
+      def dstVec = multiCycleBus.recvData.dstVec
+      def srcVec = multiCycleBus.sendData.srcVec
+      if (multiCycleBus.sendData.kind != null) {
+        switch (multiCycleBus.sendData.kind) {
+          for (
+            //(multiCycleBus, busIdx) <- cpuIo.multiCycleBusVec.view.zipWithIndex
+            ((_, opInfo), kindIdx)
+            <- innerMap.view.zipWithIndex
+          ) {
+            opInfo.multiCycleOp.get match {
+              case MultiCycleOpKind.Udiv => {
+                is (kindIdx) {
+                  if (!needBusRvalid) {
+                    val tempArea = doItFunc(
+                      opInfo,
+                      busIdx,
+                      cpuIo.multiCycleBusVec(busIdx)
+                    )
+                  } else {
+                    when (
+                      rose(
+                        RegNext(
+                          next=cpuIo.multiCycleBusVec(busIdx).nextValid,
+                          init=False,
+                        )
+                      )
+                    ) {
+                      if (setKind) {
+                        rKind := DivmodKind.UDIV
+                      }
+                      val tempArea = doItFunc(
+                        opInfo,
+                        busIdx,
+                        cpuIo.multiCycleBusVec(busIdx)
+                      )
+                    }
+                  }
+                }
               }
-              val tempArea = doItFunc(
-                opInfo,
-                busIdx,
-                cpuIo.multiCycleBusVec(busIdx)
-              )
+              case MultiCycleOpKind.Sdiv => {
+                is (kindIdx) {
+                  if (!needBusRvalid) {
+                    val tempArea = doItFunc(
+                      opInfo,
+                      busIdx,
+                      cpuIo.multiCycleBusVec(busIdx)
+                    )
+                  } else {
+                    when (
+                      rose(
+                        RegNext(
+                          next=cpuIo.multiCycleBusVec(busIdx).nextValid,
+                          init=False,
+                        )
+                      )
+                    ) {
+                      if (setKind) {
+                        rKind := DivmodKind.SDIV
+                      }
+                      val tempArea = doItFunc(
+                        opInfo,
+                        busIdx,
+                        cpuIo.multiCycleBusVec(busIdx)
+                      )
+                    }
+                  }
+                }
+              }
+              case MultiCycleOpKind.Umod => {
+                is (kindIdx) {
+                  if (!needBusRvalid) {
+                    val tempArea = doItFunc(
+                      opInfo,
+                      busIdx,
+                      cpuIo.multiCycleBusVec(busIdx)
+                    )
+                  } else {
+                    when (
+                      rose(
+                        RegNext(
+                          next=cpuIo.multiCycleBusVec(busIdx).nextValid,
+                          init=False
+                        )
+                      )
+                    ) {
+                      if (setKind) {
+                        rKind := DivmodKind.UMOD
+                      }
+                      val tempArea = doItFunc(
+                        opInfo,
+                        busIdx,
+                        cpuIo.multiCycleBusVec(busIdx)
+                      )
+                    }
+                  }
+                }
+              }
+              case MultiCycleOpKind.Smod => {
+                is (kindIdx) {
+                  if (!needBusRvalid) {
+                    val tempArea = doItFunc(
+                      opInfo,
+                      busIdx,
+                      cpuIo.multiCycleBusVec(busIdx)
+                    )
+                  } else {
+                    when (
+                      rose(
+                        RegNext(
+                          next=cpuIo.multiCycleBusVec(busIdx).nextValid,
+                          init=False,
+                        )
+                      )
+                    ) {
+                      if (setKind) {
+                        rKind := DivmodKind.SMOD
+                      }
+                      val tempArea = doItFunc(
+                        opInfo,
+                        busIdx,
+                        cpuIo.multiCycleBusVec(busIdx)
+                      )
+                    }
+                  }
+                }
+              }
+              case MultiCycleOpKind.Udivw => {
+                is (kindIdx) {
+                  if (!needBusRvalid) {
+                    val tempArea = doItFunc(
+                      opInfo,
+                      busIdx,
+                      cpuIo.multiCycleBusVec(busIdx)
+                    )
+                  } else {
+                    when (
+                      rose(
+                        RegNext(
+                          next=cpuIo.multiCycleBusVec(busIdx).nextValid,
+                          init=False,
+                        )
+                      )
+                    ) {
+                      if (setKind) {
+                        rKind := DivmodKind.UDIVW
+                      }
+                      val tempArea = doItFunc(
+                        opInfo,
+                        busIdx,
+                        cpuIo.multiCycleBusVec(busIdx)
+                      )
+                    }
+                  }
+                }
+              }
+              case MultiCycleOpKind.Sdivw => {
+                is (kindIdx) {
+                  if (!needBusRvalid) {
+                    val tempArea = doItFunc(
+                      opInfo,
+                      busIdx,
+                      cpuIo.multiCycleBusVec(busIdx)
+                    )
+                  } else {
+                    when (
+                      rose(
+                        RegNext(
+                          next=cpuIo.multiCycleBusVec(busIdx).nextValid,
+                          init=False,
+                        )
+                      )
+                    ) {
+                      if (setKind) {
+                        rKind := DivmodKind.SDIVW
+                      }
+                      val tempArea = doItFunc(
+                        opInfo,
+                        busIdx,
+                        cpuIo.multiCycleBusVec(busIdx)
+                      )
+                    }
+                  }
+                }
+              }
+              case _ => {
+              }
             }
           }
-        }
-        case MultiCycleOpKind.Sdiv => {
-          if (!needBusRvalid) {
-            val tempArea = doItFunc(
-              opInfo,
-              busIdx,
-              cpuIo.multiCycleBusVec(busIdx)
-            )
-          } else {
-            when (
-              rose(
-                RegNext(
-                  next=cpuIo.multiCycleBusVec(busIdx).nextValid,
-                  init=False,
-                )
-              )
-            ) {
-              if (setKind) {
-                rKind := DivmodKind.SDIV
-              }
-              val tempArea = doItFunc(
-                opInfo,
-                busIdx,
-                cpuIo.multiCycleBusVec(busIdx)
-              )
-            }
-          }
-        }
-        case MultiCycleOpKind.Umod => {
-          if (!needBusRvalid) {
-            val tempArea = doItFunc(
-              opInfo,
-              busIdx,
-              cpuIo.multiCycleBusVec(busIdx)
-            )
-          } else {
-            when (
-              rose(
-                RegNext(
-                  next=cpuIo.multiCycleBusVec(busIdx).nextValid,
-                  init=False
-                )
-              )
-            ) {
-              if (setKind) {
-                rKind := DivmodKind.UMOD
-              }
-              val tempArea = doItFunc(
-                opInfo,
-                busIdx,
-                cpuIo.multiCycleBusVec(busIdx)
-              )
-            }
-          }
-        }
-        case MultiCycleOpKind.Smod => {
-          if (!needBusRvalid) {
-            val tempArea = doItFunc(
-              opInfo,
-              busIdx,
-              cpuIo.multiCycleBusVec(busIdx)
-            )
-          } else {
-            when (
-              rose(
-                RegNext(
-                  next=cpuIo.multiCycleBusVec(busIdx).nextValid,
-                  init=False,
-                )
-              )
-            ) {
-              if (setKind) {
-                rKind := DivmodKind.SMOD
-              }
-              val tempArea = doItFunc(
-                opInfo,
-                busIdx,
-                cpuIo.multiCycleBusVec(busIdx)
-              )
-            }
-          }
-        }
-        case MultiCycleOpKind.Udivw => {
-          if (!needBusRvalid) {
-            val tempArea = doItFunc(
-              opInfo,
-              busIdx,
-              cpuIo.multiCycleBusVec(busIdx)
-            )
-          } else {
-            when (
-              rose(
-                RegNext(
-                  next=cpuIo.multiCycleBusVec(busIdx).nextValid,
-                  init=False,
-                )
-              )
-            ) {
-              if (setKind) {
-                rKind := DivmodKind.UDIVW
-              }
-              val tempArea = doItFunc(
-                opInfo,
-                busIdx,
-                cpuIo.multiCycleBusVec(busIdx)
-              )
-            }
-          }
-        }
-        case MultiCycleOpKind.Sdivw => {
-          if (!needBusRvalid) {
-            val tempArea = doItFunc(
-              opInfo,
-              busIdx,
-              cpuIo.multiCycleBusVec(busIdx)
-            )
-          } else {
-            when (
-              rose(
-                RegNext(
-                  next=cpuIo.multiCycleBusVec(busIdx).nextValid,
-                  init=False,
-                )
-              )
-            ) {
-              if (setKind) {
-                rKind := DivmodKind.SDIVW
-              }
-              val tempArea = doItFunc(
-                opInfo,
-                busIdx,
-                cpuIo.multiCycleBusVec(busIdx)
-              )
-            }
-          }
-        }
-        case _ => {
+          //default {
+          //  multiCycleBus.ready := False
+          //}
         }
       }
     }
@@ -5934,7 +6324,8 @@ case class SnowHouseCpuDivmod(
       //    )
       //  )
       //})
-      stallIo.ready := False
+      //stallIo.ready.allowOverride
+      //stallIo.ready := False
     },
     setKind=false,
     needBusRvalid=false,
@@ -6038,79 +6429,103 @@ case class SnowHouseCpuDivmod(
   //divmod.io.inp.denom := rSavedSrcVec(1)
   divmod.io.inp.signed := rKind.asBits(0)
   //switch (rKind) {
-    for (
-      ((_, opInfo), busIdx)
-      <- cfg.multiCycleOpInfoMap.view.zipWithIndex
-    ) {
-      opInfo.multiCycleOp.get match {
-        case MultiCycleOpKind.Udiv => {
-          //is (DivmodKind.UDIV) {
-            val stallIo = (
-              cpuIo.multiCycleBusVec(busIdx)
-            )
-            def dstVec = stallIo.recvData.dstVec
-            //stallIo.ready := True
-            dstVec(0) := rSavedResult.last(0)(dstVec(0).bitsRange)
-          //}
-        }
-        case MultiCycleOpKind.Sdiv => {
-          //is (DivmodKind.SDIV) {
-            val stallIo = (
-              cpuIo.multiCycleBusVec(busIdx)
-            )
-            def dstVec = stallIo.recvData.dstVec
-            //stallIo.ready := True
-            dstVec(0) := rSavedResult.last(1)(dstVec(0).bitsRange)
-          //}
-        }
-        case MultiCycleOpKind.Umod => {
-          //is (DivmodKind.UMOD) {
-            val stallIo = (
-              cpuIo.multiCycleBusVec(busIdx)
-            )
-            def dstVec = stallIo.recvData.dstVec
-            //stallIo.ready := True
-            dstVec(0) := rSavedResult.last(2)(dstVec(0).bitsRange)
-          //}
-        }
-        case MultiCycleOpKind.Smod => {
-          //is (DivmodKind.SMOD) {
-            val stallIo = (
-              cpuIo.multiCycleBusVec(busIdx)
-            )
-            def dstVec = stallIo.recvData.dstVec
-            //stallIo.ready := True
-            dstVec(0) := rSavedResult.last(3)(dstVec(0).bitsRange)
-          //}
-        }
-        case MultiCycleOpKind.Udivw => {
-          //is (DivmodKind.UDIV) {
-            val stallIo = (
-              cpuIo.multiCycleBusVec(busIdx)
-            )
-            def dstVec = stallIo.recvData.dstVec
-            //stallIo.ready := True
-            //dstVec(0) := rSavedResult.last(0)
-            dstVec(0) := rSavedResult.last(0)(63 downto 32)
-            dstVec(1) := rSavedResult.last(0)(31 downto 0)
-          //}
-        }
-        case MultiCycleOpKind.Sdivw => {
-          //is (DivmodKind.SDIV) {
-            val stallIo = (
-              cpuIo.multiCycleBusVec(busIdx)
-            )
-            def dstVec = stallIo.recvData.dstVec
-            //stallIo.ready := True
-            dstVec(0) := rSavedResult.last(1)(63 downto 32)
-            dstVec(1) := rSavedResult.last(1)(31 downto 0)
+  for (
+    ((group, innerMap), busIdx)
+    <- cfg.multiCycleOpInfoMap.view.zipWithIndex
+  ) {
+    val multiCycleBus = cpuIo.multiCycleBusVec(busIdx)
+    def dstVec = multiCycleBus.recvData.dstVec
+    def srcVec = multiCycleBus.sendData.srcVec
+    if (multiCycleBus.sendData.kind != null) {
+      switch (multiCycleBus.sendData.kind) {
+        for (
+          ((_, opInfo), kindIdx)
+          <- innerMap.view.zipWithIndex
+        ) {
+          opInfo.multiCycleOp.get match {
+            case MultiCycleOpKind.Udiv => {
+              is (kindIdx) {
+                //is (DivmodKind.UDIV) {
+                  val stallIo = (
+                    cpuIo.multiCycleBusVec(busIdx)
+                  )
+                  def dstVec = stallIo.recvData.dstVec
+                  //stallIo.ready := True
+                  dstVec(0) := rSavedResult.last(0)(dstVec(0).bitsRange)
+                //}
+              }
+            }
+            case MultiCycleOpKind.Sdiv => {
+              is (kindIdx) {
+                //is (DivmodKind.SDIV) {
+                  val stallIo = (
+                    cpuIo.multiCycleBusVec(busIdx)
+                  )
+                  def dstVec = stallIo.recvData.dstVec
+                  //stallIo.ready := True
+                  dstVec(0) := rSavedResult.last(1)(dstVec(0).bitsRange)
+                //}
+              }
+            }
+            case MultiCycleOpKind.Umod => {
+              is (kindIdx) {
+                //is (DivmodKind.UMOD) {
+                  val stallIo = (
+                    cpuIo.multiCycleBusVec(busIdx)
+                  )
+                  def dstVec = stallIo.recvData.dstVec
+                  //stallIo.ready := True
+                  dstVec(0) := rSavedResult.last(2)(dstVec(0).bitsRange)
+                //}
+              }
+            }
+            case MultiCycleOpKind.Smod => {
+              is (kindIdx) {
+                //is (DivmodKind.SMOD) {
+                  val stallIo = (
+                    cpuIo.multiCycleBusVec(busIdx)
+                  )
+                  def dstVec = stallIo.recvData.dstVec
+                  //stallIo.ready := True
+                  dstVec(0) := rSavedResult.last(3)(dstVec(0).bitsRange)
+                //}
+              }
+            }
+            case MultiCycleOpKind.Udivw => {
+              is (kindIdx) {
+                //is (DivmodKind.UDIV) {
+                  val stallIo = (
+                    cpuIo.multiCycleBusVec(busIdx)
+                  )
+                  def dstVec = stallIo.recvData.dstVec
+                  //stallIo.ready := True
+                  //dstVec(0) := rSavedResult.last(0)
+                  dstVec(0) := rSavedResult.last(0)(63 downto 32)
+                  dstVec(1) := rSavedResult.last(0)(31 downto 0)
+                //}
+              }
+            }
+            case MultiCycleOpKind.Sdivw => {
+              is (kindIdx) {
+                //is (DivmodKind.SDIV) {
+                  val stallIo = (
+                    cpuIo.multiCycleBusVec(busIdx)
+                  )
+                  def dstVec = stallIo.recvData.dstVec
+                  //stallIo.ready := True
+                  dstVec(0) := rSavedResult.last(1)(63 downto 32)
+                  dstVec(1) := rSavedResult.last(1)(31 downto 0)
 
-          //}
-        }
-        case _ => {
+                //}
+              }
+            }
+            case _ => {
+            }
+          }
         }
       }
     }
+  }
   //}
   switch (rState) {
     is (DivmodState.IDLE) {
@@ -6255,74 +6670,90 @@ case class SnowHouseCpuDivmod(
       //  needBusRvalid=false,
       //)
       //switch (rKind) {
-        for (
-          ((_, opInfo), busIdx)
-          <- cfg.multiCycleOpInfoMap.view.zipWithIndex
-        ) {
-          opInfo.multiCycleOp.get match {
-            case MultiCycleOpKind.Udiv => {
-              //is (DivmodKind.UDIV) {
-                val stallIo = (
-                  cpuIo.multiCycleBusVec(busIdx)
-                )
-                def dstVec = stallIo.recvData.dstVec
-                stallIo.ready := True
-                //dstVec(0) := rSavedResult.last(0)
-              //}
-            }
-            case MultiCycleOpKind.Sdiv => {
-              //is (DivmodKind.SDIV) {
-                val stallIo = (
-                  cpuIo.multiCycleBusVec(busIdx)
-                )
-                def dstVec = stallIo.recvData.dstVec
-                stallIo.ready := True
-                //dstVec(0) := rSavedResult.last(1)
-              //}
-            }
-            case MultiCycleOpKind.Umod => {
-              //is (DivmodKind.UMOD) {
-                val stallIo = (
-                  cpuIo.multiCycleBusVec(busIdx)
-                )
-                def dstVec = stallIo.recvData.dstVec
-                stallIo.ready := True
-                //dstVec(0) := rSavedResult.last(2)
-              //}
-            }
-            case MultiCycleOpKind.Smod => {
-              //is (DivmodKind.SMOD) {
-                val stallIo = (
-                  cpuIo.multiCycleBusVec(busIdx)
-                )
-                def dstVec = stallIo.recvData.dstVec
-                stallIo.ready := True
-                //dstVec(0) := rSavedResult.last(3)
-              //}
-            }
-            case MultiCycleOpKind.Udivw => {
-              //is (DivmodKind.UDIVW) {
-                val stallIo = (
-                  cpuIo.multiCycleBusVec(busIdx)
-                )
-                def dstVec = stallIo.recvData.dstVec
-                stallIo.ready := True
-                //dstVec(0) := rSavedResult.last(0)
-              //}
-            }
-            case MultiCycleOpKind.Sdivw => {
-              //is (DivmodKind.SDIVW) {
-                val stallIo = (
-                  cpuIo.multiCycleBusVec(busIdx)
-                )
-                def dstVec = stallIo.recvData.dstVec
-                stallIo.ready := True
-                //dstVec(0) := rSavedResult.last(1)
-              //}
-            }
-            case _ => {
-            }
-          }
+      for (
+        ((group, innerMap), busIdx)
+        <- cfg.multiCycleOpInfoMap.view.zipWithIndex
+      ) {
+        val multiCycleBus = cpuIo.multiCycleBusVec(busIdx)
+        def dstVec = multiCycleBus.recvData.dstVec
+        def srcVec = multiCycleBus.sendData.srcVec
+        var haveCorrectBus: Boolean = false
+        if (group == MultiCycleOpKind.Udiv.group) {
+          val stallIo = (
+            cpuIo.multiCycleBusVec(busIdx)
+          )
+          def dstVec = stallIo.recvData.dstVec
+          stallIo.ready := True
+        }
+        //for (
+        //  ((_, opInfo), kindIdx)
+        //  <- innerMap.view.zipWithIndex
+        //) {
+        //  opInfo.multiCycleOp.get match {
+        //    case MultiCycleOpKind.Udiv => {
+        //      //is (DivmodKind.UDIV) {
+        //        val stallIo = (
+        //          cpuIo.multiCycleBusVec(busIdx)
+        //        )
+        //        def dstVec = stallIo.recvData.dstVec
+        //        stallIo.ready := True
+        //        //dstVec(0) := rSavedResult.last(0)
+        //      //}
+        //    }
+        //    case MultiCycleOpKind.Sdiv => {
+        //      //is (DivmodKind.SDIV) {
+        //        val stallIo = (
+        //          cpuIo.multiCycleBusVec(busIdx)
+        //        )
+        //        def dstVec = stallIo.recvData.dstVec
+        //        stallIo.ready := True
+        //        //dstVec(0) := rSavedResult.last(1)
+        //      //}
+        //    }
+        //    case MultiCycleOpKind.Umod => {
+        //      //is (DivmodKind.UMOD) {
+        //        val stallIo = (
+        //          cpuIo.multiCycleBusVec(busIdx)
+        //        )
+        //        def dstVec = stallIo.recvData.dstVec
+        //        stallIo.ready := True
+        //        //dstVec(0) := rSavedResult.last(2)
+        //      //}
+        //    }
+        //    case MultiCycleOpKind.Smod => {
+        //      //is (DivmodKind.SMOD) {
+        //        val stallIo = (
+        //          cpuIo.multiCycleBusVec(busIdx)
+        //        )
+        //        def dstVec = stallIo.recvData.dstVec
+        //        stallIo.ready := True
+        //        //dstVec(0) := rSavedResult.last(3)
+        //      //}
+        //    }
+        //    case MultiCycleOpKind.Udivw => {
+        //      //is (DivmodKind.UDIVW) {
+        //        val stallIo = (
+        //          cpuIo.multiCycleBusVec(busIdx)
+        //        )
+        //        def dstVec = stallIo.recvData.dstVec
+        //        stallIo.ready := True
+        //        //dstVec(0) := rSavedResult.last(0)
+        //      //}
+        //    }
+        //    case MultiCycleOpKind.Sdivw => {
+        //      //is (DivmodKind.SDIVW) {
+        //        val stallIo = (
+        //          cpuIo.multiCycleBusVec(busIdx)
+        //        )
+        //        def dstVec = stallIo.recvData.dstVec
+        //        stallIo.ready := True
+        //        //dstVec(0) := rSavedResult.last(1)
+        //      //}
+        //    }
+        //    case _ => {
+        //    }
+        //  }
+        //}
         }
       //}
       rState := DivmodState.IDLE
@@ -6352,7 +6783,9 @@ case class SnowHouseCpuMultiCycleInstrArea(
     //SnowHouseCpuShiftSlt32LowLatency(cpuIo=cpuIo)
     SnowHouseCpuShift32LowLatency(cpuIo=cpuIo)
   )
-  val cpyAdd32 = SnowHouseCpuCpyAdd32(cpuIo=cpuIo)
+  //val cpyAdd32 = SnowHouseCpuCpyAdd32(cpuIo=cpuIo)
+  val addMultiCycle = SnowHouseCpuAddMultiCycle(cpuIo=cpuIo)
+  val cpyMultiCycle = SnowHouseCpuCpyMultiCycle(cpuIo=cpuIo)
   val mul32 = SnowHouseCpuMul32(cpuIo=cpuIo)
   //val divmod32 = SnowHouseCpuDivmod32(cpuIo=cpuIo)
   //val divmodw = SnowHouseCpuDivmodw(cpuIo=cpuIo)

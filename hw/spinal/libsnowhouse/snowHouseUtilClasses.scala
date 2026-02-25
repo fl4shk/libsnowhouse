@@ -1129,7 +1129,10 @@ case class SnowHouseConfig(
         tempDstArrSize = opInfo.dstArr.size
       }
     }
-    multiCycleOpKindWidthMap += (group -> log2Up(innerMap.size))
+    val tempOpKindWidth = log2Up(innerMap.size)
+    if (tempOpKindWidth > 0) {
+      multiCycleOpKindWidthMap += (group -> tempOpKindWidth)
+    }
     maxMultiCycleSrcArrSizeMap += (group -> tempSrcArrSize)
     maxMultiCycleDstArrSizeMap += (group -> tempDstArrSize)
   }

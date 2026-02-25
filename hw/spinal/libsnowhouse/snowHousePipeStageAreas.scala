@@ -3219,7 +3219,7 @@ case class SnowHousePipeStageExecuteSetOutpModMemWordIo(
           //  MultiCycleDevPayload(cfg=cfg, opInfo=opInfo)
           //)
         }
-        if (innerMap.size == 0) {
+        //if (innerMap.size == 0) {
           tempArr += (
             MultiCycleDevPayload(
               cfg=cfg,
@@ -3227,8 +3227,8 @@ case class SnowHousePipeStageExecuteSetOutpModMemWordIo(
               group=group
             )
           )
-        } else {
-        }
+        //} else {
+        //}
       }
       tempArr
     })
@@ -6637,18 +6637,21 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
           //io.aluOp := LcvAluDel1InpOpEnum.ZERO
           //nextIndexReg := 0x0
         }
-        for ((group, innerMap) <- cfg.multiCycleOpInfoMap.view) {
+        for (
+          ((group, innerMap), groupIdx)
+          <- cfg.multiCycleOpInfoMap.view.zipWithIndex
+        ) {
           for (
-            ((_, innerOpInfo), idx) <- innerMap.view.zipWithIndex
+            ((_, innerOpInfo), kindIdx) <- innerMap.view.zipWithIndex
           ) {
             if (opInfo == innerOpInfo) {
               if (!isSingleWriteToIds) {
-                io.multiCycleOpInfoIdx := idx
+                io.multiCycleOpInfoIdx := groupIdx
               }
               for ((dst, dstIdx) <- opInfo.dstArr.view.zipWithIndex) {
                 val tempDst = (
                   //modIo.multiCycleBusVec(idx).recvData.dstVec(dstIdx)
-                  io.multiCycleBusRecvDataVec(idx).dstVec(dstIdx)
+                  io.multiCycleBusRecvDataVec(groupIdx).dstVec(dstIdx)
                 )
                 dst match {
                   case DstKind.Gpr => {
@@ -9652,9 +9655,9 @@ case class SnowHousePipeStageExecute(
   ) {
     switch (
       RegNext(setOutpModMemWord.io.splitOp.multiCycleOpKind)
-      init(0x1) // this needs to be one-hot
+      init(0x0)
     ) {
-      for (((_, opInfo), opInfoIdx) <- innerMap.view.zipWithIndex) {
+      for (((_, opInfo), kindIdx) <- innerMap.view.zipWithIndex) {
         //for (
         //  (multiCycleGroup, multiCycleInnerMap)
         //  <- cfg.multiCycleOpInfoMap.view
@@ -9670,7 +9673,7 @@ case class SnowHousePipeStageExecute(
         //  }
         //}
         //if (busIdxFound)
-        is (opInfoIdx) {
+        is (kindIdx) {
           def multiCycleBus = io.multiCycleBusVec(
             //busIdx
             groupIdx
@@ -9793,6 +9796,21 @@ case class SnowHousePipeStageExecute(
   //  }
   //}
 
+  for (
+    myPsExStallHost <- psExStallHostArr.view
+  ) {
+    if (
+      myPsExStallHost.stallIo.get.sendData.kind != null
+      && myPsExStallHost.stallIo.get.sendData.kind.getWidth > 0
+    ) {
+      myPsExStallHost.stallIo.get.sendData.kind := (
+        outp.splitOp.multiCycleOpKind.resize(
+          myPsExStallHost.stallIo.get.sendData.kind.getWidth
+        )
+      )
+    }
+  }
+
   def doMultiCycleStart(
     myPsExStallHost: LcvStallHost[
       MultiCycleHostPayload,
@@ -9803,11 +9821,6 @@ case class SnowHousePipeStageExecute(
     //myDoStall(stallKindMem) := False
     //myDoStall(stallKindMultiCycle) := True
     myPsExStallHost.nextValid := True
-    if (myPsExStallHost.stallIo.get.sendData.kind != null) {
-      myPsExStallHost.stallIo.get.sendData.kind := (
-        outp.splitOp.multiCycleOpKind
-      )
-    }
   }
   val rHaveDoneMultiCycleOp = Reg(Bool(), init=False)
   switch (rMultiCycleOpState) {
