@@ -2582,6 +2582,7 @@ object MultiCycleOpKind {
       OpKindValidArgs(
         // dual word/single word = single word
         dst=Array[HashSet[DstKind]](
+          HashSet(DstKind.Hi),
           HashSet(DstKind.Gpr),
         ),
         src=Array[HashSet[SrcKind]](
@@ -2604,6 +2605,7 @@ object MultiCycleOpKind {
       OpKindValidArgs(
         // dual word/single word = single word
         dst=Array[HashSet[DstKind]](
+          HashSet(DstKind.Hi),
           HashSet(DstKind.Gpr),
         ),
         src=Array[HashSet[SrcKind]](
