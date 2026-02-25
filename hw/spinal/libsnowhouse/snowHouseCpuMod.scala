@@ -5963,7 +5963,7 @@ case class SnowHouseCpuDivmod(
       rSavedQuot(idx) := divmod.io.outp.quot
       rSavedRema(idx) := divmod.io.outp.rema
     }
-    when (!rKind.asBits(2)) {
+    when (!rKind.asBits(1)) {
       //rSavedResult(0).foreach(result => result := rSavedQuot)
       rSavedResult(0)(idx) := rSavedQuot(idx)
     } otherwise {
@@ -6135,6 +6135,14 @@ case class SnowHouseCpuDivmod(
               init=srcVec(1).getZero,
             )
           )
+          if (srcVec.size > 2) {
+            rSavedSrcVec(2) := (
+              RegNext(
+                next=srcVec(2),
+                init=srcVec(2).getZero,
+              )
+            )
+          }
         },
         setKind=true,
       )
