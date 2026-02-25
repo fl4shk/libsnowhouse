@@ -5154,7 +5154,7 @@ case class SnowHouseCpuDivmodw(
   def cfg = cpuIo.cfg
   val divmod = LongDivMultiCycle(
     mainWidth=(cfg.mainWidth * 2),
-    denomWidth=cfg.mainWidth,
+    denomWidth=(cfg.mainWidth * 2),
     chunkWidth=1,//2,
     signedReset=0x0,
   )
@@ -5351,8 +5351,21 @@ case class SnowHouseCpuDivmodw(
   rSavedResult(1) := rSavedResult(0)
   rSavedResult(2) := rSavedResult(1)
   divmod.io.inp.numer := Cat(rSavedSrcVec(2), rSavedSrcVec(0)).asUInt
-  divmod.io.inp.denom := rSavedSrcVec(1)
   divmod.io.inp.signed := rKind.asBits(0)
+  when (rKind.asBits(0)) {
+    //divmod.io.inp.denom(
+    //  divmod.io.inp.denom.high downto cfg.mainWidth
+    //) := (
+    //  rSavedSrcVec(1)
+    //)
+    divmod.io.inp.denom := (
+      rSavedSrcVec(1).asSInt.resize(divmod.io.inp.denom.getWidth).asUInt
+    )
+  } otherwise {
+    divmod.io.inp.denom := (
+      rSavedSrcVec(1).resize(divmod.io.inp.denom.getWidth)
+    )
+  }
   //switch (rKind) {
     for (
       ((_, opInfo), busIdx)
