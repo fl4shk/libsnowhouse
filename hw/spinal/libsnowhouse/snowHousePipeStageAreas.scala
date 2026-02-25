@@ -3208,14 +3208,27 @@ case class SnowHousePipeStageExecuteSetOutpModMemWordIo(
         MultiCycleDevPayload
       ]()
       for (
-        ((_, opInfo), idx) <- cfg.multiCycleOpInfoMap.view.zipWithIndex
+        //((_, opInfo), idx) <- cfg.multiCycleOpInfoMap.view.zipWithIndex
+        (group, innerMap) <- cfg.multiCycleOpInfoMap.view
       ) {
-        assert(
-          opInfo.select == OpSelect.MultiCycle
-        )
-        tempArr += (
-          MultiCycleDevPayload(cfg=cfg, opInfo=opInfo)
-        )
+        for (((_, opInfo), idx) <- innerMap.view.zipWithIndex) {
+          require(
+            opInfo.select == OpSelect.MultiCycle
+          )
+          //tempArr += (
+          //  MultiCycleDevPayload(cfg=cfg, opInfo=opInfo)
+          //)
+        }
+        if (innerMap.size == 0) {
+          tempArr += (
+            MultiCycleDevPayload(
+              cfg=cfg,
+              //maxDstArrSize=cfg.maxMultiCycleDstArrSizeMap.get(group).get
+              group=group
+            )
+          )
+        } else {
+        }
       }
       tempArr
     })
@@ -3385,7 +3398,7 @@ case class SnowHousePipeStageExecuteSetOutpModMemWordIo(
         idx < 0
         || idx >= cfg.regFileCfg.modRdPortCnt
       ) {
-        assert(
+        require(
           false,
           s"eek! idx:${idx}"
         )
@@ -4580,7 +4593,7 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
   )
   for (idx <- 0 until cfg.multiCycleOpInfoMap.size) {
     io.opIsMultiCycle(idx) := (
-      io.splitOp.multiCycleOp(idx)
+      io.splitOp.multiCycleOpGroup(idx)
     )
   }
   //io.outpDecodeExt.memAccessKind := SnowHouseMemAccessKind.LoadU
@@ -6624,83 +6637,84 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
           //io.aluOp := LcvAluDel1InpOpEnum.ZERO
           //nextIndexReg := 0x0
         }
-        for (
-          ((_, innerOpInfo), idx)
-          <- cfg.multiCycleOpInfoMap.view.zipWithIndex
-        ) {
-          if (opInfo == innerOpInfo) {
-            if (!isSingleWriteToIds) {
-              io.multiCycleOpInfoIdx := idx
-            }
-            for ((dst, dstIdx) <- opInfo.dstArr.view.zipWithIndex) {
-              val tempDst = (
-                //modIo.multiCycleBusVec(idx).recvData.dstVec(dstIdx)
-                io.multiCycleBusRecvDataVec(idx).dstVec(dstIdx)
-              )
-              dst match {
-                case DstKind.Gpr => {
-                  // TODO: *maybe* support multiple output regs
-                  io.modMemWord(0) := (
-                    tempDst
-                  )
-                }
-                case DstKind.HiddenReg(kind) => {
-                  kind match {
-                    case HiddenRegKind.MulHiOutp => {
-                      nextMulHiOutp := tempDst
-                    }
-                    case HiddenRegKind.DivHiOutp => {
-                      nextDivHiOutp := tempDst
-                    }
-                    case HiddenRegKind.ModHiOutp => {
-                      nextModHiOutp := tempDst
-                    }
-                    case _ => {
-                      assert(
-                        false,
-                        s"not yet implemented: "
-                        + s"opInfo(${opInfo}) index:${opInfoIdx}"
-                      )
-                    }
+        for ((group, innerMap) <- cfg.multiCycleOpInfoMap.view) {
+          for (
+            ((_, innerOpInfo), idx) <- innerMap.view.zipWithIndex
+          ) {
+            if (opInfo == innerOpInfo) {
+              if (!isSingleWriteToIds) {
+                io.multiCycleOpInfoIdx := idx
+              }
+              for ((dst, dstIdx) <- opInfo.dstArr.view.zipWithIndex) {
+                val tempDst = (
+                  //modIo.multiCycleBusVec(idx).recvData.dstVec(dstIdx)
+                  io.multiCycleBusRecvDataVec(idx).dstVec(dstIdx)
+                )
+                dst match {
+                  case DstKind.Gpr => {
+                    // TODO: *maybe* support multiple output regs
+                    io.modMemWord(0) := (
+                      tempDst
+                    )
                   }
-                }
-                case DstKind.Spr(kind) => {
-                  kind match {
-                    case SprKind.Hi => {
-                      nextHi := tempDst
-                    }
-                    case SprKind.Lo => {
-                      nextLo := tempDst
-                    }
-                    case SprKind.Ids => {
-                      if (
-                        isSingleWriteToIds
-                        || cfg.onlyOneMultiCycleWriteToIdsOpInfo == None
-                      ) {
-                        nextIds := tempDst
+                  case DstKind.HiddenReg(kind) => {
+                    kind match {
+                      case HiddenRegKind.MulHiOutp => {
+                        nextMulHiOutp := tempDst
+                      }
+                      case HiddenRegKind.DivHiOutp => {
+                        nextDivHiOutp := tempDst
+                      }
+                      case HiddenRegKind.ModHiOutp => {
+                        nextModHiOutp := tempDst
+                      }
+                      case _ => {
+                        assert(
+                          false,
+                          s"not yet implemented: "
+                          + s"opInfo(${opInfo}) index:${opInfoIdx}"
+                        )
                       }
                     }
-                    case SprKind.Ira => {
-                      nextIra := tempDst
-                    }
-                    case SprKind.Ie => {
-                      nextIe := tempDst(0)
-                    }
-                    case _ => {
-                      assert(
-                        false,
-                        s"not yet implemented: "
-                        + s"opInfo(${opInfo}) index:${opInfoIdx}"
-                      )
+                  }
+                  case DstKind.Spr(kind) => {
+                    kind match {
+                      case SprKind.Hi => {
+                        nextHi := tempDst
+                      }
+                      case SprKind.Lo => {
+                        nextLo := tempDst
+                      }
+                      case SprKind.Ids => {
+                        if (
+                          isSingleWriteToIds
+                          || cfg.onlyOneMultiCycleWriteToIdsOpInfo == None
+                        ) {
+                          nextIds := tempDst
+                        }
+                      }
+                      case SprKind.Ira => {
+                        nextIra := tempDst
+                      }
+                      case SprKind.Ie => {
+                        nextIe := tempDst(0)
+                      }
+                      case _ => {
+                        assert(
+                          false,
+                          s"not yet implemented: "
+                          + s"opInfo(${opInfo}) index:${opInfoIdx}"
+                        )
+                      }
                     }
                   }
-                }
-                case _ => {
-                  assert(
-                    false,
-                    s"not yet implemented: "
-                    + s"opInfo(${opInfo}) index:${opInfoIdx}"
-                  )
+                  case _ => {
+                    assert(
+                      false,
+                      s"not yet implemented: "
+                      + s"opInfo(${opInfo}) index:${opInfoIdx}"
+                    )
+                  }
                 }
               }
             }
@@ -7152,74 +7166,169 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
     }
   }
   if (cfg.onlyOneMultiCycleWriteToIdsOpInfo != None) {
-    for (
-      ((_, opInfo), idx)
-      <- cfg.multiCycleOpInfoMap.view.zipWithIndex
-    ) {
-      if (opInfo == cfg.onlyOneMultiCycleWriteToIdsOpInfo.get) {
-        innerFunc(
-          opInfo=opInfo,
-          opInfoIdx=idx,
-          isSingleWriteToIds=true,
-        )
-      }
-    }
-  }
-  switch (
-    io.inMultiCycleOp
-    ## (
-      RegNext(io.splitOp.multiCycleOp)
-      init(0x1) // arbitrarily chosen, but still set to something one-hot
-    )
-  ) {
-    for (
-      ((_, opInfo), idx)
-      <- cfg.multiCycleOpInfoMap.view.zipWithIndex
-    ) {
-      /*when*/ is(
-        //idx
-        //io.splitOp.multiCycleOp(idx)
-        new MaskedLiteral(
-          value=(
-            (1 << idx)
-            | (1 << io.splitOp.multiCycleOp.getWidth)
-          ),
-          careAbout=(
-            (1 << idx)
-            | ((1 << idx) - 1)
-            | (1 << io.splitOp.multiCycleOp.getWidth)
-          ),
-          width=(
-            cfg.multiCycleOpInfoMap.size + 1
-          )
-        )
+    for ((_, innerMap) <- cfg.multiCycleOpInfoMap.view) {
+      for (
+        ((_, opInfo), idx)
+        <- innerMap.zipWithIndex
       ) {
-        innerFunc(
-          opInfo=opInfo,
-          opInfoIdx=idx,
-          isSingleWriteToIds=false,
-        )
-        //cfg.onlyOneMultiCycleWriteToIdsOpInfo match {
-        //  case Some(writeToIdsOpInfo) => {
-        //    if (opInfo != writeToIdsOpInfo) {
-        //      innerFunc(
-        //        opInfo=opInfo,
-        //        opInfoIdx=idx,
-        //        isSingleWriteToIds=false,
-        //      )
-        //    }
-        //  }
-        //  case None => {
-        //    innerFunc(
-        //      opInfo=opInfo,
-        //      opInfoIdx=idx,
-        //      isSingleWriteToIds=false,
-        //    )
-        //  }
-        //}
+        if (opInfo == cfg.onlyOneMultiCycleWriteToIdsOpInfo.get) {
+          innerFunc(
+            opInfo=opInfo,
+            opInfoIdx=idx,
+            isSingleWriteToIds=true,
+          )
+        }
       }
     }
   }
+  if (cfg.maxMultiCycleOpKindWidth == None) {
+    switch (
+      io.inMultiCycleOp
+      ## (
+        RegNext(io.splitOp.multiCycleOpGroup)
+        init(0x1)
+        // `init` value arbitrarily chosen,
+        // but still set to something one-hot
+      )
+    ) {
+      for ((group, innerMap) <- cfg.multiCycleOpInfoMap.view) {
+        require(
+          innerMap.size == 1
+        )
+        for (
+          ((_, opInfo), idx)
+          <- innerMap.view.zipWithIndex
+        ) {
+          /*when*/ is(
+            //idx
+            //io.splitOp.multiCycleOp(idx)
+            new MaskedLiteral(
+              value=(
+                (1 << idx)
+                | (1 << io.splitOp.multiCycleOpGroup.getWidth)
+              ),
+              careAbout=(
+                (1 << idx)
+                | ((1 << idx) - 1)
+                | (1 << io.splitOp.multiCycleOpGroup.getWidth)
+              ),
+              width=(
+                cfg.multiCycleOpInfoMap.size + 1
+              )
+            )
+          ) {
+            innerFunc(
+              opInfo=opInfo,
+              opInfoIdx=idx,
+              isSingleWriteToIds=false,
+            )
+            //cfg.onlyOneMultiCycleWriteToIdsOpInfo match {
+            //  case Some(writeToIdsOpInfo) => {
+            //    if (opInfo != writeToIdsOpInfo) {
+            //      innerFunc(
+            //        opInfo=opInfo,
+            //        opInfoIdx=idx,
+            //        isSingleWriteToIds=false,
+            //      )
+            //    }
+            //  }
+            //  case None => {
+            //    innerFunc(
+            //      opInfo=opInfo,
+            //      opInfoIdx=idx,
+            //      isSingleWriteToIds=false,
+            //    )
+            //  }
+            //}
+          }
+        }
+      }
+    }
+  } else { // if (cfg.maxMultiCycleOpKindWidth != None)
+    switch (
+      io.inMultiCycleOp
+      ## (
+        RegNext(io.splitOp.multiCycleOpGroup)
+        init(0x1)
+        // `init` value arbitrarily chosen,
+        // but still set to something one-hot
+      )
+      ## (
+        RegNext(io.splitOp.multiCycleOpKind)
+        init(0x0)
+      )
+    ) {
+      for (
+        ((group, innerMap), groupIdx)
+        <- cfg.multiCycleOpInfoMap.view.zipWithIndex
+      ) {
+        for (
+          ((_, opInfo), kindIdx) <- innerMap.view.zipWithIndex
+        ) {
+          val myGroupWidth = io.splitOp.multiCycleOpGroup.getWidth
+          val myKindWidth = io.splitOp.multiCycleOpKind.getWidth
+          val myTempWidthSum = (
+            //io.splitOp.multiCycleOpGroup.getWidth
+            //+ io.splitOp.multiCycleOpKind.getWidth
+            myGroupWidth + myKindWidth
+          )
+
+          /*when*/ is(
+            //idx
+            //io.splitOp.multiCycleOp(idx)
+            new MaskedLiteral(
+              value=(
+                //(1 << idx)
+                //| (1 << io.splitOp.multiCycleOpGroup.getWidth)
+                (1 << (groupIdx + myKindWidth))
+                | kindIdx
+                | (1 << myTempWidthSum)
+              ),
+              careAbout=(
+                //(1 << idx)
+                //| ((1 << idx) - 1)
+                //| (1 << io.splitOp.multiCycleOpGroup.getWidth)
+                (1 << (groupIdx + myKindWidth))
+                | ((1 << (groupIdx + myKindWidth)) - 1)
+                | (1 << myTempWidthSum)
+              ),
+              width=(
+                1
+                + cfg.multiCycleOpInfoMap.size 
+                + cfg.maxMultiCycleOpKindWidth.get
+              )
+            )
+          ) {
+            innerFunc(
+              opInfo=opInfo,
+              opInfoIdx=kindIdx,
+              isSingleWriteToIds=false,
+            )
+            //cfg.onlyOneMultiCycleWriteToIdsOpInfo match {
+            //  case Some(writeToIdsOpInfo) => {
+            //    if (opInfo != writeToIdsOpInfo) {
+            //      innerFunc(
+            //        opInfo=opInfo,
+            //        opInfoIdx=idx,
+            //        isSingleWriteToIds=false,
+            //      )
+            //    }
+            //  }
+            //  case None => {
+            //    innerFunc(
+            //      opInfo=opInfo,
+            //      opInfoIdx=idx,
+            //      isSingleWriteToIds=false,
+            //    )
+            //  }
+            //}
+          }
+        }
+      }
+    }
+  }
+
+
   //switch (io.splitOp.fullOp) {
   //  for (
   //    ((_, opInfo), opInfoIdx) <- cfg.opInfoMap.view.zipWithIndex
@@ -7777,18 +7886,32 @@ case class SnowHousePipeStageExecute(
     cfg=cfg
   )
   for (
-    ((_, opInfo), idx)
+    ((group, innerMap), groupIdx)
     <- cfg.multiCycleOpInfoMap.view.zipWithIndex
   ) {
-    for ((dst, dstIdx) <- opInfo.dstArr.view.zipWithIndex) {
-      val tempDst = (
-        //modIo.multiCycleBusVec(idx).recvData.dstVec(dstIdx)
-        setOutpModMemWord.io.multiCycleBusRecvDataVec(idx).dstVec(dstIdx)
-      )
-      tempDst := (
-        args.io.multiCycleBusVec(idx).recvData.dstVec(dstIdx)
-      )
-    }
+    //for (
+    //  ((_, opInfo), idx)
+    //  <- innerMap.view.zipWithIndex
+    //) {
+      for (
+        //(dst, dstIdx) <- opInfo.dstArr.view.zipWithIndex
+        dstIdx <- 0 until cfg.maxMultiCycleDstArrSizeMap.get(group).get
+      ) {
+        val tempDst = (
+          //modIo.multiCycleBusVec(idx).recvData.dstVec(dstIdx)
+          setOutpModMemWord.io.multiCycleBusRecvDataVec(
+            //idx
+            groupIdx
+          ).dstVec(dstIdx)
+        )
+        tempDst := (
+          args.io.multiCycleBusVec(
+            //idx
+            groupIdx
+          ).recvData.dstVec(dstIdx)
+        )
+      }
+    //}
   }
   val doCheckHazard = (
     Vec.fill(
@@ -9521,51 +9644,47 @@ case class SnowHousePipeStageExecute(
     //}
     temp
   }
-  var busIdxFound: Boolean = false
-  var busIdx: Int = 0
+  //var busIdxFound: Boolean = false
+  //var busIdx: Int = 0
   for (
-    ((_, opInfo), opInfoIdx)
+    ((group, innerMap), groupIdx)
     <- cfg.multiCycleOpInfoMap.view.zipWithIndex
   ) {
-    for (
-      ((_, multiCycleOpInfo), myBusIdx)
-      <- cfg.multiCycleOpInfoMap.view.zipWithIndex
+    switch (
+      RegNext(setOutpModMemWord.io.splitOp.multiCycleOpKind)
+      init(0x1) // this needs to be one-hot
     ) {
-      if (opInfo == multiCycleOpInfo) {
-        busIdxFound = true
-        busIdx = myBusIdx
-      }
-    }
-    if (busIdxFound) {
-      def multiCycleBus = io.multiCycleBusVec(busIdx)
-      multiCycleBus.sendData.srcVec.foreach(src => {
-        src.allowOverride
-      })
-      multiCycleBus.sendData.srcVec(0) := (
-        RegNext/*When*/(
-          setOutpModMemWord.io.selRdMemWord(
-            opInfo=opInfo,
-            idx=0,
-          ).resize(
-            multiCycleBus.sendData.srcVec(0).getWidth
-          ),
-          //cond=(
-          //  //True
-          //  //!myDoStall(stallKindMultiCycle)
-          //  rMultiCycleOpState === MultiCycleOpState.Idle
-          //),
-        )
-        init(0x0)
-      )
-      if (multiCycleBus.sendData.srcVec.size > 1) {
-        for (
-          multiCycleIdx <- 1 until multiCycleBus.sendData.srcVec.size
-        ) {
-          multiCycleBus.sendData.srcVec(multiCycleIdx) := (
+      for (((_, opInfo), opInfoIdx) <- innerMap.view.zipWithIndex) {
+        //for (
+        //  (multiCycleGroup, multiCycleInnerMap)
+        //  <- cfg.multiCycleOpInfoMap.view
+        //) {
+        //  for (
+        //    ((_, multiCycleOpInfo), myBusIdx)
+        //    <- multiCycleInnerMap.view.zipWithIndex
+        //  ) {
+        //    if (opInfo == multiCycleOpInfo) {
+        //      busIdxFound = true
+        //      busIdx = myBusIdx
+        //    }
+        //  }
+        //}
+        //if (busIdxFound)
+        is (opInfoIdx) {
+          def multiCycleBus = io.multiCycleBusVec(
+            //busIdx
+            groupIdx
+          )
+          multiCycleBus.sendData.srcVec.foreach(src => {
+            src.allowOverride
+          })
+          multiCycleBus.sendData.srcVec(0) := (
             RegNext/*When*/(
               setOutpModMemWord.io.selRdMemWord(
                 opInfo=opInfo,
-                idx=multiCycleIdx,
+                idx=0,
+              ).resize(
+                multiCycleBus.sendData.srcVec(0).getWidth
               ),
               //cond=(
               //  //True
@@ -9575,6 +9694,31 @@ case class SnowHousePipeStageExecute(
             )
             init(0x0)
           )
+          if (multiCycleBus.sendData.srcVec.size > 1) {
+            for (
+              multiCycleIdx <- 1 until multiCycleBus.sendData.srcVec.size
+            ) {
+              if (multiCycleIdx < opInfo.srcArr.size) {
+                multiCycleBus.sendData.srcVec(multiCycleIdx) := (
+                  RegNext/*When*/(
+                    setOutpModMemWord.io.selRdMemWord(
+                      opInfo=opInfo,
+                      idx=multiCycleIdx,
+                    ),
+                    //cond=(
+                    //  //True
+                    //  //!myDoStall(stallKindMultiCycle)
+                    //  rMultiCycleOpState === MultiCycleOpState.Idle
+                    //),
+                  )
+                  init(0x0)
+                )
+              } else {
+                //multiCycleBus.sendData.srcVec(multiCycleIdx) := (
+                //)
+              }
+            }
+          }
         }
       }
     }
@@ -9659,6 +9803,11 @@ case class SnowHousePipeStageExecute(
     //myDoStall(stallKindMem) := False
     //myDoStall(stallKindMultiCycle) := True
     myPsExStallHost.nextValid := True
+    if (myPsExStallHost.stallIo.get.sendData.kind != null) {
+      myPsExStallHost.stallIo.get.sendData.kind := (
+        outp.splitOp.multiCycleOpKind
+      )
+    }
   }
   val rHaveDoneMultiCycleOp = Reg(Bool(), init=False)
   switch (rMultiCycleOpState) {
@@ -9787,49 +9936,57 @@ case class SnowHousePipeStageExecute(
             //  )
             //)
           ) {
-            for (
-              ((_, opInfo), opInfoIdx)
-              <- cfg.multiCycleOpInfoMap.view.zipWithIndex
-            ) {
-              //is (opInfoIdx)
-              if (opInfoIdx == idx) {
-                var busIdxFound: Boolean = false
-                var busIdx: Int = 0
-                for (
-                  ((_, multiCycleOpInfo), myBusIdx)
-                  <- cfg.multiCycleOpInfoMap.view.zipWithIndex
-                ) {
-                  if (opInfo == multiCycleOpInfo) {
-                    busIdxFound = true
-                    busIdx = myBusIdx
-                  }
-                }
-                if (busIdxFound) {
-                  val psExStallHost = psExStallHostArr(busIdx)
-                  doMultiCycleStart(psExStallHost, idx=idx)
-                }
-              }
-            }
+            val psExStallHost = psExStallHostArr(
+              //busIdx
+              idx
+            )
+            doMultiCycleStart(psExStallHost, idx=idx)
+            //for (
+            //  ((_, opInfo), opInfoIdx)
+            //  <- cfg.multiCycleOpInfoMap.view.zipWithIndex
+            //) {
+            //  //is (opInfoIdx)
+            //  if (opInfoIdx == idx) {
+            //    var busIdxFound: Boolean = false
+            //    var busIdx: Int = 0
+            //    for (
+            //      ((_, multiCycleOpInfo), myBusIdx)
+            //      <- cfg.multiCycleOpInfoMap.view.zipWithIndex
+            //    ) {
+            //      if (opInfo == multiCycleOpInfo) {
+            //        busIdxFound = true
+            //        busIdx = myBusIdx
+            //      }
+            //    }
+            //    if (busIdxFound) {
+            //      val psExStallHost = psExStallHostArr(busIdx)
+            //      doMultiCycleStart(psExStallHost, idx=idx)
+            //    }
+            //  }
+            //}
           }
-          for (
-            ((_, opInfo), opInfoIdx)
-            <- cfg.multiCycleOpInfoMap.view.zipWithIndex
-          ) {
-            //is (opInfoIdx)
-            if (opInfoIdx == idx) {
-              var busIdxFound: Boolean = false
-              var busIdx: Int = 0
-              for (
-                ((_, multiCycleOpInfo), myBusIdx)
-                <- cfg.multiCycleOpInfoMap.view.zipWithIndex
-              ) {
-                if (opInfo == multiCycleOpInfo) {
-                  busIdxFound = true
-                  busIdx = myBusIdx
-                }
-              }
-              if (busIdxFound) {
-                val psExStallHost = psExStallHostArr(busIdx)
+          //for (
+          //  ((_, opInfo), opInfoIdx)
+          //  <- cfg.multiCycleOpInfoMap.view.zipWithIndex
+          //) {
+          //  //is (opInfoIdx)
+          //  if (opInfoIdx == idx) {
+          //    var busIdxFound: Boolean = false
+          //    var busIdx: Int = 0
+          //    for (
+          //      ((_, multiCycleOpInfo), myBusIdx)
+          //      <- cfg.multiCycleOpInfoMap.view.zipWithIndex
+          //    ) {
+          //      if (opInfo == multiCycleOpInfo) {
+          //        busIdxFound = true
+          //        busIdx = myBusIdx
+          //      }
+          //    }
+          //    if (busIdxFound) {
+                val psExStallHost = psExStallHostArr(
+                  //busIdx
+                  idx
+                )
                 //doMultiCycleStart(psExStallHost, idx=idx)
                 when (
                   RegNext(psExStallHost.nextValid, init=False)
@@ -9845,9 +10002,9 @@ case class SnowHousePipeStageExecute(
                   //  })
                   //})
                 }
-              }
-            }
-          }
+          //    }
+          //  }
+          //}
           // END: working, slower than desired multi-cycle op handling code
           //--------
         }

@@ -1184,18 +1184,30 @@ case class SnowHouseIo(
         ]
       ]()
       for (
-        ((_, opInfo), idx) <- cfg.multiCycleOpInfoMap.view.zipWithIndex
+        //((_, opInfo), idx) <- cfg.multiCycleOpInfoMap.view.zipWithIndex
+        (group, _) <- cfg.multiCycleOpInfoMap.view
       ) {
-        assert(
-          opInfo.select == OpSelect.MultiCycle
-        )
+        //assert(
+        //  opInfo.select == OpSelect.MultiCycle
+        //)
         //if (opInfo.select == OpSelect.MultiCycle) {
           tempArr += new LcvStallIo(
             sendPayloadType=(
-              Some(MultiCycleHostPayload(cfg=cfg, opInfo=opInfo))
+              Some(MultiCycleHostPayload(
+                cfg=cfg,
+                group=group,
+                //opInfo=opInfo
+                //maxSrcArrSize=(
+                //  cfg.
+                //)
+              ))
             ),
             recvPayloadType=(
-              Some(MultiCycleDevPayload(cfg=cfg, opInfo=opInfo))
+              Some(MultiCycleDevPayload(
+                cfg=cfg,
+                group=group,
+                //opInfo=opInfo
+              ))
             ),
           )
         //}

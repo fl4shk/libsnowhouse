@@ -895,7 +895,9 @@ case class SnowHouseConfig(
   val aluLcvDel1OpInfoMap = LinkedHashMap[Int, OpInfo]()
   val nonMultiCycleOpInfoMap = LinkedHashMap[Int, OpInfo]()
   val cpyCpyuiAluNonShiftOpInfoMap = LinkedHashMap[Int, OpInfo]()
-  val multiCycleOpInfoMap = LinkedHashMap[Int, OpInfo]()
+  val multiCycleOpInfoMap = (
+    LinkedHashMap[MultiCycleOpGroup, LinkedHashMap[Int, OpInfo]]()
+  )
   //val loadOpInfoMap = LinkedHashMap[Int, OpInfo]()
   //val storeOpInfoMap = LinkedHashMap[Int, OpInfo]()
   ////val atomicRmwOpInfoMap = LinkedHashMap[Int, OpInfo]()
@@ -1097,10 +1099,61 @@ case class SnowHouseConfig(
         //  + s"number of destination/source operands: "
         //  + s"opInfo(${opInfo}), instructionIndex:${idx}"
         //)
-        multiCycleOpInfoMap += (idx -> opInfo)
+        if (!multiCycleOpInfoMap.contains(opInfo.multiCycleOp.get.group)) {
+          multiCycleOpInfoMap += (
+            (opInfo.multiCycleOp.get.group
+            -> LinkedHashMap[Int, OpInfo]())
+          )
+        }
+        multiCycleOpInfoMap.get(opInfo.multiCycleOp.get.group).get += (
+          (idx -> opInfo)
+        )
       }
     }
   }
+  val multiCycleOpKindWidthMap = LinkedHashMap[MultiCycleOpGroup, Int]()
+  val maxMultiCycleSrcArrSizeMap = (
+    LinkedHashMap[MultiCycleOpGroup, Int]()
+  )
+  val maxMultiCycleDstArrSizeMap = (
+    LinkedHashMap[MultiCycleOpGroup, Int]()
+  )
+  for ((group, innerMap) <- multiCycleOpInfoMap.view) {
+    var tempSrcArrSize: Int = 0
+    var tempDstArrSize: Int = 0
+    for ((idx, opInfo) <- innerMap.view) {
+      if (tempSrcArrSize < opInfo.srcArr.size) {
+        tempSrcArrSize = opInfo.srcArr.size
+      }
+      if (tempDstArrSize < opInfo.dstArr.size) {
+        tempDstArrSize = opInfo.dstArr.size
+      }
+    }
+    multiCycleOpKindWidthMap += (group -> log2Up(innerMap.size))
+    maxMultiCycleSrcArrSizeMap += (group -> tempSrcArrSize)
+    maxMultiCycleDstArrSizeMap += (group -> tempDstArrSize)
+  }
+  val maxMultiCycleOpKindWidth: Option[Int] = {
+    var temp: Int = 0
+    //for (
+    //  (group, innerMap) <- multiCycleOpInfoMap.view
+    //) {
+    //  if (temp < innerMap.size) {
+    //    temp = innerMap.size
+    //  }
+    //}
+    for ((group, width) <- multiCycleOpKindWidthMap.view) {
+      if (temp < width) {
+        temp = width
+      }
+    }
+    if (temp == 0) (
+      None
+    ) else (
+      Some(temp)
+    )
+  }
+
   val allAluOpsUseLcvAluDel1 = (
     aluShiftOpInfoMap.size == 0
     && aluOpInfoMap.size == aluLcvDel1OpInfoMap.size
@@ -1406,8 +1459,13 @@ case class SnowHouseSplitOp(
   //val aluShiftOp = /*Flow*/(
   //  UInt(log2Up(cfg.aluShiftOpInfoMap.size + 1) bits)
   //)
-  val multiCycleOp = /*Flow*/(
+  val multiCycleOpGroup = /*Flow*/(
     UInt(/*log2Up*/(cfg.multiCycleOpInfoMap.size) bits)
+  )
+  val multiCycleOpKind = (
+    cfg.maxMultiCycleOpKindWidth != None
+  ) generate (
+    UInt(cfg.maxMultiCycleOpKindWidth.get bits)
   )
   //val pureCpyuiOp = /*Flow*/(
   //  UInt(log2Up(cfg.pureCpyOpInfoMap.size) bits)
@@ -1457,7 +1515,11 @@ case class SnowHouseSplitOp(
     //aluShiftOp := (
     //  (1 << aluShiftOp.getWidth) - 1
     //)
-    multiCycleOp := 0x0
+    //multiCycleOp := 0x0
+    multiCycleOpGroup := 0x0
+    if (multiCycleOpKind != null) {
+      multiCycleOpKind := 0x0
+    }
     opIsMemAccess := False
     setJmpBrAlwaysEqNeOpToDefault()
     setJmpBrOtherOpToDefault()

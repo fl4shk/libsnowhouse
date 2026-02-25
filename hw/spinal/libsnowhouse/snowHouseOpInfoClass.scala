@@ -2150,7 +2150,19 @@ object AluShiftOpKind {
     }
   }
 }
+sealed trait MultiCycleOpGroup
+object MultiCycleOpGroup {
+  case object AluLike extends MultiCycleOpGroup 
+  case object AluShiftLike extends MultiCycleOpGroup
+  case object Mul extends MultiCycleOpGroup
+  case object DivMod extends MultiCycleOpGroup
+  case object CpyToOrFromIrqSpr extends MultiCycleOpGroup
+  case object CpyOther extends MultiCycleOpGroup
+  case object Custom extends MultiCycleOpGroup
+}
+
 sealed trait MultiCycleOpKind extends OpKindBase {
+  def group: MultiCycleOpGroup
   def isMultiCycleFastOp: Boolean
 }
 object MultiCycleOpKind {
@@ -2173,6 +2185,7 @@ object MultiCycleOpKind {
       )
     )
     def validArgsSet = _validArgsSet
+    def group = MultiCycleOpGroup.AluLike
     def isMultiCycleFastOp: Boolean = false
   }
   //--------
@@ -2193,6 +2206,7 @@ object MultiCycleOpKind {
       )
     )
     def validArgsSet = _validArgsSet
+    def group = MultiCycleOpGroup.CpyToOrFromIrqSpr
     def isMultiCycleFastOp: Boolean = false
   }
   //case object CpyGprIds extends MultiCycleOpKind {
@@ -2212,6 +2226,7 @@ object MultiCycleOpKind {
   //    )
   //  )
   //  def validArgsSet = _validArgsSet
+  //  def group = MultiCycleOpGroup.CpyToOrFromIrqSpr
   //  def isMultiCycleShift: Boolean = false
   //}
   case object CpyIraGpr extends MultiCycleOpKind {
@@ -2231,6 +2246,7 @@ object MultiCycleOpKind {
       )
     )
     def validArgsSet = _validArgsSet
+    def group = MultiCycleOpGroup.CpyToOrFromIrqSpr
     def isMultiCycleFastOp: Boolean = false
   }
   //case object CpyGprIra extends MultiCycleOpKind {
@@ -2250,6 +2266,7 @@ object MultiCycleOpKind {
   //    )
   //  )
   //  def validArgsSet = _validArgsSet
+  //  def group = MultiCycleOpGroup.CpyToOrFromIrqSpr
   //  def isMultiCycleShift: Boolean = false
   //}
   case object CpyIeGpr extends MultiCycleOpKind {
@@ -2269,6 +2286,7 @@ object MultiCycleOpKind {
       )
     )
     def validArgsSet = _validArgsSet
+    def group = MultiCycleOpGroup.CpyToOrFromIrqSpr
     def isMultiCycleFastOp: Boolean = false
   }
   //case object CpyGprIe extends MultiCycleOpKind {
@@ -2309,6 +2327,7 @@ object MultiCycleOpKind {
       )
     )
     def validArgsSet = _validArgsSet
+    def group = MultiCycleOpGroup.AluShiftLike
     def isMultiCycleFastOp: Boolean = true
   }
   case object Lsr extends MultiCycleOpKind {
@@ -2329,6 +2348,7 @@ object MultiCycleOpKind {
       )
     )
     def validArgsSet = _validArgsSet
+    def group = MultiCycleOpGroup.AluShiftLike
     def isMultiCycleFastOp: Boolean = true
   }
   case object Asr extends MultiCycleOpKind {
@@ -2349,6 +2369,7 @@ object MultiCycleOpKind {
       )
     )
     def validArgsSet = _validArgsSet
+    def group = MultiCycleOpGroup.AluShiftLike
     def isMultiCycleFastOp: Boolean = true
   }
   case object Sltu extends MultiCycleOpKind {
@@ -2369,6 +2390,7 @@ object MultiCycleOpKind {
       )
     )
     def validArgsSet = _validArgsSet
+    def group = MultiCycleOpGroup.AluLike
     def isMultiCycleFastOp: Boolean = false
   }
   case object Slts extends MultiCycleOpKind {
@@ -2389,6 +2411,7 @@ object MultiCycleOpKind {
       )
     )
     def validArgsSet = _validArgsSet
+    def group = MultiCycleOpGroup.AluLike
     def isMultiCycleFastOp: Boolean = false
   }
   //--------
@@ -2433,6 +2456,7 @@ object MultiCycleOpKind {
       ),
     )
     def validArgsSet = _validArgsSet
+    def group = MultiCycleOpGroup.Mul
     def isMultiCycleFastOp: Boolean = false
   }
   case object Smul extends MultiCycleOpKind {
@@ -2461,6 +2485,7 @@ object MultiCycleOpKind {
       ),
     )
     def validArgsSet = _validArgsSet
+    def group = MultiCycleOpGroup.Mul
     def isMultiCycleFastOp: Boolean = false
   }
   case object Udiv extends MultiCycleOpKind {
@@ -2517,6 +2542,7 @@ object MultiCycleOpKind {
       //),
     )
     def validArgsSet = _validArgsSet
+    def group = MultiCycleOpGroup.DivMod
     def isMultiCycleFastOp: Boolean = false
   }
   case object Sdiv extends MultiCycleOpKind {
@@ -2573,6 +2599,7 @@ object MultiCycleOpKind {
       //),
     )
     def validArgsSet = _validArgsSet
+    def group = MultiCycleOpGroup.DivMod
     def isMultiCycleFastOp: Boolean = false
   }
   case object Udivw extends MultiCycleOpKind {
@@ -2596,6 +2623,7 @@ object MultiCycleOpKind {
       ),
     )
     def validArgsSet = _validArgsSet
+    def group = MultiCycleOpGroup.DivMod
     def isMultiCycleFastOp: Boolean = false
   }
   case object Sdivw extends MultiCycleOpKind {
@@ -2619,6 +2647,7 @@ object MultiCycleOpKind {
       ),
     )
     def validArgsSet = _validArgsSet
+    def group = MultiCycleOpGroup.DivMod
     def isMultiCycleFastOp: Boolean = false
   }
   case object Umod extends MultiCycleOpKind {
@@ -2675,6 +2704,7 @@ object MultiCycleOpKind {
       //),
     )
     def validArgsSet = _validArgsSet
+    def group = MultiCycleOpGroup.DivMod
     def isMultiCycleFastOp: Boolean = false
   }
   case object Smod extends MultiCycleOpKind {
@@ -2735,6 +2765,7 @@ object MultiCycleOpKind {
       //),
     )
     def validArgsSet = _validArgsSet
+    def group = MultiCycleOpGroup.DivMod
     def isMultiCycleFastOp: Boolean = false
   }
   //case object UdivHiGprOutp extends MultiCycleOpKind {

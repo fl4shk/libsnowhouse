@@ -39,16 +39,31 @@ import libcheesevoyage.bus.lcvStall._
 //}
 case class MultiCycleHostPayload(
   cfg: SnowHouseConfig,
-  opInfo: OpInfo,
+  group: MultiCycleOpGroup,
+  ////opInfo: OpInfo,
+  //maxSrcArrSize: Int,
+  //optKindWidth: Option[Int],
 ) extends Bundle {
-  assert(
-    cfg.opInfoMap.find(_._2 == opInfo) != None
+  //assert(
+  //  cfg.opInfoMap.find(_._2 == opInfo) != None
+  //)
+  //assert(
+  //  opInfo.select == OpSelect.MultiCycle
+  //)
+  def maxSrcArrSize = cfg.maxMultiCycleSrcArrSizeMap.get(group).get
+  def optKindWidth = (
+    cfg.multiCycleOpKindWidthMap.get(group)
   )
-  assert(
-    opInfo.select == OpSelect.MultiCycle
-  )
-  val srcVec = Vec.fill(opInfo.srcArr.size)(
+  val srcVec = Vec.fill(
+    //opInfo.srcArr.size
+    maxSrcArrSize
+  )(
     UInt(cfg.mainWidth bits)
+  )
+  val kind = (
+    optKindWidth != None
+  ) generate (
+    UInt(optKindWidth.get bits)
   )
   //opInfo.multiCycleOp.get match {
   //  case MultiCycleOpKind.Umul => {
@@ -74,15 +89,21 @@ case class MultiCycleHostPayload(
 }
 case class MultiCycleDevPayload(
   cfg: SnowHouseConfig,
-  opInfo: OpInfo,
+  //opInfo: OpInfo,
+  //maxDstArrSize: Int,
+  group: MultiCycleOpGroup,
 ) extends Bundle {
-  assert(
-    cfg.opInfoMap.find(_._2 == opInfo) != None
-  )
-  assert(
-    opInfo.select == OpSelect.MultiCycle
-  )
-  val dstVec = Vec.fill(opInfo.dstArr.size)(
+  //assert(
+  //  cfg.opInfoMap.find(_._2 == opInfo) != None
+  //)
+  //assert(
+  //  opInfo.select == OpSelect.MultiCycle
+  //)
+  def maxDstArrSize = cfg.maxMultiCycleDstArrSizeMap.get(group).get
+  val dstVec = Vec.fill(
+    //opInfo.dstArr.size
+    maxDstArrSize
+  )(
     UInt(cfg.mainWidth bits)
   )
 }
