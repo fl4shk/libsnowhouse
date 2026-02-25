@@ -2575,6 +2575,50 @@ object MultiCycleOpKind {
     def validArgsSet = _validArgsSet
     def isMultiCycleFastOp: Boolean = false
   }
+  case object Udivw extends MultiCycleOpKind {
+    private[libsnowhouse] val _validArgsSet = LinkedHashSet[
+      OpKindValidArgs
+    ](
+      OpKindValidArgs(
+        // dual word/single word = single word
+        dst=Array[HashSet[DstKind]](
+          HashSet(DstKind.Gpr),
+        ),
+        src=Array[HashSet[SrcKind]](
+          HashSet(SrcKind.Gpr),
+          HashSet(SrcKind.Gpr),
+          HashSet(SrcKind.Gpr, SrcKind.Imm(/*None*/)),
+        ),
+        cond=HashSet[CondKind](
+          CondKind.Always
+        ),
+      ),
+    )
+    def validArgsSet = _validArgsSet
+    def isMultiCycleFastOp: Boolean = false
+  }
+  case object Sdivw extends MultiCycleOpKind {
+    private[libsnowhouse] val _validArgsSet = LinkedHashSet[
+      OpKindValidArgs
+    ](
+      OpKindValidArgs(
+        // dual word/single word = single word
+        dst=Array[HashSet[DstKind]](
+          HashSet(DstKind.Gpr),
+        ),
+        src=Array[HashSet[SrcKind]](
+          HashSet(SrcKind.Gpr),
+          HashSet(SrcKind.Gpr),
+          HashSet(SrcKind.Gpr, SrcKind.Imm(/*None*/)),
+        ),
+        cond=HashSet[CondKind](
+          CondKind.Always
+        ),
+      ),
+    )
+    def validArgsSet = _validArgsSet
+    def isMultiCycleFastOp: Boolean = false
+  }
   case object Umod extends MultiCycleOpKind {
     private[libsnowhouse] val _validArgsSet = LinkedHashSet[
       OpKindValidArgs

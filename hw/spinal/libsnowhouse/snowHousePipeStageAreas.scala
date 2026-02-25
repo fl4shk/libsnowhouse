@@ -3224,7 +3224,7 @@ case class SnowHousePipeStageExecuteSetOutpModMemWordIo(
   val currOp = setAsInp(UInt(log2Up(cfg.opInfoMap.size) bits))
   val inMultiCycleOp = setAsInp(Bool())
   val splitOp = setAsInp(SnowHouseSplitOp(cfg=cfg))
-  val tempVecSize = 2 // TODO: temporary size of `2`
+  val tempVecSize = cfg.regFileCfg.modRdPortCnt //2 // TODO: temporary size of `2`
   val gprIsZeroVec = (
     cfg.myHaveZeroReg
   ) generate (
@@ -9558,20 +9558,24 @@ case class SnowHousePipeStageExecute(
         init(0x0)
       )
       if (multiCycleBus.sendData.srcVec.size > 1) {
-        multiCycleBus.sendData.srcVec(1) := (
-          RegNext/*When*/(
-            setOutpModMemWord.io.selRdMemWord(
-              opInfo=opInfo,
-              idx=1,
-            ),
-            //cond=(
-            //  //True
-            //  //!myDoStall(stallKindMultiCycle)
-            //  rMultiCycleOpState === MultiCycleOpState.Idle
-            //),
+        for (
+          multiCycleIdx <- 1 until multiCycleBus.sendData.srcVec.size
+        ) {
+          multiCycleBus.sendData.srcVec(multiCycleIdx) := (
+            RegNext/*When*/(
+              setOutpModMemWord.io.selRdMemWord(
+                opInfo=opInfo,
+                idx=multiCycleIdx,
+              ),
+              //cond=(
+              //  //True
+              //  //!myDoStall(stallKindMultiCycle)
+              //  rMultiCycleOpState === MultiCycleOpState.Idle
+              //),
+            )
+            init(0x0)
           )
-          init(0x0)
-        )
+        }
       }
     }
   }
