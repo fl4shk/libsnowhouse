@@ -4739,16 +4739,77 @@ case class SnowHouseCpuCpyMultiCycle(
   def cfg = cpuIo.cfg
   for (
     ((group, innerMap), busIdx)
-    <- cfg.multiCycleOpInfoMap.view.zipWithIndex
+    <- cfg.multiCycleOpInfoMap.zipWithIndex
   ) {
-    val multiCycleBus = cpuIo.multiCycleBusVec(busIdx)
-    def dstVec = multiCycleBus.recvData.dstVec
-    def srcVec = multiCycleBus.sendData.srcVec
     if (
-      group == MultiCycleOpKind.CpyIdsGpr.group
-      && multiCycleBus.sendData.kind != null
+      //group == MultiCycleOpKind.CpyIdsGpr.group
+      (
+        group == MultiCycleOpGroup.CpyToOrFromIrqIdsSpr
+      )
+      //&& multiCycleBus.sendData.kind != null
     ) {
-      switch (multiCycleBus.sendData.kind) {
+      val multiCycleBus = cpuIo.multiCycleBusVec(busIdx)
+      def dstVec = multiCycleBus.recvData.dstVec
+      def srcVec = multiCycleBus.sendData.srcVec
+      for (
+        //((_, opInfo1), kindIdx)
+        //<- innerMap.zipWithIndex
+        (_, opInfo) <- innerMap.view
+      ) {
+        println(
+          s"opInfo debug:${opInfo}"
+        )
+        opInfo.multiCycleOp.get match {
+          case MultiCycleOpKind.CpyIdsGpr => {
+            //is (kindIdx) {
+              def mainWidth = cfg.mainWidth
+              val rSrc0 = (
+                RegNextWhen(
+                  next=(
+                    RegNext(srcVec(0))
+                    init(0x0)
+                  ),
+                  cond=rose(multiCycleBus.rValid)
+                )
+                init(0x0)
+              )
+              val rDst = (
+                Reg(
+                  cloneOf(dstVec(0)),
+                  init=dstVec(0).getZero,
+                )
+                setName(
+                  "SnowHouseCpuCpy32_CpyIdsGpr_rDst"
+                )
+              )
+              multiCycleBus.ready := False
+              dstVec(0) := rDst
+              rDst := rSrc0
+              when (
+                RegNext(
+                  next=RegNext(
+                    next=rose(multiCycleBus.rValid),
+                    init=False,
+                  ),
+                  init=False,
+                )
+              ) {
+                multiCycleBus.ready := True
+              }
+            //}
+          }
+          case _ => {
+          }
+        }
+      }
+    } else if (
+      group == MultiCycleOpGroup.CpyToOrFromIrqNonIdsSpr
+      //&& (cpuIo.multiCycleBusVec(busIdx).sendData.kind != null)
+    ) {
+      val multiCycleBus = cpuIo.multiCycleBusVec(busIdx)
+      def dstVec = multiCycleBus.recvData.dstVec
+      def srcVec = multiCycleBus.sendData.srcVec
+      //switch (multiCycleBus.sendData.kind) {
         for (
           ((_, opInfo), kindIdx)
           <- innerMap.view.zipWithIndex
@@ -4802,46 +4863,8 @@ case class SnowHouseCpuCpyMultiCycle(
             //    }
             //  }
             //}
-            case MultiCycleOpKind.CpyIdsGpr => {
-              is (kindIdx) {
-                def mainWidth = cfg.mainWidth
-                val rSrc0 = (
-                  RegNextWhen(
-                    next=(
-                      RegNext(srcVec(0))
-                      init(0x0)
-                    ),
-                    cond=rose(multiCycleBus.rValid)
-                  )
-                  init(0x0)
-                )
-                val rDst = (
-                  Reg(
-                    cloneOf(dstVec(0)),
-                    init=dstVec(0).getZero,
-                  )
-                  setName(
-                    "SnowHouseCpuCpy32_CpyIdsGpr_rDst"
-                  )
-                )
-                multiCycleBus.ready := False
-                dstVec(0) := rDst
-                rDst := rSrc0
-                when (
-                  RegNext(
-                    next=RegNext(
-                      next=rose(multiCycleBus.rValid),
-                      init=False,
-                    ),
-                    init=False,
-                  )
-                ) {
-                  multiCycleBus.ready := True
-                }
-              }
-            }
             case MultiCycleOpKind.CpyIeGpr => {
-              is (kindIdx) {
+              //is (kindIdx) {
                 def mainWidth = cfg.mainWidth
                 val rSrc0 = (
                   RegNextWhen(
@@ -4876,7 +4899,7 @@ case class SnowHouseCpuCpyMultiCycle(
                 ) {
                   multiCycleBus.ready := True
                 }
-              }
+              //}
             }
             case _ => {
             }
@@ -4886,7 +4909,7 @@ case class SnowHouseCpuCpyMultiCycle(
         //  dstVec.foreach(dst => dst := dst.getZero)
         //  multiCycleBus.ready := False
         //}
-      }
+      //}
     }
   }
 }
@@ -7100,11 +7123,11 @@ object SnowHouseCpuWithDualRamSim extends App {
     false
   )
   val testIdxRange = Array[Int](
-    0, //0,
+    //0, //0,
     //1, 1,
     //2, //2,
     //3, //3,
-    //4, 4,
+    4, 4,
     //5, //5,
     //6, //6,
     //7, 7,

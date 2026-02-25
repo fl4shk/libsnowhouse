@@ -2156,7 +2156,8 @@ object MultiCycleOpGroup {
   case object AluShiftLike extends MultiCycleOpGroup
   case object Mul extends MultiCycleOpGroup
   case object DivMod extends MultiCycleOpGroup
-  case object CpyToOrFromIrqSpr extends MultiCycleOpGroup
+  case object CpyToOrFromIrqNonIdsSpr extends MultiCycleOpGroup
+  case object CpyToOrFromIrqIdsSpr extends MultiCycleOpGroup
   case object CpyOther extends MultiCycleOpGroup
   case object Custom extends MultiCycleOpGroup
 }
@@ -2206,7 +2207,7 @@ object MultiCycleOpKind {
       )
     )
     def validArgsSet = _validArgsSet
-    def group = MultiCycleOpGroup.CpyToOrFromIrqSpr
+    def group = MultiCycleOpGroup.CpyToOrFromIrqIdsSpr
     def isMultiCycleFastOp: Boolean = false
   }
   //case object CpyGprIds extends MultiCycleOpKind {
@@ -2226,7 +2227,7 @@ object MultiCycleOpKind {
   //    )
   //  )
   //  def validArgsSet = _validArgsSet
-  //  def group = MultiCycleOpGroup.CpyToOrFromIrqSpr
+  //  def group = MultiCycleOpGroup.CpyToOrFromIrqIdsSpr
   //  def isMultiCycleShift: Boolean = false
   //}
   case object CpyIraGpr extends MultiCycleOpKind {
@@ -2246,7 +2247,7 @@ object MultiCycleOpKind {
       )
     )
     def validArgsSet = _validArgsSet
-    def group = MultiCycleOpGroup.CpyToOrFromIrqSpr
+    def group = MultiCycleOpGroup.CpyToOrFromIrqNonIdsSpr
     def isMultiCycleFastOp: Boolean = false
   }
   //case object CpyGprIra extends MultiCycleOpKind {
@@ -2266,7 +2267,7 @@ object MultiCycleOpKind {
   //    )
   //  )
   //  def validArgsSet = _validArgsSet
-  //  def group = MultiCycleOpGroup.CpyToOrFromIrqSpr
+  //  def group = MultiCycleOpGroup.CpyToOrFromIrqNonIdsSpr
   //  def isMultiCycleShift: Boolean = false
   //}
   case object CpyIeGpr extends MultiCycleOpKind {
@@ -2286,7 +2287,7 @@ object MultiCycleOpKind {
       )
     )
     def validArgsSet = _validArgsSet
-    def group = MultiCycleOpGroup.CpyToOrFromIrqSpr
+    def group = MultiCycleOpGroup.CpyToOrFromIrqNonIdsSpr
     def isMultiCycleFastOp: Boolean = false
   }
   //case object CpyGprIe extends MultiCycleOpKind {
@@ -2306,6 +2307,7 @@ object MultiCycleOpKind {
   //    )
   //  )
   //  def validArgsSet = _validArgsSet
+  //  def group = MultiCycleOpGroup.CpyToOrFromIrqNonIdsSpr
   //  def isMultiCycleShift: Boolean = false
   //}
   //--------
