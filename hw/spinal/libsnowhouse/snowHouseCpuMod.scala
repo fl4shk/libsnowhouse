@@ -5350,8 +5350,8 @@ case class SnowHouseCpuDivmodw(
   }
   rSavedResult(1) := rSavedResult(0)
   rSavedResult(2) := rSavedResult(1)
-  divmod.io.inp.numer := Cat(rSavedSrcVec(0), rSavedSrcVec(1)).asUInt
-  divmod.io.inp.denom := rSavedSrcVec(2)
+  divmod.io.inp.numer := Cat(rSavedSrcVec(2), rSavedSrcVec(0)).asUInt
+  divmod.io.inp.denom := rSavedSrcVec(1)
   divmod.io.inp.signed := rKind.asBits(0)
   //switch (rKind) {
     for (
