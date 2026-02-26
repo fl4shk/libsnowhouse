@@ -77,11 +77,11 @@ case class SnowHousePipeStageArgs(
   prevPayload: Payload[SnowHousePipePayload],
   currPayload: Payload[SnowHousePipePayload],
   myDbusIo: SnowHouseDbusIo,
-  var regFile: PipeMemRmw[
+  var regFile: PipeRegFile[
     UInt,
     Bool,
     SnowHousePipePayload,
-    PipeMemRmwDualRdTypeDisabled[UInt, Bool],
+    PipeRegFileDualRdTypeDisabled[UInt, Bool],
   ],
 ) {
 }
@@ -7673,11 +7673,11 @@ case class SnowHousePipeStageExecute(
   //  BusDevPayload,
   //],
   //myDbusIo: SnowHouseDbusIo,
-  doModInMid0FrontParams: PipeMemRmwDoModInMid0FrontFuncParams[
+  doModInMid0FrontParams: PipeRegFileDoModInMid0FrontFuncParams[
     UInt,
     Bool,
     SnowHousePipePayload,
-    PipeMemRmwDualRdTypeDisabled[UInt, Bool],
+    PipeRegFileDualRdTypeDisabled[UInt, Bool],
   ],
   pcChangeState: Bool/*UInt*/,
   shouldIgnoreInstr: Bool,
@@ -8644,7 +8644,7 @@ case class SnowHousePipeStageExecute(
   ): Unit = {
     def tempExt = outp.myExt(ydx)
     if (
-      //zdx == PipeMemRmw.modWrIdx
+      //zdx == PipeRegFile.modWrIdx
       zdx == cfg.regFileCfg.modRdPortCnt
     ) {
       //when (cMid0Front.up.isFiring) {
@@ -10142,9 +10142,9 @@ case class SnowHousePipeStageMem(
   ) generate (
     modBack(pMem).formalAssumes()
   )
-  def extIdxUp = PipeMemRmw.extIdxUp
-  def extIdxSaved = PipeMemRmw.extIdxSaved
-  def extIdxLim = PipeMemRmw.extIdxLim
+  def extIdxUp = PipeRegFile.extIdxUp
+  def extIdxSaved = PipeRegFile.extIdxSaved
+  def extIdxLim = PipeRegFile.extIdxLim
   def doPsMemFork = (
     //true
     !cfg.useLcvDataBus
@@ -10608,9 +10608,9 @@ case class SnowHousePipeStageWriteBack(
       SnowHousePipePayload(cfg=cfg)
     )
   )
-  //def extIdxUp = PipeMemRmw.extIdxUp
-  //def extIdxSaved = PipeMemRmw.extIdxSaved
-  //def extIdxLim = PipeMemRmw.extIdxLim
+  //def extIdxUp = PipeRegFile.extIdxUp
+  //def extIdxSaved = PipeRegFile.extIdxSaved
+  //def extIdxLim = PipeRegFile.extIdxLim
   //regFile.io.midModStages(1)(extIdxUp) := myWbPayload(1)
   //regFile.io.midModStages(1)(extIdxSaved) := (
   //  RegNextWhen(

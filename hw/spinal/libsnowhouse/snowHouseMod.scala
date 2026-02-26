@@ -1353,15 +1353,15 @@ case class SnowHouse
   //val psIdPostFoundBubble = Bool()
   val linkArr = PipeHelper.mkLinkArr()
   cfg.regFileCfg.linkArr = Some(linkArr)
-  val regFile = new PipeMemRmw[
+  val regFile = new PipeRegFile[
     UInt,
     Bool,
     SnowHousePipePayload,
-    PipeMemRmwDualRdTypeDisabled[UInt, Bool],
+    PipeRegFileDualRdTypeDisabled[UInt, Bool],
   ](
     cfg=cfg.regFileCfg,
     modType=SnowHousePipePayload(cfg=cfg),
-    dualRdType=PipeMemRmwDualRdTypeDisabled[UInt, Bool](),
+    dualRdType=PipeRegFileDualRdTypeDisabled[UInt, Bool](),
   )(
     doModInFrontFunc=Some(
       (
@@ -1603,17 +1603,17 @@ case class SnowHouse
   //--------
   //val pEx = Payload(SnowHouseRegFileModType(cfg=cfg))
   def mkPipeStageExecute(
-    doModInMid0FrontParams: PipeMemRmwDoModInMid0FrontFuncParams[
+    doModInMid0FrontParams: PipeRegFileDoModInMid0FrontFuncParams[
       UInt,
       Bool,
       SnowHousePipePayload,
-      PipeMemRmwDualRdTypeDisabled[UInt, Bool],
+      PipeRegFileDualRdTypeDisabled[UInt, Bool],
     ],
-    //myRegFile: PipeMemRmw[
+    //myRegFile: PipeRegFile[
     //  UInt,
     //  Bool,
     //  SnowHousePipePayload,
-    //  PipeMemRmwDualRdTypeDisabled[UInt, Bool],
+    //  PipeRegFileDualRdTypeDisabled[UInt, Bool],
     //],
   ): SnowHousePipeStageExecute = SnowHousePipeStageExecute(
     args=SnowHousePipeStageArgs(

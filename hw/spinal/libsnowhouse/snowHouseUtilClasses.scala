@@ -835,7 +835,7 @@ case class SnowHouseConfig(
   def regFilePipeName = shRegFileCfg.pipeName
   def regFileMemRamStyleAltera = shRegFileCfg.memRamStyleAltera
   def regFileMemRamStyleXilinx = shRegFileCfg.memRamStyleXilinx
-  val regFileCfg = PipeMemRmwConfig[UInt, Bool](
+  val regFileCfg = PipeRegFileConfig[UInt, Bool](
     wordType=UInt(mainWidth bits),
     wordCountArr=regFileWordCountArr,
     hazardCmpType=Bool(),
@@ -865,7 +865,7 @@ case class SnowHouseConfig(
     },
     memRamStyleAltera=regFileMemRamStyleAltera,
     memRamStyleXilinx=regFileMemRamStyleXilinx,
-    optModHazardKind=PipeMemRmw.ModHazardKind.Fwd,
+    optModHazardKind=PipeRegFile.ModHazardKind.Fwd,
     optFwdHaveZeroReg=haveZeroReg,
     fwdForFmaxStageMax=(
       if (!useLcvDataBus) (
@@ -1795,14 +1795,14 @@ case class SnowHousePipePayloadNonExt(
   val myFwd = (
     myHaveFormalFwd
   ) generate (
-    PipeMemRmwFwd[UInt, Bool](
+    PipeRegFileFwd[UInt, Bool](
       cfg=cfg.regFileCfg,
     )
   )
 }
 case class SnowHousePipePayload(
   cfg: SnowHouseConfig,
-) extends Bundle with PipeMemRmwPayloadBase[UInt, Bool] {
+) extends Bundle with PipeRegFilePayloadBase[UInt, Bool] {
   val nonExt = SnowHousePipePayloadNonExt(cfg=cfg)
   def shouldFinishJump = nonExt.shouldFinishJump
   //def psIfReadyIshCond = nonExt.psIfReadyIshCond
@@ -1856,20 +1856,20 @@ case class SnowHousePipePayload(
   def myFwd = nonExt.myFwd
 
   def mkOneExt(ydx: Int) = (
-    PipeMemRmwPayloadExt(
+    PipeRegFilePayloadExt(
       cfg=cfg.regFileCfg,
       wordCount=cfg.regFileCfg.wordCountArr(ydx),
     )
   )
-  val myExt = Vec[PipeMemRmwPayloadExt[UInt, Bool]]{
-    val myArr = ArrayBuffer[PipeMemRmwPayloadExt[UInt, Bool]]()
+  val myExt = Vec[PipeRegFilePayloadExt[UInt, Bool]]{
+    val myArr = ArrayBuffer[PipeRegFilePayloadExt[UInt, Bool]]()
     for (ydx <- 0 until cfg.regFileCfg.memArrSize) {
       myArr += mkOneExt(ydx=ydx)
     }
     myArr
   } //simPublic()
-  def setPipeMemRmwExt(
-    inpExt: PipeMemRmwPayloadExt[UInt, Bool],
+  def setPipeRegFileExt(
+    inpExt: PipeRegFilePayloadExt[UInt, Bool],
     ydx: Int,
     memArrIdx: Int,
   ): Unit = {
@@ -1907,8 +1907,8 @@ case class SnowHousePipePayload(
       myMemAddrAlt := inpExt.memAddrAlt(zdx).resized
     }
   }
-  def getPipeMemRmwExt(
-    outpExt: PipeMemRmwPayloadExt[UInt, Bool],
+  def getPipeRegFileExt(
+    outpExt: PipeRegFilePayloadExt[UInt, Bool],
       // this is essentially a return value
     ydx: Int,
     memArrIdx: Int,
@@ -1950,8 +1950,8 @@ case class SnowHousePipePayload(
       outpExt.memAddrAlt(zdx) := myMemAddrAlt.resized
     }
   }
-  def formalSetPipeMemRmwFwd(
-    inpFwd: PipeMemRmwFwd[UInt, Bool],
+  def formalSetPipeRegFileFwd(
+    inpFwd: PipeRegFileFwd[UInt, Bool],
     memArrIdx: Int,
   ): Unit = {
     assert(
@@ -1959,8 +1959,8 @@ case class SnowHousePipePayload(
     )
     myFwd := inpFwd
   }
-  def formalGetPipeMemRmwFwd(
-    outpFwd: PipeMemRmwFwd[UInt, Bool],
+  def formalGetPipeRegFileFwd(
+    outpFwd: PipeRegFileFwd[UInt, Bool],
     memArrIdx: Int,
   ): Unit = {
     assert(
