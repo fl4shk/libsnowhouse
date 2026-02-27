@@ -3464,7 +3464,7 @@ case class SnowHousePipeStageExecuteSetOutpModMemWordIo(
               zdx != None,
               s"eek! ${opInfo.myRdMemWordIdxMap} ${tempIdx}"
             )
-            rdMemWord(zdx.get)
+            rdMemWord(zdx.get + gprIdxAddend)
             ////rdMemWord(idx + gprIdxAddend)
             //var tempRdMemWord: Option[UInt] = None
             ////var innerIdx: Int = 0
@@ -5089,19 +5089,19 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
           case CpyOpKind.Cpy => {
             //nextIndexReg := 0x0
             //io.opIsCpyNonJmpAlu := True
-            assert(
+            require(
               opInfo.cond == CondKind.Always,
               s"not yet implemented: "
               + s"opInfo(${opInfo}) index:${opInfoIdx}"
             )
             opInfo.memAccess match {
               case MemAccessKind.NoMemAccess => {
-                assert(
+                require(
                   opInfo.dstArr.size == 1,
                   s"invalid opInfo.dstArr.size: "
                   + s"opInfo(${opInfo}) index:${opInfoIdx}"
                 )
-                assert(
+                require(
                   opInfo.srcArr.size == 1,
                   s"invalid opInfo.srcArr.size: "
                   + s"opInfo(${opInfo}) index:${opInfoIdx}"

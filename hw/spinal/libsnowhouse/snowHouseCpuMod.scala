@@ -203,7 +203,7 @@ object SnowHouseCpuOp {
   //def AddPcKindMain = 0x0
   //val Asr = mkOp("Asr")                     // 9
   val UmulwRaRbRc = mkOp(                           // 8, 0
-    "umulw rA, rB, rC", MultiCycleKindMulRc, false
+    "umulw rA, rB, rC", MultiCycleKindUmulwRc, false
   )
   val SmulwRaRbRc = mkOp(                         // 8, 1
     "smulw rA, rB, rC", MultiCycleKindSmulwRc, false
@@ -226,7 +226,7 @@ object SnowHouseCpuOp {
   val SdivwRaRbRc = mkOp(                         // 8, 7
     "sdivw rA, rB, rC", MultiCycleKindSdivwRc, true
   )
-  def MultiCycleKindMulRc = (0x0, 0x0)
+  def MultiCycleKindUmulwRc = (0x0, 0x0)
   def MultiCycleKindSmulwRc = (0x1, 0x0)
   def MultiCycleKindUdivRc = (0x2, 0x0)
   def MultiCycleKindSdivRc = (0x3, 0x0)
