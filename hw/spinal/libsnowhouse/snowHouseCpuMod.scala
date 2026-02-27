@@ -5094,7 +5094,17 @@ case class SnowHouseCpuMulFullProduct(
         default {
         }
       }
-      rAbsSrcVec := multiCycleBus.sendData.srcVec
+      for (idx <- 0 until rAbsSrcVec.size) {
+        rAbsSrcVec(idx) := (
+          RegNext(
+            multiCycleBus.sendData.srcVec(idx),
+            init=rAbsSrcVec(idx).getZero
+          )
+        )
+      }
+      //rAbsSrcVec := RegNext(
+      //  multiCycleBus.sendData.srcVec
+      //)
       rSignVec := rSignVec.getZero
       //rIsSignedFullProd := multiCycleBus.sendData.kind.lsb
     }
@@ -7556,20 +7566,20 @@ object SnowHouseCpuWithDualRamSim extends App {
   )
   val testIdxRange = Array[Int](
     0, //0,
-    //1, 1,
-    //2, //2,
-    //3, //3,
-    //4, 4,
-    //5, //5,
-    //6, //6,
-    //7, 7,
-    //8, 8,
-    //9, //9,
-    //10, //10,
-    //11, 11,
-    //12, //12,
-    //13, 13,
-    //14, 14,
+    ////1, 1,
+    ////2, //2,
+    ////3, //3,
+    ////4, 4,
+    ////5, //5,
+    ////6, //6,
+    ////7, 7,
+    ////8, 8,
+    ////9, //9,
+    ////10, //10,
+    ////11, 11,
+    //12, 12,
+    ////13, 13,
+    ////14, 14,
     15, 15,
   )
   val instrRamKindArr = Array[Int](
