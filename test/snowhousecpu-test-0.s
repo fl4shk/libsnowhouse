@@ -57,7 +57,7 @@ cpy r6, 0x20
 str r6, r3, 0x0
 //cpy r0, r0
 //ldr r5, r3, 0x0
-//mul r10, r6, r6
+//umulw r10, r6, r6
 //lsl r10, r5, 3
 lsl r10, r6, 3
 //lsr r10, r5, 1
@@ -71,9 +71,9 @@ cpy r7, 0x4
 ldr r8, r3, 0x1000 //0x0
 //ldr r9, r0, 0x408
 //ldr r10, r0, 0x40c
-//mul r9, r5, r7
+//umulw r9, r5, r7
 //cpy r0, r0
-mul r9, r8, r7
+umulw r9, r8, r7
 //--------
 _push_loop:
 str r7, sp, 0
@@ -96,7 +96,7 @@ bne r7, r0, _push_loop
 //add r0, r0, r0
 //add r0, r0, r0
 //--------
-mul r7, r6, r1
+umulw r7, r6, r1
 udiv r7, r7, r1
 umod r8, r6, r1
 beq r0, r0, _loop
@@ -179,3 +179,10 @@ cpy r0, r0
 //
 //_far_1_test:
 //jmp lr
+_binutils_test:
+umulw r7, r8, r9
+smulw r9, r10, r11
+udivw r1, r2, r3
+sdivw r4, r5, r6
+cpy r5, hi
+cpy hi, r6

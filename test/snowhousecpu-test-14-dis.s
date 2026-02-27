@@ -146,7 +146,7 @@ Disassembly of section .text:
  22c:	80 00 00 01 	add	r1, r0, 128
  230:	00 00 10 92 	ldr	r2, r1, 0
  234:	04 00 11 92 	str	r2, r1, 4
- 238:	00 00 21 83 	mul	r3, r2, r1
+ 238:	00 00 21 83 	umulw	r3, r2, r1
 	...
  254:	10 00 00 07 	add	r7, r0, 16
  258:	00 00 00 08 	add	r8, r0, 0

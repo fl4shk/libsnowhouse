@@ -12,8 +12,8 @@ lsl r4, r2, 1
 str r2, r3, 0x8
 ////ldr r4, r1, 0x8
 ldr r4, r3, 0x8
-////mul r4, r3, r2
-////mul r5, r4, r2
+////umulw r4, r3, r2
+////umulw r5, r4, r2
 //add r5, r4, 1
 //add r6, r5, 1
 //add r7, r6, 1

@@ -7,16 +7,35 @@ _my_text_start:
 	cpy r0, r0
 	cpy r0, r0
 
-	cpy r1, 0x1
-	cpy r2, 0x4
-	cpy r3, 0x2
+	//cpy r1, 0x1
+	//cpy r2, 0x4
+	//cpy r3, 0x2
 
-	udivw r1, r2, r3
+	//udivw r1, r2, r3
+	////sdivw r1, r2, r3
+
+	//cpy r1, -1
+	//cpy r3, -2
 	//sdivw r1, r2, r3
+	//--------
+	cpy r7, 0x1
+	cpy hi, r7
 
-	cpy r1, -1
+	cpy r1, 0x4
+	add r2, r0, r0
+	cpy r3, 0x2
+	udivw r1, r2, r3
+	cpy r8, hi
+	//--------
+	cpy r7, -1
+	cpy hi, r7
+
+	cpy r1, 0x4
+	add r2, r0, r0
 	cpy r3, -2
 	sdivw r1, r2, r3
+	cpy r9, hi
+	//--------
 
 	cpy r1, r0
 	cpy r2, r0

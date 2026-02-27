@@ -774,18 +774,18 @@ object asr {
     )
   }
 }
-object mul {
+object umulw {
   def apply(
     rA: Gpr,
     rB: Gpr,
     rC: Gpr
   ) = {
     InstructionAsmStmt(
-      op=SnowHouseCpuOp.MulRaRbRc,
+      op=SnowHouseCpuOp.UmulwRaRbRc,
       rA=rA,
       rB=rB,
       rC=rC,
-      imm=SnowHouseCpuOp.MulRaRbRc._2._1,
+      imm=SnowHouseCpuOp.UmulwRaRbRc._2._1,
     )
   }
   //def apply(

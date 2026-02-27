@@ -34,7 +34,7 @@ cpy r6, 0x20
 
 
 //str r6, r3, 0x0
-//mul r10, r6, r6
+//umulw r10, r6, r6
 //ldr r5, r3, 0x0
 //str r5, r3, 0x1000
 //ldr r6, r3, 0x1000
@@ -50,7 +50,7 @@ bne r7, r0, _str_loop
 
 cpy r7, 0x4
 //ldr r8, r3, 0x0 //0x1000 //0x0
-mul r9, r5, r7
+umulw r9, r5, r7
 //cpy r5, 0x0
 
 //cpy r2, 0x0
@@ -86,7 +86,7 @@ jl r0, r11
 //add r0, r0, r0
 //--------
 _come_from:
-mul r7, r6, r1
+umulw r7, r6, r1
 udiv r7, r7, r1
 umod r8, r6, r1
 beq r0, r0, _loop

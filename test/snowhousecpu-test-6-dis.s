@@ -17,13 +17,13 @@ Disassembly of section .text:
   2c:	00 08 00 0f 	add	sp, r0, 2048
   30:	20 00 00 06 	add	r6, r0, 32
   34:	00 00 31 96 	str	r6, r3, 0
-  38:	00 00 66 8a 	mul	r10, r6, r6
+  38:	00 00 66 8a 	umulw	r10, r6, r6
   3c:	00 00 30 95 	ldr	r5, r3, 0
   40:	00 10 31 95 	str	r5, r3, 4096
   44:	00 10 30 96 	ldr	r6, r3, 4096
   48:	04 00 00 07 	add	r7, r0, 4
   4c:	00 10 30 98 	ldr	r8, r3, 4096
-  50:	00 00 57 89 	mul	r9, r5, r7
+  50:	00 00 57 89 	umulw	r9, r5, r7
 
 00000054 <_push_loop>:
   54:	00 00 f1 97 	str	r7, sp, 0
@@ -41,9 +41,9 @@ Disassembly of section .text:
   84:	00 00 b6 a0 	jl	r0, r11
 
 00000088 <_come_from>:
-  88:	00 00 61 87 	mul	r7, r6, r1
-  8c:	01 00 71 87 	udiv	r7, r7, r1
-  90:	03 00 61 88 	umod	r8, r6, r1
+  88:	00 00 61 87 	umulw	r7, r6, r1
+  8c:	02 00 71 87 	udiv	r7, r7, r1
+  90:	04 00 61 88 	umod	r8, r6, r1
   94:	01 00 00 a0 	beq	r0, r0, 4
 
 00000098 <_pre_loop>:
@@ -67,8 +67,8 @@ Disassembly of section .text:
   c4:	00 00 d6 a0 	jl	r0, lr
 
 000000c8 <_divmod>:
-  c8:	01 00 61 87 	udiv	r7, r6, r1
-  cc:	03 00 61 88 	umod	r8, r6, r1
+  c8:	02 00 61 87 	udiv	r7, r6, r1
+  cc:	04 00 61 88 	umod	r8, r6, r1
   d0:	00 00 d6 a0 	jl	r0, lr
 
 000000d4 <_irq_handler>:

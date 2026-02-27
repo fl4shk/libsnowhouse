@@ -44,7 +44,7 @@ ldr r2, r1, 0x0
 //cpy r3, 8
 str r2, r1, 0x4
 
-mul r3, r2, r1
+umulw r3, r2, r1
 
 cpy r0, r0
 cpy r0, r0
@@ -76,7 +76,7 @@ cpy ie, r6
 
 _test_irqs:
 
-//mul r1, r1, r2
+//umulw r1, r1, r2
 add r1, r1, r2
 cpy r5, r1
 add r4, r4, 0x4

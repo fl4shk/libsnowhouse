@@ -3396,7 +3396,7 @@ case class SnowHousePipeStageExecuteSetOutpModMemWordIo(
         //idx == 0
         //|| isPostPcDst
         idx < 0
-        || idx >= cfg.regFileCfg.modRdPortCnt
+        //|| idx >= cfg.regFileCfg.modRdPortCnt
       ) {
         require(
           false,
@@ -3459,7 +3459,34 @@ case class SnowHousePipeStageExecuteSetOutpModMemWordIo(
         val tempIdx = idx
         opInfo.srcArr(tempIdx) match {
           case SrcKind.Gpr => {
-            rdMemWord(idx + gprIdxAddend)
+            val zdx = opInfo.myRdMemWordIdxMap.get(tempIdx)
+            require(
+              zdx != None,
+              s"eek! ${opInfo.myRdMemWordIdxMap} ${tempIdx}"
+            )
+            rdMemWord(zdx.get)
+            ////rdMemWord(idx + gprIdxAddend)
+            //var tempRdMemWord: Option[UInt] = None
+            ////var innerIdx: Int = 0
+            ////for (innerIdx <- 0 until tempIdx) {
+            ////}
+            //val myMap = LinkedHashMap[Int, Int]()
+            //var innerRdMemWordIdx: Int = 0
+            //for (zdx <- 0 until opInfo.srcArr.view.size) {
+            //  if (opInfo.srcArr.view
+            //}
+
+            //tempRdMemWord match {
+            //  case Some(myTempRdMemWord) => {
+            //    myTempRdMemWord
+            //  }
+            //  case None => {
+            //    require(
+            //      false,
+            //      s"eek! idx:${idx}"
+            //    )
+            //  }
+            //}
           }
           case SrcKind.Pc => {
             regPc

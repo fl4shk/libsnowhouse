@@ -16,12 +16,12 @@ cpy r7, 0x4
 cpy r1, 0x1
 cpy r2, 0x2
 cpy r3, 0x10
-mul r4, r1, r2
-mul r5, r4, r2
-mul r6, r5, r2
+umulw r4, r1, r2
+umulw r5, r4, r2
+umulw r6, r5, r2
 
 _loop_0:
-mul r1, r1, r2
+umulw r1, r1, r2
 //bne r1, r3, _loop_0
 //add r1, r1, 1
 //add r10, r10, 1

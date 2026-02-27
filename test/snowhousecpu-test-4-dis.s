@@ -18,13 +18,13 @@ Disassembly of section .text:
   30:	00 08 00 0f 	add	sp, r0, 2048
   34:	20 00 00 06 	add	r6, r0, 32
   38:	00 00 31 96 	str	r6, r3, 0
-  3c:	00 00 66 8a 	mul	r10, r6, r6
+  3c:	00 00 66 8a 	umulw	r10, r6, r6
   40:	00 00 30 95 	ldr	r5, r3, 0
   44:	00 10 31 95 	str	r5, r3, 4096
   48:	00 10 30 96 	ldr	r6, r3, 4096
   4c:	04 00 00 07 	add	r7, r0, 4
   50:	00 10 30 98 	ldr	r8, r3, 4096
-  54:	00 00 57 89 	mul	r9, r5, r7
+  54:	00 00 57 89 	umulw	r9, r5, r7
 
 00000058 <_push_loop>:
   58:	00 00 f1 97 	str	r7, sp, 0
@@ -36,9 +36,9 @@ Disassembly of section .text:
   70:	34 12 00 c0 	add	r10, r0, 305419896 // pre #0x1234
   74:	78 56 00 0a 
 	...
-  80:	00 00 61 87 	mul	r7, r6, r1
-  84:	01 00 71 87 	udiv	r7, r7, r1
-  88:	03 00 61 88 	umod	r8, r6, r1
+  80:	00 00 61 87 	umulw	r7, r6, r1
+  84:	02 00 71 87 	udiv	r7, r7, r1
+  88:	04 00 61 88 	umod	r8, r6, r1
   8c:	10 00 00 a0 	beq	r0, r0, 64
   90:	03 00 10 0a 	add	r10, r1, 3
   94:	03 00 10 0a 	add	r10, r1, 3
@@ -106,8 +106,8 @@ Disassembly of section .text:
  174:	03 00 10 0c 	add	r12, r1, 3
 
 00000178 <_divmod>:
- 178:	01 00 61 87 	udiv	r7, r6, r1
- 17c:	03 00 61 88 	umod	r8, r6, r1
+ 178:	02 00 61 87 	udiv	r7, r6, r1
+ 17c:	04 00 61 88 	umod	r8, r6, r1
  180:	00 00 d6 a0 	jl	r0, lr
  184:	03 00 10 04 	add	r4, r1, 3
  188:	03 00 10 04 	add	r4, r1, 3

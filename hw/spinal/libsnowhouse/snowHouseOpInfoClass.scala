@@ -410,6 +410,21 @@ class OpInfo(
   //val opCond: AluOpKind | LoadOpKind | StoreOpKind,
   //var cond: Option[CondKind]=None,
 ) {
+  val myRdMemWordIdxMap = {
+    val myMap = LinkedHashMap[Int, Int]()
+    var tempIdx: Int = 0
+    for (zdx <- 0 until srcArr.size) {
+      srcArr(zdx) match {
+        case SrcKind.Gpr => {
+          myMap += (zdx -> tempIdx)
+          tempIdx += 1
+        }
+        case _ => {
+        }
+      }
+    }
+    myMap
+  }
   def findValidArgs(opKind: OpKindBase): Option[OpInfoValidArgsTuple] = {
     //opKind.validArgsSet.find(validArgs => (
     //  this.dstArr.size == validArgs.dstSize 
@@ -2438,7 +2453,7 @@ object MultiCycleOpKind {
         ),
       ),
       OpKindValidArgs(
-        // word, unsigned full-product
+        // word times word, unsigned full-product
         //dstSize=2, srcSize=2
         dst=Array[HashSet[DstKind]](
           HashSet(DstKind.MulHiOutp, DstKind.Hi),
@@ -2453,7 +2468,7 @@ object MultiCycleOpKind {
           HashSet(SrcKind.Gpr),
         ),
         cond=HashSet[CondKind](
-          //CondKind.Always
+          CondKind.Always
         ),
       ),
     )
@@ -2467,7 +2482,7 @@ object MultiCycleOpKind {
     ](
       //minD=1, maxD=2, minS=2, maxS=4
       OpKindValidArgs(
-        // word, signed full-product
+        // word times word, signed full-product
         //dstSize=2, srcSize=2
         dst=Array[HashSet[DstKind]](
           HashSet(DstKind.MulHiOutp, DstKind.Hi),
@@ -2482,7 +2497,7 @@ object MultiCycleOpKind {
           HashSet(SrcKind.Gpr),
         ),
         cond=HashSet[CondKind](
-          //CondKind.Always
+          CondKind.Always
         ),
       ),
     )
@@ -2615,6 +2630,7 @@ object MultiCycleOpKind {
           HashSet(DstKind.Gpr),
         ),
         src=Array[HashSet[SrcKind]](
+          HashSet(SrcKind.Hi),
           HashSet(SrcKind.Gpr),
           HashSet(SrcKind.Gpr),
           HashSet(SrcKind.Gpr, SrcKind.Imm(/*None*/)),
@@ -2639,6 +2655,7 @@ object MultiCycleOpKind {
           HashSet(DstKind.Gpr),
         ),
         src=Array[HashSet[SrcKind]](
+          HashSet(SrcKind.Hi),
           HashSet(SrcKind.Gpr),
           HashSet(SrcKind.Gpr),
           HashSet(SrcKind.Gpr, SrcKind.Imm(/*None*/)),

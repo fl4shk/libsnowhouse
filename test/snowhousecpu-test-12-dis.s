@@ -15,12 +15,12 @@ Disassembly of section .text:
   28:	01 00 00 01 	add	r1, r0, 1
   2c:	02 00 00 02 	add	r2, r0, 2
   30:	10 00 00 03 	add	r3, r0, 16
-  34:	00 00 12 84 	mul	r4, r1, r2
-  38:	00 00 42 85 	mul	r5, r4, r2
-  3c:	00 00 52 86 	mul	r6, r5, r2
+  34:	00 00 12 84 	umulw	r4, r1, r2
+  38:	00 00 42 85 	umulw	r5, r4, r2
+  3c:	00 00 52 86 	umulw	r6, r5, r2
 
 00000040 <_loop_0>:
-  40:	00 00 12 81 	mul	r1, r1, r2
+  40:	00 00 12 81 	umulw	r1, r1, r2
   44:	fe ff 32 a1 	bltu	r1, r3, -8
   48:	01 00 40 04 	add	r4, r4, 1
   4c:	01 00 90 09 	add	r9, r9, 1
