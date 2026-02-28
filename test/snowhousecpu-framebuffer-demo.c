@@ -22,6 +22,34 @@ volatile uint32_t* to_keep_loop_going = (
 	(volatile uint32_t*)0x4ull
 );
 
+uint32_t mul_test(uint32_t a, uint32_t b) {
+	return a * b;
+}
+uint64_t udivw_test(uint64_t a, uint64_t b) {
+	return a / b;
+}
+int64_t sdivw_test(int64_t a, int64_t b) {
+	return a / b;
+}
+uint32_t cmp_ltu(uint32_t a, uint32_t b) {
+	return a < b;
+}
+int32_t cmp_lts(int32_t a, int32_t b) {
+	return a < b;
+}
+uint64_t add64_test(uint64_t a, uint64_t b) {
+	return a + b;
+}
+uint64_t sub64_test(uint64_t a, uint64_t b) {
+	//return a - b;
+	return a + (~b) + 1ul;
+}
+//uint64_t udivw_test(uint64_t a, uint64_t b) {
+//	return a / b;
+//}
+//uint64_t umulw_test(uint32_t a, uint32_t b) {
+//	return (uint64_t)(a) * (uint64_t)(b);
+//}
 int main(int argc, char** argv) {
 	//for (;;) {
 
