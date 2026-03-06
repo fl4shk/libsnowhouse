@@ -25,8 +25,8 @@ case class SnowHouseCpuFramebufferDemoConfig(
   rgbCfg: RgbConfig,
   vgaTimingInfo: LcvVgaTimingInfo,
   fbCnt2dShift: ElabVec2[Int],
-  fbAddrSliceHi: Int=23,
-  fbAddrSliceLo: Int=23,
+  fbAddrSliceHi: Int=26, // \ framebuffer base address 0x4000000
+  fbAddrSliceLo: Int=26, // /
 ) {
   def cpuCfg = program.cfg
   val myDbusCfg = cpuCfg.shCfg.subCfg.lcvDbusEtcCfg.loBusCfg
@@ -552,7 +552,6 @@ case class SnowHouseCpuFramebufferDemo(
   )
   myFbArbiter.io.hostVec.last <-/< myFbCtrl.io.bus
   myFbMem.io.bus << myFbArbiter.io.dev
-
 
   //io.fbBus <-/< myFbArbiter.io.dev
 

@@ -41,8 +41,8 @@ Disassembly of section .text:
 00000090 <_deregister_tm_clones>:
   90:	fc ff f0 0f 	add	sp, sp, -4
   94:	00 00 f1 9d 	str	lr, sp, 0
-  98:	b0 05 00 02 	add	r2, r0, 1456
-  9c:	b0 05 00 01 	add	r1, r0, 1456
+  98:	d0 04 00 02 	add	r2, r0, 1232
+  9c:	d0 04 00 01 	add	r1, r0, 1232
   a0:	05 00 10 a2 	beq	r2, r1, 20
   a4:	00 00 00 c0 	add	r2, r0, 0 // pre #0x0
   a8:	00 00 00 02 
@@ -59,8 +59,8 @@ Disassembly of section .text:
 000000d0 <_register_tm_clones>:
   d0:	fc ff f0 0f 	add	sp, sp, -4
   d4:	00 00 f1 9d 	str	lr, sp, 0
-  d8:	b0 05 00 01 	add	r1, r0, 1456
-  dc:	b0 05 10 01 	add	r1, r1, 1456
+  d8:	d0 04 00 01 	add	r1, r0, 1232
+  dc:	d0 04 10 01 	add	r1, r1, 1232
   e0:	25 00 10 71 	asr	r1, r1, 2
   e4:	f3 01 10 72 	lsr	r2, r1, 31
   e8:	00 00 21 02 	add	r2, r2, r1
@@ -70,7 +70,7 @@ Disassembly of section .text:
   f8:	00 00 00 c0 	add	r3, r0, 0 // pre #0x0
   fc:	00 00 00 03 
  100:	02 00 10 a3 	beq	r3, r1, 8
- 104:	b0 05 00 01 	add	r1, r0, 1456
+ 104:	d0 04 00 01 	add	r1, r0, 1232
  108:	00 00 36 ad 	jl	lr, r3
 
 0000010c <.L5>:
@@ -83,7 +83,7 @@ Disassembly of section .text:
  11c:	f8 ff f0 0f 	add	sp, sp, -8
  120:	00 00 f1 97 	str	r7, sp, 0
  124:	04 00 f1 9d 	str	lr, sp, 4
- 128:	b0 05 00 07 	add	r7, r0, 1456
+ 128:	a8 05 00 07 	add	r7, r0, 1448
  12c:	00 00 74 92 	ldub	r2, r7, 0
  130:	00 00 00 01 	add	r1, r0, 0
  134:	03 00 11 a2 	bne	r2, r1, 12
@@ -247,21 +247,21 @@ Disassembly of section .init:
 
 00000330 <_start>:
 	...
- 338:	01 00 00 c0 	add	sp, r0, 98304 // pre #0x1
- 33c:	00 80 00 0f 
+ 338:	ff 02 00 c0 	add	sp, r0, 50331644 // pre #0x2ff
+ 33c:	fc ff 00 0f 
  340:	02 00 00 a0 	beq	r0, r0, 8
 	...
 
 0000034c <__cstart>:
  34c:	fc ff f0 0f 	add	sp, sp, -4
  350:	00 00 f1 9d 	str	lr, sp, 0
- 354:	a4 05 00 03 	add	r3, r0, 1444
- 358:	80 05 00 02 	add	r2, r0, 1408
- 35c:	80 05 00 01 	add	r1, r0, 1408
+ 354:	c4 04 00 03 	add	r3, r0, 1220
+ 358:	b0 04 00 02 	add	r2, r0, 1200
+ 35c:	b0 04 00 01 	add	r1, r0, 1200
  360:	c7 ff ff bd 	bl	lr, -228
- 364:	b1 05 00 03 	add	r3, r0, 1457
+ 364:	a9 05 00 03 	add	r3, r0, 1449
  368:	00 00 00 02 	add	r2, r0, 0
- 36c:	a4 05 00 01 	add	r1, r0, 1444
+ 36c:	9c 05 00 01 	add	r1, r0, 1436
  370:	d8 ff ff bd 	bl	lr, -160
  374:	22 00 00 bd 	bl	lr, 136
  378:	00 00 00 02 	add	r2, r0, 0
@@ -287,7 +287,7 @@ Disassembly of section .text.startup:
  3a0:	f8 ff f0 0f 	add	sp, sp, -8
  3a4:	00 00 f1 97 	str	r7, sp, 0
  3a8:	04 00 f1 9d 	str	lr, sp, 4
- 3ac:	a0 05 00 01 	add	r1, r0, 1440
+ 3ac:	c0 04 00 01 	add	r1, r0, 1216
  3b0:	00 00 10 9d 	ldr	lr, r1, 0
  3b4:	00 00 00 06 	add	r6, r0, 0
  3b8:	40 01 00 05 	add	r5, r0, 320
@@ -371,78 +371,74 @@ Disassembly of section .text.__libc_init_array:
  4a4:	10 00 f0 0f 	add	sp, sp, 16
  4a8:	00 00 d6 a0 	jl	r0, lr
 
+Disassembly of section .data:
+
+000004b0 <___dso_handle>:
+	...
+
+000004c0 <_fb>:
+ 4c0:	00 00 00 04 	add	r4, r0, 0
+
 Disassembly of section .rodata:
 
-000004b0 <_snowhousecpu_regno_to_class>:
- 4b0:	01 00 00 00 	add	r0, r0, 1
- 4b4:	01 00 00 00 	add	r0, r0, 1
- 4b8:	01 00 00 00 	add	r0, r0, 1
- 4bc:	01 00 00 00 	add	r0, r0, 1
- 4c0:	01 00 00 00 	add	r0, r0, 1
- 4c4:	01 00 00 00 	add	r0, r0, 1
- 4c8:	02 00 00 00 	add	r0, r0, 2
- 4cc:	01 00 00 00 	add	r0, r0, 1
+000004d0 <_snowhousecpu_regno_to_class>:
  4d0:	01 00 00 00 	add	r0, r0, 1
  4d4:	01 00 00 00 	add	r0, r0, 1
  4d8:	01 00 00 00 	add	r0, r0, 1
  4dc:	01 00 00 00 	add	r0, r0, 1
  4e0:	01 00 00 00 	add	r0, r0, 1
  4e4:	01 00 00 00 	add	r0, r0, 1
- 4e8:	04 00 00 00 	add	r0, r0, 4
- 4ec:	05 00 00 00 	add	r0, r0, 5
+ 4e8:	02 00 00 00 	add	r0, r0, 2
+ 4ec:	01 00 00 00 	add	r0, r0, 1
  4f0:	01 00 00 00 	add	r0, r0, 1
  4f4:	01 00 00 00 	add	r0, r0, 1
- 4f8:	06 00 00 00 	add	r0, r0, 6
- 4fc:	00 00 00 00 	add	r0, r0, 0
+ 4f8:	01 00 00 00 	add	r0, r0, 1
+ 4fc:	01 00 00 00 	add	r0, r0, 1
+ 500:	01 00 00 00 	add	r0, r0, 1
+ 504:	01 00 00 00 	add	r0, r0, 1
+ 508:	04 00 00 00 	add	r0, r0, 4
+ 50c:	05 00 00 00 	add	r0, r0, 5
+ 510:	01 00 00 00 	add	r0, r0, 1
+ 514:	01 00 00 00 	add	r0, r0, 1
+ 518:	06 00 00 00 	add	r0, r0, 6
+ 51c:	00 00 00 00 	add	r0, r0, 0
 
-00000500 <_FB_SIZE>:
- 500:	00 2c 01 00 	add	r0, r0, r1
+00000520 <_FB_SIZE>:
+ 520:	00 2c 01 00 	add	r0, r0, r1
 	...
 
-00000510 <_FB_HEIGHT>:
- 510:	f0 00 00 00 	add	r0, r0, 240
+00000530 <_FB_HEIGHT>:
+ 530:	f0 00 00 00 	add	r0, r0, 240
 	...
 
-00000520 <_FB_WIDTH>:
- 520:	40 01 00 00 	add	r0, r0, 320
+00000540 <_FB_WIDTH>:
+ 540:	40 01 00 00 	add	r0, r0, 320
 	...
 
-00000530 <_snowhousecpu_regno_to_class>:
- 530:	01 00 00 00 	add	r0, r0, 1
- 534:	01 00 00 00 	add	r0, r0, 1
- 538:	01 00 00 00 	add	r0, r0, 1
- 53c:	01 00 00 00 	add	r0, r0, 1
- 540:	01 00 00 00 	add	r0, r0, 1
- 544:	01 00 00 00 	add	r0, r0, 1
- 548:	02 00 00 00 	add	r0, r0, 2
- 54c:	01 00 00 00 	add	r0, r0, 1
+00000550 <_snowhousecpu_regno_to_class>:
  550:	01 00 00 00 	add	r0, r0, 1
  554:	01 00 00 00 	add	r0, r0, 1
  558:	01 00 00 00 	add	r0, r0, 1
  55c:	01 00 00 00 	add	r0, r0, 1
  560:	01 00 00 00 	add	r0, r0, 1
  564:	01 00 00 00 	add	r0, r0, 1
- 568:	04 00 00 00 	add	r0, r0, 4
- 56c:	05 00 00 00 	add	r0, r0, 5
+ 568:	02 00 00 00 	add	r0, r0, 2
+ 56c:	01 00 00 00 	add	r0, r0, 1
  570:	01 00 00 00 	add	r0, r0, 1
  574:	01 00 00 00 	add	r0, r0, 1
- 578:	06 00 00 00 	add	r0, r0, 6
-
-Disassembly of section .data:
-
-00000580 <___dso_handle>:
-	...
-
-00000590 <_to_keep_loop_going>:
- 590:	04 00 00 00 	add	r0, r0, 4
-	...
-
-000005a0 <_fb>:
- 5a0:	00 00 80 00 	add	r0, r8, 0
+ 578:	01 00 00 00 	add	r0, r0, 1
+ 57c:	01 00 00 00 	add	r0, r0, 1
+ 580:	01 00 00 00 	add	r0, r0, 1
+ 584:	01 00 00 00 	add	r0, r0, 1
+ 588:	04 00 00 00 	add	r0, r0, 4
+ 58c:	05 00 00 00 	add	r0, r0, 5
+ 590:	01 00 00 00 	add	r0, r0, 1
+ 594:	01 00 00 00 	add	r0, r0, 1
+ 598:	06 00 00 00 	add	r0, r0, 6
 
 Disassembly of section .comment:
 
-00000000 <_stack-0x18000>:
+00000000 <_stack-0x2fffffc>:
    0:	47 43 43 3a 	bad
    4:	20 28 47 4e 	xor	fp, r4, r7
    8:	55 29 20 31 	sltu	r1, r2, 10581

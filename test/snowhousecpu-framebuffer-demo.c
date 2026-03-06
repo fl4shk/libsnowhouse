@@ -1,26 +1,23 @@
 #include <stdint.h>
 
-#define FB_BASE 0x800000ull //0x1000000ull
+#define FB_BASE 0x4000000ull //0x800000ull //0x1000000ull
 //volatile uint32_t* fb = (volatile uint32_t*)FB_BASE;
 volatile uint16_t* fb = (volatile uint16_t*)FB_BASE;
 
 const uint32_t FB_WIDTH = (
 	/*64;*/ /*76 >> 1*/
-	320
+	320u
 	//320 >> 1
 	//160
 	//160 >> 1
 );
 const uint32_t FB_HEIGHT = (
 	/*64;*/ 
-	240
+	240u
 	//240 >> 1
 	//76 >> 1
 );
 const uint32_t FB_SIZE = FB_HEIGHT * FB_WIDTH;
-volatile uint32_t* to_keep_loop_going = (
-	(volatile uint32_t*)0x4ull
-);
 
 uint32_t mul_test(uint32_t a, uint32_t b) {
 	return a * b;
