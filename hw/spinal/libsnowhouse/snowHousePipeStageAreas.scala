@@ -10768,7 +10768,8 @@ case class SnowHousePipeStageWriteBack(
     //  && myWbPayload.outpDecodeExt.opIsMemAccess.last
     //)
     val myD2hBus = cloneOf(io.lcvDbus.d2hBus)
-    myD2hBus <-/< io.lcvDbus.d2hBus
+    //myD2hBus <-/< io.lcvDbus.d2hBus
+    myD2hBus << io.lcvDbus.d2hBus
     myD2hBus.ready := False
 
     //when (
