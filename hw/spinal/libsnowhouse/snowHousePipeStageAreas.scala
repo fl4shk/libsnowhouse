@@ -10105,6 +10105,7 @@ case class SnowHousePipeStageExecute(
           //!setOutpModMemWord.io.shouldIgnoreInstr.last
           //if (!cfg.useLcvDataBus) (
             !myShouldIgnoreInstr.last
+            && cMid0Front.up.isValid
           //) else (
           //  !(
           //    myShouldIgnoreInstr.last
