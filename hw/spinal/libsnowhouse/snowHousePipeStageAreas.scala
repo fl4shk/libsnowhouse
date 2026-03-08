@@ -10757,6 +10757,7 @@ case class SnowHousePipeStageWriteBack(
     })
     myExtLeft.ready := cWb.up.isReady
     myExtLeft.fire := cWb.up.isFiring
+    //cWb.up(modBackPayload) := myWbPayload(1)
   }
 
 
@@ -10790,6 +10791,14 @@ case class SnowHousePipeStageWriteBack(
     //  })
     //}
 
+    cWb.up(modBackPayload) := (
+      //RegNext(myWbPayload(1), init=myWbPayload(1).getZero)
+      myWbPayload(1).getZero
+    )
+    when (cWb.up.isFiring) {
+      cWb.up(modBackPayload) := myWbPayload(1)
+    }
+
     when (
       //myDbusIo.myDbusExtraValid
       //cWb.up.isValid
@@ -10802,8 +10811,25 @@ case class SnowHousePipeStageWriteBack(
         ////!myDbusExtraReady(3)
         !myD2hBus.valid
       ) {
-        //cWb.duplicateIt()
-        cWb.haltIt()
+        cWb.duplicateIt()
+        //cWb.haltIt()
+        //myWbPayload(1).myExt.foreach(myExt => {
+        //  myExt.modMemWordValid.foreach(mmwValidItem => {
+        //    mmwValidItem := False
+        //  })
+        //  myExt.fwdCanDoIt.foreach(fwdIdx => {
+        //    fwdCanDoIt := 0x0
+        //  })
+        //})
+        cWb.down(modBackPayload) := myWbPayload(1).getZero
+        cWb.down(modBackPayload).myExt.foreach(myExt => {
+          myExt.modMemWordValid.foreach(mmwValidItem => {
+            mmwValidItem := False
+          })
+          myExt.fwdCanDoIt.foreach(fwdCanDoItItem => {
+            fwdCanDoItItem := False
+          })
+        })
       }
     }
     switch (
@@ -11039,5 +11065,9 @@ case class SnowHousePipeStageWriteBack(
   //when (cWb.up.isFiring) {
   //  cWb.up(modBackPayload) := myWbPayload(1)
   //}
-  cWb.up(modBackPayload) := myWbPayload(1)
+  //--------
+  // BEGIN: old, incorrect version
+  //cWb.up(modBackPayload) := myWbPayload(1)
+  // END: old, incorrect version
+  //--------
 }
