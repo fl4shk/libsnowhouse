@@ -10809,6 +10809,10 @@ case class SnowHousePipeStageWriteBack(
     when (!cWb.up.isValid) {
       cWb.haltIt() // need to send this back to EX
     }
+    //cWb.haltWhen(!cWb.up.valid)
+    //when (!cWb.up.valid) {
+    //  cWb.up.ready := False
+    //}
 
     when (cWb.up.isFiring) {
       cWb.up(modBackPayload) := myWbPayload(1)
@@ -10817,9 +10821,8 @@ case class SnowHousePipeStageWriteBack(
 
     when (
       //myDbusIo.myDbusExtraValid
-      //cWb.up.isValid
-      //&& 
-      myWbPayload(1).outpDecodeExt.opIsMemAccess.last
+      cWb.up.isValid
+      && myWbPayload(1).outpDecodeExt.opIsMemAccess.last
     ) {
       myD2hBus.ready := True
       when (
