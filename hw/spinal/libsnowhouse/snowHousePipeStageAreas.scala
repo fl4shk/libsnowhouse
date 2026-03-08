@@ -7710,7 +7710,7 @@ case class SnowHousePipeStageExecute(
   shouldIgnoreInstr: Bool,
   myModMemWord: SInt,
   //prevStageFoundBubble: Bool,
-  psWbToExStallRequest: Bool,
+  //psWbToExStallFwdRequest: Bool,
 ) extends Area {
   def myDbusIo = args.myDbusIo
   def myDbus = myDbusIo.dbus
@@ -7909,7 +7909,7 @@ case class SnowHousePipeStageExecute(
   )
   myDoStall(stallKindMem) := False
   //if (cfg.useLcvDataBus) {
-  //  myDoStall(stallKindPsWbToEx) := psWbToExStallRequest
+  //  myDoStall(stallKindPsWbToEx) := psWbToExStallFwdRequest
   //}
   //myDoStall(stallKindMultiCycle) := (
   //  RegNext(
@@ -9392,7 +9392,7 @@ case class SnowHousePipeStageExecute(
       //if (!cfg.useLcvDataBus) (
         tempCond
       //) else (
-      //  tempCond && !psWbToExStallRequest
+      //  tempCond && !psWbToExStallFwdRequest
       //)
     }
     when (cMid0Front.up.isValid) {
@@ -9502,7 +9502,7 @@ case class SnowHousePipeStageExecute(
       //if (!cfg.useLcvDataBus) (
         tempCond
       //) else (
-      //  tempCond && !psWbToExStallRequest
+      //  tempCond && !psWbToExStallFwdRequest
       //)
     }
   ) {
@@ -9940,7 +9940,7 @@ case class SnowHousePipeStageExecute(
             Vec[Bool](
               //True
               cMid0Front.down.isReady
-              //&& !psWbToExStallRequest
+              //&& !psWbToExStallFwdRequest
             ).asBits.asUInt
           )
         )
@@ -10199,10 +10199,10 @@ case class SnowHousePipeStageMem(
   def extIdxUp = PipeRegFile.extIdxUp
   def extIdxSaved = PipeRegFile.extIdxSaved
   def extIdxLim = PipeRegFile.extIdxLim
-  def doPsMemFork = (
-    //true
-    !cfg.useLcvDataBus
-  )
+  //def doPsMemFork = (
+  //  //true
+  //  !cfg.useLcvDataBus
+  //)
   val midModPayload = (
     Vec.fill(extIdxLim)(
       SnowHousePipePayload(cfg=cfg)
@@ -10235,58 +10235,58 @@ case class SnowHousePipeStageMem(
   //  )
   //)
   def cMem = args.link
-  val fMem = (
-    doPsMemFork
-  ) generate (
-    ForkLink(
-      up=cMem.down,
-      downs={
-        Array.fill(2)(Node())
-      },
-      synchronous=(
-        false
-        //true
-      )
-    )
-  )
-  val sMemFwd = (
-    doPsMemFork
-  ) generate (
-    StageLink(
-      up=fMem.downs(0),
-      down={
-        regFile.io.modBackFwd
-      }
-    )
-  )
+  //val fMem = (
+  //  doPsMemFork
+  //) generate (
+  //  ForkLink(
+  //    up=cMem.down,
+  //    downs={
+  //      Array.fill(2)(Node())
+  //    },
+  //    synchronous=(
+  //      false
+  //      //true
+  //    )
+  //  )
+  //)
+  //val sMemFwd = (
+  //  doPsMemFork
+  //) generate (
+  //  StageLink(
+  //    up=fMem.downs(0),
+  //    down={
+  //      regFile.io.modBackFwd
+  //    }
+  //  )
+  //)
   val sMem = (
     StageLink(
       up=(
-        if (!doPsMemFork) (
+        //if (!doPsMemFork) (
           cMem.down
-        ) else (
-          fMem.downs(1)
-        )
+        //) else (
+        //  fMem.downs(1)
+        //)
       ),
       down={
-        if (!doPsMemFork) {
-          val temp = Node()
-          temp.setName(s"sMem_down")
-          temp
-        } else {
+        //if (!doPsMemFork) {
+        //  val temp = Node()
+        //  temp.setName(s"sMem_down")
+        //  temp
+        //} else {
           modBack
-        }
+        //}
       },
     )
   )
   //regFile.myLinkArr += cMem
-  if (doPsMemFork) {
-    regFile.myLinkArr += fMem
-    regFile.myLinkArr += sMemFwd
-    //regFile.myLinkArr += sMem
-  } else {
-    //regFile.myLinkArr += sMem
-  }
+  //if (doPsMemFork) {
+  //  regFile.myLinkArr += fMem
+  //  regFile.myLinkArr += sMemFwd
+  //  //regFile.myLinkArr += sMem
+  //} else {
+  //  //regFile.myLinkArr += sMem
+  //}
   regFile.myLinkArr += sMem
   object MmwState extends SpinalEnum(
     defaultEncoding=binaryOneHot
@@ -10585,7 +10585,7 @@ case class SnowHousePipeStageMem(
 }
 case class SnowHousePipeStageWriteBack(
   args: SnowHousePipeStageArgs,
-  psWbToExStallRequest: Bool,
+  //psWbToExStallFwdRequest: Bool,
   //psMemStallHost: LcvStallHost[
   //  BusHostPayload,
   //  BusDevPayload,
@@ -10594,6 +10594,12 @@ case class SnowHousePipeStageWriteBack(
   //myDbusLdReady: Bool,
   //myDbusIo: SnowHouseDbusIo,
   //myModMemWord: SInt,
+  doModInBackEtcParams: PipeRegFileDoModInBackEtcFuncParams[
+    UInt,
+    Bool,
+    SnowHousePipePayload,
+    PipeRegFileDualRdTypeDisabled[UInt, Bool],
+  ],
 ) extends Area {
   def myDbusIo = args.myDbusIo
   def myDbus = myDbusIo.dbus
@@ -10601,17 +10607,18 @@ case class SnowHousePipeStageWriteBack(
   def myDbusLdReady = myDbusIo.dbusLdReady
   def cfg = args.cfg
   def io = args.io
-  def regFile = args.regFile
-  def front = regFile.io.front
-  def frontPayload = regFile.io.frontPayload
-  def modFront = regFile.io.modFront
-  //def modFrontAfterPayload = regFile.io.modFrontAfterPayload
-  def pMem = args.prevPayload
-  def modBack = regFile.io.modBack
-  def modBackPayload = args.currPayload
-  def back = regFile.io.back
-  def backPayload = regFile.io.backPayload
-  def cWb = args.link
+  //def regFile = args.regFile
+  def regFileIo = doModInBackEtcParams.pipeRegFileIo
+  def front = regFileIo.front
+  def frontPayload = regFileIo.frontPayload
+  def modFront = regFileIo.modFront
+  //def modFrontAfterPayload = regFileIo.modFrontAfterPayload
+  def pMem = regFileIo.modBackPayload//args.prevPayload
+  def modBack = regFileIo.modBack
+  def modBackPayload = regFileIo.modBackPayload //args.currPayload
+  def back = regFileIo.back
+  def backPayload = regFileIo.backPayload
+  def cWb = doModInBackEtcParams.cBackEtc //args.link
 
   //val sWb = StageLink(
   //  up=cWb.down,
@@ -10622,25 +10629,26 @@ case class SnowHousePipeStageWriteBack(
   //  }
   //)
   //regFile.myLinkArr += sWb
-  val fWb = (
-    ForkLink(
-      up=(
-        cWb.down
-        //sWb.down
-      ),
-      downs={
-        //Array.fill(2)(Node())
-        List[Node](
-          regFile.io.modBackFwd,
-          modBack,
-        )
-      },
-      synchronous=(
-        false
-        //true
-      )
-    )
-  )
+
+  //val fWb = (
+  //  ForkLink(
+  //    up=(
+  //      cWb.down
+  //      //sWb.down
+  //    ),
+  //    downs={
+  //      //Array.fill(2)(Node())
+  //      List[Node](
+  //        regFile.io.modBackFwd,
+  //        modBack,
+  //      )
+  //    },
+  //    synchronous=(
+  //      false
+  //      //true
+  //    )
+  //  )
+  //)
   //val sWbFwd = (
   //  StageLink(
   //    up=fWb.downs(0),
@@ -10655,14 +10663,20 @@ case class SnowHousePipeStageWriteBack(
   //    down=modBack,
   //  )
   //)
-  regFile.myLinkArr += fWb
+  //regFile.myLinkArr += fWb
   //regFile.myLinkArr += sWbFwd
   //regFile.myLinkArr += sWb
   val myWbPayload = (
-    Vec.fill(2)(
-      SnowHousePipePayload(cfg=cfg)
+    //Vec.fill(2)(
+    //  SnowHousePipePayload(cfg=cfg)
+    //)
+    Vec[SnowHousePipePayload](
+      doModInBackEtcParams.inp,
+      doModInBackEtcParams.outp,
     )
   )
+  when (cWb.up.isValid) {
+  }
   //def extIdxUp = PipeRegFile.extIdxUp
   //def extIdxSaved = PipeRegFile.extIdxSaved
   //def extIdxLim = PipeRegFile.extIdxLim
@@ -10681,10 +10695,14 @@ case class SnowHousePipeStageWriteBack(
   //when (cWb.up.isValid) {
   //  myWbPayload.head := cWb.up(pMem)
   //}
-  myWbPayload(0) := cWb.up(pMem)
+
+  //myWbPayload(0) := cWb.up(pMem)
   myWbPayload(1) := (
     RegNext(myWbPayload(1), init=myWbPayload(1).getZero)
   )
+  //when (cWb.up.isValid) {
+  //  myWbPayload(1) := myWbPayload(0)
+  //}
 
   //when (cWb.up.isValid) {
   //  myWbPayload(1) := myWbPayload(0)
@@ -10818,10 +10836,10 @@ case class SnowHousePipeStageWriteBack(
     //  })
     //}
 
-    cWb.up(modBackPayload) := (
-      //RegNext(myWbPayload(1), init=myWbPayload(1).getZero)
-      myWbPayload(1).getZero
-    )
+    //cWb.up(modBackPayload) := (
+    //  //RegNext(myWbPayload(1), init=myWbPayload(1).getZero)
+    //  myWbPayload(1).getZero
+    //)
     //myWbPayload(1).myExt.foreach(myExt => {
     //  myExt.extraLastBackMmwValid.allowOverride
     //  myExt.extraLastBackMmwValid.foreach(mmwValidItem => {
@@ -10833,9 +10851,17 @@ case class SnowHousePipeStageWriteBack(
     //  })
     //})
 
-    if (cfg.useLcvDataBus) {
-      psWbToExStallRequest := !cWb.up.isValid
-    }
+    //if (cfg.useLcvDataBus) {
+    //  psWbToExStallFwdRequest := (
+    //    !cWb.up.isValid
+    //    && History[Bool](
+    //      that=True,
+    //      when=cWb.up.isValid,
+    //      length=2,
+    //      init=False
+    //    ).last
+    //  )
+    //}
     //when (!cWb.up.isValid) {
     //  //cWb.haltIt() // need to send this back to EX
     //}
@@ -10844,9 +10870,9 @@ case class SnowHousePipeStageWriteBack(
     //  cWb.up.ready := False
     //}
 
-    when (cWb.up.isFiring) {
-      cWb.up(modBackPayload) := myWbPayload(1)
-    }
+    //when (cWb.up.isFiring) {
+    //  cWb.up(modBackPayload) := myWbPayload(1)
+    //}
     //cWb.up(modBackPayload) := myWbPayload(1)
 
     when (

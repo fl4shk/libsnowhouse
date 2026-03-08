@@ -1347,7 +1347,7 @@ case class SnowHouse
     //)
   )
   val shouldIgnoreInstr = Bool()
-  val psWbToExStallRequest = Bool()
+  //val psWbToExStallFwdRequest = Bool()
   //--------
   val myModMemWord = SInt(cfg.mainWidth bits)
   //val psIdFoundBubble = Bool()
@@ -1398,6 +1398,13 @@ case class SnowHouse
       //  doModInMid0FrontParams=doModInMid0FrontParams,
       //  myRegFile=myRegFile1,
       //)
+    ),
+    doModInBackEtcFunc=(
+      if (!cfg.useLcvDataBus) (
+        None
+      ) else (
+        Some(mkPipeStageWriteBack)
+      )
     )
   )
   //--------
@@ -1647,7 +1654,7 @@ case class SnowHouse
     //    psIdPostFoundBubble
     //  )
     //)
-    psWbToExStallRequest=psWbToExStallRequest,
+    //psWbToExStallFwdRequest=psWbToExStallFwdRequest,
   )
   //--------
   //val pipeStageWb = (
@@ -1678,11 +1685,11 @@ case class SnowHouse
   linkArr += cMem
   //val pMem = regFile.io.modFrontAfterPayload
   val pMem = (
-    if (!cfg.useLcvDataBus) (
+    //if (!cfg.useLcvDataBus) (
       regFile.io.modBackPayload
-    ) else (
-      Payload(SnowHousePipePayload(cfg=cfg))
-    )
+    //) else (
+    //  Payload(SnowHousePipePayload(cfg=cfg))
+    //)
   )
   val pipeStageMem = (
     SnowHousePipeStageMem(
@@ -1716,47 +1723,85 @@ case class SnowHouse
       myModMemWord=myModMemWord,
     )
   )
-  val cWb = (
-    cfg.useLcvDataBus
-  ) generate (
-    CtrlLink(
-      up=pipeStageMem.sMem.down,
-      down={
-        val temp = Node()
-        temp.setName(s"cWb_down")
-        temp
-      }
-    )
-  )
-  if (cfg.useLcvDataBus) {
-    linkArr += cWb
-  }
-  val pipeStageWb = (
-    cfg.useLcvDataBus
-  ) generate (
-    SnowHousePipeStageWriteBack(
-      args=SnowHousePipeStageArgs(
-        cfg=cfg,
-        io=io,
-        link=cWb,
-        prevPayload=pMem,
-        currPayload=regFile.io.modBackPayload,
-        myDbusIo=(
-          if (!cfg.useLcvDataBus) (
-            myDbusIo
-          ) else (
-            null.asInstanceOf[SnowHouseDbusIo]
-          )
-        ),
-        regFile=regFile,
+
+  def mkPipeStageWriteBack(
+    doModInBackEtcParams: PipeRegFileDoModInBackEtcFuncParams[
+      UInt,
+      Bool,
+      SnowHousePipePayload,
+      PipeRegFileDualRdTypeDisabled[UInt, Bool],
+    ],
+    //myRegFile: PipeRegFile[
+    //  UInt,
+    //  Bool,
+    //  SnowHousePipePayload,
+    //  PipeRegFileDualRdTypeDisabled[UInt, Bool],
+    //],
+  ): SnowHousePipeStageWriteBack = SnowHousePipeStageWriteBack(
+    args=SnowHousePipeStageArgs(
+      cfg=cfg,
+      io=io,
+      link=null,
+      prevPayload=null,//pMem,
+      currPayload=null,//regFile.io.modBackPayload,
+      myDbusIo=(
+        if (!cfg.useLcvDataBus) (
+          myDbusIo
+        ) else (
+          null.asInstanceOf[SnowHouseDbusIo]
+        )
       ),
-      //psMemStallHost=psMemStallHost,
-      //myDbusExtraReady=myDbusExtraReady,
-      //myDbusLdReady=myDbusLdReady,
-      //myModMemWord=myModMemWord,
-      psWbToExStallRequest=psWbToExStallRequest,
-    )
+      regFile=null,
+    ),
+    doModInBackEtcParams=doModInBackEtcParams,
+    //psMemStallHost=psMemStallHost,
+    //myDbusExtraReady=myDbusExtraReady,
+    //myDbusLdReady=myDbusLdReady,
+    //myModMemWord=myModMemWord,
+    //psWbToExStallFwdRequest=psWbToExStallFwdRequest,
   )
+
+  //val cWb = (
+  //  cfg.useLcvDataBus
+  //) generate (
+  //  CtrlLink(
+  //    up=pipeStageMem.sMem.down,
+  //    down={
+  //      val temp = Node()
+  //      temp.setName(s"cWb_down")
+  //      temp
+  //    }
+  //  )
+  //)
+  //if (cfg.useLcvDataBus) {
+  //  linkArr += cWb
+  //}
+  //val pipeStageWb = (
+  //  cfg.useLcvDataBus
+  //) generate (
+  //  SnowHousePipeStageWriteBack(
+  //    args=SnowHousePipeStageArgs(
+  //      cfg=cfg,
+  //      io=io,
+  //      link=cWb,
+  //      prevPayload=pMem,
+  //      currPayload=regFile.io.modBackPayload,
+  //      myDbusIo=(
+  //        if (!cfg.useLcvDataBus) (
+  //          myDbusIo
+  //        ) else (
+  //          null.asInstanceOf[SnowHouseDbusIo]
+  //        )
+  //      ),
+  //      regFile=regFile,
+  //    ),
+  //    //psMemStallHost=psMemStallHost,
+  //    //myDbusExtraReady=myDbusExtraReady,
+  //    //myDbusLdReady=myDbusLdReady,
+  //    //myModMemWord=myModMemWord,
+  //    //psWbToExStallFwdRequest=psWbToExStallFwdRequest,
+  //  )
+  //)
   if (cfg.exposeRegFileWriteDataToIo) {
     if (
       !cfg.exposeRegFileWriteAddrToIo
@@ -1767,13 +1812,13 @@ case class SnowHouse
       )
     } else {
       io.regFileWriteData := (
-        regFile.mod.back.myWriteData(1)(0)(0)
+        regFile.mod.back.myWriteData(0)(0)(0)
       )
     }
   }
   if (cfg.exposeRegFileWriteAddrToIo) {
     io.regFileWriteAddr := (
-      regFile.mod.back.myWriteAddr(1)(0)(0)
+      regFile.mod.back.myWriteAddr(0)(0)(0)
     )
   }
   if (cfg.exposeRegFileWriteEnableToIo) {
