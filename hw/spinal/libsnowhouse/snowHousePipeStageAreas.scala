@@ -10805,6 +10805,11 @@ case class SnowHousePipeStageWriteBack(
     //    fwdCanDoItItem := True
     //  })
     //})
+
+    when (!cWb.up.isValid) {
+      cWb.haltIt() // need to send this back to EX
+    }
+
     when (cWb.up.isFiring) {
       cWb.up(modBackPayload) := myWbPayload(1)
     }
