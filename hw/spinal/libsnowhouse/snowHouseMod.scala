@@ -1347,6 +1347,7 @@ case class SnowHouse
     //)
   )
   val shouldIgnoreInstr = Bool()
+  val psWbToExStallRequest = Bool()
   //--------
   val myModMemWord = SInt(cfg.mainWidth bits)
   //val psIdFoundBubble = Bool()
@@ -1646,6 +1647,7 @@ case class SnowHouse
     //    psIdPostFoundBubble
     //  )
     //)
+    psWbToExStallRequest=psWbToExStallRequest,
   )
   //--------
   //val pipeStageWb = (
@@ -1752,6 +1754,7 @@ case class SnowHouse
       //myDbusExtraReady=myDbusExtraReady,
       //myDbusLdReady=myDbusLdReady,
       //myModMemWord=myModMemWord,
+      psWbToExStallRequest=psWbToExStallRequest,
     )
   )
   if (cfg.exposeRegFileWriteDataToIo) {

@@ -7710,6 +7710,7 @@ case class SnowHousePipeStageExecute(
   shouldIgnoreInstr: Bool,
   myModMemWord: SInt,
   //prevStageFoundBubble: Bool,
+  psWbToExStallRequest: Bool,
 ) extends Area {
   def myDbusIo = args.myDbusIo
   def myDbus = myDbusIo.dbus
@@ -7885,13 +7886,18 @@ case class SnowHousePipeStageExecute(
   //  )
   //)
   def stallKindMem = 0
+  //def stallKindPsWbToEx = 1
   //def stallKindMultiCycle = 1
   //def stallKindMultiCycle1 = 2
   //def stallKindAluShift = 1
   def stallKindLim = (
     //3
     //2
-    1
+    //if (!cfg.useLcvDataBus) (
+      1
+    //) else (
+    //  2
+    //)
   )
 
   val myDoStall = (
@@ -7902,6 +7908,9 @@ case class SnowHousePipeStageExecute(
     )
   )
   myDoStall(stallKindMem) := False
+  //if (cfg.useLcvDataBus) {
+  //  myDoStall(stallKindPsWbToEx) := psWbToExStallRequest
+  //}
   //myDoStall(stallKindMultiCycle) := (
   //  RegNext(
   //    next=myDoStall(stallKindMultiCycle),
@@ -9374,11 +9383,18 @@ case class SnowHousePipeStageExecute(
     //  RegNextWhen(
     //  )
     //)
-    val myTempBtbElemValid = (
-      outp.branchTgtBufElem(0).valid
-      && !myShouldIgnoreInstr.last
-      && cMid0Front.down.isReady
-    )
+    val myTempBtbElemValid = {
+      val tempCond = (
+        outp.branchTgtBufElem(0).valid
+        && !myShouldIgnoreInstr.last
+        && cMid0Front.down.isReady
+      )
+      if (!cfg.useLcvDataBus) (
+        tempCond
+      ) else (
+        tempCond && !psWbToExStallRequest
+      )
+    }
     when (cMid0Front.up.isValid) {
       when (!rState) {
         switch (
@@ -9478,8 +9494,17 @@ case class SnowHousePipeStageExecute(
   )
   setOutpModMemWord.io.takeIrq := False
   when (
-    cMid0Front.up.isValid
-    && cMid0Front.down.isReady
+    {
+      val tempCond = (
+        cMid0Front.up.isValid
+        && cMid0Front.down.isReady
+      )
+      if (!cfg.useLcvDataBus) (
+        tempCond
+      ) else (
+        tempCond && !psWbToExStallRequest
+      )
+    }
   ) {
     setOutpModMemWord.io.splitOp := outp.splitOp
     when (
@@ -9915,6 +9940,7 @@ case class SnowHousePipeStageExecute(
             Vec[Bool](
               //True
               cMid0Front.down.isReady
+              && !psWbToExStallRequest
             ).asBits.asUInt
           )
         )
@@ -10559,6 +10585,7 @@ case class SnowHousePipeStageMem(
 }
 case class SnowHousePipeStageWriteBack(
   args: SnowHousePipeStageArgs,
+  psWbToExStallRequest: Bool,
   //psMemStallHost: LcvStallHost[
   //  BusHostPayload,
   //  BusDevPayload,
@@ -10806,9 +10833,12 @@ case class SnowHousePipeStageWriteBack(
     //  })
     //})
 
-    when (!cWb.up.isValid) {
-      cWb.haltIt() // need to send this back to EX
+    if (cfg.useLcvDataBus) {
+      psWbToExStallRequest := !cWb.up.isValid
     }
+    //when (!cWb.up.isValid) {
+    //  //cWb.haltIt() // need to send this back to EX
+    //}
     //cWb.haltWhen(!cWb.up.valid)
     //when (!cWb.up.valid) {
     //  cWb.up.ready := False
@@ -10821,8 +10851,9 @@ case class SnowHousePipeStageWriteBack(
 
     when (
       //myDbusIo.myDbusExtraValid
-      cWb.up.isValid
-      && myWbPayload(1).outpDecodeExt.opIsMemAccess.last
+      //cWb.up.isValid
+      //&& 
+      myWbPayload(1).outpDecodeExt.opIsMemAccess.last
     ) {
       myD2hBus.ready := True
       when (
