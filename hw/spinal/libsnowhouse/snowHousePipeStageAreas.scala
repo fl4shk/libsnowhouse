@@ -9389,11 +9389,11 @@ case class SnowHousePipeStageExecute(
         && !myShouldIgnoreInstr.last
         && cMid0Front.down.isReady
       )
-      if (!cfg.useLcvDataBus) (
+      //if (!cfg.useLcvDataBus) (
         tempCond
-      ) else (
-        tempCond && !psWbToExStallRequest
-      )
+      //) else (
+      //  tempCond && !psWbToExStallRequest
+      //)
     }
     when (cMid0Front.up.isValid) {
       when (!rState) {
@@ -9499,11 +9499,11 @@ case class SnowHousePipeStageExecute(
         cMid0Front.up.isValid
         && cMid0Front.down.isReady
       )
-      if (!cfg.useLcvDataBus) (
+      //if (!cfg.useLcvDataBus) (
         tempCond
-      ) else (
-        tempCond && !psWbToExStallRequest
-      )
+      //) else (
+      //  tempCond && !psWbToExStallRequest
+      //)
     }
   ) {
     setOutpModMemWord.io.splitOp := outp.splitOp
@@ -9940,7 +9940,7 @@ case class SnowHousePipeStageExecute(
             Vec[Bool](
               //True
               cMid0Front.down.isReady
-              && !psWbToExStallRequest
+              //&& !psWbToExStallRequest
             ).asBits.asUInt
           )
         )
