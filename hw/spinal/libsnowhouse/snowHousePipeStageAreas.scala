@@ -10795,16 +10795,16 @@ case class SnowHousePipeStageWriteBack(
       //RegNext(myWbPayload(1), init=myWbPayload(1).getZero)
       myWbPayload(1).getZero
     )
-    myWbPayload(1).myExt.foreach(myExt => {
-      myExt.extraLastBackMmwValid.allowOverride
-      myExt.extraLastBackMmwValid.foreach(mmwValidItem => {
-        mmwValidItem := True
-      })
-      myExt.extraLastBackFwdCanDoIt.allowOverride
-      myExt.extraLastBackFwdCanDoIt.foreach(fwdCanDoItItem => {
-        fwdCanDoItItem := True
-      })
-    })
+    //myWbPayload(1).myExt.foreach(myExt => {
+    //  myExt.extraLastBackMmwValid.allowOverride
+    //  myExt.extraLastBackMmwValid.foreach(mmwValidItem => {
+    //    mmwValidItem := True
+    //  })
+    //  myExt.extraLastBackFwdCanDoIt.allowOverride
+    //  myExt.extraLastBackFwdCanDoIt.foreach(fwdCanDoItItem => {
+    //    fwdCanDoItItem := True
+    //  })
+    //})
     when (cWb.up.isFiring) {
       cWb.up(modBackPayload) := myWbPayload(1)
     }
@@ -10833,15 +10833,24 @@ case class SnowHousePipeStageWriteBack(
         //  })
         //})
         //cWb.down(modBackPayload) := myWbPayload(1).getZero
+        cWb.down(modBackPayload) := myWbPayload(1)
         cWb.down(modBackPayload).myExt.foreach(myExt => {
-          myExt.extraLastBackMmwValid.allowOverride
-          myExt.extraLastBackMmwValid.foreach(mmwValidItem => {
+          myExt.modMemWordValid.allowOverride
+          myExt.modMemWordValid.foreach(mmwValidItem => {
             mmwValidItem := False
           })
-          myExt.extraLastBackFwdCanDoIt.allowOverride
-          myExt.extraLastBackFwdCanDoIt.foreach(fwdCanDoItItem => {
+          myExt.fwdCanDoIt.allowOverride
+          myExt.fwdCanDoIt.foreach(fwdCanDoItItem => {
             fwdCanDoItItem := False
           })
+          //myExt.extraLastBackMmwValid.allowOverride
+          //myExt.extraLastBackMmwValid.foreach(mmwValidItem => {
+          //  mmwValidItem := False
+          //})
+          //myExt.extraLastBackFwdCanDoIt.allowOverride
+          //myExt.extraLastBackFwdCanDoIt.foreach(fwdCanDoItItem => {
+          //  fwdCanDoItItem := False
+          //})
         })
       }
     }
