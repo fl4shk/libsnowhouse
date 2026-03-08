@@ -447,17 +447,19 @@ case class SnowHouseCpuFramebufferDemo(
   )
   myFbArbiter.io.en := True
 
-  cpu.io.lcvDbus.h2dBus.translateInto(myFbDbusSlicer.io.host.h2dBus)(
-    dataAssignment=(outp, inp) => {
-      outp.mainNonBurstInfo := inp.mainNonBurstInfo
-      //outp.mainBurstInfo := outp.mainBurstInfo.getZero
-    }
-  )
-  myFbDbusSlicer.io.host.d2hBus.translateInto(cpu.io.lcvDbus.d2hBus)(
-    dataAssignment=(outp, inp) => {
-      outp.mainNonBurstInfo := inp.mainNonBurstInfo
-    }
-  )
+  myFbDbusSlicer.io.host.h2dBus <-/< cpu.io.lcvDbus.h2dBus
+  cpu.io.lcvDbus.d2hBus << myFbDbusSlicer.io.host.d2hBus
+  //cpu.io.lcvDbus.h2dBus.translateInto(myFbDbusSlicer.io.host.h2dBus)(
+  //  dataAssignment=(outp, inp) => {
+  //    outp.mainNonBurstInfo := inp.mainNonBurstInfo
+  //    //outp.mainBurstInfo := outp.mainBurstInfo.getZero
+  //  }
+  //)
+  //myFbDbusSlicer.io.host.d2hBus.translateInto(cpu.io.lcvDbus.d2hBus)(
+  //  dataAssignment=(outp, inp) => {
+  //    outp.mainNonBurstInfo := inp.mainNonBurstInfo
+  //  }
+  //)
   //myFbDbusSlicer.io.host <-/< (
   //  //myFbCtrl.io.bus
   //  cpu.io.lcvDbus
