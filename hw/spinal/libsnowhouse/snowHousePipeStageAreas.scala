@@ -10833,7 +10833,9 @@ case class SnowHousePipeStageWriteBack(
         //  })
         //})
         //cWb.down(modBackPayload) := myWbPayload(1).getZero
-        cWb.down(modBackPayload) := myWbPayload(1)
+        cWb.down(modBackPayload).allowOverride
+        //cWb.down(modBackPayload) := myWbPayload(1)
+        cWb.down(modBackPayload) := myWbPayload(1).getZero
         cWb.down(modBackPayload).myExt.foreach(myExt => {
           myExt.modMemWordValid.allowOverride
           myExt.modMemWordValid.foreach(mmwValidItem => {
