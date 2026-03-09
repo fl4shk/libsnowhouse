@@ -1475,6 +1475,11 @@ case class SnowHouse
     psExSetPc=psExSetPc,
   )
 
+  val pIfPostLcvIbus = (
+    cfg.myHaveS2mIf
+  ) generate (
+    Payload(SnowHousePipePayload(cfg=cfg))
+  )
   val cIfPostLcvIbus = (
     //cfg.useLcvInstrBus
     cfg.myHaveS2mIf
@@ -1495,6 +1500,27 @@ case class SnowHouse
   ) {
     linkArr += cIfPostLcvIbus
   }
+  val pipeStageIfPostLcvIbus = (
+    cfg.myHaveS2mIf
+  ) generate (
+    SnowHousePipeStageInstrFetchPostLcvIbus(
+      args=SnowHousePipeStageArgs(
+        cfg=cfg,
+        io=io,
+        link=cIfPostLcvIbus,
+        prevPayload=pIf,
+        currPayload=pIfPostLcvIbus,
+        myDbusIo=(
+          if (!cfg.useLcvDataBus) (
+            myDbusIo
+          ) else (
+            null.asInstanceOf[SnowHouseDbusIo]
+          )
+        ),
+        regFile=regFile,
+      ),
+    )
+  )
   val sIfPostLcvIbus = (
     //cfg.useLcvInstrBus
     cfg.myHaveS2mIf
@@ -1587,7 +1613,13 @@ case class SnowHouse
       cfg=cfg,
       io=io,
       link=cId,
-      prevPayload=pIf,
+      prevPayload=(
+        if (!myHaveS2mIf) (
+          pIf
+        ) else (
+          pIfPostLcvIbus
+        )
+      ),
       currPayload=(
         //pId
         regFile.io.frontPayload
