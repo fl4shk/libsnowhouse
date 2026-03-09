@@ -646,10 +646,10 @@ case class SnowHouseConfig(
   optFormal: Boolean=false,
 ) {
   def mainAddrWidth = subCfg.mainAddrWidth
-  def myHaveS2mIf = (
-    useLcvInstrBus
-    && useLcvDataBus
-  )
+  //def myHaveS2mIf = (
+  //  useLcvInstrBus
+  //  && useLcvDataBus
+  //)
   def regPcSetItCntWidth = (
     //2
     1

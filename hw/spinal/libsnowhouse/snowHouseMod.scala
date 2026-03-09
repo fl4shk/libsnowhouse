@@ -1251,6 +1251,7 @@ case class SnowHouse
   //gprWordType: HardType[GprWordT],
   cfg: SnowHouseConfig,
 ) extends Component {
+  require(cfg.useLcvInstrBus)
   //--------
   val io = SnowHouseIo(cfg=cfg)
   //if (io.haveMultiCycleBusVec) {
@@ -1435,27 +1436,27 @@ case class SnowHouse
     }
   )
   linkArr += sIf
-  def myHaveS2mIf = (
-    cfg.myHaveS2mIf
-    //cfg.useLcvInstrBus
-    //&& cfg.useLcvDataBus
-  )
-  val s2mIf = (
-    myHaveS2mIf
-  ) generate (S2MLink(
-    up={
-      sIf.down
-    },
-    down={
-      val node = Node()
-      node.setName("s2mIf_down")
-      node
-    }
-  ))
-  if (myHaveS2mIf) {
-    linkArr += s2mIf
-  }
-  val pipeStageIf = SnowHousePipeStageInstrFetch(
+  //def myHaveS2mIf = (
+  //  cfg.myHaveS2mIf
+  //  //cfg.useLcvInstrBus
+  //  //&& cfg.useLcvDataBus
+  //)
+  //val s2mIf = (
+  //  myHaveS2mIf
+  //) generate (S2MLink(
+  //  up={
+  //    sIf.down
+  //  },
+  //  down={
+  //    val node = Node()
+  //    node.setName("s2mIf_down")
+  //    node
+  //  }
+  //))
+  //if (myHaveS2mIf) {
+  //  linkArr += s2mIf
+  //}
+  val pipeStageIf = SnowHousePipeStageInstrFetchLcvIbus(
     args=SnowHousePipeStageArgs(
       cfg=cfg,
       io=io,
@@ -1475,94 +1476,193 @@ case class SnowHouse
     psExSetPc=psExSetPc,
   )
 
-  val pIfPostLcvIbus = (
-    cfg.myHaveS2mIf
+  val cIfMid = (
+    cfg.useLcvInstrBus
   ) generate (
-    Payload(SnowHousePipePayload(cfg=cfg))
-  )
-  val cIfPostLcvIbus = (
-    //cfg.useLcvInstrBus
-    cfg.myHaveS2mIf
-  ) generate (CtrlLink(
-    up=(
-      //sIf.down
-      s2mIf.down
-    ),
-    down={
-      val node = Node()
-      node.setName("cIfPostLcvIbus_down")
-      node
-    }
-  ))
-  if (
-    //cfg.useLcvInstrBus
-    cfg.myHaveS2mIf
-  ) {
-    linkArr += cIfPostLcvIbus
-  }
-  val pipeStageIfPostLcvIbus = (
-    cfg.myHaveS2mIf
-  ) generate (
-    SnowHousePipeStageInstrFetchPostLcvIbus(
-      args=SnowHousePipeStageArgs(
-        cfg=cfg,
-        io=io,
-        link=cIfPostLcvIbus,
-        prevPayload=pIf,
-        currPayload=pIfPostLcvIbus,
-        myDbusIo=(
-          if (!cfg.useLcvDataBus) (
-            myDbusIo
-          ) else (
-            null.asInstanceOf[SnowHouseDbusIo]
-          )
-        ),
-        regFile=regFile,
-      ),
+    CtrlLink(
+      up=sIf.down,
+      down={
+        val node = Node()
+        node.setName("cIfMid_down")
+        node
+      }
     )
   )
-  val sIfPostLcvIbus = (
-    //cfg.useLcvInstrBus
-    cfg.myHaveS2mIf
-  ) generate (StageLink(
-    up=cIfPostLcvIbus.down,
-    down={
-      val node = Node()
-      node.setName("sIfPostLcvIbus_down")
-      node
-    }
-  ))
-  if (
-    //cfg.useLcvInstrBus
-    cfg.myHaveS2mIf
-  ) {
-    linkArr += sIfPostLcvIbus
+  if (cfg.useLcvInstrBus) {
+    linkArr += cIfMid
   }
-  val s2mIfPostLcvIbus = (
-    cfg.myHaveS2mIf
-  ) generate (S2MLink(
-    up=sIfPostLcvIbus.down,
-    down={
-      val node = Node()
-      node.setName("s2mIfPostLcvIbus_down")
-      node
-    }
-  ))
-  if (cfg.myHaveS2mIf) {
-    linkArr += s2mIfPostLcvIbus
+  val sIfMid = (
+    cfg.useLcvInstrBus
+  ) generate (
+    StageLink(
+      up=cIfMid.down,
+      down={
+        val node = Node()
+        node.setName("sIfMid_down")
+        node
+      }
+    )
+  )
+  if (cfg.useLcvInstrBus) {
+    linkArr += sIfMid
   }
+
+  val cIfLast = (
+    cfg.useLcvInstrBus
+  ) generate (
+    CtrlLink(
+      up=sIfMid.down,
+      down={
+        val node = Node()
+        node.setName("cIfLast_down")
+        node
+      }
+    )
+  )
+  if (cfg.useLcvInstrBus) {
+    linkArr += cIfLast
+  }
+  val sIfLast = (
+    cfg.useLcvInstrBus
+  ) generate (
+    StageLink(
+      up=cIfLast.down,
+      down={
+        val node = Node()
+        node.setName("sIfLast_down")
+        node
+      }
+    )
+  )
+  if (cfg.useLcvInstrBus) {
+    linkArr += sIfLast
+  }
+
+  val s2mIfLast = (
+    cfg.useLcvInstrBus
+  ) generate (
+    StageLink(
+      up=sIfLast.down,
+      down={
+        val node = Node()
+        node.setName("s2mIfLast_down")
+        node
+      }
+    )
+  )
+  if (cfg.useLcvInstrBus) {
+    linkArr += s2mIfLast
+  }
+
+  val pipeStageIfLast = SnowHousePipeStageInstrFetchLastLcvIbus(
+    args=SnowHousePipeStageArgs(
+      cfg=cfg,
+      io=io,
+      link=cIfLast,
+      prevPayload=null,
+      currPayload=pIf,
+      myDbusIo=(
+        if (!cfg.useLcvDataBus) (
+          myDbusIo
+        ) else (
+          null.asInstanceOf[SnowHouseDbusIo]
+        )
+      ),
+      regFile=regFile,
+    ),
+  )
+
+  //val pIfPostLcvIbus = (
+  //  //cfg.myHaveS2mIf
+  //) generate (
+  //  Payload(SnowHousePipePayload(cfg=cfg))
+  //)
+  //val cIfPostLcvIbus = (
+  //  cfg.useLcvInstrBus
+  //  //cfg.myHaveS2mIf
+  //) generate (CtrlLink(
+  //  up=(
+  //    //sIf.down
+  //    s2mIf.down
+  //  ),
+  //  down={
+  //    val node = Node()
+  //    node.setName("cIfPostLcvIbus_down")
+  //    node
+  //  }
+  //))
+  //if (
+  //  cfg.useLcvInstrBus
+  //  //cfg.myHaveS2mIf
+  //) {
+  //  linkArr += cIfPostLcvIbus
+  //}
+  //val pipeStageIfPostLcvIbus = (
+  //  //cfg.myHaveS2mIf
+  //  cfg.useLcvInstrBus
+  //) generate (
+  //  SnowHousePipeStageInstrFetchPostLcvIbus(
+  //    args=SnowHousePipeStageArgs(
+  //      cfg=cfg,
+  //      io=io,
+  //      link=cIfPostLcvIbus,
+  //      prevPayload=pIf,
+  //      currPayload=pIfPostLcvIbus,
+  //      myDbusIo=(
+  //        if (!cfg.useLcvDataBus) (
+  //          myDbusIo
+  //        ) else (
+  //          null.asInstanceOf[SnowHouseDbusIo]
+  //        )
+  //      ),
+  //      regFile=regFile,
+  //    ),
+  //  )
+  //)
+  //val sIfPostLcvIbus = (
+  //  //cfg.useLcvInstrBus
+  //  //cfg.myHaveS2mIf
+  //  cfg.useLcvInstrBus
+  //) generate (StageLink(
+  //  up=cIfPostLcvIbus.down,
+  //  down={
+  //    val node = Node()
+  //    node.setName("sIfPostLcvIbus_down")
+  //    node
+  //  }
+  //))
+  //if (
+  //  cfg.useLcvInstrBus
+  //  //cfg.myHaveS2mIf
+  //) {
+  //  linkArr += sIfPostLcvIbus
+  //}
+  //val s2mIfPostLcvIbus = (
+  //  cfg.myHaveS2mIf
+  //) generate (S2MLink(
+  //  up=sIfPostLcvIbus.down,
+  //  down={
+  //    val node = Node()
+  //    node.setName("s2mIfPostLcvIbus_down")
+  //    node
+  //  }
+  //))
+  //if (cfg.myHaveS2mIf) {
+  //  linkArr += s2mIfPostLcvIbus
+  //}
 
   val cId = CtrlLink(
     up={
       if (
-        //!cfg.useLcvInstrBus
-        !myHaveS2mIf
+        !cfg.useLcvInstrBus
+        //!myHaveS2mIf
       ) (
         sIf.down
       ) else ( // if (myHaveS2mIfId)
         //s2mIf.down
         //sIfPostLcvIbus.down
-        s2mIfPostLcvIbus.down
+        //s2mIfPostLcvIbus.down
+        s2mIfLast.down
       )
       //s2mIf.down
     },
@@ -1597,7 +1697,7 @@ case class SnowHouse
   val s2mId = (
     //myHaveS2mIf
     true
-  ) generate (StageLink(
+  ) generate (S2MLink(
     up=sId.down,
     down=regFile.io.front,
   ))
@@ -1614,11 +1714,11 @@ case class SnowHouse
       io=io,
       link=cId,
       prevPayload=(
-        if (!myHaveS2mIf) (
+        //if (!myHaveS2mIf) (
           pIf
-        ) else (
-          pIfPostLcvIbus
-        )
+        //) else (
+        //  pIfPostLcvIbus
+        //)
       ),
       currPayload=(
         //pId
