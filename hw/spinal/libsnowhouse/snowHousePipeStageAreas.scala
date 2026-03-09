@@ -7710,7 +7710,7 @@ case class SnowHousePipeStageExecute(
   shouldIgnoreInstr: Bool,
   myModMemWord: SInt,
   //prevStageFoundBubble: Bool,
-  //psWbToExStallFwdRequest: Bool,
+  //psWbToMemStallRequest: Bool,
 ) extends Area {
   def myDbusIo = args.myDbusIo
   def myDbus = myDbusIo.dbus
@@ -7909,7 +7909,7 @@ case class SnowHousePipeStageExecute(
   )
   myDoStall(stallKindMem) := False
   //if (cfg.useLcvDataBus) {
-  //  myDoStall(stallKindPsWbToEx) := psWbToExStallFwdRequest
+  //  myDoStall(stallKindPsWbToEx) := psWbToMemStallRequest
   //}
   //myDoStall(stallKindMultiCycle) := (
   //  RegNext(
@@ -9392,7 +9392,7 @@ case class SnowHousePipeStageExecute(
       //if (!cfg.useLcvDataBus) (
         tempCond
       //) else (
-      //  tempCond && !psWbToExStallFwdRequest
+      //  tempCond && !psWbToMemStallRequest
       //)
     }
     when (cMid0Front.up.isValid) {
@@ -9502,7 +9502,7 @@ case class SnowHousePipeStageExecute(
       //if (!cfg.useLcvDataBus) (
         tempCond
       //) else (
-      //  tempCond && !psWbToExStallFwdRequest
+      //  tempCond && !psWbToMemStallRequest
       //)
     }
   ) {
@@ -9940,7 +9940,7 @@ case class SnowHousePipeStageExecute(
             Vec[Bool](
               //True
               cMid0Front.down.isReady
-              //&& !psWbToExStallFwdRequest
+              //&& !psWbToMemStallRequest
             ).asBits.asUInt
           )
         )
@@ -10170,6 +10170,7 @@ case class SnowHousePipeStageMem(
   //myDbusLdReady: Bool,
   //myDbusIo: SnowHouseDbusIo,
   myModMemWord: SInt,
+  psWbToMemStallRequest: Bool,
 ) extends Area {
   def myDbusIo = args.myDbusIo
   def myDbus = myDbusIo.dbus
@@ -10277,7 +10278,7 @@ case class SnowHousePipeStageMem(
           modBack
         //}
       },
-    )
+    )//.withoutCollapse
   )
   //regFile.myLinkArr += cMem
   //if (doPsMemFork) {
@@ -10540,6 +10541,9 @@ case class SnowHousePipeStageMem(
   if (!cfg.useLcvDataBus) {
     cMem.up(pMem) := midModPayload(extIdxUp)
   } else { // if (cfg.useLcvDataBus)
+    when (psWbToMemStallRequest) {
+      cMem.duplicateIt()
+    }
     when (cMem.up.isFiring) {
       cMem.up(pMem) := midModPayload(extIdxUp)
     } otherwise {
@@ -10585,7 +10589,7 @@ case class SnowHousePipeStageMem(
 }
 case class SnowHousePipeStageWriteBack(
   args: SnowHousePipeStageArgs,
-  //psWbToExStallFwdRequest: Bool,
+  psWbToMemStallRequest: Bool,
   //psMemStallHost: LcvStallHost[
   //  BusHostPayload,
   //  BusDevPayload,
@@ -10852,7 +10856,7 @@ case class SnowHousePipeStageWriteBack(
     //})
 
     //if (cfg.useLcvDataBus) {
-    //  psWbToExStallFwdRequest := (
+    //  psWbToMemStallRequest := (
     //    !cWb.up.isValid
     //    && History[Bool](
     //      that=True,
@@ -10874,6 +10878,7 @@ case class SnowHousePipeStageWriteBack(
     //  cWb.up(modBackPayload) := myWbPayload(1)
     //}
     //cWb.up(modBackPayload) := myWbPayload(1)
+    psWbToMemStallRequest := False
 
     when (
       //myDbusIo.myDbusExtraValid
@@ -10887,6 +10892,7 @@ case class SnowHousePipeStageWriteBack(
         ////!myDbusExtraReady(3)
         !myD2hBus.valid
       ) {
+        psWbToMemStallRequest := True
         cWb.duplicateIt()
         //cWb.haltIt()
         //myWbPayload(1).myExt.foreach(myExt => {
