@@ -8206,6 +8206,18 @@ case class SnowHousePipeStageExecute(
         )
       )
     )
+    val tempCond1 = (
+      rMyTakeIrq
+      && /*RegNext*/(
+        /*next=*/cMid0Front.up.isFiring//,
+        //init=False,
+      )
+      //&& cMid0Front.up.isFiring
+      //&& !setOutpModMemWord.io.psExSetPc.valid
+      //&& !setOutpModMemWord.io.shouldIgnoreInstr
+      && tempCondNonLcvDbus
+      //&& psExSetPc.valid
+    )
     when (
       (
         rHaveIrqValid
@@ -8229,18 +8241,20 @@ case class SnowHousePipeStageExecute(
       }
     }
     when (
-      rMyTakeIrq
-      && /*RegNext*/(
-        /*next=*/cMid0Front.up.isFiring//,
-        //init=False,
-      )
-      //&& cMid0Front.up.isFiring
-      //&& !setOutpModMemWord.io.psExSetPc.valid
-      //&& !setOutpModMemWord.io.shouldIgnoreInstr
-      && tempCondNonLcvDbus
-      //&& psExSetPc.valid
+      tempCond1
     ) {
       nextMyTakeIrq := False
+      //io.idsIraIrq.ready := True
+    }
+    when (
+      rose(
+        RegNextWhen(
+          tempCond1,
+          cond=cMid0Front.up.isFiring,
+          init=tempCond1.getZero,
+        )
+      )
+    ) {
       io.idsIraIrq.ready := True
     }
     when (
