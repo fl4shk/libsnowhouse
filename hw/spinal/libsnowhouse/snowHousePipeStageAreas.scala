@@ -1375,19 +1375,19 @@ private[libsnowhouse] case class SnowHouseBusBridgeCtrl(
   )
   myCpuRecvAddrFifo.io.pop.ready := (
     io.cpuBus.ready
-    && (
-      //io.bridgeBus.recvData.src
-      myCpuRecvAddrFifo.io.pop.src
-      === RegNextWhen(
-        (
-          myCpuRecvAddrFifo.io.push.src
-          //+ cfg.instrRamFetchLatency //2
-          + 2
-        ),
-        cond=myCpuRecvAddrFifo.io.push.fire,
-        init=myCpuRecvAddrFifo.io.push.src.getZero,
-      )
-    )
+    //&& (
+    //  //io.bridgeBus.recvData.src
+    //  myCpuRecvAddrFifo.io.pop.src
+    //  === RegNextWhen(
+    //    (
+    //      myCpuRecvAddrFifo.io.push.src
+    //      //+ cfg.instrRamFetchLatency //2
+    //      + 2
+    //    ),
+    //    cond=myCpuRecvAddrFifo.io.push.fire,
+    //    init=myCpuRecvAddrFifo.io.push.src.getZero,
+    //  )
+    //)
   )
 
   myCpuRecvBranchPredictFifo.io.push.valid := (
@@ -1774,7 +1774,10 @@ case class SnowHousePipeStageInstrFetch(
     io.lcvIbus <> myBridge.io.lcvBus
     myBridgeCtrl.io.bridgeBus <> myBridge.io.bus
     myBridgeCtrl.io.bridgeH2dPushDelay := myBridge.io.h2dPushDelay
-    myBridgeCtrl.io.myUpFireIshCond := myReadyIshCond
+    myBridgeCtrl.io.myUpFireIshCond := (
+      //myReadyIshCond
+      down.isFiring
+    )
     myBridgeCtrl.io.myUpFireIshUpdateSrcCond := (
       //myReadyIshCond
       //down.isReady
@@ -1791,8 +1794,11 @@ case class SnowHousePipeStageInstrFetch(
     down(pIf).instrCnt.any.allowOverride
     when (!myBridgeCtrl.io.cpuBus.ready) {
       //cIf.haltIt()
-      cIf.duplicateIt()
-      down(pIf).instrCnt.any := myInstrCnt.any
+      when (down.isReady) {
+        cIf.duplicateIt()
+        down(pIf).instrCnt.any := myInstrCnt.any
+        myBridgeCtrl.io.myUpFireIshUpdateSrcCond := True
+      }
     } otherwise {
     }
   }
@@ -2222,17 +2228,23 @@ case class SnowHousePipeStageInstrFetchPostLcvIbus(
     )
   )
   when (
-    myIfPostLcvIbusPayload(0).instrCnt.any.asSInt
+    up.isValid
+    && myIfPostLcvIbusPayload(0).instrCnt.any.asSInt
     =/= (
       RegNextWhen(
         myIfPostLcvIbusPayload(0).instrCnt.any.asSInt + 1,
         cond=up.isFiring,
       )
-      init(-1)
+      init(0)
     )
     && myHistUpFiring.last
   ) {
-    cIfPostLcvIbus.throwIt()
+    //cIfPostLcvIbus.throwIt()
+    //myIfPostLcvIbusPayload(1) := (
+    //  myIfPostLcvIbusPayload(1).getZero
+    //)
+    cIfPostLcvIbus.forgetOneNow()
+    //cIfPostLcvIbus.terminateIt()
   }
 }
 //case class SnowHouseDspAddSubHistoryIo(
