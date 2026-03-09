@@ -7601,8 +7601,11 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
       && io.upIsValid
     ) {
       //io.shouldIgnoreInstr(idx) := False
-      when (io.rHadRetIra) {
-        nextIe := True
+      if (idx == 0) {
+        when (io.rHadRetIra) {
+          nextIe := True
+          nextHadRetIra := False
+        }
       }
     } 
     //elsewhen (
