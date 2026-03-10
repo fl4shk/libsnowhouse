@@ -1950,33 +1950,33 @@ case class SnowHousePipeStageInstrFetchLcvIbus(
       ),
     ).asUInt
   )
-  val myHistRegPc = (
-    History[UInt](
-      that=(
-        // TODO: check that this is correct
-        upModExt.regPc
-      ),
-      length=(
-        3
-        //2
-      ),
-      when=(
-        myReadyIshCond
-        //myUpdatePcCond
-      ),
-      init=upModExt.regPc.getZero,
-    )
-  )
+  //val myHistRegPc = (
+  //  History[UInt](
+  //    that=(
+  //      // TODO: check that this is correct
+  //      upModExt.regPc
+  //    ),
+  //    length=(
+  //      3
+  //      //2
+  //    ),
+  //    when=(
+  //      myReadyIshCond
+  //      //myUpdatePcCond
+  //    ),
+  //    init=upModExt.regPc.getZero,
+  //  )
+  //)
   upModExt.laggingRegPc.allowOverride
   //if (!cfg.useLcvInstrBus) {
-    upModExt.laggingRegPc := myHistRegPc.last
+  //  upModExt.laggingRegPc := myHistRegPc.last
   //} else {
   //  upModExt.laggingRegPc := (
   //    //myBridgeCtrl.io.cpuRecvAddr
   //    myBridgeCtrl.io.cpuRecvIbusInfo.regPc
   //  )
   //}
-  //upModExt.laggingRegPc := upModExt.regPc
+  upModExt.laggingRegPc := upModExt.regPc
   val myMainPredictCond = (
     branchPredictor.io.result.fire
     && !rTakeJumpCnt.fire

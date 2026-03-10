@@ -1,3 +1,0 @@
-Starting test:programStr:test/snowhousecpu-test-0.bin instrRamKind:5
-Ending test.
-
