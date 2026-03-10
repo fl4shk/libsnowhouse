@@ -419,6 +419,7 @@ case class SnowHouseBranchPredictor(
       //"block"
       //"distributed"
     ),
+    doAsyncRead=true,
   )
   val tgtSrcRegPcAndValidBuf = (
     RamSimpleDualPort(cfg=tgtSrcRegPcAndValidBufCfg)
@@ -473,6 +474,7 @@ case class SnowHouseBranchPredictor(
       //  //"MLAB"
       //)
     ),
+    doAsyncRead=true,
   )
   val tgtDstRegPcBuf = RamSimpleDualPort(cfg=tgtDstRegPcBufCfg)
   //val tgtDstRegPcAndValidBuf = (
@@ -528,11 +530,12 @@ case class SnowHouseBranchPredictor(
       //),
       //U(s"${log2Up(cfg.instrSizeBytes)}'d0"),
       //U(s"${cfg.mainWidth - cfg.mySrcRegPcCmpEqWidth}'d0")
-      RegNextWhen(
-        tgtBufRdAddr(0), //+ 1,
-        cond=tgtSrcRegPcAndValidBuf.io.ramIo.rdEn,
-        init=tgtBufRdAddr(0).getZero,
-      ),
+      //RegNextWhen(
+      //  tgtBufRdAddr(0), //+ 1,
+      //  cond=tgtSrcRegPcAndValidBuf.io.ramIo.rdEn,
+      //  init=tgtBufRdAddr(0).getZero,
+      //),
+      tgtBufRdAddr(0),
       U(s"${log2Up(cfg.instrSizeBytes)}'d0"),
     ).asUInt
   )
@@ -680,7 +683,10 @@ case class SnowHouseBranchPredictor(
     //RegNext(
       RegNext(
         //io.psExSetPc.nextPc(myTgtBufAddrRange)
-        io.psExSetPc.branchTgtBufElem.srcRegPc(myTgtBufAddrRange)
+        //io.psExSetPc.branchTgtBufElem.srcRegPc(myTgtBufAddrRange)
+        (
+          io.psExSetPc.branchTgtBufElem.srcRegPc //- cfg.instrSizeBytes//1
+        )(myTgtBufAddrRange)
         //- 1
         //+ (1 * cfg.instrSizeBytes)
       )
@@ -749,25 +755,27 @@ case class SnowHouseBranchPredictor(
     )
   )
   val myResultValidCmpEqRight = (
-    RegNextWhen(
-      next=(
+    //RegNextWhen(
+    //  next=
+      (
         io.inpRegPc(
           //2
           //0
           SnowHouseBranchPredictorKind._predictorInpRegPcIdxCmpEq
         )
+        //+ cfg.instrSizeBytes
         //- cfg.instrSizeBytes
       )(cfg.mySrcRegPcCmpEqRange),
-      cond=(
-        //io.upIsFiring
-        io.upIsReady
-      ),
-      init=io.inpRegPc(
-        //2
-        //0
-        SnowHouseBranchPredictorKind._predictorInpRegPcIdxCmpEq
-      )(cfg.mySrcRegPcCmpEqRange).getZero,
-    )
+    //  cond=(
+    //    //io.upIsFiring
+    //    io.upIsReady
+    //  ),
+    //  init=io.inpRegPc(
+    //    //2
+    //    //0
+    //    SnowHouseBranchPredictorKind._predictorInpRegPcIdxCmpEq
+    //  )(cfg.mySrcRegPcCmpEqRange).getZero,
+    //)
   )
   io.result.valid := (
     myRdBtbElem.fire
@@ -2004,34 +2012,98 @@ case class SnowHousePipeStageInstrFetchLcvIbus(
     cfg.haveBranchPredictor
   ) generate (
     Mux[SInt](
-      predictCond,
-      branchPredictor.io.result.nextRegPc.asSInt,
+      (
+        predictCond
+        //RegNextWhen(
+        //  predictCond,
+        //  cond=up.isFiring,
+        //  init=predictCond.getZero,
+        //)
+      ),
+      (
+        branchPredictor.io.result.nextRegPc.asSInt
+        //RegNextWhen(
+        //  branchPredictor.io.result.nextRegPc.asSInt,
+        //  cond=up.isFiring,
+        //  init=branchPredictor.io.result.nextRegPc.asSInt.getZero,
+        //)
+      ),
       (
         //tempNextRegPc
         myTempNextRegPcMaybeDel1
       ),
     ).asUInt
   )
+  //val myPredictedNextPc1 = (
+  //  cfg.haveBranchPredictor
+  //) generate (
+  //  Mux[SInt](
+  //    (
+  //      predictCond
+  //      //RegNextWhen(
+  //      //  predictCond,
+  //      //  cond=up.isFiring,
+  //      //  init=predictCond.getZero,
+  //      //)
+  //    ),
+  //    (
+  //      branchPredictor.io.result.nextRegPc.asSInt
+  //      //RegNextWhen(
+  //      //  branchPredictor.io.result.nextRegPc.asSInt,
+  //      //  cond=up.isFiring,
+  //      //  init=branchPredictor.io.result.nextRegPc.asSInt.getZero,
+  //      //)
+  //    ),
+  //    (
+  //      //tempNextRegPc
+  //      myTempNextRegPcMaybeDel1
+  //    ),
+  //  ).asUInt
+  //)
   if (cfg.haveBranchPredictor) {
     for (idx <- 0 until branchPredictor.io.inpRegPc.size) {
-      when (!rTakeJumpCnt.fire) {
-        // TODO: determine if this is correct!
-        branchPredictor.io.inpRegPc(idx) := (
-          myPredictedNextPc
-          //Cat(
-          //  (rPrevRegPc(0) + 1),
-          //  myRegPcShiftThing,
-          //).asUInt
-        )
-      } otherwise {
+      //when (!rTakeJumpCnt.fire) {
+      //  //when (predictCond) {
+      //  //  branchPredictor.io.inpRegPc(idx) := (
+      //  //  )
+      //  //} otherwise {
+      //  //}
+      //  // TODO: determine if this is correct!
+      //  //branchPredictor.io.inpRegPc(idx) := (
+      //  //  myPredictedNextPc
+      //  //  //RegNextWhen(
+      //  //  //  myPredictedNextPc//+ cfg.instrSizeBytes
+      //  //  //  cond=myReadyIshCond,
+      //  //  //  init=myPredictedNextPc.getZero
+      //  //  //)
+      //  //  //myPredictedNextPc1
+      //  //  //RegNextWhen(
+      //  //  //  myPredictedNextPc,
+      //  //  //  cond=cIf.up.isFiring,
+      //  //  //  init=myPredictedNextPc.getZero,
+      //  //  //)
+      //  //  //myPredictedNextPc
+      //  //  //Cat(
+      //  //  //  (rPrevRegPc(0) + 1),
+      //  //  //  myRegPcShiftThing,
+      //  //  //).asUInt
+      //  //)
+      //} otherwise {
         branchPredictor.io.inpRegPc(idx) := (
           //myPredictedNextPc
+          //upModExt.regPc
+          //Cat(
+          //  (rPrevRegPc(0) + 1),
+          //  //rPrevRegPc(0),
+          //  myRegPcShiftThing,
+          //).asUInt
           Cat(
             (rPrevRegPc(0) + 1),
+            //rPrevRegPc(0),
             myRegPcShiftThing,
           ).asUInt
         )
-      }
+      //}
     }
   }
   def doInitTakeJumpCnt(): Unit = {
@@ -2113,17 +2185,71 @@ case class SnowHousePipeStageInstrFetchLcvIbus(
       }
       is (M"10") {
         if (cfg.haveBranchPredictor) {
-          val temp = myPredictedNextPc
+          val temp = (
+            myPredictedNextPc
+            //RegNextWhen(
+            //  myPredictedNextPc,
+            //  cond=myReadyIshCond,
+            //  init=myPredictedNextPc.getZero,
+            //)
+          )
+          //val temp = cloneOf(myPredictedNextPc)
+          //when (
+          //  RegNextWhen(
+          //    myMainPredictCond,
+          //    cond=up.isFiring,
+          //    init=myMainPredictCond.getZero
+          //  )
+          //) {
+          //  temp := (
+          //    RegNextWhen(
+          //      myPredictedNextPc,
+          //      cond=up.isFiring,
+          //      init=myPredictedNextPc.getZero,
+          //    )
+          //  )
+          //} otherwise {
+          //  temp := (
+          //    Cat(
+          //      rPrevRegPc.last + 1,
+          //      myRegPcShiftThing,
+          //    ).asUInt
+          //    //myPredictedNextPc
+          //  )
+          //}
           //myIbus.sendData.addr := temp
-          myBusAddr := temp.resize(myBusAddr.getWidth)
-          myIbusRegPcInfo.regPc := temp
+          myBusAddr := (
+            //myIbusRegPcInfo.regPc
+            temp.resize(myBusAddr.getWidth)
+          )
+          myIbusRegPcInfo.regPc := (
+            temp
+            //RegNextWhen(
+            //  myPredictedNextPc,
+            //  cond=myReadyIshCond,
+            //  init=myPredictedNextPc.getZero,
+            //)
+          )
           myIbusRegPcInfo.branchPredictTkn.allowOverride
           myIbusRegPcInfo.branchPredictTkn := (
             //predictCond
             myMainPredictCond
+            //RegNextWhen(
+            //  myMainPredictCond,
+            //  cond=myReadyIshCond,
+            //  init=myMainPredictCond.getZero
+            //)
           )
           myIbusRegPcInfo.branchTgtBufElem.foreach(item => {
-            item := branchPredictor.io.result.rdBtbElem
+            item := (
+              branchPredictor.io.result.rdBtbElem
+              //RegNextWhen(
+              //  branchPredictor.io.result.rdBtbElem,
+              //  cond=myReadyIshCond,
+              //  init=branchPredictor.io.result.rdBtbElem.getZero,
+              //)
+              //branchPredictor.io.result.rdBtbElem
+            )
             //item.valid := myMainPredictCond
           })
         } else {
@@ -10471,6 +10597,7 @@ case class SnowHousePipeStageExecute(
   psExSetPc.branchTgtBufElem.srcRegPc := (
     RegNext(
       RegNext(
+        //(outp.laggingRegPc - cfg.instrSizeBytes),
         outp.laggingRegPc,
         //cond=cMid0Front.up.isFiring,
         init=outp.laggingRegPc.getZero,
