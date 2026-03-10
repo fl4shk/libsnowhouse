@@ -2013,20 +2013,20 @@ case class SnowHousePipeStageInstrFetchLcvIbus(
   ) generate (
     Mux[SInt](
       (
-        predictCond
-        //RegNextWhen(
-        //  predictCond,
-        //  cond=up.isFiring,
-        //  init=predictCond.getZero,
-        //)
+        //predictCond
+        RegNextWhen(
+          predictCond,
+          cond=myReadyIshCond,
+          init=predictCond.getZero,
+        )
       ),
       (
-        branchPredictor.io.result.nextRegPc.asSInt
-        //RegNextWhen(
-        //  branchPredictor.io.result.nextRegPc.asSInt,
-        //  cond=up.isFiring,
-        //  init=branchPredictor.io.result.nextRegPc.asSInt.getZero,
-        //)
+        //branchPredictor.io.result.nextRegPc.asSInt
+        RegNextWhen(
+          branchPredictor.io.result.nextRegPc.asSInt,
+          cond=myReadyIshCond,
+          init=branchPredictor.io.result.nextRegPc.asSInt.getZero,
+        )
       ),
       (
         //tempNextRegPc
@@ -5135,8 +5135,9 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
   val tempBranchPredictTkn = (
     //rose(
       //RegNext(next=io.branchPredictTkn, init=False)
-      RegNext/*When*/(
-        next=RegNextWhen(
+      //RegNext/*When*/(
+        //next=
+        RegNextWhen(
           next=(
             io.branchPredictTkn
             //|| io.branchPredictReplaceBtbElem
@@ -5151,10 +5152,10 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
             io.upIsFiring
           ),
           init=False
-        ),
+        )//,
         //cond=io.upIsFiring,
-        init=False,
-      )
+      //  init=False,
+      //)
       //&& io.upIsReady
     //)
   )
@@ -5173,14 +5174,14 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
   }
   val tempReplaceBtbElem = (
     //rose(
-      RegNext/*When*/(
-        next=(
+      //RegNext/*When*/(
+      //  next=(
           //RegNext(next=io.branchPredictReplaceBtbElem, init=False)
           io.branchPredictReplaceBtbElem
-        ),
-        //cond=io.upIsFiring,
-        init=False,
-      )
+      //  ),
+      //  //cond=io.upIsFiring,
+      //  init=False,
+      //)
     //)
   )
   val rSavedTempReplaceBtbElem = Reg(Bool(), init=False)
@@ -5198,8 +5199,8 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
   }
   val tempBtbFire = (
     //rose(
-      RegNext/*When*/(
-        next=(
+      //RegNext/*When*/(
+      //  next=(
           RegNextWhen(
             next=(
               //rose(
@@ -5224,10 +5225,10 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
             ),
             init=False
           )
-        ),
-        //cond=io.upIsFiring,
-        init=False,
-      )
+      //  ),
+      //  //cond=io.upIsFiring,
+      //  init=False,
+      //)
       //&& io.upIsReady
     //)
   )
@@ -10362,11 +10363,21 @@ case class SnowHousePipeStageExecute(
     val myTempBtbElemValid = {
       val tempCond = (
         outp.branchTgtBufElem(0).valid
-        && !myShouldIgnoreInstr.last
+        //&& !myShouldIgnoreInstr.last
         && cMid0Front.down.isReady
       )
+      //val tempCond1 = (
+      //  nextPsExSetPcValid.last
+      //  && !(
+      //    cMid0Front.up.isValid
+      //    && RegNext(myShouldIgnoreInstr.last, init=False)
+      //    && outp.regPcSetItCnt.last(0)
+      //  )
+      //)
       //if (!cfg.useLcvDataBus) (
-        tempCond
+      (
+        tempCond //&& (!tempCond1)
+      )
       //) else (
       //  tempCond && !psWbToMemStallRequest
       //)
@@ -10439,9 +10450,9 @@ case class SnowHousePipeStageExecute(
               //  //&& !prevStageFoundBubble
               //)
             )
-            when (!myShouldIgnoreInstr.last) {
+            //when (!myShouldIgnoreInstr.last) {
               doSetOtherSetOutpMmwBranchPredictorInputs(false)
-            }
+            //}
           }
         }
       } otherwise {
