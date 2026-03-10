@@ -1349,6 +1349,7 @@ case class SnowHouse
   )
   val shouldIgnoreInstr = Bool()
   val psWbToMemStallRequest = Bool()
+  val psIfLastToIfMidStallRequest = Bool()
   //--------
   val myModMemWord = SInt(cfg.mainWidth bits)
   //val psIdFoundBubble = Bool()
@@ -1507,6 +1508,27 @@ case class SnowHouse
     linkArr += sIfMid
   }
 
+  val pipeStageIfMid = (
+    cfg.useLcvInstrBus
+  ) generate (SnowHousePipeStageInstrFetchMidLcvIbus(
+    args=SnowHousePipeStageArgs(
+      cfg=cfg,
+      io=io,
+      link=cIfMid,
+      prevPayload=null,
+      currPayload=pIf,
+      myDbusIo=(
+        if (!cfg.useLcvDataBus) (
+          myDbusIo
+        ) else (
+          null.asInstanceOf[SnowHouseDbusIo]
+        )
+      ),
+      regFile=regFile,
+    ),
+    psIfLastToIfMidStallRequest=psIfLastToIfMidStallRequest,
+  ))
+
   val cIfLast = (
     cfg.useLcvInstrBus
   ) generate (
@@ -1538,23 +1560,25 @@ case class SnowHouse
     linkArr += sIfLast
   }
 
-  val s2mIfLast = (
-    cfg.useLcvInstrBus
-  ) generate (
-    StageLink(
-      up=sIfLast.down,
-      down={
-        val node = Node()
-        node.setName("s2mIfLast_down")
-        node
-      }
-    )
-  )
-  if (cfg.useLcvInstrBus) {
-    linkArr += s2mIfLast
-  }
+  //val s2mIfLast = (
+  //  cfg.useLcvInstrBus
+  //) generate (
+  //  StageLink(
+  //    up=sIfLast.down,
+  //    down={
+  //      val node = Node()
+  //      node.setName("s2mIfLast_down")
+  //      node
+  //    }
+  //  )
+  //)
+  //if (cfg.useLcvInstrBus) {
+  //  linkArr += s2mIfLast
+  //}
 
-  val pipeStageIfLast = SnowHousePipeStageInstrFetchLastLcvIbus(
+  val pipeStageIfLast = (
+    cfg.useLcvInstrBus
+  ) generate (SnowHousePipeStageInstrFetchLastLcvIbus(
     args=SnowHousePipeStageArgs(
       cfg=cfg,
       io=io,
@@ -1570,7 +1594,9 @@ case class SnowHouse
       ),
       regFile=regFile,
     ),
-  )
+    psIfLastToIfMidStallRequest=psIfLastToIfMidStallRequest,
+    psExSetPc=psExSetPc,
+  ))
 
   //val pIfPostLcvIbus = (
   //  //cfg.myHaveS2mIf
@@ -1662,7 +1688,8 @@ case class SnowHouse
         //s2mIf.down
         //sIfPostLcvIbus.down
         //s2mIfPostLcvIbus.down
-        s2mIfLast.down
+        //s2mIfLast.down
+        sIfLast.down
       )
       //s2mIf.down
     },

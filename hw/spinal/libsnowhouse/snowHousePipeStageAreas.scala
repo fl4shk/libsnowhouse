@@ -1945,20 +1945,21 @@ case class SnowHousePipeStageInstrFetchLcvIbus(
         next=upModExt.regPc.asSInt,
       )
       init(
-        //upModExt.regPc.getZero
-        -cfg.instrSizeBytes
+        upModExt.regPc.asSInt.getZero
+        //-cfg.instrSizeBytes
       ),
     ).asUInt
   )
   val myHistRegPc = (
-    !cfg.useLcvInstrBus
-  ) generate (
     History[UInt](
       that=(
         // TODO: check that this is correct
         upModExt.regPc
       ),
-      length=3,
+      length=(
+        3
+        //2
+      ),
       when=(
         myReadyIshCond
         //myUpdatePcCond
@@ -1968,14 +1969,14 @@ case class SnowHousePipeStageInstrFetchLcvIbus(
   )
   upModExt.laggingRegPc.allowOverride
   //if (!cfg.useLcvInstrBus) {
-  //  upModExt.laggingRegPc := myHistRegPc.last
+    upModExt.laggingRegPc := myHistRegPc.last
   //} else {
   //  upModExt.laggingRegPc := (
   //    //myBridgeCtrl.io.cpuRecvAddr
   //    myBridgeCtrl.io.cpuRecvIbusInfo.regPc
   //  )
   //}
-  upModExt.laggingRegPc := upModExt.regPc
+  //upModExt.laggingRegPc := upModExt.regPc
   val myMainPredictCond = (
     branchPredictor.io.result.fire
     && !rTakeJumpCnt.fire
@@ -2045,7 +2046,7 @@ case class SnowHousePipeStageInstrFetchLcvIbus(
   //    True
   //  )
   //)
-  //myBusH2dValid := True
+  //myBusH2dValid := up.isFiring//True
   myBusH2dValid := down.isReady
   when (
     //down.isReady
@@ -2053,7 +2054,8 @@ case class SnowHousePipeStageInstrFetchLcvIbus(
     myBusH2dValid
     && !io.lcvIbus.h2dBus.ready
   ) {
-    cIf.haltIt()
+    //cIf.haltIt()
+    cIf.duplicateIt()
   }
 
   val myUpdateRegPcCondUInt = (
@@ -2230,8 +2232,28 @@ case class SnowHousePipeStageInstrFetchLcvIbus(
     }
   }
 }
+case class SnowHousePipeStageInstrFetchMidLcvIbus(
+  args: SnowHousePipeStageArgs,
+  psIfLastToIfMidStallRequest: Bool,
+) extends Area {
+  def cfg = args.cfg
+  def io = args.io
+  def cIfMid = args.link
+  def pIf = args.currPayload
+  val up = cIfMid.up
+  val down = cIfMid.down
+
+  when (psIfLastToIfMidStallRequest) {
+    cIfMid.duplicateIt()
+  }
+
+  //when (up.isValid) {
+  //}
+}
 case class SnowHousePipeStageInstrFetchLastLcvIbus(
   args: SnowHousePipeStageArgs,
+  psIfLastToIfMidStallRequest: Bool,
+  psExSetPc: Flow[SnowHousePsExSetPcPayload],
 ) extends Area {
   def cfg = args.cfg
   def io = args.io
@@ -2252,29 +2274,166 @@ case class SnowHousePipeStageInstrFetchLastLcvIbus(
     myIfLastPayload(0)
   )
   myIfLastPayload(1).allowOverride
-  myIfLastPayload(1).encInstr.allowOverride
-  myIfLastPayload(1).encInstr := (
+  myIfLastPayload(1).encInstr.payload.allowOverride
+  myIfLastPayload(1).encInstr.payload := (
     RegNext(
-      next=myIfLastPayload(1).encInstr,
-      init=myIfLastPayload(1).encInstr.getZero,
+      next=myIfLastPayload(1).encInstr.payload,
+      init=myIfLastPayload(1).encInstr.payload.getZero,
     )
   )
 
   cIfLast.bypass(pIf) := myIfLastPayload(1)
 
-  io.lcvIbus.d2hBus.ready := (
-    //up.isValid
-    //&& down.isReady
-    up.isFiring
+  //val myD2hFifo = (
+  //  StreamFifo(
+  //    dataType=(
+  //      //UInt(cfg.instrMainWidth bits)
+  //      cloneOf(io.lcvIbus.d2hBus.payload)
+  //    ),
+  //    depth=(
+  //      //4
+  //      //2
+  //      8
+  //    ),
+  //    latency=0,
+  //    forFMax=true,
+  //  )
+  //)
+  //myD2hFifo.io.flush := (
+  //  RegNext(
+  //    psExSetPc.fire
+  //    || RegNext(
+  //      psExSetPc.fire,
+  //      init=False
+  //    ),
+  //    init=False
+  //  )
+  //)
+  //myD2hFifo.io.push << io.lcvIbus.d2hBus
+
+  //val myD2hPopStm = (
+  //  //myD2hFifo.io.pop
+  //  io.lcvIbus.d2hBus
+  //)
+  val myD2hThrowCond = Bool()
+  //def myD2hPopStm = io.lcvIbus.d2hBus
+  val myD2hDoThrowStm = io.lcvIbus.d2hBus.throwWhen(
+    myD2hThrowCond
+  )
+  val myD2hPopStm = cloneOf(io.lcvIbus.d2hBus)
+  myD2hPopStm << myD2hDoThrowStm
+  myD2hThrowCond := (
+    io.lcvIbus.d2hBus.src.asSInt
+    =/= (
+      RegNextWhen(
+        myD2hPopStm.src.asSInt + 1,
+        cond=(
+          myD2hPopStm.fire
+        )
+      )
+      init(1)
+    )
+    && History[Bool](
+      that=True,
+      when=(
+        //myD2hDoThrowStm.fire
+        //myD2hPopStm.valid
+        myD2hPopStm.fire
+      ),
+      length=(
+        4
+      ),
+      init=False,
+    ).last
   )
 
-  when (io.lcvIbus.d2hBus.valid) {
+  //myD2hPopStm.ready := (
+  //  //up.isValid
+  //  //&& 
+  //  //down.isReady
+  //  up.isFiring
+  //  //up.isFiring
+  //)
+  //myD2hPopStm.ready := (
+  //)
+
+  psIfLastToIfMidStallRequest := False
+  //when (
+  //  up.isValid
+  //  && !myD2hPopStm.valid
+  //) {
+  //  //psIfLastToIfMidStallRequest := True
+  //  //cIfLast.duplicateIt()
+  //  //cIfLast.haltIt()
+  //  //cIfLast.bypass(pIf) := myIfLastPayload(0).getZero 
+
+  //  // TODO: support non-all-zeros NOP
+  //  cIfLast.bypass(pIf).encInstr.payload := (
+  //    cIfLast.bypass(pIf).encInstr.payload.getZero
+  //  )
+  //} otherwise {
+  //  myIfLastPayload(1).encInstr.payload := (
+  //    myD2hPopStm.data.resize(
+  //      myIfLastPayload(1).encInstr.payload.getWidth
+  //    )
+  //  )
+  //}
+  val myHistUpFiring = (
+    History[Bool](
+      that=True,
+      length=2,
+      when=up.isFiring,
+      init=False,
+    )
+  )
+  when (
+    myD2hPopStm.valid
+  ) {
     myIfLastPayload(1).encInstr.payload := (
-      io.lcvIbus.d2hBus.data
+      myD2hPopStm.data.resize(
+        //myIfLastPayload(1).encInstr.payload.getWidth
+        cfg.instrMainWidth
+      )
+    )
+    myD2hPopStm.ready := (
+      //up.isValid
+      //&& 
+      //down.isReady
+      up.isFiring
+      //up.isFiring
     )
   } otherwise {
-    cIfLast.haltIt()
+    when (
+      myHistUpFiring.last
+      //&& myD2hThrowCond
+    ) {
+      cIfLast.haltIt()
+      //myD2hPopStm.ready := False
+    } otherwise {
+      //myD2hPopStm.ready := True
+    }
+    //cIfLast.haltIt()
+    myD2hPopStm.ready := False
   }
+  //when (
+  //  //myD2hPopStm.ready
+  //  //&& 
+  //  !myD2hPopStm.valid
+  //) {
+  //  when (myHistUpFiring.last) {
+  //    cIfLast.duplicateIt()
+  //  }
+  //  cIfLast.bypass(pIf).encInstr.payload := (
+  //    cIfLast.bypass(pIf).encInstr.payload.getZero
+  //  )
+  //} otherwise {
+  //  myIfLastPayload(1).encInstr.payload := (
+  //    myD2hPopStm.data.resize(
+  //      //myIfLastPayload(1).encInstr.payload.getWidth
+  //      cfg.instrMainWidth
+  //    )
+  //  )
+  //}
 
   //when (up.isValid) {
   //}
