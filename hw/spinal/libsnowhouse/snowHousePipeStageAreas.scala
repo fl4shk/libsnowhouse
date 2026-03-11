@@ -2132,9 +2132,7 @@ case class SnowHousePipeStageInstrFetchLcvIbus(
   //  )
   //)
   //myBusH2dValid := up.isFiring//True
-  myBusH2dValid := (
-    down.isReady
-  )
+  myBusH2dValid := down.isReady
   when (
     //down.isReady
     //!io.lcvIbus.h2dBus.fire
@@ -5042,10 +5040,10 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
     RegNext(
       (
         io.upIsFiring
-        && (
-          io.laggingRegPc
-          =/= io.psExSetPc.branchTgtBufElem.dstRegPc
-        )
+        //&& (
+        //  io.laggingRegPc
+        //  =/= io.psExSetPc.branchTgtBufElem.dstRegPc
+        //)
       ),
       init=False
     )
