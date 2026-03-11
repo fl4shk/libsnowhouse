@@ -5036,16 +5036,65 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
   //  myPsExSetPcValid := False
   //  rSavedPastUpIsFiring := False
   //}
+  val myTempPsExSetPcDstRegPc = Vec.fill(2)(
+    //Reg(
+      cloneOf(io.psExSetPc.branchTgtBufElem.dstRegPc)//,
+      //init=io.psExSetPc.branchTgtBufElem.dstRegPc,
+    //)
+  )
+  myTempPsExSetPcDstRegPc := (
+    RegNext(
+      myTempPsExSetPcDstRegPc,
+      init=myTempPsExSetPcDstRegPc.getZero
+    )
+  )
+  val myTempPsExSetPcSrcRegPc = (
+    //Reg(
+      cloneOf(io.psExSetPc.branchTgtBufElem.srcRegPc)//,
+    //  init=io.psExSetPc.branchTgtBufElem.srcRegPc.getZero
+    //)
+  )
+  //stickyTempPsExSetPcSrcRegPc := (
+  //  RegNext(
+  //    stickyTempPsExSetPcSrcRegPc,
+  //    init=stickyTempPsExSetPcSrcRegPc.getZero
+  //  )
+  //)
+  //when (
+  //  //io.psExSetPc.fire
+  //  //myPsExSetPcValid
+  //  io.splitOp.exSetNextPcKind
+  //  =/= SnowHousePsExSetNextPcKind.Dont
+  //) {
+    //stickyTempPsExSetPcDstRegPc := (
+    //  io.psExSetPc.branchTgtBufElem.dstRegPc
+    //  //io.laggingRegPc
+    //)
+    myTempPsExSetPcSrcRegPc := (
+      io.laggingRegPc
+      //io.psExSetPc.branchTgtBufElem.srcRegPc
+      //io.laggingRegPc
+    )
+  //}
   when (
     RegNext(
       (
         io.upIsFiring
         //&& (
         //  io.laggingRegPc
-        //  =/= io.psExSetPc.branchTgtBufElem.dstRegPc
+        //  =/= stickyTempPsExSetPcDstRegPc
+        //  //io.psExSetPc.branchTgtBufElem.dstRegPc
         //)
       ),
       init=False
+    )
+    && (
+      myTempPsExSetPcSrcRegPc
+      =/= myTempPsExSetPcDstRegPc.last
+      && (
+        io.splitOp.exSetNextPcKind
+        =/= SnowHousePsExSetNextPcKind.Dont
+      )
     )
     //&& !io.shouldIgnoreInstr.last
   ) {
@@ -7971,11 +8020,14 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
         io.psExSetPc.branchTgtBufElem.valid := (
           False
         )
-        io.psExSetPc.branchTgtBufElem.dstRegPc := (
+        myTempPsExSetPcDstRegPc := (
           RegNext(
-            io.psExSetPc.branchTgtBufElem.dstRegPc,
-            init=io.psExSetPc.branchTgtBufElem.dstRegPc.getZero,
+            myTempPsExSetPcDstRegPc,
+            init=myTempPsExSetPcDstRegPc.getZero,
           )
+        )
+        io.psExSetPc.branchTgtBufElem.dstRegPc := (
+          myTempPsExSetPcDstRegPc.head
         )
         //io.psExSetPc.branchTgtBufElem.srcRegPc := (
         //  RegNext(
@@ -8035,20 +8087,25 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
           io.psExSetPc.branchTgtBufElem.dstRegPc.high
           downto log2Up(cfg.instrSizeBytes)
         )
-        io.psExSetPc.branchTgtBufElem.dstRegPc := 0x0
-        io.psExSetPc.branchTgtBufElem.dstRegPc(myDstPcRange) := (
-          RegNext(
-            (
-              io.laggingRegPcPlus1InstrSize(myDstPcRange) + io.imm.last
-            ).resize(
-              io.psExSetPc.branchTgtBufElem.dstRegPc(
+        myTempPsExSetPcDstRegPc.foreach(item => {
+          item := 0x0
+          item(myDstPcRange) := (
+            RegNext(
+              (
+                io.laggingRegPcPlus1InstrSize(myDstPcRange) + io.imm.last
+              ).resize(
+                item(
+                  myDstPcRange
+                ).getWidth
+              ),
+              init=item(
                 myDstPcRange
-              ).getWidth
-            ),
-            init=io.psExSetPc.branchTgtBufElem.dstRegPc(
-              myDstPcRange
-            ).getZero,
+              ).getZero,
+            )
           )
+        })
+        io.psExSetPc.branchTgtBufElem.dstRegPc := (
+          myTempPsExSetPcDstRegPc.head
         )
         //def mySrcPcRange = (
         //  io.psExSetPc.branchTgtBufElem.srcRegPc.high
@@ -8091,13 +8148,18 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
         io.psExSetPc.branchTgtBufElem.valid := (
           False
         )
-        io.psExSetPc.branchTgtBufElem.dstRegPc := (
-          RegNext(
-            io.rdMemWord(io.jmpAddrIdx)(
-              cfg.mainAddrWidth - 1 downto 0
-            ),
-            init=io.psExSetPc.branchTgtBufElem.dstRegPc.getZero,
+        myTempPsExSetPcDstRegPc.foreach(item => {
+          item := (
+            RegNext(
+              io.rdMemWord(io.jmpAddrIdx)(
+                cfg.mainAddrWidth - 1 downto 0
+              ),
+              init=item.getZero,
+            )
           )
+        })
+        io.psExSetPc.branchTgtBufElem.dstRegPc := (
+          myTempPsExSetPcDstRegPc.head
         )
         //io.psExSetPc.branchTgtBufElem.srcRegPc := (
         //  RegNext(
@@ -8125,13 +8187,18 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
         io.psExSetPc.branchTgtBufElem.valid := (
           False
         )
-        io.psExSetPc.branchTgtBufElem.dstRegPc := (
-          RegNext(
-            io.rIra(
-              cfg.mainAddrWidth - 1 downto 0
-            ),
-            init=io.psExSetPc.branchTgtBufElem.dstRegPc.getZero,
+        myTempPsExSetPcDstRegPc.foreach(item => {
+          item := (
+            RegNext(
+              io.rIra(
+                cfg.mainAddrWidth - 1 downto 0
+              ),
+              init=item.getZero,
+            )
           )
+        })
+        io.psExSetPc.branchTgtBufElem.dstRegPc := (
+          myTempPsExSetPcDstRegPc.head
         )
         //io.psExSetPc.branchTgtBufElem.srcRegPc := (
         //  RegNext(
@@ -8159,13 +8226,18 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
         io.psExSetPc.branchTgtBufElem.valid := (
           False
         )
-        io.psExSetPc.branchTgtBufElem.dstRegPc := (
-          RegNext(
-            io.rIds(
-              cfg.mainAddrWidth - 1 downto 0
-            ),
-            init=io.psExSetPc.branchTgtBufElem.dstRegPc.getZero,
+        myTempPsExSetPcDstRegPc.foreach(item => {
+          item := (
+            RegNext(
+              io.rIds(
+                cfg.mainAddrWidth - 1 downto 0
+              ),
+              init=item.getZero,
+            )
           )
+        })
+        io.psExSetPc.branchTgtBufElem.dstRegPc := (
+          myTempPsExSetPcDstRegPc.head
         )
         //io.psExSetPc.branchTgtBufElem.srcRegPc := (
         //  RegNext(
