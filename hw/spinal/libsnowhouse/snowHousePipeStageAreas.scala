@@ -4837,6 +4837,7 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
     )
   //}
 
+  val stickyTempBtbFire = Bool()
   val myPsExSetPcValid = (
     ///*LcvFastOrR*/(
     //  ///*self=*/Vec[Bool](
@@ -4868,7 +4869,13 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
     )
     //False
   )
-  val tempBranchMispredictNotTaken = Bool()
+  val tempBranchMispredictNotTaken = Vec.fill(2)(
+    Bool()
+  )
+  tempBranchMispredictNotTaken.head := False
+  tempBranchMispredictNotTaken.last := (
+    tempBranchMispredictNotTaken.head
+  )
   val myTempBranchToItselfCond = Vec.fill(2)(
     Bool()
   )
@@ -4878,6 +4885,7 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
       init=myTempBranchToItselfCond.getZero,
     )
   )
+  val stickyTempClearBranchToItselfCond = Bool()
 
   when (
     RegNext(io.upIsFiring, init=False)
@@ -4946,7 +4954,7 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
   //}
 
   when (
-    tempBranchMispredictNotTaken
+    tempBranchMispredictNotTaken.last
     //&& RegNextWhen(
     //  !myPsExSetPcValid
     //)
@@ -4959,13 +4967,67 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
   }
   when (
     RegNextWhen(
-      myTempBranchToItselfCond.last,
+      myTempBranchToItselfCond.head,
       cond=io.upIsFiring,
-      init=myTempBranchToItselfCond.last.getZero
+      init=False,
     )
   ) {
-    myTempBranchToItselfCond.head := False
-    myTempBranchToItselfCond.last := True
+    tempBranchMispredictNotTaken.head := False
+    tempBranchMispredictNotTaken.last := False
+  }
+  stickyTempClearBranchToItselfCond := (
+    RegNext(
+      stickyTempClearBranchToItselfCond,
+      init=stickyTempClearBranchToItselfCond.getZero,
+    )
+  )
+  when (
+    RegNext(io.upIsFiring, init=False)
+  ) {
+    stickyTempClearBranchToItselfCond := (
+      (
+        myTempBranchToItselfCond.last
+        && RegNext(
+          !stickyTempBtbFire,
+          init=False
+        )
+      )
+      || (
+        RegNextWhen(
+          (
+            stickyTempClearBranchToItselfCond
+            //&& myTempBranchToItselfCond.last
+          ),
+          cond=io.upIsFiring,
+          init=False
+        )
+        && RegNext(
+          (
+            io.laggingRegPc
+            === RegNextWhen(
+              io.laggingRegPc,
+              cond=io.upIsFiring,
+              init=io.laggingRegPc.getZero,
+            )
+          ),
+          init=False
+        )
+      )
+    )
+  }
+  when (
+    //RegNextWhen(
+    //  (
+    //    myTempBranchToItselfCond.last
+    //    && stickyTempBtbFire
+    //  ),
+    //  cond=io.upIsFiring,
+    //  init=False
+    //)
+    stickyTempClearBranchToItselfCond
+  ) {
+    myTempBranchToItselfCond.head := True
+    //myTempBranchToItselfCond.last := True
   }
 
   //when (
@@ -5411,7 +5473,7 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
     //)
   )
   val rSavedTempBtbFire = Reg(Bool(), init=False)
-  val stickyTempBtbFire = (
+  stickyTempBtbFire := (
     tempBtbFire
     || rSavedTempBtbFire
   )
@@ -5425,7 +5487,9 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
   }
 
   tempPsExSetPcValid := False
-  tempBranchMispredictNotTaken := False
+  //tempBranchMispredictNotTaken.foreach(item => {
+  //  item := False
+  //})
 
   val nextTempPsExSetPcValid = (
     /*rose*/(
@@ -5488,9 +5552,9 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
     ) {
       tempPsExSetPcValid := (
         nextTempPsExSetPcValid
-        || tempBranchMispredictNotTaken
+        || tempBranchMispredictNotTaken.head
       )
-      tempBranchMispredictNotTaken := (
+      tempBranchMispredictNotTaken.head := (
         (
           (
             //tempBranchPredictTkn
@@ -5536,7 +5600,7 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
           //)
         )
       )
-      tempBranchMispredictNotTaken := (
+      tempBranchMispredictNotTaken.head := (
         //myPsExSetPcValid
         False
         //True
@@ -8150,49 +8214,58 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
             init=io.psExSetPc.branchKind.getZero,
           )
         )
-        io.psExSetPc.nextPc := (
-          //Mux[UInt](
-          //  tempPsExSetPcTaken,
-            RegNext(
-              next=(
-                io.regPcPlusImm
-                //- (3 * cfg.instrSizeBytes)
-              ),
-              init=io.regPcPlusImm.getZero,
-            ) //+ cfg.instrSizeBytes
-            //io.regPcPlusImmRealDst//, //+ cfg.instrSizeBytes
-          //  io.mySavedRegPcPlusInstrSize/*.payload*/,
-          //  //RegNextWhen(
-          //  //  next=RegNextWhen(
-          //  //    next=io.regPc,
-          //  //    cond=io.upIsFiring,
-          //  //    init=io.regPc.getZero,
-          //  //  ),
-          //  //  cond=io.upIsFiring,
-          //  //  init=io.regPc.getZero,
-          //  //) + (1 * cfg.instrSizeBytes),
-          //)
-          //+ Mux[UInt](
-          //  /*RegNext*/(
-          //    /*next=*/(
-          //      //io.btbElemValid
-          //      //&& !io.btbElemDontPredict
-          //      //&& 
-          //      io.branchPredictTkn
-          //    ),
-          //  //  init=False,
-          //  ),
-          //  U(s"${cfg.mainWidth}'d${2 * cfg.instrSizeBytes}"),
-          //  //(-S(s"${cfg.mainWidth}'d1")).asUInt,
-          //  U(s"${cfg.mainWidth}'d0"),
-          //)
-        )
-        io.psExSetPc.branchTgtBufElem.valid := (
-          True
-        )
+        //io.psExSetPc.nextPc := (
+        //  //Mux[UInt](
+        //  //  tempPsExSetPcTaken,
+        //    RegNext(
+        //      next=(
+        //        io.regPcPlusImm
+        //        //- (3 * cfg.instrSizeBytes)
+        //      ),
+        //      init=io.regPcPlusImm.getZero,
+        //    ) //+ cfg.instrSizeBytes
+        //    //io.regPcPlusImmRealDst//, //+ cfg.instrSizeBytes
+        //  //  io.mySavedRegPcPlusInstrSize/*.payload*/,
+        //  //  //RegNextWhen(
+        //  //  //  next=RegNextWhen(
+        //  //  //    next=io.regPc,
+        //  //  //    cond=io.upIsFiring,
+        //  //  //    init=io.regPc.getZero,
+        //  //  //  ),
+        //  //  //  cond=io.upIsFiring,
+        //  //  //  init=io.regPc.getZero,
+        //  //  //) + (1 * cfg.instrSizeBytes),
+        //  //)
+        //  //+ Mux[UInt](
+        //  //  /*RegNext*/(
+        //  //    /*next=*/(
+        //  //      //io.btbElemValid
+        //  //      //&& !io.btbElemDontPredict
+        //  //      //&& 
+        //  //      io.branchPredictTkn
+        //  //    ),
+        //  //  //  init=False,
+        //  //  ),
+        //  //  U(s"${cfg.mainWidth}'d${2 * cfg.instrSizeBytes}"),
+        //  //  //(-S(s"${cfg.mainWidth}'d1")).asUInt,
+        //  //  U(s"${cfg.mainWidth}'d0"),
+        //  //)
+        //)
         def myDstPcRange = (
           io.psExSetPc.branchTgtBufElem.dstRegPc.high
           downto log2Up(cfg.instrSizeBytes)
+        )
+        io.psExSetPc.nextPc := 0x0
+        io.psExSetPc.nextPc(myDstPcRange) := (
+          RegNext(
+            (
+              io.laggingRegPcPlus1InstrSize(myDstPcRange) + io.imm.last
+            ).resize(io.psExSetPc.nextPc(myDstPcRange).getWidth),
+            init=io.psExSetPc.nextPc(myDstPcRange).getZero,
+          )
+        )
+        io.psExSetPc.branchTgtBufElem.valid := (
+          True
         )
         myTempPsExSetPcDstRegPc.foreach(item => {
           item := 0x0
@@ -8201,13 +8274,9 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
               (
                 io.laggingRegPcPlus1InstrSize(myDstPcRange) + io.imm.last
               ).resize(
-                item(
-                  myDstPcRange
-                ).getWidth
+                item(myDstPcRange).getWidth
               ),
-              init=item(
-                myDstPcRange
-              ).getZero,
+              init=item(myDstPcRange).getZero,
             )
           )
         })
@@ -8704,7 +8773,7 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
   when (
     //!io.takeIrq
     //&&
-    tempBranchMispredictNotTaken
+    tempBranchMispredictNotTaken.last
     //&& !tempReplaceBtbElem
     //&& !RegNext(
     //  next=io.branchPredictReplaceBtbElem,
@@ -9517,7 +9586,7 @@ case class SnowHousePipeStageExecute(
   setOutpModMemWord.io.regPcPlusInstrSize := outp.regPcPlusInstrSize
   setOutpModMemWord.io.regPcPlusImm := (
     outp.regPcPlusImm
-    - (1 * cfg.instrSizeBytes)
+    //- (1 * cfg.instrSizeBytes)
   )
   //setOutpModMemWord.io.regPcPlusImmRealDst := (
   //  outp.branchTgtBufElem(1).dstRegPc
