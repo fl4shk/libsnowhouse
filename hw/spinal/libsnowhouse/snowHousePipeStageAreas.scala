@@ -2092,6 +2092,7 @@ case class SnowHousePipeStageInstrFetchLcvIbus(
       //  //  //).asUInt
       //  //)
       //} otherwise {
+      when (myReadyIshCond) {
         branchPredictor.io.inpRegPc(idx) := (
           //myPredictedNextPc
           //upModExt.regPc
@@ -2106,6 +2107,14 @@ case class SnowHousePipeStageInstrFetchLcvIbus(
             myRegPcShiftThing,
           ).asUInt
         )
+      } otherwise {
+        branchPredictor.io.inpRegPc(idx) := (
+          RegNext(
+            branchPredictor.io.inpRegPc(idx),
+            init=branchPredictor.io.inpRegPc(idx).getZero,
+          )
+        )
+      }
       //}
     }
   }
@@ -10644,6 +10653,17 @@ case class SnowHousePipeStageExecute(
         init=outp.branchTgtBufElem(1).includesLdBubble.getZero,
       ),
       init=outp.branchTgtBufElem(1).includesLdBubble.getZero,
+    )
+  )
+  psExSetPc.branchTgtBufElem.dontPredict.allowOverride
+  psExSetPc.branchTgtBufElem.dontPredict := (
+    RegNext(
+      RegNext(
+        outp.branchTgtBufElem(1).dontPredict,
+        //cond=cMid0Front.up.isFiring,
+        init=outp.branchTgtBufElem(1).dontPredict.getZero,
+      ),
+      init=outp.branchTgtBufElem(1).dontPredict.getZero,
     )
   )
   //psExSetPc.branchTgtBufElem.srcRegPc := (
