@@ -2094,18 +2094,19 @@ case class SnowHousePipeStageInstrFetchLcvIbus(
       //} otherwise {
       when (myReadyIshCond) {
         branchPredictor.io.inpRegPc(idx) := (
-          //myPredictedNextPc
-          //upModExt.regPc
+          myPredictedNextPc
+          ////myPredictedNextPc
+          ////upModExt.regPc
+          ////Cat(
+          ////  (rPrevRegPc(0) + 1),
+          ////  //rPrevRegPc(0),
+          ////  myRegPcShiftThing,
+          ////).asUInt
           //Cat(
           //  (rPrevRegPc(0) + 1),
           //  //rPrevRegPc(0),
           //  myRegPcShiftThing,
           //).asUInt
-          Cat(
-            (rPrevRegPc(0) + 1),
-            //rPrevRegPc(0),
-            myRegPcShiftThing,
-          ).asUInt
         )
       } otherwise {
         branchPredictor.io.inpRegPc(idx) := (
