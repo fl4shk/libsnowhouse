@@ -381,7 +381,7 @@ case class SnowHouseSubConfig(
       isIcache=true,
     )
   )
-  def myLcvBusSrcWidth = 2
+  def myLcvBusSrcWidth = 5//2
   val lcvIbusMainCfg = (
     LcvBusMainConfig(
       dataWidth=(

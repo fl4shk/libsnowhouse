@@ -536,8 +536,9 @@ case class SnowHouseInstrDataDualRam(
       )
     )
     //io.lcvIbus <> icache.io.loBus
-    io.lcvIbus.h2dBus >/-> icache.io.loBus.h2dBus
-    io.lcvIbus.d2hBus <-/< icache.io.loBus.d2hBus
+    //io.lcvIbus.h2dBus >/-> icache.io.loBus.h2dBus
+    //io.lcvIbus.d2hBus <-/< icache.io.loBus.d2hBus
+    icache.io.loBus << io.lcvIbus
     myMemIo.bus <> icache.io.hiBus
   })
   val lcvDataRamArea = (
