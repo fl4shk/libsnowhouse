@@ -1383,19 +1383,19 @@ private[libsnowhouse] case class SnowHouseBusBridgeCtrl(
   )
   myCpuRecvAddrFifo.io.pop.ready := (
     io.cpuBus.ready
-    && (
-      //io.bridgeBus.recvData.src
-      myCpuRecvAddrFifo.io.pop.src
-      === RegNextWhen(
-        (
-          myCpuRecvAddrFifo.io.push.src
-          //+ cfg.instrRamFetchLatency //2
-          + 2
-        ),
-        cond=myCpuRecvAddrFifo.io.push.fire,
-        init=myCpuRecvAddrFifo.io.push.src.getZero,
-      )
-    )
+    //&& (
+    //  //io.bridgeBus.recvData.src
+    //  myCpuRecvAddrFifo.io.pop.src
+    //  === RegNextWhen(
+    //    (
+    //      myCpuRecvAddrFifo.io.push.src
+    //      //+ cfg.instrRamFetchLatency //2
+    //      + 2
+    //    ),
+    //    cond=myCpuRecvAddrFifo.io.push.fire,
+    //    init=myCpuRecvAddrFifo.io.push.src.getZero,
+    //  )
+    //)
   )
 
   myCpuRecvBranchPredictFifo.io.push.valid := (
@@ -1417,17 +1417,17 @@ private[libsnowhouse] case class SnowHouseBusBridgeCtrl(
   myCpuRecvBranchPredictFifo.io.pop.ready := (
     //if (cfg.instrRamFetchLatency > 0) (
       io.cpuBus.ready
-      && (
-        //io.bridgeBus.recvData.src
-        myCpuRecvBranchPredictFifo.io.pop.src
-        === RegNextWhen(
-          (
-            myCpuRecvBranchPredictFifo.io.push.src //+ 1
-          ),
-          cond=myCpuRecvBranchPredictFifo.io.push.fire,
-          init=myCpuRecvBranchPredictFifo.io.push.src.getZero,
-        )
-      )
+      //&& (
+      //  //io.bridgeBus.recvData.src
+      //  myCpuRecvBranchPredictFifo.io.pop.src
+      //  === RegNextWhen(
+      //    (
+      //      myCpuRecvBranchPredictFifo.io.push.src //+ 1
+      //    ),
+      //    cond=myCpuRecvBranchPredictFifo.io.push.fire,
+      //    init=myCpuRecvBranchPredictFifo.io.push.src.getZero,
+      //  )
+      //)
     //) else (
     //  io.cpuBus.ready
     //)
@@ -1927,9 +1927,13 @@ case class SnowHousePipeStageInstrFetch(
       //cIf.terminateIt()
     }
 
-    when (!myBridgeCtrl.io.cpuExtraReady) {
-      cIf.haltIt()
-      myReadyIshCond := False
+    when (
+      !myBridgeCtrl.io.cpuExtraReady
+    ) {
+      when (!myBridgeCtrl.io.cpuBus.ready) {
+        cIf.haltIt()
+        myReadyIshCond := False
+      }
     }
   }
 
