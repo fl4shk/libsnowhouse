@@ -1990,6 +1990,10 @@ case class SnowHousePipeStageInstrFetchLcvIbus(
   upModExt.laggingRegPc := upModExt.regPc
   val myMainPredictCond = (
     branchPredictor.io.result.fire
+    && (
+      !stickyExSetPc(0).fire
+      || !stickyExSetPc(0).branchTgtBufElem.dontPredict
+    )
     //&& !rTakeJumpCnt.fire
   )
   val predictCond = (
@@ -4790,6 +4794,84 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
   //    init=item.getZero,
   //  )
   //})
+  val stickyTakeIrq = Bool()
+
+  val myTempPsExSetPcDstRegPc = Vec.fill(2)(
+    //Reg(
+      cloneOf(io.psExSetPc.branchTgtBufElem.dstRegPc)//,
+      //init=io.psExSetPc.branchTgtBufElem.dstRegPc,
+    //)
+  )
+  myTempPsExSetPcDstRegPc := (
+    RegNext(
+      myTempPsExSetPcDstRegPc,
+      init=myTempPsExSetPcDstRegPc.getZero
+    )
+  )
+  val myTempPsExSetPcSrcRegPc = (
+    //Reg(
+      cloneOf(io.psExSetPc.branchTgtBufElem.srcRegPc)//,
+    //  init=io.psExSetPc.branchTgtBufElem.srcRegPc.getZero
+    //)
+  )
+  //stickyTempPsExSetPcSrcRegPc := (
+  //  RegNext(
+  //    stickyTempPsExSetPcSrcRegPc,
+  //    init=stickyTempPsExSetPcSrcRegPc.getZero
+  //  )
+  //)
+  //when (
+  //  //io.psExSetPc.fire
+  //  //myPsExSetPcValid
+  //  io.splitOp.exSetNextPcKind
+  //  =/= SnowHousePsExSetNextPcKind.Dont
+  //) {
+    //stickyTempPsExSetPcDstRegPc := (
+    //  io.psExSetPc.branchTgtBufElem.dstRegPc
+    //  //io.laggingRegPc
+    //)
+    myTempPsExSetPcSrcRegPc := (
+      io.laggingRegPc
+      //io.psExSetPc.branchTgtBufElem.srcRegPc
+      //io.laggingRegPc
+    )
+  //}
+  val myTempBranchToItselfCond = (
+    //myTempPsExSetPcSrcRegPc
+    //=/= 
+    //RegNextWhen(
+    //  myTempPsExSetPcSrcRegPc,
+    //  cond=io.upIsFiring,
+    //  init=myTempPsExSetPcSrcRegPc,
+    //)
+    //RegNext(
+    //  myTempPsExSetPcSrcRegPc,
+    //  init=myTempPsExSetPcSrcRegPc.getZero
+    //)
+    (
+      myTempPsExSetPcSrcRegPc
+      =/= myTempPsExSetPcDstRegPc.last
+      //&& io.upIsValid
+      && (
+        RegNext(
+          (
+            io.splitOp.exSetNextPcKind
+            =/= SnowHousePsExSetNextPcKind.Dont
+          ),
+          init=False
+        )
+      )
+    )
+    //|| RegNextWhen(
+    //  RegNextWhen(
+    //    stickyTakeIrq,
+    //    cond=io.upIsFiring,
+    //    //init=stickyTakeIrq.getZero,
+    //  ),
+    //  cond=io.upIsFiring,
+    //  init=stickyTakeIrq.getZero,
+    //)
+  )
 
   def enumExSetPcValidCond/*U*/ = 0
   //def enumExSetPcValidCondS = 1
@@ -5036,50 +5118,11 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
   //  myPsExSetPcValid := False
   //  rSavedPastUpIsFiring := False
   //}
-  val myTempPsExSetPcDstRegPc = Vec.fill(2)(
-    //Reg(
-      cloneOf(io.psExSetPc.branchTgtBufElem.dstRegPc)//,
-      //init=io.psExSetPc.branchTgtBufElem.dstRegPc,
-    //)
-  )
-  myTempPsExSetPcDstRegPc := (
-    RegNext(
-      myTempPsExSetPcDstRegPc,
-      init=myTempPsExSetPcDstRegPc.getZero
-    )
-  )
-  val myTempPsExSetPcSrcRegPc = (
-    //Reg(
-      cloneOf(io.psExSetPc.branchTgtBufElem.srcRegPc)//,
-    //  init=io.psExSetPc.branchTgtBufElem.srcRegPc.getZero
-    //)
-  )
-  //stickyTempPsExSetPcSrcRegPc := (
-  //  RegNext(
-  //    stickyTempPsExSetPcSrcRegPc,
-  //    init=stickyTempPsExSetPcSrcRegPc.getZero
-  //  )
-  //)
-  //when (
-  //  //io.psExSetPc.fire
-  //  //myPsExSetPcValid
-  //  io.splitOp.exSetNextPcKind
-  //  =/= SnowHousePsExSetNextPcKind.Dont
-  //) {
-    //stickyTempPsExSetPcDstRegPc := (
-    //  io.psExSetPc.branchTgtBufElem.dstRegPc
-    //  //io.laggingRegPc
-    //)
-    myTempPsExSetPcSrcRegPc := (
-      io.laggingRegPc
-      //io.psExSetPc.branchTgtBufElem.srcRegPc
-      //io.laggingRegPc
-    )
-  //}
   when (
     RegNext(
       (
         io.upIsFiring
+        //&& !io.shouldIgnoreInstr(1)
         //&& (
         //  io.laggingRegPc
         //  =/= stickyTempPsExSetPcDstRegPc
@@ -5087,14 +5130,6 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
         //)
       ),
       init=False
-    )
-    && (
-      myTempPsExSetPcSrcRegPc
-      =/= myTempPsExSetPcDstRegPc.last
-      && (
-        io.splitOp.exSetNextPcKind
-        =/= SnowHousePsExSetNextPcKind.Dont
-      )
     )
     //&& !io.shouldIgnoreInstr.last
   ) {
@@ -5473,7 +5508,7 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
     && io.rIe
   )
   val rSavedTakeIrq = Reg(Bool(), init=False)
-  val stickyTakeIrq = (
+  stickyTakeIrq := (
     //io.takeIrq
     myTakeIrq
     || rSavedTakeIrq
@@ -5551,6 +5586,9 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
           !io.shouldIgnoreInstr(0),
           cond=io.upIsFiring,
           init=False
+        )
+        && (
+          myTempBranchToItselfCond
         )
         //&& io.upIsFiring
         //&& RegNext(
@@ -8581,6 +8619,12 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
   io.psExSetPc.branchTgtBufElem.dontPredict.allowOverride
   io.psExSetPc.branchTgtBufElem.dontPredict := (
     io.btbElemDontPredict
+    || stickyTakeIrq
+    || RegNextWhen(
+      stickyTakeIrq,
+      cond=io.upIsFiring,
+      init=stickyTakeIrq.getZero,
+    )
     //stickyTempBtbElemDontPredict
   )
   when (
@@ -10735,17 +10779,17 @@ case class SnowHousePipeStageExecute(
       init=outp.branchTgtBufElem(1).includesLdBubble.getZero,
     )
   )
-  psExSetPc.branchTgtBufElem.dontPredict.allowOverride
-  psExSetPc.branchTgtBufElem.dontPredict := (
-    RegNext(
-      RegNext(
-        outp.branchTgtBufElem(1).dontPredict,
-        //cond=cMid0Front.up.isFiring,
-        init=outp.branchTgtBufElem(1).dontPredict.getZero,
-      ),
-      init=outp.branchTgtBufElem(1).dontPredict.getZero,
-    )
-  )
+  //psExSetPc.branchTgtBufElem.dontPredict.allowOverride
+  //psExSetPc.branchTgtBufElem.dontPredict := (
+  //  RegNext(
+  //    RegNext(
+  //      outp.branchTgtBufElem(1).dontPredict,
+  //      //cond=cMid0Front.up.isFiring,
+  //      init=outp.branchTgtBufElem(1).dontPredict.getZero,
+  //    ),
+  //    init=outp.branchTgtBufElem(1).dontPredict.getZero,
+  //  )
+  //)
   //psExSetPc.branchTgtBufElem.srcRegPc := (
   //  RegNext(
   //    setOutpModMemWord.io.psExSetPc.branchTgtBufElem.srcRegPc,
