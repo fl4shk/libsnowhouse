@@ -1933,8 +1933,8 @@ case class SnowHousePipeStageInstrFetchLcvIbus(
       cond=myReadyIshCond,
     )
     temp.foreach(item => {
-      item.init(item.getZero)
-      //item.init(-1)
+      //item.init(item.getZero)
+      item.init(-1)
     })
     temp
   }
