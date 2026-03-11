@@ -1753,6 +1753,8 @@ case class SnowHousePipeStageInstrFetchLcvIbus(
   //    isIbus=true,
   //  )
   //)
+  val myReadyIshCond = Bool()
+  val myReadyIshCondShared = up.isReady//down.isFiring
   def myBusH2dValid = (
     //if (!cfg.useLcvInstrBus) (
     //  io.ibus.nextValid
@@ -1773,7 +1775,10 @@ case class SnowHousePipeStageInstrFetchLcvIbus(
   io.lcvIbus.h2dBus.src := (
     RegNextWhen(
       io.lcvIbus.h2dBus.src + 1,
-      cond=io.lcvIbus.h2dBus.fire,
+      cond=(
+        io.lcvIbus.h2dBus.fire
+        //myReadyIshCond
+      ),
       init=io.lcvIbus.h2dBus.src.getZero,
     )
   )
@@ -1790,8 +1795,6 @@ case class SnowHousePipeStageInstrFetchLcvIbus(
   //    myBridgeCtrl.io.bridgeBus
   //  )
   //)
-  val myReadyIshCond = Bool()
-  val myReadyIshCondShared = up.isReady//down.isFiring
 
   if (cfg.useLcvInstrBus) {
     //io.lcvIbus <> myBridge.io.lcvBus
@@ -2136,15 +2139,37 @@ case class SnowHousePipeStageInstrFetchLcvIbus(
   //  )
   //)
   //myBusH2dValid := up.isFiring//True
-  myBusH2dValid := down.isReady
+  val rMyBusH2dValidCnt = (
+    Reg(UInt(log2Up(2 + 1) + 1 bits))
+    init(0x0)
+  )
+  when (rMyBusH2dValidCnt < 2) {
+    myBusH2dValid := True
+    when (io.lcvIbus.h2dBus.fire) {
+      rMyBusH2dValidCnt := rMyBusH2dValidCnt + 1
+    }
+  } otherwise {
+    myBusH2dValid := down.isReady
+    //when (io.lcvIbus.h2dBus.fire) {
+    //  rMyBusH2dValidCnt := rMyBusH2dValidCnt + 1
+    //}
+    when (!down.isReady) {
+      rMyBusH2dValidCnt := 0x0
+    }
+  }
+  //myBusH2dValid := True//down.isReady
   when (
     //down.isReady
     //!io.lcvIbus.h2dBus.fire
-    myBusH2dValid
-    && !io.lcvIbus.h2dBus.ready
+    //myBusH2dValid
+    //&& 
+    !io.lcvIbus.h2dBus.ready
   ) {
+    myBusH2dValid := False
     //cIf.haltIt()
-    cIf.duplicateIt()
+    //cIf.duplicateIt()
+    cIf.haltIt()
+    //cIf.terminateIt()
   }
 
   val myUpdateRegPcCondUInt = (
@@ -2471,7 +2496,8 @@ case class SnowHousePipeStageInstrFetchLastLcvIbus(
       RegNextWhen(
         myD2hPopStm.src.asSInt + 1,
         cond=(
-          myD2hPopStm.fire
+          //myD2hPopStm.fire
+          myD2hPopStm.valid
         )
       )
       init(1)
@@ -2480,8 +2506,8 @@ case class SnowHousePipeStageInstrFetchLastLcvIbus(
       that=True,
       when=(
         //myD2hDoThrowStm.fire
-        //myD2hPopStm.valid
-        myD2hPopStm.fire
+        myD2hPopStm.valid
+        //myD2hPopStm.fire
       ),
       length=(
         4
@@ -2539,25 +2565,36 @@ case class SnowHousePipeStageInstrFetchLastLcvIbus(
       )
     )
     myD2hPopStm.ready := (
-      //up.isValid
-      //&& 
-      //down.isReady
-      up.isFiring
+      up.isValid
+      && 
+      down.isReady
+      //up.isFiring
       //up.isFiring
     )
   } otherwise {
-    when (
-      myHistUpFiring.last
-      //&& myD2hThrowCond
-    ) {
-      cIfLast.haltIt()
-      //myD2hPopStm.ready := False
-    } otherwise {
-      //myD2hPopStm.ready := True
-    }
+    //when (!io.lcvIbus.d2hBus.valid) {
+    //  cIfLast.haltIt()
+    //} otherwise {
+    //  cIfLast.terminateIt()
+    //}
+    //when (
+    //  myHistUpFiring.last
+    //  //&& myD2hThrowCond
+    //) {
+    //  cIfLast.haltIt()
+    //  //myD2hPopStm.ready := False
+    //} otherwise {
+    //  //myD2hPopStm.ready := True
+    //}
     //cIfLast.haltIt()
     myD2hPopStm.ready := False
+    cIfLast.haltIt()
   }
+  //when (!io.lcvIbus.d2hBus.valid) {
+  //  cIfLast.haltIt()
+  //} otherwise {
+  //  //cIfLast.terminateIt()
+  //}
   //when (
   //  //myD2hPopStm.ready
   //  //&& 
