@@ -419,6 +419,7 @@ case class SnowHouseBranchPredictor(
       //"block"
       //"distributed"
     ),
+    doAsyncRead=true,
   )
   val tgtSrcRegPcAndValidBuf = (
     RamSimpleDualPort(cfg=tgtSrcRegPcAndValidBufCfg)
@@ -473,6 +474,7 @@ case class SnowHouseBranchPredictor(
       //  //"MLAB"
       //)
     ),
+    doAsyncRead=true,
   )
   val tgtDstRegPcBuf = RamSimpleDualPort(cfg=tgtDstRegPcBufCfg)
   //val tgtDstRegPcAndValidBuf = (
@@ -1912,16 +1914,20 @@ case class SnowHousePipeStageInstrFetch(
       node(pIf).branchPredictTkn.allowOverride
       node(pIf).branchTgtBufElem.allowOverride
 
-      node(pIf).encInstr.payload := payload.instr
-      node(pIf).psIfRegPcSetItCnt := payload.psIfRegPcSetItCnt
-      node(pIf).regPc := payload.myIbusRegPcInfo.regPc
-      node(pIf).laggingRegPc := payload.myIbusRegPcInfo.regPc
-      node(pIf).branchPredictTkn := (
-        payload.myIbusRegPcInfo.branchPredictTkn
-      )
-      node(pIf).branchTgtBufElem := (
-        payload.myIbusRegPcInfo.branchTgtBufElem
-      )
+      //when (payload.myIbusRegPcInfo.branchPredictTkn) {
+      //} otherwise {
+        node(pIf).encInstr.payload := payload.instr
+        node(pIf).psIfRegPcSetItCnt := payload.psIfRegPcSetItCnt
+        node(pIf).regPc := payload.myIbusRegPcInfo.regPc
+        node(pIf).laggingRegPc := payload.myIbusRegPcInfo.regPc
+        node(pIf).branchPredictTkn := (
+          payload.myIbusRegPcInfo.branchPredictTkn
+          //True
+        )
+        node(pIf).branchTgtBufElem := (
+          payload.myIbusRegPcInfo.branchTgtBufElem
+        )
+      //}
     }
   )
 
@@ -1965,7 +1971,7 @@ case class SnowHousePipeStageInstrFetch(
   //)
   io.lcvIbus.h2dBus << myH2dPushStm //myLcvIbusH2dFork.head 
   myIbusTempRam.io.wrPulse.valid := myH2dPushStm.fire
-  myIbusTempRam.io.wrPulse.addr := myH2dPushStm.src
+  myIbusTempRam.io.wrPulse.addr := myH2dPushStm.src //+ 1
   myIbusTempRam.io.wrPulse.data.psIfRegPcSetItCnt := (
     myRegPcSetItCnt
   )
@@ -1974,7 +1980,40 @@ case class SnowHousePipeStageInstrFetch(
     //upModExt.myIbusRegPcInfo
     myIbusRegPcInfo
   )
-  io.lcvIbus.d2hBus.translateInto(myIbusTempRam.io.rdAddrPipe)(
+  val myD2hThrowCond = Bool()
+  //def myD2hPopStm = io.lcvBus.d2hBus
+  val myD2hDoThrowStm = io.lcvIbus.d2hBus.throwWhen(
+    myD2hThrowCond
+  )
+  val myD2hPopStm = cloneOf(io.lcvIbus.d2hBus)
+  myD2hPopStm << myD2hDoThrowStm
+  myD2hThrowCond := (
+    io.lcvIbus.d2hBus.src.asSInt
+    =/= (
+      RegNextWhen(
+        //myD2hPopStm.src.asSInt + 1,
+        io.lcvIbus.d2hBus.src.asSInt + 1,
+        cond=(
+          //myD2hPopStm.valid
+          io.lcvIbus.d2hBus.fire
+        )
+      )
+      init(1)
+    )
+    && History[Bool](
+      that=True,
+      when=(
+        //myD2hDoThrowStm.fire
+        //myD2hPopStm.valid
+        io.lcvIbus.d2hBus.fire
+      ),
+      length=(
+        4
+      ),
+      init=False,
+    ).last
+  )
+  myD2hPopStm.translateInto(myIbusTempRam.io.rdAddrPipe)(
     dataAssignment=(outp, inp) => {
       outp := outp.getZero
       outp.data.instr.allowOverride
@@ -2258,14 +2297,24 @@ case class SnowHousePipeStageInstrFetch(
   //  //  myBridgeCtrl.io.cpuRecvIbusInfo.regPc
   //  //)
   //}
-  val myMainPredictCond = (
+  val myRawPredictCond = Bool()
+  myRawPredictCond := (
     branchPredictor.io.result.fire
     && !rTakeJumpCnt.fire
+  )
+  val rMyMainPredictCond = (
+    //Reg(Bool(), init=False)
+    RegNextWhen(
+      myRawPredictCond,
+      cond=myReadyIshCond,
+      init=myRawPredictCond.getZero,
+    )
   )
   val predictCond = (
     cfg.haveBranchPredictor
   ) generate (
-    myMainPredictCond
+    //myMainPredictCond
+    rMyMainPredictCond
   )
 
   val tempNextRegPc = (
@@ -2281,12 +2330,25 @@ case class SnowHousePipeStageInstrFetch(
   ) generate (
     tempNextRegPc
   )
+  //val myPredictedNextPc = (
+  //  cfg.haveBranchPredictor
+  //) generate (
+  //  cloneOf(myTempNextRegPcMaybeDel1.asUInt)
+  //)
   val myPredictedNextPc = (
     cfg.haveBranchPredictor
   ) generate (
     Mux[SInt](
-      predictCond,
-      branchPredictor.io.result.nextRegPc.asSInt,
+      //predictCond,
+      rMyMainPredictCond,
+      (
+        //branchPredictor.io.result.nextRegPc.asSInt
+        RegNextWhen(
+          branchPredictor.io.result.nextRegPc.asSInt,
+          cond=myReadyIshCond,
+          init=branchPredictor.io.result.nextRegPc.asSInt.getZero,
+        )
+      ),
       (
         //tempNextRegPc
         myTempNextRegPcMaybeDel1
@@ -2295,24 +2357,29 @@ case class SnowHousePipeStageInstrFetch(
   )
   if (cfg.haveBranchPredictor) {
     for (idx <- 0 until branchPredictor.io.inpRegPc.size) {
-      when (!rTakeJumpCnt.fire) {
+      //when (!rTakeJumpCnt.fire) {
         // TODO: determine if this is correct!
         branchPredictor.io.inpRegPc(idx) := (
           myPredictedNextPc
+          //RegNextWhen(
+          //  myPredictedNextPc + cfg.instrSizeBytes,
+          //  cond=myReadyIshCond,
+          //  init=myPredictedNextPc.getZero,
+          //)
           //Cat(
           //  (rPrevRegPc(0) + 1),
           //  myRegPcShiftThing,
           //).asUInt
         )
-      } otherwise {
-        branchPredictor.io.inpRegPc(idx) := (
-          //myPredictedNextPc
-          Cat(
-            (rPrevRegPc(0) + 1),
-            myRegPcShiftThing,
-          ).asUInt
-        )
-      }
+      //} otherwise {
+      //  branchPredictor.io.inpRegPc(idx) := (
+      //    //myPredictedNextPc
+      //    Cat(
+      //      (rPrevRegPc(0) + 1),
+      //      myRegPcShiftThing,
+      //    ).asUInt
+      //  )
+      //}
     }
   }
   def doInitTakeJumpCnt(): Unit = {
@@ -2398,10 +2465,13 @@ case class SnowHousePipeStageInstrFetch(
           myIbusRegPcInfo.branchPredictTkn.allowOverride
           myIbusRegPcInfo.branchPredictTkn := (
             //predictCond
-            myMainPredictCond
+            //myMainPredictCond
+            myRawPredictCond
           )
           myIbusRegPcInfo.branchTgtBufElem.foreach(item => {
-            item := branchPredictor.io.result.rdBtbElem
+            item := (
+              branchPredictor.io.result.rdBtbElem
+            )
             //item.valid := myMainPredictCond
           })
         } else {
@@ -5185,8 +5255,9 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
   val tempBranchPredictTkn = (
     //rose(
       //RegNext(next=io.branchPredictTkn, init=False)
-      RegNext/*When*/(
-        next=RegNextWhen(
+      //RegNext/*When*/(
+      //  next=
+        RegNextWhen(
           next=(
             io.branchPredictTkn
             //|| io.branchPredictReplaceBtbElem
@@ -5201,10 +5272,10 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
             io.upIsFiring
           ),
           init=False
-        ),
-        //cond=io.upIsFiring,
-        init=False,
-      )
+        )//,
+      //  //cond=io.upIsFiring,
+      //  init=False,
+      //)
       //&& io.upIsReady
     //)
   )
@@ -5248,8 +5319,8 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
   }
   val tempBtbFire = (
     //rose(
-      RegNext/*When*/(
-        next=(
+      //RegNext/*When*/(
+      //  next=(
           RegNextWhen(
             next=(
               //rose(
@@ -5274,10 +5345,10 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
             ),
             init=False
           )
-        ),
-        //cond=io.upIsFiring,
-        init=False,
-      )
+      //  ),
+      //  //cond=io.upIsFiring,
+      //  init=False,
+      //)
       //&& io.upIsReady
     //)
   )
