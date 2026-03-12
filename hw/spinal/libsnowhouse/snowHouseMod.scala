@@ -545,12 +545,12 @@ case class SnowHouseInstrDataDualRam(
     cfg.useLcvDataBus
   ) generate (new Area {
     val haveDcache = (
-      //true
-      false
+      true
+      //false
     )
     val haveFastLcvBusMem = (
-      //true
-      false
+      true
+      //false
     )
     val haveDebursterForSlowLcvBusMem = (
       //false
