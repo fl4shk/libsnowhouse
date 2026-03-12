@@ -1717,15 +1717,15 @@ case class SnowHousePipeStageInstrFetch(
   def pIf = args.currPayload
   val up = cIf.up
   val down = cIf.down
-  val upModExt = (
-    /*KeepAttribute*/(
-      SnowHousePipePayload(cfg=cfg)
-    )
-    .setName(s"PipeStageInstrFetch_upModExt")
-  )
-  up(pIf) := upModExt
-  upModExt := RegNext(upModExt, init=upModExt.getZero)
-  def myInstrCnt = upModExt.instrCnt
+  //val upModExt = (
+  //  /*KeepAttribute*/(
+  //    SnowHousePipePayload(cfg=cfg)
+  //  )
+  //  .setName(s"PipeStageInstrFetch_upModExt")
+  //)
+  //up(pIf) := upModExt
+  //upModExt := RegNext(upModExt, init=upModExt.getZero)
+  //def myInstrCnt = upModExt.instrCnt
 
   //val myBridge = (
   //  cfg.useLcvInstrBus
@@ -1740,12 +1740,15 @@ case class SnowHousePipeStageInstrFetch(
   //    isIbus=true,
   //  )
   //)
-  val myH2dPushStm = cloneOf(io.lcvIbus.h2dBus)
-  val myLcvIbusH2dFork = StreamFork(
-    input=myH2dPushStm,
-    portCount=2,
-    synchronous=true,
+  val myH2dPushStm = (
+    //io.lcvIbus.h2dBus //
+    cloneOf(io.lcvIbus.h2dBus)
   )
+  //val myLcvIbusH2dFork = StreamFork(
+  //  input=myH2dPushStm,
+  //  portCount=2,
+  //  synchronous=true,
+  //)
   def myBusH2dValid = (
     //if (!cfg.useLcvInstrBus) (
     //  io.ibus.nextValid
@@ -1805,7 +1808,10 @@ case class SnowHousePipeStageInstrFetch(
   //  init(0x0)
   //)
 
-  val myRegPcSetItCnt = cloneOf(upModExt.psIfRegPcSetItCnt)
+  val myRegPcSetItCnt = (
+    UInt(cfg.myPsIfRegPcSetItCntWidth bits)
+    //cloneOf(upModExt.psIfRegPcSetItCnt)
+  )
   val rPrevRegPcSetItCnt = {
     val temp = (
       RegNextWhen(
@@ -1823,8 +1829,8 @@ case class SnowHousePipeStageInstrFetch(
   myRegPcSetItCnt.allowOverride
   myRegPcSetItCnt := rPrevRegPcSetItCnt
 
-  case class MyIbusRecvPayload(
-    hasInstr: Boolean
+  case class MyIbusTempPayload(
+    hasInstr: Boolean,
   ) extends Bundle {
     val instr = (
       hasInstr
@@ -1834,174 +1840,302 @@ case class SnowHousePipeStageInstrFetch(
     //val src = UInt(cfg.subCfg.myLcvBusSrcWidth bits)
 
     val psIfRegPcSetItCnt = (
-      !hasInstr
-    ) generate (
-      cloneOf(upModExt.psIfRegPcSetItCnt)
+      //cloneOf(upModExt.psIfRegPcSetItCnt)
+      cloneOf(myRegPcSetItCnt)
     )
 
     val myIbusRegPcInfo = (
-      !hasInstr
-    ) generate (
       MyIbusRegPcInfo(cfg=cfg)
     )
   }
+  val myIbusTempRam = {
+    val depth = 1 << cfg.subCfg.myLcvBusSrcWidth
+    val initBigInt = (
+      Some(Array.fill(1)(Array.fill(depth)(BigInt(0)).toSeq).toSeq)
+    )
+    def mySetWordFunc(
+      outp: MyIbusTempPayload,
+      inp: MyIbusTempPayload,
+      word: MyIbusTempPayload,
+    ): Unit = {
+      //outp := inp
+      ////outp.encInstr.payload.allowOverride
+      ////outp.encInstr.payload := instr
+      //outp.instr.allowOverride
+      //outp.instr := word.instr
+      //outp := word
+      outp.psIfRegPcSetItCnt := word.psIfRegPcSetItCnt
+      outp.myIbusRegPcInfo := word.myIbusRegPcInfo
+      outp.instr.allowOverride
+      outp.instr := inp.instr
+    }
+    val ramCfg = WrPulseRdPipeRamSdpPipeConfig(
+      modType=(
+        //SnowHousePipePayload(cfg=cfg)
+        MyIbusTempPayload(hasInstr=true)
+      ),
+      wordType=MyIbusTempPayload(hasInstr=false),
+      wordCount=depth,
+      pipeName="pipeStageIf",
+      setWordFunc=mySetWordFunc,
+      initBigInt=initBigInt,
+      arrRamStyleAltera="MLAB",//"M10K"
+      arrRamStyleXilinx="distributed",//"block"
+    )
+    WrPulseRdPipeRamSdpPipe(cfg=ramCfg)
+
+    //RamSimpleDualPort(
+    //  cfg=RamSimpleDualPortConfig(
+    //    wordType=MyIbusTempPayload(),
+    //    depth=depth,
+    //    initBigInt=initBigInt,
+    //    arrRamStyleAltera="MLAB",
+    //    arrRamStyleXilinx="distributed",
+    //    doAsyncRead=true,
+    //  )
+    //)
+  }
   myBusH2dValid := (
-    down.isReady
+    //down.isReady
+    //up.isReady
     //True
+    True
   )
   val myIbusRegPcInfo = MyIbusRegPcInfo(cfg=cfg)
+  cIf.up.driveFrom(myIbusTempRam.io.rdDataPipe)(
+    con=(node, payload) => {
+      node(pIf) := node(pIf).getZero
+      node(pIf).encInstr.payload.allowOverride
+      node(pIf).psIfRegPcSetItCnt.allowOverride
+      node(pIf).regPc.allowOverride
+      node(pIf).laggingRegPc.allowOverride
+      node(pIf).branchPredictTkn.allowOverride
+      node(pIf).branchTgtBufElem.allowOverride
 
-  val myInstrIbusRecvFifo = (
-    StreamFifo(
-      dataType=(
-        //UInt(cfg.instrMainWidth bits)
-        MyIbusRecvPayload(hasInstr=true)
-      ),
-      depth=(
-        //2
-        //8
-        (1 << cfg.subCfg.myLcvBusSrcWidth).max(8)
-      ),
-      latency=0,
-      forFMax=true,
-    )
-  )
-  val myRegPcEtcIbusRecvFifo = (
-    StreamFifo(
-      dataType=(
-        //UInt(cfg.instrMainWidth bits)
-        MyIbusRecvPayload(hasInstr=false)
-      ),
-      depth=(
-        //2
-        //8
-        //1 << cfg.subCfg.myLcvBusSrcWidth
-        (1 << cfg.subCfg.myLcvBusSrcWidth).max(8)
-      ),
-      latency=0,
-      forFMax=true,
-    )
-  )
-  //myInstrIbusRecvFifo.io.push.valid := 
-  io.lcvIbus.d2hBus.translateInto(myInstrIbusRecvFifo.io.push)(
-    dataAssignment=(outp, inp) => {
-      outp.instr := inp.data.resize(outp.instr.getWidth)
-      //outp.src := inp.src
-    }
-  )
-  io.lcvIbus.h2dBus << myLcvIbusH2dFork.head 
-  myLcvIbusH2dFork.last.translateInto(myRegPcEtcIbusRecvFifo.io.push)(
-    dataAssignment=(outp, inp) => {
-      outp.myIbusRegPcInfo := myIbusRegPcInfo
-      outp.psIfRegPcSetItCnt := myRegPcSetItCnt
-    }
-  )
-  when (
-    !myInstrIbusRecvFifo.io.pop.valid
-    || !myRegPcEtcIbusRecvFifo.io.pop.valid
-  ) {
-    cIf.haltIt()
-    //myInstrIbusRecvFifo.io.pop.ready := False
-    //myRegPcEtcIbusRecvFifo.io.pop.ready := False
-  } otherwise {
-    //myInstrIbusRecvFifo.io.pop.ready := down.isReady
-    //myRegPcEtcIbusRecvFifo.io.pop.ready := down.isReady
-  }
-  myInstrIbusRecvFifo.io.pop.ready := up.isReady//down.isReady
-  myRegPcEtcIbusRecvFifo.io.pop.ready := down.isReady
-
-  upModExt.encInstr.allowOverride
-  upModExt.encInstr := (
-    RegNext(
-      next=upModExt.encInstr,
-      init=upModExt.encInstr.getZero,
-    )
-  )
-  upModExt.laggingRegPc.allowOverride
-  upModExt.laggingRegPc := (
-    RegNext(
-      upModExt.laggingRegPc,
-      init=upModExt.laggingRegPc.getZero,
-    )
-  )
-  upModExt.regPc.allowOverride
-  upModExt.regPc := (
-    (
-      RegNext(
-        next=upModExt.regPc.asSInt,
+      node(pIf).encInstr.payload := payload.instr
+      node(pIf).psIfRegPcSetItCnt := payload.psIfRegPcSetItCnt
+      node(pIf).regPc := payload.myIbusRegPcInfo.regPc
+      node(pIf).laggingRegPc := payload.myIbusRegPcInfo.regPc
+      node(pIf).branchPredictTkn := (
+        payload.myIbusRegPcInfo.branchPredictTkn
       )
-      init(
-        //upModExt.regPc.getZero
-        -cfg.instrSizeBytes
-      ),
-    ).asUInt
+      node(pIf).branchTgtBufElem := (
+        payload.myIbusRegPcInfo.branchTgtBufElem
+      )
+    }
   )
-  when (myInstrIbusRecvFifo.io.pop.fire) {
-    upModExt.encInstr.payload := (
-      myInstrIbusRecvFifo.io.pop.instr
-    )
-  }
-  val myHistRegPcEtc = (
-    History(
-      that=(
-        // TODO: check that this is correct
-        //upModExt.regPc
-        //myRegPcEtcIbusRecvFifo.io.pop.myIbusRegPcInfo.regPc
-        myRegPcEtcIbusRecvFifo.io.pop.payload
-      ),
-      length=3,
-      when=(
-        //myReadyIshCond
-        //myUpdatePcCond
-        myRegPcEtcIbusRecvFifo.io.pop.fire
-      ),
-      init=(
-        //upModExt.regPc.getZero
-        myRegPcEtcIbusRecvFifo.io.pop.payload.getZero
-      ),
-    )
+
+  //val myInstrIbusRecvFifo = (
+  //  StreamFifo(
+  //    dataType=(
+  //      //UInt(cfg.instrMainWidth bits)
+  //      MyIbusRecvPayload(hasInstr=true)
+  //    ),
+  //    depth=(
+  //      //2
+  //      //8
+  //      (1 << cfg.subCfg.myLcvBusSrcWidth).max(8)
+  //    ),
+  //    latency=0,
+  //    forFMax=true,
+  //  )
+  //)
+  //val myRegPcEtcIbusRecvFifo = (
+  //  StreamFifo(
+  //    dataType=(
+  //      //UInt(cfg.instrMainWidth bits)
+  //      MyIbusRecvPayload(hasInstr=false)
+  //    ),
+  //    depth=(
+  //      //2
+  //      //8
+  //      //1 << cfg.subCfg.myLcvBusSrcWidth
+  //      (1 << cfg.subCfg.myLcvBusSrcWidth).max(8)
+  //    ),
+  //    latency=0,
+  //    forFMax=true,
+  //  )
+  //)
+  //myInstrIbusRecvFifo.io.push.valid := 
+  //io.lcvIbus.d2hBus.translateInto(myInstrIbusRecvFifo.io.push)(
+  //  dataAssignment=(outp, inp) => {
+  //    outp.instr := inp.data.resize(outp.instr.getWidth)
+  //    //outp.src := inp.src
+  //  }
+  //)
+  io.lcvIbus.h2dBus << myH2dPushStm //myLcvIbusH2dFork.head 
+  myIbusTempRam.io.wrPulse.valid := myH2dPushStm.fire
+  myIbusTempRam.io.wrPulse.addr := myH2dPushStm.src
+  myIbusTempRam.io.wrPulse.data.psIfRegPcSetItCnt := (
+    myRegPcSetItCnt
   )
+  myIbusTempRam.io.wrPulse.data.myIbusRegPcInfo := (
+    //myIbusRegPcInfo
+    //upModExt.myIbusRegPcInfo
+    myIbusRegPcInfo
+  )
+  io.lcvIbus.d2hBus.translateInto(myIbusTempRam.io.rdAddrPipe)(
+    dataAssignment=(outp, inp) => {
+      outp := outp.getZero
+      outp.data.instr.allowOverride
+      outp.data.instr := inp.data.resize(outp.data.instr.getWidth)
+      outp.addr.allowOverride
+      outp.addr := inp.src
+    }
+  )
+  ////myLcvIbusH2dFork.last.translateInto(myRegPcEtcIbusRecvFifo.io.push)(
+  ////  dataAssignment=(outp, inp) => {
+  ////    outp.myIbusRegPcInfo := myIbusRegPcInfo
+  ////    outp.psIfRegPcSetItCnt := myRegPcSetItCnt
+  ////  }
+  ////)
+  ////myBusH2dValid := False
+  //myBusH2dValid := True
+  //when (
+  //  myInstrIbusRecvFifo.io.pop.valid
+  //  && myRegPcEtcIbusRecvFifo.io.pop.valid
+  //) {
+  //  //myInstrIbusRecvFifo.io.pop.ready := down.isReady
+  //  //myRegPcEtcIbusRecvFifo.io.pop.ready := down.isReady
+  //  ////myBusH2dValid := (
+  //  ////  //down.isReady//True
+  //  ////  down.isReady
+  //  ////)
+  //} otherwise {
+  //  cIf.haltIt()
+  //  ////myInstrIbusRecvFifo.io.pop.ready := False
+  //  ////myRegPcEtcIbusRecvFifo.io.pop.ready := False
+  //  ////myBusH2dValid := (
+  //  ////  down.isReady//True
+  //  ////)
+  //  //myInstrIbusRecvFifo.io.pop.ready := False
+  //  //myRegPcEtcIbusRecvFifo.io.pop.ready := False
+
+  //  ////myInstrIbusRecvFifo.io.pop.ready := down.isReady
+  //  ////myRegPcEtcIbusRecvFifo.io.pop.ready := down.isReady
+  //}
+  ////myBusH2dValid := True
+  ////myInstrIbusRecvFifo.io.pop.ready := down.isReady
+  ////myRegPcEtcIbusRecvFifo.io.pop.ready := down.isReady
+  //myInstrIbusRecvFifo.io.pop.ready := up.isReady//down.isReady
+  //myRegPcEtcIbusRecvFifo.io.pop.ready := up.isReady//down.isReady
+
+  //upModExt.regPc.allowOverride
+  //if (cfg.haveBranchPredictor) {
+  //  upModExt.psIfRegPcSetItCnt.allowOverride
+  //  upModExt.branchPredictTkn.allowOverride
+  //  upModExt.branchTgtBufElem.allowOverride
+  //  //upModExt.branchPredictTkn := (
+  //  //  myBridgeCtrl.io.cpuRecvIbusInfo.branchPredictTkn
+  //  //)
+  //  //upModExt.branchTgtBufElem := (
+  //  //  myBridgeCtrl.io.cpuRecvIbusInfo.branchTgtBufElem
+  //  //)
+  //}
+
+  //upModExt.encInstr.allowOverride
+  //upModExt.encInstr := (
+  //  RegNext(
+  //    next=upModExt.encInstr,
+  //    init=upModExt.encInstr.getZero,
+  //  )
+  //)
+  //upModExt.laggingRegPc.allowOverride
+  //upModExt.laggingRegPc := (
+  //  RegNext(
+  //    upModExt.laggingRegPc,
+  //    init=upModExt.laggingRegPc.getZero,
+  //  )
+  //)
+  //upModExt.regPc.allowOverride
+  //upModExt.regPc := (
+  //  (
+  //    RegNext(
+  //      next=upModExt.regPc.asSInt,
+  //    )
+  //    init(
+  //      //upModExt.regPc.getZero
+  //      -cfg.instrSizeBytes
+  //    ),
+  //  ).asUInt
+  //)
+
+  //when (myInstrIbusRecvFifo.io.pop.fire) {
+  //  upModExt.encInstr.payload := (
+  //    myInstrIbusRecvFifo.io.pop.instr
+  //  )
+  //}
+
+  //val myHistRegPcEtc = (
+  //  History(
+  //    that=(
+  //      // TODO: check that this is correct
+  //      //upModExt.regPc
+  //      //myRegPcEtcIbusRecvFifo.io.pop.myIbusRegPcInfo.regPc
+  //      myRegPcEtcIbusRecvFifo.io.pop.payload
+  //    ),
+  //    length=3,
+  //    when=(
+  //      //myReadyIshCond
+  //      //myUpdatePcCond
+  //      myRegPcEtcIbusRecvFifo.io.pop.fire
+  //    ),
+  //    init=(
+  //      //upModExt.regPc.getZero
+  //      myRegPcEtcIbusRecvFifo.io.pop.payload.getZero
+  //    ),
+  //  )
+  //)
+
   //when (myRegPcEtcIbusRecvFifo.io.pop.fire) {
   //  upModExt.laggingRegPc := (
   //    myRegPcEtcIbusRecvFifo.io.pop.myIbusRegPcInfo.regPc
   //  )
   //}
-  upModExt.laggingRegPc := (
-    myHistRegPcEtc.last.myIbusRegPcInfo.regPc
-  )
-  if (cfg.haveBranchPredictor) {
-    upModExt.psIfRegPcSetItCnt.allowOverride
-    upModExt.branchPredictTkn.allowOverride
-    upModExt.branchTgtBufElem.allowOverride
-    //upModExt.branchPredictTkn := (
-    //  RegNext(
-    //    upModExt.branchPredictTkn,
-    //    init=upModExt.branchPredictTkn.getZero,
-    //  )
-    //)
-    //upModExt.branchTgtBufElem := (
-    //  RegNext(
-    //    upModExt.branchTgtBufElem,
-    //    init=upModExt.branchTgtBufElem.getZero,
-    //  )
-    //)
-    when (myRegPcEtcIbusRecvFifo.io.pop.fire) {
-      upModExt.psIfRegPcSetItCnt := (
-        myRegPcEtcIbusRecvFifo.io.pop.psIfRegPcSetItCnt
-        //myHistRegPcEtc.last.psIfRegPcSetItCnt
-      )
-      upModExt.branchPredictTkn := (
-        //myBridgeCtrl.io.cpuRecvIbusInfo.branchPredictTkn
-        myRegPcEtcIbusRecvFifo.io.pop.myIbusRegPcInfo.branchPredictTkn
-        //myHistRegPcEtc.last.myIbusRegPcInfo.branchPredictTkn
-      )
-      upModExt.branchTgtBufElem := (
-        //myBridgeCtrl.io.cpuRecvIbusInfo.branchTgtBufElem
-        myRegPcEtcIbusRecvFifo.io.pop.myIbusRegPcInfo.branchTgtBufElem
-        //myHistRegPcEtc.last.myIbusRegPcInfo.branchTgtBufElem
-      )
-    }
-  }
+
+  //upModExt.laggingRegPc := (
+  //  //myHistRegPcEtc.last.myIbusRegPcInfo.regPc
+  //)
+
+  //if (cfg.haveBranchPredictor) {
+  //  upModExt.psIfRegPcSetItCnt.allowOverride
+  //  upModExt.branchPredictTkn.allowOverride
+  //  upModExt.branchTgtBufElem.allowOverride
+  //  upModExt.psIfRegPcSetItCnt := (
+  //    RegNext(
+  //      upModExt.psIfRegPcSetItCnt,
+  //      init=upModExt.psIfRegPcSetItCnt.getZero,
+  //    )
+  //  )
+  //  upModExt.branchPredictTkn := (
+  //    RegNext(
+  //      upModExt.branchPredictTkn,
+  //      init=upModExt.branchPredictTkn.getZero,
+  //    )
+  //  )
+  //  upModExt.branchTgtBufElem := (
+  //    RegNext(
+  //      upModExt.branchTgtBufElem,
+  //      init=upModExt.branchTgtBufElem.getZero,
+  //    )
+  //  )
+  //  when (myRegPcEtcIbusRecvFifo.io.pop.fire) {
+  //    upModExt.psIfRegPcSetItCnt := (
+  //      myRegPcEtcIbusRecvFifo.io.pop.psIfRegPcSetItCnt
+  //      //myHistRegPcEtc.last.psIfRegPcSetItCnt
+  //    )
+  //    upModExt.branchPredictTkn := (
+  //      //myBridgeCtrl.io.cpuRecvIbusInfo.branchPredictTkn
+  //      myRegPcEtcIbusRecvFifo.io.pop.myIbusRegPcInfo.branchPredictTkn
+  //      //myHistRegPcEtc.last.myIbusRegPcInfo.branchPredictTkn
+  //    )
+  //    upModExt.branchTgtBufElem := (
+  //      //myBridgeCtrl.io.cpuRecvIbusInfo.branchTgtBufElem
+  //      myRegPcEtcIbusRecvFifo.io.pop.myIbusRegPcInfo.branchTgtBufElem
+  //      //myHistRegPcEtc.last.myIbusRegPcInfo.branchTgtBufElem
+  //    )
+  //  }
+  //}
 
 
   //val myReadyIshCondLcvMostCmpSrc = (
@@ -2073,16 +2207,15 @@ case class SnowHousePipeStageInstrFetch(
   val myRegPcShiftThing = (
     S(s"${log2Up(cfg.instrSizeBytes)}'d0")
   )
+  def myRegPc = myIbusRegPcInfo.regPc
   val myPrevRegPcPlusInstrSizeWidth = (
-    upModExt.regPc.getWidth - log2Up(cfg.instrSizeBytes)
+    myRegPc.getWidth - log2Up(cfg.instrSizeBytes)
   )
   val rPrevRegPc = {
     val temp = RegNextWhen(
       next=(
         Vec.fill(2)(
-          upModExt.regPc.asSInt(
-            upModExt.regPc.high downto log2Up(cfg.instrSizeBytes)
-          )
+          myRegPc.asSInt(myRegPc.high downto log2Up(cfg.instrSizeBytes))
         )
       ), 
       cond=myReadyIshCond,
@@ -2248,7 +2381,7 @@ case class SnowHousePipeStageInstrFetch(
       //if (!cfg.useLcvInstrBus) {
         //myIbusRegPcInfo.setUpModExt()
         //setUpModExtIbusRegPcInfo(info=myIbusRegPcInfo)
-        upModExt.regPc := myIbusRegPcInfo.regPc
+        //upModExt.regPc := myIbusRegPcInfo.regPc
       //}
       //myIbus.sendData.addr := tempNextRegPc//.asUInt
       myBusAddr := tempNextRegPc.resize(myBusAddr.getWidth)//.asUInt
@@ -2285,7 +2418,7 @@ case class SnowHousePipeStageInstrFetch(
         //if (!cfg.useLcvInstrBus) {
           //myIbusRegPcInfo.setUpModExt()
           //setUpModExtIbusRegPcInfo(myIbusRegPcInfo)
-          upModExt.regPc := myIbusRegPcInfo.regPc
+          //upModExt.regPc := myIbusRegPcInfo.regPc
         //}
       }
       //is (M"1-1") {
@@ -2314,17 +2447,6 @@ case class SnowHousePipeStageInstrFetch(
   //when (up.isFiring) {
   //}
   //setUpModExtIbusRegPcInfo(myBridgeCtrl.io.cpuRecvIbusInfo)
-  upModExt.regPc.allowOverride
-  if (cfg.haveBranchPredictor) {
-    upModExt.branchPredictTkn.allowOverride
-    upModExt.branchTgtBufElem.allowOverride
-    //upModExt.branchPredictTkn := (
-    //  myBridgeCtrl.io.cpuRecvIbusInfo.branchPredictTkn
-    //)
-    //upModExt.branchTgtBufElem := (
-    //  myBridgeCtrl.io.cpuRecvIbusInfo.branchTgtBufElem
-    //)
-  }
 
   //val rRegPcStallState = Reg(Bool(), init=False)
   //object MyLcvIbusState

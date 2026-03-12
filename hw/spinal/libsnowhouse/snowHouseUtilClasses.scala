@@ -381,7 +381,7 @@ case class SnowHouseSubConfig(
       isIcache=true,
     )
   )
-  def myLcvBusSrcWidth = 2//5//2
+  def myLcvBusSrcWidth = 4//5//2//5//2
   val lcvIbusMainCfg = (
     LcvBusMainConfig(
       dataWidth=(
@@ -645,6 +645,7 @@ case class SnowHouseConfig(
   targetAltera: Boolean=false,
   optFormal: Boolean=false,
 ) {
+  def myPsIfRegPcSetItCntWidth = 2
   def mainAddrWidth = subCfg.mainAddrWidth
   def myHaveS2mIf = (
     useLcvInstrBus
@@ -1772,7 +1773,7 @@ case class SnowHousePipePayloadNonExt(
     //cfg.mainWidth bits
     cfg.mainAddrWidth bits
   )
-  val psIfRegPcSetItCnt = UInt(2 bits)
+  val psIfRegPcSetItCnt = UInt(cfg.myPsIfRegPcSetItCntWidth bits)
   val regPcSetItCnt = Vec.fill(cfg.lowerMyFanoutRegPcSetItCnt)(
     UInt(
       //cfg.instrCntWidth bits

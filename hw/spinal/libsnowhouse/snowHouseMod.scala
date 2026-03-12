@@ -1424,7 +1424,7 @@ case class SnowHouse
     }
   )
   linkArr += cIf
-  cIf.up.valid := True
+  //cIf.up.valid := True
   val sIf = StageLink(
     up={
       cIf.down
