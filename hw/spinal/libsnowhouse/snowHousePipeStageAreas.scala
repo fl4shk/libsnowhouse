@@ -2556,11 +2556,26 @@ case class SnowHousePipeStageInstrFetch(
   when (myReadyIshCond) {
     myRegPcSetItCnt := 0x0
     when (rTakeJumpCnt.fire) {
-      rTakeJumpCnt.payload := rTakeJumpCnt.payload - 1
-      when (rTakeJumpCnt.payload.msb) {
+      //rTakeJumpCnt.payload := rTakeJumpCnt.payload - 1
+      //when (rTakeJumpCnt.payload.msb) {
+      //  rTakeJumpCnt.valid := False
+      //  //myRegPcSetItCnt := 0x1
+      //} otherwise {
+      //  rTakeJumpCnt.payload := rTakeJumpCnt.payload - 1
+      //}
+      when (
+        //rTakeJumpCnt.payload.msb
+        //&& 
+        (
+          myH2dPushStm.addr
+          === RegNext(
+            stickyExSetPc(0).branchTgtBufElem.dstRegPc,
+            init=stickyExSetPc(0).branchTgtBufElem.dstRegPc.getZero,
+          )
+        )
+      ) {
         rTakeJumpCnt.valid := False
         myRegPcSetItCnt := 0x1
-      } otherwise {
       }
     }
   }
@@ -10734,6 +10749,17 @@ case class SnowHousePipeStageExecute(
         init=outp.branchTgtBufElem(1).includesLdBubble.getZero,
       ),
       init=outp.branchTgtBufElem(1).includesLdBubble.getZero,
+    )
+  )
+  psExSetPc.branchTgtBufElem.dontPredict.allowOverride
+  psExSetPc.branchTgtBufElem.dontPredict := (
+    RegNext(
+      RegNext(
+        outp.branchTgtBufElem(1).dontPredict,
+        //cond=cMid0Front.up.isFiring,
+        init=outp.branchTgtBufElem(1).dontPredict.getZero,
+      ),
+      init=outp.branchTgtBufElem(1).dontPredict.getZero,
     )
   )
   //psExSetPc.branchTgtBufElem.srcRegPc := (
