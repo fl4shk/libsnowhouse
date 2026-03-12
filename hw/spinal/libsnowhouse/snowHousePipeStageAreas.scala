@@ -1773,13 +1773,38 @@ case class SnowHousePipeStageInstrFetch(
   myH2dPushStm.byteSize := log2Up(cfg.instrMainWidth / 8)
   myH2dPushStm.isWrite := False
   myH2dPushStm.data := 0x0
-  myH2dPushStm.src := (
-    RegNextWhen(
-      myH2dPushStm.src + 1,
-      cond=myH2dPushStm.fire,
-      init=myH2dPushStm.src.getZero
+  val nextSrc = cloneOf(myH2dPushStm.src)
+  val rSrc = (
+    RegNext(
+      nextSrc,
+      init=nextSrc.getZero,
     )
+    //Reg(
+    //  cloneOf(myH2dPushStm.src),
+    //  init=myH2dPushStm.src.getZero
+    //)
+    
+    //RegNextWhen(
+    //  myH2dPushStm.src + 1,
+    //  cond=myH2dPushStm.fire,
+    //  init=myH2dPushStm.src.getZero
+    //)
   )
+  val tempSrcRnw = (
+    RegNextWhen(
+      next=rSrc.asSInt,
+      cond=myH2dPushStm.fire,
+      //init=rSrc.getZero,
+    )
+    init(-2)
+  )
+  nextSrc := rSrc
+  myH2dPushStm.src := rSrc
+  when (myH2dPushStm.fire) {
+    nextSrc := rSrc + 1
+  } otherwise {
+    myH2dPushStm.src := tempSrcRnw.asUInt
+  }
 
   //def myIbus = (
   //  if (!cfg.useLcvInstrBus) (
@@ -1897,11 +1922,18 @@ case class SnowHousePipeStageInstrFetch(
     //  )
     //)
   }
+  // NOTE: setting `myBusH2dValid` to a constant `True` can cause issues
+  // if the `libsnowhouse` implementation of a CPU is hooked up a
+  // non-pipelined `LcvBus` instruction source
+  // (such as FL4SHK's own `LcvBusMemSlowUnlessBurst` module)
   myBusH2dValid := (
     //down.isReady
     //up.isReady
     //True
     True
+    //down.isFiring
+    //|| io.lcvIbus.d2hBus.valid
+    //up.isReady
   )
   val myIbusRegPcInfo = MyIbusRegPcInfo(cfg=cfg)
   cIf.up.driveFrom(myIbusTempRam.io.rdDataPipe)(
@@ -1980,39 +2012,43 @@ case class SnowHousePipeStageInstrFetch(
     //upModExt.myIbusRegPcInfo
     myIbusRegPcInfo
   )
-  val myD2hThrowCond = Bool()
-  //def myD2hPopStm = io.lcvBus.d2hBus
-  val myD2hDoThrowStm = io.lcvIbus.d2hBus.throwWhen(
-    myD2hThrowCond
-  )
-  val myD2hPopStm = cloneOf(io.lcvIbus.d2hBus)
-  myD2hPopStm << myD2hDoThrowStm
-  myD2hThrowCond := (
-    io.lcvIbus.d2hBus.src.asSInt
-    =/= (
-      RegNextWhen(
-        //myD2hPopStm.src.asSInt + 1,
-        io.lcvIbus.d2hBus.src.asSInt + 1,
-        cond=(
-          //myD2hPopStm.valid
-          io.lcvIbus.d2hBus.fire
-        )
-      )
-      init(1)
-    )
-    && History[Bool](
-      that=True,
-      when=(
-        //myD2hDoThrowStm.fire
-        //myD2hPopStm.valid
-        io.lcvIbus.d2hBus.fire
-      ),
-      length=(
-        4
-      ),
-      init=False,
-    ).last
-  )
+  //val myD2hThrowCond = Bool()
+  ////def myD2hPopStm = io.lcvBus.d2hBus
+  //val myD2hDoThrowStm = io.lcvIbus.d2hBus.throwWhen(
+  //  myD2hThrowCond
+  //)
+  //val myD2hPopStm = cloneOf(io.lcvIbus.d2hBus)
+  def myD2hPopStm = io.lcvIbus.d2hBus
+  //myD2hPopStm << myD2hDoThrowStm
+  //myD2hThrowCond := (
+  //  io.lcvIbus.d2hBus.src.asSInt
+  //  =/= (
+  //    RegNextWhen(
+  //      myD2hPopStm.src.asSInt + 1,
+  //      //io.lcvIbus.d2hBus.src.asSInt + 1,
+  //      cond=(
+  //        //myD2hPopStm.valid
+  //        myD2hPopStm.fire
+  //        //io.lcvIbus.d2hBus.fire
+  //      )
+  //    )
+  //    init(1)
+  //  )
+  //  //&& History[Bool](
+  //  //  that=True,
+  //  //  when=(
+  //  //    //myD2hDoThrowStm.fire
+  //  //    //myD2hPopStm.valid
+  //  //    myD2hPopStm.fire
+  //  //    //io.lcvIbus.d2hBus.fire
+  //  //  ),
+  //  //  length=(
+  //  //    //4
+  //  //    2
+  //  //  ),
+  //  //  init=False,
+  //  //).last
+  //)
   myD2hPopStm.translateInto(myIbusTempRam.io.rdAddrPipe)(
     dataAssignment=(outp, inp) => {
       outp := outp.getZero
@@ -2260,8 +2296,8 @@ case class SnowHousePipeStageInstrFetch(
       cond=myReadyIshCond,
     )
     temp.foreach(item => {
-      item.init(item.getZero)
-      //item.init(-1)
+      //item.init(item.getZero)
+      item.init(-1)
     })
     temp
   }
