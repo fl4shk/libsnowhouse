@@ -1901,8 +1901,13 @@ case class SnowHousePipeStageInstrFetch(
     || !myRegPcEtcIbusRecvFifo.io.pop.valid
   ) {
     cIf.haltIt()
+    //myInstrIbusRecvFifo.io.pop.ready := False
+    //myRegPcEtcIbusRecvFifo.io.pop.ready := False
+  } otherwise {
+    //myInstrIbusRecvFifo.io.pop.ready := down.isReady
+    //myRegPcEtcIbusRecvFifo.io.pop.ready := down.isReady
   }
-  myInstrIbusRecvFifo.io.pop.ready := down.isReady
+  myInstrIbusRecvFifo.io.pop.ready := up.isReady//down.isReady
   myRegPcEtcIbusRecvFifo.io.pop.ready := down.isReady
 
   upModExt.encInstr.allowOverride
