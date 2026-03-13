@@ -1773,38 +1773,38 @@ case class SnowHousePipeStageInstrFetch(
   myH2dPushStm.byteSize := log2Up(cfg.instrMainWidth / 8)
   myH2dPushStm.isWrite := False
   myH2dPushStm.data := 0x0
-  //val nextSrc = cloneOf(myH2dPushStm.src)
+  val nextSrc = cloneOf(myH2dPushStm.src)
   val rSrc = (
-    //RegNext(
-    //  nextSrc,
-    //  init=nextSrc.getZero,
-    //)
+    RegNext(
+      nextSrc,
+      init=nextSrc.getZero,
+    )
     //Reg(
     //  cloneOf(myH2dPushStm.src),
     //  init=myH2dPushStm.src.getZero
     //)
     
-    RegNextWhen(
-      myH2dPushStm.src + 1,
-      cond=myH2dPushStm.fire,
-      init=myH2dPushStm.src.getZero
-    )
+    //RegNextWhen(
+    //  myH2dPushStm.src + 1,
+    //  cond=myH2dPushStm.fire,
+    //  init=myH2dPushStm.src.getZero
+    //)
   )
-  //val tempSrcRnw = (
-  //  RegNextWhen(
-  //    next=rSrc.asSInt,
-  //    cond=myH2dPushStm.fire,
-  //    //init=rSrc.getZero,
-  //  )
-  //  init(-2)
-  //)
-  //nextSrc := rSrc
+  val tempSrcRnw = (
+    RegNextWhen(
+      next=rSrc.asSInt,
+      cond=myH2dPushStm.fire,
+      //init=rSrc.getZero,
+    )
+    init(-2)
+  )
+  nextSrc := rSrc
   myH2dPushStm.src := rSrc
-  //when (myH2dPushStm.fire) {
-  //  nextSrc := rSrc + 1
-  //} otherwise {
-  //  myH2dPushStm.src := tempSrcRnw.asUInt
-  //}
+  when (myH2dPushStm.fire) {
+    nextSrc := rSrc + 1
+  } otherwise {
+    myH2dPushStm.src := tempSrcRnw.asUInt
+  }
 
   //def myIbus = (
   //  if (!cfg.useLcvInstrBus) (
