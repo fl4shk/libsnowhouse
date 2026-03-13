@@ -7594,7 +7594,7 @@ object SnowHouseCpuWithDualRamSim extends App {
     15, 15,
   )
   val instrRamKindArr = Array[Int](
-    0,
+    //0,
     //1,
     //2,
     5,
@@ -7710,9 +7710,8 @@ object SnowHouseCpuWithDualRamSim extends App {
             ) {
               pw.write(
                 //s"pc:${myLaggingRegPc} "
-                //s""
-                //+ 
-                s"addr:${myRegFileWriteAddr} "
+                s""
+                + s"addr:${myRegFileWriteAddr} "
                 + s"data:${myRegFileWriteData}\n"
               )
               mySavedGprArr(myRegFileWriteAddr.toInt) = myRegFileWriteData
