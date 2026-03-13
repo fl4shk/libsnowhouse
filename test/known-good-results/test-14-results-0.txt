@@ -127,7 +127,6 @@ addr:4 data:72
 addr:5 data:165
 addr:5 data:72
 addr:3 data:18
-addr:10 data:1
 addr:1 data:166
 addr:5 data:166
 addr:4 data:76
@@ -307,6 +306,7 @@ addr:4 data:192
 addr:5 data:225
 addr:5 data:192
 addr:3 data:48
+addr:10 data:1
 addr:1 data:226
 addr:5 data:226
 addr:4 data:196
@@ -343,7 +343,6 @@ addr:4 data:216
 addr:5 data:237
 addr:5 data:216
 addr:3 data:54
-addr:10 data:2
 addr:1 data:238
 addr:5 data:238
 addr:4 data:220
@@ -571,7 +570,6 @@ addr:4 data:368
 addr:5 data:313
 addr:5 data:368
 addr:3 data:92
-addr:10 data:3
 addr:1 data:314
 addr:5 data:314
 addr:4 data:372
@@ -782,6 +780,7 @@ addr:4 data:508
 addr:5 data:383
 addr:5 data:508
 addr:3 data:127
+addr:10 data:2
 addr:1 data:384
 addr:5 data:384
 addr:4 data:512
@@ -791,7 +790,6 @@ addr:3 data:128
 addr:1 data:386
 addr:5 data:386
 addr:4 data:516
-addr:10 data:4
 addr:5 data:387
 addr:5 data:516
 addr:3 data:129
@@ -1017,7 +1015,6 @@ addr:4 data:664
 addr:5 data:461
 addr:5 data:664
 addr:3 data:166
-addr:10 data:5
 addr:1 data:462
 addr:5 data:462
 addr:4 data:668
@@ -1234,6 +1231,7 @@ addr:4 data:808
 addr:5 data:533
 addr:5 data:808
 addr:3 data:202
+addr:10 data:3
 addr:1 data:534
 addr:5 data:534
 addr:4 data:812
@@ -1243,7 +1241,6 @@ addr:3 data:203
 addr:1 data:536
 addr:5 data:536
 addr:4 data:816
-addr:10 data:6
 addr:5 data:537
 addr:5 data:816
 addr:3 data:204
@@ -1469,7 +1466,6 @@ addr:4 data:964
 addr:5 data:611
 addr:5 data:964
 addr:3 data:241
-addr:10 data:7
 addr:1 data:612
 addr:5 data:612
 addr:4 data:968
@@ -1560,5 +1556,9 @@ addr:4 data:1024
 addr:5 data:641
 addr:5 data:1024
 addr:3 data:256
+addr:10 data:4
+addr:10 data:5
+addr:10 data:6
+addr:10 data:7
 Ending test.
 
