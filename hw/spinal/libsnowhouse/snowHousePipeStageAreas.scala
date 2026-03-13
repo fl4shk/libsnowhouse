@@ -8226,7 +8226,10 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
             //  init=io.regPcPlusImm.getZero,
             //) //+ cfg.instrSizeBytes
             //io.regPcPlusImmRealDst//, //+ cfg.instrSizeBytes
-            io.psExSetPc.branchTgtBufElem.dstRegPc
+            (
+              io.psExSetPc.branchTgtBufElem.dstRegPc
+              - cfg.instrSizeBytes
+            )
           //  io.mySavedRegPcPlusInstrSize/*.payload*/,
           //  //RegNextWhen(
           //  //  next=RegNextWhen(
@@ -8313,6 +8316,7 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
           //)
           //init(0x0)
           io.psExSetPc.branchTgtBufElem.dstRegPc
+          - cfg.instrSizeBytes
         )
         io.psExSetPc.branchTgtBufElem.valid := (
           False
@@ -8348,6 +8352,7 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
           //)
           //init(0x0)
           io.psExSetPc.branchTgtBufElem.dstRegPc
+          - cfg.instrSizeBytes
         )
         io.psExSetPc.branchTgtBufElem.valid := (
           False
@@ -8383,6 +8388,7 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
           //)
           //init(0x0)
           io.psExSetPc.branchTgtBufElem.dstRegPc
+          - cfg.instrSizeBytes
         )
         io.psExSetPc.branchTgtBufElem.valid := (
           False
