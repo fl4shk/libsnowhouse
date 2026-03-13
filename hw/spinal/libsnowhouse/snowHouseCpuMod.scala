@@ -7377,6 +7377,11 @@ case class SnowHouseCpuWithDualRamIo(
   ) generate (
     out(Bool())
   )
+  val laggingRegPcAtRegFileWrite = (
+    cfg.exposeRegFileWriteEnableToIo
+  ) generate (
+    out(UInt(cfg.mainWidth bits))
+  )
 }
 case class SnowHouseCpuWithDualRam(
   program: SnowHouseCpuProgram,
@@ -7441,6 +7446,7 @@ case class SnowHouseCpuWithDualRam(
   }
   if (cfg.exposeRegFileWriteEnableToIo) {
     cpu.io.regFileWriteEnable <> io.regFileWriteEnable
+    cpu.io.laggingRegPcAtRegFileWrite <> io.laggingRegPcAtRegFileWrite
   }
   ////for ((multiCycleBus, idx) <- cpu.io.multiCycleBusVec.view.zipWithIndex) {
   ////  if (idx != 0) {
@@ -7570,16 +7576,16 @@ object SnowHouseCpuWithDualRamSim extends App {
     false
   )
   val testIdxRange = Array[Int](
-    0, //0,
+    //0, //0,
     //1, 1,
     //2, 2,
     //3, 3,
     //4, 4,
     //5, 5,
     //6, 6,
-    ////7, 7,
-    ////8, //8,
-    ////9, //9,
+    //7, 7,
+    //8, 8,
+    9, 9,
     //////10, //10,
     //////11, 11,
     ////12, 12,
@@ -7686,7 +7692,7 @@ object SnowHouseCpuWithDualRamSim extends App {
         )
         val mySavedGprArr = new ArrayBuffer[Long]()
         for (idx <- 0 until cfg.numGprs) {
-          mySavedGprArr += 0.toLong
+          mySavedGprArr += -1.toLong//0.toLong
         }
 
         dut.clockDomain.forkStimulus(10)
@@ -7695,6 +7701,7 @@ object SnowHouseCpuWithDualRamSim extends App {
           val myRegFileWriteEnable = dut.io.regFileWriteEnable.toBoolean
           val myRegFileWriteAddr = dut.io.regFileWriteAddr.toLong
           val myRegFileWriteData = dut.io.regFileWriteData.toLong
+          val myLaggingRegPc = dut.io.laggingRegPcAtRegFileWrite.toLong
 
           if (myRegFileWriteEnable) {
             if (
@@ -7702,7 +7709,11 @@ object SnowHouseCpuWithDualRamSim extends App {
               != mySavedGprArr(myRegFileWriteAddr.toInt)
             ) {
               pw.write(
-                s"addr:${myRegFileWriteAddr} data:${myRegFileWriteData}\n"
+                //s"pc:${myLaggingRegPc} "
+                //s""
+                //+ 
+                s"addr:${myRegFileWriteAddr} "
+                + s"data:${myRegFileWriteData}\n"
               )
               mySavedGprArr(myRegFileWriteAddr.toInt) = myRegFileWriteData
               //for (idx <- 0 until mySavedGprArr.size) {
