@@ -8218,14 +8218,15 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
         io.psExSetPc.nextPc := (
           //Mux[UInt](
           //  tempPsExSetPcTaken,
-            RegNext(
-              next=(
-                io.regPcPlusImm
-                - (3 * cfg.instrSizeBytes)
-              ),
-              init=io.regPcPlusImm.getZero,
-            ) //+ cfg.instrSizeBytes
+            //RegNext(
+            //  next=(
+            //    io.regPcPlusImm
+            //    - (3 * cfg.instrSizeBytes)
+            //  ),
+            //  init=io.regPcPlusImm.getZero,
+            //) //+ cfg.instrSizeBytes
             //io.regPcPlusImmRealDst//, //+ cfg.instrSizeBytes
+            io.psExSetPc.branchTgtBufElem.dstRegPc
           //  io.mySavedRegPcPlusInstrSize/*.payload*/,
           //  //RegNextWhen(
           //  //  next=RegNextWhen(
@@ -8303,14 +8304,15 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
           )
         )
         io.psExSetPc.nextPc := (
-          RegNext(
-            io.rdMemWord(io.jmpAddrIdx) (
-              cfg.mainAddrWidth - 1 downto 0
-            )
-            //- (1 * cfg.instrSizeBytes)
-            - (3 * cfg.instrSizeBytes)
-          )
-          init(0x0)
+          //RegNext(
+          //  io.rdMemWord(io.jmpAddrIdx) (
+          //    cfg.mainAddrWidth - 1 downto 0
+          //  )
+          //  //- (1 * cfg.instrSizeBytes)
+          //  - (3 * cfg.instrSizeBytes)
+          //)
+          //init(0x0)
+          io.psExSetPc.branchTgtBufElem.dstRegPc
         )
         io.psExSetPc.branchTgtBufElem.valid := (
           False
@@ -8338,13 +8340,14 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
           )
         )
         io.psExSetPc.nextPc := (
-          RegNext(
-            io.rIra(
-              cfg.mainAddrWidth - 1 downto 0
-            )
-            - (3 * cfg.instrSizeBytes)
-          )
-          init(0x0)
+          //RegNext(
+          //  io.rIra(
+          //    cfg.mainAddrWidth - 1 downto 0
+          //  )
+          //  - (3 * cfg.instrSizeBytes)
+          //)
+          //init(0x0)
+          io.psExSetPc.branchTgtBufElem.dstRegPc
         )
         io.psExSetPc.branchTgtBufElem.valid := (
           False
@@ -8372,13 +8375,14 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
           )
         )
         io.psExSetPc.nextPc := (
-          RegNext(
-            io.rIds(
-              cfg.mainAddrWidth - 1 downto 0
-            )
-            - (3 * cfg.instrSizeBytes)
-          )
-          init(0x0)
+          //RegNext(
+          //  io.rIds(
+          //    cfg.mainAddrWidth - 1 downto 0
+          //  )
+          //  - (3 * cfg.instrSizeBytes)
+          //)
+          //init(0x0)
+          io.psExSetPc.branchTgtBufElem.dstRegPc
         )
         io.psExSetPc.branchTgtBufElem.valid := (
           False
