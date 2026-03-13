@@ -7692,7 +7692,7 @@ object SnowHouseCpuWithDualRamSim extends App {
         )
         val mySavedGprArr = new ArrayBuffer[Long]()
         for (idx <- 0 until cfg.numGprs) {
-          mySavedGprArr += -1.toLong//0.toLong
+          mySavedGprArr += 0.toLong
         }
 
         dut.clockDomain.forkStimulus(10)
