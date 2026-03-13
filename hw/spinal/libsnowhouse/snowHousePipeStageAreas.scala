@@ -5249,6 +5249,50 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
   //  rSavedMyPsExSetPcValid := False
   //}
 
+  val tempPsExSetPcDontPredict = Bool()
+  tempPsExSetPcDontPredict := False
+  //tempPsExSetPcDontPredict := (
+  //  RegNext(
+  //    tempPsExSetPcDontPredict,
+  //    init=tempPsExSetPcDontPredict.getZero,
+  //  )
+  //)
+  val rSavedTempPsExSetPcDontPredict = Reg(Bool(), init=False)
+  val stickyTempPsExSetPcDontPredict = (
+    //io.upIsValid
+    //&& 
+    (
+      tempPsExSetPcDontPredict
+      || rSavedTempPsExSetPcDontPredict
+    )
+  )
+  when (
+    //io.upIsFiring
+    io.upIsValid
+    //&& io.downIsReady
+    //|| RegNext(io.upIsFiring, init=False)
+  ) {
+    when (tempPsExSetPcDontPredict) {
+      rSavedTempPsExSetPcDontPredict := True
+    }
+  }
+  when (
+    //RegNext(
+    //  next=(
+    //    io.upIsFiring
+    //    && rSavedTempPsExSetPcDontPredict
+    //  ),
+    //  init=False,
+    //)
+    //&& rSavedTempPsExSetPcDontPredict
+    //io.upIsFiring
+    io.upIsFiring
+    //&& rSavedTempPsExSetPcDontPredict
+    //&& !tempPsExSetPcDontPredict
+  ) {
+    rSavedTempPsExSetPcDontPredict := False
+  }
+
   val tempPsExSetPcValid = Bool() //Reg(Bool(), init=False)
   val rSavedTempPsExSetPcValid = Reg(Bool(), init=False)
   val stickyTempPsExSetPcValid = (
@@ -5628,6 +5672,8 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
     ))
   ) {
     tempPsExSetPcValid := True
+    //io.psExSetPc.branchTgtBufElem.dontPredict := True
+    tempPsExSetPcDontPredict := True
   }
   //val rTakeIrqTempPsExSetPcValid = (
   //  Reg(
@@ -5734,6 +5780,14 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
       init=io.psExSetPc.branchTgtBufElem.valid.getZero,
     )
   )
+  //io.psExSetPc.branchTgtBufElem.dontPredict.allowOverride
+  //io.psExSetPc.branchTgtBufElem.dontPredict := (
+  //  RegNext(
+  //    io.psExSetPc.branchTgtBufElem.dontPredict,
+  //    init=io.psExSetPc.branchTgtBufElem.dontPredict.getZero,
+  //  )
+  //)
+  io.psExSetPc.branchTgtBufElem
   //io.psExSetPc.branchTgtBufElem.valid.setAsReg() init(False)
   //io.psExSetPc.branchTgtBufElem.srcRegPc.allowOverride
   //io.psExSetPc.branchTgtBufElem.srcRegPc := (
@@ -8679,6 +8733,7 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
   io.psExSetPc.branchTgtBufElem.dontPredict.allowOverride
   io.psExSetPc.branchTgtBufElem.dontPredict := (
     io.btbElemDontPredict
+    || stickyTempPsExSetPcDontPredict
     //stickyTempBtbElemDontPredict
   )
   when (
