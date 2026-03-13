@@ -2393,7 +2393,7 @@ case class SnowHousePipeStageInstrFetch(
   )
   if (cfg.haveBranchPredictor) {
     for (idx <- 0 until branchPredictor.io.inpRegPc.size) {
-      //when (!rTakeJumpCnt.fire) {
+      when (!rTakeJumpCnt.fire) {
         // TODO: determine if this is correct!
         branchPredictor.io.inpRegPc(idx) := (
           myPredictedNextPc
@@ -2407,15 +2407,15 @@ case class SnowHousePipeStageInstrFetch(
           //  myRegPcShiftThing,
           //).asUInt
         )
-      //} otherwise {
-      //  branchPredictor.io.inpRegPc(idx) := (
-      //    //myPredictedNextPc
-      //    Cat(
-      //      (rPrevRegPc(0) + 1),
-      //      myRegPcShiftThing,
-      //    ).asUInt
-      //  )
-      //}
+      } otherwise {
+        branchPredictor.io.inpRegPc(idx) := (
+          //myPredictedNextPc
+          Cat(
+            (rPrevRegPc(0) + 1),
+            myRegPcShiftThing,
+          ).asUInt
+        )
+      }
     }
   }
   def doInitTakeJumpCnt(): Unit = {
