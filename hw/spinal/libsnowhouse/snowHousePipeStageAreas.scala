@@ -3753,7 +3753,7 @@ case class SnowHousePipeStageInstrDecode(
     mySeenPsIfRegPcSetItCntLsb
     || rSavedSeenPsIfRegPcSetItCntLsb
   )
-  when (mySeenPsIfRegPcSetItCntLsb) {
+  when (rose(mySeenPsIfRegPcSetItCntLsb)) {
     rSavedSeenPsIfRegPcSetItCntLsb := True
   }
   val shouldFinishJump = (
