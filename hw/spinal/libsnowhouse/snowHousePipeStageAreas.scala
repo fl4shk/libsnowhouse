@@ -3723,6 +3723,28 @@ case class SnowHousePipeStageInstrDecode(
     upPayload(1) := upPayload(0)
   }
 
+  val shouldClearExtraDecodeInfo = Bool()
+  shouldClearExtraDecodeInfo := (
+    RegNext(
+      shouldClearExtraDecodeInfo,
+      init=shouldClearExtraDecodeInfo.getZero
+    )
+  )
+  when (
+    //RegNext(
+    //  RegNext(
+    //    RegNext(
+    //      psExSetPc.valid,
+    //      init=False,
+    //    ),
+    //    init=False,
+    //  ),
+    //  init=False
+    //)
+    psExSetPc.valid
+  ) {
+    shouldClearExtraDecodeInfo := True
+  }
   //--------
   val mySeenPsIfRegPcSetItCntLsb = upPayload(1).psIfRegPcSetItCnt(0)
   val rSavedSeenPsIfRegPcSetItCntLsb = Reg(Bool(), init=False)
@@ -3771,6 +3793,9 @@ case class SnowHousePipeStageInstrDecode(
       )
     )
   )
+  when (shouldFinishJump) {
+    shouldClearExtraDecodeInfo := False
+  }
   //shouldFinishJump := (
   //  RegNext(
   //    next=shouldFinishJump,

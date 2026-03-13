@@ -2233,7 +2233,7 @@ object SnowHouseCpuPipeStageInstrDecode {
         //  //)
         //  !psId.shouldFinishJump
         //) {
-          instrIsPre := True
+          instrIsPre := True//!psId.shouldClearExtraDecodeInfo //True
         //}
         //when (!rMultiCycleState) {
           //when (cId.up.isFiring) {
@@ -2366,6 +2366,11 @@ object SnowHouseCpuPipeStageInstrDecode {
     //  ).asUInt
     //  myCat
     //}
+    when (psId.shouldClearExtraDecodeInfo) {
+      rPrevPreImm.foreach(item => {
+        item := item.getZero
+      })
+    }
   }
 }
 //case class SnowHouseCpuPipeStageInstrDecode(
@@ -7565,8 +7570,8 @@ object SnowHouseCpuWithDualRamSim extends App {
     false
   )
   val testIdxRange = Array[Int](
-    //0, 0,
-    1, //1,
+    0, //0,
+    //1, 1,
     ////2, 2,
     //3, 3,
     ////4, 4,

@@ -465,7 +465,47 @@ case class SnowHouseInstrDataDualRam(
     )
 
     if (!haveFastLcvBusMem) {
-      memSlowUnlessBurst.io.bus.h2dBus << myMemIo.bus.h2dBus
+      //memSlowUnlessBurst.io.bus.h2dBus << myMemIo.bus.h2dBus
+      ////.throwWhen(
+      ////  History(
+      ////    that=False,
+      ////    length=2,
+      ////    when=myMemIo.bus.h2dBus.fire,
+      ////    init=True,
+      ////  ).last
+      ////)
+      ////myMemIo.bus.h2dBus.translateInto(memSlowUnlessBurst.io.bus.h2dBus)(
+      ////  dataAssignment=(outp, inp) => {
+      ////    outp := inp
+      ////    outp.addr.allowOverride
+      ////    outp.addr := RegNextWhen(
+      ////      memSlowUnlessBurst.io.bus.h2dBus.addr,
+      ////      cond=memSlowUnlessBurst.io.bus.h2dBus.fire,
+      ////      init=memSlowUnlessBurst.io.bus.h2dBus.addr.getZero,
+      ////    )
+      ////  }
+      ////)
+      ////myMemIo.bus.d2hBus << memSlowUnlessBurst.io.bus.d2hBus.throwWhen(
+      ////  History(
+      ////    that=False,
+      ////    length=2,
+      ////    when=memSlowUnlessBurst.io.bus.d2hBus.fire,
+      ////    init=True,
+      ////  ).last
+      ////)
+      ////myMemIo.bus.h2dBus.translateInto(memSlowUnlessBurst.io.bus.h2dBus)(
+      ////  dataAssignment=(outp, inp) => {
+      ////    //outp := inp
+      ////    //outp.addr.allowOverride
+      ////    outp/*.addr*/ := RegNextWhen(
+      ////      inp,
+      ////      cond=memSlowUnlessBurst.io.bus.h2dBus.fire,
+      ////      init=inp.getZero,
+      ////    )
+      ////  }
+      ////)
+      //myMemIo.bus.d2hBus << memSlowUnlessBurst.io.bus.d2hBus
+      //memSlowUnlessBurst.io.bus.h2dBus << myMemIo.bus.h2dBus
       //.throwWhen(
       //  History(
       //    that=False,
@@ -474,18 +514,19 @@ case class SnowHouseInstrDataDualRam(
       //    init=True,
       //  ).last
       //)
-      //myMemIo.bus.h2dBus.translateInto(memSlowUnlessBurst.io.bus.h2dBus)(
-      //  dataAssignment=(outp, inp) => {
-      //    outp := inp
-      //    outp.addr.allowOverride
-      //    outp.addr := RegNextWhen(
-      //      memSlowUnlessBurst.io.bus.h2dBus.addr,
-      //      cond=memSlowUnlessBurst.io.bus.h2dBus.fire,
-      //      init=memSlowUnlessBurst.io.bus.h2dBus.addr.getZero,
-      //    )
-      //  }
-      //)
-      //myMemIo.bus.d2hBus << memSlowUnlessBurst.io.bus.d2hBus.throwWhen(
+      myMemIo.bus.h2dBus.translateInto(memSlowUnlessBurst.io.bus.h2dBus)(
+        dataAssignment=(outp, inp) => {
+          //outp := inp
+          //outp.addr.allowOverride
+          outp/*.addr*/ := RegNextWhen(
+            inp,
+            cond=memSlowUnlessBurst.io.bus.h2dBus.fire,
+            init=inp.getZero,
+          )
+        }
+      )
+      myMemIo.bus.d2hBus << memSlowUnlessBurst.io.bus.d2hBus
+      //.throwWhen(
       //  History(
       //    that=False,
       //    length=2,
@@ -493,18 +534,6 @@ case class SnowHouseInstrDataDualRam(
       //    init=True,
       //  ).last
       //)
-      //myMemIo.bus.h2dBus.translateInto(memSlowUnlessBurst.io.bus.h2dBus)(
-      //  dataAssignment=(outp, inp) => {
-      //    //outp := inp
-      //    //outp.addr.allowOverride
-      //    outp/*.addr*/ := RegNextWhen(
-      //      inp,
-      //      cond=memSlowUnlessBurst.io.bus.h2dBus.fire,
-      //      init=inp.getZero,
-      //    )
-      //  }
-      //)
-      myMemIo.bus.d2hBus << memSlowUnlessBurst.io.bus.d2hBus
     }
 
     io.lcvIbus.h2dBus.translateInto(
