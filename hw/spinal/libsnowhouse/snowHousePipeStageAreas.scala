@@ -752,25 +752,30 @@ case class SnowHouseBranchPredictor(
     )
   )
   val myResultValidCmpEqRight = (
-    RegNextWhen(
-      next=(
-        io.inpRegPc(
-          //2
-          //0
-          SnowHouseBranchPredictorKind._predictorInpRegPcIdxCmpEq
-        )
-        //- cfg.instrSizeBytes
-      )(cfg.mySrcRegPcCmpEqRange),
-      cond=(
-        //io.upIsFiring
-        io.upIsReady
-      ),
-      init=io.inpRegPc(
-        //2
-        //0
-        SnowHouseBranchPredictorKind._predictorInpRegPcIdxCmpEq
-      )(cfg.mySrcRegPcCmpEqRange).getZero,
-    )
+    io.inpRegPc(
+      //2
+      //0
+      SnowHouseBranchPredictorKind._predictorInpRegPcIdxCmpEq
+    )(cfg.mySrcRegPcCmpEqRange)
+    //RegNextWhen(
+    //  next=(
+    //    io.inpRegPc(
+    //      //2
+    //      //0
+    //      SnowHouseBranchPredictorKind._predictorInpRegPcIdxCmpEq
+    //    )
+    //    //- cfg.instrSizeBytes
+    //  )(cfg.mySrcRegPcCmpEqRange),
+    //  cond=(
+    //    //io.upIsFiring
+    //    io.upIsReady
+    //  ),
+    //  init=io.inpRegPc(
+    //    //2
+    //    //0
+    //    SnowHouseBranchPredictorKind._predictorInpRegPcIdxCmpEq
+    //  )(cfg.mySrcRegPcCmpEqRange).getZero,
+    //)
   )
   io.result.valid := (
     myRdBtbElem.fire
