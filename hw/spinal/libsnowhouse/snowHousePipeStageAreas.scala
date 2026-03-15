@@ -4232,8 +4232,8 @@ case class SnowHousePipeStageInstrDecode(
           numFollowingInstrs + 1
         ),
         when=(
-          //down.isFiring
-          up.isFiring
+          down.isFiring
+          //up.isFiring
         ),
         init=False
       )
