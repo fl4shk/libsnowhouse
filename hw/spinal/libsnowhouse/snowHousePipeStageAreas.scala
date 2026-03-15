@@ -4225,6 +4225,7 @@ case class SnowHousePipeStageInstrDecode(
         that=(
           upPayload(1).splitOp.opIsMemAccess
           && !upPayload(1).inpDecodeExt.head.memAccessKind.asBits(1)
+          //&& !shouldClearExtraDecodeInfo
         ),
         length=(
           //upPayload(1).myDoHaveHazardAddrCheckVec.size + 1
@@ -4315,6 +4316,7 @@ case class SnowHousePipeStageInstrDecode(
             when (
               upPayload(1).myDoHaveHazardAddrCheckVec(idx + 0)
               && myHistCondLdBubble(idx + 1)
+              && !shouldClearExtraDecodeInfo
             ) {
               doSendBubbleMainMost()
               when (down.isFiring) {
