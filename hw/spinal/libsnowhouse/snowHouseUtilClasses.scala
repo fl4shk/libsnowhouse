@@ -1626,7 +1626,18 @@ case class SnowHousePipePayloadNonExt(
   def opCnt = instrCnt.any
   val op = UInt(log2Up(cfg.opInfoMap.size) bits) //simPublic()
   val splitOp = SnowHouseSplitOp(cfg=cfg)
-  val myDoHaveHazardAddrCheckVec = Vec.fill(1)(Bool())
+  val myDoHaveHazardAddrCheckVec = Vec.fill(
+    1
+    + (
+      if (cfg.useLcvDataBus) (
+        1
+      ) else (
+        0
+      )
+    )
+  )(
+    Bool()
+  )
 
   val irqJmpOp = UInt(log2Up(cfg.opInfoMap.size) bits)
   def formalAssumes() = new Area {

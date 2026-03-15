@@ -195,11 +195,12 @@ case class BranchTgtBufElem(
   //    cfg.optBranchPredictorKind.get._branchKindEnumWidth bits
   //  )
   //)
-  val includesLdBubble = (
-    cfg.useLcvDataBus
-  ) generate (
-    Bool()
-  )
+
+  //val includesLdBubble = (
+  //  cfg.useLcvDataBus
+  //) generate (
+  //  Bool()
+  //)
   val dontPredict = (
     Bool()
   )
@@ -447,7 +448,7 @@ case class SnowHouseBranchPredictor(
         if (!cfg.useLcvDataBus) (
           myDstRegPcWidth
         ) else (
-          myDstRegPcWidth + 1
+          myDstRegPcWidth //+ 1
         )
       )
       bits
@@ -554,7 +555,7 @@ case class SnowHouseBranchPredictor(
   //)
   //myRdBtbElem.valid := myRdDstRegPcAndValid.valid
 
-  if (!cfg.useLcvDataBus) {
+  //if (!cfg.useLcvDataBus) {
     myRdBtbElem.dstRegPc.assignFromBits(
       Cat(
         tgtDstRegPcBuf.io.ramIo.rdData,
@@ -562,18 +563,18 @@ case class SnowHouseBranchPredictor(
         U(s"${log2Up(cfg.instrSizeBytes)}'d0"),
       )
     )
-  } else { // if (cfg.useLcvDataBus)
-    myRdBtbElem.includesLdBubble := tgtDstRegPcBuf.io.ramIo.rdData.msb
-    myRdBtbElem.dstRegPc.assignFromBits(
-      Cat(
-        tgtDstRegPcBuf.io.ramIo.rdData(
-          tgtDstRegPcBuf.io.ramIo.rdData.high - 1 downto 0
-        ),
-        //myRdDstRegPcAndValid.payload,
-        U(s"${log2Up(cfg.instrSizeBytes)}'d0"),
-      )
-    )
-  }
+  //} else { // if (cfg.useLcvDataBus)
+  //  //myRdBtbElem.includesLdBubble := tgtDstRegPcBuf.io.ramIo.rdData.msb
+  //  myRdBtbElem.dstRegPc.assignFromBits(
+  //    Cat(
+  //      tgtDstRegPcBuf.io.ramIo.rdData(
+  //        tgtDstRegPcBuf.io.ramIo.rdData.high - 1 downto 0
+  //      ),
+  //      //myRdDstRegPcAndValid.payload,
+  //      U(s"${log2Up(cfg.instrSizeBytes)}'d0"),
+  //    )
+  //  )
+  //}
 
   //myRdBtbElem.valid.assignFromBits(
   //  tgtValidBuf.io.ramIo.rdData
@@ -872,7 +873,7 @@ case class SnowHouseBranchPredictor(
       myTempDstRegPc
     ) else (
       Cat(
-        wrBtbElem.includesLdBubble,
+        //wrBtbElem.includesLdBubble,
         myTempDstRegPc,
       ).asUInt
     )
@@ -4178,6 +4179,15 @@ case class SnowHousePipeStageInstrDecode(
     upPayload(1).branchTgtBufElem(1) := myTempBtbElem
   })
 
+  object MyLcvDbusStallState
+  extends SpinalEnum(defaultEncoding=binaryOneHot) {
+    val
+      IDLE,
+      POST_LD_0//,
+      //POST_LD_1
+      = newElement();
+  }
+
   val myLcvDbusPartAArea = (
     cfg.useLcvDataBus
   ) generate (new Area {
@@ -4185,145 +4195,201 @@ case class SnowHousePipeStageInstrDecode(
     down(pId).allowOverride
     //val mySeenDownFire = Bool()
     //val rSavedSeenDownFire
-    val rStallState = Reg(Bool(), init=False)
+    val rStallState = (
+      //Reg(Bool(), init=False)
+      Reg(MyLcvDbusStallState())
+      init(MyLcvDbusStallState.IDLE)
+    )
     upPayload(1).branchTgtBufElem(1) := (
       //upPayload(1).branchTgtBufElem(1).getZero
       myTempBtbElem
     )
+    def numFollowingInstrs = (
+      2
+      // up to two following instructions,
+      // per the overall pipeline structure of EX -> MEM -> WB -> LastBack
+    )
+    //val myHistTempBtbElem = (
+    //  History[BranchTgtBufElem](
+    //    that=myTempBtbElem,
+    //    length=(
+    //      numFollowingInstrs + 1
+    //    ),
+    //    when=down.isFiring,
+    //    init=myTempBtbElem.getZero,
+    //  )
+    //)
 
-    val myTempCondRnw = (
-      RegNextWhen(
-        (
-          //setOutpModMemWord.io.opIsMemAccess.last
+    val myHistCondLdBubble = (
+      History[Bool](
+        that=(
           upPayload(1).splitOp.opIsMemAccess
           && !upPayload(1).inpDecodeExt.head.memAccessKind.asBits(1)
         ),
-        cond=up.isFiring,
-        init=False,
+        length=(
+          //upPayload(1).myDoHaveHazardAddrCheckVec.size + 1
+          numFollowingInstrs + 1
+        ),
+        when=down.isFiring,
+        init=False
       )
+      //RegNextWhen(
+      //  (
+      //    //setOutpModMemWord.io.opIsMemAccess.last
+      //    upPayload(1).splitOp.opIsMemAccess
+      //    && !upPayload(1).inpDecodeExt.head.memAccessKind.asBits(1)
+      //  ),
+      //  cond=up.isFiring,
+      //  init=False,
+      //)
     )
-    when (up.isValid) {
-      when (
-        upPayload(1).myDoHaveHazardAddrCheckVec(0)
-        && myTempCondRnw
-      ) {
-        when (!rStallState) {
-          cId.duplicateIt()
 
-          //myShouldIgnoreInstr.foreach(item => {
-          //  item := True
-          //})
-          //upPayload(1).branchTgtBufElem(0).valid := False
-          //upPayload(1).branchTgtBufElem(1).valid := False
-          upPayload(1).instrCnt.myPsIdBubble.foreach(item => {
-            item := True
-          })
-          //psIdFoundBubble := True
-          upPayload(1).splitOp.setToDefault()
-          //upPayload(1).branchTgtBufElem(0).valid := False
-          upPayload(1).branchTgtBufElem(1) := (
-            upPayload(1).branchTgtBufElem(1).getZero
-            //myTempBtbElem
-          )
-          //when (upPayload(0).branchTgtBufElem(0).includesLdBubble) {
-          //  upPayload(1).branchTgtBufElem(0) := (
-          //    RegNextWhen(
-          //      upPayload(1).branchTgtBufElem(0),
-          //      cond=up.isFiring,
-          //      init=upPayload(1).branchTgtBufElem(0).getZero,
-          //    )
-          //  )
-          //  upPayload(1).branchTgtBufElem(1) := (
-          //    RegNextWhen(
-          //      myTempBtbElem,
-          //      cond=up.isFiring,
-          //      init=myTempBtbElem.getZero,
-          //    )
-          //  )
-          //} otherwise {
-          //  upPayload(1).branchTgtBufElem(1) := myTempBtbElem
-          //}
-          down(pId) := upPayload(1)
-          //// TODO: need to insert a bubble here
-          ////when (cMid0Front.down.isValid) {
-          //  cMid0Front.down(outpPipePayloadA).instrCnt.shouldIgnoreInstr
-          //    .foreach(item => {
-          //      // := False
-          //      item := True
-          //    })
-          //  cMid0Front.down(outpPipePayloadA).myExt.foreach(item => {
-          //    item.modMemWordValid.foreach(innerItem => {
-          //      innerItem := False
-          //    })
-          //    item.fwdCanDoIt.foreach(innerItem => {
-          //      innerItem := False
-          //    })
-          //  })
-          //  cMid0Front.down(outpPipePayloadA).outpDecodeExt.opIsMemAccess
-          //    .foreach(item => {
-          //      item := False
-          //    })
-          ////}
-          when (down.isFiring) {
-            rStallState := True
+    //when (up.isValid) {
+    //  for (idx <- 0 until numFollowingInstrs) {
+    //    when (
+    //      upPayload(1).myDoHaveHazardAddrCheckVec(idx + 0)
+    //      && myHistCondLdBubble(idx + 1)
+    //    ) {
+    //      when (
+    //        //!rStallState
+    //        rStallState.asBits(0) // IDLE
+    //      ) {
+    //        cId.duplicateIt()
+
+    //        upPayload(1).instrCnt.myPsIdBubble.foreach(item => {
+    //          item := True
+    //        })
+    //        upPayload(1).splitOp.setToDefault()
+    //        upPayload(1).branchTgtBufElem(1) := (
+    //          upPayload(1).branchTgtBufElem(1).getZero
+    //        )
+    //        down(pId) := upPayload(1)
+    //        when (down.isFiring) {
+    //          //rStallState := True
+    //          rStallState := (
+    //            if (idx == 0) (
+    //              MyLcvDbusStallState.POST_LD_0
+    //            ) else (
+    //              MyLcvDbusStallState.POST_LD_1
+    //            )
+    //          )
+    //        }
+    //      }
+    //    }
+    //  }
+    //}
+    //when (rose(rStallState)) {
+    //  upPayload(1).instrCnt.myPsIdBubble.foreach(item => {
+    //    item := False
+    //  })
+    //}
+    //when (up.isFiring) {
+    //  //rStallState := False
+    //  rStallState := MyLcvDbusStallState.IDLE
+    //}
+    //when (rose(rStallState.asBits(1) || rStallState.asBits(2))) {
+    //  upPayload(1).instrCnt.myPsIdBubble.foreach(item => {
+    //    item := False
+    //  })
+    //}
+    upPayload(1).instrCnt.myPsIdBubble.foreach(item => {
+      item := False
+    })
+    def doSendBubbleMainMost(
+    ): Unit = {
+      cId.duplicateIt()
+
+      upPayload(1).instrCnt.myPsIdBubble.foreach(item => {
+        item := True
+      })
+      upPayload(1).splitOp.setToDefault()
+      upPayload(1).branchTgtBufElem(1) := (
+        upPayload(1).branchTgtBufElem(1).getZero
+      )
+      down(pId) := upPayload(1)
+    }
+    switch (rStallState) {
+      is (MyLcvDbusStallState.IDLE) {
+        when (up.isValid) {
+          for (idx <- 0 until numFollowingInstrs) {
+            when (
+              upPayload(1).myDoHaveHazardAddrCheckVec(idx + 0)
+              && myHistCondLdBubble(idx + 1)
+            ) {
+              doSendBubbleMainMost()
+              when (down.isFiring) {
+                //rStallState := True
+                rStallState := (
+                  //if (idx == 0) (
+                    MyLcvDbusStallState.POST_LD_0
+                  //) else (
+                  //  MyLcvDbusStallState.POST_LD_1
+                  //)
+                )
+              }
+            }
           }
         }
-      } otherwise {
-        //upPayload(1).branchTgtBufElem(1) := myTempBtbElem
-        //setOutpModMemWord.io.irqIraRegPc := outp.irqIraRegPc.head
       }
-    }
-    when (rose(rStallState)) {
-      upPayload(1).instrCnt.myPsIdBubble.foreach(item => {
-        item := False
-      })
-
-      //upPayload(1).branchTgtBufElem(0) := (
-      //  RegNextWhen(
-      //    upPayload(1).branchTgtBufElem(0),
-      //    cond=up.isFiring,
-      //    init=upPayload(1).branchTgtBufElem(0).getZero,
-      //  )
-      //)
-      //upPayload(1).branchTgtBufElem(1) := (
-      //  RegNextWhen(
-      //    myTempBtbElem,
-      //    cond=up.isFiring,
-      //    init=myTempBtbElem.getZero,
-      //  )
-      //)
-
-      //when (
-      //  !upPayload(0).branchTgtBufElem(0).valid
-      //) {
-      //  upPayload(0)
-      //}
-      //psIdFoundBubble := False
-      //cMid0Front.down(midPipePayload(1)).foreach(outerItem => {
-      //  outerItem.instrCnt.shouldIgnoreInstr.foreach(item => {
-      //    // := False
-      //    item := False
-      //  })
-      //  outerItem.myExt.foreach(item => {
-      //    item.fwdCanDoIt.foreach(innerItem => {
-      //      innerItem := (
-      //        //False
-      //        !myShouldIgnoreInstr.last
+      //is (MyLcvDbusStallState.POST_LD_0) {
+      //  def idx = 0
+      //  when (
+      //    upPayload(1).myDoHaveHazardAddrCheckVec(idx + 0)
+      //    && myHistCondLdBubble(idx + 1)
+      //  ) {
+      //    doSendBubbleMainMost()
+      //    when (down.isFiring) {
+      //      //rStallState := True
+      //      rStallState := (
+      //        if (idx == 0) (
+      //          MyLcvDbusStallState.POST_LD_0
+      //        ) else (
+      //          // should it always be `POST_LD_1`?
+      //          MyLcvDbusStallState.POST_LD_1
+      //        )
       //      )
-      //    })
-      //  })
-      //})
+      //    }
+      //  } otherwise {
+      //    //upPayload(1).branchTgtBufElem(1) := (
+      //    //  //upPayload(1).branchTgtBufElem(1).getZero
+      //    //  myHistTempBtbElem(1)
+      //    //)
+      //  }
+      //}
+      //is (MyLcvDbusStallState.POST_LD_1) {
+      //  def idx = 0
+      //  when (
+      //    upPayload(1).myDoHaveHazardAddrCheckVec(idx + 0)
+      //    && myHistCondLdBubble(idx + 1)
+      //  ) {
+      //    doSendBubbleMainMost()
+      //    when (down.isFiring) {
+      //      //rStallState := True
+      //      rStallState := (
+      //        if (idx == 0) (
+      //          MyLcvDbusStallState.POST_LD_0
+      //        ) else (
+      //          // should it always be `POST_LD_1`?
+      //          MyLcvDbusStallState.POST_LD_1
+      //        )
+      //      )
+      //    }
+      //  } otherwise {
+      //    //upPayload(1).branchTgtBufElem(1) := (
+      //    //  //upPayload(1).branchTgtBufElem(1).getZero
+      //    //  myHistTempBtbElem(1)
+      //    //)
+      //  }
+      //}
     }
     when (up.isFiring) {
-      rStallState := False
-      //when (upPayload(1).branchTgtBufElem(0).includesLdBubble) {
-      //  upPayload(1).branchTgtBufElem(0).valid := False
-      //  upPayload(1).branchTgtBufElem(1).valid := False
-      //}
-      //myShouldIgnoreInstr.foreach(item => {
-      //  item := False
-      //})
+      rStallState := MyLcvDbusStallState.IDLE
     }
+    //for (idx <- 0 until numFollowingInstrs) {
+    //  //when (rose(rStallState.asBits(idx + 1))) {
+    //  //  upPayload(1).branchTgtBuf
+    //  //}
+    //}
   })
 
 }
@@ -10591,136 +10657,150 @@ case class SnowHousePipeStageExecute(
     doSetOtherSetOutpMmwBranchPredictorInputs(false)
   })
   val myLcvDbusBtbElemValidArea = (
-    cfg.useLcvDataBus
+    cfg.useLcvDataBus   
   ) generate (new Area {
-    // TODO: (maybe) move this logic to `SnowHousePipeStageInstrDecode`
-    val rState = Reg(Bool(), init=False)
-    //when (
-    //  outp.branchTgtBufElem(0).valid
-    //) {
-    //} otherwise {
-    //}
-    //when (cMid0Front.up.isFiring) {
-    //  rState := False
-    //}
-    setOutpModMemWord.io.btbElemValid := False
-    setOutpModMemWord.io.btbElemDontPredict := (
-      //outp.branchTgtBufElem(1).dontPredict
-      //|| myShouldIgnoreInstr.last
-      False
-    )
-    setOutpModMemWord.io.branchPredictTkn := (
-      //outp.branchPredictTkn
-      ////outp.branchTgtBufElem(1).branchKind.asBits(0)
-      False
-    )
-    setOutpModMemWord.io.branchPredictReplaceBtbElem := (
-      //outp.branchPredictReplaceBtbElem
-      False
-    )
-    //val myTempBtbElem = (
-    //  RegNextWhen(
-    //  )
-    //)
-    val myTempBtbElemValid = {
-      val tempCond = (
-        outp.branchTgtBufElem(0).valid
-        && !myShouldIgnoreInstr.last
-        && cMid0Front.down.isReady
-      )
+    setOutpModMemWord.io.btbElemValid := (
       //if (!cfg.useLcvDataBus) (
-        tempCond
+        outp.branchTgtBufElem(0).valid
       //) else (
-      //  tempCond && !psWbToMemStallRequest
+      //  outp.branchTgtBufElem(0).valid
+      //  && !outp.instrCnt.myPsIdBubble.last
+      //  //&& !prevStageFoundBubble
       //)
-    }
-    when (cMid0Front.up.isValid) {
-      when (!rState) {
-        switch (
-          (
-            // If I understand correctly,
-            // `outp.branchTgtBufElem(0).valid` should *always* be `True`
-            // when `includesLdBubble === True`
-            // because of how previous pipeline stages function
-
-            //outp.branchTgtBufElem(0).valid
-            myTempBtbElemValid
-            && outp.branchTgtBufElem(0).includesLdBubble
-          )
-          ## (
-            //outp.branchTgtBufElem(0).valid
-            myTempBtbElemValid
-            && outp.instrCnt.myPsIdBubble.last
-          )
-        ) {
-          is (M"1-") {
-            when (cMid0Front.up.isFiring) {
-              rState := True
-            }
-            setOutpModMemWord.io.btbElemValid := False
-            setOutpModMemWord.io.btbElemDontPredict := (
-              //outp.branchTgtBufElem(1).dontPredict
-              //|| myShouldIgnoreInstr.last
-              False
-            )
-            setOutpModMemWord.io.branchPredictTkn := (
-              //outp.branchPredictTkn
-              ////outp.branchTgtBufElem(1).branchKind.asBits(0)
-              False
-            )
-            setOutpModMemWord.io.branchPredictReplaceBtbElem := (
-              //outp.branchPredictReplaceBtbElem
-              False
-            )
-          }
-          is (M"01") {
-            setOutpModMemWord.io.btbElemValid := False
-            setOutpModMemWord.io.btbElemDontPredict := (
-              //outp.branchTgtBufElem(1).dontPredict
-              //|| myShouldIgnoreInstr.last
-              False
-            )
-            setOutpModMemWord.io.branchPredictTkn := (
-              //outp.branchPredictTkn
-              ////outp.branchTgtBufElem(1).branchKind.asBits(0)
-              False
-            )
-            setOutpModMemWord.io.branchPredictReplaceBtbElem := (
-              //outp.branchPredictReplaceBtbElem
-              False
-            )
-          }
-          default {
-            setOutpModMemWord.io.btbElemValid := (
-              //if (!cfg.useLcvDataBus) (
-                //outp.branchTgtBufElem(0).valid
-
-                myTempBtbElemValid
-              //) else (
-              //  outp.branchTgtBufElem(0).valid
-              //  && !outp.instrCnt.myPsIdBubble.last
-              //  //&& !prevStageFoundBubble
-              //)
-            )
-            when (!myShouldIgnoreInstr.last) {
-              doSetOtherSetOutpMmwBranchPredictorInputs(false)
-            }
-          }
-        }
-      } otherwise {
-        when (cMid0Front.up.isFiring) {
-          rState := False
-        }
-        setOutpModMemWord.io.btbElemValid := True
-        doSetOtherSetOutpMmwBranchPredictorInputs(true)
-      }
-    }
-    //switch (
-    //  outp.branchTgtBufElem(0).valid
-    //  ## outp.branchTgtBufElem(0).includesLdBubble
-    //) {
-    //}
+    )
+    doSetOtherSetOutpMmwBranchPredictorInputs(false)
   })
+  //val myLcvDbusBtbElemValidArea = (
+  //  cfg.useLcvDataBus
+  //) generate (new Area {
+  //  // TODO: (maybe) move this logic to `SnowHousePipeStageInstrDecode`
+  //  val rState = Reg(Bool(), init=False)
+  //  //when (
+  //  //  outp.branchTgtBufElem(0).valid
+  //  //) {
+  //  //} otherwise {
+  //  //}
+  //  //when (cMid0Front.up.isFiring) {
+  //  //  rState := False
+  //  //}
+  //  setOutpModMemWord.io.btbElemValid := False
+  //  setOutpModMemWord.io.btbElemDontPredict := (
+  //    //outp.branchTgtBufElem(1).dontPredict
+  //    //|| myShouldIgnoreInstr.last
+  //    False
+  //  )
+  //  setOutpModMemWord.io.branchPredictTkn := (
+  //    //outp.branchPredictTkn
+  //    ////outp.branchTgtBufElem(1).branchKind.asBits(0)
+  //    False
+  //  )
+  //  setOutpModMemWord.io.branchPredictReplaceBtbElem := (
+  //    //outp.branchPredictReplaceBtbElem
+  //    False
+  //  )
+  //  //val myTempBtbElem = (
+  //  //  RegNextWhen(
+  //  //  )
+  //  //)
+  //  val myTempBtbElemValid = {
+  //    val tempCond = (
+  //      outp.branchTgtBufElem(0).valid
+  //      && !myShouldIgnoreInstr.last
+  //      && cMid0Front.down.isReady
+  //    )
+  //    //if (!cfg.useLcvDataBus) (
+  //      tempCond
+  //    //) else (
+  //    //  tempCond && !psWbToMemStallRequest
+  //    //)
+  //  }
+  //  when (cMid0Front.up.isValid) {
+  //    when (!rState) {
+  //      switch (
+  //        (
+  //          // If I understand correctly,
+  //          // `outp.branchTgtBufElem(0).valid` should *always* be `True`
+  //          // when `includesLdBubble === True`
+  //          // because of how previous pipeline stages function
+
+  //          //outp.branchTgtBufElem(0).valid
+  //          myTempBtbElemValid
+  //          && outp.branchTgtBufElem(0).includesLdBubble
+  //        )
+  //        ## (
+  //          //outp.branchTgtBufElem(0).valid
+  //          myTempBtbElemValid
+  //          && outp.instrCnt.myPsIdBubble.last
+  //        )
+  //      ) {
+  //        is (M"1-") {
+  //          when (cMid0Front.up.isFiring) {
+  //            rState := True
+  //          }
+  //          setOutpModMemWord.io.btbElemValid := False
+  //          setOutpModMemWord.io.btbElemDontPredict := (
+  //            //outp.branchTgtBufElem(1).dontPredict
+  //            //|| myShouldIgnoreInstr.last
+  //            False
+  //          )
+  //          setOutpModMemWord.io.branchPredictTkn := (
+  //            //outp.branchPredictTkn
+  //            ////outp.branchTgtBufElem(1).branchKind.asBits(0)
+  //            False
+  //          )
+  //          setOutpModMemWord.io.branchPredictReplaceBtbElem := (
+  //            //outp.branchPredictReplaceBtbElem
+  //            False
+  //          )
+  //        }
+  //        is (M"01") {
+  //          setOutpModMemWord.io.btbElemValid := False
+  //          setOutpModMemWord.io.btbElemDontPredict := (
+  //            //outp.branchTgtBufElem(1).dontPredict
+  //            //|| myShouldIgnoreInstr.last
+  //            False
+  //          )
+  //          setOutpModMemWord.io.branchPredictTkn := (
+  //            //outp.branchPredictTkn
+  //            ////outp.branchTgtBufElem(1).branchKind.asBits(0)
+  //            False
+  //          )
+  //          setOutpModMemWord.io.branchPredictReplaceBtbElem := (
+  //            //outp.branchPredictReplaceBtbElem
+  //            False
+  //          )
+  //        }
+  //        default {
+  //          setOutpModMemWord.io.btbElemValid := (
+  //            //if (!cfg.useLcvDataBus) (
+  //              //outp.branchTgtBufElem(0).valid
+
+  //              myTempBtbElemValid
+  //            //) else (
+  //            //  outp.branchTgtBufElem(0).valid
+  //            //  && !outp.instrCnt.myPsIdBubble.last
+  //            //  //&& !prevStageFoundBubble
+  //            //)
+  //          )
+  //          when (!myShouldIgnoreInstr.last) {
+  //            doSetOtherSetOutpMmwBranchPredictorInputs(false)
+  //          }
+  //        }
+  //      }
+  //    } otherwise {
+  //      when (cMid0Front.up.isFiring) {
+  //        rState := False
+  //      }
+  //      setOutpModMemWord.io.btbElemValid := True
+  //      doSetOtherSetOutpMmwBranchPredictorInputs(true)
+  //    }
+  //  }
+  //  //switch (
+  //  //  outp.branchTgtBufElem(0).valid
+  //  //  ## outp.branchTgtBufElem(0).includesLdBubble
+  //  //) {
+  //  //}
+  //})
   setOutpModMemWord.io.splitOp.kind.allowOverride
   setOutpModMemWord.io.splitOp.allowOverride
   setOutpModMemWord.io.splitOp.jmpBrAlwaysEqNeOp.allowOverride
@@ -10871,18 +10951,18 @@ case class SnowHousePipeStageExecute(
       init=outp.laggingRegPc.getZero,
     )
   )
-  psExSetPc.branchTgtBufElem.includesLdBubble.allowOverride
-  psExSetPc.branchTgtBufElem.includesLdBubble := (
-    RegNextWhen(
-      //RegNext(
-        outp.branchTgtBufElem(1).includesLdBubble,
-        //cond=cMid0Front.up.isFiring,
-      //  init=outp.branchTgtBufElem(1).includesLdBubble.getZero,
-      //),
-      cond=setOutpModMemWord.io.psExSetPc.fire,
-      init=outp.branchTgtBufElem(1).includesLdBubble.getZero,
-    )
-  )
+  //psExSetPc.branchTgtBufElem.includesLdBubble.allowOverride
+  //psExSetPc.branchTgtBufElem.includesLdBubble := (
+  //  RegNextWhen(
+  //    //RegNext(
+  //      outp.branchTgtBufElem(1).includesLdBubble,
+  //      //cond=cMid0Front.up.isFiring,
+  //    //  init=outp.branchTgtBufElem(1).includesLdBubble.getZero,
+  //    //),
+  //    cond=setOutpModMemWord.io.psExSetPc.fire,
+  //    init=outp.branchTgtBufElem(1).includesLdBubble.getZero,
+  //  )
+  //)
   psExSetPc.branchTgtBufElem.dontPredict.allowOverride
   psExSetPc.branchTgtBufElem.dontPredict := (
     RegNextWhen(

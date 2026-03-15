@@ -141,7 +141,7 @@ Disassembly of section .text:
  218:	0c 00 01 91 	str	r1, r0, 12
  21c:	04 00 00 01 	add	r1, r0, 4
  220:	10 00 01 91 	str	r1, r0, 16
- 224:	bc 02 00 01 	add	r1, r0, 700
+ 224:	c0 02 00 01 	add	r1, r0, 704
  228:	07 00 10 70 	cpy	ids, r1
  22c:	80 00 00 01 	add	r1, r0, 128
  230:	00 00 10 92 	ldr	r2, r1, 0
@@ -170,13 +170,14 @@ Disassembly of section .text:
  288:	01 00 50 05 	add	r5, r5, 1
  28c:	00 00 40 05 	add	r5, r4, 0
  290:	00 00 50 93 	ldr	r3, r5, 0
- 294:	f9 ff 72 a3 	bltu	r3, r7, -28
+ 294:	00 00 50 09 	add	r9, r5, 0
+ 298:	f8 ff 72 a3 	bltu	r3, r7, -32
 
-00000298 <_infin>:
+0000029c <_infin>:
 	...
- 2b8:	f7 ff 00 a0 	beq	r0, r0, -36
+ 2bc:	f7 ff 00 a0 	beq	r0, r0, -36
 
-000002bc <_irq_handler>:
- 2bc:	01 00 a0 0a 	add	r10, r10, 1
- 2c0:	0a 00 00 70 	ret	ira
+000002c0 <_irq_handler>:
+ 2c0:	01 00 a0 0a 	add	r10, r10, 1
+ 2c4:	0a 00 00 70 	ret	ira
 	...

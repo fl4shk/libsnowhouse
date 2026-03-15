@@ -902,15 +902,15 @@ object SnowHouseCpuPipeStageInstrDecode {
     //  )
     //)
     ret.btbElem.dontPredict := tempDontPredict
-    if (cfg.useLcvDataBus) {
-      ret.btbElem.includesLdBubble := (
-        RegNextWhen(
-          upPayload.instrCnt.myPsIdBubble.last,
-          cond=downIsFiring,
-          init=False,
-        )
-      )
-    }
+    //if (cfg.useLcvDataBus) {
+    //  ret.btbElem.includesLdBubble := (
+    //    RegNextWhen(
+    //      upPayload.instrCnt.myPsIdBubble.last,
+    //      cond=downIsFiring,
+    //      init=False,
+    //    )
+    //  )
+    //}
 
     //when (
     //  !tempDontPredict
@@ -995,8 +995,28 @@ object SnowHouseCpuPipeStageInstrDecode {
       //)
     ))
     val tempHaveHazardAddrCheckVec = (
-      Vec.fill(upPayload.gprIdxVec.size - 1)(
-        Bool()
+      Vec.fill(
+        upPayload.myDoHaveHazardAddrCheckVec.size
+      )(
+        Vec.fill(upPayload.gprIdxVec.size - 1)(
+          Bool()
+        )
+      )
+    )
+    val myHistLastGprIdx = (
+      History(
+        that=(
+          //encInstr.last.raIdx
+          upPayload.gprIdxVec.last
+        ),
+        length=(
+          tempHaveHazardAddrCheckVec.size + 1
+        ),
+        when=psId.up.isFiring,
+        init=(
+          //encInstr.last.raIdx.getZero
+          upPayload.gprIdxVec.last.getZero
+        )
       )
     )
     for (idx <- 0 until upPayload.gprIdxVec.size - 1) {
@@ -1016,27 +1036,21 @@ object SnowHouseCpuPipeStageInstrDecode {
           encInstr.head.raIdx
         }
       )
-      tempHaveHazardAddrCheckVec(idx) := (
-        tempRegIdx
-        === (
-          RegNextWhen(
-            next=(
-              //encInstr.last.raIdx
-              upPayload.gprIdxVec.last
-            ),
-            cond=psId.up.isFiring,
-            init=(
-              //encInstr.last.raIdx.getZero
-              upPayload.gprIdxVec.last.getZero
-            )
-          )
+      for (jdx <- 0 until tempHaveHazardAddrCheckVec.size) {
+        tempHaveHazardAddrCheckVec(jdx)(idx) := (
+          tempRegIdx === myHistLastGprIdx(jdx + 1)
         )
-      )
+      }
     }
     //if (!cfg.useLcvDataBus) {
-      upPayload.myDoHaveHazardAddrCheckVec(0) := (
-        tempHaveHazardAddrCheckVec.reduceLeft(_ || _)
-      )
+      //upPayload.myDoHaveHazardAddrCheckVec(0) := (
+      //  tempHaveHazardAddrCheckVec.reduceLeft(_ || _)
+      //)
+      for (jdx <- 0 until tempHaveHazardAddrCheckVec.size) {
+        upPayload.myDoHaveHazardAddrCheckVec(jdx) := (
+          tempHaveHazardAddrCheckVec(jdx).reduceLeft(_ || _)
+        )
+      }
       when (upPayload.instrCnt.myPsIdBubble.head) {
         encInstr.last := encInstr.last.getZero
       }
@@ -7576,7 +7590,7 @@ object SnowHouseCpuWithDualRamSim extends App {
     false
   )
   val testIdxRange = Array[Int](
-    0, //0,
+    //0, 0,
     //1, 1,
     //2, 2,
     //3, 3,
@@ -7590,11 +7604,11 @@ object SnowHouseCpuWithDualRamSim extends App {
     ////11, 11,
     //////12, 12,
     ////13, 13,
-    ////14, 14,
+    14, 14,
     15, 15,
   )
   val instrRamKindArr = Array[Int](
-    0,
+    //0,
     //1,
     //2,
     5,

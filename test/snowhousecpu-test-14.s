@@ -9,7 +9,7 @@ beq r0, r0, _post_const_data
 
 .set i,5
 .rept (0x200 >> 2) - 5//1
-	.word i
+	.i32 i
 	.set i,i+1
 .endr
 //cpy r0, r0
@@ -90,6 +90,7 @@ cpy r5, r4
 //.endr
 ldr r3, r5, 0x0
 
+cpy r9, r5
 //beq r0, r0, _infin
 bltu r3, r7, _test_irqs
 

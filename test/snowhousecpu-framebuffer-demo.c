@@ -47,6 +47,8 @@ uint64_t sub64_test(uint64_t a, uint64_t b) {
 //uint64_t umulw_test(uint32_t a, uint32_t b) {
 //	return (uint64_t)(a) * (uint64_t)(b);
 //}
+void irq_handler_primary_logic(uint32_t request_vec) {
+}
 int main(int argc, char** argv) {
 	//for (;;) {
 
