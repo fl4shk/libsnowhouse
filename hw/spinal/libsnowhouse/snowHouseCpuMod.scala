@@ -1010,7 +1010,7 @@ object SnowHouseCpuPipeStageInstrDecode {
           upPayload.gprIdxVec.last
         ),
         length=(
-          tempHaveHazardAddrCheckVec.size //+ 1
+          tempHaveHazardAddrCheckVec.size + 1
         ),
         when=psId.up.isFiring,
         init=(
