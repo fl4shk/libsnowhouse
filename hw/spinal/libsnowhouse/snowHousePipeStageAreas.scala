@@ -1876,53 +1876,68 @@ case class SnowHousePipeStageInstrFetch(
       MyIbusRegPcInfo(cfg=cfg)
     )
   }
-  val myIbusTempRam = {
+  val myIbusTempFifo = {
     val depth = 1 << cfg.subCfg.myLcvBusSrcWidth
-    val initBigInt = (
-      Some(Array.fill(1)(Array.fill(depth)(BigInt(0)).toSeq).toSeq)
+    StreamFifo(
+      dataType=MyIbusTempPayload(hasInstr=false),
+      depth=depth,
+      latency=2,
+      forFMax=true,
+      initPayload=Some(MyIbusTempPayload(hasInstr=false).getZero)
     )
-    def mySetWordFunc(
-      outp: MyIbusTempPayload,
-      inp: MyIbusTempPayload,
-      word: MyIbusTempPayload,
-    ): Unit = {
-      //outp := inp
-      ////outp.encInstr.payload.allowOverride
-      ////outp.encInstr.payload := instr
-      //outp.instr.allowOverride
-      //outp.instr := word.instr
-      //outp := word
-      outp.psIfRegPcSetItCnt := word.psIfRegPcSetItCnt
-      outp.myIbusRegPcInfo := word.myIbusRegPcInfo
-      outp.instr.allowOverride
-      outp.instr := inp.instr
-    }
-    val ramCfg = WrPulseRdPipeRamSdpPipeConfig(
-      modType=(
-        //SnowHousePipePayload(cfg=cfg)
-        MyIbusTempPayload(hasInstr=true)
-      ),
-      wordType=MyIbusTempPayload(hasInstr=false),
-      wordCount=depth,
-      pipeName="pipeStageIf",
-      setWordFunc=mySetWordFunc,
-      initBigInt=initBigInt,
-      arrRamStyleAltera="MLAB",//"M10K"
-      arrRamStyleXilinx="distributed",//"block"
-    )
-    WrPulseRdPipeRamSdpPipe(cfg=ramCfg)
-
-    //RamSimpleDualPort(
-    //  cfg=RamSimpleDualPortConfig(
-    //    wordType=MyIbusTempPayload(),
-    //    depth=depth,
-    //    initBigInt=initBigInt,
-    //    arrRamStyleAltera="MLAB",
-    //    arrRamStyleXilinx="distributed",
-    //    doAsyncRead=true,
-    //  )
-    //)
   }
+  //val myIbusTempRam = {
+  //  // NOTE: This didn't work out as well as I was hoping.
+  //  // `WrPulseRdPipeRamSdpPipe` is fine for stuff like, a pixel FIFO or
+  //  // something (for an example, see `LcvBusFramebufferCtrl`),
+  //  // but the pipeline latency seems to cause some issues.
+  //  val depth = 1 << cfg.subCfg.myLcvBusSrcWidth
+  //  val initBigInt = (
+  //    Some(Array.fill(1)(Array.fill(depth)(BigInt(0)).toSeq).toSeq)
+  //  )
+  //  def mySetWordFunc(
+  //    outp: MyIbusTempPayload,
+  //    inp: MyIbusTempPayload,
+  //    word: MyIbusTempPayload,
+  //  ): Unit = {
+  //    //outp := inp
+  //    ////outp.encInstr.payload.allowOverride
+  //    ////outp.encInstr.payload := instr
+  //    //outp.instr.allowOverride
+  //    //outp.instr := word.instr
+  //    //outp := word
+  //    outp.psIfRegPcSetItCnt := word.psIfRegPcSetItCnt
+  //    outp.myIbusRegPcInfo := word.myIbusRegPcInfo
+  //    outp.instr.allowOverride
+  //    outp.instr := inp.instr
+  //  }
+  //  val ramCfg = WrPulseRdPipeRamSdpPipeConfig(
+  //    modType=(
+  //      //SnowHousePipePayload(cfg=cfg)
+  //      MyIbusTempPayload(hasInstr=true)
+  //    ),
+  //    wordType=MyIbusTempPayload(hasInstr=false),
+  //    wordCount=depth,
+  //    pipeName="pipeStageIf",
+  //    setWordFunc=mySetWordFunc,
+  //    initBigInt=initBigInt,
+  //    arrRamStyleAltera="MLAB",//"M10K"
+  //    arrRamStyleXilinx="distributed",//"block"
+  //  )
+  //  WrPulseRdPipeRamSdpPipe(cfg=ramCfg)
+
+  //  //RamSimpleDualPort(
+  //  //  cfg=RamSimpleDualPortConfig(
+  //  //    wordType=MyIbusTempPayload(),
+  //  //    depth=depth,
+  //  //    initBigInt=initBigInt,
+  //  //    arrRamStyleAltera="MLAB",
+  //  //    arrRamStyleXilinx="distributed",
+  //  //    doAsyncRead=true,
+  //  //  )
+  //  //)
+  //}
+
   // NOTE: setting `myBusH2dValid` to a constant `True` can cause issues
   // if the `libsnowhouse` implementation of a CPU is hooked up a
   // non-pipelined `LcvBus` instruction source
@@ -1937,8 +1952,17 @@ case class SnowHousePipeStageInstrFetch(
     //up.isReady
   )
   val myIbusRegPcInfo = MyIbusRegPcInfo(cfg=cfg)
-  cIf.up.driveFrom(myIbusTempRam.io.rdDataPipe)(
-    con=(node, payload) => {
+  val myIbusStmJoin = StreamJoin(
+    myIbusTempFifo.io.pop,
+    myD2hPopStm,
+  )
+  cIf.up.driveFrom(
+    //myIbusTempRam.io.rdDataPipe
+    //myIbusTempFifo.io.pop
+    myIbusStmJoin
+  )(
+    con=(node, tuplePayload) => {
+      val payload = tuplePayload._1
       node(pIf) := node(pIf).getZero
       node(pIf).encInstr.payload.allowOverride
       node(pIf).psIfRegPcSetItCnt.allowOverride
@@ -1949,7 +1973,10 @@ case class SnowHousePipeStageInstrFetch(
 
       //when (payload.myIbusRegPcInfo.branchPredictTkn) {
       //} otherwise {
-        node(pIf).encInstr.payload := payload.instr
+        node(pIf).encInstr.payload := tuplePayload._2.data.resize(
+          //payload.instr
+          node(pIf).encInstr.payload.getWidth
+        )
         node(pIf).psIfRegPcSetItCnt := payload.psIfRegPcSetItCnt
         node(pIf).regPc := payload.myIbusRegPcInfo.regPc
         node(pIf).laggingRegPc := payload.myIbusRegPcInfo.regPc
@@ -2002,17 +2029,36 @@ case class SnowHousePipeStageInstrFetch(
   //    //outp.src := inp.src
   //  }
   //)
-  io.lcvIbus.h2dBus << myH2dPushStm //myLcvIbusH2dFork.head 
-  myIbusTempRam.io.wrPulse.valid := myH2dPushStm.fire
-  myIbusTempRam.io.wrPulse.addr := myH2dPushStm.src //+ 1
-  myIbusTempRam.io.wrPulse.data.psIfRegPcSetItCnt := (
-    myRegPcSetItCnt
+  val myIbusStmFork = StreamFork(
+    input=myH2dPushStm,
+    portCount=2,
+    synchronous=true,
   )
-  myIbusTempRam.io.wrPulse.data.myIbusRegPcInfo := (
-    //myIbusRegPcInfo
-    //upModExt.myIbusRegPcInfo
-    myIbusRegPcInfo
+  io.lcvIbus.h2dBus <-/< myIbusStmFork.head//myH2dPushStm //myLcvIbusH2dFork.head 
+
+  //myIbusTempRam.io.wrPulse.valid := myH2dPushStm.fire
+  //myIbusTempRam.io.wrPulse.addr := myH2dPushStm.src //+ 1
+  //myIbusTempRam.io.wrPulse.data.psIfRegPcSetItCnt := (
+  //  myRegPcSetItCnt
+  //)
+  //myIbusTempRam.io.wrPulse.data.myIbusRegPcInfo := (
+  //  //myIbusRegPcInfo
+  //  //upModExt.myIbusRegPcInfo
+  //  myIbusRegPcInfo
+  //)
+  //myIbusTempFifo.io.push <-/< myIbusStmFork.last
+  val myTempIbusFifoPushStm = cloneOf(myIbusTempFifo.io.push)
+  myIbusStmFork.last.translateInto(
+    //myIbusTempFifo.io.push
+    myTempIbusFifoPushStm
+  )(
+    dataAssignment=(outp, inp) => {
+      outp.psIfRegPcSetItCnt := myRegPcSetItCnt
+      outp.myIbusRegPcInfo := myIbusRegPcInfo
+    }
   )
+  myIbusTempFifo.io.push <-/< myTempIbusFifoPushStm
+
   //val myD2hThrowCond = Bool()
   ////def myD2hPopStm = io.lcvBus.d2hBus
   //val myD2hDoThrowStm = io.lcvIbus.d2hBus.throwWhen(
@@ -2050,15 +2096,19 @@ case class SnowHousePipeStageInstrFetch(
   //  //  init=False,
   //  //).last
   //)
-  myD2hPopStm.translateInto(myIbusTempRam.io.rdAddrPipe)(
-    dataAssignment=(outp, inp) => {
-      outp := outp.getZero
-      outp.data.instr.allowOverride
-      outp.data.instr := inp.data.resize(outp.data.instr.getWidth)
-      outp.addr.allowOverride
-      outp.addr := inp.src
-    }
-  )
+
+  //--------
+  //myD2hPopStm.translateInto(myIbusTempRam.io.rdAddrPipe)(
+  //  dataAssignment=(outp, inp) => {
+  //    outp := outp.getZero
+  //    outp.data.instr.allowOverride
+  //    outp.data.instr := inp.data.resize(outp.data.instr.getWidth)
+  //    outp.addr.allowOverride
+  //    outp.addr := inp.src
+  //  }
+  //)
+  //--------
+
   ////myLcvIbusH2dFork.last.translateInto(myRegPcEtcIbusRecvFifo.io.push)(
   ////  dataAssignment=(outp, inp) => {
   ////    outp.myIbusRegPcInfo := myIbusRegPcInfo
