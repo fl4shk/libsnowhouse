@@ -4231,7 +4231,10 @@ case class SnowHousePipeStageInstrDecode(
           //upPayload(1).myDoHaveHazardAddrCheckVec.size + 1
           numFollowingInstrs + 1
         ),
-        when=down.isFiring,
+        when=(
+          //down.isFiring
+          up.isFiring
+        ),
         init=False
       )
       //RegNextWhen(
