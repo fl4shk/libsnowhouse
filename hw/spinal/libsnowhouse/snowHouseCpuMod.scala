@@ -1039,6 +1039,7 @@ object SnowHouseCpuPipeStageInstrDecode {
       for (jdx <- 0 until tempHaveHazardAddrCheckVec.size) {
         tempHaveHazardAddrCheckVec(jdx)(idx) := (
           tempRegIdx === myHistLastGprIdx(jdx + 1)
+          && tempRegIdx.orR // check for non-zero
         )
       }
     }
