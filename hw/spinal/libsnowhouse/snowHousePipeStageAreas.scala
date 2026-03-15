@@ -5733,7 +5733,10 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
     rose(RegNext(
       (
         io.upIsFiring
-        && stickyTakeIrq
+        && (
+          stickyTakeIrq
+          || io.btbElemDontPredict
+        )
       ),
       init=False
     ))
@@ -8809,8 +8812,9 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
   //}
   io.psExSetPc.branchTgtBufElem.dontPredict.allowOverride
   io.psExSetPc.branchTgtBufElem.dontPredict := (
-    io.btbElemDontPredict
-    || stickyTempPsExSetPcDontPredict
+    //io.btbElemDontPredict
+    //|| 
+    stickyTempPsExSetPcDontPredict
     //stickyTempBtbElemDontPredict
   )
   when (
@@ -10594,12 +10598,12 @@ case class SnowHousePipeStageExecute(
   //  )
   //)
   def doSetOtherSetOutpMmwBranchPredictorInputs(
-    usePrevInstr: Boolean
+    //usePrevInstr: Boolean
   ): Unit = {
-    if (
-      !cfg.useLcvDataBus
-      || !usePrevInstr
-    ) {
+    //if (
+    //  !cfg.useLcvDataBus
+    //  || !usePrevInstr
+    //) {
       setOutpModMemWord.io.btbElemDontPredict := (
         outp.branchTgtBufElem(1).dontPredict
         //|| myShouldIgnoreInstr.last
@@ -10611,36 +10615,36 @@ case class SnowHousePipeStageExecute(
       setOutpModMemWord.io.branchPredictReplaceBtbElem := (
         outp.branchPredictReplaceBtbElem
       )
-    } else {
-      // TODO: (maybe) move this logic to `SnowHousePipeStageInstrDecode`
-      setOutpModMemWord.io.btbElemDontPredict := (
-        RegNextWhen(
-          (
-            outp.branchTgtBufElem(1).dontPredict
-            //|| myShouldIgnoreInstr.last
-          ),
-          cond=cMid0Front.up.isFiring,
-          init=False
-        )
-      )
-      setOutpModMemWord.io.branchPredictTkn := (
-        RegNextWhen(
-          (
-            outp.branchPredictTkn
-            //outp.branchTgtBufElem(1).branchKind.asBits(0)
-          ),
-          cond=cMid0Front.up.isFiring,
-          init=False,
-        )
-      )
-      setOutpModMemWord.io.branchPredictReplaceBtbElem := (
-        RegNextWhen(
-          outp.branchPredictReplaceBtbElem,
-          cond=cMid0Front.up.isFiring,
-          init=False,
-        )
-      )
-    }
+    //} else {
+    //  // TODO: (maybe) move this logic to `SnowHousePipeStageInstrDecode`
+    //  setOutpModMemWord.io.btbElemDontPredict := (
+    //    RegNextWhen(
+    //      (
+    //        outp.branchTgtBufElem(1).dontPredict
+    //        //|| myShouldIgnoreInstr.last
+    //      ),
+    //      cond=cMid0Front.up.isFiring,
+    //      init=False
+    //    )
+    //  )
+    //  setOutpModMemWord.io.branchPredictTkn := (
+    //    RegNextWhen(
+    //      (
+    //        outp.branchPredictTkn
+    //        //outp.branchTgtBufElem(1).branchKind.asBits(0)
+    //      ),
+    //      cond=cMid0Front.up.isFiring,
+    //      init=False,
+    //    )
+    //  )
+    //  setOutpModMemWord.io.branchPredictReplaceBtbElem := (
+    //    RegNextWhen(
+    //      outp.branchPredictReplaceBtbElem,
+    //      cond=cMid0Front.up.isFiring,
+    //      init=False,
+    //    )
+    //  )
+    //}
   }
   val myNonLcvDbusBtbElemValidArea = (
     !cfg.useLcvDataBus   
@@ -10654,7 +10658,9 @@ case class SnowHousePipeStageExecute(
       //  //&& !prevStageFoundBubble
       //)
     )
-    doSetOtherSetOutpMmwBranchPredictorInputs(false)
+    doSetOtherSetOutpMmwBranchPredictorInputs(
+      //false
+    )
   })
   val myLcvDbusBtbElemValidArea = (
     cfg.useLcvDataBus   
@@ -10668,7 +10674,9 @@ case class SnowHousePipeStageExecute(
       //  //&& !prevStageFoundBubble
       //)
     )
-    doSetOtherSetOutpMmwBranchPredictorInputs(false)
+    doSetOtherSetOutpMmwBranchPredictorInputs(
+      //false
+    )
   })
   //val myLcvDbusBtbElemValidArea = (
   //  cfg.useLcvDataBus
