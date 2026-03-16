@@ -8889,6 +8889,17 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
     //io.opIsAluShift.foreach(item => {
     //  item := False
     //})
+    nextIty := io.rIty
+    nextSty := io.rSty
+    nextHi := io.rHi
+    nextLo := io.rLo
+    nextIndexReg := io.rIndexReg
+    nextMulHiOutp := io.rMulHiOutp
+    nextDivHiOutp := io.rDivHiOutp
+    nextModHiOutp := io.rModHiOutp
+    if (io.haveRetIraState) {
+      nextHadRetIra := io.rHadRetIra
+    }
     io.opIsMemAccess.foreach(item => {
       item := False
     })
