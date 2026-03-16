@@ -8889,6 +8889,12 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
     //io.opIsAluShift.foreach(item => {
     //  item := False
     //})
+    if (cfg.myHaveAluFlags) {
+      nextAluFlags := io.rAluFlags 
+    }
+    nextIds := io.rIds
+    nextIe := io.rIe
+    nextIra := io.rIra
     nextIty := io.rIty
     nextSty := io.rSty
     nextHi := io.rHi
