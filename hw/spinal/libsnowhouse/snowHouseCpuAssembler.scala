@@ -1106,7 +1106,7 @@ object bltu {
     )
   }
 }
-object bgtu {
+object bgeu {
   def apply(
     rA: Gpr,
     rB: Gpr,
@@ -1117,19 +1117,28 @@ object bgtu {
       rB=rA,
       imm=imm,
     )
+    //InstructionAsmStmt(
+    //  op=SnowHouseCpuOp.BltuRaRbSimm,
+    //  rA=rB,
+    //  rB=rA,
+    //  rC=Gpr(SnowHouseCpuOp.BltuRaRbSimm._2._1),
+    //  imm=imm,
+    //)
   }
 }
-object bgeu {
+
+
+object bgtu {
   def apply(
     rA: Gpr,
     rB: Gpr,
     imm: SnowHouseCpuExpr,
   ) = {
     InstructionAsmStmt(
-      op=SnowHouseCpuOp.BgeuRaRbSimm,
+      op=SnowHouseCpuOp.BgtuRaRbSimm,
       rA=rA,
       rB=rB,
-      rC=Gpr(SnowHouseCpuOp.BgeuRaRbSimm._2._1),
+      rC=Gpr(SnowHouseCpuOp.BgtuRaRbSimm._2._1),
       imm=imm,
     )
   }
@@ -1140,13 +1149,21 @@ object bleu {
     rB: Gpr,
     imm: SnowHouseCpuExpr,
   ) = {
-    bgeu(
+    bgtu(
       rA=rB,
       rB=rA,
       imm=imm,
     )
+    //InstructionAsmStmt(
+    //  op=SnowHouseCpuOp.BgtuRaRbSimm,
+    //  rA=rB,
+    //  rB=rA,
+    //  rC=Gpr(SnowHouseCpuOp.BgtuRaRbSimm._2._1),
+    //  imm=imm,
+    //)
   }
 }
+
 object blts {
   def apply(
     rA: Gpr,
@@ -1162,7 +1179,7 @@ object blts {
     )
   }
 }
-object bgts {
+object bges {
   def apply(
     rA: Gpr,
     rB: Gpr,
@@ -1173,19 +1190,27 @@ object bgts {
       rB=rA,
       imm=imm,
     )
+    //InstructionAsmStmt(
+    //  op=SnowHouseCpuOp.BltsRaRbSimm,
+    //  rA=rB,
+    //  rB=rA,
+    //  rC=Gpr(SnowHouseCpuOp.BltsRaRbSimm._2._1),
+    //  imm=imm,
+    //)
   }
 }
-object bges {
+
+object bgts {
   def apply(
     rA: Gpr,
     rB: Gpr,
     imm: SnowHouseCpuExpr,
   ) = {
     InstructionAsmStmt(
-      op=SnowHouseCpuOp.BgesRaRbSimm,
+      op=SnowHouseCpuOp.BgtsRaRbSimm,
       rA=rA,
       rB=rB,
-      rC=Gpr(SnowHouseCpuOp.BgesRaRbSimm._2._1),
+      rC=Gpr(SnowHouseCpuOp.BgtsRaRbSimm._2._1),
       imm=imm,
     )
   }
@@ -1196,13 +1221,118 @@ object bles {
     rB: Gpr,
     imm: SnowHouseCpuExpr,
   ) = {
-    bges(
+    bgts(
       rA=rB,
       rB=rA,
       imm=imm,
     )
+    //InstructionAsmStmt(
+    //  op=SnowHouseCpuOp.BgtsRaRbSimm,
+    //  rA=rB,
+    //  rB=rA,
+    //  rC=Gpr(SnowHouseCpuOp.BgtsRaRbSimm._2._1),
+    //  imm=imm,
+    //)
   }
 }
+
+//object bgtu {
+//  def apply(
+//    rA: Gpr,
+//    rB: Gpr,
+//    imm: SnowHouseCpuExpr,
+//  ) = {
+//    bltu(
+//      rA=rB,
+//      rB=rA,
+//      imm=imm,
+//    )
+//  }
+//}
+//object bgeu {
+//  def apply(
+//    rA: Gpr,
+//    rB: Gpr,
+//    imm: SnowHouseCpuExpr,
+//  ) = {
+//    InstructionAsmStmt(
+//      op=SnowHouseCpuOp.BgtuRaRbSimm,
+//      rA=rA,
+//      rB=rB,
+//      rC=Gpr(SnowHouseCpuOp.BgtuRaRbSimm._2._1),
+//      imm=imm,
+//    )
+//  }
+//}
+//object bleu {
+//  def apply(
+//    rA: Gpr,
+//    rB: Gpr,
+//    imm: SnowHouseCpuExpr,
+//  ) = {
+//    bgeu(
+//      rA=rB,
+//      rB=rA,
+//      imm=imm,
+//    )
+//  }
+//}
+//object blts {
+//  def apply(
+//    rA: Gpr,
+//    rB: Gpr,
+//    imm: SnowHouseCpuExpr,
+//  ) = {
+//    InstructionAsmStmt(
+//      op=SnowHouseCpuOp.BltsRaRbSimm,
+//      rA=rA,
+//      rB=rB,
+//      rC=Gpr(SnowHouseCpuOp.BltsRaRbSimm._2._1),
+//      imm=imm,
+//    )
+//  }
+//}
+//object bgts {
+//  def apply(
+//    rA: Gpr,
+//    rB: Gpr,
+//    imm: SnowHouseCpuExpr,
+//  ) = {
+//    blts(
+//      rA=rB,
+//      rB=rA,
+//      imm=imm,
+//    )
+//  }
+//}
+//object bges {
+//  def apply(
+//    rA: Gpr,
+//    rB: Gpr,
+//    imm: SnowHouseCpuExpr,
+//  ) = {
+//    InstructionAsmStmt(
+//      op=SnowHouseCpuOp.BgtsRaRbSimm,
+//      rA=rA,
+//      rB=rB,
+//      rC=Gpr(SnowHouseCpuOp.BgtsRaRbSimm._2._1),
+//      imm=imm,
+//    )
+//  }
+//}
+//object bles {
+//  def apply(
+//    rA: Gpr,
+//    rB: Gpr,
+//    imm: SnowHouseCpuExpr,
+//  ) = {
+//    bges(
+//      rA=rB,
+//      rB=rA,
+//      imm=imm,
+//    )
+//  }
+//}
 object retIra {
   def apply(
   ) = {

@@ -7489,7 +7489,7 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
                         io.rdMemWord(io.brCondIdx(0)).asSInt
                         > io.rdMemWord(io.brCondIdx(1)).asSInt
                       )
-                      init(False)
+                      //init(False)
                     )
                     //val myBinop = AluOpKind.Sub.binopFunc(
                     //  cfg=cfg,
