@@ -1251,12 +1251,25 @@ object SnowHouseCpuPipeStageInstrDecode {
         init=instrIsPre.getZero,
       )
     ) {
-      upPayload.irqIraRegPc := (
+      upPayload.irqIraRegPc.head := (
         RegNextWhen(
-          next=upPayload.irqIraRegPc,
+          next=upPayload.irqIraRegPc.head,
           cond=psId.up.isFiring,
-          init=upPayload.irqIraRegPc.getZero,
+          init=upPayload.irqIraRegPc.head.getZero,
         )
+      )
+    } otherwise {
+      upPayload.irqIraRegPc.head := (
+        //outp.laggingRegPc
+        Cat(
+          (
+            upPayload.laggingRegPc(
+              upPayload.laggingRegPc.high
+              downto log2Up(cfg.instrSizeBytes)
+            )
+          ),
+          U(s"${log2Up(cfg.instrSizeBytes)}'d0"),
+        ).asUInt
       )
     }
     upPayload.aluOp := (
