@@ -1465,6 +1465,9 @@ case class SnowHouseSplitOp(
   //val aluShiftOp = /*Flow*/(
   //  UInt(log2Up(cfg.aluShiftOpInfoMap.size + 1) bits)
   //)
+  val opIsDualWidth = (
+    Bool()
+  )
   val multiCycleOpGroup = /*Flow*/(
     UInt(/*log2Up*/(cfg.multiCycleOpInfoMap.size) bits)
   )
@@ -1522,6 +1525,7 @@ case class SnowHouseSplitOp(
     //  (1 << aluShiftOp.getWidth) - 1
     //)
     //multiCycleOp := 0x0
+    opIsDualWidth := False
     multiCycleOpGroup := 0x0
     if (multiCycleOpKind != null) {
       multiCycleOpKind := 0x0

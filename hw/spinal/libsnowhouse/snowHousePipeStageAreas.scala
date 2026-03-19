@@ -3568,18 +3568,18 @@ case class SnowHousePrePipeStageExSetBranchPredictEtcArea(
   if (cfg.irqCfg != None) {
     outp.takeIrq := False
   }
-  //outp.irqIraRegPc.head := (
-  //  //outp.laggingRegPc
-  //  Cat(
-  //    (
-  //      outp.laggingRegPc(
-  //        outp.laggingRegPc.high
-  //        downto log2Up(cfg.instrSizeBytes)
-  //      )
-  //    ),
-  //    U(s"${log2Up(cfg.instrSizeBytes)}'d0"),
-  //  ).asUInt
-  //)
+  outp.irqIraRegPc.head := (
+    //outp.laggingRegPc
+    Cat(
+      (
+        outp.laggingRegPc(
+          outp.laggingRegPc.high
+          downto log2Up(cfg.instrSizeBytes)
+        )
+      ),
+      U(s"${log2Up(cfg.instrSizeBytes)}'d0"),
+    ).asUInt
+  )
   if (!cfg.useLcvDataBus) {
     //outp.irqIraRegPc.last := (
     //  outp.laggingRegPc
@@ -6752,10 +6752,28 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
                     s"not yet implemented: "
                     + s"opInfo(${opInfo}) index:${opInfoIdx}"
                   )
-                  nextIra := (
-                    //io.regPc
-                    io.irqIraRegPc.resize(nextIra.getWidth)
-                  )
+                  when (
+                    RegNextWhen(
+                      (
+                        !io.shouldIgnoreInstr.last
+                        && io.splitOp.opIsDualWidth
+                      ),
+                      cond=io.upIsFiring,
+                      init=False
+                    )
+                  ) {
+                    nextIra := (
+                      //io.regPc
+                      RegNextWhen(
+                        io.irqIraRegPc.resize(nextIra.getWidth),
+                        cond=io.upIsFiring,
+                        init=nextIra.getZero
+                      )
+                    )
+                  } otherwise {
+                    //nextIra := 
+                    nextIra := io.irqIraRegPc.resize(nextIra.getWidth)
+                  }
                   nextIe/*(0)*/ := False //0x0
                 }
               } else {
