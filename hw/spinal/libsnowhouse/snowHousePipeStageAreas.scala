@@ -10893,6 +10893,9 @@ case class SnowHousePipeStageExecute(
     ) {
       setOutpModMemWord.io.btbElemDontPredict := True
       setOutpModMemWord.io.splitOp.setToDefault()
+      setOutpModMemWord.io.splitOp.opIsDualWidth := (
+        outp.splitOp.opIsDualWidth
+      )
       setOutpModMemWord.io.splitOp.exSetNextPcKind := (
         SnowHousePsExSetNextPcKind.Ids
       )
