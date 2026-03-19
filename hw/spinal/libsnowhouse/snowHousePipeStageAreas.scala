@@ -3568,18 +3568,18 @@ case class SnowHousePrePipeStageExSetBranchPredictEtcArea(
   if (cfg.irqCfg != None) {
     outp.takeIrq := False
   }
-  outp.irqIraRegPc.head := (
-    //outp.laggingRegPc
-    Cat(
-      (
-        outp.laggingRegPc(
-          outp.laggingRegPc.high
-          downto log2Up(cfg.instrSizeBytes)
-        )
-      ),
-      U(s"${log2Up(cfg.instrSizeBytes)}'d0"),
-    ).asUInt
-  )
+  //outp.irqIraRegPc.head := (
+  //  //outp.laggingRegPc
+  //  Cat(
+  //    (
+  //      outp.laggingRegPc(
+  //        outp.laggingRegPc.high
+  //        downto log2Up(cfg.instrSizeBytes)
+  //      )
+  //    ),
+  //    U(s"${log2Up(cfg.instrSizeBytes)}'d0"),
+  //  ).asUInt
+  //)
   if (!cfg.useLcvDataBus) {
     //outp.irqIraRegPc.last := (
     //  outp.laggingRegPc
