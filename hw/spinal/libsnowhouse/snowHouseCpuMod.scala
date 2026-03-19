@@ -328,13 +328,13 @@ object SnowHouseCpuOp {
   val BltuRaRbSimm = mkOp(
     "bltu rA, rB, simm16", JmpKindBltu, false
   )
-  val BgtuRaRbSimm = mkOp(
-    "bgtu rA, rB, simm16", JmpKindBgeu, false
+  val BgeuRaRbSimm = mkOp(
+    "bgeu rA, rB, simm16", JmpKindBgeu, false
   )
   val BltsRaRbSimm = mkOp(
     "blts rA, rB, simm16", JmpKindBlts, false
   )
-  val BgtsRaRbSimm = mkOp(
+  val BgesRaRbSimm = mkOp(
     "bges rA, rB, simm16", JmpKindBges, false
   )
 
@@ -805,7 +805,7 @@ object SnowHouseCpuPipeStageInstrDecode {
           }
           setOp(BltuRaRbSimm)
         }
-        is (BgtuRaRbSimm._2._1) {
+        is (BgeuRaRbSimm._2._1) {
           optSplitOp match {
             case Some(splitOp) => {
               splitOp.havePredictableJmpBr := True
@@ -813,7 +813,7 @@ object SnowHouseCpuPipeStageInstrDecode {
             case None => {
             }
           }
-          setOp(BgtuRaRbSimm)
+          setOp(BgeuRaRbSimm)
         }
         is (BltsRaRbSimm._2._1) {
           optSplitOp match {
@@ -825,7 +825,7 @@ object SnowHouseCpuPipeStageInstrDecode {
           }
           setOp(BltsRaRbSimm)
         }
-        is (BgtsRaRbSimm._2._1) {
+        is (BgesRaRbSimm._2._1) {
           optSplitOp match {
             case Some(splitOp) => {
               splitOp.havePredictableJmpBr := True
@@ -833,7 +833,7 @@ object SnowHouseCpuPipeStageInstrDecode {
             case None => {
             }
           }
-          setOp(BgtsRaRbSimm)
+          setOp(BgesRaRbSimm)
         }
         is (JlRaRb._2._1) {
           //when (psId.startDecode) {
@@ -3170,14 +3170,14 @@ object SnowHouseCpuOpInfoMap {
     )
   )
   opInfoMap += (
-    // bgtu rA, rB, simm16
-    SnowHouseCpuOp.BgtuRaRbSimm -> OpInfo.mkCpy(
+    // bgeu rA, rB, simm16
+    SnowHouseCpuOp.BgeuRaRbSimm -> OpInfo.mkCpy(
       dstArr=Array[DstKind](DstKind.Pc),
       srcArr=Array[SrcKind](
         SrcKind.Gpr, SrcKind.Gpr, SrcKind.Imm(/*Some(true)*/)
       ),
       cpyOp=CpyOpKind.Br,
-      cond=CondKind.Gtu
+      cond=CondKind.Geu
     )
   )
   opInfoMap += (
@@ -3192,14 +3192,14 @@ object SnowHouseCpuOpInfoMap {
     )
   )
   opInfoMap += (
-    // bgts rA, rB, simm16
-    SnowHouseCpuOp.BgtsRaRbSimm -> OpInfo.mkCpy(
+    // bges rA, rB, simm16
+    SnowHouseCpuOp.BgesRaRbSimm -> OpInfo.mkCpy(
       dstArr=Array[DstKind](DstKind.Pc),
       srcArr=Array[SrcKind](
         SrcKind.Gpr, SrcKind.Gpr, SrcKind.Imm(/*Some(true)*/)
       ),
       cpyOp=CpyOpKind.Br,
-      cond=CondKind.Gts
+      cond=CondKind.Ges
     )
   )
   opInfoMap += (
