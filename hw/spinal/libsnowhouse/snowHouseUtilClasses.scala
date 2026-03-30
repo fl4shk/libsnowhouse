@@ -633,6 +633,7 @@ case class SnowHouseConfig(
   exposeRegFileWriteDataToIo: Boolean=false,
   exposeRegFileWriteAddrToIo: Boolean=false,
   exposeRegFileWriteEnableToIo: Boolean=false,
+  dbgExposeExtrasAtRegFileWrite: Boolean=false,
   useLcvInstrBus: Boolean=(
     //false
     true

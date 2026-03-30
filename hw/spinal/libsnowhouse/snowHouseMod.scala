@@ -1262,6 +1262,11 @@ case class SnowHouseIo(
   ) generate (
     out(UInt(cfg.mainWidth bits))
   )
+  val shouldIgnoreInstrAtRegFileWrite = (
+    cfg.exposeRegFileWriteEnableToIo
+  ) generate (
+    out(Bool())
+  )
   // instruction bus
   val ibus = (
     !cfg.useLcvInstrBus
@@ -1939,11 +1944,14 @@ case class SnowHouse
       regFile.mod.back.myWriteEnable(0)
     )
   }
-  if (cfg.exposeRegFileWriteEnableToIo) {
+  if (cfg.dbgExposeExtrasAtRegFileWrite) {
     io.laggingRegPcAtRegFileWrite := (
       regFile.cBackArea.tempUpMod(2).laggingRegPc.resize(
         io.laggingRegPcAtRegFileWrite.getWidth
       )
+    )
+    io.shouldIgnoreInstrAtRegFileWrite := (
+      regFile.cBackArea.tempUpMod(2).instrCnt.shouldIgnoreInstr.last
     )
   }
   regFile.io.back.ready := True

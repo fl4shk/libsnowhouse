@@ -3343,6 +3343,7 @@ case class SnowHouseCpuConfig(
   exposeRegFileWriteDataToIo: Boolean=false,
   exposeRegFileWriteAddrToIo: Boolean=false,
   exposeRegFileWriteEnableToIo: Boolean=false,
+  dbgExposeExtrasAtRegFileWrite: Boolean=false,
   optTwoCycleRegFileReads: Boolean=(
     //true
     false
@@ -3606,6 +3607,7 @@ case class SnowHouseCpuConfig(
     exposeRegFileWriteDataToIo=exposeRegFileWriteDataToIo,
     exposeRegFileWriteAddrToIo=exposeRegFileWriteAddrToIo,
     exposeRegFileWriteEnableToIo=exposeRegFileWriteEnableToIo,
+    dbgExposeExtrasAtRegFileWrite=dbgExposeExtrasAtRegFileWrite,
     targetAltera=targetAltera,
     optFormal=optFormal,
   )
@@ -7410,9 +7412,14 @@ case class SnowHouseCpuWithDualRamIo(
     out(Bool())
   )
   val laggingRegPcAtRegFileWrite = (
-    cfg.exposeRegFileWriteEnableToIo
+    cfg.dbgExposeExtrasAtRegFileWrite
   ) generate (
     out(UInt(cfg.mainWidth bits))
+  )
+  val shouldIgnoreInstrAtRegFileWrite = (
+    cfg.dbgExposeExtrasAtRegFileWrite
+  ) generate (
+    out(Bool())
   )
 }
 case class SnowHouseCpuWithDualRam(
@@ -7478,7 +7485,12 @@ case class SnowHouseCpuWithDualRam(
   }
   if (cfg.exposeRegFileWriteEnableToIo) {
     cpu.io.regFileWriteEnable <> io.regFileWriteEnable
+  }
+  if (cfg.dbgExposeExtrasAtRegFileWrite) {
     cpu.io.laggingRegPcAtRegFileWrite <> io.laggingRegPcAtRegFileWrite
+    cpu.io.shouldIgnoreInstrAtRegFileWrite <> (
+      io.shouldIgnoreInstrAtRegFileWrite
+    )
   }
   ////for ((multiCycleBus, idx) <- cpu.io.multiCycleBusVec.view.zipWithIndex) {
   ////  if (idx != 0) {
@@ -7608,7 +7620,7 @@ object SnowHouseCpuWithDualRamSim extends App {
     false
   )
   val testIdxRange = Array[Int](
-    //0, //0,
+    0, //0,
     //1, 1,
     //2, 2,
     //3, //3,
@@ -7696,6 +7708,7 @@ object SnowHouseCpuWithDualRamSim extends App {
         exposeRegFileWriteDataToIo=true,
         exposeRegFileWriteAddrToIo=true,
         exposeRegFileWriteEnableToIo=true,
+        dbgExposeExtrasAtRegFileWrite=true,
         optTwoCycleRegFileReads=(
           //true
           testOptTwoCycleRegFileReads
