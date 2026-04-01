@@ -7369,6 +7369,31 @@ case class SnowHouseCpuWithoutRamIo(
   //) generate (
   //  out(Bool())
   //)
+  val regFileWriteData = (
+    cfg.exposeRegFileWriteDataToIo
+  ) generate (
+    out(UInt(cfg.mainWidth bits))
+  )
+  val regFileWriteAddr = (
+    cfg.exposeRegFileWriteAddrToIo
+  ) generate (
+    out(UInt(log2Up(cfg.shCfg.regFileCfg.wordCountArr(0)) bits))
+  )
+  val regFileWriteEnable = (
+    cfg.exposeRegFileWriteEnableToIo
+  ) generate (
+    out(Bool())
+  )
+  val laggingRegPcAtRegFileWrite = (
+    cfg.exposeRegFileWriteEnableToIo
+  ) generate (
+    out(UInt(cfg.mainWidth bits))
+  )
+  val shouldIgnoreInstrAtRegFileWrite = (
+    cfg.exposeRegFileWriteEnableToIo
+  ) generate (
+    out(Bool())
+  )
 }
 case class SnowHouseCpuWithoutRam(
   program: SnowHouseCpuProgram,
