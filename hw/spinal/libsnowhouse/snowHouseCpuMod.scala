@@ -7409,6 +7409,25 @@ case class SnowHouseCpuWithoutRam(
   io.lcvIbus << cpu.io.lcvIbus
   io.lcvDbus << cpu.io.lcvDbus 
   //--------
+  if (io.regFileWriteData != null) {
+    io.regFileWriteData := cpu.io.regFileWriteData
+  }
+  if (io.regFileWriteAddr != null) {
+    io.regFileWriteAddr := cpu.io.regFileWriteAddr
+  }
+  if (io.regFileWriteEnable != null) {
+    io.regFileWriteEnable := cpu.io.regFileWriteEnable
+  }
+  if (io.laggingRegPcAtRegFileWrite != null) {
+    io.laggingRegPcAtRegFileWrite := (
+      cpu.io.laggingRegPcAtRegFileWrite
+    )
+  }
+  if (io.shouldIgnoreInstrAtRegFileWrite != null) {
+    io.shouldIgnoreInstrAtRegFileWrite := (
+      cpu.io.shouldIgnoreInstrAtRegFileWrite
+    )
+  }
 }
 
 case class SnowHouseCpuWithDualRamIo(
