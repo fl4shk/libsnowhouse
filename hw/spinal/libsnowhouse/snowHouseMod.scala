@@ -1218,6 +1218,40 @@ private[libsnowhouse] case class SnowHouseDbusIo(
     in(dbusLdReady)
   }
 }
+case class SnowHouseDebugInfo(
+  cfg: SnowHouseConfig
+) extends Bundle {
+  val regFileWriteData = (
+    cfg.exposeRegFileWriteDataToIo
+  ) generate (
+    UInt(cfg.mainWidth bits)
+  )
+  val regFileWriteAddr = (
+    cfg.exposeRegFileWriteAddrToIo
+  ) generate (
+    UInt(log2Up(cfg.regFileCfg.wordCountArr(0)) bits)
+  )
+  val regFileWriteEnable = (
+    cfg.exposeRegFileWriteEnableToIo
+  ) generate (
+    Bool()
+  )
+  val laggingRegPcAtRegFileWrite = (
+    cfg.dbgExposeExtrasAtRegFileWrite
+  ) generate (
+    UInt(cfg.mainWidth bits)
+  )
+  val shouldIgnoreInstrAtRegFileWrite = (
+    cfg.dbgExposeExtrasAtRegFileWrite
+  ) generate (
+    Bool()
+  )
+  val encInstrAtRegFileWrite = (
+    cfg.dbgExposeExtrasAtRegFileWrite
+  ) generate (
+    UInt(cfg.instrMainWidth bits)
+  )
+}
 case class SnowHouseIo(
   cfg: SnowHouseConfig
 ) extends Bundle {
@@ -1242,31 +1276,34 @@ case class SnowHouseIo(
       recvPayloadType=None,
     ))
   )
-  val regFileWriteData = (
+
+  val dbgInfo = (
     cfg.exposeRegFileWriteDataToIo
+    || cfg.exposeRegFileWriteAddrToIo
+    || cfg.exposeRegFileWriteEnableToIo
+    || cfg.dbgExposeExtrasAtRegFileWrite
   ) generate (
-    out(UInt(cfg.mainWidth bits))
+    out(SnowHouseDebugInfo(cfg=cfg))
   )
-  val regFileWriteAddr = (
-    cfg.exposeRegFileWriteAddrToIo
-  ) generate (
-    out(UInt(log2Up(cfg.regFileCfg.wordCountArr(0)) bits))
+  def regFileWriteData = (
+    dbgInfo.regFileWriteData
   )
-  val regFileWriteEnable = (
-    cfg.exposeRegFileWriteEnableToIo
-  ) generate (
-    out(Bool())
+  def regFileWriteAddr = (
+    dbgInfo.regFileWriteAddr
   )
-  val laggingRegPcAtRegFileWrite = (
-    cfg.exposeRegFileWriteEnableToIo
-  ) generate (
-    out(UInt(cfg.mainWidth bits))
+  def regFileWriteEnable = (
+    dbgInfo.regFileWriteEnable
   )
-  val shouldIgnoreInstrAtRegFileWrite = (
-    cfg.exposeRegFileWriteEnableToIo
-  ) generate (
-    out(Bool())
+  def laggingRegPcAtRegFileWrite = (
+    dbgInfo.laggingRegPcAtRegFileWrite
   )
+  def shouldIgnoreInstrAtRegFileWrite = (
+    dbgInfo.shouldIgnoreInstrAtRegFileWrite
+  )
+  def encInstrAtRegFileWrite = (
+    dbgInfo.encInstrAtRegFileWrite
+  )
+
   // instruction bus
   val ibus = (
     !cfg.useLcvInstrBus
@@ -1952,6 +1989,9 @@ case class SnowHouse
     )
     io.shouldIgnoreInstrAtRegFileWrite := (
       regFile.cBackArea.tempUpMod(2).instrCnt.shouldIgnoreInstr.last
+    )
+    io.encInstrAtRegFileWrite := (
+      regFile.cBackArea.tempUpMod(2).encInstr.payload
     )
   }
   regFile.io.back.ready := True

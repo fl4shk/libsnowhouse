@@ -7369,30 +7369,32 @@ case class SnowHouseCpuWithoutRamIo(
   //) generate (
   //  out(Bool())
   //)
-  val regFileWriteData = (
+
+  val dbgInfo = (
     cfg.exposeRegFileWriteDataToIo
+    || cfg.exposeRegFileWriteAddrToIo
+    || cfg.exposeRegFileWriteEnableToIo
+    || cfg.dbgExposeExtrasAtRegFileWrite
   ) generate (
-    out(UInt(cfg.mainWidth bits))
+    out(SnowHouseDebugInfo(cfg=cfg.shCfg))
   )
-  val regFileWriteAddr = (
-    cfg.exposeRegFileWriteAddrToIo
-  ) generate (
-    out(UInt(log2Up(cfg.shCfg.regFileCfg.wordCountArr(0)) bits))
+  def regFileWriteData = (
+    dbgInfo.regFileWriteData
   )
-  val regFileWriteEnable = (
-    cfg.exposeRegFileWriteEnableToIo
-  ) generate (
-    out(Bool())
+  def regFileWriteAddr = (
+    dbgInfo.regFileWriteAddr
   )
-  val laggingRegPcAtRegFileWrite = (
-    cfg.exposeRegFileWriteEnableToIo
-  ) generate (
-    out(UInt(cfg.mainWidth bits))
+  def regFileWriteEnable = (
+    dbgInfo.regFileWriteEnable
   )
-  val shouldIgnoreInstrAtRegFileWrite = (
-    cfg.exposeRegFileWriteEnableToIo
-  ) generate (
-    out(Bool())
+  def laggingRegPcAtRegFileWrite = (
+    dbgInfo.laggingRegPcAtRegFileWrite
+  )
+  def shouldIgnoreInstrAtRegFileWrite = (
+    dbgInfo.shouldIgnoreInstrAtRegFileWrite
+  )
+  def encInstrAtRegFileWrite = (
+    dbgInfo.encInstrAtRegFileWrite
   )
 }
 case class SnowHouseCpuWithoutRam(
@@ -7409,25 +7411,28 @@ case class SnowHouseCpuWithoutRam(
   io.lcvIbus << cpu.io.lcvIbus
   io.lcvDbus << cpu.io.lcvDbus 
   //--------
-  if (io.regFileWriteData != null) {
-    io.regFileWriteData := cpu.io.regFileWriteData
+  if (io.dbgInfo != null) {
+    io.dbgInfo := cpu.io.dbgInfo
   }
-  if (io.regFileWriteAddr != null) {
-    io.regFileWriteAddr := cpu.io.regFileWriteAddr
-  }
-  if (io.regFileWriteEnable != null) {
-    io.regFileWriteEnable := cpu.io.regFileWriteEnable
-  }
-  if (io.laggingRegPcAtRegFileWrite != null) {
-    io.laggingRegPcAtRegFileWrite := (
-      cpu.io.laggingRegPcAtRegFileWrite
-    )
-  }
-  if (io.shouldIgnoreInstrAtRegFileWrite != null) {
-    io.shouldIgnoreInstrAtRegFileWrite := (
-      cpu.io.shouldIgnoreInstrAtRegFileWrite
-    )
-  }
+  //if (io.regFileWriteData != null) {
+  //  io.regFileWriteData := cpu.io.regFileWriteData
+  //}
+  //if (io.regFileWriteAddr != null) {
+  //  io.regFileWriteAddr := cpu.io.regFileWriteAddr
+  //}
+  //if (io.regFileWriteEnable != null) {
+  //  io.regFileWriteEnable := cpu.io.regFileWriteEnable
+  //}
+  //if (io.laggingRegPcAtRegFileWrite != null) {
+  //  io.laggingRegPcAtRegFileWrite := (
+  //    cpu.io.laggingRegPcAtRegFileWrite
+  //  )
+  //}
+  //if (io.shouldIgnoreInstrAtRegFileWrite != null) {
+  //  io.shouldIgnoreInstrAtRegFileWrite := (
+  //    cpu.io.shouldIgnoreInstrAtRegFileWrite
+  //  )
+  //}
 }
 
 case class SnowHouseCpuWithDualRamIo(
@@ -7440,30 +7445,56 @@ case class SnowHouseCpuWithDualRamIo(
       recvPayloadType=None,
     ))
   )
-  val regFileWriteData = (
+  //val regFileWriteData = (
+  //  cfg.exposeRegFileWriteDataToIo
+  //) generate (
+  //  out(UInt(cfg.shCfg.mainWidth bits))
+  //)
+  //val regFileWriteAddr = (
+  //  cfg.exposeRegFileWriteAddrToIo
+  //) generate (
+  //  out(UInt(log2Up(cfg.shCfg.regFileCfg.wordCountArr(0)) bits))
+  //)
+  //val regFileWriteEnable = (
+  //  cfg.exposeRegFileWriteEnableToIo
+  //) generate (
+  //  out(Bool())
+  //)
+  //val laggingRegPcAtRegFileWrite = (
+  //  cfg.dbgExposeExtrasAtRegFileWrite
+  //) generate (
+  //  out(UInt(cfg.mainWidth bits))
+  //)
+  //val shouldIgnoreInstrAtRegFileWrite = (
+  //  cfg.dbgExposeExtrasAtRegFileWrite
+  //) generate (
+  //  out(Bool())
+  //)
+  val dbgInfo = (
     cfg.exposeRegFileWriteDataToIo
+    || cfg.exposeRegFileWriteAddrToIo
+    || cfg.exposeRegFileWriteEnableToIo
+    || cfg.dbgExposeExtrasAtRegFileWrite
   ) generate (
-    out(UInt(cfg.shCfg.mainWidth bits))
+    out(SnowHouseDebugInfo(cfg=cfg.shCfg))
   )
-  val regFileWriteAddr = (
-    cfg.exposeRegFileWriteAddrToIo
-  ) generate (
-    out(UInt(log2Up(cfg.shCfg.regFileCfg.wordCountArr(0)) bits))
+  def regFileWriteData = (
+    dbgInfo.regFileWriteData
   )
-  val regFileWriteEnable = (
-    cfg.exposeRegFileWriteEnableToIo
-  ) generate (
-    out(Bool())
+  def regFileWriteAddr = (
+    dbgInfo.regFileWriteAddr
   )
-  val laggingRegPcAtRegFileWrite = (
-    cfg.dbgExposeExtrasAtRegFileWrite
-  ) generate (
-    out(UInt(cfg.mainWidth bits))
+  def regFileWriteEnable = (
+    dbgInfo.regFileWriteEnable
   )
-  val shouldIgnoreInstrAtRegFileWrite = (
-    cfg.dbgExposeExtrasAtRegFileWrite
-  ) generate (
-    out(Bool())
+  def laggingRegPcAtRegFileWrite = (
+    dbgInfo.laggingRegPcAtRegFileWrite
+  )
+  def shouldIgnoreInstrAtRegFileWrite = (
+    dbgInfo.shouldIgnoreInstrAtRegFileWrite
+  )
+  def encInstrAtRegFileWrite = (
+    dbgInfo.encInstrAtRegFileWrite
   )
 }
 case class SnowHouseCpuWithDualRam(
