@@ -32,10 +32,10 @@ Disassembly of section .text:
   60:	01 00 40 04 	add	r4, r4, 1
   64:	ff ff 70 07 	add	r7, r7, -1
   68:	01 00 90 09 	add	r9, r9, 1
-  6c:	f9 ff 01 a7 	bne	r7, r0, -28
+  6c:	f9 ff 01 a7 	bne	r7, r0, -28 /* dst_pc=0x54 */
   70:	34 12 00 0a 	add	r10, r0, 4660
   74:	00 00 00 00 	add	r0, r0, 0
-  78:	8d 04 00 c0 	bne	r0, r0, 305419768 // pre #0x48d
+  78:	8d 04 00 c0 	bne	r0, r0, 305419768 /* dst_pc=0x12345674 */ /* pre #0x48d */
   7c:	7e 15 01 a0 
   80:	98 00 00 0b 	add	r11, r0, 152
   84:	00 00 b6 a0 	jl	r0, r11
@@ -44,23 +44,23 @@ Disassembly of section .text:
   88:	00 00 61 87 	umulw	r7, r6, r1
   8c:	02 00 71 87 	udiv	r7, r7, r1
   90:	04 00 61 88 	umod	r8, r6, r1
-  94:	01 00 00 a0 	beq	r0, r0, 4
+  94:	01 00 00 a0 	beq	r0, r0, 4 /* dst_pc=0x9c */
 
 00000098 <_pre_loop>:
-  98:	fb ff 00 a0 	beq	r0, r0, -20
+  98:	fb ff 00 a0 	beq	r0, r0, -20 /* dst_pc=0x88 */
 
 0000009c <_loop>:
   9c:	03 00 00 02 	add	r2, r0, 3
   a0:	00 00 30 96 	ldr	r6, r3, 0
-  a4:	06 00 00 bd 	bl	lr, 24
+  a4:	06 00 00 bd 	bl	lr, 24 /* dst_pc=0xc0 */
   a8:	04 00 31 96 	str	r6, r3, 4
   ac:	04 00 30 03 	add	r3, r3, 4
   b0:	ff ff 10 01 	add	r1, r1, -1
-  b4:	04 00 00 bd 	bl	lr, 16
-  b8:	f8 ff 01 a1 	bne	r1, r0, -32
+  b4:	04 00 00 bd 	bl	lr, 16 /* dst_pc=0xc8 */
+  b8:	f8 ff 01 a1 	bne	r1, r0, -32 /* dst_pc=0x9c */
 
 000000bc <_infin>:
-  bc:	ff ff 00 a0 	beq	r0, r0, -4
+  bc:	ff ff 00 a0 	beq	r0, r0, -4 /* dst_pc=0xbc */
 
 000000c0 <_increment>:
   c0:	01 00 60 06 	add	r6, r6, 1

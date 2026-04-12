@@ -5033,6 +5033,9 @@ case class SnowHouseCpuMulFullProduct(
   val low = (mainWidth >> 1) - 1 downto 0
   val high = (mainWidth - 1 downto (mainWidth >> 1))
   val shiftAmount = mainWidth >> 1
+  println(
+    s"low:${low} high:${high} shiftAmount:${shiftAmount}"
+  )
   //val mulCond = (
   //  /*rose*/(
   //    rState === State.IDLE
@@ -5167,7 +5170,7 @@ case class SnowHouseCpuMulFullProduct(
       rX0Y0 := rAbsSrcVec(0)(low) * rAbsSrcVec(1)(low)
       rX0Y1 := rAbsSrcVec(0)(low) * rAbsSrcVec(1)(high)
       rX1Y0 := rAbsSrcVec(0)(high) * rAbsSrcVec(1)(low)
-      rX1Y1 := rAbsSrcVec(1)(high) * rAbsSrcVec(1)(low)
+      rX1Y1 := rAbsSrcVec(0)(high) * rAbsSrcVec(1)(high)
       rState := State.FIRST_TWO_ADDS
     }
     is (State.FIRST_TWO_ADDS) {
@@ -5177,8 +5180,9 @@ case class SnowHouseCpuMulFullProduct(
         Cat(
           U(s"${shiftAmount}'d0"),
           z1(cfg.mainWidth - 1 downto 0),
+          //z1,
           U(s"${shiftAmount}'d0"),
-        ).asUInt
+        ).asUInt.resize(rPartialSum(1).getWidth)
       )
     }
     is (State.FINAL_ADD) {
@@ -7552,21 +7556,24 @@ case class SnowHouseCpuWithDualRam(
   } else {
     cpu.io.lcvDbus <> dualRam.io.lcvDbus
   }
-  if (cfg.exposeRegFileWriteDataToIo) {
-    cpu.io.regFileWriteData <> io.regFileWriteData
+  if (cpu.io.dbgInfo != null) {
+    io.dbgInfo := cpu.io.dbgInfo
   }
-  if (cfg.exposeRegFileWriteAddrToIo) {
-    cpu.io.regFileWriteAddr <> io.regFileWriteAddr
-  }
-  if (cfg.exposeRegFileWriteEnableToIo) {
-    cpu.io.regFileWriteEnable <> io.regFileWriteEnable
-  }
-  if (cfg.dbgExposeExtrasAtRegFileWrite) {
-    cpu.io.laggingRegPcAtRegFileWrite <> io.laggingRegPcAtRegFileWrite
-    cpu.io.shouldIgnoreInstrAtRegFileWrite <> (
-      io.shouldIgnoreInstrAtRegFileWrite
-    )
-  }
+  //if (cfg.exposeRegFileWriteDataToIo) {
+  //  cpu.io.regFileWriteData <> io.regFileWriteData
+  //}
+  //if (cfg.exposeRegFileWriteAddrToIo) {
+  //  cpu.io.regFileWriteAddr <> io.regFileWriteAddr
+  //}
+  //if (cfg.exposeRegFileWriteEnableToIo) {
+  //  cpu.io.regFileWriteEnable <> io.regFileWriteEnable
+  //}
+  //if (cfg.dbgExposeExtrasAtRegFileWrite) {
+  //  cpu.io.laggingRegPcAtRegFileWrite <> io.laggingRegPcAtRegFileWrite
+  //  cpu.io.shouldIgnoreInstrAtRegFileWrite <> (
+  //    io.shouldIgnoreInstrAtRegFileWrite
+  //  )
+  //}
   ////for ((multiCycleBus, idx) <- cpu.io.multiCycleBusVec.view.zipWithIndex) {
   ////  if (idx != 0) {
   ////    multiCycleBus.ready := True
@@ -7711,7 +7718,8 @@ object SnowHouseCpuWithDualRamSim extends App {
     ////13, 13,
     //14, 14,
     //15, 15,
-    16, 16
+    //16, 16
+    17, 17
   )
   val instrRamKindArr = Array[Int](
     0,

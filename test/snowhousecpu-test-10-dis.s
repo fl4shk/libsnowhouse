@@ -11,7 +11,7 @@ Disassembly of section .text:
 00000014 <_loop>:
       14:	ff ff 10 01 	add	r1, r1, -1
       18:	00 00 11 32 	slts	r2, r1, 0
-      1c:	fd ff 00 a2 	beq	r2, r0, -12
+      1c:	fd ff 00 a2 	beq	r2, r0, -12 /* dst_pc=0x14 */
       20:	01 00 30 03 	add	r3, r3, 1
       24:	01 00 30 03 	add	r3, r3, 1
       28:	01 00 30 03 	add	r3, r3, 1
@@ -2081,4 +2081,4 @@ Disassembly of section .text:
     2060:	00 00 30 05 	add	r5, r3, 0
 
 00002064 <_infin>:
-    2064:	ff ff 00 a0 	beq	r0, r0, -4
+    2064:	ff ff 00 a0 	beq	r0, r0, -4 /* dst_pc=0x2064 */

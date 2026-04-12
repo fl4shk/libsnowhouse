@@ -28,7 +28,7 @@ Disassembly of section .text:
   50:	00 00 40 95 	ldr	r5, r4, 0
 
 00000054 <_infin>:
-  54:	ff ff 00 a0 	beq	r0, r0, -4
+  54:	ff ff 00 a0 	beq	r0, r0, -4 /* dst_pc=0x54 */
   58:	fc ff f0 0f 	add	sp, sp, -4
   5c:	fc ff f0 0e 	add	fp, sp, -4
   60:	fc ff f0 0d 	add	lr, sp, -4

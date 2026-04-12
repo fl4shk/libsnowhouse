@@ -6,7 +6,7 @@ Disassembly of section .text:
 
 00000000 <_loop_0-0x40>:
 	...
-  10:	2a 00 00 bd 	bl	lr, 168
+  10:	2a 00 00 bd 	bl	lr, 168 /* dst_pc=0xbc */
   14:	a0 00 00 07 	add	r7, r0, 160
   18:	07 00 70 70 	cpy	ids, r7
   1c:	01 00 00 08 	add	r8, r0, 1
@@ -21,10 +21,10 @@ Disassembly of section .text:
 
 00000040 <_loop_0>:
   40:	00 00 12 81 	umulw	r1, r1, r2
-  44:	fe ff 32 a1 	bltu	r1, r3, -8
+  44:	fe ff 32 a1 	bltu	r1, r3, -8 /* dst_pc=0x40 */
   48:	01 00 40 04 	add	r4, r4, 1
   4c:	01 00 90 09 	add	r9, r9, 1
-  50:	fb ff 71 a4 	bne	r4, r7, -20
+  50:	fb ff 71 a4 	bne	r4, r7, -20 /* dst_pc=0x40 */
   54:	01 00 20 02 	add	r2, r2, 1
   58:	01 00 30 03 	add	r3, r3, 1
   5c:	01 00 40 04 	add	r4, r4, 1
@@ -36,16 +36,16 @@ Disassembly of section .text:
 00000070 <_loop_2>:
   70:	fc ff 70 07 	add	r7, r7, -4
   74:	00 00 70 9b 	ldr	r11, r7, 0
-  78:	fd ff b4 a8 	blts	r8, r11, -12
+  78:	fd ff b4 a8 	blts	r8, r11, -12 /* dst_pc=0x70 */
   7c:	10 00 00 07 	add	r7, r0, 16
 
 00000080 <_loop_3>:
   80:	fc ff 70 07 	add	r7, r7, -4
   84:	00 00 70 9a 	ldr	r10, r7, 0
-  88:	fd ff 74 a8 	blts	r8, r7, -12
+  88:	fd ff 74 a8 	blts	r8, r7, -12 /* dst_pc=0x80 */
 
 0000008c <_infin>:
-  8c:	ff ff 63 a6 	bgeu	r6, r6, -4
+  8c:	ff ff 63 a6 	bgeu	r6, r6, -4 /* dst_pc=0x8c */
   90:	01 00 00 01 	add	r1, r0, 1
   94:	02 00 00 02 	add	r2, r0, 2
   98:	03 00 00 03 	add	r3, r0, 3
@@ -67,7 +67,7 @@ Disassembly of section .text:
   c0:	23 00 10 72 	lsr	r2, r1, 2
   c4:	00 00 11 92 	str	r2, r1, 0
   c8:	fc ff 10 01 	add	r1, r1, -4
-  cc:	fc ff 01 a1 	bne	r1, r0, -16
+  cc:	fc ff 01 a1 	bne	r1, r0, -16 /* dst_pc=0xc0 */
   d0:	00 00 d6 a0 	jl	r0, lr
   d4:	21 00 00 01 	add	r1, r0, 33
   d8:	22 00 00 02 	add	r2, r0, 34

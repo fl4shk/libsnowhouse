@@ -31,26 +31,26 @@ Disassembly of section .text:
   5c:	01 00 80 09 	add	r9, r8, 1
   60:	01 00 90 09 	add	r9, r9, 1
   64:	ff ff 70 07 	add	r7, r7, -1
-  68:	fa ff 01 a7 	bne	r7, r0, -24
-  6c:	34 12 00 c0 	add	r10, r0, 305419896 // pre #0x1234
+  68:	fa ff 01 a7 	bne	r7, r0, -24 /* dst_pc=0x54 */
+  6c:	34 12 00 c0 	add	r10, r0, 305419896 /* pre #0x1234 */
   70:	78 56 00 0a 
 	...
   7c:	00 00 61 87 	umulw	r7, r6, r1
   80:	02 00 71 87 	udiv	r7, r7, r1
   84:	04 00 61 88 	umod	r8, r6, r1
-  88:	00 00 00 a0 	beq	r0, r0, 0
+  88:	00 00 00 a0 	beq	r0, r0, 0 /* dst_pc=0x8c */
 
 0000008c <_loop>:
   8c:	00 00 30 96 	ldr	r6, r3, 0
-  90:	06 00 00 bd 	bl	lr, 24
+  90:	06 00 00 bd 	bl	lr, 24 /* dst_pc=0xac */
   94:	04 00 31 96 	str	r6, r3, 4
   98:	04 00 30 03 	add	r3, r3, 4
   9c:	ff ff 10 01 	add	r1, r1, -1
-  a0:	04 00 00 bd 	bl	lr, 16
-  a4:	f9 ff 01 a1 	bne	r1, r0, -28
+  a0:	04 00 00 bd 	bl	lr, 16 /* dst_pc=0xb4 */
+  a4:	f9 ff 01 a1 	bne	r1, r0, -28 /* dst_pc=0x8c */
 
 000000a8 <_infin>:
-  a8:	ff ff 00 a0 	beq	r0, r0, -4
+  a8:	ff ff 00 a0 	beq	r0, r0, -4 /* dst_pc=0xa8 */
 
 000000ac <_increment>:
   ac:	01 00 60 06 	add	r6, r6, 1

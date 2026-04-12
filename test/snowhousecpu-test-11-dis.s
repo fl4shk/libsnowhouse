@@ -13,7 +13,7 @@ Disassembly of section .text:
   1c:	08 00 30 94 	ldr	r4, r3, 8
 
 00000020 <_infin>:
-  20:	ff ff 00 a0 	beq	r0, r0, -4
+  20:	ff ff 00 a0 	beq	r0, r0, -4 /* dst_pc=0x20 */
   24:	00 00 20 01 	add	r1, r2, 0
   28:	00 00 20 01 	add	r1, r2, 0
   2c:	00 00 20 01 	add	r1, r2, 0

@@ -1251,6 +1251,11 @@ case class SnowHouseDebugInfo(
   ) generate (
     UInt(cfg.instrMainWidth bits)
   )
+  //val instrIsPre = (
+  //  cfg.dbgExposeExtrasAtRegFileWrite
+  //) generate (
+  //  Flow(UInt(cfg.mainWidth bits))
+  //)
 }
 case class SnowHouseIo(
   cfg: SnowHouseConfig

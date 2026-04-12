@@ -31,23 +31,23 @@ Disassembly of section .text:
   5c:	01 00 80 09 	add	r9, r8, 1
   60:	01 00 90 09 	add	r9, r9, 1
   64:	ff ff 70 07 	add	r7, r7, -1
-  68:	fa ff 01 a7 	bne	r7, r0, -24
+  68:	fa ff 01 a7 	bne	r7, r0, -24 /* dst_pc=0x54 */
   6c:	00 00 61 87 	umulw	r7, r6, r1
   70:	02 00 71 87 	udiv	r7, r7, r1
   74:	04 00 61 88 	umod	r8, r6, r1
-  78:	00 00 00 a0 	beq	r0, r0, 0
+  78:	00 00 00 a0 	beq	r0, r0, 0 /* dst_pc=0x7c */
 
 0000007c <_loop>:
   7c:	00 00 30 96 	ldr	r6, r3, 0
-  80:	06 00 00 bd 	bl	lr, 24
+  80:	06 00 00 bd 	bl	lr, 24 /* dst_pc=0x9c */
   84:	04 00 31 96 	str	r6, r3, 4
   88:	04 00 30 03 	add	r3, r3, 4
   8c:	ff ff 10 01 	add	r1, r1, -1
-  90:	04 00 00 bd 	bl	lr, 16
-  94:	f9 ff 01 a1 	bne	r1, r0, -28
+  90:	04 00 00 bd 	bl	lr, 16 /* dst_pc=0xa4 */
+  94:	f9 ff 01 a1 	bne	r1, r0, -28 /* dst_pc=0x7c */
 
 00000098 <_infin>:
-  98:	ff ff 00 a0 	beq	r0, r0, -4
+  98:	ff ff 00 a0 	beq	r0, r0, -4 /* dst_pc=0x98 */
 
 0000009c <_increment>:
   9c:	01 00 60 06 	add	r6, r6, 1

@@ -1,0 +1,8 @@
+Starting test:programStr:test/snowhousecpu-test-17.bin instrRamKind:5
+addr:15 data:4096
+addr:1 data:3297180177
+addr:3 data:3435973837
+addr:4 data:3236416413
+addr:7 data:2637678605
+Ending test.
+

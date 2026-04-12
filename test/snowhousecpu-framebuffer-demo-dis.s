@@ -35,11 +35,11 @@ Disassembly of section .text:
   78:	00 00 00 0d 	add	lr, r0, 0
   7c:	00 00 00 0e 	add	fp, r0, 0
   80:	00 00 00 0f 	add	sp, r0, 0
-  84:	3e 01 00 b0 	bl	r0, 1272
+  84:	3e 01 00 b0 	bl	r0, 1272 /* dst_pc=0x580 */
   88:	00 00 00 00 	add	r0, r0, 0
 
 0000008c <_do_enable_irqs>:
-  8c:	00 01 00 c0 	str	r1, r0, 16777220 // pre #0x100
+  8c:	00 01 00 c0 	str	r1, r0, 16777220 /* pre #0x100 */
   90:	04 00 01 91 
   94:	a8 00 00 01 	add	r1, r0, 168
   98:	07 00 10 70 	cpy	ids, r1
@@ -57,9 +57,9 @@ Disassembly of section .text:
   c0:	14 00 f1 96 	str	r6, sp, 20
   c4:	18 00 f1 9d 	str	lr, sp, 24
   c8:	1c 00 f1 9e 	str	fp, sp, 28
-  cc:	00 01 00 c0 	ldr	r1, r0, 16777216 // pre #0x100
+  cc:	00 01 00 c0 	ldr	r1, r0, 16777216 /* pre #0x100 */
   d0:	00 00 00 91 
-  d4:	8d 00 00 bd 	bl	lr, 564
+  d4:	8d 00 00 bd 	bl	lr, 564 /* dst_pc=0x30c */
   d8:	00 00 f1 91 	str	r1, sp, 0
   dc:	04 00 f1 92 	str	r2, sp, 4
   e0:	08 00 f1 93 	str	r3, sp, 8
@@ -76,11 +76,11 @@ Disassembly of section .text:
  104:	00 00 f1 9d 	str	lr, sp, 0
  108:	20 07 00 02 	add	r2, r0, 1824
  10c:	20 07 00 01 	add	r1, r0, 1824
- 110:	05 00 10 a2 	beq	r2, r1, 20
- 114:	00 00 00 c0 	add	r2, r0, 0 // pre #0x0
+ 110:	05 00 10 a2 	beq	r2, r1, 20 /* dst_pc=0x128 */
+ 114:	00 00 00 c0 	add	r2, r0, 0 /* pre #0x0 */
  118:	00 00 00 02 
  11c:	00 00 00 03 	add	r3, r0, 0
- 120:	01 00 30 a2 	beq	r2, r3, 4
+ 120:	01 00 30 a2 	beq	r2, r3, 4 /* dst_pc=0x128 */
  124:	00 00 26 ad 	jl	lr, r2
 
 00000128 <.L1>:
@@ -93,17 +93,17 @@ Disassembly of section .text:
  140:	fc ff f0 0f 	add	sp, sp, -4
  144:	00 00 f1 9d 	str	lr, sp, 0
  148:	20 07 00 01 	add	r1, r0, 1824
- 14c:	ff ff 00 c0 	add	r1, r1, -1824 // pre #0xffff
+ 14c:	ff ff 00 c0 	add	r1, r1, -1824 /* pre #0xffff */
  150:	e0 f8 10 01 
  154:	25 00 10 71 	asr	r1, r1, 2
  158:	f3 01 10 72 	lsr	r2, r1, 31
  15c:	00 00 21 02 	add	r2, r2, r1
  160:	15 00 20 72 	asr	r2, r2, 1
  164:	00 00 00 01 	add	r1, r0, 0
- 168:	05 00 10 a2 	beq	r2, r1, 20
- 16c:	00 00 00 c0 	add	r3, r0, 0 // pre #0x0
+ 168:	05 00 10 a2 	beq	r2, r1, 20 /* dst_pc=0x180 */
+ 16c:	00 00 00 c0 	add	r3, r0, 0 /* pre #0x0 */
  170:	00 00 00 03 
- 174:	02 00 10 a3 	beq	r3, r1, 8
+ 174:	02 00 10 a3 	beq	r3, r1, 8 /* dst_pc=0x180 */
  178:	20 07 00 01 	add	r1, r0, 1824
  17c:	00 00 36 ad 	jl	lr, r3
 
@@ -120,8 +120,8 @@ Disassembly of section .text:
  19c:	f8 07 00 07 	add	r7, r0, 2040
  1a0:	00 00 74 92 	ldub	r2, r7, 0
  1a4:	00 00 00 01 	add	r1, r0, 0
- 1a8:	03 00 11 a2 	bne	r2, r1, 12
- 1ac:	d4 ff ff bd 	bl	lr, -176
+ 1a8:	03 00 11 a2 	bne	r2, r1, 12 /* dst_pc=0x1b8 */
+ 1ac:	d4 ff ff bd 	bl	lr, -176 /* dst_pc=0x100 */
  1b0:	01 00 00 01 	add	r1, r0, 1
  1b4:	00 00 77 91 	stb	r1, r7, 0
 
@@ -143,7 +143,7 @@ Disassembly of section .text:
 000001f4 <_frame_dummy>:
  1f4:	fc ff f0 0f 	add	sp, sp, -4
  1f8:	00 00 f1 9d 	str	lr, sp, 0
- 1fc:	d0 ff ff bd 	bl	lr, -192
+ 1fc:	d0 ff ff bd 	bl	lr, -192 /* dst_pc=0x140 */
  200:	00 00 f0 9d 	ldr	lr, sp, 0
  204:	04 00 f0 0f 	add	sp, sp, 4
  208:	00 00 d6 a0 	jl	r0, lr
@@ -212,7 +212,7 @@ Disassembly of section .text:
 000002e0 <_sub64_test>:
  2e0:	00 00 13 13 	sub	r3, r1, r3
  2e4:	01 00 00 05 	add	r5, r0, 1
- 2e8:	01 00 32 a1 	bltu	r1, r3, 4
+ 2e8:	01 00 32 a1 	bltu	r1, r3, 4 /* dst_pc=0x2f0 */
  2ec:	00 00 00 05 	add	r5, r0, 0
 
 000002f0 <.L17>:
@@ -226,7 +226,7 @@ Disassembly of section .text:
  30c:	00 00 d6 a0 	jl	r0, lr
 
 00000310 <_memcpy>:
- 310:	58 00 00 a3 	beq	r3, r0, 352
+ 310:	58 00 00 a3 	beq	r3, r0, 352 /* dst_pc=0x474 */
  314:	f8 ff f0 0f 	add	sp, sp, -8
  318:	00 00 f1 97 	str	r7, sp, 0
  31c:	04 00 f1 98 	str	r8, sp, 4
@@ -239,13 +239,13 @@ Disassembly of section .text:
  338:	00 00 13 03 	add	r3, r1, r3
  33c:	00 00 12 52 	or	r2, r1, r2
  340:	03 00 20 62 	and	r2, r2, 3
- 344:	43 00 01 a2 	bne	r2, r0, 268
+ 344:	43 00 01 a2 	bne	r2, r0, 268 /* dst_pc=0x454 */
  348:	04 00 00 02 	add	r2, r0, 4
- 34c:	41 00 22 a6 	bltu	r6, r2, 260
+ 34c:	41 00 22 a6 	bltu	r6, r2, 260 /* dst_pc=0x454 */
  350:	10 00 00 02 	add	r2, r0, 16
- 354:	39 00 22 a6 	bltu	r6, r2, 228
+ 354:	39 00 22 a6 	bltu	r6, r2, 228 /* dst_pc=0x43c */
  358:	40 00 00 02 	add	r2, r0, 64
- 35c:	28 00 22 a6 	bltu	r6, r2, 160
+ 35c:	28 00 22 a6 	bltu	r6, r2, 160 /* dst_pc=0x400 */
  360:	c0 ff 60 66 	and	r6, r6, -64
  364:	00 00 46 06 	add	r6, r4, r6
 
@@ -284,10 +284,10 @@ Disassembly of section .text:
  3e4:	3c 00 41 92 	str	r2, r4, 60
  3e8:	40 00 40 04 	add	r4, r4, 64
  3ec:	40 00 50 05 	add	r5, r5, 64
- 3f0:	dd ff 61 a4 	bne	r4, r6, -140
- 3f4:	1c 00 30 a6 	beq	r6, r3, 112
- 3f8:	10 00 30 a7 	beq	r7, r3, 64
- 3fc:	15 00 00 b0 	bl	r0, 84
+ 3f0:	dd ff 61 a4 	bne	r4, r6, -140 /* dst_pc=0x368 */
+ 3f4:	1c 00 30 a6 	beq	r6, r3, 112 /* dst_pc=0x468 */
+ 3f8:	10 00 30 a7 	beq	r7, r3, 64 /* dst_pc=0x43c */
+ 3fc:	15 00 00 b0 	bl	r0, 84 /* dst_pc=0x454 */
 
 00000400 <.Lmemcpy_words_x4_loop_pre>:
  400:	f0 ff 80 66 	and	r6, r8, -16
@@ -304,24 +304,24 @@ Disassembly of section .text:
  424:	0c 00 41 92 	str	r2, r4, 12
  428:	10 00 50 05 	add	r5, r5, 16
  42c:	10 00 40 04 	add	r4, r4, 16
- 430:	f5 ff 61 a4 	bne	r4, r6, -44
- 434:	0c 00 30 a6 	beq	r6, r3, 48
- 438:	06 00 31 a7 	bne	r7, r3, 24
+ 430:	f5 ff 61 a4 	bne	r4, r6, -44 /* dst_pc=0x408 */
+ 434:	0c 00 30 a6 	beq	r6, r3, 48 /* dst_pc=0x468 */
+ 438:	06 00 31 a7 	bne	r7, r3, 24 /* dst_pc=0x454 */
 
 0000043c <.L0_mac_memcpy_words_loop>:
  43c:	00 00 50 92 	ldr	r2, r5, 0
  440:	00 00 41 92 	str	r2, r4, 0
  444:	04 00 40 04 	add	r4, r4, 4
  448:	04 00 50 05 	add	r5, r5, 4
- 44c:	fb ff 71 a4 	bne	r4, r7, -20
- 450:	05 00 30 a7 	beq	r7, r3, 20
+ 44c:	fb ff 71 a4 	bne	r4, r7, -20 /* dst_pc=0x43c */
+ 450:	05 00 30 a7 	beq	r7, r3, 20 /* dst_pc=0x468 */
 
 00000454 <.L1_mac_mac_memcpy_bytes_loop>:
  454:	00 00 54 92 	ldub	r2, r5, 0
  458:	00 00 47 92 	stb	r2, r4, 0
  45c:	01 00 40 04 	add	r4, r4, 1
  460:	01 00 50 05 	add	r5, r5, 1
- 464:	fb ff 31 a4 	bne	r4, r3, -20
+ 464:	fb ff 31 a4 	bne	r4, r3, -20 /* dst_pc=0x454 */
 
 00000468 <.Lmemcpy_pop>:
  468:	00 00 f0 97 	ldr	r7, sp, 0
@@ -332,7 +332,7 @@ Disassembly of section .text:
  474:	00 00 d6 a0 	jl	r0, lr
 
 00000478 <_memset>:
- 478:	40 00 00 a3 	beq	r3, r0, 256
+ 478:	40 00 00 a3 	beq	r3, r0, 256 /* dst_pc=0x57c */
  47c:	f8 ff f0 0f 	add	sp, sp, -8
  480:	00 00 f1 97 	str	r7, sp, 0
  484:	04 00 f1 98 	str	r8, sp, 4
@@ -340,20 +340,20 @@ Disassembly of section .text:
  48c:	00 00 30 06 	add	r6, r3, 0
  490:	00 00 30 08 	add	r8, r3, 0
  494:	ff 00 20 62 	and	r2, r2, 255
- 498:	01 01 00 c0 	add	r5, r0, 16843009 // pre #0x101
+ 498:	01 01 00 c0 	add	r5, r0, 16843009 /* pre #0x101 */
  49c:	01 01 00 05 
  4a0:	00 00 52 85 	umulw	r5, r5, r2
  4a4:	fc ff 30 67 	and	r7, r3, -4
  4a8:	00 00 17 07 	add	r7, r1, r7
  4ac:	00 00 13 03 	add	r3, r1, r3
  4b0:	03 00 10 62 	and	r2, r1, 3
- 4b4:	2b 00 01 a2 	bne	r2, r0, 172
+ 4b4:	2b 00 01 a2 	bne	r2, r0, 172 /* dst_pc=0x564 */
  4b8:	04 00 00 02 	add	r2, r0, 4
- 4bc:	29 00 22 a6 	bltu	r6, r2, 164
+ 4bc:	29 00 22 a6 	bltu	r6, r2, 164 /* dst_pc=0x564 */
  4c0:	10 00 00 02 	add	r2, r0, 16
- 4c4:	23 00 22 a6 	bltu	r6, r2, 140
+ 4c4:	23 00 22 a6 	bltu	r6, r2, 140 /* dst_pc=0x554 */
  4c8:	40 00 00 02 	add	r2, r0, 64
- 4cc:	17 00 22 a6 	bltu	r6, r2, 92
+ 4cc:	17 00 22 a6 	bltu	r6, r2, 92 /* dst_pc=0x52c */
  4d0:	c0 ff 60 66 	and	r6, r6, -64
  4d4:	00 00 46 06 	add	r6, r4, r6
 
@@ -375,10 +375,10 @@ Disassembly of section .text:
  510:	38 00 41 95 	str	r5, r4, 56
  514:	3c 00 41 95 	str	r5, r4, 60
  518:	40 00 40 04 	add	r4, r4, 64
- 51c:	ee ff 61 a4 	bne	r4, r6, -72
- 520:	13 00 30 a6 	beq	r6, r3, 76
- 524:	0b 00 30 a7 	beq	r7, r3, 44
- 528:	0e 00 00 b0 	bl	r0, 56
+ 51c:	ee ff 61 a4 	bne	r4, r6, -72 /* dst_pc=0x4d8 */
+ 520:	13 00 30 a6 	beq	r6, r3, 76 /* dst_pc=0x570 */
+ 524:	0b 00 30 a7 	beq	r7, r3, 44 /* dst_pc=0x554 */
+ 528:	0e 00 00 b0 	bl	r0, 56 /* dst_pc=0x564 */
 
 0000052c <.Lmemset_words_x4_loop_pre>:
  52c:	f0 ff 80 66 	and	r6, r8, -16
@@ -390,20 +390,20 @@ Disassembly of section .text:
  53c:	08 00 41 95 	str	r5, r4, 8
  540:	0c 00 41 95 	str	r5, r4, 12
  544:	10 00 40 04 	add	r4, r4, 16
- 548:	fa ff 61 a4 	bne	r4, r6, -24
- 54c:	08 00 30 a6 	beq	r6, r3, 32
- 550:	04 00 31 a7 	bne	r7, r3, 16
+ 548:	fa ff 61 a4 	bne	r4, r6, -24 /* dst_pc=0x534 */
+ 54c:	08 00 30 a6 	beq	r6, r3, 32 /* dst_pc=0x570 */
+ 550:	04 00 31 a7 	bne	r7, r3, 16 /* dst_pc=0x564 */
 
 00000554 <.Lmemset_remaining_words_loop>:
  554:	00 00 41 95 	str	r5, r4, 0
  558:	04 00 40 04 	add	r4, r4, 4
- 55c:	fd ff 71 a4 	bne	r4, r7, -12
- 560:	03 00 30 a7 	beq	r7, r3, 12
+ 55c:	fd ff 71 a4 	bne	r4, r7, -12 /* dst_pc=0x554 */
+ 560:	03 00 30 a7 	beq	r7, r3, 12 /* dst_pc=0x570 */
 
 00000564 <.Lmemset_remaining_bytes_loop>:
  564:	00 00 47 95 	stb	r5, r4, 0
  568:	01 00 40 04 	add	r4, r4, 1
- 56c:	fd ff 31 a4 	bne	r4, r3, -12
+ 56c:	fd ff 31 a4 	bne	r4, r3, -12 /* dst_pc=0x564 */
 
 00000570 <.Lmemset_pop>:
  570:	00 00 f0 97 	ldr	r7, sp, 0
@@ -417,9 +417,9 @@ Disassembly of section .init:
 
 00000580 <_start>:
 	...
- 588:	ff 01 00 c0 	add	sp, r0, 33554428 // pre #0x1ff
+ 588:	ff 01 00 c0 	add	sp, r0, 33554428 /* pre #0x1ff */
  58c:	fc ff 00 0f 
- 590:	02 00 00 a0 	beq	r0, r0, 8
+ 590:	02 00 00 a0 	beq	r0, r0, 8 /* dst_pc=0x59c */
 	...
 
 0000059c <__cstart>:
@@ -428,27 +428,27 @@ Disassembly of section .init:
  5a4:	14 00 00 03 	add	r3, r0, 20
  5a8:	00 07 00 02 	add	r2, r0, 1792
  5ac:	00 07 00 01 	add	r1, r0, 1792
- 5b0:	57 ff ff bd 	bl	lr, -676
+ 5b0:	57 ff ff bd 	bl	lr, -676 /* dst_pc=0x310 */
  5b4:	0d 00 00 03 	add	r3, r0, 13
  5b8:	00 00 00 02 	add	r2, r0, 0
  5bc:	ec 07 00 01 	add	r1, r0, 2028
- 5c0:	ad ff ff bd 	bl	lr, -332
- 5c4:	22 00 00 bd 	bl	lr, 136
+ 5c0:	ad ff ff bd 	bl	lr, -332 /* dst_pc=0x478 */
+ 5c4:	22 00 00 bd 	bl	lr, 136 /* dst_pc=0x650 */
  5c8:	00 00 00 02 	add	r2, r0, 0
  5cc:	00 00 20 01 	add	r1, r2, 0
- 5d0:	07 00 00 bd 	bl	lr, 28
+ 5d0:	07 00 00 bd 	bl	lr, 28 /* dst_pc=0x5f0 */
 
 000005d4 <.L2>:
- 5d4:	ff ff ff b0 	bl	r0, -4
+ 5d4:	ff ff ff b0 	bl	r0, -4 /* dst_pc=0x5d4 */
 
 000005d8 <_init>:
- 5d8:	06 ff ff bd 	bl	lr, -1000
+ 5d8:	06 ff ff bd 	bl	lr, -1000 /* dst_pc=0x1f4 */
  5dc:	00 00 d6 a0 	jl	r0, lr
 
 Disassembly of section .fini:
 
 000005e0 <_fini>:
- 5e0:	eb fe ff bd 	bl	lr, -1108
+ 5e0:	eb fe ff bd 	bl	lr, -1108 /* dst_pc=0x190 */
  5e4:	00 00 d6 a0 	jl	r0, lr
 
 Disassembly of section .text.startup:
@@ -476,13 +476,13 @@ Disassembly of section .text.startup:
  62c:	00 00 36 91 	sth	r1, r3, 0
  630:	01 00 20 02 	add	r2, r2, 1
  634:	02 00 30 03 	add	r3, r3, 2
- 638:	f9 ff 51 a2 	bne	r2, r5, -28
+ 638:	f9 ff 51 a2 	bne	r2, r5, -28 /* dst_pc=0x620 */
  63c:	01 00 60 06 	add	r6, r6, 1
  640:	80 02 d0 0d 	add	lr, lr, 640
- 644:	f2 ff 71 a6 	bne	r6, r7, -56
+ 644:	f2 ff 71 a6 	bne	r6, r7, -56 /* dst_pc=0x610 */
 
 00000648 <.L25>:
- 648:	ff ff ff b0 	bl	r0, -4
+ 648:	ff ff ff b0 	bl	r0, -4 /* dst_pc=0x648 */
 
 Disassembly of section .text.__libc_init_array:
 
@@ -492,11 +492,11 @@ Disassembly of section .text.__libc_init_array:
  658:	04 00 f1 98 	str	r8, sp, 4
  65c:	08 00 f1 99 	str	r9, sp, 8
  660:	0c 00 f1 9d 	str	lr, sp, 12
- 664:	00 00 00 c0 	add	r9, r0, 0 // pre #0x0
+ 664:	00 00 00 c0 	add	r9, r0, 0 /* pre #0x0 */
  668:	00 00 00 09 
- 66c:	00 00 00 c0 	add	r7, r0, 0 // pre #0x0
+ 66c:	00 00 00 c0 	add	r7, r0, 0 /* pre #0x0 */
  670:	00 00 00 07 
- 674:	08 00 70 a9 	beq	r9, r7, 32
+ 674:	08 00 70 a9 	beq	r9, r7, 32 /* dst_pc=0x698 */
  678:	00 00 97 19 	sub	r9, r9, r7
  67c:	25 00 90 79 	asr	r9, r9, 2
  680:	00 00 00 08 	add	r8, r0, 0
@@ -506,22 +506,22 @@ Disassembly of section .text.__libc_init_array:
  688:	00 00 16 ad 	jl	lr, r1
  68c:	01 00 80 08 	add	r8, r8, 1
  690:	04 00 70 07 	add	r7, r7, 4
- 694:	fb ff 92 a8 	bltu	r8, r9, -20
+ 694:	fb ff 92 a8 	bltu	r8, r9, -20 /* dst_pc=0x684 */
 
 00000698 <.L2>:
- 698:	00 00 00 c0 	add	r2, r0, 0 // pre #0x0
+ 698:	00 00 00 c0 	add	r2, r0, 0 /* pre #0x0 */
  69c:	00 00 00 02 
  6a0:	00 00 00 01 	add	r1, r0, 0
- 6a4:	02 00 10 a2 	beq	r2, r1, 8
- 6a8:	ff ff 00 c0 	bl	lr, -1712 // pre #0xffff
+ 6a4:	02 00 10 a2 	beq	r2, r1, 8 /* dst_pc=0x6b0 */
+ 6a8:	ff ff 00 c0 	bl	lr, -1712 /* dst_pc=0xfffffffc */ /* pre #0xffff */
  6ac:	54 fe ff bd 
 
 000006b0 <.L4>:
- 6b0:	00 00 00 c0 	add	r9, r0, 0 // pre #0x0
+ 6b0:	00 00 00 c0 	add	r9, r0, 0 /* pre #0x0 */
  6b4:	00 00 00 09 
- 6b8:	00 00 00 c0 	add	r7, r0, 0 // pre #0x0
+ 6b8:	00 00 00 c0 	add	r7, r0, 0 /* pre #0x0 */
  6bc:	00 00 00 07 
- 6c0:	08 00 70 a9 	beq	r9, r7, 32
+ 6c0:	08 00 70 a9 	beq	r9, r7, 32 /* dst_pc=0x6e4 */
  6c4:	00 00 97 19 	sub	r9, r9, r7
  6c8:	25 00 90 79 	asr	r9, r9, 2
  6cc:	00 00 00 08 	add	r8, r0, 0
@@ -531,7 +531,7 @@ Disassembly of section .text.__libc_init_array:
  6d4:	00 00 16 ad 	jl	lr, r1
  6d8:	01 00 80 08 	add	r8, r8, 1
  6dc:	04 00 70 07 	add	r7, r7, 4
- 6e0:	fb ff 92 a8 	bltu	r8, r9, -20
+ 6e0:	fb ff 92 a8 	bltu	r8, r9, -20 /* dst_pc=0x6d0 */
 
 000006e4 <.L1>:
  6e4:	00 00 f0 97 	ldr	r7, sp, 0

@@ -10282,24 +10282,6 @@ case class SnowHousePipeStageExecute(
     nextPrevTxnWasHazard := False
   }
 
-  //def doHandleMyDbusPartA(
-  //): Unit = {
-  //  //if (!cfg.useLcvDataBus) {
-  //  //} else {
-  //  //  // TODO: implement `io.lcvDbus` stuff
-  //  //  io.lcvDbus.h2dBus.valid := (
-  //  //    RegNext(io.lcvDbus.h2dBus.valid, init=False)
-  //  //  )
-  //  //  when (
-  //  //    //RegNext(io.lcvDbus.h2dBus.valid, init=False)
-  //  //  ) {
-  //  //    when (io.lcvDbus.h2dBus.ready) {
-  //  //      io.lcvDbus.h2dBus.valid := False
-  //  //    }
-  //  //  }
-
-  //  //}
-  //}
   val myNonLcvDbusPartAArea = (
     !cfg.useLcvDataBus
   ) generate (new Area{
@@ -10342,14 +10324,8 @@ case class SnowHousePipeStageExecute(
       && setOutpModMemWord.io.opIsMemAccess.last
       && cMid0Front.down.isReady
     )
-    //myH2dBus.byteEn := (
-    //  U(myH2dBus.byteEn.getWidth bits, default -> True)
-    //)
-    //myH2dBus.haveFullWord := !myDbusHostPayload.subKindIsLtWordWidth
     myH2dBus.byteSize := myDbusHostPayload.myLcvDbusByteSize
     myH2dBus.src.allowOverride
-    //myH2dBus.src := 0x0
-    //myH2dBus.src.lsb := myH2dBus.isWrite
     myH2dBus.src := (
       (
         RegNextWhen(
@@ -10364,18 +10340,7 @@ case class SnowHousePipeStageExecute(
     myH2dBus.data := myDbusHostPayload.data
     myH2dBus.isWrite := myDbusHostPayload.accKind.asBits(1)
 
-    //when (
-    //  RegNextWhen(
-    //    setOutpModMemWord.io.opIsMemAccess.last,
-    //    cond=cMid0Front.up.isFiring,
-    //    init=False
-    //  )
-    //) {
-    //  myH2dBus.valid := False
-    //}
     when (
-      //setOutpModMemWord.io.opIsMemAccess.last
-      //&& !myH2dBus.fire
       myH2dBus.valid
       && !myH2dBus.ready
     ) {
@@ -10384,129 +10349,8 @@ case class SnowHousePipeStageExecute(
     when (myH2dBus.fire) {
       nextPrevTxnWasHazard := True
     }
-    //val stickySeenH2dFire = 
-    //when (
-    //  setOutpModMemWord.io.opIsMemAccess.last
-    //) {
-    //}
-
-    //when (
-    //  RegNext(io.lcvDbus.h2dBus.valid, init=False)
-    //  //io.lcvDbus.h2dBus.valid 
-    //) {
-    //  when (io.lcvDbus.h2dBus.ready) {
-    //    io.lcvDbus.h2dBus.valid := False
-    //  } otherwise {
-    //  }
-    //}
-
-    //val rStallState = Reg(Bool(), init=False)
-
-    //myDbus.nextValid := RegNext(myDbus.nextValid, init=False)
-    //when (RegNext(myDbus.nextValid, init=False)) {
-    //  when (myDbus.ready) {
-    //    myDbus.nextValid := False
-    //    //myDoStall(stallKindMem) := False
-    //  } otherwise {
-    //    myDoStall(stallKindMem) := True
-    //  }
-    //}
-    //doHandleMyDbusPartA()
 
     setOutpModMemWord.io.irqIraRegPc := outp.irqIraRegPc.head
-    ////cMid0Front.down(outpPipePayloadA).allowOverride
-    ////cMid0Front.down(outpPipePayloadA) := outp
-    //val myTempCondRnw = (
-    //  RegNextWhen(
-    //    (
-    //      setOutpModMemWord.io.opIsMemAccess.last
-    //      && !outp.outpDecodeExt.memAccessKind.asBits(1)
-    //    ),
-    //    cond=cMid0Front.up.isFiring,
-    //    init=False,
-    //  )
-    //)
-    //when (cMid0Front.up.isValid) {
-    //  when (
-    //    outp.myDoHaveHazardAddrCheckVec(0)
-    //    && myTempCondRnw
-    //  ) {
-    //    setOutpModMemWord.io.irqIraRegPc := outp.irqIraRegPc.last
-    //    // TODO: maybe insert a second bubble when the instruction
-    //    // following a load is a branch using that load result?
-    //    // The main reason for this is that the timing for
-    //    // branch mispredicts, granting an IRQ, etc. is very specific
-    //    // (it's done via a bunch of `RegNext(...)` calls)
-    //    // It might need different logic from that.
-
-    //    //cMid0Front.duplicateIt()
-    //    //when (!rStallState) {
-    //    //  // TODO: determine way to have the effect of this
-    //    //  // `cMid0Front.duplicateIt()`
-    //    //  // while still having `fwdIdx` be updated properly.
-    //    //  // `cMid0Front.duplicateIt()` will mess up the `fwdIdx`
-    //    //  // Maybe another pipeline stage should be added that handles the
-    //    //  // load delay slots?
-    //    //  // I am not currently sure how to handle this from within
-    //    //  // SpinalHDL's `lib.misc.pipeline` API, but I'll need to come
-    //    //  // back to this.
-    //    //  cMid0Front.duplicateIt()
-    //    //  myShouldIgnoreInstr.foreach(item => {
-    //    //    item := True
-    //    //  })
-    //    //  // TODO: need to insert a bubble here
-    //    //  //when (cMid0Front.down.isValid) {
-    //    //    cMid0Front.down(outpPipePayloadA).instrCnt.shouldIgnoreInstr
-    //    //      .foreach(item => {
-    //    //        // := False
-    //    //        item := True
-    //    //      })
-    //    //    cMid0Front.down(outpPipePayloadA).myExt.foreach(item => {
-    //    //      item.modMemWordValid.foreach(innerItem => {
-    //    //        innerItem := False
-    //    //      })
-    //    //      item.fwdCanDoIt.foreach(innerItem => {
-    //    //        innerItem := False
-    //    //      })
-    //    //    })
-    //    //    cMid0Front.down(outpPipePayloadA).outpDecodeExt.opIsMemAccess
-    //    //      .foreach(item => {
-    //    //        item := False
-    //    //      })
-    //    //  //}
-    //    //  when (cMid0Front.down.isFiring) {
-    //    //    rStallState := True
-    //    //  }
-    //    //}
-    //  } otherwise {
-    //    //setOutpModMemWord.io.irqIraRegPc := outp.irqIraRegPc.head
-    //  }
-    //}
-    //when (rose(rStallState)) {
-    //  myShouldIgnoreInstr.foreach(item => {
-    //    item := False
-    //  })
-    //  //cMid0Front.down(midPipePayload(1)).foreach(outerItem => {
-    //  //  outerItem.instrCnt.shouldIgnoreInstr.foreach(item => {
-    //  //    // := False
-    //  //    item := False
-    //  //  })
-    //  //  outerItem.myExt.foreach(item => {
-    //  //    item.fwdCanDoIt.foreach(innerItem => {
-    //  //      innerItem := (
-    //  //        //False
-    //  //        !myShouldIgnoreInstr.last
-    //  //      )
-    //  //    })
-    //  //  })
-    //  //})
-    //}
-    //when (cMid0Front.up.isFiring) {
-    //  rStallState := False
-    //  //myShouldIgnoreInstr.foreach(item => {
-    //  //  item := False
-    //  //})
-    //}
   })
 
 
@@ -10618,9 +10462,7 @@ case class SnowHousePipeStageExecute(
  
   )
   for (idx <- 0 until cfg.lowerMyFanoutRegPcSetItCnt) {
-    when (
-      nextPsExSetPcValid(idx)
-    ) {
+    when (nextPsExSetPcValid(idx)) {
       myShouldIgnoreInstr(idx) := True
     }
     when (
@@ -11089,9 +10931,6 @@ case class SnowHousePipeStageExecute(
       ))
     )
     temp.foreach(elem => elem.init(elem.getZero))
-    //for ((elem, tempIdx) <- temp.view.zipWithIndex) {
-    //  elem.init(elem.getZero)
-    //}
     temp
   }
   //var busIdxFound: Boolean = false
@@ -11105,26 +10944,8 @@ case class SnowHousePipeStageExecute(
       init(0x0)
     ) {
       for (((_, opInfo), kindIdx) <- innerMap.view.zipWithIndex) {
-        //for (
-        //  (multiCycleGroup, multiCycleInnerMap)
-        //  <- cfg.multiCycleOpInfoMap.view
-        //) {
-        //  for (
-        //    ((_, multiCycleOpInfo), myBusIdx)
-        //    <- multiCycleInnerMap.view.zipWithIndex
-        //  ) {
-        //    if (opInfo == multiCycleOpInfo) {
-        //      busIdxFound = true
-        //      busIdx = myBusIdx
-        //    }
-        //  }
-        //}
-        //if (busIdxFound)
         is (kindIdx) {
-          def multiCycleBus = io.multiCycleBusVec(
-            //busIdx
-            groupIdx
-          )
+          def multiCycleBus = io.multiCycleBusVec(groupIdx)
           multiCycleBus.sendData.srcVec.foreach(src => {
             src.allowOverride
           })
@@ -11136,11 +10957,6 @@ case class SnowHousePipeStageExecute(
               ).resize(
                 multiCycleBus.sendData.srcVec(0).getWidth
               ),
-              //cond=(
-              //  //True
-              //  //!myDoStall(stallKindMultiCycle)
-              //  rMultiCycleOpState === MultiCycleOpState.Idle
-              //),
             )
             init(0x0)
           )
@@ -11155,17 +10971,9 @@ case class SnowHousePipeStageExecute(
                       opInfo=opInfo,
                       idx=multiCycleIdx,
                     ),
-                    //cond=(
-                    //  //True
-                    //  //!myDoStall(stallKindMultiCycle)
-                    //  rMultiCycleOpState === MultiCycleOpState.Idle
-                    //),
                   )
                   init(0x0)
                 )
-              } else {
-                //multiCycleBus.sendData.srcVec(multiCycleIdx) := (
-                //)
               }
             }
           }
@@ -11173,35 +10981,13 @@ case class SnowHousePipeStageExecute(
       }
     }
   }
-  //io.dcacheHaveHazard := (
-  //  !rSavedStall
-  //  && doCheckHazard && myDoHaveHazard1
-  //)
-  //myDbusIo.myUpFireIshUpdateSrcCond := (
-  //  cWb.up.isFiring
-  //  //&& myWbPayload.outpDecodeExt.opIsMemAccess.last
-  //  //False
-  //)
-  //def doHandleMyDbusPartB(
-  //): Unit = {
-  //}
   val myNonLcvDbusPartBArea = (
     !cfg.useLcvDataBus
   ) generate (new Area {
-    //doHandleMyDbusPartB()
-    //myDbusIo.myUpFireIshUpdateSrcCond := False
-    when (/*LcvFastOrR*/(
-      setOutpModMemWord.io.opIsMemAccess.head
-      //|| setOutpModMemWord.io.opIsAluShift.head
-      //.asBits.asUInt
-      //.orR
-    )) {
+    when (setOutpModMemWord.io.opIsMemAccess.head) {
       nextPrevTxnWasHazard := True
       when (cMid0Front.up.isFiring) {
-        //psMemStallHost.nextValid := True
         myDbus.nextValid := True
-        //myDbusIo.myUpFireIshUpdateSrcCond := True
-        //myDbus.sendData := setOutpModMemWord.io.dbusHostPayload
       }
     }
     myDbus.sendData.addr.allowOverride
@@ -11212,40 +10998,9 @@ case class SnowHousePipeStageExecute(
   val myLcvDbusPartBArea = (
     cfg.useLcvDataBus
   ) generate (new Area {
-    ////doHandleMyDbusPartB()
-    //def myH2dBus = io.lcvDbus.h2dBus
-    //when (setOutpModMemWord.io.opIsMemAccess.head) {
-    //  myH2dBus.valid := True
-    //  nextPrevTxnWasHazard := True
-    //  //when (cMid0Front.up.isFiring) {
-    //  //  myDbus.nextValid := True
-    //  //}
-    //}
-    //def myDbusHostPayload = setOutpModMemWord.io.dbusHostPayload
-    ////myDbus.sendData.addr.allowOverride
-    //when (cMid0Front.up.isFiring) {
-    //  //myDbus.sendData := setOutpModMemWord.io.dbusHostPayload
-    //}
   })
-  //myDbusIo.myUpFireIshUpdateSrcCond := False
-  //when (/*LcvFastOrR*/(
-  //  setOutpModMemWord.io.opIsMemAccess.head
-  //  //|| setOutpModMemWord.io.opIsAluShift.head
-  //  //.asBits.asUInt
-  //  //.orR
-  //)) {
-  //  nextPrevTxnWasHazard := True
-  //  when (cMid0Front.up.isFiring) {
-  //    //psMemStallHost.nextValid := True
-  //    myDbus.nextValid := True
-  //    myDbusIo.myUpFireIshUpdateSrcCond := True
-  //    //myDbus.sendData := setOutpModMemWord.io.dbusHostPayload
-  //  }
-  //}
 
-  for (
-    myPsExStallHost <- psExStallHostArr.view
-  ) {
+  for (myPsExStallHost <- psExStallHostArr.view) {
     if (
       myPsExStallHost.stallIo.get.sendData.kind != null
       && myPsExStallHost.stallIo.get.sendData.kind.getWidth > 0
@@ -11274,36 +11029,17 @@ case class SnowHousePipeStageExecute(
     is (MultiCycleOpState.Idle) {
       setOutpModMemWord.io.inMultiCycleOp := False
       when (
-        //LcvFastOrR(
-        //  setOutpModMemWord.io.opIsMultiCycle.asBits.asUInt
-        //  //=/= 0x0
-        //  //.orR
-        //)
-        (
-          !rHaveDoneMultiCycleOp
-          && cMid0Front.up.isValid
-          && setOutpModMemWord.io.opIsAnyMultiCycle
-          //&& !setOutpModMemWord.rShouldIgnoreInstrState(2)
-          //&& !setOutpModMemWord.io.shouldIgnoreInstr(2)
-          && !myShouldIgnoreInstr(2)
-          //&& !shouldIgnoreInstr
-        )
+        !rHaveDoneMultiCycleOp
+        && cMid0Front.up.isValid
+        && setOutpModMemWord.io.opIsAnyMultiCycle
+        && !myShouldIgnoreInstr(2)
       ) {
-        //rMultiCycleOpState := (
-        //  //True
-        //  MultiCycleOpState.Main
-        //)
         for (idx <- 0 until rOpIsMultiCycle.size) {
           rOpIsMultiCycle(idx) := (
             setOutpModMemWord.io.opIsMultiCycle(idx)
           )
         }
         cMid0Front.haltIt()
-        //outp.myExt.foreach(item => {
-        //  item.modMemWordValid.foreach(mmwValidItem => {
-        //    mmwValidItem := False
-        //  })
-        //})
         val toOrReduce = (
           if (!cfg.useLcvDataBus) (
             /*RegNext*/(
@@ -11339,35 +11075,14 @@ case class SnowHousePipeStageExecute(
             ).asBits.asUInt
           )
         )
-        when (
-          //if (cfg.targetAltera) (
-          //  LcvFastOrR(toOrReduce)
-          //) else (
-            toOrReduce.orR
-          //)
-        ) {
-          //doMultiCycleStart(psExStallHost, idx=idx)
-          rMultiCycleOpState := (
-            //True
-            MultiCycleOpState.Main
-          )
+        when (toOrReduce.orR) {
+          rMultiCycleOpState := MultiCycleOpState.Main
           myDoStall(stallKindMem) := False
         }
       }
       //myDoStall(stallKindMultiCycle) := False
       when (cMid0Front.up.isFiring) {
-        //outp.myExt.foreach(myExt => {
-        //  myExt.modMemWordValid.foreach(mmwValidItem => {
-        //    mmwValidItem := True
-        //  })
-        //})
         rHaveDoneMultiCycleOp := False
-      } otherwise {
-        //outp.myExt.foreach(myExt => {
-        //  myExt.modMemWordValid.foreach(mmwValidItem => {
-        //    mmwValidItem := False
-        //  })
-        //})
       }
     }
     is (MultiCycleOpState.Main) {
@@ -11402,71 +11117,26 @@ case class SnowHousePipeStageExecute(
               idx
             )
             doMultiCycleStart(psExStallHost, idx=idx)
-            //for (
-            //  ((_, opInfo), opInfoIdx)
-            //  <- cfg.multiCycleOpInfoMap.view.zipWithIndex
-            //) {
-            //  //is (opInfoIdx)
-            //  if (opInfoIdx == idx) {
-            //    var busIdxFound: Boolean = false
-            //    var busIdx: Int = 0
-            //    for (
-            //      ((_, multiCycleOpInfo), myBusIdx)
-            //      <- cfg.multiCycleOpInfoMap.view.zipWithIndex
-            //    ) {
-            //      if (opInfo == multiCycleOpInfo) {
-            //        busIdxFound = true
-            //        busIdx = myBusIdx
-            //      }
-            //    }
-            //    if (busIdxFound) {
-            //      val psExStallHost = psExStallHostArr(busIdx)
-            //      doMultiCycleStart(psExStallHost, idx=idx)
-            //    }
-            //  }
-            //}
           }
-          //for (
-          //  ((_, opInfo), opInfoIdx)
-          //  <- cfg.multiCycleOpInfoMap.view.zipWithIndex
-          //) {
-          //  //is (opInfoIdx)
-          //  if (opInfoIdx == idx) {
-          //    var busIdxFound: Boolean = false
-          //    var busIdx: Int = 0
-          //    for (
-          //      ((_, multiCycleOpInfo), myBusIdx)
-          //      <- cfg.multiCycleOpInfoMap.view.zipWithIndex
-          //    ) {
-          //      if (opInfo == multiCycleOpInfo) {
-          //        busIdxFound = true
-          //        busIdx = myBusIdx
-          //      }
-          //    }
-          //    if (busIdxFound) {
-                val psExStallHost = psExStallHostArr(
-                  //busIdx
-                  idx
-                )
-                //doMultiCycleStart(psExStallHost, idx=idx)
-                when (
-                  RegNext(psExStallHost.nextValid, init=False)
-                  && psExStallHost.ready
-                ) {
-                  psExStallHost.nextValid := False
-                  rMultiCycleOpState := MultiCycleOpState.Idle
-                } elsewhen (rOpIsMultiCycle(idx)) {
-                  cMid0Front.haltIt()
-                  //outp.myExt.foreach(item => {
-                  //  item.modMemWordValid.foreach(mmwValidItem => {
-                  //    mmwValidItem := False
-                  //  })
-                  //})
-                }
-          //    }
-          //  }
-          //}
-          // END: working, slower than desired multi-cycle op handling code
+          val psExStallHost = psExStallHostArr(
+            //busIdx
+            idx
+          )
+          //doMultiCycleStart(psExStallHost, idx=idx)
+          when (
+            RegNext(psExStallHost.nextValid, init=False)
+            && psExStallHost.ready
+          ) {
+            psExStallHost.nextValid := False
+            rMultiCycleOpState := MultiCycleOpState.Idle
+          } elsewhen (rOpIsMultiCycle(idx)) {
+            cMid0Front.haltIt()
+            //outp.myExt.foreach(item => {
+            //  item.modMemWordValid.foreach(mmwValidItem => {
+            //    mmwValidItem := False
+            //  })
+            //})
+          }
           //--------
         }
         when (cMid0Front.up.isFiring) {

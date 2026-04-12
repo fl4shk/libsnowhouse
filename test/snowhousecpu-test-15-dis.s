@@ -11,7 +11,7 @@ Disassembly of section .text:
    c:	00 00 00 03 	add	r3, r0, 0
   10:	00 10 00 04 	add	r4, r0, 4096
   14:	08 00 40 05 	add	r5, r4, 8
-  18:	ee ff 00 c0 	add	r1, r0, -1123024 // pre #0xffee
+  18:	ee ff 00 c0 	add	r1, r0, -1123024 /* pre #0xffee */
   1c:	30 dd 00 01 
 
 00000020 <_loop_ldst_ub>:
@@ -24,10 +24,10 @@ Disassembly of section .text:
   38:	00 00 44 96 	ldub	r6, r4, 0
   3c:	01 00 10 01 	add	r1, r1, 1
   40:	01 00 40 04 	add	r4, r4, 1
-  44:	f6 ff 52 a4 	bltu	r4, r5, -40
+  44:	f6 ff 52 a4 	bltu	r4, r5, -40 /* dst_pc=0x20 */
   48:	00 08 00 04 	add	r4, r0, 2048
   4c:	08 00 40 05 	add	r5, r4, 8
-  50:	ee ff 00 c0 	add	r1, r0, -1163216 // pre #0xffee
+  50:	ee ff 00 c0 	add	r1, r0, -1163216 /* pre #0xffee */
   54:	30 40 00 01 
 
 00000058 <_loop_ldst_uh>:
@@ -40,10 +40,10 @@ Disassembly of section .text:
   70:	00 00 42 96 	lduh	r6, r4, 0
   74:	01 00 10 01 	add	r1, r1, 1
   78:	02 00 40 04 	add	r4, r4, 2
-  7c:	f6 ff 52 a4 	bltu	r4, r5, -40
+  7c:	f6 ff 52 a4 	bltu	r4, r5, -40 /* dst_pc=0x58 */
   80:	00 20 00 04 	add	r4, r0, 8192
   84:	08 00 40 05 	add	r5, r4, 8
-  88:	55 44 00 c0 	add	r1, r0, 1146447488 // pre #0x4455
+  88:	55 44 00 c0 	add	r1, r0, 1146447488 /* pre #0x4455 */
   8c:	80 66 00 01 
 
 00000090 <_loop_ldst_sb>:
@@ -56,10 +56,10 @@ Disassembly of section .text:
   a8:	00 00 45 96 	ldsb	r6, r4, 0
   ac:	01 00 10 01 	add	r1, r1, 1
   b0:	01 00 40 04 	add	r4, r4, 1
-  b4:	f6 ff 52 a4 	bltu	r4, r5, -40
+  b4:	f6 ff 52 a4 	bltu	r4, r5, -40 /* dst_pc=0x90 */
   b8:	00 18 00 04 	add	r4, r0, 6144
   bc:	08 00 40 05 	add	r5, r4, 8
-  c0:	55 44 00 c0 	add	r1, r0, 1146454064 // pre #0x4455
+  c0:	55 44 00 c0 	add	r1, r0, 1146454064 /* pre #0x4455 */
   c4:	30 80 00 01 
 
 000000c8 <_loop_ldst_sh>:
@@ -72,8 +72,8 @@ Disassembly of section .text:
   e0:	00 00 43 96 	ldsh	r6, r4, 0
   e4:	01 00 10 01 	add	r1, r1, 1
   e8:	02 00 40 04 	add	r4, r4, 2
-  ec:	f6 ff 52 a4 	bltu	r4, r5, -40
+  ec:	f6 ff 52 a4 	bltu	r4, r5, -40 /* dst_pc=0xc8 */
 
 000000f0 <_infin>:
-  f0:	ff ff 00 a0 	beq	r0, r0, -4
+  f0:	ff ff 00 a0 	beq	r0, r0, -4 /* dst_pc=0xf0 */
 	...

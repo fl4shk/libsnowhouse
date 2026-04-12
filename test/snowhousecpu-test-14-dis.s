@@ -6,7 +6,7 @@ Disassembly of section .text:
 
 00000000 <_post_const_data-0x200>:
 	...
-  10:	7b 00 00 a0 	beq	r0, r0, 492
+  10:	7b 00 00 a0 	beq	r0, r0, 492 /* dst_pc=0x200 */
   14:	05 00 00 00 	add	r0, r0, 5
   18:	06 00 00 00 	add	r0, r0, 6
   1c:	07 00 00 00 	add	r0, r0, 7
@@ -154,7 +154,7 @@ Disassembly of section .text:
 0000025c <_loop_2>:
  25c:	fc ff 70 07 	add	r7, r7, -4
  260:	00 00 70 9b 	ldr	r11, r7, 0
- 264:	fd ff b4 a8 	blts	r8, r11, -12
+ 264:	fd ff b4 a8 	blts	r8, r11, -12 /* dst_pc=0x25c */
 
 00000268 <_prep_test_irqs>:
  268:	00 00 00 04 	add	r4, r0, 0
@@ -171,11 +171,11 @@ Disassembly of section .text:
  28c:	00 00 40 05 	add	r5, r4, 0
  290:	00 00 50 93 	ldr	r3, r5, 0
  294:	00 00 50 09 	add	r9, r5, 0
- 298:	f8 ff 72 a3 	bltu	r3, r7, -32
+ 298:	f8 ff 72 a3 	bltu	r3, r7, -32 /* dst_pc=0x27c */
 
 0000029c <_infin>:
 	...
- 2bc:	f7 ff 00 a0 	beq	r0, r0, -36
+ 2bc:	f7 ff 00 a0 	beq	r0, r0, -36 /* dst_pc=0x29c */
 
 000002c0 <_irq_handler>:
  2c0:	01 00 a0 0a 	add	r10, r10, 1

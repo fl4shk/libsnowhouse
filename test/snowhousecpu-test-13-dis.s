@@ -13,10 +13,10 @@ Disassembly of section .text:
   18:	01 00 70 0c 	add	r12, r7, 1
   1c:	ff ff 70 0b 	add	r11, r7, -1
   20:	fc ff 70 07 	add	r7, r7, -4
-  24:	fc ff b4 a8 	blts	r8, r11, -16
+  24:	fc ff b4 a8 	blts	r8, r11, -16 /* dst_pc=0x18 */
 
 00000028 <_infin>:
-  28:	ff ff 63 a6 	bgeu	r6, r6, -4
+  28:	ff ff 63 a6 	bgeu	r6, r6, -4 /* dst_pc=0x28 */
   2c:	01 00 00 01 	add	r1, r0, 1
   30:	02 00 00 02 	add	r2, r0, 2
   34:	03 00 00 03 	add	r3, r0, 3
