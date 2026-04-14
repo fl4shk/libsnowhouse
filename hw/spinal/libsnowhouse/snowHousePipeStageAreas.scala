@@ -11220,7 +11220,17 @@ case class SnowHousePipeStageExecute(
   //  )
   //}
   //for (idx <- 0 until cfg.regFileCfg.memArrSize) {
+  when (myShouldIgnoreInstr.last) {
+    outp.gprIsZeroVec.last.foreach(item => {
+      item := True
+    })
+  }
     outp.myExt.foreach(item => {
+      item.modMemWordValid.foreach(item => {
+        item := (
+          !myShouldIgnoreInstr.last
+        )
+      })
       item.fwdCanDoIt.foreach(item => {
         item := (
           //!setOutpModMemWord.io.shouldIgnoreInstr.last
@@ -11639,7 +11649,10 @@ case class SnowHousePipeStageMem(
     when (psWbToMemStallRequest) {
       cMem.duplicateIt()
     }
-    when (cMem.up.isFiring) {
+    when (
+      cMem.up.isFiring
+      && !midModPayload(extIdxUp).instrCnt.shouldIgnoreInstr.last
+    ) {
       cMem.up(pMem) := midModPayload(extIdxUp)
     } otherwise {
       cMem.up(pMem) := midModPayload(extIdxUp).getZero
