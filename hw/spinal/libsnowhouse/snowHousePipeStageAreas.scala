@@ -4697,6 +4697,28 @@ case class SnowHousePipeStageExecuteSetOutpModMemWordIo(
               zdx != None,
               s"eek! ${opInfo.myRdMemWordIdxMap} ${tempIdx}"
             )
+
+            //opInfo.select match {
+            //  case OpSelect.MultiCycle => {
+            //    opInfo.multiCycleOp match {
+            //      case Some(multiCycleOp) => {
+            //        if (multiCycleOp == MultiCycleOpKind.Udivw) {
+            //          println(
+            //            s"Udivw: idx:${idx} zdx:${zdx.get}"
+            //          )
+            //        }
+            //      }
+            //      case None => {
+            //        require(
+            //          false,
+            //          s"eek!"
+            //        )
+            //      }
+            //    }
+            //  }
+            //  case _ => {
+            //  }
+            //}
             rdMemWord(zdx.get + gprIdxAddend)
             ////rdMemWord(idx + gprIdxAddend)
             //var tempRdMemWord: Option[UInt] = None
@@ -4826,7 +4848,15 @@ case class SnowHousePipeStageExecuteSetOutpModMemWordIo(
     //    return innerFunc(idx=idx, isPostPcDst=false)
     //  }
     //}
-    return innerFunc(idx=idx)
+    val ret = innerFunc(idx=idx)
+    //opInfo.select match {
+    //  case OpSelect.MultiCycle => {
+    //    
+    //  }
+    //  case _ => {
+    //  }
+    //}
+    ret
   }
   //val outpWrMemAddr = setAsOutp(
   //  UInt(log2Up(cfg.regFileCfg.wordCountMax) bits)
