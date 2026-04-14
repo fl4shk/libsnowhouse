@@ -11224,13 +11224,16 @@ case class SnowHousePipeStageExecute(
     outp.gprIsZeroVec.last.foreach(item => {
       item := True
     })
-  }
+
     outp.myExt.foreach(item => {
       item.modMemWordValid.foreach(item => {
         item := (
-          !myShouldIgnoreInstr.last
+          False
         )
       })
+    })
+  }
+    outp.myExt.foreach(item => {
       item.fwdCanDoIt.foreach(item => {
         item := (
           //!setOutpModMemWord.io.shouldIgnoreInstr.last
