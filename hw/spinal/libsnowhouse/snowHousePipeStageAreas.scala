@@ -12092,8 +12092,9 @@ case class SnowHousePipeStageWriteBack(
 
     when (
       //myDbusIo.myDbusExtraValid
-      cWb.up.isValid
-      && myWbPayload(0).outpDecodeExt.opIsMemAccess.last
+      //cWb.up.isValid
+      //&& 
+      myWbPayload(1).outpDecodeExt.opIsMemAccess.last
     ) {
       myD2hBus.ready := True
       when (

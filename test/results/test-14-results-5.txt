@@ -701,8 +701,8 @@ addr:5 data:323
 addr:5 data:388
 addr:3 data:97
 addr:9 data:388
-addr:1 data:324
 addr:10 data:6
+addr:1 data:324
 addr:5 data:324
 addr:4 data:392
 addr:5 data:325
@@ -824,8 +824,8 @@ addr:9 data:456
 addr:1 data:358
 addr:5 data:358
 addr:4 data:460
-addr:5 data:359
 addr:10 data:7
+addr:5 data:359
 addr:5 data:460
 addr:3 data:115
 addr:9 data:460
@@ -931,9 +931,5 @@ addr:1 data:388
 addr:5 data:388
 addr:4 data:520
 addr:5 data:389
-addr:5 data:520
-addr:3 data:130
-addr:9 data:520
-addr:1 data:390
 Ending test.
 
