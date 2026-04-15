@@ -1331,6 +1331,12 @@ case class SnowHouseDecodeExt(
   ) generate (
     UInt(cfg.subCfg.lcvDbusEtcCfg.loBusCfg.byteSizeWidth bits)
   )
+
+  //val memAccessSrc = (
+  //  cfg.useLcvDataBus
+  //) generate (
+  //  UInt(cfg.subCfg.myLcvBusSrcWidth bits)
+  //)
   // TODO: add support for atomic operations
   // (probably just read-modify-write)
   //val memAccessIsAtomic = Bool()

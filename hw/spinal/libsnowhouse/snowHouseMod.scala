@@ -1506,7 +1506,7 @@ case class SnowHouse
     //)
   )
   val shouldIgnoreInstr = Bool()
-  val psWbToMemStallRequest = Bool()
+  val psWbToEarlierStallRequest = Bool()
   //--------
   val myModMemWord = SInt(cfg.mainWidth bits)
   //val psIdFoundBubble = Bool()
@@ -1813,7 +1813,7 @@ case class SnowHouse
     //    psIdPostFoundBubble
     //  )
     //)
-    //psWbToMemStallRequest=psWbToMemStallRequest,
+    psWbToEarlierStallRequest=psWbToEarlierStallRequest,
   )
   //--------
   //val pipeStageWb = (
@@ -1880,7 +1880,7 @@ case class SnowHouse
       //myDbusExtraReady=myDbusExtraReady,
       //myDbusLdReady=myDbusLdReady,
       myModMemWord=myModMemWord,
-      psWbToMemStallRequest=psWbToMemStallRequest,
+      psWbToEarlierStallRequest=psWbToEarlierStallRequest,
     )
   )
 
@@ -1918,7 +1918,7 @@ case class SnowHouse
     //myDbusExtraReady=myDbusExtraReady,
     //myDbusLdReady=myDbusLdReady,
     //myModMemWord=myModMemWord,
-    psWbToMemStallRequest=psWbToMemStallRequest,
+    psWbToEarlierStallRequest=psWbToEarlierStallRequest,
   )
 
   //val cWb = (
@@ -1959,7 +1959,7 @@ case class SnowHouse
   //    //myDbusExtraReady=myDbusExtraReady,
   //    //myDbusLdReady=myDbusLdReady,
   //    //myModMemWord=myModMemWord,
-  //    //psWbToMemStallRequest=psWbToMemStallRequest,
+  //    //psWbToEarlierStallRequest=psWbToEarlierStallRequest,
   //  )
   //)
   if (cfg.exposeRegFileWriteDataToIo) {
