@@ -9169,6 +9169,12 @@ case class SnowHousePipeStageExecute(
     cMid0Front.down.isReady
     && !psWbToEarlierStallRequest
   )
+  when (psWbToEarlierStallRequest) {
+    cMid0Front.haltIt()
+  }
+  //when (!myTempDownIsReady) {
+  //  cMid0Front.duplicateIt()
+  //}
 
   val myShouldIgnoreInstr = (
     Vec.fill(cfg.lowerMyFanoutRegPcSetItCnt)(
@@ -10824,6 +10830,9 @@ case class SnowHousePipeStageExecute(
     //  //(1 << setOutpModMemWord.io.splitOp.jmpBrOtherOp.getWidth) - 1
     //  1 << (setOutpModMemWord.io.splitOp.jmpBrOtherOp.getWidth - 1)
     //)
+    //setOutpModMemWord.io.splitOp.setToDefault()
+    //setOutpModMemWord.io.splitOp.opIsMultiCycle := False
+    setOutpModMemWord.io.splitOp.opIsMemAccess := False
     setOutpModMemWord.io.splitOp.setJmpBrAlwaysEqNeOpToDefault()
     setOutpModMemWord.io.splitOp.setJmpBrOtherOpToDefault()
   }
@@ -11743,7 +11752,7 @@ case class SnowHousePipeStageMem(
     //}
     when (
       cMem.up.isFiring
-      //&& !midModPayload(extIdxUp).instrCnt.shouldIgnoreInstr.last
+      && !midModPayload(extIdxUp).instrCnt.shouldIgnoreInstr.last
     ) {
       cMem.up(pMem) := midModPayload(extIdxUp)
     } otherwise {
@@ -12083,9 +12092,8 @@ case class SnowHousePipeStageWriteBack(
 
     when (
       //myDbusIo.myDbusExtraValid
-      //cWb.up.isValid
-      //&& 
-      myWbPayload(1).outpDecodeExt.opIsMemAccess.last
+      cWb.up.isValid
+      && myWbPayload(0).outpDecodeExt.opIsMemAccess.last
     ) {
       myD2hBus.ready := True
       when (
