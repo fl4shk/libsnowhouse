@@ -5019,7 +5019,8 @@ case class SnowHouseCpuMulFullProduct(
       IDLE,
       DO_ABS_INPUTS_IF_SIGNED,
       DO_FOUR_MUL16X16,
-      FIRST_TWO_ADDS,
+      FIRST_ADD,
+      SECOND_ADD,
       FINAL_ADD,
       DO_NEGATE_RESULT,
       YIELD_RESULT
@@ -5171,18 +5172,30 @@ case class SnowHouseCpuMulFullProduct(
       rX0Y1 := rAbsSrcVec(0)(low) * rAbsSrcVec(1)(high)
       rX1Y0 := rAbsSrcVec(0)(high) * rAbsSrcVec(1)(low)
       rX1Y1 := rAbsSrcVec(0)(high) * rAbsSrcVec(1)(high)
-      rState := State.FIRST_TWO_ADDS
+      rState := State.FIRST_ADD
     }
-    is (State.FIRST_TWO_ADDS) {
-      rState := State.FINAL_ADD
-      rPartialSum(0) := Cat(z2, z0).asUInt
+    is (State.FIRST_ADD) {
+      rState := State.SECOND_ADD
+      //rPartialSum(0) := Cat(z2, z0).asUInt // this doesn't work because
+      // of potential carry outs during the partial sums!
+      rPartialSum(0) := z0.resize(rPartialSum(0).getWidth)
       rPartialSum(1) := (
         Cat(
           U(s"${shiftAmount}'d0"),
           z1(cfg.mainWidth - 1 downto 0),
           //z1,
           U(s"${shiftAmount}'d0"),
-        ).asUInt.resize(rPartialSum(1).getWidth)
+        ).asUInt//.resize(rPartialSum(1).getWidth)
+      )
+    }
+    is (State.SECOND_ADD) {
+      rState := State.FINAL_ADD
+      rPartialSum(0) := rPartialSum(0) + rPartialSum(1)
+      rPartialSum(1) := (
+        Cat(
+          z2,
+          U(s"${shiftAmount * 2}'d0")
+        ).asUInt
       )
     }
     is (State.FINAL_ADD) {
