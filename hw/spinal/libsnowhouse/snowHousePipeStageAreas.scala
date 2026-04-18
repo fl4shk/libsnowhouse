@@ -6514,7 +6514,7 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
                   //io.modMemWordValid.foreach(current => {
                   //  current := False
                   //})
-                  if (!isStore) {
+                  //if (!isStore) {
                     io.modMemWordValid.foreach(current => {
                       current := False
                     })
@@ -6524,21 +6524,21 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
                     ////io.modMemWord.foreach(modMemWord => {
                     ////  modMemWord := modMemWord.getZero
                     ////})
-                  }
-                  else 
-                  //if (isStore)
-                  {
-                    //if (!cfg.useLcvDataBus) {
-                      io.modMemWordValid.foreach(current => {
-                        current := True
-                      })
-                    //} else {
-                    //  io.modMemWordValid.foreach(current => {
-                    //    current := False
-                    //  })
-                    //}
-                    io.modMemWord(0) := selRdMemWord(0, 1)
-                  }
+                  //}
+                  //else 
+                  ////if (isStore)
+                  //{
+                  //  //if (!cfg.useLcvDataBus) {
+                  //    io.modMemWordValid.foreach(current => {
+                  //      current := True
+                  //    })
+                  //  //} else {
+                  //  //  io.modMemWordValid.foreach(current => {
+                  //  //    current := False
+                  //  //  })
+                  //  //}
+                  //  io.modMemWord(0) := selRdMemWord(0, 1)
+                  //}
 
                   //val tempSubKind = (
                   //  mem.subKind match {
@@ -11253,12 +11253,13 @@ case class SnowHousePipeStageExecute(
       })
     })
   }
-    outp.myExt.foreach(item => {
-      item.fwdCanDoIt.foreach(item => {
+    outp.myExt.foreach(myExt => {
+      myExt.fwdCanDoIt.foreach(item => {
         item := (
           //!setOutpModMemWord.io.shouldIgnoreInstr.last
           //if (!cfg.useLcvDataBus) (
             !myShouldIgnoreInstr.last
+            //&& myExt.modMemWordValid.last
             //&& cMid0Front.up.isValid
           //) else (
           //  !(
@@ -12098,6 +12099,16 @@ case class SnowHousePipeStageWriteBack(
       myWbPayload(1).outpDecodeExt.opIsMemAccess.last
     ) {
       myD2hBus.ready := True
+
+      //myWbPayload(1).myExt.foreach(myExt => {
+      //  val tempCond = (
+      //    myD2hBus.valid
+      //    && !myWbPayload(0).outpDecodeExt.memAccessKind.asBits(1)
+      //  )
+      //  myExt.fwdCanDoIt.foreach(fwdCanDoItItem => {
+      //    fwdCanDoItItem := tempCond //myD2hBus.valid
+      //  })
+      //})
       when (
         //!myDbus.ready
         ////!myDbusExtraReady(3)
