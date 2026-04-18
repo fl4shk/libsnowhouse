@@ -1251,6 +1251,11 @@ case class SnowHouseDebugInfo(
   ) generate (
     UInt(cfg.instrMainWidth bits)
   )
+  val immAtRegFileWrite = (
+    cfg.dbgExposeExtrasAtRegFileWrite
+  ) generate (
+    UInt(cfg.mainWidth bits)
+  )
   //val instrIsPre = (
   //  cfg.dbgExposeExtrasAtRegFileWrite
   //) generate (
@@ -1307,6 +1312,9 @@ case class SnowHouseIo(
   )
   def encInstrAtRegFileWrite = (
     dbgInfo.encInstrAtRegFileWrite
+  )
+  def immAtRegFileWrite = (
+    dbgInfo.immAtRegFileWrite
   )
 
   // instruction bus
@@ -1997,6 +2005,9 @@ case class SnowHouse
     )
     io.encInstrAtRegFileWrite := (
       regFile.cBackArea.tempUpMod(2).encInstr.payload
+    )
+    io.immAtRegFileWrite := (
+      regFile.cBackArea.tempUpMod(2).imm(0)
     )
   }
   regFile.io.back.ready := True
