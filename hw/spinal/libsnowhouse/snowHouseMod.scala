@@ -1256,10 +1256,17 @@ case class SnowHouseDebugInfo(
   ) generate (
     UInt(cfg.mainWidth bits)
   )
+  val rdMemWordAtRegFileWrite = (
+    cfg.dbgExposeExtrasAtRegFileWrite
+  ) generate (
+    Vec.fill(cfg.maxNumGprsPerInstr - 1)(
+      UInt(cfg.mainWidth bits)
+    )
+  )
   val gprIdxVecAtRegFileWrite = (
     cfg.dbgExposeExtrasAtRegFileWrite
   ) generate (
-    Vec.fill(cfg.numGprs)(
+    Vec.fill(cfg.maxNumGprsPerInstr)(
       UInt(cfg.mainWidth bits)
     )
   )
@@ -1322,6 +1329,9 @@ case class SnowHouseIo(
   )
   def immAtRegFileWrite = (
     dbgInfo.immAtRegFileWrite
+  )
+  def rdMemWordAtRegFileWrite = (
+    dbgInfo.rdMemWordAtRegFileWrite
   )
   def gprIdxVecAtRegFileWrite = (
     dbgInfo.gprIdxVecAtRegFileWrite
@@ -2023,7 +2033,12 @@ case class SnowHouse
     //  regFile.cBackArea.tempUpMod(2).myExt(0).rdMemWord(0)
     //  + regFile.cBackArea.tempUpMod(2).imm(0)
     //)
-    for (idx <- 0 until cfg.numGprs) {
+    for (idx <- 0 until cfg.maxNumGprsPerInstr) {
+      if (idx + 1 != cfg.maxNumGprsPerInstr) {
+        io.rdMemWordAtRegFileWrite(idx) := (
+          regFile.cBackArea.tempUpMod(2).myExt(0).rdMemWord(idx)
+        )
+      }
       io.gprIdxVecAtRegFileWrite(idx) := (
         regFile.cBackArea.tempUpMod(2).gprIdxVec(idx)
       )
