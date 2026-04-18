@@ -1256,6 +1256,11 @@ case class SnowHouseDebugInfo(
   ) generate (
     UInt(cfg.mainWidth bits)
   )
+  val dbusAddrAtRegFileWrite = (
+    cfg.dbgExposeExtrasAtRegFileWrite
+  ) generate (
+    UInt(cfg.mainWidth bits)
+  )
   //val instrIsPre = (
   //  cfg.dbgExposeExtrasAtRegFileWrite
   //) generate (
