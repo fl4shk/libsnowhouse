@@ -1256,10 +1256,12 @@ case class SnowHouseDebugInfo(
   ) generate (
     UInt(cfg.mainWidth bits)
   )
-  val dbusAddrAtRegFileWrite = (
+  val gprIdxVecAtRegFileWrite = (
     cfg.dbgExposeExtrasAtRegFileWrite
   ) generate (
-    UInt(cfg.mainWidth bits)
+    Vec.fill(cfg.numGprs)(
+      UInt(cfg.mainWidth bits)
+    )
   )
   //val instrIsPre = (
   //  cfg.dbgExposeExtrasAtRegFileWrite
@@ -1320,6 +1322,9 @@ case class SnowHouseIo(
   )
   def immAtRegFileWrite = (
     dbgInfo.immAtRegFileWrite
+  )
+  def gprIdxVecAtRegFileWrite = (
+    dbgInfo.gprIdxVecAtRegFileWrite
   )
 
   // instruction bus
@@ -2014,6 +2019,15 @@ case class SnowHouse
     io.immAtRegFileWrite := (
       regFile.cBackArea.tempUpMod(2).imm(0)
     )
+    //io.dbusAddrAtRegFileWrite := (
+    //  regFile.cBackArea.tempUpMod(2).myExt(0).rdMemWord(0)
+    //  + regFile.cBackArea.tempUpMod(2).imm(0)
+    //)
+    for (idx <- 0 until cfg.numGprs) {
+      io.gprIdxVecAtRegFileWrite(idx) := (
+        regFile.cBackArea.tempUpMod(2).gprIdxVec(idx)
+      )
+    }
   }
   regFile.io.back.ready := True
   Builder(linkArr)
