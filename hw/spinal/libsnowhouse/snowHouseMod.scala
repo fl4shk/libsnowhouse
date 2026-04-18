@@ -1267,7 +1267,7 @@ case class SnowHouseDebugInfo(
     cfg.dbgExposeExtrasAtRegFileWrite
   ) generate (
     Vec.fill(cfg.maxNumGprsPerInstr)(
-      UInt(cfg.mainWidth bits)
+      UInt(log2Up(cfg.numGprs) bits)
     )
   )
   //val instrIsPre = (
