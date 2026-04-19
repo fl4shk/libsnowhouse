@@ -4231,7 +4231,23 @@ case class SnowHousePipeStageInstrDecode(
       History[Bool](
         that=(
           upPayload(1).splitOp.opIsMemAccess
-          && !upPayload(1).inpDecodeExt.head.memAccessKind.asBits(1)
+          //--------
+          // FL4SHK NOTE:
+          // Without a bubble,
+          // there appears to be non-working behavior in
+          // operand forwarding for *any* kind of memory access
+          // (i.e. *not only for loads*),
+          // so we insert a bubble following *any* memory access
+          // instruction that makes use of this.
+          // I think this has something to do with the fact that
+          // `PipeRegFile`'s
+          // support for operand forwarding is computed ahead of time for
+          // the purposes of having a higher maximum clock rate.
+          // All of this is to say,
+          // the below line apparently needs to stay
+          // commented-out.
+          //&& !upPayload(1).inpDecodeExt.head.memAccessKind.asBits(1)
+          //--------
           //&& !shouldClearExtraDecodeInfo
         ),
         length=(
@@ -4403,8 +4419,8 @@ case class SnowHousePipeStageInstrDecode(
     //  //}
     //}
   })
-
 }
+
 //private[libsnowhouse] object PcChangeState
 //extends SpinalEnum(defaultEncoding=binarySequential) {
 //  val
@@ -6530,7 +6546,7 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
                   {
                     //if (!cfg.useLcvDataBus) {
                       io.modMemWordValid.foreach(current => {
-                        current := False//True
+                        current := True
                       })
                     //} else {
                     //  io.modMemWordValid.foreach(current => {
