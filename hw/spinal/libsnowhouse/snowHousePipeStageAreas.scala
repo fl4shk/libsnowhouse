@@ -9026,6 +9026,10 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
   //--------
   when (
     rose(myPsExSetPcCmpEq.rValid)
+    || (
+      myPsExSetPcCmpEq.rValid
+      && stable(myPsExSetPcCmpEq.rValid)
+    )
   ) {
     myPsExSetPcCmpEq.myCmp.msb := (
       //myPsExSetPcCmpEq.cmpEqQ
@@ -9052,7 +9056,13 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
       myPsExSetPcCmpEq.rValid := False
     }
   }
-  when (rose(myPsExSetPcCmpNe.rValid)) {
+  when (
+    rose(myPsExSetPcCmpNe.rValid)
+    || (
+      myPsExSetPcCmpNe.rValid
+      && stable(myPsExSetPcCmpNe.rValid)
+    )
+  ) {
     myPsExSetPcCmpNe.myCmp.msb := (
       //~myPsExSetPcCmpNe.cmpEqQ
       //(
