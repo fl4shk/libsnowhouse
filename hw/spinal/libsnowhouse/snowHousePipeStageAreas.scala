@@ -9045,7 +9045,10 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
     ) {
       myPsExSetPcCmpEq.rValid := False
     }
-    when (io.upIsFiring) {
+    when (
+      io.upIsFiring
+      && !io.splitOp.jmpBrOpIsEq
+    ) {
       myPsExSetPcCmpEq.rValid := False
     }
   }
@@ -9065,7 +9068,10 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
     when (io.shouldIgnoreInstr(3)) {
       myPsExSetPcCmpNe.rValid := False
     }
-    when (io.upIsFiring) {
+    when (
+      io.upIsFiring
+      && !io.splitOp.jmpBrOpIsNe
+    ) {
       myPsExSetPcCmpNe.rValid := False
     }
   }
@@ -10851,6 +10857,8 @@ case class SnowHousePipeStageExecute(
     //setOutpModMemWord.io.splitOp.setToDefault()
     //setOutpModMemWord.io.splitOp.opIsMultiCycle := False
     setOutpModMemWord.io.splitOp.opIsMemAccess := False
+    setOutpModMemWord.io.splitOp.jmpBrOpIsEq := False
+    setOutpModMemWord.io.splitOp.jmpBrOpIsNe := False
     setOutpModMemWord.io.splitOp.setJmpBrAlwaysEqNeOpToDefault()
     setOutpModMemWord.io.splitOp.setJmpBrOtherOpToDefault()
   }

@@ -1440,6 +1440,9 @@ case class SnowHouseSplitOp(
   val exSetNextPcKind = (
     SnowHousePsExSetNextPcKind(encoding=binarySequential)
   )
+  val jmpBrOpIsEq = Bool()
+  val jmpBrOpIsNe = Bool()
+
   val jmpBrAlwaysEqNeOp = /*Flow*/(
     UInt(log2Up(cfg.jmpBrAlwaysEqNeOpInfoMap.size + 1) bits)
     //UInt((cfg.jmpBrAlwaysEqNeOpInfoMap.size + 1) bits)
@@ -1538,6 +1541,8 @@ case class SnowHouseSplitOp(
       multiCycleOpKind := 0x0
     }
     opIsMemAccess := False
+    jmpBrOpIsEq := False
+    jmpBrOpIsNe := False
     setJmpBrAlwaysEqNeOpToDefault()
     setJmpBrOtherOpToDefault()
     havePredictableJmpBr := False
