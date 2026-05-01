@@ -9,3 +9,4 @@ preprocs_debug
 .clangd
 snowhousecpu_emu
 snowhousecpu_emu_debug
+.gdb_history
