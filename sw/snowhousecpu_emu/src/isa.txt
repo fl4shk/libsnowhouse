@@ -1,0 +1,414 @@
+object SnowHouseCpuOp {
+  //private var _rawOpCnt: Int = 0
+  private var _opCnt: Int = 0
+  def mkOp(
+    //opAsInt: Int,
+    //lim: Int,
+    name: String,
+    kind: (Int, Int),
+    update: Boolean,
+    //kindLim: Int,
+  ): (/*UInt,*/ Int, (Int, Int), String) = {
+    val ret = (
+      //U(s"${SnowHouseCpuInstrEnc.opWidth}'d${opAsInt}"),
+      //opAsInt,
+      //(
+      //  _rawOpCnt
+      //  /// SnowHouseCpuInstrEnc.numGprs
+      //  >> 1
+      //),
+      _opCnt,
+      kind,
+      name,
+    )
+    if (update) {
+      _opCnt += 1
+    }
+    //_rawOpCnt += 1
+    ret
+  }
+  //--------
+  val AddRaRbRc = mkOp(                         // 0, 0
+    "add rA, rB, rC", AddKindRc, false
+  )
+  val AddRaRbSimm16 = mkOp(                     // 0, 1
+    "add rA, rB, simm16", AddKindSimm16, true
+  )
+  def AddKindRc = (0x0, 0x0)
+  def AddKindSimm16 = (0x1, 0x0)
+
+  val SubRaRbRc = mkOp(                         // 1, 0
+    "sub rA, rB, rC", SubKindRc, false
+  )
+  //val SubRaRbSimm16 = mkOp("sub rA, rB, simm16", SubKindSimm16, true)
+  val SubReserved = mkOp(                       // 1, 1
+    "SubReserved", SubKindReserved, true
+  )
+  def SubKindRc = (0x0, 0x0)
+  //def SubKindSimm16 = 0x1
+  def SubKindReserved = (0x1, 0x0)
+  //--------
+  val SltuRaRbRc = mkOp(                        // 2, 0
+    "sltu rA, rB, rC", SltKindSltuRc, false
+  )
+  val SltsRaRbRc = mkOp(                        // 2, 1
+    "slts rA, rB, rC", SltKindSltsRc, true
+  )
+  def SltKindSltuRc = (0x0, 0x0)
+  //def SltKindSltuImm16 = (0x0, 0x1)
+  def SltKindSltsRc = (0x1, 0x0)
+  //def SltKindSltsSimm16 = (0x1, 0x1)
+
+  //--------
+  val SltuRaRbImm16 = mkOp(                         // 3, 0
+    "sltu rA, rB, imm16", SltImmKindSltuImm16, false
+  )
+  val SltsRaRbSimm16 = mkOp(                         // 3, 1
+    "slts rA, rB, simm16", SltImmKindSltsSimm16, true
+  )
+  //def SltKindSltuRc = (0x0, 0x0)
+  def SltImmKindSltuImm16 = (0x0, 0x0)
+  //def SltKindSltsRc = (0x1, 0x0)
+  def SltImmKindSltsSimm16 = (0x1, 0x0)
+  //--------
+  val XorRaRbRc = mkOp(                     // 4, 0
+    "xor rA, rB, rC", XorKindRc, false
+  )
+  val XorRaRbSimm16 = mkOp(                  // 4, 1
+    "xor rA, rB, simm16", XorKindSimm16, true
+  )
+  def XorKindRc = (0x0, 0x0)
+  def XorKindSimm16 = (0x1, 0x0)
+
+  val OrRaRbRc = mkOp(                           // 5, 0
+    "or rA, rB, rC", OrKindRc, false
+  )
+  val OrRaRbImm16 = mkOp(                        // 5, 1
+    "or rA, rB, imm16", OrKindSimm16, true
+  )
+  def OrKindRc = (0x0, 0x0)
+  def OrKindSimm16 = (0x1, 0x0)
+
+  // `AndRaRbSimm16` is moved down here to help with synthesis/routing of
+  // executing/decoding instructions
+  val AndRaRbSimm16 = mkOp(                       // 6, 0
+    "and rA, rB, simm16", AndKindSimm16, true
+  )
+  //def AndKindRc = (0x0, 0x0)
+  def AndKindSimm16 = (0x0, 0x0)
+
+  val LslRaRbRc = mkOp(                         // 7, 0
+    "lsl rA, rB, rC", ShiftEtcSprKindLslRc, false
+  )
+  val LslRaRbImm5 = mkOp(                         // 7, 1
+    "lsl rA, rB, imm5", ShiftEtcSprKindLslRaRbImm5, false
+  )
+  val LsrRaRbRc = mkOp(                         // 7, 2
+    "lsr rA, rB, rC", ShiftEtcSprKindLsrRc, false
+  )
+  val LsrRaRbImm5 = mkOp(                         // 7, 3
+    "lsr rA, rB, imm5", ShiftEtcSprKindLsrRaRbImm5, false
+  )
+  val AsrRaRbRc = mkOp(                         // 7, 4
+    "asr rA, rB, rC", ShiftEtcSprKindAsrRc, false
+  )
+  val AsrRaRbImm5 = mkOp(                         // 7, 5
+    "asr rA, rB, imm5", ShiftEtcSprKindAsrRaRbImm5, false
+  )
+  val AndRaRbRc = mkOp(                         // 7, 6
+    "and rA, rB, rC", ShiftEtcSprKindAndRc, false
+  )
+  //val AndReserved = mkOp(                         // 7, ?
+  //  "and <Reserved>", ShiftEtcSprKindAndReserved, false
+  //)
+  //val CpyRaIds = mkOp(                          // 7, ?
+  //  "cpy rA, ids", ShiftEtcSprKindCpyRaIds, false
+  //)
+  val CpyIdsRb = mkOp(                          // 7, 7
+    "cpy ids, rB", ShiftEtcSprKindCpyIdsRb, false
+  )
+  val CpyRaIra = mkOp(                          // 7, 8
+    "cpy rA, ira", ShiftEtcSprKindCpyRaIra, false
+  )
+  //val CpyIraRb = mkOp(                          // 7, ?
+  //  "cpy ira, rB", ShiftEtcSprKindCpyIraRb, false
+  //)
+  //val CpyRaIe = mkOp(                           // 7, ?
+  //  "cpy rA, ie", ShiftEtcSprKindCpyRaIe, false
+  //)
+  val CpyIeRb = mkOp(                           // 7, 9
+    "cpy ie, rB", ShiftEtcSprKindCpyIeRb, false
+  )
+  val RetIra = mkOp(                            // 7, 10
+    "ret ira", ShiftEtcSprKindRetIra, false
+  )
+  //val ShiftEtcSprOpReserved = mkOp(                // 7, 10
+  //  "ShiftEtcSprOpReserved", ShiftEtcSprKindReserved, true
+  //)
+  val CpyRaHi = mkOp(                        // 7, 11
+    "cpy rA, hi", ShiftEtcSprKindCpyRaHi, false
+  )
+  val CpyHiRb = mkOp(                        // 7, 12
+    "cpy hi, rB", ShiftEtcSprKindCpyHiRb, true
+  )
+
+  def ShiftEtcSprKindLslRc = (0x0, 0x0)
+  def ShiftEtcSprKindLslRaRbImm5 = (0x1, 0x0)
+  def ShiftEtcSprKindLsrRc = (0x2, 0x0)
+  def ShiftEtcSprKindLsrRaRbImm5 = (0x3, 0x0)
+  def ShiftEtcSprKindAsrRc = (0x4, 0x0)
+  def ShiftEtcSprKindAsrRaRbImm5 = (0x5, 0x0)
+  def ShiftEtcSprKindAndRc = (0x6, 0x0)
+  //def ShiftEtcSprKindAndReserved = (0x7, 0x0)
+  //def ShiftEtcSprKindCpyRaIds = (0x7, 0x0)
+  def ShiftEtcSprKindCpyIdsRb = (0x7, 0x0)
+  def ShiftEtcSprKindCpyRaIra = (0x8, 0x0)
+  //def ShiftEtcSprKindCpyIraRb = (0xa, 0x0)
+  //def ShiftEtcSprKindCpyRaIe = (0xb, 0x0)
+  def ShiftEtcSprKindCpyIeRb = (0x9, 0x0)
+  def ShiftEtcSprKindRetIra = (0xa, 0x0)
+  //def ShiftEtcSprKindReserved = (0xc, 0x0)
+  def ShiftEtcSprKindCpyRaHi = (0xb, 0x0)
+  def ShiftEtcSprKindCpyHiRb = (0xc, 0x0)
+
+  //val AddRaPcSimm16 = mkOp(                   // 8, 0
+  //  "AddRaPcSimm16", AddPcKindMain, true
+  //)
+  //def AddPcKindMain = 0x0
+  //val Asr = mkOp("Asr")                     // 9
+  val UmulwRaRbRc = mkOp(                           // 8, 0
+    "umulw rA, rB, rC", MultiCycleKindUmulwRc, false
+  )
+  val SmulwRaRbRc = mkOp(                         // 8, 1
+    "smulw rA, rB, rC", MultiCycleKindSmulwRc, false
+  )
+  val UdivRaRbRc = mkOp(                          // 8, 2
+    "udiv rA, rB, rC", MultiCycleKindUdivRc, false
+  )
+  val SdivRaRbRc = mkOp(                          // 8, 3
+    "sdiv rA, rB, rC", MultiCycleKindSdivRc, false
+  )
+  val UmodRaRbRc = mkOp(                          // 8, 4
+    "umod rA, rB, rC", MultiCycleKindUmodRc, false
+  )
+  val SmodRaRbRc = mkOp(                          // 8, 5
+    "smod rA, rB, rC", MultiCycleKindSmodRc, false
+  )
+  val UdivwRaRbRc = mkOp(                         // 8, 6
+    "udivw rA, rB, rC", MultiCycleKindUdivwRc, false
+  )
+  val SdivwRaRbRc = mkOp(                         // 8, 7
+    "sdivw rA, rB, rC", MultiCycleKindSdivwRc, true
+  )
+  def MultiCycleKindUmulwRc = (0x0, 0x0)
+  def MultiCycleKindSmulwRc = (0x1, 0x0)
+  def MultiCycleKindUdivRc = (0x2, 0x0)
+  def MultiCycleKindSdivRc = (0x3, 0x0)
+  def MultiCycleKindUmodRc = (0x4, 0x0)
+  def MultiCycleKindSmodRc = (0x5, 0x0)
+  def MultiCycleKindUdivwRc = (0x6, 0x0)
+  def MultiCycleKindSdivwRc = (0x7, 0x0)
+
+  //val LdrRaRbRc = mkOp(                       // 9, ?
+  //  "ldr rA, rB, rC", LdKind32Rc, false
+  //)
+  val LdrRaRbSimm16 = mkOp(                   // 9, 0
+    "ldr rA, rB, simm16", LdKind32Simm16, false
+  )
+  //def LdKind32Rc = (0x0, 0x0)
+  def LdKind32Simm16 = (0x0, 0x0)
+  //def LdKind32Simm16 = (0x1, 0x0)
+
+  //val StrRaRbRc = mkOp(                       // 9, ?
+  //  "str rA, rB, rC", StKind32Rc, false
+  //)
+  val StrRaRbSimm16 = mkOp(                   // 9, 1
+    "str rA, rB, simm16", StKind32Simm16, false
+  )
+  //def StKind32Rc = (0x0, 0x0)
+  def StKind32Simm16 = (0x1, 0x0)
+  //def StKind32Simm16 = (0x1, 0x0)
+
+  //val LduhRaRbRc = mkOp(                      // 9, ?
+  //  "lduh rA, rB, rC", LdSmallKindU16Rc, false
+  //)
+  val LduhRaRbSimm16 = mkOp(                  // 9, 2
+    "lduh rA, rB, simm16", LdSmallKindU16Simm16, false
+  )
+  //val LdshRaRbRc = mkOp(                      // 9, ?
+  //  "ldsh rA, rB, rC", LdSmallKindS16Rc, false
+  //)
+  val LdshRaRbSimm16 = mkOp(                  // 9, 3
+    "ldsh rA, rB, simm16", LdSmallKindS16Simm16, false
+  )
+  //val LdubRaRbRc = mkOp(                      // 9, ?
+  //  "ldub rA, rB, rC", LdSmallKindU8Rc, false
+  //)
+  val LdubRaRbSimm16 = mkOp(                  // 9, 4
+    "ldub rA, rB, simm16", LdSmallKindU8Simm16, false
+  )
+  //val LdsbRaRbRc = mkOp(                      // 9, ?
+  //  "ldsb rA, rB, rC", LdSmallKindS8Rc, false
+  //)
+  val LdsbRaRbSimm16 = mkOp(                  // 9, 5
+    "ldsb rA, rB, simm16", LdSmallKindS8Simm16, false
+  )
+  //def LdSmallKindU16Rc = (0x0, 0x0)
+  def LdSmallKindU16Simm16 = (0x2, 0x0)
+  //def LdSmallKindS16Rc = (0x1, 0x0)
+  def LdSmallKindS16Simm16 = (0x3, 0x0)
+  //def LdSmallKindU8Rc = (0x2, 0x0)
+  def LdSmallKindU8Simm16 = (0x4, 0x0)
+  //def LdSmallKindS8Rc = (0x3, 0x0)
+  def LdSmallKindS8Simm16 = (0x5, 0x0)
+
+
+  //val SthRaRbRc = mkOp(                         // 9, 0
+  //  "sth rA, rB, rC", StSmallKind16Rc, false
+  //)
+  val SthRaRbSimm16 = mkOp(                   // 9, 6
+    "sth rA, rB, simm16", StKind16Simm16, false
+  )
+  //val StbRaRbRc = mkOp(                         // 9, 1
+  //  "stb rA, rB, rC", StSmallKind8Rc, true
+  //)
+  val StbRaRbSimm16 = mkOp(                   // 9, 7
+    "stb rA, rB, simm16", StKind8Simm16, true
+  )
+  //def StSmallKind16Rc = (0x0, 0x0)
+  def StKind16Simm16 = (0x6, 0x0)
+  //def StSmallKind8Rc = (0x1, 0x0)
+  def StKind8Simm16 = (0x7, 0x0)
+  //--------
+  val BeqRaRbSimm = mkOp(                     // 10, 0
+    "beq rA, rB, simm16", JmpKindBeq, false
+  )
+  //val BzRaSimm = mkOp(                     // 10, 0
+  //  "bz rA, simm16", JmpKindBz, false
+  //)
+  //val BlRaSimm = mkOp(                     // 10, 0
+  //  "bl rA, simm16", JmpKindBeq, false
+  //)
+  val BneRaRbSimm = mkOp(                     // 10, 1
+    "bne rA, rB, simm16", JmpKindBne, false
+  )
+  //val BnzRaSimm = mkOp(                     // 10, 1
+  //  "bnz rA, simm16", JmpKindBnz, false
+  //)
+  val AddRaPcSimm16 = mkOp(                   // 10, 1
+    "add rA, pc, simm16", JmpKindBne, false
+  )
+
+  val BltuRaRbSimm = mkOp(
+    "bltu rA, rB, simm16", JmpKindBltu, false
+  )
+  val BgeuRaRbSimm = mkOp(
+    "bgeu rA, rB, simm16", JmpKindBgeu, false
+  )
+  val BltsRaRbSimm = mkOp(
+    "blts rA, rB, simm16", JmpKindBlts, false
+  )
+  val BgesRaRbSimm = mkOp(
+    "bges rA, rB, simm16", JmpKindBges, false
+  )
+
+  val JlRaRb = mkOp(                          // 10, 2
+    "jl rA, rB", JmpKindJlRaRb, false
+  )
+  val JmpieIds = mkOp(
+    "jmpie ids", JmpKindJmpieIds, true
+  )
+  //val JmpReserved = mkOp(                     // 10, 3
+  //  "<JmpReserved>", JmpKindReserved, true
+  //)
+  //def JmpKindBz = (0x0, 0x0)
+  def JmpKindBeq = (0x0, 0x0)
+  def JmpKindBne = (0x1, 0x0)
+  def JmpKindBltu = (0x2, 0x0)
+  def JmpKindBgeu = (0x3, 0x0)
+  def JmpKindBlts = (0x4, 0x0)
+  def JmpKindBges = (0x5, 0x0)
+  def JmpKindJlRaRb = (0x6, 0x0)
+  def JmpKindJmpieIds = (0x7, 0x0)
+  //def AddPcKindMain = 0x3
+  //def JmpKindReserved = (0x3, 0x0)
+  //--------
+  val BlRaSimm24 = mkOp(                     // 11, 0
+    "bl rA, simm24", JmpExtKindBl, true
+  )
+
+
+  def JmpExtKindBl = (0x0, 0x0)
+
+  //val CpyRaRb = mkOp("cpy rA, rB", CpyKindCpyRb, false)              // 12, 0
+  //val CpyRaSimm16 = mkOp("cpy rA, simm16", CpyKindCpySimm16, false)  // 12, 1
+  //val CpyuRaRb = mkOp("cpyu rA, rB", CpyKindCpyuRb, false)           // 12, 2
+  //val CpyuRaSimm16 = mkOp(                                        // 12, 3
+  //  "cpyu rA, simm16", CpyKindCpyuSimm16, true
+  //)
+  ////val OldCpy = mkOp("OldCpy")           // 15
+  ////def CpyKindCpyRb = 0x0
+  ////def CpyKindCpySimm16 = 0x1
+  //def CpyKindCpyuRb = 0x0//0x2
+  //def CpyKindCpyuSimm16 = 0x1//0x3
+  //--------
+  //val PushRaRb = mkOp(                            // 14, 0
+  //  "push rA, rB", StackKindPushRaRb, false
+  //)
+  //val PopRaRb = (                                 // 14, 1
+  //  mkOp(
+  //    "pop rA, rB", StackKindPopRaRb, false //
+  //  ),
+  //  //mkOp(
+  //  //  "internal: pop0", StackKindPopRaRbInternal0, false
+  //  //),
+  //  //mkOp(
+  //  //  "internal: pop1", StackKindPopRaRbInternal1, false
+  //  //)
+  //)
+  //val PopPcRb = (
+  //  mkOp(
+  //    "pop pc, rB", StackKindPopPcRb, false
+  //  ),
+  //  mkOp(
+  //    "internal 0: pop pc, rB", StackKindPopPcRbInternal0, true
+  //  ),
+  //  //mkOp(
+  //  //  "internal 1: pop pc, rB", StackKindPopPcRbInternal1, true
+  //  //),
+  //)
+  //val LdrPdRbSimm16 = mkOp(
+  //  "ldr pop_data, rB, simm16", StackKindLdrPdRbSimm16, false
+  //)
+  //val JmpPd = mkOp(
+  //  "jmp pop_data", StackKindJmpPd, true
+  //)
+  //def StackKindLdrPdRbSimm16 = (0x0, 0x0)
+  //def StackKindJmpPd = (0x1, 0x0)
+  ////def StackKindPushRaRb = (0x0, 0x0)
+  ////def StackKindPopRaRb = (0x1, 0x0)
+  //////def StackKindPopRaRbInternal0 = (StackKindPopRaRb._1, 0x1)
+  //////def StackKindPopRaRbInternal1 = (StackKindPopRaRb._1, 0x2)
+  ////def StackKindPopPcRb = (0x2, 0x0)
+  ////def StackKindPopPcRbInternal0 = (StackKindPopPcRb._1, 0x1)
+  //////def StackKindPopPcRbInternal1 = (StackKindPopPcRb._1, 0x2)
+  //--------
+  val PreImm16 = mkOp(                      // 12, 0
+    "pre simm16", PreKindImm16, true
+  )
+  def PreKindImm16 = (0x0, 0x0)
+  //--------
+  //val CmpxchgRaRbRc = mkOp(                   // 13, 0
+  //  "cmpxchg rA, rB, rC", AtomicKindCmpxchg, true
+  //)
+
+  //def AtomicKindCmpxchg = (0x0, 0x0)
+  //--------
+  val OpLim = _opCnt
+  val expectedNumOpcodes = 13
+  assert(
+    OpLim == expectedNumOpcodes,
+    s"eek! "
+    + s"${OpLim} != ${expectedNumOpcodes}"
+  )
+}

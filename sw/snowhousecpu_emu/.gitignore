@@ -1,0 +1,11 @@
+objs
+objs_debug
+deps
+deps_debug
+asmouts
+asmouts_debug
+preprocs
+preprocs_debug
+.clangd
+snowhousecpu_emu
+snowhousecpu_emu_debug
