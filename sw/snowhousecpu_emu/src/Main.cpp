@@ -19,12 +19,19 @@ extern "C" {
 //);
 extern void
 snowhousecpu_dasm_info_ctor(
-    snowhousecpu_dasm_info_t *self,
+    snowhousecpu_dasm_info_t* self,
     snowhousecpu_dasm_info_rd32_func rd32_func,
     bool show_enc_instr
 );
+
 extern void
-snowhousecpu_dasm_info_do_disassemble(snowhousecpu_dasm_info_t *self);
+snowhousecpu_dasm_info_do_disassemble(snowhousecpu_dasm_info_t* self);
+
+extern void
+do_snprintf_insn_snowhousecpu_main(
+  snowhousecpu_dasm_info_t* args,
+  char* temp_buf, size_t temp_buf_lim
+);
 //--------
 }
 
@@ -38,6 +45,7 @@ public:     // constants
     // 64 MiB of main RAM
     static constexpr size_t MEM_SIZE = 64ull * 1024ull * 1024ull; 
     static constexpr u32 ADDR_PRINT = 0xc000000ul;
+    static constexpr u32 ADDR_EXIT = 0xc000004ul;
 
     static constexpr u32 BUS_ADDR_DOOM_WAD_DBG = 0x2697ce8ull;
     static constexpr u32 HAVE_DOOM_DBG_WR = 0b01;
@@ -46,6 +54,7 @@ public:     // constants
     static constexpr u32 PC_ADDR_DOOM_WAD_MALLOC_DBG = 0x54010ull;
 
 private:        // variables
+    bool _do_extra_print = false;
     std::string _to_dbg_print;
     std::unique_ptr<u8[]> _mem;
     std::array<u32, SNOWHOUSECPU_NUM_GPRS> _gpr_file;
@@ -57,7 +66,7 @@ private:        // variables
 public:     // functions
     SnowhousecpuEmu() = default;
     SnowhousecpuEmu(
-        const char* filename
+        const char* filename, bool s_do_extra_print=false
     );
     SnowhousecpuEmu(
         SnowhousecpuEmu&& to_move
@@ -190,9 +199,12 @@ private:        // functions
     //inline u32 _read_mem
 };
 SnowhousecpuEmu::SnowhousecpuEmu(
-    const char* filename
+    const char* filename, bool s_do_extra_print
 )
-    : _mem(new u8[MEM_SIZE]) {
+    :
+    _do_extra_print(s_do_extra_print),
+    _mem(new u8[MEM_SIZE]) {
+//--------
     memset(_mem.get(), 0, sizeof(u8) * MEM_SIZE);
     if (
         std::ifstream ifile(
@@ -237,6 +249,7 @@ SnowhousecpuEmu::SnowhousecpuEmu(
         ::my_dasm_rd32_func,
         false
     );
+//--------
 }
 void SnowhousecpuEmu::exec_one_instr() {
     const u32 saved_pc = _dasm.curr_pc;
@@ -250,9 +263,27 @@ void SnowhousecpuEmu::exec_one_instr() {
     snowhousecpu_dasm_info_do_disassemble(&_dasm);
     //_pc() += _dasm.length;
     auto dbg_print = [&]() -> void {
+        if (!_do_extra_print) {
+            return;
+        }
         printf(
-            "saved_pc=%x ", saved_pc
+            "saved_pc=%x   ", saved_pc
         );
+        do {
+            std::array<char, 1024> buf;
+            buf.fill('\0');
+            const u32 other_saved_pc = _dasm.curr_pc;
+            _dasm.curr_pc = saved_pc;
+            do_snprintf_insn_snowhousecpu_main(
+                &_dasm,
+                buf.data(), buf.size()
+            );
+            _dasm.curr_pc = other_saved_pc;
+            printf(
+                "(%s)    ",
+                buf.data()
+            );
+        } while (0);
         printf(
             "ra_idx=%lu rb_idx=%lu rc_idx=%lu "
             "uimm=%lx simm=%lx simm24=%lx      ",
@@ -372,6 +403,12 @@ void SnowhousecpuEmu::exec_one_instr() {
     } else if (have_opc_info(&snowhousecpu_opc_info_or_ra_rb_imm16)) {
         temp_ra = temp_rb | uimm;
     } else if (have_opc_info(&snowhousecpu_opc_info_and_ra_rb_simm16)) {
+        //if (saved_pc == 0x2cb54ull) {
+        //    printf(
+        //        "saved_pc == "
+        //    );
+        //    dbg_print();
+        //}
         temp_ra = temp_rb & simm;
     } else if (have_opc_info(&snowhousecpu_opc_info_lsl_ra_rb_rc)) {
         if (_rc() >= 32) {
@@ -723,6 +760,7 @@ void SnowhousecpuEmu::exec_one_instr() {
     //if (_dasm.rb_idx != 0) {
     //    _gpr_file.at(_dasm.rb_idx) = temp_rb;
     //}
+    dbg_print();
 }
 
 void SnowhousecpuEmu::_bus_write(
@@ -733,6 +771,12 @@ void SnowhousecpuEmu::_bus_write(
         ? HAVE_DOOM_DBG_WR
         : 0u
     );
+    if (_do_extra_print) {
+        std::printf(
+            "_bus_write(): data:%x addr:%x byte_count:%lu\n",
+            data, addr, byte_count
+        );
+    }
     if (
         byte_count == sizeof(u8)
         || byte_count == sizeof(u16)
@@ -755,9 +799,40 @@ void SnowhousecpuEmu::_bus_write(
                         "%s\n",
                         _to_dbg_print.c_str()
                     );
+                    //if (
+                    //    _to_dbg_print
+                    //    == (
+                    //        "Error: R_InitTextures: "
+                    //        "Missing patch in texture COMP2"
+                    //    )
+                    //) {
+                    //    std::exit(1);
+                    //}
+                    //else if (
+                    //    _to_dbg_print
+                    //    == (
+                    //        "R_Init: Init DOOM refresh daemon - "
+                    //        "nummappatches:350 "
+                    //        "patchlookup_addr=268DEEC "
+                    //        "patchlookup_size:1400"
+                    //    )
+                    //) {
+                    //    for (size_t i=0x268DEEC
+                    //}
                     _to_dbg_print = "";
                 }
             }
+        } else if (addr == ADDR_EXIT) {
+            std::exit(data);
+        } else if (addr > MEM_SIZE) {
+            std::fprintf(
+                stderr,
+                "SnowhousecpuEmu::_bus_write(): "
+                "invalid bus write: "
+                "data:%x addr:%x byte_count:%lu\n",
+                data, addr, byte_count
+            );
+            std::exit(1);
         } else {
             memcpy(&_mem[addr], &data, byte_count);
         }
@@ -779,14 +854,23 @@ u32 SnowhousecpuEmu::_bus_read(
         ? HAVE_DOOM_DBG_WR
         : 0u
     );
+        u32 ret = 0; 
     if (
         byte_count == sizeof(u8)
         || byte_count == sizeof(u16)
         || byte_count == sizeof(u32)
     ) {
-        u32 ret = 0; 
+        if (addr > MEM_SIZE) {
+            std::fprintf(
+                stderr,
+                "SnowhousecpuEmu::_bus_read(): "
+                "invalid bus read: "
+                "addr:%x byte_count:%lu\n",
+                addr, byte_count
+            );
+            std::exit(1);
+        }
         memcpy(&ret, &_mem[addr], byte_count);
-        return ret;
     } else {
         std::fprintf(
             stderr,
@@ -796,6 +880,13 @@ u32 SnowhousecpuEmu::_bus_read(
         );
         std::exit(1);
     }
+    if (_do_extra_print) {
+        std::printf(
+            "_bus_read(): data:%x addr:%x byte_count:%lu\n",
+            ret, addr, byte_count
+        );
+    }
+    return ret;
 }
 
 static SnowhousecpuEmu emu;
@@ -805,8 +896,22 @@ static int my_dasm_rd32_func(u8* buf, size_t offset) {
 }
 
 int main(int argc, char** argv) {
+    if (argc == 2) {
+        emu = SnowhousecpuEmu(argv[1]);
+    } else if (argc == 3) {
+        emu = SnowhousecpuEmu(argv[1], std::atoi(argv[2]));
+    } else {
+        std::fprintf(
+            stderr,
+            "Usage 0: %s <program_filename:string>\n"
+            "Usage 1: %s "
+                "<program_filename:string> <do_extra_print:int_to_bool>\n",
+            argv[0],
+            argv[0]
+        );
+        std::exit(1);
+    }
 
-    emu = SnowhousecpuEmu(argv[1]);
     for (;;) {
         emu.exec_one_instr();
     }

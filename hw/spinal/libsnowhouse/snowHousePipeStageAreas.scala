@@ -5269,27 +5269,6 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
   )
 
   val myPsExSetPcValid = (
-    ///*LcvFastOrR*/(
-    //  ///*self=*/Vec[Bool](
-    //  //  RegNext/*When*/(
-    //  //    next=nextExSetPcValid,
-    //  //    //cond=(!io.shouldIgnoreInstr.last),
-    //  //    init=nextExSetPcValid.getZero
-    //  //  ),
-    //  //  myPsExSetPcCmpEq.myCmp.msb,
-    //  //  //RegNext(myPsExSetPcCmpEq.myStickyCmp, init=False),
-    //  //  myPsExSetPcCmpNe.myCmp.msb,
-    //  //  //RegNext(myPsExSetPcCmpNe.myStickyCmp, init=False),
-    //  //).asBits.asUInt.orR
-    //  //if (cfg.targetAltera) (
-    //  //  LcvFastOrR(
-    //  //    myPsExSetPcValidToOrReduce
-    //  //  )
-    //  //) else (
-    //    myPsExSetPcValidToOrReduce.orR
-    //  //)
-    //  //optDsp=false
-    //)
     Bool()
   )
   myPsExSetPcValid := (
@@ -5760,6 +5739,7 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
     io.takeIrq
     //&& io.upIsFiring
     && io.upIsValid
+    //&& io.downIsReady
     && io.rIe
   )
   val rSavedTakeIrq = Reg(Bool(), init=False)
@@ -8363,45 +8343,10 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
           )
         )
         io.psExSetPc.nextPc := (
-          //Mux[UInt](
-          //  tempPsExSetPcTaken,
-            //RegNext(
-            //  next=(
-            //    io.regPcPlusImm
-            //    - (3 * cfg.instrSizeBytes)
-            //  ),
-            //  init=io.regPcPlusImm.getZero,
-            //) //+ cfg.instrSizeBytes
-            //io.regPcPlusImmRealDst//, //+ cfg.instrSizeBytes
-            (
-              io.psExSetPc.branchTgtBufElem.dstRegPc
-              - cfg.instrSizeBytes
-            )
-          //  io.mySavedRegPcPlusInstrSize/*.payload*/,
-          //  //RegNextWhen(
-          //  //  next=RegNextWhen(
-          //  //    next=io.regPc,
-          //  //    cond=io.upIsFiring,
-          //  //    init=io.regPc.getZero,
-          //  //  ),
-          //  //  cond=io.upIsFiring,
-          //  //  init=io.regPc.getZero,
-          //  //) + (1 * cfg.instrSizeBytes),
-          //)
-          //+ Mux[UInt](
-          //  /*RegNext*/(
-          //    /*next=*/(
-          //      //io.btbElemValid
-          //      //&& !io.btbElemDontPredict
-          //      //&& 
-          //      io.branchPredictTkn
-          //    ),
-          //  //  init=False,
-          //  ),
-          //  U(s"${cfg.mainWidth}'d${2 * cfg.instrSizeBytes}"),
-          //  //(-S(s"${cfg.mainWidth}'d1")).asUInt,
-          //  U(s"${cfg.mainWidth}'d0"),
-          //)
+          (
+            io.psExSetPc.branchTgtBufElem.dstRegPc
+            - cfg.instrSizeBytes
+          )
         )
         io.psExSetPc.branchTgtBufElem.valid := (
           True
@@ -8725,146 +8670,6 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
     }
   }
 
-
-  //switch (io.splitOp.fullOp) {
-  //  for (
-  //    ((_, opInfo), opInfoIdx) <- cfg.opInfoMap.view.zipWithIndex
-  //  ) {
-  //    is (opInfoIdx) {
-  //      //innerFunc(
-  //      //  opInfo=opInfo,
-  //      //  opInfoIdx=idx,
-  //      //)
-  //      for (
-  //        ((_, cpyOpInfo), idx)
-  //        <- cfg.cpyCpyuiOpInfoMap.view.zipWithIndex
-  //      ) {
-  //        if (opInfo == cpyOpInfo) {
-  //          innerFunc(
-  //            opInfo=opInfo,
-  //            opInfoIdx=idx,
-  //          )
-  //        }
-  //      }
-  //      for (
-  //        ((_, jmpOpInfo), idx)
-  //        <- cfg.jmpBrAlwaysEqNeOpInfoMap.view.zipWithIndex
-  //      ) {
-  //        if (opInfo == jmpOpInfo) {
-  //          innerFunc(
-  //            opInfo=opInfo,
-  //            opInfoIdx=idx,
-  //          )
-  //        }
-  //      }
-  //      for (
-  //        ((_, aluOpInfo), idx)
-  //        <- cfg.aluOpInfoMap.view.zipWithIndex
-  //      ) {
-  //        if (opInfo == aluOpInfo) {
-  //          innerFunc(
-  //            opInfo=opInfo,
-  //            opInfoIdx=idx,
-  //          )
-  //        }
-  //      }
-  //      for (
-  //        ((_, aluShiftOpInfo), idx)
-  //        <- cfg.aluShiftOpInfoMap.view.zipWithIndex
-  //      ) {
-  //        if (opInfo == aluShiftOpInfo) {
-  //          innerFunc(
-  //            opInfo=opInfo,
-  //            opInfoIdx=idx,
-  //          )
-  //        }
-  //      }
-  //      for (
-  //        ((_, multiCycleOpInfo), idx)
-  //        <- cfg.multiCycleOpInfoMap.view.zipWithIndex
-  //      ) {
-  //        if (opInfo == multiCycleOpInfo) {
-  //          innerFunc(
-  //            opInfo=opInfo,
-  //            opInfoIdx=idx,
-  //          )
-  //        }
-  //      }
-  //    }
-  //  }
-  //}
-  //switch (io.splitOp.kind) {
-  //  is (SnowHouseSplitOpKind.CPY_CPYUI) {
-  //    switch (io.splitOp.cpyCpyuiOp) {
-  //      for (
-  //        ((_, opInfo), idx) <- cfg.cpyCpyuiOpInfoMap.view.zipWithIndex
-  //      ) {
-  //        is (idx) {
-  //          innerFunc(
-  //            opInfo=opInfo,
-  //            opInfoIdx=idx,
-  //          )
-  //        }
-  //      }
-  //    }
-  //  }
-  //  is (SnowHouseSplitOpKind.JMP_BR) {
-  //    switch (io.splitOp.jmpBrAlwaysEqNeOp) {
-  //      for (
-  //        ((_, opInfo), idx) <- cfg.jmpBrAlwaysEqNeOpInfoMap.view.zipWithIndex
-  //      ) {
-  //        is (idx) {
-  //          innerFunc(
-  //            opInfo=opInfo,
-  //            opInfoIdx=idx,
-  //          )
-  //        }
-  //      }
-  //    }
-  //  }
-  //  is (SnowHouseSplitOpKind.ALU) {
-  //    switch (io.splitOp.aluOp) {
-  //      for (
-  //        ((_, opInfo), idx) <- cfg.aluOpInfoMap.view.zipWithIndex
-  //      ) {
-  //        is (idx) {
-  //          innerFunc(
-  //            opInfo=opInfo,
-  //            opInfoIdx=idx,
-  //          )
-  //        }
-  //      }
-  //    }
-  //  }
-  //  is (SnowHouseSplitOpKind.ALU_SHIFT) {
-  //    switch (io.splitOp.aluShiftOp) {
-  //      for (
-  //        ((_, opInfo), idx) <- cfg.aluShiftOpInfoMap.view.zipWithIndex
-  //      ) {
-  //        is (idx) {
-  //          innerFunc(
-  //            opInfo=opInfo,
-  //            opInfoIdx=idx,
-  //          )
-  //        }
-  //      }
-  //    }
-  //  }
-  //  is (SnowHouseSplitOpKind.MULTI_CYCLE) {
-  //    switch (io.splitOp.multiCycleOp) {
-  //      for (
-  //        ((_, opInfo), idx) <- cfg.multiCycleOpInfoMap.view.zipWithIndex
-  //      ) {
-  //        is (idx) {
-  //          innerFunc(
-  //            opInfo=opInfo,
-  //            opInfoIdx=idx,
-  //          )
-  //        }
-  //      }
-  //    }
-  //  }
-  //}
   if (cfg.myHaveZeroReg) {
     for (idx <- 0 until io.gprIsZeroVec.size) {
       when (io.gprIsZeroVec.last(0)) {
@@ -8872,67 +8677,20 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
       }
     }
   }
-  //when (
-  //  //!rShouldIgnoreInstrState(1)
-  //  RegNext(
-  //    next=(!io.shouldIgnoreInstr(1)),
-  //    init=False,
-  //  )
-  //) {
-    //if (idx == 1) {
-      //io.psExSetPc.nextPc := (
-      //  io.regPcPlusImm 
-      //)
-      //io.shouldIgnoreInstr := False
-      doHandleSetNextPcEtc()
-    //}
-  //}
+  doHandleSetNextPcEtc()
   io.psExSetPc.branchTgtBufElem.dontPredict.allowOverride
   io.psExSetPc.branchTgtBufElem.dontPredict := (
-    //io.btbElemDontPredict
-    //|| 
     stickyTempPsExSetPcDontPredict
-    //stickyTempBtbElemDontPredict
   )
-  when (
-    //!io.takeIrq
-    //&&
-    tempBranchMispredictNotTaken
-    //&& !tempReplaceBtbElem
-    //&& !RegNext(
-    //  next=io.branchPredictReplaceBtbElem,
-    //  init=io.branchPredictReplaceBtbElem.getZero,
-    //)
-    //&& !tempReplaceBtbElem
-  ) {
+  when (tempBranchMispredictNotTaken) {
     io.psExSetPc.nextPc := (
-      //RegNextWhen(
-      //  next=io.mySavedRegPcPlusInstrSize,
-      //  cond=io.upIsFiring,
-      //  init=io.mySavedRegPcPlusInstrSize.getZero,
-      //)
       io.mySavedRegPcPlusInstrSize.head
-      //io.mySavedRegPcPlusInstrSize.last
     )
     io.psExSetPc.branchTgtBufElem.dstRegPc := (
       io.mySavedRegPcPlusInstrSize.last
     )
-    //io.psExSetPc.branchTgtBufElem.srcRegPc := (
-    //  RegNext(
-    //    io.psExSetPc.branchTgtBufElem.srcRegPc,
-    //    init=io.psExSetPc.branchTgtBufElem.srcRegPc.getZero,
-    //  )
-    //)
     io.psExSetPc.branchTgtBufElem.dontPredict := True
   }
-  //when (io.takeIrq) {
-  //  //tempBranchMispredictNotTaken := (
-  //  //  //myPsExSetPcValid
-  //  //  False
-  //  //  //True
-  //  //)
-  //  io.psExSetPc.branchTgtBufElem.dontPredict := True
-  //}
   def doShouldIgnoreState2(): Unit = {
     //io.aluModMemWordValid.foreach(current => {
     //  current := False
@@ -9032,18 +8790,10 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
     )
   ) {
     myPsExSetPcCmpEq.myCmp.msb := (
-      //myPsExSetPcCmpEq.cmpEqQ
-      //(
-      //  //Cat(myPsExSetPcCmpEq.cmpEq, myPsExSetPcCmpEq.cmpEqQ).asUInt >> 1
-      //  //myPsExSetPcCmpEq.cmpEq << myPsExSetPcCmpEq.cmpEqQ.getWidth
-      //  Cat(myPsExSetPcCmpEq.cmpEq).asSInt.resize(
-      //    myPsExSetPcCmpEq.myCmp.getWidth
-      //  ).asUInt
-      //)
       myPsExSetPcCmpEq.cmpEq
     )
   }
-  when (/*RegNext*/(/*next=*/myPsExSetPcCmpEq.rValid/*, init=False*/)) {
+  when (myPsExSetPcCmpEq.rValid) {
     when (
       io.shouldIgnoreInstr(3)
     ) {
@@ -9064,17 +8814,10 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
     )
   ) {
     myPsExSetPcCmpNe.myCmp.msb := (
-      //~myPsExSetPcCmpNe.cmpEqQ
-      //(
-      //  Cat(!myPsExSetPcCmpNe.cmpEq, myPsExSetPcCmpNe.cmpEqQ).asUInt >> 1
-      //)
-      //Cat(!myPsExSetPcCmpNe.cmpEq).asSInt.resize(
-      //  myPsExSetPcCmpNe.myCmp.getWidth
-      //).asUInt
       !myPsExSetPcCmpNe.cmpEq
     )
   }
-  when (/*RegNext*/(/*next=*/myPsExSetPcCmpNe.rValid/*, init=False*/)) {
+  when (myPsExSetPcCmpNe.rValid) {
     when (io.shouldIgnoreInstr(3)) {
       myPsExSetPcCmpNe.rValid := False
     }
@@ -9085,16 +8828,6 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
       myPsExSetPcCmpNe.rValid := False
     }
   }
-  //when (io.aluModMemWordValid.head) {
-  //  io.modMemWord.foreach(item => {
-  //    item := item.getZero
-  //  })
-  //} otherwise {
-  //  //io.myModMemWord.foreach(item => {
-  //  //  item := item.getZero
-  //  //})
-  //  //io.aluOp := LcvAluDel1InpOpEnum.ZERO
-  //}
 }
 
 case class SnowHousePipeStageExecute(
@@ -9610,6 +9343,7 @@ case class SnowHousePipeStageExecute(
       || (
         //cMid0Front.
         cMid0Front.up.isValid
+        && myTempDownIsReady
         && setOutpModMemWord.io.regPcSetItCnt(0)(0)
       )
     )
@@ -9700,6 +9434,7 @@ case class SnowHousePipeStageExecute(
       cond=(
         //cMid0Front.up.isFiring
         cMid0Front.up.isValid
+        && myTempDownIsReady
       ),
       init=(
         //outp.branchTgtBufElem(1).srcRegPc.getZero
@@ -9719,6 +9454,7 @@ case class SnowHousePipeStageExecute(
       cond=(
         //cMid0Front.up.isFiring
         cMid0Front.up.isValid
+        && myTempDownIsReady
       ),
       init=(
         //outp.branchTgtBufElem(1).srcRegPc.getZero
@@ -10397,9 +10133,9 @@ case class SnowHousePipeStageExecute(
       //RegNext(myH2dBus.valid, init=False)
       //False
       cMid0Front.up.isValid
+      && myTempDownIsReady
       && setOutpModMemWord.io.opIsMemAccess.last
       //&& cMid0Front.down.isReady
-      && myTempDownIsReady
     )
     myH2dBus.byteSize := myDbusHostPayload.myLcvDbusByteSize
     myH2dBus.src.allowOverride
@@ -10544,6 +10280,7 @@ case class SnowHousePipeStageExecute(
     }
     when (
       cMid0Front.up.isValid
+      && myTempDownIsReady
       && RegNext(myShouldIgnoreInstr(idx), init=False)
     ) {
       when (outp.regPcSetItCnt(idx)(0)) {

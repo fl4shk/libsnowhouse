@@ -1,0 +1,34 @@
+#global SIM;
+#set SIM $SIM_ARM
+##set tmpdir $TMPDIR
+# 
+#load_generic_config "sim"
+#load_base_board_description "basic-sim";
+# 
+#setup_sim ""
+# 
+## We don't use any multilib options by default.
+#process_multilib_options ""
+ 
+-----------------
+global SIM;
+set SIM $SIM_ARM
+#set tmpdir $TMPDIR
+    
+load_generic_config "sim"
+load_base_board_description "basic-sim";
+    
+setup_sim ""
+    
+# We don't use any multilib options by default.
+process_multilib_options ""
+    
+-----------------
+export DEJAGNU=`pwd`/dejagnu/site.exp
+export PATH=${QEMU_DIR}/bin:${PATH}
+export PATH=${INSTALL_DIR}/bin:${PATH}
+export SIM_ARM=qemu-aarch64
+export QEMU_LD_PREFIX=${SYSROOT}
+export QEMU_CPU="max,sve${SVE_BITS}=on"
+...
+make -j${CPUS} -k check RUNTESTFLAGS="--target_board=qemu_board/${MULTI_LIB} SIM_ARM=${SIM_ARM} $1"
