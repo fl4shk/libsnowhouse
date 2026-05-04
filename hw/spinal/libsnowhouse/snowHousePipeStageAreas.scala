@@ -5217,7 +5217,7 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
 
   rExSetPcValid.foreach(_ := False)
   myPsExSetPcCmpEq.myCmp := (
-    0x0
+    //0x0
     //False
     //RegNextWhen(
     //  next=myPsExSetPcCmpEq,
@@ -5227,13 +5227,13 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
     //  ),
     //  init=myPsExSetPcCmpEq.getZero,
     //)
-    //RegNext(
-    //  next=myPsExSetPcCmpEq.myCmp,
-    //  init=myPsExSetPcCmpEq.myCmp.getZero,
-    //)
+    RegNext(
+      next=myPsExSetPcCmpEq.myCmp,
+      init=myPsExSetPcCmpEq.myCmp.getZero,
+    )
   )
   myPsExSetPcCmpNe.myCmp := (
-    0x0
+    //0x0
     //False
     //RegNextWhen(
     //  next=myPsExSetPcCmpNe,
@@ -5247,10 +5247,10 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
     //  next=myPsExSetPcCmpNe,
     //  init=myPsExSetPcCmpEq.getZero,
     //)
-    //RegNext(
-    //  next=myPsExSetPcCmpNe.myCmp,
-    //  init=myPsExSetPcCmpNe.myCmp.getZero,
-    //)
+    RegNext(
+      next=myPsExSetPcCmpNe.myCmp,
+      init=myPsExSetPcCmpNe.myCmp.getZero,
+    )
   )
 
   val myPsExSetPcValidToOrReduce = (
@@ -8783,16 +8783,36 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
   }
   //--------
   when (
+    //(
+    //  rose(myPsExSetPcCmpEq.rValid)
+    //  //|| (
+    //  //  myPsExSetPcCmpEq.rValid
+    //  //  && stable(myPsExSetPcCmpEq.rValid)
+    //  //)
+    //)
+    //&& io.upIsValid
+    //&& io.downIsReady
+    //RegNext(
+    //  io.upIsFiring,
+    //  init=False
+    //)
+    //&& 
     rose(myPsExSetPcCmpEq.rValid)
-    || (
-      myPsExSetPcCmpEq.rValid
-      && stable(myPsExSetPcCmpEq.rValid)
-    )
   ) {
     myPsExSetPcCmpEq.myCmp.msb := (
       myPsExSetPcCmpEq.cmpEq
     )
+  } 
+  when (
+    fell(myPsExSetPcCmpEq.rValid)
+  ) {
+    myPsExSetPcCmpEq.myCmp.msb := False
   }
+  //otherwise {
+  //  myPsExSetPcCmpEq.myCmp.msb := (
+  //    False//myPsExSetPcCmpEq.cmpEq
+  //  )
+  //}
   when (myPsExSetPcCmpEq.rValid) {
     when (
       io.shouldIgnoreInstr(3)
@@ -8807,15 +8827,21 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
     }
   }
   when (
+    //rose(myPsExSetPcCmpNe.rValid)
+    ////|| (
+    ////  myPsExSetPcCmpNe.rValid
+    ////  && stable(myPsExSetPcCmpNe.rValid)
+    ////)
     rose(myPsExSetPcCmpNe.rValid)
-    || (
-      myPsExSetPcCmpNe.rValid
-      && stable(myPsExSetPcCmpNe.rValid)
-    )
   ) {
     myPsExSetPcCmpNe.myCmp.msb := (
       !myPsExSetPcCmpNe.cmpEq
     )
+  }
+  when (
+    fell(myPsExSetPcCmpNe.rValid)
+  ) {
+    myPsExSetPcCmpNe.myCmp.msb := False
   }
   when (myPsExSetPcCmpNe.rValid) {
     when (io.shouldIgnoreInstr(3)) {
