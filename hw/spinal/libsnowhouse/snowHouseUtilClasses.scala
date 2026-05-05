@@ -875,9 +875,9 @@ case class SnowHouseConfig(
         0
       ) else (
         //3
-        //2
+        2
         //1
-        0
+        //0
         //-1
       )
     ),
