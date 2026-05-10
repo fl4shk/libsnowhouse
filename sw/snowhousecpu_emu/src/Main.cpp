@@ -44,8 +44,8 @@ class SnowhousecpuEmu final {
 public:     // constants
     // 64 MiB of main RAM
     static constexpr size_t MEM_SIZE = 64ull * 1024ull * 1024ull; 
-    static constexpr u32 ADDR_PRINT = 0xc000000ul;
-    static constexpr u32 ADDR_EXIT = 0xc000004ul;
+    static constexpr u32 ADDR_PRINT = 0x6000000ul;
+    static constexpr u32 ADDR_EXIT = 0x6000004ul;
 
     static constexpr u32 BUS_ADDR_DOOM_WAD_DBG = 0x2697ce8ull;
     static constexpr u32 HAVE_DOOM_DBG_WR = 0b01;
