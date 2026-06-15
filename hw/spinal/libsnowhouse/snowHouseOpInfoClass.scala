@@ -83,6 +83,7 @@ object HiddenRegKind {
   case object DivHiOutp extends HiddenRegKind
   case object ModHiOutp extends HiddenRegKind
   //case object PopData extends HiddenRegKind
+  case object DontCare extends HiddenRegKind
 }
 
 //sealed trait AtomicGprKind {
@@ -143,6 +144,7 @@ object SrcKind {
   def MulHiOutp = HiddenReg(HiddenRegKind.MulHiOutp)
   def DivHiOutp = HiddenReg(HiddenRegKind.DivHiOutp)
   def ModHiOutp = HiddenReg(HiddenRegKind.ModHiOutp)
+  def DontCare = HiddenReg(HiddenRegKind.DontCare)
   //def PopData = HiddenReg(HiddenRegKind.PopData)
   //def IndexReg = 
   //case class PcPlusImm(
@@ -209,6 +211,7 @@ object DstKind {
   def MulHiOutp = HiddenReg(HiddenRegKind.MulHiOutp)
   def DivHiOutp = HiddenReg(HiddenRegKind.DivHiOutp)
   def ModHiOutp = HiddenReg(HiddenRegKind.ModHiOutp)
+  def DontCare = HiddenReg(HiddenRegKind.DontCare)
   //def PopData = HiddenReg(HiddenRegKind.PopData)
   //case object AluFlags extends DstKind
 }
@@ -1164,8 +1167,7 @@ object CpyOpKind {
           CondKind.Always
         ),
       ),
-      // TODO: add these back later
-      OpKindValidArgs( // for "jump and link"
+      OpKindValidArgs( // for "jump and link register"
         //dstSize=2, srcSize=1
         dst=Array[HashSet[DstKind]](
           HashSet(DstKind.Pc),
@@ -1173,6 +1175,22 @@ object CpyOpKind {
         ),
         src=Array[HashSet[SrcKind]](
           HashSet(SrcKind.Gpr/*, SrcKind.Imm(Some(false))*/)
+        ),
+        cond=HashSet[CondKind](
+          //CondKind.Link
+          CondKind.Always
+        ),
+      ),
+      //--------
+      OpKindValidArgs( // for "jump and link register + immediate"
+        //dstSize=2, srcSize=1
+        dst=Array[HashSet[DstKind]](
+          HashSet(DstKind.Pc),
+          HashSet(DstKind.Gpr),
+        ),
+        src=Array[HashSet[SrcKind]](
+          HashSet(SrcKind.Gpr/*, SrcKind.Imm(Some(false))*/),
+          HashSet(SrcKind.Imm()),
         ),
         cond=HashSet[CondKind](
           //CondKind.Link
@@ -2460,10 +2478,22 @@ object MultiCycleOpKind {
           HashSet(DstKind.Gpr, DstKind.Lo),
         ),
         src=Array[HashSet[SrcKind]](
-          //HashSet(SrcKind.Gpr, SrcKind.Pc),
-          //HashSet(SrcKind.Gpr, SrcKind.Pc),
-          //HashSet(SrcKind.Gpr, SrcKind.Pc),
-          //HashSet(SrcKind.Gpr, SrcKind.Pc),
+          HashSet(SrcKind.Gpr),
+          HashSet(SrcKind.Gpr),
+        ),
+        cond=HashSet[CondKind](
+          CondKind.Always
+        ),
+      ),
+      OpKindValidArgs(
+        // word times word, unsigned full-product, keep only high half of
+        // the full product
+        //dstSize=2, srcSize=2
+        dst=Array[HashSet[DstKind]](
+          HashSet(DstKind.Gpr),
+          HashSet(DstKind.DontCare),
+        ),
+        src=Array[HashSet[SrcKind]](
           HashSet(SrcKind.Gpr),
           HashSet(SrcKind.Gpr),
         ),
@@ -2489,10 +2519,22 @@ object MultiCycleOpKind {
           HashSet(DstKind.Gpr, DstKind.Lo),
         ),
         src=Array[HashSet[SrcKind]](
-          //HashSet(SrcKind.Gpr, SrcKind.Pc),
-          //HashSet(SrcKind.Gpr, SrcKind.Pc),
-          //HashSet(SrcKind.Gpr, SrcKind.Pc),
-          //HashSet(SrcKind.Gpr, SrcKind.Pc),
+          HashSet(SrcKind.Gpr),
+          HashSet(SrcKind.Gpr),
+        ),
+        cond=HashSet[CondKind](
+          CondKind.Always
+        ),
+      ),
+      OpKindValidArgs(
+        // word times word, signed full-product, keep only high half of
+        // the full product
+        //dstSize=2, srcSize=2
+        dst=Array[HashSet[DstKind]](
+          HashSet(DstKind.Gpr),
+          HashSet(DstKind.DontCare),
+        ),
+        src=Array[HashSet[SrcKind]](
           HashSet(SrcKind.Gpr),
           HashSet(SrcKind.Gpr),
         ),
@@ -2505,6 +2547,33 @@ object MultiCycleOpKind {
     def group = MultiCycleOpGroup.Mul
     def isMultiCycleFastOp: Boolean = false
   }
+  case object SUmul extends MultiCycleOpKind {
+    // Signed times Unsigned
+    private[libsnowhouse] val _validArgsSet = LinkedHashSet[
+      OpKindValidArgs
+    ](
+      OpKindValidArgs(
+      // signed word times unsigned word, full-product,
+      // keep only high half of the full product
+        //dstSize=2, srcSize=2
+        dst=Array[HashSet[DstKind]](
+          HashSet(DstKind.Gpr),
+          HashSet(DstKind.DontCare),
+        ),
+        src=Array[HashSet[SrcKind]](
+          HashSet(SrcKind.Gpr),
+          HashSet(SrcKind.Gpr),
+        ),
+        cond=HashSet[CondKind](
+          CondKind.Always
+        ),
+      ),
+    )
+    def validArgsSet = _validArgsSet
+    def group = MultiCycleOpGroup.Mul
+    def isMultiCycleFastOp: Boolean = false
+  }
+
   case object Udiv extends MultiCycleOpKind {
     private[libsnowhouse] val _validArgsSet = LinkedHashSet[
       OpKindValidArgs

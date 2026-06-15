@@ -1563,6 +1563,7 @@ extends SpinalEnum(defaultEncoding=binaryOneHot) {
     Dont,
     PcPlusImm,
     RdMemWord,
+    RdMemWordPlusImm,
     Ira,
     Ids
     = newElement()
