@@ -5019,7 +5019,7 @@ case class SnowHouseCpuMulFullProduct(
   extends SpinalEnum(defaultEncoding=binaryOneHot) {
     val
       IDLE,
-      DO_ABS_INPUTS_IF_SIGNED,
+      DO_ABS_INPUTS_IF_NEGATIVE,
       DO_FOUR_MUL16X16,
       FIRST_TWO_ADDS,
       FINAL_ADD,
@@ -5133,7 +5133,7 @@ case class SnowHouseCpuMulFullProduct(
           rState := State.DO_FOUR_MUL16X16
         }
         is (B"11") {
-          rState := State.DO_ABS_INPUTS_IF_SIGNED
+          rState := State.DO_ABS_INPUTS_IF_NEGATIVE
         }
         default {
         }
@@ -5152,7 +5152,7 @@ case class SnowHouseCpuMulFullProduct(
       rSignVec := rSignVec.getZero
       //rIsSignedFullProd := multiCycleBus.sendData.kind.lsb
     }
-    is (State.DO_ABS_INPUTS_IF_SIGNED) {
+    is (State.DO_ABS_INPUTS_IF_NEGATIVE) {
       rState := State.DO_FOUR_MUL16X16
       for (idx <- 0 until rAbsSrcVec.size) {
         def myAbsSrc = rAbsSrcVec(idx)
@@ -5166,7 +5166,7 @@ case class SnowHouseCpuMulFullProduct(
       rNeedToNegateResultSign := (
         // This will always result in a `False` when we are doing
         // an unsigned full product because in this case we never ended up
-        // in the `rState` of `State.DO_ABS_INPUTS_IF_SIGNED`
+        // in the `rState` of `State.DO_ABS_INPUTS_IF_NEGATIVE`
         rSignVec(0) =/= rSignVec(1)
       )
       rX0Y0 := rAbsSrcVec(0)(low) * rAbsSrcVec(1)(low)

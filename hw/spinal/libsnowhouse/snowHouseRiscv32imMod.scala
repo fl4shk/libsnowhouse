@@ -428,6 +428,14 @@ object Riscv32imOpInfoMap {
   )
 
   opInfoMap += (
+    Rv32RType.Op.MuluRdRs1Rs2 -> OpInfo.mkMultiCycle(
+      dstArr=Array[DstKind](DstKind.Gpr, DstKind.DontCare),
+      srcArr=Array[SrcKind](SrcKind.Gpr, SrcKind.Gpr),
+      multiCycleOp=MultiCycleOpKind.Umul,
+    )
+  )
+
+  opInfoMap += (
     Rv32RType.Op.MulhRdRs1Rs2 -> OpInfo.mkMultiCycle(
       dstArr=Array[DstKind](DstKind.Gpr, DstKind.DontCare),
       srcArr=Array[SrcKind](SrcKind.Gpr, SrcKind.Gpr),
@@ -442,12 +450,12 @@ object Riscv32imOpInfoMap {
       multiCycleOp=MultiCycleOpKind.SUmul,
     )
   )
-
+  //--------
   opInfoMap += (
-    Rv32RType.Op.MuluRdRs1Rs2 -> OpInfo.mkMultiCycle(
-      dstArr=Array[DstKind](DstKind.Gpr, DstKind.DontCare),
+    Rv32RType.Op.DivuRdRs1Rs2 -> OpInfo.mkMultiCycle(
+      dstArr=Array[DstKind](DstKind.Gpr),
       srcArr=Array[SrcKind](SrcKind.Gpr, SrcKind.Gpr),
-      multiCycleOp=MultiCycleOpKind.Umul,
+      multiCycleOp=MultiCycleOpKind.Udiv,
     )
   )
 
@@ -460,10 +468,10 @@ object Riscv32imOpInfoMap {
   )
 
   opInfoMap += (
-    Rv32RType.Op.DivuRdRs1Rs2 -> OpInfo.mkMultiCycle(
+    Rv32RType.Op.RemuRdRs1Rs2 -> OpInfo.mkMultiCycle(
       dstArr=Array[DstKind](DstKind.Gpr),
       srcArr=Array[SrcKind](SrcKind.Gpr, SrcKind.Gpr),
-      multiCycleOp=MultiCycleOpKind.Udiv,
+      multiCycleOp=MultiCycleOpKind.Umod,
     )
   )
 
@@ -472,14 +480,6 @@ object Riscv32imOpInfoMap {
       dstArr=Array[DstKind](DstKind.Gpr),
       srcArr=Array[SrcKind](SrcKind.Gpr, SrcKind.Gpr),
       multiCycleOp=MultiCycleOpKind.Smod,
-    )
-  )
-
-  opInfoMap += (
-    Rv32RType.Op.RemuRdRs1Rs2 -> OpInfo.mkMultiCycle(
-      dstArr=Array[DstKind](DstKind.Gpr),
-      srcArr=Array[SrcKind](SrcKind.Gpr, SrcKind.Gpr),
-      multiCycleOp=MultiCycleOpKind.Umod,
     )
   )
   //--------
@@ -928,14 +928,14 @@ object SnowHouseRiscv32imPipeStageInstrDecode {
     when (upPayload.instrCnt.myPsIdBubble.head) {
       //encInstr.last := encInstr.last.getZero
 
-      for (idx <- 0 until myEncInstrSize) {
-        encInstrR(idx) := encInstrR(idx).getZero
-        encInstrI(idx) := encInstrI(idx).getZero
-        encInstrS(idx) := encInstrS(idx).getZero
-        encInstrB(idx) := encInstrB(idx).getZero
-        encInstrJ(idx) := encInstrJ(idx).getZero
-        encInstrU(idx) := encInstrU(idx).getZero
-      }
+      //for (idx <- 0 until myEncInstrSize) {
+        encInstrR.last := encInstrR.last.getZero
+        encInstrI.last := encInstrI.last.getZero
+        encInstrS.last := encInstrS.last.getZero
+        encInstrB.last := encInstrB.last.getZero
+        encInstrJ.last := encInstrJ.last.getZero
+        encInstrU.last := encInstrU.last.getZero
+      //}
     }
     for (idx <- 0 until cfg.maxNumGprsPerInstr) {
       for (jdx <- 0 until cfg.regFileCfg.modMemWordValidSize) {
@@ -1947,9 +1947,9 @@ case class SnowHouseRiscv32imDivmod(
       UDIV,
       SDIV,
       UMOD,
-      SMOD,
-      UDIVW,
-      SDIVW
+      SMOD
+      //UDIVW,
+      //SDIVW
       = newElement()
   }
   val rKind = (
@@ -2128,64 +2128,64 @@ case class SnowHouseRiscv32imDivmod(
                   }
                 }
               }
-              case MultiCycleOpKind.Udivw => {
-                is (kindIdx) {
-                  if (!needBusRvalid) {
-                    val tempArea = doItFunc(
-                      opInfo,
-                      busIdx,
-                      cpuIo.multiCycleBusVec(busIdx)
-                    )
-                  } else {
-                    when (
-                      rose(
-                        RegNext(
-                          next=cpuIo.multiCycleBusVec(busIdx).nextValid,
-                          init=False,
-                        )
-                      )
-                    ) {
-                      if (setKind) {
-                        rKind := DivmodKind.UDIVW
-                      }
-                      val tempArea = doItFunc(
-                        opInfo,
-                        busIdx,
-                        cpuIo.multiCycleBusVec(busIdx)
-                      )
-                    }
-                  }
-                }
-              }
-              case MultiCycleOpKind.Sdivw => {
-                is (kindIdx) {
-                  if (!needBusRvalid) {
-                    val tempArea = doItFunc(
-                      opInfo,
-                      busIdx,
-                      cpuIo.multiCycleBusVec(busIdx)
-                    )
-                  } else {
-                    when (
-                      rose(
-                        RegNext(
-                          next=cpuIo.multiCycleBusVec(busIdx).nextValid,
-                          init=False,
-                        )
-                      )
-                    ) {
-                      if (setKind) {
-                        rKind := DivmodKind.SDIVW
-                      }
-                      val tempArea = doItFunc(
-                        opInfo,
-                        busIdx,
-                        cpuIo.multiCycleBusVec(busIdx)
-                      )
-                    }
-                  }
-                }
-              }
+              //case MultiCycleOpKind.Udivw => {
+              //  is (kindIdx) {
+              //    if (!needBusRvalid) {
+              //      val tempArea = doItFunc(
+              //        opInfo,
+              //        busIdx,
+              //        cpuIo.multiCycleBusVec(busIdx)
+              //      )
+              //    } else {
+              //      when (
+              //        rose(
+              //          RegNext(
+              //            next=cpuIo.multiCycleBusVec(busIdx).nextValid,
+              //            init=False,
+              //          )
+              //        )
+              //      ) {
+              //        if (setKind) {
+              //          rKind := DivmodKind.UDIVW
+              //        }
+              //        val tempArea = doItFunc(
+              //          opInfo,
+              //          busIdx,
+              //          cpuIo.multiCycleBusVec(busIdx)
+              //        )
+              //      }
+              //    }
+              //  }
+              //}
+              //case MultiCycleOpKind.Sdivw => {
+              //  is (kindIdx) {
+              //    if (!needBusRvalid) {
+              //      val tempArea = doItFunc(
+              //        opInfo,
+              //        busIdx,
+              //        cpuIo.multiCycleBusVec(busIdx)
+              //      )
+              //    } else {
+              //      when (
+              //        rose(
+              //          RegNext(
+              //            next=cpuIo.multiCycleBusVec(busIdx).nextValid,
+              //            init=False,
+              //          )
+              //        )
+              //      ) {
+              //        if (setKind) {
+              //          rKind := DivmodKind.SDIVW
+              //        }
+              //        val tempArea = doItFunc(
+              //          opInfo,
+              //          busIdx,
+              //          cpuIo.multiCycleBusVec(busIdx)
+              //        )
+              //      }
+              //    }
+              //  }
+              //}
               case _ => {
               }
             }
@@ -2312,27 +2312,27 @@ case class SnowHouseRiscv32imDivmod(
         rSavedSrcVec(1).asSInt.resize(divmod.io.inp.denom.getWidth).asUInt
       )
     }
-    is (DivmodKind.UDIVW) {
-      divmod.io.inp.numer := (
-        //Cat(rSavedSrcVec(2), rSavedSrcVec(0)).asUInt
-        Cat(rSavedSrcVec(0), rSavedSrcVec(3)).asUInt
-      )
-      divmod.io.inp.denom := (
-        //rSavedSrcVec(1).resize(divmod.io.inp.denom.getWidth)
-        Cat(rSavedSrcVec(1), rSavedSrcVec(2)).asUInt
-      )
-    }
-    is (DivmodKind.SDIVW) {
-      divmod.io.inp.numer := (
-        //Cat(rSavedSrcVec(2), rSavedSrcVec(0)).asUInt
-        Cat(rSavedSrcVec(0), rSavedSrcVec(3)).asUInt
-      )
-      divmod.io.inp.denom := (
-        //rSavedSrcVec(1).asSInt.resize(divmod.io.inp.denom.getWidth).asUInt
+    //is (DivmodKind.UDIVW) {
+    //  divmod.io.inp.numer := (
+    //    //Cat(rSavedSrcVec(2), rSavedSrcVec(0)).asUInt
+    //    Cat(rSavedSrcVec(0), rSavedSrcVec(3)).asUInt
+    //  )
+    //  divmod.io.inp.denom := (
+    //    //rSavedSrcVec(1).resize(divmod.io.inp.denom.getWidth)
+    //    Cat(rSavedSrcVec(1), rSavedSrcVec(2)).asUInt
+    //  )
+    //}
+    //is (DivmodKind.SDIVW) {
+    //  divmod.io.inp.numer := (
+    //    //Cat(rSavedSrcVec(2), rSavedSrcVec(0)).asUInt
+    //    Cat(rSavedSrcVec(0), rSavedSrcVec(3)).asUInt
+    //  )
+    //  divmod.io.inp.denom := (
+    //    //rSavedSrcVec(1).asSInt.resize(divmod.io.inp.denom.getWidth).asUInt
 
-        Cat(rSavedSrcVec(1), rSavedSrcVec(2)).asUInt
-      )
-    }
+    //    Cat(rSavedSrcVec(1), rSavedSrcVec(2)).asUInt
+    //  )
+    //}
     //is () {
     //  // udiv, sdiv, umod, smod
     //  divmod.io.inp.numer := rSavedSrcVec(0)
@@ -2617,75 +2617,6 @@ case class SnowHouseRiscv32imDivmod(
           def dstVec = stallIo.recvData.dstVec
           stallIo.ready := True
         }
-        //for (
-        //  ((_, opInfo), kindIdx)
-        //  <- innerMap.view.zipWithIndex
-        //) {
-        //  opInfo.multiCycleOp.get match {
-        //    case MultiCycleOpKind.Udiv => {
-        //      //is (DivmodKind.UDIV) {
-        //        val stallIo = (
-        //          cpuIo.multiCycleBusVec(busIdx)
-        //        )
-        //        def dstVec = stallIo.recvData.dstVec
-        //        stallIo.ready := True
-        //        //dstVec(0) := rSavedResult.last(0)
-        //      //}
-        //    }
-        //    case MultiCycleOpKind.Sdiv => {
-        //      //is (DivmodKind.SDIV) {
-        //        val stallIo = (
-        //          cpuIo.multiCycleBusVec(busIdx)
-        //        )
-        //        def dstVec = stallIo.recvData.dstVec
-        //        stallIo.ready := True
-        //        //dstVec(0) := rSavedResult.last(1)
-        //      //}
-        //    }
-        //    case MultiCycleOpKind.Umod => {
-        //      //is (DivmodKind.UMOD) {
-        //        val stallIo = (
-        //          cpuIo.multiCycleBusVec(busIdx)
-        //        )
-        //        def dstVec = stallIo.recvData.dstVec
-        //        stallIo.ready := True
-        //        //dstVec(0) := rSavedResult.last(2)
-        //      //}
-        //    }
-        //    case MultiCycleOpKind.Smod => {
-        //      //is (DivmodKind.SMOD) {
-        //        val stallIo = (
-        //          cpuIo.multiCycleBusVec(busIdx)
-        //        )
-        //        def dstVec = stallIo.recvData.dstVec
-        //        stallIo.ready := True
-        //        //dstVec(0) := rSavedResult.last(3)
-        //      //}
-        //    }
-        //    case MultiCycleOpKind.Udivw => {
-        //      //is (DivmodKind.UDIVW) {
-        //        val stallIo = (
-        //          cpuIo.multiCycleBusVec(busIdx)
-        //        )
-        //        def dstVec = stallIo.recvData.dstVec
-        //        stallIo.ready := True
-        //        //dstVec(0) := rSavedResult.last(0)
-        //      //}
-        //    }
-        //    case MultiCycleOpKind.Sdivw => {
-        //      //is (DivmodKind.SDIVW) {
-        //        val stallIo = (
-        //          cpuIo.multiCycleBusVec(busIdx)
-        //        )
-        //        def dstVec = stallIo.recvData.dstVec
-        //        stallIo.ready := True
-        //        //dstVec(0) := rSavedResult.last(1)
-        //      //}
-        //    }
-        //    case _ => {
-        //    }
-        //  }
-        //}
         }
       //}
       rState := DivmodState.IDLE
@@ -2747,7 +2678,8 @@ case class SnowHouseRiscv32imMulFullProduct(
   extends SpinalEnum(defaultEncoding=binaryOneHot) {
     val
       IDLE,
-      DO_ABS_BOTH_INPUTS_IF_SIGNED,
+      DO_ABS_BOTH_INPUTS_IF_NEGATIVE,
+      DO_ABS_LEFT_INPUT_IF_NEGATIVE,
       DO_FOUR_MUL16X16,
       FIRST_TWO_ADDS,
       FINAL_ADD,
@@ -2815,11 +2747,14 @@ case class SnowHouseRiscv32imMulFullProduct(
         rose(RegNext(multiCycleBus.nextValid, init=False))
         ## multiCycleBus.sendData.kind(1 downto 0)
       ) {
-        is (B"10") {
+        is (M"10-") {
           rState := State.DO_FOUR_MUL16X16
         }
-        is (B"11") {
-          rState := State.DO_ABS_BOTH_INPUTS_IF_SIGNED
+        is (B"110") {
+          rState := State.DO_ABS_BOTH_INPUTS_IF_NEGATIVE
+        }
+        is (B"111") {
+          rState := State.DO_ABS_LEFT_INPUT_IF_NEGATIVE
         }
         default {
         }
@@ -2838,7 +2773,15 @@ case class SnowHouseRiscv32imMulFullProduct(
       rSignVec := rSignVec.getZero
       //rIsSignedFullProd := multiCycleBus.sendData.kind.lsb
     }
-    is (State.DO_ABS_BOTH_INPUTS_IF_SIGNED) {
+    is (State.DO_ABS_BOTH_INPUTS_IF_NEGATIVE) {
+      rState := State.DO_FOUR_MUL16X16
+      def myAbsSrc = rAbsSrcVec(0)
+      rSignVec(0) := myAbsSrc.msb
+      when (myAbsSrc.msb) {
+        myAbsSrc := (-myAbsSrc.asSInt).asUInt
+      }
+    }
+    is (State.DO_ABS_LEFT_INPUT_IF_NEGATIVE) {
       rState := State.DO_FOUR_MUL16X16
       for (idx <- 0 until rAbsSrcVec.size) {
         def myAbsSrc = rAbsSrcVec(idx)
@@ -2852,7 +2795,7 @@ case class SnowHouseRiscv32imMulFullProduct(
       rNeedToNegateResultSign := (
         // This will always result in a `False` when we are doing
         // an unsigned full product because in this case we never ended up
-        // in the `rState` of `State.DO_ABS_INPUTS_IF_SIGNED`
+        // in the `rState` of `State.DO_ABS_INPUTS_IF_NEGATIVE`
         rSignVec(0) =/= rSignVec(1)
       )
       rX0Y0 := rAbsSrcVec(0)(low) * rAbsSrcVec(1)(low)
