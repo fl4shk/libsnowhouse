@@ -1583,7 +1583,6 @@ object SnowHouseRiscv32imPipeStageInstrDecode {
       }
       is (JalRdImm.op) {
         setOp(JalRdImm, encInstrJ.last)
-        upPayload.gprIdxVec.last := 0x0
       }
       is (LuiRaImm31Downto12.op) {
         setOp(LuiRaImm31Downto12, encInstrU.last)
@@ -3404,27 +3403,28 @@ object SnowHouseRiscv32imWithoutRamToVerilog extends App {
 object SnowHouseRiscv32imWithDuplDualRamSim extends App {
   
   val programStrArr = Array[String](
-    //"fl4shk-riscv-tests.ignore/rv32ui-p-lw.bin",
-    //"fl4shk-riscv-tests.ignore/rv32ui-p-slti.bin",
-    "fl4shk-riscv-tests.ignore/rv32ui-p-sw.bin",
-    //"fl4shk-riscv-tests.ignore/rv32ui-p-or.bin",
-    //"fl4shk-riscv-tests.ignore/rv32ui-p-lhu.bin",
-    //"fl4shk-riscv-tests.ignore/rv32ui-p-lbu.bin",
-    //"fl4shk-riscv-tests.ignore/rv32ui-p-andi.bin",
-    //"fl4shk-riscv-tests.ignore/rv32ui-p-and.bin",
-    //"fl4shk-riscv-tests.ignore/rv32ui-p-sb.bin",
-    //"fl4shk-riscv-tests.ignore/rv32ui-p-slt.bin",
-    //"fl4shk-riscv-tests.ignore/rv32ui-p-sra.bin",
-    //"fl4shk-riscv-tests.ignore/rv32ui-p-simple.bin",
-    //"fl4shk-riscv-tests.ignore/rv32ui-p-xori.bin",
-    //"fl4shk-riscv-tests.ignore/rv32ui-p-sltiu.bin",
-    //"fl4shk-riscv-tests.ignore/rv32ui-p-srli.bin",
-    //"fl4shk-riscv-tests.ignore/rv32ui-p-blt.bin",
-    //"fl4shk-riscv-tests.ignore/rv32ui-p-srai.bin",
-    //"fl4shk-riscv-tests.ignore/rv32ui-p-sh.bin",
-    //"fl4shk-riscv-tests.ignore/rv32ui-p-ma_data.bin",
-    //"fl4shk-riscv-tests.ignore/rv32ui-p-auipc.bin",
-    //"fl4shk-riscv-tests.ignore/rv32ui-p-jalr.bin",
+    ////"fl4shk-riscv-tests.ignore/rv32ui-p-lw.bin",
+    ////"fl4shk-riscv-tests.ignore/rv32ui-p-slti.bin",
+    ////"fl4shk-riscv-tests.ignore/rv32ui-p-sw.bin",
+    ////"fl4shk-riscv-tests.ignore/rv32ui-p-or.bin",
+    ////"fl4shk-riscv-tests.ignore/rv32ui-p-lhu.bin",
+    ////"fl4shk-riscv-tests.ignore/rv32ui-p-lbu.bin",
+    ////"fl4shk-riscv-tests.ignore/rv32ui-p-andi.bin",
+    ////"fl4shk-riscv-tests.ignore/rv32ui-p-and.bin",
+    ////"fl4shk-riscv-tests.ignore/rv32ui-p-sb.bin",
+    ////"fl4shk-riscv-tests.ignore/rv32ui-p-slt.bin",
+    ////"fl4shk-riscv-tests.ignore/rv32ui-p-sra.bin",
+    ////"fl4shk-riscv-tests.ignore/rv32ui-p-simple.bin",
+    ////"fl4shk-riscv-tests.ignore/rv32ui-p-xori.bin",
+    ////"fl4shk-riscv-tests.ignore/rv32ui-p-sltiu.bin",
+    ////"fl4shk-riscv-tests.ignore/rv32ui-p-srli.bin",
+    ////"fl4shk-riscv-tests.ignore/rv32ui-p-blt.bin",
+    ////"fl4shk-riscv-tests.ignore/rv32ui-p-srai.bin",
+    ////"fl4shk-riscv-tests.ignore/rv32ui-p-sh.bin",
+
+    ////"fl4shk-riscv-tests.ignore/rv32ui-p-ma_data.bin", // fails
+    ////"fl4shk-riscv-tests.ignore/rv32ui-p-auipc.bin",
+    "fl4shk-riscv-tests.ignore/rv32ui-p-jalr.bin",
     //"fl4shk-riscv-tests.ignore/rv32ui-p-lh.bin",
     //"fl4shk-riscv-tests.ignore/rv32ui-p-sll.bin",
     //"fl4shk-riscv-tests.ignore/rv32ui-p-jal.bin",
