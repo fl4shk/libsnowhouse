@@ -6618,7 +6618,10 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
               opInfo.dstArr.size == 1
               || (
                 opInfo.dstArr.size == 2
-                && opInfo.srcArr.size == 2
+                && (
+                  opInfo.srcArr.size == 1
+                  || opInfo.srcArr.size == 2
+                )
               )
               || opInfo.dstArr.size == 3,
               s"not yet implemented: "
@@ -6628,7 +6631,10 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
               opInfo.srcArr.size == 1
               || (
                 opInfo.dstArr.size == 2
-                && opInfo.srcArr.size == 2
+                && (
+                  opInfo.srcArr.size == 1
+                  || opInfo.srcArr.size == 2
+                )
               ),
               s"not yet implemented: "
               + s"opInfo(${opInfo}) index:${opInfoIdx}"
