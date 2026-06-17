@@ -915,8 +915,13 @@ object SnowHouseRiscv32imPipeStageInstrDecode {
       )
       for (jdx <- 0 until tempHaveHazardAddrCheckVec.size) {
         tempHaveHazardAddrCheckVec(jdx)(idx) := (
-          tempRegIdx === myHistLastGprIdx(jdx + 1)
-          && tempRegIdx.orR // check for non-zero
+          (
+            tempRegIdx === myHistLastGprIdx(jdx + 1)
+            && tempRegIdx.orR // check for non-zero
+          )
+          //|| (
+          //  tempRegIdx === 3
+          //)
         )
       }
     }
@@ -952,7 +957,7 @@ object SnowHouseRiscv32imPipeStageInstrDecode {
 
     upPayload.gprIdxVec(0) := encInstrR.last.rs1.resized
     upPayload.gprIdxVec(1) := encInstrR.last.rs2.resized
-    upPayload.gprIdxVec(2) := encInstrR.last.rd.resized
+    //upPayload.gprIdxVec(2) := encInstrR.last.rd.resized
     upPayload.gprIdxVec.last := encInstrR.last.rd.resized
 
     upPayload.splitOp.setToDefault()
@@ -1539,6 +1544,7 @@ object SnowHouseRiscv32imPipeStageInstrDecode {
         setOp(JalrRdRs1Imm, encInstrI.last)
       }
       is (SbRdRs1Imm.op) {
+        upPayload
         switch (encInstrS.last.funct3) {
           is (SbRdRs1Imm.f3) {
             setOp(SbRdRs1Imm, encInstrS.last)
@@ -1550,6 +1556,7 @@ object SnowHouseRiscv32imPipeStageInstrDecode {
             setOp(SwRdRs1Imm, encInstrS.last)
           }
         }
+        upPayload.gprIdxVec.last := 0x0
       }
       is (BeqRdRs1Imm.op) {
         switch (encInstrB.last.funct3) {
@@ -1572,9 +1579,11 @@ object SnowHouseRiscv32imPipeStageInstrDecode {
             setOp(BgeuRdRs1Imm, encInstrB.last)
           }
         }
+        upPayload.gprIdxVec.last := 0x0
       }
       is (JalRdImm.op) {
         setOp(JalRdImm, encInstrJ.last)
+        upPayload.gprIdxVec.last := 0x0
       }
       is (LuiRaImm31Downto12.op) {
         setOp(LuiRaImm31Downto12, encInstrU.last)
@@ -1823,7 +1832,7 @@ case class SnowHouseRiscv32imConfig(
   val program = ArrayBuffer[AsmStmt]()
 }
 
-case class SnowHouseRiscv32WithoutRamIo(
+case class SnowHouseRiscv32imWithoutRamIo(
   cfg: SnowHouseRiscv32imConfig
 ) extends Bundle {
   val lcvIbus = (
@@ -3285,7 +3294,7 @@ case class SnowHouseRiscv32imWithoutRam(
   cfg: SnowHouseRiscv32imConfig
 ) extends Component {
   //--------
-  val io = SnowHouseRiscv32WithoutRamIo(cfg=cfg)
+  val io = SnowHouseRiscv32imWithoutRamIo(cfg=cfg)
   val cpu = SnowHouse(cfg=cfg.shCfg)
   //--------
   val multiCycleInstrArea = (
@@ -3299,6 +3308,61 @@ case class SnowHouseRiscv32imWithoutRam(
   //  io.dbgInfo := cpu.io.dbgInfo
   //}
 }
+case class SnowHouseRiscv32imWithDuplDualRam(
+  cfg: SnowHouseRiscv32imConfig
+) extends Component {
+
+  val cpu = SnowHouseRiscv32imWithoutRam(cfg=cfg)
+  val program = SnowHouseRam32InitFromBin(
+    filename=cfg.programStr
+  )
+
+  val myMemDepth = 0x4000
+  val myMemInitBigInt = {
+    val depth = myMemDepth
+    val tempArr = new ArrayBuffer[BigInt]()
+    tempArr ++= program.view
+    while (tempArr.size < depth) {
+      tempArr += BigInt(0)
+    }
+    tempArr
+  }
+
+  val myInstrMem = LcvBusMem(
+    cfg=LcvBusMemConfig(
+      busCfg=cfg.shCfg.subCfg.lcvIbusEtcCfg.loBusCfg,
+      depth=myMemDepth,
+      initBigInt=Some(myMemInitBigInt),
+    )
+  )
+  val myDataMem = LcvBusMem(
+    cfg=LcvBusMemConfig(
+      busCfg=cfg.shCfg.subCfg.lcvDbusEtcCfg.loBusCfg,
+      depth=myMemDepth,
+      initBigInt=Some(myMemInitBigInt),
+    )
+  )
+
+  //myInstrMem.io.bus << cpu.io.lcvIbus
+  //myDataMem.io.bus << cpu.io.lcvDbus
+  cpu.io.lcvIbus.h2dBus.translateInto(myInstrMem.io.bus.h2dBus)(
+    dataAssignment=(outp, inp) => {
+      outp.addr.allowOverride
+      outp := inp
+      outp.addr.msb := False
+    }
+  )
+  cpu.io.lcvIbus.d2hBus << myInstrMem.io.bus.d2hBus
+  cpu.io.lcvDbus.h2dBus.translateInto(myDataMem.io.bus.h2dBus)(
+    dataAssignment=(outp, inp) => {
+      outp.addr.allowOverride
+      outp := inp
+      outp.addr.msb := False
+    }
+  )
+  cpu.io.lcvDbus.d2hBus << myDataMem.io.bus.d2hBus
+}
+
 object SnowHouseRiscv32imWithoutRamToVerilog extends App {
   Config.spinal.generateVerilog({
     //val cfg = SnowHouseCpuConfig(
@@ -3315,7 +3379,7 @@ object SnowHouseRiscv32imWithoutRamToVerilog extends App {
       //  true
       //),
       programStr=(
-        "test/snowhousecpu-test-0.bin"
+        "fl4shk-riscv-tests.ignore/rv32ui-p-lw.bin"
         //"test/snowhousecpu-test-1.bin"
         //"test/snowhousecpu-test-2.bin"
         //"test/snowhousecpu-test-3.bin"
@@ -3336,6 +3400,164 @@ object SnowHouseRiscv32imWithoutRamToVerilog extends App {
     //val testProgram = SnowHouseCpuTestProgram(cfg=cfg)
     SnowHouseRiscv32imWithoutRam(cfg=cfg)
   })
+}
+object SnowHouseRiscv32imWithDuplDualRamSim extends App {
+  
+  val programStrArr = Array[String](
+    //"fl4shk-riscv-tests.ignore/rv32ui-p-lw.bin",
+    //"fl4shk-riscv-tests.ignore/rv32ui-p-slti.bin",
+    "fl4shk-riscv-tests.ignore/rv32ui-p-sw.bin",
+    //"fl4shk-riscv-tests.ignore/rv32ui-p-or.bin",
+    //"fl4shk-riscv-tests.ignore/rv32ui-p-lhu.bin",
+    //"fl4shk-riscv-tests.ignore/rv32ui-p-lbu.bin",
+    //"fl4shk-riscv-tests.ignore/rv32ui-p-andi.bin",
+    //"fl4shk-riscv-tests.ignore/rv32ui-p-and.bin",
+    //"fl4shk-riscv-tests.ignore/rv32ui-p-sb.bin",
+    //"fl4shk-riscv-tests.ignore/rv32ui-p-slt.bin",
+    //"fl4shk-riscv-tests.ignore/rv32ui-p-sra.bin",
+    //"fl4shk-riscv-tests.ignore/rv32ui-p-simple.bin",
+    //"fl4shk-riscv-tests.ignore/rv32ui-p-xori.bin",
+    //"fl4shk-riscv-tests.ignore/rv32ui-p-sltiu.bin",
+    //"fl4shk-riscv-tests.ignore/rv32ui-p-srli.bin",
+    //"fl4shk-riscv-tests.ignore/rv32ui-p-blt.bin",
+    //"fl4shk-riscv-tests.ignore/rv32ui-p-srai.bin",
+    //"fl4shk-riscv-tests.ignore/rv32ui-p-sh.bin",
+    //"fl4shk-riscv-tests.ignore/rv32ui-p-ma_data.bin",
+    //"fl4shk-riscv-tests.ignore/rv32ui-p-auipc.bin",
+    //"fl4shk-riscv-tests.ignore/rv32ui-p-jalr.bin",
+    //"fl4shk-riscv-tests.ignore/rv32ui-p-lh.bin",
+    //"fl4shk-riscv-tests.ignore/rv32ui-p-sll.bin",
+    //"fl4shk-riscv-tests.ignore/rv32ui-p-jal.bin",
+    //"fl4shk-riscv-tests.ignore/rv32ui-p-addi.bin",
+    //"fl4shk-riscv-tests.ignore/rv32ui-p-xor.bin",
+    //"fl4shk-riscv-tests.ignore/rv32ui-p-sltu.bin",
+    //"fl4shk-riscv-tests.ignore/rv32ui-p-sub.bin",
+    //"fl4shk-riscv-tests.ignore/rv32ui-p-beq.bin",
+    //"fl4shk-riscv-tests.ignore/rv32ui-p-srl.bin",
+    //"fl4shk-riscv-tests.ignore/rv32ui-p-ori.bin",
+    //"fl4shk-riscv-tests.ignore/rv32ui-p-slli.bin",
+    //"fl4shk-riscv-tests.ignore/rv32ui-p-add.bin",
+    //"fl4shk-riscv-tests.ignore/rv32ui-p-st_ld.bin",
+    //"fl4shk-riscv-tests.ignore/rv32ui-p-bgeu.bin",
+    //"fl4shk-riscv-tests.ignore/rv32ui-p-lb.bin",
+    //"fl4shk-riscv-tests.ignore/rv32ui-p-ld_st.bin",
+    //"fl4shk-riscv-tests.ignore/rv32ui-p-lui.bin",
+    //"fl4shk-riscv-tests.ignore/rv32ui-p-bltu.bin",
+    //"fl4shk-riscv-tests.ignore/rv32ui-p-bge.bin",
+    //"fl4shk-riscv-tests.ignore/rv32ui-p-bne.bin",
+  )
+
+  val testOptTwoCycleRegFileReads = (
+    //true
+    false
+  )
+
+  //val instrRamKindArr = Array[Int](
+  //  0,
+  //  //1,
+  //  //2,
+  //  5,
+  //)
+  for (testIdx <- 0 until programStrArr.size) {
+    val programStr = programStrArr(testIdx)
+
+    val numClkCycles = (
+      8192 * 2
+    )
+
+    val cfg = SnowHouseRiscv32imConfig(
+      optFormal=(
+        //true
+        false
+      ),
+      //targetAltera=(
+      //  true
+      //),
+      programStr=(
+        programStr
+      ),
+      instrRamKind=(
+        //instrRamKind
+        0
+      ),
+    )
+    Config.sim.compile({
+      val toComp = (
+        SnowHouseRiscv32imWithDuplDualRam(
+          cfg=cfg
+        )
+      )
+      //toComp.setDefinitionName(
+      //  s"SnowHouseCpuWithDualRam_${testIdx}_${instrRamKind}"
+      //)
+      toComp
+    }).doSim{dut => {
+      //val pw = new PrintWriter(new File(
+      //  s"test/results/test-${testIdx}-results-${instrRamKind}.txt"
+      //))
+      //pw.write(
+      //  s"Starting test:"
+      //  + s"programStr:${programStr} instrRamKind:${instrRamKind}"
+      //  + s"\n"
+      //)
+      //val mySavedGprArr = new ArrayBuffer[Long]()
+      //for (idx <- 0 until cfg.numGprs) {
+      //  mySavedGprArr += 0.toLong
+      //}
+
+      dut.clockDomain.forkStimulus(10)
+      for (i <- 0 until numClkCycles) {
+        dut.clockDomain.waitSampling()
+        //val myRegFileWriteEnable = dut.io.regFileWriteEnable.toBoolean
+        //val myRegFileWriteAddr = dut.io.regFileWriteAddr.toLong
+        //val myRegFileWriteData = dut.io.regFileWriteData.toLong
+        //val myLaggingRegPc = dut.io.laggingRegPcAtRegFileWrite.toLong
+
+        //if (myRegFileWriteEnable) {
+        //  if (
+        //    myRegFileWriteData
+        //    != mySavedGprArr(myRegFileWriteAddr.toInt)
+        //  ) {
+        //    pw.write(
+        //      //s"pc:${myLaggingRegPc} "
+        //      s""
+        //      + s"addr:${myRegFileWriteAddr} "
+        //      + s"data:${myRegFileWriteData}\n"
+        //    )
+        //    mySavedGprArr(myRegFileWriteAddr.toInt) = myRegFileWriteData
+        //    //for (idx <- 0 until mySavedGprArr.size) {
+        //    //  tempStr += s"r${idx}=${mySavedGprArr(idx)}"
+        //    //  if (idx + 1 < mySavedGprArr.size) {
+        //    //    tempStr += " "
+        //    //  } else {
+        //    //    tempStr += "\n\n"
+        //    //  }
+        //    //}
+        //    //pw.write(tempStr)
+        //  }
+        //}
+        ////if (!grabRegFileOutputs) {
+        ////} else {
+        ////}
+        ////for (gprIdx <- 0 until cfg.numGprs) {
+        ////  printf(
+        ////    "r%i=%x ",
+        ////    gprIdx,
+        ////    dut.cpu.regFile.modMem(0)(0).readAsync(
+        ////      address=gprIdx
+        ////    ).toInt
+        ////  )
+        ////  if (gprIdx % 4 == 3) {
+        ////    printf("\n")
+        ////  }
+        ////}
+      }
+      //pw.write(
+      //  s"Ending test.\n\n"
+      //)
+      //pw.close()
+    }}
+  }
 }
 //object Riscv32imOp {
 //  private var _opCnt: Int = 0

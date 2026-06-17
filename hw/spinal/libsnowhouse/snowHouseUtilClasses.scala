@@ -608,6 +608,7 @@ case class SnowHouseConfig(
   opInfoMap: LinkedHashMap[Any, OpInfo],
   irqJmpOp: Int,
   //irqRetIraOp: Int,
+  optShiftRegPcImmAddend: Boolean=false,
   //--------
   doInstrDecodeFunc: (SnowHousePipeStageInstrDecode) => Area,
   optBranchPredictorKind: Option[SnowHouseBranchPredictorKind],
@@ -876,8 +877,8 @@ case class SnowHouseConfig(
       ) else (
         //3
         //2
-        //1
-        0
+        1
+        //0
         //-1
       )
     ),
@@ -1823,6 +1824,9 @@ case class SnowHousePipePayloadNonExt(
   //val myExt = Vec.fill(cfg.regFileCfg.memArrSize)(
   //  mkOneExt()
   //)
+  val myDbusHostPayload = (
+    BusHostPayload(cfg=cfg, isIbus=false)
+  )
   val myFwd = (
     myHaveFormalFwd
   ) generate (
@@ -1884,6 +1888,7 @@ case class SnowHousePipePayload(
 
   def myHaveFormalFwd = nonExt.myHaveFormalFwd
 
+  def myDbusHostPayload = nonExt.myDbusHostPayload
   def myFwd = nonExt.myFwd
 
   def mkOneExt(ydx: Int) = (

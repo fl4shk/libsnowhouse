@@ -13,6 +13,8 @@ import libcheesevoyage.math._
 import libcheesevoyage.bus.lcvStall._
 import libcheesevoyage.bus.lcvBus._
 
+import java.io._
+
 //sealed trait SnowHouseInstrSourceKind
 //case class SnowHouseInstrRamIo(
 //  cfg: SnowHouseConfig
@@ -1534,6 +1536,7 @@ case class SnowHouse
     //)
   )
   val shouldIgnoreInstr = Bool()
+  //val psMemToEarlierStallRequest = Bool()
   val psWbToEarlierStallRequest = Bool()
   //--------
   val myModMemWord = SInt(cfg.mainWidth bits)
@@ -1841,6 +1844,7 @@ case class SnowHouse
     //    psIdPostFoundBubble
     //  )
     //)
+    //psMemToEarlierStallRequest=psMemToEarlierStallRequest,
     psWbToEarlierStallRequest=psWbToEarlierStallRequest,
   )
   //--------
@@ -1908,6 +1912,7 @@ case class SnowHouse
       //myDbusExtraReady=myDbusExtraReady,
       //myDbusLdReady=myDbusLdReady,
       myModMemWord=myModMemWord,
+      //psMemToEarlierStallRequest=psMemToEarlierStallRequest,
       psWbToEarlierStallRequest=psWbToEarlierStallRequest,
     )
   )
@@ -2071,3 +2076,32 @@ case class SnowHouse
 //    )
 //  ))
 //}
+
+object SnowHouseRam32InitFromBin {
+  def apply(
+    filename: String,
+  ) = {
+    var tempArr = new ArrayBuffer[BigInt]()
+    val bis = new BufferedInputStream(new FileInputStream(filename))
+    val myArr = new ArrayBuffer[Int]()
+    Iterator.continually(bis.read())
+      .takeWhile(_ != -1)
+      .foreach(
+        b => {
+          myArr += b.toInt
+          if (myArr.size == 4) {
+            val toAdd = (
+              ((myArr(0) & 0xff) << 0)
+              | ((myArr(1) & 0xff) << 8)
+              | ((myArr(2) & 0xff) << 16)
+              | ((myArr(3) & 0xff) << 24)
+            )
+            tempArr += BigInt(toAdd.toInt)
+            myArr.clear() 
+          }
+        }
+      )
+    bis.close
+    tempArr
+  }
+}
