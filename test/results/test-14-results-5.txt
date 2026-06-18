@@ -911,8 +911,5 @@ addr:5 data:382
 addr:4 data:508
 addr:5 data:383
 addr:5 data:508
-addr:3 data:127
-addr:9 data:508
-addr:1 data:384
 Ending test.
 

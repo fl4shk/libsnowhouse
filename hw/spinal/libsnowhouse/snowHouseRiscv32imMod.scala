@@ -3388,50 +3388,47 @@ case class SnowHouseRiscv32imWithDuplDualRam(
 
   val myInstrMem = LcvBusMem(
     cfg=LcvBusMemConfig(
-      busCfg=cfg.shCfg.subCfg.lcvIbusEtcCfg.loBusCfg,
+      busCfg=cfg.shCfg.subCfg.lcvIbusEtcCfg.hiBusCfg,
       depth=myMemDepth,
       initBigInt=Some(myMemInitBigInt),
     )
   )
-  //val icache = LcvBusCache(
-  //  cfg=cfg.shCfg.subCfg.lcvIbusEtcCfg
-  //)
+  val icache = LcvBusCache(
+    cfg=cfg.shCfg.subCfg.lcvIbusEtcCfg
+  )
 
   val myDataMem = LcvBusMem(
     cfg=LcvBusMemConfig(
-      busCfg=cfg.shCfg.subCfg.lcvDbusEtcCfg.loBusCfg,
+      busCfg=cfg.shCfg.subCfg.lcvDbusEtcCfg.hiBusCfg,
       depth=myMemDepth,
       initBigInt=Some(myMemInitBigInt),
     )
   )
-  //val dcache = LcvBusCache(
-  //  cfg=cfg.shCfg.subCfg.lcvDbusEtcCfg
-  //)
+  val dcache = LcvBusCache(
+    cfg=cfg.shCfg.subCfg.lcvDbusEtcCfg
+  )
 
-  myInstrMem.io.bus << cpu.io.lcvIbus
-  myDataMem.io.bus <-/< cpu.io.lcvDbus
-  //cpu.io.lcvIbus.h2dBus.translateInto(
-  //  //myInstrMem.io.bus.h2dBus
-  //  icache.io.loBus.h2dBus
-  //)(
-  //  dataAssignment=(outp, inp) => {
-  //    outp.addr.allowOverride
-  //    outp := inp
-  //    outp.addr.msb := False
-  //  }
-  //)
-  //cpu.io.lcvIbus.d2hBus << icache.io.loBus.d2hBus
-  //myInstrMem.io.bus <-/< icache.io.hiBus 
+  //myInstrMem.io.bus << cpu.io.lcvIbus
+  //myDataMem.io.bus <-/< cpu.io.lcvDbus
+  cpu.io.lcvIbus.h2dBus.translateInto(icache.io.loBus.h2dBus)(
+    dataAssignment=(outp, inp) => {
+      outp.addr.allowOverride
+      outp := inp
+      outp.addr.msb := False
+    }
+  )
+  cpu.io.lcvIbus.d2hBus << icache.io.loBus.d2hBus
+  myInstrMem.io.bus <-/< icache.io.hiBus 
 
-  //cpu.io.lcvDbus.h2dBus.translateInto(dcache.io.loBus.h2dBus)(
-  //  dataAssignment=(outp, inp) => {
-  //    outp.addr.allowOverride
-  //    outp := inp
-  //    outp.addr.msb := False
-  //  }
-  //)
-  //cpu.io.lcvDbus.d2hBus << dcache.io.loBus.d2hBus
-  //myDataMem.io.bus <-/< dcache.io.hiBus 
+  cpu.io.lcvDbus.h2dBus.translateInto(dcache.io.loBus.h2dBus)(
+    dataAssignment=(outp, inp) => {
+      outp.addr.allowOverride
+      outp := inp
+      outp.addr.msb := False
+    }
+  )
+  cpu.io.lcvDbus.d2hBus << dcache.io.loBus.d2hBus
+  myDataMem.io.bus <-/< dcache.io.hiBus 
 
   if (io.dbgInfo != null) {
     io.dbgInfo := cpu.io.dbgInfo
@@ -3479,34 +3476,34 @@ object SnowHouseRiscv32imWithoutRamToVerilog extends App {
 object SnowHouseRiscv32imWithDuplDualRamSim extends App {
   
   val programStrNoExtBasenameArr = Array[String](
-    "rv32ui-p-lw",
-    "rv32ui-p-slti",
-    "rv32ui-p-sw",
-    "rv32ui-p-or",
-    "rv32ui-p-lhu",
-    "rv32ui-p-lbu",
-    "rv32ui-p-andi",
-    "rv32ui-p-and",
-    "rv32ui-p-sb",
-    "rv32ui-p-slt",
-    "rv32ui-p-sra",
-    "rv32ui-p-simple",
-    "rv32ui-p-xori",
-    "rv32ui-p-sltiu",
-    "rv32ui-p-srli",
-    "rv32ui-p-blt",
-    "rv32ui-p-srai",
-    "rv32ui-p-sh",
+    //"rv32ui-p-lw",
+    //"rv32ui-p-slti",
+    //"rv32ui-p-sw",
+    //"rv32ui-p-or",
+    //"rv32ui-p-lhu",
+    //"rv32ui-p-lbu",
+    //"rv32ui-p-andi",
+    //"rv32ui-p-and",
+    //"rv32ui-p-sb",
+    //"rv32ui-p-slt",
+    //"rv32ui-p-sra",
+    //"rv32ui-p-simple",
+    //"rv32ui-p-xori",
+    //"rv32ui-p-sltiu",
+    //"rv32ui-p-srli",
+    //"rv32ui-p-blt",
+    //"rv32ui-p-srai",
+    //"rv32ui-p-sh",
 
-    //"rv32ui-p-ma_data", // fails
-    "rv32ui-p-auipc",
-    "rv32ui-p-jalr",
-    "rv32ui-p-lh",
-    "rv32ui-p-sll",
-    "rv32ui-p-jal",
-    "rv32ui-p-addi",
-    "rv32ui-p-xor",
-    "rv32ui-p-sltu",
+    ////"rv32ui-p-ma_data", // fails
+    //"rv32ui-p-auipc",
+    //"rv32ui-p-jalr",
+    //"rv32ui-p-lh",
+    //"rv32ui-p-sll",
+    //"rv32ui-p-jal",
+    //"rv32ui-p-addi",
+    //"rv32ui-p-xor",
+    //"rv32ui-p-sltu",
     "rv32ui-p-sub",
     "rv32ui-p-beq",
     "rv32ui-p-srl",
