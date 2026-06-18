@@ -6563,15 +6563,16 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
                     + s"opInfo(${opInfo}) index:${opInfoIdx}"
                   )
                   when (
-                    RegNextWhen(
-                      (
-                        !io.shouldIgnoreInstr.last
-                        //&& io.splitOp.opIsDualWidth
-                      ),
-                      cond=io.upIsFiring,
-                      init=False
-                    )
-                    && io.splitOp.opIsDualWidth
+                    //RegNextWhen(
+                    //  (
+                    //    !io.shouldIgnoreInstr.last
+                    //    //&& io.splitOp.opIsDualWidth
+                    //  ),
+                    //  cond=io.upIsFiring,
+                    //  init=False
+                    //)
+                    //&&
+                    io.splitOp.opIsDualWidth
                   ) {
                     nextIra := (
                       //io.regPc
