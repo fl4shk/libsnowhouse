@@ -423,6 +423,7 @@ case class SnowHouseSubConfig(
         lineAttrsMemRamStyleXilinx=icacheLineAttrsMemRamStyleXilinx,
       ),
       hiBusCacheCfg=None,
+      busD2hFifoLatency=0,
     )
   )
   val dcacheCfg = (
@@ -468,6 +469,7 @@ case class SnowHouseSubConfig(
         lineAttrsMemRamStyleXilinx=dcacheLineAttrsMemRamStyleXilinx,
       ),
       hiBusCacheCfg=None,
+      busD2hFifoLatency=0,
     )
   )
   val cacheBusSrcWidth = (
