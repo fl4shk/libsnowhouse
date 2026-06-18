@@ -1163,10 +1163,14 @@ object SnowHouseCpuPipeStageInstrDecode {
       ).asUInt
     )
     //tempImm := tempImmNoShift
-    val instrIsPre = (
-      Bool()
-    )
-    instrIsPre := False
+    val instrIsPre = Bool()
+    instrIsPre := RegNext(instrIsPre, init=instrIsPre.getZero)
+    when (
+      psId.up.isFiring
+      && !upPayload.instrCnt.myPsIdBubble.last
+    ) {
+      instrIsPre := False
+    }
     val myTempPreImm = (
       //Cat(
       //  encInstr.last.raIdx,
