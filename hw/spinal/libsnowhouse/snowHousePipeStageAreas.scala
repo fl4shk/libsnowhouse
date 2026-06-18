@@ -3476,7 +3476,7 @@ case class SnowHousePrePipeStageExSetBranchPredictEtcArea(
           outp.laggingRegPc(
             outp.laggingRegPc.high
             downto log2Up(cfg.instrSizeBytes)
-          ) + 1
+          ) - 1 //+ 1
         ),
         U(s"${log2Up(cfg.instrSizeBytes)}'d0"),
       ).asUInt
@@ -4384,9 +4384,11 @@ case class SnowHousePipeStageExecuteSetOutpModMemWordIo(
     Bool()
   )
   val irqIraRegPc = setAsInp(
-    UInt(
-      //cfg.mainWidth bits
-      cfg.mainAddrWidth bits 
+    Vec.fill(2)(
+      UInt(
+        //cfg.mainWidth bits
+        cfg.mainAddrWidth bits 
+      )
     )
   )
   def selRdMemWord(
@@ -6573,15 +6575,18 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
                   ) {
                     nextIra := (
                       //io.regPc
-                      RegNextWhen(
-                        io.irqIraRegPc.resize(nextIra.getWidth),
-                        cond=io.upIsFiring,
-                        init=nextIra.getZero
-                      )
+                      //RegNextWhen(
+                      //  io.irqIraRegPc.resize(nextIra.getWidth),
+                      //  cond=io.upIsFiring,
+                      //  init=nextIra.getZero
+                      //)
+                      io.irqIraRegPc.last.resize(nextIra.getWidth)
                     )
                   } otherwise {
                     //nextIra := 
-                    nextIra := io.irqIraRegPc.resize(nextIra.getWidth)
+                    nextIra := (
+                      io.irqIraRegPc.head.resize(nextIra.getWidth)
+                    )
                   }
                   nextIe/*(0)*/ := False //0x0
                 }
@@ -10099,7 +10104,7 @@ case class SnowHousePipeStageExecute(
   val myNonLcvDbusPartAArea = (
     !cfg.useLcvDataBus
   ) generate (new Area{
-    setOutpModMemWord.io.irqIraRegPc := outp.irqIraRegPc.head
+    setOutpModMemWord.io.irqIraRegPc := outp.irqIraRegPc
     //cMid0Front.up(outpPipePayloadA) := outp
     //doHandleMyDbusPartA()
     myDbus.nextValid := RegNext(myDbus.nextValid, init=False)
@@ -10169,7 +10174,7 @@ case class SnowHousePipeStageExecute(
       nextPrevTxnWasHazard := True
     }
 
-    setOutpModMemWord.io.irqIraRegPc := outp.irqIraRegPc.head
+    setOutpModMemWord.io.irqIraRegPc := outp.irqIraRegPc
   })
 
 
