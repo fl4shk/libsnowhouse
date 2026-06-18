@@ -8303,6 +8303,8 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
                   //- cfg.instrSizeBytes
                 )
               )
+            )(
+              io.psExSetPc.branchTgtBufElem.dstRegPc.bitsRange
             ),
             init=io.psExSetPc.branchTgtBufElem.dstRegPc.getZero,
           )
@@ -8341,7 +8343,7 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
               cfg.mainAddrWidth - 1 downto 0
             ),
             init=io.psExSetPc.branchTgtBufElem.dstRegPc.getZero,
-          )
+          )(io.psExSetPc.branchTgtBufElem.dstRegPc.bitsRange)
         )
         //io.psExSetPc.branchTgtBufElem.srcRegPc := (
         //  RegNext(
