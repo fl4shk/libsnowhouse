@@ -977,6 +977,7 @@ object SnowHouseRiscv32imPipeStageInstrDecode {
       //False
       encInstrS.head.opcode === SwRdRs1Imm.op
     )
+    psId.myTempOpIsDualWidth := False
 
     def setOp(
       someOp: Any,

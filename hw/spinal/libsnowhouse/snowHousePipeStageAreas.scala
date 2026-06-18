@@ -3509,6 +3509,7 @@ case class SnowHousePipeStageInstrDecode(
   )
   val myTempOpIsMemAccessLoad = Bool()
   val myTempOpIsMemAccessStore = Bool()
+  val myTempOpIsDualWidth = Bool()
 
   val myTempBtbElem = BranchTgtBufElem(cfg=cfg)
 
@@ -4169,6 +4170,9 @@ case class SnowHousePipeStageInstrDecode(
     when (up.isFiring) {
       rStallState := MyLcvDbusStallState.IDLE
     }
+    upPayload(1).splitOp.opIsDualWidth := (
+      myTempOpIsDualWidth
+    )
     //for (idx <- 0 until numFollowingInstrs) {
     //  //when (rose(rStallState.asBits(idx + 1))) {
     //  //  upPayload(1).branchTgtBuf
@@ -10565,11 +10569,7 @@ case class SnowHousePipeStageExecute(
         setOutpModMemWord.io.btbElemDontPredict := True
         setOutpModMemWord.io.splitOp.setToDefault()
         setOutpModMemWord.io.splitOp.opIsDualWidth := (
-          RegNextWhen(
-            outp.splitOp.opIsDualWidth,
-            cond=cMid0Front.up.isFiring,
-            init=False,
-          )
+          outp.splitOp.opIsDualWidth
         )
         setOutpModMemWord.io.splitOp.exSetNextPcKind := (
           SnowHousePsExSetNextPcKind.Ids

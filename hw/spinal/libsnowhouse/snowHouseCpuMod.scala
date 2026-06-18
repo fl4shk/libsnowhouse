@@ -1248,37 +1248,45 @@ object SnowHouseCpuPipeStageInstrDecode {
     //  (1 << upPayload.splitOp.jmpBrAlwaysEqNeOp.getWidth) - 1
     //)
     upPayload.splitOp.setToDefault()
-    //val rDoAluShiftPost = Reg(Bool(), init=False)
-    when (
-      //rPrevPreImm.last.fire
+    psId.myTempOpIsDualWidth := (
       RegNextWhen(
         next=instrIsPre,
         cond=psId.up.isFiring,
         init=instrIsPre.getZero,
       )
-    ) {
-      upPayload.splitOp.opIsDualWidth := True
-      //upPayload.irqIraRegPc.head := (
-      //  RegNextWhen(
-      //    next=upPayload.irqIraRegPc.head,
-      //    cond=psId.up.isFiring,
-      //    init=upPayload.irqIraRegPc.head.getZero,
-      //  )
-      //)
-    } otherwise {
-      //upPayload.irqIraRegPc.head := (
-      //  //outp.laggingRegPc
-      //  Cat(
-      //    (
-      //      upPayload.laggingRegPc(
-      //        upPayload.laggingRegPc.high
-      //        downto log2Up(cfg.instrSizeBytes)
-      //      )
-      //    ),
-      //    U(s"${log2Up(cfg.instrSizeBytes)}'d0"),
-      //  ).asUInt
-      //)
-    }
+    )
+
+    ////val rDoAluShiftPost = Reg(Bool(), init=False)
+    //when (
+    //  //rPrevPreImm.last.fire
+    //  RegNextWhen(
+    //    next=instrIsPre,
+    //    cond=psId.up.isFiring,
+    //    init=instrIsPre.getZero,
+    //  )
+    //) {
+    //  upPayload.splitOp.opIsDualWidth := True
+    //  //upPayload.irqIraRegPc.head := (
+    //  //  RegNextWhen(
+    //  //    next=upPayload.irqIraRegPc.head,
+    //  //    cond=psId.up.isFiring,
+    //  //    init=upPayload.irqIraRegPc.head.getZero,
+    //  //  )
+    //  //)
+    //} otherwise {
+    //  //upPayload.irqIraRegPc.head := (
+    //  //  //outp.laggingRegPc
+    //  //  Cat(
+    //  //    (
+    //  //      upPayload.laggingRegPc(
+    //  //        upPayload.laggingRegPc.high
+    //  //        downto log2Up(cfg.instrSizeBytes)
+    //  //      )
+    //  //    ),
+    //  //    U(s"${log2Up(cfg.instrSizeBytes)}'d0"),
+    //  //  ).asUInt
+    //  //)
+    //}
     upPayload.aluOp := (
       LcvAluDel1InpOpEnum.ZERO
       //LcvAluDel1InpOpEnum.OP_GET_INP_A
