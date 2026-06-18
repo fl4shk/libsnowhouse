@@ -1745,564 +1745,616 @@ object SnowHouseCpuPipeStageInstrDecode {
     //  rTempState := False
     //}
 
-    switch (encInstr.last.op) {
-      is (AddRaRbRc._1) {
-        when (encInstr.last.rcIdx =/= 0x0) {
-          setOp(AddRaRbRc)
-        } otherwise {
-          setOp(AddRaRbSimm16)
-        }
-      }
-      is (SubRaRbRc._1) {
-        //when (encInstr.last.rcIdx =/= 0x0) {
-          setOp(SubRaRbRc)
-        //} otherwise {
-        //  setOp(SubRaRbSimm16)
-        //}
-      }
-      is (SltuRaRbRc._1) {
-        switch (encInstr.last.imm16(0 downto 0)) {
-          is (SltuRaRbRc._2._1) {
-            setOp(SltuRaRbRc)
+    for (idx <- 0 until encInstr.size) {
+      switch (encInstr(idx).op) {
+        is (LdrRaRbSimm16._1) {
+          if (idx == 1) {
+            //when (encInstr(idx).rcIdx =/= 0x0) {
+            //  setOp(LdrRaRbRc)
+            //} otherwise {
+            //  setOp(LdrRaRbSimm16)
+            //}
+            //upPayload.gprIdxVec(0) := 0x0
+            upPayload.gprIdxVec(0) := encInstr(idx).rbIdx
+            upPayload.gprIdxVec(1) := encInstr(idx).raIdx
+            upPayload.gprIdxVec(2) := encInstr(idx).raIdx
+            upPayload.gprIdxVec.last := encInstr(idx).raIdx
           }
-          is (SltsRaRbRc._2._1) {
-            setOp(SltsRaRbRc)
+
+          switch (encInstr(idx).rcIdx(2 downto 0)) {
+            is (LdrRaRbSimm16._2._1) {
+              if (idx == 0) {
+                psId.myTempOpIsMemAccessLoad := True
+                psId.myTempOpIsMemAccessStore := False
+              } else {
+                setOp(LdrRaRbSimm16)
+              }
+            }
+            is (StrRaRbSimm16._2._1) {
+              if (idx == 0) {
+                psId.myTempOpIsMemAccessLoad := False
+                psId.myTempOpIsMemAccessStore := True
+              } else {
+                setOp(StrRaRbSimm16)
+              }
+            }
+            is (LduhRaRbSimm16._2._1) {
+              if (idx == 0) {
+                psId.myTempOpIsMemAccessLoad := True
+                psId.myTempOpIsMemAccessStore := False
+              } else {
+                setOp(LduhRaRbSimm16)
+              }
+            }
+            is (LdshRaRbSimm16._2._1) {
+              if (idx == 0) {
+                psId.myTempOpIsMemAccessLoad := True
+                psId.myTempOpIsMemAccessStore := False
+              } else {
+                setOp(LdshRaRbSimm16)
+              }
+            }
+            is (LdubRaRbSimm16._2._1) {
+              if (idx == 0) {
+                psId.myTempOpIsMemAccessLoad := True
+                psId.myTempOpIsMemAccessStore := False
+              } else {
+                setOp(LdubRaRbSimm16)
+              }
+            }
+            is (LdsbRaRbSimm16._2._1) {
+              if (idx == 0) {
+                psId.myTempOpIsMemAccessLoad := True
+                psId.myTempOpIsMemAccessStore := False
+              } else {
+                setOp(LdsbRaRbSimm16)
+              }
+            }
+            is (SthRaRbSimm16._2._1) {
+              if (idx == 0) {
+                psId.myTempOpIsMemAccessLoad := False
+                psId.myTempOpIsMemAccessStore := True
+              } else {
+                setOp(SthRaRbSimm16)
+              }
+            }
+            is (StbRaRbSimm16._2._1) {
+              if (idx == 0) {
+                psId.myTempOpIsMemAccessLoad := False
+                psId.myTempOpIsMemAccessStore := True
+              } else {
+                setOp(StbRaRbSimm16)
+              }
+            }
+            //is (CmpxchgRaRbRc._2._1) {
+            //  setOp(CmpxchgRaRbRc)
+            //}
+            //default {
+            //  doDefault()
+            //}
           }
         }
-        //when (encInstr.last.rcIdx === 0x0) {
-        //} otherwise {
-        //}
-      }
-      is (SltuRaRbImm16._1) {
-        switch (encInstr.last.rcIdx(0 downto 0)) {
-          is (SltuRaRbImm16._2._1) {
-            setOp(
-              SltuRaRbImm16,
-              someTempImm=tempImmNoShift,
+        if (idx == 0) {
+          default {
+            psId.myTempOpIsMemAccessLoad := False
+            psId.myTempOpIsMemAccessStore := False
+          }
+        }
+        if (idx == 1) {
+          is (AddRaRbRc._1) {
+            when (encInstr(idx).rcIdx =/= 0x0) {
+              setOp(AddRaRbRc)
+            } otherwise {
+              setOp(AddRaRbSimm16)
+            }
+          }
+          is (SubRaRbRc._1) {
+            //when (encInstr(idx).rcIdx =/= 0x0) {
+              setOp(SubRaRbRc)
+            //} otherwise {
+            //  setOp(SubRaRbSimm16)
+            //}
+          }
+          is (SltuRaRbRc._1) {
+            switch (encInstr(idx).imm16(0 downto 0)) {
+              is (SltuRaRbRc._2._1) {
+                setOp(SltuRaRbRc)
+              }
+              is (SltsRaRbRc._2._1) {
+                setOp(SltsRaRbRc)
+              }
+            }
+            //when (encInstr(idx).rcIdx === 0x0) {
+            //} otherwise {
+            //}
+          }
+          is (SltuRaRbImm16._1) {
+            switch (encInstr(idx).rcIdx(0 downto 0)) {
+              is (SltuRaRbImm16._2._1) {
+                setOp(
+                  SltuRaRbImm16,
+                  someTempImm=tempImmNoShift,
+                )
+              }
+              is (SltsRaRbSimm16._2._1) {
+                setOp(SltsRaRbSimm16)
+              }
+            }
+            //when (encInstr(idx).rcIdx === 0x0) {
+            //} otherwise {
+            //}
+          }
+          is (XorRaRbRc._1) {
+            when (encInstr(idx).rcIdx =/= 0x0) {
+              setOp(XorRaRbRc)
+            } otherwise {
+              setOp(
+                XorRaRbSimm16,
+                //someTempImm=tempImmNoShift,
+              )
+            }
+          }
+          is (OrRaRbRc._1) {
+            when (encInstr(idx).rcIdx =/= 0x0) {
+              setOp(OrRaRbRc)
+            } otherwise {
+              setOp(
+                OrRaRbImm16,
+                someTempImm=tempImmNoShift,
+              )
+            }
+          }
+          is (AndRaRbSimm16._1) {
+            // can this be changed to be more efficient in its encoding?
+            setOp(AndRaRbSimm16)
+          }
+          is (LslRaRbRc._1) {
+            switch (encInstr(idx).imm16(3 downto 0)) {
+              is (LslRaRbRc._2._1) {
+                setOp(LslRaRbRc)
+              }
+              is (LslRaRbImm5._2._1) {
+                setOp(LslRaRbImm5, immShift=true)
+              }
+              is (LsrRaRbRc._2._1) {
+                setOp(LsrRaRbRc)
+              }
+              is (LsrRaRbImm5._2._1) {
+                setOp(LsrRaRbImm5, immShift=true)
+              }
+              is (AsrRaRbRc._2._1) {
+                setOp(AsrRaRbRc)
+              }
+              is (AsrRaRbImm5._2._1) {
+                setOp(AsrRaRbImm5, immShift=true)
+              }
+              is (AndRaRbRc._2._1) {
+                setOp(AndRaRbRc)
+              }
+              //is (CpyRaIds._2._1) {
+              //  setOp(CpyRaIds)
+              //}
+              is (CpyIdsRb._2._1) {
+                setOp(CpyIdsRb)
+              }
+              is (CpyRaIra._2._1) {
+                setOp(CpyRaIra)
+              }
+              //is (CpyIraRb._2._1) {
+              //  setOp(CpyIraRb)
+              //}
+              //is (CpyRaIe._2._1) {
+              //  setOp(CpyRaIe)
+              //}
+              is (CpyIeRb._2._1) {
+                setOp(CpyIeRb)
+              }
+              is (RetIra._2._1) {
+                //psId.nextPrevInstrWasJump := True
+                setOp(RetIra)
+                upPayload.splitOp.exSetNextPcKind := (
+                  SnowHousePsExSetNextPcKind.Ira
+                )
+              }
+              is (CpyRaHi._2._1) {
+                setOp(CpyRaHi)
+              }
+              is (CpyHiRb._2._1) {
+                setOp(CpyHiRb)
+              }
+              default {
+                doDefault()
+              }
+            }
+          }
+          //is (AddRaPcSimm16._1) {
+          //  setOp(AddRaPcSimm16)
+          //}
+          is (UmulwRaRbRc._1) {
+            switch (encInstr(idx).imm16(2 downto 0)) {
+              is (UmulwRaRbRc._2._1) {
+                setOp(UmulwRaRbRc)
+              }
+              is (SmulwRaRbRc._2._1) {
+                setOp(SmulwRaRbRc)
+              }
+              is (UdivRaRbRc._2._1) {
+                setOp(UdivRaRbRc)
+              }
+              is (SdivRaRbRc._2._1) {
+                setOp(SdivRaRbRc)
+              }
+              is (UmodRaRbRc._2._1) {
+                setOp(UmodRaRbRc)
+              }
+              is (SmodRaRbRc._2._1) {
+                setOp(SmodRaRbRc)
+              }
+              is (UdivwRaRbRc._2._1) {
+                setOp(UdivwRaRbRc)
+              }
+              is (SdivwRaRbRc._2._1) {
+                setOp(SdivwRaRbRc)
+              }
+              //is (DivwhiRa._2._1) {
+              //  setOp(DivwhiRa)
+              //}
+              //default {
+              //  doDefault()
+              //}
+            }
+          }
+          is (BeqRaRbSimm._1) {
+            val tempBtbElemWithBrKind = _commonDecodeBranch(
+              //mainWidth=cfg.mainWidth,
+              cfg=cfg,
+              upPayload=upPayload,
+              encInstr=encInstr(idx),
+              optSetOpFunc=Some(setOp),
+              optDoDefaultFunc=Some(doDefault),
+              optSplitOp=Some(upPayload.splitOp),
+              upIsFiring=cId.up.isFiring,
+              downIsFiring=cId.down.isFiring,
+              rPrevPreImm=rPrevPreImm(rPrevPreImm.size - 2),
+              //isPsId=true,
+              regPc=upPayload.regPc,
+              //srcRegPc=(
+              //  //upPayload.myHistRegPc
+              //  //  //(2)
+              //  //  .last
+              //  upPayload.laggingRegPc
+              //  //+ (if (!cfg.useLcvInstrBus) (0) else (1))
+              //  //+ (if (!cfg.useLcvInstrBus) (0) else (cfg.instrSizeBytes))
+              //  //psId.myHistRegPcMinus2Instrs.last
+              //),
+              //regPcPlusImm=upPayload.regPcPlusImm,
+              //dstRegPcNonLshift=(
+              //  //upPayload.regPcPlusImm + (3 * cfg.instrSizeBytes)
+              //  (
+              //    //(
+              //    //  if (!cfg.useLcvInstrBus) (
+              //    //    psId.myHistRegPcPlus1InstrSize.last.asUInt
+              //    //  ) else (
+              //    //    psId.myHistRegPcPlus2InstrSize.last.asUInt
+              //    //  )
+              //    //)
+              //    psId.myHistRegPcPlus1InstrSize.last.asUInt
+              //    //+ (if (!cfg.useLcvInstrBus) (0) else (1))
+              //    + upPayload.imm(2)
+              //    //(
+              //    //  //upPayload.imm(2).high downto log2Up(cfg.instrSizeBytes)
+              //    //)
+              //  ).resize(
+              //    psId.myHistRegPcPlus1InstrSize.last.asUInt.getWidth
+              //    //if (!cfg.useLcvInstrBus) (
+              //    //  psId.myHistRegPcPlus1InstrSize.last.asUInt.getWidth
+              //    //) else (
+              //    //  psId.myHistRegPcPlus2InstrSize.last.asUInt.getWidth
+              //    //)
+              //  )
+              //  //upPayload.laggingRegPcPlus1InstrSize + upPayload.imm(2)
+              //),
+              //branchPredictTkn=upPayload.branchPredictTkn,
+              isBl=false,
+              someTempSimmNoShift=tempSimmNoShift,
             )
+            when (cId.up.isFiring) {
+              myTempBtbElem := (
+                tempBtbElemWithBrKind.btbElem
+              )
+              upPayload.btbElemBranchKind(1) := (
+                tempBtbElemWithBrKind.branchKind
+              )
+            }
           }
-          is (SltsRaRbSimm16._2._1) {
-            setOp(SltsRaRbSimm16)
-          }
-        }
-        //when (encInstr.last.rcIdx === 0x0) {
-        //} otherwise {
-        //}
-      }
-      is (XorRaRbRc._1) {
-        when (encInstr.last.rcIdx =/= 0x0) {
-          setOp(XorRaRbRc)
-        } otherwise {
-          setOp(
-            XorRaRbSimm16,
-            //someTempImm=tempImmNoShift,
-          )
-        }
-      }
-      is (OrRaRbRc._1) {
-        when (encInstr.last.rcIdx =/= 0x0) {
-          setOp(OrRaRbRc)
-        } otherwise {
-          setOp(
-            OrRaRbImm16,
-            someTempImm=tempImmNoShift,
-          )
-        }
-      }
-      is (AndRaRbSimm16._1) {
-        // can this be changed to be more efficient in its encoding?
-        setOp(AndRaRbSimm16)
-      }
-      is (LslRaRbRc._1) {
-        switch (encInstr.last.imm16(3 downto 0)) {
-          is (LslRaRbRc._2._1) {
-            setOp(LslRaRbRc)
-          }
-          is (LslRaRbImm5._2._1) {
-            setOp(LslRaRbImm5, immShift=true)
-          }
-          is (LsrRaRbRc._2._1) {
-            setOp(LsrRaRbRc)
-          }
-          is (LsrRaRbImm5._2._1) {
-            setOp(LsrRaRbImm5, immShift=true)
-          }
-          is (AsrRaRbRc._2._1) {
-            setOp(AsrRaRbRc)
-          }
-          is (AsrRaRbImm5._2._1) {
-            setOp(AsrRaRbImm5, immShift=true)
-          }
-          is (AndRaRbRc._2._1) {
-            setOp(AndRaRbRc)
-          }
-          //is (CpyRaIds._2._1) {
-          //  setOp(CpyRaIds)
-          //}
-          is (CpyIdsRb._2._1) {
-            setOp(CpyIdsRb)
-          }
-          is (CpyRaIra._2._1) {
-            setOp(CpyRaIra)
-          }
-          //is (CpyIraRb._2._1) {
-          //  setOp(CpyIraRb)
-          //}
-          //is (CpyRaIe._2._1) {
-          //  setOp(CpyRaIe)
-          //}
-          is (CpyIeRb._2._1) {
-            setOp(CpyIeRb)
-          }
-          is (RetIra._2._1) {
-            //psId.nextPrevInstrWasJump := True
-            setOp(RetIra)
-            upPayload.splitOp.exSetNextPcKind := (
-              SnowHousePsExSetNextPcKind.Ira
+          is (BlRaSimm24._1) {
+            val tempBtbElemWithBrKind = _commonDecodeBranch(
+              //mainWidth=cfg.mainWidth,
+              cfg=cfg,
+              upPayload=upPayload,
+              encInstr=encInstr(idx),
+              optSetOpFunc=Some(setOp),
+              optDoDefaultFunc=Some(doDefault),
+              optSplitOp=Some(upPayload.splitOp),
+              upIsFiring=cId.up.isFiring,
+              downIsFiring=cId.down.isFiring,
+              rPrevPreImm=rPrevPreImm(rPrevPreImm.size - 2),
+              //isPsId=true,
+              regPc=upPayload.regPc,
+              //srcRegPc=(
+              //  //upPayload.myHistRegPc
+              //  //  //(2)
+              //  //  .last
+              //  upPayload.laggingRegPc
+              //  //+ (if (!cfg.useLcvInstrBus) (0) else (cfg.instrSizeBytes))
+              //  //+ (if (!cfg.useLcvInstrBus) (0) else (1))
+              //  //psId.myHistRegPcMinus2Instrs.last
+              //),
+              //regPcPlusImm=upPayload.regPcPlusImm,
+              //dstRegPcNonLshift=(
+              //  //upPayload.regPcPlusImm + (3 * cfg.instrSizeBytes)
+              //  (
+              //    psId.myHistRegPcPlus1InstrSize.last.asUInt
+              //    //(
+              //    //  if (!cfg.useLcvInstrBus) (
+              //    //    psId.myHistRegPcPlus1InstrSize.last.asUInt
+              //    //  ) else (
+              //    //    psId.myHistRegPcPlus2InstrSize.last.asUInt
+              //    //  )
+              //    //)
+              //    //+ (if (!cfg.useLcvInstrBus) (0) else (1))
+              //    + upPayload.imm(2)
+              //    //(
+              //    //  //upPayload.imm(2).high downto log2Up(cfg.instrSizeBytes)
+              //    //)
+              //  ).resize(
+              //    psId.myHistRegPcPlus1InstrSize.last.asUInt.getWidth
+              //    //if (!cfg.useLcvInstrBus) (
+              //    //  psId.myHistRegPcPlus1InstrSize.last.asUInt.getWidth
+              //    //) else (
+              //    //  psId.myHistRegPcPlus2InstrSize.last.asUInt.getWidth
+              //    //)
+              //  )
+              //  //upPayload.laggingRegPcPlus1InstrSize + upPayload.imm(2)
+              //),
+              //branchPredictTkn=upPayload.branchPredictTkn,
+              isBl=true,
+              someTempSimmNoShift=tempBlSimm,
             )
+            when (cId.up.isFiring) {
+              myTempBtbElem := (
+                tempBtbElemWithBrKind.btbElem
+              )
+              upPayload.btbElemBranchKind(1) := (
+                tempBtbElemWithBrKind.branchKind
+              )
+            }
           }
-          is (CpyRaHi._2._1) {
-            setOp(CpyRaHi)
+          //is (CpyuRaRb._1) {
+          //  switch (encInstr(idx).rcIdx(0 downto 0)) {
+          //    //is (CpyRaRb._2._1) {
+          //    //  setOp(CpyRaRb)
+          //    //}
+          //    //is (CpyRaSimm16._2._1) {
+          //    //  setOp(CpyRaSimm16)
+          //    //}
+          //    is (CpyuRaRb._2._1) {
+          //      setOp(CpyuRaRb)
+          //    }
+          //    is (CpyuRaSimm16._2._1) {
+          //      setOp(CpyuRaSimm16)
+          //    }
+          //  }
+          //}
+          //is (PushRaRb._1) {
+          //  //doDefault()
+          //  switch (encInstr(idx).imm16(1 downto 0)) {
+          //    //when (psId.rMultIn
+          //    is (PushRaRb._2._1) {
+          //      ////upPayload.gprIdxVec(0) := encInstr(idx).rbIdx
+          //      ////upPayload.gprIdxVec(1) := encInstr(idx).raIdx
+          //      //setOp(PushRaRb)
+          //      ////when (psId.startDecode) {
+          //      ////  psId.nextMultiInstrCnt := 1
+          //      ////  setOp(StrRaRbSimm16)
+          //      ////  upPayload.gprIdxVec(0) := encInstr(idx).raIdx
+          //      ////  upPayload.gprIdxVec(1) := encInstr(idx).rbIdx
+          //      ////  upPayload.gprIdxVec(2) := SnowHouseCpuRegs.r0.index
+          //      ////  upPayload.imm := 0x0
+          //      ////} otherwise {
+          //      ////  setOp(AddRaRbSimm16)
+          //      ////  upPayload.gprIdxVec(0) := encInstr(idx).rbIdx
+          //      ////  upPayload.gprIdxVec(1) := encInstr(idx).rbIdx
+          //      ////  upPayload.gprIdxVec(2) := SnowHouseCpuRegs.r0.index
+          //      ////  val tempSImm = SInt(cfg.mainWidth bits)
+          //      ////  tempSImm := -(cfg.mainWidth / 8)
+          //      ////  upPayload.imm := tempSImm.asUInt
+          //      ////}
+          //      if (cfg.irqCfg != None) {
+          //        upPayload.blockIrq := True
+          //      }
+          //      when (psId.rMultiInstrCnt.msb) {
+          //        when (psId.startDecode) {
+          //          when (cId.up.isFiring) {
+          //            psId.nextMultiInstrCnt := 0x0
+          //            setOp(LdrRaRbSimm16)
+          //          }
+          //          upPayload.imm.foreach(imm => {
+          //            imm := 0x0
+          //          })
+          //        }
+          //      } otherwise {
+          //        when (cId.down.isFiring) {
+          //          setOp(AddRaRbSimm16)
+          //        }
+          //        upPayload.gprIdxVec(0) := encInstr(idx).rbIdx
+
+          //        upPayload.imm.foreach(imm => {
+          //          imm := (cfg.mainWidth / 8) //tempSImm.asUInt
+          //        })
+          //      }
+          //    }
+          //    is (PopRaRb._2._1) {
+          //      if (cfg.irqCfg != None) {
+          //        upPayload.blockIrq := True
+          //      }
+          //      when (psId.rMultiInstrCnt.msb) {
+          //        when (psId.startDecode) {
+          //          when (cId.up.isFiring) {
+          //            psId.nextMultiInstrCnt := 0x0
+          //            setOp(AddRaRbSimm16)
+          //          }
+          //        }
+          //        upPayload.gprIdxVec(0) := encInstr(idx).rbIdx
+          //        val tempSImm = SInt(cfg.mainWidth bits)
+          //        tempSImm := -(cfg.mainWidth / 8)
+          //        upPayload.imm.foreach(imm => {
+          //          imm := tempSImm.asUInt
+          //        })
+          //      } otherwise {
+          //        when (cId.down.isFiring) {
+          //          setOp(LdrRaRbSimm16)
+          //        }
+          //        upPayload.imm.foreach(imm => {
+          //          imm := 0x0
+          //        })
+          //      }
+          //    }
+          //    is (PopPcRb._2._1) {
+          //      if (cfg.irqCfg != None) {
+          //        upPayload.blockIrq := True
+          //      }
+          //      when (
+          //        //!rTempState
+          //        psId.rMultiInstrCnt.msb
+          //      ) {
+          //        when (psId.startDecode) {
+          //          when (
+          //            cId.up.isFiring
+          //            //cId.down.isFiring
+          //          ) {
+          //            //rTempState := True
+          //            //dontChangeTempState := True
+          //            psId.nextMultiInstrCnt := 0x1
+          //            //doDefault()
+          //            setOp(AddRaRbSimm16)
+          //          }
+          //        }
+          //        upPayload.gprIdxVec(0) := encInstr(idx).rbIdx
+          //        //upPayload.gprIdxVec(1) := encInstr(idx).rbIdx
+          //        //upPayload.gprIdxVec(2) := SnowHouseCpuRegs.r0.index
+          //        //val tempSImm = SInt(cfg.mainWidth bits)
+          //        //tempSImm := -(cfg.mainWidth / 8)
+          //        val tempSImm = SInt(cfg.mainWidth bits)
+          //        tempSImm := -(cfg.mainWidth / 8)
+          //        upPayload.imm.foreach(imm => {
+          //          imm := tempSImm.asUInt
+          //        })
+          //      } otherwise {
+          //        //when (psId.startDecode) {
+          //        when (cId.down.isFiring) {
+          //          when (psId.rMultiInstrCnt(0 downto 0) === 1) {
+          //            setOp(
+          //              //LdrRaRbSimm16
+          //              PopPcRb._1
+          //            )
+          //            //upPayload.gprIdxVec(0) := SnowHouseCpuRegs.r0.index//encInstr.raIdx
+          //            //upPayload.gprIdxVec(1) := encInstr(idx).rbIdx
+          //            //upPayload.gprIdxVec(2) := SnowHouseCpuRegs.r0.index
+          //            upPayload.imm.foreach(imm => {
+          //              imm := 0x0
+          //            })
+          //          } otherwise {
+          //            setOp(
+          //              //LdrRaRbSimm16
+          //              PopPcRb._2
+          //            )
+          //            //upPayload.gprIdxVec(0) := SnowHouseCpuRegs.r0.index//encInstr.raIdx
+          //            //upPayload.gprIdxVec(1) := encInstr(idx).rbIdx
+          //            //upPayload.gprIdxVec(2) := SnowHouseCpuRegs.r0.index
+          //            upPayload.imm.foreach(imm => {
+          //              imm := 0x0
+          //            })
+          //          }
+          //        }
+          //        //}
+          //      }
+          //    }
+          //    default {
+          //      doDefault()
+          //    }
+          //  }
+          //}
+          //is (LdrPdRbSimm16._1) {
+          //  switch (encInstr(idx).rcIdx(0 downto 0)) {
+          //    is (LdrPdRbSimm16._2._1) {
+          //      //setOp(LdrPdRbSimm16)
+          //      upPayload.gprIdxVec(0) := SnowHouseCpuRegs.popData.index
+          //      setOp(LdrRaRbSimm16)
+          //    }
+          //    is (JmpPd._2._1) {
+          //      //setOp(JmpPd)
+          //      //setOp(
+          //      //  
+          //      //)
+          //      upPayload.gprIdxVec(0) := SnowHouseCpuRegs.r0.index
+          //      upPayload.gprIdxVec(1) := SnowHouseCpuRegs.popData.index
+          //    }
+          //  }
+          //}
+          is (PreImm16._1) {
+            doDefault(
+              //doSetImm=false
+            )
+            //when (
+            //  //!psId.rSavedExSetPc.fire
+            //  //!psId.upPayload.psIfRegPcSetItCnt(0)
+            //  //!upPayload.psIfRegPcSetItCnt(0)
+            //  //RegNextWhen(
+            //  //  next=(!upPayload.psIfRegPcSetItCnt(0)),
+            //  //  cond=cId.up.isFiring,
+            //  //  init=False
+            //  //)
+            //  !psId.shouldFinishJump
+            //) {
+              instrIsPre := True//!psId.shouldClearExtraDecodeInfo //True
+            //}
+            //when (!rMultiCycleState) {
+              //when (cId.up.isFiring) {
+              //  //if (cfg.irqCfg != None) {
+              //  //  upPayload.blockIrq := True
+              //  //}
+              //  when (rMultiCycleState === MultiCycleState.Idle) {
+              //    if (cfg.irqCfg != None) {
+              //      upPayload.blockIrq := True
+              //    }
+              //    when (!psId.psExSetPc.fire) {
+              //      nextMultiCycleState := MultiCycleState.DidntSetPc
+              //    } otherwise {
+              //      nextMultiCycleState := MultiCycleState.DidSetPc
+              //    }
+              //  }
+              //  //when (
+              //  //  //canStartMultiCycleState
+              //  //) {
+              //  //  //when (!rMultiCycleState) {
+              //  //  //  nextMultiCycleState := True
+              //  //  //}
+              //  //}
+              //}
+            //} otherwise {
+            //  if(cfg.irqCfg != None) {
+            //    upPayload.blockIrq := False
+            //  }
+            //}
           }
-          is (CpyHiRb._2._1) {
-            setOp(CpyHiRb)
-          }
+          //is (CmpxchgRaRbRc._1) {
+          //  setOp(CmpxchgRaRbRc)
+          //}
           default {
             doDefault()
           }
         }
-      }
-      //is (AddRaPcSimm16._1) {
-      //  setOp(AddRaPcSimm16)
-      //}
-      is (UmulwRaRbRc._1) {
-        switch (encInstr.last.imm16(2 downto 0)) {
-          is (UmulwRaRbRc._2._1) {
-            setOp(UmulwRaRbRc)
-          }
-          is (SmulwRaRbRc._2._1) {
-            setOp(SmulwRaRbRc)
-          }
-          is (UdivRaRbRc._2._1) {
-            setOp(UdivRaRbRc)
-          }
-          is (SdivRaRbRc._2._1) {
-            setOp(SdivRaRbRc)
-          }
-          is (UmodRaRbRc._2._1) {
-            setOp(UmodRaRbRc)
-          }
-          is (SmodRaRbRc._2._1) {
-            setOp(SmodRaRbRc)
-          }
-          is (UdivwRaRbRc._2._1) {
-            setOp(UdivwRaRbRc)
-          }
-          is (SdivwRaRbRc._2._1) {
-            setOp(SdivwRaRbRc)
-          }
-          //is (DivwhiRa._2._1) {
-          //  setOp(DivwhiRa)
-          //}
-          //default {
-          //  doDefault()
-          //}
-        }
-      }
-      is (LdrRaRbSimm16._1) {
-        //when (encInstr.last.rcIdx =/= 0x0) {
-        //  setOp(LdrRaRbRc)
-        //} otherwise {
-        //  setOp(LdrRaRbSimm16)
-        //}
-        //upPayload.gprIdxVec(0) := 0x0
-        upPayload.gprIdxVec(0) := encInstr.last.rbIdx
-        upPayload.gprIdxVec(1) := encInstr.last.raIdx
-        upPayload.gprIdxVec(2) := encInstr.last.raIdx
-        upPayload.gprIdxVec.last := encInstr.last.raIdx
-
-        switch (encInstr.last.rcIdx(2 downto 0)) {
-          is (LdrRaRbSimm16._2._1) {
-            setOp(LdrRaRbSimm16)
-          }
-          is (StrRaRbSimm16._2._1) {
-            setOp(StrRaRbSimm16)
-          }
-          is (LduhRaRbSimm16._2._1) {
-            setOp(LduhRaRbSimm16)
-          }
-          is (LdshRaRbSimm16._2._1) {
-            setOp(LdshRaRbSimm16)
-          }
-          is (LdubRaRbSimm16._2._1) {
-            setOp(LdubRaRbSimm16)
-          }
-          is (LdsbRaRbSimm16._2._1) {
-            setOp(LdsbRaRbSimm16)
-          }
-          is (SthRaRbSimm16._2._1) {
-            setOp(SthRaRbSimm16)
-          }
-          is (StbRaRbSimm16._2._1) {
-            setOp(StbRaRbSimm16)
-          }
-          //is (CmpxchgRaRbRc._2._1) {
-          //  setOp(CmpxchgRaRbRc)
-          //}
-          //default {
-          //  doDefault()
-          //}
-        }
-      }
-      is (BeqRaRbSimm._1) {
-        val tempBtbElemWithBrKind = _commonDecodeBranch(
-          //mainWidth=cfg.mainWidth,
-          cfg=cfg,
-          upPayload=upPayload,
-          encInstr=encInstr.last,
-          optSetOpFunc=Some(setOp),
-          optDoDefaultFunc=Some(doDefault),
-          optSplitOp=Some(upPayload.splitOp),
-          upIsFiring=cId.up.isFiring,
-          downIsFiring=cId.down.isFiring,
-          rPrevPreImm=rPrevPreImm(rPrevPreImm.size - 2),
-          //isPsId=true,
-          regPc=upPayload.regPc,
-          //srcRegPc=(
-          //  //upPayload.myHistRegPc
-          //  //  //(2)
-          //  //  .last
-          //  upPayload.laggingRegPc
-          //  //+ (if (!cfg.useLcvInstrBus) (0) else (1))
-          //  //+ (if (!cfg.useLcvInstrBus) (0) else (cfg.instrSizeBytes))
-          //  //psId.myHistRegPcMinus2Instrs.last
-          //),
-          //regPcPlusImm=upPayload.regPcPlusImm,
-          //dstRegPcNonLshift=(
-          //  //upPayload.regPcPlusImm + (3 * cfg.instrSizeBytes)
-          //  (
-          //    //(
-          //    //  if (!cfg.useLcvInstrBus) (
-          //    //    psId.myHistRegPcPlus1InstrSize.last.asUInt
-          //    //  ) else (
-          //    //    psId.myHistRegPcPlus2InstrSize.last.asUInt
-          //    //  )
-          //    //)
-          //    psId.myHistRegPcPlus1InstrSize.last.asUInt
-          //    //+ (if (!cfg.useLcvInstrBus) (0) else (1))
-          //    + upPayload.imm(2)
-          //    //(
-          //    //  //upPayload.imm(2).high downto log2Up(cfg.instrSizeBytes)
-          //    //)
-          //  ).resize(
-          //    psId.myHistRegPcPlus1InstrSize.last.asUInt.getWidth
-          //    //if (!cfg.useLcvInstrBus) (
-          //    //  psId.myHistRegPcPlus1InstrSize.last.asUInt.getWidth
-          //    //) else (
-          //    //  psId.myHistRegPcPlus2InstrSize.last.asUInt.getWidth
-          //    //)
-          //  )
-          //  //upPayload.laggingRegPcPlus1InstrSize + upPayload.imm(2)
-          //),
-          //branchPredictTkn=upPayload.branchPredictTkn,
-          isBl=false,
-          someTempSimmNoShift=tempSimmNoShift,
-        )
-        when (cId.up.isFiring) {
-          myTempBtbElem := (
-            tempBtbElemWithBrKind.btbElem
-          )
-          upPayload.btbElemBranchKind(1) := (
-            tempBtbElemWithBrKind.branchKind
-          )
-        }
-      }
-      is (BlRaSimm24._1) {
-        val tempBtbElemWithBrKind = _commonDecodeBranch(
-          //mainWidth=cfg.mainWidth,
-          cfg=cfg,
-          upPayload=upPayload,
-          encInstr=encInstr.last,
-          optSetOpFunc=Some(setOp),
-          optDoDefaultFunc=Some(doDefault),
-          optSplitOp=Some(upPayload.splitOp),
-          upIsFiring=cId.up.isFiring,
-          downIsFiring=cId.down.isFiring,
-          rPrevPreImm=rPrevPreImm(rPrevPreImm.size - 2),
-          //isPsId=true,
-          regPc=upPayload.regPc,
-          //srcRegPc=(
-          //  //upPayload.myHistRegPc
-          //  //  //(2)
-          //  //  .last
-          //  upPayload.laggingRegPc
-          //  //+ (if (!cfg.useLcvInstrBus) (0) else (cfg.instrSizeBytes))
-          //  //+ (if (!cfg.useLcvInstrBus) (0) else (1))
-          //  //psId.myHistRegPcMinus2Instrs.last
-          //),
-          //regPcPlusImm=upPayload.regPcPlusImm,
-          //dstRegPcNonLshift=(
-          //  //upPayload.regPcPlusImm + (3 * cfg.instrSizeBytes)
-          //  (
-          //    psId.myHistRegPcPlus1InstrSize.last.asUInt
-          //    //(
-          //    //  if (!cfg.useLcvInstrBus) (
-          //    //    psId.myHistRegPcPlus1InstrSize.last.asUInt
-          //    //  ) else (
-          //    //    psId.myHistRegPcPlus2InstrSize.last.asUInt
-          //    //  )
-          //    //)
-          //    //+ (if (!cfg.useLcvInstrBus) (0) else (1))
-          //    + upPayload.imm(2)
-          //    //(
-          //    //  //upPayload.imm(2).high downto log2Up(cfg.instrSizeBytes)
-          //    //)
-          //  ).resize(
-          //    psId.myHistRegPcPlus1InstrSize.last.asUInt.getWidth
-          //    //if (!cfg.useLcvInstrBus) (
-          //    //  psId.myHistRegPcPlus1InstrSize.last.asUInt.getWidth
-          //    //) else (
-          //    //  psId.myHistRegPcPlus2InstrSize.last.asUInt.getWidth
-          //    //)
-          //  )
-          //  //upPayload.laggingRegPcPlus1InstrSize + upPayload.imm(2)
-          //),
-          //branchPredictTkn=upPayload.branchPredictTkn,
-          isBl=true,
-          someTempSimmNoShift=tempBlSimm,
-        )
-        when (cId.up.isFiring) {
-          myTempBtbElem := (
-            tempBtbElemWithBrKind.btbElem
-          )
-          upPayload.btbElemBranchKind(1) := (
-            tempBtbElemWithBrKind.branchKind
-          )
-        }
-      }
-      //is (CpyuRaRb._1) {
-      //  switch (encInstr.last.rcIdx(0 downto 0)) {
-      //    //is (CpyRaRb._2._1) {
-      //    //  setOp(CpyRaRb)
-      //    //}
-      //    //is (CpyRaSimm16._2._1) {
-      //    //  setOp(CpyRaSimm16)
-      //    //}
-      //    is (CpyuRaRb._2._1) {
-      //      setOp(CpyuRaRb)
-      //    }
-      //    is (CpyuRaSimm16._2._1) {
-      //      setOp(CpyuRaSimm16)
-      //    }
-      //  }
-      //}
-      //is (PushRaRb._1) {
-      //  //doDefault()
-      //  switch (encInstr.last.imm16(1 downto 0)) {
-      //    //when (psId.rMultIn
-      //    is (PushRaRb._2._1) {
-      //      ////upPayload.gprIdxVec(0) := encInstr.last.rbIdx
-      //      ////upPayload.gprIdxVec(1) := encInstr.last.raIdx
-      //      //setOp(PushRaRb)
-      //      ////when (psId.startDecode) {
-      //      ////  psId.nextMultiInstrCnt := 1
-      //      ////  setOp(StrRaRbSimm16)
-      //      ////  upPayload.gprIdxVec(0) := encInstr.last.raIdx
-      //      ////  upPayload.gprIdxVec(1) := encInstr.last.rbIdx
-      //      ////  upPayload.gprIdxVec(2) := SnowHouseCpuRegs.r0.index
-      //      ////  upPayload.imm := 0x0
-      //      ////} otherwise {
-      //      ////  setOp(AddRaRbSimm16)
-      //      ////  upPayload.gprIdxVec(0) := encInstr.last.rbIdx
-      //      ////  upPayload.gprIdxVec(1) := encInstr.last.rbIdx
-      //      ////  upPayload.gprIdxVec(2) := SnowHouseCpuRegs.r0.index
-      //      ////  val tempSImm = SInt(cfg.mainWidth bits)
-      //      ////  tempSImm := -(cfg.mainWidth / 8)
-      //      ////  upPayload.imm := tempSImm.asUInt
-      //      ////}
-      //      if (cfg.irqCfg != None) {
-      //        upPayload.blockIrq := True
-      //      }
-      //      when (psId.rMultiInstrCnt.msb) {
-      //        when (psId.startDecode) {
-      //          when (cId.up.isFiring) {
-      //            psId.nextMultiInstrCnt := 0x0
-      //            setOp(LdrRaRbSimm16)
-      //          }
-      //          upPayload.imm.foreach(imm => {
-      //            imm := 0x0
-      //          })
-      //        }
-      //      } otherwise {
-      //        when (cId.down.isFiring) {
-      //          setOp(AddRaRbSimm16)
-      //        }
-      //        upPayload.gprIdxVec(0) := encInstr.last.rbIdx
-
-      //        upPayload.imm.foreach(imm => {
-      //          imm := (cfg.mainWidth / 8) //tempSImm.asUInt
-      //        })
-      //      }
-      //    }
-      //    is (PopRaRb._2._1) {
-      //      if (cfg.irqCfg != None) {
-      //        upPayload.blockIrq := True
-      //      }
-      //      when (psId.rMultiInstrCnt.msb) {
-      //        when (psId.startDecode) {
-      //          when (cId.up.isFiring) {
-      //            psId.nextMultiInstrCnt := 0x0
-      //            setOp(AddRaRbSimm16)
-      //          }
-      //        }
-      //        upPayload.gprIdxVec(0) := encInstr.last.rbIdx
-      //        val tempSImm = SInt(cfg.mainWidth bits)
-      //        tempSImm := -(cfg.mainWidth / 8)
-      //        upPayload.imm.foreach(imm => {
-      //          imm := tempSImm.asUInt
-      //        })
-      //      } otherwise {
-      //        when (cId.down.isFiring) {
-      //          setOp(LdrRaRbSimm16)
-      //        }
-      //        upPayload.imm.foreach(imm => {
-      //          imm := 0x0
-      //        })
-      //      }
-      //    }
-      //    is (PopPcRb._2._1) {
-      //      if (cfg.irqCfg != None) {
-      //        upPayload.blockIrq := True
-      //      }
-      //      when (
-      //        //!rTempState
-      //        psId.rMultiInstrCnt.msb
-      //      ) {
-      //        when (psId.startDecode) {
-      //          when (
-      //            cId.up.isFiring
-      //            //cId.down.isFiring
-      //          ) {
-      //            //rTempState := True
-      //            //dontChangeTempState := True
-      //            psId.nextMultiInstrCnt := 0x1
-      //            //doDefault()
-      //            setOp(AddRaRbSimm16)
-      //          }
-      //        }
-      //        upPayload.gprIdxVec(0) := encInstr.last.rbIdx
-      //        //upPayload.gprIdxVec(1) := encInstr.last.rbIdx
-      //        //upPayload.gprIdxVec(2) := SnowHouseCpuRegs.r0.index
-      //        //val tempSImm = SInt(cfg.mainWidth bits)
-      //        //tempSImm := -(cfg.mainWidth / 8)
-      //        val tempSImm = SInt(cfg.mainWidth bits)
-      //        tempSImm := -(cfg.mainWidth / 8)
-      //        upPayload.imm.foreach(imm => {
-      //          imm := tempSImm.asUInt
-      //        })
-      //      } otherwise {
-      //        //when (psId.startDecode) {
-      //        when (cId.down.isFiring) {
-      //          when (psId.rMultiInstrCnt(0 downto 0) === 1) {
-      //            setOp(
-      //              //LdrRaRbSimm16
-      //              PopPcRb._1
-      //            )
-      //            //upPayload.gprIdxVec(0) := SnowHouseCpuRegs.r0.index//encInstr.raIdx
-      //            //upPayload.gprIdxVec(1) := encInstr.last.rbIdx
-      //            //upPayload.gprIdxVec(2) := SnowHouseCpuRegs.r0.index
-      //            upPayload.imm.foreach(imm => {
-      //              imm := 0x0
-      //            })
-      //          } otherwise {
-      //            setOp(
-      //              //LdrRaRbSimm16
-      //              PopPcRb._2
-      //            )
-      //            //upPayload.gprIdxVec(0) := SnowHouseCpuRegs.r0.index//encInstr.raIdx
-      //            //upPayload.gprIdxVec(1) := encInstr.last.rbIdx
-      //            //upPayload.gprIdxVec(2) := SnowHouseCpuRegs.r0.index
-      //            upPayload.imm.foreach(imm => {
-      //              imm := 0x0
-      //            })
-      //          }
-      //        }
-      //        //}
-      //      }
-      //    }
-      //    default {
-      //      doDefault()
-      //    }
-      //  }
-      //}
-      //is (LdrPdRbSimm16._1) {
-      //  switch (encInstr.last.rcIdx(0 downto 0)) {
-      //    is (LdrPdRbSimm16._2._1) {
-      //      //setOp(LdrPdRbSimm16)
-      //      upPayload.gprIdxVec(0) := SnowHouseCpuRegs.popData.index
-      //      setOp(LdrRaRbSimm16)
-      //    }
-      //    is (JmpPd._2._1) {
-      //      //setOp(JmpPd)
-      //      //setOp(
-      //      //  
-      //      //)
-      //      upPayload.gprIdxVec(0) := SnowHouseCpuRegs.r0.index
-      //      upPayload.gprIdxVec(1) := SnowHouseCpuRegs.popData.index
-      //    }
-      //  }
-      //}
-      is (PreImm16._1) {
-        doDefault(
-          //doSetImm=false
-        )
-        //when (
-        //  //!psId.rSavedExSetPc.fire
-        //  //!psId.upPayload.psIfRegPcSetItCnt(0)
-        //  //!upPayload.psIfRegPcSetItCnt(0)
-        //  //RegNextWhen(
-        //  //  next=(!upPayload.psIfRegPcSetItCnt(0)),
-        //  //  cond=cId.up.isFiring,
-        //  //  init=False
-        //  //)
-        //  !psId.shouldFinishJump
-        //) {
-          instrIsPre := True//!psId.shouldClearExtraDecodeInfo //True
-        //}
-        //when (!rMultiCycleState) {
-          //when (cId.up.isFiring) {
-          //  //if (cfg.irqCfg != None) {
-          //  //  upPayload.blockIrq := True
-          //  //}
-          //  when (rMultiCycleState === MultiCycleState.Idle) {
-          //    if (cfg.irqCfg != None) {
-          //      upPayload.blockIrq := True
-          //    }
-          //    when (!psId.psExSetPc.fire) {
-          //      nextMultiCycleState := MultiCycleState.DidntSetPc
-          //    } otherwise {
-          //      nextMultiCycleState := MultiCycleState.DidSetPc
-          //    }
-          //  }
-          //  //when (
-          //  //  //canStartMultiCycleState
-          //  //) {
-          //  //  //when (!rMultiCycleState) {
-          //  //  //  nextMultiCycleState := True
-          //  //  //}
-          //  //}
-          //}
-        //} otherwise {
-        //  if(cfg.irqCfg != None) {
-        //    upPayload.blockIrq := False
-        //  }
-        //}
-      }
-      //is (CmpxchgRaRbRc._1) {
-      //  setOp(CmpxchgRaRbRc)
-      //}
-      default {
-        doDefault()
       }
     }
     //val rHadAluShiftHazard = (
@@ -7716,8 +7768,8 @@ object SnowHouseCpuWithDualRamSim extends App {
     //8, 8,
     //9, 9,
     //10, 10,
-    11, //11,
-    //12, 12,
+    //11, //11,
+    12, 12,
     //13, //13,
     //14, 14,
     15, 15,
