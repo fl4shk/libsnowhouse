@@ -970,6 +970,13 @@ object SnowHouseRiscv32imPipeStageInstrDecode {
 
     val mySplitOp = upPayload.splitOp
 
+    psId.myTempOpIsMemAccessLoad := (
+      encInstrI.head.opcode === LwRdRs1Imm.op
+    )
+    psId.myTempOpIsMemAccessStore := (
+      //False
+      encInstrS.head.opcode === SwRdRs1Imm.op
+    )
 
     def setOp(
       someOp: Any,
@@ -1014,6 +1021,7 @@ object SnowHouseRiscv32imPipeStageInstrDecode {
       } else if (
         encInstr == encInstrS.last
       ) {
+        //psId.myTempOpIsMemAccessStore := True
         upPayload.imm.foreach(item => {
           item := encInstrS.last.myTempImm().asUInt
         })
@@ -1544,7 +1552,6 @@ object SnowHouseRiscv32imPipeStageInstrDecode {
         setOp(JalrRdRs1Imm, encInstrI.last)
       }
       is (SbRdRs1Imm.op) {
-        upPayload
         switch (encInstrS.last.funct3) {
           is (SbRdRs1Imm.f3) {
             setOp(SbRdRs1Imm, encInstrS.last)
@@ -3386,6 +3393,10 @@ case class SnowHouseRiscv32imWithDuplDualRam(
       initBigInt=Some(myMemInitBigInt),
     )
   )
+  //val icache = LcvBusCache(
+  //  cfg=cfg.shCfg.subCfg.lcvIbusEtcCfg
+  //)
+
   val myDataMem = LcvBusMem(
     cfg=LcvBusMemConfig(
       busCfg=cfg.shCfg.subCfg.lcvDbusEtcCfg.loBusCfg,
@@ -3393,25 +3404,34 @@ case class SnowHouseRiscv32imWithDuplDualRam(
       initBigInt=Some(myMemInitBigInt),
     )
   )
+  //val dcache = LcvBusCache(
+  //  cfg=cfg.shCfg.subCfg.lcvDbusEtcCfg
+  //)
 
-  //myInstrMem.io.bus << cpu.io.lcvIbus
-  //myDataMem.io.bus << cpu.io.lcvDbus
-  cpu.io.lcvIbus.h2dBus.translateInto(myInstrMem.io.bus.h2dBus)(
-    dataAssignment=(outp, inp) => {
-      outp.addr.allowOverride
-      outp := inp
-      outp.addr.msb := False
-    }
-  )
-  cpu.io.lcvIbus.d2hBus << myInstrMem.io.bus.d2hBus
-  cpu.io.lcvDbus.h2dBus.translateInto(myDataMem.io.bus.h2dBus)(
-    dataAssignment=(outp, inp) => {
-      outp.addr.allowOverride
-      outp := inp
-      outp.addr.msb := False
-    }
-  )
-  cpu.io.lcvDbus.d2hBus << myDataMem.io.bus.d2hBus
+  myInstrMem.io.bus << cpu.io.lcvIbus
+  myDataMem.io.bus <-/< cpu.io.lcvDbus
+  //cpu.io.lcvIbus.h2dBus.translateInto(
+  //  //myInstrMem.io.bus.h2dBus
+  //  icache.io.loBus.h2dBus
+  //)(
+  //  dataAssignment=(outp, inp) => {
+  //    outp.addr.allowOverride
+  //    outp := inp
+  //    outp.addr.msb := False
+  //  }
+  //)
+  //cpu.io.lcvIbus.d2hBus << icache.io.loBus.d2hBus
+  //myInstrMem.io.bus <-/< icache.io.hiBus 
+
+  //cpu.io.lcvDbus.h2dBus.translateInto(dcache.io.loBus.h2dBus)(
+  //  dataAssignment=(outp, inp) => {
+  //    outp.addr.allowOverride
+  //    outp := inp
+  //    outp.addr.msb := False
+  //  }
+  //)
+  //cpu.io.lcvDbus.d2hBus << dcache.io.loBus.d2hBus
+  //myDataMem.io.bus <-/< dcache.io.hiBus 
 
   if (io.dbgInfo != null) {
     io.dbgInfo := cpu.io.dbgInfo
@@ -3459,48 +3479,48 @@ object SnowHouseRiscv32imWithoutRamToVerilog extends App {
 object SnowHouseRiscv32imWithDuplDualRamSim extends App {
   
   val programStrNoExtBasenameArr = Array[String](
-    "rv32ui-p-lw",
-    "rv32ui-p-slti",
-    "rv32ui-p-sw",
-    "rv32ui-p-or",
-    "rv32ui-p-lhu",
-    "rv32ui-p-lbu",
-    "rv32ui-p-andi",
-    "rv32ui-p-and",
-    "rv32ui-p-sb",
-    "rv32ui-p-slt",
-    "rv32ui-p-sra",
-    "rv32ui-p-simple",
-    "rv32ui-p-xori",
-    "rv32ui-p-sltiu",
-    "rv32ui-p-srli",
-    "rv32ui-p-blt",
-    "rv32ui-p-srai",
-    "rv32ui-p-sh",
+    //"rv32ui-p-lw",
+    //"rv32ui-p-slti",
+    //"rv32ui-p-sw",
+    //"rv32ui-p-or",
+    //"rv32ui-p-lhu",
+    //"rv32ui-p-lbu",
+    //"rv32ui-p-andi",
+    //"rv32ui-p-and",
+    //"rv32ui-p-sb",
+    //"rv32ui-p-slt",
+    //"rv32ui-p-sra",
+    //"rv32ui-p-simple",
+    //"rv32ui-p-xori",
+    //"rv32ui-p-sltiu",
+    //"rv32ui-p-srli",
+    //"rv32ui-p-blt",
+    //"rv32ui-p-srai",
+    //"rv32ui-p-sh",
 
-    //"rv32ui-p-ma_data", // fails
-    "rv32ui-p-auipc",
-    "rv32ui-p-jalr",
-    "rv32ui-p-lh",
-    "rv32ui-p-sll",
-    "rv32ui-p-jal",
-    "rv32ui-p-addi",
-    "rv32ui-p-xor",
-    "rv32ui-p-sltu",
-    "rv32ui-p-sub",
-    "rv32ui-p-beq",
-    "rv32ui-p-srl",
-    "rv32ui-p-ori",
-    "rv32ui-p-slli",
-    "rv32ui-p-add",
-    "rv32ui-p-st_ld",
-    "rv32ui-p-bgeu",
-    "rv32ui-p-lb",
+    ////"rv32ui-p-ma_data", // fails
+    //"rv32ui-p-auipc",
+    //"rv32ui-p-jalr",
+    //"rv32ui-p-lh",
+    //"rv32ui-p-sll",
+    //"rv32ui-p-jal",
+    //"rv32ui-p-addi",
+    //"rv32ui-p-xor",
+    //"rv32ui-p-sltu",
+    //"rv32ui-p-sub",
+    //"rv32ui-p-beq",
+    //"rv32ui-p-srl",
+    //"rv32ui-p-ori",
+    //"rv32ui-p-slli",
+    //"rv32ui-p-add",
+    //"rv32ui-p-st_ld",
+    //"rv32ui-p-bgeu",
+    //"rv32ui-p-lb",
     "rv32ui-p-ld_st",
-    "rv32ui-p-lui",
-    "rv32ui-p-bltu",
-    "rv32ui-p-bge",
-    "rv32ui-p-bne",
+    //"rv32ui-p-lui",
+    //"rv32ui-p-bltu",
+    //"rv32ui-p-bge",
+    //"rv32ui-p-bne",
   )
 
   val testOptTwoCycleRegFileReads = (

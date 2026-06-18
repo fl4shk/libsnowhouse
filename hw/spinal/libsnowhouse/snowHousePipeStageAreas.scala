@@ -3507,6 +3507,8 @@ case class SnowHousePipeStageInstrDecode(
   val upPayload = Vec.fill(2)(
     SnowHousePipePayload(cfg=cfg)
   )
+  val myTempOpIsMemAccessLoad = Bool()
+  val myTempOpIsMemAccessStore = Bool()
 
   val myTempBtbElem = BranchTgtBufElem(cfg=cfg)
 
@@ -3529,30 +3531,6 @@ case class SnowHousePipeStageInstrDecode(
       0xf
     )
   )
-  //when (!io.ibus.ready) {
-  //  cId.haltIt()
-  //}
-
-  //when (
-  //  //up.isFiring
-  //  //&& 
-  //  psExSetPc.valid
-  //) {
-  //  rSavedExSetPc.valid := True
-  //  rSavedExSetPc.nextPc := (
-  //    psExSetPc.nextPc //- (cfg.instrMainWidth.toLong / 8.toLong).toLong
-  //  )
-  //  //rShouldFinishJumpCnt := 0x2
-  //}
-
-  //when (
-  //  upPayload(1).psIfRegPcSetItCnt(0)
-  //) {
-  //  rShouldFinishJumpCnt := 0x1
-  //}
-
-  //rSavedExSetPc.payload := psExSetPc.payload
-  //rSavedExSetPc.nextPc.allowOverride
 
   //when (up.isFiring) {
   up(pId) := upPayload(1)//(0)
@@ -3618,19 +3596,7 @@ case class SnowHousePipeStageInstrDecode(
       init=shouldClearExtraDecodeInfo.getZero
     )
   )
-  when (
-    //RegNext(
-    //  RegNext(
-    //    RegNext(
-    //      psExSetPc.valid,
-    //      init=False,
-    //    ),
-    //    init=False,
-    //  ),
-    //  init=False
-    //)
-    psExSetPc.valid
-  ) {
+  when (psExSetPc.valid) {
     shouldClearExtraDecodeInfo := True
   }
   //--------
@@ -3645,31 +3611,6 @@ case class SnowHousePipeStageInstrDecode(
     rSavedSeenPsIfRegPcSetItCntLsb := True
   }
   val shouldFinishJump = (
-    ////--------
-    ////upPayload(1).psIfRegPcSetItCnt(0)
-    //RegNextWhen(
-    //  next=upPayload(1).psIfRegPcSetItCnt(0),
-    //  cond=(
-    //    up.isFiring
-    //    //up.isValid
-    //  ),
-    //  init=upPayload(1).psIfRegPcSetItCnt(0).getZero,
-    //)
-    ////--------
-    ////upPayload.psIfRegPcSetItCnt(0)
-    //Bool()
-    //--------
-    //(
-    //  upPayload(1).psIfRegPcSetItCnt(0)
-    //  || RegNextWhen(
-    //    next=upPayload(1).psIfRegPcSetItCnt(0),
-    //    cond=(
-    //      up.isFiring
-    //      //up.isValid
-    //    ),
-    //    init=upPayload(1).psIfRegPcSetItCnt(0).getZero,
-    //  )
-    //)
     stickySeenPsIfRegPcSetItCntLsb
     && (
       upPayload(1).laggingRegPc(myRegPcRange)
@@ -3684,24 +3625,6 @@ case class SnowHousePipeStageInstrDecode(
   when (shouldFinishJump) {
     shouldClearExtraDecodeInfo := False
   }
-  //shouldFinishJump := (
-  //  RegNext(
-  //    next=shouldFinishJump,
-  //    init=False,
-  //  )
-  //)
-
-  //when (up.isValid) {
-  //  when (!rShouldFinishJumpState) {
-  //    shouldFinishJump := upPayload.psIfRegPcSetItCnt(0)
-  //    rShouldFinishJumpState := True
-  //  }
-  //}
-  //when (up.isFiring) {
-  //  rShouldFinishJumpState := False
-  //}
-
-  //shouldFinishJump := upPayload.psIfRegPcSetItCnt(0)
 
   for (idx <- 0 until upPayload(1).regPcSetItCnt.size) {
     //val rPrevRegPcSetItCnt = (
@@ -3736,72 +3659,6 @@ case class SnowHousePipeStageInstrDecode(
     //}
   }
 
-  //val myPrePipeStageExSetBranchPredictEtcArea = (
-  //  !cfg.myHaveS2mIf
-  //  //!cfg.useLcvInstrBus
-  //  //|| !cfg.useLcvDataBus
-  //) generate (SnowHousePrePipeStageExSetBranchPredictEtcArea(
-  //  cfg=cfg,
-  //  outp=upPayload(1),
-  //  inp=upPayload(1),
-  //  link=cId,
-  //))
-
-  //{
-  //  cfg.myPrePsExSetBranchPredictionStuff(
-  //    outp=upPayload(1),
-  //    inp=upPayload(0),
-  //    link=cId,
-  //  )
-  //  //upPayload(1).branchPredictReplaceBtbElem := (
-  //  //  RegNextWhen(
-  //  //    next=upPayload(1).branchPredictTkn,
-  //  //    cond=cId.up.isFiring,
-  //  //    init=upPayload(1).branchPredictTkn.getZero,
-  //  //  )
-  //  //  //&& upPayload(0).branchTgtBufElem(0).fire
-  //  //  && upPayload(1).branchTgtBufElem(1).fire
-  //  //  && !upPayload(1).branchTgtBufElem(1).dontPredict
-
-  //  //  && upPayload(1).btbElemBranchKind(1).asBits(0)
-  //  //  && (
-  //  //    !LcvFastCmpEq(
-  //  //      left=(
-  //  //        upPayload(1).branchTgtBufElem(0).srcRegPc(
-  //  //          cfg.mySrcRegPcCmpEqRange
-  //  //        )
-  //  //      ),
-  //  //      right=(
-  //  //        upPayload(1).branchTgtBufElem(1).srcRegPc(
-  //  //          cfg.mySrcRegPcCmpEqRange
-  //  //        )
-  //  //      ),
-  //  //      cmpEqIo=(
-  //  //        null
-  //  //      ),
-  //  //      optDsp=(
-  //  //        false,
-  //  //      ),
-  //  //      optReg=false,
-  //  //    )._1
-  //  //    //(
-  //  //    //  upPayload(1).branchTgtBufElem(0).srcRegPc(
-  //  //    //    cfg.mySrcRegPcCmpEqRange
-  //  //    //  ) =/= upPayload(1).branchTgtBufElem(1).srcRegPc(
-  //  //    //    cfg.mySrcRegPcCmpEqRange
-  //  //    //  )
-  //  //    //)
-  //  //    //|| (
-  //  //    //  upPayload(1).branchTgtBufElem(0).dstRegPc
-  //  //    //  =/= upPayload(1).branchTgtBufElem(1).srcRegPc
-  //  //    //)
-  //  //  )
-  //  //)
-  //}
-  //when (up.isFiring) {
-  //  upPayload.regPcSetItCnt.foreach(_ := upPayload.psIfRegPcSetItCnt)
-  //}
-  //upPayload(1).regPc
   upPayload(1).regPcPlusInstrSize := (
     //upPayload(1).regPc - (1 * cfg.instrSizeBytes) //- cfg.instrSizeBytes
     //upPayload(1).branchTgtBufElem(1).srcRegPc
@@ -3813,29 +3670,6 @@ case class SnowHousePipeStageInstrDecode(
     ////- (cfg.instrMainWidth.toLong / 8.toLong)
     //upPayload.regPcPlus1Instr
   )
-  //val myPredictTkn = (
-  //  upPayload(1).branchPredictTkn
-  //  && upPayload(1).branchTgtBufElem(0).valid
-  //  && !upPayload(1).branchTgtBufElem(0).dontPredict
-  //)
-  //val myHistRegPcPlusImmCond = (
-  //)
-  //val myTempRegPcPlusInstrSize = /*Flow*/(UInt(cfg.mainWidth bits))
-  //val myHistRegPcPlusInstrSize = (
-  //  History[/*Flow[*/UInt/*]*/](
-  //    that=myTempRegPcPlusInstrSize,
-  //    length=upPayload(1).myHistRegPcPlusInstrSize.size,
-  //    when=up.isFiring,
-  //    init=myTempRegPcPlusInstrSize.getZero,
-  //  )
-  //)
-  //myTempRegPcPlusInstrSize/*.payload*/ := (
-  //  upPayload(1).regPc + (1 * cfg.instrSizeBytes)
-  //)
-  ////myTempRegPcPlusImm.valid := myPredictTkn
-  //upPayload(1).myHistRegPcPlusInstrSize := (
-  //  myHistRegPcPlusInstrSize
-  //)
   def myRegPcRange = (
     upPayload(1).regPc.high downto log2Up(cfg.instrSizeBytes)
   )
@@ -3853,39 +3687,6 @@ case class SnowHousePipeStageInstrDecode(
       ),
     )
   )
-  //val myHistRegPcMinus2InstrSize = (
-  //  History[UInt](
-  //    that=(
-  //      upPayload(1).regPc - (2 * cfg.instrSizeBytes)
-  //    ),
-  //    length=upPayload(1).myHistRegPc.size,
-  //    when=up.isFiring,
-  //    init=upPayload(1).regPc.getZero,
-  //  )
-  //)
-  //val myHistRegPcPlus1InstrSize = (
-  //  History[UInt](
-  //    that=(
-  //      upPayload(1).regPc + (1 * cfg.instrSizeBytes)
-  //    ),
-  //    length=upPayload(1).myHistRegPc.size,
-  //    when=up.isFiring,
-  //    init=upPayload(1).regPc.getZero,
-  //  )
-  //)
-  //upPayload(1).myHistRegPc := myHistRegPc
-  //val myHistRegPc = (
-  //  History[UInt](
-  //    that=upPayload(1).regPc,
-  //    length=(
-  //      //upPayload(1).myHistRegPc.size
-  //      //3
-  //      upPayload(1).myHistRegPcSize
-  //    ),
-  //    when=up.isFiring,
-  //    init=upPayload(1).regPc.getZero,
-  //  )
-  //)
 
   val myDspRegPcPlus1InstrSize = {
     val myWordWidth = (
@@ -4106,10 +3907,12 @@ case class SnowHousePipeStageInstrDecode(
     //  )
     //)
 
-    val myHistCondLdBubble = (
+    val myHistCondMemAccBubble = (
       History[Bool](
         that=(
-          upPayload(1).splitOp.opIsMemAccess
+          //upPayload(1).splitOp.opIsMemAccess
+          myTempOpIsMemAccessLoad
+          || myTempOpIsMemAccessStore
           //--------
           // FL4SHK NOTE:
           // Without a bubble,
@@ -4149,12 +3952,52 @@ case class SnowHousePipeStageInstrDecode(
       //  init=False,
       //)
     )
+    //val myHistCondStoreBubble = (
+    //  History[Bool](
+    //    that=(
+    //      //upPayload(1).splitOp.opIsMemAccess
+    //      //upPayload(1).inpDecodeExt.last.memAccessKind.asBits(1)
+    //      myTempOpIsMemAccessStore
+    //      //!upPayload(1).inpDecodeExt.head.memAccessKind.asBits(1)
+    //      //&& RegNextWhen(
+    //      //  upPayload(1).inpDecodeExt.head.memAccessKind.asBits(1),
+    //      //  cond=down.isFiring,
+    //      //  init=False
+    //      //)
+    //    ),
+    //    length=(
+    //      //upPayload(1).myDoHaveHazardAddrCheckVec.size + 1
+    //      numFollowingInstrs + 1
+    //    ),
+    //    when=(
+    //      down.isFiring
+    //      //up.isFiring
+    //    ),
+    //    init=False
+    //  )
+    //)
+    //val myHistCondLoadBubble = (
+    //  History[Bool](
+    //    that=(
+    //      myTempOpIsMemAccessLoad
+    //    ),
+    //    length=(
+    //      //upPayload(1).myDoHaveHazardAddrCheckVec.size + 1
+    //      numFollowingInstrs + 1
+    //    ),
+    //    when=(
+    //      down.isFiring
+    //      //up.isFiring
+    //    ),
+    //    init=False
+    //  )
+    //)
 
     //when (up.isValid) {
     //  for (idx <- 0 until numFollowingInstrs) {
     //    when (
     //      upPayload(1).myDoHaveHazardAddrCheckVec(idx + 0)
-    //      && myHistCondLdBubble(idx + 1)
+    //      && myHistCondMemAccBubble(idx + 1)
     //    ) {
     //      when (
     //        //!rStallState
@@ -4217,10 +4060,83 @@ case class SnowHousePipeStageInstrDecode(
     switch (rStallState) {
       is (MyLcvDbusStallState.IDLE) {
         when (up.isValid) {
+          //for (idx <- 0 until numFollowingInstrs) {
+          //  when (
+          //    (
+          //      upPayload(1).myDoHaveHazardAddrCheckVec(idx + 0)
+          //      || (
+          //        (
+          //          //myHistCondStoreBubble.asBits(
+          //          //  myHistCondStoreBubble.asBits.high -1
+          //          //  downto 0
+          //          //).orR
+          //          myHistCondStoreBubble.asBits.orR
+          //        )
+          //        && (
+          //          !(
+          //            //upPayload(1).inpDecodeExt.last.memAccessKind
+          //            //.asBits(1)
+          //            myTempOpIsMemAccessStore
+          //          )
+          //        )
+          //      )
+          //    )
+          //    && myHistCondMemAccBubble(idx + 1)
+          //    && !shouldClearExtraDecodeInfo
+          //  ) {
+          //    doSendBubbleMainMost()
+          //    when (down.isFiring) {
+          //      //rStallState := True
+          //      rStallState := (
+          //        //if (idx == 0) (
+          //          MyLcvDbusStallState.POST_LD_0
+          //        //) else (
+          //        //  MyLcvDbusStallState.POST_LD_1
+          //        //)
+          //      )
+          //    }
+          //  }
+          //}
           for (idx <- 0 until numFollowingInstrs) {
             when (
-              upPayload(1).myDoHaveHazardAddrCheckVec(idx + 0)
-              && myHistCondLdBubble(idx + 1)
+              //(
+              //  (
+              //    //upPayload(1).myDoHaveHazardAddrCheckVec(idx + 0)
+              //    //&& myHistCondMemAccBubble(idx + 1)
+              //  )
+              //  //|| (
+              //  //  (
+              //  //    //myHistCondStoreBubble.asBits(
+              //  //    //  myHistCondStoreBubble.asBits.high -1
+              //  //    //  downto 0
+              //  //    //).orR
+              //  //    myHistCondStoreBubble.asBits.orR
+              //  //  )
+              //  //  && (
+              //  //    //!(
+              //  //      //upPayload(1).inpDecodeExt.last.memAccessKind
+              //  //      //.asBits(1)
+              //  //      //myTempOpIsMemAccessStore
+              //  //    //)
+              //  //    myTempOpIsMemAccessLoad
+              //  //  )
+              //  //  //&& myHistCondMemAccBubble.head
+              //  //)
+              //)
+
+              (
+                upPayload(1).myDoHaveHazardAddrCheckVec(idx + 0)
+                || (
+                  //myHistCondMemAccBubble(idx + 1)
+                  //myHistCondStoreBubble(idx + 1)
+                  //&& myTempOpIsMemAccessLoad
+                  myHistCondMemAccBubble(idx + 1)
+                  && (
+                    myHistCondMemAccBubble(0)
+                  )
+                )
+              )
+              && myHistCondMemAccBubble(idx + 1)
               && !shouldClearExtraDecodeInfo
             ) {
               doSendBubbleMainMost()
@@ -4239,53 +4155,14 @@ case class SnowHousePipeStageInstrDecode(
         }
       }
       //is (MyLcvDbusStallState.POST_LD_0) {
-      //  def idx = 0
-      //  when (
-      //    upPayload(1).myDoHaveHazardAddrCheckVec(idx + 0)
-      //    && myHistCondLdBubble(idx + 1)
-      //  ) {
-      //    doSendBubbleMainMost()
-      //    when (down.isFiring) {
-      //      //rStallState := True
-      //      rStallState := (
-      //        if (idx == 0) (
-      //          MyLcvDbusStallState.POST_LD_0
-      //        ) else (
-      //          // should it always be `POST_LD_1`?
-      //          MyLcvDbusStallState.POST_LD_1
-      //        )
-      //      )
-      //    }
-      //  } otherwise {
-      //    //upPayload(1).branchTgtBufElem(1) := (
-      //    //  //upPayload(1).branchTgtBufElem(1).getZero
-      //    //  myHistTempBtbElem(1)
-      //    //)
+      //  doSendBubbleMainMost()
+      //  when (down.isFiring) {
+      //    rStallState := MyLcvDbusStallState.POST_LD_1
       //  }
       //}
       //is (MyLcvDbusStallState.POST_LD_1) {
-      //  def idx = 0
-      //  when (
-      //    upPayload(1).myDoHaveHazardAddrCheckVec(idx + 0)
-      //    && myHistCondLdBubble(idx + 1)
-      //  ) {
-      //    doSendBubbleMainMost()
-      //    when (down.isFiring) {
-      //      //rStallState := True
-      //      rStallState := (
-      //        if (idx == 0) (
-      //          MyLcvDbusStallState.POST_LD_0
-      //        ) else (
-      //          // should it always be `POST_LD_1`?
-      //          MyLcvDbusStallState.POST_LD_1
-      //        )
-      //      )
-      //    }
-      //  } otherwise {
-      //    //upPayload(1).branchTgtBufElem(1) := (
-      //    //  //upPayload(1).branchTgtBufElem(1).getZero
-      //    //  myHistTempBtbElem(1)
-      //    //)
+      //  when (up.isFiring) {
+      //    rStallState := MyLcvDbusStallState.IDLE
       //  }
       //}
     }
@@ -10253,6 +10130,8 @@ case class SnowHousePipeStageExecute(
     def myDbusHostPayload = setOutpModMemWord.io.dbusHostPayload
 
     outp.myDbusHostPayload := myDbusHostPayload
+    outp.myDbusHostPayload.src.allowOverride
+    outp.myDbusHostPayload.src := myH2dBus.src
 
     myH2dBus.valid := (
       //RegNext(myH2dBus.valid, init=False)
@@ -12044,8 +11923,14 @@ case class SnowHousePipeStageWriteBack(
         ////!myDbusExtraReady(3)
         !myD2hBus.valid
         //|| (
-        //  myD2hBus.src
-        //  =/= myWbPayload(1).outpDecodeExt.memAccessSrc
+        //  (
+        //    myD2hBus.src
+        //    //=/= myWbPayload(1).outpDecodeExt.memAccessSrc
+        //    =/= myWbPayload(1).myDbusHostPayload.src
+        //  )
+        //  && (
+        //    myWbPayload(1).myDbusHostPayload.accKind.asBits(1)
+        //  )
         //)
       ) {
         psWbToEarlierStallRequest := True
@@ -12082,6 +11967,21 @@ case class SnowHousePipeStageWriteBack(
           //})
         })
       }
+      //when (
+      //  myD2hBus.valid
+      //  && (
+      //    (
+      //      myD2hBus.src
+      //      //=/= myWbPayload(1).outpDecodeExt.memAccessSrc
+      //      =/= myWbPayload(1).myDbusHostPayload.src
+      //    )
+      //    //&& (
+      //    //  myWbPayload(1).myDbusHostPayload.accKind.asBits(1)
+      //    //)
+      //  )
+      //) {
+      //  psWbToEarlierStallRequest := True
+      //}
     }
     switch (
       (
