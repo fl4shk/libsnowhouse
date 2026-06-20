@@ -533,6 +533,8 @@ object SnowHouseCpuPipeStageInstrDecode {
     //mainWidth: Int,
     upPayload: SnowHousePipePayload,
     encInstr: SnowHouseCpuEncInstr,
+    encInstrIdx: Int,
+    myTempOpIsJmpBr: Bool,
     optSetOpFunc: Option[(
       (Int, (Int, Int), String),
       Boolean,
@@ -748,6 +750,9 @@ object SnowHouseCpuPipeStageInstrDecode {
           //  setOp(BlRaSimm)
           //} otherwise {
             setOp(BeqRaRbSimm)
+            if (encInstrIdx == 0) {
+              myTempOpIsJmpBr := True
+            }
             //setOp(BzRaSimm)
           //}
         }
@@ -792,6 +797,9 @@ object SnowHouseCpuPipeStageInstrDecode {
             }
             //setOp(BnRaSimm)
             setOp(BneRaRbSimm)
+            if (encInstrIdx == 0) {
+              myTempOpIsJmpBr := True
+            }
             //when (psId.startDecode) {
               //psId.nextPrevInstrWasJump := True
             //}
@@ -806,6 +814,9 @@ object SnowHouseCpuPipeStageInstrDecode {
             }
           }
           setOp(BltuRaRbSimm)
+          if (encInstrIdx == 0) {
+            myTempOpIsJmpBr := True
+          }
         }
         is (BgeuRaRbSimm._2._1) {
           optSplitOp match {
@@ -816,6 +827,9 @@ object SnowHouseCpuPipeStageInstrDecode {
             }
           }
           setOp(BgeuRaRbSimm)
+          if (encInstrIdx == 0) {
+            myTempOpIsJmpBr := True
+          }
         }
         is (BltsRaRbSimm._2._1) {
           optSplitOp match {
@@ -826,6 +840,9 @@ object SnowHouseCpuPipeStageInstrDecode {
             }
           }
           setOp(BltsRaRbSimm)
+          if (encInstrIdx == 0) {
+            myTempOpIsJmpBr := True
+          }
         }
         is (BgesRaRbSimm._2._1) {
           optSplitOp match {
@@ -836,6 +853,9 @@ object SnowHouseCpuPipeStageInstrDecode {
             }
           }
           setOp(BgesRaRbSimm)
+          if (encInstrIdx == 0) {
+            myTempOpIsJmpBr := True
+          }
         }
         is (JlRaRb._2._1) {
           //when (psId.startDecode) {
@@ -850,6 +870,9 @@ object SnowHouseCpuPipeStageInstrDecode {
           ret.btbElem.valid := False
           tempDontPredict := True
           setOp(JlRaRb)
+          if (encInstrIdx == 0) {
+            myTempOpIsJmpBr := True
+          }
           upPayload.gprIdxVec(0) := encInstr.rbIdx.resized
           upPayload.gprIdxVec(1) := 0x0
           upPayload.gprIdxVec(2) := 0x0
@@ -891,9 +914,10 @@ object SnowHouseCpuPipeStageInstrDecode {
         case None => {
         }
       }
-      setOp(
-        BlRaSimm24
-      )
+      setOp(BlRaSimm24)
+      if (encInstrIdx == 0) {
+        myTempOpIsJmpBr := True
+      }
     }
     //True
     //val rPrevRet = (
@@ -1757,6 +1781,8 @@ object SnowHouseCpuPipeStageInstrDecode {
     //  rTempState := False
     //}
 
+    psId.myTempOpIsJmpBr := False
+
     for (idx <- 0 until encInstr.size) {
       switch (encInstr(idx).op) {
         is (LdrRaRbSimm16._1) {
@@ -2022,6 +2048,8 @@ object SnowHouseCpuPipeStageInstrDecode {
               cfg=cfg,
               upPayload=upPayload,
               encInstr=encInstr(idx),
+              encInstrIdx=idx,
+              myTempOpIsJmpBr=psId.myTempOpIsJmpBr,
               optSetOpFunc=Some(setOp),
               optDoDefaultFunc=Some(doDefault),
               optSplitOp=Some(upPayload.splitOp),
@@ -2085,6 +2113,8 @@ object SnowHouseCpuPipeStageInstrDecode {
               cfg=cfg,
               upPayload=upPayload,
               encInstr=encInstr(idx),
+              encInstrIdx=idx,
+              myTempOpIsJmpBr=psId.myTempOpIsJmpBr,
               optSetOpFunc=Some(setOp),
               optDoDefaultFunc=Some(doDefault),
               optSplitOp=Some(upPayload.splitOp),
