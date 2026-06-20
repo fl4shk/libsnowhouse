@@ -3510,6 +3510,7 @@ case class SnowHousePipeStageInstrDecode(
   val myTempOpIsMemAccessLoad = Bool()
   val myTempOpIsMemAccessStore = Bool()
   val myTempOpIsDualWidth = Bool()
+  val myTempOpIsJmpBr = Bool()
 
   val myTempBtbElem = BranchTgtBufElem(cfg=cfg)
 
@@ -4135,6 +4136,10 @@ case class SnowHousePipeStageInstrDecode(
                   && (
                     myHistCondMemAccBubble(0)
                   )
+                )
+                || (
+                  myHistCondMemAccBubble(idx + 1)
+                  && myTempOpIsJmpBr
                 )
               )
               && myHistCondMemAccBubble(idx + 1)

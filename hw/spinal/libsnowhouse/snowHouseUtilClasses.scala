@@ -1515,6 +1515,10 @@ case class SnowHouseSplitOp(
       getJmpBrOtherOpToDefault()
     )
   }
+  def haveAnyJmpBrOp(
+  ): Bool = {
+    exSetNextPcKind =/= SnowHousePsExSetNextPcKind.Dont
+  }
   def setToDefault(
   ): Unit = {
     this := this.getZero
