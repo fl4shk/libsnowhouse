@@ -11978,21 +11978,21 @@ case class SnowHousePipeStageWriteBack(
           //})
         })
       }
-      //when (
-      //  myD2hBus.valid
-      //  && (
-      //    (
-      //      myD2hBus.src
-      //      //=/= myWbPayload(1).outpDecodeExt.memAccessSrc
-      //      =/= myWbPayload(1).myDbusHostPayload.src
-      //    )
-      //    //&& (
-      //    //  myWbPayload(1).myDbusHostPayload.accKind.asBits(1)
-      //    //)
-      //  )
-      //) {
-      //  psWbToEarlierStallRequest := True
-      //}
+      when (
+        myD2hBus.valid
+        && (
+          (
+            myD2hBus.src
+            //=/= myWbPayload(1).outpDecodeExt.memAccessSrc
+            =/= myWbPayload(1).myDbusHostPayload.src
+          )
+          //&& (
+          //  myWbPayload(1).myDbusHostPayload.accKind.asBits(1)
+          //)
+        )
+      ) {
+        psWbToEarlierStallRequest := True
+      }
     }
     switch (
       (
