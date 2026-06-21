@@ -3872,8 +3872,8 @@ case class SnowHousePipeStageInstrDecode(
   extends SpinalEnum(defaultEncoding=binaryOneHot) {
     val
       IDLE,
-      POST_LD_0//,
-      //POST_LD_1
+      POST_LD_0,
+      POST_LD_1
       = newElement();
   }
 
@@ -4160,17 +4160,17 @@ case class SnowHousePipeStageInstrDecode(
           }
         }
       }
-      //is (MyLcvDbusStallState.POST_LD_0) {
-      //  doSendBubbleMainMost()
-      //  when (down.isFiring) {
-      //    rStallState := MyLcvDbusStallState.POST_LD_1
-      //  }
-      //}
-      //is (MyLcvDbusStallState.POST_LD_1) {
-      //  when (up.isFiring) {
-      //    rStallState := MyLcvDbusStallState.IDLE
-      //  }
-      //}
+      is (MyLcvDbusStallState.POST_LD_0) {
+        doSendBubbleMainMost()
+        when (down.isFiring) {
+          rStallState := MyLcvDbusStallState.POST_LD_1
+        }
+      }
+      is (MyLcvDbusStallState.POST_LD_1) {
+        //when (up.isFiring) {
+        //  rStallState := MyLcvDbusStallState.IDLE
+        //}
+      }
     }
     when (up.isFiring) {
       rStallState := MyLcvDbusStallState.IDLE
@@ -10145,9 +10145,18 @@ case class SnowHousePipeStageExecute(
     def myH2dBus = io.lcvDbus.h2dBus
     def myDbusHostPayload = setOutpModMemWord.io.dbusHostPayload
 
-    outp.myDbusHostPayload := myDbusHostPayload
-    outp.myDbusHostPayload.src.allowOverride
-    outp.myDbusHostPayload.src := myH2dBus.src
+    //outp.myDbusHostPayload := myDbusHostPayload
+    //outp.myDbusHostPayload.src.allowOverride
+    //outp.myDbusHostPayload.src := (
+    //  (
+    //    RegNext(outp.myDbusHostPayload.src.asSInt)
+    //    init(-1)
+    //  ).asUInt
+    //  //myH2dBus.src
+    //)
+    //when (myH2dBus.fire) {
+    //  outp.myDbusHostPayload.src := myH2dBus.src
+    //}
 
     myH2dBus.valid := (
       //RegNext(myH2dBus.valid, init=False)
@@ -11932,6 +11941,7 @@ case class SnowHousePipeStageWriteBack(
       //cWb.up.isValid
       //&& 
       myWbPayload(1).outpDecodeExt.opIsMemAccess.last
+      //myWbPayload(1).splitOp.opIsMemAccess
     ) {
       myD2hBus.ready := True
       when (
@@ -11987,9 +11997,25 @@ case class SnowHousePipeStageWriteBack(
         myD2hBus.valid
         && (
           (
+            RegNextWhen(
+              True,
+              cond=myD2hBus.fire,
+              init=False
+            )
+          )
+          && (
             myD2hBus.src
             //=/= myWbPayload(1).outpDecodeExt.memAccessSrc
-            =/= myWbPayload(1).myDbusHostPayload.src
+            //=/= myWbPayload(1).myDbusHostPayload.src
+            =/= (
+              (
+                RegNextWhen(
+                  myD2hBus.src.asSInt + 1,
+                  cond=myD2hBus.fire,
+                )
+                init(-1)
+              ).asUInt
+            )
           )
           //&& (
           //  myWbPayload(1).myDbusHostPayload.accKind.asBits(1)

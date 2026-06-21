@@ -1830,9 +1830,9 @@ case class SnowHousePipePayloadNonExt(
   //val myExt = Vec.fill(cfg.regFileCfg.memArrSize)(
   //  mkOneExt()
   //)
-  val myDbusHostPayload = (
-    BusHostPayload(cfg=cfg, isIbus=false)
-  )
+  //val myDbusHostPayload = (
+  //  BusHostPayload(cfg=cfg, isIbus=false)
+  //)
   val myFwd = (
     myHaveFormalFwd
   ) generate (
@@ -1894,7 +1894,7 @@ case class SnowHousePipePayload(
 
   def myHaveFormalFwd = nonExt.myHaveFormalFwd
 
-  def myDbusHostPayload = nonExt.myDbusHostPayload
+  //def myDbusHostPayload = nonExt.myDbusHostPayload
   def myFwd = nonExt.myFwd
 
   def mkOneExt(ydx: Int) = (
