@@ -3442,6 +3442,122 @@ case class SnowHouseRiscv32imWithDuplDualRam(
   }
 }
 
+
+case class SnowHouseRiscv32imWithSharedRamIo(
+  cfg: SnowHouseRiscv32imConfig
+) extends Bundle {
+  val dbgInfo = (
+    cfg.dbgExposeExtrasAtRegFileWrite
+  ) generate (
+    out(SnowHouseDebugInfo(cfg=cfg.shCfg))
+  )
+  def regFileWriteData = (
+    dbgInfo.regFileWriteData
+  )
+  def regFileWriteAddr = (
+    dbgInfo.regFileWriteAddr
+  )
+  def regFileWriteEnable = (
+    dbgInfo.regFileWriteEnable
+  )
+  def laggingRegPcAtRegFileWrite = (
+    dbgInfo.laggingRegPcAtRegFileWrite
+  )
+  def shouldIgnoreInstrAtRegFileWrite = (
+    dbgInfo.shouldIgnoreInstrAtRegFileWrite
+  )
+  def encInstrAtRegFileWrite = (
+    dbgInfo.encInstrAtRegFileWrite
+  )
+}
+case class SnowHouseRiscv32imWithSharedRam(
+  cfg: SnowHouseRiscv32imConfig
+) extends Component {
+  val io = SnowHouseRiscv32imWithSharedRamIo(cfg=cfg)
+
+  val cpu = SnowHouseRiscv32imWithoutRam(cfg=cfg)
+  val program = SnowHouseRam32InitFromBin(
+    filename=cfg.programStr
+  )
+
+  val myMemDepth = 0x4000
+  val myMemInitBigInt = {
+    val depth = myMemDepth
+    val tempArr = new ArrayBuffer[BigInt]()
+    tempArr ++= program.view
+    while (tempArr.size < depth) {
+      tempArr += BigInt(0)
+    }
+    tempArr
+  }
+  val sharedRam = SnowHouseLcvBusInstrDataSharedRam(
+    cfg=cfg.shCfg,
+    sharedInitBigInt=myMemInitBigInt
+  )
+
+  //val myInstrMem = LcvBusMem(
+  //  cfg=LcvBusMemConfig(
+  //    busCfg=cfg.shCfg.subCfg.lcvIbusEtcCfg.hiBusCfg,
+  //    depth=myMemDepth,
+  //    initBigInt=Some(myMemInitBigInt),
+  //  )
+  //)
+  //val icache = LcvBusCache(
+  //  cfg=cfg.shCfg.subCfg.lcvIbusEtcCfg
+  //)
+
+  //val myDataMem = LcvBusMem(
+  //  cfg=LcvBusMemConfig(
+  //    busCfg=cfg.shCfg.subCfg.lcvDbusEtcCfg.hiBusCfg,
+  //    depth=myMemDepth,
+  //    initBigInt=Some(myMemInitBigInt),
+  //  )
+  //)
+  //val dcache = LcvBusCache(
+  //  cfg=cfg.shCfg.subCfg.lcvDbusEtcCfg
+  //)
+
+  //myInstrMem.io.bus << cpu.io.lcvIbus
+  //myDataMem.io.bus <-/< cpu.io.lcvDbus
+
+
+  cpu.io.lcvIbus.h2dBus.translateInto(
+    //icache.io.loBus.h2dBus
+    sharedRam.io.lcvIbus.h2dBus
+  )(
+    dataAssignment=(outp, inp) => {
+      outp.addr.allowOverride
+      outp := inp
+      outp.addr.msb := False
+    }
+  )
+  cpu.io.lcvIbus.d2hBus << (
+    //icache.io.loBus.d2hBus
+    sharedRam.io.lcvIbus.d2hBus
+  )
+  //myInstrMem.io.bus <-/< icache.io.hiBus 
+
+  cpu.io.lcvDbus.h2dBus.translateInto(
+    //dcache.io.loBus.h2dBus
+    sharedRam.io.lcvDbus.h2dBus
+  )(
+    dataAssignment=(outp, inp) => {
+      outp.addr.allowOverride
+      outp := inp
+      outp.addr.msb := False
+    }
+  )
+  cpu.io.lcvDbus.d2hBus << (
+    //dcache.io.loBus.d2hBus
+    sharedRam.io.lcvDbus.d2hBus
+  )
+  //myDataMem.io.bus <-/< dcache.io.hiBus 
+
+  if (io.dbgInfo != null) {
+    io.dbgInfo := cpu.io.dbgInfo
+  }
+}
+
 object SnowHouseRiscv32imWithoutRamToVerilog extends App {
   Config.spinal.generateVerilog({
     //val cfg = SnowHouseCpuConfig(
@@ -3480,8 +3596,7 @@ object SnowHouseRiscv32imWithoutRamToVerilog extends App {
     SnowHouseRiscv32imWithoutRam(cfg=cfg)
   })
 }
-object SnowHouseRiscv32imWithDuplDualRamSim extends App {
-  
+object SnowHouseRiscv32imTestProgramArr {
   val programStrNoExtBasenameArr = Array[String](
     "rv32ui-p-lw",
     "rv32ui-p-slti",
@@ -3525,6 +3640,12 @@ object SnowHouseRiscv32imWithDuplDualRamSim extends App {
     "rv32ui-p-bltu",
     "rv32ui-p-bge",
     "rv32ui-p-bne",
+  )
+}
+object SnowHouseRiscv32imWithDuplDualRamSim extends App {
+  
+  val programStrNoExtBasenameArr = (
+    SnowHouseRiscv32imTestProgramArr.programStrNoExtBasenameArr
   )
 
   val testOptTwoCycleRegFileReads = (
@@ -3570,6 +3691,134 @@ object SnowHouseRiscv32imWithDuplDualRamSim extends App {
     Config.sim.compile({
       val toComp = (
         SnowHouseRiscv32imWithDuplDualRam(
+          cfg=cfg
+        )
+      )
+      //toComp.setDefinitionName(
+      //  s"SnowHouseCpuWithDualRam_${testIdx}_${instrRamKind}"
+      //)
+      toComp
+    }).doSim{dut => {
+      val pw = new PrintWriter(new File(
+        //s"test/results/test-${testIdx}-results-${instrRamKind}.txt"
+        s"fl4shk-riscv-tests.ignore/results/"
+        + s"${programStrNoExtBasename}-results.txt"
+      ))
+      pw.write(
+        s"Starting test:"
+        //+ s"programStr:${programStr} instrRamKind:${instrRamKind}"
+        + s"programStr:${programStr}"
+        + s"\n"
+      )
+      val mySavedGprArr = new ArrayBuffer[Long]()
+      for (idx <- 0 until cfg.numGprs) {
+        mySavedGprArr += 0.toLong
+      }
+
+      dut.clockDomain.forkStimulus(10)
+      for (i <- 0 until numClkCycles) {
+        dut.clockDomain.waitSampling()
+        val myRegFileWriteEnable = dut.io.regFileWriteEnable.toBoolean
+        val myRegFileWriteAddr = dut.io.regFileWriteAddr.toLong
+        val myRegFileWriteData = dut.io.regFileWriteData.toLong
+        val myLaggingRegPc = dut.io.laggingRegPcAtRegFileWrite.toLong
+
+        if (myRegFileWriteEnable) {
+          if (
+            myRegFileWriteData
+            != mySavedGprArr(myRegFileWriteAddr.toInt)
+          ) {
+            pw.write(
+              s"pc:${myLaggingRegPc}    "
+              //s""
+              + s"addr:${myRegFileWriteAddr} "
+              + s"data:${myRegFileWriteData}\n"
+            )
+            mySavedGprArr(myRegFileWriteAddr.toInt) = myRegFileWriteData
+            //for (idx <- 0 until mySavedGprArr.size) {
+            //  tempStr += s"r${idx}=${mySavedGprArr(idx)}"
+            //  if (idx + 1 < mySavedGprArr.size) {
+            //    tempStr += " "
+            //  } else {
+            //    tempStr += "\n\n"
+            //  }
+            //}
+            //pw.write(tempStr)
+          }
+        }
+        //if (!grabRegFileOutputs) {
+        //} else {
+        //}
+        //for (gprIdx <- 0 until cfg.numGprs) {
+        //  printf(
+        //    "r%i=%x ",
+        //    gprIdx,
+        //    dut.cpu.regFile.modMem(0)(0).readAsync(
+        //      address=gprIdx
+        //    ).toInt
+        //  )
+        //  if (gprIdx % 4 == 3) {
+        //    printf("\n")
+        //  }
+        //}
+      }
+      pw.write(
+        s"Ending test.\n\n"
+      )
+      pw.close()
+    }}
+  }
+}
+
+object SnowHouseRiscv32imWithSharedRamSim extends App {
+  
+  val programStrNoExtBasenameArr = (
+    SnowHouseRiscv32imTestProgramArr.programStrNoExtBasenameArr
+  )
+
+  val testOptTwoCycleRegFileReads = (
+    //true
+    false
+  )
+
+  //val instrRamKindArr = Array[Int](
+  //  0,
+  //  //1,
+  //  //2,
+  //  5,
+  //)
+  for (testIdx <- 0 until programStrNoExtBasenameArr.size) {
+    val programStrNoExtBasename = programStrNoExtBasenameArr(testIdx)
+    val programStr = (
+      "fl4shk-riscv-tests.ignore/"
+      + programStrNoExtBasename
+      + ".bin"
+    )
+
+    val numClkCycles = (
+      8192 * 2
+    )
+
+    val cfg = SnowHouseRiscv32imConfig(
+      optFormal=(
+        //true
+        false
+      ),
+      //targetAltera=(
+      //  true
+      //),
+      programStr=(
+        programStr
+      ),
+      instrRamKind=(
+        //instrRamKind
+        0
+      ),
+      dbgExposeExtrasAtRegFileWrite=true,
+    )
+    Config.sim.compile({
+      val toComp = (
+        SnowHouseRiscv32imWithSharedRam(
           cfg=cfg
         )
       )

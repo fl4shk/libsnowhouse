@@ -1051,9 +1051,15 @@ case class SnowHouseLcvBusInstrDataSharedRam(
         mySharedMemCfg.busCfg
       ),
       numHosts=2,
-      kind=LcvBusArbiterKind.RoundRobin
+      kind=(
+        //LcvBusArbiterKind.RoundRobin
+        LcvBusArbiterKind.Priority
+      )
     )
   )
+
+  myArbiter.io.en := True
+  myArbiter.io.forceHost := myArbiter.io.forceHost.getZero
   val myDeburster = (
     LcvBusDeburster(cfg=LcvBusDebursterConfig(
       loBusCfg=mySharedMemCfg.busCfg
@@ -1074,8 +1080,8 @@ case class SnowHouseLcvBusInstrDataSharedRam(
   //myArbiter.io.hostVec(0) << io.lcvIbus
   //myArbiter.io.hostVec(1) << io.lcvDbus
   val tempHostList = List[LcvBusIo](
-    io.lcvIbus,
     io.lcvDbus,
+    io.lcvIbus,
   )
   for (idx <- 0 until tempHostList.size) {
     tempHostList(idx).h2dBus.translateInto(
