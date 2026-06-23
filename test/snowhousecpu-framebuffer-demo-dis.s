@@ -35,7 +35,7 @@ Disassembly of section .text:
   78:	00 00 00 0d 	add	lr, r0, 0
   7c:	00 00 00 0e 	add	fp, r0, 0
   80:	00 00 00 0f 	add	sp, r0, 0
-  84:	3e 01 00 b0 	bl	r0, 1272 /* dst_pc=0x580 */
+  84:	a2 00 00 b0 	bl	r0, 648 /* dst_pc=0x310 */
   88:	00 00 00 00 	add	r0, r0, 0
 
 0000008c <_do_enable_irqs>:
@@ -74,8 +74,8 @@ Disassembly of section .text:
 00000100 <_deregister_tm_clones>:
  100:	fc ff f0 0f 	add	sp, sp, -4
  104:	00 00 f1 9d 	str	lr, sp, 0
- 108:	20 07 00 02 	add	r2, r0, 1824
- 10c:	20 07 00 01 	add	r1, r0, 1824
+ 108:	a0 04 00 02 	add	r2, r0, 1184
+ 10c:	a0 04 00 01 	add	r1, r0, 1184
  110:	05 00 10 a2 	beq	r2, r1, 20 /* dst_pc=0x128 */
  114:	00 00 00 c0 	add	r2, r0, 0 /* pre #0x0 */
  118:	00 00 00 02 
@@ -92,11 +92,11 @@ Disassembly of section .text:
 00000140 <_register_tm_clones>:
  140:	fc ff f0 0f 	add	sp, sp, -4
  144:	00 00 f1 9d 	str	lr, sp, 0
- 148:	20 07 00 01 	add	r1, r0, 1824
- 14c:	ff ff 00 c0 	add	r1, r1, -1824 /* pre #0xffff */
- 150:	e0 f8 10 01 
- 154:	25 00 10 71 	asr	r1, r1, 2
- 158:	f3 01 10 72 	lsr	r2, r1, 31
+ 148:	a0 04 00 02 	add	r2, r0, 1184
+ 14c:	ff ff 00 c0 	add	r2, r2, -1184 /* pre #0xffff */
+ 150:	60 fb 20 02 
+ 154:	25 00 20 71 	asr	r1, r2, 2
+ 158:	f3 01 20 72 	lsr	r2, r2, 31
  15c:	00 00 21 02 	add	r2, r2, r1
  160:	15 00 20 72 	asr	r2, r2, 1
  164:	00 00 00 01 	add	r1, r0, 0
@@ -104,7 +104,7 @@ Disassembly of section .text:
  16c:	00 00 00 c0 	add	r3, r0, 0 /* pre #0x0 */
  170:	00 00 00 03 
  174:	02 00 10 a3 	beq	r3, r1, 8 /* dst_pc=0x180 */
- 178:	20 07 00 01 	add	r1, r0, 1824
+ 178:	a0 04 00 01 	add	r1, r0, 1184
  17c:	00 00 36 ad 	jl	lr, r3
 
 00000180 <.L5>:
@@ -117,7 +117,7 @@ Disassembly of section .text:
  190:	f8 ff f0 0f 	add	sp, sp, -8
  194:	00 00 f1 97 	str	r7, sp, 0
  198:	04 00 f1 9d 	str	lr, sp, 4
- 19c:	f8 07 00 07 	add	r7, r0, 2040
+ 19c:	78 05 00 07 	add	r7, r0, 1400
  1a0:	00 00 74 92 	ldub	r2, r7, 0
  1a4:	00 00 00 01 	add	r1, r0, 0
  1a8:	03 00 11 a2 	bne	r2, r1, 12 /* dst_pc=0x1b8 */
@@ -225,395 +225,204 @@ Disassembly of section .text:
 0000030c <_irq_handler_primary_logic>:
  30c:	00 00 d6 a0 	jl	r0, lr
 
-00000310 <_memcpy>:
- 310:	58 00 00 a3 	beq	r3, r0, 352 /* dst_pc=0x474 */
- 314:	f8 ff f0 0f 	add	sp, sp, -8
- 318:	00 00 f1 97 	str	r7, sp, 0
- 31c:	04 00 f1 98 	str	r8, sp, 4
- 320:	00 00 10 04 	add	r4, r1, 0
- 324:	00 00 20 05 	add	r5, r2, 0
- 328:	00 00 30 06 	add	r6, r3, 0
- 32c:	00 00 30 08 	add	r8, r3, 0
- 330:	fc ff 30 67 	and	r7, r3, -4
- 334:	00 00 17 07 	add	r7, r1, r7
- 338:	00 00 13 03 	add	r3, r1, r3
- 33c:	00 00 12 52 	or	r2, r1, r2
- 340:	03 00 20 62 	and	r2, r2, 3
- 344:	43 00 01 a2 	bne	r2, r0, 268 /* dst_pc=0x454 */
- 348:	04 00 00 02 	add	r2, r0, 4
- 34c:	41 00 22 a6 	bltu	r6, r2, 260 /* dst_pc=0x454 */
- 350:	10 00 00 02 	add	r2, r0, 16
- 354:	39 00 22 a6 	bltu	r6, r2, 228 /* dst_pc=0x43c */
- 358:	40 00 00 02 	add	r2, r0, 64
- 35c:	28 00 22 a6 	bltu	r6, r2, 160 /* dst_pc=0x400 */
- 360:	c0 ff 60 66 	and	r6, r6, -64
- 364:	00 00 46 06 	add	r6, r4, r6
-
-00000368 <.Lmemcpy_words_x16_loop>:
- 368:	00 00 50 92 	ldr	r2, r5, 0
- 36c:	00 00 41 92 	str	r2, r4, 0
- 370:	04 00 50 92 	ldr	r2, r5, 4
- 374:	04 00 41 92 	str	r2, r4, 4
- 378:	08 00 50 92 	ldr	r2, r5, 8
- 37c:	08 00 41 92 	str	r2, r4, 8
- 380:	0c 00 50 92 	ldr	r2, r5, 12
- 384:	0c 00 41 92 	str	r2, r4, 12
- 388:	10 00 50 92 	ldr	r2, r5, 16
- 38c:	10 00 41 92 	str	r2, r4, 16
- 390:	14 00 50 92 	ldr	r2, r5, 20
- 394:	14 00 41 92 	str	r2, r4, 20
- 398:	18 00 50 92 	ldr	r2, r5, 24
- 39c:	18 00 41 92 	str	r2, r4, 24
- 3a0:	1c 00 50 92 	ldr	r2, r5, 28
- 3a4:	1c 00 41 92 	str	r2, r4, 28
- 3a8:	20 00 50 92 	ldr	r2, r5, 32
- 3ac:	20 00 41 92 	str	r2, r4, 32
- 3b0:	24 00 50 92 	ldr	r2, r5, 36
- 3b4:	24 00 41 92 	str	r2, r4, 36
- 3b8:	28 00 50 92 	ldr	r2, r5, 40
- 3bc:	28 00 41 92 	str	r2, r4, 40
- 3c0:	2c 00 50 92 	ldr	r2, r5, 44
- 3c4:	2c 00 41 92 	str	r2, r4, 44
- 3c8:	30 00 50 92 	ldr	r2, r5, 48
- 3cc:	30 00 41 92 	str	r2, r4, 48
- 3d0:	34 00 50 92 	ldr	r2, r5, 52
- 3d4:	34 00 41 92 	str	r2, r4, 52
- 3d8:	38 00 50 92 	ldr	r2, r5, 56
- 3dc:	38 00 41 92 	str	r2, r4, 56
- 3e0:	3c 00 50 92 	ldr	r2, r5, 60
- 3e4:	3c 00 41 92 	str	r2, r4, 60
- 3e8:	40 00 40 04 	add	r4, r4, 64
- 3ec:	40 00 50 05 	add	r5, r5, 64
- 3f0:	dd ff 61 a4 	bne	r4, r6, -140 /* dst_pc=0x368 */
- 3f4:	1c 00 30 a6 	beq	r6, r3, 112 /* dst_pc=0x468 */
- 3f8:	10 00 30 a7 	beq	r7, r3, 64 /* dst_pc=0x43c */
- 3fc:	15 00 00 b0 	bl	r0, 84 /* dst_pc=0x454 */
-
-00000400 <.Lmemcpy_words_x4_loop_pre>:
- 400:	f0 ff 80 66 	and	r6, r8, -16
- 404:	00 00 46 06 	add	r6, r4, r6
-
-00000408 <.Lmemcpy_words_x4_loop>:
- 408:	00 00 50 92 	ldr	r2, r5, 0
- 40c:	00 00 41 92 	str	r2, r4, 0
- 410:	04 00 50 92 	ldr	r2, r5, 4
- 414:	04 00 41 92 	str	r2, r4, 4
- 418:	08 00 50 92 	ldr	r2, r5, 8
- 41c:	08 00 41 92 	str	r2, r4, 8
- 420:	0c 00 50 92 	ldr	r2, r5, 12
- 424:	0c 00 41 92 	str	r2, r4, 12
- 428:	10 00 50 05 	add	r5, r5, 16
- 42c:	10 00 40 04 	add	r4, r4, 16
- 430:	f5 ff 61 a4 	bne	r4, r6, -44 /* dst_pc=0x408 */
- 434:	0c 00 30 a6 	beq	r6, r3, 48 /* dst_pc=0x468 */
- 438:	06 00 31 a7 	bne	r7, r3, 24 /* dst_pc=0x454 */
-
-0000043c <.L0_mac_memcpy_words_loop>:
- 43c:	00 00 50 92 	ldr	r2, r5, 0
- 440:	00 00 41 92 	str	r2, r4, 0
- 444:	04 00 40 04 	add	r4, r4, 4
- 448:	04 00 50 05 	add	r5, r5, 4
- 44c:	fb ff 71 a4 	bne	r4, r7, -20 /* dst_pc=0x43c */
- 450:	05 00 30 a7 	beq	r7, r3, 20 /* dst_pc=0x468 */
-
-00000454 <.L1_mac_mac_memcpy_bytes_loop>:
- 454:	00 00 54 92 	ldub	r2, r5, 0
- 458:	00 00 47 92 	stb	r2, r4, 0
- 45c:	01 00 40 04 	add	r4, r4, 1
- 460:	01 00 50 05 	add	r5, r5, 1
- 464:	fb ff 31 a4 	bne	r4, r3, -20 /* dst_pc=0x454 */
-
-00000468 <.Lmemcpy_pop>:
- 468:	00 00 f0 97 	ldr	r7, sp, 0
- 46c:	04 00 f0 98 	ldr	r8, sp, 4
- 470:	08 00 f0 0f 	add	sp, sp, 8
-
-00000474 <.Lmemcpy_end>:
- 474:	00 00 d6 a0 	jl	r0, lr
-
-00000478 <_memset>:
- 478:	40 00 00 a3 	beq	r3, r0, 256 /* dst_pc=0x57c */
- 47c:	f8 ff f0 0f 	add	sp, sp, -8
- 480:	00 00 f1 97 	str	r7, sp, 0
- 484:	04 00 f1 98 	str	r8, sp, 4
- 488:	00 00 10 04 	add	r4, r1, 0
- 48c:	00 00 30 06 	add	r6, r3, 0
- 490:	00 00 30 08 	add	r8, r3, 0
- 494:	ff 00 20 62 	and	r2, r2, 255
- 498:	01 01 00 c0 	add	r5, r0, 16843009 /* pre #0x101 */
- 49c:	01 01 00 05 
- 4a0:	00 00 52 85 	umulw	r5, r5, r2
- 4a4:	fc ff 30 67 	and	r7, r3, -4
- 4a8:	00 00 17 07 	add	r7, r1, r7
- 4ac:	00 00 13 03 	add	r3, r1, r3
- 4b0:	03 00 10 62 	and	r2, r1, 3
- 4b4:	2b 00 01 a2 	bne	r2, r0, 172 /* dst_pc=0x564 */
- 4b8:	04 00 00 02 	add	r2, r0, 4
- 4bc:	29 00 22 a6 	bltu	r6, r2, 164 /* dst_pc=0x564 */
- 4c0:	10 00 00 02 	add	r2, r0, 16
- 4c4:	23 00 22 a6 	bltu	r6, r2, 140 /* dst_pc=0x554 */
- 4c8:	40 00 00 02 	add	r2, r0, 64
- 4cc:	17 00 22 a6 	bltu	r6, r2, 92 /* dst_pc=0x52c */
- 4d0:	c0 ff 60 66 	and	r6, r6, -64
- 4d4:	00 00 46 06 	add	r6, r4, r6
-
-000004d8 <.Lmemset_words_x16_loop>:
- 4d8:	00 00 41 95 	str	r5, r4, 0
- 4dc:	04 00 41 95 	str	r5, r4, 4
- 4e0:	08 00 41 95 	str	r5, r4, 8
- 4e4:	0c 00 41 95 	str	r5, r4, 12
- 4e8:	10 00 41 95 	str	r5, r4, 16
- 4ec:	14 00 41 95 	str	r5, r4, 20
- 4f0:	18 00 41 95 	str	r5, r4, 24
- 4f4:	1c 00 41 95 	str	r5, r4, 28
- 4f8:	20 00 41 95 	str	r5, r4, 32
- 4fc:	24 00 41 95 	str	r5, r4, 36
- 500:	28 00 41 95 	str	r5, r4, 40
- 504:	2c 00 41 95 	str	r5, r4, 44
- 508:	30 00 41 95 	str	r5, r4, 48
- 50c:	34 00 41 95 	str	r5, r4, 52
- 510:	38 00 41 95 	str	r5, r4, 56
- 514:	3c 00 41 95 	str	r5, r4, 60
- 518:	40 00 40 04 	add	r4, r4, 64
- 51c:	ee ff 61 a4 	bne	r4, r6, -72 /* dst_pc=0x4d8 */
- 520:	13 00 30 a6 	beq	r6, r3, 76 /* dst_pc=0x570 */
- 524:	0b 00 30 a7 	beq	r7, r3, 44 /* dst_pc=0x554 */
- 528:	0e 00 00 b0 	bl	r0, 56 /* dst_pc=0x564 */
-
-0000052c <.Lmemset_words_x4_loop_pre>:
- 52c:	f0 ff 80 66 	and	r6, r8, -16
- 530:	00 00 46 06 	add	r6, r4, r6
-
-00000534 <.Lmemset_words_x4_loop>:
- 534:	00 00 41 95 	str	r5, r4, 0
- 538:	04 00 41 95 	str	r5, r4, 4
- 53c:	08 00 41 95 	str	r5, r4, 8
- 540:	0c 00 41 95 	str	r5, r4, 12
- 544:	10 00 40 04 	add	r4, r4, 16
- 548:	fa ff 61 a4 	bne	r4, r6, -24 /* dst_pc=0x534 */
- 54c:	08 00 30 a6 	beq	r6, r3, 32 /* dst_pc=0x570 */
- 550:	04 00 31 a7 	bne	r7, r3, 16 /* dst_pc=0x564 */
-
-00000554 <.Lmemset_remaining_words_loop>:
- 554:	00 00 41 95 	str	r5, r4, 0
- 558:	04 00 40 04 	add	r4, r4, 4
- 55c:	fd ff 71 a4 	bne	r4, r7, -12 /* dst_pc=0x554 */
- 560:	03 00 30 a7 	beq	r7, r3, 12 /* dst_pc=0x570 */
-
-00000564 <.Lmemset_remaining_bytes_loop>:
- 564:	00 00 47 95 	stb	r5, r4, 0
- 568:	01 00 40 04 	add	r4, r4, 1
- 56c:	fd ff 31 a4 	bne	r4, r3, -12 /* dst_pc=0x564 */
-
-00000570 <.Lmemset_pop>:
- 570:	00 00 f0 97 	ldr	r7, sp, 0
- 574:	04 00 f0 98 	ldr	r8, sp, 4
- 578:	08 00 f0 0f 	add	sp, sp, 8
-
-0000057c <.Lmemset_end>:
- 57c:	00 00 d6 a0 	jl	r0, lr
-
 Disassembly of section .init:
 
-00000580 <_start>:
+00000310 <_start>:
 	...
- 588:	ff 01 00 c0 	add	sp, r0, 33554428 /* pre #0x1ff */
- 58c:	fc ff 00 0f 
- 590:	02 00 00 a0 	beq	r0, r0, 8 /* dst_pc=0x59c */
+ 318:	ff 00 00 c0 	add	sp, r0, 16777212 /* pre #0xff */
+ 31c:	fc ff 00 0f 
+ 320:	02 00 00 a0 	beq	r0, r0, 8 /* dst_pc=0x32c */
 	...
 
-0000059c <__cstart>:
- 59c:	fc ff f0 0f 	add	sp, sp, -4
- 5a0:	00 00 f1 9d 	str	lr, sp, 0
- 5a4:	14 00 00 03 	add	r3, r0, 20
- 5a8:	00 07 00 02 	add	r2, r0, 1792
- 5ac:	00 07 00 01 	add	r1, r0, 1792
- 5b0:	57 ff ff bd 	bl	lr, -676 /* dst_pc=0x310 */
- 5b4:	0d 00 00 03 	add	r3, r0, 13
- 5b8:	00 00 00 02 	add	r2, r0, 0
- 5bc:	ec 07 00 01 	add	r1, r0, 2028
- 5c0:	ad ff ff bd 	bl	lr, -332 /* dst_pc=0x478 */
- 5c4:	22 00 00 bd 	bl	lr, 136 /* dst_pc=0x650 */
- 5c8:	00 00 00 02 	add	r2, r0, 0
- 5cc:	00 00 20 01 	add	r1, r2, 0
- 5d0:	07 00 00 bd 	bl	lr, 28 /* dst_pc=0x5f0 */
+0000032c <__cstart>:
+ 32c:	fc ff f0 0f 	add	sp, sp, -4
+ 330:	00 00 f1 9d 	str	lr, sp, 0
+ 334:	26 00 00 bd 	bl	lr, 152 /* dst_pc=0x3d0 */
+ 338:	00 00 00 02 	add	r2, r0, 0
+ 33c:	00 00 20 01 	add	r1, r2, 0
+ 340:	0b 00 00 bd 	bl	lr, 44 /* dst_pc=0x370 */
+ 344:	00 00 00 02 	add	r2, r0, 0
+ 348:	00 0c 00 c0 	str	r1, r2, 201326596 /* pre #0xc00 */
+ 34c:	04 00 21 91 
 
-000005d4 <.L2>:
- 5d4:	ff ff ff b0 	bl	r0, -4 /* dst_pc=0x5d4 */
+00000350 <.L2>:
+ 350:	ff ff ff b0 	bl	r0, -4 /* dst_pc=0x350 */
 
-000005d8 <_init>:
- 5d8:	06 ff ff bd 	bl	lr, -1000 /* dst_pc=0x1f4 */
- 5dc:	00 00 d6 a0 	jl	r0, lr
+00000354 <_init>:
+ 354:	a7 ff ff bd 	bl	lr, -356 /* dst_pc=0x1f4 */
+ 358:	00 00 d6 a0 	jl	r0, lr
 
 Disassembly of section .fini:
 
-000005e0 <_fini>:
- 5e0:	eb fe ff bd 	bl	lr, -1108 /* dst_pc=0x190 */
- 5e4:	00 00 d6 a0 	jl	r0, lr
+0000035c <_fini>:
+ 35c:	8c ff ff bd 	bl	lr, -464 /* dst_pc=0x190 */
+ 360:	00 00 d6 a0 	jl	r0, lr
 
 Disassembly of section .text.startup:
 
-000005f0 <_main>:
- 5f0:	f8 ff f0 0f 	add	sp, sp, -8
- 5f4:	00 00 f1 97 	str	r7, sp, 0
- 5f8:	04 00 f1 9d 	str	lr, sp, 4
- 5fc:	10 07 00 01 	add	r1, r0, 1808
- 600:	00 00 10 9d 	ldr	lr, r1, 0
- 604:	00 00 00 06 	add	r6, r0, 0
- 608:	40 01 00 05 	add	r5, r0, 320
- 60c:	f0 00 00 07 	add	r7, r0, 240
+00000370 <_main>:
+ 370:	f8 ff f0 0f 	add	sp, sp, -8
+ 374:	00 00 f1 97 	str	r7, sp, 0
+ 378:	04 00 f1 9d 	str	lr, sp, 4
+ 37c:	90 04 00 01 	add	r1, r0, 1168
+ 380:	00 00 10 9d 	ldr	lr, r1, 0
+ 384:	00 00 00 06 	add	r6, r0, 0
+ 388:	40 01 00 05 	add	r5, r0, 320
+ 38c:	f0 00 00 07 	add	r7, r0, 240
 
-00000610 <.L23>:
- 610:	33 00 60 74 	lsr	r4, r6, 3
- 614:	51 00 40 74 	lsl	r4, r4, 5
- 618:	00 00 d0 03 	add	r3, lr, 0
- 61c:	00 00 00 02 	add	r2, r0, 0
+00000390 <.L23>:
+ 390:	33 00 60 74 	lsr	r4, r6, 3
+ 394:	51 00 40 74 	lsl	r4, r4, 5
+ 398:	00 00 d0 03 	add	r3, lr, 0
+ 39c:	00 00 00 02 	add	r2, r0, 0
 
-00000620 <.L24>:
- 620:	33 00 20 71 	lsr	r1, r2, 3
- 624:	1f 00 10 61 	and	r1, r1, 31
- 628:	00 00 14 51 	or	r1, r1, r4
- 62c:	00 00 36 91 	sth	r1, r3, 0
- 630:	01 00 20 02 	add	r2, r2, 1
- 634:	02 00 30 03 	add	r3, r3, 2
- 638:	f9 ff 51 a2 	bne	r2, r5, -28 /* dst_pc=0x620 */
- 63c:	01 00 60 06 	add	r6, r6, 1
- 640:	80 02 d0 0d 	add	lr, lr, 640
- 644:	f2 ff 71 a6 	bne	r6, r7, -56 /* dst_pc=0x610 */
+000003a0 <.L24>:
+ 3a0:	33 00 20 71 	lsr	r1, r2, 3
+ 3a4:	1f 00 10 61 	and	r1, r1, 31
+ 3a8:	00 00 14 51 	or	r1, r1, r4
+ 3ac:	00 00 36 91 	sth	r1, r3, 0
+ 3b0:	01 00 20 02 	add	r2, r2, 1
+ 3b4:	02 00 30 03 	add	r3, r3, 2
+ 3b8:	f9 ff 51 a2 	bne	r2, r5, -28 /* dst_pc=0x3a0 */
+ 3bc:	01 00 60 06 	add	r6, r6, 1
+ 3c0:	80 02 d0 0d 	add	lr, lr, 640
+ 3c4:	f2 ff 71 a6 	bne	r6, r7, -56 /* dst_pc=0x390 */
 
-00000648 <.L25>:
- 648:	ff ff ff b0 	bl	r0, -4 /* dst_pc=0x648 */
+000003c8 <.L25>:
+ 3c8:	ff ff ff b0 	bl	r0, -4 /* dst_pc=0x3c8 */
 
 Disassembly of section .text.__libc_init_array:
 
-00000650 <___libc_init_array>:
- 650:	f4 ff f0 0f 	add	sp, sp, -12
- 654:	00 00 f1 97 	str	r7, sp, 0
- 658:	04 00 f1 98 	str	r8, sp, 4
- 65c:	08 00 f1 9d 	str	lr, sp, 8
- 660:	00 00 00 c0 	add	r7, r0, 0 /* pre #0x0 */
- 664:	00 00 00 07 
- 668:	00 00 00 c0 	add	r7, r7, 0 /* pre #0x0 */
- 66c:	00 00 70 07 
- 670:	25 00 70 77 	asr	r7, r7, 2
- 674:	00 00 00 08 	add	r8, r0, 0
+000003d0 <___libc_init_array>:
+ 3d0:	f0 ff f0 0f 	add	sp, sp, -16
+ 3d4:	00 00 f1 97 	str	r7, sp, 0
+ 3d8:	04 00 f1 98 	str	r8, sp, 4
+ 3dc:	08 00 f1 99 	str	r9, sp, 8
+ 3e0:	0c 00 f1 9d 	str	lr, sp, 12
+ 3e4:	00 00 00 c0 	add	r9, r0, 0 /* pre #0x0 */
+ 3e8:	00 00 00 09 
+ 3ec:	00 00 00 c0 	add	r7, r0, 0 /* pre #0x0 */
+ 3f0:	00 00 00 07 
+ 3f4:	08 00 70 a9 	beq	r9, r7, 32 /* dst_pc=0x418 */
+ 3f8:	00 00 97 19 	sub	r9, r9, r7
+ 3fc:	25 00 90 79 	asr	r9, r9, 2
+ 400:	00 00 00 08 	add	r8, r0, 0
 
-00000678 <.L2>:
- 678:	12 00 71 a8 	bne	r8, r7, 72 /* dst_pc=0x6c4 */
- 67c:	00 00 00 c0 	add	r2, r0, 0 /* pre #0x0 */
- 680:	00 00 00 02 
- 684:	00 00 00 01 	add	r1, r0, 0
- 688:	02 00 10 a2 	beq	r2, r1, 8 /* dst_pc=0x694 */
- 68c:	ff ff 00 c0 	bl	lr, -1684 /* dst_pc=0xfffffffc */ /* pre #0xffff */
- 690:	5b fe ff bd 
+00000404 <.L3>:
+ 404:	00 00 70 91 	ldr	r1, r7, 0
+ 408:	00 00 16 ad 	jl	lr, r1
+ 40c:	01 00 80 08 	add	r8, r8, 1
+ 410:	04 00 70 07 	add	r7, r7, 4
+ 414:	fb ff 92 a8 	bltu	r8, r9, -20 /* dst_pc=0x404 */
 
-00000694 <.L4>:
- 694:	00 00 00 c0 	add	r7, r0, 0 /* pre #0x0 */
- 698:	00 00 00 07 
- 69c:	00 00 00 c0 	add	r7, r7, 0 /* pre #0x0 */
- 6a0:	00 00 70 07 
- 6a4:	25 00 70 77 	asr	r7, r7, 2
- 6a8:	00 00 00 08 	add	r8, r0, 0
+00000418 <.L2>:
+ 418:	00 00 00 c0 	add	r2, r0, 0 /* pre #0x0 */
+ 41c:	00 00 00 02 
+ 420:	00 00 00 01 	add	r1, r0, 0
+ 424:	02 00 10 a2 	beq	r2, r1, 8 /* dst_pc=0x430 */
+ 428:	ff ff 00 c0 	bl	lr, -1072 /* dst_pc=0xfffffffc */ /* pre #0xffff */
+ 42c:	f4 fe ff bd 
 
-000006ac <.L5>:
- 6ac:	0b 00 71 a8 	bne	r8, r7, 44 /* dst_pc=0x6dc */
- 6b0:	00 00 f0 97 	ldr	r7, sp, 0
- 6b4:	04 00 f0 98 	ldr	r8, sp, 4
- 6b8:	08 00 f0 9d 	ldr	lr, sp, 8
- 6bc:	0c 00 f0 0f 	add	sp, sp, 12
- 6c0:	00 00 d6 a0 	jl	r0, lr
+00000430 <.L4>:
+ 430:	00 00 00 c0 	add	r9, r0, 0 /* pre #0x0 */
+ 434:	00 00 00 09 
+ 438:	00 00 00 c0 	add	r7, r0, 0 /* pre #0x0 */
+ 43c:	00 00 00 07 
+ 440:	08 00 70 a9 	beq	r9, r7, 32 /* dst_pc=0x464 */
+ 444:	00 00 97 19 	sub	r9, r9, r7
+ 448:	25 00 90 79 	asr	r9, r9, 2
+ 44c:	00 00 00 08 	add	r8, r0, 0
 
-000006c4 <.L3>:
- 6c4:	21 00 80 71 	lsl	r1, r8, 2
- 6c8:	00 00 00 c0 	ldr	r1, r1, 0 /* pre #0x0 */
- 6cc:	00 00 10 91 
- 6d0:	00 00 16 ad 	jl	lr, r1
- 6d4:	01 00 80 08 	add	r8, r8, 1
- 6d8:	e7 ff ff b0 	bl	r0, -100 /* dst_pc=0x678 */
+00000450 <.L6>:
+ 450:	00 00 70 91 	ldr	r1, r7, 0
+ 454:	00 00 16 ad 	jl	lr, r1
+ 458:	01 00 80 08 	add	r8, r8, 1
+ 45c:	04 00 70 07 	add	r7, r7, 4
+ 460:	fb ff 92 a8 	bltu	r8, r9, -20 /* dst_pc=0x450 */
 
-000006dc <.L6>:
- 6dc:	21 00 80 71 	lsl	r1, r8, 2
- 6e0:	00 00 00 c0 	ldr	r1, r1, 0 /* pre #0x0 */
- 6e4:	00 00 10 91 
- 6e8:	00 00 16 ad 	jl	lr, r1
- 6ec:	01 00 80 08 	add	r8, r8, 1
- 6f0:	ee ff ff b0 	bl	r0, -72 /* dst_pc=0x6ac */
+00000464 <.L1>:
+ 464:	00 00 f0 97 	ldr	r7, sp, 0
+ 468:	04 00 f0 98 	ldr	r8, sp, 4
+ 46c:	08 00 f0 99 	ldr	r9, sp, 8
+ 470:	0c 00 f0 9d 	ldr	lr, sp, 12
+ 474:	10 00 f0 0f 	add	sp, sp, 16
+ 478:	00 00 d6 a0 	jl	r0, lr
 
 Disassembly of section .data:
 
-00000700 <___dso_handle>:
+00000480 <___dso_handle>:
 	...
 
-00000710 <_fb>:
- 710:	00 00 00 04 	add	r4, r0, 0
+00000490 <_fb>:
+ 490:	00 00 00 04 	add	r4, r0, 0
 
 Disassembly of section .rodata:
 
-00000720 <_snowhousecpu_regno_to_class>:
- 720:	01 00 00 00 	add	r0, r0, 1
- 724:	01 00 00 00 	add	r0, r0, 1
- 728:	01 00 00 00 	add	r0, r0, 1
- 72c:	01 00 00 00 	add	r0, r0, 1
- 730:	01 00 00 00 	add	r0, r0, 1
- 734:	01 00 00 00 	add	r0, r0, 1
- 738:	01 00 00 00 	add	r0, r0, 1
- 73c:	02 00 00 00 	add	r0, r0, 2
- 740:	01 00 00 00 	add	r0, r0, 1
- 744:	01 00 00 00 	add	r0, r0, 1
- 748:	01 00 00 00 	add	r0, r0, 1
- 74c:	01 00 00 00 	add	r0, r0, 1
- 750:	01 00 00 00 	add	r0, r0, 1
- 754:	01 00 00 00 	add	r0, r0, 1
- 758:	04 00 00 00 	add	r0, r0, 4
- 75c:	05 00 00 00 	add	r0, r0, 5
- 760:	01 00 00 00 	add	r0, r0, 1
- 764:	01 00 00 00 	add	r0, r0, 1
- 768:	06 00 00 00 	add	r0, r0, 6
- 76c:	00 00 00 00 	add	r0, r0, 0
+000004a0 <_snowhousecpu_regno_to_class>:
+ 4a0:	01 00 00 00 	add	r0, r0, 1
+ 4a4:	01 00 00 00 	add	r0, r0, 1
+ 4a8:	01 00 00 00 	add	r0, r0, 1
+ 4ac:	01 00 00 00 	add	r0, r0, 1
+ 4b0:	01 00 00 00 	add	r0, r0, 1
+ 4b4:	01 00 00 00 	add	r0, r0, 1
+ 4b8:	01 00 00 00 	add	r0, r0, 1
+ 4bc:	02 00 00 00 	add	r0, r0, 2
+ 4c0:	01 00 00 00 	add	r0, r0, 1
+ 4c4:	01 00 00 00 	add	r0, r0, 1
+ 4c8:	01 00 00 00 	add	r0, r0, 1
+ 4cc:	01 00 00 00 	add	r0, r0, 1
+ 4d0:	01 00 00 00 	add	r0, r0, 1
+ 4d4:	01 00 00 00 	add	r0, r0, 1
+ 4d8:	04 00 00 00 	add	r0, r0, 4
+ 4dc:	05 00 00 00 	add	r0, r0, 5
+ 4e0:	01 00 00 00 	add	r0, r0, 1
+ 4e4:	01 00 00 00 	add	r0, r0, 1
+ 4e8:	06 00 00 00 	add	r0, r0, 6
+ 4ec:	00 00 00 00 	add	r0, r0, 0
 
-00000770 <_FB_SIZE>:
- 770:	00 2c 01 00 	add	r0, r0, r1
+000004f0 <_FB_SIZE>:
+ 4f0:	00 2c 01 00 	add	r0, r0, r1
 	...
 
-00000780 <_FB_HEIGHT>:
- 780:	f0 00 00 00 	add	r0, r0, 240
+00000500 <_FB_HEIGHT>:
+ 500:	f0 00 00 00 	add	r0, r0, 240
 	...
 
-00000790 <_FB_WIDTH>:
- 790:	40 01 00 00 	add	r0, r0, 320
+00000510 <_FB_WIDTH>:
+ 510:	40 01 00 00 	add	r0, r0, 320
 	...
 
-000007a0 <_snowhousecpu_regno_to_class>:
- 7a0:	01 00 00 00 	add	r0, r0, 1
- 7a4:	01 00 00 00 	add	r0, r0, 1
- 7a8:	01 00 00 00 	add	r0, r0, 1
- 7ac:	01 00 00 00 	add	r0, r0, 1
- 7b0:	01 00 00 00 	add	r0, r0, 1
- 7b4:	01 00 00 00 	add	r0, r0, 1
- 7b8:	01 00 00 00 	add	r0, r0, 1
- 7bc:	02 00 00 00 	add	r0, r0, 2
- 7c0:	01 00 00 00 	add	r0, r0, 1
- 7c4:	01 00 00 00 	add	r0, r0, 1
- 7c8:	01 00 00 00 	add	r0, r0, 1
- 7cc:	01 00 00 00 	add	r0, r0, 1
- 7d0:	01 00 00 00 	add	r0, r0, 1
- 7d4:	01 00 00 00 	add	r0, r0, 1
- 7d8:	04 00 00 00 	add	r0, r0, 4
- 7dc:	05 00 00 00 	add	r0, r0, 5
- 7e0:	01 00 00 00 	add	r0, r0, 1
- 7e4:	01 00 00 00 	add	r0, r0, 1
- 7e8:	06 00 00 00 	add	r0, r0, 6
+00000520 <_snowhousecpu_regno_to_class>:
+ 520:	01 00 00 00 	add	r0, r0, 1
+ 524:	01 00 00 00 	add	r0, r0, 1
+ 528:	01 00 00 00 	add	r0, r0, 1
+ 52c:	01 00 00 00 	add	r0, r0, 1
+ 530:	01 00 00 00 	add	r0, r0, 1
+ 534:	01 00 00 00 	add	r0, r0, 1
+ 538:	01 00 00 00 	add	r0, r0, 1
+ 53c:	02 00 00 00 	add	r0, r0, 2
+ 540:	01 00 00 00 	add	r0, r0, 1
+ 544:	01 00 00 00 	add	r0, r0, 1
+ 548:	01 00 00 00 	add	r0, r0, 1
+ 54c:	01 00 00 00 	add	r0, r0, 1
+ 550:	01 00 00 00 	add	r0, r0, 1
+ 554:	01 00 00 00 	add	r0, r0, 1
+ 558:	04 00 00 00 	add	r0, r0, 4
+ 55c:	05 00 00 00 	add	r0, r0, 5
+ 560:	01 00 00 00 	add	r0, r0, 1
+ 564:	01 00 00 00 	add	r0, r0, 1
+ 568:	06 00 00 00 	add	r0, r0, 6
 
 Disassembly of section .comment:
 
-00000000 <_stack-0x1fffffc>:
+00000000 <_stack-0xfffffc>:
    0:	47 43 43 3a 	bad
    4:	20 28 47 4e 	xor	fp, r4, r7
    8:	55 29 20 31 	sltu	r1, r2, 10581
-   c:	35 2e 30 2e 	bad
-  10:	31 20 32 30 	bad
-  14:	32 35 30 31 	sltu	r1, r3, 13618
-  18:	32 35 20 28 	bad
+   c:	37 2e 30 2e 	bad
+  10:	30 20 32 30 	bad
+  14:	32 36 30 35 	sltu	r5, r3, 13874
+  18:	30 35 20 28 	sltu	r8, r2, r0
   1c:	65 78 70 65 	and	r5, r7, 30821
   20:	72 69 6d 65 	and	r5, r6, 26994
   24:	6e 74 61 6c 	and	r12, r6, 29806
