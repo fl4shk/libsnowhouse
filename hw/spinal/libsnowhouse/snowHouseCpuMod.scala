@@ -1123,12 +1123,14 @@ object SnowHouseCpuPipeStageInstrDecode {
     for (idx <- 0 until cfg.maxNumGprsPerInstr) {
       for (jdx <- 0 until cfg.regFileCfg.modMemWordValidSize) {
         upPayload.gprIsZeroVec(idx)(jdx) := (
-          upPayload.gprIdxVec(idx) === 0x0
+          (upPayload.gprIdxVec(idx) === 0x0)
+          || upPayload.instrCnt.myPsIdBubble.last
         )
       }
       for (jdx <- 0 until cfg.regFileCfg.modMemWordValidSize + 1) {
         upPayload.gprIsNonZeroVec(idx)(jdx) := (
-          upPayload.gprIdxVec(idx) =/= 0x0
+          (upPayload.gprIdxVec(idx) =/= 0x0)
+          && !upPayload.instrCnt.myPsIdBubble.last
         )
       }
     }
@@ -1872,6 +1874,144 @@ object SnowHouseCpuPipeStageInstrDecode {
             //}
           }
         }
+        is (BeqRaRbSimm._1) {
+          if (idx == 0) {
+            psId.myTempOpIsMemAccessLoad := False
+            psId.myTempOpIsMemAccessStore := False
+          }
+          val tempBtbElemWithBrKind = _commonDecodeBranch(
+            //mainWidth=cfg.mainWidth,
+            cfg=cfg,
+            upPayload=upPayload,
+            encInstr=encInstr(idx),
+            encInstrIdx=idx,
+            myTempOpIsJmpBr=psId.myTempOpIsJmpBr,
+            optSetOpFunc=Some(setOp),
+            optDoDefaultFunc=Some(doDefault),
+            optSplitOp=Some(upPayload.splitOp),
+            upIsFiring=cId.up.isFiring,
+            downIsFiring=cId.down.isFiring,
+            rPrevPreImm=rPrevPreImm(rPrevPreImm.size - 2),
+            //isPsId=true,
+            regPc=upPayload.regPc,
+            //srcRegPc=(
+            //  //upPayload.myHistRegPc
+            //  //  //(2)
+            //  //  .last
+            //  upPayload.laggingRegPc
+            //  //+ (if (!cfg.useLcvInstrBus) (0) else (1))
+            //  //+ (if (!cfg.useLcvInstrBus) (0) else (cfg.instrSizeBytes))
+            //  //psId.myHistRegPcMinus2Instrs.last
+            //),
+            //regPcPlusImm=upPayload.regPcPlusImm,
+            //dstRegPcNonLshift=(
+            //  //upPayload.regPcPlusImm + (3 * cfg.instrSizeBytes)
+            //  (
+            //    //(
+            //    //  if (!cfg.useLcvInstrBus) (
+            //    //    psId.myHistRegPcPlus1InstrSize.last.asUInt
+            //    //  ) else (
+            //    //    psId.myHistRegPcPlus2InstrSize.last.asUInt
+            //    //  )
+            //    //)
+            //    psId.myHistRegPcPlus1InstrSize.last.asUInt
+            //    //+ (if (!cfg.useLcvInstrBus) (0) else (1))
+            //    + upPayload.imm(2)
+            //    //(
+            //    //  //upPayload.imm(2).high downto log2Up(cfg.instrSizeBytes)
+            //    //)
+            //  ).resize(
+            //    psId.myHistRegPcPlus1InstrSize.last.asUInt.getWidth
+            //    //if (!cfg.useLcvInstrBus) (
+            //    //  psId.myHistRegPcPlus1InstrSize.last.asUInt.getWidth
+            //    //) else (
+            //    //  psId.myHistRegPcPlus2InstrSize.last.asUInt.getWidth
+            //    //)
+            //  )
+            //  //upPayload.laggingRegPcPlus1InstrSize + upPayload.imm(2)
+            //),
+            //branchPredictTkn=upPayload.branchPredictTkn,
+            isBl=false,
+            someTempSimmNoShift=tempSimmNoShift,
+          )
+          when (cId.up.isFiring) {
+            myTempBtbElem := (
+              tempBtbElemWithBrKind.btbElem
+            )
+            upPayload.btbElemBranchKind(1) := (
+              tempBtbElemWithBrKind.branchKind
+            )
+          }
+        }
+        is (BlRaSimm24._1) {
+          if (idx == 0) {
+            psId.myTempOpIsMemAccessLoad := False
+            psId.myTempOpIsMemAccessStore := False
+          }
+          val tempBtbElemWithBrKind = _commonDecodeBranch(
+            //mainWidth=cfg.mainWidth,
+            cfg=cfg,
+            upPayload=upPayload,
+            encInstr=encInstr(idx),
+            encInstrIdx=idx,
+            myTempOpIsJmpBr=psId.myTempOpIsJmpBr,
+            optSetOpFunc=Some(setOp),
+            optDoDefaultFunc=Some(doDefault),
+            optSplitOp=Some(upPayload.splitOp),
+            upIsFiring=cId.up.isFiring,
+            downIsFiring=cId.down.isFiring,
+            rPrevPreImm=rPrevPreImm(rPrevPreImm.size - 2),
+            //isPsId=true,
+            regPc=upPayload.regPc,
+            //srcRegPc=(
+            //  //upPayload.myHistRegPc
+            //  //  //(2)
+            //  //  .last
+            //  upPayload.laggingRegPc
+            //  //+ (if (!cfg.useLcvInstrBus) (0) else (cfg.instrSizeBytes))
+            //  //+ (if (!cfg.useLcvInstrBus) (0) else (1))
+            //  //psId.myHistRegPcMinus2Instrs.last
+            //),
+            //regPcPlusImm=upPayload.regPcPlusImm,
+            //dstRegPcNonLshift=(
+            //  //upPayload.regPcPlusImm + (3 * cfg.instrSizeBytes)
+            //  (
+            //    psId.myHistRegPcPlus1InstrSize.last.asUInt
+            //    //(
+            //    //  if (!cfg.useLcvInstrBus) (
+            //    //    psId.myHistRegPcPlus1InstrSize.last.asUInt
+            //    //  ) else (
+            //    //    psId.myHistRegPcPlus2InstrSize.last.asUInt
+            //    //  )
+            //    //)
+            //    //+ (if (!cfg.useLcvInstrBus) (0) else (1))
+            //    + upPayload.imm(2)
+            //    //(
+            //    //  //upPayload.imm(2).high downto log2Up(cfg.instrSizeBytes)
+            //    //)
+            //  ).resize(
+            //    psId.myHistRegPcPlus1InstrSize.last.asUInt.getWidth
+            //    //if (!cfg.useLcvInstrBus) (
+            //    //  psId.myHistRegPcPlus1InstrSize.last.asUInt.getWidth
+            //    //) else (
+            //    //  psId.myHistRegPcPlus2InstrSize.last.asUInt.getWidth
+            //    //)
+            //  )
+            //  //upPayload.laggingRegPcPlus1InstrSize + upPayload.imm(2)
+            //),
+            //branchPredictTkn=upPayload.branchPredictTkn,
+            isBl=true,
+            someTempSimmNoShift=tempBlSimm,
+          )
+          when (cId.up.isFiring) {
+            myTempBtbElem := (
+              tempBtbElemWithBrKind.btbElem
+            )
+            upPayload.btbElemBranchKind(1) := (
+              tempBtbElemWithBrKind.branchKind
+            )
+          }
+        }
         if (idx == 0) {
           default {
             psId.myTempOpIsMemAccessLoad := False
@@ -2040,136 +2180,6 @@ object SnowHouseCpuPipeStageInstrDecode {
               //default {
               //  doDefault()
               //}
-            }
-          }
-          is (BeqRaRbSimm._1) {
-            val tempBtbElemWithBrKind = _commonDecodeBranch(
-              //mainWidth=cfg.mainWidth,
-              cfg=cfg,
-              upPayload=upPayload,
-              encInstr=encInstr(idx),
-              encInstrIdx=idx,
-              myTempOpIsJmpBr=psId.myTempOpIsJmpBr,
-              optSetOpFunc=Some(setOp),
-              optDoDefaultFunc=Some(doDefault),
-              optSplitOp=Some(upPayload.splitOp),
-              upIsFiring=cId.up.isFiring,
-              downIsFiring=cId.down.isFiring,
-              rPrevPreImm=rPrevPreImm(rPrevPreImm.size - 2),
-              //isPsId=true,
-              regPc=upPayload.regPc,
-              //srcRegPc=(
-              //  //upPayload.myHistRegPc
-              //  //  //(2)
-              //  //  .last
-              //  upPayload.laggingRegPc
-              //  //+ (if (!cfg.useLcvInstrBus) (0) else (1))
-              //  //+ (if (!cfg.useLcvInstrBus) (0) else (cfg.instrSizeBytes))
-              //  //psId.myHistRegPcMinus2Instrs.last
-              //),
-              //regPcPlusImm=upPayload.regPcPlusImm,
-              //dstRegPcNonLshift=(
-              //  //upPayload.regPcPlusImm + (3 * cfg.instrSizeBytes)
-              //  (
-              //    //(
-              //    //  if (!cfg.useLcvInstrBus) (
-              //    //    psId.myHistRegPcPlus1InstrSize.last.asUInt
-              //    //  ) else (
-              //    //    psId.myHistRegPcPlus2InstrSize.last.asUInt
-              //    //  )
-              //    //)
-              //    psId.myHistRegPcPlus1InstrSize.last.asUInt
-              //    //+ (if (!cfg.useLcvInstrBus) (0) else (1))
-              //    + upPayload.imm(2)
-              //    //(
-              //    //  //upPayload.imm(2).high downto log2Up(cfg.instrSizeBytes)
-              //    //)
-              //  ).resize(
-              //    psId.myHistRegPcPlus1InstrSize.last.asUInt.getWidth
-              //    //if (!cfg.useLcvInstrBus) (
-              //    //  psId.myHistRegPcPlus1InstrSize.last.asUInt.getWidth
-              //    //) else (
-              //    //  psId.myHistRegPcPlus2InstrSize.last.asUInt.getWidth
-              //    //)
-              //  )
-              //  //upPayload.laggingRegPcPlus1InstrSize + upPayload.imm(2)
-              //),
-              //branchPredictTkn=upPayload.branchPredictTkn,
-              isBl=false,
-              someTempSimmNoShift=tempSimmNoShift,
-            )
-            when (cId.up.isFiring) {
-              myTempBtbElem := (
-                tempBtbElemWithBrKind.btbElem
-              )
-              upPayload.btbElemBranchKind(1) := (
-                tempBtbElemWithBrKind.branchKind
-              )
-            }
-          }
-          is (BlRaSimm24._1) {
-            val tempBtbElemWithBrKind = _commonDecodeBranch(
-              //mainWidth=cfg.mainWidth,
-              cfg=cfg,
-              upPayload=upPayload,
-              encInstr=encInstr(idx),
-              encInstrIdx=idx,
-              myTempOpIsJmpBr=psId.myTempOpIsJmpBr,
-              optSetOpFunc=Some(setOp),
-              optDoDefaultFunc=Some(doDefault),
-              optSplitOp=Some(upPayload.splitOp),
-              upIsFiring=cId.up.isFiring,
-              downIsFiring=cId.down.isFiring,
-              rPrevPreImm=rPrevPreImm(rPrevPreImm.size - 2),
-              //isPsId=true,
-              regPc=upPayload.regPc,
-              //srcRegPc=(
-              //  //upPayload.myHistRegPc
-              //  //  //(2)
-              //  //  .last
-              //  upPayload.laggingRegPc
-              //  //+ (if (!cfg.useLcvInstrBus) (0) else (cfg.instrSizeBytes))
-              //  //+ (if (!cfg.useLcvInstrBus) (0) else (1))
-              //  //psId.myHistRegPcMinus2Instrs.last
-              //),
-              //regPcPlusImm=upPayload.regPcPlusImm,
-              //dstRegPcNonLshift=(
-              //  //upPayload.regPcPlusImm + (3 * cfg.instrSizeBytes)
-              //  (
-              //    psId.myHistRegPcPlus1InstrSize.last.asUInt
-              //    //(
-              //    //  if (!cfg.useLcvInstrBus) (
-              //    //    psId.myHistRegPcPlus1InstrSize.last.asUInt
-              //    //  ) else (
-              //    //    psId.myHistRegPcPlus2InstrSize.last.asUInt
-              //    //  )
-              //    //)
-              //    //+ (if (!cfg.useLcvInstrBus) (0) else (1))
-              //    + upPayload.imm(2)
-              //    //(
-              //    //  //upPayload.imm(2).high downto log2Up(cfg.instrSizeBytes)
-              //    //)
-              //  ).resize(
-              //    psId.myHistRegPcPlus1InstrSize.last.asUInt.getWidth
-              //    //if (!cfg.useLcvInstrBus) (
-              //    //  psId.myHistRegPcPlus1InstrSize.last.asUInt.getWidth
-              //    //) else (
-              //    //  psId.myHistRegPcPlus2InstrSize.last.asUInt.getWidth
-              //    //)
-              //  )
-              //  //upPayload.laggingRegPcPlus1InstrSize + upPayload.imm(2)
-              //),
-              //branchPredictTkn=upPayload.branchPredictTkn,
-              isBl=true,
-              someTempSimmNoShift=tempBlSimm,
-            )
-            when (cId.up.isFiring) {
-              myTempBtbElem := (
-                tempBtbElemWithBrKind.btbElem
-              )
-              upPayload.btbElemBranchKind(1) := (
-                tempBtbElemWithBrKind.branchKind
-              )
             }
           }
           //is (CpyuRaRb._1) {

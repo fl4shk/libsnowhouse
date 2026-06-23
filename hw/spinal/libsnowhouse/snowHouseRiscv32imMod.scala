@@ -946,11 +946,13 @@ object SnowHouseRiscv32imPipeStageInstrDecode {
       for (jdx <- 0 until cfg.regFileCfg.modMemWordValidSize) {
         upPayload.gprIsZeroVec(idx)(jdx) := (
           upPayload.gprIdxVec(idx) === 0x0
+          || upPayload.instrCnt.myPsIdBubble.last
         )
       }
       for (jdx <- 0 until cfg.regFileCfg.modMemWordValidSize + 1) {
         upPayload.gprIsNonZeroVec(idx)(jdx) := (
           upPayload.gprIdxVec(idx) =/= 0x0
+          && !upPayload.instrCnt.myPsIdBubble.last
         )
       }
     }
