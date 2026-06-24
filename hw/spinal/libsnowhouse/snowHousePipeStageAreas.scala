@@ -3894,7 +3894,8 @@ case class SnowHousePipeStageInstrDecode(
       myTempBtbElem
     )
     def numFollowingInstrs = (
-      2
+      1
+      //2
       // up to two following instructions,
       // per the overall pipeline structure of EX -> MEM -> WB -> LastBack
     )
@@ -4126,23 +4127,24 @@ case class SnowHousePipeStageInstrDecode(
               //  //)
               //)
 
-              (
-                upPayload(1).myDoHaveHazardAddrCheckVec(idx + 0)
-                || (
-                  //myHistCondMemAccBubble(idx + 1)
-                  //myHistCondStoreBubble(idx + 1)
-                  //&& myTempOpIsMemAccessLoad
-                  myHistCondMemAccBubble(idx + 1)
-                  && (
-                    myHistCondMemAccBubble(0)
-                  )
-                )
-                || (
-                  myHistCondMemAccBubble(idx + 1)
-                  && myTempOpIsJmpBr
-                )
-              )
-              && myHistCondMemAccBubble(idx + 1)
+              //(
+              //  upPayload(1).myDoHaveHazardAddrCheckVec(idx + 0)
+              //  || (
+              //    //myHistCondMemAccBubble(idx + 1)
+              //    //myHistCondStoreBubble(idx + 1)
+              //    //&& myTempOpIsMemAccessLoad
+              //    myHistCondMemAccBubble(idx + 1)
+              //    && (
+              //      myHistCondMemAccBubble(0)
+              //    )
+              //  )
+              //  || (
+              //    myHistCondMemAccBubble(idx + 1)
+              //    && myTempOpIsJmpBr
+              //  )
+              //)
+              //&& 
+              myHistCondMemAccBubble(idx + 1)
               && !shouldClearExtraDecodeInfo
             ) {
               doSendBubbleMainMost()
