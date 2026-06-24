@@ -3894,8 +3894,8 @@ case class SnowHousePipeStageInstrDecode(
       myTempBtbElem
     )
     def numFollowingInstrs = (
-      //1
-      2
+      1
+      //2
       // up to two following instructions,
       // per the overall pipeline structure of EX -> MEM -> WB -> LastBack
     )
