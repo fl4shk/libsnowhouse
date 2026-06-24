@@ -4058,6 +4058,12 @@ case class SnowHousePipeStageInstrDecode(
       upPayload(1).branchTgtBufElem(1) := (
         upPayload(1).branchTgtBufElem(1).getZero
       )
+      upPayload(1).branchPredictTkn := False
+      upPayload(1).branchPredictReplaceBtbElem := False
+
+      upPayload(1).regPcSetItCnt.foreach(item => {
+        item := item.getZero
+      })
       down(pId) := upPayload(1)
     }
     switch (rStallState) {
@@ -10637,6 +10643,7 @@ case class SnowHousePipeStageExecute(
     //)
     //setOutpModMemWord.io.splitOp.setToDefault()
     //setOutpModMemWord.io.splitOp.opIsMultiCycle := False
+    setOutpModMemWord.io.splitOp.opIsMultiCycle := False
     setOutpModMemWord.io.splitOp.opIsMemAccess := False
     setOutpModMemWord.io.splitOp.jmpBrOpIsEq := False
     setOutpModMemWord.io.splitOp.jmpBrOpIsNe := False
