@@ -9328,8 +9328,9 @@ case class SnowHousePipeStageExecute(
           && setOutpModMemWord.io.regPcSetItCnt(0)(0)
         )
       )
-      && (
-        cMid0Front.up.isValid
+      || (
+        !myShouldIgnoreInstr(0)
+        && cMid0Front.up.isValid
         && RegNextWhen(
           !outp.splitOp.opIsMemAccess,
           cond=cMid0Front.up.isFiring,
