@@ -3894,8 +3894,8 @@ case class SnowHousePipeStageInstrDecode(
       myTempBtbElem
     )
     def numFollowingInstrs = (
-      1
-      //2
+      //1
+      2
       // up to two following instructions,
       // per the overall pipeline structure of EX -> MEM -> WB -> LastBack
     )
@@ -4150,7 +4150,8 @@ case class SnowHousePipeStageInstrDecode(
               //  )
               //)
               //&& 
-              myHistCondMemAccBubble(idx + 1)
+              upPayload(1).myDoHaveHazardAddrCheckVec(idx + 0)
+              && myHistCondMemAccBubble(idx + 1)
               && !shouldClearExtraDecodeInfo
             ) {
               doSendBubbleMainMost()
@@ -4158,9 +4159,9 @@ case class SnowHousePipeStageInstrDecode(
                 //rStallState := True
                 rStallState := (
                   //if (idx == 0) (
-                    //MyLcvDbusStallState.POST_LD_0
+                    MyLcvDbusStallState.POST_LD_0
                   //) else (
-                    MyLcvDbusStallState.POST_LD_1
+                  //  MyLcvDbusStallState.POST_LD_1
                   //)
                 )
               }
