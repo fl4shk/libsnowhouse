@@ -9356,7 +9356,9 @@ case class SnowHousePipeStageExecute(
       ) else (
         tempCondNonLcvDbus
         && (
-          !outp.instrCnt.myPsIdBubble.head
+          //!outp.instrCnt.myPsIdBubble.head
+          //&& 
+          !io.lcvDbus.h2dBus.valid
         )
       )
     )
