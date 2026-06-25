@@ -4158,9 +4158,9 @@ case class SnowHousePipeStageInstrDecode(
                 //rStallState := True
                 rStallState := (
                   //if (idx == 0) (
-                    MyLcvDbusStallState.POST_LD_0
+                    //MyLcvDbusStallState.POST_LD_0
                   //) else (
-                  //  MyLcvDbusStallState.POST_LD_1
+                    MyLcvDbusStallState.POST_LD_1
                   //)
                 )
               }
@@ -9323,14 +9323,14 @@ case class SnowHousePipeStageExecute(
       (
         (
           !myShouldIgnoreInstr(0)
-          && cMid0Front.up.isValid
+          //&& cMid0Front.up.isValid
           //&& RegNextWhen(
           //  !outp.splitOp.opIsMemAccess,
           //  cond=cMid0Front.up.isFiring,
           //  init=False
           //)
-          && !outp.splitOp.opIsMemAccess
-          && myTempDownIsReady
+          //&& !outp.splitOp.opIsMemAccess
+          //&& myTempDownIsReady
         )
         || (
           cMid0Front.up.isValid
