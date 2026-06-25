@@ -9321,23 +9321,34 @@ case class SnowHousePipeStageExecute(
       //!setOutpModMemWord.io.shouldIgnoreInstr(0)
       //!shouldIgnoreInstr
       (
-        !myShouldIgnoreInstr(0)
+        (
+          !myShouldIgnoreInstr(0)
+          && cMid0Front.up.isValid
+          //&& RegNextWhen(
+          //  !outp.splitOp.opIsMemAccess,
+          //  cond=cMid0Front.up.isFiring,
+          //  init=False
+          //)
+          && !outp.splitOp.opIsMemAccess
+          && myTempDownIsReady
+        )
         || (
           cMid0Front.up.isValid
           && myTempDownIsReady
           && setOutpModMemWord.io.regPcSetItCnt(0)(0)
         )
       )
-      || (
-        !myShouldIgnoreInstr(0)
-        && cMid0Front.up.isValid
-        && RegNextWhen(
-          !outp.splitOp.opIsMemAccess,
-          cond=cMid0Front.up.isFiring,
-          init=False
-        )
-        && myTempDownIsReady
-      )
+      //|| (
+      //  !myShouldIgnoreInstr(0)
+      //  && cMid0Front.up.isValid
+      //  //&& RegNextWhen(
+      //  //  !outp.splitOp.opIsMemAccess,
+      //  //  cond=cMid0Front.up.isFiring,
+      //  //  init=False
+      //  //)
+      //  && !outp.splitOp.opIsMemAccess
+      //  && myTempDownIsReady
+      //)
     )
     val tempCond = (
       if (!cfg.useLcvDataBus) (
