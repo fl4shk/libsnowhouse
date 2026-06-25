@@ -1,97 +1,159 @@
---------
-Before:
-
-add rA, rB, rC
-add rA, rB, simm16
-sub rA, rB, rC
-sltu rA, rB, rC
-slts rA, rB, rC
-xor rA, rB, rC
-xor rA, rB, imm16
-or rA, rB, rC
-or rA, rB, simm16
-and rA, rB, simm16
-lsl rA, rB, rC
-lsl rA, rB, imm5
-lsr rA, rB, rC
-lsr rA, rB, imm5
-asr rA, rB, rC
-asr rA, rB, imm5
-and rA, rB, rC
-cpy ids, rB
-cpy rA, ira
-cpy ie, rB
-ret ira
-mul rA, rB, rC
-udiv rA, rB, rC
-sdiv rA, rB, rC
-umod rA, rB, rC
-smod rA, rB, rC
-ldr rA, rB, simm16
-str rA, rB, simm16
-lduh rA, rB, simm16
-ldsh rA, rB, simm16
-ldub rA, rB, simm16
-ldsb rA, rB, simm16
-sth rA, rB, simm16
-stb rA, rB, simm16
-bl rA, simm16
-beq rA, rB, simm16
-add rA, pc, simm16
-bne rA, rB, simm16
-bltu rA, rB, simm16
-bgeu rA, rB, simm16
-blts rA, rB, simm16
-bges rA, rB, simm16
-jl rA, rB
-pre simm16
---------
-After:
-add rA, rB, rC
-add rA, rB, simm16
-sub rA, rB, rC
-sltu rA, rB, rC
-slts rA, rB, rC
-sltu rA, rB, imm16
-slts rA, rB, simm16
-xor rA, rB, rC
-xor rA, rB, imm16
-or rA, rB, rC
-or rA, rB, imm16
-and rA, rB, simm16
-lsl rA, rB, rC
-lsl rA, rB, imm5
-lsr rA, rB, rC
-lsr rA, rB, imm5
-asr rA, rB, rC
-asr rA, rB, imm5
-and rA, rB, rC
-cpy ids, rB
-cpy rA, ira
-cpy ie, rB
-ret ira
-mul rA, rB, rC
-udiv rA, rB, rC
-sdiv rA, rB, rC
-umod rA, rB, rC
-smod rA, rB, rC
-ldr rA, rB, simm16
-str rA, rB, simm16
-lduh rA, rB, simm16
-ldsh rA, rB, simm16
-ldub rA, rB, simm16
-ldsb rA, rB, simm16
-sth rA, rB, simm16
-stb rA, rB, simm16
-beq rA, rB, simm16
-add rA, pc, simm16
-bne rA, rB, simm16
-bltu rA, rB, simm16
-bgeu rA, rB, simm16
-blts rA, rB, simm16
-bges rA, rB, simm16
-jl rA, rB
-bl rA, simm24
+jmpBrAlwaysEqNeOp: beq rA, rB, simm16 // 0
+multiCycleOp: add rA, pc, simm16 // 0
+jmpBrAlwaysEqNeOp: bne rA, rB, simm16 // 2
+jmpBrOtherOp: bltu rA, rB, simm16 // 0
+jmpBrOtherOp: bgeu rA, rB, simm16 // 1
+jmpBrOtherOp: blts rA, rB, simm16 // 2
+jmpBrOtherOp: bges rA, rB, simm16 // 3
+jmpBrAlwaysEqNeOp: jl rA, rB // 3
+aluOp: add rA, rB, rC // 0
+jmpBrAlwaysEqNeOp: bl rA, simm24 // 1
+cpyCpyuiOp: ldr rA, rB, simm16 // 13
+cpyCpyuiOp: str rA, rB, simm16 // 14
+cpyCpyuiOp: lduh rA, rB, simm16 // 15
+cpyCpyuiOp: ldsh rA, rB, simm16 // 16
+cpyCpyuiOp: ldub rA, rB, simm16 // 17
+cpyCpyuiOp: ldsb rA, rB, simm16 // 18
+cpyCpyuiOp: sth rA, rB, simm16 // 19
+cpyCpyuiOp: stb rA, rB, simm16 // 20
+jmpBrAlwaysEqNeOp: beq rA, rB, simm16 // 0
+multiCycleOp: add rA, pc, simm16 // 0
+jmpBrAlwaysEqNeOp: bne rA, rB, simm16 // 2
+jmpBrOtherOp: bltu rA, rB, simm16 // 0
+jmpBrOtherOp: bgeu rA, rB, simm16 // 1
+jmpBrOtherOp: blts rA, rB, simm16 // 2
+jmpBrOtherOp: bges rA, rB, simm16 // 3
+jmpBrAlwaysEqNeOp: jl rA, rB // 3
+aluOp: add rA, rB, rC // 0
+jmpBrAlwaysEqNeOp: bl rA, simm24 // 1
+aluOp: add rA, rB, rC // 0
+aluOp: add rA, rB, simm16 // 1
+aluOp: sub rA, rB, rC // 2
+aluOp: sltu rA, rB, rC // 3
+aluOp: slts rA, rB, rC // 4
+aluOp: sltu rA, rB, imm16 // 5
+aluOp: slts rA, rB, simm16 // 6
+aluOp: xor rA, rB, rC // 7
+aluOp: xor rA, rB, simm16 // 8
+aluOp: or rA, rB, rC // 9
+aluOp: or rA, rB, imm16 // 10
+aluOp: and rA, rB, simm16 // 12
+multiCycleOp: lsl rA, rB, rC // 0
+multiCycleOp: lsl rA, rB, imm5 // 1
+multiCycleOp: lsr rA, rB, rC // 2
+multiCycleOp: lsr rA, rB, imm5 // 3
+multiCycleOp: asr rA, rB, rC // 4
+multiCycleOp: asr rA, rB, imm5 // 5
+aluOp: and rA, rB, rC // 11
+multiCycleOp: cpy ids, rB // 0
+cpyCpyuiOp: cpy rA, ira // 21
+multiCycleOp: cpy ie, rB // 0
+jmpBrAlwaysEqNeOp: ret ira // 5
+cpyCpyuiOp: cpy rA, hi // 22
+cpyCpyuiOp: cpy hi, rB // 23
+aluOp: add rA, rB, rC // 0
+multiCycleOp: umulw rA, rB, rC // 0
+multiCycleOp: smulw rA, rB, rC // 1
+multiCycleOp: udiv rA, rB, rC // 0
+multiCycleOp: sdiv rA, rB, rC // 1
+multiCycleOp: umod rA, rB, rC // 2
+multiCycleOp: smod rA, rB, rC // 3
+multiCycleOp: udivw rA, rB, rC // 4
+multiCycleOp: sdivw rA, rB, rC // 5
+//--------
+//Before:
+//
+//add rA, rB, rC
+//add rA, rB, simm16
+//sub rA, rB, rC
+//sltu rA, rB, rC
+//slts rA, rB, rC
+//xor rA, rB, rC
+//xor rA, rB, imm16
+//or rA, rB, rC
+//or rA, rB, simm16
+//and rA, rB, simm16
+//lsl rA, rB, rC
+//lsl rA, rB, imm5
+//lsr rA, rB, rC
+//lsr rA, rB, imm5
+//asr rA, rB, rC
+//asr rA, rB, imm5
+//and rA, rB, rC
+//cpy ids, rB
+//cpy rA, ira
+//cpy ie, rB
+//ret ira
+//mul rA, rB, rC
+//udiv rA, rB, rC
+//sdiv rA, rB, rC
+//umod rA, rB, rC
+//smod rA, rB, rC
+//ldr rA, rB, simm16
+//str rA, rB, simm16
+//lduh rA, rB, simm16
+//ldsh rA, rB, simm16
+//ldub rA, rB, simm16
+//ldsb rA, rB, simm16
+//sth rA, rB, simm16
+//stb rA, rB, simm16
+//bl rA, simm16
+//beq rA, rB, simm16
+//add rA, pc, simm16
+//bne rA, rB, simm16
+//bltu rA, rB, simm16
+//bgeu rA, rB, simm16
+//blts rA, rB, simm16
+//bges rA, rB, simm16
+//jl rA, rB
+//pre simm16
+//--------
+//After:
+//add rA, rB, rC
+//add rA, rB, simm16
+//sub rA, rB, rC
+//sltu rA, rB, rC
+//slts rA, rB, rC
+//sltu rA, rB, imm16
+//slts rA, rB, simm16
+//xor rA, rB, rC
+//xor rA, rB, imm16
+//or rA, rB, rC
+//or rA, rB, imm16
+//and rA, rB, simm16
+//lsl rA, rB, rC
+//lsl rA, rB, imm5
+//lsr rA, rB, rC
+//lsr rA, rB, imm5
+//asr rA, rB, rC
+//asr rA, rB, imm5
+//and rA, rB, rC
+//cpy ids, rB
+//cpy rA, ira
+//cpy ie, rB
+//ret ira
+//mul rA, rB, rC
+//udiv rA, rB, rC
+//sdiv rA, rB, rC
+//umod rA, rB, rC
+//smod rA, rB, rC
+//ldr rA, rB, simm16
+//str rA, rB, simm16
+//lduh rA, rB, simm16
+//ldsh rA, rB, simm16
+//ldub rA, rB, simm16
+//ldsb rA, rB, simm16
+//sth rA, rB, simm16
+//stb rA, rB, simm16
+//beq rA, rB, simm16
+//add rA, pc, simm16
+//bne rA, rB, simm16
+//bltu rA, rB, simm16
+//bgeu rA, rB, simm16
+//blts rA, rB, simm16
+//bges rA, rB, simm16
+//jl rA, rB
+//bl rA, simm24
 --------
 
 Notes on Changes (August 2025):
