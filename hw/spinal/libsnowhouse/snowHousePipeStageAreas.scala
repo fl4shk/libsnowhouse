@@ -4188,10 +4188,17 @@ case class SnowHousePipeStageInstrDecode(
     }
     when (up.isFiring) {
       rStallState := MyLcvDbusStallState.IDLE
+      upPayload(1).splitOp.opIsDualWidth := (
+        myTempOpIsDualWidth
+      )
+    } otherwise {
+      upPayload(1).splitOp.opIsDualWidth := (
+        False
+      )
     }
-    upPayload(1).splitOp.opIsDualWidth := (
-      myTempOpIsDualWidth
-    )
+    //upPayload(1).splitOp.opIsDualWidth := (
+    //  myTempOpIsDualWidth
+    //)
     //for (idx <- 0 until numFollowingInstrs) {
     //  //when (rose(rStallState.asBits(idx + 1))) {
     //  //  upPayload(1).branchTgtBuf
