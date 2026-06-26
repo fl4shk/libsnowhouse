@@ -4056,6 +4056,10 @@ case class SnowHousePipeStageInstrDecode(
         item := True
       })
       upPayload(1).splitOp.setToDefault()
+      upPayload(0).branchTgtBufElem(0) := (
+        //.valid := False
+        upPayload(0).branchTgtBufElem(0).getZero
+      )
       upPayload(1).branchTgtBufElem(1) := (
         upPayload(1).branchTgtBufElem(1).getZero
       )
@@ -10434,6 +10438,7 @@ case class SnowHousePipeStageExecute(
     setOutpModMemWord.io.btbElemValid := (
       //if (!cfg.useLcvDataBus) (
         outp.branchTgtBufElem(0).valid
+        //&& !outp.instrCnt.myPsIdBubble.last
       //) else (
       //  outp.branchTgtBufElem(0).valid
       //  && !outp.instrCnt.myPsIdBubble.last

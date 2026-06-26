@@ -3533,7 +3533,7 @@ case class SnowHouseRiscv32imWithSharedRam(
       outp.addr.msb := False
     }
   )
-  cpu.io.lcvIbus.d2hBus << (
+  cpu.io.lcvIbus.d2hBus <-/< (
     //icache.io.loBus.d2hBus
     sharedRam.io.lcvIbus.d2hBus
   )
@@ -3549,7 +3549,7 @@ case class SnowHouseRiscv32imWithSharedRam(
       outp.addr.msb := False
     }
   )
-  cpu.io.lcvDbus.d2hBus << (
+  cpu.io.lcvDbus.d2hBus <-/< (
     //dcache.io.loBus.d2hBus
     sharedRam.io.lcvDbus.d2hBus
   )
