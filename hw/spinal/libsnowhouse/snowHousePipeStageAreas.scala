@@ -4155,11 +4155,12 @@ case class SnowHousePipeStageInstrDecode(
               //  )
               //)
               //&& 
-              (
-                upPayload(1).myDoHaveHazardAddrCheckVec(idx + 0)
-                || myTempOpIsJmpBr
-              )
-              && myHistCondMemAccBubble(idx + 1)
+              //(
+              //  upPayload(1).myDoHaveHazardAddrCheckVec(idx + 0)
+              //  || myTempOpIsJmpBr
+              //)
+              //&& 
+              myHistCondMemAccBubble(idx + 1)
               && !shouldClearExtraDecodeInfo
             ) {
               doSendBubbleMainMost()
@@ -9372,9 +9373,8 @@ case class SnowHousePipeStageExecute(
       ) else (
         tempCondNonLcvDbus
         && (
-          //!outp.instrCnt.myPsIdBubble.head
-          //&& 
-          !io.lcvDbus.h2dBus.valid
+          !outp.instrCnt.myPsIdBubble.head
+          //&& !io.lcvDbus.h2dBus.valid
         )
       )
     )
