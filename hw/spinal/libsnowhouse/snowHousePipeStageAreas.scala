@@ -4155,7 +4155,10 @@ case class SnowHousePipeStageInstrDecode(
               //  )
               //)
               //&& 
-              upPayload(1).myDoHaveHazardAddrCheckVec(idx + 0)
+              (
+                upPayload(1).myDoHaveHazardAddrCheckVec(idx + 0)
+                || myTempOpIsJmpBr
+              )
               && myHistCondMemAccBubble(idx + 1)
               && !shouldClearExtraDecodeInfo
             ) {
