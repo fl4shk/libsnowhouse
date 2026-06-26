@@ -3894,8 +3894,9 @@ case class SnowHousePipeStageInstrDecode(
       myTempBtbElem
     )
     def numFollowingInstrs = (
+      upPayload(1).myDoHaveHazardAddrCheckVec.size
       //1
-      2
+      //2
       // up to two following instructions,
       // per the overall pipeline structure of EX -> MEM -> WB -> LastBack
     )
