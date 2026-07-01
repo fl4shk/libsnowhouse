@@ -6130,6 +6130,9 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
   //)
   io.dbusHostPayload.data := io.rdMemWord(1) //selRdMemWord(0)
   if (cfg.allMainLdstUseGprPlusImm) {
+    //println(
+    //  "NOTICE: we do have cfg.allMainLdstUseGprPlusImm"
+    //)
     io.dbusHostPayload.addr(
       io.dbusHostPayload.addr.high
       downto cfg.mainAddrWidth

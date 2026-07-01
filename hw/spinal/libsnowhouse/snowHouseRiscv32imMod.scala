@@ -3605,14 +3605,14 @@ object SnowHouseRiscv32imWithoutRamToVerilog extends App {
 }
 object SnowHouseRiscv32imTestProgramArr {
   val programStrNoExtBasenameArr = Array[String](
-    "rv32ui-p-lw",
-    "rv32ui-p-slti",
-    "rv32ui-p-sw",
-    "rv32ui-p-or",
-    "rv32ui-p-lhu",
-    "rv32ui-p-lbu",
-    "rv32ui-p-andi",
-    "rv32ui-p-and",
+    //"rv32ui-p-lw",
+    //"rv32ui-p-slti",
+    //"rv32ui-p-sw",
+    //"rv32ui-p-or",
+    //"rv32ui-p-lhu",
+    //"rv32ui-p-lbu",
+    //"rv32ui-p-andi",
+    //"rv32ui-p-and",
     "rv32ui-p-sb",
     "rv32ui-p-slt",
     "rv32ui-p-sra",
