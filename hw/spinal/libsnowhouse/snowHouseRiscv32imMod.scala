@@ -231,9 +231,9 @@ object Rv32SType {
   }
 
   object Op {
-    val SbRdRs1Imm = OpFields(op=0x23, f3=0x0)
-    val ShRdRs1Imm = OpFields(op=0x23, f3=0x1)
-    val SwRdRs1Imm = OpFields(op=0x23, f3=0x2)
+    val SbRs2Rs1Imm = OpFields(op=0x23, f3=0x0)
+    val ShRs2Rs1Imm = OpFields(op=0x23, f3=0x1)
+    val SwRs2Rs1Imm = OpFields(op=0x23, f3=0x2)
   }
 }
 
@@ -708,7 +708,7 @@ object Riscv32imOpInfoMap {
   )
   //--------
   opInfoMap += (
-    Rv32SType.Op.SbRdRs1Imm -> OpInfo.mkLdSt(
+    Rv32SType.Op.SbRs2Rs1Imm -> OpInfo.mkLdSt(
       dstArr=Array[DstKind](DstKind.Gpr),
       srcArr=Array[SrcKind](SrcKind.Gpr, SrcKind.Imm()),
       modify=MemAccessKind.Mem8(isSigned=false, isStore=true),
@@ -716,7 +716,7 @@ object Riscv32imOpInfoMap {
   )
 
   opInfoMap += (
-    Rv32SType.Op.ShRdRs1Imm -> OpInfo.mkLdSt(
+    Rv32SType.Op.ShRs2Rs1Imm -> OpInfo.mkLdSt(
       dstArr=Array[DstKind](DstKind.Gpr),
       srcArr=Array[SrcKind](SrcKind.Gpr, SrcKind.Imm()),
       modify=MemAccessKind.Mem16(isSigned=false, isStore=true),
@@ -724,7 +724,7 @@ object Riscv32imOpInfoMap {
   )
 
   opInfoMap += (
-    Rv32SType.Op.SwRdRs1Imm -> OpInfo.mkLdSt(
+    Rv32SType.Op.SwRs2Rs1Imm -> OpInfo.mkLdSt(
       dstArr=Array[DstKind](DstKind.Gpr),
       srcArr=Array[SrcKind](SrcKind.Gpr, SrcKind.Imm(/*Some(true)*/)),
       modify=MemAccessKind.Mem32(isSigned=false, isStore=true),
@@ -977,7 +977,7 @@ object SnowHouseRiscv32imPipeStageInstrDecode {
     )
     psId.myTempOpIsMemAccessStore := (
       //False
-      encInstrS.head.opcode === SwRdRs1Imm.op
+      encInstrS.head.opcode === SwRs2Rs1Imm.op
     )
     psId.myTempOpIsJmpBr := (
       encInstrB.head.opcode === BeqRdRs1Imm.op
@@ -1556,23 +1556,28 @@ object SnowHouseRiscv32imPipeStageInstrDecode {
             setOp(LhuRdRs1Imm, encInstrI.last)
           }
         }
+        upPayload.gprIdxVec.last := encInstrR.last.rd
+        upPayload.gprIdxVec(0) := encInstrR.last.rs1
+        upPayload.gprIdxVec(1) := encInstrR.last.rs2
       }
       is (JalrRdRs1Imm.op) {
         setOp(JalrRdRs1Imm, encInstrI.last)
       }
-      is (SbRdRs1Imm.op) {
+      is (SbRs2Rs1Imm.op) {
         switch (encInstrS.last.funct3) {
-          is (SbRdRs1Imm.f3) {
-            setOp(SbRdRs1Imm, encInstrS.last)
+          is (SbRs2Rs1Imm.f3) {
+            setOp(SbRs2Rs1Imm, encInstrS.last)
           }
-          is (ShRdRs1Imm.f3) {
-            setOp(ShRdRs1Imm, encInstrS.last)
+          is (ShRs2Rs1Imm.f3) {
+            setOp(ShRs2Rs1Imm, encInstrS.last)
           }
-          is (SwRdRs1Imm.f3) {
-            setOp(SwRdRs1Imm, encInstrS.last)
+          is (SwRs2Rs1Imm.f3) {
+            setOp(SwRs2Rs1Imm, encInstrS.last)
           }
         }
         upPayload.gprIdxVec.last := 0x0
+        upPayload.gprIdxVec(0) := encInstrR.last.rs1
+        upPayload.gprIdxVec(1) := encInstrR.last.rs2
       }
       is (BeqRdRs1Imm.op) {
         switch (encInstrB.last.funct3) {
