@@ -540,6 +540,7 @@ private:        // variables
 
     std::optional<u8*> _sw_wrote_to_fb_end = std::nullopt;
     timeval* _tp = nullptr;
+    bool _sw_read_from_tp = false;
 public:     // functions
     MeltedMoonDebugRiscvEmu() = default;
     MeltedMoonDebugRiscvEmu(
@@ -596,7 +597,9 @@ public:     // functions
     //        return 1;
     //    }
     //}
-    std::optional<u8*> exec_one_instr(struct timeval& n_tp);
+    std::pair<bool, std::optional<u8*>> exec_one_instr(
+        struct timeval& n_tp
+    );
 private:        // functions
     inline u32 _rd() {
         return _gpr_file.at(_enc_instr_r.rd);
@@ -761,11 +764,13 @@ MeltedMoonDebugRiscvEmu::MeltedMoonDebugRiscvEmu(
 //--------
 }
 
-std::optional<u8*> MeltedMoonDebugRiscvEmu::exec_one_instr(
+std::pair<bool, std::optional<u8*>>
+MeltedMoonDebugRiscvEmu::exec_one_instr(
     timeval& n_tp
 ) {
-    _tp = &n_tp;
     _sw_wrote_to_fb_end = std::nullopt;
+    _sw_read_from_tp = false;
+    _tp = &n_tp;
     const u32 saved_pc = _pc;
     if (
         saved_pc != (saved_pc & ~0b11u)
@@ -1514,7 +1519,7 @@ std::optional<u8*> MeltedMoonDebugRiscvEmu::exec_one_instr(
 
     //_pc += sizeof(u32);
 
-    return _sw_wrote_to_fb_end;
+    return std::pair(_sw_read_from_tp, _sw_wrote_to_fb_end);
 }
 
 void MeltedMoonDebugRiscvEmu::_bus_write(
@@ -1650,80 +1655,20 @@ u32 MeltedMoonDebugRiscvEmu::_bus_read(
     ) {
         if (addr > MEM_SIZE) {
             if (addr == ADDR_TIMER_USEC_LO) {
-                //struct timeval tp;
-                //gettimeofday(&tp, NULL);
-                //////*sec = tp.tv_sec;
-                //////*usec = tp.tv_usec;
-                //memcpy(&ret, &tp.tv_usec, byte_count);
-                ////static u32 temp = 0;
-                //////temp += 1000u;
-                ////memcpy(&ret, &temp, byte_count); 
-                ////temp++;
-                //////temp += 1000;
-
-                //static bool did_first_check = false;
-                //static struct timeval first_tp;
-
-                //if (!did_first_check) {
-                //    did_first_check = true;
-                //    gettimeofday(&first_tp, NULL);
-                //    memset(&ret, 0, byte_count);
-                //} else {
-                    //struct timeval tp;
-                    //gettimeofday(&tp, NULL);
-
-                    ////*sec = tp.tv_sec;
-                    ////*usec = tp.tv_usec;
-                    ////tp.tv_usec -= first_tp.tv_usec;
-                    i32 temp_usec = i32(_tp->tv_usec);
-                    //memcpy(&ret, &tp.tv_usec, byte_count);
-                    memcpy(&ret, &temp_usec, byte_count);
-                //}
+                _sw_read_from_tp = true;
+                i32 temp_usec = i32(_tp->tv_usec);
+                memcpy(&ret, &temp_usec, byte_count);
             } else if (addr == ADDR_TIMER_USEC_HI) {
-                //struct timeval tp;
-                //gettimeofday(&tp, NULL);
-
-                //*sec = tp.tv_sec;
-                //*usec = tp.tv_usec;
-                //tp.tv_usec -= first_tp.tv_usec;
+                _sw_read_from_tp = true;
                 i32 temp_usec = i32(i64(_tp->tv_usec) >> 32u);
-                //memcpy(&ret, &tp.tv_usec, byte_count);
                 memcpy(&ret, &temp_usec, byte_count);
             } else if (addr == ADDR_TIMER_SEC_LO) {
-                //static bool did_first_check = false;
-                //static struct timeval first_tp;
-
-                //if (!did_first_check) {
-                //    did_first_check = true;
-                //    gettimeofday(&first_tp, NULL);
-                //    memset(&ret, 0, byte_count);
-                //} else {
-                    //struct timeval tp;
-                    //gettimeofday(&tp, NULL);
-
-                    ////*sec = tp.tv_sec;
-                    ////*usec = tp.tv_sec;
-                    ////tp.tv_sec -= first_tp.tv_sec;
-                    i32 temp_sec = i32(_tp->tv_sec);
-                    //memcpy(&ret, &tp.tv_sec, byte_count);
-                    memcpy(&ret, &temp_sec, byte_count);
-                   // ret = ret >> 1;
-                //}
-
-                //static u32 temp = 0;
-                ////u32 temp_cnt = temp / 8u;
-                //u32 temp_cnt = temp;
-                //memcpy(&ret, &temp_cnt, byte_count); 
-                //temp++;
+                _sw_read_from_tp = true;
+                i32 temp_sec = i32(_tp->tv_sec);
+                memcpy(&ret, &temp_sec, byte_count);
             } else if (addr == ADDR_TIMER_SEC_HI) {
-                //struct timeval tp;
-                //gettimeofday(&tp, NULL);
-
-                ////*sec = tp.tv_sec;
-                ////*usec = tp.tv_sec;
-                ////tp.tv_sec -= first_tp.tv_sec;
+                _sw_read_from_tp = true;
                 i32 temp_sec = i32(i64(_tp->tv_sec) >> 32u);
-                //memcpy(&ret, &tp.tv_sec, byte_count);
                 memcpy(&ret, &temp_sec, byte_count);
             } else if (addr == ADDR_UDIV64_OUTP_QUOT_LO) {
                 _mmio_udiv64_outp_quot = (
@@ -1931,13 +1876,18 @@ int main(int argc, char** argv) {
     {
         //u16 temp_fb_data;
         //u32 temp_fb_addr;
-        ++update_tp_cnt;
-        if (update_tp_cnt >= 16u) {
+        auto exec_temp = emu.exec_one_instr(tp);
+        if (exec_temp.first) {
             update_tp_cnt = 0u;
-            gettimeofday(&tp, nullptr);
+        } else {
+            ++update_tp_cnt;
+            if (update_tp_cnt >= 16u) {
+                update_tp_cnt = 0u;
+                gettimeofday(&tp, nullptr);
+            }
         }
 
-        if (auto fb_start = emu.exec_one_instr(tp); fb_start) {
+        if (auto fb_start = exec_temp.second; fb_start) {
             //printout(
             //    "testificate!\n"
             //);
