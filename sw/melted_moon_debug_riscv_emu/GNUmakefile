@@ -33,7 +33,6 @@ PROJ:=$(shell basename $(CURDIR))$(DEBUG_SUFFIX)
 # Compilers and initial compiler flags
 CXX:=$(PREFIX)g++
 CXX_FLAGS:=$(CXX_FLAGS) -std=c++20 -fcoroutines -fmodules-ts -Wall \
-    -I$(SNOWHOUSECPU_BINUTILS)/include \
     $(shell pkg-config --cflags sdl2)
 
 ifdef DEBUG
@@ -54,8 +53,6 @@ LD:=$(CXX)
 
 # Initial linker flags
 LD_FLAGS:=$(LD_FLAGS) -lm \
-	-L$(SNOWHOUSECPU_BINUTILS)/opcodes \
-	-L$(SNOWHOUSECPU_BINUTILS)/bfd \
     $(shell pkg-config --libs sdl2)
 
 

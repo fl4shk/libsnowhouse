@@ -1,0 +1,13 @@
+objs
+objs_debug
+deps
+deps_debug
+asmouts
+asmouts_debug
+preprocs
+preprocs_debug
+.clangd
+melted_moon_debug_riscv_emu
+melted_moon_debug_riscv_emu_debug
+.gdb_history
+*.ignore

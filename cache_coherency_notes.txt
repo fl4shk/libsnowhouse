@@ -1,0 +1,5 @@
+* Shared L2 cache ("write back" with regards to main memory),
+* split L1i and L1d caches for each CPU (L1d is "write through" with regards to the shared L2),
+* L2 stores most recent L1d writer to each cache line. If an L1d was not the most recent writer to a particular cache line, then said L1d must read from the shared L2 before allowing the CPU core to finish its access to that L1d.,
+* Individual cache lines must have exactly one L1d writer at a time (so there's some schemes you could do in an FPGA to allow multiple write ports, such as having multiple BRAMs (to implement cache lines themselves) and each one represents a unique, non-overlapping range of cacheable memory chunks).,
+* atomics can be supported by having them "lock" a full cache line.

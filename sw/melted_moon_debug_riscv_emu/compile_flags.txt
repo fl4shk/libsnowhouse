@@ -1,0 +1,2 @@
+--std=c++23
+-I/media/other_data/fl4shk_home_stuff/Documents/dev/cxx/projects/forks_and_git_clones_etc/binutils_stuff/ports/snowhousecpu-binutils/binutils-gdb-snowhousecpu//include

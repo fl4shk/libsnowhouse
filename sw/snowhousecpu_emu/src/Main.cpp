@@ -1,4 +1,6 @@
 #include "MiscIncludes.hpp"
+#include <sys/time.h>
+
 
 using namespace liborangepower::misc_output;
 using namespace liborangepower::integer_types;
@@ -37,21 +39,35 @@ do_snprintf_insn_snowhousecpu_main(
 
 //static std::unique_ptr<u8[]> main_mem;
 
-static constexpr size_t MAIN_MEM_SIZE = 128ull * 1024ull * 1024ull; 
+//static constexpr size_t MAIN_MEM_SIZE = 128ull * 1024ull * 1024ull; 
 
 static int my_dasm_rd32_func(u8* buf, size_t offset);
+
+static constexpr size_t SCREENWIDTH = 320u;
+static constexpr size_t SCREENHEIGHT = 200u;
+
 class SnowhousecpuEmu final {
 public:     // constants
     // 64 MiB of main RAM
-    static constexpr size_t MEM_SIZE = 64ull * 1024ull * 1024ull; 
+    static constexpr size_t MEM_SIZE = (
+        64ull * 1024ull * 1024ull
+    );
     static constexpr u32 ADDR_PRINT = 0x6000000ul;
     static constexpr u32 ADDR_EXIT = 0x6000004ul;
+    static constexpr u32 ADDR_TIMER_USEC = 0x6000000ul;
+    static constexpr u32 ADDR_TIMER_SEC = 0x6000004ul;
+    static constexpr u32 ADDR_FB_START = 0x2000000ul;
+    static constexpr u32 ADDR_FB_END = (
+        ADDR_FB_START
+        + ((SCREENWIDTH * SCREENHEIGHT - 1) * sizeof(u16))
+    );
 
-    static constexpr u32 BUS_ADDR_DOOM_WAD_DBG = 0x2697ce8ull;
-    static constexpr u32 HAVE_DOOM_DBG_WR = 0b01;
-    static constexpr u32 HAVE_DOOM_DBG_RD = 0b10;
+    //static constexpr u32 BUS_ADDR_DOOM_WAD_DBG = 0x2697ce8ull;
+    //static constexpr u32 HAVE_DOOM_DBG_WR = 0b01;
+    //static constexpr u32 HAVE_DOOM_DBG_RD = 0b10;
 
-    static constexpr u32 PC_ADDR_DOOM_WAD_MALLOC_DBG = 0x54010ull;
+    //static constexpr u32 PC_ADDR_DOOM_WAD_MALLOC_DBG = 0x54010ull;
+public:     // variables
 
 private:        // variables
     bool _do_extra_print = false;
@@ -62,7 +78,9 @@ private:        // variables
     snowhousecpu_dasm_info_t _dasm;
     u32 _instr_start_pc = 0u;
     //u32 _pc = 0u;
-    u32 _have_doom_dbg = false;
+    //u32 _have_doom_dbg = false;
+
+    std::optional<u8*> _sw_wrote_to_fb_end = std::nullopt;
 public:     // functions
     SnowhousecpuEmu() = default;
     SnowhousecpuEmu(
@@ -119,7 +137,7 @@ public:     // functions
             return 1;
         }
     }
-    void exec_one_instr();
+    std::optional<u8*> exec_one_instr();
 private:        // functions
     inline decltype(_dasm.curr_pc)& _pc() {
         return _dasm.curr_pc;
@@ -251,7 +269,8 @@ SnowhousecpuEmu::SnowhousecpuEmu(
     );
 //--------
 }
-void SnowhousecpuEmu::exec_one_instr() {
+std::optional<u8*> SnowhousecpuEmu::exec_one_instr() {
+    _sw_wrote_to_fb_end = std::nullopt;
     const u32 saved_pc = _dasm.curr_pc;
 
     snowhousecpu_dasm_info_ctor(
@@ -761,16 +780,17 @@ void SnowhousecpuEmu::exec_one_instr() {
     //    _gpr_file.at(_dasm.rb_idx) = temp_rb;
     //}
     dbg_print();
+    return _sw_wrote_to_fb_end;
 }
 
 void SnowhousecpuEmu::_bus_write(
     u32 data, u32 addr, size_t byte_count
 ) {
-    _have_doom_dbg = (
-        (addr == BUS_ADDR_DOOM_WAD_DBG)
-        ? HAVE_DOOM_DBG_WR
-        : 0u
-    );
+    //_have_doom_dbg = (
+    //    (addr == BUS_ADDR_DOOM_WAD_DBG)
+    //    ? HAVE_DOOM_DBG_WR
+    //    : 0u
+    //);
     if (_do_extra_print) {
         std::printf(
             "_bus_write(): data:%x addr:%x byte_count:%lu\n",
@@ -834,6 +854,12 @@ void SnowhousecpuEmu::_bus_write(
             );
             std::exit(1);
         } else {
+            if (
+                addr == ADDR_FB_END
+                && byte_count == sizeof(u16)
+            ) {
+                _sw_wrote_to_fb_end = &_mem[ADDR_FB_START];
+            }
             memcpy(&_mem[addr], &data, byte_count);
         }
     } else {
@@ -849,28 +875,83 @@ void SnowhousecpuEmu::_bus_write(
 u32 SnowhousecpuEmu::_bus_read(
     u32 addr, size_t byte_count
 ) {
-    _have_doom_dbg = (
-        (addr == BUS_ADDR_DOOM_WAD_DBG)
-        ? HAVE_DOOM_DBG_WR
-        : 0u
-    );
-        u32 ret = 0; 
+    //_have_doom_dbg = (
+    //    (addr == BUS_ADDR_DOOM_WAD_DBG)
+    //    ? HAVE_DOOM_DBG_WR
+    //    : 0u
+    //);
+    u32 ret = 0; 
     if (
         byte_count == sizeof(u8)
         || byte_count == sizeof(u16)
         || byte_count == sizeof(u32)
     ) {
         if (addr > MEM_SIZE) {
-            std::fprintf(
-                stderr,
-                "SnowhousecpuEmu::_bus_read(): "
-                "invalid bus read: "
-                "addr:%x byte_count:%lu\n",
-                addr, byte_count
-            );
-            std::exit(1);
+            if (addr == ADDR_TIMER_USEC) {
+                //struct timeval tp;
+                //gettimeofday(&tp, NULL);
+                //////*sec = tp.tv_sec;
+                //////*usec = tp.tv_usec;
+                //memcpy(&ret, &tp.tv_usec, byte_count);
+                ////static u32 temp = 0;
+                //////temp += 1000u;
+                ////memcpy(&ret, &temp, byte_count); 
+                ////temp++;
+                //////temp += 1000;
+
+                //static bool did_first_check = false;
+                //static struct timeval first_tp;
+
+                //if (!did_first_check) {
+                //    did_first_check = true;
+                //    gettimeofday(&first_tp, NULL);
+                //    memset(&ret, 0, byte_count);
+                //} else {
+                    struct timeval tp;
+                    gettimeofday(&tp, NULL);
+
+                    //*sec = tp.tv_sec;
+                    //*usec = tp.tv_usec;
+                    //tp.tv_usec -= first_tp.tv_usec;
+                    memcpy(&ret, &tp.tv_usec, byte_count);
+                //}
+            } else if (addr == ADDR_TIMER_SEC) {
+                //static bool did_first_check = false;
+                //static struct timeval first_tp;
+
+                //if (!did_first_check) {
+                //    did_first_check = true;
+                //    gettimeofday(&first_tp, NULL);
+                //    memset(&ret, 0, byte_count);
+                //} else {
+                    struct timeval tp;
+                    gettimeofday(&tp, NULL);
+
+                    //*sec = tp.tv_sec;
+                    //*usec = tp.tv_sec;
+                    //tp.tv_sec -= first_tp.tv_sec;
+                    memcpy(&ret, &tp.tv_sec, byte_count);
+                   // ret = ret >> 1;
+                //}
+
+                //static u32 temp = 0;
+                ////u32 temp_cnt = temp / 8u;
+                //u32 temp_cnt = temp;
+                //memcpy(&ret, &temp_cnt, byte_count); 
+                //temp++;
+            } else {
+                std::fprintf(
+                    stderr,
+                    "SnowhousecpuEmu::_bus_read(): "
+                    "invalid bus read: "
+                    "addr:%x byte_count:%lu\n",
+                    addr, byte_count
+                );
+                std::exit(1);
+            }
+        } else {
+            memcpy(&ret, &_mem[addr], byte_count);
         }
-        memcpy(&ret, &_mem[addr], byte_count);
     } else {
         std::fprintf(
             stderr,
@@ -912,9 +993,107 @@ int main(int argc, char** argv) {
         std::exit(1);
     }
 
+    SDL_Window* window = SDL_CreateWindow(
+        "Melted Moon - Somewhat Of A Simulator!",   // title
+        SDL_WINDOWPOS_CENTERED, // x
+        SDL_WINDOWPOS_CENTERED, // y
+        SCREENWIDTH * 2,            // WIDTH
+        SCREENHEIGHT * 2,           // HEIGHT
+                                // flags
+        (
+            SDL_WINDOW_SHOWN
+            //| SDL_WINDOW_RESIZABLE
+        )
+    );
+    SDL_Renderer* renderer = SDL_CreateRenderer(
+        window, // window
+        -1,     // index
+        0       // flags
+    );
+    SDL_Texture* texture = SDL_CreateTexture(
+        renderer,
+        SDL_PIXELFORMAT_ARGB8888,
+        SDL_TEXTUREACCESS_STATIC,
+        SCREENWIDTH * 2,
+        SCREENHEIGHT * 2
+    );
+
+    std::unique_ptr<Uint32[]> pixels(
+        new Uint32[SCREENWIDTH * 2 * SCREENHEIGHT * 2]
+    );
+
     for (;;) {
-        emu.exec_one_instr();
+        //u16 temp_fb_data;
+        //u32 temp_fb_addr;
+        if (auto fb_start = emu.exec_one_instr(); fb_start) {
+            printout(
+                "testificate!\n"
+            );
+            //for (
+            //    u16* item=(u16*)(*fb_start);
+            //    item<(
+            //        ((u16*)(*fb_start))
+            //        + SCREENWIDTH * SCREENHEIGHT
+            //    );
+            //    ++item
+            //) {
+                for (size_t j=0; j<SCREENHEIGHT * 2; ++j) {
+                    for (size_t i=0; i<SCREENWIDTH * 2; ++i) {
+                        const size_t k = (j >> 1) * SCREENWIDTH + (i >> 1);
+                        const size_t l = j * SCREENWIDTH * 2 + i;
+                        //const uint32_t r = (
+                        //    screen_palette[(my_screen_buf[k] * 3u) + 0u]
+                        //    | 0x7u
+                        //);
+                        //const uint32_t g = (
+                        //    screen_palette[(my_screen_buf[k] * 3u) + 1u]
+                        //    | 0x7u
+                        //);
+                        //const uint32_t b = (
+                        //    screen_palette[(my_screen_buf[k] * 3u) + 2u]
+                        //    | 0x7u
+                        //);
+                        u16* item = (u16*)(*fb_start) + k;
+                        const u32 r = (
+                            ((((*item) >> 0) & 0x1f) << 3) | 0x7
+                        );
+                        const u32 g = (
+                            ((((*item) >> 5) & 0x1f) << 3) | 0x7
+                        );
+                        const u32 b = (
+                            ((((*item) >> 10) & 0x1f) << 3) | 0x7
+                        );
+                        pixels[l] = (
+                            ((r & 0xffu) << 16u)
+                            | ((g & 0xffu) << 8u)
+                            | ((b & 0xffu) << 0u)
+                        );
+                    }
+                }
+            //}
+
+            SDL_UpdateTexture(
+                texture,
+                NULL,
+                pixels.get(),
+                sizeof(Uint32) * SCREENWIDTH * 2// pitch
+                //sizeof(Uint32) * HALF_SIZE_2D.x // pitch
+                //sizeof(Uint32) * SIZE_2D.x * SIZE_2D.y
+            );
+            SDL_RenderClear(renderer);
+            SDL_RenderCopy(renderer, texture, NULL, NULL);
+            SDL_RenderPresent(renderer);
+            memset(
+                pixels.get(), 0,
+                sizeof(Uint32) * SCREENWIDTH * 2 * SCREENHEIGHT *2
+            );
+        }
     }
+
+
+    SDL_DestroyTexture(texture);
+    SDL_DestroyRenderer(renderer);
+    SDL_DestroyWindow(window);
 
     return 0;
 }
