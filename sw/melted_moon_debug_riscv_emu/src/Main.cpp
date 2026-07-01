@@ -715,7 +715,7 @@ MeltedMoonDebugRiscvEmu::MeltedMoonDebugRiscvEmu(
     :
     _do_extra_print_start_pc(s_do_extra_print_start_pc),
     _mem(new u8[MEM_SIZE]) {
-//--------
+    //--------
     memset(_mem.get(), 0, sizeof(u8) * MEM_SIZE);
     if (
         std::ifstream ifile(
@@ -787,6 +787,23 @@ MeltedMoonDebugRiscvEmu::exec_one_instr(
     std::memcpy(
         &_enc_instr_r, _mem.get() + saved_pc, sizeof(_enc_instr_r)
     );
+    static constexpr u32 ENC_INSTR_EBREAK = 0x00100073u;
+    static constexpr u32 ENC_INSTR_ECALL = 0x00000073u;
+    u32 my_maybe_bad_enc_instr = 0;
+    std::memcpy(&my_maybe_bad_enc_instr, &_enc_instr_r, sizeof(u32));
+    if (
+        my_maybe_bad_enc_instr == ENC_INSTR_EBREAK
+        || my_maybe_bad_enc_instr == ENC_INSTR_ECALL
+    ) {
+        std::fprintf(
+            stderr,
+            "Error: at saved_pc:%x, found ebreak:%i or ecall:%i!\n",
+            saved_pc,
+            int(my_maybe_bad_enc_instr == ENC_INSTR_EBREAK),
+            int(my_maybe_bad_enc_instr == ENC_INSTR_ECALL)
+        );
+        std::exit(1);
+    }
 
     const u32 inp_rd = _rd();
     const u32 inp_rs1 = _rs1();
@@ -1886,6 +1903,7 @@ int main(int argc, char** argv) {
                 gettimeofday(&tp, nullptr);
             }
         }
+        //gettimeofday(&tp, nullptr);
 
         if (auto fb_start = exec_temp.second; fb_start) {
             //printout(

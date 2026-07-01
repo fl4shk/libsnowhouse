@@ -10,6 +10,8 @@
 #include "liborangepower_src/misc/misc_includes.hpp"
 #include "liborangepower_src/misc/misc_output_funcs.hpp"
 #include "liborangepower_src/strings/sconcat_etc.hpp"
+#include "liborangepower_src/sdl2/sdl.hpp"
+#include "liborangepower_src/sdl2/sdl_render.hpp"
 
 //#define SNOWHOUSECPU_DONT_INCLUDE_BFD_HEADER
 //#include "opcode/snowhousecpu.h"
