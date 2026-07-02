@@ -586,6 +586,10 @@ public:     // functions
     //        return 1;
     //    }
     //}
+    static std::optional<std::string> disasm_one_instr(
+        u32 some_enc_instr,
+        u32 some_saved_pc
+    );
     ExecOneInstrRet exec_one_instr(struct timeval& n_tp);
 private:        // functions
     inline u32 _rd() {

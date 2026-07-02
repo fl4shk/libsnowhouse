@@ -55,6 +55,499 @@ MeltedMoonDebugRiscvEmu::MeltedMoonDebugRiscvEmu(
 //--------
 }
 
+std::optional<std::string> MeltedMoonDebugRiscvEmu::disasm_one_instr(
+    u32 some_enc_instr,
+    u32 some_saved_pc
+) {
+    Rv32RType::EncInstr temp_enc_instr_r;
+    std::memcpy(&temp_enc_instr_r, &some_enc_instr, sizeof(u32));
+
+    switch (temp_enc_instr_r.opcode) {
+    case Rv32RType::Op::AddRdRs1Rs2.op: {
+        std::string instr_name;
+        switch (temp_enc_instr_r.funct7) {
+        case Rv32RType::Op::AddRdRs1Rs2.f7: {
+            switch (temp_enc_instr_r.funct3) {
+            case Rv32RType::Op::AddRdRs1Rs2.f3: {
+                // {.op=0x33, .f3=0x0, .f7=0x00},
+                instr_name = "add";
+            }
+                break;
+            case Rv32RType::Op::XorRdRs1Rs2.f3: {
+                // {.op=0x33, .f3=0x4, .f7=0x00},
+                instr_name = "xor";
+            }
+                break;
+            case Rv32RType::Op::OrRdRs1Rs2.f3: {
+                // {.op=0x33, .f3=0x6, .f7=0x00},
+                instr_name = "or";
+            }
+                break;
+            case Rv32RType::Op::AndRdRs1Rs2.f3: {
+                // {.op=0x33, .f3=0x7, .f7=0x00},
+                instr_name = "and";
+            }
+                break;
+            case Rv32RType::Op::SllRdRs1Rs2.f3: {
+                // {.op=0x33, .f3=0x1, .f7=0x0},
+                instr_name = "sll";
+            }
+                break;
+            case Rv32RType::Op::SrlRdRs1Rs2.f3: {
+                // {.op=0x33, .f3=0x5, .f7=0x00},
+                instr_name = "srl";
+            }
+                break;
+            case Rv32RType::Op::SltRdRs1Rs2.f3: {
+                // {.op=0x33, .f3=0x2, .f7=0x00},
+                instr_name = "slt";
+            }
+                break;
+            case Rv32RType::Op::SltuRdRs1Rs2.f3: {
+                // {.op=0x33, .f3=0x3, .f7=0x00},
+                instr_name = "sltu";
+            }
+                break;
+            default: {
+                //bad_instr();
+                return std::nullopt;
+            }
+                break;
+            }
+        }
+            break;
+        case Rv32RType::Op::SubRdRs1Rs2.f7: {
+            switch (temp_enc_instr_r.funct3) {
+            case Rv32RType::Op::SubRdRs1Rs2.f3: {
+                // {.op=0x33, .f3=0x0, .f7=0x20},
+                instr_name = "sub";
+            }
+                break;
+            case Rv32RType::Op::SraRdRs1Rs2.f3: {
+                // {.op=0x33, .f3=0x5,
+                instr_name = "sra";
+            }
+                break;
+            default: {
+                //bad_instr();
+                return std::nullopt;
+            }
+                break;
+            }
+        }
+            break;
+        //------
+        case Rv32RType::Op::MulRdRs1Rs2.f7: {
+            switch (temp_enc_instr_r.funct3) {
+            case Rv32RType::Op::MulRdRs1Rs2.f3: {
+                // {.op=0x33, .f3=0x0, .f7=0x01},
+                instr_name = "mul";
+            }
+                break;
+            case Rv32RType::Op::MulhRdRs1Rs2.f3: {
+                // {.op=0x33, .f3=0x1, .f7=0x01},
+                instr_name = "mulh";
+            }
+                break;
+            case Rv32RType::Op::MulhsuRdRs1Rs2.f3: {
+                // {.op=0x33, .f3=0x2, .f7=0x01},
+                instr_name = "mulhsu";
+            }
+                break;
+            case Rv32RType::Op::MulhuRdRs1Rs2.f3: {
+                // {.op=0x33, .f3=0x3, .f7=0x01},
+                instr_name = "mulhu";
+            }
+                break;
+            case Rv32RType::Op::DivRdRs1Rs2.f3: {
+                // {.op=0x33, .f3=0x4, .f7=0x01},
+                instr_name = "div";
+            }
+                break;
+            case Rv32RType::Op::DivuRdRs1Rs2.f3: {
+                // {.op=0x33, .f3=0x5, .f7=0x01},
+                instr_name = "divu";
+            }
+                break;
+            case Rv32RType::Op::RemRdRs1Rs2.f3: {
+                // {.op=0x33, .f3=0x6, .f7=0x01},
+                instr_name = "rem";
+            }
+                break;
+            case Rv32RType::Op::RemuRdRs1Rs2.f3: {
+                // {.op=0x33, .f3=0x7, .f7=0x01};
+                instr_name = "remu";
+            }
+                break;
+            default: {
+                //bad_instr();
+                return std::nullopt;
+            }
+                break;
+            }
+        }
+            break;
+        default: {
+            //bad_instr();
+            return std::nullopt;
+        }
+            break;
+        }
+        //#ifdef MELTED_MOON_DO_DISASM
+        //disasm_str = sconcat(
+        //    std::move(instr_name), " ",
+        //    GPR_NAMES[temp_enc_instr_r.rd], ", ",
+        //    GPR_NAMES[temp_enc_instr_r.rs1], ", ",
+        //    GPR_NAMES[temp_enc_instr_r.rs2]
+        //);
+        //#endif
+        return sconcat(
+            std::move(instr_name), " ",
+            GPR_NAMES[temp_enc_instr_r.rd], ", ",
+            GPR_NAMES[temp_enc_instr_r.rs1], ", ",
+            GPR_NAMES[temp_enc_instr_r.rs2]
+        );
+    }
+        break;
+    case Rv32IType::Op::AddiRdRs1Imm.op: {
+        Rv32IType::EncInstr temp_enc_instr_i;
+        std::memcpy(&temp_enc_instr_i, &temp_enc_instr_r, sizeof(u32));
+        std::string instr_name;
+        switch (temp_enc_instr_i.funct3) {
+        case Rv32IType::Op::AddiRdRs1Imm.f3: {
+            // = {.op=0x13, .f3=0x0, .imm11dt5=-1},
+            instr_name = "addi";
+        }
+            break;
+        case Rv32IType::Op::XoriRdRs1Imm.f3: {
+            // = {.op=0x13, .f3=0x4, .imm11dt5=-1},
+            instr_name = "xori";
+        }
+            break;
+        case Rv32IType::Op::OriRdRs1Imm.f3: {
+            // = {.op=0x13, .f3=0x6, .imm11dt5=-1},
+            instr_name = "ori";
+        }
+            break;
+        case Rv32IType::Op::AndiRdRs1Imm.f3: {
+            // = {.op=0x13, .f3=0x7, .imm11dt5=-1},
+            instr_name = "andi";
+        }
+            break;
+
+        // rd = rs1 << imm[0:4]
+        case Rv32IType::Op::SlliRdRs1Imm.f3: {
+            // = {.op=0x13, .f3=0x1, .imm11dt5=0x00},
+            instr_name = "slli";
+        }
+            break;
+
+        // rd = rs1 >> imm[0:4]
+        case Rv32IType::Op::SrliRdRs1Imm.f3: {
+            switch (temp_enc_instr_i.my_imm11dt5()) {
+            // rd = rs1 >> imm[0:4]
+            case Rv32IType::Op::SrliRdRs1Imm.imm11dt5: {
+                // = {.op=0x13, .f3=0x5, .imm11dt5=0x00},
+                instr_name = "srli";
+            }
+                break;
+
+            // rd = rs1 >> imm[0:4] msb-extends
+            case Rv32IType::Op::SraiRdRs1Imm.imm11dt5: {
+                // = {.op=0x13, .f3=0x5, .imm11dt5=0x20},
+                instr_name = "srai";
+            }
+                break;
+            default: {
+                //bad_instr();
+                return std::nullopt;
+            }
+                break;
+            }
+        }
+            break;
+
+        case Rv32IType::Op::SltiRdRs1Imm.f3: {
+            // = {.op=0x13, .f3=0x2, .imm11dt5=-1},
+            instr_name = "slti";
+        }
+            break;
+        case Rv32IType::Op::SltiuRdRs1Imm.f3: {
+            // = {.op=0x13, .f3=0x3, .imm11dt5=-1},
+            instr_name = "sltiu";
+        }
+            break;
+        default: {
+            //bad_instr();
+            return std::nullopt;
+        }
+            break;
+        }
+        //#ifdef MELTED_MOON_DO_DISASM
+        //disasm_str = sconcat(
+        //    std::move(instr_name), " ",
+        //    GPR_NAMES[temp_enc_instr_r.rd], ", ",
+        //    GPR_NAMES[temp_enc_instr_r.rs1], ", ",
+        //    std::hex, "0x", temp_enc_instr_i.my_temp_imm(), std::dec
+        //);
+        //#endif
+        return sconcat(
+            std::move(instr_name), " ",
+            GPR_NAMES[temp_enc_instr_r.rd], ", ",
+            GPR_NAMES[temp_enc_instr_r.rs1], ", ",
+            std::hex, "0x", temp_enc_instr_i.my_temp_imm(), std::dec
+        );
+    }
+        break;
+
+    case Rv32IType::Op::LbRdRs1Imm.op: {
+        Rv32IType::EncInstr temp_enc_instr_i;
+        std::memcpy(&temp_enc_instr_i, &temp_enc_instr_r, sizeof(u32));
+        std::string instr_name;
+        switch (temp_enc_instr_i.funct3) {
+        //--------
+        case Rv32IType::Op::LbRdRs1Imm.f3: {
+            // = {.op=0x03, .f3=0x0, .imm11dt5=-1},
+            instr_name = "lb";
+        }
+            break;
+        case Rv32IType::Op::LhRdRs1Imm.f3: {
+            // = {.op=0x03, .f3=0x1, .imm11dt5=-1},
+            instr_name = "lh";
+        }
+            break;
+        case Rv32IType::Op::LwRdRs1Imm.f3: {
+            // = {.op=0x03, .f3=0x2, .imm11dt5=-1},
+            instr_name = "lw";
+        }
+            break;
+        case Rv32IType::Op::LbuRdRs1Imm.f3: {
+            // = {.op=0x03, .f3=0x4, .imm11dt5=-1},
+            instr_name = "lbu";
+        }
+            break;
+        case Rv32IType::Op::LhuRdRs1Imm.f3: {
+            // = {.op=0x03, .f3=0x5, .imm11dt5=-1},
+            instr_name = "lhu";
+        }
+            break;
+        default: {
+            //bad_instr();
+            return std::nullopt;
+        }
+            break;
+        }
+        //#ifdef MELTED_MOON_DO_DISASM
+        //disasm_str = sconcat(
+        //    std::move(instr_name), " ",
+        //    GPR_NAMES[temp_enc_instr_r.rd], ", ",
+        //    GPR_NAMES[temp_enc_instr_r.rs1], ", ",
+        //    std::hex, "0x", temp_enc_instr_i.my_temp_imm(), std::dec
+        //);
+        //#endif
+        return sconcat(
+            std::move(instr_name), " ",
+            GPR_NAMES[temp_enc_instr_r.rd], ", ",
+            GPR_NAMES[temp_enc_instr_r.rs1], ", ",
+            std::hex, "0x", temp_enc_instr_i.my_temp_imm(), std::dec
+        );
+    }
+        break;
+    //--------
+    case Rv32IType::Op::JalrRdRs1Imm.op: {
+        // = {.op=0x67, .f3=0x0, .imm11dt5=-1};
+        // rd = PC+4; PC = rs1 + imm
+        Rv32IType::EncInstr temp_enc_instr_i;
+        std::memcpy(&temp_enc_instr_i, &temp_enc_instr_r, sizeof(u32));
+        //#ifdef MELTED_MOON_DO_DISASM
+        //disasm_str = sconcat(
+        //    "jalr ",
+        //    GPR_NAMES[temp_enc_instr_r.rd], ", ",
+        //    GPR_NAMES[temp_enc_instr_r.rs1], ", ",
+        //    std::hex, "0x", temp_enc_instr_i.my_temp_imm(), std::dec
+        //);
+        //#endif
+        return sconcat(
+            "jalr ",
+            GPR_NAMES[temp_enc_instr_r.rd], ", ",
+            GPR_NAMES[temp_enc_instr_r.rs1], ", ",
+            std::hex, "0x", temp_enc_instr_i.my_temp_imm(), std::dec
+        );
+    }
+        break;
+
+    case Rv32SType::Op::SbRs2Rs1Imm.op: {
+        Rv32SType::EncInstr temp_enc_instr_s;
+        std::memcpy(&temp_enc_instr_s, &temp_enc_instr_r, sizeof(u32));
+        std::string instr_name;
+        switch (temp_enc_instr_s.funct3) {
+        case Rv32SType::Op::SbRs2Rs1Imm.f3: {
+            // = {.op=0x23, .f3=0x0},
+            instr_name = "sb";
+        }
+            break;
+        case Rv32SType::Op::ShRs2Rs1Imm.f3: {
+            // = {.op=0x23, .f3=0x1},
+            instr_name = "sh";
+        }
+            break;
+        case Rv32SType::Op::SwRs2Rs1Imm.f3: {
+            // = {.op=0x23, .f3=0x2};
+            instr_name = "sw";
+        }
+            break;
+        default: {
+            //bad_instr();
+            return std::nullopt;
+        }
+            break;
+        }
+        //#ifdef MELTED_MOON_DO_DISASM
+        //disasm_str = sconcat(
+        //    std::move(instr_name), " ",
+        //    GPR_NAMES[temp_enc_instr_r.rs2], ", ",
+        //    GPR_NAMES[temp_enc_instr_r.rs1], ", ",
+        //    std::hex, "0x", temp_enc_instr_s.my_temp_imm(), std::dec
+        //);
+        //#endif
+        return sconcat(
+            std::move(instr_name), " ",
+            GPR_NAMES[temp_enc_instr_r.rs2], ", ",
+            GPR_NAMES[temp_enc_instr_r.rs1], ", ",
+            std::hex, "0x", temp_enc_instr_s.my_temp_imm(), std::dec
+        );
+    }
+        break;
+    case Rv32BType::Op::BeqRs1Rs2Imm.op: {
+        Rv32BType::EncInstr temp_enc_instr_b;
+        std::memcpy(&temp_enc_instr_b, &temp_enc_instr_r, sizeof(u32));
+        std::string instr_name;
+        switch (temp_enc_instr_b.funct3) {
+        case Rv32BType::Op::BeqRs1Rs2Imm.f3: {
+            // = {.op=0x63, .f3=0x0},
+            instr_name = "beq";
+        }
+            break;
+        case Rv32BType::Op::BneRs1Rs2Imm.f3: {
+            // = {.op=0x63, .f3=0x1},
+            instr_name = "bne";
+        }
+            break;
+        case Rv32BType::Op::BltRs1Rs2Imm.f3: {
+            // = {.op=0x63, .f3=0x4},
+            instr_name = "blt";
+        }
+            break;
+        case Rv32BType::Op::BgeRs1Rs2Imm.f3: {
+            // = {.op=0x63, .f3=0x5},
+            instr_name = "bge";
+        }
+            break;
+        case Rv32BType::Op::BltuRs1Rs2Imm.f3: {
+            // = {.op=0x63, .f3=0x6},
+            instr_name = "bltu";
+        }
+            break;
+        case Rv32BType::Op::BgeuRs1Rs2Imm.f3: {
+            // = {.op=0x63, .f3=0x7};
+            instr_name = "bgeu";
+        }
+            break;
+        default: {
+            //bad_instr();
+            return std::nullopt;
+        }
+            break;
+        }
+        //#ifdef MELTED_MOON_DO_DISASM
+        //disasm_str = sconcat(
+        //    std::move(instr_name), " ",
+        //    GPR_NAMES[temp_enc_instr_r.rs1], ", ",
+        //    GPR_NAMES[temp_enc_instr_r.rs2], ", ",
+        //    std::hex, "0x",
+        //        (saved_pc + temp_enc_instr_b.my_temp_imm()),
+        //    std::dec
+        //);
+        //#endif
+        return sconcat(
+            std::move(instr_name), " ",
+            GPR_NAMES[temp_enc_instr_r.rs1], ", ",
+            GPR_NAMES[temp_enc_instr_r.rs2], ", ",
+            std::hex, "0x",
+                (some_saved_pc + temp_enc_instr_b.my_temp_imm()),
+            std::dec
+        );
+    }
+        break;
+
+    case Rv32JType::Op::JalRdImm.op: {
+        // = {.op=0x6f};
+        // rd = PC+4; PC += imm
+        Rv32JType::EncInstr temp_enc_instr_j;
+        std::memcpy(&temp_enc_instr_j, &temp_enc_instr_r, sizeof(u32));
+        //#ifdef MELTED_MOON_DO_DISASM
+        //disasm_str = sconcat(
+        //    "jal ",
+        //    GPR_NAMES[temp_enc_instr_r.rd], ", ",
+        //    std::hex, "0x",
+        //        (saved_pc + temp_enc_instr_j.my_temp_imm()),
+        //    std::dec
+        //);
+        //#endif
+        return sconcat(
+            "jal ",
+            GPR_NAMES[temp_enc_instr_r.rd], ", ",
+            std::hex, "0x",
+                (some_saved_pc + temp_enc_instr_j.my_temp_imm()),
+            std::dec
+        );
+    }
+        break;
+    case Rv32UType::Op::LuiRdImm31Downto12.op: {
+        // = {.op=0x37},
+        Rv32UType::EncInstr temp_enc_instr_u;
+        std::memcpy(&temp_enc_instr_u, &temp_enc_instr_r, sizeof(u32));
+        //#ifdef MELTED_MOON_DO_DISASM
+        //disasm_str = sconcat(
+        //    "lui ",
+        //    GPR_NAMES[temp_enc_instr_r.rd], ", ",
+        //    std::hex, "0x", temp_enc_instr_u.my_temp_imm(), std::dec
+        //);
+        //#endif
+        return sconcat(
+            "lui ",
+            GPR_NAMES[temp_enc_instr_r.rd], ", ",
+            std::hex, "0x", temp_enc_instr_u.my_temp_imm(), std::dec
+        );
+    }
+        break;
+    case Rv32UType::Op::AuipcRdImm31Downto12.op: {
+        // = {.op=0x17};
+        Rv32UType::EncInstr temp_enc_instr_u;
+        std::memcpy(&temp_enc_instr_u, &temp_enc_instr_r, sizeof(u32));
+        //#ifdef MELTED_MOON_DO_DISASM
+        //disasm_str = sconcat(
+        //    "auipc ",
+        //    GPR_NAMES[temp_enc_instr_r.rd], ", ",
+        //    std::hex, "0x", temp_enc_instr_u.my_temp_imm(), std::dec
+        //);
+        //#endif
+        return sconcat(
+            "auipc ",
+            GPR_NAMES[temp_enc_instr_r.rd], ", ",
+            std::hex, "0x", temp_enc_instr_u.my_temp_imm(), std::dec
+        );
+    }
+        break;
+
+    default: {
+        //bad_instr();
+        return std::nullopt;
+    }
+        break;
+    }
+}
+
 auto MeltedMoonDebugRiscvEmu::exec_one_instr(
     timeval& n_tp
 ) -> ExecOneInstrRet {
@@ -91,18 +584,18 @@ auto MeltedMoonDebugRiscvEmu::exec_one_instr(
     );
     static constexpr u32 ENC_INSTR_EBREAK = 0x00100073u;
     static constexpr u32 ENC_INSTR_ECALL = 0x00000073u;
-    u32 my_maybe_bad_enc_instr = 0;
-    std::memcpy(&my_maybe_bad_enc_instr, &_enc_instr_r, sizeof(u32));
+    u32 my_temp_enc_instr = 0;
+    std::memcpy(&my_temp_enc_instr, &_enc_instr_r, sizeof(u32));
     if (
-        my_maybe_bad_enc_instr == ENC_INSTR_EBREAK
-        || my_maybe_bad_enc_instr == ENC_INSTR_ECALL
+        my_temp_enc_instr == ENC_INSTR_EBREAK
+        || my_temp_enc_instr == ENC_INSTR_ECALL
     ) {
         std::fprintf(
             stderr,
             "Error: at saved_pc:%x, found ebreak:%i or ecall:%i!\n",
             saved_pc,
-            int(my_maybe_bad_enc_instr == ENC_INSTR_EBREAK),
-            int(my_maybe_bad_enc_instr == ENC_INSTR_ECALL)
+            int(my_temp_enc_instr == ENC_INSTR_EBREAK),
+            int(my_temp_enc_instr == ENC_INSTR_ECALL)
         );
         std::exit(1);
     }
@@ -116,6 +609,22 @@ auto MeltedMoonDebugRiscvEmu::exec_one_instr(
 
     #ifdef MELTED_MOON_DO_DISASM
     auto& disasm_str = _my_exec_one_instr_ret.disasm_str;
+    std::string disasm_str;
+    if (
+        auto temp_disasm_str = disasm_one_instr(
+            my_temp_enc_instr,
+            saved_pc
+        );
+        temp_disasm_str
+    ) {
+        disasm_str = *temp_disasm_str;
+    } else {
+        disasm_str = sconcat(
+            "bad (0x",
+            std::hex, my_temp_enc_instr, std::dec,
+            ")"
+        );
+    }
     #endif
     auto dbg_print = [&](
         bool force_print=false,
@@ -186,7 +695,6 @@ auto MeltedMoonDebugRiscvEmu::exec_one_instr(
 
     switch (temp_enc_instr_r.opcode) {
     case Rv32RType::Op::AddRdRs1Rs2.op: {
-        std::string instr_name;
         switch (temp_enc_instr_r.funct7) {
         case Rv32RType::Op::AddRdRs1Rs2.f7: {
             switch (temp_enc_instr_r.funct3) {
@@ -195,7 +703,6 @@ auto MeltedMoonDebugRiscvEmu::exec_one_instr(
                 _write_gpr_rd(
                     inp_rs1 + inp_rs2
                 );
-                instr_name = "add";
             }
                 break;
             case Rv32RType::Op::XorRdRs1Rs2.f3: {
@@ -203,7 +710,6 @@ auto MeltedMoonDebugRiscvEmu::exec_one_instr(
                 _write_gpr_rd(
                     inp_rs1 ^ inp_rs2
                 );
-                instr_name = "xor";
             }
                 break;
             case Rv32RType::Op::OrRdRs1Rs2.f3: {
@@ -211,7 +717,6 @@ auto MeltedMoonDebugRiscvEmu::exec_one_instr(
                 _write_gpr_rd(
                     inp_rs1 | inp_rs2
                 );
-                instr_name = "or";
             }
                 break;
             case Rv32RType::Op::AndRdRs1Rs2.f3: {
@@ -219,7 +724,6 @@ auto MeltedMoonDebugRiscvEmu::exec_one_instr(
                 _write_gpr_rd(
                     inp_rs1 & inp_rs2
                 );
-                instr_name = "and";
             }
                 break;
             case Rv32RType::Op::SllRdRs1Rs2.f3: {
@@ -240,7 +744,6 @@ auto MeltedMoonDebugRiscvEmu::exec_one_instr(
                         inp_rs1 << u32(inp_rs2 & 0x1fu)
                     );
                 //}
-                instr_name = "sll";
             }
                 break;
             case Rv32RType::Op::SrlRdRs1Rs2.f3: {
@@ -261,7 +764,6 @@ auto MeltedMoonDebugRiscvEmu::exec_one_instr(
                         inp_rs1 >> u32(inp_rs2 & 0x1fu)
                     );
                 //}
-                instr_name = "srl";
             }
                 break;
             case Rv32RType::Op::SltRdRs1Rs2.f3: {
@@ -271,7 +773,6 @@ auto MeltedMoonDebugRiscvEmu::exec_one_instr(
                 } else {
                     _write_gpr_rd(0x0u);
                 }
-                instr_name = "slt";
             }
                 break;
             case Rv32RType::Op::SltuRdRs1Rs2.f3: {
@@ -281,7 +782,6 @@ auto MeltedMoonDebugRiscvEmu::exec_one_instr(
                 } else {
                     _write_gpr_rd(0x0u);
                 }
-                instr_name = "sltu";
             }
                 break;
             default: {
@@ -298,7 +798,6 @@ auto MeltedMoonDebugRiscvEmu::exec_one_instr(
                 _write_gpr_rd(
                     inp_rs1 - inp_rs2
                 );
-                instr_name = "sub";
             }
                 break;
             case Rv32RType::Op::SraRdRs1Rs2.f3: {
@@ -323,7 +822,6 @@ auto MeltedMoonDebugRiscvEmu::exec_one_instr(
                         i32(inp_rs1) >> u32(inp_rs2 & 0x1fu)
                     );
                 //}
-                instr_name = "sra";
             }
                 break;
             default: {
@@ -341,7 +839,6 @@ auto MeltedMoonDebugRiscvEmu::exec_one_instr(
                 _write_gpr_rd(
                     inp_rs1 * inp_rs2
                 );
-                instr_name = "mul";
             }
                 break;
             case Rv32RType::Op::MulhRdRs1Rs2.f3: {
@@ -351,7 +848,6 @@ auto MeltedMoonDebugRiscvEmu::exec_one_instr(
                 _write_gpr_rd(
                     u32(i64(temp_rs1 * temp_rs2) >> 32u)
                 );
-                instr_name = "mulh";
             }
                 break;
             case Rv32RType::Op::MulhsuRdRs1Rs2.f3: {
@@ -361,7 +857,6 @@ auto MeltedMoonDebugRiscvEmu::exec_one_instr(
                 _write_gpr_rd(
                     u32(u64(temp_rs1 * temp_rs2) >> 32u)
                 );
-                instr_name = "mulhsu";
             }
                 break;
             case Rv32RType::Op::MulhuRdRs1Rs2.f3: {
@@ -371,7 +866,6 @@ auto MeltedMoonDebugRiscvEmu::exec_one_instr(
                 _write_gpr_rd(
                     u32(u64(temp_rs1 * temp_rs2) >> 32u)
                 );
-                instr_name = "mulhu";
             }
                 break;
             case Rv32RType::Op::DivRdRs1Rs2.f3: {
@@ -383,7 +877,6 @@ auto MeltedMoonDebugRiscvEmu::exec_one_instr(
                 } else {
                     _write_gpr_rd(u32(i32(-1)));
                 }
-                instr_name = "div";
             }
                 break;
             case Rv32RType::Op::DivuRdRs1Rs2.f3: {
@@ -395,7 +888,6 @@ auto MeltedMoonDebugRiscvEmu::exec_one_instr(
                 } else {
                     _write_gpr_rd(u32(i32(-1)));
                 }
-                instr_name = "divu";
             }
                 break;
             case Rv32RType::Op::RemRdRs1Rs2.f3: {
@@ -409,7 +901,6 @@ auto MeltedMoonDebugRiscvEmu::exec_one_instr(
                         inp_rs1
                     );
                 }
-                instr_name = "rem";
             }
                 break;
             case Rv32RType::Op::RemuRdRs1Rs2.f3: {
@@ -423,7 +914,6 @@ auto MeltedMoonDebugRiscvEmu::exec_one_instr(
                         inp_rs1
                     );
                 }
-                instr_name = "remu";
             }
                 break;
             default: {
@@ -438,14 +928,6 @@ auto MeltedMoonDebugRiscvEmu::exec_one_instr(
         }
             break;
         }
-        #ifdef MELTED_MOON_DO_DISASM
-        disasm_str = sconcat(
-            std::move(instr_name), " ",
-            GPR_NAMES[temp_enc_instr_r.rd], ", ",
-            GPR_NAMES[temp_enc_instr_r.rs1], ", ",
-            GPR_NAMES[temp_enc_instr_r.rs2]
-        );
-        #endif
     }
         break;
     case Rv32IType::Op::AddiRdRs1Imm.op: {
@@ -457,7 +939,6 @@ auto MeltedMoonDebugRiscvEmu::exec_one_instr(
             _write_gpr_rd(
                 u32(inp_rs1) + _enc_instr_i.my_temp_imm()
             );
-            instr_name = "addi";
         }
             break;
         case Rv32IType::Op::XoriRdRs1Imm.f3: {
@@ -465,7 +946,6 @@ auto MeltedMoonDebugRiscvEmu::exec_one_instr(
             _write_gpr_rd(
                 u32(inp_rs1) ^ u32(_enc_instr_i.my_temp_imm())
             );
-            instr_name = "xori";
         }
             break;
         case Rv32IType::Op::OriRdRs1Imm.f3: {
@@ -473,7 +953,6 @@ auto MeltedMoonDebugRiscvEmu::exec_one_instr(
             _write_gpr_rd(
                 u32(inp_rs1) | u32(_enc_instr_i.my_temp_imm())
             );
-            instr_name = "ori";
         }
             break;
         case Rv32IType::Op::AndiRdRs1Imm.f3: {
@@ -481,7 +960,6 @@ auto MeltedMoonDebugRiscvEmu::exec_one_instr(
             _write_gpr_rd(
                 u32(inp_rs1) & u32(_enc_instr_i.my_temp_imm())
             );
-            instr_name = "andi";
         }
             break;
 
@@ -492,7 +970,6 @@ auto MeltedMoonDebugRiscvEmu::exec_one_instr(
                 inp_rs1
                 << (u32(_enc_instr_i.my_imm4dt0()) & 0x1fu)
             );
-            instr_name = "slli";
         }
             break;
 
@@ -506,7 +983,6 @@ auto MeltedMoonDebugRiscvEmu::exec_one_instr(
                     inp_rs1
                     >> (u32(_enc_instr_i.my_imm4dt0()) & 0x1fu)
                 );
-                instr_name = "srli";
             }
                 break;
 
@@ -523,7 +999,6 @@ auto MeltedMoonDebugRiscvEmu::exec_one_instr(
                     i32(inp_rs1)
                     >> (u32(_enc_instr_i.my_imm4dt0()) & 0x1fu)
                 );
-                instr_name = "srai";
             }
                 break;
             default: {
@@ -541,7 +1016,6 @@ auto MeltedMoonDebugRiscvEmu::exec_one_instr(
             } else {
                 _write_gpr_rd(0x0u);
             }
-            instr_name = "slti";
         }
             break;
         case Rv32IType::Op::SltiuRdRs1Imm.f3: {
@@ -551,7 +1025,6 @@ auto MeltedMoonDebugRiscvEmu::exec_one_instr(
             } else {
                 _write_gpr_rd(0x0u);
             }
-            instr_name = "sltiu";
         }
             break;
         default: {
@@ -559,20 +1032,11 @@ auto MeltedMoonDebugRiscvEmu::exec_one_instr(
         }
             break;
         }
-        #ifdef MELTED_MOON_DO_DISASM
-        disasm_str = sconcat(
-            std::move(instr_name), " ",
-            GPR_NAMES[temp_enc_instr_r.rd], ", ",
-            GPR_NAMES[temp_enc_instr_r.rs1], ", ",
-            std::hex, "0x", _enc_instr_i.my_temp_imm(), std::dec
-        );
-        #endif
     }
         break;
 
     case Rv32IType::Op::LbRdRs1Imm.op: {
         std::memcpy(&_enc_instr_i, &temp_enc_instr_r, sizeof(u32));
-        std::string instr_name;
         switch (_enc_instr_i.funct3) {
         //--------
         case Rv32IType::Op::LbRdRs1Imm.f3: {
@@ -580,7 +1044,6 @@ auto MeltedMoonDebugRiscvEmu::exec_one_instr(
             _write_gpr_rd(
                 _bus_read_i8(inp_rs1 + _enc_instr_i.my_temp_imm())
             );
-            instr_name = "lb";
         }
             break;
         case Rv32IType::Op::LhRdRs1Imm.f3: {
@@ -588,7 +1051,6 @@ auto MeltedMoonDebugRiscvEmu::exec_one_instr(
             _write_gpr_rd(
                 _bus_read_i16(inp_rs1 + _enc_instr_i.my_temp_imm())
             );
-            instr_name = "lh";
         }
             break;
         case Rv32IType::Op::LwRdRs1Imm.f3: {
@@ -596,7 +1058,6 @@ auto MeltedMoonDebugRiscvEmu::exec_one_instr(
             _write_gpr_rd(
                 _bus_read_u32(inp_rs1 + _enc_instr_i.my_temp_imm())
             );
-            instr_name = "lw";
         }
             break;
         case Rv32IType::Op::LbuRdRs1Imm.f3: {
@@ -604,7 +1065,6 @@ auto MeltedMoonDebugRiscvEmu::exec_one_instr(
             _write_gpr_rd(
                 _bus_read_u8(inp_rs1 + _enc_instr_i.my_temp_imm())
             );
-            instr_name = "lbu";
         }
             break;
         case Rv32IType::Op::LhuRdRs1Imm.f3: {
@@ -612,7 +1072,6 @@ auto MeltedMoonDebugRiscvEmu::exec_one_instr(
             _write_gpr_rd(
                 _bus_read_u16(inp_rs1 + _enc_instr_i.my_temp_imm())
             );
-            instr_name = "lhu";
         }
             break;
         default: {
@@ -620,14 +1079,6 @@ auto MeltedMoonDebugRiscvEmu::exec_one_instr(
         }
             break;
         }
-        #ifdef MELTED_MOON_DO_DISASM
-        disasm_str = sconcat(
-            std::move(instr_name), " ",
-            GPR_NAMES[temp_enc_instr_r.rd], ", ",
-            GPR_NAMES[temp_enc_instr_r.rs1], ", ",
-            std::hex, "0x", _enc_instr_i.my_temp_imm(), std::dec
-        );
-        #endif
     }
         break;
     //--------
@@ -639,27 +1090,17 @@ auto MeltedMoonDebugRiscvEmu::exec_one_instr(
         _write_gpr_rd(
             saved_pc + sizeof(u32)
         );
-        #ifdef MELTED_MOON_DO_DISASM
-        disasm_str = sconcat(
-            "jalr ",
-            GPR_NAMES[temp_enc_instr_r.rd], ", ",
-            GPR_NAMES[temp_enc_instr_r.rs1], ", ",
-            std::hex, "0x", _enc_instr_i.my_temp_imm(), std::dec
-        );
-        #endif
     }
         break;
 
     case Rv32SType::Op::SbRs2Rs1Imm.op: {
         std::memcpy(&_enc_instr_s, &temp_enc_instr_r, sizeof(u32));
-        std::string instr_name;
         switch (_enc_instr_s.funct3) {
         case Rv32SType::Op::SbRs2Rs1Imm.f3: {
             // = {.op=0x23, .f3=0x0},
             _bus_write_u8(
                 inp_rs2, inp_rs1 + _enc_instr_s.my_temp_imm()
             );
-            instr_name = "sb";
         }
             break;
         case Rv32SType::Op::ShRs2Rs1Imm.f3: {
@@ -667,7 +1108,6 @@ auto MeltedMoonDebugRiscvEmu::exec_one_instr(
             _bus_write_u16(
                 inp_rs2, inp_rs1 + _enc_instr_s.my_temp_imm()
             );
-            instr_name = "sh";
         }
             break;
         case Rv32SType::Op::SwRs2Rs1Imm.f3: {
@@ -678,7 +1118,6 @@ auto MeltedMoonDebugRiscvEmu::exec_one_instr(
             _bus_write_u32(
                 inp_rs2, inp_rs1 + _enc_instr_s.my_temp_imm()
             );
-            instr_name = "sw";
         }
             break;
         default: {
@@ -686,19 +1125,10 @@ auto MeltedMoonDebugRiscvEmu::exec_one_instr(
         }
             break;
         }
-        #ifdef MELTED_MOON_DO_DISASM
-        disasm_str = sconcat(
-            std::move(instr_name), " ",
-            GPR_NAMES[temp_enc_instr_r.rs2], ", ",
-            GPR_NAMES[temp_enc_instr_r.rs1], ", ",
-            std::hex, "0x", _enc_instr_s.my_temp_imm(), std::dec
-        );
-        #endif
     }
         break;
     case Rv32BType::Op::BeqRs1Rs2Imm.op: {
         std::memcpy(&_enc_instr_b, &temp_enc_instr_r, sizeof(u32));
-        std::string instr_name;
         switch (_enc_instr_b.funct3) {
         case Rv32BType::Op::BeqRs1Rs2Imm.f3: {
             // = {.op=0x63, .f3=0x0},
@@ -706,7 +1136,6 @@ auto MeltedMoonDebugRiscvEmu::exec_one_instr(
                 _pc = saved_pc + _enc_instr_b.my_temp_imm();
                 //_pc = _pc + _enc_instr_b.my_temp_imm();
             }
-            instr_name = "beq";
         }
             break;
         case Rv32BType::Op::BneRs1Rs2Imm.f3: {
@@ -715,7 +1144,6 @@ auto MeltedMoonDebugRiscvEmu::exec_one_instr(
                 _pc = saved_pc + _enc_instr_b.my_temp_imm();
                 //_pc = _pc + _enc_instr_b.my_temp_imm();
             }
-            instr_name = "bne";
         }
             break;
         case Rv32BType::Op::BltRs1Rs2Imm.f3: {
@@ -724,7 +1152,6 @@ auto MeltedMoonDebugRiscvEmu::exec_one_instr(
                 _pc = saved_pc + _enc_instr_b.my_temp_imm();
                 //_pc = _pc + _enc_instr_b.my_temp_imm();
             }
-            instr_name = "blt";
         }
             break;
         case Rv32BType::Op::BgeRs1Rs2Imm.f3: {
@@ -733,7 +1160,6 @@ auto MeltedMoonDebugRiscvEmu::exec_one_instr(
                 _pc = saved_pc + _enc_instr_b.my_temp_imm();
                 //_pc = _pc + _enc_instr_b.my_temp_imm();
             }
-            instr_name = "bge";
         }
             break;
         case Rv32BType::Op::BltuRs1Rs2Imm.f3: {
@@ -742,7 +1168,6 @@ auto MeltedMoonDebugRiscvEmu::exec_one_instr(
                 _pc = saved_pc + _enc_instr_b.my_temp_imm();
                 //_pc = _pc + _enc_instr_b.my_temp_imm();
             }
-            instr_name = "bltu";
         }
             break;
         case Rv32BType::Op::BgeuRs1Rs2Imm.f3: {
@@ -751,7 +1176,6 @@ auto MeltedMoonDebugRiscvEmu::exec_one_instr(
                 _pc = saved_pc + _enc_instr_b.my_temp_imm();
                 //_pc = _pc + _enc_instr_b.my_temp_imm();
             }
-            instr_name = "bgeu";
         }
             break;
         default: {
@@ -759,16 +1183,6 @@ auto MeltedMoonDebugRiscvEmu::exec_one_instr(
         }
             break;
         }
-        #ifdef MELTED_MOON_DO_DISASM
-        disasm_str = sconcat(
-            std::move(instr_name), " ",
-            GPR_NAMES[temp_enc_instr_r.rs1], ", ",
-            GPR_NAMES[temp_enc_instr_r.rs2], ", ",
-            std::hex, "0x",
-                (saved_pc + _enc_instr_b.my_temp_imm()),
-            std::dec
-        );
-        #endif
     }
         break;
 
@@ -776,15 +1190,6 @@ auto MeltedMoonDebugRiscvEmu::exec_one_instr(
         // = {.op=0x6f};
         // rd = PC+4; PC += imm
         std::memcpy(&_enc_instr_j, &temp_enc_instr_r, sizeof(u32));
-        #ifdef MELTED_MOON_DO_DISASM
-        disasm_str = sconcat(
-            "jal ",
-            GPR_NAMES[temp_enc_instr_r.rd], ", ",
-            std::hex, "0x",
-                (saved_pc + _enc_instr_j.my_temp_imm()),
-            std::dec
-        );
-        #endif
         _pc = saved_pc + _enc_instr_j.my_temp_imm();
         //_pc = _pc + _enc_instr_j.my_temp_imm();
         _write_gpr_rd(
@@ -795,13 +1200,6 @@ auto MeltedMoonDebugRiscvEmu::exec_one_instr(
     case Rv32UType::Op::LuiRdImm31Downto12.op: {
         // = {.op=0x37},
         std::memcpy(&_enc_instr_u, &temp_enc_instr_r, sizeof(u32));
-        #ifdef MELTED_MOON_DO_DISASM
-        disasm_str = sconcat(
-            "lui ",
-            GPR_NAMES[temp_enc_instr_r.rd], ", ",
-            std::hex, "0x", _enc_instr_u.my_temp_imm(), std::dec
-        );
-        #endif
         _write_gpr_rd(
             _enc_instr_u.my_temp_imm()
         );
@@ -810,13 +1208,6 @@ auto MeltedMoonDebugRiscvEmu::exec_one_instr(
     case Rv32UType::Op::AuipcRdImm31Downto12.op: {
         // = {.op=0x17};
         std::memcpy(&_enc_instr_u, &temp_enc_instr_r, sizeof(u32));
-        #ifdef MELTED_MOON_DO_DISASM
-        disasm_str = sconcat(
-            "auipc ",
-            GPR_NAMES[temp_enc_instr_r.rd], ", ",
-            std::hex, "0x", _enc_instr_u.my_temp_imm(), std::dec
-        );
-        #endif
         _write_gpr_rd(
             saved_pc + _enc_instr_u.my_temp_imm()
             //_pc + _enc_instr_u.my_temp_imm()
