@@ -11656,6 +11656,8 @@ case class SnowHousePipeStageMem(
       cMem.up(pMem) := midModPayload(extIdxUp)
     } otherwise {
       cMem.up(pMem) := midModPayload(extIdxUp).getZero
+      cMem.up(pMem).instrCnt.shouldIgnoreInstr.allowOverride
+      cMem.up(pMem).instrCnt.shouldIgnoreInstr.last := True
       cMem.up(pMem).splitOp.allowOverride
       cMem.up(pMem).splitOp.setToDefault()
       cMem.up(pMem).gprIsZeroVec.allowOverride
