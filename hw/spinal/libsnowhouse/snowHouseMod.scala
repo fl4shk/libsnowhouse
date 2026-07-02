@@ -1249,6 +1249,11 @@ case class SnowHouseDebugInfo(
   ) generate (
     UInt(cfg.mainWidth bits)
   )
+  val myPsIdBubbleAtRegFileWrite = (
+    cfg.dbgExposeExtrasAtRegFileWrite
+  ) generate (
+    Bool()
+  )
   val shouldIgnoreInstrAtRegFileWrite = (
     cfg.dbgExposeExtrasAtRegFileWrite
   ) generate (
@@ -1331,6 +1336,9 @@ case class SnowHouseIo(
   )
   def shouldIgnoreInstrAtRegFileWrite = (
     dbgInfo.shouldIgnoreInstrAtRegFileWrite
+  )
+  def myPsIdBubbleAtRegFileWrite = (
+    dbgInfo.myPsIdBubbleAtRegFileWrite
   )
   def encInstrAtRegFileWrite = (
     dbgInfo.encInstrAtRegFileWrite
@@ -2033,6 +2041,9 @@ case class SnowHouse
     )
     io.shouldIgnoreInstrAtRegFileWrite := (
       regFile.cBackArea.tempUpMod(2).instrCnt.shouldIgnoreInstr.last
+    )
+    io.myPsIdBubbleAtRegFileWrite := (
+      regFile.cBackArea.tempUpMod(2).instrCnt.myPsIdBubble.last
     )
     io.encInstrAtRegFileWrite := (
       regFile.cBackArea.tempUpMod(2).encInstr.payload
