@@ -35,6 +35,10 @@ CXX:=$(PREFIX)g++
 CXX_FLAGS:=$(CXX_FLAGS) -std=c++20 -fcoroutines -fmodules-ts -Wall \
     $(shell pkg-config --cflags sdl2)
 
+ifdef DO_DISASM
+    CXX_FLAGS:=$(CXX_FLAGS) -DMELTED_MOON_DO_DISASM=1
+endif
+
 ifdef DEBUG
 	CXX_FLAGS:=$(CXX_FLAGS) -DDEBUG=1
 endif

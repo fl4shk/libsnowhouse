@@ -22,4 +22,6 @@
 #include <SDL_video.h>
 using liborangepower::strings::sconcat;
 
+#include <sys/time.h>
+
 #endif      // src_misc_includes_hpp
