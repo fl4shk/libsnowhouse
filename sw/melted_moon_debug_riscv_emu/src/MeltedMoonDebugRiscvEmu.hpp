@@ -85,7 +85,7 @@ public:     // constants
         + ((SCREENWIDTH * SCREENHEIGHT - 1) * sizeof(u16))
     );
     static constexpr size_t NUM_GPRS = 32u;
-    static constexpr const char* GPR_NAMES[NUM_GPRS] = {
+    static constexpr std::array<const char*, NUM_GPRS> GPR_NAMES_ARR = {
         "zero",                 // x0,
         "ra", "sp", "gp", "tp", // x1-x4
         "t0", "t1", "t2",       // x5-x7: temporary registers
@@ -108,15 +108,9 @@ public:     // types
         static constexpr size_t NUM_GPRS = (
             MeltedMoonDebugRiscvEmu::NUM_GPRS
         );
-        static constexpr const char* GPR_NAMES[NUM_GPRS] = {
-            "zero",
-            "ra", "sp", "gp", "tp",
-            "t0", "t1", "t2",
-            "s0", "s1",
-            "a0", "a1", "a2", "a3", "a4", "a5", "a6", "a7",
-            "s2", "s3", "s4", "s5", "s6", "s7", "s8", "s9", "s10", "s11",
-            "t3", "t4", "t5", "t6",
-        };
+        static constexpr auto GPR_NAMES_ARR = (
+            MeltedMoonDebugRiscvEmu::GPR_NAMES_ARR
+        );
     public:     // variables
         std::optional<u8*> sw_wrote_to_fb_end = std::nullopt;
         bool sw_read_from_tp = false;

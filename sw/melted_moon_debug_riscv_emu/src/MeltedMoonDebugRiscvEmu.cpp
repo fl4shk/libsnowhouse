@@ -196,16 +196,16 @@ std::optional<std::string> MeltedMoonDebugRiscvEmu::disasm_one_instr(
         //#ifdef MELTED_MOON_DO_DISASM
         //disasm_str = sconcat(
         //    std::move(instr_name), " ",
-        //    GPR_NAMES[temp_enc_instr_r.rd], ", ",
-        //    GPR_NAMES[temp_enc_instr_r.rs1], ", ",
-        //    GPR_NAMES[temp_enc_instr_r.rs2]
+        //    GPR_NAMES_ARR[temp_enc_instr_r.rd], ", ",
+        //    GPR_NAMES_ARR[temp_enc_instr_r.rs1], ", ",
+        //    GPR_NAMES_ARR[temp_enc_instr_r.rs2]
         //);
         //#endif
         return sconcat(
             std::move(instr_name), " ",
-            GPR_NAMES[temp_enc_instr_r.rd], ", ",
-            GPR_NAMES[temp_enc_instr_r.rs1], ", ",
-            GPR_NAMES[temp_enc_instr_r.rs2]
+            GPR_NAMES_ARR[temp_enc_instr_r.rd], ", ",
+            GPR_NAMES_ARR[temp_enc_instr_r.rs1], ", ",
+            GPR_NAMES_ARR[temp_enc_instr_r.rs2]
         );
     }
         break;
@@ -286,15 +286,15 @@ std::optional<std::string> MeltedMoonDebugRiscvEmu::disasm_one_instr(
         //#ifdef MELTED_MOON_DO_DISASM
         //disasm_str = sconcat(
         //    std::move(instr_name), " ",
-        //    GPR_NAMES[temp_enc_instr_r.rd], ", ",
-        //    GPR_NAMES[temp_enc_instr_r.rs1], ", ",
+        //    GPR_NAMES_ARR[temp_enc_instr_r.rd], ", ",
+        //    GPR_NAMES_ARR[temp_enc_instr_r.rs1], ", ",
         //    std::hex, "0x", temp_enc_instr_i.my_temp_imm(), std::dec
         //);
         //#endif
         return sconcat(
             std::move(instr_name), " ",
-            GPR_NAMES[temp_enc_instr_r.rd], ", ",
-            GPR_NAMES[temp_enc_instr_r.rs1], ", ",
+            GPR_NAMES_ARR[temp_enc_instr_r.rd], ", ",
+            GPR_NAMES_ARR[temp_enc_instr_r.rs1], ", ",
             std::hex, "0x", temp_enc_instr_i.my_temp_imm(), std::dec
         );
     }
@@ -340,15 +340,15 @@ std::optional<std::string> MeltedMoonDebugRiscvEmu::disasm_one_instr(
         //#ifdef MELTED_MOON_DO_DISASM
         //disasm_str = sconcat(
         //    std::move(instr_name), " ",
-        //    GPR_NAMES[temp_enc_instr_r.rd], ", ",
-        //    GPR_NAMES[temp_enc_instr_r.rs1], ", ",
+        //    GPR_NAMES_ARR[temp_enc_instr_r.rd], ", ",
+        //    GPR_NAMES_ARR[temp_enc_instr_r.rs1], ", ",
         //    std::hex, "0x", temp_enc_instr_i.my_temp_imm(), std::dec
         //);
         //#endif
         return sconcat(
             std::move(instr_name), " ",
-            GPR_NAMES[temp_enc_instr_r.rd], ", ",
-            GPR_NAMES[temp_enc_instr_r.rs1], ", ",
+            GPR_NAMES_ARR[temp_enc_instr_r.rd], ", ",
+            GPR_NAMES_ARR[temp_enc_instr_r.rs1], ", ",
             std::hex, "0x", temp_enc_instr_i.my_temp_imm(), std::dec
         );
     }
@@ -362,15 +362,15 @@ std::optional<std::string> MeltedMoonDebugRiscvEmu::disasm_one_instr(
         //#ifdef MELTED_MOON_DO_DISASM
         //disasm_str = sconcat(
         //    "jalr ",
-        //    GPR_NAMES[temp_enc_instr_r.rd], ", ",
-        //    GPR_NAMES[temp_enc_instr_r.rs1], ", ",
+        //    GPR_NAMES_ARR[temp_enc_instr_r.rd], ", ",
+        //    GPR_NAMES_ARR[temp_enc_instr_r.rs1], ", ",
         //    std::hex, "0x", temp_enc_instr_i.my_temp_imm(), std::dec
         //);
         //#endif
         return sconcat(
             "jalr ",
-            GPR_NAMES[temp_enc_instr_r.rd], ", ",
-            GPR_NAMES[temp_enc_instr_r.rs1], ", ",
+            GPR_NAMES_ARR[temp_enc_instr_r.rd], ", ",
+            GPR_NAMES_ARR[temp_enc_instr_r.rs1], ", ",
             std::hex, "0x", temp_enc_instr_i.my_temp_imm(), std::dec
         );
     }
@@ -405,15 +405,15 @@ std::optional<std::string> MeltedMoonDebugRiscvEmu::disasm_one_instr(
         //#ifdef MELTED_MOON_DO_DISASM
         //disasm_str = sconcat(
         //    std::move(instr_name), " ",
-        //    GPR_NAMES[temp_enc_instr_r.rs2], ", ",
-        //    GPR_NAMES[temp_enc_instr_r.rs1], ", ",
+        //    GPR_NAMES_ARR[temp_enc_instr_r.rs2], ", ",
+        //    GPR_NAMES_ARR[temp_enc_instr_r.rs1], ", ",
         //    std::hex, "0x", temp_enc_instr_s.my_temp_imm(), std::dec
         //);
         //#endif
         return sconcat(
             std::move(instr_name), " ",
-            GPR_NAMES[temp_enc_instr_r.rs2], ", ",
-            GPR_NAMES[temp_enc_instr_r.rs1], ", ",
+            GPR_NAMES_ARR[temp_enc_instr_r.rs2], ", ",
+            GPR_NAMES_ARR[temp_enc_instr_r.rs1], ", ",
             std::hex, "0x", temp_enc_instr_s.my_temp_imm(), std::dec
         );
     }
@@ -462,8 +462,8 @@ std::optional<std::string> MeltedMoonDebugRiscvEmu::disasm_one_instr(
         //#ifdef MELTED_MOON_DO_DISASM
         //disasm_str = sconcat(
         //    std::move(instr_name), " ",
-        //    GPR_NAMES[temp_enc_instr_r.rs1], ", ",
-        //    GPR_NAMES[temp_enc_instr_r.rs2], ", ",
+        //    GPR_NAMES_ARR[temp_enc_instr_r.rs1], ", ",
+        //    GPR_NAMES_ARR[temp_enc_instr_r.rs2], ", ",
         //    std::hex, "0x",
         //        (saved_pc + temp_enc_instr_b.my_temp_imm()),
         //    std::dec
@@ -471,8 +471,8 @@ std::optional<std::string> MeltedMoonDebugRiscvEmu::disasm_one_instr(
         //#endif
         return sconcat(
             std::move(instr_name), " ",
-            GPR_NAMES[temp_enc_instr_r.rs1], ", ",
-            GPR_NAMES[temp_enc_instr_r.rs2], ", ",
+            GPR_NAMES_ARR[temp_enc_instr_r.rs1], ", ",
+            GPR_NAMES_ARR[temp_enc_instr_r.rs2], ", ",
             std::hex, "0x",
                 (some_saved_pc + temp_enc_instr_b.my_temp_imm()),
             std::dec
@@ -488,7 +488,7 @@ std::optional<std::string> MeltedMoonDebugRiscvEmu::disasm_one_instr(
         //#ifdef MELTED_MOON_DO_DISASM
         //disasm_str = sconcat(
         //    "jal ",
-        //    GPR_NAMES[temp_enc_instr_r.rd], ", ",
+        //    GPR_NAMES_ARR[temp_enc_instr_r.rd], ", ",
         //    std::hex, "0x",
         //        (saved_pc + temp_enc_instr_j.my_temp_imm()),
         //    std::dec
@@ -496,7 +496,7 @@ std::optional<std::string> MeltedMoonDebugRiscvEmu::disasm_one_instr(
         //#endif
         return sconcat(
             "jal ",
-            GPR_NAMES[temp_enc_instr_r.rd], ", ",
+            GPR_NAMES_ARR[temp_enc_instr_r.rd], ", ",
             std::hex, "0x",
                 (some_saved_pc + temp_enc_instr_j.my_temp_imm()),
             std::dec
@@ -510,13 +510,13 @@ std::optional<std::string> MeltedMoonDebugRiscvEmu::disasm_one_instr(
         //#ifdef MELTED_MOON_DO_DISASM
         //disasm_str = sconcat(
         //    "lui ",
-        //    GPR_NAMES[temp_enc_instr_r.rd], ", ",
+        //    GPR_NAMES_ARR[temp_enc_instr_r.rd], ", ",
         //    std::hex, "0x", temp_enc_instr_u.my_temp_imm(), std::dec
         //);
         //#endif
         return sconcat(
             "lui ",
-            GPR_NAMES[temp_enc_instr_r.rd], ", ",
+            GPR_NAMES_ARR[temp_enc_instr_r.rd], ", ",
             std::hex, "0x", temp_enc_instr_u.my_temp_imm(), std::dec
         );
     }
@@ -528,13 +528,13 @@ std::optional<std::string> MeltedMoonDebugRiscvEmu::disasm_one_instr(
         //#ifdef MELTED_MOON_DO_DISASM
         //disasm_str = sconcat(
         //    "auipc ",
-        //    GPR_NAMES[temp_enc_instr_r.rd], ", ",
+        //    GPR_NAMES_ARR[temp_enc_instr_r.rd], ", ",
         //    std::hex, "0x", temp_enc_instr_u.my_temp_imm(), std::dec
         //);
         //#endif
         return sconcat(
             "auipc ",
-            GPR_NAMES[temp_enc_instr_r.rd], ", ",
+            GPR_NAMES_ARR[temp_enc_instr_r.rd], ", ",
             std::hex, "0x", temp_enc_instr_u.my_temp_imm(), std::dec
         );
     }
@@ -661,14 +661,14 @@ auto MeltedMoonDebugRiscvEmu::exec_one_instr(
         #endif
         std::printf(
             "inp_gprs:(%s:%x %s:%x %s:%x)    ",
-            GPR_NAMES[temp_enc_instr_r.rd], inp_rd,
-            GPR_NAMES[temp_enc_instr_r.rs1], inp_rs1,
-            GPR_NAMES[temp_enc_instr_r.rs2], inp_rs2
+            GPR_NAMES_ARR[temp_enc_instr_r.rd], inp_rd,
+            GPR_NAMES_ARR[temp_enc_instr_r.rs1], inp_rs1,
+            GPR_NAMES_ARR[temp_enc_instr_r.rs2], inp_rs2
         );
         for (size_t i=0u; i<_gpr_file.size(); ++i) {
             std::printf(
                 "%s=%x",
-                GPR_NAMES[i],
+                GPR_NAMES_ARR[i],
                 unsigned(_gpr_file.at(i))
             );
             if (i + 1u < _gpr_file.size()) {
@@ -990,8 +990,8 @@ auto MeltedMoonDebugRiscvEmu::exec_one_instr(
                 // = {.op=0x13, .f3=0x5, .imm11dt5=0x20},
                 //std::printf(
                 //    "NOTE: srai %s, %s, %x\n",
-                //    GPR_NAMES[temp_enc_instr_r.rd],
-                //    GPR_NAMES[temp_enc_instr_r.rs1],
+                //    GPR_NAMES_ARR[temp_enc_instr_r.rd],
+                //    GPR_NAMES_ARR[temp_enc_instr_r.rs1],
                 //    _enc_instr_i.my_imm4dt0()
                 //);
                 _write_gpr_rd(
