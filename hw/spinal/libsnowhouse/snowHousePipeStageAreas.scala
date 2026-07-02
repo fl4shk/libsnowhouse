@@ -11792,8 +11792,8 @@ case class SnowHousePipeStageWriteBack(
       doModInBackEtcParams.outp,
     )
   )
-  when (cWb.up.isValid) {
-  }
+  //when (cWb.up.isValid) {
+  //}
   //def extIdxUp = PipeRegFile.extIdxUp
   //def extIdxSaved = PipeRegFile.extIdxSaved
   //def extIdxLim = PipeRegFile.extIdxLim
