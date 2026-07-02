@@ -6652,38 +6652,38 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
               ) {
                 if (fullOpInfoIdx.get != cfg.irqJmpOp) {
                   //when (io.gprIsNonZeroVec.last(0)) {
-                  if (
-                    opInfo.dstArr.size == 2
-                    && opInfo.srcArr.size == 2
-                  ) {
-                    def myPcRange = (
-                      io.psExSetPc.branchTgtBufElem.dstRegPc.high
-                      downto log2Up(cfg.instrSizeBytes)
-                    )
-                    io.modMemWord(0) := (
-                      (
-                        if (cfg.optShiftRegPcImmAddend) (
-                          Cat(
-                            io.rdMemWord(0)(myPcRange) + io.imm(0), //+ 1,
-                            U(s"${log2Up(cfg.instrSizeBytes)}'d0"),
-                          ).asUInt
-                        ) else (
-                          io.rdMemWord(0) + io.imm(0)
-                          - cfg.instrSizeBytes
-                          //+ (
-                          //  2 * cfg.instrSizeBytes
-                          //)
-                        )
-                      ).resize(io.modMemWord(0).getWidth)
-                    )
-                  } else {
+                  //if (
+                  //  opInfo.dstArr.size == 2
+                  //  && opInfo.srcArr.size == 2
+                  //) {
+                  //  def myPcRange = (
+                  //    io.psExSetPc.branchTgtBufElem.dstRegPc.high
+                  //    downto log2Up(cfg.instrSizeBytes)
+                  //  )
+                  //  io.modMemWord(0) := (
+                  //    (
+                  //      if (cfg.optShiftRegPcImmAddend) (
+                  //        Cat(
+                  //          io.rdMemWord(0)(myPcRange) + io.imm(0), //+ 1,
+                  //          U(s"${log2Up(cfg.instrSizeBytes)}'d0"),
+                  //        ).asUInt
+                  //      ) else (
+                  //        io.rdMemWord(0) + io.imm(0)
+                  //        - cfg.instrSizeBytes
+                  //        //+ (
+                  //        //  2 * cfg.instrSizeBytes
+                  //        //)
+                  //      )
+                  //    ).resize(io.modMemWord(0).getWidth)
+                  //  )
+                  //} else {
                     io.modMemWord(0) := (
                       //io.regPc + ((cfg.instrMainWidth / 8) * 1)
                       io.regPcPlusInstrSize.resize(
                         io.modMemWord(0).getWidth
                       )
                     )
-                  }
+                  //}
                   //} otherwise {
                   //  io.modMemWord(0) := (
                   //    0x0
