@@ -123,6 +123,7 @@ public:     // types
         std::array<u32, NUM_GPRS>* gpr_file = nullptr;
         u32 saved_pc = 0;
         u32 pc = 0;
+        u32 enc_instr = 0;
         #ifdef MELTED_MOON_DO_DISASM
         std::string disasm_str;
         #endif      // DEBUG

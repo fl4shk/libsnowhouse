@@ -80,7 +80,14 @@ auto MeltedMoonDebugRiscvEmu::exec_one_instr(
     _pc += sizeof(u32);
 
     std::memcpy(
-        &_enc_instr_r, _mem.get() + saved_pc, sizeof(_enc_instr_r)
+        &_my_exec_one_instr_ret.enc_instr,
+        _mem.get() + saved_pc,
+        sizeof(_my_exec_one_instr_ret.enc_instr)
+    );
+    std::memcpy(
+        &_enc_instr_r,
+        &_my_exec_one_instr_ret.enc_instr,
+        sizeof(_enc_instr_r)
     );
     static constexpr u32 ENC_INSTR_EBREAK = 0x00100073u;
     static constexpr u32 ENC_INSTR_ECALL = 0x00000073u;
