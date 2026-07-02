@@ -609,7 +609,6 @@ auto MeltedMoonDebugRiscvEmu::exec_one_instr(
 
     #ifdef MELTED_MOON_DO_DISASM
     auto& disasm_str = _my_exec_one_instr_ret.disasm_str;
-    std::string disasm_str;
     if (
         auto temp_disasm_str = disasm_one_instr(
             my_temp_enc_instr,
