@@ -103,8 +103,8 @@ object Rv32RType {
     //--------
     val MulRdRs1Rs2 = OpFields(op=0x33, f3=0x0, f7=0x01)
     val MulhRdRs1Rs2 = OpFields(op=0x33, f3=0x1, f7=0x01)
-    val MulsuRdRs1Rs2 = OpFields(op=0x33, f3=0x2, f7=0x01)
-    val MuluRdRs1Rs2 = OpFields(op=0x33, f3=0x3, f7=0x01)
+    val MulhsuRdRs1Rs2 = OpFields(op=0x33, f3=0x2, f7=0x01)
+    val MulhuRdRs1Rs2 = OpFields(op=0x33, f3=0x3, f7=0x01)
     val DivRdRs1Rs2 = OpFields(op=0x33, f3=0x4, f7=0x01)
     val DivuRdRs1Rs2 = OpFields(op=0x33, f3=0x5, f7=0x01)
     val RemRdRs1Rs2 = OpFields(op=0x33, f3=0x6, f7=0x01)
@@ -428,7 +428,7 @@ object Riscv32imOpInfoMap {
   )
 
   opInfoMap += (
-    Rv32RType.Op.MuluRdRs1Rs2 -> OpInfo.mkMultiCycle(
+    Rv32RType.Op.MulhuRdRs1Rs2 -> OpInfo.mkMultiCycle(
       dstArr=Array[DstKind](DstKind.Gpr, DstKind.DontCare),
       srcArr=Array[SrcKind](SrcKind.Gpr, SrcKind.Gpr),
       multiCycleOp=MultiCycleOpKind.Umul,
@@ -444,7 +444,7 @@ object Riscv32imOpInfoMap {
   )
 
   opInfoMap += (
-    Rv32RType.Op.MulsuRdRs1Rs2 -> OpInfo.mkMultiCycle(
+    Rv32RType.Op.MulhsuRdRs1Rs2 -> OpInfo.mkMultiCycle(
       dstArr=Array[DstKind](DstKind.Gpr, DstKind.DontCare),
       srcArr=Array[SrcKind](SrcKind.Gpr, SrcKind.Gpr),
       multiCycleOp=MultiCycleOpKind.SUmul,
@@ -1478,11 +1478,11 @@ object SnowHouseRiscv32imPipeStageInstrDecode {
               is (MulhRdRs1Rs2.f3) {
                 setOp(MulhRdRs1Rs2, encInstrR.last)
               }
-              is (MulsuRdRs1Rs2.f3) {
-                setOp(MulsuRdRs1Rs2, encInstrR.last)
+              is (MulhsuRdRs1Rs2.f3) {
+                setOp(MulhsuRdRs1Rs2, encInstrR.last)
               }
-              is (MuluRdRs1Rs2.f3) {
-                setOp(MuluRdRs1Rs2, encInstrR.last)
+              is (MulhuRdRs1Rs2.f3) {
+                setOp(MulhuRdRs1Rs2, encInstrR.last)
               }
               is (DivRdRs1Rs2.f3) {
                 setOp(DivRdRs1Rs2, encInstrR.last)
@@ -2735,7 +2735,8 @@ case class SnowHouseRiscv32imMulFullProduct(
       DO_ABS_LEFT_INPUT_IF_NEGATIVE,
       DO_FOUR_MUL16X16,
       FIRST_TWO_ADDS,
-      FINAL_ADD,
+      FINAL_ADD_KIND_ZERO,
+      FINAL_ADD_KIND_NON_ZERO,
       DO_NEGATE_RESULT,
       YIELD_RESULT
       = newElement()
@@ -2794,19 +2795,28 @@ case class SnowHouseRiscv32imMulFullProduct(
   }
   //dstVec(0) := rDst
   dstVec := rDstVec
+  val rSavedKindIsZero = Reg(Bool(), init=False)
+
   switch (rState) {
     is (State.IDLE) {
       switch (
         rose(RegNext(multiCycleBus.nextValid, init=False))
         ## multiCycleBus.sendData.kind(1 downto 0)
       ) {
-        is (M"10-") {
+        is (M"100") {
+          rSavedKindIsZero := True
+          rState := State.DO_FOUR_MUL16X16
+        }
+        is (M"101") {
+          rSavedKindIsZero := False
           rState := State.DO_FOUR_MUL16X16
         }
         is (B"110") {
+          rSavedKindIsZero := False
           rState := State.DO_ABS_BOTH_INPUTS_IF_NEGATIVE
         }
         is (B"111") {
+          rSavedKindIsZero := False
           rState := State.DO_ABS_LEFT_INPUT_IF_NEGATIVE
         }
         default {
@@ -2858,7 +2868,11 @@ case class SnowHouseRiscv32imMulFullProduct(
       rState := State.FIRST_TWO_ADDS
     }
     is (State.FIRST_TWO_ADDS) {
-      rState := State.FINAL_ADD
+      when (rSavedKindIsZero) {
+        rState := State.FINAL_ADD_KIND_ZERO
+      } otherwise {
+        rState := State.FINAL_ADD_KIND_NON_ZERO
+      }
       rPartialSum(0) := Cat(z2, z0).asUInt
       rPartialSum(1) := (
         Cat(
@@ -2869,7 +2883,15 @@ case class SnowHouseRiscv32imMulFullProduct(
         ).asUInt.resize(rPartialSum(1).getWidth)
       )
     }
-    is (State.FINAL_ADD) {
+    is (State.FINAL_ADD_KIND_ZERO) {
+      (rDstVec(1), rDstVec(0)) := rPartialSum(1) + rPartialSum(0)
+      when (!rNeedToNegateResultSign) {
+        rState := State.YIELD_RESULT
+      } otherwise {
+        rState := State.DO_NEGATE_RESULT
+      }
+    }
+    is (State.FINAL_ADD_KIND_NON_ZERO) {
       (rDstVec(0), rDstVec(1)) := rPartialSum(1) + rPartialSum(0)
       when (!rNeedToNegateResultSign) {
         rState := State.YIELD_RESULT

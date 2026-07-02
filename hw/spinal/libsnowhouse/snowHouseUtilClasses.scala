@@ -1290,6 +1290,13 @@ case class SnowHouseInstrCnt(
   val myPsIdBubble = Vec.fill(cfg.lowerMyFanoutRegPcSetItCnt)(
     Bool()
   )
+  //val dbgUnfinishedMultiCycleOp = (
+  //  cfg.dbgExposeExtrasAtRegFileWrite
+  //) generate (
+  //  Vec.fill(cfg.lowerMyFanoutRegPcSetItCnt)(
+  //    Bool()
+  //  )
+  //)
   //val myPsIdPreBubble = Vec.fill(cfg.lowerMyFanoutRegPcSetItCnt)(
   //  Bool()
   //)

@@ -10939,6 +10939,11 @@ case class SnowHousePipeStageExecute(
         && setOutpModMemWord.io.opIsAnyMultiCycle
         && !myShouldIgnoreInstr(2)
       ) {
+        //if (cfg.dbgExposeExtrasAtRegFileWrite) {
+        //  outp.instrCnt.dbgUnfinishedMultiCycleOp.foreach(item => {
+        //    item := True
+        //  })
+        //}
         for (idx <- 0 until rOpIsMultiCycle.size) {
           rOpIsMultiCycle(idx) := (
             setOutpModMemWord.io.opIsMultiCycle(idx)

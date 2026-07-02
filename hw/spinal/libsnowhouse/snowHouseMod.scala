@@ -2042,6 +2042,10 @@ case class SnowHouse
     io.shouldIgnoreInstrAtRegFileWrite := (
       regFile.cBackArea.tempUpMod(2).instrCnt.shouldIgnoreInstr.last
       || psWbToEarlierStallRequest
+      //|| (
+      //  regFile.cBackArea.tempUpMod(2).instrCnt
+      //  .dbgUnfinishedMultiCycleOp.last
+      //)
     )
     io.myPsIdBubbleAtRegFileWrite := (
       regFile.cBackArea.tempUpMod(2).instrCnt.myPsIdBubble.last
