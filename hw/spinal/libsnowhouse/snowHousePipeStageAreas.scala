@@ -3872,8 +3872,8 @@ case class SnowHousePipeStageInstrDecode(
   extends SpinalEnum(defaultEncoding=binaryOneHot) {
     val
       IDLE,
-      POST_LD_0,
-      POST_LD_1
+      POST_LD_0//,
+      //POST_LD_1
       = newElement();
   }
 
@@ -3916,7 +3916,7 @@ case class SnowHousePipeStageInstrDecode(
         that=(
           //upPayload(1).splitOp.opIsMemAccess
           myTempOpIsMemAccessLoad
-          || myTempOpIsMemAccessStore
+          //|| myTempOpIsMemAccessStore
           //--------
           // FL4SHK NOTE:
           // Without a bubble,
@@ -3956,95 +3956,6 @@ case class SnowHousePipeStageInstrDecode(
       //  init=False,
       //)
     )
-    //val myHistCondStoreBubble = (
-    //  History[Bool](
-    //    that=(
-    //      //upPayload(1).splitOp.opIsMemAccess
-    //      //upPayload(1).inpDecodeExt.last.memAccessKind.asBits(1)
-    //      myTempOpIsMemAccessStore
-    //      //!upPayload(1).inpDecodeExt.head.memAccessKind.asBits(1)
-    //      //&& RegNextWhen(
-    //      //  upPayload(1).inpDecodeExt.head.memAccessKind.asBits(1),
-    //      //  cond=down.isFiring,
-    //      //  init=False
-    //      //)
-    //    ),
-    //    length=(
-    //      //upPayload(1).myDoHaveHazardAddrCheckVec.size + 1
-    //      numFollowingInstrs + 1
-    //    ),
-    //    when=(
-    //      down.isFiring
-    //      //up.isFiring
-    //    ),
-    //    init=False
-    //  )
-    //)
-    //val myHistCondLoadBubble = (
-    //  History[Bool](
-    //    that=(
-    //      myTempOpIsMemAccessLoad
-    //    ),
-    //    length=(
-    //      //upPayload(1).myDoHaveHazardAddrCheckVec.size + 1
-    //      numFollowingInstrs + 1
-    //    ),
-    //    when=(
-    //      down.isFiring
-    //      //up.isFiring
-    //    ),
-    //    init=False
-    //  )
-    //)
-
-    //when (up.isValid) {
-    //  for (idx <- 0 until numFollowingInstrs) {
-    //    when (
-    //      upPayload(1).myDoHaveHazardAddrCheckVec(idx + 0)
-    //      && myHistCondMemAccBubble(idx + 1)
-    //    ) {
-    //      when (
-    //        //!rStallState
-    //        rStallState.asBits(0) // IDLE
-    //      ) {
-    //        cId.duplicateIt()
-
-    //        upPayload(1).instrCnt.myPsIdBubble.foreach(item => {
-    //          item := True
-    //        })
-    //        upPayload(1).splitOp.setToDefault()
-    //        upPayload(1).branchTgtBufElem(1) := (
-    //          upPayload(1).branchTgtBufElem(1).getZero
-    //        )
-    //        down(pId) := upPayload(1)
-    //        when (down.isFiring) {
-    //          //rStallState := True
-    //          rStallState := (
-    //            if (idx == 0) (
-    //              MyLcvDbusStallState.POST_LD_0
-    //            ) else (
-    //              MyLcvDbusStallState.POST_LD_1
-    //            )
-    //          )
-    //        }
-    //      }
-    //    }
-    //  }
-    //}
-    //when (rose(rStallState)) {
-    //  upPayload(1).instrCnt.myPsIdBubble.foreach(item => {
-    //    item := False
-    //  })
-    //}
-    //when (up.isFiring) {
-    //  //rStallState := False
-    //  rStallState := MyLcvDbusStallState.IDLE
-    //}
-    //when (rose(rStallState.asBits(1) || rStallState.asBits(2))) {
-    //  upPayload(1).instrCnt.myPsIdBubble.foreach(item => {
-    //    item := False
-    //  })
-    //}
     upPayload(1).instrCnt.myPsIdBubble.foreach(item => {
       item := False
     })
@@ -4178,17 +4089,17 @@ case class SnowHousePipeStageInstrDecode(
           }
         }
       }
-      is (MyLcvDbusStallState.POST_LD_0) {
-        doSendBubbleMainMost()
-        when (down.isFiring) {
-          rStallState := MyLcvDbusStallState.POST_LD_1
-        }
-      }
-      is (MyLcvDbusStallState.POST_LD_1) {
-        //when (up.isFiring) {
-        //  rStallState := MyLcvDbusStallState.IDLE
-        //}
-      }
+      //is (MyLcvDbusStallState.POST_LD_0) {
+      //  doSendBubbleMainMost()
+      //  when (down.isFiring) {
+      //    rStallState := MyLcvDbusStallState.POST_LD_1
+      //  }
+      //}
+      //is (MyLcvDbusStallState.POST_LD_1) {
+      //  //when (up.isFiring) {
+      //  //  rStallState := MyLcvDbusStallState.IDLE
+      //  //}
+      //}
     }
     when (up.isFiring) {
       rStallState := MyLcvDbusStallState.IDLE
