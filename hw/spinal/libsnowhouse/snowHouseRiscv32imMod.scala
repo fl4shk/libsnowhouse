@@ -3069,7 +3069,7 @@ case class SnowHouseRiscv32imShift32LowLatency
                 )
                 when (multiCycleBus.nextValid) {
                   lslDel1.io.inpToShift := tempLeft
-                  lslDel1.io.inpAmount := tempRight(
+                  lslDel1.io.inpAmount := tempRight
                 }
                 when (rBusValidVec(0)) {
                   //dstVec(0) := binop.main
