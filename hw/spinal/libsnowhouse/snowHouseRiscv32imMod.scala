@@ -2838,20 +2838,20 @@ case class SnowHouseRiscv32imMulFullProduct(
     }
     is (State.DO_ABS_BOTH_INPUTS_IF_NEGATIVE) {
       rState := State.DO_FOUR_MUL16X16
-      def myAbsSrc = rAbsSrcVec(0)
-      rSignVec(0) := myAbsSrc.msb
-      when (myAbsSrc.msb) {
-        myAbsSrc := (-myAbsSrc.asSInt).asUInt
-      }
-    }
-    is (State.DO_ABS_LEFT_INPUT_IF_NEGATIVE) {
-      rState := State.DO_FOUR_MUL16X16
       for (idx <- 0 until rAbsSrcVec.size) {
         def myAbsSrc = rAbsSrcVec(idx)
         rSignVec(idx) := myAbsSrc.msb
         when (myAbsSrc.msb) {
           myAbsSrc := (-myAbsSrc.asSInt).asUInt
         }
+      }
+    }
+    is (State.DO_ABS_LEFT_INPUT_IF_NEGATIVE) {
+      rState := State.DO_FOUR_MUL16X16
+      def myAbsSrc = rAbsSrcVec(0)
+      rSignVec(0) := myAbsSrc.msb
+      when (myAbsSrc.msb) {
+        myAbsSrc := (-myAbsSrc.asSInt).asUInt
       }
     }
     is (State.DO_FOUR_MUL16X16) {
