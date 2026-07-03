@@ -96,12 +96,12 @@ int main(int argc, char** argv) {
         new Uint32[SCREENWIDTH * 2 * SCREENHEIGHT * 2]
     );
 
-    //for (size_t instr_cnt=0; instr_cnt < 1024u; ++instr_cnt) 
 
     //struct timeval tp;
     size_t update_tp_cnt = 0u;
     struct timeval tp;
     gettimeofday(&tp, nullptr);
+    //for (size_t instr_cnt=0; instr_cnt < 1024u; ++instr_cnt) 
     for (;;) 
     {
         //u16 temp_fb_data;

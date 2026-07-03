@@ -5,6 +5,7 @@
 #include <cstring>
 #include <vector>
 #include <string>
+#include <array>
 
 #include "liborangepower_src/game_stuff/engine_key_status_class.hpp"
 #include "liborangepower_src/misc/misc_includes.hpp"
