@@ -1929,12 +1929,12 @@ case class SnowHousePipePayload(
     myExt(ydx).pipeFlags := inpExt.pipeFlags
     myExt(ydx).main.nonMemAddrMost := inpExt.main.nonMemAddrMost
     myExt(ydx).main.modMemWord := inpExt.main.modMemWord
-    for (
-      (myMemAddrFwdCmp, zdx)
-      <- myExt(ydx).memAddrFwdCmp.view.zipWithIndex
-    ) {
-      myMemAddrFwdCmp := inpExt.memAddrFwdCmp(zdx)
-    }
+    //for (
+    //  (myMemAddrFwdCmp, zdx)
+    //  <- myExt(ydx).memAddrFwdCmp.view.zipWithIndex
+    //) {
+    //  myMemAddrFwdCmp := inpExt.memAddrFwdCmp(zdx)
+    //}
     for (
       (myMemAddrFwd, zdx)
       <- myExt(ydx).memAddrFwd.view.zipWithIndex
@@ -1970,12 +1970,12 @@ case class SnowHousePipePayload(
     outpExt.pipeFlags := myExt(ydx).pipeFlags
     outpExt.main.nonMemAddrMost := myExt(ydx).main.nonMemAddrMost
     outpExt.main.modMemWord := myExt(ydx).main.modMemWord
-    for (
-      (myMemAddrFwdCmp, zdx)
-      <- myExt(ydx).memAddrFwdCmp.view.zipWithIndex
-    ) {
-      outpExt.memAddrFwdCmp(zdx) := myMemAddrFwdCmp
-    }
+    //for (
+    //  (myMemAddrFwdCmp, zdx)
+    //  <- myExt(ydx).memAddrFwdCmp.view.zipWithIndex
+    //) {
+    //  outpExt.memAddrFwdCmp(zdx) := myMemAddrFwdCmp
+    //}
     for (
       (myMemAddrFwd, zdx)
       <- myExt(ydx).memAddrFwd.view.zipWithIndex
