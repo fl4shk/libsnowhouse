@@ -3916,7 +3916,7 @@ case class SnowHousePipeStageInstrDecode(
         that=(
           //upPayload(1).splitOp.opIsMemAccess
           myTempOpIsMemAccessLoad
-          //|| myTempOpIsMemAccessStore
+          || myTempOpIsMemAccessStore
           //--------
           // FL4SHK NOTE:
           // Without a bubble,
