@@ -1976,8 +1976,8 @@ case class SnowHouseRiscv32imDivmod(
 ) extends Area {
   def cfg = cpuIo.cfg
   val divmod = LongDivMultiCycle(
-    mainWidth=(cfg.mainWidth * 2),
-    denomWidth=(cfg.mainWidth * 2),
+    mainWidth=cfg.mainWidth,
+    denomWidth=cfg.mainWidth,
     chunkWidth=1,//2,
     signedReset=0x0,
   )
@@ -2256,20 +2256,20 @@ case class SnowHouseRiscv32imDivmod(
   )
   val rSavedQuot = (
     Vec.fill(4)(
-      Reg(UInt((cfg.mainWidth * 2) bits))
+      Reg(UInt(cfg.mainWidth bits))
       init(0x0)
     )
   )
   val rSavedRema = (
     Vec.fill(4)(
-      Reg(UInt((cfg.mainWidth * 2) bits))
+      Reg(UInt(cfg.mainWidth bits))
       init(0x0)
     )
   )
   val rSavedResult = (
     Vec.fill(3)(
       Vec.fill(4)(
-        Reg(UInt((cfg.mainWidth * 2) bits))
+        Reg(UInt(cfg.mainWidth bits))
         init(0x0)
       )
     )
