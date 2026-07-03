@@ -524,6 +524,7 @@ private:        // variables
     timeval* _tp = nullptr;
     //bool _sw_read_from_tp = false;
     ExecOneInstrRet _my_exec_one_instr_ret;
+    bool _do_printing = true;
 public:     // functions
     MeltedMoonDebugRiscvEmu() = default;
     MeltedMoonDebugRiscvEmu(
@@ -584,7 +585,10 @@ public:     // functions
         u32 some_enc_instr,
         u32 some_saved_pc
     );
-    ExecOneInstrRet exec_one_instr(struct timeval& n_tp);
+    ExecOneInstrRet exec_one_instr(
+        struct timeval& n_tp,
+        bool n_do_printing=true
+    );
 private:        // functions
     inline u32 _rd() {
         return _gpr_file.at(_enc_instr_r.rd);

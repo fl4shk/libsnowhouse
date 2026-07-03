@@ -549,14 +549,16 @@ std::optional<std::string> MeltedMoonDebugRiscvEmu::disasm_one_instr(
 }
 
 auto MeltedMoonDebugRiscvEmu::exec_one_instr(
-    timeval& n_tp
+    timeval& n_tp,
+    bool n_do_printing
 ) -> ExecOneInstrRet {
+    _tp = &n_tp;
+    _do_printing = n_do_printing;
+
     //_my_exec_one_instr_ret.sw_wrote_to_fb_end = std::nullopt;
     //_my_exec_one_instr_ret.sw_read_from_tp = false;
     _my_exec_one_instr_ret = ExecOneInstrRet();
     _my_exec_one_instr_ret.gpr_file = &_gpr_file;
-
-    _tp = &n_tp;
     const u32 saved_pc = _pc;
     _my_exec_one_instr_ret.saved_pc = saved_pc;
 
@@ -1269,10 +1271,12 @@ void MeltedMoonDebugRiscvEmu::_bus_write(
                     //    _to_dbg_print,
                     //    "\n"
                     //);
-                    std::printf(
-                        "%s\n",
-                        _to_dbg_print.c_str()
-                    );
+                    if (_do_printing) {
+                        std::printf(
+                            "%s\n",
+                            _to_dbg_print.c_str()
+                        );
+                    }
                     //if (
                     //    _to_dbg_print
                     //    == (
