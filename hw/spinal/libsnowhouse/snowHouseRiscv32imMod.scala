@@ -3040,7 +3040,9 @@ case class SnowHouseRiscv32imShift32LowLatency
                   //  next=srcVec(1),
                   //  init=srcVec(1).getZero,
                   //) //init(0x0)
-                  srcVec(1)
+                  srcVec(1)(log2Up(cfg.mainWidth) - 1 downto 0).resize(
+                    cfg.mainWidth
+                  )
                 )
                 val tempLeft = Cat(left).asUInt(width - 1 downto 0)
                 val tempRight = Cat(right).asUInt(width - 1 downto 0)
@@ -3067,7 +3069,7 @@ case class SnowHouseRiscv32imShift32LowLatency
                 )
                 when (multiCycleBus.nextValid) {
                   lslDel1.io.inpToShift := tempLeft
-                  lslDel1.io.inpAmount := tempRight
+                  lslDel1.io.inpAmount := tempRight(
                 }
                 when (rBusValidVec(0)) {
                   //dstVec(0) := binop.main
@@ -3096,7 +3098,9 @@ case class SnowHouseRiscv32imShift32LowLatency
                   //  next=srcVec(1),
                   //  init=srcVec(1).getZero,
                   //) //init(0x0)
-                  srcVec(1)
+                  srcVec(1)(log2Up(cfg.mainWidth) - 1 downto 0).resize(
+                    cfg.mainWidth
+                  )
                 )
                 val tempLeft = Cat(left).asUInt(width - 1 downto 0)
                 val tempRight = Cat(right).asUInt(width - 1 downto 0)
@@ -3173,7 +3177,9 @@ case class SnowHouseRiscv32imShift32LowLatency
                   //  next=srcVec(1),
                   //  init=srcVec(1).getZero,
                   //) //init(0x0)
-                  srcVec(1)
+                  srcVec(1)(log2Up(cfg.mainWidth) - 1 downto 0).resize(
+                    cfg.mainWidth
+                  )
                 )
                 val tempLeft = Cat(left).asUInt(width - 1 downto 0)
                 val tempRight = Cat(right).asUInt(width - 1 downto 0)
