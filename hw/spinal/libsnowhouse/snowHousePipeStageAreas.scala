@@ -3180,7 +3180,8 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
         //cond=io.upIsFiring,
         init=False,
       )
-      || stickyTempCondDstRegPc
+      //|| stickyTempCondDstRegPc
+      || myTempCondDstRegPc
     //)
   )
   val rSavedTempReplaceBtbElem = Reg(Bool(), init=False)
@@ -3324,11 +3325,11 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
               //)
             )
           )
-          || (
-            //myTempDstRegPc
-            //=/= io.btbElemSavedDstRegPc
-            stickyTempCondDstRegPc
-          )
+          //|| (
+          //  //myTempDstRegPc
+          //  //=/= io.btbElemSavedDstRegPc
+          //  stickyTempCondDstRegPc
+          //)
           //(tempBranchPredictTkn === myPsExSetPcValid)
           //&& !tempBranchPredictTkn
           //myPsExSetPcValid =/= tempBranchPredictTkn
