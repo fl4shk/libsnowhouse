@@ -3083,21 +3083,28 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
 
   val myTempDstRegPc = UInt(cfg.mainAddrWidth bits)
   myTempDstRegPc := (
-    //RegNext(
-    //  myTempDstRegPc,
-    //  init=myTempDstRegPc.getZero
-    //)
-    //io.btbElemSavedDstRegPc
     RegNext(
-      io.btbElemSavedDstRegPc,
-      init=io.btbElemSavedDstRegPc.getZero
+      myTempDstRegPc,
+      init=myTempDstRegPc.getZero
     )
+    //io.btbElemSavedDstRegPc
+    //RegNext(
+    //  io.btbElemSavedDstRegPc,
+    //  init=io.btbElemSavedDstRegPc.getZero
+    //)
   )
   val myTempCondDstRegPc = (
     RegNext(
       (
-        io.splitOp.exSetNextPcKind
-        =/= SnowHousePsExSetNextPcKind.Dont
+        //io.splitOp.exSetNextPcKind
+        //=/= SnowHousePsExSetNextPcKind.Dont
+        (
+          io.splitOp.exSetNextPcKind
+          === SnowHousePsExSetNextPcKind.RdMemWord
+        ) || (
+          io.splitOp.exSetNextPcKind
+          === SnowHousePsExSetNextPcKind.RdMemWordPlusImm
+        )
       ),
       init=False
     )
