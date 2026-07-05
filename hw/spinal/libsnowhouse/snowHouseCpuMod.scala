@@ -867,8 +867,15 @@ object SnowHouseCpuPipeStageInstrDecode {
           // In other words, we don't try to branch predict `Jl`.
           // It may be of interest to have a function return predictor at
           // some point.
-          ret.btbElem.valid := False
-          tempDontPredict := True
+
+          //ret.btbElem.valid := False
+          //tempDontPredict := True
+          ret.btbElem.valid := True
+          ret.branchKind := (
+            // this is only for `FwdNotTknBakTknEnum`!
+            Cat(True).asUInt
+            .resize(ret.branchKind.getWidth).asBits
+          )
           setOp(JlRaRb)
           if (encInstrIdx == 0) {
             myTempOpIsJmpBr := True
@@ -7809,7 +7816,7 @@ object SnowHouseCpuWithDualRamSim extends App {
     false
   )
   val testIdxRange = Array[Int](
-    //0, //0,
+    0, 0,
     //////1, //1,
     //////2, 2,
     //////3, //3,
@@ -7819,7 +7826,7 @@ object SnowHouseCpuWithDualRamSim extends App {
     //////7, 7,
     //////8, 8,
     //9, 9,
-    10, //10,
+    10, 10,
     ////11, //11,
     ////12, //12,
     //////13, //13,

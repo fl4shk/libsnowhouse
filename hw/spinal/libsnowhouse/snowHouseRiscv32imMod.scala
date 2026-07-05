@@ -1084,9 +1084,16 @@ object SnowHouseRiscv32imPipeStageInstrDecode {
           }
           temp.btbElem.dontPredict := False
         } else if (tempHaveJalr) {
-          temp.btbElem.valid := False
-          temp.branchKind := temp.branchKind.getZero
-          temp.btbElem.dontPredict := True
+          //temp.btbElem.valid := False
+          //temp.branchKind := temp.branchKind.getZero
+          //temp.btbElem.dontPredict := True
+          temp.btbElem.valid := True
+          temp.branchKind.assignFromBits(
+            // this is only for `FwdNotTknBakTknEnum`!
+            Cat(True).asUInt
+            .resize(temp.branchKind.getWidth).asBits
+          )
+          temp.btbElem.dontPredict := False
         } else {
           temp := temp.getZero
         }

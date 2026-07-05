@@ -1628,7 +1628,7 @@ case class SnowHousePipePayloadNonExt(
       Bool()
     //)
   )
-  val branchPredictReplaceBtbElem = (
+  val branchPredictReplaceBtbElemMost = (
     cfg.haveBranchPredictor
   ) generate (
     Bool()
@@ -1863,7 +1863,9 @@ case class SnowHousePipePayload(
   def takeIrq = nonExt.takeIrq
   def branchPredictTkn = nonExt.branchPredictTkn
 
-  def branchPredictReplaceBtbElem = nonExt.branchPredictReplaceBtbElem
+  def branchPredictReplaceBtbElemMost = (
+    nonExt.branchPredictReplaceBtbElemMost
+  )
   def encInstr = nonExt.encInstr
   def branchTgtBufElem = nonExt.branchTgtBufElem
   def btbElemBranchKind = nonExt.btbElemBranchKind
