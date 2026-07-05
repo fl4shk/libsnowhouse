@@ -3094,10 +3094,19 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
     )
   )
   val myTempCondDstRegPc = (
-    myTempDstRegPc
-    =/= RegNext(
-      io.btbElemSavedDstRegPc,
-      init=io.btbElemSavedDstRegPc.getZero
+    RegNext(
+      (
+        io.splitOp.exSetNextPcKind
+        =/= SnowHousePsExSetNextPcKind.Dont
+      ),
+      init=False
+    )
+    && (
+      myTempDstRegPc
+      =/= RegNext(
+        io.btbElemSavedDstRegPc,
+        init=io.btbElemSavedDstRegPc.getZero
+      )
     )
   )
   val rSavedTempCondDstRegPc = Reg(Bool(), init=False)
