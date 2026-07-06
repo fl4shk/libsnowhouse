@@ -3452,12 +3452,40 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
   val myHadBranchLastInstr = (
     RegNextWhen(
       (
-        io.splitOp.exSetNextPcKind
-        =/= SnowHousePsExSetNextPcKind.Dont
+        (
+          (
+            io.splitOp.exSetNextPcKind
+            === SnowHousePsExSetNextPcKind.PcPlusImm
+          )
+          || (
+            io.splitOp.exSetNextPcKind
+            === SnowHousePsExSetNextPcKind.RdMemWord
+          )
+          || (
+            io.splitOp.exSetNextPcKind
+            === SnowHousePsExSetNextPcKind.RdMemWordPlusImm
+          )
+        )
+        && (
+          !io.shouldIgnoreInstr(0)
+        )
       ),
       cond=io.upIsFiring,
       init=False
     )
+  )
+  val myTempBranchMispredictNotTakenMost = (
+    (
+      !myPsExSetPcValid
+      && (
+        io.laggingRegPc
+        =/= io.mySavedRegPcPlusInstrSize.last
+      )
+    )
+  )
+  val tempBranchMispredictNotTaken = (
+    myHadBranchLastInstr
+    && myTempBranchMispredictNotTakenMost
   )
   val myBranchMispredictCond = (
     myHadBranchLastInstr
@@ -3469,14 +3497,10 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
           =/= myTempDstRegPc
         )
       )
-      || (
-        !myPsExSetPcValid
-        && (
-          io.laggingRegPc
-          =/= io.mySavedRegPcPlusInstrSize.last
-        )
-      )
+      || myTempBranchMispredictNotTakenMost
     )
+    //&& io.upIsValid
+    //&& io.upIsFiring
     //&& (
     //  myPsExSetPcValid
     //)
@@ -3486,7 +3510,11 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
     //)
   )
   //io.psExSetPc.allowOverride
-  io.psExSetPc.valid := myBranchMispredictCond
+  io.psExSetPc.valid := (
+    rose(
+      myBranchMispredictCond
+    )
+  )
   io.psExSetPc.branchTgtBufElem.srcRegPc := (
     io.psExSetPc.branchTgtBufElem.srcRegPc.getZero
   )
@@ -5991,11 +6019,11 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
           True
         )
         def myDstPcRange = (
-          io.psExSetPc.branchTgtBufElem.dstRegPc.high
+          myTempDstRegPc.high
           downto log2Up(cfg.instrSizeBytes)
         )
-        io.psExSetPc.branchTgtBufElem.dstRegPc := 0x0
-        io.psExSetPc.branchTgtBufElem.dstRegPc(myDstPcRange) := (
+        myTempDstRegPc := 0x0
+        myTempDstRegPc(myDstPcRange) := (
           RegNextWhen(
             (
               if (cfg.optShiftRegPcImmAddend) (
@@ -6012,15 +6040,18 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
                   //- 1 // RISC-V stuff here
               )
             ).resize(
-              io.psExSetPc.branchTgtBufElem.dstRegPc(
+              myTempDstRegPc(
                 myDstPcRange
               ).getWidth
             ),
             cond=io.upIsFiring,
-            init=io.psExSetPc.branchTgtBufElem.dstRegPc(
+            init=myTempDstRegPc(
               myDstPcRange
             ).getZero,
           )
+        )
+        io.psExSetPc.branchTgtBufElem.dstRegPc := (
+          myTempDstRegPc
         )
         //def mySrcPcRange = (
         //  io.psExSetPc.branchTgtBufElem.srcRegPc.high
@@ -6414,8 +6445,8 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
     False
   )
   when (
-    //tempBranchMispredictNotTaken
-    myBranchMispredictCond
+    tempBranchMispredictNotTaken
+    //myBranchMispredictCond
   ) {
     io.psExSetPc.nextPc := (
       io.mySavedRegPcPlusInstrSize.head
