@@ -635,7 +635,8 @@ case class SnowHouseBranchPredictor(
     tgtValidBuf(rTgtBufWrAddr.head) := True
   }
   switch (
-    rTgtBufWrEn.last
+    rTgtBufWrEn.head
+    ## rTgtBufWrEn.last
     ## RegNext(
       io.psExSetPc.taken.myPsExSetPcValid,
       init=False
@@ -645,14 +646,20 @@ case class SnowHouseBranchPredictor(
     //)
   ) {
     //tgtBrKindBuf(rTgtBufWrAddr) := otherWrBranchKind.asBits.asUInt
-    is (M"10") {
+    is (M"1-0") {
+      tgtBrKindBuf(rTgtBufWrAddr.last) := 0x1 // weakly not taken
+    }
+    is (M"1-1") {
+      tgtBrKindBuf(rTgtBufWrAddr.last) := 0x2 // weakly taken
+    }
+    is (M"010") {
       when (tgtBrKindBuf(rTgtBufWrAddr.last).orR) {
         tgtBrKindBuf(rTgtBufWrAddr.last) := (
           tgtBrKindBuf(rTgtBufWrAddr.last) - 1
         )
       }
     }
-    is (M"11") {
+    is (M"011") {
       when ((~tgtBrKindBuf(rTgtBufWrAddr.last)).orR) {
         tgtBrKindBuf(rTgtBufWrAddr.last) := (
           tgtBrKindBuf(rTgtBufWrAddr.last) + 1
@@ -3478,8 +3485,13 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
     (
       !myPsExSetPcValid
       && (
-        io.laggingRegPc
-        =/= io.mySavedRegPcPlusInstrSize.last
+        //io.laggingRegPc
+        //=/= io.mySavedRegPcPlusInstrSize.last
+        !LcvFastCmpEq(
+          left=io.laggingRegPc,
+          right=io.mySavedRegPcPlusInstrSize.last,
+          cmpEqIo=null,
+        )._1
       )
     )
   )
@@ -3493,8 +3505,13 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
       (
         myPsExSetPcValid
         && (
-          io.laggingRegPc
-          =/= myTempDstRegPc
+          //io.laggingRegPc
+          //=/= myTempDstRegPc
+          LcvFastCmpEq(
+            left=io.laggingRegPc,
+            right=myTempDstRegPc,
+            cmpEqIo=null,
+          )._1
         )
       )
       || myTempBranchMispredictNotTakenMost
