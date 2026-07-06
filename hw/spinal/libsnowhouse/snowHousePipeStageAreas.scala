@@ -3507,7 +3507,7 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
         && (
           //io.laggingRegPc
           //=/= myTempDstRegPc
-          LcvFastCmpEq(
+          !LcvFastCmpEq(
             left=io.laggingRegPc,
             right=myTempDstRegPc,
             cmpEqIo=null,
