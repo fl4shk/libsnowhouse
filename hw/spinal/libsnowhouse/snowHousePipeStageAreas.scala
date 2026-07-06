@@ -2811,9 +2811,9 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
       //    Bool()
       //  )
       //)
-      RegNextWhen(
+      RegNext/*When*/(
         nextExSetPcValid,
-        cond=io.upIsFiring,
+        //cond=io.upIsFiring,
       )
     )
     temp.foreach(item => item.init(item.getZero))
