@@ -8946,19 +8946,22 @@ case class SnowHousePipeStageExecute(
   //}
   //for (idx <- 0 until cfg.regFileCfg.memArrSize) {
 
-  when (myShouldIgnoreInstr.last) {
-    outp.gprIsZeroVec.last.foreach(item => {
-      item := True
-    })
-
-    outp.myExt.foreach(item => {
-      item.modMemWordValid.foreach(item => {
-        item := (
-          False
-        )
+    when (myShouldIgnoreInstr.last) {
+      outp.gprIsZeroVec.last.foreach(item => {
+        item := True
       })
-    })
-  }
+      outp.gprIsNonZeroVec.last.foreach(item => {
+        item := False
+      })
+
+      outp.myExt.foreach(item => {
+        item.modMemWordValid.foreach(item => {
+          item := (
+            False
+          )
+        })
+      })
+    }
     outp.myExt.foreach(item => {
       item.fwdCanDoIt.foreach(item => {
         item := (
