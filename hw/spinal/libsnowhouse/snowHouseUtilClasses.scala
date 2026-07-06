@@ -552,49 +552,69 @@ object SnowHouseBranchPredictorKind {
   //    doHaveBranchInstr(encInstr)
   //  )
   //}
-  object FwdNotTknBakTknEnum
+
+  object SatCnt2BitEnum
   extends SpinalEnum(defaultEncoding=binarySequential) {
     val
-      //NO_BRANCH,
-      //HAVE_BRANCH,
-      //HAVE_PRE_BRANCH
-      FWD,
-      BAK//,
-      //NO_PREDICT
-      = newElement()
+      STRONGLY_NOT_TKN,
+      WEAKLY_NOT_TKN,
+      WEAKLY_TKN,
+      STRONGLY_TKN
+      = newElement();
   }
-  case class FwdNotTknBakTkn(
-    //val mainWidth: Int,
-    //val doHaveBranchInstr: (
-    //  Int,
-    //  UInt,
-    //  Bool,
-    //) => BranchTgtBufElem,
-    //val cfg: SnowHouseConfig,
+  case class SatCnt2Bit(
     val branchTgtBufSizeLog2: Int,
   ) extends SnowHouseBranchPredictorKind {
-    //def _doHaveBranchInstr(
-    //  mainWidth: Int,
-    //  encInstr: UInt,
-    //  upIsFiring: Bool,
-    //): BranchTgtBufElem = {
-    //  doHaveBranchInstr(
-    //    mainWidth,
-    //    encInstr,
-    //    upIsFiring,
-    //  )
-    //  //val ret = Flow(Bits(temp.payload.asBits.getWidth bits))
-    //  //ret.valid := temp.valid
-    //  //ret.payload.assignFromBits(temp.payload.asBits)
-    //  //ret
-    //}
     def _branchKindEnumWidth: Int = (
-      FwdNotTknBakTknEnum().asBits.getWidth
+      SatCnt2BitEnum().asBits.getWidth
     )
     def _branchTgtBufSizeLog2: Int = (
       branchTgtBufSizeLog2
     )
   }
+  //object FwdNotTknBakTknEnum
+  //extends SpinalEnum(defaultEncoding=binarySequential) {
+  //  val
+  //    //NO_BRANCH,
+  //    //HAVE_BRANCH,
+  //    //HAVE_PRE_BRANCH
+  //    FWD,
+  //    BAK//,
+  //    //NO_PREDICT
+  //    = newElement()
+  //}
+  //case class FwdNotTknBakTkn(
+  //  //val mainWidth: Int,
+  //  //val doHaveBranchInstr: (
+  //  //  Int,
+  //  //  UInt,
+  //  //  Bool,
+  //  //) => BranchTgtBufElem,
+  //  //val cfg: SnowHouseConfig,
+  //  val branchTgtBufSizeLog2: Int,
+  //) extends SnowHouseBranchPredictorKind {
+  //  //def _doHaveBranchInstr(
+  //  //  mainWidth: Int,
+  //  //  encInstr: UInt,
+  //  //  upIsFiring: Bool,
+  //  //): BranchTgtBufElem = {
+  //  //  doHaveBranchInstr(
+  //  //    mainWidth,
+  //  //    encInstr,
+  //  //    upIsFiring,
+  //  //  )
+  //  //  //val ret = Flow(Bits(temp.payload.asBits.getWidth bits))
+  //  //  //ret.valid := temp.valid
+  //  //  //ret.payload.assignFromBits(temp.payload.asBits)
+  //  //  //ret
+  //  //}
+  //  def _branchKindEnumWidth: Int = (
+  //    FwdNotTknBakTknEnum().asBits.getWidth
+  //  )
+  //  def _branchTgtBufSizeLog2: Int = (
+  //    branchTgtBufSizeLog2
+  //  )
+  //}
 }
 
 case class SnowHouseConfig(

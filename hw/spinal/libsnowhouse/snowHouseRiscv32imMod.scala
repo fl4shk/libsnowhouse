@@ -1676,7 +1676,8 @@ case class SnowHouseRiscv32imConfig(
     "block"
   ),
   branchTgtBufSizeLog2: Int=(
-    log2Up(32)
+    log2Up(64)
+    //log2Up(32)
   ),
 ) {
   //--------
@@ -1837,7 +1838,12 @@ case class SnowHouseRiscv32imConfig(
     },
     doInstrDecodeFunc=SnowHouseRiscv32imPipeStageInstrDecode.apply,
     optBranchPredictorKind=Some(
-      SnowHouseBranchPredictorKind.FwdNotTknBakTkn(
+      //SnowHouseBranchPredictorKind.FwdNotTknBakTkn(
+      //  branchTgtBufSizeLog2=(
+      //    branchTgtBufSizeLog2
+      //  ),
+      //)
+      SnowHouseBranchPredictorKind.SatCnt2Bit(
         branchTgtBufSizeLog2=(
           branchTgtBufSizeLog2
         ),

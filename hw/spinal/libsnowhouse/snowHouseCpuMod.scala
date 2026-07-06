@@ -3498,9 +3498,9 @@ case class SnowHouseCpuConfig(
   ),
   branchTgtBufSizeLog2: Int=(
     //log2Up(256)
-    //log2Up(64)
+    log2Up(64)
     //log2Up(128)
-    log2Up(32)
+    //log2Up(32)
   ),
 ) {
   //--------
@@ -3689,13 +3689,18 @@ case class SnowHouseCpuConfig(
     //),
     doInstrDecodeFunc=SnowHouseCpuPipeStageInstrDecode.apply,
     optBranchPredictorKind=Some(
-      SnowHouseBranchPredictorKind.FwdNotTknBakTkn(
-        //mainWidth=mainWidth,
-        //doHaveBranchInstr=SnowHouseCpuPipeStageInstrDecode.decodeBranch,
+      //SnowHouseBranchPredictorKind.FwdNotTknBakTkn(
+      //  //mainWidth=mainWidth,
+      //  //doHaveBranchInstr=SnowHouseCpuPipeStageInstrDecode.decodeBranch,
+      //  branchTgtBufSizeLog2=(
+      //    //log2Up(64)
+      //    //log2Up(16)
+      //    //log2Up(1024)
+      //    branchTgtBufSizeLog2
+      //  ),
+      //)
+      SnowHouseBranchPredictorKind.SatCnt2Bit(
         branchTgtBufSizeLog2=(
-          //log2Up(64)
-          //log2Up(16)
-          //log2Up(1024)
           branchTgtBufSizeLog2
         ),
       )
