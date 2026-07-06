@@ -10058,7 +10058,7 @@ case class SnowHousePipeStageWriteBack(
       (
         myWbPayload(0).outpDecodeExt.opIsMemAccess.head
         && !myWbPayload(0).outpDecodeExt.memAccessKind.asBits(1)
-        //&& myD2hBus.valid
+        && myD2hBus.valid
       )
       ## myWbPayload(0).outpDecodeExt.memAccessKind.asBits(0)
       ## myWbPayload(0).outpDecodeExt.memAccessSubKind.asBits
