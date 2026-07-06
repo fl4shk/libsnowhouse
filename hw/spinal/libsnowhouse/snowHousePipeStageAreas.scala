@@ -3513,35 +3513,43 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
         //  ),
         //  cmpEqIo=null,
         //)._1
-
       ),
-      //rose(
-        myPsExSetPcValid
-        && (
-          //io.laggingRegPc
-          //=/= myTempDstRegPc
-          !LcvFastCmpEq(
-            left=io.laggingRegPc,
-            right=rMyTempDstRegPc.payload,
-            cmpEqIo=null,
-          )._1
-        )
-      //)
+      ////rose(
+      //  myPsExSetPcValid
+      //  && (
+      //    //io.laggingRegPc
+      //    //=/= myTempDstRegPc
+      //    !LcvFastCmpEq(
+      //      left=io.laggingRegPc,
+      //      right=rMyTempDstRegPc.payload,
+      //      cmpEqIo=null,
+      //    )._1
+      //  )
+      ////)
     )
   )
   val myTempBranchMispredictNotTakenMost = (
     //rose(
-      !myPsExSetPcValid
-      && (
-        //io.laggingRegPc
-        //=/= io.mySavedRegPcPlusInstrSize.last
-        !LcvFastCmpEq(
-          left=io.laggingRegPc,
-          right=io.mySavedRegPcPlusInstrSize.last,
-          cmpEqIo=null,
-        )._1
-      )
+    //  !myPsExSetPcValid
+    //  && (
+    //    //io.laggingRegPc
+    //    //=/= io.mySavedRegPcPlusInstrSize.last
+    //    !LcvFastCmpEq(
+    //      left=io.laggingRegPc,
+    //      right=io.mySavedRegPcPlusInstrSize.last,
+    //      cmpEqIo=null,
+    //    )._1
+    //  )
     //)
+    //rose
+    (
+      !myPsExSetPcValid
+      && RegNextWhen(
+        io.branchPredictTkn,
+        cond=io.upIsFiring,
+        init=False
+      )
+    )
   )
   val tempBranchMispredictNotTaken = (
     myHadBranchLastInstr
@@ -3551,7 +3559,7 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
     myHadBranchLastInstr
     && (
       myTempBranchMispredictTakenMost.orR
-      || myTempBranchMispredictNotTakenMost
+      //|| myTempBranchMispredictNotTakenMost
     )
     //&& io.upIsValid
     //&& io.upIsFiring
