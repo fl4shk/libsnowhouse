@@ -561,7 +561,7 @@ case class SnowHouseBranchPredictor(
   rTgtBufWrEn.last := (
     io.psExSetPc.taken.fire
     && (
-      !otherWrBtbElemWithBrKind.btbElem.dontPredict
+      !otherWrBtbElemWithBrKind.btbElem.:ontPredict
     )
     //io.psExSetPc.brKindValid
     //&& (
@@ -7302,9 +7302,9 @@ case class SnowHousePipeStageExecute(
         - (3 * cfg.instrSizeBytes)
       ),
       cond=(
-        //cMid0Front.up.isFiring
-        cMid0Front.up.isValid
-        && myTempDownIsReady
+        cMid0Front.up.isFiring
+        //cMid0Front.up.isValid
+        //&& myTempDownIsReady
       ),
       init=(
         //outp.branchTgtBufElem(1).srcRegPc.getZero
@@ -7322,9 +7322,9 @@ case class SnowHousePipeStageExecute(
         //- (3 * cfg.instrSizeBytes)
       ),
       cond=(
-        //cMid0Front.up.isFiring
-        cMid0Front.up.isValid
-        && myTempDownIsReady
+        cMid0Front.up.isFiring
+        //cMid0Front.up.isValid
+        //&& myTempDownIsReady
       ),
       init=(
         //outp.branchTgtBufElem(1).srcRegPc.getZero
