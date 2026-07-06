@@ -647,10 +647,10 @@ case class SnowHouseBranchPredictor(
   ) {
     //tgtBrKindBuf(rTgtBufWrAddr) := otherWrBranchKind.asBits.asUInt
     is (M"1-0") {
-      tgtBrKindBuf(rTgtBufWrAddr.last) := 0x1 // weakly not taken
+      tgtBrKindBuf(rTgtBufWrAddr.last) := U"2'b01" // weakly not taken
     }
     is (M"1-1") {
-      tgtBrKindBuf(rTgtBufWrAddr.last) := 0x2 // weakly taken
+      tgtBrKindBuf(rTgtBufWrAddr.last) := U"2'b10" // weakly taken
     }
     is (M"010") {
       when (tgtBrKindBuf(rTgtBufWrAddr.last).orR) {
