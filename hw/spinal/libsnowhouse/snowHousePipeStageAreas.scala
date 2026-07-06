@@ -7318,8 +7318,8 @@ case class SnowHousePipeStageExecute(
         //outp.branchTgtBufElem(1).srcRegPc
         outp.laggingRegPc
         //+ (1 * cfg.instrSizeBytes)
-        //- (1 * cfg.instrSizeBytes)
-        - (3 * cfg.instrSizeBytes)
+        - (1 * cfg.instrSizeBytes)
+        //- (3 * cfg.instrSizeBytes)
       ),
       cond=(
         cMid0Front.up.isFiring
