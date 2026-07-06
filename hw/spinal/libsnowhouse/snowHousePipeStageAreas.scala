@@ -638,7 +638,7 @@ case class SnowHouseBranchPredictor(
   switch (
     (
       rTgtBufWrEn.head
-      && rTgtBufWrAddr.head === rTgtBufWrAddr.last
+      //&& rTgtBufWrAddr.head === rTgtBufWrAddr.last
     )
     ## rTgtBufWrEn.last
     ## RegNext(
@@ -3489,8 +3489,40 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
     //)
     rMyTempDstRegPc.fire
   )
+  val myTempBranchMispredictTakenMost = (
+    Vec[Bool](
+      rose(
+        myPsExSetPcValid
+        =/= RegNext(
+          io.branchPredictTkn,
+          init=False
+        )
+        //!LcvFastCmpEq(
+        //  left=myPsExSetPcValid,
+        //  right=RegNext(
+        //    io.branchPredictTkn,
+        //    init=False
+        //  ),
+        //  cmpEqIo=null,
+        //)._1
+
+      ),
+      rose(
+        myPsExSetPcValid
+        && (
+          //io.laggingRegPc
+          //=/= myTempDstRegPc
+          !LcvFastCmpEq(
+            left=io.laggingRegPc,
+            right=rMyTempDstRegPc.payload,
+            cmpEqIo=null,
+          )._1
+        )
+      )
+    )
+  )
   val myTempBranchMispredictNotTakenMost = (
-    (
+    rose(
       !myPsExSetPcValid
       && (
         //io.laggingRegPc
@@ -3510,18 +3542,7 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
   val myBranchMispredictCond = (
     myHadBranchLastInstr
     && (
-      (
-        myPsExSetPcValid
-        && (
-          //io.laggingRegPc
-          //=/= myTempDstRegPc
-          !LcvFastCmpEq(
-            left=io.laggingRegPc,
-            right=rMyTempDstRegPc.payload,
-            cmpEqIo=null,
-          )._1
-        )
-      )
+      myTempBranchMispredictTakenMost.orR
       || myTempBranchMispredictNotTakenMost
     )
     //&& io.upIsValid
@@ -3552,7 +3573,16 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
   )
   io.psExSetPc.taken.valid := (
     myHadBranchLastInstr
-    && io.upIsFiring
+    //&& io.upIsFiring
+    && RegNext(
+      io.upIsFiring,
+      init=False
+    )
+    //&& (
+    //  RegNext(
+    //    io.laggingRegPc
+    //  )
+    //)
   )
   io.psExSetPc.taken.myPsExSetPcValid := myPsExSetPcValid
   io.psExSetPc.taken.srcRegPc := (
