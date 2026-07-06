@@ -3498,7 +3498,8 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
   )
   val myTempBranchMispredictTakenMost = (
     Vec[Bool](
-      rose(
+      //rose
+      (
         myPsExSetPcValid
         =/= RegNextWhen(
           io.branchPredictTkn,
@@ -3514,52 +3515,56 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
         //  cmpEqIo=null,
         //)._1
       ),
-      ////rose(
-      //  myPsExSetPcValid
-      //  && (
-      //    //io.laggingRegPc
-      //    //=/= myTempDstRegPc
-      //    !LcvFastCmpEq(
-      //      left=io.laggingRegPc,
-      //      right=rMyTempDstRegPc.payload,
-      //      cmpEqIo=null,
-      //    )._1
-      //  )
-      ////)
+      //rose
+      (
+        myPsExSetPcValid
+        && (
+          //io.laggingRegPc
+          //=/= myTempDstRegPc
+          !LcvFastCmpEq(
+            left=io.laggingRegPc,
+            right=rMyTempDstRegPc.payload,
+            cmpEqIo=null,
+          )._1
+        )
+      )
     )
   )
   val myTempBranchMispredictNotTakenMost = (
-    //rose(
-    //  !myPsExSetPcValid
-    //  && (
-    //    //io.laggingRegPc
-    //    //=/= io.mySavedRegPcPlusInstrSize.last
-    //    !LcvFastCmpEq(
-    //      left=io.laggingRegPc,
-    //      right=io.mySavedRegPcPlusInstrSize.last,
-    //      cmpEqIo=null,
-    //    )._1
-    //  )
-    //)
-    //rose
-    (
-      !myPsExSetPcValid
-      && RegNextWhen(
-        io.branchPredictTkn,
-        cond=io.upIsFiring,
-        init=False
-      )
+    Vec[Bool](
+      //rose
+      (
+        !myPsExSetPcValid
+        && RegNextWhen(
+          io.branchPredictTkn,
+          cond=io.upIsFiring,
+          init=False
+        )
+      ),
+      //rose
+      (
+        !myPsExSetPcValid
+        && (
+          //io.laggingRegPc
+          //=/= io.mySavedRegPcPlusInstrSize.last
+          !LcvFastCmpEq(
+            left=io.laggingRegPc,
+            right=io.mySavedRegPcPlusInstrSize.last,
+            cmpEqIo=null,
+          )._1
+        )
+      ),
     )
   )
   val tempBranchMispredictNotTaken = (
     myHadBranchLastInstr
-    && myTempBranchMispredictNotTakenMost
+    && myTempBranchMispredictNotTakenMost.orR
   )
   val myBranchMispredictCond = (
     myHadBranchLastInstr
     && (
       myTempBranchMispredictTakenMost.orR
-      //|| myTempBranchMispredictNotTakenMost
+      || myTempBranchMispredictNotTakenMost.orR
     )
     //&& io.upIsValid
     //&& io.upIsFiring
