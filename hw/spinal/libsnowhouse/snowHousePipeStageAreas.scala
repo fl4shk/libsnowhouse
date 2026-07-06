@@ -3542,7 +3542,10 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
   io.psExSetPc.branchTgtBufElem.srcRegPc := (
     io.psExSetPc.branchTgtBufElem.srcRegPc.getZero
   )
-  io.psExSetPc.taken.valid := myHadBranchLastInstr
+  io.psExSetPc.taken.valid := (
+    myHadBranchLastInstr
+    && io.upIsFiring
+  )
   io.psExSetPc.taken.myPsExSetPcValid := myPsExSetPcValid
   io.psExSetPc.taken.srcRegPc := (
     RegNextWhen(
