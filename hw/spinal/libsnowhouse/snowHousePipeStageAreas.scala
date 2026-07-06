@@ -561,7 +561,7 @@ case class SnowHouseBranchPredictor(
   rTgtBufWrEn.last := (
     io.psExSetPc.taken.fire
     && (
-      !otherWrBtbElemWithBrKind.btbElem.:ontPredict
+      !otherWrBtbElemWithBrKind.btbElem.dontPredict
     )
     //io.psExSetPc.brKindValid
     //&& (
