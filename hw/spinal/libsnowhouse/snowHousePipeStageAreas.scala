@@ -545,6 +545,7 @@ case class SnowHouseBranchPredictor(
   val rTgtBufWrEn = Vec.fill(2)(
     Reg(Bool(), init=False)
   )
+
   rTgtBufWrEn.head := (
     (
       io.psExSetPc.valid
@@ -635,7 +636,10 @@ case class SnowHouseBranchPredictor(
     tgtValidBuf(rTgtBufWrAddr.head) := True
   }
   switch (
-    rTgtBufWrEn.head
+    (
+      rTgtBufWrEn.head
+      && rTgtBufWrAddr.head === rTgtBufWrAddr.last
+    )
     ## rTgtBufWrEn.last
     ## RegNext(
       io.psExSetPc.taken.myPsExSetPcValid,
@@ -8200,13 +8204,13 @@ case class SnowHousePipeStageExecute(
 
   val nextPsExSetPcTakenValid = (
     setOutpModMemWord.io.psExSetPc.taken.fire
-    && RegNext(
-      next=(
-        !myShouldIgnoreInstr(0)
-        //&& cMid0Front.up.isFiring
-      ),
-      init=False
-    )
+    //&& RegNext(
+    //  next=(
+    //    !myShouldIgnoreInstr(0)
+    //    //&& cMid0Front.up.isFiring
+    //  ),
+    //  init=False
+    //)
   )
   val nextPsExSetPcValid = Vec.fill(cfg.lowerMyFanoutRegPcSetItCnt)(
     Bool()
