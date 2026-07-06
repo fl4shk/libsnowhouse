@@ -636,11 +636,12 @@ case class SnowHouseBranchPredictor(
     tgtValidBuf(rTgtBufWrAddr.head) := True
   }
   switch (
-    (
-      rTgtBufWrEn.head
-      //&& rTgtBufWrAddr.head === rTgtBufWrAddr.last
-    )
-    ## rTgtBufWrEn.last
+    //(
+    //  rTgtBufWrEn.head
+    //  //&& rTgtBufWrAddr.head === rTgtBufWrAddr.last
+    //)
+    //## 
+    rTgtBufWrEn.last
     ## RegNext(
       io.psExSetPc.taken.myPsExSetPcValid,
       init=False
@@ -650,20 +651,26 @@ case class SnowHouseBranchPredictor(
     //)
   ) {
     //tgtBrKindBuf(rTgtBufWrAddr) := otherWrBranchKind.asBits.asUInt
-    is (M"1-0") {
-      tgtBrKindBuf(rTgtBufWrAddr.last) := U"2'b01" // weakly not taken
-    }
-    is (M"1-1") {
-      tgtBrKindBuf(rTgtBufWrAddr.last) := U"2'b10" // weakly taken
-    }
-    is (M"010") {
+    //is (M"1-0") {
+    //  tgtBrKindBuf(rTgtBufWrAddr.last) := U"2'b01" // weakly not taken
+    //}
+    //is (M"1-1") {
+    //  tgtBrKindBuf(rTgtBufWrAddr.last) := U"2'b10" // weakly taken
+    //}
+    is (
+      //M"010"
+      M"10"
+    ) {
       when (tgtBrKindBuf(rTgtBufWrAddr.last).orR) {
         tgtBrKindBuf(rTgtBufWrAddr.last) := (
           tgtBrKindBuf(rTgtBufWrAddr.last) - 1
         )
       }
     }
-    is (M"011") {
+    is (
+      //M"011"
+      M"11"
+    ) {
       when ((~tgtBrKindBuf(rTgtBufWrAddr.last)).orR) {
         tgtBrKindBuf(rTgtBufWrAddr.last) := (
           tgtBrKindBuf(rTgtBufWrAddr.last) + 1
