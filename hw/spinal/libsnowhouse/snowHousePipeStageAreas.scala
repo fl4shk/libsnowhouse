@@ -3514,6 +3514,13 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
     rose(
       myBranchMispredictCond
     )
+    //&& (
+    //  RegNextWhen(
+    //    !io.shouldIgnoreInstr(0),
+    //    cond=io.upIsFiring,
+    //    init=False
+    //  ) 
+    //)
   )
   io.psExSetPc.branchTgtBufElem.srcRegPc := (
     io.psExSetPc.branchTgtBufElem.srcRegPc.getZero
@@ -8958,6 +8965,7 @@ case class SnowHousePipeStageExecute(
           //!setOutpModMemWord.io.shouldIgnoreInstr.last
           //if (!cfg.useLcvDataBus) (
             !myShouldIgnoreInstr.last
+            && outp.gprIsNonZeroVec.last.last
             //&& cMid0Front.up.isValid
           //) else (
           //  !(
