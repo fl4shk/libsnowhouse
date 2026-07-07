@@ -3542,18 +3542,18 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
         )
       ),
       //rose
-      (
-        !myPsExSetPcValid
-        && (
-          //io.laggingRegPc
-          //=/= io.mySavedRegPcPlusInstrSize.last
-          !LcvFastCmpEq(
-            left=io.laggingRegPc,
-            right=io.mySavedRegPcPlusInstrSize.last,
-            cmpEqIo=null,
-          )._1
-        )
-      ),
+      //(
+      //  !myPsExSetPcValid
+      //  && (
+      //    //io.laggingRegPc
+      //    //=/= io.mySavedRegPcPlusInstrSize.last
+      //    !LcvFastCmpEq(
+      //      left=io.laggingRegPc,
+      //      right=io.mySavedRegPcPlusInstrSize.last,
+      //      cmpEqIo=null,
+      //    )._1
+      //  )
+      //),
     )
   )
   val tempBranchMispredictNotTaken = (
