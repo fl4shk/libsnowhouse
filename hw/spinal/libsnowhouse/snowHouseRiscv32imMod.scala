@@ -1992,7 +1992,7 @@ case class SnowHouseRiscv32imDivmod(
   val divmod = LongDivMultiCycle(
     mainWidth=cfg.mainWidth,
     denomWidth=cfg.mainWidth,
-    chunkWidth=4,//2,//1,//2,
+    chunkWidth=3,//4,//2,//1,//2,
     signedReset=0x0,
   )
   object DivmodState
