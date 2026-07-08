@@ -273,7 +273,7 @@ case class SnowHousePsExSetPcPayload(
 //    //IgnoreInstr2
 //    = newElement()
 //}
-case class SnowHouseBranchPredictorResult(
+case class SnowHouseBranchTgtBufResult(
   cfg: SnowHouseConfig,
 ) extends Bundle {
   // `valid`/`fire` indicates that we have a branch here at all
@@ -286,10 +286,10 @@ case class SnowHouseBranchPredictorResult(
   )
 
   // whether or not we're predicting the branch is taken
-  val predictTkn = Bool()
+  //val predictTkn = Bool()
   val rdBtbElem = BranchTgtBufElem(cfg=cfg)
 }
-case class SnowHouseBranchPredictorIo(
+case class SnowHouseBranchTgtBufIo(
   cfg: SnowHouseConfig,
 ) extends Bundle {
   val psExSetPc = slave(
@@ -327,21 +327,21 @@ case class SnowHouseBranchPredictorIo(
   //  SnowHousePipePayload(cfg=cfg)
   //)
   val result = out(
-    SnowHouseBranchPredictorResult(cfg=cfg)
+    SnowHouseBranchTgtBufResult(cfg=cfg)
   )
 }
 
-case class SnowHouseBranchPredictor(
+case class SnowHouseBranchTgtBufSingle(
   //psIf: SnowHousePipeStageInstrFetch,
   cfg: SnowHouseConfig
 ) extends Component {
-  val io = SnowHouseBranchPredictorIo(
+  val io = SnowHouseBranchTgtBufIo(
     cfg=cfg
   )
   val branchTgtBufSize = (
     cfg.optBranchPredictorKind.get._branchTgtBufSize
   )
-  assert (
+  require(
     branchTgtBufSize > 0
   )
   val tgtBufRdAddr = (
@@ -706,6 +706,152 @@ case class SnowHouseBranchPredictor(
   //--------
 }
 
+case class SnowHouseBranchTgtBuf(
+  //psIf: SnowHousePipeStageInstrFetch,
+  cfg: SnowHouseConfig
+) extends Component {
+  val io = SnowHouseBranchTgtBufIo(cfg=cfg)
+
+  val branchTgtBufSize = (
+    cfg.optBranchPredictorKind.get._branchTgtBufSize
+  )
+  val branchTgtBufNumWays = (
+    cfg.optBranchPredictorKind.get._branchTgtBufNumWays
+  )
+
+  //val tgtBufRdAddr = (
+  //  UInt(log2Up(branchTgtBufSize) bits)
+  //)
+
+  def myTgtBufAddrRange: Range = (
+    log2Up(branchTgtBufSize) - 1 + log2Up(cfg.instrSizeBytes)
+    downto log2Up(cfg.instrSizeBytes)
+  )
+
+  val rTgtBufWrEn = (
+    Reg(Bool(), init=False)
+  )
+
+  rTgtBufWrEn := (
+    io.psExSetPc.valid
+    && io.psExSetPc.branchTgtBufElem.fire
+    && (
+      !io.psExSetPc.btbElemWithBrKind.btbElem.dontPredict
+    )
+  )
+  val rTgtBufWrAddr = (
+    //Vec[UInt](
+      (
+        RegNext(
+          io.psExSetPc.branchTgtBufElem.srcRegPc(myTgtBufAddrRange)
+        )
+        init(0x0)
+      )//,
+    //  (
+    //    RegNext(
+    //      io.psExSetPc.taken.srcRegPc(myTgtBufAddrRange),
+    //    )
+    //    init(0x0)
+    //  )
+    //)
+  )
+
+  //for (idx <- 0 until tgtBufRdAddr.size) {
+  //  tgtBufRdAddr := (
+  //    io.inpRegPc(0)(myTgtBufAddrRange) //- 1//- 2 //- 1 //- 2//- 3
+  //  )
+  //}
+
+  //def myDstRegPcWidth = (
+  //  cfg.mainAddrWidth - log2Up(cfg.instrSizeBytes)
+  //)
+
+
+  require(
+    branchTgtBufNumWays > 0
+  )
+
+  val btbArr = Array.fill(branchTgtBufNumWays)(
+    SnowHouseBranchTgtBufSingle(cfg=cfg)
+  )
+
+  for (idx <- 0 until btbArr.size) {
+    val btb = btbArr(idx)
+    btb.io.psExSetPc := btb.io.psExSetPc.getZero
+    btb.io.inpRegPc := io.inpRegPc
+    btb.io.upIsReady := io.upIsReady
+    btb.io.upIsFiring := io.upIsFiring
+  }
+
+  val tgtFifoIdxBuf = Vec.fill(branchTgtBufSize)(
+    Reg(UInt(log2Up(btbArr.size) bits))
+    init(0x0)
+  )
+
+  switch (
+    //tgtBufRdAddr
+    //tgtBufRdAddr
+    //rTgtBufWrAddr
+    rTgtBufWrEn
+    ## rTgtBufWrAddr
+  ) {
+    for (idx <- 0 until branchTgtBufSize) {
+      is (
+        branchTgtBufSize
+        | idx
+      ) {
+        //btbArr
+        tgtFifoIdxBuf(idx) := tgtFifoIdxBuf(idx) + 1
+        switch (tgtFifoIdxBuf(idx)) {
+          for (jdx <- 0 until btbArr.size) {
+            is (jdx) {
+              btbArr(jdx).io.psExSetPc := io.psExSetPc
+            }
+          }
+          default {
+          }
+        }
+      }
+    }
+    default {
+    }
+  }
+  val myResultVec = Vec.fill(btbArr.size)(
+    cloneOf(io.result)
+  )
+  val myResultValidVec = Vec.fill(btbArr.size)(
+    Bool()
+  )
+  for (idx <- 0 until btbArr.size) {
+    myResultVec(idx) := btbArr(idx).io.result
+    myResultValidVec(idx) := btbArr(idx).io.result.fire
+  }
+  io.result.valid := myResultValidVec.orR
+  io.result.nextRegPc := 0x0
+  io.result.rdBtbElem := io.result.rdBtbElem.getZero
+
+  //val myResultFindFirst = myResultVec.sFindFirst(item => item.valid)
+  //io.result.payload := myResultFindFirst._2
+  
+
+  switch (myResultValidVec.asBits) {
+    for (idx <- 0 until myResultValidVec.size) {
+      is (idx) {
+        val myBtb = btbArr(1 << log2Up(idx))
+        //io.result.payload := btbArr(1 << log2Up(idx)).io.result.payload
+        io.result.nextRegPc := myBtb.io.result.nextRegPc
+        io.result.rdBtbElem := myBtb.io.result.rdBtbElem
+      }
+    }
+  }
+
+  //switch (
+  //  tgtBufRdAddr
+  //) {
+  //}
+
+}
+
 private[libsnowhouse] case class SnowHouseBusToLcvBusBridgeIo(
   cfg: SnowHouseConfig,
   isIbus: Boolean,
@@ -958,15 +1104,15 @@ case class SnowHousePipeStageInstrFetch(
     })
     temp.setName(s"psIf_stickyExSetPc")
   }
-  val branchPredictor = (
+  val branchTgtBuf = (
     cfg.haveBranchPredictor
   ) generate (
-    SnowHouseBranchPredictor(cfg=cfg)
+    SnowHouseBranchTgtBuf(cfg=cfg)
   )
   if (cfg.haveBranchPredictor) {
-    branchPredictor.io.psExSetPc := psExSetPc
-    branchPredictor.io.upIsFiring := up.isFiring
-    branchPredictor.io.upIsReady := myReadyIshCond //myUpdatePcCond
+    branchTgtBuf.io.psExSetPc := psExSetPc
+    branchTgtBuf.io.upIsFiring := up.isFiring
+    branchTgtBuf.io.upIsReady := myReadyIshCond //myUpdatePcCond
   }
 
   val takeJumpCntMaxVal = cfg.takeJumpCntMaxVal
@@ -1014,7 +1160,7 @@ case class SnowHousePipeStageInstrFetch(
   }
   val myRawPredictCond = Bool()
   myRawPredictCond := (
-    branchPredictor.io.result.fire
+    branchTgtBuf.io.result.fire
     && !rTakeJumpCnt.fire
     && !stickyExSetPc(0).fire
   )
@@ -1053,9 +1199,9 @@ case class SnowHousePipeStageInstrFetch(
       rMyMainPredictCond,
       (
         RegNextWhen(
-          branchPredictor.io.result.nextRegPc.asSInt,
+          branchTgtBuf.io.result.nextRegPc.asSInt,
           cond=myReadyIshCond,
-          init=branchPredictor.io.result.nextRegPc.asSInt.getZero,
+          init=branchTgtBuf.io.result.nextRegPc.asSInt.getZero,
         )
       ),
       (
@@ -1064,10 +1210,10 @@ case class SnowHousePipeStageInstrFetch(
     ).asUInt
   )
   if (cfg.haveBranchPredictor) {
-    for (idx <- 0 until branchPredictor.io.inpRegPc.size) {
+    for (idx <- 0 until branchTgtBuf.io.inpRegPc.size) {
       //when (!rTakeJumpCnt.fire) {
         // TODO: determine if this is correct!
-        branchPredictor.io.inpRegPc(idx) := (
+        branchTgtBuf.io.inpRegPc(idx) := (
           myPredictedNextPc
           //RegNextWhen(
           //  myPredictedNextPc + cfg.instrSizeBytes,
@@ -1142,7 +1288,7 @@ case class SnowHousePipeStageInstrFetch(
           )
           myIbusRegPcInfo.branchTgtBufElem.foreach(item => {
             item := (
-              branchPredictor.io.result.rdBtbElem
+              branchTgtBuf.io.result.rdBtbElem
             )
           })
         } else {

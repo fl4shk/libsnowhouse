@@ -3502,6 +3502,9 @@ case class SnowHouseCpuConfig(
     //log2Up(128)
     //log2Up(32)
   ),
+  branchTgtBufNumWays: Int = (
+    2
+  ),
 ) {
   //--------
   val instrMainWidth = 32
@@ -3702,6 +3705,9 @@ case class SnowHouseCpuConfig(
       SnowHouseBranchPredictorKind.SatCnt2Bit(
         branchTgtBufSizeLog2=(
           branchTgtBufSizeLog2
+        ),
+        branchTgtBufNumWays=(
+          branchTgtBufNumWays
         ),
       )
     ),

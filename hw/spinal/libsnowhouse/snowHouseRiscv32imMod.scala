@@ -1680,6 +1680,9 @@ case class SnowHouseRiscv32imConfig(
     log2Up(64)
     //log2Up(32)
   ),
+  branchTgtBufNumWays: Int = (
+    2
+  ),
 ) {
   //--------
   val instrMainWidth = 32
@@ -1848,6 +1851,9 @@ case class SnowHouseRiscv32imConfig(
         branchTgtBufSizeLog2=(
           branchTgtBufSizeLog2
         ),
+        branchTgtBufNumWays=(
+          branchTgtBufNumWays
+        ),
       )
     ),
     supportUcode=(
@@ -1992,7 +1998,7 @@ case class SnowHouseRiscv32imDivmod(
   val divmod = LongDivMultiCycle(
     mainWidth=cfg.mainWidth,
     denomWidth=cfg.mainWidth,
-    chunkWidth=3,//4,//2,//1,//2,
+    chunkWidth=2,//3,//4,//2,//1,//2,
     signedReset=0x0,
   )
   object DivmodState

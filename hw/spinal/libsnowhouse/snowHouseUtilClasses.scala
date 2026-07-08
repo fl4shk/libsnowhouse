@@ -515,6 +515,7 @@ sealed trait SnowHouseBranchPredictorKind {
   //): BranchTgtBufElem
   private[libsnowhouse] def _branchKindEnumWidth: Int
   private[libsnowhouse] def _branchTgtBufSizeLog2: Int
+  private[libsnowhouse] def _branchTgtBufNumWays: Int
   private[libsnowhouse] def _branchTgtBufSize: Int = (
     1 << _branchTgtBufSizeLog2
   )
@@ -564,12 +565,16 @@ object SnowHouseBranchPredictorKind {
   }
   case class SatCnt2Bit(
     val branchTgtBufSizeLog2: Int,
+    val branchTgtBufNumWays: Int,
   ) extends SnowHouseBranchPredictorKind {
     def _branchKindEnumWidth: Int = (
       SatCnt2BitEnum().asBits.getWidth
     )
     def _branchTgtBufSizeLog2: Int = (
       branchTgtBufSizeLog2
+    )
+    def _branchTgtBufNumWays: Int = (
+      branchTgtBufNumWays
     )
   }
   //object FwdNotTknBakTknEnum
