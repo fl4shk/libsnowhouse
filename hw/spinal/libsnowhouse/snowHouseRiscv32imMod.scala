@@ -1650,8 +1650,14 @@ case class SnowHouseRiscv32imConfig(
   icacheDepthWords: Int=(
     /*8192*/ 1024 //2048 // 4 kiB icache (by default)
   ),
+  icacheNumWays: Int=(
+    2
+  ),
   dcacheDepthWords: Int=(
     /*8192*/ 1024 //2048 // 4 kiB dcache (by default)
+  ),
+  dcacheNumWays: Int=(
+    2
   ),
   icacheLineWordMemRamStyleAltera: String=(
     "no_rw_check, M10K"

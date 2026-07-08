@@ -321,6 +321,9 @@ case class SnowHouseSubConfig(
     //8192
     1024
   ),
+  icacheNumWays: Int=(
+    2
+  ),
   icacheLineSizeBytes: Int=64,
   icacheBusSrcNum: Int=0,
   icacheLineWordMemRamStyleAltera: String="no_rw_check, M10K",
@@ -332,6 +335,9 @@ case class SnowHouseSubConfig(
   dcacheDepthWords: Int=(
     //8192
     1024
+  ),
+  dcacheNumWays: Int=(
+    2
   ),
   dcacheLineSizeBytes: Int=64,
   dcacheBusSrcNum: Int=1,
@@ -462,6 +468,7 @@ case class SnowHouseSubConfig(
         kind=LcvCacheKind.D,
         lineSizeBytes=dcacheLineSizeBytes,
         depthWords=dcacheDepthWords,
+        numWays=dcacheNumWays,
         numCpus=1,
         lineWordMemRamStyleAltera=dcacheLineWordMemRamStyleAltera,
         lineWordMemRamStyleXilinx=dcacheLineWordMemRamStyleXilinx,
