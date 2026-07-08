@@ -355,8 +355,8 @@ case class SnowHouseBranchTgtBufSingle(
     cfg.mainAddrWidth - log2Up(cfg.instrSizeBytes)
   )
   def myTgtBufAddrRange: Range = (
-    tgtBufRdAddr(0).high + log2Up(cfg.instrSizeBytes)
-    downto log2Up(cfg.instrSizeBytes)
+    tgtBufRdAddr(0).high + log2Up(cfg.instrSizeBytes) + 1
+    downto log2Up(cfg.instrSizeBytes) + 1
   )
   println(
     s"myDstRegPcWidth:${myDstRegPcWidth} "
@@ -480,8 +480,11 @@ case class SnowHouseBranchTgtBufSingle(
 
   myRdBtbElem.srcRegPc := (
     Cat(
-      myRdSrcRegPcAndValid.payload,
+      myRdSrcRegPcAndValid.payload(
+        myRdSrcRegPcAndValid.payload.high downto 1
+      ),
       tgtBufRdAddr(0),
+      myRdSrcRegPcAndValid.payload(0),
       U(s"${log2Up(cfg.instrSizeBytes)}'d0"),
     ).asUInt
   )
@@ -583,16 +586,23 @@ case class SnowHouseBranchTgtBufSingle(
   wrBtbElem.valid := True
 
   val myResultValidCmpEqLeft = (
-    myRdBtbElem.srcRegPc(
-      cfg.mySrcRegPcCmpEqRange
-    )
+    Cat(
+      myRdBtbElem.srcRegPc(cfg.mySrcRegPcCmpEqRangeHi),
+      myRdBtbElem.srcRegPc(cfg.mySrcRegPcCmpEqRangeLo),
+    ).asUInt
+
   )
   val myResultValidCmpEqRight = (
-    io.inpRegPc(
-      //2
-      //0
-      SnowHouseBranchPredictorKind._predictorInpRegPcIdxCmpEq
-    )(cfg.mySrcRegPcCmpEqRange)
+    Cat(
+      io.inpRegPc(
+        //2
+        //0
+        SnowHouseBranchPredictorKind._predictorInpRegPcIdxCmpEq
+      )(cfg.mySrcRegPcCmpEqRangeHi),
+      io.inpRegPc(
+        SnowHouseBranchPredictorKind._predictorInpRegPcIdxCmpEq
+      )(cfg.mySrcRegPcCmpEqRangeLo),
+    ).asUInt
   )
   io.result.valid := (
     myRdBtbElem.fire
@@ -628,7 +638,10 @@ case class SnowHouseBranchTgtBufSingle(
   )
 
   myWrSrcRegPcAndValid.payload := (
-    wrBtbElem.srcRegPc(cfg.mySrcRegPcCmpEqRange)
+    Cat(
+      wrBtbElem.srcRegPc(cfg.mySrcRegPcCmpEqRangeHi),
+      wrBtbElem.srcRegPc(cfg.mySrcRegPcCmpEqRangeLo),
+    ).asUInt
   )
   myWrSrcRegPcAndValid.valid := True
   //--------
@@ -719,13 +732,21 @@ case class SnowHouseBranchTgtBuf(
     cfg.optBranchPredictorKind.get._branchTgtBufNumWays
   )
 
+  require(
+    branchTgtBufNumWays > 0
+  )
+
   //val tgtBufRdAddr = (
   //  UInt(log2Up(branchTgtBufSize) bits)
   //)
 
+  //def myTgtBufAddrRange: Range = (
+  //  log2Up(branchTgtBufSize) - 1 + log2Up(cfg.instrSizeBytes)
+  //  downto log2Up(cfg.instrSizeBytes)
+  //)
   def myTgtBufAddrRange: Range = (
-    log2Up(branchTgtBufSize) - 1 + log2Up(cfg.instrSizeBytes)
-    downto log2Up(cfg.instrSizeBytes)
+    log2Up(branchTgtBufSize) - 1 + log2Up(cfg.instrSizeBytes) + 1
+    downto log2Up(cfg.instrSizeBytes) + 1
   )
 
   val rTgtBufWrEn = (
@@ -765,11 +786,6 @@ case class SnowHouseBranchTgtBuf(
   //def myDstRegPcWidth = (
   //  cfg.mainAddrWidth - log2Up(cfg.instrSizeBytes)
   //)
-
-
-  require(
-    branchTgtBufNumWays > 0
-  )
 
   val btbArr = Array.fill(branchTgtBufNumWays)(
     SnowHouseBranchTgtBufSingle(cfg=cfg)
@@ -1147,6 +1163,7 @@ case class SnowHousePipeStageInstrFetch(
     cfg.haveBranchPredictor
   ) generate (
     SnowHouseBranchTgtBuf(cfg=cfg)
+    //SnowHouseBranchTgtBufSingle(cfg=cfg)
   )
   if (cfg.haveBranchPredictor) {
     branchTgtBuf.io.psExSetPc := psExSetPc
@@ -1586,42 +1603,42 @@ case class SnowHousePrePipeStageExSetBranchPredictEtcArea(
   }
   outp.branchTgtBufElem(1).srcRegPc := outp.laggingRegPc
 
-  outp.branchPredictReplaceBtbElemMost := (
-    //outp.branchPredictTkn
-    ////RegNextWhen(
-    ////  next=outp.branchPredictTkn,
-    ////  cond=link.up.isFiring,
-    ////  init=outp.branchPredictTkn.getZero,
-    ////)
-    ////&& upPayload(0).branchTgtBufElem(0).fire
+  //outp.branchPredictReplaceBtbElemMost := (
+  //  //outp.branchPredictTkn
+  //  ////RegNextWhen(
+  //  ////  next=outp.branchPredictTkn,
+  //  ////  cond=link.up.isFiring,
+  //  ////  init=outp.branchPredictTkn.getZero,
+  //  ////)
+  //  ////&& upPayload(0).branchTgtBufElem(0).fire
 
-    //&& 
-    outp.branchTgtBufElem(0).fire
-    && outp.branchTgtBufElem(1).fire
-    && !outp.branchTgtBufElem(1).dontPredict
+  //  //&& 
+  //  outp.branchTgtBufElem(0).fire
+  //  && outp.branchTgtBufElem(1).fire
+  //  && !outp.branchTgtBufElem(1).dontPredict
 
-    //&& outp.btbElemBranchKind(1).asBits(1)
-    && (
-      !LcvFastCmpEq(
-        left=outp.branchTgtBufElem(0).srcRegPc(cfg.mySrcRegPcCmpEqRange),
-        right=outp.branchTgtBufElem(1).srcRegPc(cfg.mySrcRegPcCmpEqRange),
-        cmpEqIo=null,
-        optDsp=false,
-        optReg=false,
-      )._1
-      //(
-      //  outp.branchTgtBufElem(0).srcRegPc(
-      //    cfg.mySrcRegPcCmpEqRange
-      //  ) =/= outp.branchTgtBufElem(1).srcRegPc(
-      //    cfg.mySrcRegPcCmpEqRange
-      //  )
-      //)
-      //|| (
-      //  outp.branchTgtBufElem(0).dstRegPc
-      //  =/= outp.branchTgtBufElem(1).srcRegPc
-      //)
-    )
-  )
+  //  //&& outp.btbElemBranchKind(1).asBits(1)
+  //  && (
+  //    !LcvFastCmpEq(
+  //      left=outp.branchTgtBufElem(0).srcRegPc(cfg.mySrcRegPcCmpEqRange),
+  //      right=outp.branchTgtBufElem(1).srcRegPc(cfg.mySrcRegPcCmpEqRange),
+  //      cmpEqIo=null,
+  //      optDsp=false,
+  //      optReg=false,
+  //    )._1
+  //    //(
+  //    //  outp.branchTgtBufElem(0).srcRegPc(
+  //    //    cfg.mySrcRegPcCmpEqRange
+  //    //  ) =/= outp.branchTgtBufElem(1).srcRegPc(
+  //    //    cfg.mySrcRegPcCmpEqRange
+  //    //  )
+  //    //)
+  //    //|| (
+  //    //  outp.branchTgtBufElem(0).dstRegPc
+  //    //  =/= outp.branchTgtBufElem(1).srcRegPc
+  //    //)
+  //  )
+  //)
   
   if (cfg.irqCfg != None) {
     outp.takeIrq := False

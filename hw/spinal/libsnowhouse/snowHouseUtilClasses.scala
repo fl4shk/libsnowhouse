@@ -723,17 +723,22 @@ case class SnowHouseConfig(
     mainAddrWidth - 1
     downto mainAddrWidth - mySrcRegPcWidth
   )
-  def mySrcRegPcCmpEqRange = (
+  def mySrcRegPcCmpEqRangeHi = (
     //mainWidth - 1
     //downto mainWidth - mySrcRegPcCmpEqWidth
     mainAddrWidth - 1
-    downto mainAddrWidth - mySrcRegPcCmpEqWidth
+    downto mainAddrWidth - mySrcRegPcCmpEqWidth + 1
+  )
+  def mySrcRegPcCmpEqRangeLo = (
+    log2Up(instrSizeBytes)
+    downto log2Up(instrSizeBytes)
   )
   println(
     s"mySrcRegPcWidth:${mySrcRegPcWidth} "
     + s"mySrcRegPcCmpEqWidth:${mySrcRegPcCmpEqWidth} "
     + s"mySrcRegPcRange:${mySrcRegPcRange} "
-    + s"mySrcRegPcCmpEqRange:${mySrcRegPcCmpEqRange}"
+    + s"mySrcRegPcCmpEqRangeHi:${mySrcRegPcCmpEqRangeHi} "
+    + s"mySrcRegPcCmpEqRangeLo:${mySrcRegPcCmpEqRangeLo}"
   )
   def lowerMyFanout = 4
   def lowerMyFanoutRegPcSetItCnt = (
