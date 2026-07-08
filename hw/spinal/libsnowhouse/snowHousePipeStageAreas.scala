@@ -785,39 +785,70 @@ case class SnowHouseBranchTgtBuf(
     btb.io.upIsFiring := io.upIsFiring
   }
 
-  val tgtFifoIdxBuf = Vec.fill(branchTgtBufSize)(
-    Reg(UInt(log2Up(btbArr.size) bits))
-    init(0x0)
+  //val tgtFifoIdxBuf = Vec.fill(branchTgtBufSize)(
+  //  Reg(UInt(log2Up(btbArr.size) bits))
+  //  init(0x0)
+  //)
+  val tgtFifoIdxBuf = Mem(
+    initialContent=Array.fill(branchTgtBufSize)(
+      U(s"${log2Up(btbArr.size)}'d0")
+    ),
   )
 
+  val tempTgtFifoFifoReadSync = tgtFifoIdxBuf.readSync(
+    address=rTgtBufWrAddr,
+    enable=rTgtBufWrEn,
+  )
+  tgtFifoIdxBuf.write(
+    data=RegNext(tempTgtFifoFifoReadSync) + 1,
+    address=RegNext(RegNext(rTgtBufWrAddr)),
+    enable=RegNext(RegNext(rTgtBufWrEn, init=False), init=False),
+  )
   switch (
-    //tgtBufRdAddr
-    //tgtBufRdAddr
-    //rTgtBufWrAddr
-    rTgtBufWrEn
-    ## rTgtBufWrAddr
+    RegNext(RegNext(rTgtBufWrEn, init=False), init=False)
+    ## RegNext(tempTgtFifoFifoReadSync)
   ) {
-    for (idx <- 0 until branchTgtBufSize) {
+    for (idx <- 0 until btbArr.size) {
       is (
-        branchTgtBufSize
+        btbArr.size
         | idx
       ) {
-        //btbArr
-        tgtFifoIdxBuf(idx) := tgtFifoIdxBuf(idx) + 1
-        switch (tgtFifoIdxBuf(idx)) {
-          for (jdx <- 0 until btbArr.size) {
-            is (jdx) {
-              btbArr(jdx).io.psExSetPc := RegNext(io.psExSetPc)
-            }
-          }
-          default {
-          }
-        }
+        btbArr(idx).io.psExSetPc := (
+          RegNext(RegNext(RegNext(io.psExSetPc)))
+        )
       }
     }
     default {
     }
   }
+  //switch (
+  //  //tgtBufRdAddr
+  //  //tgtBufRdAddr
+  //  //rTgtBufWrAddr
+  //  rTgtBufWrEn
+  //  ## rTgtBufWrAddr
+  //) {
+  //  for (idx <- 0 until branchTgtBufSize) {
+  //    is (
+  //      branchTgtBufSize
+  //      | idx
+  //    ) {
+  //      //btbArr
+  //      //tgtFifoIdxBuf(idx) := tgtFifoIdxBuf(idx) + 1
+  //      switch (tgtFifoIdxBuf(idx)) {
+  //        for (jdx <- 0 until btbArr.size) {
+  //          is (jdx) {
+  //            btbArr(jdx).io.psExSetPc := RegNext(io.psExSetPc)
+  //          }
+  //        }
+  //        default {
+  //        }
+  //      }
+  //    }
+  //  }
+  //  default {
+  //  }
+  //}
   val myResultVec = Vec.fill(btbArr.size)(
     cloneOf(io.result)
   )
