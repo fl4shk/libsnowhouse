@@ -1676,8 +1676,8 @@ case class SnowHouseRiscv32imConfig(
     "block"
   ),
   branchTgtBufSizeLog2: Int=(
-    log2Up(128)
-    //log2Up(64)
+    //log2Up(128)
+    log2Up(64)
     //log2Up(32)
   ),
 ) {
