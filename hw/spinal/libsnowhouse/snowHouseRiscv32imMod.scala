@@ -1647,6 +1647,12 @@ case class SnowHouseRiscv32imConfig(
     //"distributed"
     "block"
   ),
+  icacheDepthWords: Int=(
+    /*8192*/ 1024 //2048 // 4 kiB icache (by default)
+  ),
+  dcacheDepthWords: Int=(
+    /*8192*/ 1024 //2048 // 4 kiB dcache (by default)
+  ),
   icacheLineWordMemRamStyleAltera: String=(
     "no_rw_check, M10K"
   ),
@@ -1718,10 +1724,14 @@ case class SnowHouseRiscv32imConfig(
     optInvertTwoRegCmp=false,
     optTwoCycleRegFileReads=optTwoCycleRegFileReads,
     subCfg={
-      val icacheDepthWords = /*8192*/ 1024 //2048 // 4 kiB icache
+      //val icacheDepthWords = (
+      //  /*8192*/ 1024 //2048 // 4 kiB icache
+      //)
       val icacheLineSizeBytes = 64
       val icacheBusSrcNum = 0x0
-      val dcacheDepthWords = /*512*/ /*128*/ 1024 //2048 /*8192*/ // 4 kiB dcache
+      //val dcacheDepthWords = (
+      //  /*512*/ /*128*/ 1024 //2048 /*8192*/ // 4 kiB dcache
+      //)
       val dcacheLineSizeBytes = 64
       val dcacheBusSrcNum = 0x1
       SnowHouseSubConfig(
