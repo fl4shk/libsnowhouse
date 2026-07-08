@@ -778,6 +778,8 @@ case class SnowHouseBranchTgtBuf(
   for (idx <- 0 until btbArr.size) {
     val btb = btbArr(idx)
     btb.io.psExSetPc := btb.io.psExSetPc.getZero
+    btb.io.psExSetPc.taken.allowOverride
+    btb.io.psExSetPc.taken := io.psExSetPc.taken
     btb.io.inpRegPc := io.inpRegPc
     btb.io.upIsReady := io.upIsReady
     btb.io.upIsFiring := io.upIsFiring
@@ -805,7 +807,7 @@ case class SnowHouseBranchTgtBuf(
         switch (tgtFifoIdxBuf(idx)) {
           for (jdx <- 0 until btbArr.size) {
             is (jdx) {
-              btbArr(jdx).io.psExSetPc := io.psExSetPc
+              btbArr(jdx).io.psExSetPc := RegNext(io.psExSetPc)
             }
           }
           default {
@@ -835,9 +837,15 @@ case class SnowHouseBranchTgtBuf(
   
 
   switch (myResultValidVec.asBits) {
-    for (idx <- 0 until myResultValidVec.size) {
+    for (idx <- 1 until (1 << myResultValidVec.size)) {
       is (idx) {
-        val myBtb = btbArr(1 << log2Up(idx))
+        println(
+          s"idx:${idx} log2Thing:${log2Up(idx + 1) - 1}"
+        )
+        val myBtb = btbArr(
+          //log2Up(idx)
+          log2Up(idx + 1) - 1
+        )
         //io.result.payload := btbArr(1 << log2Up(idx)).io.result.payload
         io.result.nextRegPc := myBtb.io.result.nextRegPc
         io.result.rdBtbElem := myBtb.io.result.rdBtbElem

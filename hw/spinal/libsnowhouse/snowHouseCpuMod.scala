@@ -3503,6 +3503,8 @@ case class SnowHouseCpuConfig(
     //log2Up(32)
   ),
   branchTgtBufNumWays: Int = (
+    //4
+    //3
     2
   ),
 ) {
