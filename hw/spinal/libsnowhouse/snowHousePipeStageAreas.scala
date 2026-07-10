@@ -10224,37 +10224,37 @@ case class SnowHousePipeStageWriteBack(
           //})
         })
       }
-      when (
-        myD2hBus.valid
-        && (
-          (
-            RegNextWhen(
-              True,
-              cond=myD2hBus.fire,
-              init=False
-            )
-          )
-          && (
-            myD2hBus.src
-            //=/= myWbPayload(1).outpDecodeExt.memAccessSrc
-            //=/= myWbPayload(1).myDbusHostPayload.src
-            =/= (
-              (
-                RegNextWhen(
-                  myD2hBus.src.asSInt + 1,
-                  cond=myD2hBus.fire,
-                )
-                init(-1)
-              ).asUInt
-            )
-          )
-          //&& (
-          //  myWbPayload(1).myDbusHostPayload.accKind.asBits(1)
-          //)
-        )
-      ) {
-        psWbToEarlierStallRequest := True
-      }
+      //when (
+      //  myD2hBus.valid
+      //  && (
+      //    (
+      //      RegNextWhen(
+      //        True,
+      //        cond=myD2hBus.fire,
+      //        init=False
+      //      )
+      //    )
+      //    && (
+      //      myD2hBus.src
+      //      //=/= myWbPayload(1).outpDecodeExt.memAccessSrc
+      //      //=/= myWbPayload(1).myDbusHostPayload.src
+      //      =/= (
+      //        (
+      //          RegNextWhen(
+      //            myD2hBus.src.asSInt + 1,
+      //            cond=myD2hBus.fire,
+      //          )
+      //          init(-1)
+      //        ).asUInt
+      //      )
+      //    )
+      //    //&& (
+      //    //  myWbPayload(1).myDbusHostPayload.accKind.asBits(1)
+      //    //)
+      //  )
+      //) {
+      //  psWbToEarlierStallRequest := True
+      //}
     }
     switch (
       (
