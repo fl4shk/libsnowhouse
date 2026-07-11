@@ -46,13 +46,13 @@ public:     // constants
     static constexpr size_t MEM_SIZE = (
         64ull * 1024ull * 1024ull
     );
-    static constexpr u32 ADDR_PRINT = 0x86000000ul;
-    static constexpr u32 ADDR_EXIT = 0x86000004ul;
-    static constexpr u32 ADDR_TIMER_USEC_LO = 0x86000000ul;
-    static constexpr u32 ADDR_TIMER_USEC_HI = 0x86000004ul;
-    static constexpr u32 ADDR_TIMER_SEC_LO = 0x86000008ul;
-    static constexpr u32 ADDR_TIMER_SEC_HI = 0x8600000cul;
-    static constexpr u32 ADDR_FB_START = 0x82000000ul;
+    static constexpr u32 ADDR_PRINT = 0x6000000ul;
+    static constexpr u32 ADDR_EXIT = 0x6000004ul;
+    static constexpr u32 ADDR_TIMER_USEC_LO = 0x6000000ul;
+    static constexpr u32 ADDR_TIMER_USEC_HI = 0x6000004ul;
+    static constexpr u32 ADDR_TIMER_SEC_LO = 0x6000008ul;
+    static constexpr u32 ADDR_TIMER_SEC_HI = 0x600000cul;
+    static constexpr u32 ADDR_FB_START = 0x2000000ul;
     static constexpr u32 ADDR_FB_END = (
         ADDR_FB_START
         + ((SCREENWIDTH * SCREENHEIGHT - 1) * sizeof(u16))

@@ -1253,12 +1253,15 @@ void MeltedMoonDebugRiscvEmu::_bus_write(
             data, addr, byte_count
         );
     }
+
+    const u32 temp_addr = addr & ~0x80000000;
+
     if (
         byte_count == sizeof(u8)
         || byte_count == sizeof(u16)
         || byte_count == sizeof(u32)
     ) {
-        if (addr == ADDR_PRINT) {
+        if (temp_addr == ADDR_PRINT) {
             std::array<u8, sizeof(u32)> buf_u8;
             memcpy(buf_u8.data(), &data, sizeof(u32));
 
@@ -1300,51 +1303,51 @@ void MeltedMoonDebugRiscvEmu::_bus_write(
                     _to_dbg_print = "";
                 }
             }
-        } else if (addr == ADDR_EXIT) {
+        } else if (temp_addr == ADDR_EXIT) {
             std::exit(data);
-        } else if (addr == ADDR_UDIV64_INP_LEFT_LO) {
+        } else if (temp_addr == ADDR_UDIV64_INP_LEFT_LO) {
             _mmio_udiv64_inp_left &= u64(i64(-1ll) << 32u);
             _mmio_udiv64_inp_left |= data;
-        } else if (addr == ADDR_UDIV64_INP_LEFT_HI) {
+        } else if (temp_addr == ADDR_UDIV64_INP_LEFT_HI) {
             _mmio_udiv64_inp_left &= u64(u32(i32(-1l)));
             _mmio_udiv64_inp_left |= (u64(data) << 32u);
-        } else if (addr == ADDR_UDIV64_INP_RIGHT_LO) {
+        } else if (temp_addr == ADDR_UDIV64_INP_RIGHT_LO) {
             _mmio_udiv64_inp_right &= u64(i64(-1ll) << 32u);
             _mmio_udiv64_inp_right |= data;
-        } else if (addr == ADDR_UDIV64_INP_RIGHT_HI) {
+        } else if (temp_addr == ADDR_UDIV64_INP_RIGHT_HI) {
             _mmio_udiv64_inp_right &= u64(u32(i32(-1l)));
             _mmio_udiv64_inp_right |= (u64(data) << 32u);
-        } else if (addr == ADDR_IDIV64_INP_LEFT_LO) {
+        } else if (temp_addr == ADDR_IDIV64_INP_LEFT_LO) {
             _mmio_idiv64_inp_left &= u64(i64(-1ll) << 32u);
             _mmio_idiv64_inp_left |= data;
-        } else if (addr == ADDR_IDIV64_INP_LEFT_HI) {
+        } else if (temp_addr == ADDR_IDIV64_INP_LEFT_HI) {
             _mmio_idiv64_inp_left &= u64(u32(i32(-1l)));
             _mmio_idiv64_inp_left |= (u64(data) << 32u);
-        } else if (addr == ADDR_IDIV64_INP_RIGHT_LO) {
+        } else if (temp_addr == ADDR_IDIV64_INP_RIGHT_LO) {
             _mmio_idiv64_inp_right &= u64(i64(-1ll) << 32u);
             _mmio_idiv64_inp_right |= data;
-        } else if (addr == ADDR_IDIV64_INP_RIGHT_HI) {
+        } else if (temp_addr == ADDR_IDIV64_INP_RIGHT_HI) {
             _mmio_idiv64_inp_right &= u64(u32(i32(-1l)));
             _mmio_idiv64_inp_right |= (u64(data) << 32u);
-        } else if (addr > MEM_SIZE) {
+        } else if (temp_addr > MEM_SIZE) {
             std::fprintf(
                 stderr,
                 "MeltedMoonDebugRiscvEmu::_bus_write(): "
                 "invalid bus write: "
-                "pc:%x data:%x addr:%x byte_count:%lu\n",
-                _pc, data, addr, byte_count
+                "pc:%x data:%x temp_addr:%x byte_count:%lu\n",
+                _pc, data, temp_addr, byte_count
             );
             std::exit(1);
         } else {
             if (
-                addr == ADDR_FB_END
+                temp_addr == ADDR_FB_END
                 && byte_count == sizeof(u16)
             ) {
                 _my_exec_one_instr_ret.sw_wrote_to_fb_end = (
                     &_mem[ADDR_FB_START]
                 );
             }
-            memcpy(&_mem[addr], &data, byte_count);
+            memcpy(&_mem[temp_addr], &data, byte_count);
         }
     } else {
         std::fprintf(
@@ -1365,148 +1368,85 @@ u32 MeltedMoonDebugRiscvEmu::_bus_read(
     //    : 0u
     //);
     u32 ret = 0; 
+    const u32 temp_addr = addr & ~0x80000000;
     if (
         byte_count == sizeof(u8)
         || byte_count == sizeof(u16)
         || byte_count == sizeof(u32)
     ) {
-        if (addr > MEM_SIZE) {
-            if (addr == ADDR_TIMER_USEC_LO) {
+        if (temp_addr > MEM_SIZE) {
+            if (temp_addr == ADDR_TIMER_USEC_LO) {
                 _my_exec_one_instr_ret.sw_read_from_tp = true;
                 i32 temp_usec = i32(_tp->tv_usec);
                 memcpy(&ret, &temp_usec, byte_count);
-            } else if (addr == ADDR_TIMER_USEC_HI) {
+            } else if (temp_addr == ADDR_TIMER_USEC_HI) {
                 _my_exec_one_instr_ret.sw_read_from_tp = true;
                 i32 temp_usec = i32(i64(_tp->tv_usec) >> 32u);
                 memcpy(&ret, &temp_usec, byte_count);
-            } else if (addr == ADDR_TIMER_SEC_LO) {
+            } else if (temp_addr == ADDR_TIMER_SEC_LO) {
                 _my_exec_one_instr_ret.sw_read_from_tp = true;
                 i32 temp_sec = i32(_tp->tv_sec);
                 memcpy(&ret, &temp_sec, byte_count);
-            } else if (addr == ADDR_TIMER_SEC_HI) {
+            } else if (temp_addr == ADDR_TIMER_SEC_HI) {
                 _my_exec_one_instr_ret.sw_read_from_tp = true;
                 i32 temp_sec = i32(i64(_tp->tv_sec) >> 32u);
                 memcpy(&ret, &temp_sec, byte_count);
-            } else if (addr == ADDR_UDIV64_OUTP_QUOT_LO) {
+            } else if (temp_addr == ADDR_UDIV64_OUTP_QUOT_LO) {
                 _mmio_udiv64_outp_quot = (
                     _mmio_udiv64_inp_left / _mmio_udiv64_inp_right
                 );
                 ret = u32(_mmio_udiv64_outp_quot);
-                //std::printf(
-                //    "debug: addr:UDIV64_QUOT_LO: ra:%x _pc:%x ret:%x "
-                //    "%llx / %llx = %llx\n",
-                //    _gpr_file.at(1), _pc, ret,
-                //    (unsigned long long)_mmio_udiv64_inp_left,
-                //    (unsigned long long)_mmio_udiv64_inp_right,
-                //    (unsigned long long)_mmio_udiv64_outp_quot
-                //);
-            } else if (addr == ADDR_UDIV64_OUTP_QUOT_HI) {
+            } else if (temp_addr == ADDR_UDIV64_OUTP_QUOT_HI) {
                 _mmio_udiv64_outp_quot = (
                     _mmio_udiv64_inp_left / _mmio_udiv64_inp_right
                 );
                 ret = u32(_mmio_udiv64_outp_quot >> 32ul);
-                //std::printf(
-                //    "debug: addr:UDIV64_QUOT_HI: ra:%x _pc:%x ret:%x "
-                //    "%llx / %llx = %llx\n",
-                //    _gpr_file.at(1), _pc, ret,
-                //    (unsigned long long)_mmio_udiv64_inp_left,
-                //    (unsigned long long)_mmio_udiv64_inp_right,
-                //    (unsigned long long)_mmio_udiv64_outp_quot
-                //);
-            } else if (addr == ADDR_UDIV64_OUTP_REMA_LO) {
+            } else if (temp_addr == ADDR_UDIV64_OUTP_REMA_LO) {
                 _mmio_udiv64_outp_rema = (
                     _mmio_udiv64_inp_left % _mmio_udiv64_inp_right
                 );
                 ret = u32(_mmio_udiv64_outp_rema);
-                //std::printf(
-                //    "debug: addr:UDIV64_REMA_LO: ra:%x _pc:%x ret:%x "
-                //    "%llx %% %llx = %llx\n",
-                //    _gpr_file.at(1), _pc, ret,
-                //    (unsigned long long)_mmio_udiv64_inp_left,
-                //    (unsigned long long)_mmio_udiv64_inp_right,
-                //    (unsigned long long)_mmio_udiv64_outp_rema
-                //);
-            } else if (addr == ADDR_UDIV64_OUTP_REMA_HI) {
+            } else if (temp_addr == ADDR_UDIV64_OUTP_REMA_HI) {
                 _mmio_udiv64_outp_rema = (
                     _mmio_udiv64_inp_left % _mmio_udiv64_inp_right
                 );
                 ret = u32(_mmio_udiv64_outp_rema >> 32ul);
-                //std::printf(
-                //    "debug: addr:UDIV64_REMA_HI: ra:%x _pc:%x ret:%x "
-                //    "%llx %% %llx = %llx\n",
-                //    _gpr_file.at(1), _pc, ret,
-                //    (unsigned long long)_mmio_udiv64_inp_left,
-                //    (unsigned long long)_mmio_udiv64_inp_right,
-                //    (unsigned long long)_mmio_udiv64_outp_rema
-                //);
-            } else if (addr == ADDR_IDIV64_OUTP_QUOT_LO) {
+            } else if (temp_addr == ADDR_IDIV64_OUTP_QUOT_LO) {
                 _mmio_idiv64_outp_quot = (
                     i64(_mmio_idiv64_inp_left)
                     / i64(_mmio_idiv64_inp_right)
                 );
                 ret = u32(_mmio_idiv64_outp_quot);
-                //std::printf(
-                //    "debug: addr:IDIV64_QUOT_LO: ra:%x _pc:%x ret:%x "
-                //    "%llx / %llx = %llx\n",
-                //    _gpr_file.at(1), _pc, ret,
-                //    (unsigned long long)_mmio_idiv64_inp_left,
-                //    (unsigned long long)_mmio_idiv64_inp_right,
-                //    (unsigned long long)_mmio_idiv64_outp_quot
-                //);
-            } else if (addr == ADDR_IDIV64_OUTP_QUOT_HI) {
+            } else if (temp_addr == ADDR_IDIV64_OUTP_QUOT_HI) {
                 _mmio_idiv64_outp_quot = (
                     i64(_mmio_idiv64_inp_left)
                     / i64(_mmio_idiv64_inp_right)
                 );
                 ret = u32(_mmio_idiv64_outp_quot >> 32ul);
-                //std::printf(
-                //    "debug: addr:IDIV64_QUOT_HI: ra:%x _pc:%x ret:%x "
-                //    "%llx / %llx = %llx\n",
-                //    _gpr_file.at(1), _pc, ret,
-                //    (unsigned long long)_mmio_idiv64_inp_left,
-                //    (unsigned long long)_mmio_idiv64_inp_right,
-                //    (unsigned long long)_mmio_idiv64_outp_quot
-                //);
-            } else if (addr == ADDR_IDIV64_OUTP_REMA_LO) {
+            } else if (temp_addr == ADDR_IDIV64_OUTP_REMA_LO) {
                 _mmio_idiv64_outp_rema = (
                     i64(_mmio_idiv64_inp_left)
                     % i64(_mmio_idiv64_inp_right)
                 );
                 ret = u32(_mmio_idiv64_outp_rema);
-                //std::printf(
-                //    "debug: addr:IDIV64_REMA_LO: ra:%x _pc:%x ret:%x "
-                //    "%llx %% %llx = %llx\n",
-                //    _gpr_file.at(1), _pc, ret,
-                //    (unsigned long long)_mmio_idiv64_inp_left,
-                //    (unsigned long long)_mmio_idiv64_inp_right,
-                //    (unsigned long long)_mmio_idiv64_outp_rema
-                //);
-            } else if (addr == ADDR_IDIV64_OUTP_REMA_HI) {
+            } else if (temp_addr == ADDR_IDIV64_OUTP_REMA_HI) {
                 _mmio_idiv64_outp_rema = (
                     i64(_mmio_idiv64_inp_left)
                     % i64(_mmio_idiv64_inp_right)
                 );
                 ret = u32(_mmio_idiv64_outp_rema >> 32ul);
-                //std::printf(
-                //    "debug: addr:IDIV64_REMA_HI: ra:%x _pc:%x ret:%x "
-                //    "%llx %% %llx = %llx\n",
-                //    _gpr_file.at(1), _pc, ret,
-                //    (unsigned long long)_mmio_idiv64_inp_left,
-                //    (unsigned long long)_mmio_idiv64_inp_right,
-                //    (unsigned long long)_mmio_idiv64_outp_rema
-                //);
             } else {
                 std::fprintf(
                     stderr,
                     "MeltedMoonDebugRiscvEmu::_bus_read(): "
                     "invalid bus read: "
-                    "addr:%x byte_count:%lu\n",
-                    addr, byte_count
+                    "temp_addr:%x byte_count:%lu\n",
+                    temp_addr, byte_count
                 );
                 std::exit(1);
             }
         } else {
-            memcpy(&ret, &_mem[addr], byte_count);
+            memcpy(&ret, &_mem[temp_addr], byte_count);
         }
     } else {
         std::fprintf(
