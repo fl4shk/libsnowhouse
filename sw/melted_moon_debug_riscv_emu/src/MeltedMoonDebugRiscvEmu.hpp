@@ -55,31 +55,31 @@ public:     // constants
     static constexpr size_t MEM_SIZE = (
         64ull * 1024ull * 1024ull
     );
-    static constexpr u32 ADDR_PRINT = 0x6000000ul;
-    static constexpr u32 ADDR_EXIT = 0x6000004ul;
-    static constexpr u32 ADDR_TIMER_USEC_LO = 0x6000000ul;
-    static constexpr u32 ADDR_TIMER_USEC_HI = 0x6000004ul;
-    static constexpr u32 ADDR_TIMER_SEC_LO = 0x6000008ul;
-    static constexpr u32 ADDR_TIMER_SEC_HI = 0x600000cul;
-    static constexpr u32 ADDR_UDIV64_INP_LEFT_LO = 0x6000010ul;
-    static constexpr u32 ADDR_UDIV64_INP_LEFT_HI = 0x6000014ul;
-    static constexpr u32 ADDR_UDIV64_INP_RIGHT_LO = 0x6000018ul;
-    static constexpr u32 ADDR_UDIV64_INP_RIGHT_HI = 0x600001cul;
-    static constexpr u32 ADDR_UDIV64_OUTP_QUOT_LO = 0x6000010ul;
-    static constexpr u32 ADDR_UDIV64_OUTP_QUOT_HI = 0x6000014ul;
-    static constexpr u32 ADDR_UDIV64_OUTP_REMA_LO = 0x6000018ul;
-    static constexpr u32 ADDR_UDIV64_OUTP_REMA_HI = 0x600001cul;
+    static constexpr u32 ADDR_PRINT = 0x86000000ul;
+    static constexpr u32 ADDR_EXIT = 0x86000004ul;
+    static constexpr u32 ADDR_TIMER_USEC_LO = 0x86000000ul;
+    static constexpr u32 ADDR_TIMER_USEC_HI = 0x86000004ul;
+    static constexpr u32 ADDR_TIMER_SEC_LO = 0x86000008ul;
+    static constexpr u32 ADDR_TIMER_SEC_HI = 0x8600000cul;
+    static constexpr u32 ADDR_UDIV64_INP_LEFT_LO = 0x86000010ul;
+    static constexpr u32 ADDR_UDIV64_INP_LEFT_HI = 0x86000014ul;
+    static constexpr u32 ADDR_UDIV64_INP_RIGHT_LO = 0x86000018ul;
+    static constexpr u32 ADDR_UDIV64_INP_RIGHT_HI = 0x8600001cul;
+    static constexpr u32 ADDR_UDIV64_OUTP_QUOT_LO = 0x86000010ul;
+    static constexpr u32 ADDR_UDIV64_OUTP_QUOT_HI = 0x86000014ul;
+    static constexpr u32 ADDR_UDIV64_OUTP_REMA_LO = 0x86000018ul;
+    static constexpr u32 ADDR_UDIV64_OUTP_REMA_HI = 0x8600001cul;
 
-    static constexpr u32 ADDR_IDIV64_INP_LEFT_LO = 0x6000020ul;
-    static constexpr u32 ADDR_IDIV64_INP_LEFT_HI = 0x6000024ul;
-    static constexpr u32 ADDR_IDIV64_INP_RIGHT_LO = 0x6000028ul;
-    static constexpr u32 ADDR_IDIV64_INP_RIGHT_HI = 0x600002cul;
-    static constexpr u32 ADDR_IDIV64_OUTP_QUOT_LO = 0x6000020ul;
-    static constexpr u32 ADDR_IDIV64_OUTP_QUOT_HI = 0x6000024ul;
-    static constexpr u32 ADDR_IDIV64_OUTP_REMA_LO = 0x6000028ul;
-    static constexpr u32 ADDR_IDIV64_OUTP_REMA_HI = 0x600002cul;
+    static constexpr u32 ADDR_IDIV64_INP_LEFT_LO = 0x86000020ul;
+    static constexpr u32 ADDR_IDIV64_INP_LEFT_HI = 0x86000024ul;
+    static constexpr u32 ADDR_IDIV64_INP_RIGHT_LO = 0x86000028ul;
+    static constexpr u32 ADDR_IDIV64_INP_RIGHT_HI = 0x8600002cul;
+    static constexpr u32 ADDR_IDIV64_OUTP_QUOT_LO = 0x86000020ul;
+    static constexpr u32 ADDR_IDIV64_OUTP_QUOT_HI = 0x86000024ul;
+    static constexpr u32 ADDR_IDIV64_OUTP_REMA_LO = 0x86000028ul;
+    static constexpr u32 ADDR_IDIV64_OUTP_REMA_HI = 0x8600002cul;
 
-    static constexpr u32 ADDR_FB_START = 0x2000000ul;
+    static constexpr u32 ADDR_FB_START = 0x82000000ul;
     static constexpr u32 ADDR_FB_END = (
         ADDR_FB_START
         + ((SCREENWIDTH * SCREENHEIGHT - 1) * sizeof(u16))
