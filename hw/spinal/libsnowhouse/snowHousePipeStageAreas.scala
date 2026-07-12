@@ -1068,8 +1068,8 @@ case class SnowHousePipeStageInstrFetch(
       setWordFunc=mySetWordFunc,
       //initBigInt=initBigInt,
       arrRamStyleAltera=(
-        //"no_rw_check, M10K",//"MLAB",//"M10K"
-        "no_rw_check, MLAB",//"MLAB",//"M10K"
+        "no_rw_check, M10K",//"MLAB",//"M10K"
+        //"no_rw_check, MLAB",//"MLAB",//"M10K"
       ),
       arrRamStyleXilinx="distributed",//"block"
     )
