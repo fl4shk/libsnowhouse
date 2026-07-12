@@ -1067,7 +1067,7 @@ case class SnowHousePipeStageInstrFetch(
       pipeName="pipeStageIf",
       setWordFunc=mySetWordFunc,
       //initBigInt=initBigInt,
-      arrRamStyleAltera="MLAB",//"M10K"
+      arrRamStyleAltera="M10K",//"MLAB",//"M10K"
       arrRamStyleXilinx="distributed",//"block"
     )
     WrPulseRdPipeRamSdpPipe(cfg=ramCfg)
