@@ -1048,6 +1048,11 @@ case class SnowHousePipeStageInstrFetch(
   }
   val myIbusTempRam = {
     val depth = 1 << cfg.subCfg.myLcvBusSrcWidth
+    //val initBigtInt = Array(
+    //  Array.fill(depth)(
+    //    BigInt(0)
+    //  ).toSeq
+    //).toSeq
     def mySetWordFunc(
       outp: MyIbusTempPayload,
       inp: MyIbusTempPayload,
@@ -1066,12 +1071,25 @@ case class SnowHousePipeStageInstrFetch(
       wordCount=depth,
       pipeName="pipeStageIf",
       setWordFunc=mySetWordFunc,
-      //initBigInt=initBigInt,
-      arrRamStyleAltera=(
-        //"no_rw_check, M10K",//"MLAB",//"M10K"
-        "no_rw_check, MLAB",//"MLAB",//"M10K"
+      initBigInt=(
+        //Some(initBigInt)
+        Some({
+          val myArr = new ArrayBuffer[ArrayBuffer[BigInt]]()
+          myArr += new ArrayBuffer[BigInt]()
+          for (idx <- 0 until depth) {
+            myArr.last += BigInt(0)
+          }
+          myArr
+        })
       ),
-      arrRamStyleXilinx="distributed",//"block"
+      arrRamStyleAltera=(
+        "no_rw_check, M10K",//"MLAB",//"M10K"
+        //"no_rw_check, MLAB",//"MLAB",//"M10K"
+      ),
+      arrRamStyleXilinx=(
+        //"block"
+        "distributed"
+      ),
     )
     WrPulseRdPipeRamSdpPipe(cfg=ramCfg)
   }
@@ -1087,11 +1105,12 @@ case class SnowHousePipeStageInstrFetch(
   // non-pipelined `LcvBus` instruction source
   // (such as FL4SHK's own `LcvBusMemSlowUnlessBurst` module)
   myBusH2dValid := (
-    rIbusTempRamInitCnt.msb
+    //rIbusTempRamInitCnt.msb
+    True
   )
   val myIbusRegPcInfo = MyIbusRegPcInfo(cfg=cfg)
   def myD2hPopStm = io.lcvIbus.d2hBus
-  when (rIbusTempRamInitCnt.msb) {
+  //when (rIbusTempRamInitCnt.msb) {
     cIf.up.driveFrom(myIbusTempRam.io.rdDataPipe)(
       con=(node, payload) => {
         node(pIf) := node(pIf).getZero
@@ -1124,20 +1143,20 @@ case class SnowHousePipeStageInstrFetch(
     myIbusTempRam.io.wrPulse.data.myIbusRegPcInfo := (
       myIbusRegPcInfo
     )
-  } otherwise {
-    cIf.up.valid := False
-    cIf.up(pIf) := cIf.up(pIf).getZero
-    myIbusTempRam.io.wrPulse.valid := True
-    myIbusTempRam.io.wrPulse.addr := rIbusTempRamInitCnt(
-      rIbusTempRamInitCnt.high - 2 downto 0
-    )
-    myIbusTempRam.io.wrPulse.data := (
-      myIbusTempRam.io.wrPulse.data.getZero
-    )
-    myIbusTempRam.io.rdDataPipe.ready := True
+  //} otherwise {
+  //  cIf.up.valid := False
+  //  cIf.up(pIf) := cIf.up(pIf).getZero
+  //  myIbusTempRam.io.wrPulse.valid := True
+  //  myIbusTempRam.io.wrPulse.addr := rIbusTempRamInitCnt(
+  //    rIbusTempRamInitCnt.high - 2 downto 0
+  //  )
+  //  myIbusTempRam.io.wrPulse.data := (
+  //    myIbusTempRam.io.wrPulse.data.getZero
+  //  )
+  //  myIbusTempRam.io.rdDataPipe.ready := True
 
-    rIbusTempRamInitCnt := rIbusTempRamInitCnt + 1
-  }
+  //  rIbusTempRamInitCnt := rIbusTempRamInitCnt + 1
+  //}
   io.lcvIbus.h2dBus << myH2dPushStm
   myD2hPopStm.translateInto(myIbusTempRam.io.rdAddrPipe)(
     dataAssignment=(outp, inp) => {
