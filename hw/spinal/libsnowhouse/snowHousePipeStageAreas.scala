@@ -2089,8 +2089,8 @@ case class SnowHousePipeStageInstrDecode(
   extends SpinalEnum(defaultEncoding=binaryOneHot) {
     val
       IDLE,
-      POST_LD_0,
-      POST_LD_1
+      POST_LD_0//,
+      //POST_LD_1
       = newElement();
   }
 
@@ -2184,15 +2184,18 @@ case class SnowHousePipeStageInstrDecode(
         item := True
       })
       upPayload(1).splitOp.setToDefault()
-      upPayload(0).branchTgtBufElem(0) := (
+      upPayload(1).branchTgtBufElem(0) := (
         //.valid := False
-        upPayload(0).branchTgtBufElem(0).getZero
+        upPayload(1).branchTgtBufElem(0).getZero
       )
+      upPayload(1).branchTgtBufElem(0).dontPredict := True
       upPayload(1).branchTgtBufElem(1) := (
         upPayload(1).branchTgtBufElem(1).getZero
       )
+      upPayload(1).branchTgtBufElem(1).dontPredict := True
+
       upPayload(1).branchPredictTkn := False
-      upPayload(1).branchPredictReplaceBtbElemMost := False
+      //upPayload(1).branchPredictReplaceBtbElemMost := False
 
       upPayload(1).regPcSetItCnt.foreach(item => {
         item := item.getZero
@@ -2306,12 +2309,12 @@ case class SnowHousePipeStageInstrDecode(
           }
         }
       }
-      is (MyLcvDbusStallState.POST_LD_0) {
-        doSendBubbleMainMost()
-        when (down.isFiring) {
-          rStallState := MyLcvDbusStallState.POST_LD_1
-        }
-      }
+      //is (MyLcvDbusStallState.POST_LD_0) {
+      //  doSendBubbleMainMost()
+      //  when (down.isFiring) {
+      //    rStallState := MyLcvDbusStallState.POST_LD_1
+      //  }
+      //}
       //is (MyLcvDbusStallState.POST_LD_1) {
       //  //when (up.isFiring) {
       //  //  rStallState := MyLcvDbusStallState.IDLE
@@ -2900,7 +2903,7 @@ case class SnowHousePipeStageExecuteSetOutpModMemWordIo(
   def opIsMemAccess = outpDecodeExt.opIsMemAccess
   //def opIsCpyNonJmpAlu = decodeExt.opIsCpyNonJmpAlu
   //def opIsAluShift = outpDecodeExt.opIsAluShift
-  def opIsJmp = outpDecodeExt.opIsJmp
+  //def opIsJmp = outpDecodeExt.opIsJmp
   def opIsAnyMultiCycle = outpDecodeExt.opIsAnyMultiCycle
   def opIsMultiCycle = outpDecodeExt.opIsMultiCycle
   def jmpAddrIdx = (
@@ -7115,6 +7118,7 @@ case class SnowHousePipeStageExecute(
   val myTempDownIsReadyMost = (
     cMid0Front.down.isReady
     //&& !psMemToEarlierStallRequest
+    && !outp.instrCnt.myPsIdBubble.last
     && !psWbToEarlierStallRequest
   )
   val myTempDownIsReady = (
@@ -8546,10 +8550,11 @@ case class SnowHousePipeStageExecute(
       cMid0Front.up.isValid
       && myTempDownIsReadyMost
       && RegNext(myShouldIgnoreInstr(idx), init=False)
+      && outp.regPcSetItCnt(idx)(0)
     ) {
-      when (outp.regPcSetItCnt(idx)(0)) {
+      //when (outp.regPcSetItCnt(idx)(0)) {
         myShouldIgnoreInstr(idx) := False
-      }
+      //}
     }
   }
 
@@ -8579,9 +8584,9 @@ case class SnowHousePipeStageExecute(
         outp.branchPredictTkn
         //outp.branchTgtBufElem(1).branchKind.asBits(0)
       )
-      setOutpModMemWord.io.branchPredictReplaceBtbElemMost := (
-        outp.branchPredictReplaceBtbElemMost
-      )
+      //setOutpModMemWord.io.branchPredictReplaceBtbElemMost := (
+      //  outp.branchPredictReplaceBtbElemMost
+      //)
       //setOutpModMemWord.io.btbElemSavedDstRegPc := (
       //  outp.branchTgtBufElem(0).dstRegPc
       //)
