@@ -2016,7 +2016,7 @@ case class SnowHouseRiscv32imDivmod(
   val divmod = LongDivMultiCycle(
     mainWidth=cfg.mainWidth,
     denomWidth=cfg.mainWidth,
-    chunkWidth=1,//2,//3,//4,//2,//1,//2,
+    chunkWidth=1,//2,//1,//2,//3,//4,//2,//1,//2,
     signedReset=0x0,
   )
   object DivmodState
@@ -2658,7 +2658,10 @@ case class SnowHouseRiscv32imDivmod(
         //--------
         //True
       ) {
-        rState := DivmodState.YIELD_RESULT_PIPE_3
+        rState := (
+          DivmodState.YIELD_RESULT_PIPE_3
+          //DivmodState.YIELD_RESULT
+        )
       }
     }
     is (DivmodState.YIELD_RESULT_PIPE_3) {
@@ -2700,7 +2703,7 @@ case class SnowHouseRiscv32imDivmod(
         val multiCycleBus = cpuIo.multiCycleBusVec(busIdx)
         def dstVec = multiCycleBus.recvData.dstVec
         def srcVec = multiCycleBus.sendData.srcVec
-        var haveCorrectBus: Boolean = false
+        //var haveCorrectBus: Boolean = false
         if (group == MultiCycleOpKind.Udiv.group) {
           val stallIo = (
             cpuIo.multiCycleBusVec(busIdx)
@@ -2715,7 +2718,7 @@ case class SnowHouseRiscv32imDivmod(
   }
 }
 
-case class SnowHouseRiscv32imMulFullProductIo(
+case class SnowHouseRiscv32imMulIo(
   cfg: SnowHouseConfig,
 ) extends Bundle {
   val multiCycleBus = slave(
@@ -2745,237 +2748,406 @@ case class SnowHouseRiscv32imMulFullProductIo(
   //val outpProd = out(UInt(cfg.mainWidth * 2 bits))
   //val isSigned = in(Bool())
 }
-case class SnowHouseRiscv32imMulFullProduct(
+//case class SnowHouseRiscv32imMul(
+//  cfg: SnowHouseConfig
+//) extends Component {
+//  val io = SnowHouseRiscv32imMulIo(cfg=cfg)
+//  def multiCycleBus = io.multiCycleBus
+//  //val rIsSignedFullProd = Reg(Bool(), init=False)
+//  val rSignVec = (
+//    Vec.fill(multiCycleBus.sendData.srcVec.size)(
+//      Reg(Bool(), init=False)
+//    )
+//  )
+//  val rNeedToNegateResultSign = Reg(Bool(), init=False)
+//
+//  val rAbsSrcVec = {
+//    val temp = Reg(cloneOf(multiCycleBus.sendData.srcVec))
+//    temp.foreach(item => item.init(0x0))
+//    temp
+//  }
+//  def dstVec = multiCycleBus.recvData.dstVec
+//  def mainWidth = cfg.mainWidth
+//  object State
+//  extends SpinalEnum(defaultEncoding=binaryOneHot) {
+//    val
+//      IDLE,
+//      DO_ABS_BOTH_INPUTS_IF_NEGATIVE,
+//      DO_ABS_LEFT_INPUT_IF_NEGATIVE,
+//      DO_FOUR_MUL16X16,
+//      FIRST_TWO_ADDS,
+//      //FINAL_ADD_KIND_ZERO,
+//      FINAL_ADD_KIND_NON_ZERO,
+//      DO_NEGATE_RESULT,
+//      YIELD_RESULT
+//      = newElement()
+//  }
+//  val rState = (
+//    Reg(State())
+//    init(State.IDLE)
+//    //setName("SnowHouseRiscv32imMul32_Umul_rState")
+//  )
+//  val low = (mainWidth >> 1) - 1 downto 0
+//  val high = (mainWidth - 1 downto (mainWidth >> 1))
+//  val shiftAmount = mainWidth >> 1
+//  println(
+//    s"low:${low} high:${high} shiftAmount:${shiftAmount}"
+//  )
+//  val rX0Y0 = (
+//    Reg(UInt(mainWidth bits))
+//    init(0x0)
+//  )
+//  val rX0Y1 = (
+//    Reg(UInt(mainWidth bits))
+//    init(0x0)
+//  )
+//  val rX1Y0 = (
+//    Reg(UInt(mainWidth bits))
+//    init(0x0)
+//  )
+//  val rX1Y1 = (
+//    Reg(UInt(mainWidth bits))
+//    init(0x0)
+//  )
+//  val rPartialSum = (
+//    Vec.fill(2)(
+//      Reg(UInt((mainWidth * 2) bits))
+//      init(0x0)
+//    )
+//  )
+//
+//  val z2 = rX1Y1
+//  val z1 = Cat(False, rX1Y0).asUInt + Cat(False, rX0Y1).asUInt
+//  val z0 = rX0Y0
+//
+//  //rPartialSum(0) := (
+//  //  rX0Y0
+//  //)
+//
+//  multiCycleBus.ready := False
+//  val rDstVec = {
+//    //Reg(
+//    //  cloneOf(dstVec(0)),
+//    //  init=dstVec(0).getZero
+//    //)
+//    val temp = Reg(cloneOf(dstVec))
+//    temp.foreach(item => item.init(item.getZero))
+//    temp
+//  }
+//  //dstVec(0) := rDst
+//  dstVec := rDstVec
+//  //val rSavedKindIsZero = Reg(Bool(), init=False)
+//
+//  when (
+//    rState.asBits(0)
+//    && RegNext(rose(multiCycleBus.nextValid), init=False)
+//    && RegNext(!multiCycleBus.sendData.kind(1 downto 0).orR)
+//  ) {
+//    dstVec(0) := (
+//      RegNext(
+//        multiCycleBus.sendData.srcVec(0)
+//        * multiCycleBus.sendData.srcVec(1)
+//      ).resize(dstVec(0).getWidth)
+//    )
+//    multiCycleBus.ready := True
+//  }
+//
+//  switch (rState) {
+//    is (State.IDLE) {
+//      switch (
+//        RegNext(rose(multiCycleBus.nextValid), init=False)
+//        ## RegNext(multiCycleBus.sendData.kind(1 downto 0))
+//      ) {
+//        is (M"100") {
+//          //rSavedKindIsZero := True
+//          //rState := State.DO_FOUR_MUL16X16
+//        }
+//        is (M"101") {
+//          //rSavedKindIsZero := False
+//          rState := State.DO_FOUR_MUL16X16
+//        }
+//        is (B"110") {
+//          //rSavedKindIsZero := False
+//          rState := State.DO_ABS_BOTH_INPUTS_IF_NEGATIVE
+//        }
+//        is (B"111") {
+//          //rSavedKindIsZero := False
+//          rState := State.DO_ABS_LEFT_INPUT_IF_NEGATIVE
+//        }
+//        default {
+//        }
+//      }
+//      for (idx <- 0 until rAbsSrcVec.size) {
+//        rAbsSrcVec(idx) := (
+//          RegNext(
+//            multiCycleBus.sendData.srcVec(idx),
+//            init=rAbsSrcVec(idx).getZero
+//          )
+//        )
+//      }
+//      //rAbsSrcVec := RegNext(
+//      //  multiCycleBus.sendData.srcVec
+//      //)
+//      rSignVec := rSignVec.getZero
+//      //rIsSignedFullProd := multiCycleBus.sendData.kind.lsb
+//    }
+//    is (State.DO_ABS_BOTH_INPUTS_IF_NEGATIVE) {
+//      rState := State.DO_FOUR_MUL16X16
+//      for (idx <- 0 until rAbsSrcVec.size) {
+//        def myAbsSrc = rAbsSrcVec(idx)
+//        rSignVec(idx) := myAbsSrc.msb
+//        when (myAbsSrc.msb) {
+//          myAbsSrc := (-myAbsSrc.asSInt).asUInt
+//        }
+//      }
+//    }
+//    is (State.DO_ABS_LEFT_INPUT_IF_NEGATIVE) {
+//      rState := State.DO_FOUR_MUL16X16
+//      def myAbsSrc = rAbsSrcVec(0)
+//      rSignVec(0) := myAbsSrc.msb
+//      when (myAbsSrc.msb) {
+//        myAbsSrc := (-myAbsSrc.asSInt).asUInt
+//      }
+//    }
+//    is (State.DO_FOUR_MUL16X16) {
+//      rNeedToNegateResultSign := (
+//        // This will always result in a `False` when we are doing
+//        // an unsigned full product because in this case we never ended up
+//        // in the `rState` of `State.DO_ABS_INPUTS_IF_NEGATIVE`
+//        rSignVec(0) =/= rSignVec(1)
+//      )
+//      rX0Y0 := rAbsSrcVec(0)(low) * rAbsSrcVec(1)(low)
+//      rX0Y1 := rAbsSrcVec(0)(low) * rAbsSrcVec(1)(high)
+//      rX1Y0 := rAbsSrcVec(0)(high) * rAbsSrcVec(1)(low)
+//      rX1Y1 := rAbsSrcVec(0)(high) * rAbsSrcVec(1)(high)
+//      rState := State.FIRST_TWO_ADDS
+//    }
+//    is (State.FIRST_TWO_ADDS) {
+//      //when (rSavedKindIsZero) {
+//      //  rState := State.FINAL_ADD_KIND_ZERO
+//      //} otherwise {
+//        rState := State.FINAL_ADD_KIND_NON_ZERO
+//      //}
+//      rPartialSum(0) := Cat(z2, z0).asUInt
+//      rPartialSum(1) := (
+//        Cat(
+//          //U(s"${shiftAmount}'d0"),
+//          //z1(cfg.mainWidth - 1 downto 0),
+//          z1,
+//          U(s"${shiftAmount}'d0"),
+//        ).asUInt.resize(rPartialSum(1).getWidth)
+//      )
+//    }
+//    //is (State.FINAL_ADD_KIND_ZERO) {
+//    //  (rDstVec(1), rDstVec(0)) := rPartialSum(1) + rPartialSum(0)
+//    //  when (!rNeedToNegateResultSign) {
+//    //    rState := State.YIELD_RESULT
+//    //  } otherwise {
+//    //    rState := State.DO_NEGATE_RESULT
+//    //  }
+//    //}
+//    is (State.FINAL_ADD_KIND_NON_ZERO) {
+//      (rDstVec(0), rDstVec(1)) := rPartialSum(1) + rPartialSum(0)
+//      when (!rNeedToNegateResultSign) {
+//        rState := State.YIELD_RESULT
+//      } otherwise {
+//        rState := State.DO_NEGATE_RESULT
+//      }
+//    }
+//    is (State.DO_NEGATE_RESULT) {
+//      (rDstVec(0), rDstVec(1)) := (
+//        (-Cat(rDstVec(0), rDstVec(1)).asSInt).asUInt
+//      )
+//      rState := State.YIELD_RESULT
+//    }
+//    is (State.YIELD_RESULT) {
+//      rState := State.IDLE
+//      //rIsSignedFullProd := False
+//      multiCycleBus.ready := True
+//    }
+//  }
+//}
+
+case class SnowHouseRiscv32imMul(
   cfg: SnowHouseConfig
 ) extends Component {
-  val io = SnowHouseRiscv32imMulFullProductIo(cfg=cfg)
+  val io = SnowHouseRiscv32imMulIo(cfg=cfg)
   def multiCycleBus = io.multiCycleBus
-  //val rIsSignedFullProd = Reg(Bool(), init=False)
-  val rSignVec = (
-    Vec.fill(multiCycleBus.sendData.srcVec.size)(
-      Reg(Bool(), init=False)
-    )
-  )
-  val rNeedToNegateResultSign = Reg(Bool(), init=False)
 
-  val rAbsSrcVec = {
-    val temp = Reg(cloneOf(multiCycleBus.sendData.srcVec))
-    temp.foreach(item => item.init(0x0))
-    temp
-  }
+  def srcVec = multiCycleBus.sendData.srcVec
   def dstVec = multiCycleBus.recvData.dstVec
-  def mainWidth = cfg.mainWidth
-  object State
-  extends SpinalEnum(defaultEncoding=binaryOneHot) {
-    val
-      IDLE,
-      DO_ABS_BOTH_INPUTS_IF_NEGATIVE,
-      DO_ABS_LEFT_INPUT_IF_NEGATIVE,
-      DO_FOUR_MUL16X16,
-      FIRST_TWO_ADDS,
-      //FINAL_ADD_KIND_ZERO,
-      FINAL_ADD_KIND_NON_ZERO,
-      DO_NEGATE_RESULT,
-      YIELD_RESULT
-      = newElement()
-  }
-  val rState = (
-    Reg(State())
-    init(State.IDLE)
-    //setName("SnowHouseRiscv32imMul32_Umul_rState")
-  )
-  val low = (mainWidth >> 1) - 1 downto 0
-  val high = (mainWidth - 1 downto (mainWidth >> 1))
-  val shiftAmount = mainWidth >> 1
-  println(
-    s"low:${low} high:${high} shiftAmount:${shiftAmount}"
-  )
-  val rX0Y0 = (
-    Reg(UInt(mainWidth bits))
-    init(0x0)
-  )
-  val rX0Y1 = (
-    Reg(UInt(mainWidth bits))
-    init(0x0)
-  )
-  val rX1Y0 = (
-    Reg(UInt(mainWidth bits))
-    init(0x0)
-  )
-  val rX1Y1 = (
-    Reg(UInt(mainWidth bits))
-    init(0x0)
-  )
-  val rPartialSum = (
-    Vec.fill(2)(
-      Reg(UInt((mainWidth * 2) bits))
-      init(0x0)
+  multiCycleBus.ready := False
+
+  //object State
+  //extends SpinalEnum(defaultEncoding=binaryOneHot) {
+  //  val
+  //    IDLE_OR_MUL,
+  //    //MUL,
+  //    MULHU,
+  //    MULH,
+  //    MULHSU
+  //    ////FULL_PRODUCT_YIELD_RESULT_PIPE_3,
+  //    //FULL_PRODUCT_YIELD_RESULT_PIPE_2,
+  //    //FULL_PRODUCT_YIELD_RESULT_PIPE_1,
+  //    //FULL_PRODUCT_YIELD_RESULT
+  //    = newElement();
+  //}
+  //val rState = (
+  //  Reg(State())
+  //  init(State.IDLE_OR_MUL)
+  //)
+  dstVec(0) := (
+    RegNext(
+      dstVec(0),
+      init=dstVec(0).getZero
     )
   )
-
-  val z2 = rX1Y1
-  val z1 = Cat(False, rX1Y0).asUInt + Cat(False, rX0Y1).asUInt
-  val z0 = rX0Y0
-
-  //rPartialSum(0) := (
-  //  rX0Y0
-  //)
-
-  multiCycleBus.ready := False
-  val rDstVec = {
-    //Reg(
-    //  cloneOf(dstVec(0)),
-    //  init=dstVec(0).getZero
-    //)
-    val temp = Reg(cloneOf(dstVec))
-    temp.foreach(item => item.init(item.getZero))
-    temp
-  }
-  //dstVec(0) := rDst
-  dstVec := rDstVec
-  //val rSavedKindIsZero = Reg(Bool(), init=False)
 
   when (
-    rState.asBits(0)
-    && RegNext(rose(multiCycleBus.nextValid), init=False)
-    && RegNext(!multiCycleBus.sendData.kind(1 downto 0).orR)
+    RegNext(multiCycleBus.nextValid, init=False)
+    //&& rState.asBits(0)
+    && RegNext(!multiCycleBus.sendData.kind.orR)
   ) {
     dstVec(0) := (
       RegNext(
-        multiCycleBus.sendData.srcVec(0)
-        * multiCycleBus.sendData.srcVec(1)
+        srcVec(0) * srcVec(1)
       ).resize(dstVec(0).getWidth)
     )
     multiCycleBus.ready := True
   }
 
-  switch (rState) {
-    is (State.IDLE) {
-      switch (
-        RegNext(rose(multiCycleBus.nextValid), init=False)
-        ## RegNext(multiCycleBus.sendData.kind(1 downto 0))
-      ) {
-        is (M"100") {
-          //rSavedKindIsZero := True
-          //rState := State.DO_FOUR_MUL16X16
-        }
-        is (M"101") {
-          //rSavedKindIsZero := False
-          rState := State.DO_FOUR_MUL16X16
-        }
-        is (B"110") {
-          //rSavedKindIsZero := False
-          rState := State.DO_ABS_BOTH_INPUTS_IF_NEGATIVE
-        }
-        is (B"111") {
-          //rSavedKindIsZero := False
-          rState := State.DO_ABS_LEFT_INPUT_IF_NEGATIVE
-        }
-        default {
-        }
-      }
-      for (idx <- 0 until rAbsSrcVec.size) {
-        rAbsSrcVec(idx) := (
-          RegNext(
-            multiCycleBus.sendData.srcVec(idx),
-            init=rAbsSrcVec(idx).getZero
-          )
+  val fullProductNumPipeStages = 3
+
+  def myFullProductOutpRangeHi = 63 downto 32
+  val myHistValidMulhu = History[Bool](
+    that=(
+      RegNext(
+        (
+          multiCycleBus.nextValid
+          && multiCycleBus.sendData.kind === 0x1
+        ),
+      )
+    ),
+    length=fullProductNumPipeStages,
+    init=False
+  )
+  val myHistMulhu = History[UInt](
+    that=(
+      RegNext(
+        srcVec(0) * srcVec(1)
+      )(myFullProductOutpRangeHi)
+    ),
+    length=fullProductNumPipeStages,
+  )
+
+
+  val myHistValidMulh = History[Bool](
+    that=(
+      RegNext(
+        (
+          multiCycleBus.nextValid
+          && multiCycleBus.sendData.kind === 0x2
+        ),
+      )
+    ),
+    length=fullProductNumPipeStages,
+    init=False
+  )
+  val myHistMulh = History[SInt](
+    that=(
+      RegNext(
+        srcVec(0).asSInt
+        * srcVec(1).asSInt
+      )(myFullProductOutpRangeHi)
+    ),
+    length=fullProductNumPipeStages,
+  )
+
+  val myHistValidMulhsu = History[Bool](
+    that=(
+      RegNext(
+        (
+          multiCycleBus.nextValid
+          && multiCycleBus.sendData.kind.andR
+        ),
+      )
+    ),
+    length=fullProductNumPipeStages,
+    init=False
+  )
+  val myHistMulhsu = History[UInt](
+    that=(
+      RegNext(
+        Mux[UInt](
+          srcVec(0).msb,
+          (
+            (-srcVec(0).asSInt).asUInt
+            * srcVec(1)
+          ),
+          (
+            srcVec(0)
+            * srcVec(1)
+          ),
         )
-      }
-      //rAbsSrcVec := RegNext(
-      //  multiCycleBus.sendData.srcVec
-      //)
-      rSignVec := rSignVec.getZero
-      //rIsSignedFullProd := multiCycleBus.sendData.kind.lsb
-    }
-    is (State.DO_ABS_BOTH_INPUTS_IF_NEGATIVE) {
-      rState := State.DO_FOUR_MUL16X16
-      for (idx <- 0 until rAbsSrcVec.size) {
-        def myAbsSrc = rAbsSrcVec(idx)
-        rSignVec(idx) := myAbsSrc.msb
-        when (myAbsSrc.msb) {
-          myAbsSrc := (-myAbsSrc.asSInt).asUInt
-        }
-      }
-    }
-    is (State.DO_ABS_LEFT_INPUT_IF_NEGATIVE) {
-      rState := State.DO_FOUR_MUL16X16
-      def myAbsSrc = rAbsSrcVec(0)
-      rSignVec(0) := myAbsSrc.msb
-      when (myAbsSrc.msb) {
-        myAbsSrc := (-myAbsSrc.asSInt).asUInt
-      }
-    }
-    is (State.DO_FOUR_MUL16X16) {
-      rNeedToNegateResultSign := (
-        // This will always result in a `False` when we are doing
-        // an unsigned full product because in this case we never ended up
-        // in the `rState` of `State.DO_ABS_INPUTS_IF_NEGATIVE`
-        rSignVec(0) =/= rSignVec(1)
-      )
-      rX0Y0 := rAbsSrcVec(0)(low) * rAbsSrcVec(1)(low)
-      rX0Y1 := rAbsSrcVec(0)(low) * rAbsSrcVec(1)(high)
-      rX1Y0 := rAbsSrcVec(0)(high) * rAbsSrcVec(1)(low)
-      rX1Y1 := rAbsSrcVec(0)(high) * rAbsSrcVec(1)(high)
-      rState := State.FIRST_TWO_ADDS
-    }
-    is (State.FIRST_TWO_ADDS) {
-      //when (rSavedKindIsZero) {
-      //  rState := State.FINAL_ADD_KIND_ZERO
-      //} otherwise {
-        rState := State.FINAL_ADD_KIND_NON_ZERO
-      //}
-      rPartialSum(0) := Cat(z2, z0).asUInt
-      rPartialSum(1) := (
-        Cat(
-          //U(s"${shiftAmount}'d0"),
-          //z1(cfg.mainWidth - 1 downto 0),
-          z1,
-          U(s"${shiftAmount}'d0"),
-        ).asUInt.resize(rPartialSum(1).getWidth)
-      )
-    }
-    //is (State.FINAL_ADD_KIND_ZERO) {
-    //  (rDstVec(1), rDstVec(0)) := rPartialSum(1) + rPartialSum(0)
-    //  when (!rNeedToNegateResultSign) {
-    //    rState := State.YIELD_RESULT
-    //  } otherwise {
-    //    rState := State.DO_NEGATE_RESULT
-    //  }
-    //}
-    is (State.FINAL_ADD_KIND_NON_ZERO) {
-      (rDstVec(0), rDstVec(1)) := rPartialSum(1) + rPartialSum(0)
-      when (!rNeedToNegateResultSign) {
-        rState := State.YIELD_RESULT
-      } otherwise {
-        rState := State.DO_NEGATE_RESULT
-      }
-    }
-    is (State.DO_NEGATE_RESULT) {
-      (rDstVec(0), rDstVec(1)) := (
-        (-Cat(rDstVec(0), rDstVec(1)).asSInt).asUInt
-      )
-      rState := State.YIELD_RESULT
-    }
-    is (State.YIELD_RESULT) {
-      rState := State.IDLE
-      //rIsSignedFullProd := False
+        //* srcVec(1)
+      )(myFullProductOutpRangeHi)
+    ),
+    length=fullProductNumPipeStages,
+  )
+  switch (
+    myHistValidMulhu.last
+    ## myHistValidMulh.last
+    ## myHistValidMulhsu.last
+  ) {
+    is (M"1--") {
+      dstVec(0) := myHistMulhu.last
       multiCycleBus.ready := True
     }
+    is (M"01-") {
+      dstVec(0) := myHistMulh.last.asUInt
+      multiCycleBus.ready := True
+    }
+    is (M"001") {
+      dstVec(0) := myHistMulhsu.last
+      multiCycleBus.ready := True
+    }
+    default {
+    }
   }
+
+  //switch (rState) {
+  //  is (State.IDLE_OR_MUL) {
+  //    switch (
+  //      RegNext(multiCycleBus.nextValid, init=False)
+  //      ## RegNext(multiCycleBus.sendData.kind)
+  //    ) {
+  //      is (B"101") {
+  //        rState := State.MULHU
+  //      }
+  //      is (B"110") {
+  //        rState := State.MULH
+  //      }
+  //      is (B"111") {
+  //        rState := State.MULHSU
+  //      }
+  //      default {
+  //      }
+  //    }
+  //  }
+  //}
 }
 case class SnowHouseRiscv32imMul32(
   cpuIo: SnowHouseIo,
 ) extends Area {
   def cfg = cpuIo.cfg
-  val fullProduct = SnowHouseRiscv32imMulFullProduct(cfg=cfg)
+  val myMul = SnowHouseRiscv32imMul(cfg=cfg)
   //val innerMap = cfg.multiCycleOpInfoMap.get(MultiCycleOpGroup.Mul).get
   for (
     ((group, _), busIdx)
     <- cfg.multiCycleOpInfoMap.view.zipWithIndex
   ) {
     if (group == MultiCycleOpGroup.Mul) {
-      cpuIo.multiCycleBusVec(busIdx) <> fullProduct.io.multiCycleBus 
+      cpuIo.multiCycleBusVec(busIdx) <> myMul.io.multiCycleBus 
     }
   }
 }
@@ -3071,7 +3243,7 @@ case class SnowHouseRiscv32imShift32LowLatency(
       //srcVec.setAsReg() //init(srcVec.getZero)
       //multiCycleBus.ready.setAsReg() init(False)
       //multiCycleBus.ready := False
-      val rReady = Reg(Bool(), init=False)
+      //val rReady = Reg(Bool(), init=False)
       //rReady := False
       //multiCycleBus.ready := rReady
       multiCycleBus.ready := False
