@@ -2773,7 +2773,7 @@ case class SnowHouseRiscv32imMulFullProduct(
       DO_ABS_LEFT_INPUT_IF_NEGATIVE,
       DO_FOUR_MUL16X16,
       FIRST_TWO_ADDS,
-      FINAL_ADD_KIND_ZERO,
+      //FINAL_ADD_KIND_ZERO,
       FINAL_ADD_KIND_NON_ZERO,
       DO_NEGATE_RESULT,
       YIELD_RESULT
@@ -2833,28 +2833,42 @@ case class SnowHouseRiscv32imMulFullProduct(
   }
   //dstVec(0) := rDst
   dstVec := rDstVec
-  val rSavedKindIsZero = Reg(Bool(), init=False)
+  //val rSavedKindIsZero = Reg(Bool(), init=False)
+
+  when (
+    rState.asBits(0)
+    && RegNext(rose(multiCycleBus.nextValid), init=False)
+    && RegNext(!multiCycleBus.sendData.kind(1 downto 0).orR)
+  ) {
+    dstVec(0) := (
+      RegNext(
+        multiCycleBus.sendData.srcVec(0)
+        * multiCycleBus.sendData.srcVec(1)
+      )
+    )
+    multiCycleBus.ready := True
+  }
 
   switch (rState) {
     is (State.IDLE) {
       switch (
-        rose(RegNext(multiCycleBus.nextValid, init=False))
-        ## multiCycleBus.sendData.kind(1 downto 0)
+        RegNext(rose(multiCycleBus.nextValid), init=False)
+        ## RegNext(multiCycleBus.sendData.kind(1 downto 0))
       ) {
         is (M"100") {
-          rSavedKindIsZero := True
-          rState := State.DO_FOUR_MUL16X16
+          //rSavedKindIsZero := True
+          //rState := State.DO_FOUR_MUL16X16
         }
         is (M"101") {
-          rSavedKindIsZero := False
+          //rSavedKindIsZero := False
           rState := State.DO_FOUR_MUL16X16
         }
         is (B"110") {
-          rSavedKindIsZero := False
+          //rSavedKindIsZero := False
           rState := State.DO_ABS_BOTH_INPUTS_IF_NEGATIVE
         }
         is (B"111") {
-          rSavedKindIsZero := False
+          //rSavedKindIsZero := False
           rState := State.DO_ABS_LEFT_INPUT_IF_NEGATIVE
         }
         default {
@@ -2906,11 +2920,11 @@ case class SnowHouseRiscv32imMulFullProduct(
       rState := State.FIRST_TWO_ADDS
     }
     is (State.FIRST_TWO_ADDS) {
-      when (rSavedKindIsZero) {
-        rState := State.FINAL_ADD_KIND_ZERO
-      } otherwise {
+      //when (rSavedKindIsZero) {
+      //  rState := State.FINAL_ADD_KIND_ZERO
+      //} otherwise {
         rState := State.FINAL_ADD_KIND_NON_ZERO
-      }
+      //}
       rPartialSum(0) := Cat(z2, z0).asUInt
       rPartialSum(1) := (
         Cat(
@@ -2921,14 +2935,14 @@ case class SnowHouseRiscv32imMulFullProduct(
         ).asUInt.resize(rPartialSum(1).getWidth)
       )
     }
-    is (State.FINAL_ADD_KIND_ZERO) {
-      (rDstVec(1), rDstVec(0)) := rPartialSum(1) + rPartialSum(0)
-      when (!rNeedToNegateResultSign) {
-        rState := State.YIELD_RESULT
-      } otherwise {
-        rState := State.DO_NEGATE_RESULT
-      }
-    }
+    //is (State.FINAL_ADD_KIND_ZERO) {
+    //  (rDstVec(1), rDstVec(0)) := rPartialSum(1) + rPartialSum(0)
+    //  when (!rNeedToNegateResultSign) {
+    //    rState := State.YIELD_RESULT
+    //  } otherwise {
+    //    rState := State.DO_NEGATE_RESULT
+    //  }
+    //}
     is (State.FINAL_ADD_KIND_NON_ZERO) {
       (rDstVec(0), rDstVec(1)) := rPartialSum(1) + rPartialSum(0)
       when (!rNeedToNegateResultSign) {
