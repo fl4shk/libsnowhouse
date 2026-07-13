@@ -987,28 +987,9 @@ object SnowHouseRiscv32imPipeStageInstrDecode {
     )
     psId.myTempOpIsDualWidth := False
 
-    def setOp(
-      someOp: Any,
-      encInstr: Any,
-      haveShiftImm5: Boolean=false,
+    def setImm(
+      encInstr: Any
     ): Area = new Area {
-      //--------
-      val tempHaveJal = (
-        someOp == JalRdImm
-      )
-      val tempHaveJalr = (
-        someOp == JalrRdRs1Imm
-      )
-      val tempHaveBrCond = (
-        encInstr == encInstrB.last
-      )
-
-      //val tempHavePredictableJmpBr = (
-      //  tempHaveJal
-      //  //|| tempHaveJalr
-      //  || tempHaveBrCond
-      //)
-      //--------
       if (
         encInstr == encInstrR.last
       ) {
@@ -1057,6 +1038,30 @@ object SnowHouseRiscv32imPipeStageInstrDecode {
           false
         )
       }
+    }
+
+    def setOp(
+      someOp: Any,
+      encInstr: Any,
+      haveShiftImm5: Boolean=false,
+    ): Area = new Area {
+      //--------
+      val tempHaveJal = (
+        someOp == JalRdImm
+      )
+      val tempHaveJalr = (
+        someOp == JalrRdRs1Imm
+      )
+      val tempHaveBrCond = (
+        encInstr == encInstrB.last
+      )
+
+      //val tempHavePredictableJmpBr = (
+      //  tempHaveJal
+      //  //|| tempHaveJalr
+      //  || tempHaveBrCond
+      //)
+      //--------
       val mySplitOp = upPayload.splitOp
 
       val tempBtbElemWithBrKindArea = new Area {
@@ -1508,6 +1513,7 @@ object SnowHouseRiscv32imPipeStageInstrDecode {
         }
       }
       is (AddiRdRs1Imm.op) {
+        setImm(encInstr=encInstrI.last)
         switch (encInstrI.last.funct3) {
           is (AddiRdRs1Imm.f3) {
             setOp(AddiRdRs1Imm, encInstrI.last)
@@ -1546,6 +1552,7 @@ object SnowHouseRiscv32imPipeStageInstrDecode {
         }
       }
       is (LbRdRs1Imm.op) {
+        setImm(encInstr=encInstrI.last)
         switch (encInstrI.last.funct3) {
           is (LbRdRs1Imm.f3) {
             setOp(LbRdRs1Imm, encInstrI.last)
@@ -1568,9 +1575,11 @@ object SnowHouseRiscv32imPipeStageInstrDecode {
         upPayload.gprIdxVec(1) := encInstrR.last.rs2
       }
       is (JalrRdRs1Imm.op) {
+        setImm(encInstr=encInstrI.last)
         setOp(JalrRdRs1Imm, encInstrI.last)
       }
       is (SbRs2Rs1Imm.op) {
+        setImm(encInstr=encInstrS.last)
         switch (encInstrS.last.funct3) {
           is (SbRs2Rs1Imm.f3) {
             setOp(SbRs2Rs1Imm, encInstrS.last)
@@ -1587,6 +1596,7 @@ object SnowHouseRiscv32imPipeStageInstrDecode {
         upPayload.gprIdxVec(1) := encInstrR.last.rs2
       }
       is (BeqRdRs1Imm.op) {
+        setImm(encInstr=encInstrB.last)
         switch (encInstrB.last.funct3) {
           is (BeqRdRs1Imm.f3) {
             setOp(BeqRdRs1Imm, encInstrB.last)
@@ -1610,12 +1620,15 @@ object SnowHouseRiscv32imPipeStageInstrDecode {
         upPayload.gprIdxVec.last := 0x0
       }
       is (JalRdImm.op) {
+        setImm(encInstr=encInstrJ.last)
         setOp(JalRdImm, encInstrJ.last)
       }
       is (LuiRaImm31Downto12.op) {
+        setImm(encInstr=encInstrU.last)
         setOp(LuiRaImm31Downto12, encInstrU.last)
       }
       is (AuipcRaImm31Downto12.op) {
+        setImm(encInstr=encInstrU.last)
         setOp(AuipcRaImm31Downto12, encInstrU.last)
       }
     }
