@@ -988,7 +988,8 @@ object SnowHouseRiscv32imPipeStageInstrDecode {
     psId.myTempOpIsDualWidth := False
 
     def setImm(
-      encInstr: Any
+      encInstr: Any,
+      haveShiftImm5: Boolean=false,
     ): Area = new Area {
       if (
         encInstr == encInstrR.last
@@ -1530,10 +1531,12 @@ object SnowHouseRiscv32imPipeStageInstrDecode {
 
           // rd = rs1 << imm[0:4]
           is (SlliRdRs1Imm.f3) {
+            setImm(encInstr=encInstrI.last, haveShiftImm5=true)
             setOp(SlliRdRs1Imm, encInstrI.last, true)
           }
 
           is (SrliRdRs1Imm.f3) {
+            setImm(encInstr=encInstrI.last, haveShiftImm5=true)
             when (!encInstrI.last.myImm11dt5().orR) {
               // rd = rs1 >> imm[0:4]
               setOp(SrliRdRs1Imm, encInstrI.last, true)
