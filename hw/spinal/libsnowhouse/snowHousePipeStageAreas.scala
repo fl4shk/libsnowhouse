@@ -1071,6 +1071,7 @@ case class SnowHousePipeStageInstrFetch(
       wordCount=depth,
       pipeName="pipeStageIf",
       setWordFunc=mySetWordFunc,
+      optWrHistLength=2,
       initBigInt=(
         //Some(initBigInt)
         Some({
