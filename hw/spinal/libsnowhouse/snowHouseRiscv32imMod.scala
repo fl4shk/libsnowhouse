@@ -2979,8 +2979,7 @@ case class SnowHouseRiscv32imMul32(
     }
   }
 }
-case class SnowHouseRiscv32imShift32LowLatency
-(
+case class SnowHouseRiscv32imShift32LowLatency(
   cpuIo: SnowHouseIo,
 ) extends Area {
   def cfg = cpuIo.cfg

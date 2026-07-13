@@ -2089,8 +2089,8 @@ case class SnowHousePipeStageInstrDecode(
   extends SpinalEnum(defaultEncoding=binaryOneHot) {
     val
       IDLE,
-      POST_LD_0//,
-      //POST_LD_1
+      POST_LD_0,
+      POST_LD_1
       = newElement();
   }
 
@@ -2306,12 +2306,12 @@ case class SnowHousePipeStageInstrDecode(
           }
         }
       }
-      //is (MyLcvDbusStallState.POST_LD_0) {
-      //  doSendBubbleMainMost()
-      //  when (down.isFiring) {
-      //    rStallState := MyLcvDbusStallState.POST_LD_1
-      //  }
-      //}
+      is (MyLcvDbusStallState.POST_LD_0) {
+        doSendBubbleMainMost()
+        when (down.isFiring) {
+          rStallState := MyLcvDbusStallState.POST_LD_1
+        }
+      }
       //is (MyLcvDbusStallState.POST_LD_1) {
       //  //when (up.isFiring) {
       //  //  rStallState := MyLcvDbusStallState.IDLE
