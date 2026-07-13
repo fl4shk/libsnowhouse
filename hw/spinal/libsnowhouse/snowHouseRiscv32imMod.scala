@@ -2844,7 +2844,7 @@ case class SnowHouseRiscv32imMulFullProduct(
       RegNext(
         multiCycleBus.sendData.srcVec(0)
         * multiCycleBus.sendData.srcVec(1)
-      )
+      ).resize(dstVec(0).getWidth)
     )
     multiCycleBus.ready := True
   }
