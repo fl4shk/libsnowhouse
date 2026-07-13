@@ -3090,7 +3090,9 @@ case class SnowHouseRiscv32imShift32LowLatency(
                 rReady := True
                 val left = srcVec(0)
                 val right = srcVec(1)(log2Up(cfg.mainWidth) - 1 downto 0)
-                dstVec(0) := RegNext(left << right)
+                dstVec(0) := RegNext(
+                  (left << right)(dstVec(0).bitsRange)
+                )
               }
             }
             case MultiCycleOpKind.Lsr => {
