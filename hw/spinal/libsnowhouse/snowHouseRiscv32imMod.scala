@@ -1044,7 +1044,6 @@ object SnowHouseRiscv32imPipeStageInstrDecode {
     def setOp(
       someOp: Any,
       encInstr: Any,
-      haveShiftImm5: Boolean=false,
     ): Area = new Area {
       //--------
       val tempHaveJal = (
