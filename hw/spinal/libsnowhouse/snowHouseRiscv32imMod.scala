@@ -1531,17 +1531,17 @@ object SnowHouseRiscv32imPipeStageInstrDecode {
           // rd = rs1 << imm[0:4]
           is (SlliRdRs1Imm.f3) {
             setImm(encInstr=encInstrI.last, haveShiftImm5=true)
-            setOp(SlliRdRs1Imm, encInstrI.last, true)
+            setOp(SlliRdRs1Imm, encInstrI.last)
           }
 
           is (SrliRdRs1Imm.f3) {
             setImm(encInstr=encInstrI.last, haveShiftImm5=true)
             when (!encInstrI.last.myImm11dt5().orR) {
               // rd = rs1 >> imm[0:4]
-              setOp(SrliRdRs1Imm, encInstrI.last, true)
+              setOp(SrliRdRs1Imm, encInstrI.last)
             } otherwise {
               // rd = rs1 >> imm[0:4] msb-extends
-              setOp(SraiRdRs1Imm, encInstrI.last, true)
+              setOp(SraiRdRs1Imm, encInstrI.last)
             }
           }
 
