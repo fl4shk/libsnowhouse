@@ -3068,7 +3068,7 @@ case class SnowHouseRiscv32imShift32LowLatency(
       && multiCycleBus.sendData.kind != null
     ) {
       dstVec.setAsReg() //init(dstVec.getZero)
-      srcVec.setAsReg() //init(srcVec.getZero)
+      //srcVec.setAsReg() //init(srcVec.getZero)
       multiCycleBus.ready.setAsReg() init(False)
       multiCycleBus.ready := False
       switch (
