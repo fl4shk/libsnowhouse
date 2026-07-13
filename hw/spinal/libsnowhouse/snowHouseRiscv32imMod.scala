@@ -3060,17 +3060,20 @@ case class SnowHouseRiscv32imShift32LowLatency(
     <- cfg.multiCycleOpInfoMap.view.zipWithIndex
   ) {
     val multiCycleBus = cpuIo.multiCycleBusVec(busIdx)
-    multiCycleBus.ready := False
+    //multiCycleBus.ready := False
     def dstVec = multiCycleBus.recvData.dstVec
     def srcVec = multiCycleBus.sendData.srcVec
     if (
       group == MultiCycleOpKind.Lsl.group
       && multiCycleBus.sendData.kind != null
     ) {
-      dstVec.setAsReg() //init(dstVec.getZero)
+      //dstVec.setAsReg() //init(dstVec.getZero)
       //srcVec.setAsReg() //init(srcVec.getZero)
-      multiCycleBus.ready.setAsReg() init(False)
-      multiCycleBus.ready := False
+      //multiCycleBus.ready.setAsReg() init(False)
+      //multiCycleBus.ready := False
+      val rReady = Reg(Bool(), init=False)
+      rReady := False
+      multiCycleBus.ready := rReady
       switch (
         multiCycleBus.nextValid
         ## multiCycleBus.sendData.kind
@@ -3084,153 +3087,27 @@ case class SnowHouseRiscv32imShift32LowLatency(
           opInfo.multiCycleOp.get match {
             case MultiCycleOpKind.Lsl => {
               is (Cat(True, U(s"$myKindWidth'd$kindIdx"))) {
-                multiCycleBus.ready := True
+                rReady := True
                 val left = srcVec(0)
                 val right = srcVec(1)(log2Up(cfg.mainWidth) - 1 downto 0)
-                dstVec(0) := left << right
+                dstVec(0) := RegNext(left << right)
               }
-              //is (kindIdx) {
-              //  def mainWidth = cfg.mainWidth
-
-              //  val width: Int=cfg.mainWidth
-              //  //val binop = InstrResult(cfg=cfg)(width=width)
-              //  val left = (
-              //    srcVec(0)
-              //  )
-              //  val right = (
-              //    srcVec(1)(log2Up(cfg.mainWidth) - 1 downto 0).resize(
-              //      cfg.mainWidth
-              //    )
-              //  )
-              //  val tempLeft = Cat(left).asUInt(width - 1 downto 0)
-              //  val tempRight = Cat(right).asUInt(width - 1 downto 0)
-              //  dstVec(0) := (
-              //    RegNext(
-              //      next=dstVec(0),
-              //      init=dstVec(0).getZero,
-              //    )
-              //  )
-              //  //dstVec(0) := binop.main
-              //  val rBusValidVec = (
-              //    Vec.fill(2)(
-              //      RegNext(
-              //        next=multiCycleBus.nextValid,
-              //        init=False
-              //      )
-              //    )
-              //  )
-              //  when (multiCycleBus.nextValid) {
-              //    lslDel1.io.inpToShift := tempLeft
-              //    lslDel1.io.inpAmount := tempRight
-              //  }
-              //  when (rBusValidVec(0)) {
-              //    //dstVec(0) := binop.main
-              //    dstVec(0) := lslDel1.io.outpResult
-              //  }
-              //  multiCycleBus.ready := (
-              //    rBusValidVec(1)
-              //  )
-              //}
             }
             case MultiCycleOpKind.Lsr => {
               is (Cat(True, U(s"$myKindWidth'd$kindIdx"))) {
-                multiCycleBus.ready := True
+                rReady := True
                 val left = srcVec(0)
                 val right = srcVec(1)(log2Up(cfg.mainWidth) - 1 downto 0)
-                dstVec(0) := left >> right
+                dstVec(0) := RegNext(left >> right)
               }
-              //is (kindIdx) {
-              //  def mainWidth = cfg.mainWidth
-
-              //  val width: Int=cfg.mainWidth
-              //  val binop = InstrResult(cfg=cfg)(width=width)
-              //  val left = (
-              //    srcVec(0)
-              //  )
-              //  val right = (
-              //    srcVec(1)(log2Up(cfg.mainWidth) - 1 downto 0).resize(
-              //      cfg.mainWidth
-              //    )
-              //  )
-              //  val tempLeft = Cat(left).asUInt(width - 1 downto 0)
-              //  val tempRight = Cat(right).asUInt(width - 1 downto 0)
-              //  dstVec(0) := (
-              //    RegNext(
-              //      next=dstVec(0),
-              //      init=dstVec(0).getZero,
-              //    )
-              //  )
-              //  //dstVec(0) := binop.main
-              //  val rBusValidVec = (
-              //    Vec.fill(2)(
-              //      RegNext(
-              //        next=multiCycleBus.nextValid,
-              //        init=False
-              //      )
-              //    )
-              //  )
-              //  when (multiCycleBus.nextValid) {
-              //    lsrDel1.io.inpToShift := tempLeft
-              //    lsrDel1.io.inpAmount := tempRight
-              //  }
-              //  when (rBusValidVec(0)) {
-              //    //dstVec(0) := binop.main
-              //    dstVec(0) := lsrDel1.io.outpResult
-              //  }
-              //  multiCycleBus.ready := (
-              //    rBusValidVec(1)
-              //  )
-              //}
             }
             case MultiCycleOpKind.Asr => {
               is (Cat(True, U(s"$myKindWidth'd$kindIdx"))) {
-                multiCycleBus.ready := True
+                rReady := True
                 val left = srcVec(0)
                 val right = srcVec(1)(log2Up(cfg.mainWidth) - 1 downto 0)
-                dstVec(0) := (left.asSInt >> right).asUInt
+                dstVec(0) := RegNext((left.asSInt >> right).asUInt)
               }
-              //is (kindIdx) {
-              //  def mainWidth = cfg.mainWidth
-
-              //  val width: Int=cfg.mainWidth
-              //  val binop = InstrResult(cfg=cfg)(width=width)
-              //  val left = (
-              //    srcVec(0)
-              //  )
-              //  val right = (
-              //    srcVec(1)(log2Up(cfg.mainWidth) - 1 downto 0).resize(
-              //      cfg.mainWidth
-              //    )
-              //  )
-              //  val tempLeft = Cat(left).asUInt(width - 1 downto 0)
-              //  val tempRight = Cat(right).asUInt(width - 1 downto 0)
-              //  dstVec(0) := (
-              //    RegNext(
-              //      next=dstVec(0),
-              //      init=dstVec(0).getZero,
-              //    )
-              //  )
-              //  //dstVec(0) := binop.main
-              //  val rBusValidVec = (
-              //    Vec.fill(2)(
-              //      RegNext(
-              //        next=multiCycleBus.nextValid,
-              //        init=False
-              //      )
-              //    )
-              //  )
-              //  when (multiCycleBus.nextValid) {
-              //    asrDel1.io.inpToShift := tempLeft
-              //    asrDel1.io.inpAmount := tempRight
-              //  }
-              //  when (rBusValidVec(0)) {
-              //    //dstVec(0) := binop.main
-              //    dstVec(0) := asrDel1.io.outpResult
-              //  }
-              //  multiCycleBus.ready := (
-              //    rBusValidVec(1)
-              //  )
-              //}
             }
             //case MultiCycleOpKind.Sltu => {
             //  val multiCycleBus = cpuIo.multiCycleBusVec(busIdx)
