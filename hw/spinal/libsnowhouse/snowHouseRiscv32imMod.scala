@@ -3072,11 +3072,12 @@ case class SnowHouseRiscv32imShift32LowLatency(
       //multiCycleBus.ready.setAsReg() init(False)
       //multiCycleBus.ready := False
       val rReady = Reg(Bool(), init=False)
-      rReady := False
-      multiCycleBus.ready := rReady
+      //rReady := False
+      //multiCycleBus.ready := rReady
+      multiCycleBus.ready := False
       switch (
-        multiCycleBus.nextValid
-        ## multiCycleBus.sendData.kind
+        RegNext(multiCycleBus.nextValid, init=False)
+        ## RegNext(multiCycleBus.sendData.kind)
       ) {
         for (
           //(multiCycleBus, busIdx) <- cpuIo.multiCycleBusVec.view.zipWithIndex
@@ -3087,7 +3088,8 @@ case class SnowHouseRiscv32imShift32LowLatency(
           opInfo.multiCycleOp.get match {
             case MultiCycleOpKind.Lsl => {
               is (Cat(True, U(s"$myKindWidth'd$kindIdx"))) {
-                rReady := True
+                //rReady := True
+                multiCycleBus.ready := True
                 val left = srcVec(0)
                 val right = srcVec(1)(log2Up(cfg.mainWidth) - 1 downto 0)
                 dstVec(0) := RegNext(
@@ -3097,7 +3099,8 @@ case class SnowHouseRiscv32imShift32LowLatency(
             }
             case MultiCycleOpKind.Lsr => {
               is (Cat(True, U(s"$myKindWidth'd$kindIdx"))) {
-                rReady := True
+                //rReady := True
+                multiCycleBus.ready := True
                 val left = srcVec(0)
                 val right = srcVec(1)(log2Up(cfg.mainWidth) - 1 downto 0)
                 dstVec(0) := RegNext(left >> right)
@@ -3105,7 +3108,8 @@ case class SnowHouseRiscv32imShift32LowLatency(
             }
             case MultiCycleOpKind.Asr => {
               is (Cat(True, U(s"$myKindWidth'd$kindIdx"))) {
-                rReady := True
+                //rReady := True
+                multiCycleBus.ready := True
                 val left = srcVec(0)
                 val right = srcVec(1)(log2Up(cfg.mainWidth) - 1 downto 0)
                 dstVec(0) := RegNext((left.asSInt >> right).asUInt)
