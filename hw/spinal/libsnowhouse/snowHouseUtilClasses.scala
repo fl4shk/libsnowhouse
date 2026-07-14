@@ -1700,8 +1700,8 @@ case class SnowHousePipePayloadNonExt(
     1
     + (
       if (cfg.useLcvDataBus) (
-        //0
-        1
+        0
+        //1
         // up to two following instructions,
         // per the overall pipeline structure of
         //   EX -> MEM -> WB -> LastBack
