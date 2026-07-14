@@ -7207,16 +7207,105 @@ case class SnowHousePipeStageExecute(
   //    current := False
   //  })
   //}
-  for (ydx <- 0 until outp.myExt.size) {
-    outp.myExt(ydx).rdMemWord := (
-      inp.myExt(ydx).rdMemWord
-    )
-    //for (zdx <- 0 until outp.myExt(ydx).fwdIdx.size) {
-    //  outp.myExt(ydx).fwdIdx(zdx) := (
-    //    inp.myExt(ydx).fwdIdx(zdx)
-    //  )
-    //}
+  if (!cfg.optForFmax) {
+    for (ydx <- 0 until outp.myExt.size) {
+      outp.myExt(ydx).rdMemWord := (
+        inp.myExt(ydx).rdMemWord
+      )
+      //for (zdx <- 0 until outp.myExt(ydx).fwdIdx.size) {
+      //  outp.myExt(ydx).fwdIdx(zdx) := (
+      //    inp.myExt(ydx).fwdIdx(zdx)
+      //  )
+      //}
+    }
   }
+
+  case class MyFwdInfo(
+  ) extends Bundle {
+    //val valid = Bool()
+    val data = UInt(cfg.mainWidth bits)
+    val addr = UInt(log2Up(cfg.regFileCfg.wordCountArr(0)) bits)
+  }
+  val myForFmaxFwdArea = (
+    cfg.optForFmax
+  ) generate (new Area {
+    val myHistFwdInfo = {
+      val temp = MyFwdInfo()
+      //temp.valid := ram.io.wrEn
+      temp.data := outp.myExt(0).modMemWord //ram.io.wrData
+      temp.addr := outp.gprIdxVec.last
+      History(
+        that=temp,
+        length=(cfg.optForFmaxPostNumPostExPreWbPipeStages.get + 2),
+        when=cLink.up.isFiring,
+        init=temp.getZero
+      )
+    }
+    //val myHistForFwdData = (
+    //  History(
+    //    that=(
+    //      ram.io.wrData
+    //    ),
+    //    length=(
+    //      cfg.optWrHistLength + 2,
+    //    ),
+    //    init=False
+    //  )
+    //)
+    val myTempHistFwdValid = Vec.fill(
+      cfg.regFileCfg.modRdPortCnt
+    )(
+      UInt(myHistFwdInfo.size bits)
+    )
+
+    for (jdx <- 0 until myTempHistFwdValid.size) {
+      for (idx <- 0 until myTempHistFwdValid(jdx).getWidth) {
+        myTempHistFwdValid(jdx)(idx) := (
+          //myHistFwdInfo(idx).valid
+          //&& 
+          (
+            LcvFastCmpEq(
+              left=outp.gprIdxVec(jdx),
+              right=myHistFwdInfo(idx).addr,
+              cmpEqIo=null,
+            )._1
+          )
+        )
+      }
+// >>> for idx in range(size):
+// ...     print(idx, (("0" * (size - idx - 1))) + "1" + ("-" * idx))
+// ...     
+// 0 0001
+// 1 001-
+// 2 01--
+// 3 1---
+      switch (myTempHistFwdValid(jdx)) {
+        for (idx <- 0 until myTempHistFwdValid(jdx).getWidth) {
+          is (MaskedLiteral(
+            (("0" * (myTempHistFwdValid(jdx).getWidth - idx - 1)))
+            + "1"
+            + ("-" * idx)
+          )) {
+            //node(mainPayload).fwdValid := True
+            //node(mainPayload).rdMemWord := (
+            //  myHistFwdInfo(idx).data
+            //)
+            outp.myExt(0).rdMemWord(jdx) := myHistFwdInfo(idx).data
+          }
+        }
+        default {
+          //node(mainPayload).fwdValid := False
+          //node(mainPayload).rdMemWord := (
+          //  node(mainPayload).rdMemWord.getZero
+          //)
+          outp.myExt(0).rdMemWord(jdx) := (
+            inp.myExt(0).rdMemWord(jdx)
+          )
+        }
+      }
+    }
+  })
+
   //val savedPsMemStallHost = (
   //  LcvStallHostSaved(
   //    stallHost=psMemStallHost,
