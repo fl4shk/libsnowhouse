@@ -1731,6 +1731,7 @@ case class SnowHousePipeStageInstrDecode(
   )
   val myTempOpIsMemAccessLoad = Bool()
   val myTempOpIsMemAccessStore = Bool()
+  val myTempOpMayNeedHazardCheck = Bool()
   val myTempOpIsDualWidth = Bool()
   val myTempOpIsJmpBr = Bool()
 
@@ -2119,8 +2120,9 @@ case class SnowHousePipeStageInstrDecode(
       upPayload(1).myDoHaveHazardAddrCheckVec.size
       //1
       //2
-      // up to two following instructions,
-      // per the overall pipeline structure of EX -> MEM -> WB -> LastBack
+      // OLD notes:
+      //// up to two following instructions,
+      //// per the overall pipeline structure of EX -> MEM -> WB -> LastBack
     )
     //val myHistTempBtbElem = (
     //  History[BranchTgtBufElem](
@@ -2141,7 +2143,9 @@ case class SnowHousePipeStageInstrDecode(
             myTempOpIsMemAccessLoad
             || myTempOpIsMemAccessStore
           ) else (
-            myTempOpIsMemAccessLoad
+            //myTempOpIsMemAccessLoad
+            //myTempOpHasHazard
+            myTempOpMayNeedHazardCheck
           )
           //--------
           // FL4SHK NOTE:
@@ -2300,7 +2304,10 @@ case class SnowHousePipeStageInstrDecode(
               //  || myTempOpIsJmpBr
               //)
               //&& 
-              myHistCondAnyBubble(idx + 1)
+              (
+                myHistCondAnyBubble(idx + 1)
+                && upPayload(1).myDoHaveHazardAddrCheckVec(idx)
+              )
               && !shouldClearExtraDecodeInfo
             ) {
               doSendBubbleMainMost()

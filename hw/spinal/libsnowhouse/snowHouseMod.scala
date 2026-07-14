@@ -1373,6 +1373,9 @@ case class SnowHouseIo(
     //cfg.opInfoMap.find(_._2.select == OpSelect.MultiCycle) != None
     cfg.havePsExStall
   )
+  val haveMultiCycleDualBusVec = (
+    cfg.havePsWbMultiCycleStall
+  )
   val multiCycleBusVec = (
     haveMultiCycleBusVec
   ) generate (
@@ -1445,6 +1448,54 @@ case class SnowHouseIo(
       master(multiCycleBusVec(idx))
     }
   }
+  val multiCycleH2dBusVec = (
+    haveMultiCycleDualBusVec
+  ) generate (
+    Vec[Stream[
+      MultiCycleHostPayload
+    ]]{
+      val tempArr = ArrayBuffer[
+        Stream[
+          MultiCycleHostPayload
+        ]
+      ]()
+      for (
+        (group, _) <- cfg.multiCycleOpInfoMap.view
+      ) {
+        tempArr += Stream(
+          MultiCycleHostPayload(
+            cfg=cfg,
+            group=group,
+          )
+        )
+      }
+      tempArr
+    }
+  )
+  val multiCycleD2hBusVec = (
+    haveMultiCycleDualBusVec
+  ) generate (
+    Vec[Stream[
+      MultiCycleDevPayload
+    ]]{
+      val tempArr = ArrayBuffer[
+        Stream[
+          MultiCycleDevPayload
+        ]
+      ]()
+      for (
+        (group, _) <- cfg.multiCycleOpInfoMap.view
+      ) {
+        tempArr += Stream(
+          MultiCycleDevPayload(
+            cfg=cfg,
+            group=group,
+          )
+        )
+      }
+      tempArr
+    }
+  )
 }
 private[libsnowhouse] case class SnowHouseNotForFmax
 //[
