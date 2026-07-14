@@ -1928,6 +1928,13 @@ private[libsnowhouse] case class SnowHouseNotForFmax
     //)
     //psMemToEarlierStallRequest=psMemToEarlierStallRequest,
     psWbToEarlierStallRequest=psWbToEarlierStallRequest,
+    myLcvDbusH2dStm=(
+      if (cfg.useLcvDataBus) (
+        io.lcvDbus.h2dBus
+      ) else (
+        null.asInstanceOf[Stream[LcvBusH2dPayload]]
+      )
+    ),
   )
   //--------
   //val pipeStageWb = (
@@ -2170,11 +2177,15 @@ private[libsnowhouse] case class SnowHouseForFmax(
     cfg=cfg,
     doDecodeFunc=cfg.doInstrDecodeFunc
   )
+  val psPreEx = SnowHouseForFmaxPipeStagePreEx(cfg=cfg)
+  val psEx = SnowHouseForFmaxPipeStageExecute(cfg=cfg)
   //--------
 
   psId.io.up <-/< psIf.io.down // extra pipeline stage for fmax
   io.lcvIbus << psIf.io.lcvIbus
   psIf.io.psExSetPc := psExSetPc
+
+  io.lcvDbus.h2dBus << psEx.io.myLcvDbusH2dStm
 
   //val linkArr = PipeHelper.mkLinkArr()
 

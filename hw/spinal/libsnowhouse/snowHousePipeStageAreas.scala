@@ -2920,9 +2920,9 @@ case class SnowHousePipeStageExecuteSetOutpModMemWordIo(
   val outpDecodeExt = setAsOutp(
     SnowHouseDecodeExt(cfg=cfg)
   )
-  val multiCycleOpInfoIdx = setAsOutp(
-    UInt(log2Up(cfg.multiCycleOpInfoMap.size) bits)
-  )
+  //val multiCycleOpInfoIdx = setAsOutp(
+  //  UInt(log2Up(cfg.multiCycleOpInfoMap.size) bits)
+  //)
   //def opIs = decodeExt.opIs
   def opIsMemAccess = outpDecodeExt.opIsMemAccess
   //def opIsCpyNonJmpAlu = decodeExt.opIsCpyNonJmpAlu
@@ -3933,7 +3933,7 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
   //  )
   //)
 
-  io.multiCycleOpInfoIdx := 0x0
+  //io.multiCycleOpInfoIdx := 0x0
   //val lowerMyFanoutShouldIgnoreInstr = Bool()
   //when (
   //  //io.shouldIgnoreInstr
@@ -5998,6 +5998,9 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
           //io.aluOp := LcvAluDel1InpOpEnum.ZERO
           //nextIndexReg := 0x0
         }
+        if (!cfg.havePsExStall) {
+          return
+        }
         for (
           ((group, innerMap), groupIdx)
           <- cfg.multiCycleOpInfoMap.view.zipWithIndex
@@ -6006,9 +6009,9 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
             ((_, innerOpInfo), kindIdx) <- innerMap.view.zipWithIndex
           ) {
             if (opInfo == innerOpInfo) {
-              if (!isSingleWriteToIds) {
-                io.multiCycleOpInfoIdx := groupIdx
-              }
+              //if (!isSingleWriteToIds) {
+              //  io.multiCycleOpInfoIdx := groupIdx
+              //}
               for ((dst, dstIdx) <- opInfo.dstArr.view.zipWithIndex) {
                 val tempDst = (
                   //modIo.multiCycleBusVec(idx).recvData.dstVec(dstIdx)
@@ -7015,6 +7018,7 @@ case class SnowHousePipeStageExecute(
   ],
   myModMemWord: SInt,
   psWbToEarlierStallRequest: Bool,
+  myLcvDbusH2dStm: Stream[LcvBusH2dPayload],
 ) extends Area {
   def myDbusIo = args.myDbusIo
   def myDbus = myDbusIo.dbus
@@ -7060,6 +7064,10 @@ case class SnowHousePipeStageExecute(
       args.link
     )
   )
+  if (cfg.optForFmax) {
+    inp := cLink.up(args.prevPayload)
+    cLink.up(args.currPayload) := outp
+  }
   val tempModFrontPayload = (
     if (!cfg.optForFmax) (
       doModInMid0FrontParams.tempModFrontPayload//Vec(ydxr
@@ -7098,16 +7106,18 @@ case class SnowHousePipeStageExecute(
   val psExStallHostArr = ArrayBuffer[LcvStallHost[
     MultiCycleHostPayload, MultiCycleDevPayload
   ]]()
-  for (
-    ((_, opInfo), idx) <- cfg.multiCycleOpInfoMap.view.zipWithIndex
-  ) {
-    psExStallHostArr += (
-      cfg.mkLcvStallHost[MultiCycleHostPayload, MultiCycleDevPayload](
-        stallIo=(
-          Some(io.multiCycleBusVec(idx))
-        ),
+  if (!cfg.optForFmax) {
+    for (
+      ((_, opInfo), idx) <- cfg.multiCycleOpInfoMap.view.zipWithIndex
+    ) {
+      psExStallHostArr += (
+        cfg.mkLcvStallHost[MultiCycleHostPayload, MultiCycleDevPayload](
+          stallIo=(
+            Some(io.multiCycleBusVec(idx))
+          ),
+        )
       )
-    )
+    }
   }
 
   val myTempDownIsReadyMost = (
@@ -7251,14 +7261,11 @@ case class SnowHousePipeStageExecute(
     ((group, innerMap), groupIdx)
     <- cfg.multiCycleOpInfoMap.view.zipWithIndex
   ) {
-    //for (
-    //  ((_, opInfo), idx)
-    //  <- innerMap.view.zipWithIndex
-    //) {
-      for (
-        //(dst, dstIdx) <- opInfo.dstArr.view.zipWithIndex
-        dstIdx <- 0 until cfg.maxMultiCycleDstArrSizeMap.get(group).get
-      ) {
+    for (
+      //(dst, dstIdx) <- opInfo.dstArr.view.zipWithIndex
+      dstIdx <- 0 until cfg.maxMultiCycleDstArrSizeMap.get(group).get
+    ) {
+      if (cfg.havePsExStall) {
         val tempDst = (
           //modIo.multiCycleBusVec(idx).recvData.dstVec(dstIdx)
           setOutpModMemWord.io.multiCycleBusRecvDataVec(
@@ -7273,7 +7280,9 @@ case class SnowHousePipeStageExecute(
           ).recvData.dstVec(dstIdx)
         )
       }
-    //}
+      if (cfg.havePsWbMultiCycleStall) {
+      }
+    }
   }
   val doCheckHazard = (
     Vec.fill(
@@ -7695,7 +7704,10 @@ case class SnowHousePipeStageExecute(
   outp.outpDecodeExt := setOutpModMemWord.io.outpDecodeExt
   outp.psExSetPc := outp.psExSetPc.getZero
   //outp.psExSetPc := psExSetPc
-  if (io.haveMultiCycleBusVec) {
+  if (
+    //io.haveMultiCycleBusVec
+    cfg.havePsExStall
+  ) {
     for (
       (multiCycleBus, busIdx) <- io.multiCycleBusVec.view.zipWithIndex
     ) {
@@ -7733,62 +7745,6 @@ case class SnowHousePipeStageExecute(
   val alu = LcvAluDel1(
     wordWidth=cfg.mainWidth
   )
-  //alu.io.inp_a := setOutpModMemWord.io.aluInpA
-  //alu.io.inp_b := setOutpModMemWord.io.aluInpB
-  //alu.io.inp_op := setOutpModMemWord.io.aluOp
-  //alu.io.inp_a := (
-  //  RegNext(
-  //    next=alu.io.inp_a,
-  //    init=alu.io.inp_a.getZero,
-  //  )
-  //)
-  //alu.io.inp_b := (
-  //  RegNext(
-  //    next=alu.io.inp_b,
-  //    init=alu.io.inp_b.getZero,
-  //  )
-  //)
-  //alu.io.inp_op := (
-  //  RegNext(
-  //    next=alu.io.inp_op,
-  //    init=(
-  //      LcvAluDel1InpOpEnum.ZERO_UINT
-  //      //alu.io.inp_op.getZero
-  //    ),
-  //  )
-  //)
-  //alu.io.inp_b_sel := (
-  //  RegNext(
-  //    next=alu.io.inp_b_sel,
-  //    init=alu.io.inp_b_sel.getZero,
-  //  )
-  //)
-  //myModMemWord := (
-  //  RegNext(
-  //    next=myModMemWord,
-  //    init=myModMemWord.getZero,
-  //  )
-  //  //RegNextWhen(
-  //  //  next=alu.io.inp_a,
-  //  //  cond=cMid0Front.up.isFiring,
-  //  //  init=alu.io.inp_a.getZero,
-  //  //)
-  //)
-
-  //myModMemWord := (
-  //  RegNext(
-  //    next=myModMemWord,
-  //    init=myModMemWord.getZero,
-  //  )
-  //  //RegNextWhen(
-  //  //  next=alu.io.inp_a,
-  //  //  cond=cMid0Front.up.isFiring,
-  //  //  init=alu.io.inp_a.getZero,
-  //  //)
-  //)
-  //myModMemWord := (
-  //  alu.io.outp_data
-  //)
   //--------
   // BEGIN: this worked pretty well for fmax, so let's try another approach
   val mostTempToSwitchMyModMemWord = (
@@ -8365,7 +8321,10 @@ case class SnowHousePipeStageExecute(
     //  rSavedSeenH2dFire := True
     //}
 
-    def myH2dBus = io.lcvDbus.h2dBus
+    def myH2dBus = (
+      //io.lcvDbus.h2dBus
+      myLcvDbusH2dStm
+    )
     def myDbusHostPayload = setOutpModMemWord.io.dbusHostPayload
 
     //outp.myDbusHostPayload := myDbusHostPayload
@@ -9272,8 +9231,12 @@ case class SnowHousePipeStageExecute(
     if (!cfg.optForFmax) {
       cLink.haltIt()
     } else {
-      cLink.duplicateIt()
+      // TODO: improve IPC here by using `cLink.duplicateIt`
+      cLink.haltIt()
+      //cLink.duplicateIt()
+      //cLink.down
       //cMid0Front.down
+      //cLink.down()
     }
   }
   if (cfg.optFormal) {
