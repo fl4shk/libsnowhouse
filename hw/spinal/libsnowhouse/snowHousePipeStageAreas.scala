@@ -7022,20 +7022,50 @@ case class SnowHousePipeStageExecute(
   def myDbusLdReady = myDbusIo.dbusLdReady
   def cfg = args.cfg
   def io = args.io
-  def nextPrevTxnWasHazard = (
-    doModInMid0FrontParams.nextPrevTxnWasHazardVec(0)
+
+  val nextPrevTxnWasHazard = (
+    if (!cfg.optForFmax) (
+      doModInMid0FrontParams.nextPrevTxnWasHazardVec(0)
+    ) else (
+      False
+    )
   )
-  def rPrevTxnWasHazard = (
-    doModInMid0FrontParams.rPrevTxnWasHazardVec(0)
+  //val rPrevTxnWasHazard = (
+  //  doModInMid0FrontParams.rPrevTxnWasHazardVec(0)
+  //)
+  //val rPrevTxnWasHazardAny = (
+  //  doModInMid0FrontParams.rPrevTxnWasHazardAny
+  //)
+  val outp = (
+    //doModInMid0FrontParams.get.outp//Vec(ydx)
+    if (!cfg.optForFmax) (
+      doModInMid0FrontParams.outp
+    ) else (
+      SnowHousePipePayload(cfg=cfg)
+    )
   )
-  def rPrevTxnWasHazardAny = (
-    doModInMid0FrontParams.rPrevTxnWasHazardAny
+  val inp = (
+    //doModInMid0FrontParams.get.inp//Vec(ydx)
+    if (!cfg.optForFmax) (
+      doModInMid0FrontParams.inp
+    ) else (
+      SnowHousePipePayload(cfg=cfg)
+    )
   )
-  def outp = doModInMid0FrontParams.outp//Vec(ydx)
-  def inp = doModInMid0FrontParams.inp//Vec(ydx)
-  def cMid0Front = doModInMid0FrontParams.cMid0Front
-  def tempModFrontPayload = (
-    doModInMid0FrontParams.tempModFrontPayload//Vec(ydxr
+  val cLink = (
+    //doModInMid0FrontParams.get.cMid0Front
+    if (!cfg.optForFmax) (
+      doModInMid0FrontParams.cMid0Front
+    ) else (
+      args.link
+    )
+  )
+  val tempModFrontPayload = (
+    if (!cfg.optForFmax) (
+      doModInMid0FrontParams.tempModFrontPayload//Vec(ydxr
+    ) else (
+      outp.getZero
+    )
   )
   if (cfg.optFormal) {
     if ((1 << outp.op.getWidth) != cfg.opInfoMap.size) {
@@ -7043,7 +7073,7 @@ case class SnowHousePipeStageExecute(
       assume(outp.op < cfg.opInfoMap.size)
     }
   }
-  def regFileFwd = doModInMid0FrontParams.myFwd //args.regFile
+  //def regFileFwd = doModInMid0FrontParams.myFwd //args.regFile
   //def myDbus = (
   //  psMemStallHost.stallIo.get
   //)
@@ -7081,7 +7111,7 @@ case class SnowHousePipeStageExecute(
   }
 
   val myTempDownIsReadyMost = (
-    cMid0Front.down.isReady
+    cLink.down.isReady
     //&& !psMemToEarlierStallRequest
     && !outp.instrCnt.myPsIdBubble.last
     && !psWbToEarlierStallRequest
@@ -7095,7 +7125,7 @@ case class SnowHousePipeStageExecute(
     //|| 
     psWbToEarlierStallRequest
   ) {
-    cMid0Front.haltIt()
+    cLink.haltIt()
   }
   //when (!myTempDownIsReady) {
   //  cMid0Front.duplicateIt()
@@ -7145,12 +7175,16 @@ case class SnowHousePipeStageExecute(
     ydx: Int,
     modIdx: Int,
   ) = (
-    doModInMid0FrontParams.getMyRdMemWordFunc(ydx, modIdx)
+    if (!cfg.optForFmax) (
+      doModInMid0FrontParams.getMyRdMemWordFunc(ydx, modIdx)
+    ) else (
+      outp.myExt(ydx).rdMemWord(modIdx)
+    )
   )
   //when (!io.ibus.ready) {
   //  cMid0Front.haltIt()
   //}
-  when (cMid0Front.up.isValid) {
+  when (cLink.up.isValid) {
     outp := inp
   }
   //when (cMid0Front.up.isFiring) {
@@ -7466,7 +7500,7 @@ case class SnowHousePipeStageExecute(
   ) generate (
     RegNextWhen(
       next=nextMyTakeIrq,
-      cond=cMid0Front.up.isFiring,
+      cond=cLink.up.isFiring,
       init=nextMyTakeIrq.getZero,
     )
   )
@@ -7491,7 +7525,7 @@ case class SnowHousePipeStageExecute(
           //&& myTempDownIsReady
         )
         || (
-          cMid0Front.up.isValid
+          cLink.up.isValid
           && myTempDownIsReady
           && setOutpModMemWord.io.regPcSetItCnt(0)(0)
         )
@@ -7522,7 +7556,7 @@ case class SnowHousePipeStageExecute(
     val tempCond1 = (
       rMyTakeIrq
       && /*RegNext*/(
-        /*next=*/cMid0Front.up.isFiring//,
+        /*next=*/cLink.up.isFiring//,
         //init=False,
       )
       //&& cMid0Front.up.isFiring
@@ -7543,7 +7577,7 @@ case class SnowHousePipeStageExecute(
       )
     ) {
       when (
-        cMid0Front.up.isFiring
+        cLink.up.isFiring
         && !rMyTakeIrq
       ) {
         nextMyTakeIrq := (
@@ -7563,7 +7597,7 @@ case class SnowHousePipeStageExecute(
       rose(
         RegNextWhen(
           tempCond1,
-          cond=cMid0Front.up.isFiring,
+          cond=cLink.up.isFiring,
           init=tempCond1.getZero,
         )
       )
@@ -7594,7 +7628,7 @@ case class SnowHousePipeStageExecute(
         //- (3 * cfg.instrSizeBytes)
       ),
       cond=(
-        cMid0Front.up.isFiring
+        cLink.up.isFiring
         //cMid0Front.up.isValid
         //&& myTempDownIsReady
       ),
@@ -7614,7 +7648,7 @@ case class SnowHousePipeStageExecute(
         //- (3 * cfg.instrSizeBytes)
       ),
       cond=(
-        cMid0Front.up.isFiring
+        cLink.up.isFiring
         //cMid0Front.up.isValid
         //&& myTempDownIsReady
       ),
@@ -7689,11 +7723,11 @@ case class SnowHousePipeStageExecute(
       }
     }
   }
-  setOutpModMemWord.io.upIsFiring := cMid0Front.up.isFiring
-  setOutpModMemWord.io.upIsValid := cMid0Front.up.isValid
-  setOutpModMemWord.io.upIsReady := cMid0Front.up.isReady
-  setOutpModMemWord.io.downIsFiring := cMid0Front.down.isFiring
-  setOutpModMemWord.io.downIsValid := cMid0Front.down.isValid
+  setOutpModMemWord.io.upIsFiring := cLink.up.isFiring
+  setOutpModMemWord.io.upIsValid := cLink.up.isValid
+  setOutpModMemWord.io.upIsReady := cLink.up.isReady
+  setOutpModMemWord.io.downIsFiring := cLink.down.isFiring
+  setOutpModMemWord.io.downIsValid := cLink.down.isValid
   setOutpModMemWord.io.downIsReady := myTempDownIsReady //cMid0Front.down.isReady
 
   val alu = LcvAluDel1(
@@ -7763,7 +7797,7 @@ case class SnowHousePipeStageExecute(
         (
           RegNext(
             (
-              cMid0Front.up.isFiring
+              cLink.up.isFiring
               && outp.myExt(0).modMemWordValid.head
               //&& setOutpModMemWord.io.modMemWordValid.head
               //&& alu.io.inp_op =/= LcvAluDel1InpOpEnum.OP_GET_INP_A
@@ -7826,7 +7860,7 @@ case class SnowHousePipeStageExecute(
           init=myModMemWord.getZero,
         )
       )
-      when (RegNext(cMid0Front.up.isFiring, init=False)) {
+      when (RegNext(cLink.up.isFiring, init=False)) {
         myModMemWord := alu.io.outp_data
       }
     }
@@ -7843,7 +7877,7 @@ case class SnowHousePipeStageExecute(
           init=myModMemWord.getZero,
         )
       )
-      when (RegNext(cMid0Front.up.isFiring, init=False)) {
+      when (RegNext(cLink.up.isFiring, init=False)) {
         myModMemWord := (
           RegNext(
             next=setOutpModMemWord.io.modMemWord(0).asSInt,
@@ -8295,7 +8329,7 @@ case class SnowHousePipeStageExecute(
   //    myDoStall(stallKindMem) := True
   //  }
   //}
-  when (cMid0Front.up.isFiring) {
+  when (cLink.up.isFiring) {
     nextPrevTxnWasHazard := False
   }
 
@@ -8350,7 +8384,7 @@ case class SnowHousePipeStageExecute(
     myH2dBus.valid := (
       //RegNext(myH2dBus.valid, init=False)
       //False
-      cMid0Front.up.isValid
+      cLink.up.isValid
       && myTempDownIsReady
       && setOutpModMemWord.io.opIsMemAccess.last
       //&& cMid0Front.down.isReady
@@ -8492,7 +8526,7 @@ case class SnowHousePipeStageExecute(
       myShouldIgnoreInstr(idx) := True
     }
     when (
-      cMid0Front.up.isValid
+      cLink.up.isValid
       && myTempDownIsReadyMost
       && RegNext(myShouldIgnoreInstr(idx), init=False)
       && outp.regPcSetItCnt(idx)(0)
@@ -8744,7 +8778,7 @@ case class SnowHousePipeStageExecute(
   when (
     {
       val tempCond = (
-        cMid0Front.up.isValid
+        cLink.up.isValid
         //&& cMid0Front.down.isReady
         //&& myTempDownIsReady
         && myTempDownIsReadyMost
@@ -9032,12 +9066,12 @@ case class SnowHousePipeStageExecute(
   ) generate (new Area {
     when (setOutpModMemWord.io.opIsMemAccess.head) {
       nextPrevTxnWasHazard := True
-      when (cMid0Front.up.isFiring) {
+      when (cLink.up.isFiring) {
         myDbus.nextValid := True
       }
     }
     myDbus.sendData.addr.allowOverride
-    when (cMid0Front.up.isFiring) {
+    when (cLink.up.isFiring) {
       myDbus.sendData := setOutpModMemWord.io.dbusHostPayload
     }
   })
@@ -9080,7 +9114,7 @@ case class SnowHousePipeStageExecute(
         setOutpModMemWord.io.inMultiCycleOp := False
         when (
           !rHaveDoneMultiCycleOp
-          && cMid0Front.up.isValid
+          && cLink.up.isValid
           && setOutpModMemWord.io.opIsAnyMultiCycle
           && !myShouldIgnoreInstr(2)
         ) {
@@ -9094,7 +9128,7 @@ case class SnowHousePipeStageExecute(
               setOutpModMemWord.io.opIsMultiCycle(idx)
             )
           }
-          cMid0Front.haltIt()
+          cLink.haltIt()
           val toOrReduce = (
             if (!cfg.useLcvDataBus) (
               /*RegNext*/(
@@ -9137,7 +9171,7 @@ case class SnowHousePipeStageExecute(
           }
         }
         //myDoStall(stallKindMultiCycle) := False
-        when (cMid0Front.up.isFiring) {
+        when (cLink.up.isFiring) {
           rHaveDoneMultiCycleOp := False
         }
       }
@@ -9186,7 +9220,7 @@ case class SnowHousePipeStageExecute(
               psExStallHost.nextValid := False
               rMultiCycleOpState := MultiCycleOpState.Idle
             } elsewhen (rOpIsMultiCycle(idx)) {
-              cMid0Front.haltIt()
+              cLink.haltIt()
               //outp.myExt.foreach(item => {
               //  item.modMemWordValid.foreach(mmwValidItem => {
               //    mmwValidItem := False
@@ -9195,7 +9229,7 @@ case class SnowHousePipeStageExecute(
             }
             //--------
           }
-          when (cMid0Front.up.isFiring) {
+          when (cLink.up.isFiring) {
             rHaveDoneMultiCycleOp := False
           }
         //}
@@ -9216,7 +9250,7 @@ case class SnowHousePipeStageExecute(
     doCheckHazard(idx) := (
       RegNextWhen(
         next=myNextPrevTxnWasHazardVec(idx),
-        cond=cMid0Front.up.isFiring,
+        cond=cLink.up.isFiring,
         init=myNextPrevTxnWasHazardVec(idx).getZero,
       )
     )
@@ -9235,7 +9269,12 @@ case class SnowHousePipeStageExecute(
       //outp.myExt(ydx).memAddrFwdCmp.foreach(_.foreach(_ := 0x0))
       outp.myExt(ydx).modMemWordValid.foreach(_ := False)
     }
-    cMid0Front.haltIt()
+    if (!cfg.optForFmax) {
+      cLink.haltIt()
+    } else {
+      cLink.duplicateIt()
+      //cMid0Front.down
+    }
   }
   if (cfg.optFormal) {
     outp.psExSetOutpModMemWordIo := setOutpModMemWord.io
