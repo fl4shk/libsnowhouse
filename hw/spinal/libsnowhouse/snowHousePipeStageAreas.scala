@@ -9211,29 +9211,32 @@ case class SnowHousePipeStageExecute(
         psExStallHost.nextValid := False
       }
     })
-    for (idx <- 0 until doCheckHazard.size) {
-      doCheckHazard(idx) := (
-        RegNextWhen(
-          next=myNextPrevTxnWasHazardVec(idx),
-          cond=cMid0Front.up.isFiring,
-          init=myNextPrevTxnWasHazardVec(idx).getZero,
-        )
-      )
-    }
-    when (myDoStall.sFindFirst(_ === True)._1) {
-      for (ydx <- 0 until cfg.regFileCfg.memArrSize) {
-        //outp.myExt(ydx).valid.foreach(current => {
-        //  current := False
-        //})
-        //outp.myExt(ydx).memAddrFwd.foreach(current => {
-        //  current := 
-        //})
-        //outp.myExt(ydx).memAddrFwdCmp.foreach(_.foreach(_ := 0x0))
-        outp.myExt(ydx).modMemWordValid.foreach(_ := False)
-      }
-      cMid0Front.haltIt()
-    }
   })
+  for (idx <- 0 until doCheckHazard.size) {
+    doCheckHazard(idx) := (
+      RegNextWhen(
+        next=myNextPrevTxnWasHazardVec(idx),
+        cond=cMid0Front.up.isFiring,
+        init=myNextPrevTxnWasHazardVec(idx).getZero,
+      )
+    )
+  }
+  when (
+    //myDoStall.sFindFirst(_ === True)._1
+    myDoStall.asBits.orR
+  ) {
+    for (ydx <- 0 until cfg.regFileCfg.memArrSize) {
+      //outp.myExt(ydx).valid.foreach(current => {
+      //  current := False
+      //})
+      //outp.myExt(ydx).memAddrFwd.foreach(current => {
+      //  current := 
+      //})
+      //outp.myExt(ydx).memAddrFwdCmp.foreach(_.foreach(_ := 0x0))
+      outp.myExt(ydx).modMemWordValid.foreach(_ := False)
+    }
+    cMid0Front.haltIt()
+  }
   if (cfg.optFormal) {
     outp.psExSetOutpModMemWordIo := setOutpModMemWord.io
   }
