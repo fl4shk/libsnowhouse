@@ -67,47 +67,47 @@ case class SnowHouseForFmaxPipeStageInstrFetch(
   val linkArr = PipeHelper.mkLinkArr()
 
   val pIf = Payload(SnowHousePipePayload(cfg=cfg))
-  val cIf = CtrlLink()
-  val sIf = StageLink(
-    up=cIf.down,
+  val cLink = CtrlLink()
+  val sLink = StageLink(
+    up=cLink.down,
     down={
       val temp = Node()
       temp.setName("sIf_down")
       temp
     }
   )
-  val s2mIf = S2MLink(
-    up=sIf.down,
+  val s2mLink = S2MLink(
+    up=sLink.down,
     down={
       val temp = Node()
       temp.setName("s2mIf_down")
       temp
     }
   )
-  linkArr += cIf
-  linkArr += sIf
-  linkArr += s2mIf
+  linkArr += cLink
+  linkArr += sLink
+  linkArr += s2mLink
 
-  val up = cIf.up
-  val down = cIf.down
+  val up = cLink.up
+  val down = cLink.down
   val psExSetPc = io.psExSetPc
 
-  val pipeStageIf = SnowHousePipeStageInstrFetch(
+  val pipeStageLink = SnowHousePipeStageInstrFetch(
     args=SnowHousePipeStageArgs(
       cfg=cfg,
       io=null,
-      link=cIf,
+      link=cLink,
       prevPayload=null,
       currPayload=pIf,
       myDbusIo=null.asInstanceOf[SnowHouseDbusIo],
       regFile=null,
     ),
-    psIdHaltIt=null,
+    //psIdHaltIt=null,
     psExSetPc=psExSetPc,
     lcvIbus=io.lcvIbus,
   )
 
-  s2mIf.down.driveTo(
+  s2mLink.down.driveTo(
     io.down
   )(
     con=(outp, node) => {
@@ -156,32 +156,32 @@ case class SnowHouseForFmaxPipeStageInstrDecode(
 
   val pIdInp = Payload(SnowHousePipePayload(cfg=cfg))
   val pIdOutp = Payload(SnowHousePipePayload(cfg=cfg))
-  val cId = CtrlLink()
-  val sId = StageLink(
-    up=cId.down,
+  val cLink = CtrlLink()
+  val sLink = StageLink(
+    up=cLink.down,
     down={
       val temp = Node()
-      temp.setName("sId_down")
+      temp.setName("s_down")
       temp
     }
   )
-  val s2mId = S2MLink(
-    up=sId.down,
+  val s2mLink = S2MLink(
+    up=sLink.down,
     down={
       val temp = Node()
-      temp.setName("s2mId_down")
+      temp.setName("s2mLink_down")
       temp
     }
   )
-  linkArr += cId
-  linkArr += sId
-  linkArr += s2mId
+  linkArr += cLink
+  linkArr += sLink
+  linkArr += s2mLink
 
   val innerPsId = SnowHousePipeStageInstrDecode(
     SnowHousePipeStageArgs(
       cfg=cfg,
       io=null,
-      link=cId,
+      link=cLink,
       prevPayload=pIdInp,
       currPayload=(
         pIdOutp
@@ -196,25 +196,103 @@ case class SnowHouseForFmaxPipeStageInstrDecode(
       ),
       regFile=null,
     ),
-    psIdHaltIt=null,
+    //psIdHaltIt=null,
     psExSetPc=io.psExSetPc,
-    pcChangeState=null,
-    shouldIgnoreInstr=null,
+    //pcChangeState=null,
+    //shouldIgnoreInstr=null,
     doDecodeFunc=cfg.doInstrDecodeFunc,
     //psIdFoundBubble=psIdFoundBubble,
   )
 
-  cId.up.driveFrom(io.up)(
+  cLink.up.driveFrom(io.up)(
     con=(node, inp) => {
       node(pIdInp) := inp
     }
   )
 
-  s2mId.down.driveTo(
+  s2mLink.down.driveTo(
     io.down
   )(
     con=(outp, node) => {
       outp := node(pIdOutp)
+    }
+  )
+
+  Builder(linkArr)
+  //--------
+}
+
+case class SnowHouseForFmaxPipeStageExecuteIo(
+  cfg: SnowHouseConfig
+) extends Bundle {
+  //--------
+  val up = (
+    slave(Stream(
+      SnowHousePipePayload(cfg=cfg)
+    ))
+  )
+  val down = (
+    master(Stream(
+      SnowHousePipePayload(cfg=cfg)
+    ))
+  )
+  //--------
+  val psExSetPc = (
+    master(Flow(
+      SnowHousePsExSetPcPayload(cfg=cfg)
+    ))
+  )
+  //--------
+  //val myModMemWord = (
+  //  in(SInt(cfg.mainWidth bits))
+  //)
+}
+case class SnowHouseForFmaxPipeStageExecute(
+  cfg: SnowHouseConfig
+) extends Component {
+  //--------
+  val io = SnowHouseForFmaxPipeStageInstrDecodeIo(cfg=cfg)
+  //def up = io.up
+  //def down = io.down
+  //--------
+  val linkArr = PipeHelper.mkLinkArr()
+
+  //def opInfoMap = cfg.opInfoMap
+
+  val pExInp = Payload(SnowHousePipePayload(cfg=cfg))
+  val pExOutp = Payload(SnowHousePipePayload(cfg=cfg))
+  val cLink = CtrlLink()
+  val sLink = StageLink(
+    up=cLink.down,
+    down={
+      val temp = Node()
+      temp.setName("s_down")
+      temp
+    }
+  )
+  //val s2mLink = S2MLink(
+  //  up=sLink.down,
+  //  down={
+  //    val temp = Node()
+  //    temp.setName("s2m_down")
+  //    temp
+  //  }
+  //)
+  linkArr += cLink
+  linkArr += sLink
+  //linkArr += s2mLink
+
+  cLink.up.driveFrom(io.up)(
+    con=(node, inp) => {
+      node(pExInp) := inp
+    }
+  )
+
+  sLink.down.driveTo(
+    io.down
+  )(
+    con=(outp, node) => {
+      outp := node(pExOutp)
     }
   )
 

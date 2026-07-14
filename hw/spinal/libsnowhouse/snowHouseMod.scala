@@ -1531,7 +1531,7 @@ private[libsnowhouse] case class SnowHouseNotForFmax
   //  })
   //}
   //--------
-  val psIdHaltIt = Bool()
+  //val psIdHaltIt = Bool()
   val psExSetPc = (
     /*KeepAttribute*/(
       /*Stream*/Flow(SnowHousePsExSetPcPayload(cfg=cfg))
@@ -1605,13 +1605,13 @@ private[libsnowhouse] case class SnowHouseNotForFmax
     ////myBridgeCtrl.io.cpuBus := myDbusIo.dbus.nextValid
   })
 
-  val pcChangeState = (
-    Bool()
-    //UInt(
-    //  SnowHouseShouldIgnoreInstrState().asBits.getWidth bits
-    //)
-  )
-  val shouldIgnoreInstr = Bool()
+  //val pcChangeState = (
+  //  Bool()
+  //  //UInt(
+  //  //  SnowHouseShouldIgnoreInstrState().asBits.getWidth bits
+  //  //)
+  //)
+  //val shouldIgnoreInstr = Bool()
   //val psMemToEarlierStallRequest = Bool()
   val psWbToEarlierStallRequest = Bool()
   //--------
@@ -1737,7 +1737,7 @@ private[libsnowhouse] case class SnowHouseNotForFmax
       ),
       regFile=regFile,
     ),
-    psIdHaltIt=psIdHaltIt,
+    //psIdHaltIt=psIdHaltIt,
     psExSetPc=psExSetPc,
     lcvIbus=io.lcvIbus,
   )
@@ -1868,10 +1868,10 @@ private[libsnowhouse] case class SnowHouseNotForFmax
       ),
       regFile=regFile,
     ),
-    psIdHaltIt=psIdHaltIt,
+    //psIdHaltIt=psIdHaltIt,
     psExSetPc=psExSetPc,
-    pcChangeState=pcChangeState,
-    shouldIgnoreInstr=shouldIgnoreInstr,
+    //pcChangeState=pcChangeState,
+    //shouldIgnoreInstr=shouldIgnoreInstr,
     doDecodeFunc=cfg.doInstrDecodeFunc,
     //psIdFoundBubble=psIdFoundBubble,
   )
@@ -1911,8 +1911,8 @@ private[libsnowhouse] case class SnowHouseNotForFmax
     doModInMid0FrontParams=doModInMid0FrontParams,
     //myDbusExtraReady=myDbusExtraReady,
     //myDbusLdReady=myDbusLdReady,
-    pcChangeState=pcChangeState,
-    shouldIgnoreInstr=shouldIgnoreInstr,
+    //pcChangeState=pcChangeState,
+    //shouldIgnoreInstr=shouldIgnoreInstr,
     myModMemWord=myModMemWord,
     //prevStageFoundBubble=(
     //  if (!cfg.optTwoCycleRegFileReads) (
