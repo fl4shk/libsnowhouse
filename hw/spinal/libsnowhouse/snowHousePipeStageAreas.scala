@@ -959,6 +959,7 @@ case class SnowHousePipeStageInstrFetch(
   args: SnowHousePipeStageArgs,
   psIdHaltIt: Bool,
   psExSetPc: Flow[SnowHousePsExSetPcPayload],
+  lcvIbus: LcvBusIo,
 ) extends Area {
   require(
     cfg.useLcvInstrBus
@@ -971,7 +972,7 @@ case class SnowHousePipeStageInstrFetch(
   val up = cIf.up
   val down = cIf.down
   val myH2dPushStm = (
-    cloneOf(io.lcvIbus.h2dBus)
+    cloneOf(lcvIbus.h2dBus)
   )
   def myBusH2dValid = (
     myH2dPushStm.valid
@@ -1114,7 +1115,7 @@ case class SnowHousePipeStageInstrFetch(
     True
   )
   val myIbusRegPcInfo = MyIbusRegPcInfo(cfg=cfg)
-  def myD2hPopStm = io.lcvIbus.d2hBus
+  def myD2hPopStm = lcvIbus.d2hBus
   //when (rIbusTempRamInitCnt.msb) {
     cIf.up.driveFrom(myIbusTempRam.io.rdDataPipe)(
       con=(node, payload) => {
@@ -1162,7 +1163,7 @@ case class SnowHousePipeStageInstrFetch(
 
   //  rIbusTempRamInitCnt := rIbusTempRamInitCnt + 1
   //}
-  io.lcvIbus.h2dBus << myH2dPushStm
+  lcvIbus.h2dBus << myH2dPushStm
   myD2hPopStm.translateInto(myIbusTempRam.io.rdAddrPipe)(
     dataAssignment=(outp, inp) => {
       outp := outp.getZero

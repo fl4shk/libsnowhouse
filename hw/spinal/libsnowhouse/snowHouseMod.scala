@@ -1496,6 +1496,14 @@ case class SnowHouseIo(
       tempArr
     }
   )
+  if (haveMultiCycleDualBusVec) {
+    for (idx <- 0 until multiCycleH2dBusVec.size) {
+      master(multiCycleH2dBusVec(idx))
+    }
+    for (idx <- 0 until multiCycleD2hBusVec.size) {
+      slave(multiCycleD2hBusVec(idx))
+    }
+  }
 }
 private[libsnowhouse] case class SnowHouseNotForFmax
 //[
@@ -1731,6 +1739,7 @@ private[libsnowhouse] case class SnowHouseNotForFmax
     ),
     psIdHaltIt=psIdHaltIt,
     psExSetPc=psExSetPc,
+    lcvIbus=io.lcvIbus,
   )
 
   val cIfPostLcvIbus = (
