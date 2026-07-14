@@ -2347,10 +2347,10 @@ case class SnowHouseMcDualBusToMcBusBridgeIo(
     }
   )
   for (idx <- 0 until multiCycleH2dBusVec.size) {
-    master(multiCycleH2dBusVec(idx))
+    slave(multiCycleH2dBusVec(idx))
   }
   for (idx <- 0 until multiCycleD2hBusVec.size) {
-    slave(multiCycleD2hBusVec(idx))
+    master(multiCycleD2hBusVec(idx))
   }
 
   for (idx <- 0 until multiCycleBusVec.size) {
