@@ -2094,8 +2094,8 @@ case class SnowHousePipeStageInstrDecode(
   extends SpinalEnum(defaultEncoding=binaryOneHot) {
     val
       IDLE,
-      POST_LD_0//,
-      //POST_LD_1
+      POST_LD_0,
+      POST_LD_1
       = newElement();
   }
 
@@ -2133,12 +2133,16 @@ case class SnowHousePipeStageInstrDecode(
     //  )
     //)
 
-    val myHistCondMemAccBubble = (
+    val myHistCondAnyBubble = (
       History[Bool](
         that=(
           //upPayload(1).splitOp.opIsMemAccess
-          myTempOpIsMemAccessLoad
-          || myTempOpIsMemAccessStore
+          if (!cfg.optForFmax) (
+            myTempOpIsMemAccessLoad
+            || myTempOpIsMemAccessStore
+          ) else (
+            myTempOpIsMemAccessLoad
+          )
           //--------
           // FL4SHK NOTE:
           // Without a bubble,
@@ -2296,30 +2300,37 @@ case class SnowHousePipeStageInstrDecode(
               //  || myTempOpIsJmpBr
               //)
               //&& 
-              myHistCondMemAccBubble(idx + 1)
+              myHistCondAnyBubble(idx + 1)
               && !shouldClearExtraDecodeInfo
             ) {
               doSendBubbleMainMost()
               when (down.isFiring) {
                 //rStallState := True
                 rStallState := (
-                  //if (idx == 0) (
+                  if (!cfg.optForFmax) (
+                    MyLcvDbusStallState.POST_LD_1
+                  ) else ( // if (cfg.optForFmax)
                     MyLcvDbusStallState.POST_LD_0
-                  //) else (
-                  //  MyLcvDbusStallState.POST_LD_1
-                  //)
+                  )
+                  ////if (idx == 0) (
+                  //  MyLcvDbusStallState.POST_LD_0
+                  ////) else (
+                  ////  MyLcvDbusStallState.POST_LD_1
+                  ////)
                 )
               }
             }
           }
         }
       }
-      //is (MyLcvDbusStallState.POST_LD_0) {
-      //  doSendBubbleMainMost()
-      //  when (down.isFiring) {
-      //    rStallState := MyLcvDbusStallState.POST_LD_1
-      //  }
-      //}
+      if (cfg.optForFmax) {
+        is (MyLcvDbusStallState.POST_LD_0) {
+          doSendBubbleMainMost()
+          when (down.isFiring) {
+            rStallState := MyLcvDbusStallState.POST_LD_1
+          }
+        }
+      }
       //is (MyLcvDbusStallState.POST_LD_1) {
       //  //when (up.isFiring) {
       //  //  rStallState := MyLcvDbusStallState.IDLE

@@ -1446,7 +1446,7 @@ case class SnowHouseIo(
     }
   }
 }
-case class SnowHouse
+private[libsnowhouse] case class SnowHouseNotForFmax
 //[
 //  PipeStageInstrDecode <: SnowHousePipeStageInstrDecode
 //]
@@ -1455,6 +1455,9 @@ case class SnowHouse
   cfg: SnowHouseConfig,
 ) extends Component {
   //--------
+  require(
+    !cfg.optForFmax
+  )
   val io = SnowHouseIo(cfg=cfg)
   //if (io.haveMultiCycleBusVec) {
   //  io.multiCycleBusVec.foreach(multiCycleBus => {
@@ -2074,6 +2077,78 @@ case class SnowHouse
   regFile.io.back.ready := True
   Builder(linkArr)
   //--------
+}
+
+private[libsnowhouse] case class SnowHouseForFmax(
+  cfg: SnowHouseConfig
+) extends Component {
+  require(
+    cfg.useLcvInstrBus
+  )
+  require(
+    cfg.useLcvDataBus
+  )
+  require(
+    cfg.optForFmax
+  )
+
+  val io = SnowHouseIo(cfg=cfg)
+
+  val psExSetPc = (
+    (
+      Flow(SnowHousePsExSetPcPayload(cfg=cfg))
+    )
+    .setName(s"SnowHouse_psExSetPc")
+  )
+  val psIf = SnowHouseForFmaxPipeStageInstrFetch(cfg=cfg)
+  val psId = SnowHouseForFmaxPipeStageInstrDecode(
+    cfg=cfg,
+    doDecodeFunc=cfg.doInstrDecodeFunc
+  )
+  //--------
+
+  psId.io.up <-/< psIf.io.down // extra pipeline stage for fmax
+  io.lcvIbus << psIf.io.lcvIbus
+  psIf.io.psExSetPc := psExSetPc
+
+  //val linkArr = PipeHelper.mkLinkArr()
+
+  //val cIf = CtrlLink()
+  //linkArr += cIf
+
+  //val cId = CtrlLink()
+  //linkArr += cId
+
+  //val cEx = CtrlLink()
+  //linkArr += cEx
+
+  //val cMem = CtrlLink()
+  //linkArr += cMem
+
+  //val cWb = CtrlLink()
+  //linkArr += cWb
+
+  //Builder(linkArr)
+}
+
+case class SnowHouse(
+  cfg: SnowHouseConfig
+) extends Component {
+  val io = SnowHouseIo(cfg=cfg)
+
+  val notForFmaxArea = (
+    !cfg.optForFmax
+  ) generate (new Area {
+    val snowHouse = SnowHouseNotForFmax(cfg=cfg)
+    io <> snowHouse.io
+  })
+
+  val forFmaxArea = (
+    cfg.optForFmax
+  ) generate (new Area {
+    val snowHouse = SnowHouseForFmax(cfg=cfg)
+    io <> snowHouse.io
+  })
 }
 
 //object SnowHouseToVerilog extends App {

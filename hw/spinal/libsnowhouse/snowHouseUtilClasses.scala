@@ -644,9 +644,11 @@ case class SnowHouseConfig(
   opInfoMap: LinkedHashMap[Any, OpInfo],
   irqJmpOp: Int,
   //irqRetIraOp: Int,
+  optForFmax: Boolean=true,
   optShiftRegPcImmAddend: Boolean=false,
   //--------
   doInstrDecodeFunc: (SnowHousePipeStageInstrDecode) => Area,
+  //doForFmaxInstrDecodeFunc: (SnowHouseForFmaxPipeStageInstrDecode) => Area,
   optBranchPredictorKind: Option[SnowHouseBranchPredictorKind],
   //--------
   instrRamKind: Int,
@@ -1700,11 +1702,16 @@ case class SnowHousePipePayloadNonExt(
     1
     + (
       if (cfg.useLcvDataBus) (
-        0
-        //1
-        // up to two following instructions,
-        // per the overall pipeline structure of
-        //   EX -> MEM -> WB -> LastBack
+        if (!cfg.optForFmax) (
+          0
+          //1
+        ) else (
+          //2
+          1
+          // up to two following instructions,
+          // per the overall pipeline structure of
+          //   EX -> MEM -> WB -> LastBack
+        )
       ) else (
         0
       )
