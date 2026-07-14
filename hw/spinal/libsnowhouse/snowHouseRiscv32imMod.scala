@@ -1951,14 +1951,16 @@ case class SnowHouseRiscv32imWithoutRamIo(
 
 
 case class SnowHouseRiscv32imAddMultiCycle(
-  cpuIo: SnowHouseIo,
+  //cpuIo: SnowHouseIo,
+  bridge: SnowHouseMcDualBusToMcBusBridge,
 ) extends Area {
-  def cfg = cpuIo.cfg
+  //def cfg = cpuIo.cfg
+  def cfg = bridge.cfg
   for (
     ((group, innerMap), busIdx)
     <- cfg.multiCycleOpInfoMap.view.zipWithIndex
   ) {
-    val multiCycleBus = cpuIo.multiCycleBusVec(busIdx)
+    val multiCycleBus = bridge.io.multiCycleBusVec(busIdx)
     def dstVec = multiCycleBus.recvData.dstVec
     def srcVec = multiCycleBus.sendData.srcVec
     //switch (
@@ -2030,9 +2032,11 @@ case class SnowHouseRiscv32imAddMultiCycle(
 }
 
 case class SnowHouseRiscv32imDivmod(
-  cpuIo: SnowHouseIo
+  //cpuIo: SnowHouseIo
+  bridge: SnowHouseMcDualBusToMcBusBridge,
 ) extends Area {
-  def cfg = cpuIo.cfg
+  //def cfg = cpuIo.cfg
+  def cfg = bridge.cfg
   val divmod = LongDivMultiCycle(
     mainWidth=cfg.mainWidth,
     denomWidth=cfg.mainWidth,
@@ -2080,7 +2084,7 @@ case class SnowHouseRiscv32imDivmod(
     ((group, innerMap), busIdx)
     <- cfg.multiCycleOpInfoMap.view.zipWithIndex
   ) {
-    val multiCycleBus = cpuIo.multiCycleBusVec(busIdx)
+    val multiCycleBus = bridge.io.multiCycleBusVec(busIdx)
     def dstVec = multiCycleBus.recvData.dstVec
     def srcVec = multiCycleBus.sendData.srcVec
     if (
@@ -2109,7 +2113,7 @@ case class SnowHouseRiscv32imDivmod(
       ((group, innerMap), busIdx)
       <- cfg.multiCycleOpInfoMap.view.zipWithIndex
     ) {
-      val multiCycleBus = cpuIo.multiCycleBusVec(busIdx)
+      val multiCycleBus = bridge.io.multiCycleBusVec(busIdx)
       def dstVec = multiCycleBus.recvData.dstVec
       def srcVec = multiCycleBus.sendData.srcVec
       if (
@@ -2118,7 +2122,7 @@ case class SnowHouseRiscv32imDivmod(
       ) {
         switch (multiCycleBus.sendData.kind) {
           for (
-            //(multiCycleBus, busIdx) <- cpuIo.multiCycleBusVec.view.zipWithIndex
+            //(multiCycleBus, busIdx) <- bridge.io.multiCycleBusVec.view.zipWithIndex
             ((_, opInfo), kindIdx)
             <- innerMap.view.zipWithIndex
           ) {
@@ -2129,13 +2133,15 @@ case class SnowHouseRiscv32imDivmod(
                     val tempArea = doItFunc(
                       opInfo,
                       busIdx,
-                      cpuIo.multiCycleBusVec(busIdx)
+                      bridge.io.multiCycleBusVec(busIdx)
                     )
                   } else {
                     when (
                       rose(
                         RegNext(
-                          next=cpuIo.multiCycleBusVec(busIdx).nextValid,
+                          next=(
+                            bridge.io.multiCycleBusVec(busIdx).nextValid
+                          ),
                           init=False,
                         )
                       )
@@ -2146,7 +2152,7 @@ case class SnowHouseRiscv32imDivmod(
                       val tempArea = doItFunc(
                         opInfo,
                         busIdx,
-                        cpuIo.multiCycleBusVec(busIdx)
+                        bridge.io.multiCycleBusVec(busIdx)
                       )
                     }
                   }
@@ -2158,13 +2164,15 @@ case class SnowHouseRiscv32imDivmod(
                     val tempArea = doItFunc(
                       opInfo,
                       busIdx,
-                      cpuIo.multiCycleBusVec(busIdx)
+                      bridge.io.multiCycleBusVec(busIdx)
                     )
                   } else {
                     when (
                       rose(
                         RegNext(
-                          next=cpuIo.multiCycleBusVec(busIdx).nextValid,
+                          next=(
+                            bridge.io.multiCycleBusVec(busIdx).nextValid
+                          ),
                           init=False,
                         )
                       )
@@ -2175,7 +2183,7 @@ case class SnowHouseRiscv32imDivmod(
                       val tempArea = doItFunc(
                         opInfo,
                         busIdx,
-                        cpuIo.multiCycleBusVec(busIdx)
+                        bridge.io.multiCycleBusVec(busIdx)
                       )
                     }
                   }
@@ -2187,13 +2195,15 @@ case class SnowHouseRiscv32imDivmod(
                     val tempArea = doItFunc(
                       opInfo,
                       busIdx,
-                      cpuIo.multiCycleBusVec(busIdx)
+                      bridge.io.multiCycleBusVec(busIdx)
                     )
                   } else {
                     when (
                       rose(
                         RegNext(
-                          next=cpuIo.multiCycleBusVec(busIdx).nextValid,
+                          next=(
+                            bridge.io.multiCycleBusVec(busIdx).nextValid
+                          ),
                           init=False
                         )
                       )
@@ -2204,7 +2214,7 @@ case class SnowHouseRiscv32imDivmod(
                       val tempArea = doItFunc(
                         opInfo,
                         busIdx,
-                        cpuIo.multiCycleBusVec(busIdx)
+                        bridge.io.multiCycleBusVec(busIdx)
                       )
                     }
                   }
@@ -2216,13 +2226,15 @@ case class SnowHouseRiscv32imDivmod(
                     val tempArea = doItFunc(
                       opInfo,
                       busIdx,
-                      cpuIo.multiCycleBusVec(busIdx)
+                      bridge.io.multiCycleBusVec(busIdx)
                     )
                   } else {
                     when (
                       rose(
                         RegNext(
-                          next=cpuIo.multiCycleBusVec(busIdx).nextValid,
+                          next=(
+                            bridge.io.multiCycleBusVec(busIdx).nextValid
+                          ),
                           init=False,
                         )
                       )
@@ -2233,7 +2245,7 @@ case class SnowHouseRiscv32imDivmod(
                       val tempArea = doItFunc(
                         opInfo,
                         busIdx,
-                        cpuIo.multiCycleBusVec(busIdx)
+                        bridge.io.multiCycleBusVec(busIdx)
                       )
                     }
                   }
@@ -2245,13 +2257,13 @@ case class SnowHouseRiscv32imDivmod(
               //      val tempArea = doItFunc(
               //        opInfo,
               //        busIdx,
-              //        cpuIo.multiCycleBusVec(busIdx)
+              //        bridge.io.multiCycleBusVec(busIdx)
               //      )
               //    } else {
               //      when (
               //        rose(
               //          RegNext(
-              //            next=cpuIo.multiCycleBusVec(busIdx).nextValid,
+              //            next=bridge.io.multiCycleBusVec(busIdx).nextValid,
               //            init=False,
               //          )
               //        )
@@ -2262,7 +2274,7 @@ case class SnowHouseRiscv32imDivmod(
               //        val tempArea = doItFunc(
               //          opInfo,
               //          busIdx,
-              //          cpuIo.multiCycleBusVec(busIdx)
+              //          bridge.io.multiCycleBusVec(busIdx)
               //        )
               //      }
               //    }
@@ -2274,13 +2286,13 @@ case class SnowHouseRiscv32imDivmod(
               //      val tempArea = doItFunc(
               //        opInfo,
               //        busIdx,
-              //        cpuIo.multiCycleBusVec(busIdx)
+              //        bridge.io.multiCycleBusVec(busIdx)
               //      )
               //    } else {
               //      when (
               //        rose(
               //          RegNext(
-              //            next=cpuIo.multiCycleBusVec(busIdx).nextValid,
+              //            next=bridge.io.multiCycleBusVec(busIdx).nextValid,
               //            init=False,
               //          )
               //        )
@@ -2291,7 +2303,7 @@ case class SnowHouseRiscv32imDivmod(
               //        val tempArea = doItFunc(
               //          opInfo,
               //          busIdx,
-              //          cpuIo.multiCycleBusVec(busIdx)
+              //          bridge.io.multiCycleBusVec(busIdx)
               //        )
               //      }
               //    }
@@ -2465,7 +2477,7 @@ case class SnowHouseRiscv32imDivmod(
     ((group, innerMap), busIdx)
     <- cfg.multiCycleOpInfoMap.view.zipWithIndex
   ) {
-    val multiCycleBus = cpuIo.multiCycleBusVec(busIdx)
+    val multiCycleBus = bridge.io.multiCycleBusVec(busIdx)
     def dstVec = multiCycleBus.recvData.dstVec
     def srcVec = multiCycleBus.sendData.srcVec
     if (
@@ -2482,7 +2494,7 @@ case class SnowHouseRiscv32imDivmod(
               is (kindIdx) {
                 //is (DivmodKind.UDIV) {
                   val stallIo = (
-                    cpuIo.multiCycleBusVec(busIdx)
+                    bridge.io.multiCycleBusVec(busIdx)
                   )
                   def dstVec = stallIo.recvData.dstVec
                   //stallIo.ready := True
@@ -2494,7 +2506,7 @@ case class SnowHouseRiscv32imDivmod(
               is (kindIdx) {
                 //is (DivmodKind.SDIV) {
                   val stallIo = (
-                    cpuIo.multiCycleBusVec(busIdx)
+                    bridge.io.multiCycleBusVec(busIdx)
                   )
                   def dstVec = stallIo.recvData.dstVec
                   //stallIo.ready := True
@@ -2506,7 +2518,7 @@ case class SnowHouseRiscv32imDivmod(
               is (kindIdx) {
                 //is (DivmodKind.UMOD) {
                   val stallIo = (
-                    cpuIo.multiCycleBusVec(busIdx)
+                    bridge.io.multiCycleBusVec(busIdx)
                   )
                   def dstVec = stallIo.recvData.dstVec
                   //stallIo.ready := True
@@ -2518,7 +2530,7 @@ case class SnowHouseRiscv32imDivmod(
               is (kindIdx) {
                 //is (DivmodKind.SMOD) {
                   val stallIo = (
-                    cpuIo.multiCycleBusVec(busIdx)
+                    bridge.io.multiCycleBusVec(busIdx)
                   )
                   def dstVec = stallIo.recvData.dstVec
                   //stallIo.ready := True
@@ -2530,7 +2542,7 @@ case class SnowHouseRiscv32imDivmod(
               is (kindIdx) {
                 //is (DivmodKind.UDIV) {
                   val stallIo = (
-                    cpuIo.multiCycleBusVec(busIdx)
+                    bridge.io.multiCycleBusVec(busIdx)
                   )
                   def dstVec = stallIo.recvData.dstVec
                   //stallIo.ready := True
@@ -2544,7 +2556,7 @@ case class SnowHouseRiscv32imDivmod(
               is (kindIdx) {
                 //is (DivmodKind.SDIV) {
                   val stallIo = (
-                    cpuIo.multiCycleBusVec(busIdx)
+                    bridge.io.multiCycleBusVec(busIdx)
                   )
                   def dstVec = stallIo.recvData.dstVec
                   //stallIo.ready := True
@@ -2720,13 +2732,13 @@ case class SnowHouseRiscv32imDivmod(
         ((group, innerMap), busIdx)
         <- cfg.multiCycleOpInfoMap.view.zipWithIndex
       ) {
-        val multiCycleBus = cpuIo.multiCycleBusVec(busIdx)
+        val multiCycleBus = bridge.io.multiCycleBusVec(busIdx)
         def dstVec = multiCycleBus.recvData.dstVec
         def srcVec = multiCycleBus.sendData.srcVec
         //var haveCorrectBus: Boolean = false
         if (group == MultiCycleOpKind.Udiv.group) {
           val stallIo = (
-            cpuIo.multiCycleBusVec(busIdx)
+            bridge.io.multiCycleBusVec(busIdx)
           )
           def dstVec = stallIo.recvData.dstVec
           stallIo.ready := True
@@ -3157,9 +3169,12 @@ case class SnowHouseRiscv32imMul(
   //}
 }
 case class SnowHouseRiscv32imMul32(
-  cpuIo: SnowHouseIo,
+  //cpuIo: SnowHouseIo,
+  bridge: SnowHouseMcDualBusToMcBusBridge,
 ) extends Area {
-  def cfg = cpuIo.cfg
+  //def cfg = cpuIo.cfg
+  def cfg = bridge.cfg
+
   val myMul = SnowHouseRiscv32imMul(cfg=cfg)
   //val innerMap = cfg.multiCycleOpInfoMap.get(MultiCycleOpGroup.Mul).get
   for (
@@ -3167,14 +3182,16 @@ case class SnowHouseRiscv32imMul32(
     <- cfg.multiCycleOpInfoMap.view.zipWithIndex
   ) {
     if (group == MultiCycleOpGroup.Mul) {
-      cpuIo.multiCycleBusVec(busIdx) <> myMul.io.multiCycleBus 
+      bridge.io.multiCycleBusVec(busIdx) <> myMul.io.multiCycleBus 
     }
   }
 }
 case class SnowHouseRiscv32imShift32LowLatency(
-  cpuIo: SnowHouseIo,
+  //cpuIo: SnowHouseIo,
+  bridge: SnowHouseMcDualBusToMcBusBridge,
 ) extends Area {
-  def cfg = cpuIo.cfg
+  def cfg = bridge.cfg
+  //def cfg = cpuIo.cfg
   //val lslDel1 = SnowHouseLslDel1(mainWidth=cfg.mainWidth)
   //val lsrDel1 = SnowHouseLsrDel1(mainWidth=cfg.mainWidth)
   //val asrDel1 = SnowHouseAsrDel1(mainWidth=cfg.mainWidth)
@@ -3251,7 +3268,10 @@ case class SnowHouseRiscv32imShift32LowLatency(
     ((group, innerMap), busIdx)
     <- cfg.multiCycleOpInfoMap.view.zipWithIndex
   ) {
-    val multiCycleBus = cpuIo.multiCycleBusVec(busIdx)
+    val multiCycleBus = (
+      //cpuIo.multiCycleBusVec(busIdx)
+      bridge.io.multiCycleBusVec(busIdx)
+    )
     //multiCycleBus.ready := False
     def dstVec = multiCycleBus.recvData.dstVec
     def srcVec = multiCycleBus.sendData.srcVec
@@ -3419,48 +3439,58 @@ case class SnowHouseRiscv32imMultiCycleInstrArea(
   //val lsrImm = SnowHouseRiscv32imLsr32(cpuIo=cpuIo, immShift=true)
   //val asrRc = SnowHouseRiscv32imAsr32(cpuIo=cpuIo, immShift=false)
   //val asrImm = SnowHouseRiscv32imAsr32(cpuIo=cpuIo, immShift=true)
-  for (idx <- 0 until cpuIo.multiCycleH2dBusVec.size) {
-    def myH2dBus = cpuIo.multiCycleH2dBusVec(idx)
-    def myD2hBus = cpuIo.multiCycleD2hBusVec(idx)
-    //myH2dBus.ready := RegNext(myH2dBus.valid, init=False)
-    myH2dBus.ready := False
-    myD2hBus.valid := False
-    myD2hBus.payload := myD2hBus.payload.getZero
+  //val bridgeArr = Array.fill(
+  //  cpuIo.cfg.multiCycleOpInfoMap.view.size
+  //)(
+  //  SnowHouseMcDualBusToMcBusBridge(cfg=cpuIo.cfg)
+  //)
+  val bridge = SnowHouseMcDualBusToMcBusBridge(cfg=cpuIo.cfg)
 
-    val rState = Reg(Bool(), init=False)
-    when (!rState) {
-      when (RegNext(myH2dBus.valid, init=False)) {
-        myH2dBus.ready := True
-        rState := True
-      }
-    } otherwise {
-      myD2hBus.valid := True
-      when (myD2hBus.ready) {
-        rState := False
-      }
-    }
-    //when (myH2dBus.fire) {
-    //  
-    //}
-    //myD2hBus.valid := 
-  }
+  //for (idx <- 0 until cpuIo.multiCycleH2dBusVec.size) {
+  //  def myH2dBus = cpuIo.multiCycleH2dBusVec(idx)
+  //  def myD2hBus = cpuIo.multiCycleD2hBusVec(idx)
+  //  //myH2dBus.ready := RegNext(myH2dBus.valid, init=False)
+  //  myH2dBus.ready := False
+  //  myD2hBus.valid := False
+  //  myD2hBus.payload := myD2hBus.payload.getZero
+
+  //  val rState = Reg(Bool(), init=False)
+  //  when (!rState) {
+  //    when (RegNext(myH2dBus.valid, init=False)) {
+  //      myH2dBus.ready := True
+  //      rState := True
+  //    }
+  //  } otherwise {
+  //    myD2hBus.valid := True
+  //    when (myD2hBus.ready) {
+  //      rState := False
+  //    }
+  //  }
+  //  //when (myH2dBus.fire) {
+  //  //  
+  //  //}
+  //  //myD2hBus.valid := 
+  //}
   //cpuIo.multiCycleH2dBusVec.foreach(myH2dBus => {
   //  myH2dBus.ready := True
   //})
 
-  ////--------
-  //val shift32/*shiftSlt32*/ = (
-  //  //SnowHouseRiscv32imShift32(cpuIo=cpuIo)
-  //  //SnowHouseRiscv32imShiftSlt32LowLatency(cpuIo=cpuIo)
-  //  SnowHouseRiscv32imShift32LowLatency(cpuIo=cpuIo)
-  //)
-  ////val cpyAdd32 = SnowHouseRiscv32imCpyAdd32(cpuIo=cpuIo)
-  //val addMultiCycle = SnowHouseRiscv32imAddMultiCycle(cpuIo=cpuIo)
-  //val mul32 = SnowHouseRiscv32imMul32(cpuIo=cpuIo)
-  ////val divmod32 = SnowHouseRiscv32imDivmod32(cpuIo=cpuIo)
-  ////val divmodw = SnowHouseRiscv32imDivmodw(cpuIo=cpuIo)
-  //val divmod = SnowHouseRiscv32imDivmod(cpuIo=cpuIo)
-  ////--------
+  //--------
+  val shift32/*shiftSlt32*/ = (
+    //SnowHouseRiscv32imShift32(cpuIo=cpuIo)
+    //SnowHouseRiscv32imShiftSlt32LowLatency(cpuIo=cpuIo)
+    SnowHouseRiscv32imShift32LowLatency(
+      //cpuIo=cpuIo
+      bridge=bridge
+    )
+  )
+  //val cpyAdd32 = SnowHouseRiscv32imCpyAdd32(cpuIo=cpuIo)
+  val addMultiCycle = SnowHouseRiscv32imAddMultiCycle(bridge=bridge)
+  val mul32 = SnowHouseRiscv32imMul32(bridge=bridge)
+  //val divmod32 = SnowHouseRiscv32imDivmod32(cpuIo=cpuIo)
+  //val divmodw = SnowHouseRiscv32imDivmodw(cpuIo=cpuIo)
+  val divmod = SnowHouseRiscv32imDivmod(bridge=bridge)
+  //--------
 }
 case class SnowHouseRiscv32imWithoutRam(
   cfg: SnowHouseRiscv32imConfig

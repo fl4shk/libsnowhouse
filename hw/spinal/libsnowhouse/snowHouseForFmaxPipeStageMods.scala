@@ -244,7 +244,7 @@ case class SnowHouseForFmaxPipeStageExecuteIo(
   )
   //--------
   //val myModMemWord = (
-  //  in(SInt(cfg.mainWidth bits))
+  //  out(SInt(cfg.mainWidth bits))
   //)
 }
 case class SnowHouseForFmaxPipeStageExecute(
@@ -281,6 +281,8 @@ case class SnowHouseForFmaxPipeStageExecute(
   linkArr += cLink
   linkArr += sLink
   //linkArr += s2mLink
+
+  val myModMemWord = SInt(cfg.mainWidth bits)
 
   cLink.up.driveFrom(io.up)(
     con=(node, inp) => {

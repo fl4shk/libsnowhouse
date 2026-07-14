@@ -670,6 +670,11 @@ case class SnowHouseInstrDataDualRam(
     ) generate (
       LcvBusCache(cfg=cfg.subCfg.lcvDbusEtcCfg)
     )
+    dcache.io.mmioHiBus.h2dBus.ready := False
+    dcache.io.mmioHiBus.d2hBus.valid := False
+    dcache.io.mmioHiBus.d2hBus.payload := (
+      dcache.io.mmioHiBus.d2hBus.payload.getZero
+    )
     val myMemCfg = LcvBusMemConfig(
       busCfg=(
         if (
@@ -2209,6 +2214,205 @@ case class SnowHouse(
     val snowHouse = SnowHouseForFmax(cfg=cfg)
     io <> snowHouse.io
   })
+}
+
+case class SnowHouseMcDualBusToMcBusBridgeIo(
+  cfg: SnowHouseConfig,
+) extends Bundle {
+  require(
+    cfg.havePsWbMultiCycleStall
+  )
+
+  //val h2dBus = slave(
+  //  Stream(
+  //    MultiCycleHostPayload(
+  //      cfg=cfg,
+  //      group=group,
+  //    )
+  //  )
+  //)
+  //val d2hBus = master(
+  //  Stream(
+  //    MultiCycleDevPayload(
+  //      cfg=cfg,
+  //      group=group,
+  //    )
+  //  )
+  //)
+
+  //val stallIo = master(
+  //  new LcvStallIo[
+  //    MultiCycleHostPayload,
+  //    MultiCycleDevPayload,
+  //  ](
+  //    sendPayloadType=(
+  //      Some(MultiCycleHostPayload(
+  //        cfg=cfg,
+  //        group=group,
+  //      ))
+  //    ),
+  //    recvPayloadType=(
+  //      Some(MultiCycleDevPayload(
+  //        cfg=cfg,
+  //        group=group,
+  //      ))
+  //    ),
+  //  )
+  //)
+  val multiCycleH2dBusVec = (
+    Vec[Stream[
+      MultiCycleHostPayload
+    ]]{
+      val tempArr = ArrayBuffer[
+        Stream[
+          MultiCycleHostPayload
+        ]
+      ]()
+      for (
+        (group, _) <- cfg.multiCycleOpInfoMap.view
+      ) {
+        tempArr += Stream(
+          MultiCycleHostPayload(
+            cfg=cfg,
+            group=group,
+          )
+        )
+      }
+      tempArr
+    }
+  )
+  val multiCycleD2hBusVec = (
+    Vec[Stream[
+      MultiCycleDevPayload
+    ]]{
+      val tempArr = ArrayBuffer[
+        Stream[
+          MultiCycleDevPayload
+        ]
+      ]()
+      for (
+        (group, _) <- cfg.multiCycleOpInfoMap.view
+      ) {
+        tempArr += Stream(
+          MultiCycleDevPayload(
+            cfg=cfg,
+            group=group,
+          )
+        )
+      }
+      tempArr
+    }
+  )
+  val multiCycleBusVec = (
+    Vec[LcvStallIo[
+      MultiCycleHostPayload,
+      MultiCycleDevPayload,
+    ]]{
+      val tempArr = ArrayBuffer[
+        LcvStallIo[
+          MultiCycleHostPayload,
+          MultiCycleDevPayload,
+        ]
+      ]()
+      for (
+        //((_, opInfo), idx) <- cfg.multiCycleOpInfoMap.view.zipWithIndex
+        (group, _) <- cfg.multiCycleOpInfoMap.view
+      ) {
+        //assert(
+        //  opInfo.select == OpSelect.MultiCycle
+        //)
+        //if (opInfo.select == OpSelect.MultiCycle) {
+          tempArr += new LcvStallIo(
+            sendPayloadType=(
+              Some(MultiCycleHostPayload(
+                cfg=cfg,
+                group=group,
+                //opInfo=opInfo
+                //maxSrcArrSize=(
+                //  cfg.
+                //)
+              ))
+            ),
+            recvPayloadType=(
+              Some(MultiCycleDevPayload(
+                cfg=cfg,
+                group=group,
+                //opInfo=opInfo
+              ))
+            ),
+          )
+        //}
+      }
+      tempArr
+    }
+  )
+  for (idx <- 0 until multiCycleH2dBusVec.size) {
+    master(multiCycleH2dBusVec(idx))
+  }
+  for (idx <- 0 until multiCycleD2hBusVec.size) {
+    slave(multiCycleD2hBusVec(idx))
+  }
+
+  for (idx <- 0 until multiCycleBusVec.size) {
+    master(multiCycleBusVec(idx))
+  }
+}
+case class SnowHouseMcDualBusToMcBusBridge(
+  cfg: SnowHouseConfig,
+) extends Component {
+  val io = SnowHouseMcDualBusToMcBusBridgeIo(
+    cfg=cfg
+  )
+  val rStateVec = Vec.fill(
+    cfg.multiCycleOpInfoMap.view.size
+  )(
+    Reg(Bool(), init=False)
+  )
+  for (idx <- 0 until cfg.multiCycleOpInfoMap.view.size) {
+    def rState = rStateVec(idx)
+    def myH2dBus = io.multiCycleH2dBusVec(idx)
+    def myD2hBus = io.multiCycleD2hBusVec(idx)
+    def stallIo = io.multiCycleBusVec(idx)
+
+    myH2dBus.ready := False
+    myD2hBus.valid := (
+      RegNext(
+        myD2hBus.valid,
+        init=myD2hBus.valid.getZero
+      )
+    )
+    myD2hBus.payload := (
+      RegNext(
+        myD2hBus.payload,
+        init=myD2hBus.payload.getZero
+      )
+    )
+    stallIo.nextValid := False
+    stallIo.sendData := (
+      RegNext(
+        stallIo.sendData,
+        init=stallIo.sendData.getZero
+      )
+    )
+    when (!rState) {
+      myD2hBus.valid := False
+      when (myH2dBus.valid) {
+        stallIo.nextValid := True
+        stallIo.sendData := myH2dBus.payload
+        myH2dBus.ready := True
+        rState := True
+      }
+    } otherwise {
+      stallIo.nextValid := True
+      when (stallIo.ready) {
+        myD2hBus.payload := stallIo.recvData
+        myD2hBus.valid := True
+      }
+      when (myD2hBus.fire) {
+        rState := True
+      }
+    }
+  }
 }
 
 //object SnowHouseToVerilog extends App {
