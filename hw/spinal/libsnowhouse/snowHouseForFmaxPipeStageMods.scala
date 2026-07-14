@@ -296,6 +296,7 @@ case class SnowHouseForFmaxPipeStagePreEx(
   )
   //when (cLink.up.valid) {
   //}
+  cLink.up(pPreExOutp) := myOutp
 
   s2mLink.down.driveTo(
     io.down

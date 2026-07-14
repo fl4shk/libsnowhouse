@@ -644,7 +644,8 @@ case class SnowHouseConfig(
   opInfoMap: LinkedHashMap[Any, OpInfo],
   irqJmpOp: Int,
   //irqRetIraOp: Int,
-  optForFmax: Boolean=true,
+  //optForFmax: Boolean=true,
+  optForFmaxPostNumPostExPreWbPipeStages: Option[Int]=Some(1),
   optShiftRegPcImmAddend: Boolean=false,
   //--------
   doInstrDecodeFunc: (SnowHousePipeStageInstrDecode) => Area,
@@ -685,6 +686,7 @@ case class SnowHouseConfig(
   targetAltera: Boolean=false,
   optFormal: Boolean=false,
 ) {
+  val optForFmax = (optForFmaxPostNumPostExPreWbPipeStages != None)
   def myPsIfRegPcSetItCntWidth = 2
   def mainAddrWidth = subCfg.mainAddrWidth
   def myHaveS2mIf = (

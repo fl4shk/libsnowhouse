@@ -2181,30 +2181,111 @@ private[libsnowhouse] case class SnowHouseForFmax(
   val psEx = SnowHouseForFmaxPipeStageExecute(cfg=cfg)
   //--------
 
-  psId.io.up <-/< psIf.io.down // extra pipeline stage for fmax
-  io.lcvIbus << psIf.io.lcvIbus
+  psId.io.up << psIf.io.down // extra pipeline stage for fmax
+  //psPreEx.io.up << psId.io.down
+  //psEx.io.up << psPreEx.io.down
+
+  //--------
+  val myRegFile = new ArrayBuffer[WrPulseRdPipeRamSdpPipe[
+    SnowHousePipePayload,
+    UInt,
+  ]]()
+  for (idx <- 0 until cfg.regFileCfg.modRdPortCnt) {
+    myRegFile += WrPulseRdPipeRamSdpPipe(
+      cfg=WrPulseRdPipeRamSdpPipeConfig(
+        modType=SnowHousePipePayload(cfg=cfg),
+        wordType=UInt(cfg.mainWidth bits),
+        wordCount=cfg.regFileCfg.wordCountArr(0),
+        pipeName="myRegFileArr",
+        setWordFunc=(
+          outp: SnowHousePipePayload,
+          inp: SnowHousePipePayload,
+          rdMemWord: UInt,
+        ) => {
+          outp := inp
+          outp.myExt(0).rdMemWord(idx).allowOverride
+          outp.myExt(0).rdMemWord(idx) := rdMemWord
+        },
+        optExtraRdPipeStages=(
+          1
+        ),
+        optWrHistLength=(
+          1
+        ),
+        initBigInt=Some({
+          val myArr = new ArrayBuffer[BigInt]()
+          myArr ++= Array.fill(cfg.regFileCfg.wordCountArr(0))(BigInt(0))
+          Array(myArr.toSeq)
+        }),
+        arrRamStyleAltera="no_rw_check, M10K",
+        arrRamStyleXilinx="block",
+        arrRwAddrCollisionXilinx="",
+      )
+    )
+  }
+  val myRegFileRdAddrPipeFrontVec = Vec.fill(2)(
+    cloneOf(myRegFile.head.io.rdAddrPipe)
+  )
+  psId.io.down.translateInto(myRegFileRdAddrPipeFrontVec.head)(
+    dataAssignment=(outp, inp) => {
+      outp.data := inp
+    }
+  )
+  myRegFileRdAddrPipeFrontVec.last <-/< myRegFileRdAddrPipeFrontVec.head
+
+  val myRegFileRdAddrPipeFork = StreamFork(
+    input=myRegFileRdAddrPipeFrontVec.last,
+    portCount=myRegFile.size,
+    synchronous=true,
+  )
+
+  for (idx <- 0 until myRegFile.size) {
+    myRegFileRdAddrPipeFork(idx).translateInto(
+      myRegFile(idx).io.rdAddrPipe
+    )(
+      dataAssignment=(outp, inp) => {
+        outp.data := inp.data
+        outp.addr := inp.data.gprIdxVec(idx)
+      }
+    )
+  }
+
+  val myRegFileRdDataPipeJoin = StreamJoin.vec(
+    sources=myRegFile.map(item => item.io.rdDataPipe)
+  )
+
+  val myRegFileRdDataPipeLast = Stream(SnowHousePipePayload(cfg=cfg))
+  myRegFileRdDataPipeJoin.translateInto(
+    myRegFileRdDataPipeLast
+  )(
+    dataAssignment=(outp, inp) => {
+      outp := inp.head
+      outp.myExt(0).rdMemWord.allowOverride
+      for (idx <- 0 until inp.size) {
+        outp.myExt(0).rdMemWord(idx) := (
+          inp(idx).myExt(0).rdMemWord(idx)
+        )
+      }
+    }
+  )
+  psPreEx.io.up << myRegFileRdDataPipeLast
+  psEx.io.up << psPreEx.io.down
+
+  myRegFile.foreach(item => {
+    item.io.wrPulse.valid := False
+    item.io.wrPulse.payload := (
+      item.io.wrPulse.payload.getZero
+    )
+  })
+  //--------
+
   psIf.io.psExSetPc := psExSetPc
+  psId.io.psExSetPc := psExSetPc
+  psExSetPc := psEx.io.psExSetPc
 
+  io.lcvIbus << psIf.io.lcvIbus
   io.lcvDbus.h2dBus << psEx.io.myLcvDbusH2dStm
-
-  //val linkArr = PipeHelper.mkLinkArr()
-
-  //val cIf = CtrlLink()
-  //linkArr += cIf
-
-  //val cId = CtrlLink()
-  //linkArr += cId
-
-  //val cEx = CtrlLink()
-  //linkArr += cEx
-
-  //val cMem = CtrlLink()
-  //linkArr += cMem
-
-  //val cWb = CtrlLink()
-  //linkArr += cWb
-
-  //Builder(linkArr)
+  //psWb.io.myLcvDbusD2hStm << io.lcvDbus.d2hBus
 }
 
 case class SnowHouse(

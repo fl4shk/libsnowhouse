@@ -3665,7 +3665,7 @@ case class SnowHouseCpuConfig(
       }
       myIrqJmpOp
     },
-    optForFmax=false,
+    optForFmaxPostNumPostExPreWbPipeStages=None,
     optShiftRegPcImmAddend=true,
     //irqRetIraOp={
     //  var myIrqRetIraOp: Int = 0x0
