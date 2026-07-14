@@ -602,7 +602,7 @@ void SnowhousecpuEmu::_bus_write(
             data, addr, byte_count
         );
     }
-    const u32 temp_addr = addr & ~0x80000000;
+    const u32 temp_addr = addr & ~0x8000000;
 
     if (
         byte_count == sizeof(u8)
@@ -691,7 +691,7 @@ u32 SnowhousecpuEmu::_bus_read(
     //);
     u32 ret = 0; 
 
-    const u32 temp_addr = addr & ~0x80000000;
+    const u32 temp_addr = addr & ~0x8000000;
 
     if (
         byte_count == sizeof(u8)

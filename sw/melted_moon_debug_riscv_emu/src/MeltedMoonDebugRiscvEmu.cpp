@@ -1254,7 +1254,7 @@ void MeltedMoonDebugRiscvEmu::_bus_write(
         );
     }
 
-    const u32 temp_addr = addr & ~0x80000000;
+    const u32 temp_addr = addr & ~0x8000000;
 
     if (
         byte_count == sizeof(u8)
@@ -1368,7 +1368,7 @@ u32 MeltedMoonDebugRiscvEmu::_bus_read(
     //    : 0u
     //);
     u32 ret = 0; 
-    const u32 temp_addr = addr & ~0x80000000;
+    const u32 temp_addr = addr & ~0x8000000;
     if (
         byte_count == sizeof(u8)
         || byte_count == sizeof(u16)
