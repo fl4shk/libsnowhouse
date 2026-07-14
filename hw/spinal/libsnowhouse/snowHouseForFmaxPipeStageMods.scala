@@ -92,7 +92,6 @@ case class SnowHouseForFmaxPipeStageInstrFetch(
   val down = cIf.down
   val psExSetPc = io.psExSetPc
 
-
   val pipeStageIf = SnowHousePipeStageInstrFetch(
     args=SnowHousePipeStageArgs(
       cfg=cfg,

@@ -3419,17 +3419,48 @@ case class SnowHouseRiscv32imMultiCycleInstrArea(
   //val lsrImm = SnowHouseRiscv32imLsr32(cpuIo=cpuIo, immShift=true)
   //val asrRc = SnowHouseRiscv32imAsr32(cpuIo=cpuIo, immShift=false)
   //val asrImm = SnowHouseRiscv32imAsr32(cpuIo=cpuIo, immShift=true)
-  val shift32/*shiftSlt32*/ = (
-    //SnowHouseRiscv32imShift32(cpuIo=cpuIo)
-    //SnowHouseRiscv32imShiftSlt32LowLatency(cpuIo=cpuIo)
-    SnowHouseRiscv32imShift32LowLatency(cpuIo=cpuIo)
-  )
-  //val cpyAdd32 = SnowHouseRiscv32imCpyAdd32(cpuIo=cpuIo)
-  val addMultiCycle = SnowHouseRiscv32imAddMultiCycle(cpuIo=cpuIo)
-  val mul32 = SnowHouseRiscv32imMul32(cpuIo=cpuIo)
-  //val divmod32 = SnowHouseRiscv32imDivmod32(cpuIo=cpuIo)
-  //val divmodw = SnowHouseRiscv32imDivmodw(cpuIo=cpuIo)
-  val divmod = SnowHouseRiscv32imDivmod(cpuIo=cpuIo)
+  for (idx <- 0 until cpuIo.multiCycleH2dBusVec.size) {
+    def myH2dBus = cpuIo.multiCycleH2dBusVec(idx)
+    def myD2hBus = cpuIo.multiCycleD2hBusVec(idx)
+    //myH2dBus.ready := RegNext(myH2dBus.valid, init=False)
+    myH2dBus.ready := False
+    myD2hBus.valid := False
+    myD2hBus.payload := myD2hBus.payload.getZero
+
+    val rState = Reg(Bool(), init=False)
+    when (!rState) {
+      when (RegNext(myH2dBus.valid, init=False)) {
+        myH2dBus.ready := True
+        rState := True
+      }
+    } otherwise {
+      myD2hBus.valid := True
+      when (myD2hBus.ready) {
+        rState := False
+      }
+    }
+    //when (myH2dBus.fire) {
+    //  
+    //}
+    //myD2hBus.valid := 
+  }
+  //cpuIo.multiCycleH2dBusVec.foreach(myH2dBus => {
+  //  myH2dBus.ready := True
+  //})
+
+  ////--------
+  //val shift32/*shiftSlt32*/ = (
+  //  //SnowHouseRiscv32imShift32(cpuIo=cpuIo)
+  //  //SnowHouseRiscv32imShiftSlt32LowLatency(cpuIo=cpuIo)
+  //  SnowHouseRiscv32imShift32LowLatency(cpuIo=cpuIo)
+  //)
+  ////val cpyAdd32 = SnowHouseRiscv32imCpyAdd32(cpuIo=cpuIo)
+  //val addMultiCycle = SnowHouseRiscv32imAddMultiCycle(cpuIo=cpuIo)
+  //val mul32 = SnowHouseRiscv32imMul32(cpuIo=cpuIo)
+  ////val divmod32 = SnowHouseRiscv32imDivmod32(cpuIo=cpuIo)
+  ////val divmodw = SnowHouseRiscv32imDivmodw(cpuIo=cpuIo)
+  //val divmod = SnowHouseRiscv32imDivmod(cpuIo=cpuIo)
+  ////--------
 }
 case class SnowHouseRiscv32imWithoutRam(
   cfg: SnowHouseRiscv32imConfig

@@ -1711,11 +1711,13 @@ case class SnowHousePipePayloadNonExt(
           0
           //1
         ) else (
+          0
           //2
-          1
-          // up to two following instructions,
-          // per the overall pipeline structure of
-          //   EX -> MEM -> WB -> LastBack
+          //1
+          // Old notes (from when MEM was being considered):
+          //// up to two following instructions,
+          //// per the overall pipeline structure of
+          ////   EX -> MEM -> WB -> LastBack
         )
       ) else (
         0
