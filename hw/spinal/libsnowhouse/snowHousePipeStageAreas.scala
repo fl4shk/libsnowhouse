@@ -7125,22 +7125,33 @@ case class SnowHousePipeStageExecute(
     }
   }
 
-  val myTempDownIsReadyMost = (
+  val myTempDownIsReadyMostMost = (
     cLink.down.isReady
     //&& !psMemToEarlierStallRequest
-    && !outp.instrCnt.myPsIdBubble.last
-    && !psWbToEarlierStallRequest
+  )
+  val myTempDownIsReadyMost = (
+    (
+      if (!cfg.optForFmax) (
+        myTempDownIsReadyMostMost
+        && !outp.instrCnt.myPsIdBubble.last
+        && !psWbToEarlierStallRequest
+      ) else (
+        myTempDownIsReadyMostMost
+      )
+    )
   )
   val myTempDownIsReady = (
     myTempDownIsReadyMost
     //&& !myWaitFinishDuplDbusHostAddr
   )
-  when (
-    //psMemToEarlierStallRequest
-    //|| 
-    psWbToEarlierStallRequest
-  ) {
-    cLink.haltIt()
+  if (!cfg.optForFmax) {
+    when (
+      //psMemToEarlierStallRequest
+      //|| 
+      psWbToEarlierStallRequest
+    ) {
+      cLink.haltIt()
+    }
   }
   //when (!myTempDownIsReady) {
   //  cMid0Front.duplicateIt()
@@ -7222,7 +7233,7 @@ case class SnowHousePipeStageExecute(
 
   case class MyFwdInfo(
   ) extends Bundle {
-    //val valid = Bool()
+    val valid = Bool()
     val data = UInt(cfg.mainWidth bits)
     val addr = UInt(log2Up(cfg.regFileCfg.wordCountArr(0)) bits)
   }
@@ -7231,7 +7242,7 @@ case class SnowHousePipeStageExecute(
   ) generate (new Area {
     val myHistFwdInfo = {
       val temp = MyFwdInfo()
-      //temp.valid := ram.io.wrEn
+      temp.valid := outp.myExt(0).modMemWordValid.last //ram.io.wrEn
       temp.data := outp.myExt(0).modMemWord //ram.io.wrData
       temp.addr := outp.gprIdxVec.last
       History(
@@ -7261,9 +7272,8 @@ case class SnowHousePipeStageExecute(
     for (jdx <- 0 until myTempHistFwdValid.size) {
       for (idx <- 0 until myTempHistFwdValid(jdx).getWidth) {
         myTempHistFwdValid(jdx)(idx) := (
-          //myHistFwdInfo(idx).valid
-          //&& 
-          (
+          myHistFwdInfo(idx).valid
+          && (
             LcvFastCmpEq(
               left=outp.gprIdxVec(jdx),
               right=myHistFwdInfo(idx).addr,
@@ -7286,18 +7296,10 @@ case class SnowHousePipeStageExecute(
             + "1"
             + ("-" * idx)
           )) {
-            //node(mainPayload).fwdValid := True
-            //node(mainPayload).rdMemWord := (
-            //  myHistFwdInfo(idx).data
-            //)
             outp.myExt(0).rdMemWord(jdx) := myHistFwdInfo(idx).data
           }
         }
         default {
-          //node(mainPayload).fwdValid := False
-          //node(mainPayload).rdMemWord := (
-          //  node(mainPayload).rdMemWord.getZero
-          //)
           outp.myExt(0).rdMemWord(jdx) := (
             inp.myExt(0).rdMemWord(jdx)
           )
@@ -7836,12 +7838,18 @@ case class SnowHousePipeStageExecute(
   setOutpModMemWord.io.downIsValid := cLink.down.isValid
   setOutpModMemWord.io.downIsReady := myTempDownIsReady //cMid0Front.down.isReady
 
-  val alu = LcvAluDel1(
-    wordWidth=cfg.mainWidth
+  val alu = (
+    !cfg.optForFmax
+  ) generate (
+    LcvAluDel1(
+      wordWidth=cfg.mainWidth
+    )
   )
   //--------
   // BEGIN: this worked pretty well for fmax, so let's try another approach
   val mostTempToSwitchMyModMemWord = (
+    !cfg.optForFmax
+  ) generate (
     //RegNext(
       (
         (
@@ -7877,6 +7885,8 @@ case class SnowHousePipeStageExecute(
     //)
   )
   val tempToSwitchMyModMemWord = (
+    !cfg.optForFmax
+  ) generate (
     if (!cfg.useLcvDataBus) (
       mostTempToSwitchMyModMemWord
       ## (
@@ -7896,197 +7906,69 @@ case class SnowHousePipeStageExecute(
       mostTempToSwitchMyModMemWord
     )
   )
-  switch (tempToSwitchMyModMemWord) {
-    is (
-      if (!cfg.useLcvDataBus) (
-        M"100"
-      ) else (
-        M"10"
-      )
-    ) {
-      myModMemWord := (
-        RegNext(
-          next=myModMemWord,
-          init=myModMemWord.getZero,
+  if (!cfg.optForFmax) {
+    switch (tempToSwitchMyModMemWord) {
+      is (
+        if (!cfg.useLcvDataBus) (
+          M"100"
+        ) else (
+          M"10"
         )
-      )
-      when (RegNext(cLink.up.isFiring, init=False)) {
-        myModMemWord := alu.io.outp_data
-      }
-    }
-    is (
-      if (!cfg.useLcvDataBus) (
-        M"110"
-      ) else (
-        M"11"
-      )
-    ) {
-      myModMemWord := (
-        RegNext(
-          next=myModMemWord,
-          init=myModMemWord.getZero,
-        )
-      )
-      when (RegNext(cLink.up.isFiring, init=False)) {
+      ) {
         myModMemWord := (
           RegNext(
-            next=setOutpModMemWord.io.modMemWord(0).asSInt,
-            init=setOutpModMemWord.io.modMemWord(0).asSInt.getZero
+            next=myModMemWord,
+            init=myModMemWord.getZero,
           )
         )
+        when (RegNext(cLink.up.isFiring, init=False)) {
+          myModMemWord := alu.io.outp_data
+        }
       }
-    }
-    if (!cfg.useLcvDataBus) {
-      is (M"--1") {
-        myModMemWord := myDbus.recvData.data.asSInt.resized
-      }
-    }
-    default {
-      myModMemWord := (
-        RegNext(
-          next=myModMemWord,
-          init=myModMemWord.getZero,
+      is (
+        if (!cfg.useLcvDataBus) (
+          M"110"
+        ) else (
+          M"11"
         )
-        //RegNextWhen(
-        //  next=alu.io.inp_a,
-        //  cond=cMid0Front.up.isFiring,
-        //  init=alu.io.inp_a.getZero,
-        //)
-      )
+      ) {
+        myModMemWord := (
+          RegNext(
+            next=myModMemWord,
+            init=myModMemWord.getZero,
+          )
+        )
+        when (RegNext(cLink.up.isFiring, init=False)) {
+          myModMemWord := (
+            RegNext(
+              next=setOutpModMemWord.io.modMemWord(0).asSInt,
+              init=setOutpModMemWord.io.modMemWord(0).asSInt.getZero
+            )
+          )
+        }
+      }
+      if (!cfg.useLcvDataBus) {
+        is (M"--1") {
+          myModMemWord := myDbus.recvData.data.asSInt.resized
+        }
+      }
+      default {
+        myModMemWord := (
+          RegNext(
+            next=myModMemWord,
+            init=myModMemWord.getZero,
+          )
+          //RegNextWhen(
+          //  next=alu.io.inp_a,
+          //  cond=cMid0Front.up.isFiring,
+          //  init=alu.io.inp_a.getZero,
+          //)
+        )
+      }
     }
   }
-  //switch (
-  //  (
-  //    RegNext(
-  //      next=(
-  //        cMid0Front.up.isFiring
-  //        && setOutpModMemWord.io.modMemWordValid.head
-  //        //&& alu.io.inp_op =/= LcvAluDel1InpOpEnum.OP_GET_INP_A
-  //      ),
-  //      init=False,
-  //    )
-  //  ) ## (
-  //    RegNext(
-  //      next=(
-  //        //alu.io.inp_op === LcvAluDel1InpOpEnum.OP_GET_INP_A
-  //        alu.io.inp_op === LcvAluDel1InpOpEnum.ZERO
-  //      ),
-  //      init=False,
-  //    )
-  //  ) ## (
-  //    //rose(
-  //      myDbusLdReady
-  //    //)
-  //    && rose(
-  //      myDbus.ready
-  //    )
-  //    //RegNext(
-  //    //  next=(
-  //    //  ),
-  //    //  init=False
-  //    //)
-  //  )
-  //) {
-  //  is (M"100") {
-  //    myModMemWord := (
-  //      RegNext(
-  //        next=myModMemWord,
-  //        init=myModMemWord.getZero,
-  //      )
-  //    )
-  //    when (RegNext(cMid0Front.up.isFiring, init=False)) {
-  //      myModMemWord := alu.io.outp_data
-  //    }
-  //  }
-  //  is (M"110") {
-  //    myModMemWord := (
-  //      RegNext(
-  //        next=myModMemWord,
-  //        init=myModMemWord.getZero,
-  //      )
-  //    )
-  //    when (RegNext(cMid0Front.up.isFiring, init=False)) {
-  //      myModMemWord := (
-  //        RegNext(
-  //          next=setOutpModMemWord.io.modMemWord(0).asSInt,
-  //          init=setOutpModMemWord.io.modMemWord(0).asSInt.getZero
-  //        )
-  //      )
-  //    }
-  //  }
-  //  is (M"--1") {
-  //    myModMemWord := (
-  //      myDbus.recvData.data.asSInt.resized
-  //    )
-  //  }
-  //  default {
-  //    myModMemWord := (
-  //      RegNext(
-  //        next=myModMemWord,
-  //        init=myModMemWord.getZero,
-  //      )
-  //      //RegNextWhen(
-  //      //  next=alu.io.inp_a,
-  //      //  cond=cMid0Front.up.isFiring,
-  //      //  init=alu.io.inp_a.getZero,
-  //      //)
-  //    )
-  //  }
-  //}
   // END: this worked pretty well for fmax, so let's try another approach
   //--------
-
-  //when (
-  //  RegNext(
-  //    next=(
-  //      cMid0Front.up.isFiring
-  //      && setOutpModMemWord.io.modMemWordValid.head
-  //      && alu.io.inp_op =/= LcvAluDel1InpOpEnum.OP_GET_INP_A
-  //    ),
-  //    init=False,
-  //  )
-  //) {
-  //  myModMemWord := alu.io.outp_data
-  //} elsewhen (
-  //  RegNext(
-  //    next=(
-  //      cMid0Front.up.isFiring
-  //      && setOutpModMemWord.io.modMemWordValid.head
-  //      && alu.io.inp_op === LcvAluDel1InpOpEnum.OP_GET_INP_A
-  //    ),
-  //    init=False,
-  //  )
-  //) {
-  //  myModMemWord := (
-  //    RegNext(
-  //      next=(
-  //        setOutpModMemWord.io.modMemWord(0).asSInt
-  //      ),
-  //      init=setOutpModMemWord.io.modMemWord(0).asSInt.getZero
-  //    )
-  //  )
-  //} otherwise {
-  //  myModMemWord := (
-  //    RegNext(
-  //      next=myModMemWord,
-  //      init=myModMemWord.getZero,
-  //    )
-  //    //RegNextWhen(
-  //    //  next=alu.io.inp_a,
-  //    //  cond=cMid0Front.up.isFiring,
-  //    //  init=alu.io.inp_a.getZero,
-  //    //)
-  //  )
-  //}
-
-
-  //when (
-  //  myDbusLdReady
-  //) {
-  //  myModMemWord := (
-  //    myDbus.recvData.data.asSInt.resized
-  //  )
-  //}
 
   //val myTempRdMemWord = cloneOf(setOutpModMemWord.io.rdMemWord)
   //val myTempRdMemWordCond = (
@@ -8129,201 +8011,25 @@ case class SnowHousePipeStageExecute(
         //  )
         //}
       //}
-      //outp.shiftModMemWord := (
-      //  setOutpModMemWord.io.shiftModMemWord
-      //)
-      //outp.shiftModMemWordValid := (
-      //  setOutpModMemWord.io.shiftModMemWordValid
-      //)
-      //outp.shiftModMemWordValid.foreach(item => {
-      //  item := setOutpModMemWord.io.opIsAluShift.head
-      //})
     } else {
       def tempRdMemWord = setOutpModMemWord.io.rdMemWord(zdx)
       val tempMyRdMemWord = myRdMemWord(ydx=ydx, modIdx=zdx)
-      //tempMyRdMemWord := myRdMemWord(ydx=ydx, modIdx=zdx)
-      //tempExt.rdMemWord(zdx) := tempMyRdMemWord
+      tempRdMemWord := tempMyRdMemWord
 
-      //myTempRdMemWordCond(zdx) := (
-      //  RegNextWhen(
-      //    tempExt.modMemWordValid.head,
-      //    cond=setOutpModMemWord.io.upIsFiring,
-      //    init=False
-      //  )
-      //  && (
-      //    tempExt.memAddr(zdx)
-      //    === RegNextWhen(
-      //      tempExt.memAddr.last,
-      //      cond=setOutpModMemWord.io.upIsFiring,
-      //      init=tempExt.memAddr.last.getZero
-      //    )
-      //  )
-      //)
-
-      //when (
-      //  myTempRdMemWordCond(zdx)
-      //) {
-      //  tempRdMemWord := myModMemWord.asUInt
-      //} otherwise {
-        tempRdMemWord := tempMyRdMemWord
-      //}
-      //when (
-      //  //outp.aluOp === LcvAluDel1InpOpEnum.OP_GET_INP_A
-      //  RegNextWhen(
-      //    next=(
-      //      //(
-      //      //  cMid0Front.down.isReady
-      //      //) && 
-      //      (
-      //        alu.io.inp_op === LcvAluDel1InpOpEnum.OP_GET_INP_A
-      //      ) && (
-      //        setOutpModMemWord.io.modMemWordValid.head
-      //      )
-      //    ),
-      //    cond=(
-      //      //cMid0Front.down.isReady
-      //      cMid0Front.up.isFiring
-      //    ),
-      //    init=False,
-      //  )
-      //) {
-      //  //alu.io.inp_op := LcvAluDel1InpOpEnum.ZERO
-      //  //alu.io.inp_op := LcvAluDel1InpOpEnum.OP_GET_INP_A
-      //  //alu.io.inp_a := setOutpModMemWord.io.modMemWord(0).asSInt
-      //  myModMemWord := RegNextWhen(
-      //    next=setOutpModMemWord.io.modMemWord(0).asSInt,
-      //    cond=(
-      //      //cMid0Front.down.isReady
-      //      cMid0Front.up.isFiring
-      //    ),
-      //    init=setOutpModMemWord.io.modMemWord(0).asSInt.getZero,
-      //  )
-      //}
-
-      if (zdx == 0) {
-        alu.io.inp_a := (
-          tempMyRdMemWord.asSInt
-          //tempRdMemWord.asSInt
-        )
-        alu.io.inp_op := outp.aluOp
-        //when (
-        //  cMid0Front.down.isReady
-        //  //cMid0Front.up.isFiring
-        //) {
-        //  //alu.io.inp_a := tempMyRdMemWord.asSInt
-        //  //when (
-        //  //  //!myShouldIgnoreInstr(0)
-        //  //  //&& 
-        //  //  alu.io.inp_op === LcvAluDel1InpOpEnum.OP_GET_INP_A
-        //  //) {
-        //  //  alu.io.inp_a := setOutpModMemWord.io.modMemWord(0).asSInt
-        //  //}
-        //  when (setOutpModMemWord.io.modMemWordValid.head) {
-        //    alu.io.inp_op := outp.aluOp
-        //  } otherwise {
-        //    alu.io.inp_op := LcvAluDel1InpOpEnum.OP_GET_INP_A
-        //  }
-
-        //  //when (
-        //  //  //outp.aluOp === LcvAluDel1InpOpEnum.OP_GET_INP_A
-        //  //  alu.io.inp_op === LcvAluDel1InpOpEnum.OP_GET_INP_A
-        //  //) {
-        //  //  //alu.io.inp_op := LcvAluDel1InpOpEnum.ZERO
-        //  //  //alu.io.inp_op := LcvAluDel1InpOpEnum.OP_GET_INP_A
-        //  //  alu.io.inp_a := setOutpModMemWord.io.modMemWord(0).asSInt
-        //  //}
-
-        //  //when (alu.io.inp_op === LcvAluDel1InpOpEnum.OP_GET_INP_A) {
-        //  //  alu.io.inp_a := setOutpModMemWord.io.modMemWord(0).asSInt
-        //  //}
-        //  //when (setOutpModMemWord.io.aluModMemWordValid.head) {
-        //  //  alu.io.inp_a := tempMyRdMemWord.asSInt
-        //  //  alu.io.inp_op := outp.aluOp
-        //  //} otherwise {
-        //  //  alu.io.inp_a := 0x0
-        //  //  alu.io.inp_op := LcvAluDel1InpOpEnum.ADD
-        //  //}
-        //} 
-        //when (myShouldIgnoreInstr.last) {
-        //  //alu.io.inp_op := LcvAluDel1InpOpEnum.ZERO
-        //  alu.io.inp_op := 
-        //}
-      } else if (zdx == 1) {
-        //alu.io.inp_b_sel := True
-        //when (
-        //  cMid0Front.down.isReady
-        //  //cMid0Front.up.isFiring
-        //) {
-          alu.io.inp_b(0) := (
+      if (!cfg.optForFmax) {
+        if (zdx == 0) {
+          alu.io.inp_a := (
             tempMyRdMemWord.asSInt
             //tempRdMemWord.asSInt
           )
+          alu.io.inp_op := outp.aluOp
+        } else if (zdx == 1) {
+          alu.io.inp_b(0) := tempMyRdMemWord.asSInt
           alu.io.inp_b(1) := outp.imm.last.asSInt
           alu.io.inp_b_sel := outp.aluInpBIsImm
-          //when (
-          //  //setOutpModMemWord.io.aluModMemWordValid.head
-          //  setOutpModMemWord.io.modMemWordValid.head
-          //) {
-          //  alu.io.inp_b(1) := outp.imm.last.asSInt
-          //  alu.io.inp_b_sel := outp.aluInpBIsImm
-          //  //when (!outp.aluInpBIsImm) {
-          //  //  alu.io.inp_b := tempMyRdMemWord.asSInt
-          //  //} otherwise {
-          //  //  alu.io.inp_b := outp.imm(0).asSInt
-          //  //}
-          //} otherwise {
-          //  //alu.io.inp_b := 0x0 
-          //  alu.io.inp_b(1) := 0x0
-          //  //alu.io.inp_b.foreach(_ := 0x0)
-          //  //alu.io.inp_b_sel := False
-          //}
-        //}
+        }
       }
-      //val rRdMemWordState = (
-      //  Reg(Bool(), init=False)
-      //  .setName(
-      //    s"${cfg.shRegFileCfg.pipeName}_rRdMemWordState_${ydx}_${zdx}"
-      //  )
-      //)
 
-      //when (
-      //  cMid0Front.down.isReady
-      //)
-      //tempRdMemWord := (
-      //  RegNext(
-      //    next=tempRdMemWord,
-      //    init=tempRdMemWord.getZero,
-      //  )
-      //)
-      ////when (
-      ////  outp.gprIsZeroVec(zdx).last
-      ////) {
-      ////  tempRdMemWord := 0x0
-      ////} else
-      //when (
-      //  //tempExt.memAddr(zdx) =/= 0x0
-      //  regFileFwd.myFwdMmwValidUp(ydx)(zdx)
-      //) {
-        //--------
-        // BEGIN: old version...
-        //tempRdMemWord := tempMyRdMemWord //myRdMemWord(ydx=ydx, modIdx=zdx)
-        // END: old version...
-        //--------
-      //}
-      //when (
-      //  cMid0Front.up.isValid
-      //  //////&& cMid0Front.down.isValid
-      //  //&& cMid0Front.down.isReady
-      //  && cMid0Front.down.isReady
-      //) {
-      //  when (!rRdMemWordState) {
-      //    tempRdMemWord := myRdMemWord(ydx=ydx, modIdx=zdx)
-      //    rRdMemWordState := True
-      //  }
-      //}
-      //when (cMid0Front.up.isFiring) {
-      //  rRdMemWordState := False
-      //}
       // TODO (maybe): support multiple register writes per instruction
     }
   }
@@ -8347,6 +8053,10 @@ case class SnowHousePipeStageExecute(
       )
     }
   } else { // if (cfg.regFileWordCountArr.size > 1)
+    require(
+      false,
+      "not yet implemented (in full)"
+    )
     for (
       //(tempRdMemWord, zdx) <- setOutpModMemWord.io.rdMemWord.zipWithIndex
       zdx <- 0 until setOutpModMemWord.io.rdMemWord.size + 1
@@ -10176,7 +9886,6 @@ case class SnowHousePipeStageWriteBack(
     //cWb.up(modBackPayload) := myWbPayload(1)
   }
 
-
   //--------
   val myLcvDbusArea = (
     cfg.useLcvDataBus
@@ -10190,62 +9899,7 @@ case class SnowHousePipeStageWriteBack(
     myD2hBus << io.lcvDbus.d2hBus
     myD2hBus.ready := False
 
-    //when (
-    //  myWbPayload(0).outpDecodeExt.opIsMemAccess.last
-    //  && !myD2hBus.valid
-    //) {
-    //  val mapElem = myWbPayload(1).gprIdxToMemAddrIdxMap(0)
-    //  val myCurrExt = (
-    //    if (!mapElem.haveHowToSetIdx) (
-    //      myWbPayload(1).myExt(0)
-    //    ) else (
-    //      myWbPayload(1).myExt(mapElem.howToSetIdx)
-    //    )
-    //  )
-    //  myCurrExt.modMemWordValid.foreach(mmwValidItem => {
-    //    mmwValidItem := False
-    //  })
-    //}
-
-    //cWb.up(modBackPayload) := (
-    //  //RegNext(myWbPayload(1), init=myWbPayload(1).getZero)
-    //  myWbPayload(1).getZero
-    //)
-    //myWbPayload(1).myExt.foreach(myExt => {
-    //  myExt.extraLastBackMmwValid.allowOverride
-    //  myExt.extraLastBackMmwValid.foreach(mmwValidItem => {
-    //    mmwValidItem := True
-    //  })
-    //  myExt.extraLastBackFwdCanDoIt.allowOverride
-    //  myExt.extraLastBackFwdCanDoIt.foreach(fwdCanDoItItem => {
-    //    fwdCanDoItItem := True
-    //  })
-    //})
-
-    //if (cfg.useLcvDataBus) {
-    //  psWbToEarlierStallRequest := (
-    //    !cWb.up.isValid
-    //    && History[Bool](
-    //      that=True,
-    //      when=cWb.up.isValid,
-    //      length=2,
-    //      init=False
-    //    ).last
-    //  )
-    //}
-    //when (!cWb.up.isValid) {
-    //  //cWb.haltIt() // need to send this back to EX
-    //}
-    //cWb.haltWhen(!cWb.up.valid)
-    //when (!cWb.up.valid) {
-    //  cWb.up.ready := False
-    //}
-
-    //when (cWb.up.isFiring) {
-    //  cWb.up(modBackPayload) := myWbPayload(1)
-    //}
-    //cWb.up(modBackPayload) := myWbPayload(1)
-    psWbToEarlierStallRequest := False
+    //psWbToEarlierStallRequest := False
 
     when (
       //myDbusIo.myDbusExtraValid
@@ -10270,7 +9924,7 @@ case class SnowHousePipeStageWriteBack(
         //  )
         //)
       ) {
-        psWbToEarlierStallRequest := True
+        //psWbToEarlierStallRequest := True
         cWb.duplicateIt()
         //cWb.haltIt()
         //myWbPayload(1).myExt.foreach(myExt => {
@@ -10434,145 +10088,7 @@ case class SnowHousePipeStageWriteBack(
         myCurrExt.modMemWordValid(idx) := (
           !myWbPayload(0).gprIsZeroVec.last(idx)
         )
-        //when (!myWbPayload.gprIsZeroVec.last(idx)) {
-        //  //myCurrExt.modMemWordValid.foreach(current => {
-        //  //  current := (
-        //  //    // TODO: support more destination GPRs
-        //  //    //!myWbPayload.gprIsZeroVec(0)
-        //  //    True
-        //  //  )
-        //  //})
-        //}
       }
-      //val myDecodeExt = myWbPayload.outpDecodeExt
-      //val mapElem = myWbPayload.gprIdxToMemAddrIdxMap(0)
-      //val myCurrExt = (
-      //  if (!mapElem.haveHowToSetIdx) (
-      //    myWbPayload.myExt(
-      //      0
-      //    )
-      //  ) else (
-      //    myWbPayload.myExt(
-      //      mapElem.howToSetIdx
-      //    )
-      //  )
-      //)
-      //when (!myWbPayload.outpDecodeExt.memAccessKind.asBits(1)) {
-      //  myCurrExt.modMemWord := myDbus.recvData.word
-      //  //myCurrExt.modMemWordValid.foreach(current => {
-      //  //  current := (
-      //  //    // TODO: support more destination GPRs
-      //  //    //!myWbPayload.gprIsZeroVec(0)
-      //  //    True
-      //  //  )
-      //  //})
-      //}
-      //myCurrExt.modMemWordValid.foreach(current => {
-      //  current := (
-      //    // TODO: support more destination GPRs
-      //    //!myWbPayload.gprIsZeroVec(0)
-      //    True
-      //  )
-      //})
     }
   })
-  //when (
-  //  //cWb.up.isValid
-  //  //&& 
-  //  myDbus.ready
-  //) {
-  //  val myDecodeExt = myWbPayload.outpDecodeExt
-  //  val mapElem = myWbPayload.gprIdxToMemAddrIdxMap(0)
-  //  val myCurrExt = (
-  //    if (!mapElem.haveHowToSetIdx) (
-  //      myWbPayload.myExt(
-  //        0
-  //      )
-  //    ) else (
-  //      myWbPayload.myExt(
-  //        mapElem.howToSetIdx
-  //      )
-  //    )
-  //  )
-  //  when (!myWbPayload.outpDecodeExt.memAccessKind.asBits(1)) {
-  //    myCurrExt.modMemWord := myDbus.recvData.word
-  //    //myCurrExt.modMemWordValid.foreach(current => {
-  //    //  current := (
-  //    //    // TODO: support more destination GPRs
-  //    //    //!myWbPayload.gprIsZeroVec(0)
-  //    //    True
-  //    //  )
-  //    //})
-  //    for (idx <- 0 until cfg.regFileCfg.modMemWordValidSize) {
-  //      myCurrExt.modMemWordValid(idx) := (
-  //        !myWbPayload.gprIsZeroVec.last(idx)
-  //      )
-  //      //when (!myWbPayload.gprIsZeroVec.last(idx)) {
-  //      //  //myCurrExt.modMemWordValid.foreach(current => {
-  //      //  //  current := (
-  //      //  //    // TODO: support more destination GPRs
-  //      //  //    //!myWbPayload.gprIsZeroVec(0)
-  //      //  //    True
-  //      //  //  )
-  //      //  //})
-  //      //}
-  //    }
-  //  }
-  //  //for (idx <- 0 until cfg.regFileCfg.modMemWordValidSize) {
-  //  //  myCurrExt.modMemWordValid(idx) := (
-  //  //    !myWbPayload.gprIsZeroVec.last(idx)
-  //  //  )
-  //  //  //when (!myWbPayload.gprIsZeroVec.last(idx)) {
-  //  //  //  //myCurrExt.modMemWordValid.foreach(current => {
-  //  //  //  //  current := (
-  //  //  //  //    // TODO: support more destination GPRs
-  //  //  //  //    //!myWbPayload.gprIsZeroVec(0)
-  //  //  //  //    True
-  //  //  //  //  )
-  //  //  //  //})
-  //  //  //}
-  //  //}
-  //}
-
-  //--------
-  //myDbusIo.myDbusExtraValid := (
-  //  myWbPayload.outpDecodeExt.opIsMemAccess.last
-  //)
-  //--------
-  //when (
-  //  //myDbusExtraReady(2)
-  //  myDbus.ready
-  //) {
-  //  val myDecodeExt = myWbPayload.outpDecodeExt
-  //  val mapElem = myWbPayload.gprIdxToMemAddrIdxMap(0)
-  //  val myCurrExt = (
-  //    if (!mapElem.haveHowToSetIdx) (
-  //      myWbPayload.myExt(
-  //        0
-  //      )
-  //    ) else (
-  //      myWbPayload.myExt(
-  //        mapElem.howToSetIdx
-  //      )
-  //    )
-  //  )
-  //  myCurrExt.modMemWordValid.foreach(current => {
-  //    current := (
-  //      // TODO: support more destination GPRs
-  //      //!myWbPayload.gprIsZeroVec(0)
-  //      True
-  //    )
-  //  })
-  //}
-  //cWb.up(modBackPayload) := (
-  //  RegNext(myWbPayload(1), init=myWbPayload(1).getZero)
-  //)
-  //when (cWb.up.isFiring) {
-  //  cWb.up(modBackPayload) := myWbPayload(1)
-  //}
-  //--------
-  // BEGIN: old, incorrect version
-  //cWb.up(modBackPayload) := myWbPayload(1)
-  // END: old, incorrect version
-  //--------
 }

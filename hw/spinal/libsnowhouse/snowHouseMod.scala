@@ -2179,6 +2179,7 @@ private[libsnowhouse] case class SnowHouseForFmax(
   )
   val psPreEx = SnowHouseForFmaxPipeStagePreEx(cfg=cfg)
   val psEx = SnowHouseForFmaxPipeStageExecute(cfg=cfg)
+  val psWb = SnowHouseForFmaxPipeStageWriteBack(cfg=cfg)
   //--------
 
   psId.io.up << psIf.io.down // extra pipeline stage for fmax
@@ -2270,12 +2271,35 @@ private[libsnowhouse] case class SnowHouseForFmax(
   )
   psPreEx.io.up << myRegFileRdDataPipeLast
   psEx.io.up << psPreEx.io.down
+  val myPostExPreWbStmVec = (
+    cfg.optForFmaxPostNumPostExPreWbPipeStages.get > 0
+  ) generate (
+    Vec.fill(
+      cfg.optForFmaxPostNumPostExPreWbPipeStages.get
+    )(
+      Stream(SnowHousePipePayload(cfg=cfg))
+    )
+  )
+  if (cfg.optForFmaxPostNumPostExPreWbPipeStages.get > 0) {
+    for (idx <- 0 until myPostExPreWbStmVec.size) {
+      if (idx == 0) {
+        myPostExPreWbStmVec(idx) <-< psEx.io.down
+      } else if (idx + 1 == myPostExPreWbStmVec.size) {
+        psWb.io.up <-< myPostExPreWbStmVec(idx)
+      } else {
+        myPostExPreWbStmVec(idx) <-< myPostExPreWbStmVec(idx - 1)
+      }
+    }
+  } else {
+    psWb.io.up << psEx.io.down
+  }
 
   myRegFile.foreach(item => {
-    item.io.wrPulse.valid := False
-    item.io.wrPulse.payload := (
-      item.io.wrPulse.payload.getZero
-    )
+    //item.io.wrPulse.valid := False
+    //item.io.wrPulse.payload := (
+    //  item.io.wrPulse.payload.getZero
+    //)
+    item.io.wrPulse := psWb.io.myRegFileWrPulse
   })
   //--------
 
@@ -2285,7 +2309,7 @@ private[libsnowhouse] case class SnowHouseForFmax(
 
   io.lcvIbus << psIf.io.lcvIbus
   io.lcvDbus.h2dBus << psEx.io.myLcvDbusH2dStm
-  //psWb.io.myLcvDbusD2hStm << io.lcvDbus.d2hBus
+  psWb.io.myLcvDbusD2hStm << io.lcvDbus.d2hBus
 }
 
 case class SnowHouse(

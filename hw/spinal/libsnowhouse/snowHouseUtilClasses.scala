@@ -1713,9 +1713,10 @@ case class SnowHousePipePayloadNonExt(
           0
           //1
         ) else (
-          0
+          //0
           //2
           //1
+          cfg.optForFmaxPostNumPostExPreWbPipeStages.get //+ 1
           // Old notes (from when MEM was being considered):
           //// up to two following instructions,
           //// per the overall pipeline structure of

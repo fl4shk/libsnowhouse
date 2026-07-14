@@ -3579,6 +3579,11 @@ case class SnowHouseRiscv32imWithDuplDualRam(
   val dcache = LcvBusCache(
     cfg=cfg.shCfg.subCfg.lcvDbusEtcCfg
   )
+  dcache.io.mmioHiBus.h2dBus.ready := False
+  dcache.io.mmioHiBus.d2hBus.valid := False
+  dcache.io.mmioHiBus.d2hBus.payload := (
+    dcache.io.mmioHiBus.d2hBus.payload.getZero
+  )
 
   //myInstrMem.io.bus << cpu.io.lcvIbus
   //myDataMem.io.bus <-/< cpu.io.lcvDbus

@@ -424,3 +424,237 @@ case class SnowHouseForFmaxPipeStageExecute(
   Builder(linkArr)
   //--------
 }
+
+case class SnowHouseForFmaxPipeStageWriteBackIo(
+  cfg: SnowHouseConfig
+) extends Bundle {
+  //--------
+  val up = (
+    slave(Stream(
+      SnowHousePipePayload(cfg=cfg)
+    ))
+  )
+  //--------
+  val myLcvDbusD2hStm = (
+    slave(Stream(
+      LcvBusD2hPayload(cfg=cfg.subCfg.lcvIbusEtcCfg.loBusCfg)
+    ))
+  )
+  //--------
+  val myRegFileWrPulse = master(Flow(
+    PipeSimpleDualPortMemDrivePayload(
+      dataType=UInt(cfg.mainWidth bits),
+      wordCount=cfg.regFileCfg.wordCountArr(0),
+    )
+  ))
+}
+case class SnowHouseForFmaxPipeStageWriteBack(
+  cfg: SnowHouseConfig
+) extends Component {
+  //--------
+  val io = SnowHouseForFmaxPipeStageWriteBackIo(cfg=cfg)
+  //def up = io.up
+  //def down = io.down
+  //--------
+  val linkArr = PipeHelper.mkLinkArr()
+
+  //def opInfoMap = cfg.opInfoMap
+
+  //val pwbInp = Payload(SnowHousePipePayload(cfg=cfg))
+  //val pwbOutp = Payload(SnowHousePipePayload(cfg=cfg))
+  val cLink = CtrlLink()
+  //val sLink = StageLink(
+  //  up=cLink.down,
+  //  down={
+  //    val temp = Node()
+  //    temp.setName("s_down")
+  //    temp
+  //  }
+  //)
+  //val s2mLink = S2MLink(
+  //  up=sLink.down,
+  //  down={
+  //    val temp = Node()
+  //    temp.setName("s2m_down")
+  //    temp
+  //  }
+  //)
+  linkArr += cLink
+  //linkArr += sLink
+  //linkArr += s2mLink
+  val myWbPayload = (
+    Vec.fill(2)(
+      SnowHousePipePayload(cfg=cfg)
+    )
+  )
+  myWbPayload(1) := (
+    RegNext(
+      myWbPayload(1),
+      init=myWbPayload(1).getZero
+    )
+  )
+  when (cLink.up.isValid) {
+    myWbPayload(1) := myWbPayload(0)
+  }
+
+  val myLcvDbusArea = new Area {
+    //myDbusIo.myDbusExtraValid := (
+    //  cWb.up.isValid
+    //  && myWbPayload.outpDecodeExt.opIsMemAccess.last
+    //)
+    val myD2hBus = cloneOf(io.myLcvDbusD2hStm)
+    //myD2hBus <-/< io.lcvDbus.d2hBus
+    myD2hBus << io.myLcvDbusD2hStm
+    myD2hBus.ready := False
+
+    //psWbToEarlierStallRequest := False
+
+    when (myWbPayload(1).outpDecodeExt.opIsMemAccess.last) {
+      myD2hBus.ready := True
+    }
+    when (
+      myWbPayload(1).outpDecodeExt.opIsMemAccess.last
+      && !myD2hBus.valid
+    ) {
+      //psWbToEarlierStallRequest := True
+      cLink.duplicateIt()
+    }
+    switch (
+      (
+        myWbPayload(0).outpDecodeExt.opIsMemAccess.head
+        && !myWbPayload(0).outpDecodeExt.memAccessKind.asBits(1)
+        && myD2hBus.valid
+      )
+      ## myWbPayload(0).outpDecodeExt.memAccessKind.asBits(0)
+      ## myWbPayload(0).outpDecodeExt.memAccessSubKind.asBits
+    ) {
+      //--------
+      // This stuff might need to be changed for the purposes of
+      // atomic operations that are larger than `cfg.mainWidth`.
+      // It's currently limited to at max 32-bit values, for example, on a
+      // 32-bit `cfg.mainWidth` CPU. More work will be needed later.
+      //--------
+      val myDecodeExt = myWbPayload(1).outpDecodeExt
+      val mapElem = myWbPayload(1).gprIdxToMemAddrIdxMap(0)
+      val myCurrExt = (
+        if (!mapElem.haveHowToSetIdx) (
+          myWbPayload(1).myExt(
+            0
+          )
+        ) else (
+          myWbPayload(1).myExt(
+            mapElem.howToSetIdx
+          )
+        )
+      )
+      //--------
+      is (M"10--") {
+        // zero-extending sub-word load or full-word load
+        myCurrExt.modMemWord := myD2hBus.data
+      }
+      is (M"1100") {
+        // LoadS, Sz8
+        myCurrExt.modMemWord := (
+          myD2hBus.data(
+            (7.min(myD2hBus.data.high)) downto 0
+          ).asSInt.resize(myCurrExt.modMemWord.getWidth).asUInt
+        )
+      }
+      is (M"1101") {
+        // LoadS, Sz16
+        myCurrExt.modMemWord := (
+          myD2hBus.data(
+            (15.min(myD2hBus.data.high)) downto 0
+          ).asSInt.resize(myCurrExt.modMemWord.getWidth).asUInt
+        )
+      }
+      is (M"1110") {
+        // LoadS, Sz32
+        myCurrExt.modMemWord := (
+          myD2hBus.data(
+            (31.min(myD2hBus.data.high)) downto 0
+          ).asSInt.resize(myCurrExt.modMemWord.getWidth).asUInt
+        )
+      }
+      is (M"1111") {
+        // LoadS, Sz64
+        myCurrExt.modMemWord := (
+          myD2hBus.data(
+            (63.min(myD2hBus.data.high)) downto 0
+          ).asSInt.resize(myCurrExt.modMemWord.getWidth).asUInt
+        )
+      }
+      default {
+      }
+    }
+    when (
+      !myWbPayload(0).outpDecodeExt.memAccessKind.asBits(1)
+      && myD2hBus.valid
+    ) {
+      val myDecodeExt = myWbPayload(1).outpDecodeExt
+      val mapElem = myWbPayload(1).gprIdxToMemAddrIdxMap(0)
+      val myCurrExt = (
+        if (!mapElem.haveHowToSetIdx) (
+          myWbPayload(1).myExt(
+            0
+          )
+        ) else (
+          myWbPayload(1).myExt(
+            mapElem.howToSetIdx
+          )
+        )
+      )
+      //myCurrExt.modMemWord := myDbus.recvData.word
+      //myCurrExt.modMemWord := myD2hBus.data
+      //myCurrExt.modMemWordValid.foreach(current => {
+      //  current := (
+      //    // TODO: support more destination GPRs
+      //    //!myWbPayload.gprIsZeroVec(0)
+      //    True
+      //  )
+      //})
+      for (idx <- 0 until cfg.regFileCfg.modMemWordValidSize) {
+        myCurrExt.modMemWordValid(idx) := (
+          !myWbPayload(0).gprIsZeroVec.last(idx)
+        )
+      }
+    }
+  }
+
+  cLink.up.driveFrom(io.up)(
+    con=(node, inp) => {
+      //node(pwbInp) := inp
+      myWbPayload(0) := inp
+    }
+  )
+  cLink.down.ready := True
+  io.myRegFileWrPulse.valid := (
+    cLink.up.isFiring
+    && !myWbPayload(0).gprIsZeroVec.last.last
+    && !myWbPayload(0).instrCnt.shouldIgnoreInstr.last
+  )
+  io.myRegFileWrPulse.addr := (
+    myWbPayload(0).gprIdxVec.last
+  )
+  io.myRegFileWrPulse.data := {
+    val myDecodeExt = myWbPayload(1).outpDecodeExt
+    val mapElem = myWbPayload(1).gprIdxToMemAddrIdxMap(0)
+    val myCurrExt = (
+      if (!mapElem.haveHowToSetIdx) (
+        myWbPayload(1).myExt(
+          0
+        )
+      ) else (
+        myWbPayload(1).myExt(
+          mapElem.howToSetIdx
+        )
+      )
+    )
+    //myCurrExt.modMemWord := myDbus.recvData.word
+    //myWbPayload(1).
+    myCurrExt.modMemWord
+  }
+
+  Builder(linkArr)
+  //--------
+}
