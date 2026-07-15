@@ -366,8 +366,8 @@ object Riscv32imOpInfoMap {
       dstArr=Array[DstKind](DstKind.Gpr),
       srcArr=Array[SrcKind](SrcKind.Gpr, SrcKind.Gpr),
       aluOp=(
-        //AluOpKind.Add
-        AluOpKind.LcvAlu(LcvAluDel1InpOpEnum.ADD)
+        AluOpKind.Add
+        //AluOpKind.LcvAlu(LcvAluDel1InpOpEnum.ADD)
       ),
     )
   )
@@ -377,8 +377,8 @@ object Riscv32imOpInfoMap {
       dstArr=Array[DstKind](DstKind.Gpr),
       srcArr=Array[SrcKind](SrcKind.Gpr, SrcKind.Gpr),
       aluOp=(
-        //AluOpKind.Sub
-        AluOpKind.LcvAlu(LcvAluDel1InpOpEnum.SUB)
+        AluOpKind.Sub
+        //AluOpKind.LcvAlu(LcvAluDel1InpOpEnum.SUB)
       ),
     )
   )
@@ -388,8 +388,8 @@ object Riscv32imOpInfoMap {
       dstArr=Array[DstKind](DstKind.Gpr),
       srcArr=Array[SrcKind](SrcKind.Gpr, SrcKind.Gpr),
       aluOp=(
-        //AluOpKind.Xor
-        AluOpKind.LcvAlu(LcvAluDel1InpOpEnum.XOR)
+        AluOpKind.Xor
+        //AluOpKind.LcvAlu(LcvAluDel1InpOpEnum.XOR)
       ),
     )
   )
@@ -399,8 +399,8 @@ object Riscv32imOpInfoMap {
       dstArr=Array[DstKind](DstKind.Gpr),
       srcArr=Array[SrcKind](SrcKind.Gpr, SrcKind.Gpr),
       aluOp=(
-        //AluOpKind.Or
-        AluOpKind.LcvAlu(LcvAluDel1InpOpEnum.OR)
+        AluOpKind.Or
+        //AluOpKind.LcvAlu(LcvAluDel1InpOpEnum.OR)
       ),
     )
   )
@@ -410,8 +410,8 @@ object Riscv32imOpInfoMap {
       dstArr=Array[DstKind](DstKind.Gpr),
       srcArr=Array[SrcKind](SrcKind.Gpr, SrcKind.Gpr),
       aluOp=(
-        //AluOpKind.And
-        AluOpKind.LcvAlu(LcvAluDel1InpOpEnum.AND)
+        AluOpKind.And
+        //AluOpKind.LcvAlu(LcvAluDel1InpOpEnum.AND)
       ),
     )
   )
@@ -574,8 +574,8 @@ object Riscv32imOpInfoMap {
       dstArr=Array[DstKind](DstKind.Gpr),
       srcArr=Array[SrcKind](SrcKind.Gpr, SrcKind.Gpr),
       aluOp=(
-        //AluOpKind.Slts
-        AluOpKind.LcvAlu(LcvAluDel1InpOpEnum.SLTS)
+        AluOpKind.Slts
+        //AluOpKind.LcvAlu(LcvAluDel1InpOpEnum.SLTS)
       ),
     )
   )
@@ -585,8 +585,8 @@ object Riscv32imOpInfoMap {
       dstArr=Array[DstKind](DstKind.Gpr),
       srcArr=Array[SrcKind](SrcKind.Gpr, SrcKind.Gpr),
       aluOp=(
-        //AluOpKind.Sltu
-        AluOpKind.LcvAlu(LcvAluDel1InpOpEnum.SLTU)
+        AluOpKind.Sltu
+        //AluOpKind.LcvAlu(LcvAluDel1InpOpEnum.SLTU)
       ),
     )
   )
@@ -597,8 +597,8 @@ object Riscv32imOpInfoMap {
       dstArr=Array[DstKind](DstKind.Gpr),
       srcArr=Array[SrcKind](SrcKind.Gpr, SrcKind.Imm(/*Some(true)*/)),
       aluOp=(
-        //AluOpKind.Add
-        AluOpKind.LcvAlu(LcvAluDel1InpOpEnum.ADD)
+        AluOpKind.Add
+        //AluOpKind.LcvAlu(LcvAluDel1InpOpEnum.ADD)
       ),
     )
   )
@@ -608,8 +608,8 @@ object Riscv32imOpInfoMap {
       dstArr=Array[DstKind](DstKind.Gpr),
       srcArr=Array[SrcKind](SrcKind.Gpr, SrcKind.Imm(/*Some(true)*/)),
       aluOp=(
-        //AluOpKind.Xor
-        AluOpKind.LcvAlu(LcvAluDel1InpOpEnum.XOR)
+        AluOpKind.Xor
+        //AluOpKind.LcvAlu(LcvAluDel1InpOpEnum.XOR)
       ),
     )
   )
@@ -619,8 +619,8 @@ object Riscv32imOpInfoMap {
       dstArr=Array[DstKind](DstKind.Gpr),
       srcArr=Array[SrcKind](SrcKind.Gpr, SrcKind.Imm(/*Some(true)*/)),
       aluOp=(
-        //AluOpKind.Or
-        AluOpKind.LcvAlu(LcvAluDel1InpOpEnum.OR)
+        AluOpKind.Or
+        //AluOpKind.LcvAlu(LcvAluDel1InpOpEnum.OR)
       ),
     )
   )
@@ -630,8 +630,8 @@ object Riscv32imOpInfoMap {
       dstArr=Array[DstKind](DstKind.Gpr),
       srcArr=Array[SrcKind](SrcKind.Gpr, SrcKind.Imm(/*Some(true)*/)),
       aluOp=(
-        //AluOpKind.And
-        AluOpKind.LcvAlu(LcvAluDel1InpOpEnum.AND)
+        AluOpKind.And
+        //AluOpKind.LcvAlu(LcvAluDel1InpOpEnum.AND)
       ),
     )
   )
@@ -641,8 +641,8 @@ object Riscv32imOpInfoMap {
       dstArr=Array[DstKind](DstKind.Gpr),
       srcArr=Array[SrcKind](SrcKind.Gpr, SrcKind.Imm()),
       aluOp=(
-        //AluOpKind.Slts
-        AluOpKind.LcvAlu(LcvAluDel1InpOpEnum.SLTS)
+        AluOpKind.Slts
+        //AluOpKind.LcvAlu(LcvAluDel1InpOpEnum.SLTS)
       ),
     )
   )
@@ -652,8 +652,8 @@ object Riscv32imOpInfoMap {
       dstArr=Array[DstKind](DstKind.Gpr),
       srcArr=Array[SrcKind](SrcKind.Gpr, SrcKind.Imm()),
       aluOp=(
-        //AluOpKind.Sltu
-        AluOpKind.LcvAlu(LcvAluDel1InpOpEnum.SLTU)
+        AluOpKind.Sltu
+        //AluOpKind.LcvAlu(LcvAluDel1InpOpEnum.SLTU)
       ),
     )
   )

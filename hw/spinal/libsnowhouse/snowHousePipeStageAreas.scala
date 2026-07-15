@@ -7137,10 +7137,11 @@ case class SnowHousePipeStageExecute(
     (
       if (!cfg.optForFmax) (
         myTempDownIsReadyMostMost
-        && !outp.instrCnt.myPsIdBubble.last
+        //&& !outp.instrCnt.myPsIdBubble.last
         && !psWbToEarlierStallRequest
       ) else (
         myTempDownIsReadyMostMost
+        //&& !outp.instrCnt.myPsIdBubble.last
       )
     )
   )
@@ -7246,12 +7247,16 @@ case class SnowHousePipeStageExecute(
   ) generate (new Area {
     val myHistFwdInfo = {
       val temp = MyFwdInfo()
-      temp.valid := outp.myExt(0).modMemWordValid.last //ram.io.wrEn
+      temp.valid := (
+        outp.myExt(0).modMemWordValid.last //ram.io.wrEn
+        && outp.gprIsNonZeroVec.last.last
+        && !myShouldIgnoreInstr(0)
+      )
       temp.data := outp.myExt(0).modMemWord //ram.io.wrData
       temp.addr := outp.gprIdxVec.last
       History(
         that=temp,
-        length=(cfg.optForFmaxPostNumPostExPreWbPipeStages.get + 2),
+        length=(cfg.optForFmaxPostNumPostExPreWbPipeStages.get + 5),
         when=cLink.up.isFiring,
         init=temp.getZero
       )
@@ -7270,17 +7275,21 @@ case class SnowHousePipeStageExecute(
     val myTempHistFwdValid = Vec.fill(
       cfg.regFileCfg.modRdPortCnt
     )(
-      UInt(myHistFwdInfo.size bits)
+      UInt(myHistFwdInfo.size - 1 bits)
     )
 
     for (jdx <- 0 until myTempHistFwdValid.size) {
+      //myTempHistFwdValid(jdx).lsb := False
       for (idx <- 0 until myTempHistFwdValid(jdx).getWidth) {
-        myTempHistFwdValid(jdx)(idx) := (
-          myHistFwdInfo(idx).valid
+        myTempHistFwdValid(jdx)(
+          //myTempHistFwdValid(jdx).getWidth - idx - 1
+          idx
+        ) := (
+          myHistFwdInfo(idx + 1).valid
           && (
             LcvFastCmpEq(
               left=outp.gprIdxVec(jdx),
-              right=myHistFwdInfo(idx).addr,
+              right=myHistFwdInfo(idx + 1).addr,
               cmpEqIo=null,
             )._1
           )
@@ -7293,14 +7302,20 @@ case class SnowHousePipeStageExecute(
 // 1 001-
 // 2 01--
 // 3 1---
-      switch (myTempHistFwdValid(jdx)) {
+      switch (
+        myTempHistFwdValid(jdx)
+      ) {
         for (idx <- 0 until myTempHistFwdValid(jdx).getWidth) {
           is (MaskedLiteral(
-            (("0" * (myTempHistFwdValid(jdx).getWidth - idx - 1)))
+            ("-" * idx)
             + "1"
-            + ("-" * idx)
+            + (("0" * (myTempHistFwdValid(jdx).getWidth - idx - 1)))
           )) {
-            outp.myExt(0).rdMemWord(jdx) := myHistFwdInfo(idx).data
+            outp.myExt(0).rdMemWord(jdx) := (
+              myHistFwdInfo(
+                myHistFwdInfo.size - 1 - idx //(idx + 1)
+              ).data
+            )
           }
         }
         default {
@@ -7993,8 +8008,11 @@ case class SnowHousePipeStageExecute(
       //when (cMid0Front.up.isFiring) {
         tempExt.modMemWord := (
           // TODO: support multiple output `modMemWord`s
-          //setOutpModMemWord.io.modMemWord(0)
-          tempExt.modMemWord.getZero
+          if (!cfg.optForFmax) (
+            tempExt.modMemWord.getZero
+          ) else (
+            setOutpModMemWord.io.modMemWord(0)
+          )
         )
         for (idx <- 0 until tempExt.modMemWordValid.size) {
           //tempExt.modMemWordValid.foreach(current =>{

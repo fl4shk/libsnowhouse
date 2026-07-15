@@ -2184,7 +2184,7 @@ private[libsnowhouse] case class SnowHouseForFmax(
   //--------
 
   psId.io.up << psIf.io.down // extra pipeline stage for fmax
-  //psPreEx.io.up << psId.io.down
+  psPreEx.io.up << psId.io.down
   //psEx.io.up << psPreEx.io.down
 
   //--------
@@ -2209,7 +2209,8 @@ private[libsnowhouse] case class SnowHouseForFmax(
           outp.myExt(0).rdMemWord(idx) := rdMemWord
         },
         optExtraRdPipeStages=(
-          1
+          //1
+          0
         ),
         optWrHistLength=(
           1
@@ -2228,12 +2229,13 @@ private[libsnowhouse] case class SnowHouseForFmax(
   val myRegFileRdAddrPipeFrontVec = Vec.fill(2)(
     cloneOf(myRegFile.head.io.rdAddrPipe)
   )
-  psId.io.down.translateInto(myRegFileRdAddrPipeFrontVec.head)(
+  psPreEx.io.down.translateInto(myRegFileRdAddrPipeFrontVec.head)(
     dataAssignment=(outp, inp) => {
       outp.data := inp
     }
   )
-  myRegFileRdAddrPipeFrontVec.last <-/< myRegFileRdAddrPipeFrontVec.head
+  //myRegFileRdAddrPipeFrontVec.last <-/< myRegFileRdAddrPipeFrontVec.head
+  myRegFileRdAddrPipeFrontVec.last << myRegFileRdAddrPipeFrontVec.head
 
   val myRegFileRdAddrPipeFork = StreamFork(
     input=myRegFileRdAddrPipeFrontVec.last,
@@ -2270,8 +2272,9 @@ private[libsnowhouse] case class SnowHouseForFmax(
       }
     }
   )
-  psPreEx.io.up << myRegFileRdDataPipeLast
-  psEx.io.up << psPreEx.io.down
+  //psPreEx.io.up << myRegFileRdDataPipeLast
+  //psEx.io.up << psPreEx.io.down
+  psEx.io.up << myRegFileRdDataPipeLast
   val myPostExPreWbStmVec = (
     cfg.optForFmaxPostNumPostExPreWbPipeStages.get > 0
   ) generate (
