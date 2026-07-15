@@ -1728,7 +1728,6 @@ case class SnowHousePipePayloadNonExt(
         0
       )
     )
-
   )(
     Bool()
   )
