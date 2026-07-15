@@ -2327,7 +2327,8 @@ case class SnowHousePipeStageInstrDecode(
               //&& 
               (
                 myHistCondAnyBubble(idx + 1)
-                && upPayload(1).myDoHaveHazardAddrCheckVec(idx + 1)
+                //&& upPayload(1).myDoHaveHazardAddrCheckVec(idx)
+                && upPayload(1).myDoHaveHazardAddrCheckVec.orR
               )
               && !shouldClearExtraDecodeInfo
             ) {
