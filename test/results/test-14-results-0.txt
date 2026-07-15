@@ -381,7 +381,6 @@ addr:4 data:208
 addr:5 data:233
 addr:5 data:208
 addr:3 data:52
-addr:10 data:1
 addr:9 data:208
 addr:1 data:234
 addr:5 data:234
@@ -962,7 +961,6 @@ addr:4 data:540
 addr:5 data:399
 addr:5 data:540
 addr:3 data:135
-addr:10 data:2
 addr:9 data:540
 addr:1 data:400
 addr:5 data:400
@@ -1519,7 +1517,6 @@ addr:3 data:214
 addr:9 data:856
 addr:1 data:558
 addr:5 data:558
-addr:10 data:3
 addr:4 data:860
 addr:5 data:559
 addr:5 data:860
@@ -1812,9 +1809,5 @@ addr:5 data:641
 addr:5 data:1024
 addr:3 data:256
 addr:9 data:1024
-addr:10 data:4
-addr:10 data:5
-addr:10 data:6
-addr:10 data:7
 Ending test.
 

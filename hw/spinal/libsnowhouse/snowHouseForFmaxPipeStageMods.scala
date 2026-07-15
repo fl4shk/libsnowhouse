@@ -334,6 +334,16 @@ case class SnowHouseForFmaxPipeStageExecuteIo(
   val psWbToEarlierStallRequest = (
     in(Bool())
   )
+  //--------
+  val idsIraIrq = (
+    cfg.myHaveIrqIdsIra
+  ) generate (
+    slave(new LcvStallIo[Bool, Bool](
+      sendPayloadType=None,
+      recvPayloadType=None,
+    ))
+  )
+  //--------
   val myLcvDbusH2dStm = (
     master(Stream(
       LcvBusH2dPayload(cfg=cfg.subCfg.lcvIbusEtcCfg.loBusCfg)
@@ -451,6 +461,7 @@ case class SnowHouseForFmaxPipeStageExecute(
     psWbToEarlierStallRequest=io.psWbToEarlierStallRequest,
     myLcvDbusH2dStm=io.myLcvDbusH2dStm,
     multiCycleBusVec=io.multiCycleBusVec,
+    idsIraIrq=io.idsIraIrq,
     //pcChangeState=null,
     //shouldIgnoreInstr=null,
     //psExFoundBubble=psExFoundBubble,

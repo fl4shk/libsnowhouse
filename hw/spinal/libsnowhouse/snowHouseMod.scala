@@ -1937,6 +1937,7 @@ private[libsnowhouse] case class SnowHouseNotForFmax
       )
     ),
     multiCycleBusVec=io.multiCycleBusVec,
+    idsIraIrq=io.idsIraIrq,
   )
   //--------
   //val pipeStageWb = (
@@ -2326,6 +2327,8 @@ private[libsnowhouse] case class SnowHouseForFmax(
   psIf.io.psExSetPc := psExSetPc
   psId.io.psExSetPc := psExSetPc
   psExSetPc := psEx.io.psExSetPc
+
+  psEx.io.idsIraIrq <> io.idsIraIrq
 
   io.lcvIbus << psIf.io.lcvIbus
   io.lcvDbus.h2dBus << psEx.io.myLcvDbusH2dStm

@@ -7059,6 +7059,7 @@ case class SnowHousePipeStageExecute(
     MultiCycleHostPayload,
     MultiCycleDevPayload,
   ]],
+  idsIraIrq: LcvStallIo[Bool, Bool],
 ) extends Area {
   def myDbusIo = args.myDbusIo
   def myDbus = myDbusIo.dbus
@@ -7649,7 +7650,7 @@ case class SnowHousePipeStageExecute(
   ) generate (
     RegNext(
       next=RegNext(
-        next=io.idsIraIrq.nextValid,
+        next=idsIraIrq.nextValid,
         init=False,
       ),
       init=False,
@@ -7675,7 +7676,7 @@ case class SnowHousePipeStageExecute(
   )
   if (cfg.irqCfg != None) {
     nextMyTakeIrq := rMyTakeIrq
-    io.idsIraIrq.ready := False
+    idsIraIrq.ready := False
     val tempCondNonLcvDbus = (
       //setOutpModMemWord.io.regPcSetItCnt(0)(0)
       //&& setOutpModMemWord.io.upIsValid
@@ -7760,7 +7761,7 @@ case class SnowHousePipeStageExecute(
       tempCond1
     ) {
       nextMyTakeIrq := False
-      //io.idsIraIrq.ready := True
+      //idsIraIrq.ready := True
     }
     when (
       rose(
@@ -7771,15 +7772,15 @@ case class SnowHousePipeStageExecute(
         )
       )
     ) {
-      io.idsIraIrq.ready := True
+      idsIraIrq.ready := True
     }
     when (
       RegNext(
-        next=io.idsIraIrq.ready,
-        init=io.idsIraIrq.ready.getZero,
+        next=idsIraIrq.ready,
+        init=idsIraIrq.ready.getZero,
       )
     ) {
-      io.idsIraIrq.ready := False
+      idsIraIrq.ready := False
     }
   }
 
@@ -8621,60 +8622,62 @@ case class SnowHousePipeStageExecute(
     }
   ) {
     setOutpModMemWord.io.splitOp := outp.splitOp
-    if (setOutpModMemWord.io.haveRetIraState) {
-      when (
-        (
-          rMyTakeIrq
-          //&& cMid0Front.up.isFiring
-          //&& RegNext(
-          //  next=cMid0Front.up.isFiring,
-          //  init=False
-          //)
-        )
-        //&& cMid0Front.up.isFiring
-      ) {
-        setOutpModMemWord.io.btbElemDontPredict := True
-        setOutpModMemWord.io.splitOp.setToDefault()
-        setOutpModMemWord.io.splitOp.opIsDualWidth := (
-          outp.splitOp.opIsDualWidth
-        )
-        setOutpModMemWord.io.splitOp.exSetNextPcKind := (
-          SnowHousePsExSetNextPcKind.Ids
-        )
-        setOutpModMemWord.io.splitOp.jmpBrAlwaysEqNeOp.allowOverride
-        setOutpModMemWord.io.splitOp.jmpBrAlwaysEqNeOp := {
-          val temp = UInt(
-            log2Up(cfg.jmpBrAlwaysEqNeOpInfoMap.size) bits
-            //(cfg.jmpBrAlwaysEqNeOpInfoMap.size + 1) bits
+    if (false) {
+      if (setOutpModMemWord.io.haveRetIraState) {
+        when (
+          (
+            rMyTakeIrq
+            //&& cMid0Front.up.isFiring
+            //&& RegNext(
+            //  next=cMid0Front.up.isFiring,
+            //  init=False
+            //)
           )
-          for (
-            ((idx, pureJmpOpInfo), jmpBrAlwaysEqNeOp)
-            <- cfg.jmpBrAlwaysEqNeOpInfoMap.view.zipWithIndex
-          ) {
-            if (idx == cfg.irqJmpOp) {
-              temp := (
-                jmpBrAlwaysEqNeOp
-                //1 << jmpBrAlwaysEqNeOp
-              )
+          //&& cMid0Front.up.isFiring
+        ) {
+          setOutpModMemWord.io.btbElemDontPredict := True
+          setOutpModMemWord.io.splitOp.setToDefault()
+          setOutpModMemWord.io.splitOp.opIsDualWidth := (
+            outp.splitOp.opIsDualWidth
+          )
+          setOutpModMemWord.io.splitOp.exSetNextPcKind := (
+            SnowHousePsExSetNextPcKind.Ids
+          )
+          setOutpModMemWord.io.splitOp.jmpBrAlwaysEqNeOp.allowOverride
+          setOutpModMemWord.io.splitOp.jmpBrAlwaysEqNeOp := {
+            val temp = UInt(
+              log2Up(cfg.jmpBrAlwaysEqNeOpInfoMap.size) bits
+              //(cfg.jmpBrAlwaysEqNeOpInfoMap.size + 1) bits
+            )
+            for (
+              ((idx, pureJmpOpInfo), jmpBrAlwaysEqNeOp)
+              <- cfg.jmpBrAlwaysEqNeOpInfoMap.view.zipWithIndex
+            ) {
+              if (idx == cfg.irqJmpOp) {
+                temp := (
+                  jmpBrAlwaysEqNeOp
+                  //1 << jmpBrAlwaysEqNeOp
+                )
+              }
             }
+            temp
           }
-          temp
-        }
-        setOutpModMemWord.io.takeIrq := True
-        //setOutpModMemWord.io.splitOp.jmpBrOtherOp := (
-        //  //(1 << setOutpModMemWord.io.splitOp.jmpBrOtherOp.getWidth) - 1
-        //  1 << (setOutpModMemWord.io.splitOp.jmpBrOtherOp.getWidth - 1)
-        //)
+          setOutpModMemWord.io.takeIrq := True
+          //setOutpModMemWord.io.splitOp.jmpBrOtherOp := (
+          //  //(1 << setOutpModMemWord.io.splitOp.jmpBrOtherOp.getWidth) - 1
+          //  1 << (setOutpModMemWord.io.splitOp.jmpBrOtherOp.getWidth - 1)
+          //)
 
-        // Due to how jumps/branches are handled, I'm pretty sure we can just
-        // leave this value as whatever we got from `outp.splitOp` because
-        // the lt, ge, etc. comparison is ignored due to there also being a
-        // forced unconditional jump from the IRQ being responded to.
-        // See these signals in
-        // `SnowHousePipeStageExecuteSetOutpModMemWord`: 
-        // * `myPsExSetPcValid`
-        // * `myPsExSetPcValidToOrReduce`
-        //setOutpModMemWord.io.splitOp.setJmpBrOtherOpToDefault()
+          // Due to how jumps/branches are handled, I'm pretty sure we can just
+          // leave this value as whatever we got from `outp.splitOp` because
+          // the lt, ge, etc. comparison is ignored due to there also being a
+          // forced unconditional jump from the IRQ being responded to.
+          // See these signals in
+          // `SnowHousePipeStageExecuteSetOutpModMemWord`: 
+          // * `myPsExSetPcValid`
+          // * `myPsExSetPcValidToOrReduce`
+          //setOutpModMemWord.io.splitOp.setJmpBrOtherOpToDefault()
+        }
       }
     }
   } otherwise {

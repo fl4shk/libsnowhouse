@@ -1792,6 +1792,8 @@ object SnowHouseCpuPipeStageInstrDecode {
 
     psId.myTempOpIsJmpBr := False
 
+    psId.myTempOpMayNeedHazardCheck := False
+
     for (idx <- 0 until encInstr.size) {
       switch (encInstr(idx).op) {
         is (LdrRaRbSimm16._1) {
@@ -1806,6 +1808,7 @@ object SnowHouseCpuPipeStageInstrDecode {
             upPayload.gprIdxVec(1) := encInstr(idx).raIdx
             upPayload.gprIdxVec(2) := encInstr(idx).raIdx
             upPayload.gprIdxVec.last := encInstr(idx).raIdx
+            psId.myTempOpMayNeedHazardCheck := True
           }
 
           switch (encInstr(idx).rcIdx(2 downto 0)) {
@@ -2571,8 +2574,8 @@ object SnowHouseCpuOpInfoMap {
       dstArr=Array[DstKind](DstKind.Gpr),
       srcArr=Array[SrcKind](SrcKind.Gpr, SrcKind.Gpr),
       aluOp=(
-        //AluOpKind.Add
-        AluOpKind.LcvAlu(LcvAluDel1InpOpEnum.ADD)
+        AluOpKind.Add
+        //AluOpKind.LcvAlu(LcvAluDel1InpOpEnum.ADD)
       ),
     )
   )
@@ -2582,8 +2585,8 @@ object SnowHouseCpuOpInfoMap {
       dstArr=Array[DstKind](DstKind.Gpr),
       srcArr=Array[SrcKind](SrcKind.Gpr, SrcKind.Imm(/*Some(true)*/)),
       aluOp=(
-        //AluOpKind.Add
-        AluOpKind.LcvAlu(LcvAluDel1InpOpEnum.ADD)
+        AluOpKind.Add
+        //AluOpKind.LcvAlu(LcvAluDel1InpOpEnum.ADD)
       ),
     )
   )
@@ -2594,8 +2597,8 @@ object SnowHouseCpuOpInfoMap {
       dstArr=Array[DstKind](DstKind.Gpr),
       srcArr=Array[SrcKind](SrcKind.Gpr, SrcKind.Gpr),
       aluOp=(
-        //AluOpKind.Sub
-        AluOpKind.LcvAlu(LcvAluDel1InpOpEnum.SUB)
+        AluOpKind.Sub
+        //AluOpKind.LcvAlu(LcvAluDel1InpOpEnum.SUB)
       ),
     )
   )
@@ -2644,8 +2647,8 @@ object SnowHouseCpuOpInfoMap {
       dstArr=Array[DstKind](DstKind.Gpr),
       srcArr=Array[SrcKind](SrcKind.Gpr, SrcKind.Gpr),
       aluOp=(
-        //AluOpKind.Sltu
-        AluOpKind.LcvAlu(LcvAluDel1InpOpEnum.SLTU)
+        AluOpKind.Sltu
+        //AluOpKind.LcvAlu(LcvAluDel1InpOpEnum.SLTU)
       ),
     )
     //SnowHouseCpuOp.SltuRaRbRc -> OpInfo.mkMultiCycle(
@@ -2662,8 +2665,8 @@ object SnowHouseCpuOpInfoMap {
       dstArr=Array[DstKind](DstKind.Gpr),
       srcArr=Array[SrcKind](SrcKind.Gpr, SrcKind.Gpr),
       aluOp=(
-        //AluOpKind.Slts
-        AluOpKind.LcvAlu(LcvAluDel1InpOpEnum.SLTS)
+        AluOpKind.Slts
+        //AluOpKind.LcvAlu(LcvAluDel1InpOpEnum.SLTS)
       ),
     )
     //SnowHouseCpuOp.SltsRaRbRc -> OpInfo.mkMultiCycle(
@@ -2681,8 +2684,8 @@ object SnowHouseCpuOpInfoMap {
       dstArr=Array[DstKind](DstKind.Gpr),
       srcArr=Array[SrcKind](SrcKind.Gpr, SrcKind.Imm()),
       aluOp=(
-        //AluOpKind.Sltu
-        AluOpKind.LcvAlu(LcvAluDel1InpOpEnum.SLTU)
+        AluOpKind.Sltu
+        //AluOpKind.LcvAlu(LcvAluDel1InpOpEnum.SLTU)
       ),
     )
     //SnowHouseCpuOp.SltuRaRbImm16 -> OpInfo.mkMultiCycle(
@@ -2699,8 +2702,8 @@ object SnowHouseCpuOpInfoMap {
       dstArr=Array[DstKind](DstKind.Gpr),
       srcArr=Array[SrcKind](SrcKind.Gpr, SrcKind.Imm()),
       aluOp=(
-        //AluOpKind.Slts
-        AluOpKind.LcvAlu(LcvAluDel1InpOpEnum.SLTS)
+        AluOpKind.Slts
+        //AluOpKind.LcvAlu(LcvAluDel1InpOpEnum.SLTS)
       ),
     )
     //SnowHouseCpuOp.SltsRaRbSimm16 -> OpInfo.mkMultiCycle(
@@ -2724,8 +2727,8 @@ object SnowHouseCpuOpInfoMap {
       dstArr=Array[DstKind](DstKind.Gpr),
       srcArr=Array[SrcKind](SrcKind.Gpr, SrcKind.Gpr),
       aluOp=(
-        //AluOpKind.Xor
-        AluOpKind.LcvAlu(LcvAluDel1InpOpEnum.XOR)
+        AluOpKind.Xor
+        //AluOpKind.LcvAlu(LcvAluDel1InpOpEnum.XOR)
       ),
     )
   )
@@ -2734,8 +2737,8 @@ object SnowHouseCpuOpInfoMap {
       dstArr=Array[DstKind](DstKind.Gpr),
       srcArr=Array[SrcKind](SrcKind.Gpr, SrcKind.Imm(/*Some(true)*/)),
       aluOp=(
-        //AluOpKind.Xor
-        AluOpKind.LcvAlu(LcvAluDel1InpOpEnum.XOR)
+        AluOpKind.Xor
+        //AluOpKind.LcvAlu(LcvAluDel1InpOpEnum.XOR)
       ),
     )
   )
@@ -2745,8 +2748,8 @@ object SnowHouseCpuOpInfoMap {
       dstArr=Array[DstKind](DstKind.Gpr),
       srcArr=Array[SrcKind](SrcKind.Gpr, SrcKind.Gpr),
       aluOp=(
-        //AluOpKind.Or
-        AluOpKind.LcvAlu(LcvAluDel1InpOpEnum.OR)
+        AluOpKind.Or
+        //AluOpKind.LcvAlu(LcvAluDel1InpOpEnum.OR)
       ),
     )
   )
@@ -2755,8 +2758,8 @@ object SnowHouseCpuOpInfoMap {
       dstArr=Array[DstKind](DstKind.Gpr),
       srcArr=Array[SrcKind](SrcKind.Gpr, SrcKind.Imm(/*Some(true)*/)),
       aluOp=(
-        //AluOpKind.Or
-        AluOpKind.LcvAlu(LcvAluDel1InpOpEnum.OR)
+        AluOpKind.Or
+        //AluOpKind.LcvAlu(LcvAluDel1InpOpEnum.OR)
       ),
     )
   )
@@ -2767,8 +2770,8 @@ object SnowHouseCpuOpInfoMap {
       dstArr=Array[DstKind](DstKind.Gpr),
       srcArr=Array[SrcKind](SrcKind.Gpr, SrcKind.Gpr),
       aluOp=(
-        //AluOpKind.And
-        AluOpKind.LcvAlu(LcvAluDel1InpOpEnum.AND)
+        AluOpKind.And
+        //AluOpKind.LcvAlu(LcvAluDel1InpOpEnum.AND)
       ),
     )
   )
@@ -2778,8 +2781,8 @@ object SnowHouseCpuOpInfoMap {
       dstArr=Array[DstKind](DstKind.Gpr),
       srcArr=Array[SrcKind](SrcKind.Gpr, SrcKind.Imm()),
       aluOp=(
-        //AluOpKind.And
-        AluOpKind.LcvAlu(LcvAluDel1InpOpEnum.AND)
+        AluOpKind.And
+        //AluOpKind.LcvAlu(LcvAluDel1InpOpEnum.AND)
       ),
     )
   )
@@ -3665,7 +3668,7 @@ case class SnowHouseCpuConfig(
       }
       myIrqJmpOp
     },
-    optForFmaxPostNumPostExPreWbPipeStages=None,
+    //optForFmaxPostNumPostExPreWbPipeStages=None,
     optShiftRegPcImmAddend=true,
     //irqRetIraOp={
     //  var myIrqRetIraOp: Int = 0x0
@@ -7830,25 +7833,25 @@ object SnowHouseCpuWithDualRamSim extends App {
     false
   )
   val testIdxRange = Array[Int](
-    0, 0,
-    //////1, //1,
+    //0, 0,
+    //1, //1,
     //////2, 2,
     //////3, //3,
-    ////4, //4,
+    //4, //4,
     //////5, 5,
     ////6, //6,
     //////7, 7,
     //////8, 8,
-    //9, 9,
+    //9, //9,
     //10, 10,
     ////11, //11,
     ////12, //12,
     //////13, //13,
     //14, 14,
-    15, 15,
+    //15, 15,
     //////16, 16
     //////17, 17
-    //18, 18
+    18, 18
   )
   val instrRamKindArr = Array[Int](
     0,
