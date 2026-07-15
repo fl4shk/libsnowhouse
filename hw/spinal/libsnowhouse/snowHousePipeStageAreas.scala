@@ -7024,6 +7024,10 @@ case class SnowHousePipeStageExecute(
   myModMemWord: SInt,
   psWbToEarlierStallRequest: Bool,
   myLcvDbusH2dStm: Stream[LcvBusH2dPayload],
+  multiCycleBusVec: Vec[LcvStallIo[
+    MultiCycleHostPayload,
+    MultiCycleDevPayload,
+  ]],
 ) extends Area {
   def myDbusIo = args.myDbusIo
   def myDbus = myDbusIo.dbus
@@ -7111,14 +7115,14 @@ case class SnowHousePipeStageExecute(
   val psExStallHostArr = ArrayBuffer[LcvStallHost[
     MultiCycleHostPayload, MultiCycleDevPayload
   ]]()
-  if (!cfg.optForFmax) {
+  if (cfg.havePsExStall) {
     for (
       ((_, opInfo), idx) <- cfg.multiCycleOpInfoMap.view.zipWithIndex
     ) {
       psExStallHostArr += (
         cfg.mkLcvStallHost[MultiCycleHostPayload, MultiCycleDevPayload](
           stallIo=(
-            Some(io.multiCycleBusVec(idx))
+            Some(multiCycleBusVec(idx))
           ),
         )
       )
@@ -7370,7 +7374,7 @@ case class SnowHousePipeStageExecute(
           ).dstVec(dstIdx)
         )
         tempDst := (
-          args.io.multiCycleBusVec(
+          multiCycleBusVec(
             //idx
             groupIdx
           ).recvData.dstVec(dstIdx)
@@ -7805,7 +7809,7 @@ case class SnowHousePipeStageExecute(
     cfg.havePsExStall
   ) {
     for (
-      (multiCycleBus, busIdx) <- io.multiCycleBusVec.view.zipWithIndex
+      (multiCycleBus, busIdx) <- multiCycleBusVec.view.zipWithIndex
     ) {
       for (idx <- 0 until multiCycleBus.sendData.srcVec.size) {
         multiCycleBus.sendData.srcVec(idx) := (
@@ -8758,8 +8762,9 @@ case class SnowHousePipeStageExecute(
       //NoMoreStall
       = newElement()
   }
-  val myNotForFmaxArea0 = (
-    !cfg.optForFmax
+  val myHavePsExStallArea0 = (
+    //!cfg.optForFmax
+    cfg.havePsExStall
   ) generate (new Area {
     val rMultiCycleOpState = {
       val temp = Reg(MultiCycleOpState())
@@ -8787,7 +8792,7 @@ case class SnowHousePipeStageExecute(
       ) {
         for (((_, opInfo), kindIdx) <- innerMap.view.zipWithIndex) {
           is (kindIdx) {
-            def multiCycleBus = io.multiCycleBusVec(groupIdx)
+            def multiCycleBus = multiCycleBusVec(groupIdx)
             multiCycleBus.sendData.srcVec.foreach(src => {
               src.allowOverride
             })
@@ -8842,11 +8847,12 @@ case class SnowHousePipeStageExecute(
     cfg.useLcvDataBus
   ) generate (new Area {
   })
-  val myNotForFmaxArea1 = (
-    !cfg.optForFmax
+  val myHavePsExStallArea1 = (
+    //!cfg.optForFmax
+    cfg.havePsExStall
   ) generate (new Area {
-    val rMultiCycleOpState = myNotForFmaxArea0.rMultiCycleOpState
-    val rOpIsMultiCycle = myNotForFmaxArea0.rOpIsMultiCycle
+    val rMultiCycleOpState = myHavePsExStallArea0.rMultiCycleOpState
+    val rOpIsMultiCycle = myHavePsExStallArea0.rOpIsMultiCycle
     for (myPsExStallHost <- psExStallHostArr.view) {
       if (
         myPsExStallHost.stallIo.get.sendData.kind != null

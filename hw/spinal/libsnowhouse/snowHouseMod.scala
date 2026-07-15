@@ -1935,6 +1935,7 @@ private[libsnowhouse] case class SnowHouseNotForFmax
         null.asInstanceOf[Stream[LcvBusH2dPayload]]
       )
     ),
+    multiCycleBusVec=io.multiCycleBusVec,
   )
   //--------
   //val pipeStageWb = (
@@ -2313,6 +2314,11 @@ private[libsnowhouse] case class SnowHouseForFmax(
   io.lcvIbus << psIf.io.lcvIbus
   io.lcvDbus.h2dBus << psEx.io.myLcvDbusH2dStm
   psWb.io.myLcvDbusD2hStm << io.lcvDbus.d2hBus
+
+
+  for (idx <- 0 until io.multiCycleBusVec.size) {
+    io.multiCycleBusVec(idx) <> psEx.io.multiCycleBusVec(idx)
+  }
   io.dbgInfo := psWb.io.dbgInfo
 }
 

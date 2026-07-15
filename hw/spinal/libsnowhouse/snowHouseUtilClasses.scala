@@ -1213,12 +1213,14 @@ case class SnowHouseConfig(
     && aluLcvDel1OpInfoMap.size > 0
   )
   val havePsExStall = (
-    !optForFmax
-    && multiCycleOpInfoMap.size > 0
+    //!optForFmax
+    //&& 
+    multiCycleOpInfoMap.size > 0
   )
   val havePsWbMultiCycleStall = (
-    optForFmax
-    && multiCycleOpInfoMap.size > 0
+    //optForFmax
+    //&& multiCycleOpInfoMap.size > 0
+    false
   )
   val havePsMemStall = (
     memAccOpInfoMap.size > 0

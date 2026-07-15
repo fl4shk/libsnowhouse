@@ -339,6 +339,54 @@ case class SnowHouseForFmaxPipeStageExecuteIo(
       LcvBusH2dPayload(cfg=cfg.subCfg.lcvIbusEtcCfg.loBusCfg)
     ))
   )
+  val multiCycleBusVec = (
+    Vec[LcvStallIo[
+      MultiCycleHostPayload,
+      MultiCycleDevPayload,
+    ]]{
+      val tempArr = ArrayBuffer[
+        LcvStallIo[
+          MultiCycleHostPayload,
+          MultiCycleDevPayload,
+        ]
+      ]()
+      for (
+        //((_, opInfo), idx) <- cfg.multiCycleOpInfoMap.view.zipWithIndex
+        (group, _) <- cfg.multiCycleOpInfoMap.view
+      ) {
+        //assert(
+        //  opInfo.select == OpSelect.MultiCycle
+        //)
+        //if (opInfo.select == OpSelect.MultiCycle) {
+          tempArr += new LcvStallIo(
+            sendPayloadType=(
+              Some(MultiCycleHostPayload(
+                cfg=cfg,
+                group=group,
+                //opInfo=opInfo
+                //maxSrcArrSize=(
+                //  cfg.
+                //)
+              ))
+            ),
+            recvPayloadType=(
+              Some(MultiCycleDevPayload(
+                cfg=cfg,
+                group=group,
+                //opInfo=opInfo
+              ))
+            ),
+          )
+        //}
+      }
+      tempArr
+    }
+  )
+  for (idx <- 0 until multiCycleBusVec.size) {
+    master(
+      multiCycleBusVec(idx)
+    )
+  }
   //val myModMemWord = (
   //  out(SInt(cfg.mainWidth bits))
   //)
@@ -402,6 +450,7 @@ case class SnowHouseForFmaxPipeStageExecute(
     myModMemWord=myModMemWord,
     psWbToEarlierStallRequest=io.psWbToEarlierStallRequest,
     myLcvDbusH2dStm=io.myLcvDbusH2dStm,
+    multiCycleBusVec=io.multiCycleBusVec,
     //pcChangeState=null,
     //shouldIgnoreInstr=null,
     //psExFoundBubble=psExFoundBubble,
