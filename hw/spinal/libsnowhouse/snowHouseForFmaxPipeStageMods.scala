@@ -574,7 +574,8 @@ case class SnowHouseForFmaxPipeStageWriteBack(
       myD2hBus.ready := True
     }
     when (
-      myWbPayload(1).outpDecodeExt.opIsMemAccess.last
+      cLink.up.isValid
+      && myWbPayload(1).outpDecodeExt.opIsMemAccess.last
       && !myD2hBus.valid
     ) {
       //psWbToEarlierStallRequest := True
@@ -582,7 +583,8 @@ case class SnowHouseForFmaxPipeStageWriteBack(
     }
     switch (
       (
-        myWbPayload(1).outpDecodeExt.opIsMemAccess.head
+        cLink.up.isValid
+        && myWbPayload(1).outpDecodeExt.opIsMemAccess.head
         && !myWbPayload(1).outpDecodeExt.memAccessKind.asBits(1)
         && (
           //myD2hBus.valid
@@ -652,7 +654,8 @@ case class SnowHouseForFmaxPipeStageWriteBack(
       }
     }
     when (
-      !myWbPayload(1).outpDecodeExt.memAccessKind.asBits(1)
+      cLink.up.isValid
+      && !myWbPayload(1).outpDecodeExt.memAccessKind.asBits(1)
       && (
         //myD2hBus.valid
         myD2hBus.fire
