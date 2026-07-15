@@ -2334,7 +2334,7 @@ case class SnowHousePipeStageInstrDecode(
               doSendBubbleMainMost()
               when (down.isFiring) {
                 //rStallState := True
-                rBubbleCnt := rBubbleCnt + 1
+                //rBubbleCnt := rBubbleCnt + 1
 
                 rStallState := (
                   if (!cfg.optForFmax) (
