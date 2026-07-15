@@ -2161,7 +2161,10 @@ case class SnowHousePipeStageInstrDecode(
     ) generate (
       Reg(SInt(log2Up(numFollowingInstrs + 1) + 1 bits))
       //RegNext(nextBubbleCnt)
-      init(-1)
+      init(
+        //-1
+        numFollowingInstrs - 1
+      )
     )
     if (!cfg.optForFmax) {
       myNonBubbleCond := down.isFiring
