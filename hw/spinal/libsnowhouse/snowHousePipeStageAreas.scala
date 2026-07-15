@@ -6409,7 +6409,8 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
           )
           rMyTempDstRegPc.valid := (
             //True
-            !io.shouldIgnoreInstr.last
+            io.upIsFiring
+            && !io.shouldIgnoreInstr.last
           )
           rMyTempDstRegPc.payload := 0x0
           rMyTempDstRegPc.payload(myDstPcRange) := (
@@ -6498,7 +6499,9 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
         } else {
           rMyTempDstRegPc.valid := (
             //True
-            !io.shouldIgnoreInstr.last
+            io.upIsFiring
+            && !io.shouldIgnoreInstr.last
+            //!io.shouldIgnoreInstr.last
           )
           rMyTempDstRegPc.payload := (
             //RegNext/*When*/(
@@ -6548,7 +6551,9 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
         } else {
           rMyTempDstRegPc.valid := (
             //True
-            !io.shouldIgnoreInstr.last
+            io.upIsFiring
+            && !io.shouldIgnoreInstr.last
+            //!io.shouldIgnoreInstr.last
           )
           rMyTempDstRegPc.payload := (
             //RegNext/*When*/(
