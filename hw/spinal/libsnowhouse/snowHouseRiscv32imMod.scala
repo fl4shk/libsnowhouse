@@ -1213,10 +1213,10 @@ object SnowHouseRiscv32imPipeStageInstrDecode {
               )
               //mySplitOp.nonMultiCycleOp := nonMultiCycleNonJmpOpInfoIdx
               if (!cfg.allAluOpsUseLcvAluDel1) {
-                println(
-                  s"cfg.allAluOpsUseLcvAluDel1:"
-                  + s"${cfg.allAluOpsUseLcvAluDel1}"
-                )
+                //println(
+                //  s"cfg.allAluOpsUseLcvAluDel1:"
+                //  + s"${cfg.allAluOpsUseLcvAluDel1}"
+                //)
                 mySplitOp.cpyCpyuiAluNonShiftOp := (
                   //cpyCpyuiAluNonShiftOpInfoIdx
                   1 << cpyCpyuiAluNonShiftOpInfoIdx
