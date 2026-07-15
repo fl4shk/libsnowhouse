@@ -1058,6 +1058,7 @@ case class SnowHousePipeStageInstrFetch(
       outp: MyIbusTempPayload,
       inp: MyIbusTempPayload,
       word: MyIbusTempPayload,
+      upIsFiring: Bool,
     ): Unit = {
       outp.psIfRegPcSetItCnt := word.psIfRegPcSetItCnt
       outp.myIbusRegPcInfo := word.myIbusRegPcInfo
@@ -1493,10 +1494,12 @@ case class SnowHousePrePipeStageExSetBranchPredictEtcArea(
   cfg: SnowHouseConfig,
   outp: SnowHousePipePayload,
   inp: SnowHousePipePayload,
-  link: CtrlLink,
+  //link: CtrlLink,
+  upIsFiring: Bool,
 ) extends Area {
-  val up = link.up
-  val down = link.down
+  //val up = link.up
+  //val down = link.down
+  outp.allowOverride
 
   def myRegPcRange = (
     outp.regPc.high downto log2Up(cfg.instrSizeBytes)
@@ -1505,7 +1508,10 @@ case class SnowHousePrePipeStageExSetBranchPredictEtcArea(
     History[SInt](
       that=outp.regPc(myRegPcRange).asSInt,
       length=outp.myHistRegPcSize,
-      when=up.isFiring,
+      when=(
+        //up.isFiring
+        upIsFiring,
+      ),
       init=outp.regPc(myRegPcRange).asSInt.getZero,
     )
   )
@@ -1573,7 +1579,7 @@ case class SnowHousePrePipeStageExSetBranchPredictEtcArea(
     myHistRegPc(0)
   )
   myDspRegPcMinus2InstrSize.io.inp.carry := True
-  myDspRegPcMinus2InstrSize.io.inp.cond := up.isFiring
+  myDspRegPcMinus2InstrSize.io.inp.cond := upIsFiring//up.isFiring
   for (idx <- 0 until myHistRegPcMinus2InstrSize.size) {
     if (idx == 0) {
       myHistRegPcMinus2InstrSize(idx) := (
@@ -1588,7 +1594,11 @@ case class SnowHousePrePipeStageExSetBranchPredictEtcArea(
           init=myHistRegPcMinus2InstrSize(idx).getZero,
         )
       )
-      when (RegNext(next=up.isFiring, init=False)) {
+      when (RegNext(
+        //next=up.isFiring,
+        upIsFiring,
+        init=False
+      )) {
         myHistRegPcMinus2InstrSize(idx) := (
           RegNext(
             next=myHistRegPcMinus2InstrSize(idx - 1),
@@ -2192,6 +2202,10 @@ case class SnowHousePipeStageInstrDecode(
       //  init=False,
       //)
     )
+    val rBubbleCnt = (
+      Reg(UInt(log2Up(numFollowingInstrs + 1) + 1 bits))
+      init(0x0)
+    )
     upPayload(1).instrCnt.myPsIdBubble.foreach(item => {
       item := False
     })
@@ -2340,8 +2354,17 @@ case class SnowHousePipeStageInstrDecode(
         is (MyLcvDbusStallState.POST_LD_0) {
           doSendBubbleMainMost()
           when (down.isFiring) {
+            rBubbleCnt := rBubbleCnt + 1
+          }
+          when (
+            down.isFiring
+            && rBubbleCnt === numFollowingInstrs - 1
+          ) {
             rStallState := MyLcvDbusStallState.POST_LD_1
           }
+        }
+        is (MyLcvDbusStallState.POST_LD_1) {
+          rBubbleCnt := 0x0
         }
       }
       //is (MyLcvDbusStallState.POST_LD_1) {
@@ -7256,7 +7279,9 @@ case class SnowHousePipeStageExecute(
       temp.addr := outp.gprIdxVec.last
       History(
         that=temp,
-        length=(cfg.optForFmaxPostNumPostExPreWbPipeStages.get + 5),
+        length=(
+          cfg.optForFmaxPostNumPostExPreWbPipeStages.get + 3//5
+        ),
         when=cLink.up.isFiring,
         init=temp.getZero
       )
@@ -7295,6 +7320,7 @@ case class SnowHousePipeStageExecute(
           )
         )
       }
+
 // >>> for idx in range(size):
 // ...     print(idx, (("0" * (size - idx - 1))) + "1" + ("-" * idx))
 // ...     
@@ -7302,18 +7328,29 @@ case class SnowHousePipeStageExecute(
 // 1 001-
 // 2 01--
 // 3 1---
+
+// >>> for idx in range(size):
+// ...     print(idx, ("-" * (size - idx - 1) + "1" + ("0" * idx)))
+// ...     
+// 0 ---1
+// 1 --10
+// 2 -100
+// 3 1000
       switch (
         myTempHistFwdValid(jdx)
       ) {
         for (idx <- 0 until myTempHistFwdValid(jdx).getWidth) {
-          is (MaskedLiteral(
-            ("-" * idx)
-            + "1"
-            + (("0" * (myTempHistFwdValid(jdx).getWidth - idx - 1)))
-          )) {
+          is (MaskedLiteral({
+            //("-" * idx)
+            //+ "1"
+            //+ (("0" * (myTempHistFwdValid(jdx).getWidth - idx - 1)))
+            val size = myTempHistFwdValid(jdx).getWidth
+            ("-" * (size - idx - 1) + "1" + ("0" * idx))
+          })) {
             outp.myExt(0).rdMemWord(jdx) := (
               myHistFwdInfo(
-                myHistFwdInfo.size - 1 - idx //(idx + 1)
+                //myHistFwdInfo.size - 1 - idx //(idx + 1)
+                idx + 1
               ).data
             )
           }

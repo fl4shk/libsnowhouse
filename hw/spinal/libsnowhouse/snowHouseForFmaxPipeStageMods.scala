@@ -222,93 +222,93 @@ case class SnowHouseForFmaxPipeStageInstrDecode(
   //--------
 }
 
-case class SnowHouseForFmaxPipeStagePreExIo(
-  cfg: SnowHouseConfig
-) extends Bundle {
-  val up = (
-    slave(Stream(
-      SnowHousePipePayload(cfg=cfg)
-    ))
-  )
-  val down = (
-    master(Stream(
-      SnowHousePipePayload(cfg=cfg)
-    ))
-  )
-}
-
-case class SnowHouseForFmaxPipeStagePreEx(
-  cfg: SnowHouseConfig,
-) extends Component {
-  //--------
-  val io = SnowHouseForFmaxPipeStagePreExIo(cfg=cfg)
-  //def up = io.up
-  //def down = io.down
-  //--------
-  val linkArr = PipeHelper.mkLinkArr()
-
-  //def opInfoMap = cfg.opInfoMap
-
-  val pPreExInp = Payload(SnowHousePipePayload(cfg=cfg))
-  val pPreExOutp = Payload(SnowHousePipePayload(cfg=cfg))
-  val cLink = CtrlLink()
-  val sLink = StageLink(
-    up=cLink.down,
-    down={
-      val temp = Node()
-      temp.setName("s_down")
-      temp
-    }
-  )
-  val s2mLink = S2MLink(
-    up=sLink.down,
-    down={
-      val temp = Node()
-      temp.setName("s2mLink_down")
-      temp
-    }
-  )
-  linkArr += cLink
-  linkArr += sLink
-  linkArr += s2mLink
-
-  val myOutp = SnowHousePipePayload(cfg=cfg)
-  val myInp = SnowHousePipePayload(cfg=cfg)
-  //myInp := RegNext(myInp)
-  myOutp := RegNext(myOutp)
-  myOutp.allowOverride
-
-  val innerPsPreEx = SnowHousePrePipeStageExSetBranchPredictEtcArea(
-    cfg=cfg,
-    outp=myOutp,
-    inp=myInp,
-    link=cLink,
-  )
-
-  cLink.up.driveFrom(io.up)(
-    con=(node, inp) => {
-      node(pPreExInp) := inp
-      myInp := inp
-      when (node.isValid) {
-        myOutp := myInp
-      }
-    }
-  )
-  //when (cLink.up.valid) {
-  //}
-  cLink.up(pPreExOutp) := myOutp
-
-  s2mLink.down.driveTo(
-    io.down
-  )(
-    con=(outp, node) => {
-      outp := node(pPreExOutp)
-    }
-  )
-
-  Builder(linkArr)
-  //--------
-}
+//case class SnowHouseForFmaxPipeStagePreExIo(
+//  cfg: SnowHouseConfig
+//) extends Bundle {
+//  val up = (
+//    slave(Stream(
+//      SnowHousePipePayload(cfg=cfg)
+//    ))
+//  )
+//  val down = (
+//    master(Stream(
+//      SnowHousePipePayload(cfg=cfg)
+//    ))
+//  )
+//}
+//
+//case class SnowHouseForFmaxPipeStagePreEx(
+//  cfg: SnowHouseConfig,
+//) extends Component {
+//  //--------
+//  val io = SnowHouseForFmaxPipeStagePreExIo(cfg=cfg)
+//  //def up = io.up
+//  //def down = io.down
+//  //--------
+//  val linkArr = PipeHelper.mkLinkArr()
+//
+//  //def opInfoMap = cfg.opInfoMap
+//
+//  val pPreExInp = Payload(SnowHousePipePayload(cfg=cfg))
+//  val pPreExOutp = Payload(SnowHousePipePayload(cfg=cfg))
+//  val cLink = CtrlLink()
+//  val sLink = StageLink(
+//    up=cLink.down,
+//    down={
+//      val temp = Node()
+//      temp.setName("s_down")
+//      temp
+//    }
+//  )
+//  val s2mLink = S2MLink(
+//    up=sLink.down,
+//    down={
+//      val temp = Node()
+//      temp.setName("s2mLink_down")
+//      temp
+//    }
+//  )
+//  linkArr += cLink
+//  linkArr += sLink
+//  linkArr += s2mLink
+//
+//  val myOutp = SnowHousePipePayload(cfg=cfg)
+//  val myInp = SnowHousePipePayload(cfg=cfg)
+//  //myInp := RegNext(myInp)
+//  myOutp := RegNext(myOutp)
+//  myOutp.allowOverride
+//
+//  val innerPsPreEx = SnowHousePrePipeStageExSetBranchPredictEtcArea(
+//    cfg=cfg,
+//    outp=myOutp,
+//    inp=myInp,
+//    link=cLink,
+//  )
+//
+//  cLink.up.driveFrom(io.up)(
+//    con=(node, inp) => {
+//      node(pPreExInp) := inp
+//      myInp := inp
+//      when (node.isValid) {
+//        myOutp := myInp
+//      }
+//    }
+//  )
+//  //when (cLink.up.valid) {
+//  //}
+//  cLink.up(pPreExOutp) := myOutp
+//
+//  s2mLink.down.driveTo(
+//    io.down
+//  )(
+//    con=(outp, node) => {
+//      outp := node(pPreExOutp)
+//    }
+//  )
+//
+//  Builder(linkArr)
+//  //--------
+//}
 
 case class SnowHouseForFmaxPipeStageExecuteIo(
   cfg: SnowHouseConfig

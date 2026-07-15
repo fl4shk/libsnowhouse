@@ -1648,7 +1648,8 @@ private[libsnowhouse] case class SnowHouseNotForFmax
               cfg=cfg,
               outp=outp,
               inp=inp,
-              link=cFront,
+              //link=cFront,
+              upIsFiring=cFront.up.isFiring,
             )
           )
           //cfg.myPrePsExSetBranchPredictionStuff(
@@ -2178,22 +2179,22 @@ private[libsnowhouse] case class SnowHouseForFmax(
     cfg=cfg,
     doDecodeFunc=cfg.doInstrDecodeFunc
   )
-  val psPreEx = SnowHouseForFmaxPipeStagePreEx(cfg=cfg)
+  //val psPreEx = SnowHouseForFmaxPipeStagePreEx(cfg=cfg)
   val psEx = SnowHouseForFmaxPipeStageExecute(cfg=cfg)
   val psWb = SnowHouseForFmaxPipeStageWriteBack(cfg=cfg)
   //--------
 
   psId.io.up << psIf.io.down // extra pipeline stage for fmax
-  psPreEx.io.up << psId.io.down
+  //psPreEx.io.up << psId.io.down
   //psEx.io.up << psPreEx.io.down
 
   //--------
-  val myRegFile = new ArrayBuffer[WrPulseRdPipeRamSdpPipe[
+  val myRegFile = new ArrayBuffer[WrPulseRdPipeRamSimpleDualPort[
     SnowHousePipePayload,
     UInt,
   ]]()
   for (idx <- 0 until cfg.regFileCfg.modRdPortCnt) {
-    myRegFile += WrPulseRdPipeRamSdpPipe(
+    myRegFile += WrPulseRdPipeRamSimpleDualPort(
       cfg=WrPulseRdPipeRamSdpPipeConfig(
         modType=SnowHousePipePayload(cfg=cfg),
         wordType=UInt(cfg.mainWidth bits),
@@ -2203,10 +2204,20 @@ private[libsnowhouse] case class SnowHouseForFmax(
           outp: SnowHousePipePayload,
           inp: SnowHousePipePayload,
           rdMemWord: UInt,
+          upIsFiring: Bool,
         ) => {
           outp := inp
           outp.myExt(0).rdMemWord(idx).allowOverride
           outp.myExt(0).rdMemWord(idx) := rdMemWord
+          val innerPsPreEx = (
+            SnowHousePrePipeStageExSetBranchPredictEtcArea(
+              cfg=cfg,
+              outp=outp,
+              inp=inp,
+              //link=cLink,
+              upIsFiring=upIsFiring,
+            )
+          )
         },
         optExtraRdPipeStages=(
           //1
@@ -2229,7 +2240,7 @@ private[libsnowhouse] case class SnowHouseForFmax(
   val myRegFileRdAddrPipeFrontVec = Vec.fill(2)(
     cloneOf(myRegFile.head.io.rdAddrPipe)
   )
-  psPreEx.io.down.translateInto(myRegFileRdAddrPipeFrontVec.head)(
+  psId.io.down.translateInto(myRegFileRdAddrPipeFrontVec.head)(
     dataAssignment=(outp, inp) => {
       outp.data := inp
     }
