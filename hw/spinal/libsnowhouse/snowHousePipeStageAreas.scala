@@ -2211,7 +2211,8 @@ case class SnowHousePipeStageInstrDecode(
           numFollowingInstrs + 1
         ),
         when=(
-          down.isFiring
+          //down.isFiring
+          myNonBubbleCond
           //myNonBubbleCond
           //if (!cfg.optForFmax) (
           //  down.isFiring
