@@ -2328,7 +2328,9 @@ private[libsnowhouse] case class SnowHouseForFmax(
   psId.io.psExSetPc := psExSetPc
   psExSetPc := psEx.io.psExSetPc
 
-  psEx.io.idsIraIrq <> io.idsIraIrq
+  if (io.idsIraIrq != null) {
+    psEx.io.idsIraIrq <> io.idsIraIrq
+  }
 
   io.lcvIbus << psIf.io.lcvIbus
   io.lcvDbus.h2dBus << psEx.io.myLcvDbusH2dStm
