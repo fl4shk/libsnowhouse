@@ -2162,17 +2162,17 @@ case class SnowHousePipeStageInstrDecode(
       Reg(SInt(log2Up(numFollowingInstrs + 1) + 1 bits))
       //RegNext(nextBubbleCnt)
       init(
-        //-1
-        numFollowingInstrs - 1
+        -1
+        //numFollowingInstrs - 1
       )
     )
     if (!cfg.optForFmax) {
       myNonBubbleCond := down.isFiring
     } else {
       myNonBubbleCond := (
-        up.isFiring
-        //down.isFiring
-        //&& rBubbleCnt.msb
+        //up.isFiring
+        down.isFiring
+        && rBubbleCnt.msb
       )
     }
     val myHistCondAnyBubble = (
@@ -2211,7 +2211,8 @@ case class SnowHousePipeStageInstrDecode(
           numFollowingInstrs + 1
         ),
         when=(
-          myNonBubbleCond
+          down.isFiring
+          //myNonBubbleCond
           //if (!cfg.optForFmax) (
           //  down.isFiring
           //) else (
@@ -2392,13 +2393,16 @@ case class SnowHousePipeStageInstrDecode(
           when (
             down.isFiring
             //&& rBubbleCnt === numFollowingInstrs //- 1
-            && rBubbleCnt.msb
+            && (rBubbleCnt - 1).msb
           ) {
             rStallState := MyLcvDbusStallState.POST_LD_1
           }
         }
         is (MyLcvDbusStallState.POST_LD_1) {
           //rBubbleCnt := 0x0
+          when (up.isFiring) {
+            rBubbleCnt := rBubbleCnt - 1
+          }
         }
       }
       //is (MyLcvDbusStallState.POST_LD_1) {
