@@ -2284,12 +2284,15 @@ private[libsnowhouse] case class SnowHouseForFmax(
     for (idx <- 0 until myPostExPreWbStmVec.size) {
       if (idx == 0) {
         myPostExPreWbStmVec(idx) <-< psEx.io.down
-      } else if (idx + 1 == myPostExPreWbStmVec.size) {
-        psWb.io.up <-< myPostExPreWbStmVec(idx)
-      } else {
+      } //else 
+      //if (idx + 1 == myPostExPreWbStmVec.size) {
+      //  psWb.io.up <-< myPostExPreWbStmVec(idx)
+      //}
+      else {
         myPostExPreWbStmVec(idx) <-< myPostExPreWbStmVec(idx - 1)
       }
     }
+    psWb.io.up <-< myPostExPreWbStmVec.last
   } else {
     psWb.io.up << psEx.io.down
   }
@@ -2310,6 +2313,7 @@ private[libsnowhouse] case class SnowHouseForFmax(
   io.lcvIbus << psIf.io.lcvIbus
   io.lcvDbus.h2dBus << psEx.io.myLcvDbusH2dStm
   psWb.io.myLcvDbusD2hStm << io.lcvDbus.d2hBus
+  io.dbgInfo := psWb.io.dbgInfo
 }
 
 case class SnowHouse(

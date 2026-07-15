@@ -434,6 +434,14 @@ case class SnowHouseForFmaxPipeStageWriteBackIo(
       SnowHousePipePayload(cfg=cfg)
     ))
   )
+  val dbgInfo = (
+    cfg.exposeRegFileWriteDataToIo
+    || cfg.exposeRegFileWriteAddrToIo
+    || cfg.exposeRegFileWriteEnableToIo
+    || cfg.dbgExposeExtrasAtRegFileWrite
+  ) generate (
+    out(SnowHouseDebugInfo(cfg=cfg))
+  )
   //--------
   val myLcvDbusD2hStm = (
     slave(Stream(
@@ -447,6 +455,7 @@ case class SnowHouseForFmaxPipeStageWriteBackIo(
       wordCount=cfg.regFileCfg.wordCountArr(0),
     )
   ))
+  //--------
 }
 case class SnowHouseForFmaxPipeStageWriteBack(
   cfg: SnowHouseConfig
@@ -628,6 +637,7 @@ case class SnowHouseForFmaxPipeStageWriteBack(
     }
   )
   cLink.down.ready := True
+
   io.myRegFileWrPulse.valid := (
     cLink.up.isFiring
     && !myWbPayload(0).gprIsZeroVec.last.last
@@ -653,6 +663,30 @@ case class SnowHouseForFmaxPipeStageWriteBack(
     //myCurrExt.modMemWord := myDbus.recvData.word
     //myWbPayload(1).
     myCurrExt.modMemWord
+  }
+  if (io.dbgInfo != null) {
+    io.dbgInfo.regFileWriteData := io.myRegFileWrPulse.data
+    io.dbgInfo.regFileWriteAddr := io.myRegFileWrPulse.addr
+    io.dbgInfo.regFileWriteEnable := io.myRegFileWrPulse.fire
+    io.dbgInfo.laggingRegPcAtRegFileWrite := myWbPayload(1).laggingRegPc
+    io.dbgInfo.shouldIgnoreInstrAtRegFileWrite := (
+      myWbPayload(1).instrCnt.shouldIgnoreInstr.last
+    )
+    io.dbgInfo.myPsIdBubbleAtRegFileWrite := (
+      myWbPayload(1).instrCnt.myPsIdBubble.last
+    )
+    io.dbgInfo.encInstrAtRegFileWrite := (
+      myWbPayload(1).encInstr.payload
+    )
+    io.dbgInfo.immAtRegFileWrite := (
+      myWbPayload(1).imm.last
+    )
+    io.dbgInfo.rdMemWordAtRegFileWrite := (
+      myWbPayload(1).myExt(0).rdMemWord
+    )
+    io.dbgInfo.gprIdxVecAtRegFileWrite := (
+      myWbPayload(1).gprIdxVec
+    )
   }
 
   Builder(linkArr)
