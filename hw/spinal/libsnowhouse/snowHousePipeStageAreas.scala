@@ -2334,6 +2334,8 @@ case class SnowHousePipeStageInstrDecode(
               doSendBubbleMainMost()
               when (down.isFiring) {
                 //rStallState := True
+                rBubbleCnt := rBubbleCnt + 1
+
                 rStallState := (
                   if (!cfg.optForFmax) (
                     MyLcvDbusStallState.POST_LD_1
