@@ -714,6 +714,24 @@ case class SnowHouseForFmaxPipeStageWriteBack(
     cLink.up.isFiring
     && !myWbPayload(1).gprIsZeroVec.last.last
     && !myWbPayload(1).instrCnt.shouldIgnoreInstr.last
+    && {
+      val myDecodeExt = myWbPayload(1).outpDecodeExt
+      val mapElem = myWbPayload(1).gprIdxToMemAddrIdxMap(0)
+      val myCurrExt = (
+        if (!mapElem.haveHowToSetIdx) (
+          myWbPayload(1).myExt(
+            0
+          )
+        ) else (
+          myWbPayload(1).myExt(
+            mapElem.howToSetIdx
+          )
+        )
+      )
+      //myCurrExt.modMemWord := myDbus.recvData.word
+      //myWbPayload(1).
+      myCurrExt.modMemWordValid(0)
+    }
   )
   io.myRegFileWrPulse.addr := (
     myWbPayload(1).gprIdxVec.last
