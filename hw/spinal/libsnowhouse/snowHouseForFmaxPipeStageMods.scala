@@ -567,7 +567,10 @@ case class SnowHouseForFmaxPipeStageWriteBack(
 
     //psWbToEarlierStallRequest := False
 
-    when (myWbPayload(1).outpDecodeExt.opIsMemAccess.last) {
+    when (
+      cLink.up.isValid
+      && myWbPayload(1).outpDecodeExt.opIsMemAccess.last
+    ) {
       myD2hBus.ready := True
     }
     when (
@@ -581,7 +584,10 @@ case class SnowHouseForFmaxPipeStageWriteBack(
       (
         myWbPayload(1).outpDecodeExt.opIsMemAccess.head
         && !myWbPayload(1).outpDecodeExt.memAccessKind.asBits(1)
-        && myD2hBus.valid
+        && (
+          //myD2hBus.valid
+          myD2hBus.fire
+        )
       )
       ## myWbPayload(1).outpDecodeExt.memAccessKind.asBits(0)
       ## myWbPayload(1).outpDecodeExt.memAccessSubKind.asBits
@@ -647,7 +653,10 @@ case class SnowHouseForFmaxPipeStageWriteBack(
     }
     when (
       !myWbPayload(1).outpDecodeExt.memAccessKind.asBits(1)
-      && myD2hBus.valid
+      && (
+        //myD2hBus.valid
+        myD2hBus.fire
+      )
     ) {
       val myDecodeExt = myWbPayload(1).outpDecodeExt
       val mapElem = myWbPayload(1).gprIdxToMemAddrIdxMap(0)
