@@ -579,12 +579,12 @@ case class SnowHouseForFmaxPipeStageWriteBack(
     }
     switch (
       (
-        myWbPayload(0).outpDecodeExt.opIsMemAccess.head
-        && !myWbPayload(0).outpDecodeExt.memAccessKind.asBits(1)
+        myWbPayload(1).outpDecodeExt.opIsMemAccess.head
+        && !myWbPayload(1).outpDecodeExt.memAccessKind.asBits(1)
         && myD2hBus.valid
       )
-      ## myWbPayload(0).outpDecodeExt.memAccessKind.asBits(0)
-      ## myWbPayload(0).outpDecodeExt.memAccessSubKind.asBits
+      ## myWbPayload(1).outpDecodeExt.memAccessKind.asBits(0)
+      ## myWbPayload(1).outpDecodeExt.memAccessSubKind.asBits
     ) {
       //--------
       // This stuff might need to be changed for the purposes of
@@ -646,7 +646,7 @@ case class SnowHouseForFmaxPipeStageWriteBack(
       }
     }
     when (
-      !myWbPayload(0).outpDecodeExt.memAccessKind.asBits(1)
+      !myWbPayload(1).outpDecodeExt.memAccessKind.asBits(1)
       && myD2hBus.valid
     ) {
       val myDecodeExt = myWbPayload(1).outpDecodeExt
@@ -673,7 +673,7 @@ case class SnowHouseForFmaxPipeStageWriteBack(
       //})
       for (idx <- 0 until cfg.regFileCfg.modMemWordValidSize) {
         myCurrExt.modMemWordValid(idx) := (
-          !myWbPayload(0).gprIsZeroVec.last(idx)
+          !myWbPayload(1).gprIsZeroVec.last(idx)
         )
       }
     }
@@ -682,18 +682,18 @@ case class SnowHouseForFmaxPipeStageWriteBack(
   cLink.up.driveFrom(io.up)(
     con=(node, inp) => {
       //node(pwbInp) := inp
-      myWbPayload(0) := inp
+      myWbPayload(1) := inp
     }
   )
   cLink.down.ready := True
 
   io.myRegFileWrPulse.valid := (
     cLink.up.isFiring
-    && !myWbPayload(0).gprIsZeroVec.last.last
-    && !myWbPayload(0).instrCnt.shouldIgnoreInstr.last
+    && !myWbPayload(1).gprIsZeroVec.last.last
+    && !myWbPayload(1).instrCnt.shouldIgnoreInstr.last
   )
   io.myRegFileWrPulse.addr := (
-    myWbPayload(0).gprIdxVec.last
+    myWbPayload(1).gprIdxVec.last
   )
   io.myRegFileWrPulse.data := {
     val myDecodeExt = myWbPayload(1).outpDecodeExt
