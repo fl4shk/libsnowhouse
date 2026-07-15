@@ -2189,17 +2189,16 @@ private[libsnowhouse] case class SnowHouseForFmax(
   //psEx.io.up << psPreEx.io.down
 
   //--------
-  val myRegFile = new ArrayBuffer[WrPulseRdPipeRamSimpleDualPort[
+  val myRegFile = new ArrayBuffer[WrPulseRdPipeRam[
     SnowHousePipePayload,
     UInt,
   ]]()
   for (idx <- 0 until cfg.regFileCfg.modRdPortCnt) {
-    myRegFile += WrPulseRdPipeRamSimpleDualPort(
-      cfg=WrPulseRdPipeRamSdpPipeConfig(
+    myRegFile += WrPulseRdPipeRam(
+      cfg=WrPulseRdPipeRamConfig(
         modType=SnowHousePipePayload(cfg=cfg),
         wordType=UInt(cfg.mainWidth bits),
         wordCount=cfg.regFileCfg.wordCountArr(0),
-        pipeName="myRegFileArr",
         setWordFunc=(
           outp: SnowHousePipePayload,
           inp: SnowHousePipePayload,
@@ -2210,6 +2209,8 @@ private[libsnowhouse] case class SnowHouseForFmax(
           outp.myExt(0).rdMemWord(idx).allowOverride
           outp.myExt(0).rdMemWord(idx) := rdMemWord
           val innerPsPreEx = (
+            idx == 0
+          ) generate (
             SnowHousePrePipeStageExSetBranchPredictEtcArea(
               cfg=cfg,
               outp=outp,
@@ -2218,10 +2219,11 @@ private[libsnowhouse] case class SnowHouseForFmax(
               upIsFiring=upIsFiring,
             )
           )
+          .setName("innerPsPreEx")
         },
-        optExtraRdPipeStages=(
-          //1
-          0
+        optRdLatency=(
+          1
+          //0
         ),
         optWrHistLength=(
           1

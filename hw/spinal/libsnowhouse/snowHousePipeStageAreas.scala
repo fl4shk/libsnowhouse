@@ -1065,17 +1065,18 @@ case class SnowHousePipeStageInstrFetch(
       outp.instr.allowOverride
       outp.instr := inp.instr
     }
-    val ramCfg = WrPulseRdPipeRamSdpPipeConfig(
+    val ramCfg = WrPulseRdPipeRamConfig(
       modType=(
         MyIbusTempPayload(hasInstr=true)
       ),
       wordType=MyIbusTempPayload(hasInstr=false),
       wordCount=depth,
-      pipeName="pipeStageIf",
+      //pipeName="pipeStageIf",
       setWordFunc=mySetWordFunc,
-      optExtraRdPipeStages=(
+      optRdLatency=(
         //2
-        3
+        //3
+        4
       ),
       optWrHistLength=(
         //1
@@ -1103,7 +1104,7 @@ case class SnowHousePipeStageInstrFetch(
         "distributed"
       ),
     )
-    WrPulseRdPipeRamSdpPipe(cfg=ramCfg)
+    WrPulseRdPipeRam(cfg=ramCfg)
   }
 
   val rIbusTempRamInitCnt = {
