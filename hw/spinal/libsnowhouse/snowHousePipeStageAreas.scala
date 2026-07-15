@@ -2359,7 +2359,7 @@ case class SnowHousePipeStageInstrDecode(
           }
           when (
             down.isFiring
-            && rBubbleCnt === numFollowingInstrs - 1
+            && rBubbleCnt === numFollowingInstrs //- 1
           ) {
             rStallState := MyLcvDbusStallState.POST_LD_1
           }
