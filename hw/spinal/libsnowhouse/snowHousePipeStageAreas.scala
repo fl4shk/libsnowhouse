@@ -7283,7 +7283,7 @@ case class SnowHousePipeStageExecute(
       History(
         that=temp,
         length=(
-          cfg.optForFmaxPostNumPostExPreWbPipeStages.get + 2//3//5//4//3//5
+          cfg.optForFmaxPostNumPostExPreWbPipeStages.get + 3//2//5//4//3//5
         ),
         when=cLink.up.isFiring,
         init=temp.getZero

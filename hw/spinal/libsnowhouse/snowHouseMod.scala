@@ -2184,7 +2184,7 @@ private[libsnowhouse] case class SnowHouseForFmax(
   val psWb = SnowHouseForFmaxPipeStageWriteBack(cfg=cfg)
   //--------
 
-  psId.io.up << psIf.io.down // extra pipeline stage for fmax
+  psId.io.up <-/< psIf.io.down // extra pipeline stage for fmax
   //psPreEx.io.up << psId.io.down
   //psEx.io.up << psPreEx.io.down
 
