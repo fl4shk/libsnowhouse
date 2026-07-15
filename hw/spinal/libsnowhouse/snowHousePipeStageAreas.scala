@@ -2170,8 +2170,8 @@ case class SnowHousePipeStageInstrDecode(
       myNonBubbleCond := down.isFiring
     } else {
       myNonBubbleCond := (
-        up.isFiring
-        //down.isFiring
+        //up.isFiring
+        down.isFiring
         //&& rBubbleCnt.msb
       )
     }
