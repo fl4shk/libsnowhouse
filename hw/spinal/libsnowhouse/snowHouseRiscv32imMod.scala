@@ -888,7 +888,8 @@ object SnowHouseRiscv32imPipeStageInstrDecode {
         ),
         when=(
           //psId.up.isFiring
-          psId.down.isFiring
+          //psId.down.isFiring
+          psId.myNonBubbleCond
         ),
         init=(
           //encInstr.last.raIdx.getZero

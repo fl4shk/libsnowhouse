@@ -1773,6 +1773,7 @@ case class SnowHousePipeStageInstrDecode(
       0xf
     )
   )
+  val myNonBubbleCond = Bool()
 
   //when (up.isFiring) {
   up(pId) := upPayload(1)//(0)
@@ -2152,6 +2153,25 @@ case class SnowHousePipeStageInstrDecode(
     //  )
     //)
 
+    //val nextBubbleCnt = (
+    //  UInt(log2Up(numFollowingInstrs + 1) + 1 bits)
+    //)
+    val rBubbleCnt = (
+      cfg.optForFmax
+    ) generate (
+      Reg(SInt(log2Up(numFollowingInstrs + 1) + 1 bits))
+      //RegNext(nextBubbleCnt)
+      init(-1)
+    )
+    if (!cfg.optForFmax) {
+      myNonBubbleCond := down.isFiring
+    } else {
+      myNonBubbleCond := (
+        up.isFiring
+        //down.isFiring
+        //&& rBubbleCnt.msb
+      )
+    }
     val myHistCondAnyBubble = (
       History[Bool](
         that=(
@@ -2188,8 +2208,15 @@ case class SnowHousePipeStageInstrDecode(
           numFollowingInstrs + 1
         ),
         when=(
-          down.isFiring
-          //up.isFiring
+          myNonBubbleCond
+          //if (!cfg.optForFmax) (
+          //  down.isFiring
+          //) else (
+          //  //&& !rBubbleCnt.orR
+          //  //down.isFiring
+          //  //&& rBubbleCnt.msb
+          //)
+            //up.isFiring
         ),
         init=False
       )
@@ -2202,10 +2229,6 @@ case class SnowHousePipeStageInstrDecode(
       //  cond=up.isFiring,
       //  init=False,
       //)
-    )
-    val rBubbleCnt = (
-      Reg(UInt(log2Up(numFollowingInstrs + 1) + 1 bits))
-      init(0x0)
     )
     upPayload(1).instrCnt.myPsIdBubble.foreach(item => {
       item := False
@@ -2336,6 +2359,9 @@ case class SnowHousePipeStageInstrDecode(
               when (down.isFiring) {
                 //rStallState := True
                 //rBubbleCnt := rBubbleCnt + 1
+                if (cfg.optForFmax) {
+                  rBubbleCnt := numFollowingInstrs - 1//2//1
+                }
 
                 rStallState := (
                   if (!cfg.optForFmax) (
@@ -2358,17 +2384,18 @@ case class SnowHousePipeStageInstrDecode(
         is (MyLcvDbusStallState.POST_LD_0) {
           doSendBubbleMainMost()
           when (down.isFiring) {
-            rBubbleCnt := rBubbleCnt + 1
+            rBubbleCnt := rBubbleCnt - 1//+ 1
           }
           when (
             down.isFiring
-            && rBubbleCnt === numFollowingInstrs //- 1
+            //&& rBubbleCnt === numFollowingInstrs //- 1
+            && rBubbleCnt.msb
           ) {
             rStallState := MyLcvDbusStallState.POST_LD_1
           }
         }
         is (MyLcvDbusStallState.POST_LD_1) {
-          rBubbleCnt := 0x0
+          //rBubbleCnt := 0x0
         }
       }
       //is (MyLcvDbusStallState.POST_LD_1) {
