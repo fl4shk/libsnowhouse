@@ -901,12 +901,17 @@ object SnowHouseRiscv32imPipeStageInstrDecode {
     for (idx <- 0 until upPayload.gprIdxVec.size - 1) {
       val tempRegIdx: UInt = (
         if (idx == 0) {
-          encInstrR.head.rd
-        } else if (idx == 1) {
+          //encInstrR.head.rd
           encInstrR.head.rs1
-        } else if (idx == 2) {
+        } else if (idx == 1) {
+          //encInstrR.head.rs1
           encInstrR.head.rs2
-        } else {
+        } 
+        //else if (idx == 2) 
+        //{
+        //  //encInstrR.head.rs2
+        //} 
+        else {
           assert(
             false,
             s"${idx} ${upPayload.gprIdxVec.size - 1}"
