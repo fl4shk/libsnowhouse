@@ -717,7 +717,9 @@ case class SnowHouseForFmaxPipeStageWriteBack(
     io.dbgInfo.regFileWriteData := io.myRegFileWrPulse.data
     io.dbgInfo.regFileWriteAddr := io.myRegFileWrPulse.addr
     io.dbgInfo.regFileWriteEnable := io.myRegFileWrPulse.fire
-    io.dbgInfo.laggingRegPcAtRegFileWrite := myWbPayload(1).laggingRegPc
+    io.dbgInfo.laggingRegPcAtRegFileWrite := (
+      myWbPayload(1).laggingRegPc.resize(cfg.mainWidth bits)
+    )
     io.dbgInfo.shouldIgnoreInstrAtRegFileWrite := (
       myWbPayload(1).instrCnt.shouldIgnoreInstr.last
     )
