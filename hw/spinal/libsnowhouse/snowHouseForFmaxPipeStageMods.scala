@@ -682,7 +682,7 @@ case class SnowHouseForFmaxPipeStageWriteBack(
   cLink.up.driveFrom(io.up)(
     con=(node, inp) => {
       //node(pwbInp) := inp
-      myWbPayload(1) := inp
+      myWbPayload(0) := inp
     }
   )
   cLink.down.ready := True
