@@ -1759,7 +1759,11 @@ case class SnowHousePrePipeStageExSetBranchPredictEtcArea(
         //&& !myShouldIgnoreInstr(0)
         outp.gprIsNonZeroVec.last.last
         && (
-          !rMyPsExSetPcState
+          (
+            //!myBranchMispredictEtc
+            //&& 
+            !rMyPsExSetPcState
+          )
           || outp.regPcSetItCnt(1).lsb
         )
       )
@@ -1800,12 +1804,16 @@ case class SnowHousePrePipeStageExSetBranchPredictEtcArea(
         ) := (
           myHistFwdInfo(idx + 1).valid
           && (
-            LcvFastCmpEq(
-              left=outp.gprIdxVec(jdx),
-              right=myHistFwdInfo(idx + 1).addr,
-              cmpEqIo=null,
-            )._1
+            outp.gprIdxVec(jdx)
+            === myHistFwdInfo(idx + 1).addr
           )
+          //&& (
+          //  LcvFastCmpEq(
+          //    left=outp.gprIdxVec(jdx),
+          //    right=myHistFwdInfo(idx + 1).addr,
+          //    cmpEqIo=null,
+          //  )._1
+          //)
         )
       }
 
@@ -1827,15 +1835,15 @@ case class SnowHousePrePipeStageExSetBranchPredictEtcArea(
       switch (
         myTempHistFwdValid(jdx)
       ) {
-        for (idx <- 0 until myTempHistFwdValid(jdx).getWidth) {
+        val size = myTempHistFwdValid(jdx).getWidth
+        for (idx <- 0 until size) {
           is (MaskedLiteral({
             //("-" * idx)
             //+ "1"
             //+ (("0" * (myTempHistFwdValid(jdx).getWidth - idx - 1)))
-            val size = myTempHistFwdValid(jdx).getWidth
             ("-" * (size - idx - 1) + "1" + ("0" * idx))
           })) {
-            outp.forFmaxFwdIdx(jdx) := idx + 1
+            outp.forFmaxFwdIdx(jdx) := idx //+ 1
             //outp.myExt(0).rdMemWord(jdx) := (
             //  myHistFwdInfo(
             //    //myHistFwdInfo.size - 1 - idx //(idx + 1)
@@ -1845,7 +1853,10 @@ case class SnowHousePrePipeStageExSetBranchPredictEtcArea(
           }
         }
         default {
-          outp.forFmaxFwdIdx(jdx) := 0x0
+          outp.forFmaxFwdIdx(jdx) := (
+            //0x0
+            (1 << outp.forFmaxFwdIdx(jdx).getWidth) - 1
+          )
           //outp.myExt(0).rdMemWord(jdx) := (
           //  inp.myExt(0).rdMemWord(jdx)
           //)
@@ -3969,13 +3980,13 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
       (
         myPsExSetPcValid
         && (
-          //io.laggingRegPc
-          //=/= myTempDstRegPc
-          !LcvFastCmpEq(
-            left=io.laggingRegPc,
-            right=rMyTempDstRegPc.payload,
-            cmpEqIo=null,
-          )._1
+          io.laggingRegPc
+          =/= rMyTempDstRegPc.payload
+          //!LcvFastCmpEq(
+          //  left=io.laggingRegPc,
+          //  right=rMyTempDstRegPc.payload,
+          //  cmpEqIo=null,
+          //)._1
         )
       )
     )
@@ -3997,11 +4008,15 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
         && (
           //io.laggingRegPc
           //=/= io.mySavedRegPcPlusInstrSize.last
-          !LcvFastCmpEq(
-            left=io.laggingRegPc,
-            right=io.mySavedRegPcPlusInstrSize.last,
-            cmpEqIo=null,
-          )._1
+          (
+            io.laggingRegPc
+            =/= io.mySavedRegPcPlusInstrSize.last
+          )
+          //!LcvFastCmpEq(
+          //  left=io.laggingRegPc,
+          //  right=io.mySavedRegPcPlusInstrSize.last,
+          //  cmpEqIo=null,
+          //)._1
         )
       ),
     )
@@ -7438,7 +7453,7 @@ case class SnowHousePipeStageExecute(
 
   case class MyFwdInfo(
   ) extends Bundle {
-    //val valid = Bool()
+    val valid = Bool()
     val data = UInt(cfg.mainWidth bits)
     //val addr = UInt(log2Up(cfg.regFileCfg.wordCountArr(0)) bits)
   }
@@ -7447,11 +7462,11 @@ case class SnowHousePipeStageExecute(
   ) generate (new Area {
     val myHistFwdInfo = {
       val temp = MyFwdInfo()
-      //temp.valid := (
-      //  outp.myExt(0).modMemWordValid.last //ram.io.wrEn
-      //  && outp.gprIsNonZeroVec.last.last
-      //  && !myShouldIgnoreInstr(0)
-      //)
+      temp.valid := (
+        outp.myExt(0).modMemWordValid.last //ram.io.wrEn
+        && outp.gprIsNonZeroVec.last.last
+        && !myShouldIgnoreInstr(0)
+      )
       temp.data := outp.myExt(0).modMemWord //ram.io.wrData
       //temp.addr := outp.gprIdxVec.last
       History(
@@ -7521,7 +7536,7 @@ case class SnowHousePipeStageExecute(
           idx
           //<- 0 until myTempHistFwdValid(jdx).getWidth
           //<- 0 until (1 << outp.optForFmaxFwdIdx(jdx).getWidth)
-          <- 0 until cfg.optForFmaxPsExFwdSize
+          <- 0 until cfg.optForFmaxPsExFwdSize - 1
         ) {
           is (
             //MaskedLiteral({
@@ -7538,26 +7553,43 @@ case class SnowHousePipeStageExecute(
             idx
           ) {
             //when (myTempHistFwdValid(jdx)(idx + 1)) {
-            outp.myExt(0).rdMemWord(jdx) := (
-              if (idx == 0) {
-                inp.myExt(0).rdMemWord(jdx)
-              } else {
-                myHistFwdInfo(
-                  //myHistFwdInfo.size - 1 - idx //(idx + 1)
-                  //idx + 1
-                  idx
-                ).data
-              }
-            )
+            //outp.myExt(0).rdMemWord(jdx) := (
+            //  if (idx == 0) {
+            //    inp.myExt(0).rdMemWord(jdx)
+            //  } else {
+            //    myHistFwdInfo(
+            //      //myHistFwdInfo.size - 1 - idx //(idx + 1)
+            //      //idx + 1
+            //      idx
+            //    ).data
+            //  }
+            //)
+            //if (idx == 0) {
+            //  outp.myExt(0).rdMemWord(jdx) := (
+            //    inp.myExt(0).rdMemWord(jdx)
+            //  )
+            //} else {
+              //when (myHistFwdInfo(idx).valid) {
+                outp.myExt(0).rdMemWord(jdx) := (
+                  myHistFwdInfo(
+                    //myHistFwdInfo.size - 1 - idx //(idx + 1)
+                    idx + 1
+                    //idx
+                  ).data
+                )
+              //} otherwise {
+              //  outp.myExt(0)
+              //}
+            //}
             //} otherwise {
             //}
           }
         }
-        //default {
-        //  outp.myExt(0).rdMemWord(jdx) := (
-        //    inp.myExt(0).rdMemWord(jdx)
-        //  )
-        //}
+        default {
+          outp.myExt(0).rdMemWord(jdx) := (
+            inp.myExt(0).rdMemWord(jdx)
+          )
+        }
       }
     }
   })
