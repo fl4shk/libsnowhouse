@@ -2340,7 +2340,9 @@ private[libsnowhouse] case class SnowHouseForFmax(
   for (idx <- 0 until io.multiCycleBusVec.size) {
     io.multiCycleBusVec(idx) <> psEx.io.multiCycleBusVec(idx)
   }
-  io.dbgInfo := psWb.io.dbgInfo
+  if (io.dbgInfo != null) {
+    io.dbgInfo := psWb.io.dbgInfo
+  }
 }
 
 case class SnowHouse(
