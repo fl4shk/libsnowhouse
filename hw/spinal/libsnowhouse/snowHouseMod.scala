@@ -2301,16 +2301,16 @@ private[libsnowhouse] case class SnowHouseForFmax(
   if (cfg.optForFmaxPostNumPostExPreWbPipeStages.get > 0) {
     for (idx <- 0 until myPostExPreWbStmVec.size) {
       if (idx == 0) {
-        myPostExPreWbStmVec(idx) <-/< psEx.io.down
+        myPostExPreWbStmVec(idx) << psEx.io.down
       } //else 
       //if (idx + 1 == myPostExPreWbStmVec.size) {
       //  psWb.io.up <-< myPostExPreWbStmVec(idx)
       //}
       else {
-        myPostExPreWbStmVec(idx) <-/< myPostExPreWbStmVec(idx - 1)
+        myPostExPreWbStmVec(idx) <-< myPostExPreWbStmVec(idx - 1)
       }
     }
-    psWb.io.up <-/< myPostExPreWbStmVec.last
+    psWb.io.up <-< myPostExPreWbStmVec.last
   } else {
     psWb.io.up << psEx.io.down
   }
