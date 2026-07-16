@@ -7533,7 +7533,8 @@ case class SnowHousePipeStageExecute(
             //  )
             //  ("-" * (size - idx - 1) + "1" + ("0" * idx))
             //})
-            idx + 1
+            //idx + 1
+            idx
           ) {
             //when (myTempHistFwdValid(jdx)(idx + 1)) {
             outp.myExt(0).rdMemWord(jdx) := (
