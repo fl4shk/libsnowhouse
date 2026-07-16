@@ -646,8 +646,8 @@ case class SnowHouseConfig(
   //irqRetIraOp: Int,
   //optForFmax: Boolean=true,
   optForFmaxPostNumPostExPreWbPipeStages: Option[Int]=Some(
-    //1
-    0
+    1
+    //0
   ),
   optShiftRegPcImmAddend: Boolean=false,
   //--------
