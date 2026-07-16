@@ -2313,10 +2313,10 @@ private[libsnowhouse] case class SnowHouseForFmax(
       //  psWb.io.up <-< myPostExPreWbStmVec(idx)
       //}
       else {
-        myPostExPreWbStmVec(idx) <-< myPostExPreWbStmVec(idx - 1)
+        myPostExPreWbStmVec(idx) <-/< myPostExPreWbStmVec(idx - 1)
       }
     }
-    psWb.io.up <-< myPostExPreWbStmVec.last
+    psWb.io.up <-/< myPostExPreWbStmVec.last
   } else {
     psWb.io.up <-/< psEx.io.down
   }
