@@ -645,7 +645,10 @@ case class SnowHouseConfig(
   irqJmpOp: Int,
   //irqRetIraOp: Int,
   //optForFmax: Boolean=true,
-  optForFmaxPostNumPostExPreWbPipeStages: Option[Int]=Some(1),
+  optForFmaxPostNumPostExPreWbPipeStages: Option[Int]=Some(
+    //1
+    0
+  ),
   optShiftRegPcImmAddend: Boolean=false,
   //--------
   doInstrDecodeFunc: (SnowHousePipeStageInstrDecode) => Area,
