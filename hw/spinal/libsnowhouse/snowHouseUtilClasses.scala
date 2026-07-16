@@ -693,7 +693,7 @@ case class SnowHouseConfig(
   val optForFmaxPsExFwdSize = (
     optForFmaxPostNumPostExPreWbPipeStages match {
       case Some(myNumStages) => {
-        myNumStages + 3//2//3//2//3//2//3//2//5//4//3//5
+        myNumStages + 2//3//2//3//2//3//2//3//2//5//4//3//5
       }
       case None => {
         0
