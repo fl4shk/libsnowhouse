@@ -425,17 +425,17 @@ case class SnowHouseForFmaxPipeStageExecute(
       temp
     }
   )
-  //val s2mLink = S2MLink(
-  //  up=sLink.down,
-  //  down={
-  //    val temp = Node()
-  //    temp.setName("s2m_down")
-  //    temp
-  //  }
-  //)
+  val s2mLink = S2MLink(
+    up=sLink.down,
+    down={
+      val temp = Node()
+      temp.setName("s2m_down")
+      temp
+    }
+  )
   linkArr += cLink
   linkArr += sLink
-  //linkArr += s2mLink
+  linkArr += s2mLink
 
   val myModMemWord = SInt(cfg.mainWidth bits)
   val innerPsEx = SnowHousePipeStageExecute(
@@ -473,7 +473,7 @@ case class SnowHouseForFmaxPipeStageExecute(
     }
   )
 
-  sLink.down.driveTo(
+  s2mLink.down.driveTo(
     io.down
   )(
     con=(outp, node) => {
