@@ -1893,6 +1893,9 @@ case class SnowHouseRiscv32imConfig(
       //}
       myIrqJmpOp
     },
+    optForFmaxPostNumPostExPreWbPipeStages=(
+      optForFmaxPostNumPostExPreWbPipeStages
+    ),
     doInstrDecodeFunc=SnowHouseRiscv32imPipeStageInstrDecode.apply,
     optBranchPredictorKind=Some(
       //SnowHouseBranchPredictorKind.FwdNotTknBakTkn(
