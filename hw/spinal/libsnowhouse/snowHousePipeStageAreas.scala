@@ -7538,20 +7538,25 @@ case class SnowHousePipeStageExecute(
           ) {
             //when (myTempHistFwdValid(jdx)(idx + 1)) {
             outp.myExt(0).rdMemWord(jdx) := (
-              myHistFwdInfo(
-                //myHistFwdInfo.size - 1 - idx //(idx + 1)
-                idx + 1
-              ).data
+              if (idx == 0) {
+                inp.myExt(0).rdMemWord(jdx)
+              } else {
+                myHistFwdInfo(
+                  //myHistFwdInfo.size - 1 - idx //(idx + 1)
+                  //idx + 1
+                  idx
+                ).data
+              }
             )
             //} otherwise {
             //}
           }
         }
-        default {
-          outp.myExt(0).rdMemWord(jdx) := (
-            inp.myExt(0).rdMemWord(jdx)
-          )
-        }
+        //default {
+        //  outp.myExt(0).rdMemWord(jdx) := (
+        //    inp.myExt(0).rdMemWord(jdx)
+        //  )
+        //}
       }
     }
   })
