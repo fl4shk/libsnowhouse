@@ -690,6 +690,16 @@ case class SnowHouseConfig(
   optFormal: Boolean=false,
 ) {
   val optForFmax = (optForFmaxPostNumPostExPreWbPipeStages != None)
+  val optForFmaxPsExFwdSize = (
+    optForFmaxPostNumPostExPreWbPipeStages match {
+      case Some(myNumStages) => {
+        myNumStages + 3//2//3//2//3//2//3//2//5//4//3//5
+      }
+      case None => {
+        0
+      }
+    }
+  )
   def myPsIfRegPcSetItCntWidth = 2
   def mainAddrWidth = subCfg.mainAddrWidth
   def myHaveS2mIf = (

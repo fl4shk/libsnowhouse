@@ -1721,6 +1721,114 @@ case class SnowHousePrePipeStageExSetBranchPredictEtcArea(
       ).asUInt
     )
   }
+
+  case class MyFwdInfo(
+  ) extends Bundle {
+    val valid = Bool()
+    //val data = UInt(cfg.mainWidth bits)
+    val addr = UInt(log2Up(cfg.regFileCfg.wordCountArr(0)) bits)
+  }
+  val myForFmaxFwdArea = (
+    cfg.optForFmax
+  ) generate (new Area {
+    val myHistFwdInfo = {
+      val temp = MyFwdInfo()
+      temp.valid := (
+        //outp.myExt(0).modMemWordValid.last //ram.io.wrEn
+        //&& outp.gprIsNonZeroVec.last.last
+        //&& !myShouldIgnoreInstr(0)
+        outp.gprIsNonZeroVec.last.last
+      )
+      //temp.data := outp.myExt(0).modMemWord //ram.io.wrData
+      temp.addr := outp.gprIdxVec.last
+      History(
+        that=temp,
+        length=(
+          cfg.optForFmaxPsExFwdSize
+        ),
+        when=upIsFiring,
+        init=temp.getZero
+      )
+    }
+    //val myHistForFwdData = (
+    //  History(
+    //    that=(
+    //      ram.io.wrData
+    //    ),
+    //    length=(
+    //      cfg.optWrHistLength + 2,
+    //    ),
+    //    init=False
+    //  )
+    //)
+    val myTempHistFwdValid = Vec.fill(
+      cfg.regFileCfg.modRdPortCnt
+    )(
+      UInt(myHistFwdInfo.size - 1 bits)
+    )
+
+    for (jdx <- 0 until myTempHistFwdValid.size) {
+      //myTempHistFwdValid(jdx).lsb := False
+      for (idx <- 0 until myTempHistFwdValid(jdx).getWidth) {
+        myTempHistFwdValid(jdx)(
+          //myTempHistFwdValid(jdx).getWidth - idx - 1
+          idx
+        ) := (
+          myHistFwdInfo(idx + 1).valid
+          && (
+            LcvFastCmpEq(
+              left=outp.gprIdxVec(jdx),
+              right=myHistFwdInfo(idx + 1).addr,
+              cmpEqIo=null,
+            )._1
+          )
+        )
+      }
+
+// >>> for idx in range(size):
+// ...     print(idx, (("0" * (size - idx - 1))) + "1" + ("-" * idx))
+// ...     
+// 0 0001
+// 1 001-
+// 2 01--
+// 3 1---
+
+// >>> for idx in range(size):
+// ...     print(idx, ("-" * (size - idx - 1) + "1" + ("0" * idx)))
+// ...     
+// 0 ---1
+// 1 --10
+// 2 -100
+// 3 1000
+      switch (
+        myTempHistFwdValid(jdx)
+      ) {
+        for (idx <- 0 until myTempHistFwdValid(jdx).getWidth) {
+          is (MaskedLiteral({
+            //("-" * idx)
+            //+ "1"
+            //+ (("0" * (myTempHistFwdValid(jdx).getWidth - idx - 1)))
+            val size = myTempHistFwdValid(jdx).getWidth
+            ("-" * (size - idx - 1) + "1" + ("0" * idx))
+          })) {
+            outp.myExt(0).fwdIdx(jdx) := idx + 1
+            //outp.myExt(0).rdMemWord(jdx) := (
+            //  myHistFwdInfo(
+            //    //myHistFwdInfo.size - 1 - idx //(idx + 1)
+            //    idx + 1
+            //  ).data
+            //)
+          }
+        }
+        default {
+          outp.myExt(0).fwdIdx(jdx) := 0x0
+          //outp.myExt(0).rdMemWord(jdx) := (
+          //  inp.myExt(0).rdMemWord(jdx)
+          //)
+        }
+      }
+    }
+  })
 }
 case class SnowHousePipeStageInstrDecode(
   val args: SnowHousePipeStageArgs,
@@ -7306,26 +7414,26 @@ case class SnowHousePipeStageExecute(
 
   case class MyFwdInfo(
   ) extends Bundle {
-    val valid = Bool()
+    //val valid = Bool()
     val data = UInt(cfg.mainWidth bits)
-    val addr = UInt(log2Up(cfg.regFileCfg.wordCountArr(0)) bits)
+    //val addr = UInt(log2Up(cfg.regFileCfg.wordCountArr(0)) bits)
   }
   val myForFmaxFwdArea = (
     cfg.optForFmax
   ) generate (new Area {
     val myHistFwdInfo = {
       val temp = MyFwdInfo()
-      temp.valid := (
-        outp.myExt(0).modMemWordValid.last //ram.io.wrEn
-        && outp.gprIsNonZeroVec.last.last
-        && !myShouldIgnoreInstr(0)
-      )
+      //temp.valid := (
+      //  outp.myExt(0).modMemWordValid.last //ram.io.wrEn
+      //  && outp.gprIsNonZeroVec.last.last
+      //  && !myShouldIgnoreInstr(0)
+      //)
       temp.data := outp.myExt(0).modMemWord //ram.io.wrData
-      temp.addr := outp.gprIdxVec.last
+      //temp.addr := outp.gprIdxVec.last
       History(
         that=temp,
         length=(
-          cfg.optForFmaxPostNumPostExPreWbPipeStages.get + 3//2//3//2//3//2//3//2//5//4//3//5
+          cfg.optForFmaxPsExFwdSize
         ),
         when=cLink.up.isFiring,
         init=temp.getZero
@@ -7342,29 +7450,29 @@ case class SnowHousePipeStageExecute(
     //    init=False
     //  )
     //)
-    val myTempHistFwdValid = Vec.fill(
-      cfg.regFileCfg.modRdPortCnt
-    )(
-      UInt(myHistFwdInfo.size - 1 bits)
-    )
+    //val myTempHistFwdValid = Vec.fill(
+    //  cfg.regFileCfg.modRdPortCnt
+    //)(
+    //  UInt(myHistFwdInfo.size - 1 bits)
+    //)
 
-    for (jdx <- 0 until myTempHistFwdValid.size) {
+    for (jdx <- 0 until cfg.regFileCfg.modRdPortCnt) {
       //myTempHistFwdValid(jdx).lsb := False
-      for (idx <- 0 until myTempHistFwdValid(jdx).getWidth) {
-        myTempHistFwdValid(jdx)(
-          //myTempHistFwdValid(jdx).getWidth - idx - 1
-          idx
-        ) := (
-          myHistFwdInfo(idx + 1).valid
-          && (
-            LcvFastCmpEq(
-              left=outp.gprIdxVec(jdx),
-              right=myHistFwdInfo(idx + 1).addr,
-              cmpEqIo=null,
-            )._1
-          )
-        )
-      }
+      //for (idx <- 0 until myTempHistFwdValid(jdx).getWidth) {
+      //  myTempHistFwdValid(jdx)(
+      //    //myTempHistFwdValid(jdx).getWidth - idx - 1
+      //    idx
+      //  ) := (
+      //    myHistFwdInfo(idx + 1).valid
+      //    //&& (
+      //    //  LcvFastCmpEq(
+      //    //    left=outp.gprIdxVec(jdx),
+      //    //    right=myHistFwdInfo(idx + 1).addr,
+      //    //    cmpEqIo=null,
+      //    //  )._1
+      //    //)
+      //  )
+      //}
 
 // >>> for idx in range(size):
 // ...     print(idx, (("0" * (size - idx - 1))) + "1" + ("-" * idx))
@@ -7382,22 +7490,33 @@ case class SnowHousePipeStageExecute(
 // 2 -100
 // 3 1000
       switch (
-        myTempHistFwdValid(jdx)
+        //myTempHistFwdValid(jdx)
+        outp.myExt(0).fwdIdx(jdx)
       ) {
-        for (idx <- 0 until myTempHistFwdValid(jdx).getWidth) {
+        for (
+          idx
+          //<- 0 until myTempHistFwdValid(jdx).getWidth
+          <- 0 until outp.myExt(0).fwdIdx(jdx).getWidth
+        ) {
           is (MaskedLiteral({
             //("-" * idx)
             //+ "1"
             //+ (("0" * (myTempHistFwdValid(jdx).getWidth - idx - 1)))
-            val size = myTempHistFwdValid(jdx).getWidth
+            val size = (
+              //myTempHistFwdValid(jdx).getWidth
+              outp.myExt(0).fwdIdx(jdx).getWidth
+            )
             ("-" * (size - idx - 1) + "1" + ("0" * idx))
           })) {
+            //when (myTempHistFwdValid(jdx)(idx + 1)) {
             outp.myExt(0).rdMemWord(jdx) := (
               myHistFwdInfo(
                 //myHistFwdInfo.size - 1 - idx //(idx + 1)
                 idx + 1
               ).data
             )
+            //} otherwise {
+            //}
           }
         }
         default {
