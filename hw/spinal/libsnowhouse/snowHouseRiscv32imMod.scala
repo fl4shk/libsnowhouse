@@ -987,7 +987,7 @@ object SnowHouseRiscv32imPipeStageInstrDecode {
     )
     psId.myTempOpMayNeedHazardCheck := (
       encInstrI.head.opcode === LwRdRs1Imm.op
-      //|| encInstrU.head.opcode === AuipcRaImm31Downto12.op
+      || encInstrU.head.opcode === AuipcRaImm31Downto12.op
       // this is also updated later...
     )
     psId.myTempOpIsJmpBr := (
@@ -1498,7 +1498,7 @@ object SnowHouseRiscv32imPipeStageInstrDecode {
           }
           default {
             // assume it's one of the `M` extension instructions
-            //psId.myTempOpMayNeedHazardCheck := True
+            psId.myTempOpMayNeedHazardCheck := True
             switch (encInstrR.last.funct3) {
               is (MulRdRs1Rs2.f3) {
                 setOp(MulRdRs1Rs2, encInstrR.last)
