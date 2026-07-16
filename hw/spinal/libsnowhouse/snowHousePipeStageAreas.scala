@@ -1800,12 +1800,16 @@ case class SnowHousePrePipeStageExSetBranchPredictEtcArea(
         ) := (
           myHistFwdInfo(idx + 1).valid
           && (
-            LcvFastCmpEq(
-              left=outp.gprIdxVec(jdx),
-              right=myHistFwdInfo(idx + 1).addr,
-              cmpEqIo=null,
-            )._1
+            outp.gprIdxVec(jdx)
+            === myHistFwdInfo(idx + 1).addr
           )
+          //&& (
+          //  LcvFastCmpEq(
+          //    left=outp.gprIdxVec(jdx),
+          //    right=myHistFwdInfo(idx + 1).addr,
+          //    cmpEqIo=null,
+          //  )._1
+          //)
         )
       }
 
@@ -3969,13 +3973,13 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
       (
         myPsExSetPcValid
         && (
-          //io.laggingRegPc
-          //=/= myTempDstRegPc
-          !LcvFastCmpEq(
-            left=io.laggingRegPc,
-            right=rMyTempDstRegPc.payload,
-            cmpEqIo=null,
-          )._1
+          io.laggingRegPc
+          =/= rMyTempDstRegPc.payload
+          //!LcvFastCmpEq(
+          //  left=io.laggingRegPc,
+          //  right=rMyTempDstRegPc.payload,
+          //  cmpEqIo=null,
+          //)._1
         )
       )
     )
@@ -3997,11 +4001,15 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
         && (
           //io.laggingRegPc
           //=/= io.mySavedRegPcPlusInstrSize.last
-          !LcvFastCmpEq(
-            left=io.laggingRegPc,
-            right=io.mySavedRegPcPlusInstrSize.last,
-            cmpEqIo=null,
-          )._1
+          (
+            io.laggingRegPc
+            =/= io.mySavedRegPcPlusInstrSize.last
+          )
+          //!LcvFastCmpEq(
+          //  left=io.laggingRegPc,
+          //  right=io.mySavedRegPcPlusInstrSize.last,
+          //  cmpEqIo=null,
+          //)._1
         )
       ),
     )

@@ -631,17 +631,6 @@ object SnowHouseBranchPredictorKind {
   //}
 }
 
-case class SnowHouseForFmaxConfig(
-  numPostExPreWbPipeStages: Int=(
-    //1
-    0
-  ),
-  optDualIssue: Boolean=(
-    true
-    //false
-  )
-) {
-}
 case class SnowHouseConfig(
   haveZeroReg: Option[Int],
   irqCfg: Option[SnowHouseIrqConfig],
@@ -656,21 +645,9 @@ case class SnowHouseConfig(
   irqJmpOp: Int,
   //irqRetIraOp: Int,
   //optForFmax: Boolean=true,
-  //optForFmaxPostNumPostExPreWbPipeStages: Option[Int]=Some(
-  //  //1
-  //  0
-  //),
-  optForFmaxCfg: Option[SnowHouseForFmaxConfig]=Some(
-    SnowHouseForFmaxConfig(
-      numPostExPreWbPipeStages=(
-        //1
-        0
-      ),
-      optDualIssue=(
-        //false
-        true
-      ),
-    )
+  optForFmaxPostNumPostExPreWbPipeStages: Option[Int]=Some(
+    //1
+    0
   ),
   optShiftRegPcImmAddend: Boolean=false,
   //--------
@@ -712,11 +689,11 @@ case class SnowHouseConfig(
   targetAltera: Boolean=false,
   optFormal: Boolean=false,
 ) {
-  val optForFmax = (optForFmaxCfg != None)
+  val optForFmax = (optForFmaxPostNumPostExPreWbPipeStages != None)
   val optForFmaxPsExFwdSize = (
-    optForFmaxCfg match {
-      case Some(myForFmaxCfg) => {
-        myForFmaxCfg.numPostExPreWbPipeStages + 3//2//3//2//3//2//3//2//5//4//3//5
+    optForFmaxPostNumPostExPreWbPipeStages match {
+      case Some(myNumStages) => {
+        myNumStages + 3//2//3//2//3//2//3//2//5//4//3//5
       }
       case None => {
         0
@@ -1761,7 +1738,7 @@ case class SnowHousePipePayloadNonExt(
           //0
           //2
           //1
-          cfg.optForFmaxPsExFwdSize + 1//0//1//2//1 //+ 2//1//2//1//2//4//3//1
+          cfg.optForFmaxPostNumPostExPreWbPipeStages.get + 1//0//1//2//1 //+ 2//1//2//1//2//4//3//1
           // Old notes (from when MEM was being considered):
           //// up to two following instructions,
           //// per the overall pipeline structure of

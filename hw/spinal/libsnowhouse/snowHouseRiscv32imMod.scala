@@ -1656,13 +1656,9 @@ object SnowHouseRiscv32imPipeStageInstrDecode {
 case class SnowHouseRiscv32imConfig(
   optFormal: Boolean,
   optMainAddrWidth: Option[Int]=None,
-  optForFmaxCfg: Option[SnowHouseForFmaxConfig]=Some(
-    SnowHouseForFmaxConfig(
-      numPostExPreWbPipeStages=(
-        //0
-        1
-      ),
-    )
+  optForFmaxPostNumPostExPreWbPipeStages: Option[Int]=Some(
+    //0
+    1
   ),
   targetAltera: Boolean=(
     //false
@@ -1897,8 +1893,8 @@ case class SnowHouseRiscv32imConfig(
       //}
       myIrqJmpOp
     },
-    optForFmaxCfg=(
-      optForFmaxCfg
+    optForFmaxPostNumPostExPreWbPipeStages=(
+      optForFmaxPostNumPostExPreWbPipeStages
     ),
     doInstrDecodeFunc=SnowHouseRiscv32imPipeStageInstrDecode.apply,
     optBranchPredictorKind=Some(
