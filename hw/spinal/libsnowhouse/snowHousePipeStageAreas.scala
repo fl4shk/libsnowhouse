@@ -7520,18 +7520,21 @@ case class SnowHousePipeStageExecute(
         for (
           idx
           //<- 0 until myTempHistFwdValid(jdx).getWidth
-          <- 0 until outp.myExt(0).fwdIdx(jdx).getWidth
+          <- 0 until (1 << outp.myExt(0).fwdIdx(jdx).getWidth)
         ) {
-          is (MaskedLiteral({
-            //("-" * idx)
-            //+ "1"
-            //+ (("0" * (myTempHistFwdValid(jdx).getWidth - idx - 1)))
-            val size = (
-              //myTempHistFwdValid(jdx).getWidth
-              outp.myExt(0).fwdIdx(jdx).getWidth
-            )
-            ("-" * (size - idx - 1) + "1" + ("0" * idx))
-          })) {
+          is (
+            //MaskedLiteral({
+            //  //("-" * idx)
+            //  //+ "1"
+            //  //+ (("0" * (myTempHistFwdValid(jdx).getWidth - idx - 1)))
+            //  val size = (
+            //    //myTempHistFwdValid(jdx).getWidth
+            //    outp.myExt(0).fwdIdx(jdx).getWidth
+            //  )
+            //  ("-" * (size - idx - 1) + "1" + ("0" * idx))
+            //})
+            idx + 1
+          ) {
             //when (myTempHistFwdValid(jdx)(idx + 1)) {
             outp.myExt(0).rdMemWord(jdx) := (
               myHistFwdInfo(
