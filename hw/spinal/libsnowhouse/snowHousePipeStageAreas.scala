@@ -1497,6 +1497,7 @@ case class SnowHousePrePipeStageExSetBranchPredictEtcArea(
   inp: SnowHousePipePayload,
   //link: CtrlLink,
   upIsFiring: Bool,
+  psExSetPc: Flow[SnowHousePsExSetPcPayload],
 ) extends Area {
   //val up = link.up
   //val down = link.down
@@ -1731,6 +1732,22 @@ case class SnowHousePrePipeStageExSetBranchPredictEtcArea(
   val myForFmaxFwdArea = (
     cfg.optForFmax
   ) generate (new Area {
+    val rMyPsExSetPcState = (
+      Reg(Bool(), init=False)
+    )
+    when (!rMyPsExSetPcState) {
+      when (psExSetPc.fire) {
+        rMyPsExSetPcState := True
+      }
+    } otherwise {
+      when (
+        upIsFiring
+        && outp.regPcSetItCnt(0).lsb
+      ) {
+        rMyPsExSetPcState := False
+      }
+    }
+
     val myHistFwdInfo = {
       val temp = MyFwdInfo()
       temp.valid := (
@@ -1738,6 +1755,10 @@ case class SnowHousePrePipeStageExSetBranchPredictEtcArea(
         //&& outp.gprIsNonZeroVec.last.last
         //&& !myShouldIgnoreInstr(0)
         outp.gprIsNonZeroVec.last.last
+        && (
+          !rMyPsExSetPcState
+          || outp.regPcSetItCnt(1).lsb
+        )
       )
       //temp.data := outp.myExt(0).modMemWord //ram.io.wrData
       temp.addr := outp.gprIdxVec.last

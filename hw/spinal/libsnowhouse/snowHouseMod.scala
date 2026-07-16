@@ -1650,6 +1650,7 @@ private[libsnowhouse] case class SnowHouseNotForFmax
               inp=inp,
               //link=cFront,
               upIsFiring=cFront.up.isFiring,
+              psExSetPc=psExSetPc,
             )
           )
           //cfg.myPrePsExSetBranchPredictionStuff(
@@ -2218,6 +2219,7 @@ private[libsnowhouse] case class SnowHouseForFmax(
               inp=inp,
               //link=cLink,
               upIsFiring=upIsFiring,
+              psExSetPc=psExSetPc,
             )
           )
           .setName("innerPsPreEx")
