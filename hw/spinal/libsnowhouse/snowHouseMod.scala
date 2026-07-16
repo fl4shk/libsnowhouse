@@ -2239,7 +2239,7 @@ private[libsnowhouse] case class SnowHouseForFmax(
           myArr ++= Array.fill(cfg.regFileCfg.wordCountArr(0))(BigInt(0))
           Array(myArr.toSeq)
         }),
-        arrRamStyleAltera="no_rw_check, M10K",
+        arrRamStyleAltera="no_rw_check, MLAB",
         arrRamStyleXilinx="block",
         arrRwAddrCollisionXilinx="",
       )
