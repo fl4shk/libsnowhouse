@@ -1799,7 +1799,7 @@ case class SnowHousePrePipeStageExSetBranchPredictEtcArea(
           idx
         ) := (
           myHistFwdInfo(idx + 1).valid
-          (
+          && (
             outp.gprIdxVec(jdx)
             === myHistFwdInfo(idx + 1).addr
           )
