@@ -1650,7 +1650,8 @@ private[libsnowhouse] case class SnowHouseNotForFmax
               inp=inp,
               //link=cFront,
               upIsFiring=cFront.up.isFiring,
-              psExSetPc=psExSetPc,
+              //psExSetPc=psExSetPc,
+              myBranchMispredictEtc=False,
             )
           )
           //cfg.myPrePsExSetBranchPredictionStuff(
@@ -2206,6 +2207,7 @@ private[libsnowhouse] case class SnowHouseForFmax(
           inp: SnowHousePipePayload,
           rdMemWord: UInt,
           upIsFiring: Bool,
+          myExternalInpCond: Bool,
         ) => {
           outp := inp
           outp.myExt(0).rdMemWord(idx).allowOverride
@@ -2219,7 +2221,8 @@ private[libsnowhouse] case class SnowHouseForFmax(
               inp=inp,
               //link=cLink,
               upIsFiring=upIsFiring,
-              psExSetPc=psExSetPc,
+              //psExSetPc=psExSetPc,
+              myBranchMispredictEtc=myExternalInpCond,
             )
           )
           .setName("innerPsPreEx")
@@ -2241,6 +2244,7 @@ private[libsnowhouse] case class SnowHouseForFmax(
         arrRwAddrCollisionXilinx="",
       )
     )
+    myRegFile.last.io.myExternalInpCond := psExSetPc.fire
   }
   val myRegFileRdAddrPipeFrontVec = Vec.fill(2)(
     cloneOf(myRegFile.head.io.rdAddrPipe)

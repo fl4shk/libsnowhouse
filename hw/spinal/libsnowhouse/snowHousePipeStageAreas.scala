@@ -1059,6 +1059,7 @@ case class SnowHousePipeStageInstrFetch(
       inp: MyIbusTempPayload,
       word: MyIbusTempPayload,
       upIsFiring: Bool,
+      myExternalInpCond: Bool,
     ): Unit = {
       outp.psIfRegPcSetItCnt := word.psIfRegPcSetItCnt
       outp.myIbusRegPcInfo := word.myIbusRegPcInfo
@@ -1497,7 +1498,8 @@ case class SnowHousePrePipeStageExSetBranchPredictEtcArea(
   inp: SnowHousePipePayload,
   //link: CtrlLink,
   upIsFiring: Bool,
-  psExSetPc: Flow[SnowHousePsExSetPcPayload],
+  //psExSetPc: Flow[SnowHousePsExSetPcPayload],
+  myBranchMispredictEtc: Bool,
 ) extends Area {
   //val up = link.up
   //val down = link.down
@@ -1735,8 +1737,9 @@ case class SnowHousePrePipeStageExSetBranchPredictEtcArea(
     val rMyPsExSetPcState = (
       Reg(Bool(), init=False)
     )
+
     when (!rMyPsExSetPcState) {
-      when (psExSetPc.fire) {
+      when (myBranchMispredictEtc) {
         rMyPsExSetPcState := True
       }
     } otherwise {
