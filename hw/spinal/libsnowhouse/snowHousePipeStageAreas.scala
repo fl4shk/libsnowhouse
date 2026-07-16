@@ -1835,7 +1835,7 @@ case class SnowHousePrePipeStageExSetBranchPredictEtcArea(
             val size = myTempHistFwdValid(jdx).getWidth
             ("-" * (size - idx - 1) + "1" + ("0" * idx))
           })) {
-            outp.myExt(0).fwdIdx(jdx) := idx + 1
+            outp.optForFmaxFwdIdx(jdx) := idx + 1
             //outp.myExt(0).rdMemWord(jdx) := (
             //  myHistFwdInfo(
             //    //myHistFwdInfo.size - 1 - idx //(idx + 1)
@@ -1845,7 +1845,7 @@ case class SnowHousePrePipeStageExSetBranchPredictEtcArea(
           }
         }
         default {
-          outp.myExt(0).fwdIdx(jdx) := 0x0
+          outp.optForFmaxFwdIdx(jdx) := 0x0
           //outp.myExt(0).rdMemWord(jdx) := (
           //  inp.myExt(0).rdMemWord(jdx)
           //)
@@ -7515,12 +7515,12 @@ case class SnowHousePipeStageExecute(
 // 3 1000
       switch (
         //myTempHistFwdValid(jdx)
-        outp.myExt(0).fwdIdx(jdx)
+        outp.optForFmaxFwdIdx(jdx)
       ) {
         for (
           idx
           //<- 0 until myTempHistFwdValid(jdx).getWidth
-          <- 0 until (1 << outp.myExt(0).fwdIdx(jdx).getWidth)
+          <- 0 until (1 << outp.optForFmaxFwdIdx(jdx).getWidth)
         ) {
           is (
             //MaskedLiteral({

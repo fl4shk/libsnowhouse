@@ -1648,6 +1648,13 @@ extends SpinalEnum(defaultEncoding=binaryOneHot) {
 case class SnowHousePipePayloadNonExt(
   cfg: SnowHouseConfig
 ) extends Bundle {
+  val optForFmaxFwdIdx = (
+    cfg.optForFmax
+  ) generate (
+    Vec.fill(cfg.regFileCfg.modRdPortCnt)(
+      UInt(log2Up(cfg.optForFmaxPsExFwdSize) bits)
+    )
+  )
   val lcvDataBusSrc = (
     cfg.useLcvDataBus
   ) generate (
@@ -1927,6 +1934,7 @@ case class SnowHousePipePayload(
   cfg: SnowHouseConfig,
 ) extends Bundle with PipeRegFilePayloadBase[UInt, Bool] {
   val nonExt = SnowHousePipePayloadNonExt(cfg=cfg)
+  def optForFmaxFwdIdx = nonExt.optForFmaxFwdIdx
   def shouldFinishJump = nonExt.shouldFinishJump
   //def psIfReadyIshCond = nonExt.psIfReadyIshCond
   def blockIrq = nonExt.blockIrq
