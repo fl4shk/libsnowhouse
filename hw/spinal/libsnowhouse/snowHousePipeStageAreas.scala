@@ -7520,7 +7520,8 @@ case class SnowHousePipeStageExecute(
         for (
           idx
           //<- 0 until myTempHistFwdValid(jdx).getWidth
-          <- 0 until (1 << outp.optForFmaxFwdIdx(jdx).getWidth)
+          //<- 0 until (1 << outp.optForFmaxFwdIdx(jdx).getWidth)
+          <- 0 until cfg.optForFmaxPsExFwdSize
         ) {
           is (
             //MaskedLiteral({
