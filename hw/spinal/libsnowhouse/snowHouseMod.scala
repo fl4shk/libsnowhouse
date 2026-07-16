@@ -2318,7 +2318,7 @@ private[libsnowhouse] case class SnowHouseForFmax(
     }
     psWb.io.up <-/< myPostExPreWbStmVec.last
   } else {
-    psWb.io.up <-< psEx.io.down
+    psWb.io.up <-/< psEx.io.down
   }
 
   myRegFile.foreach(item => {

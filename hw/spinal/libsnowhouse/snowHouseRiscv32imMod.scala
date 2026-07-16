@@ -1656,6 +1656,10 @@ object SnowHouseRiscv32imPipeStageInstrDecode {
 case class SnowHouseRiscv32imConfig(
   optFormal: Boolean,
   optMainAddrWidth: Option[Int]=None,
+  optForFmaxPostNumPostExPreWbPipeStages: Option[Int]=Some(
+    //0
+    1
+  ),
   targetAltera: Boolean=(
     //false
     true
