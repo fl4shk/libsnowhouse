@@ -1671,8 +1671,8 @@ case class SnowHouseRiscv32imConfig(
     SnowHouseForFmaxConfig(
       numPostExPreWbPipeStages=(
         //0
-        //1
-        2
+        1
+        //2
       ),
     )
   ),
