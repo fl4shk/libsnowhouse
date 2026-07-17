@@ -2238,22 +2238,22 @@ private[libsnowhouse] case class SnowHouseForFmax(
           val rSavedRegFileWrPulseFire = (
             Reg(Bool(), init=False)
           )
-          when (
-            //RegNext(
-            //  (
-            //    upIsFiring
-            //    && stickyRegFileWrPulseFire
-            //  ),
-            //  init=False
-            //)
-            upIsFiring
-            && rSavedRegFileWrPulseFire
-          ) {
-            //stickyRegFileWrPulseFire := (
-            //  False
-            //)
-            rSavedRegFileWrPulseFire := False
-          }
+          //when (
+          //  //RegNext(
+          //  //  (
+          //  //    upIsFiring
+          //  //    && stickyRegFileWrPulseFire
+          //  //  ),
+          //  //  init=False
+          //  //)
+          //  upIsFiring
+          //  //&& rSavedRegFileWrPulseFire
+          //) {
+          //  //stickyRegFileWrPulseFire := (
+          //  //  False
+          //  //)
+          //  rSavedRegFileWrPulseFire := False
+          //}
           switch (
             (
               wrPulse.fire
@@ -2265,7 +2265,10 @@ private[libsnowhouse] case class SnowHouseForFmax(
             ## rSavedRegFileWrPulseFire
           ) {
             is (M"1-") {
-              rSavedRegFileWrPulseFire := True
+              rSavedRegFileWrPulseFire := (
+                True
+                //!upIsFiring
+              )
               outp.myExt(0).rdMemWord(idx) := (
                 wrPulse.data
               )
@@ -2275,6 +2278,22 @@ private[libsnowhouse] case class SnowHouseForFmax(
             default {
               outp.myExt(0).rdMemWord(idx) := rdMemWord
             }
+          }
+          when (
+            //RegNext(
+            //  (
+            //    upIsFiring
+            //    && stickyRegFileWrPulseFire
+            //  ),
+            //  init=False
+            //)
+            upIsFiring
+            //&& rSavedRegFileWrPulseFire
+          ) {
+            //stickyRegFileWrPulseFire := (
+            //  False
+            //)
+            rSavedRegFileWrPulseFire := False
           }
           //when (
           //  wrPulse.fire
