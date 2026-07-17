@@ -1060,6 +1060,9 @@ case class SnowHousePipeStageInstrFetch(
       word: MyIbusTempPayload,
       upIsFiring: Bool,
       myExternalInpCond: Bool,
+      wrPulse: Flow[
+        PipeSimpleDualPortMemDrivePayload[MyIbusTempPayload]
+      ],
     ): Unit = {
       outp.psIfRegPcSetItCnt := word.psIfRegPcSetItCnt
       outp.myIbusRegPcInfo := word.myIbusRegPcInfo
@@ -7510,36 +7513,37 @@ case class SnowHousePipeStageExecute(
     //  )
     //)
 
-    val stickyRegFileWrPulseVec = Vec.fill(
-      forFmaxRegFileWrPulseArr.size
-    )(
-      cloneOf(forFmaxRegFileWrPulseArr.head)
-    )
-    stickyRegFileWrPulseVec(0) := (
-      RegNext(
-        stickyRegFileWrPulseVec(0),
-        init=stickyRegFileWrPulseVec(0).getZero
-      )
-    )
-    when (
-      RegNext(
-        (
-          cLink.up.isFiring
-          && stickyRegFileWrPulseVec(0).fire
-        ),
-        init=False
-      )
-    ) {
-      stickyRegFileWrPulseVec(0).valid := (
-        False
-      )
-    }
-    when (forFmaxRegFileWrPulseArr(0).fire) {
-      //rSavedRegFileWrPulse(jdx) := 
-      stickyRegFileWrPulseVec(0) := (
-        forFmaxRegFileWrPulseArr(0)
-      )
-    }
+
+    //val stickyRegFileWrPulseVec = Vec.fill(
+    //  forFmaxRegFileWrPulseArr.size
+    //)(
+    //  cloneOf(forFmaxRegFileWrPulseArr.head)
+    //)
+    //stickyRegFileWrPulseVec(0) := (
+    //  RegNext(
+    //    stickyRegFileWrPulseVec(0),
+    //    init=stickyRegFileWrPulseVec(0).getZero
+    //  )
+    //)
+    //when (
+    //  RegNext(
+    //    (
+    //      cLink.up.isFiring
+    //      && stickyRegFileWrPulseVec(0).fire
+    //    ),
+    //    init=False
+    //  )
+    //) {
+    //  stickyRegFileWrPulseVec(0).valid := (
+    //    False
+    //  )
+    //}
+    //when (forFmaxRegFileWrPulseArr(0).fire) {
+    //  //rSavedRegFileWrPulse(jdx) := 
+    //  stickyRegFileWrPulseVec(0) := (
+    //    forFmaxRegFileWrPulseArr(0)
+    //  )
+    //}
 
     for (jdx <- 0 until cfg.regFileCfg.modRdPortCnt) {
 
@@ -7613,18 +7617,18 @@ case class SnowHousePipeStageExecute(
             //)
             if (idx == 0) {
               outp.myExt(0).rdMemWord(jdx) := (
-                Mux(
-                  (
-                    stickyRegFileWrPulseVec(0).fire
-                    && (
-                      outp.gprIdxVec(jdx) 
-                      === stickyRegFileWrPulseVec(0).addr
-                    )
-                    //&& forFmaxRegFileWrPulseArr(0).
-                  ),
-                  stickyRegFileWrPulseVec(0).data,
+                //Mux(
+                //  (
+                //    stickyRegFileWrPulseVec(0).fire
+                //    && (
+                //      outp.gprIdxVec(jdx) 
+                //      === stickyRegFileWrPulseVec(0).addr
+                //    )
+                //    //&& forFmaxRegFileWrPulseArr(0).
+                //  ),
+                //  stickyRegFileWrPulseVec(0).data,
                   inp.myExt(0).rdMemWord(jdx)
-                )
+                //)
               )
             } else {
               //when (myHistFwdInfo(idx).valid) {

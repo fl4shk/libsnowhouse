@@ -2209,10 +2209,64 @@ private[libsnowhouse] case class SnowHouseForFmax(
           rdMemWord: UInt,
           upIsFiring: Bool,
           myExternalInpCond: Bool,
+          wrPulse: Flow[
+            PipeSimpleDualPortMemDrivePayload[UInt]
+          ],
         ) => {
           outp := inp
           outp.myExt(0).rdMemWord(idx).allowOverride
-          outp.myExt(0).rdMemWord(idx) := rdMemWord
+          //outp.myExt(0).rdMemWord(idx) := rdMemWord
+          outp.myExt(0).rdMemWord(idx) := (
+            RegNext(
+              outp.myExt(0).rdMemWord(idx),
+              init=outp.myExt(0).rdMemWord(idx).getZero,
+            )
+          )
+          val stickyRegFileWrPulseFire = (
+            //cloneOf(wrPulse)
+            //Flow(
+            //  cloneOf(outp.myExt(0).rdMemWord(idx))
+            //)
+            Bool()
+          )
+          stickyRegFileWrPulseFire := (
+            RegNext(
+              stickyRegFileWrPulseFire,
+              init=stickyRegFileWrPulseFire.getZero
+            )
+          )
+          when (
+            RegNext(
+              (
+                upIsFiring
+                && stickyRegFileWrPulseFire
+              ),
+              init=False
+            )
+          ) {
+            stickyRegFileWrPulseFire := (
+              False
+            )
+          }
+          when (
+            wrPulse.fire
+            && (
+              outp.gprIdxVec(idx)
+              === wrPulse.addr
+            )
+          ) {
+            stickyRegFileWrPulseFire := True
+            outp.myExt(0).rdMemWord(idx) := (
+              wrPulse.data
+            )
+          }
+          when (!stickyRegFileWrPulseFire) {
+            outp.myExt(0).rdMemWord(idx) := rdMemWord
+          }
+          //when (
+          //  wrPulse.fire
+          //) {
+          //}
           //val innerPsPostIdPreEx = (
           //  idx == 0
           //) generate (
