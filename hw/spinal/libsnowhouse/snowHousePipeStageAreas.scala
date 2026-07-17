@@ -1094,8 +1094,8 @@ case class SnowHousePipeStageInstrFetch(
         //4
       ),
       optWrHistLength=(
-        1
-        //2
+        //1
+        2
         //3
         //4
       ),
