@@ -1643,8 +1643,8 @@ private[libsnowhouse] case class SnowHouseNotForFmax
         //ydx,
       ) => new Area {
         //if (myHaveS2mIf) {
-          val myPrePsExSetBranchPredictEtcArea = (
-            SnowHousePrePipeStageExSetBranchPredictEtcArea(
+          val myPipeStagePostIdPreEx = (
+            SnowHousePipeStagePostIdPreEx(
               cfg=cfg,
               outp=outp,
               inp=inp,
@@ -1940,6 +1940,7 @@ private[libsnowhouse] case class SnowHouseNotForFmax
     ),
     multiCycleBusVec=io.multiCycleBusVec,
     idsIraIrq=io.idsIraIrq,
+    forFmaxRegFileWrPulseArr=null,
   )
   //--------
   //val pipeStageWb = (
@@ -2182,14 +2183,14 @@ private[libsnowhouse] case class SnowHouseForFmax(
     cfg=cfg,
     doDecodeFunc=cfg.doInstrDecodeFunc
   )
-  //val psPreEx = SnowHouseForFmaxPipeStagePreEx(cfg=cfg)
+  val psPostIdPreEx = SnowHouseForFmaxPipeStagePostIdPreEx(cfg=cfg)
   val psEx = SnowHouseForFmaxPipeStageExecute(cfg=cfg)
   val psWb = SnowHouseForFmaxPipeStageWriteBack(cfg=cfg)
   //--------
 
   psId.io.up <-/< psIf.io.down // extra pipeline stage for fmax
-  //psPreEx.io.up << psId.io.down
-  //psEx.io.up << psPreEx.io.down
+  psPostIdPreEx.io.up << psId.io.down
+  //psEx.io.up << psPostIdPreEx.io.down
 
   //--------
   val myRegFile = new ArrayBuffer[WrPulseRdPipeRam[
@@ -2212,20 +2213,20 @@ private[libsnowhouse] case class SnowHouseForFmax(
           outp := inp
           outp.myExt(0).rdMemWord(idx).allowOverride
           outp.myExt(0).rdMemWord(idx) := rdMemWord
-          val innerPsPreEx = (
-            idx == 0
-          ) generate (
-            SnowHousePrePipeStageExSetBranchPredictEtcArea(
-              cfg=cfg,
-              outp=outp,
-              inp=inp,
-              //link=cLink,
-              upIsFiring=upIsFiring,
-              //psExSetPc=psExSetPc,
-              myBranchMispredictEtc=myExternalInpCond,
-            )
-          )
-          .setName("innerPsPreEx")
+          //val innerPsPostIdPreEx = (
+          //  idx == 0
+          //) generate (
+          //  SnowHousePrePipeStageExSetBranchPredictEtcArea(
+          //    cfg=cfg,
+          //    outp=outp,
+          //    inp=inp,
+          //    //link=cLink,
+          //    upIsFiring=upIsFiring,
+          //    //psExSetPc=psExSetPc,
+          //    myBranchMispredictEtc=myExternalInpCond,
+          //  )
+          //)
+          //.setName("innerPsPostIdPreEx")
         },
         optRdLatency=(
           1
@@ -2244,12 +2245,12 @@ private[libsnowhouse] case class SnowHouseForFmax(
         arrRwAddrCollisionXilinx="",
       )
     )
-    myRegFile.last.io.myExternalInpCond := psExSetPc.fire
+    myRegFile.last.io.myExternalInpCond := False//psExSetPc.fire
   }
   val myRegFileRdAddrPipeFrontVec = Vec.fill(2)(
     cloneOf(myRegFile.head.io.rdAddrPipe)
   )
-  psId.io.down.translateInto(myRegFileRdAddrPipeFrontVec.head)(
+  psPostIdPreEx.io.down.translateInto(myRegFileRdAddrPipeFrontVec.head)(
     dataAssignment=(outp, inp) => {
       outp.data := inp
     }
@@ -2292,9 +2293,9 @@ private[libsnowhouse] case class SnowHouseForFmax(
       }
     }
   )
-  //psPreEx.io.up << myRegFileRdDataPipeLast
-  //psEx.io.up << psPreEx.io.down
-  psEx.io.up <-< myRegFileRdDataPipeLast
+  //psPostIdPreEx.io.up << myRegFileRdDataPipeLast
+  //psEx.io.up << psPostIdPreEx.io.down
+  psEx.io.up << myRegFileRdDataPipeLast
   val myPostExPreWbStmVec = (
     cfg.optForFmaxPsExFwdSize > 0
   ) generate (
@@ -2316,7 +2317,7 @@ private[libsnowhouse] case class SnowHouseForFmax(
         myPostExPreWbStmVec(idx) <-< myPostExPreWbStmVec(idx - 1)
       }
     }
-    psWb.io.up <-< myPostExPreWbStmVec.last
+    psWb.io.up << myPostExPreWbStmVec.last
   } else {
     psWb.io.up <-< psEx.io.down
   }
@@ -2328,10 +2329,12 @@ private[libsnowhouse] case class SnowHouseForFmax(
     //)
     item.io.wrPulse := psWb.io.myRegFileWrPulse
   })
+  psEx.io.myRegFileWrPulse << psWb.io.myRegFileWrPulse
   //--------
 
   psIf.io.psExSetPc := psExSetPc
   psId.io.psExSetPc := psExSetPc
+  psPostIdPreEx.io.myBranchMispredictEtc := psExSetPc.fire
   psExSetPc := psEx.io.psExSetPc
 
   if (io.idsIraIrq != null) {
@@ -2341,7 +2344,6 @@ private[libsnowhouse] case class SnowHouseForFmax(
   io.lcvIbus << psIf.io.lcvIbus
   io.lcvDbus.h2dBus << psEx.io.myLcvDbusH2dStm
   psWb.io.myLcvDbusD2hStm << io.lcvDbus.d2hBus
-
 
   for (idx <- 0 until io.multiCycleBusVec.size) {
     io.multiCycleBusVec(idx) <> psEx.io.multiCycleBusVec(idx)

@@ -161,7 +161,7 @@ case class SnowHouseForFmaxPipeStageInstrDecode(
     up=cLink.down,
     down={
       val temp = Node()
-      temp.setName("s_down")
+      temp.setName("sLink_down")
       temp
     }
   )
@@ -222,93 +222,97 @@ case class SnowHouseForFmaxPipeStageInstrDecode(
   //--------
 }
 
-//case class SnowHouseForFmaxPipeStagePreExIo(
-//  cfg: SnowHouseConfig
-//) extends Bundle {
-//  val up = (
-//    slave(Stream(
-//      SnowHousePipePayload(cfg=cfg)
-//    ))
-//  )
-//  val down = (
-//    master(Stream(
-//      SnowHousePipePayload(cfg=cfg)
-//    ))
-//  )
-//}
-//
-//case class SnowHouseForFmaxPipeStagePreEx(
-//  cfg: SnowHouseConfig,
-//) extends Component {
-//  //--------
-//  val io = SnowHouseForFmaxPipeStagePreExIo(cfg=cfg)
-//  //def up = io.up
-//  //def down = io.down
-//  //--------
-//  val linkArr = PipeHelper.mkLinkArr()
-//
-//  //def opInfoMap = cfg.opInfoMap
-//
-//  val pPreExInp = Payload(SnowHousePipePayload(cfg=cfg))
-//  val pPreExOutp = Payload(SnowHousePipePayload(cfg=cfg))
-//  val cLink = CtrlLink()
-//  val sLink = StageLink(
-//    up=cLink.down,
-//    down={
-//      val temp = Node()
-//      temp.setName("s_down")
-//      temp
-//    }
-//  )
-//  val s2mLink = S2MLink(
-//    up=sLink.down,
-//    down={
-//      val temp = Node()
-//      temp.setName("s2mLink_down")
-//      temp
-//    }
-//  )
-//  linkArr += cLink
-//  linkArr += sLink
-//  linkArr += s2mLink
-//
-//  val myOutp = SnowHousePipePayload(cfg=cfg)
-//  val myInp = SnowHousePipePayload(cfg=cfg)
-//  //myInp := RegNext(myInp)
-//  myOutp := RegNext(myOutp)
-//  myOutp.allowOverride
-//
-//  val innerPsPreEx = SnowHousePrePipeStageExSetBranchPredictEtcArea(
-//    cfg=cfg,
-//    outp=myOutp,
-//    inp=myInp,
-//    link=cLink,
-//  )
-//
-//  cLink.up.driveFrom(io.up)(
-//    con=(node, inp) => {
-//      node(pPreExInp) := inp
-//      myInp := inp
-//      when (node.isValid) {
-//        myOutp := myInp
-//      }
-//    }
-//  )
-//  //when (cLink.up.valid) {
-//  //}
-//  cLink.up(pPreExOutp) := myOutp
-//
-//  s2mLink.down.driveTo(
-//    io.down
-//  )(
-//    con=(outp, node) => {
-//      outp := node(pPreExOutp)
-//    }
-//  )
-//
-//  Builder(linkArr)
-//  //--------
-//}
+case class SnowHouseForFmaxPipeStagePreExIo(
+  cfg: SnowHouseConfig
+) extends Bundle {
+  val up = (
+    slave(Stream(
+      SnowHousePipePayload(cfg=cfg)
+    ))
+  )
+  val down = (
+    master(Stream(
+      SnowHousePipePayload(cfg=cfg)
+    ))
+  )
+  //--------
+  val myBranchMispredictEtc = in(Bool())
+  //--------
+}
+
+case class SnowHouseForFmaxPipeStagePostIdPreEx(
+  cfg: SnowHouseConfig,
+) extends Component {
+  //--------
+  val io = SnowHouseForFmaxPipeStagePreExIo(cfg=cfg)
+  //def up = io.up
+  //def down = io.down
+  //--------
+  val linkArr = PipeHelper.mkLinkArr()
+
+  //def opInfoMap = cfg.opInfoMap
+
+  //val pPreExInp = Payload(SnowHousePipePayload(cfg=cfg))
+  val pPreExOutp = Payload(SnowHousePipePayload(cfg=cfg))
+  val cLink = CtrlLink()
+  val sLink = StageLink(
+    up=cLink.down,
+    down={
+      val temp = Node()
+      temp.setName("sLink_down")
+      temp
+    }
+  )
+  //val s2mLink = S2MLink(
+  //  up=sLink.down,
+  //  down={
+  //    val temp = Node()
+  //    temp.setName("s2mLink_down")
+  //    temp
+  //  }
+  //)
+  linkArr += cLink
+  linkArr += sLink
+  //linkArr += s2mLink
+
+  val myOutp = SnowHousePipePayload(cfg=cfg)
+  val myInp = SnowHousePipePayload(cfg=cfg)
+  //myInp := RegNext(myInp)
+  myOutp := RegNext(myOutp)
+  myOutp.allowOverride
+  when (cLink.up.isValid) {
+    myOutp := myInp
+  }
+
+  val innerPsPostIdPreEx = SnowHousePipeStagePostIdPreEx(
+    cfg=cfg,
+    outp=myOutp,
+    inp=myInp,
+    //link=cLink,
+    upIsFiring=cLink.up.isFiring,
+    myBranchMispredictEtc=io.myBranchMispredictEtc,
+  )
+
+  cLink.up.driveFrom(io.up)(
+    con=(node, inp) => {
+      //node(pPreExInp) := inp
+      myInp := inp
+      node(pPreExOutp) := myOutp
+    }
+  )
+  //when (cLink.up.valid) {
+  //}
+  //cLink.up(pPreExOutp) := myOutp
+
+  sLink.down.driveTo(io.down)(
+    con=(outp, node) => {
+      outp := node(pPreExOutp)
+    }
+  )
+
+  Builder(linkArr)
+  //--------
+}
 
 case class SnowHouseForFmaxPipeStageExecuteIo(
   cfg: SnowHouseConfig
@@ -322,6 +326,15 @@ case class SnowHouseForFmaxPipeStageExecuteIo(
   val down = (
     master(Stream(
       SnowHousePipePayload(cfg=cfg)
+    ))
+  )
+  //--------
+  val myRegFileWrPulse = (
+    slave(Flow(
+      PipeSimpleDualPortMemDrivePayload(
+        dataType=UInt(cfg.mainWidth bits),
+        wordCount=cfg.regFileCfg.wordCountArr(0),
+      )
     ))
   )
   //--------
@@ -421,21 +434,21 @@ case class SnowHouseForFmaxPipeStageExecute(
     up=cLink.down,
     down={
       val temp = Node()
-      temp.setName("s_down")
+      temp.setName("sLink_down")
       temp
     }
   )
-  val s2mLink = S2MLink(
-    up=sLink.down,
-    down={
-      val temp = Node()
-      temp.setName("s2m_down")
-      temp
-    }
-  )
+  //val s2mLink = S2MLink(
+  //  up=sLink.down,
+  //  down={
+  //    val temp = Node()
+  //    temp.setName("s2m_down")
+  //    temp
+  //  }
+  //)
   linkArr += cLink
   linkArr += sLink
-  linkArr += s2mLink
+  //linkArr += s2mLink
 
   val myModMemWord = SInt(cfg.mainWidth bits)
   val innerPsEx = SnowHousePipeStageExecute(
@@ -465,6 +478,9 @@ case class SnowHouseForFmaxPipeStageExecute(
     //pcChangeState=null,
     //shouldIgnoreInstr=null,
     //psExFoundBubble=psExFoundBubble,
+    forFmaxRegFileWrPulseArr=Array(
+      io.myRegFileWrPulse
+    )
   )
 
   cLink.up.driveFrom(io.up)(
@@ -473,7 +489,7 @@ case class SnowHouseForFmaxPipeStageExecute(
     }
   )
 
-  s2mLink.down.driveTo(
+  sLink.down.driveTo(
     io.down
   )(
     con=(outp, node) => {
@@ -536,7 +552,7 @@ case class SnowHouseForFmaxPipeStageWriteBack(
   //  up=cLink.down,
   //  down={
   //    val temp = Node()
-  //    temp.setName("s_down")
+  //    temp.setName("sLink_down")
   //    temp
   //  }
   //)

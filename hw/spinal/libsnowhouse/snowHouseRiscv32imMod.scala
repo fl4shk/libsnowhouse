@@ -277,12 +277,12 @@ object Rv32BType {
   }
 
   object Op {
-    val BeqRdRs1Imm = OpFields(op=0x63, f3=0x0)
-    val BneRdRs1Imm = OpFields(op=0x63, f3=0x1)
-    val BltRdRs1Imm = OpFields(op=0x63, f3=0x4)
-    val BgeRdRs1Imm = OpFields(op=0x63, f3=0x5)
-    val BltuRdRs1Imm = OpFields(op=0x63, f3=0x6)
-    val BgeuRdRs1Imm = OpFields(op=0x63, f3=0x7)
+    val BeqRs1Rs2Imm = OpFields(op=0x63, f3=0x0)
+    val BneRs1Rs2Imm = OpFields(op=0x63, f3=0x1)
+    val BltRs1Rs2Imm = OpFields(op=0x63, f3=0x4)
+    val BgeRs1Rs2Imm = OpFields(op=0x63, f3=0x5)
+    val BltuRs1Rs2Imm = OpFields(op=0x63, f3=0x6)
+    val BgeuRs1Rs2Imm = OpFields(op=0x63, f3=0x7)
   }
 }
 
@@ -352,8 +352,8 @@ object Rv32UType {
   }
 
   object Op {
-    val LuiRaImm31Downto12 = OpFields(op=0x37)
-    val AuipcRaImm31Downto12 = OpFields(op=0x17)
+    val LuiRdImm31Downto12 = OpFields(op=0x37)
+    val AuipcRdImm31Downto12 = OpFields(op=0x17)
   }
 }
 
@@ -732,7 +732,7 @@ object Riscv32imOpInfoMap {
   )
   //--------
   opInfoMap += (
-    Rv32BType.Op.BeqRdRs1Imm -> OpInfo.mkCpy(
+    Rv32BType.Op.BeqRs1Rs2Imm -> OpInfo.mkCpy(
       dstArr=Array[DstKind](DstKind.Pc),
       srcArr=Array[SrcKind](
         SrcKind.Gpr, SrcKind.Gpr, SrcKind.Imm(/*Some(true)*/)
@@ -743,7 +743,7 @@ object Riscv32imOpInfoMap {
   )
 
   opInfoMap += (
-    Rv32BType.Op.BneRdRs1Imm -> OpInfo.mkCpy(
+    Rv32BType.Op.BneRs1Rs2Imm -> OpInfo.mkCpy(
       dstArr=Array[DstKind](DstKind.Pc),
       srcArr=Array[SrcKind](
         SrcKind.Gpr, SrcKind.Gpr, SrcKind.Imm(/*Some(true)*/)
@@ -754,7 +754,7 @@ object Riscv32imOpInfoMap {
   )
 
   opInfoMap += (
-    Rv32BType.Op.BltRdRs1Imm -> OpInfo.mkCpy(
+    Rv32BType.Op.BltRs1Rs2Imm -> OpInfo.mkCpy(
       dstArr=Array[DstKind](DstKind.Pc),
       srcArr=Array[SrcKind](
         SrcKind.Gpr, SrcKind.Gpr, SrcKind.Imm(/*Some(true)*/)
@@ -765,7 +765,7 @@ object Riscv32imOpInfoMap {
   )
 
   opInfoMap += (
-    Rv32BType.Op.BgeRdRs1Imm -> OpInfo.mkCpy(
+    Rv32BType.Op.BgeRs1Rs2Imm -> OpInfo.mkCpy(
       dstArr=Array[DstKind](DstKind.Pc),
       srcArr=Array[SrcKind](
         SrcKind.Gpr, SrcKind.Gpr, SrcKind.Imm(/*Some(true)*/)
@@ -776,7 +776,7 @@ object Riscv32imOpInfoMap {
   )
 
   opInfoMap += (
-    Rv32BType.Op.BltuRdRs1Imm -> OpInfo.mkCpy(
+    Rv32BType.Op.BltuRs1Rs2Imm -> OpInfo.mkCpy(
       dstArr=Array[DstKind](DstKind.Pc),
       srcArr=Array[SrcKind](
         SrcKind.Gpr, SrcKind.Gpr, SrcKind.Imm(/*Some(true)*/)
@@ -787,7 +787,7 @@ object Riscv32imOpInfoMap {
   )
 
   opInfoMap += (
-    Rv32BType.Op.BgeuRdRs1Imm -> OpInfo.mkCpy(
+    Rv32BType.Op.BgeuRs1Rs2Imm -> OpInfo.mkCpy(
       dstArr=Array[DstKind](DstKind.Pc),
       srcArr=Array[SrcKind](
         SrcKind.Gpr, SrcKind.Gpr, SrcKind.Imm(/*Some(true)*/)
@@ -810,7 +810,7 @@ object Riscv32imOpInfoMap {
   )
   //--------
   opInfoMap += (
-    Rv32UType.Op.LuiRaImm31Downto12 -> OpInfo.mkCpy(
+    Rv32UType.Op.LuiRdImm31Downto12 -> OpInfo.mkCpy(
       dstArr=Array[DstKind](DstKind.Gpr),
       srcArr=Array[SrcKind](
         SrcKind.Imm()
@@ -819,7 +819,7 @@ object Riscv32imOpInfoMap {
     )
   )
   opInfoMap += (
-    Rv32UType.Op.AuipcRaImm31Downto12 -> OpInfo.mkMultiCycle(
+    Rv32UType.Op.AuipcRdImm31Downto12 -> OpInfo.mkMultiCycle(
       dstArr=Array[DstKind](DstKind.Gpr),
       srcArr=Array[SrcKind](SrcKind.Pc, SrcKind.Imm(/*Some(true)*/)),
       //aluOp=(
@@ -987,11 +987,11 @@ object SnowHouseRiscv32imPipeStageInstrDecode {
     )
     psId.myTempOpMayNeedHazardCheck := (
       encInstrI.head.opcode === LwRdRs1Imm.op
-      //|| encInstrU.head.opcode === AuipcRaImm31Downto12.op
+      //|| encInstrU.head.opcode === AuipcRdImm31Downto12.op
       // this is also updated later...
     )
     psId.myTempOpIsJmpBr := (
-      encInstrB.head.opcode === BeqRdRs1Imm.op
+      encInstrB.head.opcode === BeqRs1Rs2Imm.op
       // please excuse the use of `encInstrB` for `Jal` and `Jalr`!
       || encInstrB.head.opcode === JalRdImm.op
       || encInstrB.head.opcode === JalrRdRs1Imm.op
@@ -1530,6 +1530,8 @@ object SnowHouseRiscv32imPipeStageInstrDecode {
       }
       is (AddiRdRs1Imm.op) {
         setImm(encInstr=encInstrI.last)
+        upPayload.gprIdxVec(1) := 0x0
+
         switch (encInstrI.last.funct3) {
           is (AddiRdRs1Imm.f3) {
             setOp(AddiRdRs1Imm, encInstrI.last)
@@ -1571,6 +1573,8 @@ object SnowHouseRiscv32imPipeStageInstrDecode {
       }
       is (LbRdRs1Imm.op) {
         setImm(encInstr=encInstrI.last)
+        upPayload.gprIdxVec(1) := 0x0
+
         switch (encInstrI.last.funct3) {
           is (LbRdRs1Imm.f3) {
             setOp(LbRdRs1Imm, encInstrI.last)
@@ -1590,10 +1594,11 @@ object SnowHouseRiscv32imPipeStageInstrDecode {
         }
         upPayload.gprIdxVec.last := encInstrR.last.rd
         upPayload.gprIdxVec(0) := encInstrR.last.rs1
-        upPayload.gprIdxVec(1) := encInstrR.last.rs2
+        upPayload.gprIdxVec(1) := 0x0
       }
       is (JalrRdRs1Imm.op) {
         setImm(encInstr=encInstrI.last)
+        upPayload.gprIdxVec(1) := 0x0
         setOp(JalrRdRs1Imm, encInstrI.last)
       }
       is (SbRs2Rs1Imm.op) {
@@ -1613,26 +1618,26 @@ object SnowHouseRiscv32imPipeStageInstrDecode {
         upPayload.gprIdxVec(0) := encInstrR.last.rs1
         upPayload.gprIdxVec(1) := encInstrR.last.rs2
       }
-      is (BeqRdRs1Imm.op) {
+      is (BeqRs1Rs2Imm.op) {
         setImm(encInstr=encInstrB.last)
         switch (encInstrB.last.funct3) {
-          is (BeqRdRs1Imm.f3) {
-            setOp(BeqRdRs1Imm, encInstrB.last)
+          is (BeqRs1Rs2Imm.f3) {
+            setOp(BeqRs1Rs2Imm, encInstrB.last)
           }
-          is (BneRdRs1Imm.f3) {
-            setOp(BneRdRs1Imm, encInstrB.last)
+          is (BneRs1Rs2Imm.f3) {
+            setOp(BneRs1Rs2Imm, encInstrB.last)
           }
-          is (BltRdRs1Imm.f3) {
-            setOp(BltRdRs1Imm, encInstrB.last)
+          is (BltRs1Rs2Imm.f3) {
+            setOp(BltRs1Rs2Imm, encInstrB.last)
           }
-          is (BgeRdRs1Imm.f3) {
-            setOp(BgeRdRs1Imm, encInstrB.last)
+          is (BgeRs1Rs2Imm.f3) {
+            setOp(BgeRs1Rs2Imm, encInstrB.last)
           }
-          is (BltuRdRs1Imm.f3) {
-            setOp(BltuRdRs1Imm, encInstrB.last)
+          is (BltuRs1Rs2Imm.f3) {
+            setOp(BltuRs1Rs2Imm, encInstrB.last)
           }
-          is (BgeuRdRs1Imm.f3) {
-            setOp(BgeuRdRs1Imm, encInstrB.last)
+          is (BgeuRs1Rs2Imm.f3) {
+            setOp(BgeuRs1Rs2Imm, encInstrB.last)
           }
         }
         upPayload.gprIdxVec.last := 0x0
@@ -1640,14 +1645,20 @@ object SnowHouseRiscv32imPipeStageInstrDecode {
       is (JalRdImm.op) {
         setImm(encInstr=encInstrJ.last)
         setOp(JalRdImm, encInstrJ.last)
+        upPayload.gprIdxVec(0) := 0x0
+        upPayload.gprIdxVec(1) := 0x0
       }
-      is (LuiRaImm31Downto12.op) {
+      is (LuiRdImm31Downto12.op) {
         setImm(encInstr=encInstrU.last)
-        setOp(LuiRaImm31Downto12, encInstrU.last)
+        setOp(LuiRdImm31Downto12, encInstrU.last)
+        upPayload.gprIdxVec(0) := 0x0
+        upPayload.gprIdxVec(1) := 0x0
       }
-      is (AuipcRaImm31Downto12.op) {
+      is (AuipcRdImm31Downto12.op) {
         setImm(encInstr=encInstrU.last)
-        setOp(AuipcRaImm31Downto12, encInstrU.last)
+        setOp(AuipcRdImm31Downto12, encInstrU.last)
+        upPayload.gprIdxVec(0) := 0x0
+        upPayload.gprIdxVec(1) := 0x0
       }
     }
   }
