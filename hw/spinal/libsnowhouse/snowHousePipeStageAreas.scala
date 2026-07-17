@@ -7617,19 +7617,46 @@ case class SnowHousePipeStageExecute(
             //)
             if (idx == 0) {
               outp.myExt(0).rdMemWord(jdx) := (
-                //Mux(
-                //  (
-                //    stickyRegFileWrPulseVec(0).fire
-                //    && (
-                //      outp.gprIdxVec(jdx) 
-                //      === stickyRegFileWrPulseVec(0).addr
-                //    )
-                //    //&& forFmaxRegFileWrPulseArr(0).
-                //  ),
-                //  stickyRegFileWrPulseVec(0).data,
-                  inp.myExt(0).rdMemWord(jdx)
-                //)
+                RegNext(
+                  outp.myExt(0).rdMemWord(jdx),
+                  init=outp.myExt(0).rdMemWord(jdx).getZero,
+                )
               )
+              when (
+                RegNext(
+                  cLink.up.isFiring,
+                  init=False
+                )
+                || rose(
+                  cLink.up.isValid
+                )
+              ) {
+                outp.myExt(0).rdMemWord(jdx) := (
+                  //Mux(
+                  //  (
+                  //    stickyRegFileWrPulseVec(0).fire
+                  //    && (
+                  //      outp.gprIdxVec(jdx) 
+                  //      === stickyRegFileWrPulseVec(0).addr
+                  //    )
+                  //    //&& forFmaxRegFileWrPulseArr(0).
+                  //  ),
+                  //  stickyRegFileWrPulseVec(0).data,
+                    inp.myExt(0).rdMemWord(jdx)
+                  //)
+                )
+              }
+              when (
+                forFmaxRegFileWrPulseArr(0).fire
+                && (
+                  outp.gprIdxVec(jdx)
+                  === forFmaxRegFileWrPulseArr(0).addr
+                )
+              ) {
+                outp.myExt(0).rdMemWord(jdx) := (
+                  forFmaxRegFileWrPulseArr(0).data
+                )
+              }
             } else {
               //when (myHistFwdInfo(idx).valid) {
                 outp.myExt(0).rdMemWord(jdx) := (
