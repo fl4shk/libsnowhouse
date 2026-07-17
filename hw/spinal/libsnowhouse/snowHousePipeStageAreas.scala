@@ -7616,36 +7616,12 @@ case class SnowHousePipeStageExecute(
             //  }
             //)
             if (idx == 0) {
-              outp.myExt(0).rdMemWord(jdx) := (
-                RegNext(
-                  outp.myExt(0).rdMemWord(jdx),
-                  init=outp.myExt(0).rdMemWord(jdx).getZero,
-                )
-              )
-              when (
-                RegNext(
-                  cLink.up.isFiring,
-                  init=False
-                )
-                || rose(
-                  cLink.up.isValid
-                )
-              ) {
-                outp.myExt(0).rdMemWord(jdx) := (
-                  //Mux(
-                  //  (
-                  //    stickyRegFileWrPulseVec(0).fire
-                  //    && (
-                  //      outp.gprIdxVec(jdx) 
-                  //      === stickyRegFileWrPulseVec(0).addr
-                  //    )
-                  //    //&& forFmaxRegFileWrPulseArr(0).
-                  //  ),
-                  //  stickyRegFileWrPulseVec(0).data,
-                    inp.myExt(0).rdMemWord(jdx)
-                  //)
-                )
-              }
+              //outp.myExt(0).rdMemWord(jdx) := (
+              //  RegNext(
+              //    outp.myExt(0).rdMemWord(jdx),
+              //    init=outp.myExt(0).rdMemWord(jdx).getZero,
+              //  )
+              //)
               val rSavedRegFileWrPulse = (
                 RegNextWhen(
                   forFmaxRegFileWrPulseArr(0),
@@ -7653,27 +7629,100 @@ case class SnowHousePipeStageExecute(
                   init=forFmaxRegFileWrPulseArr(0).getZero
                 )
               )
-              when (
-                forFmaxRegFileWrPulseArr(0).fire
-                && (
-                  outp.gprIdxVec(jdx)
-                  === forFmaxRegFileWrPulseArr(0).addr
+              switch (
+                (
+                  forFmaxRegFileWrPulseArr(0).fire
+                  && (
+                    outp.gprIdxVec(jdx)
+                    === forFmaxRegFileWrPulseArr(0).addr
+                  )
+                )
+                ## (
+                  rSavedRegFileWrPulse.fire
+                  && (
+                    outp.gprIdxVec(jdx)
+                    === rSavedRegFileWrPulse.addr
+                  )
+                )
+                ## (
+                  RegNext(
+                    cLink.up.isFiring,
+                    init=False
+                  )
+                  || rose(
+                    cLink.up.isValid
+                  )
                 )
               ) {
-                outp.myExt(0).rdMemWord(jdx) := (
-                  forFmaxRegFileWrPulseArr(0).data
-                )
-              } elsewhen (
-                rSavedRegFileWrPulse.fire
-                && (
-                  outp.gprIdxVec(jdx)
-                  === rSavedRegFileWrPulse.addr
-                )
-              ) {
-                outp.myExt(0).rdMemWord(jdx) := (
-                  rSavedRegFileWrPulse.data
-                )
+                is ( M"1--") {
+                  outp.myExt(0).rdMemWord(jdx) := (
+                    forFmaxRegFileWrPulseArr(0).data
+                  )
+                }
+                is (M"01-") {
+                  outp.myExt(0).rdMemWord(jdx) := (
+                    rSavedRegFileWrPulse.data
+                  )
+                }
+                is (M"001") {
+                  outp.myExt(0).rdMemWord(jdx) := (
+                    inp.myExt(0).rdMemWord(jdx)
+                  )
+                }
+                default {
+                  outp.myExt(0).rdMemWord(jdx) := (
+                    RegNext(
+                      outp.myExt(0).rdMemWord(jdx),
+                      init=outp.myExt(0).rdMemWord(jdx).getZero,
+                    )
+                  )
+                }
               }
+              //when (
+              //  RegNext(
+              //    cLink.up.isFiring,
+              //    init=False
+              //  )
+              //  || rose(
+              //    cLink.up.isValid
+              //  )
+              //) {
+              //  outp.myExt(0).rdMemWord(jdx) := (
+              //    //Mux(
+              //    //  (
+              //    //    stickyRegFileWrPulseVec(0).fire
+              //    //    && (
+              //    //      outp.gprIdxVec(jdx) 
+              //    //      === stickyRegFileWrPulseVec(0).addr
+              //    //    )
+              //    //    //&& forFmaxRegFileWrPulseArr(0).
+              //    //  ),
+              //    //  stickyRegFileWrPulseVec(0).data,
+              //      inp.myExt(0).rdMemWord(jdx)
+              //    //)
+              //  )
+              //}
+              //when (
+              //  forFmaxRegFileWrPulseArr(0).fire
+              //  && (
+              //    outp.gprIdxVec(jdx)
+              //    === forFmaxRegFileWrPulseArr(0).addr
+              //  )
+              //) {
+              //  outp.myExt(0).rdMemWord(jdx) := (
+              //    forFmaxRegFileWrPulseArr(0).data
+              //  )
+              //} elsewhen (
+              //  rSavedRegFileWrPulse.fire
+              //  && (
+              //    outp.gprIdxVec(jdx)
+              //    === rSavedRegFileWrPulse.addr
+              //  )
+              //) {
+              //  outp.myExt(0).rdMemWord(jdx) := (
+              //    rSavedRegFileWrPulse.data
+              //  )
+              //}
             } else {
               //when (myHistFwdInfo(idx).valid) {
                 outp.myExt(0).rdMemWord(jdx) := (
