@@ -2235,12 +2235,124 @@ private[libsnowhouse] case class SnowHouseForFmax(
           //    init=stickyRegFileWrPulseFire.getZero
           //  )
           //)
-          val rSavedRegFileWrPulseFire = (
-            Reg(Bool(), init=False)
+
+          //val rSavedRegFileWrPulseFire = (
+          //  Reg(Bool(), init=False)
+          //)
+          //val rSavedRegFileWrPulseAddr = (
+          //  Reg(cloneOf(wrPulse.addr), init=wrPulse.addr.getZero)
+          //)
+
+          //val mySaveWrPulseCond = (
+          //  //myExternalInpCond
+          //  //&& 
+          //  wrPulse.fire
+          //  //&& (
+          //  //  outp.gprIdxVec(idx)
+          //  //  === wrPulse.addr
+          //  //)
+          //)
+          val myHistWrPulse = (
+            History(
+              that=({
+                //val temp = cloneOf(wrPulse)
+                //temp.valid := mySaveWrPulseCond
+                //temp.payload := wrPulse.payload
+                //temp
+                wrPulse,
+              }),
+              length=2,
+              when=wrPulse.fire,
+              init=wrPulse.getZero
+            )
           )
-          val rSavedRegFileWrPulseAddr = (
-            Reg(cloneOf(wrPulse.addr), init=wrPulse.addr.getZero)
-          )
+          val myTempHistWrPulseValidVec = Vec(myHistWrPulse.map(
+            item => (
+              myExternalInpCond
+              && item.fire
+              && (
+                outp.gprIdxVec(idx)
+                === wrPulse.addr
+              )
+            )
+          ))
+// >>> for idx in range(size):
+// ...     print(idx, ("-" * (size - idx - 1) + "1" + ("0" * idx)))
+// ...     
+// 0 ---1
+// 1 --10
+// 2 -100
+// 3 1000
+          switch (myTempHistWrPulseValidVec.asBits) {
+            for (kdx <- 0 until myTempHistWrPulseValidVec.size) {
+              is ({
+                val size = myTempHistWrPulseValidVec.size
+                MaskedLiteral(
+                  ("-" * (size - kdx - 1) + "1" + ("0" * kdx))
+                )
+              }) {
+                outp.myExt(0).rdMemWord(idx) := (
+                  myHistWrPulse(kdx).data
+                )
+              }
+            }
+            default {
+              outp.myExt(0).rdMemWord(idx) := rdMemWord
+            }
+          }
+
+          //val rSavedRegFileWrPulse = (
+          //  Reg(cloneOf(wrPulse), init=wrPulse.getZero)
+          //)
+          ////when (
+          ////  //RegNext(
+          ////  //  (
+          ////  //    upIsFiring
+          ////  //    && stickyRegFileWrPulseFire
+          ////  //  ),
+          ////  //  init=False
+          ////  //)
+          ////  upIsFiring
+          ////  //&& rSavedRegFileWrPulseFire
+          ////) {
+          ////  //stickyRegFileWrPulseFire := (
+          ////  //  False
+          ////  //)
+          ////  rSavedRegFileWrPulseFire := False
+          ////}
+          //switch (
+          //  (
+          //    wrPulse.fire
+          //    && (
+          //      outp.gprIdxVec(idx)
+          //      === wrPulse.addr
+          //    )
+          //  )
+          //  ## (
+          //    rSavedRegFileWrPulse.fire
+          //    && (
+          //      outp.gprIdxVec(idx)
+          //      === rSavedRegFileWrPulse.addr
+          //    )
+          //  )
+          //) {
+          //  is (M"1-") {
+          //    rSavedRegFileWrPulse.valid := (
+          //      //True
+          //      //!upIsFiring
+          //      myExternalInpCond
+          //    )
+          //    //rSavedRegFileWrPulse
+          //    outp.myExt(0).rdMemWord(idx) := (
+          //      wrPulse.data
+          //    )
+          //  }
+          //  is (M"01") {
+          //  }
+          //  default {
+          //    outp.myExt(0).rdMemWord(idx) := rdMemWord
+          //  }
+          //}
           //when (
           //  //RegNext(
           //  //  (
@@ -2255,50 +2367,8 @@ private[libsnowhouse] case class SnowHouseForFmax(
           //  //stickyRegFileWrPulseFire := (
           //  //  False
           //  //)
-          //  rSavedRegFileWrPulseFire := False
+          //  rSavedRegFileWrPulse.valid := False
           //}
-          switch (
-            (
-              wrPulse.fire
-              && (
-                outp.gprIdxVec(idx)
-                === wrPulse.addr
-              )
-            )
-            ## rSavedRegFileWrPulseFire
-          ) {
-            is (M"1-") {
-              rSavedRegFileWrPulseFire := (
-                //True
-                //!upIsFiring
-                myExternalInpCond
-              )
-              outp.myExt(0).rdMemWord(idx) := (
-                wrPulse.data
-              )
-            }
-            is (M"01") {
-            }
-            default {
-              outp.myExt(0).rdMemWord(idx) := rdMemWord
-            }
-          }
-          when (
-            //RegNext(
-            //  (
-            //    upIsFiring
-            //    && stickyRegFileWrPulseFire
-            //  ),
-            //  init=False
-            //)
-            upIsFiring
-            //&& rSavedRegFileWrPulseFire
-          ) {
-            //stickyRegFileWrPulseFire := (
-            //  False
-            //)
-            rSavedRegFileWrPulseFire := False
-          }
           //when (
           //  wrPulse.fire
           //  && (
