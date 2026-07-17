@@ -1078,8 +1078,8 @@ case class SnowHousePipeStageInstrFetch(
       //pipeName="pipeStageIf",
       setWordFunc=mySetWordFunc,
       optRdLatency=(
-        1
-        //2
+        //1
+        2
         //3
         //4
       ),
