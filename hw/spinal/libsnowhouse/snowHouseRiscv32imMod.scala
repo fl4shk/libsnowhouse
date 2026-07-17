@@ -1670,8 +1670,8 @@ case class SnowHouseRiscv32imConfig(
   optForFmaxCfg: Option[SnowHouseForFmaxConfig]=Some(
     SnowHouseForFmaxConfig(
       numPostExPreWbPipeStages=(
-        //0
-        1
+        0
+        //1
       ),
     )
   ),
@@ -3801,7 +3801,7 @@ object SnowHouseRiscv32imWithoutRamToVerilog extends App {
 }
 object SnowHouseRiscv32imTestProgramArr {
   val programStrNoExtBasenameArr = Array[String](
-    //"rv32ui-p-lw",
+    "rv32ui-p-lw",
     "rv32ui-p-slti",
     //"rv32ui-p-sw",
     //"rv32ui-p-or",

@@ -2222,47 +2222,78 @@ private[libsnowhouse] case class SnowHouseForFmax(
               init=outp.myExt(0).rdMemWord(idx).getZero,
             )
           )
-          val stickyRegFileWrPulseFire = (
-            //cloneOf(wrPulse)
-            //Flow(
-            //  cloneOf(outp.myExt(0).rdMemWord(idx))
+          //val stickyRegFileWrPulseFire = (
+          //  //cloneOf(wrPulse)
+          //  //Flow(
+          //  //  cloneOf(outp.myExt(0).rdMemWord(idx))
+          //  //)
+          //  Bool()
+          //)
+          //stickyRegFileWrPulseFire := (
+          //  RegNext(
+          //    stickyRegFileWrPulseFire,
+          //    init=stickyRegFileWrPulseFire.getZero
+          //  )
+          //)
+          val rSavedRegFileWrPulseFire = (
+            Reg(Bool(), init=False)
+          )
+          when (
+            //RegNext(
+            //  (
+            //    upIsFiring
+            //    && stickyRegFileWrPulseFire
+            //  ),
+            //  init=False
             //)
-            Bool()
-          )
-          stickyRegFileWrPulseFire := (
-            RegNext(
-              stickyRegFileWrPulseFire,
-              init=stickyRegFileWrPulseFire.getZero
-            )
-          )
-          when (
-            RegNext(
-              (
-                upIsFiring
-                && stickyRegFileWrPulseFire
-              ),
-              init=False
-            )
+            upIsFiring
+            && rSavedRegFileWrPulseFire
           ) {
-            stickyRegFileWrPulseFire := (
-              False
-            )
+            //stickyRegFileWrPulseFire := (
+            //  False
+            //)
+            rSavedRegFileWrPulseFire := False
           }
-          when (
-            wrPulse.fire
-            && (
-              outp.gprIdxVec(idx)
-              === wrPulse.addr
+          switch (
+            (
+              wrPulse.fire
+              && (
+                outp.gprIdxVec(idx)
+                === wrPulse.addr
+              )
             )
+            ## rSavedRegFileWrPulseFire
           ) {
-            stickyRegFileWrPulseFire := True
-            outp.myExt(0).rdMemWord(idx) := (
-              wrPulse.data
-            )
+            is (M"1-") {
+              rSavedRegFileWrPulseFire := True
+              outp.myExt(0).rdMemWord(idx) := (
+                wrPulse.data
+              )
+            }
+            //is (M"00") {
+            //}
+            default {
+              outp.myExt(0).rdMemWord(idx) := rdMemWord
+            }
           }
-          when (!stickyRegFileWrPulseFire) {
-            outp.myExt(0).rdMemWord(idx) := rdMemWord
-          }
+          //when (
+          //  wrPulse.fire
+          //  && (
+          //    outp.gprIdxVec(idx)
+          //    === wrPulse.addr
+          //  )
+          //) {
+          //  //stickyRegFileWrPulseFire := True
+          //  rSavedRegFileWrPulseFire := True
+          //  outp.myExt(0).rdMemWord(idx) := (
+          //    wrPulse.data
+          //  )
+          //}
+          //when (
+          //  !stickyRegFileWrPulseFire
+          //) {
+          //  outp.myExt(0).rdMemWord(idx) := rdMemWord
+          //}
           //when (
           //  wrPulse.fire
           //) {
@@ -2373,7 +2404,7 @@ private[libsnowhouse] case class SnowHouseForFmax(
     }
     psWb.io.up << myPostExPreWbStmVec.last
   } else {
-    psWb.io.up <-< psEx.io.down
+    psWb.io.up << psEx.io.down
   }
 
   myRegFile.foreach(item => {
