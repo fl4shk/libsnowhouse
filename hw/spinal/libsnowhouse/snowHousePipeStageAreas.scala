@@ -1700,112 +1700,112 @@ case class SnowHousePipeStageInstrDecode(
   def myRegPcRange = (
     upPayload(1).regPc.high downto log2Up(cfg.instrSizeBytes)
   )
-  val myHistRegPc = (
-    History[SInt](
-      that=(
-        //upPayload(1).regPc(myRegPcRange).asSInt
-        upPayload(1).laggingRegPc(myRegPcRange).asSInt
-      ),
-      length=upPayload(1).myHistRegPcSize,
-      when=up.isFiring,
-      init=(
-        //upPayload(1).regPc(myRegPcRange).asSInt.getZero
-        upPayload(1).laggingRegPc(myRegPcRange).asSInt.getZero
-      ),
-    )
-  )
+  //val myHistRegPc = (
+  //  History[SInt](
+  //    that=(
+  //      //upPayload(1).regPc(myRegPcRange).asSInt
+  //      upPayload(1).laggingRegPc(myRegPcRange).asSInt
+  //    ),
+  //    length=upPayload(1).myHistRegPcSize,
+  //    when=up.isFiring,
+  //    init=(
+  //      //upPayload(1).regPc(myRegPcRange).asSInt.getZero
+  //      upPayload(1).laggingRegPc(myRegPcRange).asSInt.getZero
+  //    ),
+  //  )
+  //)
 
-  val myDspRegPcPlus1InstrSize = {
-    val myWordWidth = (
-      //cfg.mainWidth - log2Up(cfg.instrSizeBytes)
-      cfg.mainAddrWidth - log2Up(cfg.instrSizeBytes)
-    )
-    //LcvCondAddJustCarryDel1(
-    //  wordWidth=myWordWidth
-    //)
-    //LcvAddJustCarryDel1(
-    //  wordWidth=myWordWidth
-    //)
-    new Area {
-      val wordWidth = myWordWidth
-      val io = new Bundle {
-        val inp = new Bundle {
-          val a = SInt(wordWidth bits)
-          //val b = SInt(wordWidth bits)
-          val carry = Bool()
-          val cond = Bool()
-        }
-        val outp = new Bundle {
-          val sum_carry = SInt(wordWidth + 1 bits)
-        }
-      }
-      val tempA = Cat(False, io.inp.a).asSInt
-      //val tempB = Cat(False, io.inp.b).asSInt
-      val tempCarry = Cat(
-        U(s"${wordWidth}'d0"), 
-        io.inp.carry
-      ).asSInt
-      val myTempSumCarry = tempA + tempCarry
+  //val myDspRegPcPlus1InstrSize = {
+  //  val myWordWidth = (
+  //    //cfg.mainWidth - log2Up(cfg.instrSizeBytes)
+  //    cfg.mainAddrWidth - log2Up(cfg.instrSizeBytes)
+  //  )
+  //  //LcvCondAddJustCarryDel1(
+  //  //  wordWidth=myWordWidth
+  //  //)
+  //  //LcvAddJustCarryDel1(
+  //  //  wordWidth=myWordWidth
+  //  //)
+  //  new Area {
+  //    val wordWidth = myWordWidth
+  //    val io = new Bundle {
+  //      val inp = new Bundle {
+  //        val a = SInt(wordWidth bits)
+  //        //val b = SInt(wordWidth bits)
+  //        val carry = Bool()
+  //        val cond = Bool()
+  //      }
+  //      val outp = new Bundle {
+  //        val sum_carry = SInt(wordWidth + 1 bits)
+  //      }
+  //    }
+  //    val tempA = Cat(False, io.inp.a).asSInt
+  //    //val tempB = Cat(False, io.inp.b).asSInt
+  //    val tempCarry = Cat(
+  //      U(s"${wordWidth}'d0"), 
+  //      io.inp.carry
+  //    ).asSInt
+  //    val myTempSumCarry = tempA + tempCarry
 
-      //if (!cfg.useLcvInstrBus) {
-        io.outp.sum_carry := (
-          RegNextWhen(
-            next=myTempSumCarry,
-            cond=io.inp.cond,
-          )
-          init(0x0)
-        )
-      //} else {
-      //  io.outp.sum_carry := (
-      //    RegNext(io.outp.sum_carry, init=io.outp.sum_carry.getZero)
-      //  )
-      //  when (io.inp.cond) {
-      //    io.outp.sum_carry := myTempSumCarry
-      //  }
-      //}
-    }
-  }
-  val myHistRegPcPlus1InstrSize = (
-    Vec.fill(
-      upPayload(1).myHistRegPcSize - 1
-    )(
-      SInt(
-        //cfg.mainWidth - log2Up(cfg.instrSizeBytes)
-        cfg.mainAddrWidth - log2Up(cfg.instrSizeBytes)
-        bits
-      )
-    )
-  )
-  myDspRegPcPlus1InstrSize.io.inp.a := (
-    //myHistRegPc(1)
-    myHistRegPc(0)
-  )
-  myDspRegPcPlus1InstrSize.io.inp.carry := True
-  myDspRegPcPlus1InstrSize.io.inp.cond := up.isFiring
-  for (idx <- 0 until myHistRegPcPlus1InstrSize.size) {
-    if (idx == 0) {
-      myHistRegPcPlus1InstrSize(idx) := (
-        myDspRegPcPlus1InstrSize.io.outp.sum_carry(
-          myHistRegPcPlus1InstrSize(idx).bitsRange
-        )
-      )
-    } else {
-      myHistRegPcPlus1InstrSize(idx) := (
-        RegNext(
-          next=myHistRegPcPlus1InstrSize(idx),
-          init=myHistRegPcPlus1InstrSize(idx).getZero,
-        )
-      )
-      when (RegNext(next=up.isFiring, init=False)) {
-        myHistRegPcPlus1InstrSize(idx) := (
-          RegNext(
-            next=myHistRegPcPlus1InstrSize(idx - 1),
-            init=myHistRegPcPlus1InstrSize(idx - 1).getZero,
-          )
-        )
-      }
-    }
-  }
+  //    //if (!cfg.useLcvInstrBus) {
+  //      io.outp.sum_carry := (
+  //        RegNextWhen(
+  //          next=myTempSumCarry,
+  //          cond=io.inp.cond,
+  //        )
+  //        init(0x0)
+  //      )
+  //    //} else {
+  //    //  io.outp.sum_carry := (
+  //    //    RegNext(io.outp.sum_carry, init=io.outp.sum_carry.getZero)
+  //    //  )
+  //    //  when (io.inp.cond) {
+  //    //    io.outp.sum_carry := myTempSumCarry
+  //    //  }
+  //    //}
+  //  }
+  //}
+  //val myHistRegPcPlus1InstrSize = (
+  //  Vec.fill(
+  //    upPayload(1).myHistRegPcSize - 1
+  //  )(
+  //    SInt(
+  //      //cfg.mainWidth - log2Up(cfg.instrSizeBytes)
+  //      cfg.mainAddrWidth - log2Up(cfg.instrSizeBytes)
+  //      bits
+  //    )
+  //  )
+  //)
+  //myDspRegPcPlus1InstrSize.io.inp.a := (
+  //  //myHistRegPc(1)
+  //  myHistRegPc(0)
+  //)
+  //myDspRegPcPlus1InstrSize.io.inp.carry := True
+  //myDspRegPcPlus1InstrSize.io.inp.cond := up.isFiring
+  //for (idx <- 0 until myHistRegPcPlus1InstrSize.size) {
+  //  if (idx == 0) {
+  //    myHistRegPcPlus1InstrSize(idx) := (
+  //      myDspRegPcPlus1InstrSize.io.outp.sum_carry(
+  //        myHistRegPcPlus1InstrSize(idx).bitsRange
+  //      )
+  //    )
+  //  } else {
+  //    myHistRegPcPlus1InstrSize(idx) := (
+  //      RegNext(
+  //        next=myHistRegPcPlus1InstrSize(idx),
+  //        init=myHistRegPcPlus1InstrSize(idx).getZero,
+  //      )
+  //    )
+  //    when (RegNext(next=up.isFiring, init=False)) {
+  //      myHistRegPcPlus1InstrSize(idx) := (
+  //        RegNext(
+  //          next=myHistRegPcPlus1InstrSize(idx - 1),
+  //          init=myHistRegPcPlus1InstrSize(idx - 1).getZero,
+  //        )
+  //      )
+  //    }
+  //  }
+  //}
   val upGprIdxToMemAddrIdxMap = upPayload(1).gprIdxToMemAddrIdxMap
   for ((gprIdx, zdx) <- upPayload(1).gprIdxVec.view.zipWithIndex) {
     upPayload(1).myExt(0).memAddr(zdx) := gprIdx
