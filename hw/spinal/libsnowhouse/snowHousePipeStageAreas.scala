@@ -1078,7 +1078,8 @@ case class SnowHousePipeStageInstrFetch(
       //pipeName="pipeStageIf",
       setWordFunc=mySetWordFunc,
       optRdLatency=(
-        2
+        1
+        //2
         //3
         //4
       ),
@@ -1100,8 +1101,8 @@ case class SnowHousePipeStageInstrFetch(
         })
       ),
       arrRamStyleAltera=(
-        "no_rw_check, M10K",//"MLAB",//"M10K"
-        //"no_rw_check, MLAB",//"MLAB",//"M10K"
+        //"no_rw_check, M10K",//"MLAB",//"M10K"
+        "no_rw_check, MLAB",//"MLAB",//"M10K"
       ),
       arrRamStyleXilinx=(
         //"block"
