@@ -1078,13 +1078,13 @@ case class SnowHousePipeStageInstrFetch(
       //pipeName="pipeStageIf",
       setWordFunc=mySetWordFunc,
       optRdLatency=(
-        //2
+        2
         //3
-        4
+        //4
       ),
       optWrHistLength=(
-        //1
-        2
+        1
+        //2
         //3
         //4
       ),
