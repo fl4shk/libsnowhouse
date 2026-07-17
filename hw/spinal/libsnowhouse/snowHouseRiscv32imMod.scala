@@ -1744,7 +1744,8 @@ case class SnowHouseRiscv32imConfig(
     //log2Up(32)
   ),
   branchTgtBufNumWays: Int = (
-    2
+    1
+    //2
   ),
 ) {
   //--------
