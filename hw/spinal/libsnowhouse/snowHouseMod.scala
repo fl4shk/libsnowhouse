@@ -2238,6 +2238,9 @@ private[libsnowhouse] case class SnowHouseForFmax(
           val rSavedRegFileWrPulseFire = (
             Reg(Bool(), init=False)
           )
+          val rSavedRegFileWrPulseAddr = (
+            Reg(cloneOf(wrPulse.addr), init=wrPulse.addr.getZero)
+          )
           //when (
           //  //RegNext(
           //  //  (
@@ -2266,8 +2269,9 @@ private[libsnowhouse] case class SnowHouseForFmax(
           ) {
             is (M"1-") {
               rSavedRegFileWrPulseFire := (
-                True
+                //True
                 //!upIsFiring
+                myExternalInpCond
               )
               outp.myExt(0).rdMemWord(idx) := (
                 wrPulse.data
@@ -2349,7 +2353,9 @@ private[libsnowhouse] case class SnowHouseForFmax(
         arrRwAddrCollisionXilinx="",
       )
     )
-    myRegFile.last.io.myExternalInpCond := False//psExSetPc.fire
+    myRegFile.last.io.myExternalInpCond := (
+      myRegFile.last.io.rdAddrPipe.valid //False//psExSetPc.fire
+    )
   }
   val myRegFileRdAddrPipeFrontVec = Vec.fill(2)(
     cloneOf(myRegFile.head.io.rdAddrPipe)
