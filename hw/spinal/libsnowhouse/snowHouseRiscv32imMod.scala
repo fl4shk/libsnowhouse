@@ -1673,7 +1673,10 @@ case class SnowHouseRiscv32imConfig(
         //0
         1
       ),
-      optDualIssue=true,
+      optDualIssue=(
+        //true
+        false
+      ),
     )
   ),
   targetAltera: Boolean=(

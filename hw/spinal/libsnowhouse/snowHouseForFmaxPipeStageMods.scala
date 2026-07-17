@@ -242,6 +242,7 @@ case class SnowHouseForFmaxPipeStagePreExIo(
 
 case class SnowHouseForFmaxPipeStagePostIdPreEx(
   cfg: SnowHouseConfig,
+  //dualIssueIdx: Int,
 ) extends Component {
   //--------
   val io = SnowHouseForFmaxPipeStagePreExIo(cfg=cfg)
@@ -284,6 +285,7 @@ case class SnowHouseForFmaxPipeStagePostIdPreEx(
     myOutp := myInp
   }
 
+  val dualIssueIdx = 0
   val innerPsPostIdPreEx = SnowHousePipeStagePostIdPreEx(
     cfg=cfg,
     outp=myOutp,
@@ -291,6 +293,7 @@ case class SnowHouseForFmaxPipeStagePostIdPreEx(
     //link=cLink,
     upIsFiring=cLink.up.isFiring,
     myBranchMispredictEtc=io.myBranchMispredictEtc,
+    dualIssueIdx=dualIssueIdx,
   )
 
   cLink.up.driveFrom(io.up)(
@@ -416,7 +419,8 @@ case class SnowHouseForFmaxPipeStageExecuteIo(
   //--------
 }
 case class SnowHouseForFmaxPipeStageExecute(
-  cfg: SnowHouseConfig
+  cfg: SnowHouseConfig,
+  //dualIssueIdx: Int,
 ) extends Component {
   //--------
   val io = SnowHouseForFmaxPipeStageExecuteIo(cfg=cfg)
@@ -451,6 +455,8 @@ case class SnowHouseForFmaxPipeStageExecute(
   linkArr += s2mLink
 
   val myModMemWord = SInt(cfg.mainWidth bits)
+
+  val dualIssueIdx = 0
   val innerPsEx = SnowHousePipeStageExecute(
     SnowHousePipeStageArgs(
       cfg=cfg,
@@ -478,9 +484,14 @@ case class SnowHouseForFmaxPipeStageExecute(
     //pcChangeState=null,
     //shouldIgnoreInstr=null,
     //psExFoundBubble=psExFoundBubble,
-    forFmaxRegFileWrPulseArr=Array(
-      io.myRegFileWrPulse
-    )
+    //forFmaxRegFileWrPulseArr=Array(
+    //  io.myRegFileWrPulse
+    //),
+    otherPsExOutpMmw=null,
+    otherPsExOutpMmwValidEtc=null,
+    dualIssueIdx=(
+      dualIssueIdx
+    ),
   )
 
   cLink.up.driveFrom(io.up)(

@@ -1652,6 +1652,7 @@ private[libsnowhouse] case class SnowHouseNotForFmax
               upIsFiring=cFront.up.isFiring,
               //psExSetPc=psExSetPc,
               myBranchMispredictEtc=False,
+              dualIssueIdx=0,
             )
           )
           //cfg.myPrePsExSetBranchPredictionStuff(
@@ -1940,7 +1941,10 @@ private[libsnowhouse] case class SnowHouseNotForFmax
     ),
     multiCycleBusVec=io.multiCycleBusVec,
     idsIraIrq=io.idsIraIrq,
-    forFmaxRegFileWrPulseArr=null,
+    //forFmaxRegFileWrPulseArr=null,
+    otherPsExOutpMmw=null,
+    otherPsExOutpMmwValidEtc=null,
+    dualIssueIdx=0,
   )
   //--------
   //val pipeStageWb = (
@@ -2184,12 +2188,14 @@ private[libsnowhouse] case class SnowHouseForFmax(
     doDecodeFunc=cfg.doInstrDecodeFunc
   )
   val psPostIdPreEx = SnowHouseForFmaxPipeStagePostIdPreEx(cfg=cfg)
-  val psEx = SnowHouseForFmaxPipeStageExecute(cfg=cfg)
+  val psEx = SnowHouseForFmaxPipeStageExecute(
+    cfg=cfg
+  )
   val psWb = SnowHouseForFmaxPipeStageWriteBack(cfg=cfg)
   //--------
 
   //psId.io.up <-/< psIf.io.down // extra pipeline stage for fmax
-  psPostIdPreEx.io.up <-/< psId.io.down
+  psPostIdPreEx.io.up << psId.io.down
   psId.io.up << psIf.io.down
   //psPostIdPreEx.io.up << psId.io.down
   //psEx.io.up << psPostIdPreEx.io.down

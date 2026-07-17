@@ -716,7 +716,7 @@ case class SnowHouseConfig(
   val optForFmaxPsExFwdSize = (
     optForFmaxCfg match {
       case Some(myForFmaxCfg) => (
-        myForFmaxCfg.numPostExPreWbPipeStages + 1//3//2//1//2//1//2//6//5//4//6//5//4//3//2//3//4//5//6//3//6//5//4//3//6//5//4//3//6//5//4//3//2//3//2//3//2//3//2//5//4//3//5
+        myForFmaxCfg.numPostExPreWbPipeStages + 6//5//4//3//2//1//3//2//1//2//1//2//6//5//4//6//5//4//3//2//3//4//5//6//3//6//5//4//3//6//5//4//3//6//5//4//3//2//3//2//3//2//3//2//5//4//3//5
       )
       case None => (
         0
@@ -1694,7 +1694,11 @@ case class SnowHousePipePayloadNonExt(
     cfg.optForFmax
   ) generate (
     Vec.fill(cfg.regFileCfg.modRdPortCnt)(
-      UInt(log2Up(cfg.optForFmaxPsExFwdSize) bits)
+      Vec.fill(cfg.myRegFileModWrCnt)(
+        Flow(
+          UInt(log2Up(cfg.optForFmaxPsExFwdSize) bits)
+        )
+      )
     )
   )
   val lcvDataBusSrc = (
@@ -1782,7 +1786,7 @@ case class SnowHousePipePayloadNonExt(
           //0
           //2
           //1
-          cfg.optForFmaxPsExFwdSize + 1//2//3//2//1//0//1//2//1 //+ 2//1//2//1//2//4//3//1
+          cfg.optForFmaxPsExFwdSize //- 1//+ 0//3//4//8//7//6//5//4//3//2//1//2//3//2//1//0//1//2//1 //+ 2//1//2//1//2//4//3//1
           // Old notes (from when MEM was being considered):
           //// up to two following instructions,
           //// per the overall pipeline structure of
