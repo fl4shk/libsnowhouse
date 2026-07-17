@@ -736,174 +736,184 @@ case class SnowHouseBranchTgtBuf(
     branchTgtBufNumWays > 0
   )
 
-  //val tgtBufRdAddr = (
-  //  UInt(log2Up(branchTgtBufSize) bits)
-  //)
-
-  //def myTgtBufAddrRange: Range = (
-  //  log2Up(branchTgtBufSize) - 1 + log2Up(cfg.instrSizeBytes)
-  //  downto log2Up(cfg.instrSizeBytes)
-  //)
-  def myTgtBufAddrRange: Range = (
-    log2Up(branchTgtBufSize) - 1 + log2Up(cfg.instrSizeBytes) + 1
-    downto log2Up(cfg.instrSizeBytes) + 1
-  )
-
-  val rTgtBufWrEn = (
-    Reg(Bool(), init=False)
-  )
-
-  rTgtBufWrEn := (
-    io.psExSetPc.valid
-    && io.psExSetPc.branchTgtBufElem.fire
-    && (
-      !io.psExSetPc.btbElemWithBrKind.btbElem.dontPredict
-    )
-  )
-  val rTgtBufWrAddr = (
-    //Vec[UInt](
-      (
-        RegNext(
-          io.psExSetPc.branchTgtBufElem.srcRegPc(myTgtBufAddrRange)
-        )
-        init(0x0)
-      )//,
-    //  (
-    //    RegNext(
-    //      io.psExSetPc.taken.srcRegPc(myTgtBufAddrRange),
-    //    )
-    //    init(0x0)
-    //  )
+  val myDirectMappedArea = (
+    branchTgtBufNumWays == 1
+  ) generate (new Area {
+    val btbSingle = SnowHouseBranchTgtBufSingle(cfg=cfg)
+    io <> btbSingle.io
+  })
+  val myNonDirectMappedArea = (
+    branchTgtBufNumWays > 1
+  ) generate (new Area {
+    //val tgtBufRdAddr = (
+    //  UInt(log2Up(branchTgtBufSize) bits)
     //)
-  )
 
-  //for (idx <- 0 until tgtBufRdAddr.size) {
-  //  tgtBufRdAddr := (
-  //    io.inpRegPc(0)(myTgtBufAddrRange) //- 1//- 2 //- 1 //- 2//- 3
-  //  )
-  //}
+    //def myTgtBufAddrRange: Range = (
+    //  log2Up(branchTgtBufSize) - 1 + log2Up(cfg.instrSizeBytes)
+    //  downto log2Up(cfg.instrSizeBytes)
+    //)
+    def myTgtBufAddrRange: Range = (
+      log2Up(branchTgtBufSize) - 1 + log2Up(cfg.instrSizeBytes) + 1
+      downto log2Up(cfg.instrSizeBytes) + 1
+    )
 
-  //def myDstRegPcWidth = (
-  //  cfg.mainAddrWidth - log2Up(cfg.instrSizeBytes)
-  //)
+    val rTgtBufWrEn = (
+      Reg(Bool(), init=False)
+    )
 
-  val btbArr = Array.fill(branchTgtBufNumWays)(
-    SnowHouseBranchTgtBufSingle(cfg=cfg)
-  )
+    rTgtBufWrEn := (
+      io.psExSetPc.valid
+      && io.psExSetPc.branchTgtBufElem.fire
+      && (
+        !io.psExSetPc.btbElemWithBrKind.btbElem.dontPredict
+      )
+    )
+    val rTgtBufWrAddr = (
+      //Vec[UInt](
+        (
+          RegNext(
+            io.psExSetPc.branchTgtBufElem.srcRegPc(myTgtBufAddrRange)
+          )
+          init(0x0)
+        )//,
+      //  (
+      //    RegNext(
+      //      io.psExSetPc.taken.srcRegPc(myTgtBufAddrRange),
+      //    )
+      //    init(0x0)
+      //  )
+      //)
+    )
 
-  for (idx <- 0 until btbArr.size) {
-    val btb = btbArr(idx)
-    btb.io.psExSetPc := btb.io.psExSetPc.getZero
-    btb.io.psExSetPc.taken.allowOverride
-    btb.io.psExSetPc.taken := io.psExSetPc.taken
-    btb.io.inpRegPc := io.inpRegPc
-    btb.io.upIsReady := io.upIsReady
-    btb.io.upIsFiring := io.upIsFiring
-  }
+    //for (idx <- 0 until tgtBufRdAddr.size) {
+    //  tgtBufRdAddr := (
+    //    io.inpRegPc(0)(myTgtBufAddrRange) //- 1//- 2 //- 1 //- 2//- 3
+    //  )
+    //}
 
-  //val tgtFifoIdxBuf = Vec.fill(branchTgtBufSize)(
-  //  Reg(UInt(log2Up(btbArr.size) bits))
-  //  init(0x0)
-  //)
-  val tgtFifoIdxBuf = Mem(
-    initialContent=Array.fill(branchTgtBufSize)(
-      U(s"${log2Up(btbArr.size)}'d0")
-    ),
-  )
+    //def myDstRegPcWidth = (
+    //  cfg.mainAddrWidth - log2Up(cfg.instrSizeBytes)
+    //)
 
-  val tempTgtFifoFifoReadSync = tgtFifoIdxBuf.readSync(
-    address=rTgtBufWrAddr,
-    enable=rTgtBufWrEn,
-  )
-  tgtFifoIdxBuf.write(
-    data=RegNext(tempTgtFifoFifoReadSync) + 1,
-    address=RegNext(RegNext(rTgtBufWrAddr)),
-    enable=RegNext(RegNext(rTgtBufWrEn, init=False), init=False),
-  )
-  switch (
-    RegNext(RegNext(rTgtBufWrEn, init=False), init=False)
-    ## RegNext(tempTgtFifoFifoReadSync)
-  ) {
+    val btbArr = Array.fill(branchTgtBufNumWays)(
+      SnowHouseBranchTgtBufSingle(cfg=cfg)
+    )
+
     for (idx <- 0 until btbArr.size) {
-      is (
-        btbArr.size
-        | idx
-      ) {
-        btbArr(idx).io.psExSetPc := (
-          RegNext(RegNext(RegNext(io.psExSetPc)))
-        )
+      val btb = btbArr(idx)
+      btb.io.psExSetPc := btb.io.psExSetPc.getZero
+      btb.io.psExSetPc.taken.allowOverride
+      btb.io.psExSetPc.taken := io.psExSetPc.taken
+      btb.io.inpRegPc := io.inpRegPc
+      btb.io.upIsReady := io.upIsReady
+      btb.io.upIsFiring := io.upIsFiring
+    }
+
+    //val tgtFifoIdxBuf = Vec.fill(branchTgtBufSize)(
+    //  Reg(UInt(log2Up(btbArr.size) bits))
+    //  init(0x0)
+    //)
+    val tgtFifoIdxBuf = Mem(
+      initialContent=Array.fill(branchTgtBufSize)(
+        U(s"${log2Up(btbArr.size)}'d0")
+      ),
+    )
+
+    val tempTgtFifoFifoReadSync = tgtFifoIdxBuf.readSync(
+      address=rTgtBufWrAddr,
+      enable=rTgtBufWrEn,
+    )
+    tgtFifoIdxBuf.write(
+      data=RegNext(tempTgtFifoFifoReadSync) + 1,
+      address=RegNext(RegNext(rTgtBufWrAddr)),
+      enable=RegNext(RegNext(rTgtBufWrEn, init=False), init=False),
+    )
+    switch (
+      RegNext(RegNext(rTgtBufWrEn, init=False), init=False)
+      ## RegNext(tempTgtFifoFifoReadSync)
+    ) {
+      for (idx <- 0 until btbArr.size) {
+        is (
+          btbArr.size
+          | idx
+        ) {
+          btbArr(idx).io.psExSetPc := (
+            RegNext(RegNext(RegNext(io.psExSetPc)))
+          )
+        }
+      }
+      default {
       }
     }
-    default {
+    //switch (
+    //  //tgtBufRdAddr
+    //  //tgtBufRdAddr
+    //  //rTgtBufWrAddr
+    //  rTgtBufWrEn
+    //  ## rTgtBufWrAddr
+    //) {
+    //  for (idx <- 0 until branchTgtBufSize) {
+    //    is (
+    //      branchTgtBufSize
+    //      | idx
+    //    ) {
+    //      //btbArr
+    //      //tgtFifoIdxBuf(idx) := tgtFifoIdxBuf(idx) + 1
+    //      switch (tgtFifoIdxBuf(idx)) {
+    //        for (jdx <- 0 until btbArr.size) {
+    //          is (jdx) {
+    //            btbArr(jdx).io.psExSetPc := RegNext(io.psExSetPc)
+    //          }
+    //        }
+    //        default {
+    //        }
+    //      }
+    //    }
+    //  }
+    //  default {
+    //  }
+    //}
+    val myResultVec = Vec.fill(btbArr.size)(
+      cloneOf(io.result)
+    )
+    val myResultValidVec = Vec.fill(btbArr.size)(
+      Bool()
+    )
+    for (idx <- 0 until btbArr.size) {
+      myResultVec(idx) := btbArr(idx).io.result
+      myResultValidVec(idx) := btbArr(idx).io.result.fire
     }
-  }
-  //switch (
-  //  //tgtBufRdAddr
-  //  //tgtBufRdAddr
-  //  //rTgtBufWrAddr
-  //  rTgtBufWrEn
-  //  ## rTgtBufWrAddr
-  //) {
-  //  for (idx <- 0 until branchTgtBufSize) {
-  //    is (
-  //      branchTgtBufSize
-  //      | idx
-  //    ) {
-  //      //btbArr
-  //      //tgtFifoIdxBuf(idx) := tgtFifoIdxBuf(idx) + 1
-  //      switch (tgtFifoIdxBuf(idx)) {
-  //        for (jdx <- 0 until btbArr.size) {
-  //          is (jdx) {
-  //            btbArr(jdx).io.psExSetPc := RegNext(io.psExSetPc)
-  //          }
-  //        }
-  //        default {
-  //        }
-  //      }
-  //    }
-  //  }
-  //  default {
-  //  }
-  //}
-  val myResultVec = Vec.fill(btbArr.size)(
-    cloneOf(io.result)
-  )
-  val myResultValidVec = Vec.fill(btbArr.size)(
-    Bool()
-  )
-  for (idx <- 0 until btbArr.size) {
-    myResultVec(idx) := btbArr(idx).io.result
-    myResultValidVec(idx) := btbArr(idx).io.result.fire
-  }
-  io.result.valid := myResultValidVec.orR
-  io.result.nextRegPc := 0x0
-  io.result.rdBtbElem := io.result.rdBtbElem.getZero
+    io.result.valid := myResultValidVec.orR
+    io.result.nextRegPc := 0x0
+    io.result.rdBtbElem := io.result.rdBtbElem.getZero
 
-  //val myResultFindFirst = myResultVec.sFindFirst(item => item.valid)
-  //io.result.payload := myResultFindFirst._2
-  
+    //val myResultFindFirst = myResultVec.sFindFirst(item => item.valid)
+    //io.result.payload := myResultFindFirst._2
+    
 
-  switch (myResultValidVec.asBits) {
-    for (idx <- 1 until (1 << myResultValidVec.size)) {
-      is (idx) {
-        println(
-          s"idx:${idx} log2Thing:${log2Up(idx + 1) - 1}"
-        )
-        val myBtb = btbArr(
-          //log2Up(idx)
-          log2Up(idx + 1) - 1
-        )
-        //io.result.payload := btbArr(1 << log2Up(idx)).io.result.payload
-        io.result.nextRegPc := myBtb.io.result.nextRegPc
-        io.result.rdBtbElem := myBtb.io.result.rdBtbElem
+    switch (myResultValidVec.asBits) {
+      for (idx <- 1 until (1 << myResultValidVec.size)) {
+        is (idx) {
+          println(
+            s"idx:${idx} log2Thing:${log2Up(idx + 1) - 1}"
+          )
+          val myBtb = btbArr(
+            //log2Up(idx)
+            log2Up(idx + 1) - 1
+          )
+          //io.result.payload := btbArr(1 << log2Up(idx)).io.result.payload
+          io.result.nextRegPc := myBtb.io.result.nextRegPc
+          io.result.rdBtbElem := myBtb.io.result.rdBtbElem
+        }
       }
     }
-  }
 
-  //switch (
-  //  tgtBufRdAddr
-  //) {
-  //}
+    //switch (
+    //  tgtBufRdAddr
+    //) {
+    //}
+  })
 
 }
 
