@@ -7646,6 +7646,13 @@ case class SnowHousePipeStageExecute(
                   //)
                 )
               }
+              val rSavedRegFileWrPulse = (
+                RegNextWhen(
+                  forFmaxRegFileWrPulseArr(0),
+                  cond=forFmaxRegFileWrPulseArr(0).fire,
+                  init=forFmaxRegFileWrPulseArr(0).getZero
+                )
+              )
               when (
                 forFmaxRegFileWrPulseArr(0).fire
                 && (
@@ -7655,6 +7662,16 @@ case class SnowHousePipeStageExecute(
               ) {
                 outp.myExt(0).rdMemWord(jdx) := (
                   forFmaxRegFileWrPulseArr(0).data
+                )
+              } elsewhen (
+                rSavedRegFileWrPulse.fire
+                && (
+                  outp.gprIdxVec(jdx)
+                  === rSavedRegFileWrPulse.addr
+                )
+              ) {
+                outp.myExt(0).rdMemWord(jdx) := (
+                  rSavedRegFileWrPulse.data
                 )
               }
             } else {
