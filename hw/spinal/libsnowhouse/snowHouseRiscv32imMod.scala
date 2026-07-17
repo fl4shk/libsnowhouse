@@ -1672,8 +1672,8 @@ case class SnowHouseRiscv32imConfig(
       numPostExPreWbPipeStages=(
         //0
         1
-        //2
       ),
+      optDualIssue=true,
     )
   ),
   targetAltera: Boolean=(
@@ -1744,8 +1744,7 @@ case class SnowHouseRiscv32imConfig(
     //log2Up(32)
   ),
   branchTgtBufNumWays: Int = (
-    1
-    //2
+    2
   ),
 ) {
   //--------

@@ -3670,6 +3670,16 @@ case class SnowHouseCpuConfig(
       myIrqJmpOp
     },
     //optForFmaxPostNumPostExPreWbPipeStages=None,
+    optForFmaxCfg=Some(
+      SnowHouseForFmaxConfig(
+        numPostExPreWbPipeStages=(
+          1
+        ),
+        optDualIssue=(
+          false
+        ),
+      )
+    ),
     optShiftRegPcImmAddend=true,
     //irqRetIraOp={
     //  var myIrqRetIraOp: Int = 0x0

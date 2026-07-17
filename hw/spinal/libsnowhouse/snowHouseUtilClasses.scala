@@ -723,6 +723,25 @@ case class SnowHouseConfig(
       )
     }
   )
+  val optDualIssue = (
+    optForFmaxCfg match {
+      case Some(myForFmaxCfg) => {
+        myForFmaxCfg.optDualIssue
+      }
+      case None => {
+        false
+      }
+    }
+  )
+  val myRegFileModWrCnt = (
+    if (optDualIssue) (2) else (1)
+    //1
+  )
+  val myRegFileModRdCnt = (
+    subCfg.shRegFileCfg.modRdPortCnt
+    * myRegFileModWrCnt
+  )
+
   def myPsIfRegPcSetItCntWidth = 2
   def mainAddrWidth = subCfg.mainAddrWidth
   def myHaveS2mIf = (
@@ -1524,9 +1543,9 @@ case class SnowHouseSplitOp(
     //UInt(log2Up(cfg.cpyCpyuiAluNonShiftOpInfoMap.size + 1) bits)
     UInt((cfg.cpyCpyuiAluNonShiftOpInfoMap.size + 1) bits)
   )
-  val kind = SnowHouseSplitOpKind(
-    //binaryOneHot
-  )
+  //val kind = SnowHouseSplitOpKind(
+  //  //binaryOneHot
+  //)
   val cpyCpyuiOp = (
     cfg.allAluOpsUseLcvAluDel1
   ) generate /*Flow*/(
@@ -1615,7 +1634,7 @@ case class SnowHouseSplitOp(
   def setToDefault(
   ): Unit = {
     this := this.getZero
-    kind := SnowHouseSplitOpKind.CPY_CPYUI
+    //kind := SnowHouseSplitOpKind.CPY_CPYUI
     opIsMultiCycle := False
     //nonMultiCycleOp := (
     //  (1 << nonMultiCycleOp.getWidth) - 1

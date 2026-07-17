@@ -8982,7 +8982,7 @@ case class SnowHousePipeStageExecute(
   //  //) {
   //  //}
   //})
-  setOutpModMemWord.io.splitOp.kind.allowOverride
+  //setOutpModMemWord.io.splitOp.kind.allowOverride
   setOutpModMemWord.io.splitOp.allowOverride
   setOutpModMemWord.io.splitOp.jmpBrAlwaysEqNeOp.allowOverride
   setOutpModMemWord.io.splitOp := (
