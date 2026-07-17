@@ -2189,9 +2189,9 @@ private[libsnowhouse] case class SnowHouseForFmax(
   //--------
 
   //psId.io.up <-/< psIf.io.down // extra pipeline stage for fmax
-  //psPostIdPreEx.io.up <-/< psId.io.down
+  psPostIdPreEx.io.up <-/< psId.io.down
   psId.io.up << psIf.io.down
-  psPostIdPreEx.io.up << psId.io.down
+  //psPostIdPreEx.io.up << psId.io.down
   //psEx.io.up << psPostIdPreEx.io.down
 
   //--------
@@ -2310,7 +2310,7 @@ private[libsnowhouse] case class SnowHouseForFmax(
       //  psWb.io.up <-< myPostExPreWbStmVec(idx)
       //}
       else {
-        myPostExPreWbStmVec(idx) <-< myPostExPreWbStmVec(idx - 1)
+        myPostExPreWbStmVec(idx) <-/< myPostExPreWbStmVec(idx - 1)
       }
     }
     psWb.io.up << myPostExPreWbStmVec.last
@@ -2325,7 +2325,7 @@ private[libsnowhouse] case class SnowHouseForFmax(
     //)
     item.io.wrPulse := psWb.io.myRegFileWrPulse
   })
-  psEx.io.myRegFileWrPulse <-< psWb.io.myRegFileWrPulse
+  psEx.io.myRegFileWrPulse << psWb.io.myRegFileWrPulse
   //--------
 
   psIf.io.psExSetPc := psExSetPc

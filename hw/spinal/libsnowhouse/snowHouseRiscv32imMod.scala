@@ -1670,8 +1670,9 @@ case class SnowHouseRiscv32imConfig(
   optForFmaxCfg: Option[SnowHouseForFmaxConfig]=Some(
     SnowHouseForFmaxConfig(
       numPostExPreWbPipeStages=(
-        0
+        //0
         //1
+        2
       ),
     )
   ),
