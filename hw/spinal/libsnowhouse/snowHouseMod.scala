@@ -2270,8 +2270,8 @@ private[libsnowhouse] case class SnowHouseForFmax(
                 wrPulse.data
               )
             }
-            //is (M"00") {
-            //}
+            is (M"01") {
+            }
             default {
               outp.myExt(0).rdMemWord(idx) := rdMemWord
             }
