@@ -2189,7 +2189,7 @@ private[libsnowhouse] case class SnowHouseForFmax(
   //--------
 
   psId.io.up <-/< psIf.io.down // extra pipeline stage for fmax
-  psPostIdPreEx.io.up << psId.io.down
+  psPostIdPreEx.io.up <-/< psId.io.down
   //psEx.io.up << psPostIdPreEx.io.down
 
   //--------
