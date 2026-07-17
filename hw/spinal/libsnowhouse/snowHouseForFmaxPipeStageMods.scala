@@ -255,14 +255,14 @@ case class SnowHouseForFmaxPipeStagePostIdPreEx(
   //val pPreExInp = Payload(SnowHousePipePayload(cfg=cfg))
   val pPreExOutp = Payload(SnowHousePipePayload(cfg=cfg))
   val cLink = CtrlLink()
-  val sLink = StageLink(
-    up=cLink.down,
-    down={
-      val temp = Node()
-      temp.setName("sLink_down")
-      temp
-    }
-  )
+  //val sLink = StageLink(
+  //  up=cLink.down,
+  //  down={
+  //    val temp = Node()
+  //    temp.setName("sLink_down")
+  //    temp
+  //  }
+  //)
   //val s2mLink = S2MLink(
   //  up=sLink.down,
   //  down={
@@ -272,7 +272,7 @@ case class SnowHouseForFmaxPipeStagePostIdPreEx(
   //  }
   //)
   linkArr += cLink
-  linkArr += sLink
+  //linkArr += sLink
   //linkArr += s2mLink
 
   val myOutp = SnowHousePipePayload(cfg=cfg)
@@ -304,7 +304,7 @@ case class SnowHouseForFmaxPipeStagePostIdPreEx(
   //}
   //cLink.up(pPreExOutp) := myOutp
 
-  sLink.down.driveTo(io.down)(
+  cLink.down.driveTo(io.down)(
     con=(outp, node) => {
       outp := node(pPreExOutp)
     }
