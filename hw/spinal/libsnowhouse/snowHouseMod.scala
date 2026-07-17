@@ -2325,7 +2325,7 @@ private[libsnowhouse] case class SnowHouseForFmax(
     //)
     item.io.wrPulse := psWb.io.myRegFileWrPulse
   })
-  psEx.io.myRegFileWrPulse << psWb.io.myRegFileWrPulse
+  psEx.io.myRegFileWrPulse <-< psWb.io.myRegFileWrPulse
   //--------
 
   psIf.io.psExSetPc := psExSetPc
