@@ -2217,10 +2217,11 @@ private[libsnowhouse] case class SnowHouseForFmax(
           outp.myExt(0).rdMemWord(idx).allowOverride
           //outp.myExt(0).rdMemWord(idx) := rdMemWord
           outp.myExt(0).rdMemWord(idx) := (
-            RegNext(
-              outp.myExt(0).rdMemWord(idx),
-              init=outp.myExt(0).rdMemWord(idx).getZero,
-            )
+            rdMemWord
+            //RegNext(
+            //  outp.myExt(0).rdMemWord(idx),
+            //  init=outp.myExt(0).rdMemWord(idx).getZero,
+            //)
           )
           //val stickyRegFileWrPulse = (
           //  cloneOf(wrPulse)
