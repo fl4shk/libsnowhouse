@@ -754,6 +754,33 @@ case class SnowHouseConfig(
       )
     }
   )
+
+  val myPsIdBubbleNumFollowingInstrs = (
+    //1
+    //+ 
+    (
+      if (useLcvDataBus) (
+        if (!optForFmax) (
+          1
+          //0
+          //1
+        ) else (
+          //0
+          //2
+          //1
+          optForFmaxPsExFwdSize + 1//2//3//2//1//0//1//2//1 //+ 2//1//2//1//2//4//3//1
+          // Old notes (from when MEM was being considered):
+          //// up to two following instructions,
+          //// per the overall pipeline structure of
+          ////   EX -> MEM -> WB -> LastBack
+        )
+      ) else (
+        //0
+        1
+      )
+    )
+  )
+
   //val optDualIssue = (
   //  optForFmaxCfg match {
   //    case Some(myForFmaxCfg) => {
@@ -1801,30 +1828,8 @@ case class SnowHousePipePayloadNonExt(
   val op = UInt(log2Up(cfg.opInfoMap.size) bits) //simPublic()
   val splitOp = SnowHouseSplitOp(cfg=cfg)
   val myDoHaveHazardAddrCheckVec = Vec.fill(
-    //1
-    //+ 
-    (
-      if (cfg.useLcvDataBus) (
-        if (!cfg.optForFmax) (
-          1
-          //0
-          //1
-        ) else (
-          //0
-          //2
-          //1
-          cfg.optForFmaxPsExFwdSize + 1//2//3//2//1//0//1//2//1 //+ 2//1//2//1//2//4//3//1
-          //+ cfg.optMaxNumScoreboardInstrs
-          // Old notes (from when MEM was being considered):
-          //// up to two following instructions,
-          //// per the overall pipeline structure of
-          ////   EX -> MEM -> WB -> LastBack
-        )
-      ) else (
-        //0
-        1
-      )
-    )
+    cfg.myPsIdBubbleNumFollowingInstrs
+    + cfg.optMaxNumScoreboardInstrs
   )(
     Bool()
   )

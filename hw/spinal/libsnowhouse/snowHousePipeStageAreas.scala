@@ -1919,7 +1919,8 @@ case class SnowHousePipeStageInstrDecode(
       myTempBtbElem
     )
     def numFollowingInstrs = (
-      upPayload(1).myDoHaveHazardAddrCheckVec.size
+      cfg.myPsIdBubbleNumFollowingInstrs
+      //upPayload(1).myDoHaveHazardAddrCheckVec.size
       //1
       //2
       // OLD notes:
