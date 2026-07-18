@@ -873,7 +873,7 @@ object SnowHouseRiscv32imPipeStageInstrDecode {
 
     val tempHaveHazardAddrCheckVec = (
       Vec.fill(upPayload.myDoHaveHazardAddrCheckVec.size)(
-        Vec.fill(upPayload.gprIdxVec.size - 1)(
+        Vec.fill(upPayload.gprIdxVec.size + 1)(
           Bool()
         )
       )
@@ -881,7 +881,7 @@ object SnowHouseRiscv32imPipeStageInstrDecode {
     val myHistLastGprIdx = (
       History(
         that=(
-          upPayload.gprIdxVec.last
+          upPayload.gprIdxVec
         ),
         length=(
           tempHaveHazardAddrCheckVec.size + 1
@@ -893,42 +893,54 @@ object SnowHouseRiscv32imPipeStageInstrDecode {
         ),
         init=(
           //encInstr.last.raIdx.getZero
-          upPayload.gprIdxVec.last.getZero
+          upPayload.gprIdxVec.getZero
         )
       )
     )
 
-    for (idx <- 0 until upPayload.gprIdxVec.size - 1) {
-      val tempRegIdx: UInt = (
-        if (idx == 0) {
-          //encInstrR.head.rd
-          encInstrR.head.rs1
-        } else if (idx == 1) {
-          //encInstrR.head.rs1
-          encInstrR.head.rs2
-        } 
-        //else if (idx == 2) 
-        //{
-        //  //encInstrR.head.rs2
-        //} 
-        else {
-          assert(
-            false,
-            s"${idx} ${upPayload.gprIdxVec.size - 1}"
-          )
-          encInstrR.head.rd
-        }
-      )
-      for (jdx <- 0 until tempHaveHazardAddrCheckVec.size) {
-        tempHaveHazardAddrCheckVec(jdx)(idx) := (
-          (
-            tempRegIdx === myHistLastGprIdx(jdx + 1)
-            && tempRegIdx.orR // check for non-zero
-          )
-          //|| (
-          //  tempRegIdx === 3
-          //)
+    for (idx <- 0 until upPayload.gprIdxVec.size + 1) {
+      if (idx < upPayload.gprIdxVec.size - 1) {
+        val tempRegIdx: UInt = (
+          if (idx == 0) {
+            //encInstrR.head.rd
+            encInstrR.head.rs1
+          } else if (idx == 1) {
+            //encInstrR.head.rs1
+            encInstrR.head.rs2
+          }
+          //else if (idx == 2) 
+          //{
+          //  //encInstrR.head.rs2
+          //} 
+          else {
+            assert(
+              false,
+              s"${idx} ${upPayload.gprIdxVec.size - 1}"
+            )
+            encInstrR.head.rd
+          }
         )
+        for (jdx <- 0 until tempHaveHazardAddrCheckVec.size) {
+          tempHaveHazardAddrCheckVec(jdx)(idx) := (
+            (
+              tempRegIdx === myHistLastGprIdx(jdx + 1).last
+              && tempRegIdx.orR // check for non-zero
+            )
+            //|| (
+            //  tempRegIdx === 3
+            //)
+          )
+        }
+      } else { // if (idx >= upPayload.gprIdxVec.size - 1)
+        val tempRegIdx = encInstrR.head.rd
+        for (jdx <- 0 until tempHaveHazardAddrCheckVec.size) {
+          tempHaveHazardAddrCheckVec(jdx)(idx) := (
+            (
+              tempRegIdx === myHistLastGprIdx(jdx + 1)(idx % 2)
+              && tempRegIdx.orR // check for non-zero
+            )
+          )
+        }
       }
     }
     for (jdx <- 0 until tempHaveHazardAddrCheckVec.size) {
@@ -1675,7 +1687,11 @@ case class SnowHouseRiscv32imConfig(
       ),
       //optDualIssue=true,
       optMaxNumScoreboardInstrs=(
-        None
+        //None
+        Some(
+          //1
+          2
+        )
       )
     )
   ),

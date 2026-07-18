@@ -590,6 +590,12 @@ case class SnowHouseForFmaxPipeStageWriteBack(
     temp
     //UInt(log2Up(currWbPayloadOuterVecSize) bits)
   })
+  val rScoreboardStallCnt = (
+    cfg.optScoreboard
+  ) generate (
+    Reg(UInt(log2Up(cfg.optMaxNumScoreboardInstrs + 1) + 1 bits))
+    init(0x0)
+  )
   if (cfg.optScoreboard) {
     //rCurrWbPayloadOuterIdx := (
     //  RegNext(
@@ -830,10 +836,31 @@ case class SnowHouseForFmaxPipeStageWriteBack(
   //    rWbPayloadOuterIdx.lsb := !rWbPayloadOuterIdx.lsb
   //  }
   //}
+  if (cfg.optScoreboard) {
+    when (
+      myLcvDbusArea.myD2hBus.fire
+    ) {
+      rScoreboardStallCnt := 0
+    } elsewhen (
+      rScoreboardStallCnt >= cfg.optMaxNumScoreboardInstrs
+      && rCurrWbPayloadOuterIdx.lsb
+    ) {
+      cLink.duplicateIt()
+    } elsewhen (
+      cLink.up.isFiring
+      && rCurrWbPayloadOuterIdx.lsb
+    ) {
+      rScoreboardStallCnt := rScoreboardStallCnt + 1
+    }
+  }
   io.myRegFileWrPulse.valid := (
     (
-      cLink.up.isFiring
-      || myLcvDbusArea.myD2hBus.fire
+      if (cfg.optScoreboard) (
+        cLink.up.isFiring
+        || myLcvDbusArea.myD2hBus.fire
+      ) else (
+        cLink.up.isFiring
+      )
     )
     && !myWbPayload(1).gprIsZeroVec.last.last
     && !myWbPayload(1).instrCnt.shouldIgnoreInstr.last
