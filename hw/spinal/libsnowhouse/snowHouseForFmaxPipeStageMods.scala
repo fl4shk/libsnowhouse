@@ -725,20 +725,21 @@ case class SnowHouseForFmaxPipeStageWriteBack(
       }
     }
     if (cfg.optScoreboard) {
-      //when (
-      //  (
-      //    cLink.up.isValid
-      //    || rCurrWbPayloadOuterIdx.lsb
-      //  )
-      //  && myWbPayloadVec.head(1).outpDecodeExt.opIsMemAccess.last
-      //  && (
-      //    // this is checking for `myD2hBus.fire`
-      //    myD2hBus.valid
-      //  )
-      //) {
-      //  rCurrWbPayloadOuterIdx.lsb := False
-      //  cLink.duplicateIt()
-      //}
+      when (
+        (
+          //cLink.up.isValid
+          //|| 
+          rCurrWbPayloadOuterIdx.lsb
+        )
+        && myWbPayloadVec.head(1).outpDecodeExt.opIsMemAccess.last
+        && (
+          // this is checking for `myD2hBus.fire`
+          myD2hBus.valid
+        )
+      ) {
+        rCurrWbPayloadOuterIdx.lsb := False
+        cLink.duplicateIt()
+      }
     }
     switch (
       (
@@ -975,9 +976,9 @@ case class SnowHouseForFmaxPipeStageWriteBack(
     ) {
       rScoreboardStallCnt := 0
       rCurrWbPayloadOuterIdx.lsb := False
-      when (rCurrWbPayloadOuterIdx.lsb) {
-        cLink.duplicateIt()
-      }
+      //when (rCurrWbPayloadOuterIdx.lsb) {
+      //  cLink.duplicateIt()
+      //}
     } elsewhen (
       !myWbPayloadVec.last(1).instrCnt.shouldIgnoreInstr.head
       //&& !myWbPayloadVec.last(1).instrCnt.myPsIdBubble.head

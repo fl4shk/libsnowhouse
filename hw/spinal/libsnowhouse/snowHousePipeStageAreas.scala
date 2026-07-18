@@ -8664,11 +8664,24 @@ case class SnowHousePipeStageExecute(
     //  outp.myDbusHostPayload.src := myH2dBus.src
     //}
 
+    val rSeenH2dBusFire = (
+      cfg.optScoreboard
+    ) generate (
+      Reg(Bool(), init=False)
+    )
     myH2dBus.valid := (
       //RegNext(myH2dBus.valid, init=False)
       //False
-      cLink.up.isValid
-      && myTempDownIsReady
+      (
+        if (cfg.optScoreboard) (
+          cLink.up.isValid
+          //&& myTempDownIsReady
+          && !rSeenH2dBusFire
+        ) else (
+          cLink.up.isValid
+          && myTempDownIsReady
+        )
+      )
       && setOutpModMemWord.io.opIsMemAccess.last
       //&& cMid0Front.down.isReady
     )
@@ -8688,14 +8701,59 @@ case class SnowHousePipeStageExecute(
     myH2dBus.data := myDbusHostPayload.data
     myH2dBus.isWrite := myDbusHostPayload.accKind.asBits(1)
 
+    if (cfg.optScoreboard) {
+      cLink.down(args.currPayload).instrCnt.shouldIgnoreInstr
+      .allowOverride
+    }
     when (
       myH2dBus.valid
       && !myH2dBus.ready
     ) {
-      myDoStall(stallKindMem) := True
+      if (cfg.optScoreboard) {
+        cLink.duplicateIt()
+        //outp.instrCnt.shouldIgnoreInstr.foreach(item => {
+        //  item := True
+        //})
+        cLink.down(args.currPayload).instrCnt.shouldIgnoreInstr.foreach(
+          item => {
+            item := True
+          }
+        )
+      } else {
+        myDoStall(stallKindMem) := True
+      }
     }
     when (myH2dBus.fire) {
+      if (cfg.optScoreboard) {
+        rSeenH2dBusFire := True
+        cLink.down(args.currPayload).instrCnt.shouldIgnoreInstr := (
+          myShouldIgnoreInstr
+        )
+        //cLink.down(args.currPayload).instrCnt.shouldIgnoreInstr.foreach(
+        //  item => {
+        //    item := False
+        //  }
+        //)
+      }
+      //outp.instrCnt.shouldIgnoreInstr.foreach(item => {
+      //  item := False
+      //})
+      //outp.instrCnt.shouldIgnoreInstr := (
+      //  myShouldIgnoreInstr
+      //)
+      //if (cfg.optScoreboard) {
+      //  cLink.down(args.currPayload).instrCnt.shouldIgnoreInstr.foreach(
+      //    item => {
+      //      item := False
+      //    }
+      //  )
+      //}
       nextPrevTxnWasHazard := True
+    }
+    if (cfg.optScoreboard) {
+      when (cLink.up.isFiring) {
+        rSeenH2dBusFire := False
+      }
     }
 
     setOutpModMemWord.io.irqIraRegPc := outp.irqIraRegPc
