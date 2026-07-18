@@ -945,13 +945,13 @@ case class SnowHouseForFmaxPipeStageWriteBack(
       RegNext(
         ( 
           myLcvDbusArea.myD2hBus.fire
-          //&& rCurrWbPayloadOuterIdx.lsb
+          && rCurrWbPayloadOuterIdx.lsb
         ),
         init=False
       )
-      && (
-        !rCurrWbPayloadOuterIdx.lsb
-      )
+      //&& (
+      //  !rCurrWbPayloadOuterIdx.lsb
+      //)
     ) {
       myWbPayloadVec.head := (
         RegNext(
@@ -977,12 +977,16 @@ case class SnowHouseForFmaxPipeStageWriteBack(
       rScoreboardStallCnt := 0
       rCurrWbPayloadOuterIdx.lsb := False
     } elsewhen (
-      rScoreboardStallCnt >= cfg.optMaxNumScoreboardInstrs
+      !myWbPayload(1).instrCnt.shouldIgnoreInstr.head
+      && !myWbPayload(1).instrCnt.myPsIdBubble.head
+      && rScoreboardStallCnt >= cfg.optMaxNumScoreboardInstrs
       && rCurrWbPayloadOuterIdx.lsb
     ) {
       cLink.duplicateIt()
     } elsewhen (
-      cLink.up.isFiring
+      !myWbPayload(1).instrCnt.shouldIgnoreInstr.last
+      && !myWbPayload(1).instrCnt.myPsIdBubble.last
+      && cLink.up.isFiring
       && rCurrWbPayloadOuterIdx.lsb
     ) {
       rScoreboardStallCnt := rScoreboardStallCnt + 1
