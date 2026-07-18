@@ -1814,7 +1814,7 @@ case class SnowHousePipePayloadNonExt(
           //2
           //1
           cfg.optForFmaxPsExFwdSize + 1//2//3//2//1//0//1//2//1 //+ 2//1//2//1//2//4//3//1
-          + cfg.optMaxNumScoreboardInstrs
+          //+ cfg.optMaxNumScoreboardInstrs
           // Old notes (from when MEM was being considered):
           //// up to two following instructions,
           //// per the overall pipeline structure of

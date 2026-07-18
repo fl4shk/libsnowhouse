@@ -945,9 +945,12 @@ case class SnowHouseForFmaxPipeStageWriteBack(
       RegNext(
         ( 
           myLcvDbusArea.myD2hBus.fire
-          && rCurrWbPayloadOuterIdx.lsb
+          //&& rCurrWbPayloadOuterIdx.lsb
         ),
         init=False
+      )
+      && (
+        !rCurrWbPayloadOuterIdx.lsb
       )
     ) {
       myWbPayloadVec.head := (
@@ -956,6 +959,13 @@ case class SnowHouseForFmaxPipeStageWriteBack(
           init=myWbPayloadVec.last.getZero,
         )
       )
+      //setRegFileWrPulseEtc(myWbPayloadVec.head)
+    } otherwise {
+    }
+
+    when (
+      myLcvDbusArea.myD2hBus.fire
+    ) {
       setRegFileWrPulseEtc(myWbPayloadVec.head)
     } otherwise {
       setRegFileWrPulseEtc(myWbPayload)
@@ -965,6 +975,7 @@ case class SnowHouseForFmaxPipeStageWriteBack(
       myLcvDbusArea.myD2hBus.fire
     ) {
       rScoreboardStallCnt := 0
+      rCurrWbPayloadOuterIdx.lsb := False
     } elsewhen (
       rScoreboardStallCnt >= cfg.optMaxNumScoreboardInstrs
       && rCurrWbPayloadOuterIdx.lsb
