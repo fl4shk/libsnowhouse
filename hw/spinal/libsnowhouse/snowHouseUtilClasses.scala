@@ -636,10 +636,14 @@ case class SnowHouseForFmaxConfig(
     //1
     0
   ),
-  optDualIssue: Boolean=(
-    true
-    //false
-  )
+  optMaxNumScoreboardInstrs: Option[Int]=Some(
+    //2
+    1
+  ),
+  //optDualIssue: Boolean=(
+  //  true
+  //  //false
+  //)
 ) {
 }
 case class SnowHouseConfig(
@@ -666,10 +670,10 @@ case class SnowHouseConfig(
         //1
         0
       ),
-      optDualIssue=(
-        //false
-        true
-      ),
+      //optDualIssue=(
+      //  //false
+      //  true
+      //),
     )
   ),
   optShiftRegPcImmAddend: Boolean=false,
@@ -723,24 +727,51 @@ case class SnowHouseConfig(
       )
     }
   )
-  val optDualIssue = (
+  val optScoreboard = (
     optForFmaxCfg match {
-      case Some(myForFmaxCfg) => {
-        myForFmaxCfg.optDualIssue
-      }
-      case None => {
+      case Some(myForFmaxCfg) => (
+        myForFmaxCfg.optMaxNumScoreboardInstrs != None
+      )
+      case None => (
         false
-      }
+      )
     }
   )
-  val myRegFileModWrCnt = (
-    if (optDualIssue) (2) else (1)
-    //1
+  val optMaxNumScoreboardInstrs = (
+    optForFmaxCfg match {
+      case Some(myForFmaxCfg) => (
+        myForFmaxCfg.optMaxNumScoreboardInstrs match {
+          case Some(myNumScoreboardInstrs) => (
+            myNumScoreboardInstrs
+          )
+          case None => (
+            0
+          )
+        }
+      )
+      case None => (
+        0
+      )
+    }
   )
-  val myRegFileModRdCnt = (
-    subCfg.shRegFileCfg.modRdPortCnt
-    * myRegFileModWrCnt
-  )
+  //val optDualIssue = (
+  //  optForFmaxCfg match {
+  //    case Some(myForFmaxCfg) => {
+  //      myForFmaxCfg.optDualIssue
+  //    }
+  //    case None => {
+  //      false
+  //    }
+  //  }
+  //)
+  //val myRegFileModWrCnt = (
+  //  if (optDualIssue) (2) else (1)
+  //  //1
+  //)
+  //val myRegFileModRdCnt = (
+  //  subCfg.shRegFileCfg.modRdPortCnt
+  //  * myRegFileModWrCnt
+  //)
 
   def myPsIfRegPcSetItCntWidth = 2
   def mainAddrWidth = subCfg.mainAddrWidth
@@ -1783,6 +1814,7 @@ case class SnowHousePipePayloadNonExt(
           //2
           //1
           cfg.optForFmaxPsExFwdSize + 1//2//3//2//1//0//1//2//1 //+ 2//1//2//1//2//4//3//1
+          + cfg.optMaxNumScoreboardInstrs
           // Old notes (from when MEM was being considered):
           //// up to two following instructions,
           //// per the overall pipeline structure of

@@ -3675,9 +3675,10 @@ case class SnowHouseCpuConfig(
         numPostExPreWbPipeStages=(
           1
         ),
-        optDualIssue=(
-          false
-        ),
+        optMaxNumScoreboardInstrs=None,
+        //optDualIssue=(
+        //  false
+        //),
       )
     ),
     optShiftRegPcImmAddend=true,
