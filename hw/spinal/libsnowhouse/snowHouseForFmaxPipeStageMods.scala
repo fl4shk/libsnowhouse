@@ -856,6 +856,90 @@ case class SnowHouseForFmaxPipeStageWriteBack(
   //    rWbPayloadOuterIdx.lsb := !rWbPayloadOuterIdx.lsb
   //  }
   //}
+  def setRegFileWrPulseEtc(
+    someMyWbPayload: Vec[SnowHousePipePayload],
+  ): Unit = {
+    io.myRegFileWrPulse.valid := (
+      (
+        if (cfg.optScoreboard) (
+          cLink.up.isFiring
+          || myLcvDbusArea.myD2hBus.fire
+        ) else (
+          cLink.up.isFiring
+        )
+      )
+      && !someMyWbPayload(1).gprIsZeroVec.last.last
+      && !someMyWbPayload(1).instrCnt.shouldIgnoreInstr.last
+      && {
+        val myDecodeExt = someMyWbPayload(1).outpDecodeExt
+        val mapElem = someMyWbPayload(1).gprIdxToMemAddrIdxMap(0)
+        val myCurrExt = (
+          if (!mapElem.haveHowToSetIdx) (
+            someMyWbPayload(1).myExt(
+              0
+            )
+          ) else (
+            someMyWbPayload(1).myExt(
+              mapElem.howToSetIdx
+            )
+          )
+        )
+        //myCurrExt.modMemWord := myDbus.recvData.word
+        //someMyWbPayload(1).
+        myCurrExt.modMemWordValid(0)
+      }
+    )
+    io.myRegFileWrPulse.addr := (
+      someMyWbPayload(1).gprIdxVec.last
+    )
+    io.myRegFileWrPulse.data := {
+      val myDecodeExt = someMyWbPayload(1).outpDecodeExt
+      val mapElem = someMyWbPayload(1).gprIdxToMemAddrIdxMap(0)
+      val myCurrExt = (
+        if (!mapElem.haveHowToSetIdx) (
+          someMyWbPayload(1).myExt(
+            0
+          )
+        ) else (
+          someMyWbPayload(1).myExt(
+            mapElem.howToSetIdx
+          )
+        )
+      )
+      //myCurrExt.modMemWord := myDbus.recvData.word
+      //someMyWbPayload(1).
+      myCurrExt.modMemWord
+    }
+    if (io.dbgInfo != null) {
+      io.dbgInfo.regFileWriteData := io.myRegFileWrPulse.data
+      io.dbgInfo.regFileWriteAddr := io.myRegFileWrPulse.addr
+      io.dbgInfo.regFileWriteEnable := io.myRegFileWrPulse.fire
+      io.dbgInfo.laggingRegPcAtRegFileWrite := (
+        someMyWbPayload(1).laggingRegPc.resize(cfg.mainWidth bits)
+      )
+      io.dbgInfo.shouldIgnoreInstrAtRegFileWrite := (
+        someMyWbPayload(1).instrCnt.shouldIgnoreInstr.last
+        || !cLink.up.isFiring
+      )
+      io.dbgInfo.myPsIdBubbleAtRegFileWrite := (
+        someMyWbPayload(1).instrCnt.myPsIdBubble.last
+        || !cLink.up.isFiring
+      )
+      io.dbgInfo.encInstrAtRegFileWrite := (
+        someMyWbPayload(1).encInstr.payload
+      )
+      io.dbgInfo.immAtRegFileWrite := (
+        someMyWbPayload(1).imm.last
+      )
+      io.dbgInfo.rdMemWordAtRegFileWrite := (
+        someMyWbPayload(1).myExt(0).rdMemWord
+      )
+      io.dbgInfo.gprIdxVecAtRegFileWrite := (
+        someMyWbPayload(1).gprIdxVec
+      )
+    }
+  }
+
   if (cfg.optScoreboard) {
     when (
       RegNext(
@@ -872,6 +956,9 @@ case class SnowHouseForFmaxPipeStageWriteBack(
           init=myWbPayloadVec.last.getZero,
         )
       )
+      setRegFileWrPulseEtc(myWbPayloadVec.head)
+    } otherwise {
+      setRegFileWrPulseEtc(myWbPayload)
     }
 
     when (
@@ -889,85 +976,8 @@ case class SnowHouseForFmaxPipeStageWriteBack(
     ) {
       rScoreboardStallCnt := rScoreboardStallCnt + 1
     }
-  }
-  io.myRegFileWrPulse.valid := (
-    (
-      if (cfg.optScoreboard) (
-        cLink.up.isFiring
-        || myLcvDbusArea.myD2hBus.fire
-      ) else (
-        cLink.up.isFiring
-      )
-    )
-    && !myWbPayload(1).gprIsZeroVec.last.last
-    && !myWbPayload(1).instrCnt.shouldIgnoreInstr.last
-    && {
-      val myDecodeExt = myWbPayload(1).outpDecodeExt
-      val mapElem = myWbPayload(1).gprIdxToMemAddrIdxMap(0)
-      val myCurrExt = (
-        if (!mapElem.haveHowToSetIdx) (
-          myWbPayload(1).myExt(
-            0
-          )
-        ) else (
-          myWbPayload(1).myExt(
-            mapElem.howToSetIdx
-          )
-        )
-      )
-      //myCurrExt.modMemWord := myDbus.recvData.word
-      //myWbPayload(1).
-      myCurrExt.modMemWordValid(0)
-    }
-  )
-  io.myRegFileWrPulse.addr := (
-    myWbPayload(1).gprIdxVec.last
-  )
-  io.myRegFileWrPulse.data := {
-    val myDecodeExt = myWbPayload(1).outpDecodeExt
-    val mapElem = myWbPayload(1).gprIdxToMemAddrIdxMap(0)
-    val myCurrExt = (
-      if (!mapElem.haveHowToSetIdx) (
-        myWbPayload(1).myExt(
-          0
-        )
-      ) else (
-        myWbPayload(1).myExt(
-          mapElem.howToSetIdx
-        )
-      )
-    )
-    //myCurrExt.modMemWord := myDbus.recvData.word
-    //myWbPayload(1).
-    myCurrExt.modMemWord
-  }
-  if (io.dbgInfo != null) {
-    io.dbgInfo.regFileWriteData := io.myRegFileWrPulse.data
-    io.dbgInfo.regFileWriteAddr := io.myRegFileWrPulse.addr
-    io.dbgInfo.regFileWriteEnable := io.myRegFileWrPulse.fire
-    io.dbgInfo.laggingRegPcAtRegFileWrite := (
-      myWbPayload(1).laggingRegPc.resize(cfg.mainWidth bits)
-    )
-    io.dbgInfo.shouldIgnoreInstrAtRegFileWrite := (
-      myWbPayload(1).instrCnt.shouldIgnoreInstr.last
-      || !cLink.up.isFiring
-    )
-    io.dbgInfo.myPsIdBubbleAtRegFileWrite := (
-      myWbPayload(1).instrCnt.myPsIdBubble.last
-      || !cLink.up.isFiring
-    )
-    io.dbgInfo.encInstrAtRegFileWrite := (
-      myWbPayload(1).encInstr.payload
-    )
-    io.dbgInfo.immAtRegFileWrite := (
-      myWbPayload(1).imm.last
-    )
-    io.dbgInfo.rdMemWordAtRegFileWrite := (
-      myWbPayload(1).myExt(0).rdMemWord
-    )
-    io.dbgInfo.gprIdxVecAtRegFileWrite := (
-      myWbPayload(1).gprIdxVec
-    )
+  } else {
+    setRegFileWrPulseEtc(myWbPayload)
   }
 
   Builder(linkArr)
