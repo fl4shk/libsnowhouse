@@ -333,13 +333,19 @@ case class SnowHouseForFmaxPipeStageExecuteIo(
   )
   //--------
   val myRegFileWrPulse = (
-    slave(Flow(
-      PipeSimpleDualPortMemDrivePayload(
-        dataType=UInt(cfg.mainWidth bits),
-        wordCount=cfg.regFileCfg.wordCountArr(0),
+    //slave
+    (
+      Vec.fill(cfg.numMultiIssue)(
+        Flow(
+          PipeSimpleDualPortMemDrivePayload(
+            dataType=UInt(cfg.mainWidth bits),
+            wordCount=cfg.regFileCfg.wordCountArr(0),
+          )
+        )
       )
-    ))
+    )
   )
+  myRegFileWrPulse.foreach(item => slave(item))
   //--------
   val psExSetPc = (
     master(Flow(
@@ -456,43 +462,48 @@ case class SnowHouseForFmaxPipeStageExecute(
 
   val myModMemWord = SInt(cfg.mainWidth bits)
 
-  val dualIssueIdx = 0
-  val innerPsEx = SnowHousePipeStageExecute(
-    SnowHousePipeStageArgs(
-      cfg=cfg,
-      io=null,
-      link=cLink,
-      prevPayload=pExInp,
-      currPayload=pExOutp,
-      myDbusIo=(
-        //if (!cfg.useLcvDataBus) (
-        //  myDbusIo
-        //) else (
-          null.asInstanceOf[SnowHouseDbusIo]
-        //)
-      ),
-      regFile=null,
-    ),
-    //psExHaltIt=null,
-    psExSetPc=io.psExSetPc,
-    doModInMid0FrontParams=null,
-    myModMemWord=myModMemWord,
-    psWbToEarlierStallRequest=io.psWbToEarlierStallRequest,
-    myLcvDbusH2dStm=io.myLcvDbusH2dStm,
-    multiCycleBusVec=io.multiCycleBusVec,
-    idsIraIrq=io.idsIraIrq,
-    //pcChangeState=null,
-    //shouldIgnoreInstr=null,
-    //psExFoundBubble=psExFoundBubble,
-    forFmaxRegFileWrPulseArr=Array(
-      io.myRegFileWrPulse
-    ),
-    otherPsExOutpMmw=null,
-    otherPsExOutpMmwValidEtc=null,
-    dualIssueIdx=(
-      dualIssueIdx
-    ),
+  //val dualIssueIdx = 0
+  val myPsExOutpMmw = Vec.fill(cfg.numMultiIssue)(
+    UInt(cfg.mainWidth bits)
   )
+  val myPsExOutpMmwValidEtc = Vec.fill(cfg.numMultiIssue)(
+    Bool()
+  )
+  val innerPsExArr = new ArrayBuffer[SnowHousePipeStageExecute]()
+  for (kdx <- 0 until cfg.numMultiIssue) {
+    innerPsExArr += SnowHousePipeStageExecute(
+      SnowHousePipeStageArgs(
+        cfg=cfg,
+        io=null,
+        link=cLink,
+        prevPayload=pExInp,
+        currPayload=pExOutp,
+        myDbusIo=(
+          //if (!cfg.useLcvDataBus) (
+          //  myDbusIo
+          //) else (
+            null.asInstanceOf[SnowHouseDbusIo]
+          //)
+        ),
+        regFile=null,
+      ),
+      //psExHaltIt=null,
+      psExSetPc=io.psExSetPc,
+      doModInMid0FrontParams=null,
+      myModMemWord=myModMemWord,
+      psWbToEarlierStallRequest=io.psWbToEarlierStallRequest,
+      myLcvDbusH2dStm=io.myLcvDbusH2dStm,
+      multiCycleBusVec=io.multiCycleBusVec,
+      idsIraIrq=io.idsIraIrq,
+      //pcChangeState=null,
+      //shouldIgnoreInstr=null,
+      //psExFoundBubble=psExFoundBubble,
+      forFmaxRegFileWrPulseArr=io.myRegFileWrPulse,
+      myPsExOutpMmw=myPsExOutpMmw,
+      myPsExOutpMmwValidEtc=myPsExOutpMmwValidEtc,
+      dualIssueIdx=kdx,
+    )
+  }
 
   cLink.up.driveFrom(io.up)(
     con=(node, inp) => {
@@ -527,7 +538,11 @@ case class SnowHouseForFmaxPipeStageWriteBackIo(
     || cfg.exposeRegFileWriteEnableToIo
     || cfg.dbgExposeExtrasAtRegFileWrite
   ) generate (
-    out(SnowHouseDebugInfo(cfg=cfg))
+    out(
+      //Vec.fill(cfg.numMultiIssue)(
+        SnowHouseDebugInfo(cfg=cfg)
+      //)
+    )
   )
   //--------
   val myLcvDbusD2hStm = (
@@ -536,19 +551,30 @@ case class SnowHouseForFmaxPipeStageWriteBackIo(
     ))
   )
   //--------
-  val myRegFileWrPulse = master(Flow(
-    PipeSimpleDualPortMemDrivePayload(
-      dataType=UInt(cfg.mainWidth bits),
-      wordCount=cfg.regFileCfg.wordCountArr(0),
+  val myRegFileWrPulse = (
+    master
+    (
+      //Vec.fill(cfg.numMultiIssue)(
+        Flow(
+          PipeSimpleDualPortMemDrivePayload(
+            dataType=UInt(cfg.mainWidth bits),
+            wordCount=cfg.regFileCfg.wordCountArr(0),
+          )
+        )
+      //)
     )
-  ))
+  )
+  //myRegFileWrPulse.foreach(item => master(item))
   //--------
 }
 case class SnowHouseForFmaxPipeStageWriteBack(
-  cfg: SnowHouseConfig
+  cfg: SnowHouseConfig,
+  dualIssueIdx: Int,
 ) extends Component {
   //--------
-  val io = SnowHouseForFmaxPipeStageWriteBackIo(cfg=cfg)
+  val io = SnowHouseForFmaxPipeStageWriteBackIo(
+    cfg=cfg
+  )
   //def up = io.up
   //def down = io.down
   //--------
@@ -583,6 +609,10 @@ case class SnowHouseForFmaxPipeStageWriteBack(
       SnowHousePipePayload(cfg=cfg)
     )
   )
+  myWbPayload.foreach(item => {
+    //item.setDualIssueIdx(dualIssueIdx)
+    item.dualIssueIdx = Some(dualIssueIdx)
+  })
   myWbPayload(1) := (
     RegNext(
       myWbPayload(1),
@@ -593,7 +623,9 @@ case class SnowHouseForFmaxPipeStageWriteBack(
     myWbPayload(1) := myWbPayload(0)
   }
 
-  val myLcvDbusArea = new Area {
+  val myLcvDbusArea = (
+    dualIssueIdx == 0
+  ) generate (new Area {
     //myDbusIo.myDbusExtraValid := (
     //  cWb.up.isValid
     //  && myWbPayload.outpDecodeExt.opIsMemAccess.last
@@ -727,7 +759,7 @@ case class SnowHouseForFmaxPipeStageWriteBack(
         )
       }
     }
-  }
+  })
 
   cLink.up.driveFrom(io.up)(
     con=(node, inp) => {
@@ -782,30 +814,31 @@ case class SnowHouseForFmaxPipeStageWriteBack(
     myCurrExt.modMemWord
   }
   if (io.dbgInfo != null) {
-    io.dbgInfo.regFileWriteData := io.myRegFileWrPulse.data
-    io.dbgInfo.regFileWriteAddr := io.myRegFileWrPulse.addr
-    io.dbgInfo.regFileWriteEnable := io.myRegFileWrPulse.fire
-    io.dbgInfo.laggingRegPcAtRegFileWrite := (
+    val myDbgInfo = io.dbgInfo
+    myDbgInfo.regFileWriteData := io.myRegFileWrPulse.data
+    myDbgInfo.regFileWriteAddr := io.myRegFileWrPulse.addr
+    myDbgInfo.regFileWriteEnable := io.myRegFileWrPulse.fire
+    myDbgInfo.laggingRegPcAtRegFileWrite := (
       myWbPayload(1).laggingRegPc.resize(cfg.mainWidth bits)
     )
-    io.dbgInfo.shouldIgnoreInstrAtRegFileWrite := (
+    myDbgInfo.shouldIgnoreInstrAtRegFileWrite := (
       myWbPayload(1).instrCnt.shouldIgnoreInstr.last
       || !cLink.up.isFiring
     )
-    io.dbgInfo.myPsIdBubbleAtRegFileWrite := (
+    myDbgInfo.myPsIdBubbleAtRegFileWrite := (
       myWbPayload(1).instrCnt.myPsIdBubble.last
       || !cLink.up.isFiring
     )
-    io.dbgInfo.encInstrAtRegFileWrite := (
+    myDbgInfo.encInstrAtRegFileWrite := (
       myWbPayload(1).encInstr.payload
     )
-    io.dbgInfo.immAtRegFileWrite := (
+    myDbgInfo.immAtRegFileWrite := (
       myWbPayload(1).imm.last
     )
-    io.dbgInfo.rdMemWordAtRegFileWrite := (
+    myDbgInfo.rdMemWordAtRegFileWrite := (
       myWbPayload(1).myExt(0).rdMemWord
     )
-    io.dbgInfo.gprIdxVecAtRegFileWrite := (
+    myDbgInfo.gprIdxVecAtRegFileWrite := (
       myWbPayload(1).gprIdxVec
     )
   }

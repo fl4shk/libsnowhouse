@@ -1984,18 +1984,33 @@ case class SnowHousePipePayloadNonExt(
 }
 case class SnowHousePipePayload(
   cfg: SnowHouseConfig,
+  var dualIssueIdx: Option[Int]=None,
 ) extends Bundle with PipeRegFilePayloadBase[UInt, Bool] {
-  private var dualIssueIdx: Int = 0
-  def setDualIssueIdx(
-    someDualIssueIdx: Int
-  ): Unit = {
-    dualIssueIdx = someDualIssueIdx
-  }
+  //private var dualIssueIdx: Int = 0
+  //def setDualIssueIdx(
+  //  someDualIssueIdx: Int
+  //): Unit = {
+  //  dualIssueIdx = someDualIssueIdx
+  //}
 
   val nonExtVec = Vec.fill(cfg.numMultiIssue)(
     SnowHousePipePayloadNonExt(cfg=cfg)
   )
-  def nonExt = nonExtVec(dualIssueIdx)
+  def nonExt = (
+    dualIssueIdx match {
+      case Some(dualIssueIdx) => (
+        nonExtVec(dualIssueIdx)
+      )
+      case None => (
+        //null.asInstanceOf[SnowHousePipePayloadNonExt]
+        if (cfg.numMultiIssue > 1) (
+          nonExtVec(cfg.numMultiIssue)
+        ) else (
+          nonExtVec.head
+        )
+      )
+    }
+  )
 
   def forFmaxFwdIdx = nonExt.forFmaxFwdIdx
   def shouldFinishJump = nonExt.shouldFinishJump
@@ -2068,7 +2083,23 @@ case class SnowHousePipePayload(
     })
   ) //simPublic()
 
-  def myExt = myExtVec(dualIssueIdx)
+  //def myExt = myExtVec(dualIssueIdx)
+  def myExt = (
+    dualIssueIdx match {
+      case Some(dualIssueIdx) => {
+        myExtVec(dualIssueIdx)
+      }
+      case None => {
+        //null.asInstanceOf[PipeRegFilePayloadExt[UInt, Bool]]
+        //myExtVec(cfg.numMultiIssue)
+        if (cfg.numMultiIssue > 1) (
+          myExtVec(cfg.numMultiIssue)
+        ) else (
+          myExtVec.head
+        )
+      }
+    }
+  )
 
   def setPipeRegFileExt(
     inpExt: PipeRegFilePayloadExt[UInt, Bool],

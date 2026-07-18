@@ -2066,7 +2066,7 @@ case class SnowHousePipeStagePostIdPreEx(
   //val up = link.up
   //val down = link.down
   //val myOutp = outp(dualIssueIdx)
-  outp.setDualIssueIdx(dualIssueIdx)
+  //outp.setDualIssueIdx(dualIssueIdx)
   outp.allowOverride
 
   def myRegPcRange = (
@@ -6412,15 +6412,15 @@ case class SnowHousePipeStageExecute(
     MultiCycleDevPayload,
   ]],
   idsIraIrq: LcvStallIo[Bool, Bool],
-  forFmaxRegFileWrPulseArr: Seq[
+  forFmaxRegFileWrPulseArr: Vec[
     Flow[
       PipeSimpleDualPortMemDrivePayload[
         UInt
       ]
     ]
   ],
-  otherPsExOutpMmw: UInt,
-  otherPsExOutpMmwValidEtc: Bool,
+  myPsExOutpMmw: Vec[UInt],
+  myPsExOutpMmwValidEtc: Vec[Bool],
   dualIssueIdx: Int
 ) extends Area {
   def myDbusIo = args.myDbusIo
@@ -6650,11 +6650,14 @@ case class SnowHousePipeStageExecute(
         && outp.gprIsNonZeroVec.last.last
         && !myShouldIgnoreInstr(0)
       )
+      myPsExOutpMmw(myLeftIdx) := temp(myLeftIdx).data
+      myPsExOutpMmwValidEtc(myLeftIdx) := temp(myLeftIdx).valid
+
       temp(myLeftIdx).data := outp.myExt(0).modMemWord //ram.io.wrData
       //temp.head.addr := outp.gprIdxVec.last
       if (cfg.optDualIssue) {
-        temp(myRightIdx).valid := otherPsExOutpMmwValidEtc
-        temp(myRightIdx).data := otherPsExOutpMmw
+        temp(myRightIdx).valid := myPsExOutpMmwValidEtc(myRightIdx)
+        temp(myRightIdx).data := myPsExOutpMmw(myRightIdx)
       }
 
       History(

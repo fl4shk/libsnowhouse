@@ -1325,37 +1325,41 @@ case class SnowHouseIo(
     || cfg.exposeRegFileWriteEnableToIo
     || cfg.dbgExposeExtrasAtRegFileWrite
   ) generate (
-    out(SnowHouseDebugInfo(cfg=cfg))
+    out(
+      Vec.fill(cfg.numMultiIssue)(
+        SnowHouseDebugInfo(cfg=cfg)
+      )
+    )
   )
   def regFileWriteData = (
-    dbgInfo.regFileWriteData
+    Vec(dbgInfo.map(item => item.regFileWriteData))
   )
   def regFileWriteAddr = (
-    dbgInfo.regFileWriteAddr
+    Vec(dbgInfo.map(item => item.regFileWriteAddr))
   )
   def regFileWriteEnable = (
-    dbgInfo.regFileWriteEnable
+    Vec(dbgInfo.map(item => item.regFileWriteEnable))
   )
   def laggingRegPcAtRegFileWrite = (
-    dbgInfo.laggingRegPcAtRegFileWrite
+    Vec(dbgInfo.map(item => item.laggingRegPcAtRegFileWrite))
   )
   def shouldIgnoreInstrAtRegFileWrite = (
-    dbgInfo.shouldIgnoreInstrAtRegFileWrite
+    Vec(dbgInfo.map(item => item.shouldIgnoreInstrAtRegFileWrite))
   )
   def myPsIdBubbleAtRegFileWrite = (
-    dbgInfo.myPsIdBubbleAtRegFileWrite
+    Vec(dbgInfo.map(item => item.myPsIdBubbleAtRegFileWrite))
   )
   def encInstrAtRegFileWrite = (
-    dbgInfo.encInstrAtRegFileWrite
+    Vec(dbgInfo.map(item => item.encInstrAtRegFileWrite))
   )
   def immAtRegFileWrite = (
-    dbgInfo.immAtRegFileWrite
+    Vec(dbgInfo.map(item => item.immAtRegFileWrite))
   )
   def rdMemWordAtRegFileWrite = (
-    dbgInfo.rdMemWordAtRegFileWrite
+    Vec(dbgInfo.map(item => item.rdMemWordAtRegFileWrite))
   )
   def gprIdxVecAtRegFileWrite = (
-    dbgInfo.gprIdxVecAtRegFileWrite
+    Vec(dbgInfo.map(item => item.gprIdxVecAtRegFileWrite))
   )
 
   // instruction bus
@@ -1942,8 +1946,8 @@ private[libsnowhouse] case class SnowHouseNotForFmax
     multiCycleBusVec=io.multiCycleBusVec,
     idsIraIrq=io.idsIraIrq,
     forFmaxRegFileWrPulseArr=null,
-    otherPsExOutpMmw=null,
-    otherPsExOutpMmwValidEtc=null,
+    myPsExOutpMmw=null,
+    myPsExOutpMmwValidEtc=null,
     dualIssueIdx=0,
   )
   //--------
@@ -2099,32 +2103,32 @@ private[libsnowhouse] case class SnowHouseNotForFmax
       !cfg.exposeRegFileWriteAddrToIo
       && !cfg.exposeRegFileWriteEnableToIo
     ) {
-      io.regFileWriteData := (
+      io.regFileWriteData.head := (
         regFile.io.back(regFile.io.modBackPayload).myExt(0).modMemWord
       )
     } else {
-      io.regFileWriteData := (
+      io.regFileWriteData.head := (
         regFile.mod.back.myWriteData(0)(0)(0)
       )
     }
   }
   if (cfg.exposeRegFileWriteAddrToIo) {
-    io.regFileWriteAddr := (
+    io.regFileWriteAddr.head := (
       regFile.mod.back.myWriteAddr(0)(0)(0)
     )
   }
   if (cfg.exposeRegFileWriteEnableToIo) {
-    io.regFileWriteEnable := (
+    io.regFileWriteEnable.head := (
       regFile.mod.back.myWriteEnable(0)
     )
   }
   if (cfg.dbgExposeExtrasAtRegFileWrite) {
-    io.laggingRegPcAtRegFileWrite := (
+    io.laggingRegPcAtRegFileWrite.head := (
       regFile.cBackArea.tempUpMod(2).laggingRegPc.resize(
-        io.laggingRegPcAtRegFileWrite.getWidth
+        io.laggingRegPcAtRegFileWrite.head.getWidth
       )
     )
-    io.shouldIgnoreInstrAtRegFileWrite := (
+    io.shouldIgnoreInstrAtRegFileWrite.head := (
       regFile.cBackArea.tempUpMod(2).instrCnt.shouldIgnoreInstr.last
       || psWbToEarlierStallRequest
       //|| (
@@ -2132,13 +2136,13 @@ private[libsnowhouse] case class SnowHouseNotForFmax
       //  .dbgUnfinishedMultiCycleOp.last
       //)
     )
-    io.myPsIdBubbleAtRegFileWrite := (
+    io.myPsIdBubbleAtRegFileWrite.head := (
       regFile.cBackArea.tempUpMod(2).instrCnt.myPsIdBubble.last
     )
-    io.encInstrAtRegFileWrite := (
+    io.encInstrAtRegFileWrite.head := (
       regFile.cBackArea.tempUpMod(2).encInstr.payload
     )
-    io.immAtRegFileWrite := (
+    io.immAtRegFileWrite.head := (
       regFile.cBackArea.tempUpMod(2).imm(0)
     )
     //io.dbusAddrAtRegFileWrite := (
@@ -2147,11 +2151,11 @@ private[libsnowhouse] case class SnowHouseNotForFmax
     //)
     for (idx <- 0 until cfg.maxNumGprsPerInstr) {
       if (idx + 1 != cfg.maxNumGprsPerInstr) {
-        io.rdMemWordAtRegFileWrite(idx) := (
+        io.rdMemWordAtRegFileWrite.head(idx) := (
           regFile.cBackArea.tempUpMod(2).myExt(0).rdMemWord(idx)
         )
       }
-      io.gprIdxVecAtRegFileWrite(idx) := (
+      io.gprIdxVecAtRegFileWrite.head(idx) := (
         regFile.cBackArea.tempUpMod(2).gprIdxVec(idx)
       )
     }
@@ -2191,7 +2195,13 @@ private[libsnowhouse] case class SnowHouseForFmax(
   val psEx = SnowHouseForFmaxPipeStageExecute(
     cfg=cfg
   )
-  val psWb = SnowHouseForFmaxPipeStageWriteBack(cfg=cfg)
+  val psWbArr = new ArrayBuffer[SnowHouseForFmaxPipeStageWriteBack]()
+  for (kdx <- 0 until cfg.numMultiIssue) {
+    psWbArr += SnowHouseForFmaxPipeStageWriteBack(
+      cfg=cfg,
+      dualIssueIdx=kdx
+    )
+  }
   //--------
 
   //psId.io.up <-/< psIf.io.down // extra pipeline stage for fmax
@@ -2201,56 +2211,74 @@ private[libsnowhouse] case class SnowHouseForFmax(
   //psEx.io.up << psPostIdPreEx.io.down
 
   //--------
-  val myRegFile = new ArrayBuffer[WrPulseRdPipeRam[
+  val myRegFileArr = new ArrayBuffer[ArrayBuffer[WrPulseRdPipeRam[
     SnowHousePipePayload,
     UInt,
-  ]]()
-  for (idx <- 0 until cfg.regFileCfg.modRdPortCnt) {
-    myRegFile += WrPulseRdPipeRam(
-      cfg=WrPulseRdPipeRamConfig(
-        modType=SnowHousePipePayload(cfg=cfg),
-        wordType=UInt(cfg.mainWidth bits),
-        wordCount=cfg.regFileCfg.wordCountArr(0),
-        setWordFunc=(
-          outp: SnowHousePipePayload,
-          inp: SnowHousePipePayload,
-          rdMemWord: UInt,
-          upIsFiring: Bool,
-          myExternalInpCond: Bool,
-          wrPulse: Flow[
-            PipeSimpleDualPortMemDrivePayload[UInt]
-          ],
-        ) => {
-          outp := inp
-          outp.myExt(0).rdMemWord(idx).allowOverride
-          //outp.myExt(0).rdMemWord(idx) := rdMemWord
-          outp.myExt(0).rdMemWord(idx) := (
-            rdMemWord
-          )
-        },
-        optRdLatency=(
-          1
-          //0
-        ),
-        optWrHistLength=(
-          1
-        ),
-        initBigInt=Some({
-          val myArr = new ArrayBuffer[BigInt]()
-          myArr ++= Array.fill(cfg.regFileCfg.wordCountArr(0))(BigInt(0))
-          Array(myArr.toSeq)
-        }),
-        arrRamStyleAltera=cfg.regFileCfg.memRamStyleAltera,
-        arrRamStyleXilinx=cfg.regFileCfg.memRamStyleXilinx,
-        arrRwAddrCollisionXilinx="",
+  ]]]()
+  for (kdx <- 0 until cfg.numMultiIssue) {
+    myRegFileArr += new ArrayBuffer[WrPulseRdPipeRam[
+      SnowHousePipePayload,
+      UInt
+    ]]()
+    val myRegFile = myRegFileArr.last
+    for (idx <- 0 until cfg.regFileCfg.modRdPortCnt) {
+      myRegFile += WrPulseRdPipeRam(
+        cfg=WrPulseRdPipeRamConfig(
+          modType=SnowHousePipePayload(
+            cfg=cfg,
+            dualIssueIdx=Some(kdx),
+          ),
+          wordType=UInt(cfg.mainWidth bits),
+          wordCount=(
+            cfg.regFileCfg.wordCountArr(0)
+            /// cfg.numMultiIssue
+          ),
+          setWordFunc=(
+            outp: SnowHousePipePayload,
+            inp: SnowHousePipePayload,
+            rdMemWord: UInt,
+            upIsFiring: Bool,
+            myExternalInpCond: Bool,
+            wrPulse: Flow[
+              PipeSimpleDualPortMemDrivePayload[UInt]
+            ],
+          ) => {
+            //outp.setDualIssueIdx(kdx)
+            //inp.setDualIssueIdx(kdx)
+            outp := inp
+            outp.myExt(0).rdMemWord(idx).allowOverride
+            //outp.myExt(0).rdMemWord(idx) := rdMemWord
+            outp.myExt(0).rdMemWord(idx) := (
+              rdMemWord
+            )
+          },
+          optRdLatency=(
+            1
+            //0
+          ),
+          optWrHistLength=(
+            1
+          ),
+          initBigInt=Some({
+            val myArr = new ArrayBuffer[BigInt]()
+            myArr ++= Array.fill(
+              cfg.regFileCfg.wordCountArr(0)
+              /// cfg.numMultiIssue
+            )(BigInt(0))
+            Array(myArr.toSeq)
+          }),
+          arrRamStyleAltera=cfg.regFileCfg.memRamStyleAltera,
+          arrRamStyleXilinx=cfg.regFileCfg.memRamStyleXilinx,
+          arrRwAddrCollisionXilinx="",
+        )
       )
-    )
-    myRegFile.last.io.myExternalInpCond := (
-      myRegFile.last.io.rdAddrPipe.valid //False//psExSetPc.fire
-    )
+      myRegFile.last.io.myExternalInpCond := (
+        myRegFile.last.io.rdAddrPipe.valid //False//psExSetPc.fire
+      )
+    }
   }
   val myRegFileRdAddrPipeFrontVec = Vec.fill(2)(
-    cloneOf(myRegFile.head.io.rdAddrPipe)
+    cloneOf(myRegFileArr.head.head.io.rdAddrPipe)
   )
   psPostIdPreEx.io.down.translateInto(myRegFileRdAddrPipeFrontVec.head)(
     dataAssignment=(outp, inp) => {
@@ -2262,36 +2290,74 @@ private[libsnowhouse] case class SnowHouseForFmax(
 
   val myRegFileRdAddrPipeFork = StreamFork(
     input=myRegFileRdAddrPipeFrontVec.last,
-    portCount=myRegFile.size,
+    portCount=(
+      myRegFileArr.size * myRegFileArr.head.size
+    ),
     synchronous=true,
   )
 
-  for (idx <- 0 until myRegFile.size) {
-    myRegFileRdAddrPipeFork(idx).translateInto(
-      myRegFile(idx).io.rdAddrPipe
-    )(
-      dataAssignment=(outp, inp) => {
-        outp.data := inp.data
-        outp.addr := inp.data.gprIdxVec(idx)
-      }
-    )
+  //val myRegFileRdDataPipeJoinSrcVec = Vec.fill(
+  //  myRegFileArr.size * myRegFileArr.head.size
+  //)(
+  //  cloneOf(myRegFileArr.head.head.io.rdDataPipe)
+  //)
+  val myRegFileRdDataPipeJoinSrcArr = (
+    new ArrayBuffer[Stream[SnowHousePipePayload]]()
+  )
+
+  for (kdx <- 0 until myRegFileArr.size) {
+    val myRegFile = myRegFileArr(kdx)
+    for (idx <- 0 until myRegFile.size) {
+      myRegFileRdDataPipeJoinSrcArr += myRegFile(idx).io.rdDataPipe
+
+      myRegFileRdAddrPipeFork(
+        kdx * myRegFile.size + idx
+      ).translateInto(
+        myRegFile(idx).io.rdAddrPipe
+      )(
+        dataAssignment=(outp, inp) => {
+          //outp.data.setDualIssueIdx(kdx)
+          //inp.data.setDualIssueIdx(kdx)
+          outp.data := inp.data
+          outp.addr := (
+            inp.data.gprIdxVec(idx)(
+              inp.data.gprIdxVec(idx).high - 1
+              //downto log2Up(cfg.numMultiIssue)
+              downto 0
+            )
+          )
+        }
+      )
+    }
   }
 
   val myRegFileRdDataPipeJoin = StreamJoin.vec(
-    sources=myRegFile.map(item => item.io.rdDataPipe)
+    //sources=myRegFile.map(item => item.io.rdDataPipe)
+    sources=myRegFileRdDataPipeJoinSrcArr
   )
 
-  val myRegFileRdDataPipeLast = Stream(SnowHousePipePayload(cfg=cfg))
+  val myRegFileRdDataPipeLast = Stream(SnowHousePipePayload(
+    cfg=cfg,
+    dualIssueIdx=None,
+  ))
   myRegFileRdDataPipeJoin.translateInto(
     myRegFileRdDataPipeLast
   )(
     dataAssignment=(outp, inp) => {
       outp := inp.head
-      outp.myExt(0).rdMemWord.allowOverride
-      for (idx <- 0 until inp.size) {
-        outp.myExt(0).rdMemWord(idx) := (
-          inp(idx).myExt(0).rdMemWord(idx)
-        )
+      for (kdx <- 0 until cfg.numMultiIssue) {
+        //outp.setDualIssueIdx(kdx)
+        outp.myExtVec(kdx)(0).rdMemWord.allowOverride
+        for (
+          idx <- 0 until myRegFileArr(kdx).size //inp.size
+        ) {
+          val myInp = inp(kdx * myRegFileArr(kdx).size + idx)
+          //myInp.setDualIssueIdx(kdx)
+
+          outp.myExtVec(kdx)(0).rdMemWord(idx) := (
+            myInp.myExtVec(kdx)(0).rdMemWord(idx)
+          )
+        }
       }
     }
   )
@@ -2307,7 +2373,7 @@ private[libsnowhouse] case class SnowHouseForFmax(
       Stream(SnowHousePipePayload(cfg=cfg))
     )
   )
-  if (cfg.optForFmaxPsExFwdSize > 0) {
+  //if (cfg.optForFmaxPsExFwdSize > 0) {
     for (idx <- 0 until myPostExPreWbStmVec.size) {
       if (idx == 0) {
         myPostExPreWbStmVec(idx) << psEx.io.down
@@ -2319,19 +2385,29 @@ private[libsnowhouse] case class SnowHouseForFmax(
         myPostExPreWbStmVec(idx) <-< myPostExPreWbStmVec(idx - 1)
       }
     }
-    psWb.io.up << myPostExPreWbStmVec.last
-  } else {
-    psWb.io.up << psEx.io.down
-  }
+    val myPsWbUpFork = StreamFork(
+      input=myPostExPreWbStmVec.last,
+      portCount=cfg.numMultiIssue,
+      synchronous=true,
+    )
+    //psWb.io.up << myPostExPreWbStmVec.last
+    for (kdx <- 0 until cfg.numMultiIssue) {
+      psWbArr(kdx).io.up << myPsWbUpFork(kdx)
+    }
+  //} else {
+  //  psWb.io.up << psEx.io.down
+  //}
 
-  myRegFile.foreach(item => {
-    //item.io.wrPulse.valid := False
-    //item.io.wrPulse.payload := (
-    //  item.io.wrPulse.payload.getZero
-    //)
-    item.io.wrPulse := psWb.io.myRegFileWrPulse
-  })
-  psEx.io.myRegFileWrPulse << psWb.io.myRegFileWrPulse
+  //myRegFile.foreach(item => {
+  //  //item.io.wrPulse.valid := False
+  //  //item.io.wrPulse.payload := (
+  //  //  item.io.wrPulse.payload.getZero
+  //  //)
+  //  item.io.wrPulse := psWb.io.myRegFileWrPulse
+  //})
+  for (kdx <- 0 until cfg.numMultiIssue) {
+    psEx.io.myRegFileWrPulse(kdx) << psWbArr(kdx).io.myRegFileWrPulse
+  }
   //--------
 
   psIf.io.psExSetPc := psExSetPc
@@ -2345,13 +2421,24 @@ private[libsnowhouse] case class SnowHouseForFmax(
 
   io.lcvIbus << psIf.io.lcvIbus
   io.lcvDbus.h2dBus << psEx.io.myLcvDbusH2dStm
-  psWb.io.myLcvDbusD2hStm << io.lcvDbus.d2hBus
+  for (kdx <- 0 until cfg.numMultiIssue) {
+    if (kdx == 0) {
+      psWbArr(kdx).io.myLcvDbusD2hStm << io.lcvDbus.d2hBus
+    } else {
+      psWbArr(kdx).io.myLcvDbusD2hStm.valid := False
+      psWbArr(kdx).io.myLcvDbusD2hStm.payload := (
+        psWbArr(kdx).io.myLcvDbusD2hStm.payload.getZero
+      )
+    }
+  }
 
   for (idx <- 0 until io.multiCycleBusVec.size) {
     io.multiCycleBusVec(idx) <> psEx.io.multiCycleBusVec(idx)
   }
   if (io.dbgInfo != null) {
-    io.dbgInfo := psWb.io.dbgInfo
+    for (kdx <- 0 until cfg.numMultiIssue) {
+      io.dbgInfo(kdx) := psWbArr(kdx).io.dbgInfo
+    }
   }
 }
 
