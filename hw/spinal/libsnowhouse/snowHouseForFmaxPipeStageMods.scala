@@ -222,17 +222,21 @@ case class SnowHouseForFmaxPipeStageInstrDecode(
   //--------
 }
 
-case class SnowHouseForFmaxPipeStagePreExIo(
+case class SnowHouseForFmaxPipeStagePostIdPreExIo(
   cfg: SnowHouseConfig
 ) extends Bundle {
   val up = (
     slave(Stream(
-      SnowHousePipePayload(cfg=cfg)
+      Vec.fill(cfg.myRegFileModWrCnt)(
+        SnowHousePipePayload(cfg=cfg)
+      )
     ))
   )
   val down = (
     master(Stream(
-      SnowHousePipePayload(cfg=cfg)
+      Vec.fill(cfg.myRegFileModWrCnt)(
+        SnowHousePipePayload(cfg=cfg)
+      )
     ))
   )
   //--------
@@ -245,7 +249,7 @@ case class SnowHouseForFmaxPipeStagePostIdPreEx(
   //dualIssueIdx: Int,
 ) extends Component {
   //--------
-  val io = SnowHouseForFmaxPipeStagePreExIo(cfg=cfg)
+  val io = SnowHouseForFmaxPipeStagePostIdPreExIo(cfg=cfg)
   //def up = io.up
   //def down = io.down
   //--------
@@ -253,8 +257,16 @@ case class SnowHouseForFmaxPipeStagePostIdPreEx(
 
   //def opInfoMap = cfg.opInfoMap
 
-  //val pPreExInp = Payload(SnowHousePipePayload(cfg=cfg))
-  val pPreExOutp = Payload(SnowHousePipePayload(cfg=cfg))
+  val pPostIdPreExInp = Payload(
+    Vec.fill(cfg.numMultiIssue)(
+      SnowHousePipePayload(cfg=cfg)
+    )
+  )
+  val pPostIdPreExOutp = Payload(
+    Vec.fill(cfg.numMultiIssue)(
+      SnowHousePipePayload(cfg=cfg)
+    )
+  )
   val cLink = CtrlLink()
   //val sLink = StageLink(
   //  up=cLink.down,
@@ -276,8 +288,12 @@ case class SnowHouseForFmaxPipeStagePostIdPreEx(
   //linkArr += sLink
   //linkArr += s2mLink
 
-  val myOutp = SnowHousePipePayload(cfg=cfg)
-  val myInp = SnowHousePipePayload(cfg=cfg)
+  val myOutp = Vec.fill(cfg.numMultiIssue)(
+    SnowHousePipePayload(cfg=cfg)
+  )
+  val myInp = Vec.fill(cfg.numMultiIssue)(
+    SnowHousePipePayload(cfg=cfg)
+  )
   //myInp := RegNext(myInp)
   myOutp := RegNext(myOutp)
   myOutp.allowOverride
@@ -285,31 +301,36 @@ case class SnowHouseForFmaxPipeStagePostIdPreEx(
     myOutp := myInp
   }
 
-  val dualIssueIdx = 0
-  val innerPsPostIdPreEx = SnowHousePipeStagePostIdPreEx(
-    cfg=cfg,
-    outp=myOutp,
-    inp=myInp,
-    //link=cLink,
-    upIsFiring=cLink.up.isFiring,
-    myBranchMispredictEtc=io.myBranchMispredictEtc,
-    dualIssueIdx=dualIssueIdx,
+  //val dualIssueIdx = 0
+  val innerPsPostIdPreExArr = (
+    new ArrayBuffer[SnowHousePipeStagePostIdPreEx]()
   )
+  for (dualIssueIdx <- 0 until cfg.numMultiIssue) {
+    innerPsPostIdPreExArr += SnowHousePipeStagePostIdPreEx(
+      cfg=cfg,
+      outp=myOutp,
+      inp=myInp,
+      //link=cLink,
+      upIsFiring=cLink.up.isFiring,
+      myBranchMispredictEtc=io.myBranchMispredictEtc,
+      dualIssueIdx=dualIssueIdx,
+    )
+  }
 
   cLink.up.driveFrom(io.up)(
     con=(node, inp) => {
-      //node(pPreExInp) := inp
+      //node(pPostIdPreExInp) := inp
       myInp := inp
-      node(pPreExOutp) := myOutp
+      node(pPostIdPreExOutp) := myOutp
     }
   )
   //when (cLink.up.valid) {
   //}
-  //cLink.up(pPreExOutp) := myOutp
+  //cLink.up(pPostIdPreExOutp) := myOutp
 
   cLink.down.driveTo(io.down)(
     con=(outp, node) => {
-      outp := node(pPreExOutp)
+      outp := node(pPostIdPreExOutp)
     }
   )
 

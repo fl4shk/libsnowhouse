@@ -1646,8 +1646,8 @@ private[libsnowhouse] case class SnowHouseNotForFmax
           val myPipeStagePostIdPreEx = (
             SnowHousePipeStagePostIdPreEx(
               cfg=cfg,
-              outp=outp,
-              inp=inp,
+              outp=Vec(outp),
+              inp=Vec(inp),
               //link=cFront,
               upIsFiring=cFront.up.isFiring,
               //psExSetPc=psExSetPc,
@@ -2195,7 +2195,7 @@ private[libsnowhouse] case class SnowHouseForFmax(
   //--------
 
   //psId.io.up <-/< psIf.io.down // extra pipeline stage for fmax
-  psPostIdPreEx.io.up << psId.io.down
+  psPostIdPreEx.io.up <-/< psId.io.down
   psId.io.up << psIf.io.down
   //psPostIdPreEx.io.up << psId.io.down
   //psEx.io.up << psPostIdPreEx.io.down
