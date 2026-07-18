@@ -606,12 +606,21 @@ case class SnowHouseForFmaxPipeStageWriteBack(
     )
   )
   myWbPayloadVec.foreach(item => {
-    item := (
-      RegNext(
-        item,
-        init=item.getZero
+    if (cfg.optScoreboard) {
+      item := (
+        RegNext(
+          item,
+          init=item.getZero
+        )
       )
-    )
+    } else {
+      item(1) := (
+        RegNext(
+          item(1),
+          init=item(1).getZero
+        )
+      )
+    }
   })
 
   when (cLink.up.isValid) {

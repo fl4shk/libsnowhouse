@@ -1674,6 +1674,9 @@ case class SnowHouseRiscv32imConfig(
         1
       ),
       //optDualIssue=true,
+      optMaxNumScoreboardInstrs=(
+        None
+      )
     )
   ),
   targetAltera: Boolean=(
