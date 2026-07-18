@@ -7634,28 +7634,51 @@ case class SnowHousePipeStageExecute(
               //    init=outp.myExt(0).rdMemWord(jdx).getZero,
               //  )
               //)
-              val rSavedRegFileWrPulse = (
-                RegNextWhen(
-                  forFmaxRegFileWrPulseArr(0),
-                  cond=forFmaxRegFileWrPulseArr(0).fire,
-                  init=forFmaxRegFileWrPulseArr(0).getZero
+              val myHistRegFileWrPulse = (
+                History(
+                  that=forFmaxRegFileWrPulseArr(0),
+                  when=forFmaxRegFileWrPulseArr(0).fire,
+                  length=(
+                    2
+                    + (if (cfg.optScoreboard) (1) else (0))
+                  ),
+                  init=forFmaxRegFileWrPulseArr(0).getZero,
+                )
+              )
+              //val rSavedRegFileWrPulse = (
+              //  RegNextWhen(
+              //    forFmaxRegFileWrPulseArr(0),
+              //    cond=forFmaxRegFileWrPulseArr(0).fire,
+              //    init=forFmaxRegFileWrPulseArr(0).getZero
+              //  )
+              //)
+              val myFwdTempToSwitch = (
+                Vec(
+                  myHistRegFileWrPulse.map(myWrPulse => (
+                    myWrPulse.fire
+                    && (
+                      outp.gprIdxVec(jdx)
+                      === myWrPulse.addr
+                    )
+                  ))
                 )
               )
               switch (
-                (
-                  forFmaxRegFileWrPulseArr(0).fire
-                  && (
-                    outp.gprIdxVec(jdx)
-                    === forFmaxRegFileWrPulseArr(0).addr
-                  )
-                )
-                ## (
-                  rSavedRegFileWrPulse.fire
-                  && (
-                    outp.gprIdxVec(jdx)
-                    === rSavedRegFileWrPulse.addr
-                  )
-                )
+                //(
+                //  forFmaxRegFileWrPulseArr(0).fire
+                //  && (
+                //    outp.gprIdxVec(jdx)
+                //    === forFmaxRegFileWrPulseArr(0).addr
+                //  )
+                //)
+                //## (
+                //  rSavedRegFileWrPulse.fire
+                //  && (
+                //    outp.gprIdxVec(jdx)
+                //    === rSavedRegFileWrPulse.addr
+                //  )
+                //)
+                myFwdTempToSwitch
                 ## (
                   RegNext(
                     cLink.up.isFiring,
@@ -7666,17 +7689,46 @@ case class SnowHousePipeStageExecute(
                   )
                 )
               ) {
-                is ( M"1--") {
+                is ({
+                  var temp = "1--"
+                  if (cfg.optScoreboard) {
+                    temp += "-"
+                  }
+                  MaskedLiteral(temp)
+                }) {
                   outp.myExt(0).rdMemWord(jdx) := (
-                    forFmaxRegFileWrPulseArr(0).data
+                    myHistRegFileWrPulse(0).data
                   )
                 }
-                is (M"01-") {
+                is ({
+                  var temp = "01-"
+                  if (cfg.optScoreboard) {
+                    temp += "-"
+                  }
+                  MaskedLiteral(temp)
+                }) {
                   outp.myExt(0).rdMemWord(jdx) := (
-                    rSavedRegFileWrPulse.data
+                    myHistRegFileWrPulse(1).data
                   )
                 }
-                is (M"001") {
+                if (cfg.optScoreboard) {
+                  is (M"001-") {
+                    outp.myExt(0).rdMemWord(jdx) := (
+                      myHistRegFileWrPulse(2).data
+                    )
+                  }
+                }
+                is ({
+                  //var temp = "001"
+                  val temp = (
+                    if (cfg.optScoreboard) (
+                      "0001"
+                    ) else (
+                      "001"
+                    )
+                  )
+                  MaskedLiteral(temp)
+                }) {
                   outp.myExt(0).rdMemWord(jdx) := (
                     inp.myExt(0).rdMemWord(jdx)
                   )

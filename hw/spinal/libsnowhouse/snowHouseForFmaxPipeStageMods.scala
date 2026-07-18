@@ -645,6 +645,33 @@ case class SnowHouseForFmaxPipeStageWriteBack(
     }
   })
 
+  val myD2hBus = cloneOf(io.myLcvDbusD2hStm)
+  if (cfg.optScoreboard) {
+    when (
+      //RegNext(
+      //  ( 
+      //    myD2hBus.fire
+      //    && rCurrWbPayloadOuterIdx.lsb
+      //  ),
+      //  init=False
+      //)
+      //&& (
+      //  !rCurrWbPayloadOuterIdx.lsb
+      //)
+      fell(
+        rCurrWbPayloadOuterIdx.lsb
+      )
+    ) {
+      myWbPayloadVec.head := (
+        RegNext(
+          myWbPayloadVec.last,
+          init=myWbPayloadVec.last.getZero,
+        )
+      )
+      //setRegFileWrPulseEtc(myWbPayloadVec.head)
+    } otherwise {
+    }
+  }
   when (cLink.up.isValid) {
     myWbPayload(1) := myWbPayload(0)
   }
@@ -654,7 +681,6 @@ case class SnowHouseForFmaxPipeStageWriteBack(
     //  cWb.up.isValid
     //  && myWbPayload.outpDecodeExt.opIsMemAccess.last
     //)
-    val myD2hBus = cloneOf(io.myLcvDbusD2hStm)
     //myD2hBus <-/< io.lcvDbus.d2hBus
     myD2hBus << io.myLcvDbusD2hStm
     myD2hBus.ready := False
@@ -662,8 +688,6 @@ case class SnowHouseForFmaxPipeStageWriteBack(
     //myCurrWbPayloadOuterIdxInfo.lsb := (
     //  myD2hBus.fire
     //)
-
-    //psWbToEarlierStallRequest := False
 
     when (
       (
@@ -682,42 +706,39 @@ case class SnowHouseForFmaxPipeStageWriteBack(
     when (
       (
         if (cfg.optScoreboard) (
-          cLink.up.isValid
+          // TODO: maybe try `isValid` later (for fmax)?
+          cLink.up.isFiring
           && !rCurrWbPayloadOuterIdx.lsb
         ) else (
           cLink.up.isValid
         )
       )
+      //cLink.up.isValid
       && myWbPayloadVec.head(1).outpDecodeExt.opIsMemAccess.last
       && !myD2hBus.valid
     ) {
-      //psWbToEarlierStallRequest := True
       if (cfg.optScoreboard) {
+        //rCurrWbPayloadOuterIdx.lsb := True
         rCurrWbPayloadOuterIdx.lsb := True
       } else {
         cLink.duplicateIt()
       }
     }
     if (cfg.optScoreboard) {
-      when (
-        (
-          if (cfg.optScoreboard) (
-            cLink.up.isValid
-            || rCurrWbPayloadOuterIdx.lsb
-          ) else (
-            cLink.up.isValid
-          )
-        )
-        && myWbPayloadVec.head(1).outpDecodeExt.opIsMemAccess.last
-        && (
-          // this is checking for `myD2hBus.fire`
-          myD2hBus.valid
-        )
-      ) {
-        //psWbToEarlierStallRequest := True
-        rCurrWbPayloadOuterIdx.lsb := False
-        cLink.duplicateIt()
-      }
+      //when (
+      //  (
+      //    cLink.up.isValid
+      //    || rCurrWbPayloadOuterIdx.lsb
+      //  )
+      //  && myWbPayloadVec.head(1).outpDecodeExt.opIsMemAccess.last
+      //  && (
+      //    // this is checking for `myD2hBus.fire`
+      //    myD2hBus.valid
+      //  )
+      //) {
+      //  rCurrWbPayloadOuterIdx.lsb := False
+      //  cLink.duplicateIt()
+      //}
     }
     switch (
       (
@@ -863,7 +884,7 @@ case class SnowHouseForFmaxPipeStageWriteBack(
       (
         if (cfg.optScoreboard) (
           cLink.up.isFiring
-          || myLcvDbusArea.myD2hBus.fire
+          || myD2hBus.fire
         ) else (
           cLink.up.isFiring
         )
@@ -942,29 +963,7 @@ case class SnowHouseForFmaxPipeStageWriteBack(
 
   if (cfg.optScoreboard) {
     when (
-      RegNext(
-        ( 
-          myLcvDbusArea.myD2hBus.fire
-          && rCurrWbPayloadOuterIdx.lsb
-        ),
-        init=False
-      )
-      //&& (
-      //  !rCurrWbPayloadOuterIdx.lsb
-      //)
-    ) {
-      myWbPayloadVec.head := (
-        RegNext(
-          myWbPayloadVec.last,
-          init=myWbPayloadVec.last.getZero,
-        )
-      )
-      //setRegFileWrPulseEtc(myWbPayloadVec.head)
-    } otherwise {
-    }
-
-    when (
-      myLcvDbusArea.myD2hBus.fire
+      myD2hBus.fire
     ) {
       setRegFileWrPulseEtc(myWbPayloadVec.head)
     } otherwise {
@@ -972,20 +971,23 @@ case class SnowHouseForFmaxPipeStageWriteBack(
     }
 
     when (
-      myLcvDbusArea.myD2hBus.fire
+      myD2hBus.fire
     ) {
       rScoreboardStallCnt := 0
       rCurrWbPayloadOuterIdx.lsb := False
+      when (rCurrWbPayloadOuterIdx.lsb) {
+        cLink.duplicateIt()
+      }
     } elsewhen (
-      !myWbPayload(1).instrCnt.shouldIgnoreInstr.head
-      && !myWbPayload(1).instrCnt.myPsIdBubble.head
-      && rScoreboardStallCnt >= cfg.optMaxNumScoreboardInstrs
+      !myWbPayloadVec.last(1).instrCnt.shouldIgnoreInstr.head
+      //&& !myWbPayloadVec.last(1).instrCnt.myPsIdBubble.head
+      && rScoreboardStallCnt >= cfg.optMaxNumScoreboardInstrs - 1
       && rCurrWbPayloadOuterIdx.lsb
     ) {
       cLink.duplicateIt()
     } elsewhen (
-      !myWbPayload(1).instrCnt.shouldIgnoreInstr.last
-      && !myWbPayload(1).instrCnt.myPsIdBubble.last
+      !myWbPayloadVec.last(1).instrCnt.shouldIgnoreInstr.last
+      //&& !myWbPayloadVec.last(1).instrCnt.myPsIdBubble.last
       && cLink.up.isFiring
       && rCurrWbPayloadOuterIdx.lsb
     ) {
