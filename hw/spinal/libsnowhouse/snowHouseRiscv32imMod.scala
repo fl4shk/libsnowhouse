@@ -1690,7 +1690,8 @@ case class SnowHouseRiscv32imConfig(
         //None
         Some(
           //1
-          2
+          //2
+          4
         )
       )
     )

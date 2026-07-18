@@ -7556,6 +7556,17 @@ case class SnowHousePipeStageExecute(
     //    forFmaxRegFileWrPulseArr(0)
     //  )
     //}
+    val myHistRegFileWrPulse = (
+      History(
+        that=forFmaxRegFileWrPulseArr(0),
+        when=forFmaxRegFileWrPulseArr(0).fire,
+        length=(
+          2
+          + (if (cfg.optScoreboard) (1) else (0))
+        ),
+        init=forFmaxRegFileWrPulseArr(0).getZero,
+      )
+    )
 
     for (jdx <- 0 until cfg.regFileCfg.modRdPortCnt) {
 
@@ -7634,17 +7645,6 @@ case class SnowHousePipeStageExecute(
               //    init=outp.myExt(0).rdMemWord(jdx).getZero,
               //  )
               //)
-              val myHistRegFileWrPulse = (
-                History(
-                  that=forFmaxRegFileWrPulseArr(0),
-                  when=forFmaxRegFileWrPulseArr(0).fire,
-                  length=(
-                    2
-                    + (if (cfg.optScoreboard) (1) else (0))
-                  ),
-                  init=forFmaxRegFileWrPulseArr(0).getZero,
-                )
-              )
               //val rSavedRegFileWrPulse = (
               //  RegNextWhen(
               //    forFmaxRegFileWrPulseArr(0),
@@ -7652,7 +7652,7 @@ case class SnowHousePipeStageExecute(
               //    init=forFmaxRegFileWrPulseArr(0).getZero
               //  )
               //)
-              val myFwdTempToSwitch = (
+              val myFwdTempToSwitchReversed = (
                 Vec(
                   myHistRegFileWrPulse.map(myWrPulse => (
                     myWrPulse.fire
@@ -7663,6 +7663,18 @@ case class SnowHousePipeStageExecute(
                   ))
                 )
               )
+              val myFwdTempToSwitch = Vec.fill(
+                myFwdTempToSwitchReversed.size
+              )(
+                Bool()
+              )
+              for (idx <- 0 until myFwdTempToSwitch.size) {
+                myFwdTempToSwitch(idx) := (
+                  myFwdTempToSwitchReversed(
+                    myFwdTempToSwitch.size - idx - 1
+                  )
+                )
+              }
               switch (
                 //(
                 //  forFmaxRegFileWrPulseArr(0).fire
