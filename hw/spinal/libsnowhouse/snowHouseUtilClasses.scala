@@ -1985,7 +1985,18 @@ case class SnowHousePipePayloadNonExt(
 case class SnowHousePipePayload(
   cfg: SnowHouseConfig,
 ) extends Bundle with PipeRegFilePayloadBase[UInt, Bool] {
-  val nonExt = SnowHousePipePayloadNonExt(cfg=cfg)
+  private var dualIssueIdx: Int = 0
+  def setDualIssueIdx(
+    someDualIssueIdx: Int
+  ): Unit = {
+    dualIssueIdx = someDualIssueIdx
+  }
+
+  val nonExtVec = Vec.fill(cfg.numMultiIssue)(
+    SnowHousePipePayloadNonExt(cfg=cfg)
+  )
+  def nonExt = nonExtVec(dualIssueIdx)
+
   def forFmaxFwdIdx = nonExt.forFmaxFwdIdx
   def shouldFinishJump = nonExt.shouldFinishJump
   //def psIfReadyIshCond = nonExt.psIfReadyIshCond
@@ -2047,13 +2058,18 @@ case class SnowHousePipePayload(
       wordCount=cfg.regFileCfg.wordCountArr(ydx),
     )
   )
-  val myExt = Vec[PipeRegFilePayloadExt[UInt, Bool]]{
-    val myArr = ArrayBuffer[PipeRegFilePayloadExt[UInt, Bool]]()
-    for (ydx <- 0 until cfg.regFileCfg.memArrSize) {
-      myArr += mkOneExt(ydx=ydx)
-    }
-    myArr
-  } //simPublic()
+  val myExtVec = (
+    Vec.fill(cfg.numMultiIssue)({
+      val myArr = ArrayBuffer[PipeRegFilePayloadExt[UInt, Bool]]()
+      for (ydx <- 0 until cfg.regFileCfg.memArrSize) {
+        myArr += mkOneExt(ydx=ydx)
+      }
+      Vec(myArr)
+    })
+  ) //simPublic()
+
+  def myExt = myExtVec(dualIssueIdx)
+
   def setPipeRegFileExt(
     inpExt: PipeRegFilePayloadExt[UInt, Bool],
     ydx: Int,

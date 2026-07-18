@@ -227,16 +227,12 @@ case class SnowHouseForFmaxPipeStagePostIdPreExIo(
 ) extends Bundle {
   val up = (
     slave(Stream(
-      Vec.fill(cfg.myRegFileModWrCnt)(
-        SnowHousePipePayload(cfg=cfg)
-      )
+      SnowHousePipePayload(cfg=cfg)
     ))
   )
   val down = (
     master(Stream(
-      Vec.fill(cfg.myRegFileModWrCnt)(
-        SnowHousePipePayload(cfg=cfg)
-      )
+      SnowHousePipePayload(cfg=cfg)
     ))
   )
   //--------
@@ -257,16 +253,8 @@ case class SnowHouseForFmaxPipeStagePostIdPreEx(
 
   //def opInfoMap = cfg.opInfoMap
 
-  val pPostIdPreExInp = Payload(
-    Vec.fill(cfg.numMultiIssue)(
-      SnowHousePipePayload(cfg=cfg)
-    )
-  )
-  val pPostIdPreExOutp = Payload(
-    Vec.fill(cfg.numMultiIssue)(
-      SnowHousePipePayload(cfg=cfg)
-    )
-  )
+  //val pPreExInp = Payload(SnowHousePipePayload(cfg=cfg))
+  val pPreExOutp = Payload(SnowHousePipePayload(cfg=cfg))
   val cLink = CtrlLink()
   //val sLink = StageLink(
   //  up=cLink.down,
@@ -288,12 +276,8 @@ case class SnowHouseForFmaxPipeStagePostIdPreEx(
   //linkArr += sLink
   //linkArr += s2mLink
 
-  val myOutp = Vec.fill(cfg.numMultiIssue)(
-    SnowHousePipePayload(cfg=cfg)
-  )
-  val myInp = Vec.fill(cfg.numMultiIssue)(
-    SnowHousePipePayload(cfg=cfg)
-  )
+  val myOutp = SnowHousePipePayload(cfg=cfg)
+  val myInp = SnowHousePipePayload(cfg=cfg)
   //myInp := RegNext(myInp)
   myOutp := RegNext(myOutp)
   myOutp.allowOverride
@@ -301,36 +285,31 @@ case class SnowHouseForFmaxPipeStagePostIdPreEx(
     myOutp := myInp
   }
 
-  //val dualIssueIdx = 0
-  val innerPsPostIdPreExArr = (
-    new ArrayBuffer[SnowHousePipeStagePostIdPreEx]()
+  val dualIssueIdx = 0
+  val innerPsPostIdPreExArr = SnowHousePipeStagePostIdPreEx(
+    cfg=cfg,
+    outp=myOutp,
+    inp=myInp,
+    //link=cLink,
+    upIsFiring=cLink.up.isFiring,
+    myBranchMispredictEtc=io.myBranchMispredictEtc,
+    dualIssueIdx=dualIssueIdx,
   )
-  for (dualIssueIdx <- 0 until cfg.numMultiIssue) {
-    innerPsPostIdPreExArr += SnowHousePipeStagePostIdPreEx(
-      cfg=cfg,
-      outp=myOutp,
-      inp=myInp,
-      //link=cLink,
-      upIsFiring=cLink.up.isFiring,
-      myBranchMispredictEtc=io.myBranchMispredictEtc,
-      dualIssueIdx=dualIssueIdx,
-    )
-  }
 
   cLink.up.driveFrom(io.up)(
     con=(node, inp) => {
-      //node(pPostIdPreExInp) := inp
+      //node(pPreExInp) := inp
       myInp := inp
-      node(pPostIdPreExOutp) := myOutp
+      node(pPreExOutp) := myOutp
     }
   )
   //when (cLink.up.valid) {
   //}
-  //cLink.up(pPostIdPreExOutp) := myOutp
+  //cLink.up(pPreExOutp) := myOutp
 
   cLink.down.driveTo(io.down)(
     con=(outp, node) => {
-      outp := node(pPostIdPreExOutp)
+      outp := node(pPreExOutp)
     }
   )
 

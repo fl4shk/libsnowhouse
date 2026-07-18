@@ -2055,8 +2055,8 @@ case class SnowHousePipeStageInstrDecode(
 
 case class SnowHousePipeStagePostIdPreEx(
   cfg: SnowHouseConfig,
-  outp: Vec[SnowHousePipePayload],
-  inp: Vec[SnowHousePipePayload],
+  outp: SnowHousePipePayload,
+  inp: SnowHousePipePayload,
   //link: CtrlLink,
   upIsFiring: Bool,
   //psExSetPc: Flow[SnowHousePsExSetPcPayload],
@@ -2065,21 +2065,22 @@ case class SnowHousePipeStagePostIdPreEx(
 ) extends Area {
   //val up = link.up
   //val down = link.down
-  val myOutp = outp(dualIssueIdx)
-  myOutp.allowOverride
+  //val myOutp = outp(dualIssueIdx)
+  outp.setDualIssueIdx(dualIssueIdx)
+  outp.allowOverride
 
   def myRegPcRange = (
-    myOutp.regPc.high downto log2Up(cfg.instrSizeBytes)
+    outp.regPc.high downto log2Up(cfg.instrSizeBytes)
   )
   //val myHistRegPc = (
   //  History[SInt](
-  //    that=myOutp.regPc(myRegPcRange).asSInt,
-  //    length=myOutp.myHistRegPcSize,
+  //    that=outp.regPc(myRegPcRange).asSInt,
+  //    length=outp.myHistRegPcSize,
   //    when=(
   //      //up.isFiring
   //      upIsFiring,
   //    ),
-  //    init=myOutp.regPc(myRegPcRange).asSInt.getZero,
+  //    init=outp.regPc(myRegPcRange).asSInt.getZero,
   //  )
   //)
   //val myDspRegPcMinus2InstrSize = {
@@ -2096,7 +2097,7 @@ case class SnowHousePipeStagePostIdPreEx(
   //          val carry = Bool()
   //          val cond = Bool()
   //        }
-  //        val myOutp = new Bundle {
+  //        val outp = new Bundle {
   //          val sum_carry = SInt(wordWidth + 1 bits)
   //        }
   //      }
@@ -2114,7 +2115,7 @@ case class SnowHousePipeStagePostIdPreEx(
   //      ).asSInt
   //    )
   //    //if (!cfg.useLcvInstrBus) {
-  //      io.myOutp.sum_carry := (
+  //      io.outp.sum_carry := (
   //        RegNextWhen(
   //          next=myTempSumCarry,
   //          cond=io.inp.cond,
@@ -2122,17 +2123,17 @@ case class SnowHousePipeStagePostIdPreEx(
   //        init(0x0)
   //      )
   //    //} else {
-  //    //  io.myOutp.sum_carry := (
-  //    //    RegNext(io.myOutp.sum_carry, init=io.myOutp.sum_carry.getZero)
+  //    //  io.outp.sum_carry := (
+  //    //    RegNext(io.outp.sum_carry, init=io.outp.sum_carry.getZero)
   //    //  )
   //    //  when (io.inp.cond) {
-  //    //    io.myOutp.sum_carry := myTempSumCarry
+  //    //    io.outp.sum_carry := myTempSumCarry
   //    //  }
   //    //}
   //  }
   //}
   //val myHistRegPcMinus2InstrSize = (
-  //  Vec.fill(myOutp.myHistRegPcSize - 1)(
+  //  Vec.fill(outp.myHistRegPcSize - 1)(
   //    SInt(
   //      //cfg.mainWidth - log2Up(cfg.instrSizeBytes)
   //      myDspRegPcMinus2InstrSize.wordWidth
@@ -2150,7 +2151,7 @@ case class SnowHousePipeStagePostIdPreEx(
   //for (idx <- 0 until myHistRegPcMinus2InstrSize.size) {
   //  if (idx == 0) {
   //    myHistRegPcMinus2InstrSize(idx) := (
-  //      myDspRegPcMinus2InstrSize.io.myOutp.sum_carry(
+  //      myDspRegPcMinus2InstrSize.io.outp.sum_carry(
   //        myHistRegPcMinus2InstrSize(idx).bitsRange
   //      )
   //    )
@@ -2182,83 +2183,83 @@ case class SnowHousePipeStagePostIdPreEx(
   //    )
   //  )
   //)
-  myOutp.laggingRegPcPlus1InstrSize := (
+  outp.laggingRegPcPlus1InstrSize := (
     //laggingRegPcMinus2InstrSize.asUInt
-    myOutp.laggingRegPc + cfg.instrSizeBytes
+    outp.laggingRegPc + cfg.instrSizeBytes
   )
-  myOutp.regPcPlusImm := 0x0
-  myOutp.regPcPlusImm.allowOverride
+  outp.regPcPlusImm := 0x0
+  outp.regPcPlusImm.allowOverride
   if (cfg.optShiftRegPcImmAddend) {
-    myOutp.regPcPlusImm(myRegPcRange) := (
+    outp.regPcPlusImm(myRegPcRange) := (
       (
         //laggingRegPcMinus2InstrSize//.asSInt
         //+ (if (!cfg.useLcvInstrBus) (0) else (1))
-        myOutp.laggingRegPcPlus1InstrSize(myRegPcRange).asSInt
+        outp.laggingRegPcPlus1InstrSize(myRegPcRange).asSInt
         + (
-          myOutp.imm(2).asSInt
+          outp.imm(2).asSInt
         )
-      ).asUInt.resize(myOutp.regPcPlusImm(myRegPcRange).getWidth)
+      ).asUInt.resize(outp.regPcPlusImm(myRegPcRange).getWidth)
       //- (cfg.instrMainWidth.toLong / 8.toLong)
     )
   } else {
-    myOutp.regPcPlusImm := (
+    outp.regPcPlusImm := (
       (
-        //myOutp.laggingRegPcPlus1InstrSize.asSInt
-        myOutp.laggingRegPc.asSInt
+        //outp.laggingRegPcPlus1InstrSize.asSInt
+        outp.laggingRegPc.asSInt
         + (
-          myOutp.imm(2).asSInt
+          outp.imm(2).asSInt
         )
-      ).asUInt.resize(myOutp.regPcPlusImm.getWidth)
+      ).asUInt.resize(outp.regPcPlusImm.getWidth)
     )
   }
-  myOutp.branchTgtBufElem(1).srcRegPc := myOutp.laggingRegPc
+  outp.branchTgtBufElem(1).srcRegPc := outp.laggingRegPc
 
-  //myOutp.branchPredictReplaceBtbElemMost := (
-  //  //myOutp.branchPredictTkn
+  //outp.branchPredictReplaceBtbElemMost := (
+  //  //outp.branchPredictTkn
   //  ////RegNextWhen(
-  //  ////  next=myOutp.branchPredictTkn,
+  //  ////  next=outp.branchPredictTkn,
   //  ////  cond=link.up.isFiring,
-  //  ////  init=myOutp.branchPredictTkn.getZero,
+  //  ////  init=outp.branchPredictTkn.getZero,
   //  ////)
   //  ////&& upPayload(0).branchTgtBufElem(0).fire
 
   //  //&& 
-  //  myOutp.branchTgtBufElem(0).fire
-  //  && myOutp.branchTgtBufElem(1).fire
-  //  && !myOutp.branchTgtBufElem(1).dontPredict
+  //  outp.branchTgtBufElem(0).fire
+  //  && outp.branchTgtBufElem(1).fire
+  //  && !outp.branchTgtBufElem(1).dontPredict
 
-  //  //&& myOutp.btbElemBranchKind(1).asBits(1)
+  //  //&& outp.btbElemBranchKind(1).asBits(1)
   //  && (
   //    !LcvFastCmpEq(
-  //      left=myOutp.branchTgtBufElem(0).srcRegPc(cfg.mySrcRegPcCmpEqRange),
-  //      right=myOutp.branchTgtBufElem(1).srcRegPc(cfg.mySrcRegPcCmpEqRange),
+  //      left=outp.branchTgtBufElem(0).srcRegPc(cfg.mySrcRegPcCmpEqRange),
+  //      right=outp.branchTgtBufElem(1).srcRegPc(cfg.mySrcRegPcCmpEqRange),
   //      cmpEqIo=null,
   //      optDsp=false,
   //      optReg=false,
   //    )._1
   //    //(
-  //    //  myOutp.branchTgtBufElem(0).srcRegPc(
+  //    //  outp.branchTgtBufElem(0).srcRegPc(
   //    //    cfg.mySrcRegPcCmpEqRange
-  //    //  ) =/= myOutp.branchTgtBufElem(1).srcRegPc(
+  //    //  ) =/= outp.branchTgtBufElem(1).srcRegPc(
   //    //    cfg.mySrcRegPcCmpEqRange
   //    //  )
   //    //)
   //    //|| (
-  //    //  myOutp.branchTgtBufElem(0).dstRegPc
-  //    //  =/= myOutp.branchTgtBufElem(1).srcRegPc
+  //    //  outp.branchTgtBufElem(0).dstRegPc
+  //    //  =/= outp.branchTgtBufElem(1).srcRegPc
   //    //)
   //  )
   //)
   
   if (cfg.irqCfg != None) {
-    myOutp.takeIrq := False
+    outp.takeIrq := False
   }
-  myOutp.irqIraRegPc.head := (
-    //myOutp.laggingRegPc
+  outp.irqIraRegPc.head := (
+    //outp.laggingRegPc
     Cat(
       (
-        myOutp.laggingRegPc(
-          myOutp.laggingRegPc.high
+        outp.laggingRegPc(
+          outp.laggingRegPc.high
           downto log2Up(cfg.instrSizeBytes)
         )
       ),
@@ -2266,20 +2267,20 @@ case class SnowHousePipeStagePostIdPreEx(
     ).asUInt
   )
   if (!cfg.useLcvDataBus) {
-    //myOutp.irqIraRegPc.last := (
-    //  myOutp.laggingRegPc
+    //outp.irqIraRegPc.last := (
+    //  outp.laggingRegPc
     //)
   } else {
-    //for (idx <- 0 until myOutp.irqIraRegPc
-    //myOutp.irqIraRegPc.head := (
-    //  myOutp.laggingRegPc
+    //for (idx <- 0 until outp.irqIraRegPc
+    //outp.irqIraRegPc.head := (
+    //  outp.laggingRegPc
     //)
-    myOutp.irqIraRegPc.last := (
-      //myOutp.laggingRegPc + cfg.instrSizeBytes
+    outp.irqIraRegPc.last := (
+      //outp.laggingRegPc + cfg.instrSizeBytes
       Cat(
         (
-          myOutp.laggingRegPc(
-            myOutp.laggingRegPc.high
+          outp.laggingRegPc(
+            outp.laggingRegPc.high
             downto log2Up(cfg.instrSizeBytes)
           ) - 1 //+ 1
         ),
@@ -2308,7 +2309,7 @@ case class SnowHousePipeStagePostIdPreEx(
     } otherwise {
       when (
         upIsFiring
-        && myOutp.regPcSetItCnt(0).lsb
+        && outp.regPcSetItCnt(0).lsb
       ) {
         rMyPsExSetPcState := False
       }
@@ -2322,21 +2323,21 @@ case class SnowHousePipeStagePostIdPreEx(
       //val myRightIdx = (dualIssueIdx + 1) % cfg.myRegFileModWrCnt
       for (kdx <- 0 until cfg.myRegFileModWrCnt) {
         temp(kdx).valid := (
-          //myOutp.myExt(0).modMemWordValid.last //ram.io.wrEn
-          //&& myOutp.gprIsNonZeroVec.last.last
+          //outp.myExt(0).modMemWordValid.last //ram.io.wrEn
+          //&& outp.gprIsNonZeroVec.last.last
           //&& !myShouldIgnoreInstr(0)
-          outp(kdx).gprIsNonZeroVec.last.last
+          outp.nonExtVec(kdx).gprIsNonZeroVec.last.last
           && (
             (
               //!myBranchMispredictEtc
               //&& 
               !rMyPsExSetPcState
             )
-            || outp(kdx).regPcSetItCnt(1).lsb
+            || outp.nonExtVec(kdx).regPcSetItCnt(1).lsb
           )
         )
         //temp.data := outp(kdx).myExt(0).modMemWord //ram.io.wrData
-        temp(kdx).addr := outp(kdx).gprIdxVec.last
+        temp(kdx).addr := outp.nonExtVec(kdx).gprIdxVec.last
       }
       History(
         that=temp,
@@ -2424,12 +2425,12 @@ case class SnowHousePipeStagePostIdPreEx(
           ) := (
             myHistFwdInfo(idx + 1)(kdx).valid
             && (
-              myOutp.gprIdxVec(jdx)
+              outp.gprIdxVec(jdx)
               === myHistFwdInfo(idx + 1)(kdx).addr
             )
             //&& (
             //  LcvFastCmpEq(
-            //    left=myOutp.gprIdxVec(jdx),
+            //    left=outp.gprIdxVec(jdx),
             //    right=myHistFwdInfo(idx + 1).addr,
             //    cmpEqIo=null,
             //  )._1
@@ -2484,7 +2485,7 @@ case class SnowHousePipeStagePostIdPreEx(
         myTempHistFwdValidRotated(jdx).asBits
       ) {
         val size = myTempHistFwdValidRotated(jdx).asBits.getWidth
-        val myForFmaxFwdIdx = myOutp.forFmaxFwdIdx(jdx)(dualIssueIdx)
+        val myForFmaxFwdIdx = outp.forFmaxFwdIdx(jdx)(dualIssueIdx)
         for (idx <- 0 until size) {
           is (MaskedLiteral({
             //("-" * idx)
@@ -2506,7 +2507,7 @@ case class SnowHousePipeStagePostIdPreEx(
                 )
               ) + 1
             )
-            //myOutp.myExt(0).rdMemWord(jdx) := (
+            //outp.myExt(0).rdMemWord(jdx) := (
             //  myHistFwdInfo(
             //    //myHistFwdInfo.size - 1 - idx //(idx + 1)
             //    idx + 1
@@ -2518,9 +2519,9 @@ case class SnowHousePipeStagePostIdPreEx(
           myForFmaxFwdIdx.valid := False
           myForFmaxFwdIdx.payload := (
             0x0
-            //(1 << myOutp.forFmaxFwdIdx(jdx).getWidth) - 1
+            //(1 << outp.forFmaxFwdIdx(jdx).getWidth) - 1
           )
-          //myOutp.myExt(0).rdMemWord(jdx) := (
+          //outp.myExt(0).rdMemWord(jdx) := (
           //  inp.myExt(0).rdMemWord(jdx)
           //)
         }
