@@ -873,7 +873,7 @@ object SnowHouseRiscv32imPipeStageInstrDecode {
 
     val tempHaveHazardAddrCheckVec = (
       Vec.fill(upPayload.myDoHaveHazardAddrCheckVec.size)(
-        Vec.fill(upPayload.gprIdxVec.size + 1)(
+        Vec.fill(upPayload.gprIdxVec.size + 2)(
           Bool()
         )
       )
@@ -898,7 +898,7 @@ object SnowHouseRiscv32imPipeStageInstrDecode {
       )
     )
 
-    for (idx <- 0 until upPayload.gprIdxVec.size + 1) {
+    for (idx <- 0 until upPayload.gprIdxVec.size + 2) {
       if (idx < upPayload.gprIdxVec.size - 1) {
         val tempRegIdx: UInt = (
           if (idx == 0) {
@@ -936,7 +936,7 @@ object SnowHouseRiscv32imPipeStageInstrDecode {
         for (jdx <- 0 until tempHaveHazardAddrCheckVec.size) {
           tempHaveHazardAddrCheckVec(jdx)(idx) := (
             (
-              tempRegIdx === myHistLastGprIdx(jdx + 1)(idx % 2)
+              tempRegIdx === myHistLastGprIdx(jdx + 1)(idx % 3)
               && tempRegIdx.orR // check for non-zero
             )
           )

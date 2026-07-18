@@ -578,6 +578,12 @@ case class SnowHouseForFmaxPipeStageWriteBack(
       )
     )
   )
+
+  //val myCurrWbPayloadOuterIdxInfo = (
+  //  cfg.optScoreboard
+  //) generate (
+  //  UInt(log2Up(currWbPayloadOuterVecSize) bits)
+  //)
   val rCurrWbPayloadOuterIdx = (
     cfg.optScoreboard
   ) generate ({
@@ -606,7 +612,17 @@ case class SnowHouseForFmaxPipeStageWriteBack(
   }
   def myWbPayload = (
     if (cfg.optScoreboard) (
-      myWbPayloadVec(rCurrWbPayloadOuterIdx)
+      myWbPayloadVec(
+        (
+          //myCurrWbPayloadOuterIdxInfo
+          //| rCurrWbPayloadOuterIdx
+          //Mux(
+          //  myCurrWbPayloadOuterIdxInfo.lsb,
+          //  False.asUInt.resize(myCurrWbPayloadOuterIdxInfo.getWidth),
+            rCurrWbPayloadOuterIdx
+          //)
+        )
+      )
     ) else (
       myWbPayloadVec.head
     )
@@ -643,6 +659,10 @@ case class SnowHouseForFmaxPipeStageWriteBack(
     myD2hBus << io.myLcvDbusD2hStm
     myD2hBus.ready := False
 
+    //myCurrWbPayloadOuterIdxInfo.lsb := (
+    //  myD2hBus.fire
+    //)
+
     //psWbToEarlierStallRequest := False
 
     when (
@@ -673,7 +693,7 @@ case class SnowHouseForFmaxPipeStageWriteBack(
     ) {
       //psWbToEarlierStallRequest := True
       if (cfg.optScoreboard) {
-        rCurrWbPayloadOuterIdx := 1
+        rCurrWbPayloadOuterIdx.lsb := True
       } else {
         cLink.duplicateIt()
       }
@@ -695,7 +715,7 @@ case class SnowHouseForFmaxPipeStageWriteBack(
         )
       ) {
         //psWbToEarlierStallRequest := True
-        rCurrWbPayloadOuterIdx := 0
+        rCurrWbPayloadOuterIdx.lsb := False
         cLink.duplicateIt()
       }
     }
@@ -837,6 +857,23 @@ case class SnowHouseForFmaxPipeStageWriteBack(
   //  }
   //}
   if (cfg.optScoreboard) {
+    when (
+      RegNext(
+        ( 
+          myLcvDbusArea.myD2hBus.fire
+          && rCurrWbPayloadOuterIdx.lsb
+        ),
+        init=False
+      )
+    ) {
+      myWbPayloadVec.head := (
+        RegNext(
+          myWbPayloadVec.last,
+          init=myWbPayloadVec.last.getZero,
+        )
+      )
+    }
+
     when (
       myLcvDbusArea.myD2hBus.fire
     ) {
