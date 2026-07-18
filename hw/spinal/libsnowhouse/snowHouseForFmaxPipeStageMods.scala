@@ -484,9 +484,9 @@ case class SnowHouseForFmaxPipeStageExecute(
     //pcChangeState=null,
     //shouldIgnoreInstr=null,
     //psExFoundBubble=psExFoundBubble,
-    //forFmaxRegFileWrPulseArr=Array(
-    //  io.myRegFileWrPulse
-    //),
+    forFmaxRegFileWrPulseArr=Array(
+      io.myRegFileWrPulse
+    ),
     otherPsExOutpMmw=null,
     otherPsExOutpMmwValidEtc=null,
     dualIssueIdx=(

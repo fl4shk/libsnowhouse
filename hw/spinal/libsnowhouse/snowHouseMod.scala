@@ -1941,7 +1941,7 @@ private[libsnowhouse] case class SnowHouseNotForFmax
     ),
     multiCycleBusVec=io.multiCycleBusVec,
     idsIraIrq=io.idsIraIrq,
-    //forFmaxRegFileWrPulseArr=null,
+    forFmaxRegFileWrPulseArr=null,
     otherPsExOutpMmw=null,
     otherPsExOutpMmwValidEtc=null,
     dualIssueIdx=0,
