@@ -1886,7 +1886,7 @@ object SnowHouseCpuPipeStageInstrDecode {
             upPayload.gprIdxVec(0) := encInstr(idx).rbIdx
             upPayload.gprIdxVec(1) := encInstr(idx).raIdx
             upPayload.gprIdxVec(2) := encInstr(idx).raIdx
-            //upPayload.gprIdxVec.last := encInstr(idx).raIdx
+            upPayload.gprIdxVec.last := encInstr(idx).raIdx
             psId.myTempOpMayNeedHazardCheck := True
           }
 

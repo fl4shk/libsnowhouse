@@ -1473,11 +1473,11 @@ case class SnowHouseForFmaxPipeStageWriteBack(
       )
       io.dbgInfo.shouldIgnoreInstrAtRegFileWrite := (
         someMyWbPayload(1).instrCnt.shouldIgnoreInstr.last
-        || !cLink.up.isFiring
+        //|| !cLink.up.isFiring
       )
       io.dbgInfo.myPsIdBubbleAtRegFileWrite := (
         someMyWbPayload(1).instrCnt.myPsIdBubble.last
-        || !cLink.up.isFiring
+        //|| !cLink.up.isFiring
       )
       io.dbgInfo.encInstrAtRegFileWrite := (
         someMyWbPayload(1).encInstr.payload

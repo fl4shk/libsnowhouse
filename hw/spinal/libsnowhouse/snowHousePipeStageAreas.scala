@@ -2478,6 +2478,7 @@ case class SnowHousePipeStagePostIdPreEx(
           )
           || outp.regPcSetItCnt(1).lsb
         )
+        && !outp.instrCnt.myPsIdBubble.head
       )
       //temp.data := outp.myExt(0).modMemWord //ram.io.wrData
       temp.addr := outp.gprIdxVec.last
