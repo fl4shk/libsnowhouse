@@ -578,24 +578,37 @@ case class SnowHouseForFmaxPipeStageWriteBack(
       )
     )
   )
+  val myWbValidVec = (
+    Vec.fill(currWbPayloadOuterVecSize)(
+      Bool()
+    )
+  )
+
+  val myMemWbPayload = myWbPayloadVec.head
+  val myNonMemWbPayload = myWbPayloadVec.last
+
+  val myMemWbValid = myWbValidVec.head
+  val myNonMemWbValid = myWbValidVec.last
 
   //val myCurrWbPayloadOuterIdxInfo = (
   //  cfg.optScoreboard
   //) generate (
   //  UInt(log2Up(currWbPayloadOuterVecSize) bits)
   //)
-  val rCurrWbPayloadOuterIdx = (
-    cfg.optScoreboard
-  ) generate ({
-    val temp = Reg(
-      //Flow(
-        UInt(log2Up(currWbPayloadOuterVecSize) bits)
-      //)
-    )
-    temp.init(temp.getZero)
-    temp
-    //UInt(log2Up(currWbPayloadOuterVecSize) bits)
-  })
+
+  //val rCurrWbPayloadOuterIdx = (
+  //  cfg.optScoreboard
+  //) generate ({
+  //  val temp = Reg(
+  //    //Flow(
+  //      UInt(log2Up(currWbPayloadOuterVecSize) bits)
+  //    //)
+  //  )
+  //  temp.init(temp.getZero)
+  //  temp
+  //  //UInt(log2Up(currWbPayloadOuterVecSize) bits)
+  //})
+
   val rScoreboardStallCnt = (
     cfg.optScoreboard
   ) generate (
@@ -610,29 +623,32 @@ case class SnowHouseForFmaxPipeStageWriteBack(
     //  )
     //)
   }
-  def myWbPayload = (
-    if (cfg.optScoreboard) (
-      myWbPayloadVec(
-        (
-          //myCurrWbPayloadOuterIdxInfo
-          //| rCurrWbPayloadOuterIdx
-          //Mux(
-          //  myCurrWbPayloadOuterIdxInfo.lsb,
-          //  False.asUInt.resize(myCurrWbPayloadOuterIdxInfo.getWidth),
-            rCurrWbPayloadOuterIdx
-          //)
-        )
-      )
-    ) else (
-      myWbPayloadVec.head
-    )
-  )
+
+  //def myWbPayload = (
+  //  if (cfg.optScoreboard) (
+  //    myWbPayloadVec(
+  //      (
+  //        //myCurrWbPayloadOuterIdxInfo
+  //        //| rCurrWbPayloadOuterIdx
+  //        //Mux(
+  //        //  myCurrWbPayloadOuterIdxInfo.lsb,
+  //        //  False.asUInt.resize(myCurrWbPayloadOuterIdxInfo.getWidth),
+  //          rCurrWbPayloadOuterIdx
+  //        //)
+  //      )
+  //    )
+  //  ) else (
+  //    myWbPayloadVec.head
+  //  )
+  //)
+
   myWbPayloadVec.foreach(item => {
     if (cfg.optScoreboard) {
-      item := (
+      //item(0) := item(0).getZero
+      item(1) := (
         RegNext(
-          item,
-          init=item.getZero
+          item(1),
+          init=item(1).getZero
         )
       )
     } else {
@@ -645,36 +661,109 @@ case class SnowHouseForFmaxPipeStageWriteBack(
     }
   })
 
+  myMemWbValid := (
+    RegNext(myMemWbValid, init=myMemWbValid.getZero)
+  )
+  myNonMemWbValid := (
+    RegNext(myNonMemWbValid, init=myNonMemWbValid.getZero)
+  )
+
   val myD2hBus = cloneOf(io.myLcvDbusD2hStm)
+  //val rSeenD2hBusFire = Reg(Bool(), init=False)
+
+  //when (myD2hBus.fire) {
+  //  rSeenD2hBusFire := True
+  //}
   if (cfg.optScoreboard) {
     when (
-      //RegNext(
-      //  ( 
-      //    myD2hBus.fire
-      //    && rCurrWbPayloadOuterIdx.lsb
-      //  ),
-      //  init=False
-      //)
-      //&& (
-      //  !rCurrWbPayloadOuterIdx.lsb
-      //)
-      fell(
-        rCurrWbPayloadOuterIdx.lsb
+      RegNext(
+        (
+          io.myRegFileWrPulse.fire
+          && myMemWbValid
+        ),
+        init=False
       )
     ) {
-      myWbPayloadVec.head := (
-        RegNext(
-          myWbPayloadVec.last,
-          init=myWbPayloadVec.last.getZero,
-        )
+      myMemWbValid := False
+    }
+    when (
+      RegNext(
+        (
+          io.myRegFileWrPulse.fire
+          && myNonMemWbValid
+        ),
+        init=False
       )
-      //setRegFileWrPulseEtc(myWbPayloadVec.head)
-    } otherwise {
+    ) {
+      myNonMemWbValid := False
+    }
+
+    switch (
+      cLink.up.isValid
+      //## myWbPayload
+      ## myWbPayloadVec.head(0).outpDecodeExt.opIsMemAccess
+    ) {
+      is (B"11") {
+        myMemWbValid := True
+        myMemWbPayload(1) := myMemWbPayload(0)
+      }
+      is (B"10") {
+        myNonMemWbValid := True
+        myNonMemWbPayload(1) := myNonMemWbPayload(0)
+      }
+      default {
+      }
+    }
+  } else {
+    when (cLink.up.isValid) {
+      myWbPayloadVec.head(1) := myWbPayloadVec.head(0)
     }
   }
-  when (cLink.up.isValid) {
-    myWbPayload(1) := myWbPayload(0)
-  }
+
+  //if (cfg.optScoreboard) {
+  //  when (cLink.up.isValid) {
+  //    myWbPayload(1) := myWbPayload(0)
+  //  }
+  //  when (
+  //    RegNext(
+  //      ( 
+  //        myD2hBus.fire
+  //        //&& rCurrWbPayloadOuterIdx.lsb
+  //      ),
+  //      init=False
+  //    )
+  //    //&& (
+  //    //  !rCurrWbPayloadOuterIdx.lsb
+  //    //)
+  //  ) {
+  //    when (
+  //      fell(
+  //        rCurrWbPayloadOuterIdx.lsb
+  //      )
+  //    ) {
+  //      myWbPayloadVec.head(1) := (
+  //        RegNext(
+  //          myWbPayloadVec.last(1),
+  //          init=myWbPayloadVec.last(1).getZero,
+  //        )
+  //      )
+  //    } otherwise {
+  //      myWbPayloadVec.head(1) := myWbPayloadVec.head(1).getZero
+  //    }
+  //    myWbPayloadVec.last := myWbPayloadVec.last.getZero
+  //    //setRegFileWrPulseEtc(myWbPayloadVec.head)
+  //  } otherwise {
+  //  }
+  //} else {
+  //  when (cLink.up.isValid) {
+  //    myWbPayload(1) := myWbPayload(0)
+  //  }
+  //}
+
+  //val rSavedInstrCntMem = (
+  //  Reg(cloneOf(myWbPayloadVec.head(1).instrCnt.mem))
+  //  init(0x0)
+  //)
 
   val myLcvDbusArea = new Area {
     //myDbusIo.myDbusExtraValid := (
@@ -692,74 +781,79 @@ case class SnowHouseForFmaxPipeStageWriteBack(
     when (
       (
         if (cfg.optScoreboard) (
-          cLink.up.isValid
-          || rCurrWbPayloadOuterIdx.lsb
+          //cLink.up.isValid
+          //|| rCurrWbPayloadOuterIdx.lsb
+          //&& 
+          myMemWbValid
         ) else (
           cLink.up.isValid
         )
       )
-      && myWbPayloadVec.head(1).outpDecodeExt.opIsMemAccess.last
+      && myMemWbPayload(1).outpDecodeExt.opIsMemAccess.last
     ) {
       myD2hBus.ready := True
     }
 
-    when (
-      (
-        if (cfg.optScoreboard) (
-          // TODO: maybe try `isValid` later (for fmax)?
-          cLink.up.isFiring
-          && !rCurrWbPayloadOuterIdx.lsb
-        ) else (
-          cLink.up.isValid
+    if (!cfg.optScoreboard) {
+      when (
+        (
+          //if (cfg.optScoreboard) (
+          //  // TODO: maybe try `isValid` later (for fmax)?
+          //  cLink.up.isValid
+          //  //&& !rCurrWbPayloadOuterIdx.lsb
+          //  && myMemWbValid
+          //) else (
+            cLink.up.isValid
+          //)
         )
-      )
-      //cLink.up.isValid
-      && myWbPayloadVec.head(1).outpDecodeExt.opIsMemAccess.last
-      && !myD2hBus.valid
-    ) {
-      if (cfg.optScoreboard) {
-        //rCurrWbPayloadOuterIdx.lsb := True
-        rCurrWbPayloadOuterIdx.lsb := True
-      } else {
-        cLink.duplicateIt()
+        //cLink.up.isValid
+        && myMemWbPayload(1).outpDecodeExt.opIsMemAccess.last
+        && !myD2hBus.valid
+      ) {
+        if (cfg.optScoreboard) {
+          //rCurrWbPayloadOuterIdx.lsb := True
+        } else {
+          cLink.duplicateIt()
+        }
       }
     }
     if (cfg.optScoreboard) {
-      when (
-        (
-          //cLink.up.isValid
-          //|| 
-          rCurrWbPayloadOuterIdx.lsb
-        )
-        && myWbPayloadVec.head(1).outpDecodeExt.opIsMemAccess.last
-        && (
-          // this is checking for `myD2hBus.fire`
-          myD2hBus.valid
-        )
-      ) {
-        rCurrWbPayloadOuterIdx.lsb := False
-        cLink.duplicateIt()
-      }
+      //when (
+      //  (
+      //    //cLink.up.isValid
+      //    //|| 
+      //    rCurrWbPayloadOuterIdx.lsb
+      //  )
+      //  && myMemWbPayload(1).outpDecodeExt.opIsMemAccess.last
+      //  && (
+      //    // this is checking for `myD2hBus.fire`
+      //    myD2hBus.valid
+      //  )
+      //) {
+      //  //rCurrWbPayloadOuterIdx.lsb := False
+      //  cLink.duplicateIt()
+      //}
     }
     switch (
       (
         (
           if (cfg.optScoreboard) (
-            cLink.up.isValid
-            || rCurrWbPayloadOuterIdx.lsb
+            //cLink.up.isValid
+            //|| rCurrWbPayloadOuterIdx.lsb
+            myMemWbValid
           ) else (
             cLink.up.isValid
           )
         )
-        && myWbPayloadVec.head(1).outpDecodeExt.opIsMemAccess.head
-        && !myWbPayloadVec.head(1).outpDecodeExt.memAccessKind.asBits(1)
+        && myMemWbPayload(1).outpDecodeExt.opIsMemAccess.head
+        && !myMemWbPayload(1).outpDecodeExt.memAccessKind.asBits(1)
         && (
           //myD2hBus.valid
           myD2hBus.fire
         )
       )
-      ## myWbPayloadVec.head(1).outpDecodeExt.memAccessKind.asBits(0)
-      ## myWbPayloadVec.head(1).outpDecodeExt.memAccessSubKind.asBits
+      ## myMemWbPayload(1).outpDecodeExt.memAccessKind.asBits(0)
+      ## myMemWbPayload(1).outpDecodeExt.memAccessSubKind.asBits
     ) {
       //--------
       // This stuff might need to be changed for the purposes of
@@ -767,15 +861,15 @@ case class SnowHouseForFmaxPipeStageWriteBack(
       // It's currently limited to at max 32-bit values, for example, on a
       // 32-bit `cfg.mainWidth` CPU. More work will be needed later.
       //--------
-      val myDecodeExt = myWbPayloadVec.head(1).outpDecodeExt
-      val mapElem = myWbPayloadVec.head(1).gprIdxToMemAddrIdxMap(0)
+      val myDecodeExt = myMemWbPayload(1).outpDecodeExt
+      val mapElem = myMemWbPayload(1).gprIdxToMemAddrIdxMap(0)
       val myCurrExt = (
         if (!mapElem.haveHowToSetIdx) (
-          myWbPayloadVec.head(1).myExt(
+          myMemWbPayload(1).myExt(
             0
           )
         ) else (
-          myWbPayloadVec.head(1).myExt(
+          myMemWbPayload(1).myExt(
             mapElem.howToSetIdx
           )
         )
@@ -823,27 +917,28 @@ case class SnowHouseForFmaxPipeStageWriteBack(
     when (
       (
         if (cfg.optScoreboard) (
-          cLink.up.isValid
-          || rCurrWbPayloadOuterIdx.lsb
+          //cLink.up.isValid
+          //|| 
+          myMemWbValid //rCurrWbPayloadOuterIdx.lsb
         ) else (
           cLink.up.isValid
         )
       )
-      && !myWbPayloadVec.head(1).outpDecodeExt.memAccessKind.asBits(1)
+      && !myMemWbPayload(1).outpDecodeExt.memAccessKind.asBits(1)
       && (
         //myD2hBus.valid
         myD2hBus.fire
       )
     ) {
-      val myDecodeExt = myWbPayloadVec.head(1).outpDecodeExt
-      val mapElem = myWbPayloadVec.head(1).gprIdxToMemAddrIdxMap(0)
+      val myDecodeExt = myMemWbPayload(1).outpDecodeExt
+      val mapElem = myMemWbPayload(1).gprIdxToMemAddrIdxMap(0)
       val myCurrExt = (
         if (!mapElem.haveHowToSetIdx) (
-          myWbPayloadVec.head(1).myExt(
+          myMemWbPayload(1).myExt(
             0
           )
         ) else (
-          myWbPayloadVec.head(1).myExt(
+          myMemWbPayload(1).myExt(
             mapElem.howToSetIdx
           )
         )
@@ -853,13 +948,13 @@ case class SnowHouseForFmaxPipeStageWriteBack(
       //myCurrExt.modMemWordValid.foreach(current => {
       //  current := (
       //    // TODO: support more destination GPRs
-      //    //!myWbPayloadVec.head.gprIsZeroVec(0)
+      //    //!myMemWbPayload.gprIsZeroVec(0)
       //    True
       //  )
       //})
       for (idx <- 0 until cfg.regFileCfg.modMemWordValidSize) {
         myCurrExt.modMemWordValid(idx) := (
-          !myWbPayloadVec.head(1).gprIsZeroVec.last(idx)
+          !myMemWbPayload(1).gprIsZeroVec.last(idx)
         )
       }
     }
@@ -868,7 +963,13 @@ case class SnowHouseForFmaxPipeStageWriteBack(
   cLink.up.driveFrom(io.up)(
     con=(node, inp) => {
       //node(pwbInp) := inp
-      myWbPayload(0) := inp
+      //myWbPayload(0) := inp
+      if (cfg.optScoreboard) {
+        myMemWbPayload(0) := inp
+        myNonMemWbPayload(0) := inp
+      } else {
+        myWbPayloadVec.head(0) := inp
+      }
     }
   )
   cLink.down.ready := True
@@ -880,12 +981,27 @@ case class SnowHouseForFmaxPipeStageWriteBack(
   //}
   def setRegFileWrPulseEtc(
     someMyWbPayload: Vec[SnowHousePipePayload],
+    isMem: Boolean,
   ): Unit = {
     io.myRegFileWrPulse.valid := (
       (
+        //if (
+        //  cfg.optScoreboard
+        //  && !isMem
+        //) (
+        //  cLink.up.isFiring
+        //  //|| myD2hBus.fire
+        //) else (
+        //  //cLink.up.isFiring
+        //  myD2hBus.fire
+        //)
         if (cfg.optScoreboard) (
-          cLink.up.isFiring
-          || myD2hBus.fire
+          if (isMem) (
+            myMemWbValid
+          ) else (
+            myNonMemWbValid
+            && cLink.up.isFiring
+          )
         ) else (
           cLink.up.isFiring
         )
@@ -966,36 +1082,39 @@ case class SnowHouseForFmaxPipeStageWriteBack(
     when (
       myD2hBus.fire
     ) {
-      setRegFileWrPulseEtc(myWbPayloadVec.head)
+      setRegFileWrPulseEtc(myMemWbPayload, isMem=true)
     } otherwise {
-      setRegFileWrPulseEtc(myWbPayload)
+      setRegFileWrPulseEtc(myNonMemWbPayload, isMem=false)
     }
 
     when (
       myD2hBus.fire
     ) {
       rScoreboardStallCnt := 0
-      rCurrWbPayloadOuterIdx.lsb := False
+      //rCurrWbPayloadOuterIdx.lsb := False
       //when (rCurrWbPayloadOuterIdx.lsb) {
       //  cLink.duplicateIt()
       //}
+      //myMemWbValid := False
     } elsewhen (
-      !myWbPayloadVec.last(1).instrCnt.shouldIgnoreInstr.head
+      !myNonMemWbPayload(1).instrCnt.shouldIgnoreInstr.head
       //&& !myWbPayloadVec.last(1).instrCnt.myPsIdBubble.head
       && rScoreboardStallCnt >= cfg.optMaxNumScoreboardInstrs - 1
-      && rCurrWbPayloadOuterIdx.lsb
+      //&& rCurrWbPayloadOuterIdx.lsb
+      && myNonMemWbValid
     ) {
       cLink.duplicateIt()
     } elsewhen (
-      !myWbPayloadVec.last(1).instrCnt.shouldIgnoreInstr.last
-      //&& !myWbPayloadVec.last(1).instrCnt.myPsIdBubble.last
+      !myNonMemWbPayload(1).instrCnt.shouldIgnoreInstr.last
+      && !myNonMemWbPayload(1).instrCnt.myPsIdBubble.last
       && cLink.up.isFiring
-      && rCurrWbPayloadOuterIdx.lsb
+      //&& rCurrWbPayloadOuterIdx.lsb
+      && myNonMemWbValid
     ) {
       rScoreboardStallCnt := rScoreboardStallCnt + 1
     }
   } else {
-    setRegFileWrPulseEtc(myWbPayload)
+    setRegFileWrPulseEtc(myWbPayloadVec.head, isMem=false)
   }
 
   Builder(linkArr)

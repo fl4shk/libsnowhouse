@@ -7313,7 +7313,12 @@ case class SnowHousePipeStageExecute(
   )
   if (cfg.optForFmax) {
     inp := cLink.up(args.prevPayload)
-    cLink.up(args.currPayload) := outp
+    if (cfg.optScoreboard) {
+      cLink.down(args.currPayload).allowOverride
+      cLink.down(args.currPayload) := outp
+    } else {
+      cLink.up(args.currPayload) := outp
+    }
   }
   val tempModFrontPayload = (
     if (!cfg.optForFmax) (
@@ -8675,7 +8680,7 @@ case class SnowHousePipeStageExecute(
       (
         if (cfg.optScoreboard) (
           cLink.up.isValid
-          //&& myTempDownIsReady
+          && myTempDownIsReady
           && !rSeenH2dBusFire
         ) else (
           cLink.up.isValid
@@ -8702,33 +8707,63 @@ case class SnowHousePipeStageExecute(
     myH2dBus.isWrite := myDbusHostPayload.accKind.asBits(1)
 
     if (cfg.optScoreboard) {
-      cLink.down(args.currPayload).instrCnt.shouldIgnoreInstr
-      .allowOverride
+      cLink.down(args.currPayload).instrCnt.allowOverride
+      //cLink.down(args.currPayload).outpDecodeExt.allowOverride
+      //cLink.up(args.currPayload) := outp
     }
+    val rInstrCntMem = (
+      Reg(cloneOf(outp.instrCnt.mem))
+      init(1)
+    )
+    outp.instrCnt.mem := rInstrCntMem
     when (
-      myH2dBus.valid
-      && !myH2dBus.ready
+      if (cfg.optScoreboard) (
+        myH2dBus.valid
+        //&& myTempDownIsReady
+        && !myH2dBus.ready
+      ) else (
+        myH2dBus.valid
+        && !myH2dBus.ready
+      )
     ) {
       if (cfg.optScoreboard) {
         cLink.duplicateIt()
         //outp.instrCnt.shouldIgnoreInstr.foreach(item => {
         //  item := True
         //})
-        cLink.down(args.currPayload).instrCnt.shouldIgnoreInstr.foreach(
-          item => {
-            item := True
-          }
-        )
+        //cLink.down(args.currPayload) := outp
+        //cLink.down(args.currPayload).instrCnt
+        //cLink.down(args.currPayload).instrCnt.shouldIgnoreInstr.foreach(
+        //  item => {
+        //    item := True
+        //  }
+        //)
+        //cLink.down(args.currPayload).instrCnt.myPsIdBubble.foreach(
+        //  item => {
+        //    item := True
+        //  }
+        //)
+        //cLink.down(args.currPayload).outpDecodeExt.opIsMemAccess.foreach(
+        //  item => {
+        //    item := False
+        //  }
+        //)
       } else {
         myDoStall(stallKindMem) := True
       }
+    } otherwise {
+      //if (cfg.optScoreboard) {
+      //  cLink.up(args.currPayload) := outp
+      //}
     }
     when (myH2dBus.fire) {
+      //rInstrCntMem.lsb := !rInstrCntMem.lsb
+      rInstrCntMem := rInstrCntMem + 1
       if (cfg.optScoreboard) {
         rSeenH2dBusFire := True
-        cLink.down(args.currPayload).instrCnt.shouldIgnoreInstr := (
-          myShouldIgnoreInstr
-        )
+        //cLink.down(args.currPayload).instrCnt.shouldIgnoreInstr := (
+        //  myShouldIgnoreInstr
+        //)
         //cLink.down(args.currPayload).instrCnt.shouldIgnoreInstr.foreach(
         //  item => {
         //    item := False
