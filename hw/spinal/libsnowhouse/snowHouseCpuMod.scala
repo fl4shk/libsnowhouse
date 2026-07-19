@@ -3743,8 +3743,9 @@ case class SnowHouseCpuConfig(
         optMaxNumScoreboardInstrs=(
           //None
           Some(
-            4
-            //2
+            //8
+            //4
+            2
           )
         ),
         //optDualIssue=(
