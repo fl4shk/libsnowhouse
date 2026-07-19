@@ -203,7 +203,6 @@ case class SnowHouseForFmaxScoreboard(
     )
   )
   for (
-    // old "scoreboard" code:
     idx <- 0 until io.gprIdxVec.size + 2
     //idx <- 0 until upPayload.gprIdxVec.size - 1
   ) {
@@ -234,6 +233,69 @@ case class SnowHouseForFmaxScoreboard(
           )
         )
       }
+    }
+  }
+
+  val myInfoValidVec = (
+    Vec.fill(cfg.optMaxNumScoreboardInstrs)(
+      Bool()
+    )
+    //Vec(rMyInfoVec.reverse.map(item => item.fire))
+  )
+  for (idx <- 0 until cfg.optMaxNumScoreboardInstrs) {
+    when (io.commit.fire && io.commit.payload === idx) {
+      myInfoValidVec(idx) := False
+      rMyInfoVec(idx).valid := False
+    } otherwise {
+      myInfoValidVec(idx) := rMyInfoVec(idx).fire
+    }
+  }
+
+
+  def bitscan(
+    x: UInt
+  ): UInt = (
+    x & ~(x - 1)
+  )
+
+// >>> for x in range(8):
+// ...     print(x, bin(x), bin(x ^ 0x7), bin(bitscan(x ^ 0x7)))
+// ...     
+// 0 0b0 0b111 0b1
+// 1 0b1 0b110 0b10
+// 2 0b10 0b101 0b1
+// 3 0b11 0b100 0b100
+// 4 0b100 0b11 0b1
+// 5 0b101 0b10 0b10
+// 6 0b110 0b1 0b1
+// 7 0b111 0b0 0b0
+
+// >>> for idx in range(size):
+// ...     print(idx, ("-" * (size - idx - 1) + "1" + ("0" * idx)))
+// ...     
+// 0 ---1
+// 1 --10
+// 2 -100
+// 3 1000
+  switch (
+    io.issue.ready
+    ## bitscan(~myInfoValidVec.asBits.asUInt)
+  ) {
+    val size = myInfoValidVec.size
+    for (idx <- 0 until size) {
+      is (MaskedLiteral({
+        "1" + ("-" * (size - idx - 1) + "1" + ("0" * idx))
+      })) {
+        // fast-ish (regarding fmax) search to implement the free list
+        // search
+        io.issue.valid := True
+        io.issue.payload := idx
+        rMyInfoVec(idx).valid := True
+        rMyInfoVec(idx).gprIdxVec := io.gprIdxVec
+      }
+    }
+    default {
+      io.issue.valid := False
     }
   }
 
