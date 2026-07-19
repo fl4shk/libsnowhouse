@@ -1101,7 +1101,8 @@ case class SnowHouseForFmaxPipeStageWriteBack(
       //&& !myWbPayloadVec.last(1).instrCnt.myPsIdBubble.head
       && rScoreboardStallCnt >= cfg.optMaxNumScoreboardInstrs - 1
       //&& rCurrWbPayloadOuterIdx.lsb
-      && myNonMemWbValid
+      //&& myNonMemWbValid
+      && myMemWbValid
     ) {
       cLink.duplicateIt()
     } elsewhen (
@@ -1110,6 +1111,7 @@ case class SnowHouseForFmaxPipeStageWriteBack(
       && cLink.up.isFiring
       //&& rCurrWbPayloadOuterIdx.lsb
       && myNonMemWbValid
+      && myMemWbValid
     ) {
       rScoreboardStallCnt := rScoreboardStallCnt + 1
     }
