@@ -1029,44 +1029,46 @@ case class SnowHouseForFmaxPipeStageWriteBack(
       //myMemWbPayload(1) := myMemWbPayload(0)
       rInstrCntMem := rInstrCntMem + 1 //myWbPayloadVec.head(1).instrCnt.mem
     }
-    when ({
-      val tempCond = (
-        cLink.up.isFiring
-        //&& !myMemWbValid
-        && myNonMemWbValid
-        //&& (
-        //  rInstrCntNonMem === myWbPayloadVec.head(0).instrCnt.nonMem
-        //)
-        && !myD2hBus.fire
-        && !myNonMemWbPayload(1).instrCnt.shouldIgnoreInstr.head
-      )
-      (
-        tempCond
-        //&& (
-        //  myNonMemWbPayload(1).instrCnt.any
-        //  =/= (
-        //    RegNextWhen(
-        //      myNonMemWbPayload(1).instrCnt.any
-        //    )
-        //  )
-        //)
-      )
-      //&& (
-      //  myWbPayloadVec.head.instrCnt.any
-      //  =/= (
-      //    RegNextWhen(
-      //      outp.instrCnt.any,
-      //      cond=cLink.up.isFiring,
-      //    )
-      //    init(0x1)
-      //  )
-      //)
-    }) {
-      rInstrCntNonMem := rInstrCntNonMem + 1
-    }
+    //when ({
+    //  val tempCond = (
+    //    cLink.up.isFiring
+    //    //&& !myMemWbValid
+    //    && myNonMemWbValid
+    //    //&& (
+    //    //  rInstrCntNonMem === myWbPayloadVec.head(0).instrCnt.nonMem
+    //    //)
+    //    && !myD2hBus.fire
+    //    && !myNonMemWbPayload(1).instrCnt.shouldIgnoreInstr.head
+    //  )
+    //  (
+    //    tempCond
+    //    //&& (
+    //    //  myNonMemWbPayload(1).instrCnt.any
+    //    //  =/= (
+    //    //    RegNextWhen(
+    //    //      myNonMemWbPayload(1).instrCnt.any
+    //    //    )
+    //    //  )
+    //    //)
+    //  )
+    //  //&& (
+    //  //  myWbPayloadVec.head.instrCnt.any
+    //  //  =/= (
+    //  //    RegNextWhen(
+    //  //      outp.instrCnt.any,
+    //  //      cond=cLink.up.isFiring,
+    //  //    )
+    //  //    init(0x1)
+    //  //  )
+    //  //)
+    //}) {
+    //  rInstrCntNonMem := rInstrCntNonMem + 1
+    //}
+
     when (
       cLink.up.isValid
       && myMemWbValid
+      && !myNonMemWbValid
       && !myD2hBus.fire
       //&& (
       //  rInstrCntMem =/= myWbPayloadVec.head(0).instrCnt.mem
@@ -1441,10 +1443,10 @@ case class SnowHouseForFmaxPipeStageWriteBack(
             ) else (
               myNonMemWbValid
               && cLink.up.isFiring
-              && (
-                rInstrCntNonMem
-                === myWbPayloadVec.last(0).instrCnt.nonMem
-              )
+              //&& (
+              //  rInstrCntNonMem
+              //  === myWbPayloadVec.last(0).instrCnt.nonMem
+              //)
             )
           )
           //&& (
