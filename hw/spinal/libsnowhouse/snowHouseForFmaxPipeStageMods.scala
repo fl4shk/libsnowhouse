@@ -994,7 +994,7 @@ case class SnowHouseForFmaxPipeStageWriteBack(
     when (
       cLink.up.isValid
       && myMemWbValid
-      && !myD2hBus.fire
+      //&& !myD2hBus.fire
       && (
         rInstrCntMem =/= myWbPayloadVec.head(0).instrCnt.mem
       )
@@ -1020,31 +1020,33 @@ case class SnowHouseForFmaxPipeStageWriteBack(
       myNonMemWbValid := True
       myNonMemWbPayload(1) := myNonMemWbPayload(0)
     }
-    when (
-      cLink.up.isFiring
-      && !myD2hBus.fire
-      && (
-        !myMemWbValid
-        || myNonMemWbValid
-      )
-    ) {
-      rInstrCntNonMem := rInstrCntNonMem + 1
-    }
-    when (
-      cLink.up.isValid
-      //&& myMemWbValid
-      //&& !myD2hBus.fire
-      && !myD2hBus.fire
-      && (
-        !myMemWbValid
-        || myNonMemWbValid
-      )
-      && (
-        rInstrCntNonMem =/= myWbPayloadVec.head(0).instrCnt.nonMem
-      )
-    ) {
-      cLink.throwIt()
-    }
+    //when (
+    //  cLink.up.isFiring
+    //  && !myD2hBus.fire
+    //  && (
+    //    //!myMemWbValid
+    //    //|| 
+    //    myNonMemWbValid
+    //  )
+    //  && !myNonMemWbPayload(1).instrCnt.myPsIdBubble.head
+    //) {
+    //  rInstrCntNonMem := rInstrCntNonMem + 1
+    //}
+    //when (
+    //  cLink.up.isValid
+    //  //&& myMemWbValid
+    //  //&& !myD2hBus.fire
+    //  && !myD2hBus.fire
+    //  && (
+    //    !myMemWbValid
+    //    || myNonMemWbValid
+    //  )
+    //  && (
+    //    rInstrCntNonMem =/= myWbPayloadVec.head(0).instrCnt.nonMem
+    //  )
+    //) {
+    //  cLink.throwIt()
+    //}
 
     //switch (
     //  cLink.up.isValid
@@ -1162,7 +1164,7 @@ case class SnowHouseForFmaxPipeStageWriteBack(
       ) {
         if (cfg.optScoreboard) {
           //rCurrWbPayloadOuterIdx.lsb := True
-          cLink.duplicateIt()
+          //cLink.duplicateIt()
         } else {
           cLink.duplicateIt()
         }
@@ -1334,6 +1336,26 @@ case class SnowHouseForFmaxPipeStageWriteBack(
     someMyWbPayload: Vec[SnowHousePipePayload],
     isMem: Boolean,
   ): Unit = {
+    val myNonMemRegFileWrPulseValidPartial = (
+      cfg.optScoreboard
+    ) generate (
+      myNonMemWbValid
+      && cLink.up.isFiring
+      //cLink.up.isValid
+      ////&& myMemWbValid
+      ////&& !myD2hBus.fire
+      //&& !myD2hBus.fire
+      //&& (
+      //  !myMemWbValid
+      //  || myNonMemWbValid
+      //)
+      && (
+        rInstrCntNonMem === myWbPayloadVec.head(0).instrCnt.nonMem
+      )
+      && (
+        !myNonMemWbPayload(1).instrCnt.myPsIdBubble.head
+      )
+    )
     io.commitEtc.myRegFileWrPulse.valid := (
       (
         //if (
@@ -1348,10 +1370,10 @@ case class SnowHouseForFmaxPipeStageWriteBack(
         //)
         if (cfg.optScoreboard) (
           if (isMem) (
-            myMemWbValid
+            //myMemWbValid
+            True
           ) else (
-            myNonMemWbValid
-            && cLink.up.isFiring
+            myNonMemRegFileWrPulseValidPartial
           )
         ) else (
           cLink.up.isFiring
@@ -1378,6 +1400,21 @@ case class SnowHouseForFmaxPipeStageWriteBack(
         myCurrExt.modMemWordValid(0)
       }
     )
+    if (
+      cfg.optScoreboard
+      && !isMem
+    ) {
+      when (
+        //myNonMemWbValid
+        //&& cLink.up.isFiring
+        //&& (
+        //  rInstrCntNonMem === myWbPayloadVec.head(0).instrCnt.nonMem
+        //)
+        myNonMemRegFileWrPulseValidPartial
+      ) {
+        rInstrCntNonMem := rInstrCntNonMem + 1
+      }
+    }
     io.commitEtc.myRegFileWrPulse.addr := (
       someMyWbPayload(1).gprIdxVec.last
     )

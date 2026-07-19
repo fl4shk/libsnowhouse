@@ -1886,7 +1886,7 @@ object SnowHouseCpuPipeStageInstrDecode {
             upPayload.gprIdxVec(0) := encInstr(idx).rbIdx
             upPayload.gprIdxVec(1) := encInstr(idx).raIdx
             upPayload.gprIdxVec(2) := encInstr(idx).raIdx
-            upPayload.gprIdxVec.last := encInstr(idx).raIdx
+            //upPayload.gprIdxVec.last := encInstr(idx).raIdx
             psId.myTempOpMayNeedHazardCheck := True
           }
 
@@ -1905,6 +1905,7 @@ object SnowHouseCpuPipeStageInstrDecode {
                 psId.myTempOpIsMemAccessStore := True
               } else {
                 setOp(StrRaRbSimm16)
+                upPayload.gprIdxVec.last := 0x0
               }
             }
             is (LduhRaRbSimm16._2._1) {
@@ -1945,6 +1946,7 @@ object SnowHouseCpuPipeStageInstrDecode {
                 psId.myTempOpIsMemAccessStore := True
               } else {
                 setOp(SthRaRbSimm16)
+                upPayload.gprIdxVec.last := 0x0
               }
             }
             is (StbRaRbSimm16._2._1) {
@@ -1953,6 +1955,7 @@ object SnowHouseCpuPipeStageInstrDecode {
                 psId.myTempOpIsMemAccessStore := True
               } else {
                 setOp(StbRaRbSimm16)
+                upPayload.gprIdxVec.last := 0x0
               }
             }
             //is (CmpxchgRaRbRc._2._1) {

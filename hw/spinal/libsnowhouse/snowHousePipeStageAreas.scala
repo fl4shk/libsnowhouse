@@ -8711,6 +8711,7 @@ case class SnowHousePipeStageExecute(
       !myH2dBus.valid
       && !rSeenH2dBusFire
       && cLink.up.isFiring
+      && !outp.instrCnt.myPsIdBubble.head
     ) {
       rInstrCntNonMem := rInstrCntNonMem + 1
     }
