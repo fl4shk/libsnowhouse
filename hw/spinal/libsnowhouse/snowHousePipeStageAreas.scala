@@ -2027,27 +2027,8 @@ case class SnowHousePipeStageInstrDecode(
     def doSendBubbleMainMost(
     ): Unit = {
       cId.duplicateIt()
+      upPayload(1).setAsBubbleMain()
 
-      upPayload(1).instrCnt.myPsIdBubble.foreach(item => {
-        item := True
-      })
-      upPayload(1).splitOp.setToDefault()
-      upPayload(1).branchTgtBufElem(0) := (
-        //.valid := False
-        upPayload(1).branchTgtBufElem(0).getZero
-      )
-      upPayload(1).branchTgtBufElem(0).dontPredict := True
-      upPayload(1).branchTgtBufElem(1) := (
-        upPayload(1).branchTgtBufElem(1).getZero
-      )
-      upPayload(1).branchTgtBufElem(1).dontPredict := True
-
-      upPayload(1).branchPredictTkn := False
-      //upPayload(1).branchPredictReplaceBtbElemMost := False
-
-      upPayload(1).regPcSetItCnt.foreach(item => {
-        item := item.getZero
-      })
       down(pId) := upPayload(1)
     }
     switch (rStallState) {
@@ -8744,11 +8725,12 @@ case class SnowHousePipeStageExecute(
         //    item := True
         //  }
         //)
-        cLink.down(args.currPayload).outpDecodeExt.opIsMemAccess.foreach(
-          item => {
-            item := False
-          }
-        )
+        cLink.down(args.currPayload).setAsBubbleMain()
+        //cLink.down(args.currPayload).outpDecodeExt.opIsMemAccess.foreach(
+        //  item => {
+        //    item := False
+        //  }
+        //)
       } else {
         myDoStall(stallKindMem) := True
       }

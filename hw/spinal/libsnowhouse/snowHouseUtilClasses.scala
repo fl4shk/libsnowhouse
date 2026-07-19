@@ -1468,7 +1468,7 @@ case class SnowHouseConfig(
 case class SnowHouseInstrCnt(
   cfg: SnowHouseConfig,
 ) extends Bundle {
-  val sb = (
+  val scoreboardTag = (
     cfg.optScoreboard
   ) generate (
     UInt(
@@ -2219,5 +2219,28 @@ case class SnowHousePipePayload(
       myHaveFormalFwd
     )
     outpFwd := myFwd
+  }
+  def setAsBubbleMain(
+  ): Unit = {
+    instrCnt.myPsIdBubble.foreach(item => {
+      item := True
+    })
+    splitOp.setToDefault()
+    branchTgtBufElem(0) := (
+      //.valid := False
+      branchTgtBufElem(0).getZero
+    )
+    branchTgtBufElem(0).dontPredict := True
+    branchTgtBufElem(1) := (
+      branchTgtBufElem(1).getZero
+    )
+    branchTgtBufElem(1).dontPredict := True
+
+    branchPredictTkn := False
+    //branchPredictReplaceBtbElemMost := False
+
+    regPcSetItCnt.foreach(item => {
+      item := item.getZero
+    })
   }
 }
