@@ -119,6 +119,141 @@ case class SnowHouseForFmaxPipeStageInstrFetch(
   //--------
 }
 
+
+case class SnowHouseForFmaxScoreboardIo(
+  cfg: SnowHouseConfig,
+) extends Bundle {
+  require(
+    cfg.optScoreboard
+  )
+
+  val gprIdxVec = (
+    //Vec.fill(cfg.numMultiIssue)(
+      Vec.fill(cfg.maxNumGprsPerInstr)(
+        UInt(log2Up(cfg.numGprs) bits)
+      )
+    //)
+  )
+  val issue = (
+    //Vec.fill(cfg.numMultiIssue)(
+      Stream(
+        UInt(cfg.optScoreboardTagWidth bits)
+      )
+    //)
+  )
+
+  val commit = (
+    //Vec.fill(cfg.numMultiIssue)(
+      Flow(
+        UInt(cfg.optScoreboardTagWidth bits)
+      )
+    //)
+  )
+
+  //for (idx <- 0 until cfg.numMultiIssue) {
+  //  master(issue(idx))
+  //  slave(commit(idx))
+  //}
+  master(issue)
+  master(commit)
+
+  //commit.foreach(item => {
+  //  slave(item)
+  //})
+}
+case class SnowHouseForFmaxScoreboard(
+  cfg: SnowHouseConfig,
+) extends Component {
+  require(
+    cfg.optScoreboard
+  )
+
+  val io = SnowHouseForFmaxScoreboardIo(cfg=cfg)
+
+  case class MyInfo(
+  ) extends Bundle {
+    val valid = Bool()
+    def fire = valid
+
+    val gprIdxVec = (
+      Vec.fill(cfg.maxNumGprsPerInstr)(
+        UInt(log2Up(cfg.numGprs) bits)
+      )
+    )
+  }
+  val rMyInfoVec = (
+    Vec.fill(cfg.optMaxNumScoreboardInstrs)({
+      val temp = (
+        //Vec.fill(cfg.numMultiIssue)(
+          Reg(MyInfo())
+        //)
+      )
+      //temp.foreach(item => item.init(item.getZero))
+      temp.init(temp.getZero)
+      temp
+    })
+  )
+
+
+  val tempHaveHazardAddrCheckVec = (
+    Vec.fill(cfg.optMaxNumScoreboardInstrs)(
+      Vec.fill(io.gprIdxVec.size + 2)(
+        Bool()
+      )
+    )
+  )
+  for (
+    // old "scoreboard" code:
+    idx <- 0 until io.gprIdxVec.size + 2
+    //idx <- 0 until upPayload.gprIdxVec.size - 1
+  ) {
+    if (idx < io.gprIdxVec.size - 1) {
+      val tempRegIdx = io.gprIdxVec(idx)
+      for (jdx <- 0 until cfg.optMaxNumScoreboardInstrs) {
+        tempHaveHazardAddrCheckVec(jdx)(idx) := (
+          (
+            //tempRegIdx === myHistLastGprIdx(jdx + 1).last
+            tempRegIdx === rMyInfoVec(jdx).gprIdxVec.last
+            && tempRegIdx.orR // check for non-zero
+            && rMyInfoVec(jdx).fire
+          )
+        )
+      }
+    } else { // if (idx >= upPayload.gprIdxVec.size - 1)
+      val tempRegIdx = io.gprIdxVec.last
+      for (jdx <- 0 until tempHaveHazardAddrCheckVec.size) {
+        tempHaveHazardAddrCheckVec(jdx)(idx) := (
+          (
+            //tempRegIdx === myHistLastGprIdx(jdx + 1)(idx % 3)
+
+            tempRegIdx === rMyInfoVec(jdx).gprIdxVec(
+              idx % (io.gprIdxVec.size - 1)
+            )
+            && tempRegIdx.orR // check for non-zero
+            && rMyInfoVec(jdx).fire
+          )
+        )
+      }
+    }
+  }
+
+  //when (
+  //  io.issue.fire
+  //) {
+  //}
+
+  //switch (
+  //  
+  //) {
+  //}
+
+  //val rSavedGprIdxVec = (
+  //  Vec.fill(
+  //    cfg.op
+  //  )
+  //)
+}
+
 case class SnowHouseForFmaxPipeStageInstrDecodeIo(
   cfg: SnowHouseConfig
 ) extends Bundle {
@@ -140,7 +275,9 @@ case class SnowHouseForFmaxPipeStageInstrDecodeIo(
     ))
   )
   //--------
+  //--------
 }
+
 case class SnowHouseForFmaxPipeStageInstrDecode(
   cfg: SnowHouseConfig,
   val doDecodeFunc: (SnowHousePipeStageInstrDecode) => Area,
@@ -664,9 +801,11 @@ case class SnowHouseForFmaxPipeStageWriteBack(
   myMemWbValid := (
     RegNext(myMemWbValid, init=myMemWbValid.getZero)
   )
-  myNonMemWbValid := (
-    RegNext(myNonMemWbValid, init=myNonMemWbValid.getZero)
-  )
+  if (cfg.optScoreboard) {
+    myNonMemWbValid := (
+      RegNext(myNonMemWbValid, init=myNonMemWbValid.getZero)
+    )
+  }
 
   val myD2hBus = cloneOf(io.myLcvDbusD2hStm)
   //val rSeenD2hBusFire = Reg(Bool(), init=False)

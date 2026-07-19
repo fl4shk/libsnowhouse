@@ -1506,6 +1506,7 @@ case class SnowHousePipeStageInstrFetch(
 //  //  )
 //  //)
 //}
+
 case class SnowHousePipeStageInstrDecode(
   val args: SnowHousePipeStageArgs,
   //val psIdHaltIt: Bool,

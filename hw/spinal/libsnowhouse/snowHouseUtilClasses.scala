@@ -727,34 +727,6 @@ case class SnowHouseConfig(
       )
     }
   )
-  val optScoreboard = (
-    optForFmaxCfg match {
-      case Some(myForFmaxCfg) => (
-        myForFmaxCfg.optMaxNumScoreboardInstrs != None
-      )
-      case None => (
-        false
-      )
-    }
-  )
-  val optMaxNumScoreboardInstrs = (
-    optForFmaxCfg match {
-      case Some(myForFmaxCfg) => (
-        myForFmaxCfg.optMaxNumScoreboardInstrs match {
-          case Some(myNumScoreboardInstrs) => (
-            myNumScoreboardInstrs
-          )
-          case None => (
-            0
-          )
-        }
-      )
-      case None => (
-        0
-      )
-    }
-  )
-
   val myPsIdBubbleNumFollowingInstrs = (
     //1
     //+ 
@@ -787,6 +759,53 @@ case class SnowHouseConfig(
         1
       )
     )
+  )
+  val optScoreboard = (
+    optForFmaxCfg match {
+      case Some(myForFmaxCfg) => (
+        myForFmaxCfg.optMaxNumScoreboardInstrs != None
+      )
+      case None => (
+        false
+      )
+    }
+  )
+  val optMaxNumScoreboardInstrs = (
+    optForFmaxCfg match {
+      case Some(myForFmaxCfg) => (
+        myForFmaxCfg.optMaxNumScoreboardInstrs match {
+          case Some(myNumScoreboardInstrs) => (
+            myNumScoreboardInstrs
+          )
+          case None => (
+            0
+          )
+        }
+      )
+      case None => (
+        0
+      )
+    }
+  )
+  val optNumScoreboardTags = (
+    if (optScoreboard) (
+      (
+        optMaxNumScoreboardInstrs
+        //+ myPsIdBubbleNumFollowingInstrs
+      )
+    ) else (
+      0
+    )
+  )
+  val optScoreboardTagWidth = (
+    if (optScoreboard) (
+      log2Up(optNumScoreboardTags)
+    ) else (
+      0
+    )
+  )
+  val numMultiIssue = (
+    1 // TODO: support multiple issue
   )
 
   //val optDualIssue = (
@@ -1449,6 +1468,14 @@ case class SnowHouseConfig(
 case class SnowHouseInstrCnt(
   cfg: SnowHouseConfig,
 ) extends Bundle {
+  val sb = (
+    cfg.optScoreboard
+  ) generate (
+    UInt(
+      log2Up(cfg.optNumScoreboardTags)
+      bits
+    )
+  )
   val any = UInt(cfg.instrCntWidth bits)
   val fwd = UInt(cfg.instrCntWidth bits)
   val jmp = UInt(cfg.instrCntWidth bits)
@@ -1838,7 +1865,7 @@ case class SnowHousePipePayloadNonExt(
   val splitOp = SnowHouseSplitOp(cfg=cfg)
   val myDoHaveHazardAddrCheckVec = Vec.fill(
     cfg.myPsIdBubbleNumFollowingInstrs
-    + cfg.optMaxNumScoreboardInstrs
+    //+ cfg.optMaxNumScoreboardInstrs
   )(
     Bool()
   )
