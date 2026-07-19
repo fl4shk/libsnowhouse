@@ -8743,11 +8743,11 @@ case class SnowHousePipeStageExecute(
         //    item := True
         //  }
         //)
-        //cLink.down(args.currPayload).outpDecodeExt.opIsMemAccess.foreach(
-        //  item => {
-        //    item := False
-        //  }
-        //)
+        cLink.down(args.currPayload).outpDecodeExt.opIsMemAccess.foreach(
+          item => {
+            item := False
+          }
+        )
       } else {
         myDoStall(stallKindMem) := True
       }

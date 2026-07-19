@@ -703,6 +703,7 @@ case class SnowHouseForFmaxPipeStageWriteBack(
     ) {
       myNonMemWbValid := False
     }
+
     when (
       cLink.up.isValid
       && myWbPayloadVec.head(0).outpDecodeExt.opIsMemAccess(0)
@@ -721,17 +722,20 @@ case class SnowHouseForFmaxPipeStageWriteBack(
       //rSavedInstrCntMem := myWbPayloadVec.head(1).instrCnt.mem
     }
     when (
-      cLink.up.isFiring
-      && myWbPayloadVec.head(0).outpDecodeExt.opIsMemAccess(0)
-      && (
-        RegNext(
-          (
-            !myMemWbValid
-            || myD2hBus.fire
-          ),
-          init=False
-        )
-      )
+      //cLink.up.isFiring
+      //&& myWbPayloadVec.head(0).outpDecodeExt.opIsMemAccess(0)
+      //&& (
+      //  RegNext(
+      //    (
+      //      !myMemWbValid
+      //      || myD2hBus.fire
+      //    ),
+      //    init=False
+      //  )
+      //)
+      //cLink.up.isValid
+      //&& myWbPayloadVec.head(0).outpDecodeExt.opIsMemAccess(0)
+      myD2hBus.fire
     ) {
       //myMemWbValid := True
       //myMemWbPayload(1) := myMemWbPayload(0)
@@ -747,6 +751,7 @@ case class SnowHouseForFmaxPipeStageWriteBack(
     ) {
       cLink.duplicateIt()
     }
+
     when (
       cLink.up.isValid
       && !myWbPayloadVec.head(0).outpDecodeExt.opIsMemAccess(0)
