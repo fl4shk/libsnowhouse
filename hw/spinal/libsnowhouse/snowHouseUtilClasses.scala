@@ -697,7 +697,9 @@ case class SnowHouseConfig(
   instrCntWidth: Int=(
     //8
     //4
-    3
+    //3
+    //5
+    6
   ),
   //exposeGprsToIo: Option[Seq[Int]]=None,
   exposeRegFileWriteDataToIo: Boolean=false,
@@ -1480,6 +1482,7 @@ case class SnowHouseInstrCnt(
   val fwd = UInt(cfg.instrCntWidth bits)
   val jmp = UInt(cfg.instrCntWidth bits)
   val mem = UInt(cfg.instrCntWidth bits)
+  val nonMem = UInt(cfg.instrCntWidth bits)
   val shouldIgnoreInstr = Vec.fill(cfg.lowerMyFanoutRegPcSetItCnt)(
     Bool()
   )

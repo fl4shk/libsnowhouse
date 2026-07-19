@@ -440,16 +440,10 @@ case class SnowHouseForFmaxPipeStageInstrDecode(
     }
   )
 
-  s2mLink.down.driveTo(
-    io.down
-  )(
-    con=(outp, node) => {
-      outp := node(pIdOutp)
-    }
-  )
-
   if (cfg.optScoreboard) {
-    scoreboard.io.issue.ready := cLink.up.isFiring
+    scoreboard.io.issue.ready := (
+      cLink.up.isFiring
+    )
     scoreboard.io.gprIdxVec := innerPsId.upPayload(1).gprIdxVec
     innerPsId.upPayload(1).instrCnt.scoreboardTag := (
       scoreboard.io.issue.payload
@@ -460,6 +454,14 @@ case class SnowHouseForFmaxPipeStageInstrDecode(
     }
     scoreboard.io.commit := io.myScoreboardCommmit
   }
+
+  s2mLink.down.driveTo(
+    io.down
+  )(
+    con=(outp, node) => {
+      outp := node(pIdOutp)
+    }
+  )
 
   Builder(linkArr)
   //--------
@@ -941,9 +943,21 @@ case class SnowHouseForFmaxPipeStageWriteBack(
   val myD2hBus = cloneOf(io.myLcvDbusD2hStm)
   //val rSeenD2hBusFire = Reg(Bool(), init=False)
 
-  val rSavedInstrCntMem = (
+  //val rSavedCommitTag = (
+  //  cfg.optScoreboard
+  //) generate (
+  //  Reg(cloneOf(io.commit.payload))
+
+  //  // non-zero initial value to make sure things work correctly
+  //  init(2)
+  //)
+  val rInstrCntMem = (
     Reg(cloneOf(myWbPayloadVec.head(1).instrCnt.mem))
-    init(0x0)
+    init(0x1)
+  )
+  val rInstrCntNonMem = (
+    Reg(cloneOf(myWbPayloadVec.head(1).instrCnt.nonMem))
+    init(0x1)
   )
   //when (myD2hBus.fire) {
   //  rSeenD2hBusFire := True
@@ -991,6 +1005,10 @@ case class SnowHouseForFmaxPipeStageWriteBack(
       myMemWbPayload(1) := myMemWbPayload(0)
       //rSavedInstrCntMem := myWbPayloadVec.head(1).instrCnt.mem
     }
+    //when (io.commit.fire) {
+    //  rSavedCommitTag := io.commit.payload
+    //}
+
     when (
       //cLink.up.isFiring
       //&& myWbPayloadVec.head(0).outpDecodeExt.opIsMemAccess(0)
@@ -1009,18 +1027,60 @@ case class SnowHouseForFmaxPipeStageWriteBack(
     ) {
       //myMemWbValid := True
       //myMemWbPayload(1) := myMemWbPayload(0)
-      rSavedInstrCntMem := rSavedInstrCntMem + 1 //myWbPayloadVec.head(1).instrCnt.mem
+      rInstrCntMem := rInstrCntMem + 1 //myWbPayloadVec.head(1).instrCnt.mem
+    }
+    when (
+      cLink.up.isFiring
+      && !myMemWbValid
+    ) {
+      rInstrCntNonMem := rInstrCntNonMem + 1
     }
     when (
       cLink.up.isValid
       && myMemWbValid
       && !myD2hBus.fire
+      //&& (
+      //  rInstrCntMem =/= myWbPayloadVec.head(0).instrCnt.mem
+      //)
       && (
-        rSavedInstrCntMem =/= myWbPayloadVec.head(0).instrCnt.mem
+        rInstrCntMem === myWbPayloadVec.head(0).instrCnt.mem
       )
     ) {
       cLink.duplicateIt()
+      //cLink.throwIt()
     }
+    //when (
+    //  cLink.up.isFiring
+    //) {
+    //}
+    //when (
+    //  cLink.up.isValid
+    //  && myNonMemWbValid
+    //  && (
+    //    !myMemWbValid
+    //    || !myD2hBus.fire
+    //  )
+    //  && (
+    //    rInstrCntNonMem =/= myWbPayloadVec.last(0).instrCnt.nonMem
+    //  )
+    //) {
+    //  cLink.throwIt()
+    //}
+    //when (
+    //  cLink.up.isFiring
+    //  && (
+    //    myNonMemWbValid
+    //  )
+    //  && (
+    //    !myMemWbValid
+    //    || !myD2hBus.fire
+    //  )
+    //) {
+    //}
+    //when (
+    //  cLink.up.isValid
+    //) {
+    //}
 
     when (
       cLink.up.isValid
@@ -1342,12 +1402,18 @@ case class SnowHouseForFmaxPipeStageWriteBack(
         //  myD2hBus.fire
         //)
         if (cfg.optScoreboard) (
-          if (isMem) (
-            myMemWbValid
-          ) else (
-            myNonMemWbValid
-            && cLink.up.isFiring
+          (
+            if (isMem) (
+              myMemWbValid
+            ) else (
+              myNonMemWbValid
+              && cLink.up.isFiring
+            )
           )
+          //&& (
+          //  rSavedCommitTag
+          //  =/= someMyWbPayload(1).instrCnt.scoreboardTag
+          //)
         ) else (
           cLink.up.isFiring
         )
@@ -1396,17 +1462,23 @@ case class SnowHouseForFmaxPipeStageWriteBack(
     }
     if (cfg.optScoreboard) {
       io.commit.valid := (
-        if (isMem) (
-          //myMemWbValid
-          myD2hBus.fire
-          //&& !myMemWbPayload(1).instrCnt.myPsIdBubble.last
-          //&& !myMemWbPayload(1).instrCnt.shouldIgnoreInstr.last
-        ) else (
-          myNonMemWbValid
-          && cLink.up.isFiring
-          //&& !myNonMemWbPayload(1).instrCnt.myPsIdBubble.last
-          //&& !myNonMemWbPayload(1).instrCnt.shouldIgnoreInstr.last
+        (
+          if (isMem) (
+            //myMemWbValid
+            myD2hBus.fire
+            && !myMemWbPayload(1).instrCnt.myPsIdBubble.last
+            //&& !myMemWbPayload(1).instrCnt.shouldIgnoreInstr.last
+          ) else (
+            myNonMemWbValid
+            && cLink.up.isFiring
+            && !myNonMemWbPayload(1).instrCnt.myPsIdBubble.last
+            //&& !myNonMemWbPayload(1).instrCnt.shouldIgnoreInstr.last
+          )
         )
+        //&& (
+        //  rSavedCommitTag
+        //  =/= someMyWbPayload(1).instrCnt.scoreboardTag
+        //)
       )
       io.commit.payload := (
         someMyWbPayload(1).instrCnt.scoreboardTag

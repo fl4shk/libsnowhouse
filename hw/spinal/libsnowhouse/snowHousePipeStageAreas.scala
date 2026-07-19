@@ -1143,6 +1143,7 @@ case class SnowHousePipeStageInstrFetch(
       con=(node, payload) => {
         node(pIf) := node(pIf).getZero
         node(pIf).encInstr.payload.allowOverride
+        node(pIf).instrCnt.allowOverride
         node(pIf).psIfRegPcSetItCnt.allowOverride
         node(pIf).regPc.allowOverride
         node(pIf).laggingRegPc.allowOverride
@@ -1150,6 +1151,15 @@ case class SnowHousePipeStageInstrFetch(
         node(pIf).branchTgtBufElem.allowOverride
 
         node(pIf).encInstr.payload := payload.instr
+
+        node(pIf).instrCnt.any := (
+          RegNextWhen(
+            (node(pIf).instrCnt.any + 1),
+            cond=cIf.up.isFiring,
+          )
+          init(0x0)
+        )
+
         node(pIf).psIfRegPcSetItCnt := payload.psIfRegPcSetItCnt
         node(pIf).regPc := payload.myIbusRegPcInfo.regPc
         node(pIf).laggingRegPc := payload.myIbusRegPcInfo.regPc
@@ -1561,7 +1571,8 @@ case class SnowHousePipeStageInstrDecode(
   val myNonBubbleCond = Bool()
 
   //when (up.isFiring) {
-  up(pId) := upPayload(1)//(0)
+  //up(pId) := upPayload(1)//(0)
+  down(pId) := upPayload(1)
   //}
   val nextSetUpPayloadState = Vec.fill(2)(
     Bool()
@@ -2458,6 +2469,15 @@ case class SnowHousePipeStagePostIdPreEx(
         rMyPsExSetPcState := False
       }
     }
+    //val rSavedScoreboardTag = (
+    //  cfg.optScoreboard
+    //) generate (
+    //  RegNextWhen(
+    //    outp.instrCnt.scoreboardTag,
+    //    cond=upIsFiring,
+    //  )
+    //  init(2) // non-zero value chosen since scoreboard 
+    //)
 
     val myHistFwdInfo = {
       val temp = MyFwdInfo()
@@ -2510,7 +2530,17 @@ case class SnowHousePipeStagePostIdPreEx(
           //myTempHistFwdValid(jdx).getWidth - idx - 1
           idx
         ) := (
-          myHistFwdInfo(idx + 1).valid
+          (
+            if (cfg.optScoreboard) (
+              myHistFwdInfo(idx + 1).valid
+              //&& (
+              //  outp.instrCnt.scoreboardTag
+              //  =/= rSavedScoreboardTag
+              //)
+            ) else (
+              myHistFwdInfo(idx + 1).valid
+            )
+          )
           && (
             outp.gprIdxVec(jdx)
             === myHistFwdInfo(idx + 1).addr
@@ -7470,6 +7500,16 @@ case class SnowHousePipeStageExecute(
   val myForFmaxFwdArea = (
     cfg.optForFmax
   ) generate (new Area {
+    
+    //val rSavedScoreboardTag = (
+    //  cfg.optScoreboard
+    //) generate (
+    //  RegNextWhen(
+    //    outp.instrCnt.scoreboardTag,
+    //    cond=cLink.up.isFiring,
+    //  )
+    //  init(2) // non-zero value chosen since scoreboard 
+    //)
     val myHistFwdInfo = {
       val temp = MyFwdInfo()
       temp.valid := (
@@ -7548,8 +7588,9 @@ case class SnowHousePipeStageExecute(
         that=forFmaxRegFileWrPulseArr(0),
         when=forFmaxRegFileWrPulseArr(0).fire,
         length=(
-          2
-          + (if (cfg.optScoreboard) (1) else (0))
+          if (cfg.optScoreboard) (1) else (2)
+          //2
+          //+ (if (cfg.optScoreboard) (1) else (0))
         ),
         init=forFmaxRegFileWrPulseArr(0).getZero,
       )
@@ -7639,9 +7680,9 @@ case class SnowHousePipeStageExecute(
               //    init=forFmaxRegFileWrPulseArr(0).getZero
               //  )
               //)
-              val myFwdTempToSwitchReversed = (
+              val myFwdTempToSwitch = (
                 Vec(
-                  myHistRegFileWrPulse.map(myWrPulse => (
+                  myHistRegFileWrPulse.reverse.map(myWrPulse => (
                     myWrPulse.fire
                     && (
                       outp.gprIdxVec(jdx)
@@ -7650,18 +7691,18 @@ case class SnowHousePipeStageExecute(
                   ))
                 )
               )
-              val myFwdTempToSwitch = Vec.fill(
-                myFwdTempToSwitchReversed.size
-              )(
-                Bool()
-              )
-              for (idx <- 0 until myFwdTempToSwitch.size) {
-                myFwdTempToSwitch(idx) := (
-                  myFwdTempToSwitchReversed(
-                    myFwdTempToSwitch.size - idx - 1
-                  )
-                )
-              }
+              //val myFwdTempToSwitch = Vec.fill(
+              //  myFwdTempToSwitchReversed.size
+              //)(
+              //  Bool()
+              //)
+              //for (idx <- 0 until myFwdTempToSwitch.size) {
+              //  myFwdTempToSwitch(idx) := (
+              //    myFwdTempToSwitchReversed(
+              //      myFwdTempToSwitch.size - idx - 1
+              //    )
+              //  )
+              //}
               switch (
                 //(
                 //  forFmaxRegFileWrPulseArr(0).fire
@@ -7689,39 +7730,49 @@ case class SnowHousePipeStageExecute(
                 )
               ) {
                 is ({
-                  var temp = "1--"
-                  if (cfg.optScoreboard) {
-                    temp += "-"
-                  }
+                  //var temp = "1--"
+                  //if (cfg.optScoreboard) {
+                  //  temp += "-"
+                  //}
+                  val temp = (
+                    if (cfg.optScoreboard) (
+                      "1-"
+                    ) else (
+                      "1--"
+                    )
+                  )
                   MaskedLiteral(temp)
                 }) {
                   outp.myExt(0).rdMemWord(jdx) := (
                     myHistRegFileWrPulse(0).data
                   )
                 }
-                is ({
-                  var temp = "01-"
-                  if (cfg.optScoreboard) {
-                    temp += "-"
-                  }
-                  MaskedLiteral(temp)
-                }) {
-                  outp.myExt(0).rdMemWord(jdx) := (
-                    myHistRegFileWrPulse(1).data
-                  )
-                }
-                if (cfg.optScoreboard) {
-                  is (M"001-") {
+                if (!cfg.optScoreboard) {
+                  is ({
+                    var temp = "01-"
+                    //if (cfg.optScoreboard) {
+                    //  temp += "-"
+                    //}
+                    MaskedLiteral(temp)
+                  }) {
                     outp.myExt(0).rdMemWord(jdx) := (
-                      myHistRegFileWrPulse(2).data
+                      myHistRegFileWrPulse(1).data
                     )
                   }
                 }
+                //if (cfg.optScoreboard) {
+                //  is (M"001-") {
+                //    outp.myExt(0).rdMemWord(jdx) := (
+                //      myHistRegFileWrPulse(2).data
+                //    )
+                //  }
+                //}
                 is ({
                   //var temp = "001"
                   val temp = (
                     if (cfg.optScoreboard) (
-                      "0001"
+                      //"0001"
+                      "01"
                     ) else (
                       "001"
                     )
@@ -8693,11 +8744,6 @@ case class SnowHousePipeStageExecute(
       //cLink.down(args.currPayload).outpDecodeExt.allowOverride
       //cLink.up(args.currPayload) := outp
     }
-    val rInstrCntMem = (
-      Reg(cloneOf(outp.instrCnt.mem))
-      init(0)
-    )
-    outp.instrCnt.mem := rInstrCntMem
     when (
       if (cfg.optScoreboard) (
         myH2dBus.valid
@@ -8741,7 +8787,6 @@ case class SnowHousePipeStageExecute(
     }
     when (myH2dBus.fire) {
       //rInstrCntMem.lsb := !rInstrCntMem.lsb
-      rInstrCntMem := rInstrCntMem + 1
       if (cfg.optScoreboard) {
         rSeenH2dBusFire := True
         //cLink.down(args.currPayload).instrCnt.shouldIgnoreInstr := (
@@ -9706,6 +9751,60 @@ case class SnowHousePipeStageExecute(
     outp.instrCnt.shouldIgnoreInstr.foreach(item => {
       item := myShouldIgnoreInstr.last
     })
+  }
+  val rInstrCntMem = (
+    Reg(cloneOf(outp.instrCnt.mem))
+    init(0)
+  )
+  val rInstrCntNonMem = (
+    Reg(cloneOf(outp.instrCnt.nonMem))
+    init(0)
+  )
+  outp.instrCnt.mem := rInstrCntMem
+  outp.instrCnt.nonMem := rInstrCntNonMem
+
+  if (cfg.optScoreboard) {
+    val tempCond = (
+      //cLink.up.isFiring
+      //&& 
+      !myShouldIgnoreInstr.head
+      && !outp.instrCnt.myPsIdBubble.head
+      && (
+        outp.instrCnt.any
+        =/= (
+          RegNextWhen(
+            outp.instrCnt.any,
+            cond=cLink.up.isFiring,
+          )
+          init(0x1)
+        )
+      )
+    )
+    when (
+      tempCond
+      && outp.outpDecodeExt.opIsMemAccess(0)
+    ) {
+      outp.instrCnt.mem := (
+        RegNextWhen(
+          (outp.instrCnt.mem + 1),
+          cond=tempCond,
+          init=outp.instrCnt.mem.getZero
+        )
+        //+ 1
+      )
+    }
+    when (
+      tempCond
+      && !outp.outpDecodeExt.opIsMemAccess(0)
+    ) {
+      outp.instrCnt.nonMem := (
+        RegNextWhen(
+          (outp.instrCnt.nonMem + 1),
+          cond=tempCond,
+          init=outp.instrCnt.nonMem.getZero
+        )
+      )
+    }
   }
   //when (!myTempDownIsReady) {
   //}
