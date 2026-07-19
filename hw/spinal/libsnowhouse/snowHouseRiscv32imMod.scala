@@ -999,7 +999,7 @@ object SnowHouseRiscv32imPipeStageInstrDecode {
     )
     psId.myTempOpMayNeedHazardCheck := (
       encInstrI.head.opcode === LwRdRs1Imm.op
-      //|| encInstrS.head.opcode === SwRs2Rs1Imm.op
+      || encInstrS.head.opcode === SwRs2Rs1Imm.op
       //|| encInstrU.head.opcode === AuipcRdImm31Downto12.op
       // this is also updated later...
     )
