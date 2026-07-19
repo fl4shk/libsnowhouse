@@ -7588,9 +7588,9 @@ case class SnowHousePipeStageExecute(
         that=forFmaxRegFileWrPulseArr(0),
         when=forFmaxRegFileWrPulseArr(0).fire,
         length=(
-          if (cfg.optScoreboard) (1) else (2)
-          //2
-          //+ (if (cfg.optScoreboard) (1) else (0))
+          //if (cfg.optScoreboard) (1) else (2)
+          2
+          + (if (cfg.optScoreboard) (1) else (0))
         ),
         init=forFmaxRegFileWrPulseArr(0).getZero,
       )
@@ -7730,36 +7730,36 @@ case class SnowHousePipeStageExecute(
                 )
               ) {
                 is ({
-                  //var temp = "1--"
-                  //if (cfg.optScoreboard) {
-                  //  temp += "-"
-                  //}
-                  val temp = (
-                    if (cfg.optScoreboard) (
-                      "1-"
-                    ) else (
-                      "1--"
-                    )
-                  )
+                  var temp = "1--"
+                  if (cfg.optScoreboard) {
+                    temp += "-"
+                  }
+                  //val temp = (
+                  //  if (cfg.optScoreboard) (
+                  //    "1-"
+                  //  ) else (
+                  //    "1--"
+                  //  )
+                  //)
                   MaskedLiteral(temp)
                 }) {
                   outp.myExt(0).rdMemWord(jdx) := (
                     myHistRegFileWrPulse(0).data
                   )
                 }
-                if (!cfg.optScoreboard) {
+                //if (!cfg.optScoreboard) {
                   is ({
                     var temp = "01-"
-                    //if (cfg.optScoreboard) {
-                    //  temp += "-"
-                    //}
+                    if (cfg.optScoreboard) {
+                      temp += "-"
+                    }
                     MaskedLiteral(temp)
                   }) {
                     outp.myExt(0).rdMemWord(jdx) := (
                       myHistRegFileWrPulse(1).data
                     )
                   }
-                }
+                //}
                 //if (cfg.optScoreboard) {
                 //  is (M"001-") {
                 //    outp.myExt(0).rdMemWord(jdx) := (
@@ -7769,10 +7769,13 @@ case class SnowHousePipeStageExecute(
                 //}
                 is ({
                   //var temp = "001"
+                  //if (cfg.optScoreboard) {
+                  //  temp += "-"
+                  //}
                   val temp = (
                     if (cfg.optScoreboard) (
-                      //"0001"
-                      "01"
+                      "0001"
+                      //"01"
                     ) else (
                       "001"
                     )
@@ -9765,10 +9768,9 @@ case class SnowHousePipeStageExecute(
 
   if (cfg.optScoreboard) {
     val tempCond = (
-      //cLink.up.isFiring
-      //&& 
-      !myShouldIgnoreInstr.head
-      && !outp.instrCnt.myPsIdBubble.head
+      cLink.up.isFiring
+      && !myShouldIgnoreInstr.head
+      //&& !outp.instrCnt.myPsIdBubble.head
       && (
         outp.instrCnt.any
         =/= (

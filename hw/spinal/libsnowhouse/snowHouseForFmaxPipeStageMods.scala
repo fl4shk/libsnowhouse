@@ -953,11 +953,11 @@ case class SnowHouseForFmaxPipeStageWriteBack(
   //)
   val rInstrCntMem = (
     Reg(cloneOf(myWbPayloadVec.head(1).instrCnt.mem))
-    init(0x1)
+    init(0x0)
   )
   val rInstrCntNonMem = (
     Reg(cloneOf(myWbPayloadVec.head(1).instrCnt.nonMem))
-    init(0x1)
+    init(0x0)
   )
   //when (myD2hBus.fire) {
   //  rSeenD2hBusFire := True
@@ -1029,10 +1029,39 @@ case class SnowHouseForFmaxPipeStageWriteBack(
       //myMemWbPayload(1) := myMemWbPayload(0)
       rInstrCntMem := rInstrCntMem + 1 //myWbPayloadVec.head(1).instrCnt.mem
     }
-    when (
-      cLink.up.isFiring
-      && !myMemWbValid
-    ) {
+    when ({
+      val tempCond = (
+        cLink.up.isFiring
+        //&& !myMemWbValid
+        && myNonMemWbValid
+        //&& (
+        //  rInstrCntNonMem === myWbPayloadVec.head(0).instrCnt.nonMem
+        //)
+        && !myD2hBus.fire
+        && !myNonMemWbPayload(1).instrCnt.shouldIgnoreInstr.head
+      )
+      (
+        tempCond
+        //&& (
+        //  myNonMemWbPayload(1).instrCnt.any
+        //  =/= (
+        //    RegNextWhen(
+        //      myNonMemWbPayload(1).instrCnt.any
+        //    )
+        //  )
+        //)
+      )
+      //&& (
+      //  myWbPayloadVec.head.instrCnt.any
+      //  =/= (
+      //    RegNextWhen(
+      //      outp.instrCnt.any,
+      //      cond=cLink.up.isFiring,
+      //    )
+      //    init(0x1)
+      //  )
+      //)
+    }) {
       rInstrCntNonMem := rInstrCntNonMem + 1
     }
     when (
@@ -1405,9 +1434,17 @@ case class SnowHouseForFmaxPipeStageWriteBack(
           (
             if (isMem) (
               myMemWbValid
+              //&& (
+              //  rInstrCntMem
+              //  === myWbPayloadVec.last(0).instrCnt.mem
+              //)
             ) else (
               myNonMemWbValid
               && cLink.up.isFiring
+              && (
+                rInstrCntNonMem
+                === myWbPayloadVec.last(0).instrCnt.nonMem
+              )
             )
           )
           //&& (
