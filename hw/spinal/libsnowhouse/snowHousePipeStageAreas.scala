@@ -8713,7 +8713,7 @@ case class SnowHousePipeStageExecute(
     }
     val rInstrCntMem = (
       Reg(cloneOf(outp.instrCnt.mem))
-      init(1)
+      init(0)
     )
     outp.instrCnt.mem := rInstrCntMem
     when (
