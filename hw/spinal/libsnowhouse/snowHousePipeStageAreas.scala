@@ -8701,7 +8701,19 @@ case class SnowHousePipeStageExecute(
       Reg(cloneOf(outp.instrCnt.mem))
       init(0)
     )
+    val rInstrCntNonMem = (
+      Reg(cloneOf(outp.instrCnt.nonMem))
+      init(0)
+    )
     outp.instrCnt.mem := rInstrCntMem
+    outp.instrCnt.nonMem := rInstrCntNonMem
+    when (
+      !myH2dBus.valid
+      && !rSeenH2dBusFire
+      && cLink.up.isFiring
+    ) {
+      rInstrCntNonMem := rInstrCntNonMem + 1
+    }
     when (
       if (cfg.optScoreboard) (
         myH2dBus.valid

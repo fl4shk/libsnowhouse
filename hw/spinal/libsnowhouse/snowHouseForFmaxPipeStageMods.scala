@@ -916,8 +916,12 @@ case class SnowHouseForFmaxPipeStageWriteBack(
   val myD2hBus = cloneOf(io.myLcvDbusD2hStm)
   //val rSeenD2hBusFire = Reg(Bool(), init=False)
 
-  val rSavedInstrCntMem = (
+  val rInstrCntMem = (
     Reg(cloneOf(myWbPayloadVec.head(1).instrCnt.mem))
+    init(0x0)
+  )
+  val rInstrCntNonMem = (
+    Reg(cloneOf(myWbPayloadVec.head(1).instrCnt.nonMem))
     init(0x0)
   )
   //when (myD2hBus.fire) {
@@ -964,7 +968,7 @@ case class SnowHouseForFmaxPipeStageWriteBack(
     ) {
       myMemWbValid := True
       myMemWbPayload(1) := myMemWbPayload(0)
-      //rSavedInstrCntMem := myWbPayloadVec.head(1).instrCnt.mem
+      //rInstrCntMem := myWbPayloadVec.head(1).instrCnt.mem
     }
     when (
       //cLink.up.isFiring
@@ -984,14 +988,15 @@ case class SnowHouseForFmaxPipeStageWriteBack(
     ) {
       //myMemWbValid := True
       //myMemWbPayload(1) := myMemWbPayload(0)
-      rSavedInstrCntMem := rSavedInstrCntMem + 1 //myWbPayloadVec.head(1).instrCnt.mem
+      rInstrCntMem := rInstrCntMem + 1 //myWbPayloadVec.head(1).instrCnt.mem
     }
+
     when (
       cLink.up.isValid
       && myMemWbValid
       && !myD2hBus.fire
       && (
-        rSavedInstrCntMem =/= myWbPayloadVec.head(0).instrCnt.mem
+        rInstrCntMem =/= myWbPayloadVec.head(0).instrCnt.mem
       )
     ) {
       cLink.duplicateIt()
@@ -1014,6 +1019,13 @@ case class SnowHouseForFmaxPipeStageWriteBack(
     ) {
       myNonMemWbValid := True
       myNonMemWbPayload(1) := myNonMemWbPayload(0)
+    }
+    when (
+      cLink.up.isFiring
+      && !myD2hBus.fire
+      && !myMemWbValid
+    ) {
+      rInstrCntNonMem := rInstrCntNonMem + 1
     }
 
     //switch (
@@ -1371,10 +1383,22 @@ case class SnowHouseForFmaxPipeStageWriteBack(
     }
     if (cfg.optScoreboard) {
       io.commitEtc.scoreboardTag.valid := (
-        myD2hBus.fire
-        || (
-          cLink.up.isFiring
-          && myNonMemWbValid
+        (
+          if (isMem) (
+            (
+              //myD2hBus.fire
+              //|| (
+              //  cLink.up.isFiring
+              //  && myMemWbValid
+              //  //&& !myNonMemWbValid
+              //  //&& someMyWbPayload(1).outpDecodeExt.opIsMemAccess(0)
+              //)
+              True
+            )
+          ) else (
+            cLink.up.isFiring
+            && myNonMemWbValid
+          )
         )
       )
       io.commitEtc.scoreboardTag.payload := (
@@ -1417,7 +1441,15 @@ case class SnowHouseForFmaxPipeStageWriteBack(
 
   if (cfg.optScoreboard) {
     when (
+      //myD2hBus.fire
       myD2hBus.fire
+      //|| (
+      //  cLink.up.isFiring
+      //  && myMemWbValid
+      //  && myMemWbPayload(0).instrCnt.myPsIdBubble(0)
+      //  //&& !myNonMemWbValid
+      //  //&& someMyWbPayload(1).outpDecodeExt.opIsMemAccess(0)
+      //)
     ) {
       setCommitEtc(myMemWbPayload, isMem=true)
     } otherwise {

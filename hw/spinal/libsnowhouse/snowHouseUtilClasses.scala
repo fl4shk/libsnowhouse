@@ -1480,6 +1480,7 @@ case class SnowHouseInstrCnt(
   val fwd = UInt(cfg.instrCntWidth bits)
   val jmp = UInt(cfg.instrCntWidth bits)
   val mem = UInt(cfg.instrCntWidth bits)
+  val nonMem = UInt(cfg.instrCntWidth bits)
   val shouldIgnoreInstr = Vec.fill(cfg.lowerMyFanoutRegPcSetItCnt)(
     Bool()
   )
@@ -2238,8 +2239,8 @@ case class SnowHousePipePayload(
 
     branchPredictTkn := False
     //branchPredictReplaceBtbElemMost := False
-    inpDecodeExt := inpDecodeExt.getZero
-    outpDecodeExt := outpDecodeExt.getZero
+    //inpDecodeExt := inpDecodeExt.getZero
+    //outpDecodeExt := outpDecodeExt.getZero
 
     regPcSetItCnt.foreach(item => {
       item := item.getZero
