@@ -1561,7 +1561,11 @@ case class SnowHousePipeStageInstrDecode(
   val myNonBubbleCond = Bool()
 
   //when (up.isFiring) {
-  up(pId) := upPayload(1)//(0)
+  if (!cfg.optScoreboard) {
+    up(pId) := upPayload(1)//(0)
+  } else {
+    down(pId) := upPayload(1)
+  }
   //}
   val nextSetUpPayloadState = Vec.fill(2)(
     Bool()

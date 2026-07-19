@@ -246,11 +246,12 @@ case class SnowHouseForFmaxScoreboard(
   )
   for (idx <- 0 until cfg.optMaxNumScoreboardInstrs) {
     when (io.commit.fire && io.commit.payload === idx) {
-      myInfoValidVec(idx) := False
+      //myInfoValidVec(idx) := False
       rMyInfoVec(idx).valid := False
     } otherwise {
-      myInfoValidVec(idx) := rMyInfoVec(idx).fire
+      //myInfoValidVec(idx) := rMyInfoVec(idx).fire
     }
+    myInfoValidVec(idx) := rMyInfoVec(idx).fire
   }
 
 
@@ -292,9 +293,15 @@ case class SnowHouseForFmaxScoreboard(
       )) {
         // fast-ish (regarding fmax) search to implement the free list
         // search
-        io.issue.valid := True
-        io.issue.payload := idx
-        when (io.issue.ready) {
+        io.issue.valid := (
+          //True
+          !tempHaveHazardAddrCheckVec.asBits.orR
+        )
+        io.issue.payload := (
+          RegNext(io.issue.payload, init=io.issue.payload.getZero)
+        )
+        when (io.issue.fire) {
+          io.issue.payload := idx
           rMyInfoVec(idx).valid := True
           rMyInfoVec(idx).gprIdxVec := io.gprIdxVec
         }
@@ -302,7 +309,10 @@ case class SnowHouseForFmaxScoreboard(
     }
     default {
       io.issue.valid := False
-      io.issue.payload := 0x0
+      //io.issue.payload := 0x0
+      io.issue.payload := (
+        RegNext(io.issue.payload, init=io.issue.payload.getZero)
+      )
     }
   }
 }
@@ -412,16 +422,10 @@ case class SnowHouseForFmaxPipeStageInstrDecode(
     }
   )
 
-  s2mLink.down.driveTo(
-    io.down
-  )(
-    con=(outp, node) => {
-      outp := node(pIdOutp)
-    }
-  )
-
   if (cfg.optScoreboard) {
-    scoreboard.io.issue.ready := cLink.up.isFiring
+    scoreboard.io.issue.ready := (
+      cLink.up.isFiring // cLink.down.isFiring
+    )
     scoreboard.io.gprIdxVec := innerPsId.upPayload(1).gprIdxVec
     innerPsId.upPayload(1).instrCnt.scoreboardTag := (
       scoreboard.io.issue.payload
@@ -432,6 +436,14 @@ case class SnowHouseForFmaxPipeStageInstrDecode(
     }
     scoreboard.io.commit := io.myScoreboardCommmit
   }
+
+  s2mLink.down.driveTo(
+    io.down
+  )(
+    con=(outp, node) => {
+      outp := node(pIdOutp)
+    }
+  )
 
   Builder(linkArr)
   //--------
@@ -716,19 +728,23 @@ case class SnowHouseForFmaxPipeStageExecute(
   //--------
 }
 
-case class SnowHouseForFmaxPsWbCommmitPayload(
+case class SnowHouseForFmaxPsWbCommmitEtc(
   cfg: SnowHouseConfig
 ) extends Bundle {
-  val myRegFileWrPulsePayload = (
-    PipeSimpleDualPortMemDrivePayload(
-      dataType=UInt(cfg.mainWidth bits),
-      wordCount=cfg.regFileCfg.wordCountArr(0),
+  val myRegFileWrPulse = (
+    Flow(
+      PipeSimpleDualPortMemDrivePayload(
+        dataType=UInt(cfg.mainWidth bits),
+        wordCount=cfg.regFileCfg.wordCountArr(0),
+      )
     )
   )
   val scoreboardTag = (
     cfg.optScoreboard
   ) generate (
-    UInt(cfg.optScoreboardTagWidth bits)
+    Flow(
+      UInt(cfg.optScoreboardTagWidth bits)
+    )
   )
 }
 case class SnowHouseForFmaxPipeStageWriteBackIo(
@@ -755,9 +771,9 @@ case class SnowHouseForFmaxPipeStageWriteBackIo(
     ))
   )
   //--------
-  val commit = master(Flow(
-    SnowHouseForFmaxPsWbCommmitPayload(cfg=cfg)
-  ))
+  val commitEtc = out(
+    SnowHouseForFmaxPsWbCommmitEtc(cfg=cfg)
+  )
   //--------
 }
 case class SnowHouseForFmaxPipeStageWriteBack(
@@ -1288,7 +1304,7 @@ case class SnowHouseForFmaxPipeStageWriteBack(
     someMyWbPayload: Vec[SnowHousePipePayload],
     isMem: Boolean,
   ): Unit = {
-    io.commit.valid := (
+    io.commitEtc.myRegFileWrPulse.valid := (
       (
         //if (
         //  cfg.optScoreboard
@@ -1332,10 +1348,10 @@ case class SnowHouseForFmaxPipeStageWriteBack(
         myCurrExt.modMemWordValid(0)
       }
     )
-    io.commit.myRegFileWrPulsePayload.addr := (
+    io.commitEtc.myRegFileWrPulse.addr := (
       someMyWbPayload(1).gprIdxVec.last
     )
-    io.commit.myRegFileWrPulsePayload.data := {
+    io.commitEtc.myRegFileWrPulse.data := {
       val myDecodeExt = someMyWbPayload(1).outpDecodeExt
       val mapElem = someMyWbPayload(1).gprIdxToMemAddrIdxMap(0)
       val myCurrExt = (
@@ -1354,18 +1370,25 @@ case class SnowHouseForFmaxPipeStageWriteBack(
       myCurrExt.modMemWord
     }
     if (cfg.optScoreboard) {
-      io.commit.scoreboardTag := (
+      io.commitEtc.scoreboardTag.valid := (
+        myD2hBus.fire
+        || (
+          cLink.up.isFiring
+          && myNonMemWbValid
+        )
+      )
+      io.commitEtc.scoreboardTag.payload := (
         someMyWbPayload(1).instrCnt.scoreboardTag
       )
     }
     if (io.dbgInfo != null) {
       io.dbgInfo.regFileWriteData := (
-        io.commit.myRegFileWrPulsePayload.data
+        io.commitEtc.myRegFileWrPulse.data
       )
       io.dbgInfo.regFileWriteAddr := (
-        io.commit.myRegFileWrPulsePayload.addr
+        io.commitEtc.myRegFileWrPulse.addr
       )
-      io.dbgInfo.regFileWriteEnable := io.commit.fire
+      io.dbgInfo.regFileWriteEnable := io.commitEtc.myRegFileWrPulse.fire
       io.dbgInfo.laggingRegPcAtRegFileWrite := (
         someMyWbPayload(1).laggingRegPc.resize(cfg.mainWidth bits)
       )
