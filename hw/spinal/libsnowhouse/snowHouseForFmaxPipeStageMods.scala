@@ -1030,6 +1030,7 @@ case class SnowHouseForFmaxPipeStageWriteBack(
     when (
       cLink.up.isValid
       && !myWbPayloadVec.head(0).outpDecodeExt.opIsMemAccess(0)
+      && !myWbPayloadVec.head(0).instrCnt.myPsIdBubble(0)
       //&& (
       //  RegNext(
       //    (
