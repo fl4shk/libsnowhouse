@@ -1023,9 +1023,27 @@ case class SnowHouseForFmaxPipeStageWriteBack(
     when (
       cLink.up.isFiring
       && !myD2hBus.fire
-      && !myMemWbValid
+      && (
+        !myMemWbValid
+        || myNonMemWbValid
+      )
     ) {
       rInstrCntNonMem := rInstrCntNonMem + 1
+    }
+    when (
+      cLink.up.isValid
+      //&& myMemWbValid
+      //&& !myD2hBus.fire
+      && !myD2hBus.fire
+      && (
+        !myMemWbValid
+        || myNonMemWbValid
+      )
+      && (
+        rInstrCntNonMem =/= myWbPayloadVec.head(0).instrCnt.nonMem
+      )
+    ) {
+      cLink.throwIt()
     }
 
     //switch (
