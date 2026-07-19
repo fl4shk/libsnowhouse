@@ -2239,6 +2239,9 @@ case class SnowHousePipePayload(
     branchPredictTkn := False
     //branchPredictReplaceBtbElemMost := False
 
+    inpDecodeExt := inpDecodeExt.getZero
+    outpDecodeExt := outpDecodeExt.getZero
+
     regPcSetItCnt.foreach(item => {
       item := item.getZero
     })
