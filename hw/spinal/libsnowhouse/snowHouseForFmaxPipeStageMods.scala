@@ -197,15 +197,22 @@ case class SnowHouseForFmaxScoreboard(
   )
 
 
+  val myHazardCheckVecInnerSize = (
+    (io.gprIdxVec.size - 1) * 2 + 1
+    //io.gprIdxVec.size + 3
+  )
   val tempHaveHazardAddrCheckVec = (
     Vec.fill(cfg.optMaxNumScoreboardInstrs)(
-      Vec.fill(io.gprIdxVec.size + 2)(
+      Vec.fill(
+        //io.gprIdxVec.size + 2
+        myHazardCheckVecInnerSize
+      )(
         Bool()
       )
     )
   )
   for (
-    idx <- 0 until io.gprIdxVec.size + 2
+    idx <- 0 until myHazardCheckVecInnerSize//io.gprIdxVec.size + 2
     //idx <- 0 until upPayload.gprIdxVec.size - 1
   ) {
     if (idx < io.gprIdxVec.size - 1) {
@@ -244,14 +251,19 @@ case class SnowHouseForFmaxScoreboard(
     )
     //Vec(rMyInfoVec.reverse.map(item => item.fire))
   )
-  for (idx <- 0 until cfg.optMaxNumScoreboardInstrs) {
-    when (io.commit.fire && io.commit.payload === idx) {
-      //myInfoValidVec(idx) := False
-      rMyInfoVec(idx).valid := False
+  for (jdx <- 0 until cfg.optMaxNumScoreboardInstrs) {
+    when (io.commit.fire && io.commit.payload === jdx) {
+      myInfoValidVec(jdx) := False
+      tempHaveHazardAddrCheckVec(jdx).foreach(
+        item => (
+          item := False
+        )
+      )
+      rMyInfoVec(jdx).valid := False
     } otherwise {
-      //myInfoValidVec(idx) := rMyInfoVec(idx).fire
+      myInfoValidVec(jdx) := rMyInfoVec(jdx).fire
     }
-    myInfoValidVec(idx) := rMyInfoVec(idx).fire
+    //myInfoValidVec(jdx) := rMyInfoVec(jdx).fire
   }
 
 
@@ -968,6 +980,7 @@ case class SnowHouseForFmaxPipeStageWriteBack(
     when (
       cLink.up.isValid
       && myWbPayloadVec.head(0).outpDecodeExt.opIsMemAccess(0)
+      && !myWbPayloadVec.head(0).instrCnt.myPsIdBubble(0)
       && (
         RegNext(
           (
@@ -1463,6 +1476,7 @@ case class SnowHouseForFmaxPipeStageWriteBack(
               //True
               //!myMemWbPayload(1).instrCnt.myPsIdBubble.last
               True
+              //!myMemWbPayload(1).instrCnt.myPsIdBubble.last
             )
           ) else (
             cLink.up.isFiring

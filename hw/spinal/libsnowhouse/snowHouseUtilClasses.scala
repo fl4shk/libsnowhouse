@@ -717,10 +717,21 @@ case class SnowHouseConfig(
   optFormal: Boolean=false,
 ) {
   val optForFmax = (optForFmaxCfg != None)
+  val optScoreboard = (
+    optForFmaxCfg match {
+      case Some(myForFmaxCfg) => (
+        myForFmaxCfg.optMaxNumScoreboardInstrs != None
+      )
+      case None => (
+        false
+      )
+    }
+  )
   val optForFmaxPsExFwdSize = (
     optForFmaxCfg match {
       case Some(myForFmaxCfg) => (
         myForFmaxCfg.numPostExPreWbPipeStages + 1//3//2//1//2//1//2//6//5//4//6//5//4//3//2//3//4//5//6//3//6//5//4//3//6//5//4//3//6//5//4//3//2//3//2//3//2//3//2//5//4//3//5
+        + (if (optScoreboard) (1) else (0))
       )
       case None => (
         0
@@ -759,16 +770,6 @@ case class SnowHouseConfig(
         1
       )
     )
-  )
-  val optScoreboard = (
-    optForFmaxCfg match {
-      case Some(myForFmaxCfg) => (
-        myForFmaxCfg.optMaxNumScoreboardInstrs != None
-      )
-      case None => (
-        false
-      )
-    }
   )
   val optMaxNumScoreboardInstrs = (
     optForFmaxCfg match {
