@@ -1399,9 +1399,13 @@ case class SnowHouseForFmaxPipeStageWriteBack(
         if (isMem) (
           //myMemWbValid
           myD2hBus.fire
+          //&& !myMemWbPayload(1).instrCnt.myPsIdBubble.last
+          //&& !myMemWbPayload(1).instrCnt.shouldIgnoreInstr.last
         ) else (
           myNonMemWbValid
           && cLink.up.isFiring
+          //&& !myNonMemWbPayload(1).instrCnt.myPsIdBubble.last
+          //&& !myNonMemWbPayload(1).instrCnt.shouldIgnoreInstr.last
         )
       )
       io.commit.payload := (

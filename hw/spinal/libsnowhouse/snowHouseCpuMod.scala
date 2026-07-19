@@ -1027,9 +1027,9 @@ object SnowHouseCpuPipeStageInstrDecode {
       //  psId.tempInstr.asBits.getZero
       //)
     ))
-    val myNonScoreboardArea = (
-      !cfg.optScoreboard
-    ) generate (new Area {
+    //val myNonScoreboardArea = (
+    //  !cfg.optScoreboard
+    //) generate (new Area {
       val tempHaveHazardAddrCheckVec = (
         Vec.fill(
           upPayload.myDoHaveHazardAddrCheckVec.size
@@ -1118,7 +1118,7 @@ object SnowHouseCpuPipeStageInstrDecode {
           tempHaveHazardAddrCheckVec(jdx).reduceLeft(_ || _)
         )
       }
-    })
+    //})
     //val myHistLastGprIdx = (
     //  History(
     //    that=(
