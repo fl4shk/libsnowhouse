@@ -769,7 +769,14 @@ case class SnowHouseConfig(
           //2
           //1
           optForFmaxPsExFwdSize + 1//2//3//2//1//0//1//2//1 //+ 2//1//2//1//2//4//3//1
-          //+ (if (optScoreboard) (1) else (0))
+          //+ (
+          //  if (optScoreboard) (
+          //    //1
+          //    5
+          //  ) else (
+          //    0
+          //  )
+          //)
           // Old notes (from when MEM was being considered):
           //// up to two following instructions,
           //// per the overall pipeline structure of

@@ -1094,7 +1094,7 @@ object SnowHouseCpuPipeStageInstrDecode {
         for (jdx <- 0 until tempHaveHazardAddrCheckVec.size) {
           tempHaveHazardAddrCheckVec(jdx)(idx) := (
             (
-              tempRegIdx === myHistLastGprIdx(jdx + 1)(idx % 4)
+              tempRegIdx === myHistLastGprIdx(jdx + 1)(idx % 3)
               && tempRegIdx.orR // check for non-zero
             )
           )
@@ -3743,8 +3743,8 @@ case class SnowHouseCpuConfig(
         optMaxNumScoreboardInstrs=(
           //None
           Some(
-            //4
-            2
+            4
+            //2
           )
         ),
         //optDualIssue=(

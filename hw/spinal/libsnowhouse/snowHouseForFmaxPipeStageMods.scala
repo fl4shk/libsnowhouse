@@ -678,8 +678,9 @@ case class SnowHouseForFmaxPipeStageWriteBack(
     when (
       RegNext(
         (
-          io.myRegFileWrPulse.fire
-          && myMemWbValid
+          //io.myRegFileWrPulse.fire
+          myD2hBus.fire
+          //&& myMemWbValid
         ),
         init=False
       )
@@ -689,7 +690,8 @@ case class SnowHouseForFmaxPipeStageWriteBack(
     when (
       RegNext(
         (
-          io.myRegFileWrPulse.fire
+          //io.myRegFileWrPulse.fire
+          cLink.up.isFiring
           && myNonMemWbValid
         ),
         init=False
@@ -1101,13 +1103,13 @@ case class SnowHouseForFmaxPipeStageWriteBack(
       //&& !myWbPayloadVec.last(1).instrCnt.myPsIdBubble.head
       && rScoreboardStallCnt >= cfg.optMaxNumScoreboardInstrs - 1
       //&& rCurrWbPayloadOuterIdx.lsb
-      //&& myNonMemWbValid
+      && myNonMemWbValid
       && myMemWbValid
     ) {
       cLink.duplicateIt()
     } elsewhen (
       !myNonMemWbPayload(1).instrCnt.shouldIgnoreInstr.last
-      && !myNonMemWbPayload(1).instrCnt.myPsIdBubble.last
+      //&& !myNonMemWbPayload(1).instrCnt.myPsIdBubble.last
       && cLink.up.isFiring
       //&& rCurrWbPayloadOuterIdx.lsb
       && myNonMemWbValid
