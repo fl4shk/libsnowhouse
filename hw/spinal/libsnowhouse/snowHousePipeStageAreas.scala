@@ -2608,6 +2608,9 @@ case class SnowHousePipeStageExecuteSetOutpModMemWordIo(
       signal
     )
   }
+  val instrCnt = setAsInp(
+    SnowHouseInstrCnt(cfg=cfg)
+  )
   val multiCycleBusRecvDataVec = (
     cfg.havePsExStall
   ) generate (
@@ -3215,11 +3218,16 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
   //  )
   //)
   def getTempModMemWordValid(idx: Int) = (
-    if (cfg.myHaveZeroReg) (
-      //!io.gprIsZeroVec(0)(idx)
-      io.gprIsNonZeroVec.last(idx)
-    ) else (
-      True
+    (
+      if (cfg.myHaveZeroReg) (
+        //!io.gprIsZeroVec(0)(idx)
+        io.gprIsNonZeroVec.last(idx)
+      ) else (
+        True
+      )
+    )
+    && (
+      !io.instrCnt.myPsIdBubble(idx)
     )
     //myModMemWordValid
   )
@@ -7481,6 +7489,7 @@ case class SnowHousePipeStageExecute(
         outp.myExt(0).modMemWordValid.last //ram.io.wrEn
         && outp.gprIsNonZeroVec.last.last
         && !myShouldIgnoreInstr(0)
+        && !outp.instrCnt.myPsIdBubble.last
       )
       temp.data := outp.myExt(0).modMemWord //ram.io.wrData
       //temp.addr := outp.gprIdxVec.last
@@ -7862,6 +7871,7 @@ case class SnowHousePipeStageExecute(
     //args=args
     cfg=cfg
   )
+  setOutpModMemWord.io.instrCnt := outp.instrCnt
   for (
     ((group, innerMap), groupIdx)
     <- cfg.multiCycleOpInfoMap.view.zipWithIndex
@@ -8744,6 +8754,7 @@ case class SnowHousePipeStageExecute(
         //  }
         //)
         cLink.down(args.currPayload).setAsBubbleMain()
+        setOutpModMemWord.io.instrCnt.setAsBubbleMain()
         //cLink.down(args.currPayload).outpDecodeExt.opIsMemAccess.foreach(
         //  item => {
         //    item := False

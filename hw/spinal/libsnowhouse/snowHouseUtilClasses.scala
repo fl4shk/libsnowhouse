@@ -1504,6 +1504,12 @@ case class SnowHouseInstrCnt(
   //  Bool()
   //)
   //def shouldIgnoreInstr = (pcChangeState === True)
+  def setAsBubbleMain(
+  ): Unit = {
+    myPsIdBubble.foreach(item => {
+      item := True
+    })
+  }
 }
 //object SnowHouseDecodeExtLdStKind
 //extends SpinalEnum(defaultEncoding=binarySequential) {
@@ -1920,6 +1926,13 @@ case class SnowHousePipePayloadNonExt(
   val gprIdxVec = Vec.fill(cfg.maxNumGprsPerInstr)(
     UInt(log2Up(cfg.numGprs) bits)
   ) //simPublic()
+  //val scoreboardGprIdxVec = (
+  //  cfg.optScoreboard
+  //) generate (
+  //  Vec.fill(cfg.maxNumGprsPerInstr)(
+  //    UInt(log2Up(cfg.numGprs) bits)
+  //  ) //simPublic()
+  //)
   val gprIsZeroVec = Vec.fill(cfg.maxNumGprsPerInstr)(
     Vec.fill(cfg.regFileCfg.modMemWordValidSize)(
       Bool()
@@ -2081,6 +2094,7 @@ case class SnowHousePipePayload(
   def aluOp = nonExt.aluOp
   //def aluModMemWordValid = nonExt.aluModMemWordValid
   def gprIdxVec = nonExt.gprIdxVec
+  //def scoreboardGprIdxVec = nonExt.scoreboardGprIdxVec
   def gprIsZeroVec = nonExt.gprIsZeroVec
   def gprIsNonZeroVec = nonExt.gprIsNonZeroVec
   def gprIdxToMemAddrIdxMap = nonExt.gprIdxToMemAddrIdxMap
@@ -2223,9 +2237,10 @@ case class SnowHousePipePayload(
   }
   def setAsBubbleMain(
   ): Unit = {
-    instrCnt.myPsIdBubble.foreach(item => {
-      item := True
-    })
+    //instrCnt.myPsIdBubble.foreach(item => {
+    //  item := True
+    //})
+    instrCnt.setAsBubbleMain()
     splitOp.setToDefault()
     branchTgtBufElem(0) := (
       //.valid := False
