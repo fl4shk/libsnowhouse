@@ -204,9 +204,9 @@ case class SnowHouseForFmaxScoreboard(
 
 
   val myHazardCheckVecInnerSize = (
-    //(io.gprIdxVec.size - 1) * 2 + 1
+    (io.gprIdxVec.size - 1) * 2 + 1
     //io.gprIdxVec.size + 3
-    io.gprIdxVec.size - 1
+    //io.gprIdxVec.size - 1
   )
   val tempHaveHazardAddrCheckVec = (
     Vec.fill(cfg.optMaxNumScoreboardInstrs)(
@@ -236,23 +236,23 @@ case class SnowHouseForFmaxScoreboard(
         )
       }
     } 
-    //else { // if (idx >= upPayload.gprIdxVec.size - 1)
-    //  val tempRegIdx = io.gprIdxVec.last
-    //  for (jdx <- 0 until tempHaveHazardAddrCheckVec.size) {
-    //    tempHaveHazardAddrCheckVec(jdx)(idx) := (
-    //      (
-    //        //tempRegIdx === myHistLastGprIdx(jdx + 1)(idx % 3)
+    else { // if (idx >= upPayload.gprIdxVec.size - 1)
+      val tempRegIdx = io.gprIdxVec.last
+      for (jdx <- 0 until tempHaveHazardAddrCheckVec.size) {
+        tempHaveHazardAddrCheckVec(jdx)(idx) := (
+          (
+            //tempRegIdx === myHistLastGprIdx(jdx + 1)(idx % 3)
 
-    //        tempRegIdx === rMyInfoVec(jdx).gprIdxVec(
-    //          idx % (io.gprIdxVec.size - 1)
-    //        )
-    //        && tempRegIdx.orR // check for non-zero
-    //        && rMyInfoVec(jdx).hazardValid
-    //        && rMyInfoVec(jdx).allocValid
-    //      )
-    //    )
-    //  }
-    //}
+            tempRegIdx === rMyInfoVec(jdx).gprIdxVec(
+              idx % (io.gprIdxVec.size - 1)
+            )
+            && tempRegIdx.orR // check for non-zero
+            && rMyInfoVec(jdx).hazardValid
+            && rMyInfoVec(jdx).allocValid
+          )
+        )
+      }
+    }
   }
 
   val myInfoAllocValidVec = (
