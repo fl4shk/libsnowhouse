@@ -1150,6 +1150,16 @@ case class SnowHouseForFmaxPipeStageWriteBack(
     //  myNonMemWbValid := True
     //  myNonMemWbPayload(1) := myNonMemWbPayload(0)
     //}
+    when (
+      myMemWbFifo.io.pop.valid
+    ) {
+      myMemWbPayload(1) := myMemWbFifo.io.pop.payload
+    }
+    when (
+      myNonMemWbFifo.io.pop.valid
+    ) {
+      myNonMemWbPayload(1) := myNonMemWbFifo.io.pop.payload
+    }
   } else {
     when (cLink.up.isValid) {
       myWbPayloadVec.head(1) := myWbPayloadVec.head(0)
