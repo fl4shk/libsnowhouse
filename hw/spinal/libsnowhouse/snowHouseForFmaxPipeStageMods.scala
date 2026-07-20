@@ -1416,11 +1416,13 @@ case class SnowHouseForFmaxPipeStageWriteBack(
         //)
         if (cfg.optScoreboard) (
           if (isMem) (
-            myMemWbValid
-            //True
-            && (
-              myMemWbPayload(1).outpDecodeExt.opIsMemAccess(0)
-              && !myMemWbPayload(1).outpDecodeExt.memAccessKind.asBits(1)
+            //myMemWbValid
+            ////True
+            //&& 
+            (
+              //myMemWbPayload(1).outpDecodeExt.opIsMemAccess(0)
+              //&& 
+              !myMemWbPayload(1).outpDecodeExt.memAccessKind.asBits(1)
             )
           ) else (
             myNonMemRegFileWrPulseValidPartial
