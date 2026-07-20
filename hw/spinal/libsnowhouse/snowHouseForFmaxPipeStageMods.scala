@@ -1517,28 +1517,44 @@ case class SnowHouseForFmaxPipeStageWriteBack(
       io.dbgInfo.regFileWriteAddr := (
         io.commitEtc.myRegFileWrPulse.addr
       )
-      io.dbgInfo.regFileWriteEnable := io.commitEtc.myRegFileWrPulse.fire
+      io.dbgInfo.regFileWriteEnable := (
+        io.commitEtc.myRegFileWrPulse.fire
+        && (
+          if (!isMem) (
+            cLink.up.isFiring
+          ) else (
+            True
+          )
+        )
+      )
       io.dbgInfo.laggingRegPcAtRegFileWrite := (
         someMyWbPayload(1).laggingRegPc.resize(cfg.mainWidth bits)
       )
       io.dbgInfo.shouldIgnoreInstrAtRegFileWrite := (
         someMyWbPayload(1).instrCnt.shouldIgnoreInstr.last
-        || (
+        && (
           if (!isMem) (
-            !cLink.up.isFiring
+            cLink.up.isFiring
           ) else (
-            False
+            True
           )
         )
       )
       io.dbgInfo.myPsIdBubbleAtRegFileWrite := (
         someMyWbPayload(1).instrCnt.myPsIdBubble.last
         //|| !cLink.up.isFiring
-        || (
+        //|| (
+        //  if (!isMem) (
+        //    !cLink.up.isFiring
+        //  ) else (
+        //    False
+        //  )
+        //)
+        && (
           if (!isMem) (
-            !cLink.up.isFiring
+            cLink.up.isFiring
           ) else (
-            False
+            True
           )
         )
       )
