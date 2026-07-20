@@ -3759,12 +3759,12 @@ case class SnowHouseCpuConfig(
         optMaxNumScoreboardInstrs=(
           //None
           Some(
-            //8
+            8
             //4
             //2
             //1
             //32
-            8
+            //8
           )
         ),
         //optDualIssue=(
@@ -7957,10 +7957,10 @@ object SnowHouseCpuWithDualRamSim extends App {
     //18, 18
   )
   val instrRamKindArr = Array[Int](
-    //0,
+    0,
     //1,
     //2,
-    5,
+    //5,
   )
   for (testIdx <- 0 to testIdxRange(1)) {
     programStrArr += (

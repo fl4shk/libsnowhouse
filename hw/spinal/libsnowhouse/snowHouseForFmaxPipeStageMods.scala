@@ -136,6 +136,11 @@ case class SnowHouseForFmaxScoreboardIo(
       //)
     )
   )
+  val myTempOpMayNeedHazardCheck = (
+    in(
+      Bool()
+    )
+  )
   val issue = (
     //Vec.fill(cfg.numMultiIssue)(
       Stream(
@@ -174,8 +179,9 @@ case class SnowHouseForFmaxScoreboard(
 
   case class MyInfo(
   ) extends Bundle {
-    val valid = Bool()
-    def fire = valid
+    val hazardValid = Bool()
+    //def fire = hazardValid
+    val allocValid = Bool()
 
     val gprIdxVec = (
       Vec.fill(cfg.maxNumGprsPerInstr)(
@@ -223,7 +229,7 @@ case class SnowHouseForFmaxScoreboard(
             //tempRegIdx === myHistLastGprIdx(jdx + 1).last
             tempRegIdx === rMyInfoVec(jdx).gprIdxVec.last
             && tempRegIdx.orR // check for non-zero
-            && rMyInfoVec(jdx).fire
+            && rMyInfoVec(jdx).hazardValid
           )
         )
       }
@@ -238,34 +244,34 @@ case class SnowHouseForFmaxScoreboard(
               idx % (io.gprIdxVec.size - 1)
             )
             && tempRegIdx.orR // check for non-zero
-            && rMyInfoVec(jdx).fire
+            && rMyInfoVec(jdx).hazardValid
           )
         )
       }
     }
   }
 
-  val myInfoValidVec = (
+  val myInfoAllocValidVec = (
     Vec.fill(cfg.optMaxNumScoreboardInstrs)(
       Bool()
     )
-    //Vec(rMyInfoVec.reverse.map(item => item.fire))
+    //Vec(rMyInfoVec.reverse.map(item => item.hazardValid))
   )
   for (jdx <- 0 until cfg.optMaxNumScoreboardInstrs) {
     when (io.commit.fire && io.commit.payload === jdx) {
-      myInfoValidVec(jdx) := False
-      tempHaveHazardAddrCheckVec(jdx).foreach(
-        item => (
-          item := False
-        )
-      )
-      rMyInfoVec(jdx).valid := False
+      //myInfoValidVec(jdx) := False
+      //tempHaveHazardAddrCheckVec(jdx).foreach(
+      //  item => (
+      //    item := False
+      //  )
+      //)
+      rMyInfoVec(jdx).allocValid := False
+      rMyInfoVec(jdx).hazardValid := False
     } otherwise {
-      myInfoValidVec(jdx) := rMyInfoVec(jdx).fire
+      //myInfoValidVec(jdx) := rMyInfoVec(jdx).hazardValid
     }
-    //myInfoValidVec(jdx) := rMyInfoVec(jdx).fire
+    myInfoAllocValidVec(jdx) := rMyInfoVec(jdx).allocValid
   }
-
 
   def bitscan(
     x: UInt
@@ -295,9 +301,9 @@ case class SnowHouseForFmaxScoreboard(
   switch (
     //io.issue.ready
     //## 
-    bitscan(~myInfoValidVec.asBits.asUInt)
+    bitscan(~myInfoAllocValidVec.asBits.asUInt)
   ) {
-    val size = myInfoValidVec.size
+    val size = myInfoAllocValidVec.size
     for (idx <- 0 until size) {
       is (MaskedLiteral(
         //"1" + 
@@ -314,7 +320,13 @@ case class SnowHouseForFmaxScoreboard(
         )
         when (io.issue.fire) {
           io.issue.payload := idx
-          rMyInfoVec(idx).valid := True
+          rMyInfoVec(idx).hazardValid := (
+            io.myTempOpMayNeedHazardCheck
+            //True
+          )
+          rMyInfoVec(idx).allocValid := (
+            True
+          )
           rMyInfoVec(idx).gprIdxVec := io.gprIdxVec
         }
       }
@@ -435,6 +447,9 @@ case class SnowHouseForFmaxPipeStageInstrDecode(
   )
 
   if (cfg.optScoreboard) {
+    scoreboard.io.myTempOpMayNeedHazardCheck := (
+      innerPsId.myTempOpMayNeedHazardCheck
+    )
     scoreboard.io.issue.ready := (
       cLink.up.isFiring // cLink.down.isFiring
       //cLink.down.isFiring
@@ -1482,7 +1497,7 @@ case class SnowHouseForFmaxPipeStageWriteBack(
           ) else (
             cLink.up.isFiring
             && myNonMemWbValid
-            && !myNonMemWbPayload(1).instrCnt.myPsIdBubble.last
+            //&& !myNonMemWbPayload(1).instrCnt.myPsIdBubble.last
           )
         )
       )
