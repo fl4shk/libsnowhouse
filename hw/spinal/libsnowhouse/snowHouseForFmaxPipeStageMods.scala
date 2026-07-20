@@ -259,18 +259,18 @@ case class SnowHouseForFmaxScoreboard(
   )
   for (jdx <- 0 until cfg.optMaxNumScoreboardInstrs) {
     when (io.commit.fire && io.commit.payload === jdx) {
-      //myInfoValidVec(jdx) := False
-      //tempHaveHazardAddrCheckVec(jdx).foreach(
-      //  item => (
-      //    item := False
-      //  )
-      //)
+      myInfoAllocValidVec(jdx) := False
+      tempHaveHazardAddrCheckVec(jdx).foreach(
+        item => (
+          item := False
+        )
+      )
       rMyInfoVec(jdx).allocValid := False
       rMyInfoVec(jdx).hazardValid := False
     } otherwise {
-      //myInfoValidVec(jdx) := rMyInfoVec(jdx).hazardValid
+      myInfoAllocValidVec(jdx) := rMyInfoVec(jdx).allocValid
     }
-    myInfoAllocValidVec(jdx) := rMyInfoVec(jdx).allocValid
+    //myInfoAllocValidVec(jdx) := rMyInfoVec(jdx).allocValid
   }
 
   def bitscan(
