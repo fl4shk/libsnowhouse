@@ -204,8 +204,9 @@ case class SnowHouseForFmaxScoreboard(
 
 
   val myHazardCheckVecInnerSize = (
-    (io.gprIdxVec.size - 1) * 2 + 1
+    //(io.gprIdxVec.size - 1) * 2 + 1
     //io.gprIdxVec.size + 3
+    io.gprIdxVec.size - 1
   )
   val tempHaveHazardAddrCheckVec = (
     Vec.fill(cfg.optMaxNumScoreboardInstrs)(
@@ -230,25 +231,28 @@ case class SnowHouseForFmaxScoreboard(
             tempRegIdx === rMyInfoVec(jdx).gprIdxVec.last
             && tempRegIdx.orR // check for non-zero
             && rMyInfoVec(jdx).hazardValid
+            && rMyInfoVec(jdx).allocValid
           )
         )
       }
-    } else { // if (idx >= upPayload.gprIdxVec.size - 1)
-      val tempRegIdx = io.gprIdxVec.last
-      for (jdx <- 0 until tempHaveHazardAddrCheckVec.size) {
-        tempHaveHazardAddrCheckVec(jdx)(idx) := (
-          (
-            //tempRegIdx === myHistLastGprIdx(jdx + 1)(idx % 3)
+    } 
+    //else { // if (idx >= upPayload.gprIdxVec.size - 1)
+    //  val tempRegIdx = io.gprIdxVec.last
+    //  for (jdx <- 0 until tempHaveHazardAddrCheckVec.size) {
+    //    tempHaveHazardAddrCheckVec(jdx)(idx) := (
+    //      (
+    //        //tempRegIdx === myHistLastGprIdx(jdx + 1)(idx % 3)
 
-            tempRegIdx === rMyInfoVec(jdx).gprIdxVec(
-              idx % (io.gprIdxVec.size - 1)
-            )
-            && tempRegIdx.orR // check for non-zero
-            && rMyInfoVec(jdx).hazardValid
-          )
-        )
-      }
-    }
+    //        tempRegIdx === rMyInfoVec(jdx).gprIdxVec(
+    //          idx % (io.gprIdxVec.size - 1)
+    //        )
+    //        && tempRegIdx.orR // check for non-zero
+    //        && rMyInfoVec(jdx).hazardValid
+    //        && rMyInfoVec(jdx).allocValid
+    //      )
+    //    )
+    //  }
+    //}
   }
 
   val myInfoAllocValidVec = (
@@ -451,7 +455,8 @@ case class SnowHouseForFmaxPipeStageInstrDecode(
       innerPsId.myTempOpMayNeedHazardCheck
     )
     scoreboard.io.issue.ready := (
-      cLink.up.isFiring // cLink.down.isFiring
+      //cLink.up.isFiring // cLink.down.isFiring
+      cLink.down.isFiring
       //cLink.down.isFiring
       //cLink.up.isValid
       //&& cLink.down.isReady

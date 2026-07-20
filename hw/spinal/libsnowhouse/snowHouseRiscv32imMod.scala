@@ -1704,7 +1704,8 @@ case class SnowHouseRiscv32imConfig(
         Some(
           //1
           //2
-          4
+          //4
+          6
         )
       )
     )
