@@ -1523,11 +1523,14 @@ case class SnowHouseForFmaxPipeStageWriteBack(
       )
       io.dbgInfo.regFileWriteEnable := (
         io.commitEtc.myRegFileWrPulse.fire
-        || (
+        && (
           if (!isMem) (
-            !cLink.up.isFiring
+            (
+              cLink.up.isFiring
+              && !myNonMemWbPayload(1).instrCnt.myPsIdBubble.last
+            )
           ) else (
-            False
+            True
           )
         )
       )
