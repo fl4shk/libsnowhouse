@@ -1542,6 +1542,7 @@ case class SnowHouseForFmaxPipeStageWriteBack(
         || (
           if (!isMem) (
             !cLink.up.isFiring
+            || !myNonMemWbValid
           ) else (
             False
           )
@@ -1553,6 +1554,7 @@ case class SnowHouseForFmaxPipeStageWriteBack(
         || (
           if (!isMem) (
             !cLink.up.isFiring
+            || !myNonMemWbValid
           ) else (
             False
           )
