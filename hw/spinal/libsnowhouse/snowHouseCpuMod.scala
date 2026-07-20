@@ -3757,16 +3757,16 @@ case class SnowHouseCpuConfig(
           1
         ),
         optMaxNumScoreboardInstrs=(
-          //None
-          Some(
-            6
-            //8
-            //4
-            //2
-            //1
-            //32
-            //8
-          )
+          None
+          //Some(
+          //  6
+          //  //8
+          //  //4
+          //  //2
+          //  //1
+          //  //32
+          //  //8
+          //)
         ),
         //optDualIssue=(
         //  false
