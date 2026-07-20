@@ -1416,8 +1416,12 @@ case class SnowHouseForFmaxPipeStageWriteBack(
         //)
         if (cfg.optScoreboard) (
           if (isMem) (
-            //myMemWbValid
-            True
+            myMemWbValid
+            //True
+            && (
+              myMemWbPayload(1).outpDecodeExt.opIsMemAccess(0)
+              && !myMemWbPayload(1).outpDecodeExt.memAccessKind.asBits(1)
+            )
           ) else (
             myNonMemRegFileWrPulseValidPartial
           )
@@ -1519,11 +1523,11 @@ case class SnowHouseForFmaxPipeStageWriteBack(
       )
       io.dbgInfo.regFileWriteEnable := (
         io.commitEtc.myRegFileWrPulse.fire
-        && (
+        || (
           if (!isMem) (
-            cLink.up.isFiring
+            !cLink.up.isFiring
           ) else (
-            True
+            False
           )
         )
       )
@@ -1532,31 +1536,31 @@ case class SnowHouseForFmaxPipeStageWriteBack(
       )
       io.dbgInfo.shouldIgnoreInstrAtRegFileWrite := (
         someMyWbPayload(1).instrCnt.shouldIgnoreInstr.last
-        && (
+        || (
           if (!isMem) (
-            cLink.up.isFiring
+            !cLink.up.isFiring
           ) else (
-            True
+            False
           )
         )
       )
       io.dbgInfo.myPsIdBubbleAtRegFileWrite := (
         someMyWbPayload(1).instrCnt.myPsIdBubble.last
         //|| !cLink.up.isFiring
-        //|| (
-        //  if (!isMem) (
-        //    !cLink.up.isFiring
-        //  ) else (
-        //    False
-        //  )
-        //)
-        && (
+        || (
           if (!isMem) (
-            cLink.up.isFiring
+            !cLink.up.isFiring
           ) else (
-            True
+            False
           )
         )
+        //&& (
+        //  if (!isMem) (
+        //    cLink.up.isFiring
+        //  ) else (
+        //    True
+        //  )
+        //)
       )
       io.dbgInfo.encInstrAtRegFileWrite := (
         someMyWbPayload(1).encInstr.payload
