@@ -798,6 +798,9 @@ case class SnowHouseConfig(
       0
     )
   )
+  val optScoreboardCommitVecSize = (
+    2
+  )
   val optScoreboardTagWidth = (
     if (optScoreboard) (
       log2Up(optNumScoreboardTags)

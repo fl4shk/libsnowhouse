@@ -2244,9 +2244,11 @@ object SnowHouseCpuPipeStageInstrDecode {
             switch (encInstr(idx).imm16(2 downto 0)) {
               is (UmulwRaRbRc._2._1) {
                 setOp(UmulwRaRbRc)
+                upPayload.gprIdxVec(2) := 0x0
               }
               is (SmulwRaRbRc._2._1) {
                 setOp(SmulwRaRbRc)
+                upPayload.gprIdxVec(2) := 0x0
               }
               is (UdivRaRbRc._2._1) {
                 setOp(UdivRaRbRc)
@@ -3757,16 +3759,16 @@ case class SnowHouseCpuConfig(
           1
         ),
         optMaxNumScoreboardInstrs=(
-          None
-          //Some(
-          //  6
-          //  //8
-          //  //4
-          //  //2
-          //  //1
-          //  //32
-          //  //8
-          //)
+          //None
+          Some(
+            6
+            //8
+            //4
+            //2
+            //1
+            //32
+            //8
+          )
         ),
         //optDualIssue=(
         //  false
@@ -7937,7 +7939,7 @@ object SnowHouseCpuWithDualRamSim extends App {
     false
   )
   val testIdxRange = Array[Int](
-    0, //0,
+    0, 0,
     //1, 1,
     //////2, 2,
     //////3, //3,
@@ -7961,7 +7963,7 @@ object SnowHouseCpuWithDualRamSim extends App {
     0,
     //1,
     //2,
-    5,
+    //5,
   )
   for (testIdx <- 0 to testIdxRange(1)) {
     programStrArr += (

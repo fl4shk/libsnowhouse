@@ -255,6 +255,7 @@ case class SnowHouseForFmaxScoreboard(
     else { // if (idx >= upPayload.gprIdxVec.size - 1)
       val tempRegIdx = io.gprIdxVec.last
       for (jdx <- 0 until tempHaveIssueHazardAddrCheckVec.size) {
+        //tempHaveIssueHazardAddrCheckVec(jdx)(idx) := False
         tempHaveIssueHazardAddrCheckVec(jdx)(idx) := (
           (
             //tempRegIdx === myHistLastGprIdx(jdx + 1)(idx % 3)
@@ -277,11 +278,15 @@ case class SnowHouseForFmaxScoreboard(
       //rMyInfoVec(io.commit.payload).gprIdxVec.last
     )
     for (jdx <- 0 until cfg.optMaxNumScoreboardInstrs) {
+      val myTempInfoGprIdx = (
+        rMyInfoVec(jdx).gprIdxVec.last
+        //rMyInfoVec(jdx).gprIdxVec(idx)
+      )
       tempHaveCommitHazardAddrCheckVec(jdx)(idx) := (
         //tempRegIdx === myHistLastGprIdx(jdx + 1).last
         //tempRegIdx === rMyInfoVec(jdx).gprIdxVec(idx)
-        tempRegIdx === rMyInfoVec(jdx).gprIdxVec.last
-        && rMyInfoVec(jdx).gprIdxVec.last.orR // check for non-zero
+        tempRegIdx === myTempInfoGprIdx
+        && myTempInfoGprIdx.orR // check for non-zero
         && rMyInfoVec(jdx).hazardValid
         && rMyInfoVec(jdx).allocValid
         && io.commit.payload =/= jdx
@@ -1031,9 +1036,11 @@ case class SnowHouseForFmaxPipeStageWriteBack(
     when (myD2hBus.fire) {
       rSeenMyD2hBusFire := True
     }
-    when (io.commitEtc.scoreboardTag.fire) {
-      rSeenMyD2hBusFire := False
-    }
+    //when (
+    //  io.commitEtc.scoreboardTag.fire
+    //) {
+    //  rSeenMyD2hBusFire := False
+    //}
 
     when (
       RegNext(
@@ -1633,8 +1640,20 @@ case class SnowHouseForFmaxPipeStageWriteBack(
     }
   }
 
-
-  if (cfg.optScoreboard) {
+  val myScoreboardArea = (
+    cfg.optScoreboard
+  ) generate (new Area {
+    val rCommitIdx = {
+      val temp = Reg(Flow(UInt(1 bits)))
+      temp.init(temp.getZero)
+      temp
+    }
+    switch (
+      rCommitIdx.fire
+      ## rCommitIdx.payload
+      ## stickyMyD2hBusFire
+    ) {
+    }
     when (
       //myD2hBus.fire
       //myD2hBus.fire
@@ -1665,18 +1684,19 @@ case class SnowHouseForFmaxPipeStageWriteBack(
           && !myMemWbPayload(1).instrCnt.myPsIdBubble.head
           //&& !myMemWbPayload(1).instrCnt.shouldIgnoreInstr.head
         )
-        //|| (
-        //  //(
-        //  //  !(
-        //  //    myD2hBus.fire
-        //  //    || rSeenMyD2hBusFire
-        //  //  ) 
-        //  //)
-        //  //&& 
-        //  myNonMemWbValid
-        //  && !myNonMemWbPayload(1).instrCnt.myPsIdBubble.last
-        //  //&& !myNonMemWbPayload(1).instrCnt.shouldIgnoreInstr.last
-        //)
+        || (
+          //(
+          //  !(
+          //    myD2hBus.fire
+          //    || rSeenMyD2hBusFire
+          //  ) 
+          //)
+          //&& 
+          cLink.up.isValid
+          && myNonMemWbValid
+          && !myNonMemWbPayload(1).instrCnt.myPsIdBubble.last
+          //&& !myNonMemWbPayload(1).instrCnt.shouldIgnoreInstr.last
+        )
       )
       && io.commitEtc.scoreboardTag.valid
       && !io.commitEtc.scoreboardTag.ready//fire
@@ -1712,7 +1732,9 @@ case class SnowHouseForFmaxPipeStageWriteBack(
     //) {
     //  rScoreboardStallCnt := rScoreboardStallCnt + 1
     //}
-  } else {
+  })
+
+  if (!cfg.optScoreboard) {
     setCommitEtc(myWbPayloadVec.head, isMem=false)
   }
 
