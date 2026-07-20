@@ -925,6 +925,9 @@ case class SnowHouseForFmaxPipeStageWriteBack(
     val instrCnt = SnowHouseInstrCnt(cfg=cfg)
     val outpDecodeExt = SnowHouseDecodeExt(cfg=cfg)
 
+    val gprIdxVec = Vec.fill(cfg.maxNumGprsPerInstr)(
+      UInt(log2Up(cfg.numGprs) bits)
+    ) //simPublic()
     val gprIsZeroVec = Vec.fill(cfg.maxNumGprsPerInstr)(
       Vec.fill(cfg.regFileCfg.modMemWordValidSize)(
         Bool()
@@ -992,6 +995,9 @@ case class SnowHouseForFmaxPipeStageWriteBack(
     myMemWbFifo.io.push.payload.outpDecodeExt := (
       myMemWbPayload(0).outpDecodeExt
     )
+    myMemWbFifo.io.push.payload.gprIdxVec := (
+      myMemWbPayload(0).gprIdxVec
+    )
     myMemWbFifo.io.push.payload.gprIsZeroVec := (
       myMemWbPayload(0).gprIsZeroVec
     )
@@ -1010,6 +1016,9 @@ case class SnowHouseForFmaxPipeStageWriteBack(
     myNonMemWbFifo.io.push.payload.outpDecodeExt := (
       myNonMemWbPayload(0).outpDecodeExt
     )
+    myNonMemWbFifo.io.push.payload.gprIdxVec := (
+      myNonMemWbPayload(0).gprIdxVec
+    )
     myNonMemWbFifo.io.push.payload.gprIsZeroVec := (
       myNonMemWbPayload(0).gprIsZeroVec
     )
@@ -1018,8 +1027,16 @@ case class SnowHouseForFmaxPipeStageWriteBack(
     )
 
     when (
-      !myMemWbFifo.io.push.ready
-      || !myNonMemWbFifo.io.push.ready
+      (
+        //cLink.up.isValid
+        //&& myMemWbPayload.
+        myNonMemWbFifo.io.push.valid
+        && !myMemWbFifo.io.push.ready
+      )
+      || (
+        myNonMemWbFifo.io.push.valid
+        && !myNonMemWbFifo.io.push.ready
+      )
     ) {
       cLink.duplicateIt()
     }
@@ -1094,115 +1111,6 @@ case class SnowHouseForFmaxPipeStageWriteBack(
     when (myD2hBus.fire) {
       rSeenMyD2hBusFire := True
     }
-    ////when (
-    ////  io.commitEtc.scoreboardTag.fire
-    ////) {
-    ////  rSeenMyD2hBusFire := False
-    ////}
-
-    ////when (
-    ////  //RegNext(
-    ////  //  (
-    ////  //    //io.myRegFileWrPulse.fire
-    ////  //    (
-    ////  //      //myD2hBus.fire
-    ////  //      ////&& myMemWbValid
-    ////  //      //|| rSeenMyD2hBusFire
-    ////  //      stickyMyD2hBusFire
-    ////  //    )
-    ////  //    && io.commitEtc.scoreboardTag.fire
-    ////  //  ),
-    ////  //  init=False
-    ////  //)
-    ////  rMemCommitFire
-    ////) {
-    ////  rMemCommitFire := False
-    ////  myMemWbValid := False
-    ////}
-    ////when (
-    ////  //RegNext(
-    ////  //  (
-    ////  //    //io.myRegFileWrPulse.fire
-    ////  //    //cLink.up.isFiring
-    ////  //    myNonMemWbValid
-    ////  //    && io.commitEtc.scoreboardTag.fire
-    ////  //  ),
-    ////  //  init=False
-    ////  //)
-    ////  rNonMemCommitFire
-    ////) {
-    ////  rNonMemCommitFire := False
-    ////  myNonMemWbValid := False
-    ////}
-
-    //when (
-    //  cLink.up.isValid
-    //  && myWbPayloadVec.head(0).outpDecodeExt.opIsMemAccess(0)
-    //  && !myWbPayloadVec.head(0).instrCnt.myPsIdBubble(0)
-    //  && (
-    //    RegNext(
-    //      (
-    //        !myMemWbValid
-    //        || (
-    //          //|| myD2hBus.fire
-    //          //|| rSeenMyD2hBusFire
-    //          stickyMyD2hBusFire
-    //          && io.commitEtc.scoreboardTag.fire
-    //        )
-    //      ),
-    //      init=False
-    //    )
-    //  )
-    //) {
-    //  myMemWbValid := True
-    //  myMemWbPayload(1) := myMemWbPayload(0)
-    //  //rInstrCntMem := myWbPayloadVec.head(1).instrCnt.mem
-    //}
-    ////when (
-    ////  //cLink.up.isFiring
-    ////  //&& myWbPayloadVec.head(0).outpDecodeExt.opIsMemAccess(0)
-    ////  //&& (
-    ////  //  RegNext(
-    ////  //    (
-    ////  //      !myMemWbValid
-    ////  //      || myD2hBus.fire
-    ////  //    ),
-    ////  //    init=False
-    ////  //  )
-    ////  //)
-    ////  //cLink.up.isValid
-    ////  //&& myWbPayloadVec.head(0).outpDecodeExt.opIsMemAccess(0)
-    ////  (
-    ////    //myD2hBus.fire
-    ////    //|| rSeenMyD2hBusFire
-    ////    stickyMyD2hBusFire
-    ////  )
-    ////  && io.commitEtc.scoreboardTag.fire
-    ////) {
-    ////  //myMemWbValid := True
-    ////  //myMemWbPayload(1) := myMemWbPayload(0)
-    ////  rInstrCntMem := rInstrCntMem + 1 //myWbPayloadVec.head(1).instrCnt.mem
-    ////}
-
-    ////when (
-    ////  cLink.up.isValid
-    ////  && myMemWbValid
-    ////  //&& !myD2hBus.fire
-    ////  && (
-    ////    rInstrCntMem =/= myWbPayloadVec.head(0).instrCnt.mem
-    ////  )
-    ////) {
-    ////  cLink.duplicateIt()
-    ////}
-
-    //when (
-    //  cLink.up.isValid
-    //  && !myWbPayloadVec.head(0).outpDecodeExt.opIsMemAccess(0)
-    //  && !myWbPayloadVec.head(0).instrCnt.myPsIdBubble(0)
-    //) {
-    //  myNonMemWbValid := True
-    //  myNonMemWbPayload(1) := myNonMemWbPayload(0)
-    //}
     when (
       myMemWbFifo.io.pop.valid
     ) {
@@ -1213,6 +1121,9 @@ case class SnowHouseForFmaxPipeStageWriteBack(
       )
       myMemWbPayload(1).outpDecodeExt := (
         myMemWbFifo.io.pop.payload.outpDecodeExt
+      )
+      myMemWbPayload(1).gprIdxVec := (
+        myMemWbFifo.io.pop.payload.gprIdxVec
       )
       myMemWbPayload(1).gprIsZeroVec := (
         myMemWbFifo.io.pop.payload.gprIsZeroVec
@@ -1230,6 +1141,9 @@ case class SnowHouseForFmaxPipeStageWriteBack(
       )
       myNonMemWbPayload(1).outpDecodeExt := (
         myNonMemWbFifo.io.pop.payload.outpDecodeExt
+      )
+      myNonMemWbPayload(1).gprIdxVec := (
+        myNonMemWbFifo.io.pop.payload.gprIdxVec
       )
       myNonMemWbPayload(1).gprIsZeroVec := (
         myNonMemWbFifo.io.pop.payload.gprIsZeroVec
