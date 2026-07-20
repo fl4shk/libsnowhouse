@@ -281,12 +281,11 @@ case class SnowHouseForFmaxScoreboard(
         //tempRegIdx === myHistLastGprIdx(jdx + 1).last
         //tempRegIdx === rMyInfoVec(jdx).gprIdxVec(idx)
         tempRegIdx === rMyInfoVec(jdx).gprIdxVec.last
-        //&& tempRegIdx.orR // check for non-zero
-        && rMyInfoVec(jdx).gprIdxVec.last.orR
+        && rMyInfoVec(jdx).gprIdxVec.last.orR // check for non-zero
         && rMyInfoVec(jdx).hazardValid
         && rMyInfoVec(jdx).allocValid
         && io.commit.payload =/= jdx
-        //&& io.commit.valid
+        && io.commit.valid
       )
     }
   }
@@ -303,18 +302,18 @@ case class SnowHouseForFmaxScoreboard(
 
   for (jdx <- 0 until cfg.optMaxNumScoreboardInstrs) {
     when (io.commit.fire && io.commit.payload === jdx) {
-      myInfoAllocValidVec(jdx) := False
-      tempHaveIssueHazardAddrCheckVec(jdx).foreach(
-        item => (
-          item := False
-        )
-      )
+      //myInfoAllocValidVec(jdx) := False
+      //tempHaveIssueHazardAddrCheckVec(jdx).foreach(
+      //  item => (
+      //    item := False
+      //  )
+      //)
       rMyInfoVec(jdx).allocValid := False
       rMyInfoVec(jdx).hazardValid := False
     } otherwise {
-      myInfoAllocValidVec(jdx) := rMyInfoVec(jdx).allocValid
+      //myInfoAllocValidVec(jdx) := rMyInfoVec(jdx).allocValid
     }
-    //myInfoAllocValidVec(jdx) := rMyInfoVec(jdx).allocValid
+    myInfoAllocValidVec(jdx) := rMyInfoVec(jdx).allocValid
   }
 
   def bitscan(
@@ -1424,7 +1423,7 @@ case class SnowHouseForFmaxPipeStageWriteBack(
       cfg.optScoreboard
     ) generate (
       myNonMemWbValid
-      && io.commitEtc.scoreboardTag.fire
+      //&& io.commitEtc.scoreboardTag.fire
       //&& cLink.up.isFiring
       //cLink.up.isValid
       ////&& myMemWbValid
@@ -1664,18 +1663,18 @@ case class SnowHouseForFmaxPipeStageWriteBack(
           && !myMemWbPayload(1).instrCnt.myPsIdBubble.head
           //&& !myMemWbPayload(1).instrCnt.shouldIgnoreInstr.head
         )
-        || (
-          //(
-          //  !(
-          //    myD2hBus.fire
-          //    || rSeenMyD2hBusFire
-          //  ) 
-          //)
-          //&& 
-          myNonMemWbValid
-          && !myNonMemWbPayload(1).instrCnt.myPsIdBubble.last
-          //&& !myNonMemWbPayload(1).instrCnt.shouldIgnoreInstr.last
-        )
+        //|| (
+        //  //(
+        //  //  !(
+        //  //    myD2hBus.fire
+        //  //    || rSeenMyD2hBusFire
+        //  //  ) 
+        //  //)
+        //  //&& 
+        //  myNonMemWbValid
+        //  && !myNonMemWbPayload(1).instrCnt.myPsIdBubble.last
+        //  //&& !myNonMemWbPayload(1).instrCnt.shouldIgnoreInstr.last
+        //)
       )
       && io.commitEtc.scoreboardTag.valid
       && !io.commitEtc.scoreboardTag.ready//fire
