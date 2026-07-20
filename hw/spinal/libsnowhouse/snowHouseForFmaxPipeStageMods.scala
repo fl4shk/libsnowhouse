@@ -151,7 +151,7 @@ case class SnowHouseForFmaxScoreboardIo(
 
   val commit = (
     //Vec.fill(cfg.numMultiIssue)(
-      Flow(
+      Stream(
         UInt(cfg.optScoreboardTagWidth bits)
       )
     //)
@@ -203,29 +203,45 @@ case class SnowHouseForFmaxScoreboard(
   )
 
 
-  val myHazardCheckVecInnerSize = (
-    (io.gprIdxVec.size - 1) * 2 + 1
+  val myIssueHazardCheckVecInnerSize = (
+    //(io.gprIdxVec.size - 1) * 2 + 1
     //io.gprIdxVec.size + 3
     //io.gprIdxVec.size - 1
+    io.gprIdxVec.size
   )
-  val tempHaveHazardAddrCheckVec = (
+  val tempHaveIssueHazardAddrCheckVec = (
+    // RAW/WAW hazards
     Vec.fill(cfg.optMaxNumScoreboardInstrs)(
       Vec.fill(
         //io.gprIdxVec.size + 2
-        myHazardCheckVecInnerSize
+        myIssueHazardCheckVecInnerSize
       )(
         Bool()
       )
     )
   )
+
+  val myCommitHazardCheckVecInnerSize = (
+    // WAR hazards
+    io.gprIdxVec.size - 1
+  )
+  val tempHaveCommitHazardAddrCheckVec = (
+    // 
+    Vec.fill(cfg.optMaxNumScoreboardInstrs)(
+      Vec.fill(myCommitHazardCheckVecInnerSize)(
+        Bool()
+      )
+    )
+  )
+
   for (
-    idx <- 0 until myHazardCheckVecInnerSize//io.gprIdxVec.size + 2
+    idx <- 0 until myIssueHazardCheckVecInnerSize//io.gprIdxVec.size + 2
     //idx <- 0 until upPayload.gprIdxVec.size - 1
   ) {
     if (idx < io.gprIdxVec.size - 1) {
       val tempRegIdx = io.gprIdxVec(idx)
       for (jdx <- 0 until cfg.optMaxNumScoreboardInstrs) {
-        tempHaveHazardAddrCheckVec(jdx)(idx) := (
+        tempHaveIssueHazardAddrCheckVec(jdx)(idx) := (
           (
             //tempRegIdx === myHistLastGprIdx(jdx + 1).last
             tempRegIdx === rMyInfoVec(jdx).gprIdxVec.last
@@ -238,14 +254,15 @@ case class SnowHouseForFmaxScoreboard(
     } 
     else { // if (idx >= upPayload.gprIdxVec.size - 1)
       val tempRegIdx = io.gprIdxVec.last
-      for (jdx <- 0 until tempHaveHazardAddrCheckVec.size) {
-        tempHaveHazardAddrCheckVec(jdx)(idx) := (
+      for (jdx <- 0 until tempHaveIssueHazardAddrCheckVec.size) {
+        tempHaveIssueHazardAddrCheckVec(jdx)(idx) := (
           (
             //tempRegIdx === myHistLastGprIdx(jdx + 1)(idx % 3)
 
-            tempRegIdx === rMyInfoVec(jdx).gprIdxVec(
-              idx % (io.gprIdxVec.size - 1)
-            )
+            //tempRegIdx === rMyInfoVec(jdx).gprIdxVec(
+            //  idx % (io.gprIdxVec.size - 1)
+            //)
+            tempRegIdx === rMyInfoVec(jdx).gprIdxVec.last
             && tempRegIdx.orR // check for non-zero
             && rMyInfoVec(jdx).hazardValid
             && rMyInfoVec(jdx).allocValid
@@ -254,6 +271,20 @@ case class SnowHouseForFmaxScoreboard(
       }
     }
   }
+  for (idx <- 0 until myCommitHazardCheckVecInnerSize) {
+    val tempRegIdx = rMyInfoVec(io.commit.payload).gprIdxVec(idx)
+    for (jdx <- 0 until cfg.optMaxNumScoreboardInstrs) {
+      tempHaveCommitHazardAddrCheckVec(jdx)(idx) := (
+        //tempRegIdx === myHistLastGprIdx(jdx + 1).last
+        tempRegIdx === rMyInfoVec(jdx).gprIdxVec(idx)
+        && tempRegIdx.orR // check for non-zero
+        && rMyInfoVec(jdx).hazardValid
+        && rMyInfoVec(jdx).allocValid
+        && io.commit.payload =/= jdx
+      )
+    }
+  }
+  io.commit.ready := !tempHaveCommitHazardAddrCheckVec.asBits.orR
 
   val myInfoAllocValidVec = (
     Vec.fill(cfg.optMaxNumScoreboardInstrs)(
@@ -261,10 +292,11 @@ case class SnowHouseForFmaxScoreboard(
     )
     //Vec(rMyInfoVec.reverse.map(item => item.hazardValid))
   )
+
   for (jdx <- 0 until cfg.optMaxNumScoreboardInstrs) {
     when (io.commit.fire && io.commit.payload === jdx) {
       myInfoAllocValidVec(jdx) := False
-      tempHaveHazardAddrCheckVec(jdx).foreach(
+      tempHaveIssueHazardAddrCheckVec(jdx).foreach(
         item => (
           item := False
         )
@@ -317,7 +349,7 @@ case class SnowHouseForFmaxScoreboard(
         // search
         io.issue.valid := (
           //True
-          !tempHaveHazardAddrCheckVec.asBits.orR
+          !tempHaveIssueHazardAddrCheckVec.asBits.orR
         )
         io.issue.payload := (
           RegNext(io.issue.payload, init=io.issue.payload.getZero)
@@ -369,7 +401,7 @@ case class SnowHouseForFmaxPipeStageInstrDecodeIo(
   val myScoreboardCommmit = (
     cfg.optScoreboard
   ) generate (
-    slave(Flow(
+    slave(Stream(
       UInt(cfg.optScoreboardTagWidth bits)
     ))
   )
@@ -478,7 +510,7 @@ case class SnowHouseForFmaxPipeStageInstrDecode(
       //  True
       //)
     }
-    scoreboard.io.commit := io.myScoreboardCommmit
+    scoreboard.io.commit << io.myScoreboardCommmit
   }
 
   s2mLink.down.driveTo(
@@ -776,18 +808,22 @@ case class SnowHouseForFmaxPsWbCommmitEtc(
   cfg: SnowHouseConfig
 ) extends Bundle {
   val myRegFileWrPulse = (
-    Flow(
-      PipeSimpleDualPortMemDrivePayload(
-        dataType=UInt(cfg.mainWidth bits),
-        wordCount=cfg.regFileCfg.wordCountArr(0),
+    master(
+      Flow(
+        PipeSimpleDualPortMemDrivePayload(
+          dataType=UInt(cfg.mainWidth bits),
+          wordCount=cfg.regFileCfg.wordCountArr(0),
+        )
       )
     )
   )
   val scoreboardTag = (
     cfg.optScoreboard
   ) generate (
-    Flow(
-      UInt(cfg.optScoreboardTagWidth bits)
+    master(
+      Stream(
+        UInt(cfg.optScoreboardTagWidth bits)
+      )
     )
   )
 }
@@ -815,7 +851,7 @@ case class SnowHouseForFmaxPipeStageWriteBackIo(
     ))
   )
   //--------
-  val commitEtc = out(
+  val commitEtc = (
     SnowHouseForFmaxPsWbCommmitEtc(cfg=cfg)
   )
   //--------
@@ -1403,7 +1439,8 @@ case class SnowHouseForFmaxPipeStageWriteBack(
       )
     )
     io.commitEtc.myRegFileWrPulse.valid := (
-      (
+      io.commitEtc.scoreboardTag.fire
+      && (
         //if (
         //  cfg.optScoreboard
         //  && !isMem
@@ -1489,6 +1526,11 @@ case class SnowHouseForFmaxPipeStageWriteBack(
       myCurrExt.modMemWord
     }
     if (cfg.optScoreboard) {
+      //val rSeenUpIsFiring = (
+      //  isMem
+      //) generate (
+      //  Reg(Bool(), init=False)
+      //)
       io.commitEtc.scoreboardTag.valid := (
         (
           if (isMem) (
@@ -1584,10 +1626,24 @@ case class SnowHouseForFmaxPipeStageWriteBack(
     }
   }
 
+  val rSeenMyD2hBusFire = (
+    cfg.optScoreboard
+  ) generate (
+    Reg(Bool(), init=False)
+  )
+
   if (cfg.optScoreboard) {
+    when (myD2hBus.fire) {
+      rSeenMyD2hBusFire := True
+    }
+    when (io.commitEtc.scoreboardTag.fire) {
+      rSeenMyD2hBusFire := False
+    }
+
     when (
       //myD2hBus.fire
       myD2hBus.fire
+      || rSeenMyD2hBusFire
       //|| (
       //  cLink.up.isFiring
       //  && myMemWbValid
@@ -1599,6 +1655,11 @@ case class SnowHouseForFmaxPipeStageWriteBack(
       setCommitEtc(myMemWbPayload, isMem=true)
     } otherwise {
       setCommitEtc(myNonMemWbPayload, isMem=false)
+    }
+    when (
+      !io.commitEtc.scoreboardTag.ready
+    ) {
+      cLink.duplicateIt()
     }
 
     //when (
