@@ -920,14 +920,40 @@ case class SnowHouseForFmaxPipeStageWriteBack(
     )
   )
 
+  case class MyWbPayload(
+  ) extends Bundle {
+    val instrCnt = SnowHouseInstrCnt(cfg=cfg)
+    val outpDecodeExt = SnowHouseDecodeExt(cfg=cfg)
+
+    val gprIsZeroVec = Vec.fill(cfg.maxNumGprsPerInstr)(
+      Vec.fill(cfg.regFileCfg.modMemWordValidSize)(
+        Bool()
+      )
+    )
+
+    val myExt = Vec[PipeRegFilePayloadExt[UInt, Bool]]{
+      val myArr = ArrayBuffer[PipeRegFilePayloadExt[UInt, Bool]]()
+      for (ydx <- 0 until cfg.regFileCfg.memArrSize) {
+        myArr += myWbPayloadVec.head.head.mkOneExt(ydx=ydx)
+      }
+      myArr
+    } //simPublic()
+  }
+
   val myMemWbFifo = StreamFifo(
-    dataType=SnowHousePipePayload(cfg=cfg),
+    dataType=(
+      //SnowHousePipePayload(cfg=cfg)
+      MyWbPayload()
+    ),
     depth=2,
     latency=0,
     forFMax=true
   )
   val myNonMemWbFifo = StreamFifo(
-    dataType=SnowHousePipePayload(cfg=cfg),
+    dataType=(
+      //SnowHousePipePayload(cfg=cfg)
+      MyWbPayload()
+    ),
     depth=2,
     latency=0,
     forFMax=true
@@ -942,35 +968,62 @@ case class SnowHouseForFmaxPipeStageWriteBack(
   val myMemWbValid = myMemWbFifo.io.pop.valid
   val myNonMemWbValid = myNonMemWbFifo.io.pop.valid
 
-  myMemWbFifo.io.pop.ready := False
-  myNonMemWbFifo.io.pop.ready := False
+  val myScoreboardWbFifoArea = (
+    cfg.optScoreboard
+  ) generate (new Area {
+    myMemWbFifo.io.pop.ready := False
+    myNonMemWbFifo.io.pop.ready := False
 
-  //myMemWbFifo.io.push.payload := (
-  //  myMemWbFifo.io.push.payload.getZero
-  //)
-  //myNonMemWbFifo.io.push.payload := (
-  //  myNonMemWbFifo.io.push.payload.getZero
-  //)
-  myMemWbFifo.io.push.valid := (
-    cLink.up.isValid
-    && myMemWbPayload(0).splitOp.opIsMemAccess
-    && !myMemWbPayload(0).instrCnt.myPsIdBubble.head
-  )
+    //myMemWbFifo.io.push.payload := (
+    //  myMemWbFifo.io.push.payload.getZero
+    //)
+    //myNonMemWbFifo.io.push.payload := (
+    //  myNonMemWbFifo.io.push.payload.getZero
+    //)
+    myMemWbFifo.io.push.valid := (
+      cLink.up.isValid
+      && myMemWbPayload(0).splitOp.opIsMemAccess
+      && !myMemWbPayload(0).instrCnt.myPsIdBubble.head
+    )
 
-  myMemWbFifo.io.push.payload := myMemWbPayload(0)
-  myNonMemWbFifo.io.push.valid := (
-    cLink.up.isValid
-    && !myNonMemWbPayload(0).splitOp.opIsMemAccess
-    && !myNonMemWbPayload(0).instrCnt.myPsIdBubble.head
-  )
-  myNonMemWbFifo.io.push.payload := myNonMemWbPayload(0)
+    myMemWbFifo.io.push.payload.instrCnt := (
+      myMemWbPayload(0).instrCnt
+    )
+    myMemWbFifo.io.push.payload.outpDecodeExt := (
+      myMemWbPayload(0).outpDecodeExt
+    )
+    myMemWbFifo.io.push.payload.gprIsZeroVec := (
+      myMemWbPayload(0).gprIsZeroVec
+    )
+    myMemWbFifo.io.push.payload.myExt := (
+      myMemWbPayload(0).myExt
+    )
 
-  when (
-    !myMemWbFifo.io.push.ready
-    || !myNonMemWbFifo.io.push.ready
-  ) {
-    cLink.duplicateIt()
-  }
+    myNonMemWbFifo.io.push.valid := (
+      cLink.up.isValid
+      && !myNonMemWbPayload(0).splitOp.opIsMemAccess
+      && !myNonMemWbPayload(0).instrCnt.myPsIdBubble.head
+    )
+    myNonMemWbFifo.io.push.payload.instrCnt := (
+      myNonMemWbPayload(0).instrCnt
+    )
+    myNonMemWbFifo.io.push.payload.outpDecodeExt := (
+      myNonMemWbPayload(0).outpDecodeExt
+    )
+    myNonMemWbFifo.io.push.payload.gprIsZeroVec := (
+      myNonMemWbPayload(0).gprIsZeroVec
+    )
+    myNonMemWbFifo.io.push.payload.myExt := (
+      myNonMemWbPayload(0).myExt
+    )
+
+    when (
+      !myMemWbFifo.io.push.ready
+      || !myNonMemWbFifo.io.push.ready
+    ) {
+      cLink.duplicateIt()
+    }
+  })
 
   myWbPayloadVec.foreach(item => {
     if (cfg.optScoreboard) {
@@ -1153,12 +1206,37 @@ case class SnowHouseForFmaxPipeStageWriteBack(
     when (
       myMemWbFifo.io.pop.valid
     ) {
-      myMemWbPayload(1) := myMemWbFifo.io.pop.payload
+      //myMemWbPayload(1) := myMemWbFifo.io.pop.payload
+
+      myMemWbPayload(1).instrCnt := (
+        myMemWbFifo.io.pop.payload.instrCnt
+      )
+      myMemWbPayload(1).outpDecodeExt := (
+        myMemWbFifo.io.pop.payload.outpDecodeExt
+      )
+      myMemWbPayload(1).gprIsZeroVec := (
+        myMemWbFifo.io.pop.payload.gprIsZeroVec
+      )
+      myMemWbPayload(1).myExt := (
+        myMemWbFifo.io.pop.payload.myExt
+      )
     }
     when (
       myNonMemWbFifo.io.pop.valid
     ) {
-      myNonMemWbPayload(1) := myNonMemWbFifo.io.pop.payload
+      //myNonMemWbPayload(1) := myNonMemWbFifo.io.pop.payload
+      myNonMemWbPayload(1).instrCnt := (
+        myNonMemWbFifo.io.pop.payload.instrCnt
+      )
+      myNonMemWbPayload(1).outpDecodeExt := (
+        myNonMemWbFifo.io.pop.payload.outpDecodeExt
+      )
+      myNonMemWbPayload(1).gprIsZeroVec := (
+        myNonMemWbFifo.io.pop.payload.gprIsZeroVec
+      )
+      myNonMemWbPayload(1).myExt := (
+        myNonMemWbFifo.io.pop.payload.myExt
+      )
     }
   } else {
     when (cLink.up.isValid) {
@@ -1337,18 +1415,19 @@ case class SnowHouseForFmaxPipeStageWriteBack(
       // 32-bit `cfg.mainWidth` CPU. More work will be needed later.
       //--------
       val myDecodeExt = myMemWbPayload(1).outpDecodeExt
-      val mapElem = myMemWbPayload(1).gprIdxToMemAddrIdxMap(0)
-      val myCurrExt = (
-        if (!mapElem.haveHowToSetIdx) (
-          myMemWbPayload(1).myExt(
-            0
-          )
-        ) else (
-          myMemWbPayload(1).myExt(
-            mapElem.howToSetIdx
-          )
-        )
-      )
+      //val mapElem = myMemWbPayload(1).gprIdxToMemAddrIdxMap(0)
+      //val myCurrExt = (
+      //  if (!mapElem.haveHowToSetIdx) (
+      //    myMemWbPayload(1).myExt(
+      //      0
+      //    )
+      //  ) else (
+      //    myMemWbPayload(1).myExt(
+      //      mapElem.howToSetIdx
+      //    )
+      //  )
+      //)
+      val myCurrExt = myMemWbPayload(1).myExt(0)
       //--------
       is (M"10--") {
         // zero-extending sub-word load or full-word load
@@ -1407,18 +1486,19 @@ case class SnowHouseForFmaxPipeStageWriteBack(
       )
     ) {
       val myDecodeExt = myMemWbPayload(1).outpDecodeExt
-      val mapElem = myMemWbPayload(1).gprIdxToMemAddrIdxMap(0)
-      val myCurrExt = (
-        if (!mapElem.haveHowToSetIdx) (
-          myMemWbPayload(1).myExt(
-            0
-          )
-        ) else (
-          myMemWbPayload(1).myExt(
-            mapElem.howToSetIdx
-          )
-        )
-      )
+      //val mapElem = myMemWbPayload(1).gprIdxToMemAddrIdxMap(0)
+      //val myCurrExt = (
+      //  if (!mapElem.haveHowToSetIdx) (
+      //    myMemWbPayload(1).myExt(
+      //      0
+      //    )
+      //  ) else (
+      //    myMemWbPayload(1).myExt(
+      //      mapElem.howToSetIdx
+      //    )
+      //  )
+      //)
+      val myCurrExt = myMemWbPayload(1).myExt(0)
       //myCurrExt.modMemWord := myDbus.recvData.word
       //myCurrExt.modMemWord := myD2hBus.data
       //myCurrExt.modMemWordValid.foreach(current => {

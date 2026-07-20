@@ -4529,6 +4529,8 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
   io.outpDecodeExt.memAccessLcvDbusByteSize := (
     io.inpDecodeExt(1).memAccessLcvDbusByteSize
   )
+  io.outpDecodeExt.memAccessIsPush := False
+  io.outpDecodeExt.opIsJmp := False
   println(
     f"cfg.allMainLdstUseGprPlusImm:${cfg.allMainLdstUseGprPlusImm}"
   )
