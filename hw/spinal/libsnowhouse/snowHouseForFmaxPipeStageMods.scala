@@ -1441,8 +1441,6 @@ case class SnowHouseForFmaxPipeStageWriteBack(
       )
     )
     io.commitEtc.myRegFileWrPulse.valid := (
-      io.commitEtc.scoreboardTag.fire
-      && (
         //if (
         //  cfg.optScoreboard
         //  && !isMem
@@ -1453,18 +1451,22 @@ case class SnowHouseForFmaxPipeStageWriteBack(
         //  //cLink.up.isFiring
         //  myD2hBus.fire
         //)
+      (
         if (cfg.optScoreboard) (
-          if (isMem) (
-            //myMemWbValid
-            ////True
-            //&& 
-            (
-              //myMemWbPayload(1).outpDecodeExt.opIsMemAccess(0)
+          io.commitEtc.scoreboardTag.fire
+          && (
+            if (isMem) (
+              //myMemWbValid
+              ////True
               //&& 
-              !myMemWbPayload(1).outpDecodeExt.memAccessKind.asBits(1)
+              (
+                //myMemWbPayload(1).outpDecodeExt.opIsMemAccess(0)
+                //&& 
+                !myMemWbPayload(1).outpDecodeExt.memAccessKind.asBits(1)
+              )
+            ) else (
+              myNonMemRegFileWrPulseValidPartial
             )
-          ) else (
-            myNonMemRegFileWrPulseValidPartial
           )
         ) else (
           cLink.up.isFiring

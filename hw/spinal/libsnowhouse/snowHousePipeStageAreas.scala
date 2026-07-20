@@ -8711,22 +8711,28 @@ case class SnowHousePipeStageExecute(
       //cLink.up(args.currPayload) := outp
     }
     val rInstrCntMem = (
+      cfg.optScoreboard
+    ) generate (
       Reg(cloneOf(outp.instrCnt.mem))
       init(0)
     )
     val rInstrCntNonMem = (
+      cfg.optScoreboard
+    ) generate (
       Reg(cloneOf(outp.instrCnt.nonMem))
       init(0)
     )
-    outp.instrCnt.mem := rInstrCntMem
-    outp.instrCnt.nonMem := rInstrCntNonMem
-    when (
-      !myH2dBus.valid
-      && !rSeenH2dBusFire
-      && cLink.up.isFiring
-      && !outp.instrCnt.myPsIdBubble.head
-    ) {
-      rInstrCntNonMem := rInstrCntNonMem + 1
+    if (cfg.optScoreboard) {
+      outp.instrCnt.mem := rInstrCntMem
+      outp.instrCnt.nonMem := rInstrCntNonMem
+      when (
+        !myH2dBus.valid
+        && !rSeenH2dBusFire
+        && cLink.up.isFiring
+        && !outp.instrCnt.myPsIdBubble.head
+      ) {
+        rInstrCntNonMem := rInstrCntNonMem + 1
+      }
     }
     when (
       if (cfg.optScoreboard) (
@@ -8772,8 +8778,8 @@ case class SnowHousePipeStageExecute(
     }
     when (myH2dBus.fire) {
       //rInstrCntMem.lsb := !rInstrCntMem.lsb
-      rInstrCntMem := rInstrCntMem + 1
       if (cfg.optScoreboard) {
+        rInstrCntMem := rInstrCntMem + 1
         rSeenH2dBusFire := True
         //cLink.down(args.currPayload).instrCnt.shouldIgnoreInstr := (
         //  myShouldIgnoreInstr

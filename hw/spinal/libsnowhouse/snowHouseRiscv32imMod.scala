@@ -1700,14 +1700,14 @@ case class SnowHouseRiscv32imConfig(
       ),
       //optDualIssue=true,
       optMaxNumScoreboardInstrs=(
-        //None
-        Some(
-          //1
-          //2
-          //4
-          //6
-          8
-        )
+        None
+        //Some(
+        //  //1
+        //  //2
+        //  //4
+        //  //6
+        //  8
+        //)
       )
     )
   ),
