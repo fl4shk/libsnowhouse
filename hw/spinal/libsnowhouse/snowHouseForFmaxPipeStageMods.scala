@@ -179,7 +179,7 @@ case class SnowHouseForFmaxScoreboard(
 
   case class MyInfo(
   ) extends Bundle {
-    val hazardValid = Bool()
+    //val hazardValid = Bool()
     //def fire = hazardValid
     val allocValid = Bool()
 
@@ -246,7 +246,7 @@ case class SnowHouseForFmaxScoreboard(
             //tempRegIdx === myHistLastGprIdx(jdx + 1).last
             tempRegIdx === rMyInfoVec(jdx).gprIdxVec.last
             && tempRegIdx.orR // check for non-zero
-            && rMyInfoVec(jdx).hazardValid
+            //&& rMyInfoVec(jdx).hazardValid
             && rMyInfoVec(jdx).allocValid
             //&& io.myTempOpMayNeedHazardCheck
           )
@@ -266,7 +266,7 @@ case class SnowHouseForFmaxScoreboard(
             )
             //tempRegIdx === rMyInfoVec(jdx).gprIdxVec.last
             && tempRegIdx.orR // check for non-zero
-            && rMyInfoVec(jdx).hazardValid
+            //&& rMyInfoVec(jdx).hazardValid
             && rMyInfoVec(jdx).allocValid
           )
         )
@@ -288,7 +288,7 @@ case class SnowHouseForFmaxScoreboard(
         //tempRegIdx === rMyInfoVec(jdx).gprIdxVec(idx)
         tempRegIdx === myTempInfoGprIdx
         && myTempInfoGprIdx.orR // check for non-zero
-        && rMyInfoVec(jdx).hazardValid
+        //&& rMyInfoVec(jdx).hazardValid
         && rMyInfoVec(jdx).allocValid
         && io.commit.payload =/= jdx
         && io.commit.valid
@@ -317,7 +317,7 @@ case class SnowHouseForFmaxScoreboard(
       //  )
       //)
       rMyInfoVec(jdx).allocValid := False
-      rMyInfoVec(jdx).hazardValid := False
+      //rMyInfoVec(jdx).hazardValid := False
     } otherwise {
       //myInfoAllocValidVec(jdx) := rMyInfoVec(jdx).allocValid
     }
@@ -372,10 +372,10 @@ case class SnowHouseForFmaxScoreboard(
         )
         when (io.issue.fire) {
           io.issue.payload := idx
-          rMyInfoVec(idx).hazardValid := (
-            //io.myTempOpMayNeedHazardCheck
-            True
-          )
+          //rMyInfoVec(idx).hazardValid := (
+          //  //io.myTempOpMayNeedHazardCheck
+          //  True
+          //)
           rMyInfoVec(idx).allocValid := (
             //io.myTempOpMayNeedHazardCheck
             True
@@ -953,8 +953,9 @@ case class SnowHouseForFmaxPipeStageWriteBack(
       MyWbPayload()
     ),
     depth=(
+      4
       //2
-      1
+      //1
     ),
     latency=0,
     forFMax=true
@@ -965,8 +966,9 @@ case class SnowHouseForFmaxPipeStageWriteBack(
       MyWbPayload()
     ),
     depth=(
+      4
       //2
-      1
+      //1
     ),
     latency=0,
     forFMax=true

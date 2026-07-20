@@ -3801,8 +3801,8 @@ case class SnowHouseCpuConfig(
         optMaxNumScoreboardInstrs=(
           //None
           Some(
-            6
-            //8
+            //6
+            8
             //4
             //2
             //1
