@@ -1032,6 +1032,16 @@ case class SnowHouseForFmaxPipeStageWriteBack(
       myD2hBus.fire
     )
   )
+  val rMemCommitFire = (
+    cfg.optScoreboard
+  ) generate (
+    Reg(Bool(), init=False)
+  )
+  val rNonMemCommitFire = (
+    cfg.optScoreboard
+  ) generate (
+    Reg(Bool(), init=False)
+  )
   if (cfg.optScoreboard) {
     when (myD2hBus.fire) {
       rSeenMyD2hBusFire := True
@@ -1043,33 +1053,37 @@ case class SnowHouseForFmaxPipeStageWriteBack(
     //}
 
     when (
-      RegNext(
-        (
-          //io.myRegFileWrPulse.fire
-          (
-            //myD2hBus.fire
-            ////&& myMemWbValid
-            //|| rSeenMyD2hBusFire
-            stickyMyD2hBusFire
-          )
-          && io.commitEtc.scoreboardTag.fire
-        ),
-        init=False
-      )
+      //RegNext(
+      //  (
+      //    //io.myRegFileWrPulse.fire
+      //    (
+      //      //myD2hBus.fire
+      //      ////&& myMemWbValid
+      //      //|| rSeenMyD2hBusFire
+      //      stickyMyD2hBusFire
+      //    )
+      //    && io.commitEtc.scoreboardTag.fire
+      //  ),
+      //  init=False
+      //)
+      rMemCommitFire
     ) {
+      rMemCommitFire := False
       myMemWbValid := False
     }
     when (
-      RegNext(
-        (
-          //io.myRegFileWrPulse.fire
-          //cLink.up.isFiring
-          myNonMemWbValid
-          && io.commitEtc.scoreboardTag.fire
-        ),
-        init=False
-      )
+      //RegNext(
+      //  (
+      //    //io.myRegFileWrPulse.fire
+      //    //cLink.up.isFiring
+      //    myNonMemWbValid
+      //    && io.commitEtc.scoreboardTag.fire
+      //  ),
+      //  init=False
+      //)
+      rNonMemCommitFire
     ) {
+      rNonMemCommitFire := False
       myNonMemWbValid := False
     }
 
@@ -1137,17 +1151,6 @@ case class SnowHouseForFmaxPipeStageWriteBack(
       cLink.up.isValid
       && !myWbPayloadVec.head(0).outpDecodeExt.opIsMemAccess(0)
       && !myWbPayloadVec.head(0).instrCnt.myPsIdBubble(0)
-      //&& (
-      //  RegNext(
-      //    (
-      //      !myNonMemWbValid
-      //      || (
-      //        cLink.up.isFiring
-      //      )
-      //    ),
-      //    init=False
-      //  )
-      //)
     ) {
       myNonMemWbValid := True
       myNonMemWbPayload(1) := myNonMemWbPayload(0)
@@ -1430,6 +1433,7 @@ case class SnowHouseForFmaxPipeStageWriteBack(
       cfg.optScoreboard
     ) generate (
       myNonMemWbValid
+      && io.commitEtc.scoreboardTag.fire
       //&& io.commitEtc.scoreboardTag.fire
       //&& cLink.up.isFiring
       //cLink.up.isValid
@@ -1460,16 +1464,17 @@ case class SnowHouseForFmaxPipeStageWriteBack(
         //)
       (
         if (cfg.optScoreboard) (
-          io.commitEtc.scoreboardTag.fire
-          && (
+          (
             if (isMem) (
               //myMemWbValid
               ////True
               //&& 
               (
                 //myMemWbPayload(1).outpDecodeExt.opIsMemAccess(0)
-                //&& 
-                !myMemWbPayload(1).outpDecodeExt.memAccessKind.asBits(1)
+                io.commitEtc.scoreboardTag.fire
+                && (
+                  !myMemWbPayload(1).outpDecodeExt.memAccessKind.asBits(1)
+                )
               )
             ) else (
               myNonMemRegFileWrPulseValidPartial
@@ -1653,56 +1658,114 @@ case class SnowHouseForFmaxPipeStageWriteBack(
       ## rCommitIdx.payload
       ## stickyMyD2hBusFire
     ) {
+      is (M"0-1") {
+        setCommitEtc(myMemWbPayload, isMem=true)
+        when (io.commitEtc.scoreboardTag.fire) {
+          rMemCommitFire := True
+          rSeenMyD2hBusFire := False
+        }
+      }
+      is (M"0-0") {
+        setCommitEtc(myNonMemWbPayload, isMem=false)
+        when (io.commitEtc.scoreboardTag.fire) {
+          rNonMemCommitFire := True
+        }
+      }
+      is (M"111") {
+        setCommitEtc(myMemWbPayload, isMem=true)
+        when (io.commitEtc.scoreboardTag.fire) {
+          rMemCommitFire := True
+          rSeenMyD2hBusFire := False
+        }
+      }
+      is (M"10-") {
+        setCommitEtc(myNonMemWbPayload, isMem=false)
+        when (io.commitEtc.scoreboardTag.fire) {
+          rNonMemCommitFire := True
+        }
+      }
+      //is (M"110") 
+      default {
+        setCommitEtc(myMemWbPayload, isMem=true)
+        when (io.commitEtc.scoreboardTag.fire) {
+          rMemCommitFire := True
+          rSeenMyD2hBusFire := False
+        }
+      }
     }
-    when (
-      //myD2hBus.fire
-      //myD2hBus.fire
-      //|| rSeenMyD2hBusFire
-      stickyMyD2hBusFire
-      //|| (
-      //  cLink.up.isFiring
-      //  && myMemWbValid
-      //  && myMemWbPayload(0).instrCnt.myPsIdBubble(0)
-      //  //&& !myNonMemWbValid
-      //  //&& someMyWbPayload(1).outpDecodeExt.opIsMemAccess(0)
-      //)
+    switch (
+      rCommitIdx.fire
+      ## (
+        //!io.commitEtc.scoreboardTag.valid
+        //|| 
+        io.commitEtc.scoreboardTag.isStall
+      )
     ) {
-      setCommitEtc(myMemWbPayload, isMem=true)
-    } otherwise {
-      setCommitEtc(myNonMemWbPayload, isMem=false)
+      is (B"01") {
+        rCommitIdx.valid := True
+      }
+      is (M"10") {
+        rCommitIdx.valid := False
+      }
+      is (B"11") {
+        rCommitIdx.payload.lsb := !rCommitIdx.payload.lsb
+      }
+      //is (B"00") 
+      default {
+      }
     }
 
-    when (
-      ( 
-        (
-          (
-            //myD2hBus.fire
-            //|| rSeenMyD2hBusFire
-            stickyMyD2hBusFire
-          )
-          && myMemWbValid
-          && !myMemWbPayload(1).instrCnt.myPsIdBubble.head
-          //&& !myMemWbPayload(1).instrCnt.shouldIgnoreInstr.head
-        )
-        || (
-          //(
-          //  !(
-          //    myD2hBus.fire
-          //    || rSeenMyD2hBusFire
-          //  ) 
-          //)
-          //&& 
-          cLink.up.isValid
-          && myNonMemWbValid
-          && !myNonMemWbPayload(1).instrCnt.myPsIdBubble.last
-          //&& !myNonMemWbPayload(1).instrCnt.shouldIgnoreInstr.last
-        )
-      )
-      && io.commitEtc.scoreboardTag.valid
-      && !io.commitEtc.scoreboardTag.ready//fire
-    ) {
-      cLink.duplicateIt()
-    }
+    //when (
+    //  //myD2hBus.fire
+    //  //myD2hBus.fire
+    //  //|| rSeenMyD2hBusFire
+    //  stickyMyD2hBusFire
+    //  //|| (
+    //  //  cLink.up.isFiring
+    //  //  && myMemWbValid
+    //  //  && myMemWbPayload(0).instrCnt.myPsIdBubble(0)
+    //  //  //&& !myNonMemWbValid
+    //  //  //&& someMyWbPayload(1).outpDecodeExt.opIsMemAccess(0)
+    //  //)
+    //) {
+    //  setCommitEtc(myMemWbPayload, isMem=true)
+    //} otherwise {
+    //  setCommitEtc(myNonMemWbPayload, isMem=false)
+    //}
+
+
+    //when (
+    //  ( 
+    //    (
+    //      (
+    //        //myD2hBus.fire
+    //        //|| rSeenMyD2hBusFire
+    //        stickyMyD2hBusFire
+    //      )
+    //      && myMemWbValid
+    //      && !myMemWbPayload(1).instrCnt.myPsIdBubble.head
+    //      //&& !myMemWbPayload(1).instrCnt.shouldIgnoreInstr.head
+    //    )
+    //    || (
+    //      //(
+    //      //  !(
+    //      //    myD2hBus.fire
+    //      //    || rSeenMyD2hBusFire
+    //      //  ) 
+    //      //)
+    //      //&& 
+    //      cLink.up.isValid
+    //      && myNonMemWbValid
+    //      && !myNonMemWbPayload(1).instrCnt.myPsIdBubble.last
+    //      //&& !myNonMemWbPayload(1).instrCnt.shouldIgnoreInstr.last
+    //    )
+    //  )
+    //  && io.commitEtc.scoreboardTag.valid
+    //  && !io.commitEtc.scoreboardTag.ready//fire
+    //) {
+    //  cLink.duplicateIt()
+    //}
+
 
     //when (
     //  myD2hBus.fire
