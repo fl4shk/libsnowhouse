@@ -2442,6 +2442,7 @@ case class SnowHousePipeStagePostIdPreEx(
     val valid = Bool()
     //val data = UInt(cfg.mainWidth bits)
     val addr = UInt(log2Up(cfg.regFileCfg.wordCountArr(0)) bits)
+    //val instrResultInPsWb = Bool()
   }
   val myForFmaxFwdArea = (
     cfg.optForFmax
@@ -2479,6 +2480,7 @@ case class SnowHousePipeStagePostIdPreEx(
           || outp.regPcSetItCnt(1).lsb
         )
         && !outp.instrCnt.myPsIdBubble.head
+        && !outp.splitOp.opIsMemAccess
       )
       //temp.data := outp.myExt(0).modMemWord //ram.io.wrData
       temp.addr := outp.gprIdxVec.last
