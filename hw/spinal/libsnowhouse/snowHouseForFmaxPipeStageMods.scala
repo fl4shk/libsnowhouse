@@ -332,10 +332,10 @@ case class SnowHouseForFmaxScoreboard(
           tempRegIdx === rMyInfoVec(jdx).gprIdxVec.last
           //&& tempRegIdx.orR // check for non-zero
           && rMyInfoVec(jdx).gprIsNonZeroVec.last
-          //&& (
-          //  rMyInfoVec(jdx).hazardValid
-          //  //|| io.myTempOpMayNeedHazardCheck
-          //)
+          && (
+            rMyInfoVec(jdx).hazardValid
+            //|| io.myTempOpMayNeedHazardCheck
+          )
           && rMyInfoVec(jdx).allocValid
         )
       )
