@@ -844,7 +844,10 @@ case class SnowHouseForFmaxPipeStageScoreboardRawHazard(
   //when (cLink.down.isFiring) {
   //  rSeenReadGprsFire := False
   //}
-  io.readGprs.valid := cLink.down.isFiring
+  io.readGprs.valid := (
+    cLink.down.isFiring
+    && !myOutp.instrCnt.myPsIdBubble.head
+  )
 
   when (!io.readGprs.ready && !myOutp.instrCnt.myPsIdBubble.head) {
     cLink.duplicateIt()
