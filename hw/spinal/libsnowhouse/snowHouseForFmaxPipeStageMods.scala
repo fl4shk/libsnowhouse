@@ -254,11 +254,10 @@ case class SnowHouseForFmaxScoreboard(
             //tempRegIdx === myHistLastGprIdx(jdx + 1).last
             tempRegIdx === rMyInfoVec(jdx).gprIdxVec.last
             && tempRegIdx.orR // check for non-zero
-            && (
-              rMyInfoVec(jdx).hazardValid
-              //|| 
-              //io.myTempOpMayNeedHazardCheck
-            )
+            //&& (
+            //  rMyInfoVec(jdx).hazardValid
+            //  || io.myTempOpMayNeedHazardCheck
+            //)
             && rMyInfoVec(jdx).allocValid
           )
         )
@@ -270,22 +269,21 @@ case class SnowHouseForFmaxScoreboard(
       for (jdx <- 0 until tempHaveIssueHazardAddrCheckVec.size) {
         //tempHaveIssueHazardAddrCheckVec(jdx)(idx) := False
         tempHaveIssueHazardAddrCheckVec(jdx)(idx) := (
-          False
-          //(
-          //  //tempRegIdx === myHistLastGprIdx(jdx + 1)(idx % 3)
+          //False
+          (
+            //tempRegIdx === myHistLastGprIdx(jdx + 1)(idx % 3)
 
-          //  //tempRegIdx === rMyInfoVec(jdx).gprIdxVec(
-          //  //  idx % io.gprIdxVec.size
-          //  //)
-          //  tempRegIdx === rMyInfoVec(jdx).gprIdxVec.last
-          //  && tempRegIdx.orR // check for non-zero
-          //  //&& (
-          //  //  //rMyInfoVec(jdx).hazardValid
-          //  //  //|| 
-          //  //  io.myTempOpMayNeedHazardCheck
-          //  //)
-          //  && rMyInfoVec(jdx).allocValid
-          //)
+            //tempRegIdx === rMyInfoVec(jdx).gprIdxVec(
+            //  idx % io.gprIdxVec.size
+            //)
+            tempRegIdx === rMyInfoVec(jdx).gprIdxVec.last
+            && tempRegIdx.orR // check for non-zero
+            && (
+              rMyInfoVec(jdx).hazardValid
+              || io.myTempOpMayNeedHazardCheck
+            )
+            && rMyInfoVec(jdx).allocValid
+          )
         )
       }
     }
