@@ -254,10 +254,10 @@ case class SnowHouseForFmaxScoreboard(
             //tempRegIdx === myHistLastGprIdx(jdx + 1).last
             tempRegIdx === rMyInfoVec(jdx).gprIdxVec.last
             && tempRegIdx.orR // check for non-zero
-            //&& (
-            //  rMyInfoVec(jdx).hazardValid
-            //  || io.myTempOpMayNeedHazardCheck
-            //)
+            && (
+              rMyInfoVec(jdx).hazardValid
+              || io.myTempOpMayNeedHazardCheck
+            )
             && rMyInfoVec(jdx).allocValid
           )
         )
@@ -1502,7 +1502,7 @@ case class SnowHouseForFmaxPipeStageWriteBack(
           cLink.up.isValid
         )
       )
-      && !myMemWbPayload(1).outpDecodeExt.memAccessKind.asBits(1)
+      //&& !myMemWbPayload(1).outpDecodeExt.memAccessKind.asBits(1)
       && (
         //myD2hBus.valid
         myD2hBus.fire
@@ -1539,6 +1539,7 @@ case class SnowHouseForFmaxPipeStageWriteBack(
       //}
       myCurrExt.modMemWordValid.last := (
         !myMemWbPayload(1).gprIsZeroVec.last.last
+        && !myMemWbPayload(1).outpDecodeExt.memAccessKind.asBits(1)
       )
     }
   }
