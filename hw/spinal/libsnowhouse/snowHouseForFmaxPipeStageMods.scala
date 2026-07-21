@@ -119,6 +119,12 @@ case class SnowHouseForFmaxPipeStageInstrFetch(
   //--------
 }
 
+case class SnowHouseScoreboardIssuePayload(
+  cfg: SnowHouseConfig,
+) extends Bundle {
+  val cntOverflow = Bool()
+  val tag = UInt(cfg.optScoreboardTagWidth bits)
+}
 
 case class SnowHouseScoreboardCommitPayload(
   cfg: SnowHouseConfig,
@@ -150,7 +156,8 @@ case class SnowHouseForFmaxScoreboardIo(
   val issue = (
     //Vec.fill(cfg.numMultiIssue)(
       Stream(
-        UInt(cfg.optScoreboardTagWidth bits)
+        //UInt(cfg.optScoreboardTagWidth bits)
+        SnowHouseScoreboardIssuePayload(cfg=cfg)
       )
     //)
   )
@@ -184,11 +191,12 @@ case class SnowHouseForFmaxScoreboard(
 
   val io = SnowHouseForFmaxScoreboardIo(cfg=cfg)
 
-  val myInstrAgeWidth = 12
+  val myInstrAgeWidth = 12//4//5//4//6//8//12
   val myMaxInstrAge = (
     // we flush the pipeline when this counter gets close to overflowing!
-    // it is assumed there are much much fewer than 64 pipeline stages
-    (1 << myInstrAgeWidth) - 64
+    // it is assumed there are fewer pipeline stages
+    // than the subtract amount 
+    (1 << myInstrAgeWidth) - 32//2//1//8 //- //32//64
   )
   val rInstrAgeCnt = {
     val temp = Reg(Flow(UInt(myInstrAgeWidth bits)))
@@ -400,6 +408,19 @@ case class SnowHouseForFmaxScoreboard(
 // 1 --10
 // 2 -100
 // 3 1000
+  io.issue.payload.allowOverride
+  io.issue.valid := (
+    //True
+    !tempHaveIssueHazardAddrCheckVec.asBits.orR
+    //&& !tempHaveCommitHazardAddrCheckVec.asBits.orR
+    && !rInstrAgeCnt.fire
+  )
+  io.issue.payload := (
+    RegNext(io.issue.payload, init=io.issue.payload.getZero)
+  )
+  //io.issue.cntOverflow := rInstrAgeCnt.fire
+  io.issue.cntOverflow := rInstrAgeCnt.fire
+
   switch (
     //io.issue.ready
     //## 
@@ -413,17 +434,17 @@ case class SnowHouseForFmaxScoreboard(
       )) {
         // fast-ish (regarding fmax) search to implement the free list
         // search
-        io.issue.valid := (
-          //True
-          !tempHaveIssueHazardAddrCheckVec.asBits.orR
-          //&& !tempHaveCommitHazardAddrCheckVec.asBits.orR
-          && !rInstrAgeCnt.fire
-        )
-        io.issue.payload := (
-          RegNext(io.issue.payload, init=io.issue.payload.getZero)
-        )
+        //io.issue.valid := (
+        //  //True
+        //  !tempHaveIssueHazardAddrCheckVec.asBits.orR
+        //  //&& !tempHaveCommitHazardAddrCheckVec.asBits.orR
+        //  && !rInstrAgeCnt.fire
+        //)
+        //io.issue.payload := (
+        //  RegNext(io.issue.payload, init=io.issue.payload.getZero)
+        //)
         when (io.issue.fire) {
-          io.issue.payload := idx
+          io.issue.tag := idx
           rInstrAgeCnt.payload := rInstrAgeCnt.payload + 1
           rMyInfoVec(idx).instrAge := rInstrAgeCnt.payload
           rMyInfoVec(idx).hazardValid := (
@@ -460,14 +481,15 @@ case class SnowHouseForFmaxScoreboard(
     ## myInfoAllocValidVec.orR
   ) {
     // flush the pipeline
-    is (
-      M"01-"
-    ) {
+    is (M"01-") {
       rInstrAgeCnt.valid := True
       rInstrAgeCnt.payload := 0x0
+
+      //io.issue.cntOverflow := True
     }
     is (M"1-0") {
       rInstrAgeCnt.valid := False
+      //io.issue.cntOverflow := False
     }
     default {
     }
@@ -597,12 +619,17 @@ case class SnowHouseForFmaxPipeStageInstrDecode(
     )
     scoreboard.io.gprIdxVec := innerPsId.upPayload(1).gprIdxVec
     innerPsId.upPayload(1).instrCnt.scoreboardTag := (
-      scoreboard.io.issue.payload
+      scoreboard.io.issue.tag
     )
     //innerPsId.upPayload(1).tempUpMod
     when (!scoreboard.io.issue.valid) {
       cLink.duplicateIt()
-      cLink.down(pIdOutp).setAsBubbleMain()
+      cLink.down(pIdOutp).setAsBubbleMain(
+        !scoreboard.io.issue.cntOverflow
+      )
+      innerPsId.upPayload(1).instrCnt.scoreboardTag := (
+        scoreboard.io.issue.tag
+      )
       //innerPsId.upPayload(1).myDoHaveHazardAddrCheckVec.foreach(
       //  item => {
       //    item := True
@@ -1764,8 +1791,9 @@ case class SnowHouseForFmaxPipeStageWriteBack(
           ) else (
             //cLink.up.isFiring
             //&& 
-            cLink.up.isValid
-            && myNonMemWbValid
+            //cLink.up.isValid
+            //&& 
+            myNonMemWbValid
             //&& !myNonMemWbPayload(1).instrCnt.myPsIdBubble.last
           )
         )

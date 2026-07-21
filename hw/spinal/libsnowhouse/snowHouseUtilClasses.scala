@@ -1472,14 +1472,22 @@ case class SnowHouseConfig(
 case class SnowHouseInstrCnt(
   cfg: SnowHouseConfig,
 ) extends Bundle {
-  val scoreboardTag = (
+  //val scoreboardTag = (
+  //  cfg.optScoreboard
+  //) generate (
+  //  UInt(
+  //    log2Up(cfg.optNumScoreboardTags)
+  //    bits
+  //  )
+  //)
+  val scoreboardIssuePayload = (
     cfg.optScoreboard
   ) generate (
-    UInt(
-      log2Up(cfg.optNumScoreboardTags)
-      bits
-    )
+    SnowHouseScoreboardIssuePayload(cfg=cfg)
   )
+  def scoreboardTag = scoreboardIssuePayload.tag
+  def scoreboardIssueCntOverflow = scoreboardIssuePayload.cntOverflow
+
   val any = UInt(cfg.instrCntWidth bits)
   val fwd = UInt(cfg.instrCntWidth bits)
   val jmp = UInt(cfg.instrCntWidth bits)
@@ -1509,9 +1517,10 @@ case class SnowHouseInstrCnt(
   //)
   //def shouldIgnoreInstr = (pcChangeState === True)
   def setAsBubbleMain(
+    somePsIdBubble: Bool=True
   ): Unit = {
     myPsIdBubble.foreach(item => {
-      item := True
+      item := somePsIdBubble
     })
   }
 }
@@ -2240,11 +2249,13 @@ case class SnowHousePipePayload(
     outpFwd := myFwd
   }
   def setAsBubbleMain(
+    myPsIdBubble: Bool=True
   ): Unit = {
     //instrCnt.myPsIdBubble.foreach(item => {
     //  item := True
     //})
-    instrCnt.setAsBubbleMain()
+    instrCnt.setAsBubbleMain(somePsIdBubble=myPsIdBubble)
+
     splitOp.setToDefault()
     branchTgtBufElem(0) := (
       //.valid := False
@@ -2260,6 +2271,20 @@ case class SnowHousePipePayload(
     //branchPredictReplaceBtbElemMost := False
     //inpDecodeExt := inpDecodeExt.getZero
     //outpDecodeExt := outpDecodeExt.getZero
+    gprIsZeroVec.foreach(
+      outerItem => outerItem.foreach(
+        item => {
+          item := True
+        }
+      )
+    )
+    gprIsNonZeroVec.foreach(
+      outerItem => outerItem.foreach(
+        item => {
+          item := False
+        }
+      )
+    )
 
     regPcSetItCnt.foreach(item => {
       item := item.getZero
