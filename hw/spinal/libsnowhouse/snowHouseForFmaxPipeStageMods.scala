@@ -179,7 +179,7 @@ case class SnowHouseForFmaxScoreboard(
 
   case class MyInfo(
   ) extends Bundle {
-    //val hazardValid = Bool()
+    val hazardValid = Bool()
     //def fire = hazardValid
     val allocValid = Bool()
 
@@ -207,7 +207,8 @@ case class SnowHouseForFmaxScoreboard(
     //(io.gprIdxVec.size - 1) * 2 + 1
     //io.gprIdxVec.size + 3
     //io.gprIdxVec.size - 1
-    (io.gprIdxVec.size - 1) * 2 + 1
+    //(io.gprIdxVec.size - 1) * 2 + 1
+    io.gprIdxVec.size
   )
   val tempHaveIssueHazardAddrCheckVec = (
     // RAW/WAW hazards
@@ -246,9 +247,12 @@ case class SnowHouseForFmaxScoreboard(
             //tempRegIdx === myHistLastGprIdx(jdx + 1).last
             tempRegIdx === rMyInfoVec(jdx).gprIdxVec.last
             && tempRegIdx.orR // check for non-zero
-            //&& rMyInfoVec(jdx).hazardValid
+            && (
+              rMyInfoVec(jdx).hazardValid
+              //|| io.myTempOpMayNeedHazardCheck
+            )
             && rMyInfoVec(jdx).allocValid
-            //&& io.myTempOpMayNeedHazardCheck
+            
           )
         )
       }
@@ -261,12 +265,15 @@ case class SnowHouseForFmaxScoreboard(
           (
             //tempRegIdx === myHistLastGprIdx(jdx + 1)(idx % 3)
 
-            tempRegIdx === rMyInfoVec(jdx).gprIdxVec(
-              idx % io.gprIdxVec.size
-            )
-            //tempRegIdx === rMyInfoVec(jdx).gprIdxVec.last
+            //tempRegIdx === rMyInfoVec(jdx).gprIdxVec(
+            //  idx % io.gprIdxVec.size
+            //)
+            tempRegIdx === rMyInfoVec(jdx).gprIdxVec.last
             && tempRegIdx.orR // check for non-zero
-            //&& rMyInfoVec(jdx).hazardValid
+            //&& (
+            //  rMyInfoVec(jdx).hazardValid
+            //  //|| io.myTempOpMayNeedHazardCheck
+            //)
             && rMyInfoVec(jdx).allocValid
           )
         )
@@ -275,8 +282,8 @@ case class SnowHouseForFmaxScoreboard(
   }
   for (idx <- 0 until myCommitHazardCheckVecInnerSize) {
     val tempRegIdx = (
-      rMyInfoVec(io.commit.payload).gprIdxVec(idx)
-      //rMyInfoVec(io.commit.payload).gprIdxVec.last
+      //rMyInfoVec(io.commit.payload).gprIdxVec(idx)
+      rMyInfoVec(io.commit.payload).gprIdxVec.last
     )
     for (jdx <- 0 until cfg.optMaxNumScoreboardInstrs) {
       val myTempInfoGprIdx = (
@@ -289,6 +296,11 @@ case class SnowHouseForFmaxScoreboard(
         tempRegIdx === myTempInfoGprIdx
         && myTempInfoGprIdx.orR // check for non-zero
         //&& rMyInfoVec(jdx).hazardValid
+        && (
+          //rMyInfoVec(jdx).hazardValid
+          //|| 
+          rMyInfoVec(io.commit.payload).hazardValid
+        )
         && rMyInfoVec(jdx).allocValid
         && io.commit.payload =/= jdx
         && io.commit.valid
@@ -317,7 +329,7 @@ case class SnowHouseForFmaxScoreboard(
       //  )
       //)
       rMyInfoVec(jdx).allocValid := False
-      //rMyInfoVec(jdx).hazardValid := False
+      rMyInfoVec(jdx).hazardValid := False
     } otherwise {
       //myInfoAllocValidVec(jdx) := rMyInfoVec(jdx).allocValid
     }
@@ -372,10 +384,10 @@ case class SnowHouseForFmaxScoreboard(
         )
         when (io.issue.fire) {
           io.issue.payload := idx
-          //rMyInfoVec(idx).hazardValid := (
-          //  //io.myTempOpMayNeedHazardCheck
-          //  True
-          //)
+          rMyInfoVec(idx).hazardValid := (
+            io.myTempOpMayNeedHazardCheck
+            //True
+          )
           rMyInfoVec(idx).allocValid := (
             //io.myTempOpMayNeedHazardCheck
             True
@@ -953,8 +965,8 @@ case class SnowHouseForFmaxPipeStageWriteBack(
       MyWbPayload()
     ),
     depth=(
-      4
-      //2
+      //4
+      2
       //1
     ),
     latency=0,
@@ -966,8 +978,8 @@ case class SnowHouseForFmaxPipeStageWriteBack(
       MyWbPayload()
     ),
     depth=(
-      4
-      //2
+      //4
+      2
       //1
     ),
     latency=0,
@@ -1020,6 +1032,7 @@ case class SnowHouseForFmaxPipeStageWriteBack(
     myNonMemWbFifo.io.push.valid := (
       cLink.up.isValid
       && !myNonMemWbPayload(0).splitOp.opIsMemAccess
+      //&& !myNonMemWbPayload(0).inpDecodeExt.last.opIsMemAccess(0)
       && !myNonMemWbPayload(0).instrCnt.myPsIdBubble.head
     )
     myNonMemWbFifo.io.push.payload.instrCnt := (
@@ -1112,6 +1125,7 @@ case class SnowHouseForFmaxPipeStageWriteBack(
       || (
         myMemWbFifo.io.pop.valid
         && myMemWbFifo.io.pop.payload.instrCnt.shouldIgnoreInstr.head
+        && !myMemWbFifo.io.pop.payload.instrCnt.myPsIdBubble.head
       )
     ) else (
       myD2hBus.fire
