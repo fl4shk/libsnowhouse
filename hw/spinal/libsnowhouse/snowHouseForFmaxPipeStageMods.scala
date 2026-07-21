@@ -134,6 +134,7 @@ case class SnowHouseScoreboardReadGprsPayload(
       UInt(log2Up(cfg.numGprs) bits)
     )
   )
+  val tag = UInt(cfg.optScoreboardTagWidth bits)
 }
 
 case class SnowHouseScoreboardCommitPayload(
@@ -173,18 +174,21 @@ case class SnowHouseForFmaxScoreboardIo(
     //)
   )
 
-  val readGprsPayload = (
-    in(
-      //Vec.fill(cfg.numMultiIssue)(
-        //Stream(
-          SnowHouseScoreboardReadGprsPayload(cfg=cfg)
-        //)
-      //)
-    )
-  )
+  //val readGprsPayload = (
+  //  in(
+  //    //Vec.fill(cfg.numMultiIssue)(
+  //      //Stream(
+  //        SnowHouseScoreboardReadGprsPayload(cfg=cfg)
+  //      //)
+  //    //)
+  //  )
+  //)
 
-  val readGprsReady = (
-    out(Bool())
+  //val readGprsReady = (
+  //  out(Bool())
+  //)
+  val readGprs = (
+    Stream(SnowHouseScoreboardReadGprsPayload(cfg=cfg))
   )
 
   val commit = (
@@ -201,7 +205,7 @@ case class SnowHouseForFmaxScoreboardIo(
   //  slave(commit(idx))
   //}
   master(issue)
-  //slave(readGprs)
+  slave(readGprs)
   slave(commit)
 
   //commit.foreach(item => {
@@ -232,7 +236,9 @@ case class SnowHouseForFmaxScoreboard(
 
   case class MyInfo(
   ) extends Bundle {
-    val hazardValid = Bool()
+    //val hazardValid = Bool()
+    val issueHazardValid = Bool()
+    val readGprsHazardValid = Bool()
     //def fire = hazardValid
     val allocValid = Bool()
     val instrAge = UInt(myInstrAgeWidth bits) //cloneOf(rInstrAgeCnt)
@@ -287,7 +293,7 @@ case class SnowHouseForFmaxScoreboard(
   )
 
   val myReadGprsHazardCheckVecInnerSize = (
-    io.readGprsPayload.gprIdxVec.size - 1
+    io.readGprs.gprIdxVec.size - 1
   )
 
   val tempHaveReadGprsHazardAddrCheckVec = (
@@ -344,7 +350,7 @@ case class SnowHouseForFmaxScoreboard(
 
   for (idx <- 0 until myReadGprsHazardCheckVecInnerSize) {
     // RAW hazards
-    val tempRegIdx = io.readGprsPayload.gprIdxVec(idx)
+    val tempRegIdx = io.readGprs.gprIdxVec(idx)
     for (jdx <- 0 until cfg.optMaxNumScoreboardInstrs) {
       tempHaveReadGprsHazardAddrCheckVec(jdx)(idx) := (
         (
@@ -355,17 +361,27 @@ case class SnowHouseForFmaxScoreboard(
           && (
             // other "RAW" hazards will be handled via my implementation of
             // fast forwarding!
-            rMyInfoVec(jdx).hazardValid
+            rMyInfoVec(jdx).readGprsHazardValid
             //|| io.myTempOpMayNeedHazardCheck
           )
           && rMyInfoVec(jdx).allocValid
+          //&& io.readGprs.valid
         )
       )
+      when (
+        io.readGprs.valid
+        //&& tempHaveReadGprsHazardAddrCheckVec(jdx).orR
+        && rMyInfoVec(jdx).allocValid
+        && rMyInfoVec(jdx).issueHazardValid
+      ) {
+        rMyInfoVec(jdx).readGprsHazardValid := True
+      }
     }
   }
 
-  io.readGprsReady := (
-    !tempHaveReadGprsHazardAddrCheckVec.asBits.orR
+  io.readGprs.ready := (
+    io.readGprs.valid
+    && !tempHaveReadGprsHazardAddrCheckVec.asBits.orR
   )
 
   for (idx <- 0 until myCommitHazardCheckVecInnerSize) {
@@ -391,11 +407,11 @@ case class SnowHouseForFmaxScoreboard(
         )
         //&& rMyInfoVec(io.commit.tag).allocValid
         //&& rMyInfoVec(jdx).hazardValid
-        && (
-          //rMyInfoVec(jdx).hazardValid
-          //|| 
-          rMyInfoVec(io.commit.tag).hazardValid
-        )
+        //&& (
+        //  //rMyInfoVec(jdx).hazardValid
+        //  //|| 
+        //  rMyInfoVec(io.commit.tag).hazardValid
+        //)
         && rMyInfoVec(jdx).allocValid
         && io.commit.tag =/= jdx
         && io.commit.valid
@@ -424,7 +440,9 @@ case class SnowHouseForFmaxScoreboard(
       //  )
       //)
       rMyInfoVec(jdx).allocValid := False
-      rMyInfoVec(jdx).hazardValid := False
+      //rMyInfoVec(jdx).hazardValid := False
+      rMyInfoVec(jdx).issueHazardValid := False
+      rMyInfoVec(jdx).readGprsHazardValid := False
     } otherwise {
       //myInfoAllocValidVec(jdx) := rMyInfoVec(jdx).allocValid
     }
@@ -495,7 +513,7 @@ case class SnowHouseForFmaxScoreboard(
           io.issue.tag := idx
           rInstrAgeCnt.payload := rInstrAgeCnt.payload + 1
           rMyInfoVec(idx).instrAge := rInstrAgeCnt.payload
-          rMyInfoVec(idx).hazardValid := (
+          rMyInfoVec(idx).issueHazardValid := (
             io.issueMyTempOpMayNeedHazardCheck
             //True
           )
@@ -571,17 +589,22 @@ case class SnowHouseForFmaxPipeStageInstrDecodeIo(
     ))
   )
   //--------
-  val myScoreboardReadGprsPayload = (
-    in(
-      //Vec.fill(cfg.numMultiIssue)(
-        //Stream(
-          SnowHouseScoreboardReadGprsPayload(cfg=cfg)
-        //)
-      //)
-    )
-  )
-  val myScoreboardReadGprsReady = (
-    out(Bool())
+  //val myScoreboardReadGprsPayload = (
+  //  in(
+  //    //Vec.fill(cfg.numMultiIssue)(
+  //      //Stream(
+  //        SnowHouseScoreboardReadGprsPayload(cfg=cfg)
+  //      //)
+  //    //)
+  //  )
+  //)
+  //val myScoreboardReadGprsReady = (
+  //  out(Bool())
+  //)
+  val myScoreboardReadGprs = (
+    slave(Stream(
+      SnowHouseScoreboardReadGprsPayload(cfg=cfg)
+    ))
   )
 
   val myScoreboardCommmit = (
@@ -703,8 +726,7 @@ case class SnowHouseForFmaxPipeStageInstrDecode(
       //  True
       //)
     }
-    scoreboard.io.readGprsPayload := io.myScoreboardReadGprsPayload
-    io.myScoreboardReadGprsReady := scoreboard.io.readGprsReady
+    scoreboard.io.readGprs << io.myScoreboardReadGprs
     scoreboard.io.commit << io.myScoreboardCommmit
     // can't do `<-/< `, see `commitEtc` logic in WB stage
     // apparently can't do `<-<` ???
@@ -736,19 +758,24 @@ case class SnowHouseForFmaxPipeStageScoreboardRawHazardIo(
     ))
   )
   //--------
-  val readGprsPayload = (
-    out(
-      //Vec.fill(cfg.numMultiIssue)(
-        //Stream(
-          SnowHouseScoreboardReadGprsPayload(cfg=cfg)
-        //)
-      //)
-    )
+  val readGprs = (
+    master(Stream(
+      SnowHouseScoreboardReadGprsPayload(cfg=cfg)
+    ))
   )
+  //val readGprsPayload = (
+  //  out(
+  //    //Vec.fill(cfg.numMultiIssue)(
+  //      //Stream(
+  //        SnowHouseScoreboardReadGprsPayload(cfg=cfg)
+  //      //)
+  //    //)
+  //  )
+  //)
 
-  val readGprsReady = (
-    in(Bool())
-  )
+  //val readGprsReady = (
+  //  in(Bool())
+  //)
   //--------
 }
 case class SnowHouseForFmaxPipeStageScoreboardRawHazard(
@@ -799,29 +826,30 @@ case class SnowHouseForFmaxPipeStageScoreboardRawHazard(
     myOutp := myInp
   }
 
-  io.readGprsPayload.gprIdxVec := myOutp.gprIdxVec
+  io.readGprs.payload.gprIdxVec := myOutp.gprIdxVec
   //val rStallState = Reg(Bool(), init=False)
 
   //when (!rStallState) {
   //}
 
-  val rSeenReadGprsReady = Reg(Bool(), init=False)
-  val stickyReadGprsReady = (
-    io.readGprsReady
-    || rSeenReadGprsReady
-  )
+  //val rSeenReadGprsFire = Reg(Bool(), init=False)
+  //val stickyReadGprsFire = (
+  //  io.readGprs.fire
+  //  || rSeenReadGprsFire
+  //)
 
-  when (io.readGprsReady) {
-    rSeenReadGprsReady := True
-  }
-  when (cLink.down.isFiring) {
-    rSeenReadGprsReady := False
-  }
+  //when (io.readGprs.fire) {
+  //  rSeenReadGprsFire := True
+  //}
+  //when (cLink.down.isFiring) {
+  //  rSeenReadGprsFire := False
+  //}
+  io.readGprs.valid := cLink.down.isFiring
 
-  when (!stickyReadGprsReady && !myOutp.instrCnt.myPsIdBubble.head) {
+  when (!io.readGprs.ready && !myOutp.instrCnt.myPsIdBubble.head) {
     cLink.duplicateIt()
     cLink.down(pIdOutp).allowOverride
-    cLink.down(pIdOutp) := myOutp//.getZero
+    cLink.down(pIdOutp) := myOutp.getZero
     //cLink.down(pIdOutp).gprIsZeroVec.foreach(outerItem => {
     //  outerItem.foreach(item => {
     //    item := True

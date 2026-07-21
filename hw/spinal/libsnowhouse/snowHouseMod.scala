@@ -2197,12 +2197,13 @@ private[libsnowhouse] case class SnowHouseForFmax(
   if (cfg.optScoreboard) {
     psScoreboardRawHazard.io.up <-/< psId.io.down
 
-    psId.io.myScoreboardReadGprsPayload := (
-      psScoreboardRawHazard.io.readGprsPayload
-    )
-    psScoreboardRawHazard.io.readGprsReady := (
-      psId.io.myScoreboardReadGprsReady
-    )
+    //psId.io.myScoreboardReadGprsPayload := (
+    //  psScoreboardRawHazard.io.readGprsPayload
+    //)
+    //psScoreboardRawHazard.io.readGprsReady := (
+    //  psId.io.myScoreboardReadGprsReady
+    //)
+    psId.io.myScoreboardReadGprs << psScoreboardRawHazard.io.readGprs
     psPreFwd.io.up <-/< psScoreboardRawHazard.io.down
   } else {
     psPreFwd.io.up <-/< psId.io.down
