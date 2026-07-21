@@ -1268,6 +1268,7 @@ case class SnowHouseForFmaxPipeStageWriteBack(
       myD2hBus.fire
       || rSeenMyD2hBusFire
       || (
+        //myMemWbFifo.io.pop.valid
         myMemWbFifo.io.pop.valid
         && myMemWbFifo.io.pop.payload.instrCnt.shouldIgnoreInstr.head
         && !myMemWbFifo.io.pop.payload.instrCnt.myPsIdBubble.head
@@ -1276,6 +1277,19 @@ case class SnowHouseForFmaxPipeStageWriteBack(
       myD2hBus.fire
     )
   )
+
+  val stickyMemMmw = (
+    cfg.optScoreboard
+  ) generate (
+    UInt(cfg.mainWidth bits)
+  )
+
+  val stickyMemMmwValid = (
+    cfg.optScoreboard
+  ) generate (
+    Bool()
+  )
+
   //val rMemCommitFire = (
   //  cfg.optScoreboard
   //) generate (
@@ -1287,6 +1301,21 @@ case class SnowHouseForFmaxPipeStageWriteBack(
   //  Reg(Bool(), init=False)
   //)
   if (cfg.optScoreboard) {
+    stickyMemMmw := (
+      RegNext(
+        stickyMemMmw,
+
+        // this can probably go without a reset
+        //init=stickyMemMmw.getZero
+      )
+    )
+    stickyMemMmwValid := (
+      RegNext(
+        stickyMemMmwValid,
+        init=stickyMemMmwValid.getZero
+      )
+    )
+
     when (myD2hBus.fire) {
       rSeenMyD2hBusFire := True
     }
@@ -1539,42 +1568,49 @@ case class SnowHouseForFmaxPipeStageWriteBack(
       //    )
       //  )
       //)
-      val myCurrExt = myMemWbPayload(1).myExt(0)
+      //val myCurrExt = myMemWbPayload(1).myExt(0)
+      val myCurrMmw = (
+        if (cfg.optScoreboard) (
+          stickyMemMmw
+        ) else (
+          myMemWbPayload(1).myExt(0).modMemWord
+        )
+      )
       //--------
       is (M"10--") {
         // zero-extending sub-word load or full-word load
-        myCurrExt.modMemWord := myD2hBus.data
+        myCurrMmw := myD2hBus.data
       }
       is (M"1100") {
         // LoadS, Sz8
-        myCurrExt.modMemWord := (
+        myCurrMmw := (
           myD2hBus.data(
             (7.min(myD2hBus.data.high)) downto 0
-          ).asSInt.resize(myCurrExt.modMemWord.getWidth).asUInt
+          ).asSInt.resize(myCurrMmw.getWidth).asUInt
         )
       }
       is (M"1101") {
         // LoadS, Sz16
-        myCurrExt.modMemWord := (
+        myCurrMmw := (
           myD2hBus.data(
             (15.min(myD2hBus.data.high)) downto 0
-          ).asSInt.resize(myCurrExt.modMemWord.getWidth).asUInt
+          ).asSInt.resize(myCurrMmw.getWidth).asUInt
         )
       }
       is (M"1110") {
         // LoadS, Sz32
-        myCurrExt.modMemWord := (
+        myCurrMmw := (
           myD2hBus.data(
             (31.min(myD2hBus.data.high)) downto 0
-          ).asSInt.resize(myCurrExt.modMemWord.getWidth).asUInt
+          ).asSInt.resize(myCurrMmw.getWidth).asUInt
         )
       }
       is (M"1111") {
         // LoadS, Sz64
-        myCurrExt.modMemWord := (
+        myCurrMmw := (
           myD2hBus.data(
             (63.min(myD2hBus.data.high)) downto 0
-          ).asSInt.resize(myCurrExt.modMemWord.getWidth).asUInt
+          ).asSInt.resize(myCurrMmw.getWidth).asUInt
         )
       }
       default {
@@ -1610,7 +1646,14 @@ case class SnowHouseForFmaxPipeStageWriteBack(
       //    )
       //  )
       //)
-      val myCurrExt = myMemWbPayload(1).myExt(0)
+      //val myCurrExt = myMemWbPayload(1).myExt(0)
+      val myCurrMmwValid = (
+        if (cfg.optScoreboard) (
+          stickyMemMmwValid
+        ) else (
+          myMemWbPayload(1).myExt(0).modMemWordValid.last
+        )
+      )
       //myCurrExt.modMemWord := myDbus.recvData.word
       //myCurrExt.modMemWord := myD2hBus.data
       //myCurrExt.modMemWordValid.foreach(current => {
@@ -1625,7 +1668,7 @@ case class SnowHouseForFmaxPipeStageWriteBack(
       //    !myMemWbPayload(1).gprIsZeroVec.last(idx)
       //  )
       //}
-      myCurrExt.modMemWordValid.last := (
+      myCurrMmwValid := (
         !myMemWbPayload(1).gprIsZeroVec.last.last
         && !myMemWbPayload(1).outpDecodeExt.memAccessKind.asBits(1)
       )
@@ -1713,22 +1756,26 @@ case class SnowHouseForFmaxPipeStageWriteBack(
       && !someMyWbPayload(1).gprIsZeroVec.last.last
       && !someMyWbPayload(1).instrCnt.shouldIgnoreInstr.last
       && {
-        val myDecodeExt = someMyWbPayload(1).outpDecodeExt
-        val mapElem = someMyWbPayload(1).gprIdxToMemAddrIdxMap(0)
-        val myCurrExt = (
-          if (!mapElem.haveHowToSetIdx) (
-            someMyWbPayload(1).myExt(
-              0
-            )
-          ) else (
-            someMyWbPayload(1).myExt(
-              mapElem.howToSetIdx
+        if (cfg.optScoreboard && isMem) {
+          stickyMemMmwValid
+        } else {
+          val myDecodeExt = someMyWbPayload(1).outpDecodeExt
+          val mapElem = someMyWbPayload(1).gprIdxToMemAddrIdxMap(0)
+          val myCurrExt = (
+            if (!mapElem.haveHowToSetIdx) (
+              someMyWbPayload(1).myExt(
+                0
+              )
+            ) else (
+              someMyWbPayload(1).myExt(
+                mapElem.howToSetIdx
+              )
             )
           )
-        )
-        //myCurrExt.modMemWord := myDbus.recvData.word
-        //someMyWbPayload(1).
-        myCurrExt.modMemWordValid.last
+          //myCurrExt.modMemWord := myDbus.recvData.word
+          //someMyWbPayload(1).
+          myCurrExt.modMemWordValid.last
+        }
       }
     )
     //if (
@@ -1750,22 +1797,26 @@ case class SnowHouseForFmaxPipeStageWriteBack(
       someMyWbPayload(1).gprIdxVec.last
     )
     io.commitEtc.myRegFileWrPulse.data := {
-      val myDecodeExt = someMyWbPayload(1).outpDecodeExt
-      val mapElem = someMyWbPayload(1).gprIdxToMemAddrIdxMap(0)
-      val myCurrExt = (
-        if (!mapElem.haveHowToSetIdx) (
-          someMyWbPayload(1).myExt(
-            0
-          )
-        ) else (
-          someMyWbPayload(1).myExt(
-            mapElem.howToSetIdx
+      if (cfg.optScoreboard && isMem) {
+        stickyMemMmw
+      } else {
+        val myDecodeExt = someMyWbPayload(1).outpDecodeExt
+        val mapElem = someMyWbPayload(1).gprIdxToMemAddrIdxMap(0)
+        val myCurrExt = (
+          if (!mapElem.haveHowToSetIdx) (
+            someMyWbPayload(1).myExt(
+              0
+            )
+          ) else (
+            someMyWbPayload(1).myExt(
+              mapElem.howToSetIdx
+            )
           )
         )
-      )
-      //myCurrExt.modMemWord := myDbus.recvData.word
-      //someMyWbPayload(1).
-      myCurrExt.modMemWord
+        //myCurrExt.modMemWord := myDbus.recvData.word
+        //someMyWbPayload(1).
+        myCurrExt.modMemWord
+      }
     }
     if (cfg.optScoreboard) {
       //val rSeenUpIsFiring = (
@@ -1876,13 +1927,13 @@ case class SnowHouseForFmaxPipeStageWriteBack(
     cfg.optScoreboard
   ) generate (new Area {
     val rCommitIdx = {
-      val temp = Reg(Flow(UInt(1 bits)))
+      val temp = Reg(Flow(UInt(2 bits)))
       temp.init(temp.getZero)
       temp
     }
     switch (
       rCommitIdx.fire
-      ## rCommitIdx.payload.lsb
+      ## rCommitIdx.payload.msb
       ## stickyMyD2hBusFire
     ) {
       is (M"0-1") {
@@ -1923,12 +1974,27 @@ case class SnowHouseForFmaxPipeStageWriteBack(
         //  rSeenMyD2hBusFire := False
         //  myMemWbFifo.io.pop.ready := True
         //}
-        setCommitEtc(myNonMemWbPayload, isMem=false)
-        when (io.commitEtc.scoreboardTag.fire) {
-          //rNonMemCommitFire := True
-          rSeenMyD2hBusFire := False
-          myNonMemWbFifo.io.pop.ready := True
+        io.commitEtc.scoreboardTag.valid := False
+        io.commitEtc.scoreboardTag.payload := (
+          io.commitEtc.scoreboardTag.payload.getZero
+        )
+        io.commitEtc.myRegFileWrPulse.valid := False
+        io.commitEtc.myRegFileWrPulse.payload := (
+          io.commitEtc.myRegFileWrPulse.payload.getZero
+        )
+        if (io.dbgInfo != null) {
+          io.dbgInfo := io.dbgInfo.getZero
+          io.dbgInfo.shouldIgnoreInstrAtRegFileWrite.allowOverride
+          io.dbgInfo.myPsIdBubbleAtRegFileWrite.allowOverride
+          io.dbgInfo.shouldIgnoreInstrAtRegFileWrite := True
+          io.dbgInfo.myPsIdBubbleAtRegFileWrite := True
         }
+        //setCommitEtc(myNonMemWbPayload.getZero, isMem=false)
+        //when (io.commitEtc.scoreboardTag.fire) {
+        //  //rNonMemCommitFire := True
+        //  rSeenMyD2hBusFire := False
+        //  myNonMemWbFifo.io.pop.ready := True
+        //}
       }
     }
     switch (
@@ -1942,8 +2008,8 @@ case class SnowHouseForFmaxPipeStageWriteBack(
     ) {
       is (B"01") {
         rCommitIdx.valid := True
-        rCommitIdx.payload.lsb := !rCommitIdx.payload.lsb
-        //rCommitIdx.payload := rCommitIdx.payload + 1
+        //rCommitIdx.payload.lsb := !rCommitIdx.payload.lsb
+        rCommitIdx.payload := rCommitIdx.payload + 1
         //cLink.duplicateIt()
       }
       is (M"10") {
@@ -1951,107 +2017,14 @@ case class SnowHouseForFmaxPipeStageWriteBack(
         //cLink.duplicateIt()
       }
       is (B"11") {
-        rCommitIdx.payload.lsb := !rCommitIdx.payload.lsb
-        //rCommitIdx.payload := rCommitIdx.payload + 1
+        //rCommitIdx.payload.lsb := !rCommitIdx.payload.lsb
+        rCommitIdx.payload := rCommitIdx.payload + 1
         //cLink.duplicateIt()
       }
       //is (B"00") 
       default {
       }
     }
-
-    //when (
-    //  !io.commitEtc.scoreboardTag.ready
-    //) {
-    //  cLink.duplicateIt()
-    //}
-
-    //when (
-    //  rCommitIdx.fire
-    //) {
-    //  cLink.duplicateIt()
-    //}
-
-    //when (
-    //  //myD2hBus.fire
-    //  //myD2hBus.fire
-    //  //|| rSeenMyD2hBusFire
-    //  stickyMyD2hBusFire
-    //  //|| (
-    //  //  cLink.up.isFiring
-    //  //  && myMemWbValid
-    //  //  && myMemWbPayload(0).instrCnt.myPsIdBubble(0)
-    //  //  //&& !myNonMemWbValid
-    //  //  //&& someMyWbPayload(1).outpDecodeExt.opIsMemAccess(0)
-    //  //)
-    //) {
-    //  setCommitEtc(myMemWbPayload, isMem=true)
-    //} otherwise {
-    //  setCommitEtc(myNonMemWbPayload, isMem=false)
-    //}
-
-
-    //when (
-    //  ( 
-    //    (
-    //      (
-    //        //myD2hBus.fire
-    //        //|| rSeenMyD2hBusFire
-    //        stickyMyD2hBusFire
-    //      )
-    //      && myMemWbValid
-    //      && !myMemWbPayload(1).instrCnt.myPsIdBubble.head
-    //      //&& !myMemWbPayload(1).instrCnt.shouldIgnoreInstr.head
-    //    )
-    //    || (
-    //      //(
-    //      //  !(
-    //      //    myD2hBus.fire
-    //      //    || rSeenMyD2hBusFire
-    //      //  ) 
-    //      //)
-    //      //&& 
-    //      cLink.up.isValid
-    //      && myNonMemWbValid
-    //      && !myNonMemWbPayload(1).instrCnt.myPsIdBubble.last
-    //      //&& !myNonMemWbPayload(1).instrCnt.shouldIgnoreInstr.last
-    //    )
-    //  )
-    //  && io.commitEtc.scoreboardTag.valid
-    //  && !io.commitEtc.scoreboardTag.ready//fire
-    //) {
-    //  cLink.duplicateIt()
-    //}
-
-
-    //when (
-    //  myD2hBus.fire
-    //) {
-    //  rScoreboardStallCnt := 0
-    //  //rCurrWbPayloadOuterIdx.lsb := False
-    //  //when (rCurrWbPayloadOuterIdx.lsb) {
-    //  //  cLink.duplicateIt()
-    //  //}
-    //  //myMemWbValid := False
-    //} elsewhen (
-    //  !myNonMemWbPayload(1).instrCnt.shouldIgnoreInstr.head
-    //  //&& !myWbPayloadVec.last(1).instrCnt.myPsIdBubble.head
-    //  && rScoreboardStallCnt >= cfg.optMaxNumScoreboardInstrs - 1
-    //  //&& rCurrWbPayloadOuterIdx.lsb
-    //  && myNonMemWbValid
-    //  && myMemWbValid
-    //) {
-    //  cLink.duplicateIt()
-    //} elsewhen (
-    //  !myNonMemWbPayload(1).instrCnt.shouldIgnoreInstr.last
-    //  //&& !myNonMemWbPayload(1).instrCnt.myPsIdBubble.last
-    //  && cLink.up.isFiring
-    //  //&& rCurrWbPayloadOuterIdx.lsb
-    //  && myNonMemWbValid
-    //  && myMemWbValid
-    //) {
-    //  rScoreboardStallCnt := rScoreboardStallCnt + 1
-    //}
   })
 
   if (!cfg.optScoreboard) {
