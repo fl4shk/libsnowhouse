@@ -177,8 +177,14 @@ case class SnowHouseForFmaxScoreboard(
 
   val io = SnowHouseForFmaxScoreboardIo(cfg=cfg)
 
+  val myInstrAgeWidth = 12
+  val myMaxInstrAge = (
+    // we flush the pipeline when this counter gets close to overflowing!
+    // it is assumed there are much much fewer than 64 pipeline stages
+    (1 << myInstrAgeWidth) - 64
+  )
   val rInstrAgeCnt = (
-    Reg(UInt(8 bits))
+    Reg(UInt(myInstrAgeWidth bits))
     init(0x0)
   )
 
@@ -288,43 +294,43 @@ case class SnowHouseForFmaxScoreboard(
       }
     }
   }
-  for (idx <- 0 until myCommitHazardCheckVecInnerSize) {
-    // WAR hazards
-    val tempRegIdx = (
-      rMyInfoVec(io.commit.payload).gprIdxVec(idx)
-      //rMyInfoVec(io.commit.payload).gprIdxVec.last
-    )
-    for (jdx <- 0 until cfg.optMaxNumScoreboardInstrs) {
-      val myTempInfoGprIdx = (
-        rMyInfoVec(jdx).gprIdxVec.last
-        //rMyInfoVec(jdx).gprIdxVec(idx)
-      )
-      tempHaveCommitHazardAddrCheckVec(jdx)(idx) := (
-        //tempRegIdx === myHistLastGprIdx(jdx + 1).last
-        //tempRegIdx === rMyInfoVec(jdx).gprIdxVec(idx)
-        tempRegIdx === myTempInfoGprIdx
-        && myTempInfoGprIdx.orR // check for non-zero
-        //&& (
-        //  rMyInfoVec(io.commit.payload).instrAge
-        //  > rMyInfoVec(jdx).instrAge
-        //)
-        //&& rMyInfoVec(io.commit.payload).allocValid
-        //&& rMyInfoVec(jdx).hazardValid
-        && (
-          //rMyInfoVec(jdx).hazardValid
-          //|| 
-          rMyInfoVec(io.commit.payload).hazardValid
-        )
-        && rMyInfoVec(jdx).allocValid
-        && io.commit.payload =/= jdx
-        && io.commit.valid
-      )
-    }
-  }
+  //for (idx <- 0 until myCommitHazardCheckVecInnerSize) {
+  //  // WAR hazards
+  //  val tempRegIdx = (
+  //    //rMyInfoVec(io.commit.payload).gprIdxVec(idx)
+  //    rMyInfoVec(io.commit.payload).gprIdxVec.last
+  //  )
+  //  for (jdx <- 0 until cfg.optMaxNumScoreboardInstrs) {
+  //    val myTempInfoGprIdx = (
+  //      //rMyInfoVec(jdx).gprIdxVec.last
+  //      rMyInfoVec(jdx).gprIdxVec(idx)
+  //    )
+  //    tempHaveCommitHazardAddrCheckVec(jdx)(idx) := (
+  //      //tempRegIdx === myHistLastGprIdx(jdx + 1).last
+  //      //tempRegIdx === rMyInfoVec(jdx).gprIdxVec(idx)
+  //      tempRegIdx === myTempInfoGprIdx
+  //      && myTempInfoGprIdx.orR // check for non-zero
+  //      && (
+  //        rMyInfoVec(io.commit.payload).instrAge
+  //        > rMyInfoVec(jdx).instrAge
+  //      )
+  //      //&& rMyInfoVec(io.commit.payload).allocValid
+  //      //&& rMyInfoVec(jdx).hazardValid
+  //      //&& (
+  //      //  //rMyInfoVec(jdx).hazardValid
+  //      //  //|| 
+  //      //  rMyInfoVec(io.commit.payload).hazardValid
+  //      //)
+  //      && rMyInfoVec(jdx).allocValid
+  //      && io.commit.payload =/= jdx
+  //      && io.commit.valid
+  //    )
+  //  }
+  //}
   io.commit.ready := (
     //io.commit.valid && 
-    !tempHaveCommitHazardAddrCheckVec.asBits.orR
-    //True
+    //!tempHaveCommitHazardAddrCheckVec.asBits.orR
+    True
   )
 
   val myInfoAllocValidVec = (
