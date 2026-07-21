@@ -1874,13 +1874,13 @@ case class SnowHouseForFmaxPipeStageWriteBack(
     cfg.optScoreboard
   ) generate (new Area {
     val rCommitIdx = {
-      val temp = Reg(Flow(UInt(1 bits)))
+      val temp = Reg(Flow(UInt(2 bits)))
       temp.init(temp.getZero)
       temp
     }
     switch (
       rCommitIdx.fire
-      ## rCommitIdx.payload
+      ## rCommitIdx.payload.msb
       ## stickyMyD2hBusFire
     ) {
       is (M"0-1") {
@@ -1934,7 +1934,8 @@ case class SnowHouseForFmaxPipeStageWriteBack(
     ) {
       is (B"01") {
         rCommitIdx.valid := True
-        rCommitIdx.payload.lsb := !rCommitIdx.payload.lsb
+        //rCommitIdx.payload.lsb := !rCommitIdx.payload.lsb
+        rCommitIdx.payload := rCommitIdx.payload + 1
         //cLink.duplicateIt()
       }
       is (M"10") {
@@ -1942,7 +1943,8 @@ case class SnowHouseForFmaxPipeStageWriteBack(
         //cLink.duplicateIt()
       }
       is (B"11") {
-        rCommitIdx.payload.lsb := !rCommitIdx.payload.lsb
+        //rCommitIdx.payload.lsb := !rCommitIdx.payload.lsb
+        rCommitIdx.payload := rCommitIdx.payload + 1
         //cLink.duplicateIt()
       }
       //is (B"00") 
