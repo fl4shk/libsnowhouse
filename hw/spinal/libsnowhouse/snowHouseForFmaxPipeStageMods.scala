@@ -177,11 +177,17 @@ case class SnowHouseForFmaxScoreboard(
 
   val io = SnowHouseForFmaxScoreboardIo(cfg=cfg)
 
+  val rInstrAgeCnt = (
+    Reg(UInt(8 bits))
+    init(0x0)
+  )
+
   case class MyInfo(
   ) extends Bundle {
     val hazardValid = Bool()
     //def fire = hazardValid
     val allocValid = Bool()
+    val instrAge = cloneOf(rInstrAgeCnt)
 
     val gprIdxVec = (
       Vec.fill(cfg.maxNumGprsPerInstr)(
@@ -240,6 +246,7 @@ case class SnowHouseForFmaxScoreboard(
     //idx <- 0 until upPayload.gprIdxVec.size - 1
   ) {
     if (idx < io.gprIdxVec.size - 1) {
+      // RAW hazards
       val tempRegIdx = io.gprIdxVec(idx)
       for (jdx <- 0 until cfg.optMaxNumScoreboardInstrs) {
         tempHaveIssueHazardAddrCheckVec(jdx)(idx) := (
@@ -249,58 +256,67 @@ case class SnowHouseForFmaxScoreboard(
             && tempRegIdx.orR // check for non-zero
             && (
               rMyInfoVec(jdx).hazardValid
-              //|| io.myTempOpMayNeedHazardCheck
+              //|| 
+              //io.myTempOpMayNeedHazardCheck
             )
             && rMyInfoVec(jdx).allocValid
-            
           )
         )
       }
     } 
     else { // if (idx >= upPayload.gprIdxVec.size - 1)
+      // WAW hazards
       val tempRegIdx = io.gprIdxVec.last
       for (jdx <- 0 until tempHaveIssueHazardAddrCheckVec.size) {
         //tempHaveIssueHazardAddrCheckVec(jdx)(idx) := False
         tempHaveIssueHazardAddrCheckVec(jdx)(idx) := (
-          (
-            //tempRegIdx === myHistLastGprIdx(jdx + 1)(idx % 3)
+          False
+          //(
+          //  //tempRegIdx === myHistLastGprIdx(jdx + 1)(idx % 3)
 
-            //tempRegIdx === rMyInfoVec(jdx).gprIdxVec(
-            //  idx % io.gprIdxVec.size
-            //)
-            tempRegIdx === rMyInfoVec(jdx).gprIdxVec.last
-            && tempRegIdx.orR // check for non-zero
-            //&& (
-            //  rMyInfoVec(jdx).hazardValid
-            //  //|| io.myTempOpMayNeedHazardCheck
-            //)
-            && rMyInfoVec(jdx).allocValid
-          )
+          //  //tempRegIdx === rMyInfoVec(jdx).gprIdxVec(
+          //  //  idx % io.gprIdxVec.size
+          //  //)
+          //  tempRegIdx === rMyInfoVec(jdx).gprIdxVec.last
+          //  && tempRegIdx.orR // check for non-zero
+          //  //&& (
+          //  //  //rMyInfoVec(jdx).hazardValid
+          //  //  //|| 
+          //  //  io.myTempOpMayNeedHazardCheck
+          //  //)
+          //  && rMyInfoVec(jdx).allocValid
+          //)
         )
       }
     }
   }
   for (idx <- 0 until myCommitHazardCheckVecInnerSize) {
+    // WAR hazards
     val tempRegIdx = (
       //rMyInfoVec(io.commit.payload).gprIdxVec(idx)
       rMyInfoVec(io.commit.payload).gprIdxVec.last
     )
     for (jdx <- 0 until cfg.optMaxNumScoreboardInstrs) {
       val myTempInfoGprIdx = (
-        rMyInfoVec(jdx).gprIdxVec.last
-        //rMyInfoVec(jdx).gprIdxVec(idx)
+        //rMyInfoVec(jdx).gprIdxVec.last
+        rMyInfoVec(jdx).gprIdxVec(idx)
       )
       tempHaveCommitHazardAddrCheckVec(jdx)(idx) := (
         //tempRegIdx === myHistLastGprIdx(jdx + 1).last
         //tempRegIdx === rMyInfoVec(jdx).gprIdxVec(idx)
         tempRegIdx === myTempInfoGprIdx
         && myTempInfoGprIdx.orR // check for non-zero
-        //&& rMyInfoVec(jdx).hazardValid
         && (
-          //rMyInfoVec(jdx).hazardValid
-          //|| 
-          rMyInfoVec(io.commit.payload).hazardValid
+          rMyInfoVec(io.commit.payload).instrAge
+          > rMyInfoVec(jdx).instrAge
         )
+        //&& rMyInfoVec(io.commit.payload).allocValid
+        //&& rMyInfoVec(jdx).hazardValid
+        //&& (
+        //  //rMyInfoVec(jdx).hazardValid
+        //  //|| 
+        //  rMyInfoVec(io.commit.payload).hazardValid
+        //)
         && rMyInfoVec(jdx).allocValid
         && io.commit.payload =/= jdx
         && io.commit.valid
@@ -384,6 +400,8 @@ case class SnowHouseForFmaxScoreboard(
         )
         when (io.issue.fire) {
           io.issue.payload := idx
+          rInstrAgeCnt := rInstrAgeCnt + 1
+          rMyInfoVec(idx).instrAge := rInstrAgeCnt
           rMyInfoVec(idx).hazardValid := (
             io.myTempOpMayNeedHazardCheck
             //True
@@ -833,7 +851,7 @@ case class SnowHouseForFmaxPipeStageExecute(
   //--------
 }
 
-case class SnowHouseForFmaxPsWbCommmitEtc(
+case class SnowHouseForFmaxPsWbCommitEtc(
   cfg: SnowHouseConfig
 ) extends Bundle {
   val myRegFileWrPulse = (
@@ -881,7 +899,7 @@ case class SnowHouseForFmaxPipeStageWriteBackIo(
   )
   //--------
   val commitEtc = (
-    SnowHouseForFmaxPsWbCommmitEtc(cfg=cfg)
+    SnowHouseForFmaxPsWbCommitEtc(cfg=cfg)
   )
   //--------
 }
@@ -940,12 +958,35 @@ case class SnowHouseForFmaxPipeStageWriteBack(
   ) extends Bundle {
     val instrCnt = SnowHouseInstrCnt(cfg=cfg)
     val outpDecodeExt = SnowHouseDecodeExt(cfg=cfg)
+    val laggingRegPc = (
+      io.dbgInfo != null
+    ) generate (
+      UInt(cfg.mainAddrWidth bits)
+    )
 
-    val gprIdxVec = Vec.fill(cfg.maxNumGprsPerInstr)(
+    val gprIdxVec = Vec.fill(
+      if (io.dbgInfo != null) (
+        cfg.maxNumGprsPerInstr
+      ) else (
+        1
+      )
+    )(
       UInt(log2Up(cfg.numGprs) bits)
     ) //simPublic()
-    val gprIsZeroVec = Vec.fill(cfg.maxNumGprsPerInstr)(
-      Vec.fill(cfg.regFileCfg.modMemWordValidSize)(
+    val gprIsZeroVec = Vec.fill(
+      //if (io.dbgInfo != null) (
+      //  cfg.maxNumGprsPerInstr
+      //) else (
+        1
+      //)
+    )(
+      Vec.fill(
+        //if (io.dbgInfo != null) (
+        //  cfg.regFileCfg.modMemWordValidSize
+        //) else (
+          1
+        //)
+      )(
         Bool()
       )
     )
@@ -1019,11 +1060,20 @@ case class SnowHouseForFmaxPipeStageWriteBack(
     myMemWbFifo.io.push.payload.outpDecodeExt := (
       myMemWbPayload(0).outpDecodeExt
     )
-    myMemWbFifo.io.push.payload.gprIdxVec := (
-      myMemWbPayload(0).gprIdxVec
-    )
-    myMemWbFifo.io.push.payload.gprIsZeroVec := (
-      myMemWbPayload(0).gprIsZeroVec
+    if (io.dbgInfo != null) {
+      myMemWbFifo.io.push.payload.laggingRegPc := (
+        myMemWbPayload(0).laggingRegPc
+      )
+      myMemWbFifo.io.push.payload.gprIdxVec := (
+        myMemWbPayload(0).gprIdxVec
+      )
+    } else {
+      myMemWbFifo.io.push.payload.gprIdxVec.last := (
+        myMemWbPayload(0).gprIdxVec.last
+      )
+    }
+    myMemWbFifo.io.push.payload.gprIsZeroVec.last.last := (
+      myMemWbPayload(0).gprIsZeroVec.last.last
     )
     myMemWbFifo.io.push.payload.myExt := (
       myMemWbPayload(0).myExt
@@ -1041,11 +1091,20 @@ case class SnowHouseForFmaxPipeStageWriteBack(
     myNonMemWbFifo.io.push.payload.outpDecodeExt := (
       myNonMemWbPayload(0).outpDecodeExt
     )
-    myNonMemWbFifo.io.push.payload.gprIdxVec := (
-      myNonMemWbPayload(0).gprIdxVec
-    )
-    myNonMemWbFifo.io.push.payload.gprIsZeroVec := (
-      myNonMemWbPayload(0).gprIsZeroVec
+    if (io.dbgInfo != null) {
+      myNonMemWbFifo.io.push.payload.laggingRegPc := (
+        myNonMemWbPayload(0).laggingRegPc
+      )
+      myNonMemWbFifo.io.push.payload.gprIdxVec := (
+        myNonMemWbPayload(0).gprIdxVec
+      )
+    } else {
+      myNonMemWbFifo.io.push.payload.gprIdxVec.last := (
+        myNonMemWbPayload(0).gprIdxVec.last
+      )
+    }
+    myNonMemWbFifo.io.push.payload.gprIsZeroVec.last.last := (
+      myNonMemWbPayload(0).gprIsZeroVec.last.last
     )
     myNonMemWbFifo.io.push.payload.myExt := (
       myNonMemWbPayload(0).myExt
@@ -1156,11 +1215,20 @@ case class SnowHouseForFmaxPipeStageWriteBack(
       myMemWbPayload(1).outpDecodeExt := (
         myMemWbFifo.io.pop.payload.outpDecodeExt
       )
-      myMemWbPayload(1).gprIdxVec := (
-        myMemWbFifo.io.pop.payload.gprIdxVec
-      )
-      myMemWbPayload(1).gprIsZeroVec := (
-        myMemWbFifo.io.pop.payload.gprIsZeroVec
+      if (io.dbgInfo != null) {
+        myMemWbPayload(1).laggingRegPc := (
+          myMemWbFifo.io.pop.payload.laggingRegPc
+        )
+        myMemWbPayload(1).gprIdxVec := (
+          myMemWbFifo.io.pop.payload.gprIdxVec
+        )
+      } else {
+        myMemWbPayload(1).gprIdxVec.last := (
+          myMemWbFifo.io.pop.payload.gprIdxVec.last
+        )
+      }
+      myMemWbPayload(1).gprIsZeroVec.last.last := (
+        myMemWbFifo.io.pop.payload.gprIsZeroVec.last.last
       )
       myMemWbPayload(1).myExt := (
         myMemWbFifo.io.pop.payload.myExt
@@ -1176,11 +1244,20 @@ case class SnowHouseForFmaxPipeStageWriteBack(
       myNonMemWbPayload(1).outpDecodeExt := (
         myNonMemWbFifo.io.pop.payload.outpDecodeExt
       )
-      myNonMemWbPayload(1).gprIdxVec := (
-        myNonMemWbFifo.io.pop.payload.gprIdxVec
-      )
-      myNonMemWbPayload(1).gprIsZeroVec := (
-        myNonMemWbFifo.io.pop.payload.gprIsZeroVec
+      if (io.dbgInfo != null) {
+        myNonMemWbPayload(1).laggingRegPc := (
+          myNonMemWbFifo.io.pop.payload.laggingRegPc
+        )
+        myNonMemWbPayload(1).gprIdxVec := (
+          myNonMemWbFifo.io.pop.payload.gprIdxVec
+        )
+      } else {
+        myNonMemWbPayload(1).gprIdxVec.last := (
+          myNonMemWbFifo.io.pop.payload.gprIdxVec.last
+        )
+      }
+      myNonMemWbPayload(1).gprIsZeroVec.last.last := (
+        myNonMemWbFifo.io.pop.payload.gprIsZeroVec.last.last
       )
       myNonMemWbPayload(1).myExt := (
         myNonMemWbFifo.io.pop.payload.myExt
@@ -1457,11 +1534,14 @@ case class SnowHouseForFmaxPipeStageWriteBack(
       //    True
       //  )
       //})
-      for (idx <- 0 until cfg.regFileCfg.modMemWordValidSize) {
-        myCurrExt.modMemWordValid(idx) := (
-          !myMemWbPayload(1).gprIsZeroVec.last(idx)
-        )
-      }
+      //for (idx <- 0 until cfg.regFileCfg.modMemWordValidSize) {
+      //  myCurrExt.modMemWordValid(idx) := (
+      //    !myMemWbPayload(1).gprIsZeroVec.last(idx)
+      //  )
+      //}
+      myCurrExt.modMemWordValid.last := (
+        !myMemWbPayload(1).gprIsZeroVec.last.last
+      )
     }
   }
 
