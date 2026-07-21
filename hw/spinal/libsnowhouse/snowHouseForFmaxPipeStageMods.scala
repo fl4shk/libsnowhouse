@@ -800,11 +800,33 @@ case class SnowHouseForFmaxPipeStageScoreboardRawHazard(
   }
 
   io.readGprsPayload.gprIdxVec := myOutp.gprIdxVec
+  //val rStallState = Reg(Bool(), init=False)
 
-  when (!io.readGprsReady) {
+  //when (!rStallState) {
+  //}
+
+  val rSeenReadGprsReady = Reg(Bool(), init=False)
+  val stickyReadGprsReady = (
+    io.readGprsReady
+    || rSeenReadGprsReady
+  )
+
+  when (io.readGprsReady) {
+    rSeenReadGprsReady := True
+  }
+  when (cLink.down.isFiring) {
+    rSeenReadGprsReady := False
+  }
+
+  when (!stickyReadGprsReady && !myOutp.instrCnt.myPsIdBubble.head) {
     cLink.duplicateIt()
     cLink.down(pIdOutp).allowOverride
-    cLink.down(pIdOutp) := myOutp.getZero
+    cLink.down(pIdOutp) := myOutp//.getZero
+    //cLink.down(pIdOutp).gprIsZeroVec.foreach(outerItem => {
+    //  outerItem.foreach(item => {
+    //    item := True
+    //  })
+    //})
     cLink.down(pIdOutp).setAsBubbleMain(
       //!scoreboard.io.issue.cntOverflow
       True

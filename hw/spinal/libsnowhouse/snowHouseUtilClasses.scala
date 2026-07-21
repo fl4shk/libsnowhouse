@@ -2250,6 +2250,7 @@ case class SnowHousePipePayload(
   }
   def setAsBubbleMain(
     myPsIdBubble: Bool=True
+    //doSetGprIsZeroVec
   ): Unit = {
     //instrCnt.myPsIdBubble.foreach(item => {
     //  item := True
@@ -2271,6 +2272,7 @@ case class SnowHousePipePayload(
     //branchPredictReplaceBtbElemMost := False
     //inpDecodeExt := inpDecodeExt.getZero
     //outpDecodeExt := outpDecodeExt.getZero
+
     gprIsZeroVec.foreach(
       outerItem => outerItem.foreach(
         item => {
