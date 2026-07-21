@@ -626,7 +626,8 @@ case class SnowHouseForFmaxPipeStageInstrDecode(
     when (!scoreboard.io.issue.valid) {
       cLink.duplicateIt()
       cLink.down(pIdOutp).setAsBubbleMain(
-        !scoreboard.io.issue.cntOverflow
+        //!scoreboard.io.issue.cntOverflow
+        True
       )
       innerPsId.upPayload(1).instrCnt.scoreboardTag := (
         scoreboard.io.issue.tag
