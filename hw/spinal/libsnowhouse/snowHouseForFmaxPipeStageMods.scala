@@ -204,7 +204,10 @@ case class SnowHouseForFmaxScoreboard(
     val instrAge = UInt(myInstrAgeWidth bits) //cloneOf(rInstrAgeCnt)
 
     val gprIsNonZeroVec = (
-      Vec.fill(cfg.maxNumGprsPerInstr)(
+      Vec.fill(
+        //cfg.maxNumGprsPerInstr
+        1
+      )(
         Bool()
       )
     )
@@ -324,7 +327,8 @@ case class SnowHouseForFmaxScoreboard(
         //tempRegIdx === myHistLastGprIdx(jdx + 1).last
         //tempRegIdx === rMyInfoVec(jdx).gprIdxVec(idx)
         tempRegIdx === myTempInfoGprIdx
-        && myTempInfoGprIdx.orR // check for non-zero
+        //&& myTempInfoGprIdx.orR // check for non-zero
+        && rMyInfoVec(jdx).gprIsNonZeroVec.last
         && (
           rMyInfoVec(io.commit.tag).instrAge
           > rMyInfoVec(jdx).instrAge
@@ -431,11 +435,14 @@ case class SnowHouseForFmaxScoreboard(
             True
           )
           rMyInfoVec(idx).gprIdxVec := io.gprIdxVec
-          for (jdx <- 0 until io.gprIdxVec.size) {
-            rMyInfoVec(idx).gprIsNonZeroVec(jdx) := (
-              io.gprIdxVec(jdx).orR // check for non-zero
-            )
-          }
+          rMyInfoVec(idx).gprIsNonZeroVec.last := (
+            io.gprIdxVec.last.orR // check for non-zero
+          )
+          //for (jdx <- 0 until io.gprIdxVec.size) {
+          //  rMyInfoVec(idx).gprIsNonZeroVec(jdx) := (
+          //    io.gprIdxVec(jdx).orR // check for non-zero
+          //  )
+          //}
         }
       }
     }
