@@ -2204,7 +2204,7 @@ case class SnowHousePipeStageInstrDecode(
   })
 }
 
-case class SnowHousePipeStagePostIdPreEx(
+case class SnowHousePipeStagePreFwd(
   cfg: SnowHouseConfig,
   outp: SnowHousePipePayload,
   inp: SnowHousePipePayload,

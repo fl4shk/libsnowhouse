@@ -1643,8 +1643,8 @@ private[libsnowhouse] case class SnowHouseNotForFmax
         //ydx,
       ) => new Area {
         //if (myHaveS2mIf) {
-          val myPipeStagePostIdPreEx = (
-            SnowHousePipeStagePostIdPreEx(
+          val myPipeStagePreFwd = (
+            SnowHousePipeStagePreFwd(
               cfg=cfg,
               outp=outp,
               inp=inp,
@@ -2183,16 +2183,33 @@ private[libsnowhouse] case class SnowHouseForFmax(
     cfg=cfg,
     doDecodeFunc=cfg.doInstrDecodeFunc
   )
-  val psPostIdPreEx = SnowHouseForFmaxPipeStagePostIdPreEx(cfg=cfg)
+  val psScoreboardRawHazard = (
+    cfg.optScoreboard
+  ) generate (
+    SnowHouseForFmaxPipeStageScoreboardRawHazard(cfg=cfg)
+  )
+  val psPreFwd = SnowHouseForFmaxPipeStagePreFwd(cfg=cfg)
   val psEx = SnowHouseForFmaxPipeStageExecute(cfg=cfg)
   val psWb = SnowHouseForFmaxPipeStageWriteBack(cfg=cfg)
   //--------
 
   //psId.io.up <-/< psIf.io.down // extra pipeline stage for fmax
-  psPostIdPreEx.io.up <-/< psId.io.down
+  if (cfg.optScoreboard) {
+    psScoreboardRawHazard.io.up <-/< psId.io.down
+
+    psId.io.myScoreboardReadGprsPayload := (
+      psScoreboardRawHazard.io.readGprsPayload
+    )
+    psScoreboardRawHazard.io.readGprsReady := (
+      psId.io.myScoreboardReadGprsReady
+    )
+    psPreFwd.io.up <-/< psScoreboardRawHazard.io.down
+  } else {
+    psPreFwd.io.up <-/< psId.io.down
+  }
   psId.io.up << psIf.io.down
-  //psPostIdPreEx.io.up << psId.io.down
-  //psEx.io.up << psPostIdPreEx.io.down
+  //psPreFwd.io.up << psId.io.down
+  //psEx.io.up << psPreFwd.io.down
 
   //--------
   val myRegFile = new ArrayBuffer[WrPulseRdPipeRam[
@@ -2246,7 +2263,7 @@ private[libsnowhouse] case class SnowHouseForFmax(
   val myRegFileRdAddrPipeFrontVec = Vec.fill(2)(
     cloneOf(myRegFile.head.io.rdAddrPipe)
   )
-  psPostIdPreEx.io.down.translateInto(myRegFileRdAddrPipeFrontVec.head)(
+  psPreFwd.io.down.translateInto(myRegFileRdAddrPipeFrontVec.head)(
     dataAssignment=(outp, inp) => {
       outp.data := inp
     }
@@ -2289,8 +2306,8 @@ private[libsnowhouse] case class SnowHouseForFmax(
       }
     }
   )
-  //psPostIdPreEx.io.up << myRegFileRdDataPipeLast
-  //psEx.io.up << psPostIdPreEx.io.down
+  //psPreFwd.io.up << myRegFileRdDataPipeLast
+  //psEx.io.up << psPreFwd.io.down
   psEx.io.up << myRegFileRdDataPipeLast
   val myPostExPreWbStmVec = (
     cfg.optForFmaxPsExFwdSize > 0
@@ -2347,7 +2364,7 @@ private[libsnowhouse] case class SnowHouseForFmax(
 
   psIf.io.psExSetPc := psExSetPc
   psId.io.psExSetPc := psExSetPc
-  psPostIdPreEx.io.myBranchMispredictEtc := psExSetPc.fire
+  psPreFwd.io.myBranchMispredictEtc := psExSetPc.fire
   psExSetPc := psEx.io.psExSetPc
 
   if (io.idsIraIrq != null) {
