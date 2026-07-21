@@ -239,8 +239,8 @@ case class SnowHouseForFmaxScoreboard(
 
     val gprIsNonZeroVec = (
       Vec.fill(
-        //cfg.maxNumGprsPerInstr
-        1
+        cfg.maxNumGprsPerInstr
+        //1
       )(
         Bool()
       )
@@ -332,10 +332,10 @@ case class SnowHouseForFmaxScoreboard(
           tempRegIdx === rMyInfoVec(jdx).gprIdxVec.last
           //&& tempRegIdx.orR // check for non-zero
           && rMyInfoVec(jdx).gprIsNonZeroVec.last
-          && (
-            rMyInfoVec(jdx).hazardValid
-            //|| io.myTempOpMayNeedHazardCheck
-          )
+          //&& (
+          //  rMyInfoVec(jdx).hazardValid
+          //  //|| io.myTempOpMayNeedHazardCheck
+          //)
           && rMyInfoVec(jdx).allocValid
         )
       )
@@ -384,7 +384,7 @@ case class SnowHouseForFmaxScoreboard(
         //tempRegIdx === rMyInfoVec(jdx).gprIdxVec(idx)
         tempRegIdx === myTempInfoGprIdx
         //&& myTempInfoGprIdx.orR // check for non-zero
-        && rMyInfoVec(jdx).gprIsNonZeroVec.last
+        && rMyInfoVec(jdx).gprIsNonZeroVec(idx)
         && (
           rMyInfoVec(io.commit.tag).instrAge
           > rMyInfoVec(jdx).instrAge
@@ -504,8 +504,10 @@ case class SnowHouseForFmaxScoreboard(
             True
           )
           rMyInfoVec(idx).gprIdxVec := io.issueGprIdxVec
-          rMyInfoVec(idx).gprIsNonZeroVec.last := (
-            io.issueGprIdxVec.last.orR // check for non-zero
+          rMyInfoVec(idx).gprIsNonZeroVec := (
+            //io.issueGprIdxVec.last.orR // check for non-zero
+            // check for non-zero
+            Vec(io.issueGprIdxVec.map(item => item.orR))
           )
           //for (jdx <- 0 until io.gprIdxVec.size) {
           //  rMyInfoVec(idx).gprIsNonZeroVec(jdx) := (
