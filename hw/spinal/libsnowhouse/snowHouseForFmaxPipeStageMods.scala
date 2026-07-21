@@ -1640,7 +1640,7 @@ case class SnowHouseForFmaxPipeStageWriteBack(
         )
         //myCurrExt.modMemWord := myDbus.recvData.word
         //someMyWbPayload(1).
-        myCurrExt.modMemWordValid(0)
+        myCurrExt.modMemWordValid.last
       }
     )
     if (
