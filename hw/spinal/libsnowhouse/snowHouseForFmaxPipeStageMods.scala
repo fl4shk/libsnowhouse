@@ -391,11 +391,11 @@ case class SnowHouseForFmaxScoreboard(
         )
         //&& rMyInfoVec(io.commit.tag).allocValid
         //&& rMyInfoVec(jdx).hazardValid
-        //&& (
-        //  //rMyInfoVec(jdx).hazardValid
-        //  //|| 
-        //  rMyInfoVec(io.commit.tag).hazardValid
-        //)
+        && (
+          //rMyInfoVec(jdx).hazardValid
+          //|| 
+          rMyInfoVec(io.commit.tag).hazardValid
+        )
         && rMyInfoVec(jdx).allocValid
         && io.commit.tag =/= jdx
         && io.commit.valid
