@@ -256,7 +256,7 @@ case class SnowHouseForFmaxScoreboard(
             && tempRegIdx.orR // check for non-zero
             && (
               rMyInfoVec(jdx).hazardValid
-              || io.myTempOpMayNeedHazardCheck
+              //|| io.myTempOpMayNeedHazardCheck
             )
             && rMyInfoVec(jdx).allocValid
           )
@@ -278,10 +278,10 @@ case class SnowHouseForFmaxScoreboard(
             //)
             tempRegIdx === rMyInfoVec(jdx).gprIdxVec.last
             && tempRegIdx.orR // check for non-zero
-            && (
-              rMyInfoVec(jdx).hazardValid
-              || io.myTempOpMayNeedHazardCheck
-            )
+            //&& (
+            //  rMyInfoVec(jdx).hazardValid
+            //  //|| io.myTempOpMayNeedHazardCheck
+            //)
             && rMyInfoVec(jdx).allocValid
           )
         )
@@ -1159,14 +1159,14 @@ case class SnowHouseForFmaxPipeStageWriteBack(
   val myD2hBus = cloneOf(io.myLcvDbusD2hStm)
   //val rSeenD2hBusFire = Reg(Bool(), init=False)
 
-  val rInstrCntMem = (
-    Reg(cloneOf(myWbPayloadVec.head(1).instrCnt.mem))
-    init(0x0)
-  )
-  val rInstrCntNonMem = (
-    Reg(cloneOf(myWbPayloadVec.head(1).instrCnt.nonMem))
-    init(0x0)
-  )
+  //val rInstrCntMem = (
+  //  Reg(cloneOf(myWbPayloadVec.head(1).instrCnt.mem))
+  //  init(0x0)
+  //)
+  //val rInstrCntNonMem = (
+  //  Reg(cloneOf(myWbPayloadVec.head(1).instrCnt.nonMem))
+  //  init(0x0)
+  //)
   //when (myD2hBus.fire) {
   //  rSeenD2hBusFire := True
   //}
@@ -1582,9 +1582,9 @@ case class SnowHouseForFmaxPipeStageWriteBack(
       //  !myMemWbValid
       //  || myNonMemWbValid
       //)
-      && (
-        rInstrCntNonMem === myWbPayloadVec.head(0).instrCnt.nonMem
-      )
+      //&& (
+      //  rInstrCntNonMem === myWbPayloadVec.head(0).instrCnt.nonMem
+      //)
       && (
         !myNonMemWbPayload(1).instrCnt.myPsIdBubble.head
       )
@@ -1643,21 +1643,21 @@ case class SnowHouseForFmaxPipeStageWriteBack(
         myCurrExt.modMemWordValid.last
       }
     )
-    if (
-      cfg.optScoreboard
-      && !isMem
-    ) {
-      when (
-        //myNonMemWbValid
-        //&& cLink.up.isFiring
-        //&& (
-        //  rInstrCntNonMem === myWbPayloadVec.head(0).instrCnt.nonMem
-        //)
-        myNonMemRegFileWrPulseValidPartial
-      ) {
-        rInstrCntNonMem := rInstrCntNonMem + 1
-      }
-    }
+    //if (
+    //  cfg.optScoreboard
+    //  && !isMem
+    //) {
+    //  when (
+    //    //myNonMemWbValid
+    //    //&& cLink.up.isFiring
+    //    //&& (
+    //    //  rInstrCntNonMem === myWbPayloadVec.head(0).instrCnt.nonMem
+    //    //)
+    //    myNonMemRegFileWrPulseValidPartial
+    //  ) {
+    //    rInstrCntNonMem := rInstrCntNonMem + 1
+    //  }
+    //}
     io.commitEtc.myRegFileWrPulse.addr := (
       someMyWbPayload(1).gprIdxVec.last
     )
