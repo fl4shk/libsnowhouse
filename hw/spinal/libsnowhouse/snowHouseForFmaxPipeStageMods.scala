@@ -344,7 +344,7 @@ case class SnowHouseForFmaxScoreboard(
 
   for (idx <- 0 until myReadGprsHazardCheckVecInnerSize) {
     // RAW hazards
-    val tempRegIdx = io.issueGprIdxVec(idx)
+    val tempRegIdx = io.readGprsPayload.gprIdxVec(idx)
     for (jdx <- 0 until cfg.optMaxNumScoreboardInstrs) {
       tempHaveReadGprsHazardAddrCheckVec(jdx)(idx) := (
         (
