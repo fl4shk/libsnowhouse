@@ -278,10 +278,10 @@ case class SnowHouseForFmaxScoreboard(
             //)
             tempRegIdx === rMyInfoVec(jdx).gprIdxVec.last
             && tempRegIdx.orR // check for non-zero
-            //&& (
-            //  rMyInfoVec(jdx).hazardValid
-            //  //|| io.myTempOpMayNeedHazardCheck
-            //)
+            && (
+              rMyInfoVec(jdx).hazardValid
+              //|| io.myTempOpMayNeedHazardCheck
+            )
             && rMyInfoVec(jdx).allocValid
           )
         )
@@ -291,30 +291,30 @@ case class SnowHouseForFmaxScoreboard(
   for (idx <- 0 until myCommitHazardCheckVecInnerSize) {
     // WAR hazards
     val tempRegIdx = (
-      //rMyInfoVec(io.commit.payload).gprIdxVec(idx)
-      rMyInfoVec(io.commit.payload).gprIdxVec.last
+      rMyInfoVec(io.commit.payload).gprIdxVec(idx)
+      //rMyInfoVec(io.commit.payload).gprIdxVec.last
     )
     for (jdx <- 0 until cfg.optMaxNumScoreboardInstrs) {
       val myTempInfoGprIdx = (
-        //rMyInfoVec(jdx).gprIdxVec.last
-        rMyInfoVec(jdx).gprIdxVec(idx)
+        rMyInfoVec(jdx).gprIdxVec.last
+        //rMyInfoVec(jdx).gprIdxVec(idx)
       )
       tempHaveCommitHazardAddrCheckVec(jdx)(idx) := (
         //tempRegIdx === myHistLastGprIdx(jdx + 1).last
         //tempRegIdx === rMyInfoVec(jdx).gprIdxVec(idx)
         tempRegIdx === myTempInfoGprIdx
         && myTempInfoGprIdx.orR // check for non-zero
-        && (
-          rMyInfoVec(io.commit.payload).instrAge
-          > rMyInfoVec(jdx).instrAge
-        )
+        //&& (
+        //  rMyInfoVec(io.commit.payload).instrAge
+        //  > rMyInfoVec(jdx).instrAge
+        //)
         //&& rMyInfoVec(io.commit.payload).allocValid
         //&& rMyInfoVec(jdx).hazardValid
-        //&& (
-        //  //rMyInfoVec(jdx).hazardValid
-        //  //|| 
-        //  rMyInfoVec(io.commit.payload).hazardValid
-        //)
+        && (
+          //rMyInfoVec(jdx).hazardValid
+          //|| 
+          rMyInfoVec(io.commit.payload).hazardValid
+        )
         && rMyInfoVec(jdx).allocValid
         && io.commit.payload =/= jdx
         && io.commit.valid
