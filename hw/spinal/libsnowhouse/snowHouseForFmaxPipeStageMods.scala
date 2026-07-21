@@ -120,6 +120,12 @@ case class SnowHouseForFmaxPipeStageInstrFetch(
 }
 
 
+case class SnowHouseScoreboardCommitPayload(
+  cfg: SnowHouseConfig,
+) extends Bundle {
+  val tag = UInt(cfg.optScoreboardTagWidth bits)
+}
+
 case class SnowHouseForFmaxScoreboardIo(
   cfg: SnowHouseConfig,
 ) extends Bundle {
@@ -152,7 +158,8 @@ case class SnowHouseForFmaxScoreboardIo(
   val commit = (
     //Vec.fill(cfg.numMultiIssue)(
       Stream(
-        UInt(cfg.optScoreboardTagWidth bits)
+        //UInt(cfg.optScoreboardTagWidth bits)
+        SnowHouseScoreboardCommitPayload(cfg=cfg)
       )
     //)
   )
@@ -183,18 +190,24 @@ case class SnowHouseForFmaxScoreboard(
     // it is assumed there are much much fewer than 64 pipeline stages
     (1 << myInstrAgeWidth) - 64
   )
-  val rInstrAgeCnt = (
-    Reg(UInt(myInstrAgeWidth bits))
-    init(0x0)
-  )
+  val rInstrAgeCnt = {
+    val temp = Reg(Flow(UInt(myInstrAgeWidth bits)))
+    temp.init(temp.getZero)
+    temp
+  }
 
   case class MyInfo(
   ) extends Bundle {
     val hazardValid = Bool()
     //def fire = hazardValid
     val allocValid = Bool()
-    val instrAge = cloneOf(rInstrAgeCnt)
+    val instrAge = UInt(myInstrAgeWidth bits) //cloneOf(rInstrAgeCnt)
 
+    val gprIsNonZeroVec = (
+      Vec.fill(cfg.maxNumGprsPerInstr)(
+        Bool()
+      )
+    )
     val gprIdxVec = (
       Vec.fill(cfg.maxNumGprsPerInstr)(
         UInt(log2Up(cfg.numGprs) bits)
@@ -259,7 +272,8 @@ case class SnowHouseForFmaxScoreboard(
           (
             //tempRegIdx === myHistLastGprIdx(jdx + 1).last
             tempRegIdx === rMyInfoVec(jdx).gprIdxVec.last
-            && tempRegIdx.orR // check for non-zero
+            //&& tempRegIdx.orR // check for non-zero
+            && rMyInfoVec(jdx).gprIsNonZeroVec.last
             && (
               rMyInfoVec(jdx).hazardValid
               //|| io.myTempOpMayNeedHazardCheck
@@ -268,7 +282,7 @@ case class SnowHouseForFmaxScoreboard(
           )
         )
       }
-    } 
+    }
     else { // if (idx >= upPayload.gprIdxVec.size - 1)
       // WAW hazards
       val tempRegIdx = io.gprIdxVec.last
@@ -283,7 +297,8 @@ case class SnowHouseForFmaxScoreboard(
             //  idx % io.gprIdxVec.size
             //)
             tempRegIdx === rMyInfoVec(jdx).gprIdxVec.last
-            && tempRegIdx.orR // check for non-zero
+            //&& tempRegIdx.orR // check for non-zero
+            && rMyInfoVec(jdx).gprIsNonZeroVec.last
             && (
               rMyInfoVec(jdx).hazardValid
               //|| io.myTempOpMayNeedHazardCheck
@@ -294,43 +309,43 @@ case class SnowHouseForFmaxScoreboard(
       }
     }
   }
-  //for (idx <- 0 until myCommitHazardCheckVecInnerSize) {
-  //  // WAR hazards
-  //  val tempRegIdx = (
-  //    //rMyInfoVec(io.commit.payload).gprIdxVec(idx)
-  //    rMyInfoVec(io.commit.payload).gprIdxVec.last
-  //  )
-  //  for (jdx <- 0 until cfg.optMaxNumScoreboardInstrs) {
-  //    val myTempInfoGprIdx = (
-  //      //rMyInfoVec(jdx).gprIdxVec.last
-  //      rMyInfoVec(jdx).gprIdxVec(idx)
-  //    )
-  //    tempHaveCommitHazardAddrCheckVec(jdx)(idx) := (
-  //      //tempRegIdx === myHistLastGprIdx(jdx + 1).last
-  //      //tempRegIdx === rMyInfoVec(jdx).gprIdxVec(idx)
-  //      tempRegIdx === myTempInfoGprIdx
-  //      && myTempInfoGprIdx.orR // check for non-zero
-  //      && (
-  //        rMyInfoVec(io.commit.payload).instrAge
-  //        > rMyInfoVec(jdx).instrAge
-  //      )
-  //      //&& rMyInfoVec(io.commit.payload).allocValid
-  //      //&& rMyInfoVec(jdx).hazardValid
-  //      //&& (
-  //      //  //rMyInfoVec(jdx).hazardValid
-  //      //  //|| 
-  //      //  rMyInfoVec(io.commit.payload).hazardValid
-  //      //)
-  //      && rMyInfoVec(jdx).allocValid
-  //      && io.commit.payload =/= jdx
-  //      && io.commit.valid
-  //    )
-  //  }
-  //}
+  for (idx <- 0 until myCommitHazardCheckVecInnerSize) {
+    // WAR hazards
+    val tempRegIdx = (
+      //rMyInfoVec(io.commit.tag).gprIdxVec(idx)
+      rMyInfoVec(io.commit.tag).gprIdxVec.last
+    )
+    for (jdx <- 0 until cfg.optMaxNumScoreboardInstrs) {
+      val myTempInfoGprIdx = (
+        //rMyInfoVec(jdx).gprIdxVec.last
+        rMyInfoVec(jdx).gprIdxVec(idx)
+      )
+      tempHaveCommitHazardAddrCheckVec(jdx)(idx) := (
+        //tempRegIdx === myHistLastGprIdx(jdx + 1).last
+        //tempRegIdx === rMyInfoVec(jdx).gprIdxVec(idx)
+        tempRegIdx === myTempInfoGprIdx
+        && myTempInfoGprIdx.orR // check for non-zero
+        && (
+          rMyInfoVec(io.commit.tag).instrAge
+          > rMyInfoVec(jdx).instrAge
+        )
+        //&& rMyInfoVec(io.commit.tag).allocValid
+        //&& rMyInfoVec(jdx).hazardValid
+        //&& (
+        //  //rMyInfoVec(jdx).hazardValid
+        //  //|| 
+        //  rMyInfoVec(io.commit.tag).hazardValid
+        //)
+        && rMyInfoVec(jdx).allocValid
+        && io.commit.tag =/= jdx
+        && io.commit.valid
+      )
+    }
+  }
   io.commit.ready := (
     //io.commit.valid && 
-    //!tempHaveCommitHazardAddrCheckVec.asBits.orR
-    True
+    !tempHaveCommitHazardAddrCheckVec.asBits.orR
+    //True
   )
 
   val myInfoAllocValidVec = (
@@ -341,7 +356,7 @@ case class SnowHouseForFmaxScoreboard(
   )
 
   for (jdx <- 0 until cfg.optMaxNumScoreboardInstrs) {
-    when (io.commit.fire && io.commit.payload === jdx) {
+    when (io.commit.fire && io.commit.tag === jdx) {
       //myInfoAllocValidVec(jdx) := False
       //tempHaveIssueHazardAddrCheckVec(jdx).foreach(
       //  item => (
@@ -398,14 +413,15 @@ case class SnowHouseForFmaxScoreboard(
           //True
           !tempHaveIssueHazardAddrCheckVec.asBits.orR
           //&& !tempHaveCommitHazardAddrCheckVec.asBits.orR
+          && !rInstrAgeCnt.fire
         )
         io.issue.payload := (
           RegNext(io.issue.payload, init=io.issue.payload.getZero)
         )
         when (io.issue.fire) {
           io.issue.payload := idx
-          rInstrAgeCnt := rInstrAgeCnt + 1
-          rMyInfoVec(idx).instrAge := rInstrAgeCnt
+          rInstrAgeCnt.payload := rInstrAgeCnt.payload + 1
+          rMyInfoVec(idx).instrAge := rInstrAgeCnt.payload
           rMyInfoVec(idx).hazardValid := (
             io.myTempOpMayNeedHazardCheck
             //True
@@ -415,6 +431,11 @@ case class SnowHouseForFmaxScoreboard(
             True
           )
           rMyInfoVec(idx).gprIdxVec := io.gprIdxVec
+          for (jdx <- 0 until io.gprIdxVec.size) {
+            rMyInfoVec(idx).gprIsNonZeroVec(jdx) := (
+              io.gprIdxVec(jdx).orR // check for non-zero
+            )
+          }
         }
       }
     }
@@ -426,6 +447,28 @@ case class SnowHouseForFmaxScoreboard(
       )
     }
   }
+  switch (
+    rInstrAgeCnt.fire
+    ## (rInstrAgeCnt.payload === myMaxInstrAge)
+    ## myInfoAllocValidVec.orR
+  ) {
+    // flush the pipeline
+    is (
+      M"01-"
+    ) {
+      rInstrAgeCnt.valid := True
+      rInstrAgeCnt.payload := 0x0
+    }
+    is (M"1-0") {
+      rInstrAgeCnt.valid := False
+    }
+    default {
+    }
+  }
+  //when (!rInstrAgeCnt.fire) {
+  //  when (rInstrAgeCnt.payload === myMaxInstrAge) {
+  //  }
+  //}
 }
 
 case class SnowHouseForFmaxPipeStageInstrDecodeIo(
@@ -453,7 +496,8 @@ case class SnowHouseForFmaxPipeStageInstrDecodeIo(
     cfg.optScoreboard
   ) generate (
     slave(Stream(
-      UInt(cfg.optScoreboardTagWidth bits)
+      //UInt(cfg.optScoreboardTagWidth bits)
+      SnowHouseScoreboardCommitPayload(cfg=cfg)
     ))
   )
   //--------
@@ -561,7 +605,8 @@ case class SnowHouseForFmaxPipeStageInstrDecode(
       //  True
       //)
     }
-    scoreboard.io.commit << io.myScoreboardCommmit
+    scoreboard.io.commit <-< io.myScoreboardCommmit
+    // can't do `<-/< `, see `commitEtc` logic in WB stage
   }
 
   s2mLink.down.driveTo(
@@ -873,7 +918,8 @@ case class SnowHouseForFmaxPsWbCommitEtc(
   ) generate (
     master(
       Stream(
-        UInt(cfg.optScoreboardTagWidth bits)
+        //UInt(cfg.optScoreboardTagWidth bits)
+        SnowHouseScoreboardCommitPayload(cfg=cfg)
       )
     )
   )
@@ -1717,7 +1763,7 @@ case class SnowHouseForFmaxPipeStageWriteBack(
           )
         )
       )
-      io.commitEtc.scoreboardTag.payload := (
+      io.commitEtc.scoreboardTag.tag := (
         someMyWbPayload(1).instrCnt.scoreboardTag
       )
     }
