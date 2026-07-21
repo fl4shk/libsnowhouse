@@ -642,6 +642,7 @@ case class SnowHouseForFmaxPipeStageInstrDecode(
     }
     scoreboard.io.commit << io.myScoreboardCommmit
     // can't do `<-/< `, see `commitEtc` logic in WB stage
+    // apparently can't do `<-<` ???
   }
 
   s2mLink.down.driveTo(
