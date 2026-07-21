@@ -285,10 +285,11 @@ case class SnowHouseForFmaxScoreboard(
             tempRegIdx === rMyInfoVec(jdx).gprIdxVec.last
             //&& tempRegIdx.orR // check for non-zero
             && rMyInfoVec(jdx).gprIsNonZeroVec.last
-            //&& (
-            //  rMyInfoVec(jdx).hazardValid
-            //  //|| io.myTempOpMayNeedHazardCheck
-            //)
+            && (
+              // other "RAW" hazards will be handled via forwarding!
+              rMyInfoVec(jdx).hazardValid
+              //|| io.myTempOpMayNeedHazardCheck
+            )
             && rMyInfoVec(jdx).allocValid
           )
         )
@@ -639,7 +640,7 @@ case class SnowHouseForFmaxPipeStageInstrDecode(
       //  True
       //)
     }
-    scoreboard.io.commit <-< io.myScoreboardCommmit
+    scoreboard.io.commit << io.myScoreboardCommmit
     // can't do `<-/< `, see `commitEtc` logic in WB stage
   }
 
