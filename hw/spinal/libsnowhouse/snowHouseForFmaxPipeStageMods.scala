@@ -734,7 +734,9 @@ case class SnowHouseForFmaxPipeStageInstrDecode(
     //&& 
     (
       !rMyPsExSetPcState
-      || innerPsId.upPayload(1).shouldFinishJump
+      //|| innerPsId.upPayload(1).regPcSetItCnt(1).lsb
+      //|| innerPsId.upPayload(1).shouldFinishJump
+      || innerPsId.shouldFinishJump
     )
   )
 
