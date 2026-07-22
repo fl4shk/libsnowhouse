@@ -959,7 +959,7 @@ case class SnowHouseForFmaxPipeStageScoreboardIssue(
     //  True
     //)
   }
-  scoreboard.io.readGprs </< io.myScoreboardReadGprs
+  scoreboard.io.readGprs << io.myScoreboardReadGprs
   scoreboard.io.commit </< io.myScoreboardCommmit
 
   s2mLink.down.driveTo(io.down)(
