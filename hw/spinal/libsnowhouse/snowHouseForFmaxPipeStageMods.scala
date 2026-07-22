@@ -1873,6 +1873,9 @@ case class SnowHouseForFmaxPipeStageWriteBack(
         myMemWbPayload(1).laggingRegPc := (
           myMemWbFifo.io.pop.payload.laggingRegPc
         )
+        myMemWbPayload(1).imm.last := (
+          myMemWbFifo.io.pop.payload.imm.last
+        )
         myMemWbPayload(1).encInstr.payload := (
           myMemWbFifo.io.pop.payload.encInstr
         )
@@ -1904,6 +1907,9 @@ case class SnowHouseForFmaxPipeStageWriteBack(
       if (io.dbgInfo != null) {
         myNonMemWbPayload(1).laggingRegPc := (
           myNonMemWbFifo.io.pop.payload.laggingRegPc
+        )
+        myNonMemWbPayload(1).imm.last := (
+          myNonMemWbFifo.io.pop.payload.imm.last
         )
         myNonMemWbPayload(1).encInstr.payload := (
           myNonMemWbFifo.io.pop.payload.encInstr
