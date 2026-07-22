@@ -1107,8 +1107,8 @@ case class SnowHouseForFmaxPipeStageScoreboardReadGprs(
       item => (
         !item
         && (
-          rMyPsExSetPcState
-          && !myOutp.regPcSetItCnt(1).lsb
+          !rMyPsExSetPcState
+          || !myOutp.regPcSetItCnt(1).lsb
         )
       )
     ))
