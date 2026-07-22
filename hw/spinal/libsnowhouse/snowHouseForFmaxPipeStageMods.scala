@@ -798,6 +798,9 @@ case class SnowHouseForFmaxPipeStageInstrDecode(
   //--------
 }
 
+//case class SnowHouseForFmaxPipeStageScoreboardMainIo(
+//) extends Bundle {
+//}
 case class SnowHouseForFmaxPipeStageScoreboardRawHazardIo(
   cfg: SnowHouseConfig
 ) extends Bundle {
