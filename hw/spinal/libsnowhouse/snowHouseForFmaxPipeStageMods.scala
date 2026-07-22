@@ -2114,14 +2114,15 @@ case class SnowHouseForFmaxPipeStageWriteBack(
       io.dbgInfo.regFileWriteEnable := (
         io.commitEtc.myRegFileWrPulse.fire
         && (
-          if (!isMem) (
-            (
-              cLink.up.isFiring
-              && !myNonMemWbPayload(1).instrCnt.myPsIdBubble.last
-            )
-          ) else (
-            True
-          )
+          io.commitEtc.scoreboardTag.fire
+          //if (!isMem) (
+          //  (
+          //    cLink.up.isFiring
+          //    && !myNonMemWbPayload(1).instrCnt.myPsIdBubble.last
+          //  )
+          //) else (
+          //  True
+          //)
         )
       )
       io.dbgInfo.laggingRegPcAtRegFileWrite := (
@@ -2130,24 +2131,20 @@ case class SnowHouseForFmaxPipeStageWriteBack(
       io.dbgInfo.shouldIgnoreInstrAtRegFileWrite := (
         someMyWbPayload(1).instrCnt.shouldIgnoreInstr.last
         || (
-          if (!isMem) (
-            !cLink.up.isFiring
-            || !myNonMemWbValid
-          ) else (
-            False
-          )
+          !io.commitEtc.scoreboardTag.fire
         )
       )
       io.dbgInfo.myPsIdBubbleAtRegFileWrite := (
         someMyWbPayload(1).instrCnt.myPsIdBubble.last
         //|| !cLink.up.isFiring
         || (
-          if (!isMem) (
-            !cLink.up.isFiring
-            || !myNonMemWbValid
-          ) else (
-            False
-          )
+          //if (!isMem) (
+          //  !cLink.up.isFiring
+          //  || !myNonMemWbValid
+          //) else (
+          //  False
+          //)
+          !io.commitEtc.scoreboardTag.fire
         )
         //&& (
         //  if (!isMem) (
