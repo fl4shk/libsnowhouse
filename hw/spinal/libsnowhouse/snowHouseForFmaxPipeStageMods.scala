@@ -1569,6 +1569,14 @@ case class SnowHouseForFmaxPipeStageWriteBack(
       UInt(cfg.mainAddrWidth bits)
     )
 
+    val imm = (
+      io.dbgInfo != null
+    ) generate (
+      Vec.fill(1)(
+        UInt(cfg.mainWidth bits)
+      )
+    )
+
     val gprIdxVec = Vec.fill(
       if (io.dbgInfo != null) (
         cfg.maxNumGprsPerInstr
@@ -1669,6 +1677,9 @@ case class SnowHouseForFmaxPipeStageWriteBack(
       myMemWbFifo.io.push.payload.laggingRegPc := (
         myMemWbPayload(0).laggingRegPc
       )
+      myMemWbFifo.io.push.payload.imm.last := (
+        myMemWbPayload(0).imm.last
+      )
       myMemWbFifo.io.push.payload.encInstr := (
         myMemWbPayload(0).encInstr.payload
       )
@@ -1702,6 +1713,9 @@ case class SnowHouseForFmaxPipeStageWriteBack(
     if (io.dbgInfo != null) {
       myNonMemWbFifo.io.push.payload.laggingRegPc := (
         myNonMemWbPayload(0).laggingRegPc
+      )
+      myNonMemWbFifo.io.push.payload.imm.last := (
+        myNonMemWbPayload(0).imm.last
       )
       myNonMemWbFifo.io.push.payload.encInstr := (
         myNonMemWbPayload(0).encInstr.payload
