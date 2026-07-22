@@ -850,6 +850,7 @@ case class SnowHouseForFmaxPipeStageScoreboardIssue(
   scoreboard.io.issue.ready := (
     //cLink.up.isFiring // cLink.down.isFiring
     cLink.down.isFiring
+    && mySharedNonShouldIgnoreCond
     //cLink.down.isFiring
     //cLink.up.isValid
     //&& cLink.down.isReady
