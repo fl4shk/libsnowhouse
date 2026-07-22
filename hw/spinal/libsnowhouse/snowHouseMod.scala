@@ -2365,6 +2365,9 @@ private[libsnowhouse] case class SnowHouseForFmax(
 
   psIf.io.psExSetPc := psExSetPc
   psId.io.psExSetPc := psExSetPc
+  if (cfg.optScoreboard) {
+    psScoreboardRawHazard.io.myBranchMispredictEtc := psExSetPc.fire
+  }
   psPreFwd.io.myBranchMispredictEtc := psExSetPc.fire
   psExSetPc := psEx.io.psExSetPc
 

@@ -862,16 +862,47 @@ case class SnowHouseForFmaxPipeStageScoreboardRawHazard(
   //when (cLink.down.isFiring) {
   //  rSeenReadGprsFire := False
   //}
+
+  val rMyPsExSetPcState = (
+    Reg(Bool(), init=False)
+  )
+
+  when (!rMyPsExSetPcState) {
+    when (io.myBranchMispredictEtc) {
+      rMyPsExSetPcState := True
+    }
+  } otherwise {
+    when (
+      cLink.down.isFiring
+      && myOutp.regPcSetItCnt(0).lsb
+    ) {
+      rMyPsExSetPcState := False
+    }
+  }
+
+  val mySharedNonShouldIgnoreCond = (
+    //cLink.up.isValid
+    //&& 
+    !myOutp.instrCnt.myPsIdBubble.head
+    && (
+      !rMyPsExSetPcState
+      || myOutp.regPcSetItCnt(1).lsb
+    )
+  )
+
   io.readGprs.valid := (
     //cLink.up.isValid
     //&& cLink.down.isReady
     cLink.down.isFiring
-    && !myOutp.instrCnt.myPsIdBubble.head
+    //&& !myOutp.instrCnt.myPsIdBubble.head
+    && mySharedNonShouldIgnoreCond
   )
+
 
   when (
     cLink.up.isValid
-    && !io.readGprs.ready && !myOutp.instrCnt.myPsIdBubble.head
+    && mySharedNonShouldIgnoreCond
+    && !io.readGprs.ready 
   ) {
     cLink.duplicateIt()
     cLink.down(pScoreboardRawHazardOutp).allowOverride
