@@ -118,6 +118,8 @@ public:     // types
         u32 saved_pc = 0;
         u32 pc = 0;
         u32 enc_instr = 0;
+        u32 imm = 0;
+        u32 bus_addr = 0;
         #ifdef MELTED_MOON_DO_DISASM
         std::string disasm_str;
         #endif      // DEBUG
