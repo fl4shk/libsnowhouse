@@ -1691,7 +1691,7 @@ case class SnowHouseForFmaxPipeStageWriteBack(
       cLink.up.isValid
       && !myNonMemWbPayload(0).splitOp.opIsMemAccess
       //&& !myNonMemWbPayload(0).inpDecodeExt.last.opIsMemAccess(0)
-      && !myNonMemWbPayload(0).instrCnt.myPsIdBubble.head
+      && !myNonMemWbPayload(0).instrCnt.myPsIdBubble.last
     )
     myNonMemWbFifo.io.push.payload.instrCnt := (
       myNonMemWbPayload(0).instrCnt
@@ -1796,7 +1796,7 @@ case class SnowHouseForFmaxPipeStageWriteBack(
         //myMemWbFifo.io.pop.valid
         myMemWbFifo.io.pop.valid
         && myMemWbFifo.io.pop.payload.instrCnt.shouldIgnoreInstr.head
-        && !myMemWbFifo.io.pop.payload.instrCnt.myPsIdBubble.head
+        //&& !myMemWbFifo.io.pop.payload.instrCnt.myPsIdBubble.head
       )
     ) else (
       myD2hBus.fire
