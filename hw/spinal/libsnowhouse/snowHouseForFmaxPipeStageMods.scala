@@ -921,7 +921,7 @@ case class SnowHouseForFmaxPipeStageScoreboardIssue(
   scoreboard.io.issue.ready := (
     //cLink.up.isFiring // cLink.down.isFiring
     cLink.down.isFiring
-    //&& mySharedNonShouldIgnoreCond
+    && mySharedNonShouldIgnoreCond
     //cLink.down.isFiring
     //cLink.up.isValid
     //&& cLink.down.isReady
@@ -1103,7 +1103,15 @@ case class SnowHouseForFmaxPipeStageScoreboardReadGprs(
   val mySharedNonShouldIgnoreCond = (
     //cLink.up.isValid
     //&& 
-    Vec(myOutp.instrCnt.myPsIdBubble.map(item => !item))
+    Vec(myOutp.instrCnt.myPsIdBubble.map(
+      item => (
+        !item
+        && (
+          rMyPsExSetPcState
+          && !myOutp.regPcSetItCnt(1).lsb
+        )
+      )
+    ))
     //&& (
     //  !rMyPsExSetPcState
     //  || myOutp.regPcSetItCnt(1).lsb
