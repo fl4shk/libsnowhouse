@@ -613,26 +613,26 @@ case class SnowHouseForFmaxPipeStageInstrDecodeIo(
   //  out(Bool())
   //)
 
-  val myBranchMispredictEtc = (
-    in(
-      Bool()
-    )
-  )
-  //--------
-  val myScoreboardReadGprs = (
-    slave(Stream(
-      SnowHouseScoreboardReadGprsPayload(cfg=cfg)
-    ))
-  )
+  //val myBranchMispredictEtc = (
+  //  in(
+  //    Bool()
+  //  )
+  //)
+  ////--------
+  //val myScoreboardReadGprs = (
+  //  slave(Stream(
+  //    SnowHouseScoreboardReadGprsPayload(cfg=cfg)
+  //  ))
+  //)
 
-  val myScoreboardCommmit = (
-    cfg.optScoreboard
-  ) generate (
-    slave(Stream(
-      //UInt(cfg.optScoreboardTagWidth bits)
-      SnowHouseScoreboardCommitPayload(cfg=cfg)
-    ))
-  )
+  //val myScoreboardCommmit = (
+  //  cfg.optScoreboard
+  //) generate (
+  //  slave(Stream(
+  //    //UInt(cfg.optScoreboardTagWidth bits)
+  //    SnowHouseScoreboardCommitPayload(cfg=cfg)
+  //  ))
+  //)
   //--------
 }
 
@@ -672,11 +672,6 @@ case class SnowHouseForFmaxPipeStageInstrDecode(
   linkArr += sLink
   linkArr += s2mLink
 
-  val scoreboard = (
-    cfg.optScoreboard
-  ) generate (
-    SnowHouseForFmaxScoreboard(cfg=cfg)
-  )
   val innerPsId = SnowHousePipeStageInstrDecode(
     SnowHousePipeStageArgs(
       cfg=cfg,
@@ -710,81 +705,6 @@ case class SnowHouseForFmaxPipeStageInstrDecode(
     }
   )
 
-  val rMyPsExSetPcState = (
-    Reg(Bool(), init=False)
-  )
-
-  when (!rMyPsExSetPcState) {
-    when (io.myBranchMispredictEtc) {
-      rMyPsExSetPcState := True
-    }
-  } otherwise {
-    when (
-      cLink.down.isFiring
-      && innerPsId.upPayload(1).regPcSetItCnt(0).lsb
-    ) {
-      rMyPsExSetPcState := False
-    }
-  }
-
-  val mySharedNonShouldIgnoreCond = (
-    //cLink.up.isValid
-    //&& 
-    //!innerPsId.upPayload(1).instrCnt.myPsIdBubble.head
-    //&& 
-    (
-      !rMyPsExSetPcState
-      //|| innerPsId.upPayload(1).regPcSetItCnt(1).lsb
-      //|| innerPsId.upPayload(1).shouldFinishJump
-      || innerPsId.shouldFinishJump
-    )
-  )
-
-
-  val myScoreboardArea = (
-    cfg.optScoreboard
-  ) generate (new Area {
-    scoreboard.io.issueMyTempOpMayNeedHazardCheck := (
-      innerPsId.myTempOpMayNeedHazardCheck
-    )
-    scoreboard.io.issue.ready := (
-      //cLink.up.isFiring // cLink.down.isFiring
-      cLink.down.isFiring
-      //cLink.down.isFiring
-      //cLink.up.isValid
-      //&& cLink.down.isReady
-    )
-    scoreboard.io.issueGprIdxVec := innerPsId.upPayload(1).gprIdxVec
-    innerPsId.upPayload(1).instrCnt.scoreboardTag := (
-      scoreboard.io.issue.tag
-    )
-    //innerPsId.upPayload(1).tempUpMod
-    when (
-      !scoreboard.io.issue.valid
-      && mySharedNonShouldIgnoreCond
-    ) {
-      cLink.duplicateIt()
-      cLink.down(pIdOutp).setAsBubbleMain(
-        //!scoreboard.io.issue.cntOverflow
-        True
-      )
-      innerPsId.upPayload(1).instrCnt.scoreboardTag := (
-        scoreboard.io.issue.tag
-      )
-      //innerPsId.upPayload(1).myDoHaveHazardAddrCheckVec.foreach(
-      //  item => {
-      //    item := True
-      //  }
-      //)
-      //innerPsId.upPayload(1).myDoHaveHazardAddrCheckVec.head := (
-      //  True
-      //)
-    }
-    scoreboard.io.readGprs << io.myScoreboardReadGprs
-    scoreboard.io.commit << io.myScoreboardCommmit
-    // can't do `<-/< `, see `commitEtc` logic in WB stage
-    // apparently can't do `<-<` ???
-  })
 
   s2mLink.down.driveTo(
     io.down
@@ -798,10 +718,185 @@ case class SnowHouseForFmaxPipeStageInstrDecode(
   //--------
 }
 
-//case class SnowHouseForFmaxPipeStageScoreboardMainIo(
-//) extends Bundle {
-//}
-case class SnowHouseForFmaxPipeStageScoreboardRawHazardIo(
+case class SnowHouseForFmaxPipeStageScoreboardIssueIo(
+  cfg: SnowHouseConfig
+) extends Bundle {
+  //--------
+  val up = (
+    slave(Stream(
+      SnowHousePipePayload(cfg=cfg)
+    ))
+  )
+  val down = (
+    master(Stream(
+      SnowHousePipePayload(cfg=cfg)
+    ))
+  )
+  //--------
+  val myBranchMispredictEtc = (
+    in(
+      Bool()
+    )
+  )
+  //--------
+  val myScoreboardReadGprs = (
+    slave(Stream(
+      SnowHouseScoreboardReadGprsPayload(cfg=cfg)
+    ))
+  )
+
+  val myScoreboardCommmit = (
+    cfg.optScoreboard
+  ) generate (
+    slave(Stream(
+      //UInt(cfg.optScoreboardTagWidth bits)
+      SnowHouseScoreboardCommitPayload(cfg=cfg)
+    ))
+  )
+  //--------
+}
+
+case class SnowHouseForFmaxPipeStageScoreboardIssue(
+  cfg: SnowHouseConfig
+) extends Component {
+  require(
+    cfg.optScoreboard
+  )
+  //--------
+  val io = SnowHouseForFmaxPipeStageScoreboardIssueIo(cfg=cfg)
+  //--------
+  val linkArr = PipeHelper.mkLinkArr()
+
+  //def opInfoMap = cfg.opInfoMap
+
+  //val pScoreboardIssueInp = Payload(SnowHousePipePayload(cfg=cfg))
+  val pScoreboardIssueOutp = Payload(SnowHousePipePayload(cfg=cfg))
+  val cLink = CtrlLink()
+  val sLink = StageLink(
+    up=cLink.down,
+    down={
+      val temp = Node()
+      temp.setName("sLink_down")
+      temp
+    }
+  )
+  val s2mLink = S2MLink(
+    up=sLink.down,
+    down={
+      val temp = Node()
+      temp.setName("s2mLink_down")
+      temp
+    }
+  )
+  linkArr += cLink
+  linkArr += sLink
+  linkArr += s2mLink
+
+  val scoreboard = (
+    cfg.optScoreboard
+  ) generate (
+    SnowHouseForFmaxScoreboard(cfg=cfg)
+  )
+
+  val myInp = SnowHousePipePayload(cfg=cfg)
+  val myOutp = SnowHousePipePayload(cfg=cfg)
+
+  cLink.up.driveFrom(io.up)(
+    con=(node, inp) => {
+      //node(pScoreboardIssueInp) := inp
+      myInp := inp
+    }
+  )
+
+  myOutp := RegNext(myOutp, init=myOutp.getZero)
+  when (cLink.up.isValid) {
+    myOutp := myInp
+  }
+  
+  val rMyPsExSetPcState = (
+    Reg(Bool(), init=False)
+  )
+
+  when (!rMyPsExSetPcState) {
+    when (io.myBranchMispredictEtc) {
+      rMyPsExSetPcState := True
+    }
+  } otherwise {
+    when (
+      cLink.down.isFiring
+      && myOutp.regPcSetItCnt(0).lsb
+      //&& innerPsId.shouldFinishJump
+    ) {
+      rMyPsExSetPcState := False
+    }
+  }
+
+  val mySharedNonShouldIgnoreCond = (
+    //cLink.up.isValid
+    //&& 
+    //!myOutp.instrCnt.myPsIdBubble.head
+    //&& 
+    (
+      !rMyPsExSetPcState
+      || myOutp.regPcSetItCnt(1).lsb
+      //|| myOutp.shouldFinishJump
+      //|| innerPsId.shouldFinishJump
+    )
+  )
+
+  scoreboard.io.issueMyTempOpMayNeedHazardCheck := (
+    myOutp.instrCnt.myScoreboardOpMayNeedHazardCheck
+  )
+  scoreboard.io.issue.ready := (
+    //cLink.up.isFiring // cLink.down.isFiring
+    cLink.down.isFiring
+    //cLink.down.isFiring
+    //cLink.up.isValid
+    //&& cLink.down.isReady
+  )
+  scoreboard.io.issueGprIdxVec := myOutp.gprIdxVec
+  myOutp.instrCnt.scoreboardTag.allowOverride
+  myOutp.instrCnt.scoreboardTag := (
+    scoreboard.io.issue.tag
+  )
+  //myOutp.tempUpMod
+  cLink.down(pScoreboardIssueOutp) := myOutp
+  cLink.down(pScoreboardIssueOutp).allowOverride
+  when (
+    !scoreboard.io.issue.valid
+    && mySharedNonShouldIgnoreCond
+  ) {
+    cLink.duplicateIt()
+    cLink.down(pScoreboardIssueOutp).setAsBubbleMain(
+      //!scoreboard.io.issue.cntOverflow
+      True
+    )
+    myOutp.instrCnt.scoreboardTag := (
+      scoreboard.io.issue.tag
+    )
+    //myOutp.myDoHaveHazardAddrCheckVec.foreach(
+    //  item => {
+    //    item := True
+    //  }
+    //)
+    //myOutp.myDoHaveHazardAddrCheckVec.head := (
+    //  True
+    //)
+  }
+  scoreboard.io.readGprs << io.myScoreboardReadGprs
+  scoreboard.io.commit << io.myScoreboardCommmit
+  // can't do `<-/< `, see `commitEtc` logic in WB stage
+  // apparently can't do `<-<` ???
+
+  s2mLink.down.driveTo(io.down)(
+    con=(outp, node) => {
+      outp := node(pScoreboardIssueOutp)
+    }
+  )
+
+  Builder(linkArr)
+}
+case class SnowHouseForFmaxPipeStageScoreboardReadGprsIo(
   cfg: SnowHouseConfig
 ) extends Bundle {
   val up = (
@@ -840,18 +935,21 @@ case class SnowHouseForFmaxPipeStageScoreboardRawHazardIo(
   )
   //--------
 }
-case class SnowHouseForFmaxPipeStageScoreboardRawHazard(
+case class SnowHouseForFmaxPipeStageScoreboardReadGprs(
   cfg: SnowHouseConfig
 ) extends Component {
+  require(
+    cfg.optScoreboard
+  )
   //--------
-  val io = SnowHouseForFmaxPipeStageScoreboardRawHazardIo(cfg=cfg)
+  val io = SnowHouseForFmaxPipeStageScoreboardReadGprsIo(cfg=cfg)
   //--------
   val linkArr = PipeHelper.mkLinkArr()
 
   //def opInfoMap = cfg.opInfoMap
 
-  //val pScoreboardRawHazardInp = Payload(SnowHousePipePayload(cfg=cfg))
-  val pScoreboardRawHazardOutp = Payload(SnowHousePipePayload(cfg=cfg))
+  //val pScoreboardReadGprsInp = Payload(SnowHousePipePayload(cfg=cfg))
+  val pScoreboardReadGprsOutp = Payload(SnowHousePipePayload(cfg=cfg))
   val cLink = CtrlLink()
   val sLink = StageLink(
     up=cLink.down,
@@ -878,7 +976,7 @@ case class SnowHouseForFmaxPipeStageScoreboardRawHazard(
 
   cLink.up.driveFrom(io.up)(
     con=(node, inp) => {
-      //node(pScoreboardRawHazardInp) := inp
+      //node(pScoreboardReadGprsInp) := inp
       myInp := inp
     }
   )
@@ -950,16 +1048,16 @@ case class SnowHouseForFmaxPipeStageScoreboardRawHazard(
     && !io.readGprs.ready 
   ) {
     cLink.duplicateIt()
-    cLink.down(pScoreboardRawHazardOutp).allowOverride
-    cLink.down(pScoreboardRawHazardOutp) := myOutp//.getZero
+    cLink.down(pScoreboardReadGprsOutp).allowOverride
+    cLink.down(pScoreboardReadGprsOutp) := myOutp//.getZero
 
-    cLink.down(pScoreboardRawHazardOutp).setAsBubbleMain(
+    cLink.down(pScoreboardReadGprsOutp).setAsBubbleMain(
       //!scoreboard.io.issue.cntOverflow
       True
       //myPsIdBubble=True,
       //myUpdateGprIsOrIsntZero=true
     )
-    //cLink.down(pScoreboardRawHazardOutp).gprIsZeroVec.foreach(
+    //cLink.down(pScoreboardReadGprsOutp).gprIsZeroVec.foreach(
     //  outerItem => {
     //    outerItem.foreach(item => {
     //      item := True
@@ -975,12 +1073,12 @@ case class SnowHouseForFmaxPipeStageScoreboardRawHazard(
     //  True
     //)
   } otherwise {
-    cLink.down(pScoreboardRawHazardOutp) := myOutp
+    cLink.down(pScoreboardReadGprsOutp) := myOutp
   }
 
   s2mLink.down.driveTo(io.down)(
     con=(outp, node) => {
-      outp := node(pScoreboardRawHazardOutp)
+      outp := node(pScoreboardReadGprsOutp)
     }
   )
 

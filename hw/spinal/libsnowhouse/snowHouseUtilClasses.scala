@@ -1487,6 +1487,11 @@ case class SnowHouseInstrCnt(
   )
   def scoreboardTag = scoreboardIssuePayload.tag
   def scoreboardIssueCntOverflow = scoreboardIssuePayload.cntOverflow
+  val myScoreboardOpMayNeedHazardCheck = (
+    cfg.optScoreboard
+  ) generate (
+    Bool()
+  )
 
   val any = UInt(cfg.instrCntWidth bits)
   val fwd = UInt(cfg.instrCntWidth bits)
