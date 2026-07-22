@@ -936,7 +936,7 @@ case class SnowHouseForFmaxPipeStageScoreboardIssue(
   cLink.down(pScoreboardIssueOutp).allowOverride
 
   when (
-    !scoreboard.io.issue.fire
+    !scoreboard.io.issue.valid//fire
     //&& mySharedNonShouldIgnoreCond
   ) {
     cLink.duplicateIt()
