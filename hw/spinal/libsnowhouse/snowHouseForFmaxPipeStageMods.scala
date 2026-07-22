@@ -788,6 +788,11 @@ case class SnowHouseForFmaxPipeStageScoreboardRawHazardIo(
   //val readGprsReady = (
   //  in(Bool())
   //)
+  val myBranchMispredictEtc = (
+    in(
+      Bool()
+    )
+  )
   //--------
 }
 case class SnowHouseForFmaxPipeStageScoreboardRawHazard(
@@ -2154,9 +2159,19 @@ case class SnowHouseForFmaxPipeStageWriteBack(
         //  )
         //)
       )
+
       io.dbgInfo.encInstrAtRegFileWrite := (
-        someMyWbPayload(1).encInstr.payload
+        //someMyWbPayload(1).encInstr.payload
+        RegNext(
+          io.dbgInfo.encInstrAtRegFileWrite,
+          init=io.dbgInfo.encInstrAtRegFileWrite.getZero
+        )
       )
+      when (someMyWbPayload(1).encInstr.payload.orR) {
+        io.dbgInfo.encInstrAtRegFileWrite := (
+          someMyWbPayload(1).encInstr.payload
+        )
+      }
       io.dbgInfo.immAtRegFileWrite := (
         someMyWbPayload(1).imm.last
       )
