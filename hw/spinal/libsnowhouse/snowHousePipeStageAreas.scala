@@ -1564,9 +1564,6 @@ case class SnowHousePipeStageInstrDecode(
   if (!cfg.optScoreboard) {
     up(pId) := upPayload(1)//(0)
   } else {
-    upPayload(1).instrCnt.myScoreboardOpMayNeedHazardCheck := (
-      myTempOpMayNeedHazardCheck
-    )
     down(pId) := upPayload(1)
   }
   //}
@@ -2205,6 +2202,11 @@ case class SnowHousePipeStageInstrDecode(
     //  //}
     //}
   })
+  if (cfg.optScoreboard) {
+    upPayload(1).instrCnt.myScoreboardOpMayNeedHazardCheck := (
+      myTempOpMayNeedHazardCheck
+    )
+  }
 }
 
 case class SnowHousePipeStagePreFwd(

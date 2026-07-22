@@ -375,9 +375,11 @@ case class SnowHouseForFmaxScoreboard(
         )
       )
       when (
-        io.readGprs.valid
-        && io.readGprs.tag === jdx
+        //io.readGprs.valid
         //&& tempHaveReadGprsHazardAddrCheckVec(jdx).orR
+        //&& 
+        io.readGprs.fire
+        && io.readGprs.tag === jdx
         && rMyInfoVec(jdx).issueAllocValid
         && rMyInfoVec(jdx).issueHazardValid
       ) {
@@ -930,11 +932,11 @@ case class SnowHouseForFmaxPipeStageScoreboardReadGprsIo(
   //  in(Bool())
   //)
 
-  //val myBranchMispredictEtc = (
-  //  in(
-  //    Bool()
-  //  )
-  //)
+  val myBranchMispredictEtc = (
+    in(
+      Bool()
+    )
+  )
   //--------
 }
 case class SnowHouseForFmaxPipeStageScoreboardReadGprs(
