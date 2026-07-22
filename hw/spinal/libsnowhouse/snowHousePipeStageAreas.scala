@@ -7567,7 +7567,7 @@ case class SnowHousePipeStageExecute(
         when=forFmaxRegFileWrPulseArr(0).fire,
         length=(
           2
-          + (if (cfg.optScoreboard) (1) else (0))
+          //+ (if (cfg.optScoreboard) (1) else (0))
         ),
         init=forFmaxRegFileWrPulseArr(0).getZero,
       )
@@ -7708,9 +7708,9 @@ case class SnowHousePipeStageExecute(
               ) {
                 is ({
                   var temp = "1--"
-                  if (cfg.optScoreboard) {
-                    temp += "-"
-                  }
+                  //if (cfg.optScoreboard) {
+                  //  temp += "-"
+                  //}
                   MaskedLiteral(temp)
                 }) {
                   outp.myExt(0).rdMemWord(jdx) := (
@@ -7719,30 +7719,30 @@ case class SnowHousePipeStageExecute(
                 }
                 is ({
                   var temp = "01-"
-                  if (cfg.optScoreboard) {
-                    temp += "-"
-                  }
+                  //if (cfg.optScoreboard) {
+                  //  temp += "-"
+                  //}
                   MaskedLiteral(temp)
                 }) {
                   outp.myExt(0).rdMemWord(jdx) := (
                     myHistRegFileWrPulse(1).data
                   )
                 }
-                if (cfg.optScoreboard) {
-                  is (M"001-") {
-                    outp.myExt(0).rdMemWord(jdx) := (
-                      myHistRegFileWrPulse(2).data
-                    )
-                  }
-                }
+                //if (cfg.optScoreboard) {
+                //  is (M"001-") {
+                //    outp.myExt(0).rdMemWord(jdx) := (
+                //      myHistRegFileWrPulse(2).data
+                //    )
+                //  }
+                //}
                 is ({
                   //var temp = "001"
                   val temp = (
-                    if (cfg.optScoreboard) (
-                      "0001"
-                    ) else (
+                    //if (cfg.optScoreboard) (
+                    //  "0001"
+                    //) else (
                       "001"
-                    )
+                    //)
                   )
                   MaskedLiteral(temp)
                 }) {
