@@ -363,13 +363,13 @@ case class SnowHouseForFmaxScoreboard(
             // fast forwarding!
             rMyInfoVec(jdx).readGprsHazardValid
             //|| io.myTempOpMayNeedHazardCheck
-            || (
-              io.readGprs.valid
-              && io.readGprs.tag === jdx
-              //&& tempHaveReadGprsHazardAddrCheckVec(jdx).orR
-              //&& rMyInfoVec(jdx).issueAllocValid
-              && rMyInfoVec(jdx).issueHazardValid
-            )
+            //|| (
+            //  io.readGprs.valid
+            //  && io.readGprs.tag === jdx
+            //  //&& tempHaveReadGprsHazardAddrCheckVec(jdx).orR
+            //  //&& rMyInfoVec(jdx).issueAllocValid
+            //  && rMyInfoVec(jdx).issueHazardValid
+            //)
           )
           && rMyInfoVec(jdx).issueAllocValid
           //&& io.readGprs.valid

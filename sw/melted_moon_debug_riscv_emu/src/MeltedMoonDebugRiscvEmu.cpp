@@ -550,7 +550,8 @@ std::optional<std::string> MeltedMoonDebugRiscvEmu::disasm_one_instr(
 
 auto MeltedMoonDebugRiscvEmu::exec_one_instr(
     timeval& n_tp,
-    bool n_do_printing
+    bool n_do_printing,
+    const std::optional<u32>& n_enc_instr
 ) -> ExecOneInstrRet {
     _tp = &n_tp;
     _do_printing = n_do_printing;
@@ -574,11 +575,20 @@ auto MeltedMoonDebugRiscvEmu::exec_one_instr(
     }
     _pc += sizeof(u32);
 
-    std::memcpy(
-        &_my_exec_one_instr_ret.enc_instr,
-        _mem.get() + saved_pc,
-        sizeof(_my_exec_one_instr_ret.enc_instr)
-    );
+    if (!n_enc_instr) {
+        std::memcpy(
+            &_my_exec_one_instr_ret.enc_instr,
+            _mem.get() + saved_pc,
+            sizeof(_my_exec_one_instr_ret.enc_instr)
+        );
+    } else {
+        const u32 temp_enc_instr = *n_enc_instr;
+        std::memcpy(
+            &_my_exec_one_instr_ret.enc_instr,
+            &temp_enc_instr,
+            sizeof(_my_exec_one_instr_ret.enc_instr)
+        );
+    }
     std::memcpy(
         &_enc_instr_r,
         &_my_exec_one_instr_ret.enc_instr,
