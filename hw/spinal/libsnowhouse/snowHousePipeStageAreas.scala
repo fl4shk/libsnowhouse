@@ -7498,7 +7498,8 @@ case class SnowHousePipeStageExecute(
         outp.myExt(0).modMemWordValid.last //ram.io.wrEn
         && outp.gprIsNonZeroVec.last.last
         && !myShouldIgnoreInstr(0)
-        //&& !outp.instrCnt.myPsIdBubble.last
+        && !outp.instrCnt.myPsIdBubble.last
+        && !outp.splitOp.opIsMemAccess
       )
       temp.data := outp.myExt(0).modMemWord //ram.io.wrData
       //temp.addr := outp.gprIdxVec.last
