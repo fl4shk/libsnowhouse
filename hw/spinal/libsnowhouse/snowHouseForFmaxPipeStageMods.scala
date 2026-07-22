@@ -919,8 +919,8 @@ case class SnowHouseForFmaxPipeStageScoreboardIssue(
     myOutp.instrCnt.myScoreboardOpMayNeedHazardCheck
   )
   scoreboard.io.issue.ready := (
-    cLink.up.isFiring // cLink.down.isFiring
-    //cLink.down.isFiring
+    //cLink.up.isFiring // cLink.down.isFiring
+    cLink.down.isFiring
     //&& mySharedNonShouldIgnoreCond
     //cLink.down.isFiring
     //cLink.up.isValid
@@ -936,7 +936,7 @@ case class SnowHouseForFmaxPipeStageScoreboardIssue(
   cLink.down(pScoreboardIssueOutp).allowOverride
 
   when (
-    !scoreboard.io.issue.valid
+    !scoreboard.io.issue.fire
     && mySharedNonShouldIgnoreCond
   ) {
     cLink.duplicateIt()
@@ -959,8 +959,8 @@ case class SnowHouseForFmaxPipeStageScoreboardIssue(
     //  True
     //)
   }
-  scoreboard.io.readGprs <-/< io.myScoreboardReadGprs
-  scoreboard.io.commit <-/< io.myScoreboardCommmit
+  scoreboard.io.readGprs </< io.myScoreboardReadGprs
+  scoreboard.io.commit </< io.myScoreboardCommmit
 
   s2mLink.down.driveTo(io.down)(
     con=(outp, node) => {
