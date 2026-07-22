@@ -456,9 +456,8 @@ case class SnowHouseForFmaxScoreboard(
   }
 
   io.readGprs.ready := (
-    //io.readGprs.valid
-    //&& 
-    !tempHaveReadGprsHazardAddrCheckVec.asBits.orR
+    io.readGprs.valid
+    && !tempHaveReadGprsHazardAddrCheckVec.asBits.orR
   )
 
   for (idx <- 0 until myCommitHazardCheckVecInnerSize) {
@@ -918,6 +917,7 @@ case class SnowHouseForFmaxPipeStageScoreboardIssue(
   //)
 
   scoreboard.io.myBranchMispredictEtc := io.myBranchMispredictEtc
+
   scoreboard.io.issueRegPcSetItCnt := (
     myOutp.regPcSetItCnt
   )
@@ -950,9 +950,12 @@ case class SnowHouseForFmaxPipeStageScoreboardIssue(
       //!scoreboard.io.issue.cntOverflow
       True
     )
-    myOutp.instrCnt.scoreboardTag := (
-      scoreboard.io.issue.tag
-    )
+    cLink.down(pScoreboardIssueOutp).gprIdxVec.foreach(gprIdx => {
+      gprIdx := 0x0
+    })
+    //myOutp.instrCnt.scoreboardTag := (
+    //  scoreboard.io.issue.tag
+    //)
     //myOutp.myDoHaveHazardAddrCheckVec.foreach(
     //  item => {
     //    item := True
@@ -1639,8 +1642,8 @@ case class SnowHouseForFmaxPipeStageWriteBack(
   val myScoreboardWbFifoArea = (
     cfg.optScoreboard
   ) generate (new Area {
-    myMemWbFifo.io.pop.ready := False
-    myNonMemWbFifo.io.pop.ready := False
+    //myMemWbFifo.io.pop.ready := False
+    //myNonMemWbFifo.io.pop.ready := False
 
     //myMemWbFifo.io.push.payload := (
     //  myMemWbFifo.io.push.payload.getZero
@@ -2278,6 +2281,14 @@ case class SnowHouseForFmaxPipeStageWriteBack(
     ],
     isMem: Boolean,
   ): Unit = {
+    if (
+      cfg.optScoreboard
+      && isMem
+    ) {
+      when (someCommitStm.fire) {
+        rSeenMyD2hBusFire := False
+      }
+    }
     val myNonMemRegFileWrPulseValidPartial = (
       cfg.optScoreboard
     ) generate (
@@ -2377,6 +2388,7 @@ case class SnowHouseForFmaxPipeStageWriteBack(
               //True
               //!myMemWbPayload(1).instrCnt.myPsIdBubble.last
               myMemWbValid
+              && stickyMyD2hBusFire
             )
           ) else (
             //cLink.up.isFiring
@@ -2391,9 +2403,13 @@ case class SnowHouseForFmaxPipeStageWriteBack(
       someCommitStm.tag := (
         someMyWbPayload(1).instrCnt.scoreboardTag
       )
+      if (isMem) {
+        myMemWbFifo.io.pop.ready := someCommitStm.fire
+      } else {
+        myNonMemWbFifo.io.pop.ready := someCommitStm.fire
+      }
     }
     if (io.dbgInfo != null) {
-
       if (
         !cfg.optScoreboard
         || isMem
