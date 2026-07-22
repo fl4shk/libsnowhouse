@@ -1051,43 +1051,40 @@ auto MeltedMoonDebugRiscvEmu::exec_one_instr(
 
     case Rv32IType::Op::LbRdRs1Imm.op: {
         std::memcpy(&_enc_instr_i, &temp_enc_instr_r, sizeof(u32));
-        _my_exec_one_instr_ret.bus_addr = (
-            inp_rs1 + _enc_instr_i.my_temp_imm()
-        );
         switch (_enc_instr_i.funct3) {
         //--------
         case Rv32IType::Op::LbRdRs1Imm.f3: {
             // = {.op=0x03, .f3=0x0, .imm11dt5=-1},
             _write_gpr_rd(
-                _bus_read_i8(_my_exec_one_instr_ret.bus_addr)
+                _bus_read_i8(inp_rs1 + _enc_instr_i.my_temp_imm())
             );
         }
             break;
         case Rv32IType::Op::LhRdRs1Imm.f3: {
             // = {.op=0x03, .f3=0x1, .imm11dt5=-1},
             _write_gpr_rd(
-                _bus_read_i16(_my_exec_one_instr_ret.bus_addr)
+                _bus_read_i16(inp_rs1 + _enc_instr_i.my_temp_imm())
             );
         }
             break;
         case Rv32IType::Op::LwRdRs1Imm.f3: {
             // = {.op=0x03, .f3=0x2, .imm11dt5=-1},
             _write_gpr_rd(
-                _bus_read_u32(_my_exec_one_instr_ret.bus_addr)
+                _bus_read_u32(inp_rs1 + _enc_instr_i.my_temp_imm())
             );
         }
             break;
         case Rv32IType::Op::LbuRdRs1Imm.f3: {
             // = {.op=0x03, .f3=0x4, .imm11dt5=-1},
             _write_gpr_rd(
-                _bus_read_u8(_my_exec_one_instr_ret.bus_addr)
+                _bus_read_u8(inp_rs1 + _enc_instr_i.my_temp_imm())
             );
         }
             break;
         case Rv32IType::Op::LhuRdRs1Imm.f3: {
             // = {.op=0x03, .f3=0x5, .imm11dt5=-1},
             _write_gpr_rd(
-                _bus_read_u16(_my_exec_one_instr_ret.bus_addr)
+                _bus_read_u16(inp_rs1 + _enc_instr_i.my_temp_imm())
             );
         }
             break;
@@ -1115,25 +1112,15 @@ auto MeltedMoonDebugRiscvEmu::exec_one_instr(
         switch (_enc_instr_s.funct3) {
         case Rv32SType::Op::SbRs2Rs1Imm.f3: {
             // = {.op=0x23, .f3=0x0},
-
-            _my_exec_one_instr_ret.bus_addr = (
-                inp_rs1 + _enc_instr_s.my_temp_imm()
-            );
             _bus_write_u8(
-                inp_rs2, 
-                _my_exec_one_instr_ret.bus_addr
-                //inp_rs1 + _enc_instr_s.my_temp_imm()
+                inp_rs2, inp_rs1 + _enc_instr_s.my_temp_imm()
             );
         }
             break;
         case Rv32SType::Op::ShRs2Rs1Imm.f3: {
             // = {.op=0x23, .f3=0x1},
-
-            _my_exec_one_instr_ret.bus_addr = (
-                inp_rs1 + _enc_instr_s.my_temp_imm()
-            );
             _bus_write_u16(
-                inp_rs2, _my_exec_one_instr_ret.bus_addr
+                inp_rs2, inp_rs1 + _enc_instr_s.my_temp_imm()
             );
         }
             break;
@@ -1142,11 +1129,8 @@ auto MeltedMoonDebugRiscvEmu::exec_one_instr(
             //std::printf(
             //    
             //);
-            _my_exec_one_instr_ret.bus_addr = (
-                inp_rs1 + _enc_instr_s.my_temp_imm()
-            );
             _bus_write_u32(
-                inp_rs2, _my_exec_one_instr_ret.bus_addr
+                inp_rs2, inp_rs1 + _enc_instr_s.my_temp_imm()
             );
         }
             break;
@@ -1267,6 +1251,7 @@ auto MeltedMoonDebugRiscvEmu::exec_one_instr(
 void MeltedMoonDebugRiscvEmu::_bus_write(
     u32 data, u32 addr, size_t byte_count
 ) {
+    _my_exec_one_instr_ret.bus_addr = addr;
     //_have_doom_dbg = (
     //    (addr == BUS_ADDR_DOOM_WAD_DBG)
     //    ? HAVE_DOOM_DBG_WR
@@ -1391,6 +1376,7 @@ void MeltedMoonDebugRiscvEmu::_bus_write(
 u32 MeltedMoonDebugRiscvEmu::_bus_read(
     u32 addr, size_t byte_count
 ) {
+    _my_exec_one_instr_ret.bus_addr = addr;
     //_have_doom_dbg = (
     //    (addr == BUS_ADDR_DOOM_WAD_DBG)
     //    ? HAVE_DOOM_DBG_WR
