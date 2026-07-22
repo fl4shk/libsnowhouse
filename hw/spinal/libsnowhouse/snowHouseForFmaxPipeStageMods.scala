@@ -1553,6 +1553,11 @@ case class SnowHouseForFmaxPipeStageWriteBack(
   ) extends Bundle {
     val instrCnt = SnowHouseInstrCnt(cfg=cfg)
     val outpDecodeExt = SnowHouseDecodeExt(cfg=cfg)
+    val encInstr = (
+      io.dbgInfo != null
+    ) generate (
+      UInt(cfg.instrMainWidth bits)
+    )
     val laggingRegPc = (
       io.dbgInfo != null
     ) generate (
@@ -1659,6 +1664,9 @@ case class SnowHouseForFmaxPipeStageWriteBack(
       myMemWbFifo.io.push.payload.laggingRegPc := (
         myMemWbPayload(0).laggingRegPc
       )
+      myMemWbFifo.io.push.payload.encInstr := (
+        myMemWbPayload(0).encInstr.payload
+      )
       myMemWbFifo.io.push.payload.gprIdxVec := (
         myMemWbPayload(0).gprIdxVec
       )
@@ -1689,6 +1697,9 @@ case class SnowHouseForFmaxPipeStageWriteBack(
     if (io.dbgInfo != null) {
       myNonMemWbFifo.io.push.payload.laggingRegPc := (
         myNonMemWbPayload(0).laggingRegPc
+      )
+      myNonMemWbFifo.io.push.payload.encInstr := (
+        myNonMemWbPayload(0).encInstr.payload
       )
       myNonMemWbFifo.io.push.payload.gprIdxVec := (
         myNonMemWbPayload(0).gprIdxVec
@@ -1843,6 +1854,9 @@ case class SnowHouseForFmaxPipeStageWriteBack(
         myMemWbPayload(1).laggingRegPc := (
           myMemWbFifo.io.pop.payload.laggingRegPc
         )
+        myMemWbPayload(1).encInstr.payload := (
+          myMemWbFifo.io.pop.payload.encInstr
+        )
         myMemWbPayload(1).gprIdxVec := (
           myMemWbFifo.io.pop.payload.gprIdxVec
         )
@@ -1871,6 +1885,9 @@ case class SnowHouseForFmaxPipeStageWriteBack(
       if (io.dbgInfo != null) {
         myNonMemWbPayload(1).laggingRegPc := (
           myNonMemWbFifo.io.pop.payload.laggingRegPc
+        )
+        myNonMemWbPayload(1).encInstr.payload := (
+          myNonMemWbFifo.io.pop.payload.encInstr
         )
         myNonMemWbPayload(1).gprIdxVec := (
           myNonMemWbFifo.io.pop.payload.gprIdxVec

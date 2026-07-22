@@ -727,6 +727,13 @@ case class SnowHouseConfig(
       )
     }
   )
+  val numMultiCommit = (
+    if (optScoreboard) (
+      2
+    ) else (
+      0
+    )
+  )
   val optForFmaxPsExFwdSize = (
     optForFmaxCfg match {
       case Some(myForFmaxCfg) => (
