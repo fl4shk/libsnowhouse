@@ -1010,31 +1010,31 @@ case class SnowHouseForFmaxPipeStageScoreboardReadGprs(
   //  rSeenReadGprsFire := False
   //}
 
-  val rMyPsExSetPcState = (
-    Reg(Bool(), init=False)
-  )
+  //val rMyPsExSetPcState = (
+  //  Reg(Bool(), init=False)
+  //)
 
-  when (!rMyPsExSetPcState) {
-    when (io.myBranchMispredictEtc) {
-      rMyPsExSetPcState := True
-    }
-  } otherwise {
-    when (
-      cLink.down.isFiring
-      && myOutp.regPcSetItCnt(0).lsb
-    ) {
-      rMyPsExSetPcState := False
-    }
-  }
+  //when (!rMyPsExSetPcState) {
+  //  when (io.myBranchMispredictEtc) {
+  //    rMyPsExSetPcState := True
+  //  }
+  //} otherwise {
+  //  when (
+  //    cLink.down.isFiring
+  //    && myOutp.regPcSetItCnt(0).lsb
+  //  ) {
+  //    rMyPsExSetPcState := False
+  //  }
+  //}
 
   val mySharedNonShouldIgnoreCond = (
     //cLink.up.isValid
     //&& 
     !myOutp.instrCnt.myPsIdBubble.head
-    && (
-      !rMyPsExSetPcState
-      || myOutp.regPcSetItCnt(1).lsb
-    )
+    //&& (
+    //  !rMyPsExSetPcState
+    //  || myOutp.regPcSetItCnt(1).lsb
+    //)
   )
 
   io.readGprs.valid := (
