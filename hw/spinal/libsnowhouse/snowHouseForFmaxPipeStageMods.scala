@@ -495,7 +495,7 @@ case class SnowHouseForFmaxScoreboard(
     }
   }
   io.commit.ready := (
-    //io.commit.valid && 
+    io.commit.valid && 
     !tempHaveCommitHazardAddrCheckVec.asBits.orR
     //True
   )
