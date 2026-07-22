@@ -960,7 +960,7 @@ case class SnowHouseForFmaxPipeStageScoreboardIssue(
     //)
   }
   scoreboard.io.readGprs << io.myScoreboardReadGprs
-  scoreboard.io.commit </< io.myScoreboardCommmit
+  scoreboard.io.commit << io.myScoreboardCommmit
 
   s2mLink.down.driveTo(io.down)(
     con=(outp, node) => {
@@ -2232,15 +2232,22 @@ case class SnowHouseForFmaxPipeStageWriteBack(
   val myCommitInpStmVec = (
     cfg.optScoreboard
   ) generate (
-    Vec.fill(myWbPayloadVec.size)(
-      cloneOf(io.commitEtc.scoreboardTag)
+    Vec.fill(2)(
+      Vec.fill(myWbPayloadVec.size)(
+        cloneOf(io.commitEtc.scoreboardTag)
+      )
     )
   )
+  for (idx <- 0 until myCommitInpStmVec.size) {
+    myCommitInpStmVec.last(idx) <-/< (
+      myCommitInpStmVec.head(idx)
+    )
+  }
   val myCommitOutpStm = (
     cfg.optScoreboard
   ) generate (
     StreamArbiterFactory.roundRobin.noLock.on(
-      myCommitInpStmVec
+      myCommitInpStmVec.last
     )
   )
 
@@ -2251,18 +2258,25 @@ case class SnowHouseForFmaxPipeStageWriteBack(
   val myRegFileWrPulseInpStmVec = (
     cfg.optScoreboard
   ) generate (
-    Vec.fill(myWbPayloadVec.size)(
-      Stream(
-        PipeSimpleDualPortMemDrivePayload(
-          dataType=UInt(cfg.mainWidth bits),
-          wordCount=cfg.regFileCfg.wordCountArr(0),
+    Vec.fill(2)(
+      Vec.fill(myWbPayloadVec.size)(
+        Stream(
+          PipeSimpleDualPortMemDrivePayload(
+            dataType=UInt(cfg.mainWidth bits),
+            wordCount=cfg.regFileCfg.wordCountArr(0),
+          )
         )
       )
     )
   )
+  for (idx <- 0 until myRegFileWrPulseInpStmVec.size) {
+    myRegFileWrPulseInpStmVec.last(idx) <-/< (
+      myRegFileWrPulseInpStmVec.head(idx)
+    )
+  }
   val myRegFileWrPulseOutpStm = (
     StreamArbiterFactory.roundRobin.noLock.on(
-      myRegFileWrPulseInpStmVec
+      myRegFileWrPulseInpStmVec.last
     )
   )
 
@@ -2534,14 +2548,14 @@ case class SnowHouseForFmaxPipeStageWriteBack(
   ) generate (new Area {
     setCommitEtc(
       someMyWbPayload=myMemWbPayload,
-      someCommitStm=myCommitInpStmVec.head,
-      someRegFileWrPulseStm=myRegFileWrPulseInpStmVec.head,
+      someCommitStm=myCommitInpStmVec.head.head,
+      someRegFileWrPulseStm=myRegFileWrPulseInpStmVec.head.head,
       isMem=true
     )
     setCommitEtc(
       someMyWbPayload=myNonMemWbPayload,
-      someCommitStm=myCommitInpStmVec.last,
-      someRegFileWrPulseStm=myRegFileWrPulseInpStmVec.last,
+      someCommitStm=myCommitInpStmVec.head.last,
+      someRegFileWrPulseStm=myRegFileWrPulseInpStmVec.head.last,
       isMem=false
     )
     //val rCommitIdx = {
