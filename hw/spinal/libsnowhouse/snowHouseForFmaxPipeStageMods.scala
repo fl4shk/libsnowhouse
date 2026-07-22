@@ -446,7 +446,7 @@ case class SnowHouseForFmaxScoreboard(
       rMyInfoVec(jdx).issueAllocValid := False
       //rMyInfoVec(jdx).hazardValid := False
       rMyInfoVec(jdx).issueHazardValid := False
-      //rMyInfoVec(jdx).readGprsHazardValid := False
+      rMyInfoVec(jdx).readGprsHazardValid := False
     } otherwise {
       //myInfoAllocValidVec(jdx) := rMyInfoVec(jdx).allocValid
     }
