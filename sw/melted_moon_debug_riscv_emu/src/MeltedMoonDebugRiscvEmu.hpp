@@ -588,6 +588,7 @@ public:     // functions
     ExecOneInstrRet exec_one_instr(
         struct timeval& n_tp,
         bool n_do_printing=true,
+        const std::optional<u32>& n_pc=std::nullopt,
         const std::optional<u32>& n_enc_instr=std::nullopt
     );
 private:        // functions
