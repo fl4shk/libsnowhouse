@@ -623,7 +623,7 @@ case class SnowHouseForFmaxScoreboard(
     rFlushInfo.fire
     ## (
       (rFlushInfo.instrAgeCnt === myMaxInstrAge)
-      || io.myBranchMispredictEtc
+      //|| io.myBranchMispredictEtc
     )
     ## myInfoAllocValidVec.orR
   ) {
@@ -885,36 +885,30 @@ case class SnowHouseForFmaxPipeStageScoreboardIssue(
     myOutp := myInp
   }
   
-  //val rMyPsExSetPcState = (
-  //  Reg(Bool(), init=False)
-  //)
+  val rMyPsExSetPcState = (
+    Reg(Bool(), init=False)
+  )
 
-  //when (!rMyPsExSetPcState) {
-  //  when (io.myBranchMispredictEtc) {
-  //    rMyPsExSetPcState := True
-  //  }
-  //} otherwise {
-  //  when (
-  //    cLink.down.isFiring
-  //    && myOutp.regPcSetItCnt(0).lsb
-  //    //&& innerPsId.shouldFinishJump
-  //  ) {
-  //    rMyPsExSetPcState := False
-  //  }
-  //}
+  when (!rMyPsExSetPcState) {
+    when (io.myBranchMispredictEtc) {
+      rMyPsExSetPcState := True
+    }
+  } otherwise {
+    when (
+      //cLink.down.isFiring
+      cLink.up.isFiring
+      && myOutp.regPcSetItCnt(0).lsb
+    ) {
+      rMyPsExSetPcState := False
+    }
+  }
 
-  //val mySharedNonShouldIgnoreCond = (
-  //  //cLink.up.isValid
-  //  //&& 
-  //  //!myOutp.instrCnt.myPsIdBubble.head
-  //  //&& 
-  //  (
-  //    !rMyPsExSetPcState
-  //    || myOutp.regPcSetItCnt(1).lsb
-  //    //|| myOutp.shouldFinishJump
-  //    //|| innerPsId.shouldFinishJump
-  //  )
-  //)
+  val mySharedNonShouldIgnoreCond = (
+    (
+      !rMyPsExSetPcState
+      || myOutp.regPcSetItCnt(1).lsb
+    )
+  )
 
   scoreboard.io.myBranchMispredictEtc := io.myBranchMispredictEtc
 
@@ -925,8 +919,8 @@ case class SnowHouseForFmaxPipeStageScoreboardIssue(
     myOutp.instrCnt.myScoreboardOpMayNeedHazardCheck
   )
   scoreboard.io.issue.ready := (
-    //cLink.up.isFiring // cLink.down.isFiring
-    cLink.down.isFiring
+    cLink.up.isFiring // cLink.down.isFiring
+    //cLink.down.isFiring
     //&& mySharedNonShouldIgnoreCond
     //cLink.down.isFiring
     //cLink.up.isValid
@@ -943,7 +937,7 @@ case class SnowHouseForFmaxPipeStageScoreboardIssue(
 
   when (
     !scoreboard.io.issue.valid
-    //&& mySharedNonShouldIgnoreCond
+    && mySharedNonShouldIgnoreCond
   ) {
     cLink.duplicateIt()
     cLink.down(pScoreboardIssueOutp).setAsBubbleMain(
@@ -965,10 +959,8 @@ case class SnowHouseForFmaxPipeStageScoreboardIssue(
     //  True
     //)
   }
-  scoreboard.io.readGprs << io.myScoreboardReadGprs
-  scoreboard.io.commit << io.myScoreboardCommmit
-  // can't do `<-/< `, see `commitEtc` logic in WB stage
-  // apparently can't do `<-<` ???
+  scoreboard.io.readGprs <-/< io.myScoreboardReadGprs
+  scoreboard.io.commit <-/< io.myScoreboardCommmit
 
   s2mLink.down.driveTo(io.down)(
     con=(outp, node) => {
@@ -1090,22 +1082,23 @@ case class SnowHouseForFmaxPipeStageScoreboardReadGprs(
   //  rSeenReadGprsFire := False
   //}
 
-  //val rMyPsExSetPcState = (
-  //  Reg(Bool(), init=False)
-  //)
+  val rMyPsExSetPcState = (
+    Reg(Bool(), init=False)
+  )
 
-  //when (!rMyPsExSetPcState) {
-  //  when (io.myBranchMispredictEtc) {
-  //    rMyPsExSetPcState := True
-  //  }
-  //} otherwise {
-  //  when (
-  //    cLink.down.isFiring
-  //    && myOutp.regPcSetItCnt(0).lsb
-  //  ) {
-  //    rMyPsExSetPcState := False
-  //  }
-  //}
+  when (!rMyPsExSetPcState) {
+    when (io.myBranchMispredictEtc) {
+      rMyPsExSetPcState := True
+    }
+  } otherwise {
+    when (
+      //cLink.down.isFiring
+      cLink.up.isFiring
+      && myOutp.regPcSetItCnt(0).lsb
+    ) {
+      rMyPsExSetPcState := False
+    }
+  }
 
   val mySharedNonShouldIgnoreCond = (
     //cLink.up.isValid
@@ -1120,6 +1113,7 @@ case class SnowHouseForFmaxPipeStageScoreboardReadGprs(
   io.readGprs.valid := (
     //cLink.up.isValid
     //&& cLink.down.isReady
+    //cLink.up.isFiring
     cLink.down.isFiring
     //&& !myOutp.instrCnt.myPsIdBubble.head
     && mySharedNonShouldIgnoreCond.head
@@ -2270,7 +2264,7 @@ case class SnowHouseForFmaxPipeStageWriteBack(
     myRegFileWrPulseOutpStm.payload
   )
   if (cfg.optScoreboard) {
-    io.commitEtc.scoreboardTag <-/< myCommitOutpStm
+    io.commitEtc.scoreboardTag << myCommitOutpStm
   }
 
   def setCommitEtc(
