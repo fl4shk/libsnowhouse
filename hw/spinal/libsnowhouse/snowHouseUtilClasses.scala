@@ -731,7 +731,7 @@ case class SnowHouseConfig(
     optForFmaxCfg match {
       case Some(myForFmaxCfg) => (
         myForFmaxCfg.numPostExPreWbPipeStages + 1//3//2//1//2//1//2//6//5//4//6//5//4//3//2//3//4//5//6//3//6//5//4//3//6//5//4//3//6//5//4//3//2//3//2//3//2//3//2//5//4//3//5
-        + (if (optScoreboard) (2) else (0))
+        + (if (optScoreboard) (3) else (0))
       )
       case None => (
         0
