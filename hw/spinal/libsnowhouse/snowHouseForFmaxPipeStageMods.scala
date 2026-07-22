@@ -813,36 +813,36 @@ case class SnowHouseForFmaxPipeStageScoreboardIssue(
     myOutp := myInp
   }
   
-  val rMyPsExSetPcState = (
-    Reg(Bool(), init=False)
-  )
+  //val rMyPsExSetPcState = (
+  //  Reg(Bool(), init=False)
+  //)
 
-  when (!rMyPsExSetPcState) {
-    when (io.myBranchMispredictEtc) {
-      rMyPsExSetPcState := True
-    }
-  } otherwise {
-    when (
-      cLink.down.isFiring
-      && myOutp.regPcSetItCnt(0).lsb
-      //&& innerPsId.shouldFinishJump
-    ) {
-      rMyPsExSetPcState := False
-    }
-  }
+  //when (!rMyPsExSetPcState) {
+  //  when (io.myBranchMispredictEtc) {
+  //    rMyPsExSetPcState := True
+  //  }
+  //} otherwise {
+  //  when (
+  //    cLink.down.isFiring
+  //    && myOutp.regPcSetItCnt(0).lsb
+  //    //&& innerPsId.shouldFinishJump
+  //  ) {
+  //    rMyPsExSetPcState := False
+  //  }
+  //}
 
-  val mySharedNonShouldIgnoreCond = (
-    //cLink.up.isValid
-    //&& 
-    //!myOutp.instrCnt.myPsIdBubble.head
-    //&& 
-    (
-      !rMyPsExSetPcState
-      || myOutp.regPcSetItCnt(1).lsb
-      //|| myOutp.shouldFinishJump
-      //|| innerPsId.shouldFinishJump
-    )
-  )
+  //val mySharedNonShouldIgnoreCond = (
+  //  //cLink.up.isValid
+  //  //&& 
+  //  //!myOutp.instrCnt.myPsIdBubble.head
+  //  //&& 
+  //  (
+  //    !rMyPsExSetPcState
+  //    || myOutp.regPcSetItCnt(1).lsb
+  //    //|| myOutp.shouldFinishJump
+  //    //|| innerPsId.shouldFinishJump
+  //  )
+  //)
 
   scoreboard.io.issueMyTempOpMayNeedHazardCheck := (
     myOutp.instrCnt.myScoreboardOpMayNeedHazardCheck
@@ -850,7 +850,7 @@ case class SnowHouseForFmaxPipeStageScoreboardIssue(
   scoreboard.io.issue.ready := (
     //cLink.up.isFiring // cLink.down.isFiring
     cLink.down.isFiring
-    && mySharedNonShouldIgnoreCond
+    //&& mySharedNonShouldIgnoreCond
     //cLink.down.isFiring
     //cLink.up.isValid
     //&& cLink.down.isReady
@@ -865,7 +865,7 @@ case class SnowHouseForFmaxPipeStageScoreboardIssue(
   cLink.down(pScoreboardIssueOutp).allowOverride
   when (
     !scoreboard.io.issue.valid
-    && mySharedNonShouldIgnoreCond
+    //&& mySharedNonShouldIgnoreCond
   ) {
     cLink.duplicateIt()
     cLink.down(pScoreboardIssueOutp).setAsBubbleMain(
@@ -929,11 +929,12 @@ case class SnowHouseForFmaxPipeStageScoreboardReadGprsIo(
   //val readGprsReady = (
   //  in(Bool())
   //)
-  val myBranchMispredictEtc = (
-    in(
-      Bool()
-    )
-  )
+
+  //val myBranchMispredictEtc = (
+  //  in(
+  //    Bool()
+  //  )
+  //)
   //--------
 }
 case class SnowHouseForFmaxPipeStageScoreboardReadGprs(
@@ -1007,31 +1008,31 @@ case class SnowHouseForFmaxPipeStageScoreboardReadGprs(
   //  rSeenReadGprsFire := False
   //}
 
-  val rMyPsExSetPcState = (
-    Reg(Bool(), init=False)
-  )
+  //val rMyPsExSetPcState = (
+  //  Reg(Bool(), init=False)
+  //)
 
-  when (!rMyPsExSetPcState) {
-    when (io.myBranchMispredictEtc) {
-      rMyPsExSetPcState := True
-    }
-  } otherwise {
-    when (
-      cLink.down.isFiring
-      && myOutp.regPcSetItCnt(0).lsb
-    ) {
-      rMyPsExSetPcState := False
-    }
-  }
+  //when (!rMyPsExSetPcState) {
+  //  when (io.myBranchMispredictEtc) {
+  //    rMyPsExSetPcState := True
+  //  }
+  //} otherwise {
+  //  when (
+  //    cLink.down.isFiring
+  //    && myOutp.regPcSetItCnt(0).lsb
+  //  ) {
+  //    rMyPsExSetPcState := False
+  //  }
+  //}
 
   val mySharedNonShouldIgnoreCond = (
     //cLink.up.isValid
     //&& 
     !myOutp.instrCnt.myPsIdBubble.head
-    && (
-      !rMyPsExSetPcState
-      || myOutp.regPcSetItCnt(1).lsb
-    )
+    //&& (
+    //  !rMyPsExSetPcState
+    //  || myOutp.regPcSetItCnt(1).lsb
+    //)
   )
 
   io.readGprs.valid := (
