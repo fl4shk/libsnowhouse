@@ -248,64 +248,52 @@ case class SnowHouseForFmaxScoreboard(
     )
   )
 
-  for (idx <- 0 until rMyPsExSetPcState.size) {
-    when (!rMyPsExSetPcState(idx)) {
-      when (io.myBranchMispredictEtc) {
-        rMyPsExSetPcState(idx) := True
-      }
-    } otherwise {
-      when (
-        if (idx == 0) (
-          io.issue.fire
-          && io.issueRegPcSetItCnt(0).lsb
-        ) else (
-          io.readGprs.fire
-          && io.readGprs.regPcSetItCnt(0).lsb
-        )
-      ) {
-        rMyPsExSetPcState(idx) := False
-      }
-    }
-  }
+  //for (idx <- 0 until rMyPsExSetPcState.size) {
+  //  when (!rMyPsExSetPcState(idx)) {
+  //    when (io.myBranchMispredictEtc) {
+  //      rMyPsExSetPcState(idx) := True
+  //    }
+  //  } otherwise {
+  //    when (
+  //      if (idx == 0) (
+  //        io.issue.fire
+  //        && io.issueRegPcSetItCnt(0).lsb
+  //      ) else (
+  //        io.readGprs.fire
+  //        && io.readGprs.regPcSetItCnt(0).lsb
+  //      )
+  //    ) {
+  //      rMyPsExSetPcState(idx) := False
+  //    }
+  //  }
+  //}
 
-  val myIssueSharedNonShouldIgnoreCond = (
-    //cLink.up.isValid
-    //&& 
-    //!myOutp.instrCnt.myPsIdBubble.head
-    //&& 
-    (
-      !rMyPsExSetPcState.head
-      || io.issueRegPcSetItCnt(1).lsb
-      //|| myOutp.regPcSetItCnt(1).lsb
-      //|| myOutp.shouldFinishJump
-      //|| innerPsId.shouldFinishJump
-    )
-  )
-  val myReadGprsSharedNonShouldIgnoreCond = (
-    //cLink.up.isValid
-    //&& 
-    //!myOutp.instrCnt.myPsIdBubble.head
-    //&& 
-    //io.readGprs.valid
-    //&
-    (
-      !rMyPsExSetPcState.head
-      || io.readGprs.regPcSetItCnt(1).lsb
-      //|| myOutp.regPcSetItCnt(1).lsb
-      //|| myOutp.shouldFinishJump
-      //|| innerPsId.shouldFinishJump
-    )
-  )
+  //val myIssueSharedShouldIgnoreCond = (
+  //  !(
+  //    rMyPsExSetPcState.head
+  //    && !io.issueRegPcSetItCnt(1).lsb
+  //  )
+  //)
+  //val myReadGprsSharedShouldIgnoreCond = (
+  //  !(
+  //    rMyPsExSetPcState.last
+  //    && !io.readGprs.regPcSetItCnt(1).lsb
+  //  )
+  //)
 
   val myInstrAgeWidth = 12//4//5//4//6//8//12
   val myMaxInstrAge = (
     // we flush the pipeline when this counter gets close to overflowing!
     // it is assumed there are fewer pipeline stages
     // than the subtract amount 
-    (1 << myInstrAgeWidth) - 32//2//1//8 //- //32//64
+    (1 << myInstrAgeWidth) - 1 - 32//2//1//8 //- //32//64
   )
-  val rInstrAgeCnt = {
-    val temp = Reg(Flow(UInt(myInstrAgeWidth bits)))
+  case class FlushInfoPayload(
+  ) extends Bundle {
+    val instrAgeCnt = UInt(myInstrAgeWidth bits)
+  }
+  val rFlushInfo = {
+    val temp = Reg(Flow(FlushInfoPayload()))
     temp.init(temp.getZero)
     temp
   }
@@ -317,7 +305,7 @@ case class SnowHouseForFmaxScoreboard(
     val readGprsHazardValid = Bool()
     //def fire = hazardValid
     val issueAllocValid = Bool()
-    val instrAge = UInt(myInstrAgeWidth bits) //cloneOf(rInstrAgeCnt)
+    val instrAge = UInt(myInstrAgeWidth bits) //cloneOf(rFlushInfo)
 
     val gprIsNonZeroVec = (
       Vec.fill(
@@ -568,13 +556,13 @@ case class SnowHouseForFmaxScoreboard(
     //True
     !tempHaveIssueHazardAddrCheckVec.asBits.orR
     //&& !tempHaveCommitHazardAddrCheckVec.asBits.orR
-    && !rInstrAgeCnt.fire
+    && !rFlushInfo.fire
   )
   io.issue.payload := (
     RegNext(io.issue.payload, init=io.issue.payload.getZero)
   )
-  //io.issue.cntOverflow := rInstrAgeCnt.fire
-  io.issue.cntOverflow := rInstrAgeCnt.fire
+  //io.issue.cntOverflow := rFlushInfo.fire
+  io.issue.cntOverflow := rFlushInfo.fire
 
   switch (
     //io.issue.ready
@@ -593,15 +581,15 @@ case class SnowHouseForFmaxScoreboard(
         //  //True
         //  !tempHaveIssueHazardAddrCheckVec.asBits.orR
         //  //&& !tempHaveCommitHazardAddrCheckVec.asBits.orR
-        //  && !rInstrAgeCnt.fire
+        //  && !rFlushInfo.fire
         //)
         //io.issue.payload := (
         //  RegNext(io.issue.payload, init=io.issue.payload.getZero)
         //)
         when (io.issue.fire) {
           io.issue.tag := idx
-          rInstrAgeCnt.payload := rInstrAgeCnt.payload + 1
-          rMyInfoVec(idx).instrAge := rInstrAgeCnt.payload
+          rFlushInfo.instrAgeCnt := rFlushInfo.instrAgeCnt + 1
+          rMyInfoVec(idx).instrAge := rFlushInfo.instrAgeCnt
           rMyInfoVec(idx).issueHazardValid := (
             io.issueMyTempOpMayNeedHazardCheck
             //True
@@ -633,26 +621,31 @@ case class SnowHouseForFmaxScoreboard(
     }
   }
   switch (
-    rInstrAgeCnt.fire
-    ## (rInstrAgeCnt.payload === myMaxInstrAge)
+    rFlushInfo.fire
+    ## (
+      (rFlushInfo.instrAgeCnt === myMaxInstrAge)
+      || io.myBranchMispredictEtc
+    )
     ## myInfoAllocValidVec.orR
   ) {
     // flush the pipeline
     is (M"01-") {
-      rInstrAgeCnt.valid := True
-      rInstrAgeCnt.payload := 0x0
+      rFlushInfo.valid := True
+      rFlushInfo.instrAgeCnt := 0x0
 
       //io.issue.cntOverflow := True
     }
     is (M"1-0") {
-      rInstrAgeCnt.valid := False
+      // we're done flushing the pipeline
+      // when every element of `rMyInfoVec` has been deallocated
+      rFlushInfo.valid := False
       //io.issue.cntOverflow := False
     }
     default {
     }
   }
-  //when (!rInstrAgeCnt.fire) {
-  //  when (rInstrAgeCnt.payload === myMaxInstrAge) {
+  //when (!rFlushInfo.fire) {
+  //  when (rFlushInfo.payload === myMaxInstrAge) {
   //  }
   //}
 }
