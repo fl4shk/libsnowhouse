@@ -134,6 +134,15 @@ case class SnowHouseScoreboardReadGprsPayload(
       UInt(log2Up(cfg.numGprs) bits)
     )
   )
+  val regPcSetItCnt = in(
+    Vec.fill(cfg.lowerMyFanoutRegPcSetItCnt)(
+      UInt(
+        //cfg.instrCntWidth bits
+        //2 bits
+        cfg.regPcSetItCntWidth bits
+      ) //Bool()
+    )
+  )
   val tag = UInt(cfg.optScoreboardTagWidth bits)
 }
 
@@ -149,7 +158,19 @@ case class SnowHouseForFmaxScoreboardIo(
   require(
     cfg.optScoreboard
   )
-
+  //--------
+  val myBranchMispredictEtc = in(Bool())
+  val issueRegPcSetItCnt = in(
+    Vec.fill(cfg.lowerMyFanoutRegPcSetItCnt)(
+      UInt(
+        //cfg.instrCntWidth bits
+        //2 bits
+        cfg.regPcSetItCntWidth bits
+      ) //Bool()
+    )
+  )
+  //val regPcSetItCnt = in(
+  //--------
   val issueGprIdxVec = (
     in(
       //Vec.fill(cfg.numMultiIssue)(
@@ -218,8 +239,63 @@ case class SnowHouseForFmaxScoreboard(
   require(
     cfg.optScoreboard
   )
-
+  //--------
   val io = SnowHouseForFmaxScoreboardIo(cfg=cfg)
+  //--------
+  val rMyPsExSetPcState = (
+    Vec.fill(2)(
+      Reg(Bool(), init=False)
+    )
+  )
+
+  for (idx <- 0 until rMyPsExSetPcState.size) {
+    when (!rMyPsExSetPcState(idx)) {
+      when (io.myBranchMispredictEtc) {
+        rMyPsExSetPcState(idx) := True
+      }
+    } otherwise {
+      when (
+        if (idx == 0) (
+          io.issue.fire
+          && io.issueRegPcSetItCnt(0).lsb
+        ) else (
+          io.readGprs.fire
+          && io.readGprs.regPcSetItCnt(0).lsb
+        )
+      ) {
+        rMyPsExSetPcState(idx) := False
+      }
+    }
+  }
+
+  val myIssueSharedNonShouldIgnoreCond = (
+    //cLink.up.isValid
+    //&& 
+    //!myOutp.instrCnt.myPsIdBubble.head
+    //&& 
+    (
+      !rMyPsExSetPcState.head
+      || io.issueRegPcSetItCnt(1).lsb
+      //|| myOutp.regPcSetItCnt(1).lsb
+      //|| myOutp.shouldFinishJump
+      //|| innerPsId.shouldFinishJump
+    )
+  )
+  val myReadGprsSharedNonShouldIgnoreCond = (
+    //cLink.up.isValid
+    //&& 
+    //!myOutp.instrCnt.myPsIdBubble.head
+    //&& 
+    //io.readGprs.valid
+    //&
+    (
+      !rMyPsExSetPcState.head
+      || io.readGprs.regPcSetItCnt(1).lsb
+      //|| myOutp.regPcSetItCnt(1).lsb
+      //|| myOutp.shouldFinishJump
+      //|| innerPsId.shouldFinishJump
+    )
+  )
 
   val myInstrAgeWidth = 12//4//5//4//6//8//12
   val myMaxInstrAge = (
@@ -761,6 +837,8 @@ case class SnowHouseForFmaxPipeStageScoreboardIssueIo(
 case class SnowHouseForFmaxPipeStageScoreboardIssue(
   cfg: SnowHouseConfig
 ) extends Component {
+  // technically this is the pipeline stage where the scoreboard itself is
+  // stored too
   require(
     cfg.optScoreboard
   )
@@ -846,6 +924,10 @@ case class SnowHouseForFmaxPipeStageScoreboardIssue(
   //  )
   //)
 
+  scoreboard.io.myBranchMispredictEtc := io.myBranchMispredictEtc
+  scoreboard.io.issueRegPcSetItCnt := (
+    myOutp.regPcSetItCnt
+  )
   scoreboard.io.issueMyTempOpMayNeedHazardCheck := (
     myOutp.instrCnt.myScoreboardOpMayNeedHazardCheck
   )
@@ -865,6 +947,7 @@ case class SnowHouseForFmaxPipeStageScoreboardIssue(
   //myOutp.tempUpMod
   cLink.down(pScoreboardIssueOutp) := myOutp
   cLink.down(pScoreboardIssueOutp).allowOverride
+
   when (
     !scoreboard.io.issue.valid
     //&& mySharedNonShouldIgnoreCond
@@ -992,6 +1075,7 @@ case class SnowHouseForFmaxPipeStageScoreboardReadGprs(
 
   io.readGprs.gprIdxVec := myOutp.gprIdxVec
   io.readGprs.tag := myOutp.instrCnt.scoreboardTag
+  io.readGprs.regPcSetItCnt := myOutp.regPcSetItCnt
   //val rStallState = Reg(Bool(), init=False)
 
   //when (!rStallState) {
@@ -1030,7 +1114,7 @@ case class SnowHouseForFmaxPipeStageScoreboardReadGprs(
   val mySharedNonShouldIgnoreCond = (
     //cLink.up.isValid
     //&& 
-    !myOutp.instrCnt.myPsIdBubble.head
+    Vec(myOutp.instrCnt.myPsIdBubble.map(item => !item))
     //&& (
     //  !rMyPsExSetPcState
     //  || myOutp.regPcSetItCnt(1).lsb
@@ -1042,13 +1126,13 @@ case class SnowHouseForFmaxPipeStageScoreboardReadGprs(
     //&& cLink.down.isReady
     cLink.down.isFiring
     //&& !myOutp.instrCnt.myPsIdBubble.head
-    && mySharedNonShouldIgnoreCond
+    && mySharedNonShouldIgnoreCond.head
   )
 
 
   when (
     cLink.up.isValid
-    && mySharedNonShouldIgnoreCond
+    && mySharedNonShouldIgnoreCond.last
     && !io.readGprs.ready 
   ) {
     cLink.duplicateIt()
