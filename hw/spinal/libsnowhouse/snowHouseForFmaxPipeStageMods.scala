@@ -280,8 +280,7 @@ case class SnowHouseForFmaxScoreboard(
     1
   )
   val tempHaveIssueHazardAddrCheckVec = (
-    // RAW/
-    //WAW hazards
+    // WAW hazards
     Vec.fill(cfg.optMaxNumScoreboardInstrs)(
       Vec.fill(
         //io.gprIdxVec.size + 2
@@ -613,6 +612,13 @@ case class SnowHouseForFmaxPipeStageInstrDecodeIo(
   //val myScoreboardReadGprsReady = (
   //  out(Bool())
   //)
+
+  val myBranchMispredictEtc = (
+    in(
+      Bool()
+    )
+  )
+  //--------
   val myScoreboardReadGprs = (
     slave(Stream(
       SnowHouseScoreboardReadGprsPayload(cfg=cfg)
@@ -704,7 +710,38 @@ case class SnowHouseForFmaxPipeStageInstrDecode(
     }
   )
 
-  if (cfg.optScoreboard) {
+  val rMyPsExSetPcState = (
+    Reg(Bool(), init=False)
+  )
+
+  when (!rMyPsExSetPcState) {
+    when (io.myBranchMispredictEtc) {
+      rMyPsExSetPcState := True
+    }
+  } otherwise {
+    when (
+      cLink.down.isFiring
+      && innerPsId.upPayload(1).regPcSetItCnt(0).lsb
+    ) {
+      rMyPsExSetPcState := False
+    }
+  }
+
+  val mySharedNonShouldIgnoreCond = (
+    //cLink.up.isValid
+    //&& 
+    //!innerPsId.upPayload(1).instrCnt.myPsIdBubble.head
+    //&& 
+    (
+      !rMyPsExSetPcState
+      || innerPsId.upPayload(1).shouldFinishJump
+    )
+  )
+
+
+  val myScoreboardArea = (
+    cfg.optScoreboard
+  ) generate (new Area {
     scoreboard.io.issueMyTempOpMayNeedHazardCheck := (
       innerPsId.myTempOpMayNeedHazardCheck
     )
@@ -720,7 +757,10 @@ case class SnowHouseForFmaxPipeStageInstrDecode(
       scoreboard.io.issue.tag
     )
     //innerPsId.upPayload(1).tempUpMod
-    when (!scoreboard.io.issue.valid) {
+    when (
+      !scoreboard.io.issue.valid
+      && mySharedNonShouldIgnoreCond
+    ) {
       cLink.duplicateIt()
       cLink.down(pIdOutp).setAsBubbleMain(
         //!scoreboard.io.issue.cntOverflow
@@ -742,7 +782,7 @@ case class SnowHouseForFmaxPipeStageInstrDecode(
     scoreboard.io.commit << io.myScoreboardCommmit
     // can't do `<-/< `, see `commitEtc` logic in WB stage
     // apparently can't do `<-<` ???
-  }
+  })
 
   s2mLink.down.driveTo(
     io.down
