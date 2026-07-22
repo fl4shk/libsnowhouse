@@ -240,7 +240,7 @@ case class SnowHouseForFmaxScoreboard(
     val issueHazardValid = Bool()
     val readGprsHazardValid = Bool()
     //def fire = hazardValid
-    val allocValid = Bool()
+    val issueAllocValid = Bool()
     val instrAge = UInt(myInstrAgeWidth bits) //cloneOf(rInstrAgeCnt)
 
     val gprIsNonZeroVec = (
@@ -342,7 +342,7 @@ case class SnowHouseForFmaxScoreboard(
           //  rMyInfoVec(jdx).hazardValid
           //  //|| io.myTempOpMayNeedHazardCheck
           //)
-          && rMyInfoVec(jdx).allocValid
+          && rMyInfoVec(jdx).issueAllocValid
         )
       )
     }
@@ -364,24 +364,28 @@ case class SnowHouseForFmaxScoreboard(
             rMyInfoVec(jdx).readGprsHazardValid
             //|| io.myTempOpMayNeedHazardCheck
           )
-          && rMyInfoVec(jdx).allocValid
+          && rMyInfoVec(jdx).issueAllocValid
           //&& io.readGprs.valid
         )
       )
       when (
         io.readGprs.valid
+        && io.readGprs.tag === jdx
         //&& tempHaveReadGprsHazardAddrCheckVec(jdx).orR
-        && rMyInfoVec(jdx).allocValid
-        && rMyInfoVec(jdx).issueHazardValid
+        && rMyInfoVec(jdx).issueAllocValid
+        //&& rMyInfoVec(jdx).issueHazardValid
       ) {
-        rMyInfoVec(jdx).readGprsHazardValid := True
+        rMyInfoVec(jdx).readGprsHazardValid := (
+          rMyInfoVec(jdx).issueHazardValid
+        )
       }
     }
   }
 
   io.readGprs.ready := (
-    io.readGprs.valid
-    && !tempHaveReadGprsHazardAddrCheckVec.asBits.orR
+    //io.readGprs.valid
+    //&& 
+    !tempHaveReadGprsHazardAddrCheckVec.asBits.orR
   )
 
   for (idx <- 0 until myCommitHazardCheckVecInnerSize) {
@@ -412,7 +416,7 @@ case class SnowHouseForFmaxScoreboard(
         //  //|| 
         //  rMyInfoVec(io.commit.tag).hazardValid
         //)
-        && rMyInfoVec(jdx).allocValid
+        && rMyInfoVec(jdx).issueAllocValid
         && io.commit.tag =/= jdx
         && io.commit.valid
       )
@@ -439,14 +443,14 @@ case class SnowHouseForFmaxScoreboard(
       //    item := False
       //  )
       //)
-      rMyInfoVec(jdx).allocValid := False
+      rMyInfoVec(jdx).issueAllocValid := False
       //rMyInfoVec(jdx).hazardValid := False
       rMyInfoVec(jdx).issueHazardValid := False
-      rMyInfoVec(jdx).readGprsHazardValid := False
+      //rMyInfoVec(jdx).readGprsHazardValid := False
     } otherwise {
       //myInfoAllocValidVec(jdx) := rMyInfoVec(jdx).allocValid
     }
-    myInfoAllocValidVec(jdx) := rMyInfoVec(jdx).allocValid
+    myInfoAllocValidVec(jdx) := rMyInfoVec(jdx).issueAllocValid
   }
 
   def bitscan(
@@ -517,7 +521,7 @@ case class SnowHouseForFmaxScoreboard(
             io.issueMyTempOpMayNeedHazardCheck
             //True
           )
-          rMyInfoVec(idx).allocValid := (
+          rMyInfoVec(idx).issueAllocValid := (
             //io.myTempOpMayNeedHazardCheck
             True
           )
@@ -788,8 +792,8 @@ case class SnowHouseForFmaxPipeStageScoreboardRawHazard(
 
   //def opInfoMap = cfg.opInfoMap
 
-  val pIdInp = Payload(SnowHousePipePayload(cfg=cfg))
-  val pIdOutp = Payload(SnowHousePipePayload(cfg=cfg))
+  //val pScoreboardRawHazardInp = Payload(SnowHousePipePayload(cfg=cfg))
+  val pScoreboardRawHazardOutp = Payload(SnowHousePipePayload(cfg=cfg))
   val cLink = CtrlLink()
   val sLink = StageLink(
     up=cLink.down,
@@ -816,7 +820,7 @@ case class SnowHouseForFmaxPipeStageScoreboardRawHazard(
 
   cLink.up.driveFrom(io.up)(
     con=(node, inp) => {
-      //node(pIdInp) := inp
+      //node(pScoreboardRawHazardInp) := inp
       myInp := inp
     }
   )
@@ -826,7 +830,8 @@ case class SnowHouseForFmaxPipeStageScoreboardRawHazard(
     myOutp := myInp
   }
 
-  io.readGprs.payload.gprIdxVec := myOutp.gprIdxVec
+  io.readGprs.gprIdxVec := myOutp.gprIdxVec
+  io.readGprs.tag := myOutp.instrCnt.scoreboardTag
   //val rStallState = Reg(Bool(), init=False)
 
   //when (!rStallState) {
@@ -845,23 +850,33 @@ case class SnowHouseForFmaxPipeStageScoreboardRawHazard(
   //  rSeenReadGprsFire := False
   //}
   io.readGprs.valid := (
+    //cLink.up.isValid
+    //&& cLink.down.isReady
     cLink.down.isFiring
     && !myOutp.instrCnt.myPsIdBubble.head
   )
 
-  when (!io.readGprs.ready && !myOutp.instrCnt.myPsIdBubble.head) {
+  when (
+    cLink.up.isValid
+    && !io.readGprs.ready && !myOutp.instrCnt.myPsIdBubble.head
+  ) {
     cLink.duplicateIt()
-    cLink.down(pIdOutp).allowOverride
-    cLink.down(pIdOutp) := myOutp.getZero
-    //cLink.down(pIdOutp).gprIsZeroVec.foreach(outerItem => {
-    //  outerItem.foreach(item => {
-    //    item := True
-    //  })
-    //})
-    cLink.down(pIdOutp).setAsBubbleMain(
+    cLink.down(pScoreboardRawHazardOutp).allowOverride
+    cLink.down(pScoreboardRawHazardOutp) := myOutp//.getZero
+
+    cLink.down(pScoreboardRawHazardOutp).setAsBubbleMain(
       //!scoreboard.io.issue.cntOverflow
       True
+      //myPsIdBubble=True,
+      //myUpdateGprIsOrIsntZero=true
     )
+    //cLink.down(pScoreboardRawHazardOutp).gprIsZeroVec.foreach(
+    //  outerItem => {
+    //    outerItem.foreach(item => {
+    //      item := True
+    //    })
+    //  }
+    //)
     //innerPsId.upPayload(1).myDoHaveHazardAddrCheckVec.foreach(
     //  item => {
     //    item := True
@@ -871,12 +886,12 @@ case class SnowHouseForFmaxPipeStageScoreboardRawHazard(
     //  True
     //)
   } otherwise {
-    cLink.down(pIdOutp) := myOutp
+    cLink.down(pScoreboardRawHazardOutp) := myOutp
   }
 
   s2mLink.down.driveTo(io.down)(
     con=(outp, node) => {
-      outp := node(pIdOutp)
+      outp := node(pScoreboardRawHazardOutp)
     }
   )
 
@@ -1319,8 +1334,8 @@ case class SnowHouseForFmaxPipeStageWriteBack(
     ),
     depth=(
       //4
-      2
-      //1
+      //2
+      1
     ),
     latency=0,
     forFMax=true
@@ -1332,8 +1347,8 @@ case class SnowHouseForFmaxPipeStageWriteBack(
     ),
     depth=(
       //4
-      2
-      //1
+      //2
+      1
     ),
     latency=0,
     forFMax=true

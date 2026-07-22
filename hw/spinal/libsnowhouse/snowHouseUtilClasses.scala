@@ -2249,8 +2249,8 @@ case class SnowHousePipePayload(
     outpFwd := myFwd
   }
   def setAsBubbleMain(
-    myPsIdBubble: Bool=True
-    //doSetGprIsZeroVec
+    myPsIdBubble: Bool=True,
+    myUpdateGprIsOrIsntZero: Boolean=true,
   ): Unit = {
     //instrCnt.myPsIdBubble.foreach(item => {
     //  item := True
@@ -2273,20 +2273,22 @@ case class SnowHousePipePayload(
     //inpDecodeExt := inpDecodeExt.getZero
     //outpDecodeExt := outpDecodeExt.getZero
 
-    gprIsZeroVec.foreach(
-      outerItem => outerItem.foreach(
-        item => {
-          item := True
-        }
+    if (myUpdateGprIsOrIsntZero) {
+      gprIsZeroVec.foreach(
+        outerItem => outerItem.foreach(
+          item => {
+            item := True
+          }
+        )
       )
-    )
-    gprIsNonZeroVec.foreach(
-      outerItem => outerItem.foreach(
-        item => {
-          item := False
-        }
+      gprIsNonZeroVec.foreach(
+        outerItem => outerItem.foreach(
+          item => {
+            item := False
+          }
+        )
       )
-    )
+    }
 
     regPcSetItCnt.foreach(item => {
       item := item.getZero
