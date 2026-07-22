@@ -623,7 +623,7 @@ case class SnowHouseForFmaxScoreboard(
     rFlushInfo.fire
     ## (
       (rFlushInfo.instrAgeCnt === myMaxInstrAge)
-      //|| io.myBranchMispredictEtc
+      || io.myBranchMispredictEtc
     )
     ## myInfoAllocValidVec.orR
   ) {
@@ -885,30 +885,30 @@ case class SnowHouseForFmaxPipeStageScoreboardIssue(
     myOutp := myInp
   }
   
-  val rMyPsExSetPcState = (
-    Reg(Bool(), init=False)
-  )
+  //val rMyPsExSetPcState = (
+  //  Reg(Bool(), init=False)
+  //)
 
-  when (!rMyPsExSetPcState) {
-    when (io.myBranchMispredictEtc) {
-      rMyPsExSetPcState := True
-    }
-  } otherwise {
-    when (
-      //cLink.down.isFiring
-      cLink.up.isFiring
-      && myOutp.regPcSetItCnt(0).lsb
-    ) {
-      rMyPsExSetPcState := False
-    }
-  }
+  //when (!rMyPsExSetPcState) {
+  //  when (io.myBranchMispredictEtc) {
+  //    rMyPsExSetPcState := True
+  //  }
+  //} otherwise {
+  //  when (
+  //    //cLink.down.isFiring
+  //    cLink.up.isFiring
+  //    && myOutp.regPcSetItCnt(0).lsb
+  //  ) {
+  //    rMyPsExSetPcState := False
+  //  }
+  //}
 
-  val mySharedNonShouldIgnoreCond = (
-    (
-      !rMyPsExSetPcState
-      || myOutp.regPcSetItCnt(1).lsb
-    )
-  )
+  //val mySharedNonShouldIgnoreCond = (
+  //  (
+  //    !rMyPsExSetPcState
+  //    || myOutp.regPcSetItCnt(1).lsb
+  //  )
+  //)
 
   scoreboard.io.myBranchMispredictEtc := io.myBranchMispredictEtc
 
@@ -921,7 +921,7 @@ case class SnowHouseForFmaxPipeStageScoreboardIssue(
   scoreboard.io.issue.ready := (
     //cLink.up.isFiring // cLink.down.isFiring
     cLink.down.isFiring
-    && mySharedNonShouldIgnoreCond
+    //&& mySharedNonShouldIgnoreCond
     //cLink.down.isFiring
     //cLink.up.isValid
     //&& cLink.down.isReady
@@ -937,7 +937,7 @@ case class SnowHouseForFmaxPipeStageScoreboardIssue(
 
   when (
     !scoreboard.io.issue.fire
-    && mySharedNonShouldIgnoreCond
+    //&& mySharedNonShouldIgnoreCond
   ) {
     cLink.duplicateIt()
     cLink.down(pScoreboardIssueOutp).setAsBubbleMain(
@@ -1082,41 +1082,41 @@ case class SnowHouseForFmaxPipeStageScoreboardReadGprs(
   //  rSeenReadGprsFire := False
   //}
 
-  val rMyPsExSetPcState = (
-    Reg(Bool(), init=False)
-  )
+  //val rMyPsExSetPcState = (
+  //  Reg(Bool(), init=False)
+  //)
 
-  when (!rMyPsExSetPcState) {
-    when (io.myBranchMispredictEtc) {
-      rMyPsExSetPcState := True
-    }
-  } otherwise {
-    when (
-      //cLink.down.isFiring
-      cLink.up.isFiring
-      && myOutp.regPcSetItCnt(0).lsb
-    ) {
-      rMyPsExSetPcState := False
-    }
-  }
+  //when (!rMyPsExSetPcState) {
+  //  when (io.myBranchMispredictEtc) {
+  //    rMyPsExSetPcState := True
+  //  }
+  //} otherwise {
+  //  when (
+  //    //cLink.down.isFiring
+  //    cLink.up.isFiring
+  //    && myOutp.regPcSetItCnt(0).lsb
+  //  ) {
+  //    rMyPsExSetPcState := False
+  //  }
+  //}
 
-  val mySharedNonShouldIgnoreCond = (
-    //cLink.up.isValid
-    //&& 
-    Vec(myOutp.instrCnt.myPsIdBubble.map(
-      item => (
-        !item
-        && (
-          !rMyPsExSetPcState
-          || !myOutp.regPcSetItCnt(1).lsb
-        )
-      )
-    ))
-    //&& (
-    //  !rMyPsExSetPcState
-    //  || myOutp.regPcSetItCnt(1).lsb
-    //)
-  )
+  //val mySharedNonShouldIgnoreCond = (
+  //  //cLink.up.isValid
+  //  //&& 
+  //  Vec(myOutp.instrCnt.myPsIdBubble.map(
+  //    item => (
+  //      !item
+  //      && (
+  //        !rMyPsExSetPcState
+  //        || !myOutp.regPcSetItCnt(1).lsb
+  //      )
+  //    )
+  //  ))
+  //  //&& (
+  //  //  !rMyPsExSetPcState
+  //  //  || myOutp.regPcSetItCnt(1).lsb
+  //  //)
+  //)
 
   io.readGprs.valid := (
     //cLink.up.isValid
@@ -1124,13 +1124,13 @@ case class SnowHouseForFmaxPipeStageScoreboardReadGprs(
     //cLink.up.isFiring
     cLink.down.isFiring
     //&& !myOutp.instrCnt.myPsIdBubble.head
-    && mySharedNonShouldIgnoreCond.head
+    //&& mySharedNonShouldIgnoreCond.head
   )
 
 
   when (
     cLink.up.isValid
-    && mySharedNonShouldIgnoreCond.last
+    //&& mySharedNonShouldIgnoreCond.last
     && !io.readGprs.ready 
   ) {
     cLink.duplicateIt()
