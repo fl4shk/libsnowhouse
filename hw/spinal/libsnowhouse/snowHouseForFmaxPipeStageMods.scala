@@ -2307,7 +2307,13 @@ case class SnowHouseForFmaxPipeStageWriteBack(
       True
     )
   )
-  io.commitEtc.myRegFileWrPulse.valid := myRegFileWrPulseOutpStm.fire
+  io.commitEtc.myRegFileWrPulse.valid := (
+    if (cfg.optScoreboard) (
+      myRegFileWrPulseOutpStm.fire
+    ) else (
+      myRegFileWrPulseOutpStm.valid
+    )
+  )
   io.commitEtc.myRegFileWrPulse.payload := (
     myRegFileWrPulseOutpStm.payload
   )
