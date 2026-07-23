@@ -2289,16 +2289,27 @@ case class SnowHouseForFmaxPipeStageWriteBack(
       )
     )
   )
-  for (idx <- 0 until myRegFileWrPulseInpStmVec.size) {
-    myRegFileWrPulseInpStmVec.last(idx) <-/< (
-      myRegFileWrPulseInpStmVec.head(idx)
-    )
-  }
   val myRegFileWrPulseOutpStm = (
-    StreamArbiterFactory.roundRobin.noLock.on(
-      myRegFileWrPulseInpStmVec.last
+    if (cfg.optScoreboard) (
+      StreamArbiterFactory.roundRobin.noLock.on(
+        myRegFileWrPulseInpStmVec.last
+      )
+    ) else (
+      Stream(
+        PipeSimpleDualPortMemDrivePayload(
+          dataType=UInt(cfg.mainWidth bits),
+          wordCount=cfg.regFileCfg.wordCountArr(0),
+        )
+      )
     )
   )
+  if (cfg.optScoreboard) {
+    for (idx <- 0 until myRegFileWrPulseInpStmVec.size) {
+      myRegFileWrPulseInpStmVec.last(idx) <-/< (
+        myRegFileWrPulseInpStmVec.head(idx)
+      )
+    }
+  }
 
   myRegFileWrPulseOutpStm.ready := (
     if (cfg.optScoreboard) (
