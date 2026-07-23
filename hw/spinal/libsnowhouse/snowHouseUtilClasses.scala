@@ -2268,13 +2268,16 @@ case class SnowHousePipePayload(
     outpFwd := myFwd
   }
   def setAsBubbleMain(
-    myPsIdBubble: Bool=True,
+    myPsIdBubble: Option[Bool]=Some(True),
     myUpdateGprIsOrIsntZero: Boolean=true,
+    myUpdateRegPcSetItCnt: Boolean=true,
   ): Unit = {
     //instrCnt.myPsIdBubble.foreach(item => {
     //  item := True
     //})
-    instrCnt.setAsBubbleMain(somePsIdBubble=myPsIdBubble)
+    if (myPsIdBubble != None) {
+      instrCnt.setAsBubbleMain(somePsIdBubble=myPsIdBubble.get)
+    }
 
     splitOp.setToDefault()
     branchTgtBufElem(0) := (
@@ -2308,9 +2311,10 @@ case class SnowHousePipePayload(
         )
       )
     }
-
-    regPcSetItCnt.foreach(item => {
-      item := item.getZero
-    })
+    if (myUpdateRegPcSetItCnt) {
+      regPcSetItCnt.foreach(item => {
+        item := item.getZero
+      })
+    }
   }
 }

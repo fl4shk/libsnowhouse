@@ -2031,7 +2031,7 @@ case class SnowHousePipeStageInstrDecode(
     def doSendBubbleMainMost(
     ): Unit = {
       cId.duplicateIt()
-      upPayload(1).setAsBubbleMain()
+      upPayload(1).setAsBubbleMain(Some(True))
 
       down(pId) := upPayload(1)
     }
@@ -2476,15 +2476,15 @@ case class SnowHousePipeStagePreFwd(
         //&& outp.gprIsNonZeroVec.last.last
         //&& !myShouldIgnoreInstr(0)
         outp.gprIsNonZeroVec.last.last
-        && (
-          (
-            //!myBranchMispredictEtc
-            //&& 
-            !rMyPsExSetPcState
-            && !myBranchMispredictEtc
-          )
-          || outp.regPcSetItCnt(1).lsb
-        )
+        //&& (
+        //  (
+        //    //!myBranchMispredictEtc
+        //    //&& 
+        //    !rMyPsExSetPcState
+        //    && !myBranchMispredictEtc
+        //  )
+        //  || outp.regPcSetItCnt(1).lsb
+        //)
         && !outp.instrCnt.myPsIdBubble.head
         //&& !outp.splitOp.opIsMemAccess
       )
@@ -2527,6 +2527,15 @@ case class SnowHousePipeStagePreFwd(
           idx
         ) := (
           myHistFwdInfo(idx + 1).valid
+          && (
+            (
+              //!myBranchMispredictEtc
+              //&& 
+              !rMyPsExSetPcState
+              && !myBranchMispredictEtc
+            )
+            || outp.regPcSetItCnt(1).lsb
+          )
           && (
             outp.gprIdxVec(jdx)
             === myHistFwdInfo(idx + 1).addr
@@ -8778,7 +8787,7 @@ case class SnowHousePipeStageExecute(
         //    item := True
         //  }
         //)
-        cLink.down(args.currPayload).setAsBubbleMain()
+        cLink.down(args.currPayload).setAsBubbleMain(Some(True))
         setOutpModMemWord.io.instrCnt.setAsBubbleMain()
         //cLink.down(args.currPayload).outpDecodeExt.opIsMemAccess.foreach(
         //  item => {
@@ -9712,12 +9721,28 @@ case class SnowHousePipeStageExecute(
   //for (idx <- 0 until cfg.regFileCfg.memArrSize) {
 
     when (myShouldIgnoreInstr.last) {
-      outp.gprIsZeroVec.last.foreach(item => {
-        item := True
+      //outp.gprIsZeroVec.last.foreach(item => {
+      //  item := True
+      //})
+      //outp.gprIsZeroVec.foreach(outerItem => {
+      //  outerItem.foreach(item => {
+      //    item := True
+      //  })
+      //})
+      //outp.gprIsNonZeroVec.foreach(outerItem => {
+      //  outerItem.foreach(item => {
+      //    item := False
+      //  })
+      //})
+      outp.gprIdxVec := outp.gprIdxVec.getZero
+      outp.setAsBubbleMain(
+        None,
+        myUpdateRegPcSetItCnt=false,
+      )
+      outp.myExt(0).rdMemWord.foreach(item => {
+        item := 0x0
       })
-      outp.gprIsNonZeroVec.last.foreach(item => {
-        item := False
-      })
+      outp.myExt(0).modMemWord := 0x0
 
       outp.myExt.foreach(item => {
         item.modMemWordValid.foreach(item => {

@@ -942,7 +942,7 @@ case class SnowHouseForFmaxPipeStageScoreboardIssue(
     cLink.duplicateIt()
     cLink.down(pScoreboardIssueOutp).setAsBubbleMain(
       //!scoreboard.io.issue.cntOverflow
-      True
+      Some(True)
     )
     cLink.down(pScoreboardIssueOutp).gprIdxVec.foreach(gprIdx => {
       gprIdx := 0x0
@@ -1139,7 +1139,7 @@ case class SnowHouseForFmaxPipeStageScoreboardReadGprs(
 
     cLink.down(pScoreboardReadGprsOutp).setAsBubbleMain(
       //!scoreboard.io.issue.cntOverflow
-      True
+      Some(True)
       //myPsIdBubble=True,
       //myUpdateGprIsOrIsntZero=true
     )
