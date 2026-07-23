@@ -2300,7 +2300,7 @@ case class SnowHouseForFmaxPipeStageWriteBack(
     )
   )
 
-  myRegFileWrPulseOutpStm.ready := True
+  myRegFileWrPulseOutpStm.ready := io.commitEtc.scoreboardTag.ready
   io.commitEtc.myRegFileWrPulse.valid := myRegFileWrPulseOutpStm.valid
   io.commitEtc.myRegFileWrPulse.payload := (
     myRegFileWrPulseOutpStm.payload
