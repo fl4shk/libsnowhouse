@@ -2307,7 +2307,7 @@ case class SnowHouseForFmaxPipeStageWriteBack(
       True
     )
   )
-  io.commitEtc.myRegFileWrPulse.valid := myRegFileWrPulseOutpStm.valid
+  io.commitEtc.myRegFileWrPulse.valid := myRegFileWrPulseOutpStm.fire
   io.commitEtc.myRegFileWrPulse.payload := (
     myRegFileWrPulseOutpStm.payload
   )
