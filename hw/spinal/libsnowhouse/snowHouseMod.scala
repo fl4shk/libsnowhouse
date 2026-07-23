@@ -1288,6 +1288,11 @@ case class SnowHouseDebugInfo(
       UInt(log2Up(cfg.numGprs) bits)
     )
   )
+  val reorderBufIdx = (
+    cfg.optScoreboard
+  ) generate (
+    UInt(cfg.optScoreboardReorderBufWidth bits)
+  )
   //val instrIsPre = (
   //  cfg.dbgExposeExtrasAtRegFileWrite
   //) generate (

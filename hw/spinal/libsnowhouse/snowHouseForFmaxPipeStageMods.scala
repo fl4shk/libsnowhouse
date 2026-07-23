@@ -123,6 +123,9 @@ case class SnowHouseScoreboardIssuePayload(
   cfg: SnowHouseConfig,
 ) extends Bundle {
   val cntOverflow = Bool()
+
+ // reorder buffer index
+  val reorderBufIdx = UInt(cfg.optScoreboardReorderBufWidth bits)
   val tag = UInt(cfg.optScoreboardTagWidth bits)
 }
 
@@ -288,6 +291,7 @@ case class SnowHouseForFmaxScoreboard(
     // than the subtract amount 
     (1 << myInstrAgeWidth) - 1 - 32//2//1//8 //- //32//64
   )
+
   case class FlushInfoPayload(
   ) extends Bundle {
     val instrAgeCnt = UInt(myInstrAgeWidth bits)
@@ -562,6 +566,13 @@ case class SnowHouseForFmaxScoreboard(
   )
   //io.issue.cntOverflow := rFlushInfo.fire
   io.issue.cntOverflow := rFlushInfo.fire
+  io.issue.reorderBufIdx := (
+    RegNextWhen(
+      (io.issue.reorderBufIdx + 1),
+      cond=io.issue.fire,
+      init=io.issue.reorderBufIdx.getZero,
+    )
+  )
 
   switch (
     //io.issue.ready
@@ -927,9 +938,13 @@ case class SnowHouseForFmaxPipeStageScoreboardIssue(
     //&& cLink.down.isReady
   )
   scoreboard.io.issueGprIdxVec := myOutp.gprIdxVec
-  myOutp.instrCnt.scoreboardTag.allowOverride
-  myOutp.instrCnt.scoreboardTag := (
-    scoreboard.io.issue.tag
+  //myOutp.instrCnt.scoreboardTag.allowOverride
+  //myOutp.instrCnt.scoreboardTag := (
+  //  scoreboard.io.issue.tag
+  //)
+  myOutp.instrCnt.scoreboardIssuePayload.allowOverride
+  myOutp.instrCnt.scoreboardIssuePayload := (
+    scoreboard.io.issue.payload
   )
   //myOutp.tempUpMod
   cLink.down(pScoreboardIssueOutp) := myOutp
@@ -1474,6 +1489,178 @@ case class SnowHouseForFmaxPsWbCommitEtc(
     )
   )
 }
+
+case class SnowHouseForFmaxPsWbReorderBufPayloadMost(
+  cfg: SnowHouseConfig,
+  optIncludeBufIdx: Boolean=true,
+) extends Bundle {
+  val commit = (
+    cfg.optScoreboard
+  ) generate (
+    //cloneOf(io.commitEtc.scoreboardTag.payload)
+    SnowHouseScoreboardCommitPayload(cfg=cfg)
+  )
+  val regFileWrite = (
+    //cloneOf(
+    //  io.commitEtc.myRegFileWrPulse.payload
+    //)
+    PipeSimpleDualPortMemDrivePayload(
+      dataType=UInt(cfg.mainWidth bits),
+      wordCount=cfg.regFileCfg.wordCountArr(0),
+    )
+  )
+  //val myWbPayload = (
+  //  io.dbgInfo != null
+  //) generate (
+  //  cloneOf(myWbPayloadVec.head(1))
+  //)
+  val myWbPayload = (
+    cfg.exposeRegFileWriteDataToIo
+    || cfg.exposeRegFileWriteAddrToIo
+    || cfg.exposeRegFileWriteEnableToIo
+    || cfg.dbgExposeExtrasAtRegFileWrite
+  ) generate (
+    SnowHousePipePayload(cfg=cfg)
+  )
+}
+case class SnowHouseForFmaxPsWbReorderBufPayload(
+  cfg: SnowHouseConfig,
+  optIncludeBufIdx: Boolean=true,
+) extends Bundle {
+  val most = SnowHouseForFmaxPsWbReorderBufPayloadMost(cfg=cfg)
+  def commit = most.commit
+  def regFileWrite = most.regFileWrite
+  def myWbPayload = most.myWbPayload
+
+  val reorderBufIdx = (
+    cfg.optScoreboard
+    && optIncludeBufIdx
+  ) generate (
+    UInt(cfg.optScoreboardReorderBufWidth bits   )
+  )
+}
+
+case class SnowHouseForFmaxPsWbReorderBufIo(
+  cfg: SnowHouseConfig
+) extends Bundle {
+  val push = slave(Stream(
+    SnowHouseForFmaxPsWbReorderBufPayload(cfg=cfg)
+  ))
+  val pop = master(Stream(
+    SnowHouseForFmaxPsWbReorderBufPayload(
+      cfg=cfg,
+      optIncludeBufIdx=false,
+    )
+  ))
+}
+
+case class SnowHouseForFmaxPsWbReorderBuf(
+  cfg: SnowHouseConfig
+) extends Component {
+  require(
+    cfg.optScoreboard
+  )
+  //--------
+  val io = SnowHouseForFmaxPsWbReorderBufIo(cfg=cfg)
+  //--------
+  val myReorderBufSize = (
+    1 << log2Up(cfg.optScoreboardReorderBufWidth)
+  )
+  //val myFifo = (
+  //  StreamFifo(
+  //    dataType=SnowHouseForFmaxPsWbReorderBufPayload(cfg=cfg),
+  //    depth=myReorderBufSize,
+  //    latency=0,
+  //    forFMax=true,
+  //  )
+  //)
+
+  val myRam = (
+    WrPulseRdPipeRam(
+      cfg=WrPulseRdPipeRamConfig(
+        modType=SnowHouseForFmaxPsWbReorderBufPayload(
+          cfg=cfg,
+          optIncludeBufIdx=false,
+        ),
+        wordType=SnowHouseForFmaxPsWbReorderBufPayload(
+          cfg=cfg,
+          optIncludeBufIdx=false
+        ),
+        wordCount=myReorderBufSize,
+        setWordFunc=(
+          outp: SnowHouseForFmaxPsWbReorderBufPayload,
+          inp: SnowHouseForFmaxPsWbReorderBufPayload,
+          rdMemWord: SnowHouseForFmaxPsWbReorderBufPayload,
+          upIsFiring: Bool,
+          myExternalInpCond: Bool,
+          wrPulse: Flow[
+            PipeSimpleDualPortMemDrivePayload[
+              SnowHouseForFmaxPsWbReorderBufPayload
+            ]
+          ],
+        ) => {
+          outp := rdMemWord
+        },
+        optRdLatency=(
+          1//0//1
+        ),
+        optWrHistLength=1,
+        arrRamStyleAltera=(
+          //"no_rw_check, logic"
+          "no_rw_check, MLAB"
+          //"MLAB"
+        ),
+        arrRamStyleXilinx=(
+          "auto"
+          //"block"
+          //"distributed"
+        ),
+      ),
+    )
+  )
+
+  //myFifo.io.push << io.push
+  //myFifo.io.pop.ready := False
+  val rValidVec = Vec.fill(myReorderBufSize)(
+    Reg(Bool(), init=False)
+  )
+
+  myRam.io.wrPulse.valid := io.push.fire
+  myRam.io.wrPulse.addr := io.push.reorderBufIdx.resize(
+    log2Up(rValidVec.size) bits
+  )
+  myRam.io.wrPulse.data.most := io.push.most
+  when (myRam.io.wrPulse.fire) {
+    rValidVec(myRam.io.wrPulse.addr) := True
+  }
+
+  val myTempPushStm = cloneOf(io.push)
+  myTempPushStm << io.push.haltWhen(
+    !rValidVec(
+      io.push.reorderBufIdx.resize(log2Up(rValidVec.size) bits)
+    )
+  )
+  
+  myTempPushStm.translateInto(myRam.io.rdAddrPipe)(
+    dataAssignment=(outp, inp) => {
+      outp.data.most := inp.most
+      outp.addr := (
+        //inp.reorderBufIdx
+        RegNextWhen(
+          (outp.addr + 1),
+          cond=myRam.io.rdAddrPipe.fire,
+          init=outp.addr.getZero,
+        )
+      )
+      when (myRam.io.rdAddrPipe.fire) {
+        rValidVec(outp.addr) := False
+      }
+    }
+  )
+
+  io.pop << myRam.io.rdDataPipe
+}
+
 case class SnowHouseForFmaxPipeStageWriteBackIo(
   cfg: SnowHouseConfig
 ) extends Bundle {
@@ -2250,65 +2437,69 @@ case class SnowHouseForFmaxPipeStageWriteBack(
   //val myNonMemCommitStm = cloneOf(io.commitEtc.scoreboardTag)
   //val myCommitSel = UInt(1 bits)
 
-  case class MyTempCommitPayload(
-  ) extends Bundle {
-    val commit = (
-      cfg.optScoreboard
-    ) generate (
-      cloneOf(io.commitEtc.scoreboardTag.payload)
-    )
-    val regFileWrite = (
-      cloneOf(
-        io.commitEtc.myRegFileWrPulse.payload
-      )
-    )
-    val myWbPayload = (
-      io.dbgInfo != null
-    ) generate (
-      cloneOf(myWbPayloadVec.head(1))
-    )
-  }
 
-  val myCommitInpStmVec = (
+  val myCommitFrontStmVec = (
     cfg.optScoreboard
   ) generate (
     Vec.fill(2)(
       Vec.fill(myWbPayloadVec.size)(
         //cloneOf(io.commitEtc.scoreboardTag)
         Stream(
-          MyTempCommitPayload()
+          SnowHouseForFmaxPsWbReorderBufPayload(cfg=cfg)
         )
       )
     )
   )
-  val myMemCommitFrontInpStm = (
+  val myMemCommitFrontStm = (
     cfg.optScoreboard
   ) generate (
-    myCommitInpStmVec.head.head
+    myCommitFrontStmVec.head.head
   )
-  val myNonMemCommitFrontInpStm = (
+  val myNonMemCommitFrontStm = (
     cfg.optScoreboard
   ) generate (
-    myCommitInpStmVec.head.last
+    myCommitFrontStmVec.head.last
   )
   if (cfg.optScoreboard) {
-    for (idx <- 0 until myCommitInpStmVec.size) {
-      myCommitInpStmVec.last(idx) </< (
-        myCommitInpStmVec.head(idx)
+    for (idx <- 0 until myCommitFrontStmVec.size) {
+      myCommitFrontStmVec.last(idx) << (
+        myCommitFrontStmVec.head(idx)
       )
     }
   }
-  val myCommitOutpStm = (
+  val myCommitBackStm = (
     if (cfg.optScoreboard) (
       StreamArbiterFactory.roundRobin.noLock.on(
-        myCommitInpStmVec.last
+        myCommitFrontStmVec.last
       )
     ) else (
       Stream(
-        MyTempCommitPayload()
+        SnowHouseForFmaxPsWbReorderBufPayload(cfg=cfg)
       )
     )
   )
+  val myReorderBuf = (
+    cfg.optScoreboard
+  ) generate (
+    SnowHouseForFmaxPsWbReorderBuf(cfg=cfg)
+  )
+  //val myCommitFinalInpStm = (
+  //  if (cfg.optScoreboard) (
+  //    myReorderBuf.io.push
+  //  ) else (
+  //    myCommitBackStm
+  //  )
+  //)
+  val myCommitFinalOutpStm = (
+    if (cfg.optScoreboard) (
+      myReorderBuf.io.pop
+    ) else (
+      myCommitBackStm
+    )
+  )
+  if (cfg.optScoreboard) {
+    myReorderBuf.io.push << myCommitBackStm
+  }
 
   //val myCommitStmMux = StreamMux(
   //  select=myCommitSel,
@@ -2359,18 +2550,22 @@ case class SnowHouseForFmaxPipeStageWriteBack(
   //  )
   //)
 
+  //--------
   io.commitEtc.myRegFileWrPulse.valid := (
     if (cfg.optScoreboard) (
-      myCommitOutpStm.fire
+      //myCommitBackStm.fire
+      myCommitFinalOutpStm.fire
     ) else (
-      myCommitOutpStm.valid
+      //myCommitBackStm.valid
+      myCommitFinalOutpStm.valid
     )
   )
   io.commitEtc.myRegFileWrPulse.payload := (
-    myCommitOutpStm.regFileWrite
+    //myCommitBackStm.regFileWrite
+    myCommitFinalOutpStm.regFileWrite
   )
   if (cfg.optScoreboard) {
-    myCommitOutpStm.translateInto(io.commitEtc.scoreboardTag)(
+    myCommitFinalOutpStm.translateInto(io.commitEtc.scoreboardTag)(
       dataAssignment=(outp, inp) => {
         outp := inp.commit
       }
@@ -2379,12 +2574,17 @@ case class SnowHouseForFmaxPipeStageWriteBack(
 
   def setCommitEtc(
     someMyWbPayload: Vec[SnowHousePipePayload],
-    someCommitStm: Stream[MyTempCommitPayload],
+    someCommitStm: Stream[SnowHouseForFmaxPsWbReorderBufPayload],
     //someRegFileWrPulseStm: Stream[
     //  PipeSimpleDualPortMemDrivePayload[UInt]
     //],
     isMem: Boolean,
   ): Unit = {
+    if (cfg.optScoreboard) {
+      someCommitStm.reorderBufIdx := (
+        someMyWbPayload(1).instrCnt.scoreboardIssuePayload.reorderBufIdx
+      )
+    }
     if (
       cfg.optScoreboard
       && isMem
@@ -2573,14 +2773,14 @@ case class SnowHouseForFmaxPipeStageWriteBack(
   ) generate (new Area {
     setCommitEtc(
       someMyWbPayload=myMemWbPayload,
-      someCommitStm=myMemCommitFrontInpStm,
+      someCommitStm=myMemCommitFrontStm,
       //someCommitStm=myCommitInpStmVec.head.head,
       //someRegFileWrPulseStm=myRegFileWrPulseInpStmVec.head.head,
       isMem=true
     )
     setCommitEtc(
       someMyWbPayload=myNonMemWbPayload,
-      someCommitStm=myNonMemCommitFrontInpStm,
+      someCommitStm=myNonMemCommitFrontStm,
       //someCommitStm=myCommitInpStmVec.head.last,
       //someRegFileWrPulseStm=myRegFileWrPulseInpStmVec.head.last,
       isMem=false
@@ -2697,121 +2897,122 @@ case class SnowHouseForFmaxPipeStageWriteBack(
   if (!cfg.optScoreboard) {
     setCommitEtc(
       someMyWbPayload=myWbPayloadVec.head,
-      someCommitStm=myCommitOutpStm,
+      someCommitStm=myCommitFinalOutpStm,
       //someRegFileWrPulseStm=myRegFileWrPulseOutpStm,
       isMem=false
     )
   }
   if (io.dbgInfo != null) {
-    io.dbgInfo.regFileWriteData := (
-      RegNext(
-        io.dbgInfo.regFileWriteData
-      )
-    )
-    io.dbgInfo.regFileWriteAddr := (
-      RegNext(
-        io.dbgInfo.regFileWriteAddr
-      )
-    )
-    io.dbgInfo.regFileWriteEnable := False
-    io.dbgInfo.laggingRegPcAtRegFileWrite := (
-      RegNext(
-        io.dbgInfo.laggingRegPcAtRegFileWrite
-      )
-    )
-    io.dbgInfo.shouldIgnoreInstrAtRegFileWrite := (
-      RegNext(
-        io.dbgInfo.shouldIgnoreInstrAtRegFileWrite
-      )
-    )
-    io.dbgInfo.myPsIdBubbleAtRegFileWrite := (
-      RegNext(
-        io.dbgInfo.myPsIdBubbleAtRegFileWrite
-      )
-    )
-    io.dbgInfo.encInstrAtRegFileWrite := (
-      //someMyWbPayload(1).encInstr.payload
-      RegNext(
-        io.dbgInfo.encInstrAtRegFileWrite,
-        init=io.dbgInfo.encInstrAtRegFileWrite.getZero
-      )
-    )
-    io.dbgInfo.immAtRegFileWrite := (
-      //someMyWbPayload(1).imm.last
-      RegNext(
-        io.dbgInfo.immAtRegFileWrite,
-      )
-    )
-    io.dbgInfo.rdMemWordAtRegFileWrite := (
-      //someMyWbPayload(1).myExt(0).rdMemWord
-      RegNext(
-        io.dbgInfo.rdMemWordAtRegFileWrite
-      )
-    )
-    io.dbgInfo.gprIdxVecAtRegFileWrite := (
-      //someMyWbPayload(1).gprIdxVec
-      RegNext(
-        io.dbgInfo.gprIdxVecAtRegFileWrite
-      )
-    )
+    io.dbgInfo := RegNext(io.dbgInfo)
+    //io.dbgInfo.regFileWriteData := (
+    //  RegNext(
+    //    io.dbgInfo.regFileWriteData
+    //  )
+    //)
+    //io.dbgInfo.regFileWriteAddr := (
+    //  RegNext(
+    //    io.dbgInfo.regFileWriteAddr
+    //  )
+    //)
+    //io.dbgInfo.regFileWriteEnable := False
+    //io.dbgInfo.laggingRegPcAtRegFileWrite := (
+    //  RegNext(
+    //    io.dbgInfo.laggingRegPcAtRegFileWrite
+    //  )
+    //)
+    //io.dbgInfo.shouldIgnoreInstrAtRegFileWrite := (
+    //  RegNext(
+    //    io.dbgInfo.shouldIgnoreInstrAtRegFileWrite
+    //  )
+    //)
+    //io.dbgInfo.myPsIdBubbleAtRegFileWrite := (
+    //  RegNext(
+    //    io.dbgInfo.myPsIdBubbleAtRegFileWrite
+    //  )
+    //)
+    //io.dbgInfo.encInstrAtRegFileWrite := (
+    //  //someMyWbPayload(1).encInstr.payload
+    //  RegNext(
+    //    io.dbgInfo.encInstrAtRegFileWrite,
+    //    init=io.dbgInfo.encInstrAtRegFileWrite.getZero
+    //  )
+    //)
+    //io.dbgInfo.immAtRegFileWrite := (
+    //  //someMyWbPayload(1).imm.last
+    //  RegNext(
+    //    io.dbgInfo.immAtRegFileWrite,
+    //  )
+    //)
+    //io.dbgInfo.rdMemWordAtRegFileWrite := (
+    //  //someMyWbPayload(1).myExt(0).rdMemWord
+    //  RegNext(
+    //    io.dbgInfo.rdMemWordAtRegFileWrite
+    //  )
+    //)
+    //io.dbgInfo.gprIdxVecAtRegFileWrite := (
+    //  //someMyWbPayload(1).gprIdxVec
+    //  RegNext(
+    //    io.dbgInfo.gprIdxVecAtRegFileWrite
+    //  )
+    //)
     when (
       //myCommitOutpStm.fire
-      myCommitOutpStm.fire
+      myCommitFinalOutpStm.fire
     ) {
       io.dbgInfo.regFileWriteData := (
-        myCommitOutpStm.regFileWrite.data
+        myCommitFinalOutpStm.regFileWrite.data
       )
       io.dbgInfo.regFileWriteAddr := (
-        myCommitOutpStm.regFileWrite.addr
+        myCommitFinalOutpStm.regFileWrite.addr
       )
       io.dbgInfo.regFileWriteEnable := (
         if (cfg.optScoreboard) (
-          myCommitOutpStm.fire
+          myCommitFinalOutpStm.fire
           && (
-            myCommitOutpStm.fire
+            myCommitFinalOutpStm.fire
           )
         ) else (
-          myCommitOutpStm.fire
+          myCommitFinalOutpStm.fire
         )
       )
       io.dbgInfo.laggingRegPcAtRegFileWrite := (
-        myCommitOutpStm.myWbPayload.laggingRegPc.resize(
+        myCommitFinalOutpStm.myWbPayload.laggingRegPc.resize(
           cfg.mainWidth bits
         )
       )
       io.dbgInfo.shouldIgnoreInstrAtRegFileWrite := (
         if (cfg.optScoreboard) (
-          myCommitOutpStm.myWbPayload.instrCnt.shouldIgnoreInstr.last
+          myCommitFinalOutpStm.myWbPayload.instrCnt.shouldIgnoreInstr.last
           || (
-            !myCommitOutpStm.fire
+            !myCommitFinalOutpStm.fire
           )
         ) else (
-          myCommitOutpStm.myWbPayload.instrCnt.shouldIgnoreInstr.last
+          myCommitFinalOutpStm.myWbPayload.instrCnt.shouldIgnoreInstr.last
         )
       )
       io.dbgInfo.myPsIdBubbleAtRegFileWrite := (
         if (cfg.optScoreboard) (
-          myCommitOutpStm.myWbPayload.instrCnt.myPsIdBubble.last
+          myCommitFinalOutpStm.myWbPayload.instrCnt.myPsIdBubble.last
           || (
-            !myCommitOutpStm.fire
+            !myCommitFinalOutpStm.fire
           )
         ) else (
-          myCommitOutpStm.myWbPayload.instrCnt.myPsIdBubble.last
+          myCommitFinalOutpStm.myWbPayload.instrCnt.myPsIdBubble.last
         )
       )
-      when (myCommitOutpStm.myWbPayload.encInstr.payload.orR) {
+      when (myCommitFinalOutpStm.myWbPayload.encInstr.payload.orR) {
         io.dbgInfo.encInstrAtRegFileWrite := (
-          myCommitOutpStm.myWbPayload.encInstr.payload
+          myCommitFinalOutpStm.myWbPayload.encInstr.payload
         )
       }
       io.dbgInfo.immAtRegFileWrite := (
-        myCommitOutpStm.myWbPayload.imm.last
+        myCommitFinalOutpStm.myWbPayload.imm.last
       )
       io.dbgInfo.rdMemWordAtRegFileWrite := (
-        myCommitOutpStm.myWbPayload.myExt(0).rdMemWord
+        myCommitFinalOutpStm.myWbPayload.myExt(0).rdMemWord
       )
       io.dbgInfo.gprIdxVecAtRegFileWrite := (
-        myCommitOutpStm.myWbPayload.gprIdxVec
+        myCommitFinalOutpStm.myWbPayload.gprIdxVec
       )
     }
   }
