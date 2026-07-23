@@ -490,7 +490,7 @@ case class SnowHouseForFmaxScoreboard(
         //)
         && rMyInfoVec(jdx).issueAllocValid
         && io.commit.tag =/= jdx
-        && io.commit.valid
+        //&& io.commit.valid
       )
     }
   }
@@ -2249,25 +2249,64 @@ case class SnowHouseForFmaxPipeStageWriteBack(
   //val myMemCommitStm = cloneOf(io.commitEtc.scoreboardTag)
   //val myNonMemCommitStm = cloneOf(io.commitEtc.scoreboardTag)
   //val myCommitSel = UInt(1 bits)
+
+  case class MyTempCommitPayload(
+  ) extends Bundle {
+    val commit = (
+      cfg.optScoreboard
+    ) generate (
+      cloneOf(io.commitEtc.scoreboardTag.payload)
+    )
+    val regFileWrite = (
+      cloneOf(
+        io.commitEtc.myRegFileWrPulse.payload
+      )
+    )
+    val myWbPayload = (
+      io.dbgInfo != null
+    ) generate (
+      cloneOf(myWbPayloadVec.head(1))
+    )
+  }
+
   val myCommitInpStmVec = (
     cfg.optScoreboard
   ) generate (
     Vec.fill(2)(
       Vec.fill(myWbPayloadVec.size)(
-        cloneOf(io.commitEtc.scoreboardTag)
+        //cloneOf(io.commitEtc.scoreboardTag)
+        Stream(
+          MyTempCommitPayload()
+        )
       )
     )
   )
-  for (idx <- 0 until myCommitInpStmVec.size) {
-    myCommitInpStmVec.last(idx) <-/< (
-      myCommitInpStmVec.head(idx)
-    )
-  }
-  val myCommitOutpStm = (
+  val myMemCommitFrontInpStm = (
     cfg.optScoreboard
   ) generate (
-    StreamArbiterFactory.roundRobin.noLock.on(
-      myCommitInpStmVec.last
+    myCommitInpStmVec.head.head
+  )
+  val myNonMemCommitFrontInpStm = (
+    cfg.optScoreboard
+  ) generate (
+    myCommitInpStmVec.head.last
+  )
+  if (cfg.optScoreboard) {
+    for (idx <- 0 until myCommitInpStmVec.size) {
+      myCommitInpStmVec.last(idx) </< (
+        myCommitInpStmVec.head(idx)
+      )
+    }
+  }
+  val myCommitOutpStm = (
+    if (cfg.optScoreboard) (
+      StreamArbiterFactory.roundRobin.noLock.on(
+        myCommitInpStmVec.last
+      )
+    ) else (
+      Stream(
+        MyTempCommitPayload()
+      )
     )
   )
 
@@ -2275,69 +2314,75 @@ case class SnowHouseForFmaxPipeStageWriteBack(
   //  select=myCommitSel,
   //  inputs=Vec(myMemCommitStm, myNonMemCommitStm)
   //)
-  val myRegFileWrPulseInpStmVec = (
-    cfg.optScoreboard
-  ) generate (
-    Vec.fill(2)(
-      Vec.fill(myWbPayloadVec.size)(
-        Stream(
-          PipeSimpleDualPortMemDrivePayload(
-            dataType=UInt(cfg.mainWidth bits),
-            wordCount=cfg.regFileCfg.wordCountArr(0),
-          )
-        )
-      )
-    )
-  )
-  val myRegFileWrPulseOutpStm = (
-    if (cfg.optScoreboard) (
-      StreamArbiterFactory.roundRobin.noLock.on(
-        myRegFileWrPulseInpStmVec.last
-      )
-    ) else (
-      Stream(
-        PipeSimpleDualPortMemDrivePayload(
-          dataType=UInt(cfg.mainWidth bits),
-          wordCount=cfg.regFileCfg.wordCountArr(0),
-        )
-      )
-    )
-  )
-  if (cfg.optScoreboard) {
-    for (idx <- 0 until myRegFileWrPulseInpStmVec.size) {
-      myRegFileWrPulseInpStmVec.last(idx) <-/< (
-        myRegFileWrPulseInpStmVec.head(idx)
-      )
-    }
-  }
 
-  myRegFileWrPulseOutpStm.ready := (
-    if (cfg.optScoreboard) (
-      io.commitEtc.scoreboardTag.ready
-    ) else (
-      True
-    )
-  )
+  //val myRegFileWrPulseInpStmVec = (
+  //  cfg.optScoreboard
+  //) generate (
+  //  Vec.fill(2)(
+  //    Vec.fill(myWbPayloadVec.size)(
+  //      Stream(
+  //        PipeSimpleDualPortMemDrivePayload(
+  //          dataType=UInt(cfg.mainWidth bits),
+  //          wordCount=cfg.regFileCfg.wordCountArr(0),
+  //        )
+  //      )
+  //    )
+  //  )
+  //)
+  //val myRegFileWrPulseOutpStm = (
+  //  if (cfg.optScoreboard) (
+  //    StreamArbiterFactory.roundRobin.noLock.on(
+  //      myRegFileWrPulseInpStmVec.last
+  //    )
+  //  ) else (
+  //    Stream(
+  //      PipeSimpleDualPortMemDrivePayload(
+  //        dataType=UInt(cfg.mainWidth bits),
+  //        wordCount=cfg.regFileCfg.wordCountArr(0),
+  //      )
+  //    )
+  //  )
+  //)
+  //if (cfg.optScoreboard) {
+  //  for (idx <- 0 until myRegFileWrPulseInpStmVec.size) {
+  //    myRegFileWrPulseInpStmVec.last(idx) << (
+  //      myRegFileWrPulseInpStmVec.head(idx)
+  //    )
+  //  }
+  //}
+
+  //myRegFileWrPulseOutpStm.ready := (
+  //  if (cfg.optScoreboard) (
+  //    io.commitEtc.scoreboardTag.ready
+  //  ) else (
+  //    True
+  //  )
+  //)
+
   io.commitEtc.myRegFileWrPulse.valid := (
     if (cfg.optScoreboard) (
-      myRegFileWrPulseOutpStm.fire
+      myCommitOutpStm.fire
     ) else (
-      myRegFileWrPulseOutpStm.valid
+      myCommitOutpStm.valid
     )
   )
   io.commitEtc.myRegFileWrPulse.payload := (
-    myRegFileWrPulseOutpStm.payload
+    myCommitOutpStm.regFileWrite
   )
   if (cfg.optScoreboard) {
-    io.commitEtc.scoreboardTag << myCommitOutpStm
+    myCommitOutpStm.translateInto(io.commitEtc.scoreboardTag)(
+      dataAssignment=(outp, inp) => {
+        outp := inp.commit
+      }
+    )
   }
 
   def setCommitEtc(
     someMyWbPayload: Vec[SnowHousePipePayload],
-    someCommitStm: Stream[SnowHouseScoreboardCommitPayload],
-    someRegFileWrPulseStm: Stream[
-      PipeSimpleDualPortMemDrivePayload[UInt]
-    ],
+    someCommitStm: Stream[MyTempCommitPayload],
+    //someRegFileWrPulseStm: Stream[
+    //  PipeSimpleDualPortMemDrivePayload[UInt]
+    //],
     isMem: Boolean,
   ): Unit = {
     if (
@@ -2355,7 +2400,56 @@ case class SnowHouseForFmaxPipeStageWriteBack(
       && someCommitStm.fire
       && !myNonMemWbPayload(1).instrCnt.myPsIdBubble.head
     )
-    someRegFileWrPulseStm.valid := (
+    if (io.dbgInfo != null) {
+      someCommitStm.myWbPayload := someMyWbPayload(1)
+    }
+
+    //someRegFileWrPulseStm.valid := (
+    //  (
+    //    if (cfg.optScoreboard) (
+    //      (
+    //        if (isMem) (
+    //          (
+    //            //myMemWbPayload(1).outpDecodeExt.opIsMemAccess(0)
+    //            someCommitStm.fire
+    //            && (
+    //              !myMemWbPayload(1).outpDecodeExt.memAccessKind.asBits(1)
+    //            )
+    //          )
+    //        ) else (
+    //          myNonMemRegFileWrPulseValidPartial
+    //        )
+    //      )
+    //    ) else (
+    //      cLink.up.isFiring
+    //    )
+    //  )
+    //  && !someMyWbPayload(1).gprIsZeroVec.last.last
+    //  && !someMyWbPayload(1).instrCnt.shouldIgnoreInstr.last
+    //  && {
+    //    if (cfg.optScoreboard && isMem) {
+    //      stickyMemMmwValid
+    //    } else {
+    //      val myDecodeExt = someMyWbPayload(1).outpDecodeExt
+    //      val mapElem = someMyWbPayload(1).gprIdxToMemAddrIdxMap(0)
+    //      val myCurrExt = (
+    //        if (!mapElem.haveHowToSetIdx) (
+    //          someMyWbPayload(1).myExt(
+    //            0
+    //          )
+    //        ) else (
+    //          someMyWbPayload(1).myExt(
+    //            mapElem.howToSetIdx
+    //          )
+    //        )
+    //      )
+    //      //myCurrExt.modMemWord := myDbus.recvData.word
+    //      //someMyWbPayload(1).
+    //      myCurrExt.modMemWordValid.last
+    //    }
+    //  }
+    //)
+    when (
       (
         if (cfg.optScoreboard) (
           (
@@ -2399,31 +2493,35 @@ case class SnowHouseForFmaxPipeStageWriteBack(
           myCurrExt.modMemWordValid.last
         }
       }
-    )
-    someRegFileWrPulseStm.addr := (
-      someMyWbPayload(1).gprIdxVec.last
-    )
-    someRegFileWrPulseStm.data := {
-      if (cfg.optScoreboard && isMem) {
-        stickyMemMmw
-      } else {
-        val myDecodeExt = someMyWbPayload(1).outpDecodeExt
-        val mapElem = someMyWbPayload(1).gprIdxToMemAddrIdxMap(0)
-        val myCurrExt = (
-          if (!mapElem.haveHowToSetIdx) (
-            someMyWbPayload(1).myExt(
-              0
-            )
-          ) else (
-            someMyWbPayload(1).myExt(
-              mapElem.howToSetIdx
+    ) {
+      someCommitStm.regFileWrite.addr := (
+        someMyWbPayload(1).gprIdxVec.last
+      )
+      someCommitStm.regFileWrite.data := {
+        if (cfg.optScoreboard && isMem) {
+          stickyMemMmw
+        } else {
+          val myDecodeExt = someMyWbPayload(1).outpDecodeExt
+          val mapElem = someMyWbPayload(1).gprIdxToMemAddrIdxMap(0)
+          val myCurrExt = (
+            if (!mapElem.haveHowToSetIdx) (
+              someMyWbPayload(1).myExt(
+                0
+              )
+            ) else (
+              someMyWbPayload(1).myExt(
+                mapElem.howToSetIdx
+              )
             )
           )
-        )
-        //myCurrExt.modMemWord := myDbus.recvData.word
-        //someMyWbPayload(1).
-        myCurrExt.modMemWord
+          //myCurrExt.modMemWord := myDbus.recvData.word
+          //someMyWbPayload(1).
+          myCurrExt.modMemWord
+        }
       }
+    } otherwise {
+      someCommitStm.regFileWrite.addr := 0x0
+      someCommitStm.regFileWrite.data := 0x0
     }
     if (cfg.optScoreboard) {
       //val rSeenUpIsFiring = (
@@ -2459,129 +2557,13 @@ case class SnowHouseForFmaxPipeStageWriteBack(
           )
         )
       )
-      someCommitStm.tag := (
+      someCommitStm.commit.tag := (
         someMyWbPayload(1).instrCnt.scoreboardTag
       )
       if (isMem) {
         myMemWbFifo.io.pop.ready := someCommitStm.fire
       } else {
         myNonMemWbFifo.io.pop.ready := someCommitStm.fire
-      }
-    }
-    if (io.dbgInfo != null) {
-      if (
-        !cfg.optScoreboard
-        || isMem
-      ) {
-        io.dbgInfo.regFileWriteData := (
-          RegNext(
-            io.dbgInfo.regFileWriteData
-          )
-        )
-        io.dbgInfo.regFileWriteAddr := (
-          RegNext(
-            io.dbgInfo.regFileWriteAddr
-          )
-        )
-        io.dbgInfo.regFileWriteEnable := False
-        io.dbgInfo.laggingRegPcAtRegFileWrite := (
-          RegNext(
-            io.dbgInfo.laggingRegPcAtRegFileWrite
-          )
-        )
-        io.dbgInfo.shouldIgnoreInstrAtRegFileWrite := (
-          RegNext(
-            io.dbgInfo.shouldIgnoreInstrAtRegFileWrite
-          )
-        )
-        io.dbgInfo.myPsIdBubbleAtRegFileWrite := (
-          RegNext(
-            io.dbgInfo.myPsIdBubbleAtRegFileWrite
-          )
-        )
-        io.dbgInfo.encInstrAtRegFileWrite := (
-          //someMyWbPayload(1).encInstr.payload
-          RegNext(
-            io.dbgInfo.encInstrAtRegFileWrite,
-            init=io.dbgInfo.encInstrAtRegFileWrite.getZero
-          )
-        )
-        io.dbgInfo.immAtRegFileWrite := (
-          //someMyWbPayload(1).imm.last
-          RegNext(
-            io.dbgInfo.immAtRegFileWrite,
-          )
-        )
-        io.dbgInfo.rdMemWordAtRegFileWrite := (
-          //someMyWbPayload(1).myExt(0).rdMemWord
-          RegNext(
-            io.dbgInfo.rdMemWordAtRegFileWrite
-          )
-        )
-        io.dbgInfo.gprIdxVecAtRegFileWrite := (
-          //someMyWbPayload(1).gprIdxVec
-          RegNext(
-            io.dbgInfo.gprIdxVecAtRegFileWrite
-          )
-        )
-      }
-      when (
-        //someCommitStm.fire
-        someRegFileWrPulseStm.fire
-      ) {
-        io.dbgInfo.regFileWriteData := (
-          someRegFileWrPulseStm.data
-        )
-        io.dbgInfo.regFileWriteAddr := (
-          someRegFileWrPulseStm.addr
-        )
-        io.dbgInfo.regFileWriteEnable := (
-          if (cfg.optScoreboard) (
-            someRegFileWrPulseStm.fire
-            && (
-              someCommitStm.fire
-            )
-          ) else (
-            someRegFileWrPulseStm.fire
-          )
-        )
-        io.dbgInfo.laggingRegPcAtRegFileWrite := (
-          someMyWbPayload(1).laggingRegPc.resize(cfg.mainWidth bits)
-        )
-        io.dbgInfo.shouldIgnoreInstrAtRegFileWrite := (
-          if (cfg.optScoreboard) (
-            someMyWbPayload(1).instrCnt.shouldIgnoreInstr.last
-            || (
-              !someCommitStm.fire
-            )
-          ) else (
-            someMyWbPayload(1).instrCnt.shouldIgnoreInstr.last
-          )
-        )
-        io.dbgInfo.myPsIdBubbleAtRegFileWrite := (
-          if (cfg.optScoreboard) (
-            someMyWbPayload(1).instrCnt.myPsIdBubble.last
-            || (
-              !someCommitStm.fire
-            )
-          ) else (
-            someMyWbPayload(1).instrCnt.myPsIdBubble.last
-          )
-        )
-        when (someMyWbPayload(1).encInstr.payload.orR) {
-          io.dbgInfo.encInstrAtRegFileWrite := (
-            someMyWbPayload(1).encInstr.payload
-          )
-        }
-        io.dbgInfo.immAtRegFileWrite := (
-          someMyWbPayload(1).imm.last
-        )
-        io.dbgInfo.rdMemWordAtRegFileWrite := (
-          someMyWbPayload(1).myExt(0).rdMemWord
-        )
-        io.dbgInfo.gprIdxVecAtRegFileWrite := (
-          someMyWbPayload(1).gprIdxVec
-        )
       }
     }
   }
@@ -2591,14 +2573,16 @@ case class SnowHouseForFmaxPipeStageWriteBack(
   ) generate (new Area {
     setCommitEtc(
       someMyWbPayload=myMemWbPayload,
-      someCommitStm=myCommitInpStmVec.head.head,
-      someRegFileWrPulseStm=myRegFileWrPulseInpStmVec.head.head,
+      someCommitStm=myMemCommitFrontInpStm,
+      //someCommitStm=myCommitInpStmVec.head.head,
+      //someRegFileWrPulseStm=myRegFileWrPulseInpStmVec.head.head,
       isMem=true
     )
     setCommitEtc(
       someMyWbPayload=myNonMemWbPayload,
-      someCommitStm=myCommitInpStmVec.head.last,
-      someRegFileWrPulseStm=myRegFileWrPulseInpStmVec.head.last,
+      someCommitStm=myNonMemCommitFrontInpStm,
+      //someCommitStm=myCommitInpStmVec.head.last,
+      //someRegFileWrPulseStm=myRegFileWrPulseInpStmVec.head.last,
       isMem=false
     )
     //val rCommitIdx = {
@@ -2713,10 +2697,123 @@ case class SnowHouseForFmaxPipeStageWriteBack(
   if (!cfg.optScoreboard) {
     setCommitEtc(
       someMyWbPayload=myWbPayloadVec.head,
-      someCommitStm=null,
-      someRegFileWrPulseStm=myRegFileWrPulseOutpStm,
+      someCommitStm=myCommitOutpStm,
+      //someRegFileWrPulseStm=myRegFileWrPulseOutpStm,
       isMem=false
     )
+  }
+  if (io.dbgInfo != null) {
+    io.dbgInfo.regFileWriteData := (
+      RegNext(
+        io.dbgInfo.regFileWriteData
+      )
+    )
+    io.dbgInfo.regFileWriteAddr := (
+      RegNext(
+        io.dbgInfo.regFileWriteAddr
+      )
+    )
+    io.dbgInfo.regFileWriteEnable := False
+    io.dbgInfo.laggingRegPcAtRegFileWrite := (
+      RegNext(
+        io.dbgInfo.laggingRegPcAtRegFileWrite
+      )
+    )
+    io.dbgInfo.shouldIgnoreInstrAtRegFileWrite := (
+      RegNext(
+        io.dbgInfo.shouldIgnoreInstrAtRegFileWrite
+      )
+    )
+    io.dbgInfo.myPsIdBubbleAtRegFileWrite := (
+      RegNext(
+        io.dbgInfo.myPsIdBubbleAtRegFileWrite
+      )
+    )
+    io.dbgInfo.encInstrAtRegFileWrite := (
+      //someMyWbPayload(1).encInstr.payload
+      RegNext(
+        io.dbgInfo.encInstrAtRegFileWrite,
+        init=io.dbgInfo.encInstrAtRegFileWrite.getZero
+      )
+    )
+    io.dbgInfo.immAtRegFileWrite := (
+      //someMyWbPayload(1).imm.last
+      RegNext(
+        io.dbgInfo.immAtRegFileWrite,
+      )
+    )
+    io.dbgInfo.rdMemWordAtRegFileWrite := (
+      //someMyWbPayload(1).myExt(0).rdMemWord
+      RegNext(
+        io.dbgInfo.rdMemWordAtRegFileWrite
+      )
+    )
+    io.dbgInfo.gprIdxVecAtRegFileWrite := (
+      //someMyWbPayload(1).gprIdxVec
+      RegNext(
+        io.dbgInfo.gprIdxVecAtRegFileWrite
+      )
+    )
+    when (
+      //myCommitOutpStm.fire
+      myCommitOutpStm.fire
+    ) {
+      io.dbgInfo.regFileWriteData := (
+        myCommitOutpStm.regFileWrite.data
+      )
+      io.dbgInfo.regFileWriteAddr := (
+        myCommitOutpStm.regFileWrite.addr
+      )
+      io.dbgInfo.regFileWriteEnable := (
+        if (cfg.optScoreboard) (
+          myCommitOutpStm.fire
+          && (
+            myCommitOutpStm.fire
+          )
+        ) else (
+          myCommitOutpStm.fire
+        )
+      )
+      io.dbgInfo.laggingRegPcAtRegFileWrite := (
+        myCommitOutpStm.myWbPayload.laggingRegPc.resize(
+          cfg.mainWidth bits
+        )
+      )
+      io.dbgInfo.shouldIgnoreInstrAtRegFileWrite := (
+        if (cfg.optScoreboard) (
+          myCommitOutpStm.myWbPayload.instrCnt.shouldIgnoreInstr.last
+          || (
+            !myCommitOutpStm.fire
+          )
+        ) else (
+          myCommitOutpStm.myWbPayload.instrCnt.shouldIgnoreInstr.last
+        )
+      )
+      io.dbgInfo.myPsIdBubbleAtRegFileWrite := (
+        if (cfg.optScoreboard) (
+          myCommitOutpStm.myWbPayload.instrCnt.myPsIdBubble.last
+          || (
+            !myCommitOutpStm.fire
+          )
+        ) else (
+          myCommitOutpStm.myWbPayload.instrCnt.myPsIdBubble.last
+        )
+      )
+      when (myCommitOutpStm.myWbPayload.encInstr.payload.orR) {
+        io.dbgInfo.encInstrAtRegFileWrite := (
+          myCommitOutpStm.myWbPayload.encInstr.payload
+        )
+      }
+      io.dbgInfo.immAtRegFileWrite := (
+        myCommitOutpStm.myWbPayload.imm.last
+      )
+      io.dbgInfo.rdMemWordAtRegFileWrite := (
+        myCommitOutpStm.myWbPayload.myExt(0).rdMemWord
+      )
+      io.dbgInfo.gprIdxVecAtRegFileWrite := (
+        myCommitOutpStm.myWbPayload.gprIdxVec
+      )
+    }
   }
 
   Builder(linkArr)

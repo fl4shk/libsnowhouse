@@ -8693,7 +8693,7 @@ case class SnowHousePipeStageExecute(
           cLink.up.isValid
           && myTempDownIsReady
           && !rSeenH2dBusFire
-          && !outp.instrCnt.myPsIdBubble.head
+          //&& !outp.instrCnt.myPsIdBubble.head
         ) else (
           cLink.up.isValid
           && myTempDownIsReady
