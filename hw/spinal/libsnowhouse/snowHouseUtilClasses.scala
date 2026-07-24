@@ -2344,15 +2344,19 @@ case class SnowHousePipePayload(
     )
     && !instrCnt.myPsIdBubble.head
     && (
-      RegNextWhen(
-        (
-          !splitOp.opIsMemAccess
-          || inpDecodeExt.last.memAccessKind.asBits(1)
-        ),
-        cond=someNodeIsFiring,
-        init=False,
-      )
+      !splitOp.opIsMemAccess
+      //|| inpDecodeExt.last.memAccessKind.asBits(1)
     )
+    //&& (
+    //  RegNextWhen(
+    //    (
+    //      !splitOp.opIsMemAccess
+    //      || inpDecodeExt.last.memAccessKind.asBits(1)
+    //    ),
+    //    cond=someNodeIsFiring,
+    //    init=False,
+    //  )
+    //)
     //&& gprIsNonZeroVec.last.last
   )
 }
