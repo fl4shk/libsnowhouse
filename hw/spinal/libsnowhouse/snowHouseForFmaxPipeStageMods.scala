@@ -1606,7 +1606,8 @@ case class SnowHouseForFmaxPsWbReorderBuf(
             && wrPulse.addr === inp.reorderBufIdx
           ) {
             outp.most := wrPulse.data.most
-          } elsewhen (
+          } 
+          .elsewhen (
             RegNextWhen(
               wrPulse.addr,
               cond=wrPulse.fire,
@@ -1620,7 +1621,8 @@ case class SnowHouseForFmaxPsWbReorderBuf(
                 init=wrPulse.data.most.getZero
               )
             )
-          } otherwise {
+          } 
+          .otherwise {
             outp.most := rdMemWord.most
           }
         },
@@ -1628,6 +1630,11 @@ case class SnowHouseForFmaxPsWbReorderBuf(
           1//0//1
         ),
         optWrHistLength=1,
+        initBigInt=Some({
+          val tempArr = new ArrayBuffer[BigInt]()
+          tempArr ++= Array.fill(myReorderBufSize)(BigInt(0))
+          Array(tempArr).toSeq
+        }),
         arrRamStyleAltera=(
           //"no_rw_check, logic"
           "no_rw_check, MLAB"
@@ -1655,11 +1662,13 @@ case class SnowHouseForFmaxPsWbReorderBuf(
   //  log2Up(rValidVec.size) bits
   //)
   myRam.io.wrPulse.data.most := io.push.most
-  when (myRam.io.rdAddrPipe.fire) {
-    rValidVec(myRam.io.rdAddrPipe.addr) := False
-  }
   when (myRam.io.wrPulse.fire) {
     rValidVec(myRam.io.wrPulse.addr) := True
+  }
+  when (
+    myRam.io.rdAddrPipe.fire
+  ) {
+    rValidVec(myRam.io.rdAddrPipe.addr) := False
   }
 
   //val myTempPushStm = Vec.fill(2)(
@@ -1682,6 +1691,10 @@ case class SnowHouseForFmaxPsWbReorderBuf(
   myRam.io.rdAddrPipe.valid := (
     rValidVec(
       myRdAddr
+    )
+    || (
+      myRam.io.wrPulse.fire
+      && myRam.io.wrPulse.addr === myRdAddr
     )
   )
   myRam.io.rdAddrPipe.data := myRam.io.rdAddrPipe.data.getZero
@@ -2547,20 +2560,20 @@ case class SnowHouseForFmaxPipeStageWriteBack(
       myCommitBackStm
     )
   )
-  //val myCommitForkStm = (
-  //  cfg.optScoreboard
-  //) generate (
-  //  StreamFork(
-  //    input=myCommitBackStm,
-  //    portCount=2,
-  //    synchronous=true,
-  //  )
-  //)
+  val myCommitForkStm = (
+    cfg.optScoreboard
+  ) generate (
+    StreamFork(
+      input=myCommitBackStm,
+      portCount=2,
+      synchronous=true,
+    )
+  )
   if (cfg.optScoreboard) {
-    //myCommitFinalOutpStm.ready := True
+    myCommitFinalOutpStm.ready := True
     myReorderBuf.io.push << (
-      //myCommitForkStm.head
-      myCommitBackStm
+      myCommitForkStm.head
+      //myCommitBackStm
     )
   }
 
@@ -2617,7 +2630,7 @@ case class SnowHouseForFmaxPipeStageWriteBack(
   io.commitEtc.myRegFileWrPulse.valid := (
     if (cfg.optScoreboard) (
       //myCommitBackStm.fire
-      myCommitFinalOutpStm.valid//fire
+      myCommitFinalOutpStm.fire
     ) else (
       //myCommitBackStm.valid
       myCommitFinalOutpStm.valid
@@ -2629,8 +2642,8 @@ case class SnowHouseForFmaxPipeStageWriteBack(
   )
   if (cfg.optScoreboard) {
     (
-      myCommitFinalOutpStm
-      //myCommitForkStm.last
+      //myCommitFinalOutpStm
+      myCommitForkStm.last
     )
     .translateInto(io.commitEtc.scoreboardTag)(
       dataAssignment=(outp, inp) => {
