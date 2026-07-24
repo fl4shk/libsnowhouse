@@ -1601,12 +1601,12 @@ case class SnowHouseForFmaxPsWbReorderBuf(
           ],
         ) => {
           outp.reorderBufIdx := inp.reorderBufIdx
-          //when (
-          //  wrPulse.fire
-          //  && wrPulse.addr === inp.reorderBufIdx
-          //) {
-          //  outp.most := wrPulse.data.most
-          //} 
+          when (
+            wrPulse.fire
+            && wrPulse.addr === inp.reorderBufIdx
+          ) {
+            outp.most := wrPulse.data.most
+          } 
           //elsewhen (
           //  RegNextWhen(
           //    wrPulse.addr,
@@ -1622,9 +1622,9 @@ case class SnowHouseForFmaxPsWbReorderBuf(
           //    )
           //  )
           //} 
-          //.otherwise {
+          .otherwise {
             outp.most := rdMemWord.most
-          //}
+          }
         },
         optRdLatency=(
           1//0//1
