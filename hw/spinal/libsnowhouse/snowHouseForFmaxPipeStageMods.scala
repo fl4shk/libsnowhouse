@@ -430,6 +430,7 @@ case class SnowHouseForFmaxScoreboard(
             // other "RAW" hazards will be handled via my implementation of
             // fast forwarding!
             rMyInfoVec(jdx).readGprsHazardValid
+            || rMyInfoVec(io.readGprs.tag).issueHazardValid
             //|| io.myTempOpMayNeedHazardCheck
             //|| (
             //  io.readGprs.valid
