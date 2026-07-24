@@ -2547,20 +2547,20 @@ case class SnowHouseForFmaxPipeStageWriteBack(
       myCommitBackStm
     )
   )
-  val myCommitForkStm = (
-    cfg.optScoreboard
-  ) generate (
-    StreamFork(
-      input=myCommitBackStm,
-      portCount=2,
-      synchronous=true,
-    )
-  )
+  //val myCommitForkStm = (
+  //  cfg.optScoreboard
+  //) generate (
+  //  StreamFork(
+  //    input=myCommitBackStm,
+  //    portCount=2,
+  //    synchronous=true,
+  //  )
+  //)
   if (cfg.optScoreboard) {
-    myCommitFinalOutpStm.ready := True
+    //myCommitFinalOutpStm.ready := True
     myReorderBuf.io.push << (
-      myCommitForkStm.head
-      //myCommitBackStm
+      //myCommitForkStm.head
+      myCommitBackStm
     )
   }
 
@@ -2629,8 +2629,8 @@ case class SnowHouseForFmaxPipeStageWriteBack(
   )
   if (cfg.optScoreboard) {
     (
-      //myCommitFinalOutpStm
-      myCommitForkStm.last
+      myCommitFinalOutpStm
+      //myCommitForkStm.last
     )
     .translateInto(io.commitEtc.scoreboardTag)(
       dataAssignment=(outp, inp) => {
