@@ -364,6 +364,7 @@ case class SnowHouseForFmaxScoreboard(
   )
 
   val tempHaveReadGprsHazardAddrCheckVec = (
+    // non-forwardable RAW hazards
     Vec.fill(cfg.optMaxNumScoreboardInstrs)(
       Vec.fill(
         myReadGprsHazardCheckVecInnerSize
@@ -609,6 +610,7 @@ case class SnowHouseForFmaxScoreboard(
             //io.myTempOpMayNeedHazardCheck
             True
           )
+
           rMyInfoVec(idx).gprIdxVec := io.issueGprIdxVec
           rMyInfoVec(idx).gprIsNonZeroVec := (
             //io.issueGprIdxVec.last.orR // check for non-zero
