@@ -2476,20 +2476,28 @@ case class SnowHousePipeStagePreFwd(
         //&& outp.gprIsNonZeroVec.last.last
         //&& !myShouldIgnoreInstr(0)
         outp.gprIsNonZeroVec.last.last
-        && (
-          (
-            //!myBranchMispredictEtc
-            //&& 
+        && outp.calcForFmaxFwdValidMost(
+          someShouldIgnoreInstr=(
             !rMyPsExSetPcState
-            && !myBranchMispredictEtc
-          )
-          || outp.regPcSetItCnt(1).lsb
+            //&& !myBranchMispredictEtc
+          ),
+          inPsEx=false
         )
-        && !outp.instrCnt.myPsIdBubble.head
-        && (
-          !outp.splitOp.opIsMemAccess
-          || outp.inpDecodeExt.last.memAccessKind.asBits(1)
-        )
+        && outp.gprIsNonZeroVec.last.last
+        //&& (
+        //  (
+        //    //!myBranchMispredictEtc
+        //    //&& 
+        //    !rMyPsExSetPcState
+        //    && !myBranchMispredictEtc
+        //  )
+        //  || outp.regPcSetItCnt(1).lsb
+        //)
+        //&& !outp.instrCnt.myPsIdBubble.head
+        //&& (
+        //  !outp.splitOp.opIsMemAccess
+        //  || outp.inpDecodeExt.last.memAccessKind.asBits(1)
+        //)
         //&& !outp.instrCnt.myPsIdBubble.last
       )
       //temp.data := outp.myExt(0).modMemWord //ram.io.wrData
@@ -2521,7 +2529,12 @@ case class SnowHousePipeStagePreFwd(
         ),
         init=temp.getZero
       )
+      //myTempHist
 
+      val myFwdInfoVec = Vec.fill(myTempHist.size)(
+        cloneOf(temp)
+      )
+      myFwdInfoVec := myTempHist
       when (
         //(
         //  !rMyPsExSetPcState
@@ -2534,14 +2547,35 @@ case class SnowHousePipeStagePreFwd(
         //  outp.splitOp.opIsMemAccess
         //  && !outp.inpDecodeExt.last.memAccessKind.asBits(1)
         //)
-        !temp.valid
+        //!temp.valid
+        //(
+        //  (
+        //    //!myBranchMispredictEtc
+        //    //&& 
+        //    !rMyPsExSetPcState
+        //    && !myBranchMispredictEtc
+        //  )
+        //  || outp.regPcSetItCnt(1).lsb
+        //)
+        //&& !outp.instrCnt.myPsIdBubble.head
+        //&& (
+        //  !outp.splitOp.opIsMemAccess
+        //  || outp.inpDecodeExt.last.memAccessKind.asBits(1)
+        //)
+        outp.calcForFmaxFwdValidMost(
+          someShouldIgnoreInstr=(
+            !rMyPsExSetPcState
+            //&& !myBranchMispredictEtc
+          ),
+          inPsEx=false
+        )
         && outp.gprIsNonZeroVec.last.last
       ) {
-        myTempHist.foreach(item => {
+        myFwdInfoVec.foreach(item => {
           item.valid := False
         })
       }
-      myTempHist
+      myFwdInfoVec
     }
     //val myHistForFwdData = (
     //  History(

@@ -2323,4 +2323,29 @@ case class SnowHousePipePayload(
       })
     }
   }
+  def calcForFmaxFwdValidMost(
+    someShouldIgnoreInstr: Bool,
+    inPsEx: Boolean,
+  ): Bool = (
+    (
+      //(
+      //  //!myBranchMispredictEtc
+      //  //&& 
+      //  !rMyPsExSetPcState
+      //  && !myBranchMispredictEtc
+      //)
+      if (inPsEx) (
+        someShouldIgnoreInstr
+      ) else (
+        someShouldIgnoreInstr
+        || regPcSetItCnt(1).lsb
+      )
+    )
+    && !instrCnt.myPsIdBubble.head
+    && (
+      !splitOp.opIsMemAccess
+      || inpDecodeExt.last.memAccessKind.asBits(1)
+    )
+    //&& gprIsNonZeroVec.last.last
+  )
 }
