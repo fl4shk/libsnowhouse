@@ -464,44 +464,44 @@ case class SnowHouseForFmaxScoreboard(
     && !tempHaveReadGprsHazardAddrCheckVec.asBits.orR
   )
 
-  for (idx <- 0 until myCommitHazardCheckVecInnerSize) {
-    // WAR hazards
-    val tempRegIdx = (
-      //rMyInfoVec(io.commit.tag).gprIdxVec(idx)
-      rMyInfoVec(io.commit.tag).gprIdxVec.last
-    )
-    for (jdx <- 0 until cfg.optMaxNumScoreboardInstrs) {
-      val myTempInfoGprIdx = (
-        //rMyInfoVec(jdx).gprIdxVec.last
-        rMyInfoVec(jdx).gprIdxVec(idx)
-      )
-      tempHaveCommitHazardAddrCheckVec(jdx)(idx) := (
-        //tempRegIdx === myHistLastGprIdx(jdx + 1).last
-        //tempRegIdx === rMyInfoVec(jdx).gprIdxVec(idx)
-        tempRegIdx === myTempInfoGprIdx
-        //&& myTempInfoGprIdx.orR // check for non-zero
-        && rMyInfoVec(jdx).gprIsNonZeroVec(idx)
-        && (
-          rMyInfoVec(io.commit.tag).instrAge
-          > rMyInfoVec(jdx).instrAge
-        )
-        //&& rMyInfoVec(io.commit.tag).allocValid
-        //&& rMyInfoVec(jdx).hazardValid
-        //&& (
-        //  //rMyInfoVec(jdx).hazardValid
-        //  //|| 
-        //  rMyInfoVec(io.commit.tag).hazardValid
-        //)
-        && rMyInfoVec(jdx).issueAllocValid
-        && io.commit.tag =/= jdx
-        //&& io.commit.valid
-      )
-    }
-  }
+  //for (idx <- 0 until myCommitHazardCheckVecInnerSize) {
+  //  // WAR hazards
+  //  val tempRegIdx = (
+  //    //rMyInfoVec(io.commit.tag).gprIdxVec(idx)
+  //    rMyInfoVec(io.commit.tag).gprIdxVec.last
+  //  )
+  //  for (jdx <- 0 until cfg.optMaxNumScoreboardInstrs) {
+  //    val myTempInfoGprIdx = (
+  //      //rMyInfoVec(jdx).gprIdxVec.last
+  //      rMyInfoVec(jdx).gprIdxVec(idx)
+  //    )
+  //    tempHaveCommitHazardAddrCheckVec(jdx)(idx) := (
+  //      //tempRegIdx === myHistLastGprIdx(jdx + 1).last
+  //      //tempRegIdx === rMyInfoVec(jdx).gprIdxVec(idx)
+  //      tempRegIdx === myTempInfoGprIdx
+  //      //&& myTempInfoGprIdx.orR // check for non-zero
+  //      && rMyInfoVec(jdx).gprIsNonZeroVec(idx)
+  //      && (
+  //        rMyInfoVec(io.commit.tag).instrAge
+  //        > rMyInfoVec(jdx).instrAge
+  //      )
+  //      //&& rMyInfoVec(io.commit.tag).allocValid
+  //      //&& rMyInfoVec(jdx).hazardValid
+  //      //&& (
+  //      //  //rMyInfoVec(jdx).hazardValid
+  //      //  //|| 
+  //      //  rMyInfoVec(io.commit.tag).hazardValid
+  //      //)
+  //      && rMyInfoVec(jdx).issueAllocValid
+  //      && io.commit.tag =/= jdx
+  //      //&& io.commit.valid
+  //    )
+  //  }
+  //}
   io.commit.ready := (
-    io.commit.valid && 
-    !tempHaveCommitHazardAddrCheckVec.asBits.orR
-    //True
+    //io.commit.valid && 
+    //!tempHaveCommitHazardAddrCheckVec.asBits.orR
+    True
   )
 
   val myInfoAllocValidVec = (
@@ -1536,7 +1536,7 @@ case class SnowHouseForFmaxPsWbReorderBufPayload(
     cfg.optScoreboard
     && optIncludeBufIdx
   ) generate (
-    UInt(cfg.optScoreboardReorderBufWidth bits   )
+    UInt(cfg.optScoreboardReorderBufWidth bits)
   )
 }
 
@@ -1564,7 +1564,7 @@ case class SnowHouseForFmaxPsWbReorderBuf(
   val io = SnowHouseForFmaxPsWbReorderBufIo(cfg=cfg)
   //--------
   val myReorderBufSize = (
-    1 << log2Up(cfg.optScoreboardReorderBufWidth)
+    1 << cfg.optScoreboardReorderBufWidth
   )
   //val myFifo = (
   //  StreamFifo(
@@ -1580,7 +1580,7 @@ case class SnowHouseForFmaxPsWbReorderBuf(
       cfg=WrPulseRdPipeRamConfig(
         modType=SnowHouseForFmaxPsWbReorderBufPayload(
           cfg=cfg,
-          optIncludeBufIdx=false,
+          optIncludeBufIdx=true,
         ),
         wordType=SnowHouseForFmaxPsWbReorderBufPayload(
           cfg=cfg,
@@ -1599,7 +1599,31 @@ case class SnowHouseForFmaxPsWbReorderBuf(
             ]
           ],
         ) => {
-          outp := rdMemWord
+          outp.reorderBufIdx := inp.reorderBufIdx
+          //when (
+          //  wrPulse.fire
+          //  && wrPulse.addr === inp.reorderBufIdx
+          //) {
+          //  outp.most := wrPulse.data.most
+          //} 
+          //elsewhen (
+          //  RegNextWhen(
+          //    wrPulse.addr,
+          //    cond=wrPulse.fire,
+          //    init=wrPulse.addr.getZero
+          //  ) === inp.reorderBufIdx
+          //) {
+          //  outp.most := (
+          //    RegNextWhen(
+          //    wrPulse.data.most,
+          //      cond=wrPulse.fire,
+          //      init=wrPulse.data.most.getZero
+          //    )
+          //  )
+          //} 
+          //.otherwise {
+            outp.most := rdMemWord.most
+          //}
         },
         optRdLatency=(
           1//0//1
@@ -1625,38 +1649,65 @@ case class SnowHouseForFmaxPsWbReorderBuf(
     Reg(Bool(), init=False)
   )
 
-  myRam.io.wrPulse.valid := io.push.fire
-  myRam.io.wrPulse.addr := io.push.reorderBufIdx.resize(
-    log2Up(rValidVec.size) bits
-  )
+  io.push.ready := True
+  myRam.io.wrPulse.valid := io.push.valid//fire//valid//valid//fire
+  myRam.io.wrPulse.addr := io.push.reorderBufIdx
+  //.resize(
+  //  log2Up(rValidVec.size) bits
+  //)
   myRam.io.wrPulse.data.most := io.push.most
+  when (myRam.io.rdAddrPipe.fire) {
+    rValidVec(myRam.io.rdAddrPipe.addr) := False
+  }
   when (myRam.io.wrPulse.fire) {
     rValidVec(myRam.io.wrPulse.addr) := True
   }
 
-  val myTempPushStm = cloneOf(io.push)
-  myTempPushStm << io.push.haltWhen(
-    !rValidVec(
-      io.push.reorderBufIdx.resize(log2Up(rValidVec.size) bits)
+  //val myTempPushStm = Vec.fill(2)(
+  //  cloneOf(io.pop)
+  //  //Stream(
+  //  //  cloneOf(io.push.payload)
+  //  //)
+  //)
+  //myTempPushStm.head.valid := True
+  //myTempPushStm.head.most := io.push.most
+  val myRdAddr = cloneOf(myRam.io.rdAddrPipe.addr)
+  myRdAddr := (
+    RegNextWhen(
+      (myRdAddr + 1),
+      cond=myRam.io.rdAddrPipe.fire,
+      init=myRdAddr.getZero,
     )
   )
-  
-  myTempPushStm.translateInto(myRam.io.rdAddrPipe)(
-    dataAssignment=(outp, inp) => {
-      outp.data.most := inp.most
-      outp.addr := (
-        //inp.reorderBufIdx
-        RegNextWhen(
-          (outp.addr + 1),
-          cond=myRam.io.rdAddrPipe.fire,
-          init=outp.addr.getZero,
-        )
-      )
-      when (myRam.io.rdAddrPipe.fire) {
-        rValidVec(outp.addr) := False
-      }
-    }
+  //myTempPushStm.last << myTempPushStm.head.haltWhen
+  myRam.io.rdAddrPipe.valid := (
+    rValidVec(
+      myRdAddr
+    )
   )
+  myRam.io.rdAddrPipe.data := myRam.io.rdAddrPipe.data.getZero
+  myRam.io.rdAddrPipe.data.reorderBufIdx.allowOverride
+  myRam.io.rdAddrPipe.data.reorderBufIdx := myRdAddr
+  myRam.io.rdAddrPipe.addr := myRdAddr
+  
+  //myTempPushStm.last.translateInto(myRam.io.rdAddrPipe)(
+  //  dataAssignment=(outp, inp) => {
+  //    //outp.data.most := inp.most
+  //    //outp.data.most := outp
+  //    outp.addr := (
+  //      //inp.reorderBufIdx
+  //      //RegNextWhen(
+  //      //  (outp.addr + 1),
+  //      //  cond=myRam.io.rdAddrPipe.fire,
+  //      //  init=outp.addr.getZero,
+  //      //)
+  //      myRdAddr
+  //    )
+  //    //when (myRam.io.rdAddrPipe.fire) {
+  //    //  rValidVec(outp.addr) := False
+  //    //}
+  //  }
+  //)
 
   io.pop << myRam.io.rdDataPipe
 }
@@ -2903,7 +2954,9 @@ case class SnowHouseForFmaxPipeStageWriteBack(
     )
   }
   if (io.dbgInfo != null) {
-    io.dbgInfo := RegNext(io.dbgInfo)
+    io.dbgInfo := RegNext(io.dbgInfo, init=io.dbgInfo.getZero)
+    io.dbgInfo.regFileWriteEnable.allowOverride 
+    io.dbgInfo.regFileWriteEnable := False 
     //io.dbgInfo.regFileWriteData := (
     //  RegNext(
     //    io.dbgInfo.regFileWriteData
@@ -2967,7 +3020,9 @@ case class SnowHouseForFmaxPipeStageWriteBack(
       )
       io.dbgInfo.regFileWriteEnable := (
         if (cfg.optScoreboard) (
-          myCommitFinalOutpStm.fire
+          (
+            myCommitFinalOutpStm.regFileWrite.addr =/= 0x0
+          )
           && (
             myCommitFinalOutpStm.fire
           )
