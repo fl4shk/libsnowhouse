@@ -1606,23 +1606,21 @@ case class SnowHouseForFmaxPsWbReorderBuf(
             && wrPulse.addr === inp.reorderBufIdx
           ) {
             outp.most := wrPulse.data.most
-          } 
-          //elsewhen (
-          //  RegNextWhen(
-          //    wrPulse.addr,
-          //    cond=wrPulse.fire,
-          //    init=wrPulse.addr.getZero
-          //  ) === inp.reorderBufIdx
-          //) {
-          //  outp.most := (
-          //    RegNextWhen(
-          //    wrPulse.data.most,
-          //      cond=wrPulse.fire,
-          //      init=wrPulse.data.most.getZero
-          //    )
-          //  )
-          //} 
-          .otherwise {
+          } elsewhen (
+            RegNextWhen(
+              wrPulse.addr,
+              cond=wrPulse.fire,
+              init=wrPulse.addr.getZero
+            ) === inp.reorderBufIdx
+          ) {
+            outp.most := (
+              RegNextWhen(
+              wrPulse.data.most,
+                cond=wrPulse.fire,
+                init=wrPulse.data.most.getZero
+              )
+            )
+          } otherwise {
             outp.most := rdMemWord.most
           }
         },
