@@ -2476,20 +2476,20 @@ case class SnowHousePipeStagePreFwd(
         //&& outp.gprIsNonZeroVec.last.last
         //&& !myShouldIgnoreInstr(0)
         outp.gprIsNonZeroVec.last.last
-        && (
-          (
-            //!myBranchMispredictEtc
-            //&& 
-            !rMyPsExSetPcState
-            && !myBranchMispredictEtc
-          )
-          || outp.regPcSetItCnt(1).lsb
-        )
+        //&& (
+        //  (
+        //    //!myBranchMispredictEtc
+        //    //&& 
+        //    !rMyPsExSetPcState
+        //    && !myBranchMispredictEtc
+        //  )
+        //  || outp.regPcSetItCnt(1).lsb
+        //)
         //&& !outp.instrCnt.myPsIdBubble.head
-        && (
-          !outp.splitOp.opIsMemAccess
-          || outp.outpDecodeExt.memAccessKind.asBits(1)
-        )
+        //&& (
+        //  !outp.splitOp.opIsMemAccess
+        //  || outp.outpDecodeExt.memAccessKind.asBits(1)
+        //)
       )
       //temp.data := outp.myExt(0).modMemWord //ram.io.wrData
       temp.addr := outp.gprIdxVec.last
@@ -2500,7 +2500,20 @@ case class SnowHousePipeStagePreFwd(
         ),
         when=(
           upIsFiring
+          && (
+            (
+              //!myBranchMispredictEtc
+              //&& 
+              !rMyPsExSetPcState
+              && !myBranchMispredictEtc
+            )
+            || outp.regPcSetItCnt(1).lsb
+          )
           && !outp.instrCnt.myPsIdBubble.last
+          && (
+            !outp.splitOp.opIsMemAccess
+            //|| outp.outpDecodeExt.memAccessKind.asBits(1)
+          )
         ),
         init=temp.getZero
       )
@@ -7515,12 +7528,12 @@ case class SnowHousePipeStageExecute(
       temp.valid := (
         outp.myExt(0).modMemWordValid.last //ram.io.wrEn
         && outp.gprIsNonZeroVec.last.last
-        && !myShouldIgnoreInstr(0)
+        //&& !myShouldIgnoreInstr(0)
         //&& !outp.instrCnt.myPsIdBubble.last
-        && (
-          !outp.splitOp.opIsMemAccess
-          || outp.outpDecodeExt.memAccessKind.asBits(1)
-        )
+        //&& (
+        //  !outp.splitOp.opIsMemAccess
+        //  || outp.outpDecodeExt.memAccessKind.asBits(1)
+        //)
       )
       temp.data := outp.myExt(0).modMemWord //ram.io.wrData
       //temp.addr := outp.gprIdxVec.last
@@ -7531,9 +7544,28 @@ case class SnowHousePipeStageExecute(
         ),
         when=(
           cLink.up.isFiring
+          //&& !outp.instrCnt.myPsIdBubble.last
+          ////&& !outp.splitOp.memAccessKind.
+          ////&& !outp.splitOp.opIsMemAccess
+          //&& (
+          //  !outp.splitOp.opIsMemAccess
+          //  //|| outp.outpDecodeExt.memAccessKind.asBits(1)
+          //)
+          && (
+            //(
+            //  //!myBranchMispredictEtc
+            //  //&& 
+            //  !rMyPsExSetPcState
+            //  && !myBranchMispredictEtc
+            //)
+            //|| outp.regPcSetItCnt(1).lsb
+            !myShouldIgnoreInstr(0)
+          )
           && !outp.instrCnt.myPsIdBubble.last
-          //&& !outp.splitOp.memAccessKind.
-          //&& !outp.splitOp.opIsMemAccess
+          && (
+            !outp.splitOp.opIsMemAccess
+            //|| outp.outpDecodeExt.memAccessKind.asBits(1)
+          )
         ),
         init=temp.getZero
       )

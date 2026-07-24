@@ -2617,7 +2617,7 @@ case class SnowHouseForFmaxPipeStageWriteBack(
   io.commitEtc.myRegFileWrPulse.valid := (
     if (cfg.optScoreboard) (
       //myCommitBackStm.fire
-      myCommitFinalOutpStm.fire
+      myCommitFinalOutpStm.valid//fire
     ) else (
       //myCommitBackStm.valid
       myCommitFinalOutpStm.valid
