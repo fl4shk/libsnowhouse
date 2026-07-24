@@ -2481,6 +2481,7 @@ case class SnowHousePipeStagePreFwd(
             !rMyPsExSetPcState
             //&& !myBranchMispredictEtc
           ),
+          someNodeIsFiring=upIsFiring,
           inPsEx=false
         )
         && outp.gprIsNonZeroVec.last.last
@@ -2567,6 +2568,7 @@ case class SnowHousePipeStagePreFwd(
             !rMyPsExSetPcState
             //&& !myBranchMispredictEtc
           ),
+          someNodeIsFiring=upIsFiring,
           inPsEx=false
         )
         && outp.gprIsNonZeroVec.last.last
