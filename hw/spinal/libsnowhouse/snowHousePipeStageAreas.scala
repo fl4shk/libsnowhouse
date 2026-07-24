@@ -2486,7 +2486,10 @@ case class SnowHousePipeStagePreFwd(
           || outp.regPcSetItCnt(1).lsb
         )
         //&& !outp.instrCnt.myPsIdBubble.head
-        && !outp.splitOp.opIsMemAccess
+        && (
+          !outp.splitOp.opIsMemAccess
+          || outp.outpDecodeExt.memAccessKind.asBits(1)
+        )
       )
       //temp.data := outp.myExt(0).modMemWord //ram.io.wrData
       temp.addr := outp.gprIdxVec.last
@@ -7512,7 +7515,10 @@ case class SnowHousePipeStageExecute(
         && outp.gprIsNonZeroVec.last.last
         && !myShouldIgnoreInstr(0)
         //&& !outp.instrCnt.myPsIdBubble.last
-        && !outp.splitOp.opIsMemAccess
+        && (
+          !outp.splitOp.opIsMemAccess
+          || outp.outpDecodeExt.memAccessKind.asBits(1)
+        )
       )
       temp.data := outp.myExt(0).modMemWord //ram.io.wrData
       //temp.addr := outp.gprIdxVec.last
