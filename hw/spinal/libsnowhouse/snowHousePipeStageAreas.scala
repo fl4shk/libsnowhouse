@@ -2576,7 +2576,7 @@ case class SnowHousePipeStagePreFwd(
             //+ (("0" * (myTempHistFwdValid(jdx).getWidth - idx - 1)))
             ("-" * (size - idx - 1) + "1" + ("0" * idx))
           })) {
-            outp.forFmaxFwdIdx(jdx) := idx + 1
+            outp.forFmaxFwdIdx(jdx) := idx //+ 1
             //outp.myExt(0).rdMemWord(jdx) := (
             //  myHistFwdInfo(
             //    //myHistFwdInfo.size - 1 - idx //(idx + 1)
@@ -2587,8 +2587,8 @@ case class SnowHousePipeStagePreFwd(
         }
         default {
           outp.forFmaxFwdIdx(jdx) := (
-            0x0
-            //(1 << outp.forFmaxFwdIdx(jdx).getWidth) - 1
+            //0x0
+            (1 << outp.forFmaxFwdIdx(jdx).getWidth) - 1
           )
           //outp.myExt(0).rdMemWord(jdx) := (
           //  inp.myExt(0).rdMemWord(jdx)
@@ -7637,8 +7637,8 @@ case class SnowHousePipeStageExecute(
         for (
           idx
           //<- 0 until myTempHistFwdValid(jdx).getWidth
-          //<- 0 until (1 << outp.optForFmaxFwdIdx(jdx).getWidth)
-          <- 0 until cfg.optForFmaxPsExFwdSize //- 1
+          <- 0 until (1 << outp.forFmaxFwdIdx(jdx).getWidth)
+          //<- 0 until cfg.optForFmaxPsExFwdSize //- 1
         ) {
           is (
             //MaskedLiteral({
@@ -7666,7 +7666,11 @@ case class SnowHousePipeStageExecute(
             //    ).data
             //  }
             //)
-            if (idx == 0) {
+            if (
+              //idx == 0
+              //idx == (1 << outp.forFmaxFwdIdx(jdx).getWidth) - 1
+              idx >= cfg.optForFmaxPsExFwdSize - 1
+            ) {
               //outp.myExt(0).rdMemWord(jdx) := (
               //  RegNext(
               //    outp.myExt(0).rdMemWord(jdx),
@@ -7832,7 +7836,7 @@ case class SnowHousePipeStageExecute(
                 outp.myExt(0).rdMemWord(jdx) := (
                   myHistFwdInfo(
                     //myHistFwdInfo.size - 1 - idx //(idx + 1)
-                    idx //+ 1
+                    idx + 1
                     //idx
                   ).data
                 )
