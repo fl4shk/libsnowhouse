@@ -2476,15 +2476,15 @@ case class SnowHousePipeStagePreFwd(
         //&& outp.gprIsNonZeroVec.last.last
         //&& !myShouldIgnoreInstr(0)
         outp.gprIsNonZeroVec.last.last
-        //&& (
-        //  (
-        //    //!myBranchMispredictEtc
-        //    //&& 
-        //    !rMyPsExSetPcState
-        //    && !myBranchMispredictEtc
-        //  )
-        //  || outp.regPcSetItCnt(1).lsb
-        //)
+        && (
+          (
+            //!myBranchMispredictEtc
+            //&& 
+            !rMyPsExSetPcState
+            && !myBranchMispredictEtc
+          )
+          || outp.regPcSetItCnt(1).lsb
+        )
         && !outp.instrCnt.myPsIdBubble.head
         //&& !outp.splitOp.opIsMemAccess
       )

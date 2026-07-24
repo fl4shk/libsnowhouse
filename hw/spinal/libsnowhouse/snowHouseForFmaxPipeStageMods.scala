@@ -464,42 +464,43 @@ case class SnowHouseForFmaxScoreboard(
     && !tempHaveReadGprsHazardAddrCheckVec.asBits.orR
   )
 
-  //for (idx <- 0 until myCommitHazardCheckVecInnerSize) {
-  //  // WAR hazards
-  //  val tempRegIdx = (
-  //    //rMyInfoVec(io.commit.tag).gprIdxVec(idx)
-  //    rMyInfoVec(io.commit.tag).gprIdxVec.last
-  //  )
-  //  for (jdx <- 0 until cfg.optMaxNumScoreboardInstrs) {
-  //    val myTempInfoGprIdx = (
-  //      //rMyInfoVec(jdx).gprIdxVec.last
-  //      rMyInfoVec(jdx).gprIdxVec(idx)
-  //    )
-  //    tempHaveCommitHazardAddrCheckVec(jdx)(idx) := (
-  //      //tempRegIdx === myHistLastGprIdx(jdx + 1).last
-  //      //tempRegIdx === rMyInfoVec(jdx).gprIdxVec(idx)
-  //      tempRegIdx === myTempInfoGprIdx
-  //      //&& myTempInfoGprIdx.orR // check for non-zero
-  //      && rMyInfoVec(jdx).gprIsNonZeroVec(idx)
-  //      && (
-  //        rMyInfoVec(io.commit.tag).instrAge
-  //        > rMyInfoVec(jdx).instrAge
-  //      )
-  //      //&& rMyInfoVec(io.commit.tag).allocValid
-  //      //&& rMyInfoVec(jdx).hazardValid
-  //      //&& (
-  //      //  //rMyInfoVec(jdx).hazardValid
-  //      //  //|| 
-  //      //  rMyInfoVec(io.commit.tag).hazardValid
-  //      //)
-  //      && rMyInfoVec(jdx).issueAllocValid
-  //      && io.commit.tag =/= jdx
-  //      //&& io.commit.valid
-  //    )
-  //  }
-  //}
+  for (idx <- 0 until myCommitHazardCheckVecInnerSize) {
+    // WAR hazards
+    val tempRegIdx = (
+      //rMyInfoVec(io.commit.tag).gprIdxVec(idx)
+      rMyInfoVec(io.commit.tag).gprIdxVec.last
+    )
+    for (jdx <- 0 until cfg.optMaxNumScoreboardInstrs) {
+      val myTempInfoGprIdx = (
+        //rMyInfoVec(jdx).gprIdxVec.last
+        rMyInfoVec(jdx).gprIdxVec(idx)
+      )
+      tempHaveCommitHazardAddrCheckVec(jdx)(idx) := (
+        //tempRegIdx === myHistLastGprIdx(jdx + 1).last
+        //tempRegIdx === rMyInfoVec(jdx).gprIdxVec(idx)
+        tempRegIdx === myTempInfoGprIdx
+        //&& myTempInfoGprIdx.orR // check for non-zero
+        && rMyInfoVec(jdx).gprIsNonZeroVec(idx)
+        && (
+          rMyInfoVec(io.commit.tag).instrAge
+          > rMyInfoVec(jdx).instrAge
+        )
+        //&& rMyInfoVec(io.commit.tag).allocValid
+        //&& rMyInfoVec(jdx).hazardValid
+        //&& (
+        //  //rMyInfoVec(jdx).hazardValid
+        //  //|| 
+        //  rMyInfoVec(io.commit.tag).hazardValid
+        //)
+        && rMyInfoVec(jdx).issueAllocValid
+        && io.commit.tag =/= jdx
+        //&& io.commit.valid
+      )
+    }
+  }
   io.commit.ready := (
-    //io.commit.valid && 
+    //io.commit.valid
+    //&& 
     //!tempHaveCommitHazardAddrCheckVec.asBits.orR
     True
   )
