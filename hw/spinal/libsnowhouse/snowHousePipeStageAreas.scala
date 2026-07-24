@@ -2488,13 +2488,13 @@ case class SnowHousePipeStagePreFwd(
         && !outp.instrCnt.myPsIdBubble.head
         && (
           !outp.splitOp.opIsMemAccess
-          //|| outp.outpDecodeExt.memAccessKind.asBits(1)
+          || outp.inpDecodeExt.last.memAccessKind.asBits(1)
         )
         //&& !outp.instrCnt.myPsIdBubble.last
       )
       //temp.data := outp.myExt(0).modMemWord //ram.io.wrData
       temp.addr := outp.gprIdxVec.last
-      History(
+      val myTempHist = History(
         that=temp,
         length=(
           cfg.optForFmaxPsExFwdSize
@@ -2516,11 +2516,32 @@ case class SnowHousePipeStagePreFwd(
           //&& !outp.instrCnt.myPsIdBubble.last
           //&& (
           //  !outp.splitOp.opIsMemAccess
-          //  //|| outp.outpDecodeExt.memAccessKind.asBits(1)
+          //  //|| outp.inpDecodeExt.last.memAccessKind.asBits(1)
           //)
         ),
         init=temp.getZero
       )
+
+      when (
+        //(
+        //  !rMyPsExSetPcState
+        //  && !outp.regPcSetItCnt(2).lsb
+        //)
+        //|| (
+        //  outp.instrCnt.myPsIdBubble.last
+        //)
+        //|| (
+        //  outp.splitOp.opIsMemAccess
+        //  && !outp.inpDecodeExt.last.memAccessKind.asBits(1)
+        //)
+        !temp.valid
+        && outp.gprIsNonZeroVec.last.last
+      ) {
+        myTempHist.foreach(item => {
+          item.valid := False
+        })
+      }
+      myTempHist
     }
     //val myHistForFwdData = (
     //  History(
