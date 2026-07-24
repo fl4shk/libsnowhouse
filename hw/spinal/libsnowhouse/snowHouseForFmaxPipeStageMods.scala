@@ -215,7 +215,7 @@ case class SnowHouseForFmaxScoreboardIo(
     Stream(SnowHouseScoreboardReadGprsPayload(cfg=cfg))
   )
 
-  val commit = (
+  val reorderBufWrite = (
     //Vec.fill(cfg.numMultiIssue)(
       Stream(
         //UInt(cfg.optScoreboardTagWidth bits)
@@ -230,7 +230,7 @@ case class SnowHouseForFmaxScoreboardIo(
   //}
   master(issue)
   slave(readGprs)
-  slave(commit)
+  slave(reorderBufWrite)
 
   //commit.foreach(item => {
   //  slave(item)
@@ -468,7 +468,7 @@ case class SnowHouseForFmaxScoreboard(
     // WAR hazards
     val tempRegIdx = (
       //rMyInfoVec(io.commit.tag).gprIdxVec(idx)
-      rMyInfoVec(io.commit.tag).gprIdxVec.last
+      rMyInfoVec(io.reorderBufWrite.tag).gprIdxVec.last
     )
     for (jdx <- 0 until cfg.optMaxNumScoreboardInstrs) {
       val myTempInfoGprIdx = (
@@ -482,7 +482,7 @@ case class SnowHouseForFmaxScoreboard(
         //&& myTempInfoGprIdx.orR // check for non-zero
         && rMyInfoVec(jdx).gprIsNonZeroVec(idx)
         && (
-          rMyInfoVec(io.commit.tag).instrAge
+          rMyInfoVec(io.reorderBufWrite.tag).instrAge
           > rMyInfoVec(jdx).instrAge
         )
         //&& rMyInfoVec(io.commit.tag).allocValid
@@ -493,16 +493,16 @@ case class SnowHouseForFmaxScoreboard(
         //  rMyInfoVec(io.commit.tag).hazardValid
         //)
         && rMyInfoVec(jdx).issueAllocValid
-        && io.commit.tag =/= jdx
+        && io.reorderBufWrite.tag =/= jdx
         //&& io.commit.valid
       )
     }
   }
-  io.commit.ready := (
-    //io.commit.valid
+  io.reorderBufWrite.ready := (
+    //io.reorderBufWrite.valid
     //&& 
-    //!tempHaveCommitHazardAddrCheckVec.asBits.orR
-    True
+    !tempHaveCommitHazardAddrCheckVec.asBits.orR
+    //True
   )
 
   val myInfoAllocValidVec = (
@@ -513,7 +513,7 @@ case class SnowHouseForFmaxScoreboard(
   )
 
   for (jdx <- 0 until cfg.optMaxNumScoreboardInstrs) {
-    when (io.commit.fire && io.commit.tag === jdx) {
+    when (io.reorderBufWrite.fire && io.reorderBufWrite.tag === jdx) {
       //myInfoAllocValidVec(jdx) := False
       //tempHaveIssueHazardAddrCheckVec(jdx).foreach(
       //  item => (
@@ -976,7 +976,7 @@ case class SnowHouseForFmaxPipeStageScoreboardIssue(
     //)
   }
   scoreboard.io.readGprs << io.myScoreboardReadGprs
-  scoreboard.io.commit << io.myScoreboardCommmit
+  scoreboard.io.reorderBufWrite << io.myScoreboardCommmit
 
   s2mLink.down.driveTo(io.down)(
     con=(outp, node) => {
@@ -2549,8 +2549,21 @@ case class SnowHouseForFmaxPipeStageWriteBack(
       myCommitBackStm
     )
   )
+  val myCommitForkStm = (
+    cfg.optScoreboard
+  ) generate (
+    StreamFork(
+      input=myCommitBackStm,
+      portCount=2,
+      synchronous=true,
+    )
+  )
   if (cfg.optScoreboard) {
-    myReorderBuf.io.push << myCommitBackStm
+    myCommitFinalOutpStm.ready := True
+    myReorderBuf.io.push << (
+      myCommitForkStm.head
+      //myCommitBackStm
+    )
   }
 
   //val myCommitStmMux = StreamMux(
@@ -2617,7 +2630,11 @@ case class SnowHouseForFmaxPipeStageWriteBack(
     myCommitFinalOutpStm.regFileWrite
   )
   if (cfg.optScoreboard) {
-    myCommitFinalOutpStm.translateInto(io.commitEtc.scoreboardTag)(
+    (
+      //myCommitFinalOutpStm
+      myCommitForkStm.last
+    )
+    .translateInto(io.commitEtc.scoreboardTag)(
       dataAssignment=(outp, inp) => {
         outp := inp.commit
       }
