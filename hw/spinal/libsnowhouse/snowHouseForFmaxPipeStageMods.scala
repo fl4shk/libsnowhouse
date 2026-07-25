@@ -422,14 +422,20 @@ case class SnowHouseForFmaxScoreboard(
     val tempRegIdx = io.readGprs.gprIdxVec(idx) //io.issueGprIdxVec(idx)
     for (jdx <- 0 until cfg.optMaxNumScoreboardInstrs) {
       tempHaveReadGprsHazardAddrCheckVec(jdx)(idx) := (
-        tempRegIdx === rMyInfoVec(jdx).gprIdxVec.last
+        (
+          tempRegIdx === rMyInfoVec(jdx).gprIdxVec.last
+          || rMyInfoVec(jdx).gprIdxVec(idx) === io.readGprs.gprIdxVec.last
+        )
         //&& tempRegIdx.orR // check for non-zero
         && rMyInfoVec(jdx).gprIsNonZeroVec.last
         //&& (
         //  rMyInfoVec(jdx).hazardValid
         //  //|| io.myTempOpMayNeedHazardCheck
         //)
-        && rMyInfoVec(jdx).readGprsHazardValid
+        && (
+          rMyInfoVec(jdx).readGprsHazardValid
+          //|| rMyInfoVec(io.readGprs.tag).issueHazardValid
+        )
         && rMyInfoVec(jdx).issueAllocValid
       )
       //tempHaveReadGprsHazardAddrCheckVec(jdx)(idx) := (
