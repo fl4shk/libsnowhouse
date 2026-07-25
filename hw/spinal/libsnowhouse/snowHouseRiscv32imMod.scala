@@ -1639,7 +1639,12 @@ object SnowHouseRiscv32imPipeStageInstrDecode {
             setOp(SwRs2Rs1Imm, encInstrS.last)
           }
         }
-        upPayload.gprIdxVec.last := 0x0
+        //upPayload.gprIdxVec.last := 0x0
+        if (cfg.optScoreboard) {
+          upPayload.gprIdxVec.last := encInstrR.last.rs2
+        } else {
+          upPayload.gprIdxVec.last := 0x0
+        }
         upPayload.gprIdxVec(0) := encInstrR.last.rs1
         upPayload.gprIdxVec(1) := encInstrR.last.rs2
       }
@@ -3854,26 +3859,26 @@ object SnowHouseRiscv32imTestProgramArr {
     ////"rv32ui-p-srli",
     ////"rv32ui-p-blt",
     ////"rv32ui-p-srai",
-    "rv32ui-p-sh",
+    //"rv32ui-p-sh",
 
-    ////"rv32ui-p-ma_data", // fails
-    //"rv32ui-p-auipc",
-    //"rv32ui-p-jalr",
-    "rv32ui-p-lh",
-    //"rv32ui-p-sll",
-    //"rv32ui-p-jal",
-    //"rv32ui-p-addi",
-    //"rv32ui-p-xor",
-    //"rv32ui-p-sltu",
-    //"rv32ui-p-sub",
-    //"rv32ui-p-beq",
-    //"rv32ui-p-srl",
-    //"rv32ui-p-ori",
-    //"rv32ui-p-slli",
-    //"rv32ui-p-add",
-    "rv32ui-p-st_ld",
-    //"rv32ui-p-bgeu",
-    "rv32ui-p-lb",
+    //////"rv32ui-p-ma_data", // fails
+    ////"rv32ui-p-auipc",
+    ////"rv32ui-p-jalr",
+    //"rv32ui-p-lh",
+    ////"rv32ui-p-sll",
+    ////"rv32ui-p-jal",
+    ////"rv32ui-p-addi",
+    ////"rv32ui-p-xor",
+    ////"rv32ui-p-sltu",
+    ////"rv32ui-p-sub",
+    ////"rv32ui-p-beq",
+    ////"rv32ui-p-srl",
+    ////"rv32ui-p-ori",
+    ////"rv32ui-p-slli",
+    ////"rv32ui-p-add",
+    //"rv32ui-p-st_ld",
+    ////"rv32ui-p-bgeu",
+    //"rv32ui-p-lb",
     "rv32ui-p-ld_st",
     //"rv32ui-p-lui",
     //"rv32ui-p-bltu",

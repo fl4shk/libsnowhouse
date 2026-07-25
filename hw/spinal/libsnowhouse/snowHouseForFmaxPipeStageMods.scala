@@ -2133,9 +2133,7 @@ case class SnowHouseForFmaxPipeStageWriteBack(
     stickyMemMmw := (
       RegNext(
         stickyMemMmw,
-
-        // this can probably go without a reset
-        //init=stickyMemMmw.getZero
+        init=stickyMemMmw.getZero
       )
     )
     stickyMemMmwValid := (
@@ -2455,6 +2453,10 @@ case class SnowHouseForFmaxPipeStageWriteBack(
         )
       }
       default {
+        myCurrMmw := (
+          // TODO: support other `rdMemWord` indices
+          myMemWbPayload(1).myExt(0).rdMemWord(1)
+        )
       }
     }
     when (
@@ -2511,7 +2513,7 @@ case class SnowHouseForFmaxPipeStageWriteBack(
       //}
       myCurrMmwValid := (
         !myMemWbPayload(1).gprIsZeroVec.last.last
-        && !myMemWbPayload(1).outpDecodeExt.memAccessKind.asBits(1)
+        //&& !myMemWbPayload(1).outpDecodeExt.memAccessKind.asBits(1)
       )
     }
   }
@@ -2777,9 +2779,9 @@ case class SnowHouseForFmaxPipeStageWriteBack(
               (
                 //myMemWbPayload(1).outpDecodeExt.opIsMemAccess(0)
                 someCommitStm.fire
-                && (
-                  !myMemWbPayload(1).outpDecodeExt.memAccessKind.asBits(1)
-                )
+                //&& (
+                //  !myMemWbPayload(1).outpDecodeExt.memAccessKind.asBits(1)
+                //)
               )
             ) else (
               myNonMemRegFileWrPulseValidPartial
