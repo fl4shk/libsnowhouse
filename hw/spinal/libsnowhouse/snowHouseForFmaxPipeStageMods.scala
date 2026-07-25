@@ -417,35 +417,45 @@ case class SnowHouseForFmaxScoreboard(
   }
 
   for (idx <- 0 until myReadGprsHazardCheckVecInnerSize) {
-    // RAW hazards
-    val tempRegIdx = io.readGprs.gprIdxVec(idx)
+    // (non-forwardable) RAW hazards
+    val tempRegIdx = io.readGprs.gprIdxVec(idx) //io.issueGprIdxVec(idx)
     for (jdx <- 0 until cfg.optMaxNumScoreboardInstrs) {
       tempHaveReadGprsHazardAddrCheckVec(jdx)(idx) := (
-        (
-          //tempRegIdx === myHistLastGprIdx(jdx + 1).last
-          tempRegIdx === rMyInfoVec(jdx).gprIdxVec.last
-          //&& tempRegIdx.orR // check for non-zero
-          && rMyInfoVec(jdx).gprIsNonZeroVec.last
-          && (
-            // other "RAW" hazards will be handled via my implementation of
-            // fast forwarding!
-            rMyInfoVec(jdx).readGprsHazardValid
-            //|| 
-            //rMyInfoVec(io.readGprs.tag).issueHazardValid
-            //rMyInfoVec(io.readGprs.tag).readGprsHazardValid
-            //|| io.myTempOpMayNeedHazardCheck
-            //|| (
-            //  io.readGprs.valid
-            //  && io.readGprs.tag === jdx
-            //  //&& tempHaveReadGprsHazardAddrCheckVec(jdx).orR
-            //  //&& rMyInfoVec(jdx).issueAllocValid
-            //  && rMyInfoVec(jdx).issueHazardValid
-            //)
-          )
-          && rMyInfoVec(jdx).issueAllocValid
-          //&& io.readGprs.valid
-        )
+        tempRegIdx === rMyInfoVec(jdx).gprIdxVec.last
+        //&& tempRegIdx.orR // check for non-zero
+        && rMyInfoVec(jdx).gprIsNonZeroVec.last
+        //&& (
+        //  rMyInfoVec(jdx).hazardValid
+        //  //|| io.myTempOpMayNeedHazardCheck
+        //)
+        && rMyInfoVec(jdx).readGprsHazardValid
+        && rMyInfoVec(jdx).issueAllocValid
       )
+      //tempHaveReadGprsHazardAddrCheckVec(jdx)(idx) := (
+      //  (
+      //    //tempRegIdx === myHistLastGprIdx(jdx + 1).last
+      //    tempRegIdx === rMyInfoVec(jdx).gprIdxVec.last
+      //    //&& tempRegIdx.orR // check for non-zero
+      //    && rMyInfoVec(jdx).gprIsNonZeroVec.last
+      //    && (
+      //      // other "RAW" hazards will be handled via my implementation of
+      //      // fast forwarding!
+      //      rMyInfoVec(jdx).readGprsHazardValid
+      //      || rMyInfoVec(io.readGprs.tag).issueHazardValid
+      //      //rMyInfoVec(io.readGprs.tag).readGprsHazardValid
+      //      //|| io.myTempOpMayNeedHazardCheck
+      //      //|| (
+      //      //  io.readGprs.valid
+      //      //  && io.readGprs.tag === jdx
+      //      //  //&& tempHaveReadGprsHazardAddrCheckVec(jdx).orR
+      //      //  //&& rMyInfoVec(jdx).issueAllocValid
+      //      //  && rMyInfoVec(jdx).issueHazardValid
+      //      //)
+      //    )
+      //    && rMyInfoVec(jdx).issueAllocValid
+      //    //&& io.readGprs.valid
+      //  )
+      //)
       when (
         //io.readGprs.valid
         //&& tempHaveReadGprsHazardAddrCheckVec(jdx).orR
@@ -464,8 +474,20 @@ case class SnowHouseForFmaxScoreboard(
   }
 
   io.readGprs.ready := (
-    io.readGprs.valid
-    && !tempHaveReadGprsHazardAddrCheckVec.asBits.orR
+    (
+      io.readGprs.valid
+      && (
+        !tempHaveReadGprsHazardAddrCheckVec.asBits.orR
+        || (
+          io.reorderBufWrite.fire
+          && (
+            io.reorderBufWrite.tag === io.readGprs.tag
+          )
+        )
+      )
+      //&& !rMyInfoVec(io.readGprs.tag).readGprsHazardValid
+    )
+    //|| rFlushInfo.fire
   )
 
   for (idx <- 0 until myCommitHazardCheckVecInnerSize) {
@@ -609,6 +631,10 @@ case class SnowHouseForFmaxScoreboard(
             io.issueMyTempOpMayNeedHazardCheck
             //True
           )
+          //rMyInfoVec(idx).readGprsHazardValid := (
+          //  io.issueMyTempOpMayNeedHazardCheck
+          //  && tempHaveReadGprsHazardAddrCheckVec.asBits.orR
+          //)
           rMyInfoVec(idx).issueAllocValid := (
             //io.myTempOpMayNeedHazardCheck
             True
@@ -1140,10 +1166,10 @@ case class SnowHouseForFmaxPipeStageScoreboardReadGprs(
   )
 
   io.readGprs.valid := (
-    //cLink.up.isValid
+    cLink.up.isValid
     //&& cLink.down.isReady
     //cLink.up.isFiring
-    cLink.down.isFiring
+    //cLink.down.isFiring
     //&& !myOutp.instrCnt.myPsIdBubble.head
     && mySharedNonShouldIgnoreCond.head
   )
@@ -1152,6 +1178,7 @@ case class SnowHouseForFmaxPipeStageScoreboardReadGprs(
   when (
     cLink.up.isValid
     && mySharedNonShouldIgnoreCond.last
+    && io.readGprs.valid
     && !io.readGprs.ready 
   ) {
     cLink.duplicateIt()
@@ -1182,6 +1209,12 @@ case class SnowHouseForFmaxPipeStageScoreboardReadGprs(
   } otherwise {
     cLink.down(pScoreboardReadGprsOutp) := myOutp
   }
+  //when (
+  //  cLink.up.isValid
+  //  && myInp.instrCnt.myPsIdBubble.head
+  //) {
+  //  cLink.throwIt()
+  //}
 
   s2mLink.down.driveTo(io.down)(
     con=(outp, node) => {
@@ -2008,6 +2041,12 @@ case class SnowHouseForFmaxPipeStageWriteBack(
     ) {
       cLink.duplicateIt()
     }
+    //when (
+    //  cLink.up.isValid
+    //  && myWbPayloadVec.head.head.instrCnt.myPsIdBubble.head
+    //) {
+    //  cLink.throwIt()
+    //}
   })
 
   myWbPayloadVec.foreach(item => {
