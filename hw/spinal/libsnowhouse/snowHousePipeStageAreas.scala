@@ -2600,9 +2600,9 @@ case class SnowHousePipeStagePreFwd(
         ),
         when=(
           upIsFiring
-          //&& (
-          //  outp.gprIsNonZeroVec.last.last
-          //)
+          && (
+            outp.gprIsNonZeroVec.last.last
+          )
           //&& (
           //  (
           //    //!myBranchMispredictEtc
@@ -7766,7 +7766,7 @@ case class SnowHousePipeStageExecute(
           ////  //|| outp.outpDecodeExt.memAccessKind.asBits(1)
           ////)
           //&& outp.myExt(0).modMemWordValid.last //ram.io.wrEn
-          //&& outp.gprIsNonZeroVec.last.last
+          && outp.gprIsNonZeroVec.last.last
           //&& (
           //  //(
           //  //  //!myBranchMispredictEtc
