@@ -236,6 +236,7 @@ case class SnowHouseForFmaxScoreboardIo(
   //  slave(item)
   //})
 }
+
 case class SnowHouseForFmaxScoreboard(
   cfg: SnowHouseConfig,
 ) extends Component {
@@ -556,31 +557,7 @@ case class SnowHouseForFmaxScoreboard(
     myInfoAllocValidVec(jdx) := rMyInfoVec(jdx).issueAllocValid
   }
 
-  def bitscan(
-    x: UInt
-  ): UInt = (
-    x & ~(x - 1)
-  )
 
-// >>> for x in range(8):
-// ...     print(x, bin(x), bin(x ^ 0x7), bin(bitscan(x ^ 0x7)))
-// ...     
-// 0 0b0 0b111 0b1
-// 1 0b1 0b110 0b10
-// 2 0b10 0b101 0b1
-// 3 0b11 0b100 0b100
-// 4 0b100 0b11 0b1
-// 5 0b101 0b10 0b10
-// 6 0b110 0b1 0b1
-// 7 0b111 0b0 0b0
-
-// >>> for idx in range(size):
-// ...     print(idx, ("-" * (size - idx - 1) + "1" + ("0" * idx)))
-// ...     
-// 0 ---1
-// 1 --10
-// 2 -100
-// 3 1000
   io.issue.payload.allowOverride
   io.issue.valid := (
     //True
@@ -601,10 +578,29 @@ case class SnowHouseForFmaxScoreboard(
     )
   )
 
+// >>> for x in range(8):
+// ...     print(x, bin(x), bin(x ^ 0x7), bin(Bitscan(x ^ 0x7)))
+// ...     
+// 0 0b0 0b111 0b1
+// 1 0b1 0b110 0b10
+// 2 0b10 0b101 0b1
+// 3 0b11 0b100 0b100
+// 4 0b100 0b11 0b1
+// 5 0b101 0b10 0b10
+// 6 0b110 0b1 0b1
+// 7 0b111 0b0 0b0
+
+// >>> for idx in range(size):
+// ...     print(idx, ("-" * (size - idx - 1) + "1" + ("0" * idx)))
+// ...     
+// 0 ---1
+// 1 --10
+// 2 -100
+// 3 1000
   switch (
     //io.issue.ready
     //## 
-    bitscan(~myInfoAllocValidVec.asBits.asUInt)
+    Bitscan(~myInfoAllocValidVec.asBits.asUInt)
   ) {
     val size = myInfoAllocValidVec.size
     for (idx <- 0 until size) {
@@ -2560,12 +2556,12 @@ case class SnowHouseForFmaxPipeStageWriteBack(
   val myMemCommitFrontStm = (
     cfg.optScoreboard
   ) generate (
-    myCommitFrontStmVec.head.last
+    myCommitFrontStmVec.head.head
   )
   val myNonMemCommitFrontStm = (
     cfg.optScoreboard
   ) generate (
-    myCommitFrontStmVec.head.head
+    myCommitFrontStmVec.head.last
   )
   if (cfg.optScoreboard) {
     for (idx <- 0 until myCommitFrontStmVec.size) {
@@ -2576,7 +2572,7 @@ case class SnowHouseForFmaxPipeStageWriteBack(
   }
   val myCommitBackStm = (
     if (cfg.optScoreboard) (
-      StreamArbiterFactory.lowerFirst.noLock.on(
+      StreamArbiterFactory.roundRobin.noLock.on(
         myCommitFrontStmVec.last
       )
     ) else (
@@ -2604,20 +2600,20 @@ case class SnowHouseForFmaxPipeStageWriteBack(
       myCommitBackStm
     )
   )
-  val myCommitForkStm = (
-    cfg.optScoreboard
-  ) generate (
-    StreamFork(
-      input=myCommitBackStm,
-      portCount=2,
-      synchronous=true,
-    )
-  )
+  //val myCommitForkStm = (
+  //  cfg.optScoreboard
+  //) generate (
+  //  StreamFork(
+  //    input=myCommitBackStm,
+  //    portCount=2,
+  //    synchronous=true,
+  //  )
+  //)
   if (cfg.optScoreboard) {
-    myCommitFinalOutpStm.ready := True
+    //myCommitFinalOutpStm.ready := True
     myReorderBuf.io.push << (
-      myCommitForkStm.head
-      //myCommitBackStm
+      //myCommitForkStm.head
+      myCommitBackStm
     )
   }
 
@@ -2686,8 +2682,8 @@ case class SnowHouseForFmaxPipeStageWriteBack(
   )
   if (cfg.optScoreboard) {
     (
-      //myCommitFinalOutpStm
-      myCommitForkStm.last
+      myCommitFinalOutpStm
+      //myCommitForkStm.last
     )
     .translateInto(io.commitEtc.scoreboardTag)(
       dataAssignment=(outp, inp) => {

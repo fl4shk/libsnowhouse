@@ -2209,6 +2209,47 @@ case class SnowHousePipeStageInstrDecode(
   }
 }
 
+object Bitscan {
+
+// >>> for x in range(8):
+// ...     print(x, bin(x), bin(Bitscan(x)))
+// ...     
+// 0 0b0 0b0
+// 1 0b1 0b1
+// 2 0b10 0b10
+// 3 0b11 0b1
+// 4 0b100 0b100
+// 5 0b101 0b1
+// 6 0b110 0b10
+// 7 0b111 0b1
+
+// >>> for x in range(8):
+// ...     print(x, bin(x), bin(x ^ 0x7), bin(Bitscan(x ^ 0x7)))
+// ...     
+// 0 0b0 0b111 0b1
+// 1 0b1 0b110 0b10
+// 2 0b10 0b101 0b1
+// 3 0b11 0b100 0b100
+// 4 0b100 0b11 0b1
+// 5 0b101 0b10 0b10
+// 6 0b110 0b1 0b1
+// 7 0b111 0b0 0b0
+
+// >>> for idx in range(size):
+// ...     print(idx, ("-" * (size - idx - 1) + "1" + ("0" * idx)))
+// ...     
+// 0 ---1
+// 1 --10
+// 2 -100
+// 3 1000
+
+
+  def apply(
+    x: UInt
+  ): UInt = (
+    x & ~(x - 1)
+  )
+}
 case class SnowHousePipeStagePreFwd(
   cfg: SnowHouseConfig,
   outp: SnowHousePipePayload,
@@ -2450,7 +2491,9 @@ case class SnowHousePipeStagePreFwd(
     //val isLoadEtc = Bool() // TODO: atomics that read from the bus/mem
     val opIsMemAccess = Bool()
     //val instrResultInPsWb = Bool()
+    //val myFwdIdx = UInt(log2Up(cfg.optForFmaxPsExFwdSize) bits)
   }
+
   val myForFmaxFwdArea = (
     cfg.optForFmax
   ) generate (new Area {
@@ -2552,7 +2595,8 @@ case class SnowHousePipeStagePreFwd(
       val myTempHist = History(
         that=temp,
         length=(
-          cfg.optForFmaxPsExFwdSize
+          //cfg.optForFmaxPsExFwdSize
+          cfg.optPreFwdForFmaxPsExFwdSize
         ),
         when=(
           upIsFiring
@@ -2649,6 +2693,12 @@ case class SnowHousePipeStagePreFwd(
       //Bool()
       UInt(myHistFwdInfo.size - 1 bits)
     )
+    val myTempHistFwdOpIsNonMemAccess = Vec.fill(
+      cfg.regFileCfg.modRdPortCnt
+    )(
+      //Bool()
+      UInt(myHistFwdInfo.size - 1 bits)
+    )
 
     for (jdx <- 0 until myTempHistFwdValid.size) {
       //myTempHistFwdValid(jdx).lsb := False
@@ -2667,10 +2717,20 @@ case class SnowHousePipeStagePreFwd(
           //  )
           //  || outp.regPcSetItCnt(1).lsb
           //)
+
           && (
-            outp.gprIdxVec(jdx)
-            === myHistFwdInfo(idx + 1).addr
+            if (cfg.optScoreboard) (
+              (
+                outp.gprIdxVec(jdx)
+                === myHistFwdInfo(idx + 1).addr
+              )
+              && !myHistFwdInfo(idx + 1).opIsMemAccess
+            ) else (
+              outp.gprIdxVec(jdx)
+              === myHistFwdInfo(idx + 1).addr
+            )
           )
+
           //&& (
           //  LcvFastCmpEq(
           //    left=outp.gprIdxVec(jdx),
@@ -2682,6 +2742,14 @@ case class SnowHousePipeStagePreFwd(
         myTempHistFwdOpIsMemAccess(jdx)(idx) := (
           myHistFwdInfo(idx + 1).valid
           && myHistFwdInfo(idx + 1).opIsMemAccess
+          && (
+            outp.gprIdxVec(jdx)
+            === myHistFwdInfo(idx + 1).addr
+          )
+        )
+        myTempHistFwdOpIsNonMemAccess(jdx)(idx) := (
+          myHistFwdInfo(idx + 1).valid
+          && !myHistFwdInfo(idx + 1).opIsMemAccess
           && (
             outp.gprIdxVec(jdx)
             === myHistFwdInfo(idx + 1).addr
@@ -2704,40 +2772,43 @@ case class SnowHousePipeStagePreFwd(
 // 1 --10
 // 2 -100
 // 3 1000
-      switch (
-        myTempHistFwdValid(jdx)
-      ) {
-        val size = myTempHistFwdValid(jdx).getWidth
-        for (idx <- 0 until size) {
-          is (MaskedLiteral({
-            //("-" * idx)
-            //+ "1"
-            //+ (("0" * (myTempHistFwdValid(jdx).getWidth - idx - 1)))
-            ("-" * (size - idx - 1) + "1" + ("0" * idx))
-          })) {
-            when (!myTempHistFwdOpIsMemAccess(jdx)(idx)) {
-              outp.forFmaxFwdIdx(jdx) := idx + 1
-            } otherwise {
-              outp.forFmaxFwdIdx(jdx) := 0x0
+      //if (cfg.optScoreboard) {
+      //} else { // if (!cfg.optScoreboard)
+        switch (
+          myTempHistFwdValid(jdx)
+        ) {
+          val size = myTempHistFwdValid(jdx).getWidth
+          for (idx <- 0 until size) {
+            is (MaskedLiteral({
+              //("-" * idx)
+              //+ "1"
+              //+ (("0" * (myTempHistFwdValid(jdx).getWidth - idx - 1)))
+              ("-" * (size - idx - 1) + "1" + ("0" * idx))
+            })) {
+              //when (!myTempHistFwdOpIsMemAccess(jdx)(idx)) {
+                outp.forFmaxFwdIdx(jdx) := idx + 1
+              //} otherwise {
+              //  outp.forFmaxFwdIdx(jdx) := 0x0
+              //}
+              //outp.myExt(0).rdMemWord(jdx) := (
+              //  myHistFwdInfo(
+              //    //myHistFwdInfo.size - 1 - idx //(idx + 1)
+              //    idx + 1
+              //  ).data
+              //)
             }
+          }
+          default {
+            outp.forFmaxFwdIdx(jdx) := (
+              0x0
+              //(1 << outp.forFmaxFwdIdx(jdx).getWidth) - 1
+            )
             //outp.myExt(0).rdMemWord(jdx) := (
-            //  myHistFwdInfo(
-            //    //myHistFwdInfo.size - 1 - idx //(idx + 1)
-            //    idx + 1
-            //  ).data
+            //  inp.myExt(0).rdMemWord(jdx)
             //)
           }
         }
-        default {
-          outp.forFmaxFwdIdx(jdx) := (
-            0x0
-            //(1 << outp.forFmaxFwdIdx(jdx).getWidth) - 1
-          )
-          //outp.myExt(0).rdMemWord(jdx) := (
-          //  inp.myExt(0).rdMemWord(jdx)
-          //)
-        }
-      }
+      //}
     }
   })
 }

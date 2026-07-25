@@ -742,8 +742,8 @@ case class SnowHouseConfig(
         + (
           if (optScoreboard) (
             //6
-            4
-            //2
+            //4
+            2
             //3
           ) else (
             0
@@ -754,6 +754,27 @@ case class SnowHouseConfig(
         0
       )
     }
+  )
+  val optPreFwdForFmaxPsExFwdSize = (
+    optForFmaxPsExFwdSize
+    //optForFmaxCfg match {
+    //  case Some(myForFmaxCfg) => (
+    //    myForFmaxCfg.numPostExPreWbPipeStages + 1//3//2//1//2//1//2//6//5//4//6//5//4//3//2//3//4//5//6//3//6//5//4//3//6//5//4//3//6//5//4//3//2//3//2//3//2//3//2//5//4//3//5
+    //    + (
+    //      if (optScoreboard) (
+    //        6
+    //        //4
+    //        //2
+    //        //3
+    //      ) else (
+    //        0
+    //      )
+    //    )
+    //  )
+    //  case None => (
+    //    0
+    //  )
+    //}
   )
   val myPsIdBubbleNumFollowingInstrs = (
     //1
