@@ -424,7 +424,10 @@ case class SnowHouseForFmaxScoreboard(
       tempHaveReadGprsHazardAddrCheckVec(jdx)(idx) := (
         (
           tempRegIdx === rMyInfoVec(jdx).gprIdxVec.last
-          || rMyInfoVec(jdx).gprIdxVec(idx) === io.readGprs.gprIdxVec.last
+          //|| (
+          //  // technically this is a WAR hazard
+          //  rMyInfoVec(jdx).gprIdxVec(idx) === io.readGprs.gprIdxVec.last
+          //)
         )
         //&& tempRegIdx.orR // check for non-zero
         && rMyInfoVec(jdx).gprIsNonZeroVec.last
@@ -485,12 +488,12 @@ case class SnowHouseForFmaxScoreboard(
       io.readGprs.valid
       && (
         !tempHaveReadGprsHazardAddrCheckVec.asBits.orR
-        || (
-          io.reorderBufWrite.fire
-          && (
-            io.reorderBufWrite.tag === io.readGprs.tag
-          )
-        )
+        //|| (
+        //  io.reorderBufWrite.fire
+        //  && (
+        //    io.reorderBufWrite.tag === io.readGprs.tag
+        //  )
+        //)
       )
       //&& !rMyInfoVec(io.readGprs.tag).readGprsHazardValid
     )
@@ -2561,6 +2564,15 @@ case class SnowHouseForFmaxPipeStageWriteBack(
       )
     )
   )
+
+  def myInstrMayPassCntInitVal = cfg.optForFmaxPsExFwdSize - 1
+
+  val rInstrMayPassCnt = (
+    cfg.optScoreboard
+  ) generate (
+    Reg(UInt(log2Up(cfg.optForFmaxPsExFwdSize) bits))
+    init(myInstrMayPassCntInitVal)
+  )
   val myMemCommitFrontStm = (
     cfg.optScoreboard
   ) generate (
@@ -2580,7 +2592,7 @@ case class SnowHouseForFmaxPipeStageWriteBack(
   }
   val myCommitBackStm = (
     if (cfg.optScoreboard) (
-      StreamArbiterFactory.roundRobin.noLock.on(
+      StreamArbiterFactory.lowerFirst.noLock.on(
         myCommitFrontStmVec.last
       )
     ) else (
@@ -2881,10 +2893,31 @@ case class SnowHouseForFmaxPipeStageWriteBack(
             //cLink.up.isValid
             //&& 
             myNonMemWbValid
+            && rInstrMayPassCnt.orR
             //&& !myNonMemWbPayload(1).instrCnt.myPsIdBubble.last
           )
         )
       )
+      if (isMem) {
+        //rInstrMayPassCnt := myInstrMayPassCntInitVal
+      } else {
+        switch (
+          myMemWbValid
+          ## someCommitStm.fire
+        ) {
+          is (M"11") {
+            rInstrMayPassCnt := rInstrMayPassCnt - 1
+          }
+          is (M"0-") {
+            rInstrMayPassCnt := myInstrMayPassCntInitVal
+          }
+        }
+        //when (
+        //  myMemWbValid
+        //  && someCommitStm.fire
+        //) {
+        //}
+      }
       someCommitStm.commit.tag := (
         someMyWbPayload(1).instrCnt.scoreboardTag
       )
