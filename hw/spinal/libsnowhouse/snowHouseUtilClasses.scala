@@ -749,8 +749,8 @@ case class SnowHouseConfig(
           if (optScoreboard) (
             //6
             //4
-            2
-            //3
+            //2
+            3
           ) else (
             0
           )
