@@ -2343,10 +2343,10 @@ case class SnowHousePipePayload(
       )
     )
     && !instrCnt.myPsIdBubble.head
-    && (
-      !splitOp.opIsMemAccess
-      //|| inpDecodeExt.last.memAccessKind.asBits(1)
-    )
+    //&& (
+    //  !splitOp.opIsMemAccess
+    //  //|| inpDecodeExt.last.memAccessKind.asBits(1)
+    //)
     //&& (
     //  RegNextWhen(
     //    (
