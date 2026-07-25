@@ -2613,10 +2613,10 @@ case class SnowHousePipeStagePreFwd(
           //  || outp.regPcSetItCnt(1).lsb
           //)
           && !outp.instrCnt.myPsIdBubble.last
-          && (
-            !outp.splitOp.opIsMemAccess
-            //|| outp.inpDecodeExt.last.memAccessKind.asBits(1)
-          )
+          //&& (
+          //  !outp.splitOp.opIsMemAccess
+          //  //|| outp.inpDecodeExt.last.memAccessKind.asBits(1)
+          //)
         ),
         init=temp.getZero
       )
@@ -2724,7 +2724,7 @@ case class SnowHousePipeStagePreFwd(
                 outp.gprIdxVec(jdx)
                 === myHistFwdInfo(idx + 1).addr
               )
-              && !myHistFwdInfo(idx + 1).opIsMemAccess
+              //&& !myHistFwdInfo(idx + 1).opIsMemAccess
             ) else (
               outp.gprIdxVec(jdx)
               === myHistFwdInfo(idx + 1).addr
@@ -2742,18 +2742,18 @@ case class SnowHousePipeStagePreFwd(
         myTempHistFwdOpIsMemAccess(jdx)(idx) := (
           myHistFwdInfo(idx + 1).valid
           && myHistFwdInfo(idx + 1).opIsMemAccess
-          && (
-            outp.gprIdxVec(jdx)
-            === myHistFwdInfo(idx + 1).addr
-          )
+          //&& (
+          //  outp.gprIdxVec(jdx)
+          //  === myHistFwdInfo(idx + 1).addr
+          //)
         )
         myTempHistFwdOpIsNonMemAccess(jdx)(idx) := (
           myHistFwdInfo(idx + 1).valid
           && !myHistFwdInfo(idx + 1).opIsMemAccess
-          && (
-            outp.gprIdxVec(jdx)
-            === myHistFwdInfo(idx + 1).addr
-          )
+          //&& (
+          //  outp.gprIdxVec(jdx)
+          //  === myHistFwdInfo(idx + 1).addr
+          //)
         )
       }
 
@@ -7778,10 +7778,10 @@ case class SnowHousePipeStageExecute(
           //  !myShouldIgnoreInstr(0)
           //)
           && !outp.instrCnt.myPsIdBubble.last
-          && (
-            !outp.splitOp.opIsMemAccess
-            //|| outp.outpDecodeExt.memAccessKind.asBits(1)
-          )
+          //&& (
+          //  !outp.splitOp.opIsMemAccess
+          //  //|| outp.outpDecodeExt.memAccessKind.asBits(1)
+          //)
         ),
         init=temp.getZero
       )
