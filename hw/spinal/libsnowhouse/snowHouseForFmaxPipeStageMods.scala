@@ -2565,7 +2565,7 @@ case class SnowHouseForFmaxPipeStageWriteBack(
     )
   )
 
-  def myInstrMayPassCntInitVal = cfg.optForFmaxPsExFwdSize - 1
+  def myInstrMayPassCntInitVal = cfg.optForFmaxPsExFwdSize - 2//1
 
   val rInstrMayPassCnt = (
     cfg.optScoreboard
