@@ -308,6 +308,7 @@ case class SnowHouseForFmaxScoreboard(
     //val hazardValid = Bool()
     val issueHazardValid = Bool()
     val readGprsHazardValid = Bool()
+    val readGprsHazardValidFwdLimit = Bool()
     //def fire = hazardValid
     val issueAllocValid = Bool()
     val instrAge = UInt(myInstrAgeWidth bits) //cloneOf(rFlushInfo)
@@ -374,6 +375,11 @@ case class SnowHouseForFmaxScoreboard(
       )
     )
   )
+  val tempHaveReadGprsHazardAddrCheckFwdLimitVec = (
+    cloneOf(
+      tempHaveReadGprsHazardAddrCheckVec
+    )
+  )
 
   val myCommitHazardCheckVecInnerSize = (
     // WAR hazards
@@ -421,9 +427,11 @@ case class SnowHouseForFmaxScoreboard(
     // (non-forwardable) RAW hazards
     val tempRegIdx = io.readGprs.gprIdxVec(idx) //io.issueGprIdxVec(idx)
     for (jdx <- 0 until cfg.optMaxNumScoreboardInstrs) {
-      tempHaveReadGprsHazardAddrCheckVec(jdx)(idx) := (
+      val tempCmp = (
         (
-          tempRegIdx === rMyInfoVec(jdx).gprIdxVec.last
+          (
+            tempRegIdx === rMyInfoVec(jdx).gprIdxVec.last
+          )
           //|| (
           //  // technically this is a WAR hazard
           //  rMyInfoVec(jdx).gprIdxVec(idx) === io.readGprs.gprIdxVec.last
@@ -435,11 +443,21 @@ case class SnowHouseForFmaxScoreboard(
         //  rMyInfoVec(jdx).hazardValid
         //  //|| io.myTempOpMayNeedHazardCheck
         //)
+        && rMyInfoVec(jdx).issueAllocValid
+      )
+      tempHaveReadGprsHazardAddrCheckVec(jdx)(idx) := (
+        tempCmp
         && (
           rMyInfoVec(jdx).readGprsHazardValid
           //|| rMyInfoVec(io.readGprs.tag).issueHazardValid
         )
-        && rMyInfoVec(jdx).issueAllocValid
+      )
+      tempHaveReadGprsHazardAddrCheckFwdLimitVec(jdx)(idx) := (
+        tempCmp
+        //&& (
+        //  !rMyInfoVec(jdx).readGprsHazardValid
+        //  //|| rMyInfoVec(io.readGprs.tag).issueHazardValid
+        //)
       )
       //tempHaveReadGprsHazardAddrCheckVec(jdx)(idx) := (
       //  (
@@ -473,21 +491,33 @@ case class SnowHouseForFmaxScoreboard(
         io.readGprs.fire
         && io.readGprs.tag === jdx
         && rMyInfoVec(jdx).issueAllocValid
-        && rMyInfoVec(jdx).issueHazardValid
+        //&& rMyInfoVec(jdx).issueHazardValid
       ) {
         rMyInfoVec(jdx).readGprsHazardValid := (
-          //rMyInfoVec(jdx).issueHazardValid
+          rMyInfoVec(jdx).issueHazardValid
+          //True
+        )
+        rMyInfoVec(jdx).readGprsHazardValidFwdLimit := (
           True
         )
       }
     }
   }
 
+  def myReadGprsInstrMayPassCntInitVal = cfg.optForFmaxPsExFwdSize - 2//1
+
+  val rReadGprsInstrMayPassCnt = (
+    cfg.optScoreboard
+  ) generate (
+    Reg(UInt(log2Up(myReadGprsInstrMayPassCntInitVal + 1) bits))
+    init(myReadGprsInstrMayPassCntInitVal)
+  )
   io.readGprs.ready := (
     (
       io.readGprs.valid
       && (
         !tempHaveReadGprsHazardAddrCheckVec.asBits.orR
+        && rReadGprsInstrMayPassCnt.orR
         //|| (
         //  io.reorderBufWrite.fire
         //  && (
@@ -499,6 +529,24 @@ case class SnowHouseForFmaxScoreboard(
     )
     //|| rFlushInfo.fire
   )
+  switch (
+    io.readGprs.fire
+    ## tempHaveReadGprsHazardAddrCheckFwdLimitVec.asBits.orR
+  ) {
+    is (M"11") {
+      rReadGprsInstrMayPassCnt := rReadGprsInstrMayPassCnt - 1
+    }
+    is (M"0-") {
+      rReadGprsInstrMayPassCnt := myReadGprsInstrMayPassCntInitVal
+    }
+  }
+  //when (
+  //  io.readGprs.fire
+  //  //&& !tempHaveReadGprsHazardAddrCheckVec.asBits.orR
+  //  && tempHaveReadGprsHazardAddrCheckFwdLimitVec.asBits.orR
+  //) {
+  //  rReadGprs
+  //}
 
   for (idx <- 0 until myCommitHazardCheckVecInnerSize) {
     // WAR hazards
@@ -560,6 +608,7 @@ case class SnowHouseForFmaxScoreboard(
       //rMyInfoVec(jdx).hazardValid := False
       rMyInfoVec(jdx).issueHazardValid := False
       rMyInfoVec(jdx).readGprsHazardValid := False
+      rMyInfoVec(jdx).readGprsHazardValidFwdLimit := False
     } otherwise {
       //myInfoAllocValidVec(jdx) := rMyInfoVec(jdx).allocValid
     }
@@ -2565,14 +2614,14 @@ case class SnowHouseForFmaxPipeStageWriteBack(
     )
   )
 
-  def myInstrMayPassCntInitVal = cfg.optForFmaxPsExFwdSize - 2//1
+  //def myInstrMayPassCntInitVal = cfg.optForFmaxPsExFwdSize - 2//1
 
-  val rInstrMayPassCnt = (
-    cfg.optScoreboard
-  ) generate (
-    Reg(UInt(log2Up(cfg.optForFmaxPsExFwdSize) bits))
-    init(myInstrMayPassCntInitVal)
-  )
+  //val rInstrMayPassCnt = (
+  //  cfg.optScoreboard
+  //) generate (
+  //  Reg(UInt(log2Up(cfg.optForFmaxPsExFwdSize) bits))
+  //  init(myInstrMayPassCntInitVal)
+  //)
   val myMemCommitFrontStm = (
     cfg.optScoreboard
   ) generate (
@@ -2893,7 +2942,7 @@ case class SnowHouseForFmaxPipeStageWriteBack(
             //cLink.up.isValid
             //&& 
             myNonMemWbValid
-            && rInstrMayPassCnt.orR
+            //&& rInstrMayPassCnt.orR
             //&& !myNonMemWbPayload(1).instrCnt.myPsIdBubble.last
           )
         )
@@ -2901,17 +2950,17 @@ case class SnowHouseForFmaxPipeStageWriteBack(
       if (isMem) {
         //rInstrMayPassCnt := myInstrMayPassCntInitVal
       } else {
-        switch (
-          myMemWbValid
-          ## someCommitStm.fire
-        ) {
-          is (M"11") {
-            rInstrMayPassCnt := rInstrMayPassCnt - 1
-          }
-          is (M"0-") {
-            rInstrMayPassCnt := myInstrMayPassCntInitVal
-          }
-        }
+        //switch (
+        //  myMemWbValid
+        //  ## someCommitStm.fire
+        //) {
+        //  is (M"11") {
+        //    rInstrMayPassCnt := rInstrMayPassCnt - 1
+        //  }
+        //  is (M"0-") {
+        //    rInstrMayPassCnt := myInstrMayPassCntInitVal
+        //  }
+        //}
         //when (
         //  myMemWbValid
         //  && someCommitStm.fire
