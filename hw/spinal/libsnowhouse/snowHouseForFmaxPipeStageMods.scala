@@ -2560,12 +2560,12 @@ case class SnowHouseForFmaxPipeStageWriteBack(
   val myMemCommitFrontStm = (
     cfg.optScoreboard
   ) generate (
-    myCommitFrontStmVec.head.head
+    myCommitFrontStmVec.head.last
   )
   val myNonMemCommitFrontStm = (
     cfg.optScoreboard
   ) generate (
-    myCommitFrontStmVec.head.last
+    myCommitFrontStmVec.head.head
   )
   if (cfg.optScoreboard) {
     for (idx <- 0 until myCommitFrontStmVec.size) {
@@ -2576,7 +2576,7 @@ case class SnowHouseForFmaxPipeStageWriteBack(
   }
   val myCommitBackStm = (
     if (cfg.optScoreboard) (
-      StreamArbiterFactory.roundRobin.noLock.on(
+      StreamArbiterFactory.lowerFirst.noLock.on(
         myCommitFrontStmVec.last
       )
     ) else (
