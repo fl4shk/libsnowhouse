@@ -454,10 +454,10 @@ case class SnowHouseForFmaxScoreboard(
       )
       tempHaveReadGprsHazardAddrCheckFwdLimitVec(jdx)(idx) := (
         tempCmp
-        && (
-          !rMyInfoVec(jdx).readGprsHazardValid
-          //|| rMyInfoVec(io.readGprs.tag).issueHazardValid
-        )
+        //&& (
+        //  !rMyInfoVec(jdx).readGprsHazardValid
+        //  //|| rMyInfoVec(io.readGprs.tag).issueHazardValid
+        //)
       )
       //tempHaveReadGprsHazardAddrCheckVec(jdx)(idx) := (
       //  (
@@ -537,7 +537,7 @@ case class SnowHouseForFmaxScoreboard(
     is (M"11") {
       rReadGprsInstrMayPassCnt := rReadGprsInstrMayPassCnt - 1
     }
-    is (M"0-") {
+    is (M"10") {
       rReadGprsInstrMayPassCnt := myReadGprsInstrMayPassCntInitVal
     }
   }
