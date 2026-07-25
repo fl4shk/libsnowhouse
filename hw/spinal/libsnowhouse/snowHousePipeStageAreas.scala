@@ -2559,10 +2559,10 @@ case class SnowHousePipeStagePreFwd(
         //&& !myShouldIgnoreInstr(0)
         (
           outp.gprIsNonZeroVec.last.last
-          || (
-            outp.splitOp.opIsMemAccess
-            && outp.inpDecodeExt.last.memAccessKind.asBits(1)
-          )
+          //|| (
+          //  outp.splitOp.opIsMemAccess
+          //  && outp.inpDecodeExt.last.memAccessKind.asBits(1)
+          //)
         )
         && outp.calcForFmaxFwdValidMost(
           someShouldIgnoreInstr=(
@@ -2613,10 +2613,10 @@ case class SnowHousePipeStagePreFwd(
           //  || outp.regPcSetItCnt(1).lsb
           //)
           && !outp.instrCnt.myPsIdBubble.last
-          //&& (
-          //  !outp.splitOp.opIsMemAccess
-          //  //|| outp.inpDecodeExt.last.memAccessKind.asBits(1)
-          //)
+          && (
+            !outp.splitOp.opIsMemAccess
+            //|| outp.inpDecodeExt.last.memAccessKind.asBits(1)
+          )
         ),
         init=temp.getZero
       )
@@ -2785,11 +2785,11 @@ case class SnowHousePipeStagePreFwd(
               //+ (("0" * (myTempHistFwdValid(jdx).getWidth - idx - 1)))
               ("-" * (size - idx - 1) + "1" + ("0" * idx))
             })) {
-              //when (!myTempHistFwdOpIsMemAccess(jdx)(idx)) {
+              when (!myTempHistFwdOpIsMemAccess(jdx)(idx)) {
                 outp.forFmaxFwdIdx(jdx) := idx + 1
-              //} otherwise {
-              //  outp.forFmaxFwdIdx(jdx) := 0x0
-              //}
+              } otherwise {
+                outp.forFmaxFwdIdx(jdx) := 0x0
+              }
               //outp.myExt(0).rdMemWord(jdx) := (
               //  myHistFwdInfo(
               //    //myHistFwdInfo.size - 1 - idx //(idx + 1)
@@ -7778,10 +7778,10 @@ case class SnowHousePipeStageExecute(
           //  !myShouldIgnoreInstr(0)
           //)
           && !outp.instrCnt.myPsIdBubble.last
-          //&& (
-          //  !outp.splitOp.opIsMemAccess
-          //  //|| outp.outpDecodeExt.memAccessKind.asBits(1)
-          //)
+          && (
+            !outp.splitOp.opIsMemAccess
+            //|| outp.outpDecodeExt.memAccessKind.asBits(1)
+          )
         ),
         init=temp.getZero
       )
