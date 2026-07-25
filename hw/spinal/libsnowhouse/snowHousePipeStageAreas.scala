@@ -2514,7 +2514,13 @@ case class SnowHousePipeStagePreFwd(
         //outp.myExt(0).modMemWordValid.last //ram.io.wrEn
         //&& outp.gprIsNonZeroVec.last.last
         //&& !myShouldIgnoreInstr(0)
-        outp.gprIsNonZeroVec.last.last
+        (
+          outp.gprIsNonZeroVec.last.last
+          || (
+            outp.splitOp.opIsMemAccess
+            && outp.inpDecodeExt.last.memAccessKind.asBits(1)
+          )
+        )
         && outp.calcForFmaxFwdValidMost(
           someShouldIgnoreInstr=(
             !rMyPsExSetPcState
