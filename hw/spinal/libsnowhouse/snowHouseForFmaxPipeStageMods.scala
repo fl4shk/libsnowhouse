@@ -430,7 +430,9 @@ case class SnowHouseForFmaxScoreboard(
             // other "RAW" hazards will be handled via my implementation of
             // fast forwarding!
             rMyInfoVec(jdx).readGprsHazardValid
-            || rMyInfoVec(io.readGprs.tag).issueHazardValid
+            //|| 
+            //rMyInfoVec(io.readGprs.tag).issueHazardValid
+            //rMyInfoVec(io.readGprs.tag).readGprsHazardValid
             //|| io.myTempOpMayNeedHazardCheck
             //|| (
             //  io.readGprs.valid
@@ -1119,23 +1121,23 @@ case class SnowHouseForFmaxPipeStageScoreboardReadGprs(
   //  }
   //}
 
-  //val mySharedNonShouldIgnoreCond = (
-  //  //cLink.up.isValid
-  //  //&& 
-  //  Vec(myOutp.instrCnt.myPsIdBubble.map(
-  //    item => (
-  //      !item
-  //      && (
-  //        !rMyPsExSetPcState
-  //        || !myOutp.regPcSetItCnt(1).lsb
-  //      )
-  //    )
-  //  ))
-  //  //&& (
-  //  //  !rMyPsExSetPcState
-  //  //  || myOutp.regPcSetItCnt(1).lsb
-  //  //)
-  //)
+  val mySharedNonShouldIgnoreCond = (
+    //cLink.up.isValid
+    //&& 
+    Vec(myOutp.instrCnt.myPsIdBubble.map(
+      item => (
+        !item
+        //&& (
+        //  !rMyPsExSetPcState
+        //  || !myOutp.regPcSetItCnt(1).lsb
+        //)
+      )
+    ))
+    //&& (
+    //  !rMyPsExSetPcState
+    //  || myOutp.regPcSetItCnt(1).lsb
+    //)
+  )
 
   io.readGprs.valid := (
     //cLink.up.isValid
@@ -1143,13 +1145,13 @@ case class SnowHouseForFmaxPipeStageScoreboardReadGprs(
     //cLink.up.isFiring
     cLink.down.isFiring
     //&& !myOutp.instrCnt.myPsIdBubble.head
-    //&& mySharedNonShouldIgnoreCond.head
+    && mySharedNonShouldIgnoreCond.head
   )
 
 
   when (
     cLink.up.isValid
-    //&& mySharedNonShouldIgnoreCond.last
+    && mySharedNonShouldIgnoreCond.last
     && !io.readGprs.ready 
   ) {
     cLink.duplicateIt()
@@ -2563,20 +2565,20 @@ case class SnowHouseForFmaxPipeStageWriteBack(
       myCommitBackStm
     )
   )
-  //val myCommitForkStm = (
-  //  cfg.optScoreboard
-  //) generate (
-  //  StreamFork(
-  //    input=myCommitBackStm,
-  //    portCount=2,
-  //    synchronous=true,
-  //  )
-  //)
+  val myCommitForkStm = (
+    cfg.optScoreboard
+  ) generate (
+    StreamFork(
+      input=myCommitBackStm,
+      portCount=2,
+      synchronous=true,
+    )
+  )
   if (cfg.optScoreboard) {
-    //myCommitFinalOutpStm.ready := True
+    myCommitFinalOutpStm.ready := True
     myReorderBuf.io.push << (
-      //myCommitForkStm.head
-      myCommitBackStm
+      myCommitForkStm.head
+      //myCommitBackStm
     )
   }
 
@@ -2645,8 +2647,8 @@ case class SnowHouseForFmaxPipeStageWriteBack(
   )
   if (cfg.optScoreboard) {
     (
-      myCommitFinalOutpStm
-      //myCommitForkStm.last
+      //myCommitFinalOutpStm
+      myCommitForkStm.last
     )
     .translateInto(io.commitEtc.scoreboardTag)(
       dataAssignment=(outp, inp) => {
