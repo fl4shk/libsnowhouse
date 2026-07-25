@@ -2447,6 +2447,8 @@ case class SnowHousePipeStagePreFwd(
     val valid = Bool()
     //val data = UInt(cfg.mainWidth bits)
     val addr = UInt(log2Up(cfg.regFileCfg.wordCountArr(0)) bits)
+    //val isLoadEtc = Bool() // TODO: atomics that read from the bus/mem
+    val opIsMemAccess = Bool()
     //val instrResultInPsWb = Bool()
   }
   val myForFmaxFwdArea = (
@@ -2469,6 +2471,43 @@ case class SnowHousePipeStagePreFwd(
       }
     }
 
+    //val rSavedMemAccVec = (
+    //  //Vec.fill(cfg.optForFmaxPsExFwdSize)(
+    //    Vec.fill(cfg.numGprs)(
+    //      Reg(Bool(), init=False)
+    //    )
+    //    //Reg(UInt(cfg.numGprs bits))
+    //    //init(0x0)
+    //  //)
+    //)
+    //for (idx <- 0 until cfg.numGprs) {
+    //  when (
+    //    outp.gprIsNonZeroVec.last.last
+    //    //&& outp.calcForFmaxFwdValidMost(
+    //    //  someShouldIgnoreInstr=(
+    //    //    !rMyPsExSetPcState
+    //    //    //&& !myBranchMispredictEtc
+    //    //  ),
+    //    //  someNodeIsFiring=upIsFiring,
+    //    //  inPsEx=false
+    //    //)
+    //    && (
+    //      !rMyPsExSetPcState
+    //      || outp.regPcSetItCnt(1).lsb
+    //    )
+    //    && !outp.instrCnt.myPsIdBubble.head
+    //    && outp.gprIdxVec.last === idx
+    //    && upIsFiring
+    //  ) {
+    //    // TODO: might need to use a `History` here, with one bit per
+    //    // register, but not sure since the pipeline is filled with
+    //    // bubbles when 
+    //    rSavedMemAccVec(idx) := (
+    //      outp.splitOp.opIsMemAccess
+    //    )
+    //  }
+    //}
+
     val myHistFwdInfo = {
       val temp = MyFwdInfo()
       temp.valid := (
@@ -2484,7 +2523,7 @@ case class SnowHousePipeStagePreFwd(
           someNodeIsFiring=upIsFiring,
           inPsEx=false
         )
-        && outp.gprIsNonZeroVec.last.last
+        //&& outp.gprIsNonZeroVec.last.last
         //&& (
         //  (
         //    //!myBranchMispredictEtc
@@ -2503,6 +2542,7 @@ case class SnowHousePipeStagePreFwd(
       )
       //temp.data := outp.myExt(0).modMemWord //ram.io.wrData
       temp.addr := outp.gprIdxVec.last
+      temp.opIsMemAccess := outp.splitOp.opIsMemAccess
       val myTempHist = History(
         that=temp,
         length=(
@@ -2523,10 +2563,10 @@ case class SnowHousePipeStagePreFwd(
           //  || outp.regPcSetItCnt(1).lsb
           //)
           && !outp.instrCnt.myPsIdBubble.last
-          && (
-            !outp.splitOp.opIsMemAccess
-            //|| outp.inpDecodeExt.last.memAccessKind.asBits(1)
-          )
+          //&& (
+          //  !outp.splitOp.opIsMemAccess
+          //  //|| outp.inpDecodeExt.last.memAccessKind.asBits(1)
+          //)
         ),
         init=temp.getZero
       )
@@ -2597,6 +2637,13 @@ case class SnowHousePipeStagePreFwd(
       UInt(myHistFwdInfo.size - 1 bits)
     )
 
+    val myTempHistFwdOpIsMemAccess = Vec.fill(
+      cfg.regFileCfg.modRdPortCnt
+    )(
+      //Bool()
+      UInt(myHistFwdInfo.size - 1 bits)
+    )
+
     for (jdx <- 0 until myTempHistFwdValid.size) {
       //myTempHistFwdValid(jdx).lsb := False
       for (idx <- 0 until myTempHistFwdValid(jdx).getWidth) {
@@ -2626,6 +2673,10 @@ case class SnowHousePipeStagePreFwd(
           //  )._1
           //)
         )
+        myTempHistFwdOpIsMemAccess(jdx)(idx) := (
+          myHistFwdInfo(idx + 1).valid
+          && myHistFwdInfo(idx + 1).opIsMemAccess
+        )
       }
 
 // >>> for idx in range(size):
@@ -2654,7 +2705,11 @@ case class SnowHousePipeStagePreFwd(
             //+ (("0" * (myTempHistFwdValid(jdx).getWidth - idx - 1)))
             ("-" * (size - idx - 1) + "1" + ("0" * idx))
           })) {
-            outp.forFmaxFwdIdx(jdx) := idx + 1
+            when (!myTempHistFwdOpIsMemAccess(jdx)(idx)) {
+              outp.forFmaxFwdIdx(jdx) := idx + 1
+            } otherwise {
+              outp.forFmaxFwdIdx(jdx) := 0x0
+            }
             //outp.myExt(0).rdMemWord(jdx) := (
             //  myHistFwdInfo(
             //    //myHistFwdInfo.size - 1 - idx //(idx + 1)
@@ -7642,10 +7697,10 @@ case class SnowHousePipeStageExecute(
           //  !myShouldIgnoreInstr(0)
           //)
           && !outp.instrCnt.myPsIdBubble.last
-          && (
-            !outp.splitOp.opIsMemAccess
-            //|| outp.outpDecodeExt.memAccessKind.asBits(1)
-          )
+          //&& (
+          //  !outp.splitOp.opIsMemAccess
+          //  //|| outp.outpDecodeExt.memAccessKind.asBits(1)
+          //)
         ),
         init=temp.getZero
       )
