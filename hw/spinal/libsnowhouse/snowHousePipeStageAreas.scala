@@ -2682,6 +2682,10 @@ case class SnowHousePipeStagePreFwd(
         myTempHistFwdOpIsMemAccess(jdx)(idx) := (
           myHistFwdInfo(idx + 1).valid
           && myHistFwdInfo(idx + 1).opIsMemAccess
+          && (
+            outp.gprIdxVec(jdx)
+            === myHistFwdInfo(idx + 1).addr
+          )
         )
       }
 
