@@ -538,15 +538,15 @@ case class SnowHouseForFmaxScoreboard(
     is (M"11") {
       rReadGprsInstrMayPassCnt := rReadGprsInstrMayPassCnt - 1
     }
-    is (M"10") {
-      when (rReadGprsInstrMayPassCnt < myReadGprsInstrMayPassCntInitVal) {
-        rReadGprsInstrMayPassCnt := rReadGprsInstrMayPassCnt + 1
-      } otherwise {
-      }
-      //rReadGprsInstrMayPassCnt := myReadGprsInstrMayPassCntInitVal
+    is (M"0-") {
+      //when (rReadGprsInstrMayPassCnt < myReadGprsInstrMayPassCntInitVal) {
+      //  rReadGprsInstrMayPassCnt := rReadGprsInstrMayPassCnt + 1
+      //} otherwise {
+      //}
+      rReadGprsInstrMayPassCnt := myReadGprsInstrMayPassCntInitVal
     }
-    default {
-    }
+    //default {
+    //}
   }
   //when (
   //  io.readGprs.fire
