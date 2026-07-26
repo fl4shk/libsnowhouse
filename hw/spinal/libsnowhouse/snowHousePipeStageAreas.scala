@@ -2592,14 +2592,15 @@ case class SnowHousePipeStagePreFwd(
       //temp.data := outp.myExt(0).modMemWord //ram.io.wrData
       temp.addr := outp.gprIdxVec.last
       temp.forceToZero := (
-        (
-          rMyPsExSetPcState
-          && !outp.regPcSetItCnt(1).lsb
-        )
-        //|| (
-        //  outp.instrCnt.myPsIdBubble.head
+        //(
+        //  rMyPsExSetPcState
+        //  && !outp.regPcSetItCnt(1).lsb
         //)
-        || (
+        ////|| (
+        ////  outp.instrCnt.myPsIdBubble.head
+        ////)
+        //|| 
+        (
           outp.splitOp.opIsMemAccess
           //&& !outp.inpDecodeExt.last.memAccessKind.asBits(1)
         )
@@ -2638,47 +2639,49 @@ case class SnowHousePipeStagePreFwd(
         cloneOf(temp)
       )
       myFwdInfoVec := myTempHist
-      //when (
-      //  //(
-      //  //  !rMyPsExSetPcState
-      //  //  && !outp.regPcSetItCnt(2).lsb
-      //  //)
-      //  //|| (
-      //  //  outp.instrCnt.myPsIdBubble.last
-      //  //)
-      //  //|| (
-      //  //  outp.splitOp.opIsMemAccess
-      //  //  && !outp.inpDecodeExt.last.memAccessKind.asBits(1)
-      //  //)
-      //  //!temp.valid
-      //  //(
-      //  //  (
-      //  //    //!myBranchMispredictEtc
-      //  //    //&& 
-      //  //    !rMyPsExSetPcState
-      //  //    && !myBranchMispredictEtc
-      //  //  )
-      //  //  || outp.regPcSetItCnt(1).lsb
-      //  //)
-      //  //&& !outp.instrCnt.myPsIdBubble.head
-      //  //&& (
-      //  //  !outp.splitOp.opIsMemAccess
-      //  //  || outp.inpDecodeExt.last.memAccessKind.asBits(1)
-      //  //)
-      //  !outp.calcForFmaxFwdValidMost(
-      //    someShouldIgnoreInstr=(
-      //      !rMyPsExSetPcState
-      //      //&& !myBranchMispredictEtc
-      //    ),
-      //    someNodeIsFiring=upIsFiring,
-      //    inPsEx=false
-      //  )
-      //  //&& outp.gprIsNonZeroVec.last.last
-      //) {
-      //  myFwdInfoVec.foreach(item => {
-      //    item.valid := False
-      //  })
-      //}
+      when (
+        //(
+        //  !rMyPsExSetPcState
+        //  && !outp.regPcSetItCnt(2).lsb
+        //)
+        //|| (
+        //  outp.instrCnt.myPsIdBubble.last
+        //)
+        //|| (
+        //  outp.splitOp.opIsMemAccess
+        //  && !outp.inpDecodeExt.last.memAccessKind.asBits(1)
+        //)
+        //!temp.valid
+        //(
+        //  (
+        //    //!myBranchMispredictEtc
+        //    //&& 
+        //    !rMyPsExSetPcState
+        //    && !myBranchMispredictEtc
+        //  )
+        //  || outp.regPcSetItCnt(1).lsb
+        //)
+        //&& !outp.instrCnt.myPsIdBubble.head
+        //&& (
+        //  !outp.splitOp.opIsMemAccess
+        //  || outp.inpDecodeExt.last.memAccessKind.asBits(1)
+        //)
+        //!outp.calcForFmaxFwdValidMost(
+        //  someShouldIgnoreInstr=(
+        //    !rMyPsExSetPcState
+        //    //&& !myBranchMispredictEtc
+        //  ),
+        //  someNodeIsFiring=upIsFiring,
+        //  inPsEx=false
+        //)
+        ////&& outp.gprIsNonZeroVec.last.last
+        rMyPsExSetPcState
+        && !outp.regPcSetItCnt(1).lsb
+      ) {
+        myFwdInfoVec.foreach(item => {
+          item.valid := False
+        })
+      }
 
       myFwdInfoVec
     }
