@@ -2324,15 +2324,23 @@ private[libsnowhouse] case class SnowHouseForFmax(
   //psEx.io.up << psPreFwd.io.down
   psEx.io.up << myRegFileRdDataPipeLast
   val myPostExPreWbStmVec = (
-    cfg.optForFmaxPsExFwdSize > 0
+    //cfg.optForFmaxPsExFwdSize > 0
+    cfg.optForFmax
+    && (
+      cfg.optForFmaxCfg.get.numPostExPreWbPipeStages > 0
+    )
   ) generate (
     Vec.fill(
-      cfg.optForFmaxPsExFwdSize
+      //cfg.optForFmaxPsExFwdSize
+      cfg.optForFmaxCfg.get.numPostExPreWbPipeStages
     )(
       Stream(SnowHousePipePayload(cfg=cfg))
     )
   )
-  if (cfg.optForFmaxPsExFwdSize > 0) {
+  if (
+    //cfg.optForFmaxPsExFwdSize > 0
+    myPostExPreWbStmVec != null
+  ) {
     for (idx <- 0 until myPostExPreWbStmVec.size) {
       if (idx == 0) {
         myPostExPreWbStmVec(idx) << psEx.io.down
