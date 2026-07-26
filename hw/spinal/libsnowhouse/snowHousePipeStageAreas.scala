@@ -2564,14 +2564,14 @@ case class SnowHousePipeStagePreFwd(
           //  && outp.inpDecodeExt.last.memAccessKind.asBits(1)
           //)
         )
-        && outp.calcForFmaxFwdValidMost(
-          someShouldIgnoreInstr=(
-            !rMyPsExSetPcState
-            //&& !myBranchMispredictEtc
-          ),
-          someNodeIsFiring=upIsFiring,
-          inPsEx=false
-        )
+        //&& outp.calcForFmaxFwdValidMost(
+        //  someShouldIgnoreInstr=(
+        //    !rMyPsExSetPcState
+        //    //&& !myBranchMispredictEtc
+        //  ),
+        //  someNodeIsFiring=upIsFiring,
+        //  inPsEx=false
+        //)
         //&& outp.gprIsNonZeroVec.last.last
         //&& (
         //  (
@@ -2602,6 +2602,14 @@ case class SnowHousePipeStagePreFwd(
           upIsFiring
           && (
             outp.gprIsNonZeroVec.last.last
+          )
+          && outp.calcForFmaxFwdValidMost(
+            someShouldIgnoreInstr=(
+              !rMyPsExSetPcState
+              && !myBranchMispredictEtc
+            ),
+            someNodeIsFiring=upIsFiring,
+            inPsEx=false
           )
           //&& (
           //  (
@@ -7767,6 +7775,7 @@ case class SnowHousePipeStageExecute(
           ////)
           //&& outp.myExt(0).modMemWordValid.last //ram.io.wrEn
           && outp.gprIsNonZeroVec.last.last
+          && !myShouldIgnoreInstr(0)
           //&& (
           //  //(
           //  //  //!myBranchMispredictEtc
