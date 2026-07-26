@@ -2592,14 +2592,14 @@ case class SnowHousePipeStagePreFwd(
       //temp.data := outp.myExt(0).modMemWord //ram.io.wrData
       temp.addr := outp.gprIdxVec.last
       temp.forceToZero := (
-        //(
-        //  rMyPsExSetPcState
-        //  && !outp.regPcSetItCnt(1).lsb
+        (
+          rMyPsExSetPcState
+          && !outp.regPcSetItCnt(1).lsb
+        )
+        //|| (
+        //  outp.instrCnt.myPsIdBubble.head
         //)
-        ////|| (
-        ////  outp.instrCnt.myPsIdBubble.head
-        ////)
-        //|| 
+        || 
         (
           outp.splitOp.opIsMemAccess
           //&& !outp.inpDecodeExt.last.memAccessKind.asBits(1)
