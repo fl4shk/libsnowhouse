@@ -2369,7 +2369,7 @@ case class SnowHousePipePayload(
         || regPcSetItCnt(1).lsb
       )
     )
-    //&& !instrCnt.myPsIdBubble.head
+    && !instrCnt.myPsIdBubble.head
     //&& (
     //  !splitOp.opIsMemAccess
     //  //|| inpDecodeExt.last.memAccessKind.asBits(1)

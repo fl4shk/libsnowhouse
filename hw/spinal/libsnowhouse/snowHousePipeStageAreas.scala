@@ -2564,14 +2564,14 @@ case class SnowHousePipeStagePreFwd(
           //  && outp.inpDecodeExt.last.memAccessKind.asBits(1)
           //)
         )
-        //&& outp.calcForFmaxFwdValidMost(
-        //  someShouldIgnoreInstr=(
-        //    !rMyPsExSetPcState
-        //    //&& !myBranchMispredictEtc
-        //  ),
-        //  someNodeIsFiring=upIsFiring,
-        //  inPsEx=false
-        //)
+        && outp.calcForFmaxFwdValidMost(
+          someShouldIgnoreInstr=(
+            !rMyPsExSetPcState
+            //&& !myBranchMispredictEtc
+          ),
+          someNodeIsFiring=upIsFiring,
+          inPsEx=false
+        )
         //&& outp.gprIsNonZeroVec.last.last
         //&& (
         //  (
@@ -2600,27 +2600,19 @@ case class SnowHousePipeStagePreFwd(
         ),
         when=(
           upIsFiring
-          && (
-            outp.gprIsNonZeroVec.last.last
-          )
-          && outp.calcForFmaxFwdValidMost(
-            someShouldIgnoreInstr=(
-              !rMyPsExSetPcState
-              && !myBranchMispredictEtc
-            ),
-            someNodeIsFiring=upIsFiring,
-            inPsEx=false
-          )
           //&& (
-          //  (
-          //    //!myBranchMispredictEtc
-          //    //&& 
-          //    !rMyPsExSetPcState
-          //    && !myBranchMispredictEtc
-          //  )
-          //  || outp.regPcSetItCnt(1).lsb
+          //  outp.gprIsNonZeroVec.last.last
           //)
-          && !outp.instrCnt.myPsIdBubble.last
+          ////&& (
+          ////  (
+          ////    //!myBranchMispredictEtc
+          ////    //&& 
+          ////    !rMyPsExSetPcState
+          ////    //&& !myBranchMispredictEtc
+          ////  )
+          ////  || outp.regPcSetItCnt(1).lsb
+          ////)
+          //&& !outp.instrCnt.myPsIdBubble.last
           //&& (
           //  !outp.splitOp.opIsMemAccess
           //  //|| outp.inpDecodeExt.last.memAccessKind.asBits(1)
@@ -2748,16 +2740,18 @@ case class SnowHousePipeStagePreFwd(
           //)
         )
         myTempHistFwdOpIsMemAccess(jdx)(idx) := (
-          myHistFwdInfo(idx + 1).valid
-          && myHistFwdInfo(idx + 1).opIsMemAccess
+          //myHistFwdInfo(idx + 1).valid
+          //&& 
+          myHistFwdInfo(idx + 1).opIsMemAccess
           //&& (
           //  outp.gprIdxVec(jdx)
           //  === myHistFwdInfo(idx + 1).addr
           //)
         )
         myTempHistFwdOpIsNonMemAccess(jdx)(idx) := (
-          myHistFwdInfo(idx + 1).valid
-          && !myHistFwdInfo(idx + 1).opIsMemAccess
+          //myHistFwdInfo(idx + 1).valid
+          //&& 
+          !myHistFwdInfo(idx + 1).opIsMemAccess
           //&& (
           //  outp.gprIdxVec(jdx)
           //  === myHistFwdInfo(idx + 1).addr
@@ -7766,27 +7760,27 @@ case class SnowHousePipeStageExecute(
         ),
         when=(
           cLink.up.isFiring
-          ////&& !outp.instrCnt.myPsIdBubble.last
-          //////&& !outp.splitOp.memAccessKind.
-          //////&& !outp.splitOp.opIsMemAccess
+          //////&& !outp.instrCnt.myPsIdBubble.last
+          ////////&& !outp.splitOp.memAccessKind.
+          ////////&& !outp.splitOp.opIsMemAccess
+          //////&& (
+          //////  !outp.splitOp.opIsMemAccess
+          //////  //|| outp.outpDecodeExt.memAccessKind.asBits(1)
+          //////)
+          ////&& outp.myExt(0).modMemWordValid.last //ram.io.wrEn
+          //&& outp.gprIsNonZeroVec.last.last
+          //&& !myShouldIgnoreInstr(0)
           ////&& (
-          ////  !outp.splitOp.opIsMemAccess
-          ////  //|| outp.outpDecodeExt.memAccessKind.asBits(1)
+          ////  //(
+          ////  //  //!myBranchMispredictEtc
+          ////  //  //&& 
+          ////  //  !rMyPsExSetPcState
+          ////  //  //&& !myBranchMispredictEtc
+          ////  //)
+          ////  //|| outp.regPcSetItCnt(1).lsb
+          ////  !myShouldIgnoreInstr(0)
           ////)
-          //&& outp.myExt(0).modMemWordValid.last //ram.io.wrEn
-          && outp.gprIsNonZeroVec.last.last
-          && !myShouldIgnoreInstr(0)
-          //&& (
-          //  //(
-          //  //  //!myBranchMispredictEtc
-          //  //  //&& 
-          //  //  !rMyPsExSetPcState
-          //  //  && !myBranchMispredictEtc
-          //  //)
-          //  //|| outp.regPcSetItCnt(1).lsb
-          //  !myShouldIgnoreInstr(0)
-          //)
-          && !outp.instrCnt.myPsIdBubble.last
+          //&& !outp.instrCnt.myPsIdBubble.last
           //&& (
           //  !outp.splitOp.opIsMemAccess
           //  //|| outp.outpDecodeExt.memAccessKind.asBits(1)
