@@ -750,7 +750,8 @@ case class SnowHouseConfig(
             //6
             //4
             //2
-            3
+            //3
+            1
           ) else (
             0
           )

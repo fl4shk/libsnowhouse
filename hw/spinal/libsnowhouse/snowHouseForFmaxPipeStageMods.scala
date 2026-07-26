@@ -598,40 +598,40 @@ case class SnowHouseForFmaxScoreboard(
   //  rReadGprs
   //}
 
-  for (idx <- 0 until myCommitHazardCheckVecInnerSize) {
-    // WAR hazards
-    val tempRegIdx = (
-      //rMyInfoVec(io.commit.tag).gprIdxVec(idx)
-      rMyInfoVec(io.reorderBufWrite.tag).gprIdxVec.last
-    )
-    for (jdx <- 0 until cfg.optMaxNumScoreboardInstrs) {
-      val myTempInfoGprIdx = (
-        //rMyInfoVec(jdx).gprIdxVec.last
-        rMyInfoVec(jdx).gprIdxVec(idx)
-      )
-      tempHaveCommitHazardAddrCheckVec(jdx)(idx) := (
-        //tempRegIdx === myHistLastGprIdx(jdx + 1).last
-        //tempRegIdx === rMyInfoVec(jdx).gprIdxVec(idx)
-        tempRegIdx === myTempInfoGprIdx
-        //&& myTempInfoGprIdx.orR // check for non-zero
-        && rMyInfoVec(jdx).gprIsNonZeroVec(idx)
-        && (
-          rMyInfoVec(io.reorderBufWrite.tag).instrAge
-          > rMyInfoVec(jdx).instrAge
-        )
-        //&& rMyInfoVec(io.commit.tag).allocValid
-        //&& rMyInfoVec(jdx).hazardValid
-        //&& (
-        //  //rMyInfoVec(jdx).hazardValid
-        //  //|| 
-        //  rMyInfoVec(io.commit.tag).hazardValid
-        //)
-        && rMyInfoVec(jdx).issueAllocValid
-        && io.reorderBufWrite.tag =/= jdx
-        //&& io.commit.valid
-      )
-    }
-  }
+  //for (idx <- 0 until myCommitHazardCheckVecInnerSize) {
+  //  // WAR hazards
+  //  val tempRegIdx = (
+  //    //rMyInfoVec(io.commit.tag).gprIdxVec(idx)
+  //    rMyInfoVec(io.reorderBufWrite.tag).gprIdxVec.last
+  //  )
+  //  for (jdx <- 0 until cfg.optMaxNumScoreboardInstrs) {
+  //    val myTempInfoGprIdx = (
+  //      //rMyInfoVec(jdx).gprIdxVec.last
+  //      rMyInfoVec(jdx).gprIdxVec(idx)
+  //    )
+  //    tempHaveCommitHazardAddrCheckVec(jdx)(idx) := (
+  //      //tempRegIdx === myHistLastGprIdx(jdx + 1).last
+  //      //tempRegIdx === rMyInfoVec(jdx).gprIdxVec(idx)
+  //      tempRegIdx === myTempInfoGprIdx
+  //      //&& myTempInfoGprIdx.orR // check for non-zero
+  //      && rMyInfoVec(jdx).gprIsNonZeroVec(idx)
+  //      && (
+  //        rMyInfoVec(io.reorderBufWrite.tag).instrAge
+  //        > rMyInfoVec(jdx).instrAge
+  //      )
+  //      //&& rMyInfoVec(io.commit.tag).allocValid
+  //      //&& rMyInfoVec(jdx).hazardValid
+  //      //&& (
+  //      //  //rMyInfoVec(jdx).hazardValid
+  //      //  //|| 
+  //      //  rMyInfoVec(io.commit.tag).hazardValid
+  //      //)
+  //      && rMyInfoVec(jdx).issueAllocValid
+  //      && io.reorderBufWrite.tag =/= jdx
+  //      //&& io.commit.valid
+  //    )
+  //  }
+  //}
   io.reorderBufWrite.ready := (
     //io.reorderBufWrite.valid
     //&& 
@@ -729,8 +729,8 @@ case class SnowHouseForFmaxScoreboard(
         //)
         when (io.issue.fire) {
           io.issue.tag := idx
-          rFlushInfo.instrAgeCnt := rFlushInfo.instrAgeCnt + 1
-          rMyInfoVec(idx).instrAge := rFlushInfo.instrAgeCnt
+          //rFlushInfo.instrAgeCnt := rFlushInfo.instrAgeCnt + 1
+          //rMyInfoVec(idx).instrAge := rFlushInfo.instrAgeCnt
           rMyInfoVec(idx).issueHazardValid := (
             io.issueMyTempOpMayNeedHazardCheck
             //True
@@ -769,8 +769,9 @@ case class SnowHouseForFmaxScoreboard(
   switch (
     rFlushInfo.fire
     ## (
-      (rFlushInfo.instrAgeCnt === myMaxInstrAge)
-      || io.myBranchMispredictEtc
+      //(rFlushInfo.instrAgeCnt === myMaxInstrAge)
+      //|| 
+      io.myBranchMispredictEtc
     )
     ## myInfoAllocValidVec.orR
   ) {
