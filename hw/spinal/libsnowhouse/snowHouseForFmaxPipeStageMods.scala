@@ -147,6 +147,7 @@ case class SnowHouseScoreboardReadGprsPayload(
     )
   )
   val tag = UInt(cfg.optScoreboardTagWidth bits)
+  val someNodeIsFiring = Bool()
 }
 
 case class SnowHouseScoreboardCommitPayload(
@@ -375,11 +376,11 @@ case class SnowHouseForFmaxScoreboard(
       )
     )
   )
-  //val tempHaveReadGprsHazardAddrCheckFwdLimitVec = (
-  //  cloneOf(
-  //    tempHaveReadGprsHazardAddrCheckVec
-  //  )
-  //)
+  val tempHaveReadGprsHazardAddrCheckFwdLimitVec = (
+    cloneOf(
+      tempHaveReadGprsHazardAddrCheckVec
+    )
+  )
 
   val myCommitHazardCheckVecInnerSize = (
     // WAR hazards
@@ -452,13 +453,13 @@ case class SnowHouseForFmaxScoreboard(
           //|| rMyInfoVec(io.readGprs.tag).issueHazardValid
         )
       )
-      //tempHaveReadGprsHazardAddrCheckFwdLimitVec(jdx)(idx) := (
-      //  tempCmp
-      //  && (
-      //    !rMyInfoVec(jdx).readGprsHazardValid
-      //    //|| rMyInfoVec(io.readGprs.tag).issueHazardValid
-      //  )
-      //)
+      tempHaveReadGprsHazardAddrCheckFwdLimitVec(jdx)(idx) := (
+        tempCmp
+        && (
+          !rMyInfoVec(jdx).readGprsHazardValid
+          //|| rMyInfoVec(io.readGprs.tag).issueHazardValid
+        )
+      )
       //tempHaveReadGprsHazardAddrCheckVec(jdx)(idx) := (
       //  (
       //    //tempRegIdx === myHistLastGprIdx(jdx + 1).last
@@ -505,20 +506,20 @@ case class SnowHouseForFmaxScoreboard(
   }
 
   //def myReadGprsInstrMayPassCntInitVal = cfg.optForFmaxPsExFwdSize - 2//1
-  //def myReadGprsInstrMayPassCntInitVal = 2
+  def myReadGprsInstrMayPassCntInitVal = 2
 
-  //val rReadGprsInstrMayPassCnt = (
-  //  cfg.optScoreboard
-  //) generate (
-  //  Reg(UInt(log2Up(myReadGprsInstrMayPassCntInitVal + 1) bits))
-  //  init(myReadGprsInstrMayPassCntInitVal)
-  //)
+  val rReadGprsInstrMayPassCnt = (
+    cfg.optScoreboard
+  ) generate (
+    Reg(UInt(log2Up(myReadGprsInstrMayPassCntInitVal + 1) bits))
+    init(myReadGprsInstrMayPassCntInitVal)
+  )
   io.readGprs.ready := (
     (
       io.readGprs.valid
       && (
         !tempHaveReadGprsHazardAddrCheckVec.asBits.orR
-        //&& rReadGprsInstrMayPassCnt.orR
+        && rReadGprsInstrMayPassCnt.orR
         //|| (
         //  io.reorderBufWrite.fire
         //  && (
@@ -530,27 +531,34 @@ case class SnowHouseForFmaxScoreboard(
     )
     //|| rFlushInfo.fire
   )
-  //switch (
-  //  io.readGprs.fire
-  //  ## tempHaveReadGprsHazardAddrCheckFwdLimitVec.asBits.orR
-  //  //## (rReadGprsInstrMayPassCnt < myReadGprsInstrMayPassCntInitVal)
-  //) {
-  //  is (M"11") {
-  //    rReadGprsInstrMayPassCnt := rReadGprsInstrMayPassCnt - 1
-  //  }
-  //  is (
-  //    //M"0-"
-  //    M"10"
-  //  ) {
-  //    //when (rReadGprsInstrMayPassCnt < myReadGprsInstrMayPassCntInitVal) {
-  //    //  rReadGprsInstrMayPassCnt := rReadGprsInstrMayPassCnt + 1
-  //    //} otherwise {
-  //    //}
-  //    rReadGprsInstrMayPassCnt := myReadGprsInstrMayPassCntInitVal
-  //  }
-  //  default {
-  //  }
-  //}
+  switch (
+    io.readGprs.fire
+    //## io.readGprs.someNodeIsFiring
+    ## tempHaveReadGprsHazardAddrCheckFwdLimitVec.asBits.orR
+    //## (rReadGprsInstrMayPassCnt < myReadGprsInstrMayPassCntInitVal)
+  ) {
+    is (
+      M"11"
+      //M"101"
+    ) {
+      rReadGprsInstrMayPassCnt := rReadGprsInstrMayPassCnt - 1
+    }
+    is (
+      //M"0--"
+      //M"0-"
+      M"10"
+
+      //M"1-0"
+    ) {
+      //when (rReadGprsInstrMayPassCnt < myReadGprsInstrMayPassCntInitVal) {
+      //  rReadGprsInstrMayPassCnt := rReadGprsInstrMayPassCnt + 1
+      //} otherwise {
+      //}
+      rReadGprsInstrMayPassCnt := myReadGprsInstrMayPassCntInitVal
+    }
+    default {
+    }
+  }
   //when (
   //  io.readGprs.fire
   //  //&& !tempHaveReadGprsHazardAddrCheckVec.asBits.orR
@@ -1231,12 +1239,15 @@ case class SnowHouseForFmaxPipeStageScoreboardReadGprs(
   )
 
   io.readGprs.valid := (
-    cLink.up.isValid
+    //cLink.up.isValid
     //&& cLink.down.isReady
     //cLink.up.isFiring
-    //cLink.down.isFiring
+    cLink.down.isFiring
     //&& !myOutp.instrCnt.myPsIdBubble.head
     && mySharedNonShouldIgnoreCond.head
+  )
+  io.readGprs.someNodeIsFiring := (
+    cLink.down.isFiring
   )
 
 
