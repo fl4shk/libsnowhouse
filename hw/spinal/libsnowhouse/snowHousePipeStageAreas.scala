@@ -2489,7 +2489,7 @@ case class SnowHousePipeStagePreFwd(
     //val data = UInt(cfg.mainWidth bits)
     val addr = UInt(log2Up(cfg.regFileCfg.wordCountArr(0)) bits)
     //val isLoadEtc = Bool() // TODO: atomics that read from the bus/mem
-    val opIsMemAccess = Bool()
+    val forceToZero = Bool()
     //val instrResultInPsWb = Bool()
     //val myFwdIdx = UInt(log2Up(cfg.optForFmaxPsExFwdSize) bits)
   }
@@ -2591,7 +2591,14 @@ case class SnowHousePipeStagePreFwd(
       )
       //temp.data := outp.myExt(0).modMemWord //ram.io.wrData
       temp.addr := outp.gprIdxVec.last
-      temp.opIsMemAccess := outp.splitOp.opIsMemAccess
+      temp.forceToZero := (
+        //(
+        //  rMyPsExSetPcState
+        //  && !outp.regPcSetItCnt(1).lsb
+        //)
+        //|| 
+        outp.splitOp.opIsMemAccess
+      )
       val myTempHist = History(
         that=temp,
         length=(
@@ -2742,7 +2749,7 @@ case class SnowHousePipeStagePreFwd(
         myTempHistFwdOpIsMemAccess(jdx)(idx) := (
           //myHistFwdInfo(idx + 1).valid
           //&& 
-          myHistFwdInfo(idx + 1).opIsMemAccess
+          myHistFwdInfo(idx + 1).forceToZero
           //&& (
           //  outp.gprIdxVec(jdx)
           //  === myHistFwdInfo(idx + 1).addr
@@ -2751,7 +2758,7 @@ case class SnowHousePipeStagePreFwd(
         myTempHistFwdOpIsNonMemAccess(jdx)(idx) := (
           //myHistFwdInfo(idx + 1).valid
           //&& 
-          !myHistFwdInfo(idx + 1).opIsMemAccess
+          !myHistFwdInfo(idx + 1).forceToZero
           //&& (
           //  outp.gprIdxVec(jdx)
           //  === myHistFwdInfo(idx + 1).addr
