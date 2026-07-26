@@ -2582,7 +2582,7 @@ case class SnowHousePipeStagePreFwd(
         //  )
         //  || outp.regPcSetItCnt(1).lsb
         //)
-        //&& !outp.instrCnt.myPsIdBubble.head
+        && !outp.instrCnt.myPsIdBubble.head
         //&& (
         //  !outp.splitOp.opIsMemAccess
         //  || outp.inpDecodeExt.last.memAccessKind.asBits(1)
@@ -7787,7 +7787,7 @@ case class SnowHousePipeStageExecute(
           ////  //|| outp.regPcSetItCnt(1).lsb
           ////  !myShouldIgnoreInstr(0)
           ////)
-          //&& !outp.instrCnt.myPsIdBubble.last
+          && !outp.instrCnt.myPsIdBubble.last
           //&& (
           //  !outp.splitOp.opIsMemAccess
           //  //|| outp.outpDecodeExt.memAccessKind.asBits(1)
