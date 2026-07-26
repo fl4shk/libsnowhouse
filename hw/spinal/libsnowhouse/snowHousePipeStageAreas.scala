@@ -2596,7 +2596,10 @@ case class SnowHousePipeStagePreFwd(
           rMyPsExSetPcState
           && !outp.regPcSetItCnt(1).lsb
         )
-        || outp.splitOp.opIsMemAccess
+        || (
+          outp.splitOp.opIsMemAccess
+          && !outp.inpDecodeExt.last.memAccessKind.asBits(1)
+        )
       )
       val myTempHist = History(
         that=temp,
