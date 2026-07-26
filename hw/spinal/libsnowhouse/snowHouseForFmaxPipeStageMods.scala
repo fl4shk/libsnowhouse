@@ -540,6 +540,8 @@ case class SnowHouseForFmaxScoreboard(
     is (M"10") {
       rReadGprsInstrMayPassCnt := myReadGprsInstrMayPassCntInitVal
     }
+    default {
+    }
   }
   //when (
   //  io.readGprs.fire
