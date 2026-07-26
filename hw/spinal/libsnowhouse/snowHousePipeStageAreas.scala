@@ -2564,6 +2564,7 @@ case class SnowHousePipeStagePreFwd(
           //  && outp.inpDecodeExt.last.memAccessKind.asBits(1)
           //)
         )
+        && !temp.forceToZero
         //&& outp.calcForFmaxFwdValidMost(
         //  someShouldIgnoreInstr=(
         //    !rMyPsExSetPcState
