@@ -371,12 +371,31 @@ case class SnowHouseForFmaxScoreboard(
     // non-forwardable RAW hazards
     // TODO: this should be switched to be computed in the "Issue" stage
     // at some point (for fmax)
+
+    // However, perhaps it maybe it makes more sense
+    // to just add an extra pipeline stage between Issue and ReadGprs
+    // instead? That would at least let me keep my existing logic around,
+    // and would likely still help fmax by a lot.
     Vec.fill(cfg.optMaxNumScoreboardInstrs)(
       Vec.fill(
         myReadGprsHazardCheckVecInnerSize
       )(
         Bool()
       )
+    )
+  )
+  val myHistRawHazard = (
+    History(
+      tempHaveReadGprsHazardAddrCheckVec.asBits.orR,
+      length=2,
+      when=(
+        //io.readGprs.valid
+        //&& 
+        io.readGprs.someNodeIsFiring
+      ),
+      //init=(
+      //  tempHaveReadGprsHazardAddrCheckVec.getZero
+      //)
     )
   )
   //val tempHaveReadGprsHazardAddrCheckFwdLimitVec = (
@@ -527,7 +546,8 @@ case class SnowHouseForFmaxScoreboard(
     (
       io.readGprs.valid
       && (
-        !tempHaveReadGprsHazardAddrCheckVec.asBits.orR
+        //!tempHaveReadGprsHazardAddrCheckVec.asBits.orR
+        !myHistRawHazard.last
         //&& rReadGprsInstrMayPassCnt.orR
         //|| (
         //  io.reorderBufWrite.fire
@@ -1179,31 +1199,59 @@ case class SnowHouseForFmaxPipeStageScoreboardReadGprs(
 
   //val pScoreboardReadGprsInp = Payload(SnowHousePipePayload(cfg=cfg))
   val pScoreboardReadGprsOutp = Payload(SnowHousePipePayload(cfg=cfg))
-  val cLink = CtrlLink()
-  val sLink = StageLink(
-    up=cLink.down,
+
+  val cFrontLink = CtrlLink()
+  val sFrontLink = StageLink(
+    up=cFrontLink.down,
     down={
       val temp = Node()
-      temp.setName("sLink_down")
+      temp.setName("sFrontLink_down")
       temp
     }
   )
-  val s2mLink = S2MLink(
-    up=sLink.down,
+  val s2mFrontLink = S2MLink(
+    up=sFrontLink.down,
     down={
       val temp = Node()
-      temp.setName("s2mLink_down")
+      temp.setName("s2mFrontLink_down")
       temp
     }
   )
-  linkArr += cLink
-  linkArr += sLink
-  linkArr += s2mLink
+  val cBackLink = CtrlLink(
+    up=s2mFrontLink.down,
+    down={
+      val temp = Node()
+      temp.setName("cBackLink_down")
+      temp
+    }
+  )
+  val sBackLink = StageLink(
+    up=cBackLink.down,
+    down={
+      val temp = Node()
+      temp.setName("sBackLink_down")
+      temp
+    }
+  )
+  val s2mBackLink = S2MLink(
+    up=sBackLink.down,
+    down={
+      val temp = Node()
+      temp.setName("s2mBackLink_down")
+      temp
+    }
+  )
+  linkArr += cFrontLink
+  linkArr += sFrontLink
+  linkArr += s2mFrontLink
+  linkArr += cBackLink
+  linkArr += sBackLink
+  linkArr += s2mBackLink
 
   val myInp = SnowHousePipePayload(cfg=cfg)
   val myOutp = SnowHousePipePayload(cfg=cfg)
 
-  cLink.up.driveFrom(io.up)(
+  cFrontLink.up.driveFrom(io.up)(
     con=(node, inp) => {
       //node(pScoreboardReadGprsInp) := inp
       myInp := inp
@@ -1211,13 +1259,16 @@ case class SnowHouseForFmaxPipeStageScoreboardReadGprs(
   )
 
   myOutp := RegNext(myOutp, init=myOutp.getZero)
-  when (cLink.up.isValid) {
+  when (cFrontLink.up.isValid) {
     myOutp := myInp
   }
 
   io.readGprs.gprIdxVec := myOutp.gprIdxVec
   io.readGprs.tag := myOutp.instrCnt.scoreboardTag
   io.readGprs.regPcSetItCnt := myOutp.regPcSetItCnt
+  io.readGprs.someNodeIsFiring := (
+    cFrontLink.up.isFiring
+  )
   //val rStallState = Reg(Bool(), init=False)
 
   //when (!rStallState) {
@@ -1273,29 +1324,26 @@ case class SnowHouseForFmaxPipeStageScoreboardReadGprs(
   )
 
   io.readGprs.valid := (
-    cLink.up.isValid
-    && cLink.down.isReady
+    cBackLink.up.isValid
+    && cBackLink.down.isReady
     //cLink.up.isFiring
     //cLink.down.isFiring
     //&& !myOutp.instrCnt.myPsIdBubble.head
     && mySharedNonShouldIgnoreCond.head
   )
-  io.readGprs.someNodeIsFiring := (
-    cLink.down.isFiring
-  )
 
 
   when (
-    cLink.up.isValid
+    cBackLink.up.isValid
     && mySharedNonShouldIgnoreCond.last
     && io.readGprs.valid
     && !io.readGprs.ready 
   ) {
-    cLink.duplicateIt()
-    cLink.down(pScoreboardReadGprsOutp).allowOverride
-    cLink.down(pScoreboardReadGprsOutp) := myOutp//.getZero
+    cBackLink.duplicateIt()
+    cBackLink.down(pScoreboardReadGprsOutp).allowOverride
+    cBackLink.down(pScoreboardReadGprsOutp) := myOutp//.getZero
 
-    cLink.down(pScoreboardReadGprsOutp).setAsBubbleMain(
+    cBackLink.down(pScoreboardReadGprsOutp).setAsBubbleMain(
       //!scoreboard.io.issue.cntOverflow
       Some(True)
       //myPsIdBubble=True,
@@ -1317,7 +1365,7 @@ case class SnowHouseForFmaxPipeStageScoreboardReadGprs(
     //  True
     //)
   } otherwise {
-    cLink.down(pScoreboardReadGprsOutp) := myOutp
+    cBackLink.down(pScoreboardReadGprsOutp) := myOutp
   }
   //when (
   //  cLink.up.isValid
@@ -1326,7 +1374,7 @@ case class SnowHouseForFmaxPipeStageScoreboardReadGprs(
   //  cLink.throwIt()
   //}
 
-  s2mLink.down.driveTo(io.down)(
+  s2mBackLink.down.driveTo(io.down)(
     con=(outp, node) => {
       outp := node(pScoreboardReadGprsOutp)
     }
