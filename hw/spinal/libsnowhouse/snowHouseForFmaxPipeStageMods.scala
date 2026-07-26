@@ -461,7 +461,7 @@ case class SnowHouseForFmaxScoreboard(
         tempCmp
         && (
           !rMyInfoVec(jdx).readGprsHazardValid
-          //|| rMyInfoVec(jdx).readGprsHazardValidFwdLimit
+          && rMyInfoVec(jdx).readGprsHazardValidFwdLimit
           //|| rMyInfoVec(io.readGprs.tag).issueHazardValid
         )
       )
