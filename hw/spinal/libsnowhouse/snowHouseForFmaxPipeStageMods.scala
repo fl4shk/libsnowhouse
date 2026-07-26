@@ -533,11 +533,15 @@ case class SnowHouseForFmaxScoreboard(
   switch (
     io.readGprs.fire
     ## tempHaveReadGprsHazardAddrCheckFwdLimitVec.asBits.orR
+    //## (rReadGprsInstrMayPassCnt < myReadGprsInstrMayPassCntInitVal)
   ) {
     is (M"11") {
       rReadGprsInstrMayPassCnt := rReadGprsInstrMayPassCnt - 1
     }
     is (M"10") {
+      //when (rReadGprsInstrMayPassCnt < myReadGprsInstrMayPassCntInitVal) {
+      //} otherwise {
+      //}
       rReadGprsInstrMayPassCnt := myReadGprsInstrMayPassCntInitVal
     }
     default {
