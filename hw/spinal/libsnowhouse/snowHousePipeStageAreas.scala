@@ -2489,7 +2489,9 @@ case class SnowHousePipeStagePreFwd(
     //val data = UInt(cfg.mainWidth bits)
     val addr = UInt(log2Up(cfg.regFileCfg.wordCountArr(0)) bits)
     //val isLoadEtc = Bool() // TODO: atomics that read from the bus/mem
-    val forceToZero = Bool()
+    val memAccessForceToZero = Bool()
+    val branchMispredictEtcForceToZero = Bool()
+    val anyForceToZero = Bool()
     //val instrResultInPsWb = Bool()
     //val myFwdIdx = UInt(log2Up(cfg.optForFmaxPsExFwdSize) bits)
   }
@@ -2564,7 +2566,7 @@ case class SnowHousePipeStagePreFwd(
           //  && outp.inpDecodeExt.last.memAccessKind.asBits(1)
           //)
         )
-        && !temp.forceToZero
+        //&& !temp.forceToZero
         //&& outp.calcForFmaxFwdValidMost(
         //  someShouldIgnoreInstr=(
         //    !rMyPsExSetPcState
@@ -2592,7 +2594,23 @@ case class SnowHousePipeStagePreFwd(
       )
       //temp.data := outp.myExt(0).modMemWord //ram.io.wrData
       temp.addr := outp.gprIdxVec.last
-      temp.forceToZero := (
+      temp.memAccessForceToZero := (
+        //(
+        //  (
+        //    rMyPsExSetPcState
+        //    || myBranchMispredictEtc
+        //  )
+        //  && !outp.regPcSetItCnt(1).lsb
+        //)
+        //|| (
+        //  outp.instrCnt.myPsIdBubble.head
+        //)
+        (
+          outp.splitOp.opIsMemAccess
+          //&& !outp.inpDecodeExt.last.memAccessKind.asBits(1)
+        )
+      )
+      temp.branchMispredictEtcForceToZero := (
         (
           (
             rMyPsExSetPcState
@@ -2600,14 +2618,10 @@ case class SnowHousePipeStagePreFwd(
           )
           && !outp.regPcSetItCnt(1).lsb
         )
-        //|| (
-        //  outp.instrCnt.myPsIdBubble.head
-        //)
-        || 
-        (
-          outp.splitOp.opIsMemAccess
-          //&& !outp.inpDecodeExt.last.memAccessKind.asBits(1)
-        )
+      )
+      temp.anyForceToZero := (
+        temp.memAccessForceToZero
+        || temp.branchMispredictEtcForceToZero
       )
       val myTempHist = History(
         that=temp,
@@ -2643,6 +2657,12 @@ case class SnowHousePipeStagePreFwd(
         cloneOf(temp)
       )
       myFwdInfoVec := myTempHist
+      for (idx <- 0 until myFwdInfoVec.size - 1) {
+        when (myFwdInfoVec(idx).branchMispredictEtcForceToZero) {
+          myFwdInfoVec(idx).valid := False
+          myFwdInfoVec(idx + 1).valid := False
+        }
+      }
       //when (
       //  //(
       //  //  !rMyPsExSetPcState
@@ -2761,7 +2781,7 @@ case class SnowHousePipeStagePreFwd(
         myTempHistFwdForceToZero(jdx)(idx) := (
           //myHistFwdInfo(idx + 1).valid
           //&& 
-          myHistFwdInfo(idx + 1).forceToZero
+          myHistFwdInfo(idx + 1).anyForceToZero
           //&& (
           //  outp.gprIdxVec(jdx)
           //  === myHistFwdInfo(idx + 1).addr
