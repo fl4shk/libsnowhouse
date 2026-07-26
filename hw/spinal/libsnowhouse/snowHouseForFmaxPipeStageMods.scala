@@ -375,11 +375,11 @@ case class SnowHouseForFmaxScoreboard(
       )
     )
   )
-  val tempHaveReadGprsHazardAddrCheckFwdLimitVec = (
-    cloneOf(
-      tempHaveReadGprsHazardAddrCheckVec
-    )
-  )
+  //val tempHaveReadGprsHazardAddrCheckFwdLimitVec = (
+  //  cloneOf(
+  //    tempHaveReadGprsHazardAddrCheckVec
+  //  )
+  //)
 
   val myCommitHazardCheckVecInnerSize = (
     // WAR hazards
@@ -452,13 +452,13 @@ case class SnowHouseForFmaxScoreboard(
           //|| rMyInfoVec(io.readGprs.tag).issueHazardValid
         )
       )
-      tempHaveReadGprsHazardAddrCheckFwdLimitVec(jdx)(idx) := (
-        tempCmp
-        //&& (
-        //  !rMyInfoVec(jdx).readGprsHazardValid
-        //  //|| rMyInfoVec(io.readGprs.tag).issueHazardValid
-        //)
-      )
+      //tempHaveReadGprsHazardAddrCheckFwdLimitVec(jdx)(idx) := (
+      //  tempCmp
+      //  && (
+      //    !rMyInfoVec(jdx).readGprsHazardValid
+      //    //|| rMyInfoVec(io.readGprs.tag).issueHazardValid
+      //  )
+      //)
       //tempHaveReadGprsHazardAddrCheckVec(jdx)(idx) := (
       //  (
       //    //tempRegIdx === myHistLastGprIdx(jdx + 1).last
@@ -505,20 +505,20 @@ case class SnowHouseForFmaxScoreboard(
   }
 
   //def myReadGprsInstrMayPassCntInitVal = cfg.optForFmaxPsExFwdSize - 2//1
-  def myReadGprsInstrMayPassCntInitVal = 2
+  //def myReadGprsInstrMayPassCntInitVal = 2
 
-  val rReadGprsInstrMayPassCnt = (
-    cfg.optScoreboard
-  ) generate (
-    Reg(UInt(log2Up(myReadGprsInstrMayPassCntInitVal + 1) bits))
-    init(myReadGprsInstrMayPassCntInitVal)
-  )
+  //val rReadGprsInstrMayPassCnt = (
+  //  cfg.optScoreboard
+  //) generate (
+  //  Reg(UInt(log2Up(myReadGprsInstrMayPassCntInitVal + 1) bits))
+  //  init(myReadGprsInstrMayPassCntInitVal)
+  //)
   io.readGprs.ready := (
     (
       io.readGprs.valid
       && (
         !tempHaveReadGprsHazardAddrCheckVec.asBits.orR
-        && rReadGprsInstrMayPassCnt.orR
+        //&& rReadGprsInstrMayPassCnt.orR
         //|| (
         //  io.reorderBufWrite.fire
         //  && (
@@ -530,24 +530,27 @@ case class SnowHouseForFmaxScoreboard(
     )
     //|| rFlushInfo.fire
   )
-  switch (
-    io.readGprs.fire
-    ## tempHaveReadGprsHazardAddrCheckFwdLimitVec.asBits.orR
-    //## (rReadGprsInstrMayPassCnt < myReadGprsInstrMayPassCntInitVal)
-  ) {
-    is (M"11") {
-      rReadGprsInstrMayPassCnt := rReadGprsInstrMayPassCnt - 1
-    }
-    is (M"0-") {
-      //when (rReadGprsInstrMayPassCnt < myReadGprsInstrMayPassCntInitVal) {
-      //  rReadGprsInstrMayPassCnt := rReadGprsInstrMayPassCnt + 1
-      //} otherwise {
-      //}
-      rReadGprsInstrMayPassCnt := myReadGprsInstrMayPassCntInitVal
-    }
-    //default {
-    //}
-  }
+  //switch (
+  //  io.readGprs.fire
+  //  ## tempHaveReadGprsHazardAddrCheckFwdLimitVec.asBits.orR
+  //  //## (rReadGprsInstrMayPassCnt < myReadGprsInstrMayPassCntInitVal)
+  //) {
+  //  is (M"11") {
+  //    rReadGprsInstrMayPassCnt := rReadGprsInstrMayPassCnt - 1
+  //  }
+  //  is (
+  //    //M"0-"
+  //    M"10"
+  //  ) {
+  //    //when (rReadGprsInstrMayPassCnt < myReadGprsInstrMayPassCntInitVal) {
+  //    //  rReadGprsInstrMayPassCnt := rReadGprsInstrMayPassCnt + 1
+  //    //} otherwise {
+  //    //}
+  //    rReadGprsInstrMayPassCnt := myReadGprsInstrMayPassCntInitVal
+  //  }
+  //  default {
+  //  }
+  //}
   //when (
   //  io.readGprs.fire
   //  //&& !tempHaveReadGprsHazardAddrCheckVec.asBits.orR
