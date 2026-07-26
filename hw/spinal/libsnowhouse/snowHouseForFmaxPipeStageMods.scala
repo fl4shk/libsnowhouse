@@ -512,7 +512,7 @@ case class SnowHouseForFmaxScoreboard(
   }
 
   def myReadGprsInstrMayPassCntInitVal = (
-    cfg.optForFmaxPsExFwdSize - 3//2//1//2//1
+    cfg.optForFmaxPsExFwdSize - 1//2//3//2//1//2//1
   )
   //def myReadGprsInstrMayPassCntInitVal = 2
 
