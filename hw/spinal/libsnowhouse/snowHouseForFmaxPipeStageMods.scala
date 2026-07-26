@@ -456,7 +456,8 @@ case class SnowHouseForFmaxScoreboard(
       tempHaveReadGprsHazardAddrCheckFwdLimitVec(jdx)(idx) := (
         tempCmp
         && (
-          !rMyInfoVec(jdx).readGprsHazardValid
+          //!rMyInfoVec(jdx).readGprsHazardValid
+          rMyInfoVec(jdx).readGprsHazardValidFwdLimit
           //|| rMyInfoVec(io.readGprs.tag).issueHazardValid
         )
       )
@@ -532,13 +533,17 @@ case class SnowHouseForFmaxScoreboard(
     //|| rFlushInfo.fire
   )
   switch (
-    io.readGprs.fire
+    //io.readGprs.fire
+    io.readGprs.valid
+    ## io.readGprs.ready
     //## io.readGprs.someNodeIsFiring
+    ## tempHaveReadGprsHazardAddrCheckVec.asBits.orR
     ## tempHaveReadGprsHazardAddrCheckFwdLimitVec.asBits.orR
     //## (rReadGprsInstrMayPassCnt < myReadGprsInstrMayPassCntInitVal)
   ) {
     is (
-      M"11"
+      M"1101"
+      //M"101"
       //M"101"
     ) {
       rReadGprsInstrMayPassCnt := rReadGprsInstrMayPassCnt - 1
@@ -546,7 +551,8 @@ case class SnowHouseForFmaxScoreboard(
     is (
       //M"0--"
       //M"0-"
-      M"10"
+      //M"1-0"
+      M"1-00"
 
       //M"1-0"
     ) {
@@ -1239,10 +1245,10 @@ case class SnowHouseForFmaxPipeStageScoreboardReadGprs(
   )
 
   io.readGprs.valid := (
-    //cLink.up.isValid
-    //&& cLink.down.isReady
+    cLink.up.isValid
+    && cLink.down.isReady
     //cLink.up.isFiring
-    cLink.down.isFiring
+    //cLink.down.isFiring
     //&& !myOutp.instrCnt.myPsIdBubble.head
     && mySharedNonShouldIgnoreCond.head
   )
