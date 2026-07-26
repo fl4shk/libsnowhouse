@@ -539,10 +539,11 @@ case class SnowHouseForFmaxScoreboard(
       rReadGprsInstrMayPassCnt := rReadGprsInstrMayPassCnt - 1
     }
     is (M"10") {
-      //when (rReadGprsInstrMayPassCnt < myReadGprsInstrMayPassCntInitVal) {
-      //} otherwise {
-      //}
-      rReadGprsInstrMayPassCnt := myReadGprsInstrMayPassCntInitVal
+      when (rReadGprsInstrMayPassCnt < myReadGprsInstrMayPassCntInitVal) {
+        rReadGprsInstrMayPassCnt := rReadGprsInstrMayPassCnt + 1
+      } otherwise {
+      }
+      //rReadGprsInstrMayPassCnt := myReadGprsInstrMayPassCntInitVal
     }
     default {
     }
