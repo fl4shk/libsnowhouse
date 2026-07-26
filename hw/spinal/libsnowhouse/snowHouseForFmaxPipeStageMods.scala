@@ -537,41 +537,53 @@ case class SnowHouseForFmaxScoreboard(
     )
     //|| rFlushInfo.fire
   )
-  switch (
-    //io.readGprs.fire
-    io.readGprs.valid
-    ## io.readGprs.ready
-    //## io.readGprs.someNodeIsFiring
-    ## tempHaveReadGprsHazardAddrCheckVec.asBits.orR
-    //## tempHaveReadGprsHazardAddrCheckFwdLimitVec.asBits.orR
-    //## (rReadGprsInstrMayPassCnt < myReadGprsInstrMayPassCntInitVal)
+  when (
+    io.readGprs.fire
   ) {
-    is (
-      //M"11--"
-      M"11-"
-      //M"101"
-      //M"101"
-    ) {
-      rReadGprsInstrMayPassCnt := rReadGprsInstrMayPassCnt - 1
-    }
-    is (
-      //M"0--"
-      //M"0-"
-      //M"1-0"
-      //M"1-0-"
-      M"1-0"
-
-      //M"1-0"
-    ) {
-      //when (rReadGprsInstrMayPassCnt < myReadGprsInstrMayPassCntInitVal) {
-      //  rReadGprsInstrMayPassCnt := rReadGprsInstrMayPassCnt + 1
-      //} otherwise {
-      //}
-      rReadGprsInstrMayPassCnt := myReadGprsInstrMayPassCntInitVal
-    }
-    default {
-    }
+    rReadGprsInstrMayPassCnt := rReadGprsInstrMayPassCnt - 1
   }
+  when (
+    io.readGprs.valid
+    && !tempHaveReadGprsHazardAddrCheckVec.asBits.orR
+    && tempHaveReadGprsHazardAddrCheckFwdLimitVec.asBits.orR
+  ) {
+    rReadGprsInstrMayPassCnt := myReadGprsInstrMayPassCntInitVal
+  }
+  //switch (
+  //  //io.readGprs.fire
+  //  io.readGprs.valid
+  //  ## io.readGprs.ready
+  //  //## io.readGprs.someNodeIsFiring
+  //  ## tempHaveReadGprsHazardAddrCheckVec.asBits.orR
+  //  //## tempHaveReadGprsHazardAddrCheckFwdLimitVec.asBits.orR
+  //  //## (rReadGprsInstrMayPassCnt < myReadGprsInstrMayPassCntInitVal)
+  //) {
+  //  is (
+  //    //M"11--"
+  //    M"11-"
+  //    //M"101"
+  //    //M"101"
+  //  ) {
+  //    rReadGprsInstrMayPassCnt := rReadGprsInstrMayPassCnt - 1
+  //  }
+  //  is (
+  //    //M"0--"
+  //    //M"0-"
+  //    //M"1-0"
+  //    //M"1-0-"
+  //    M"1-0"
+
+  //    //M"1-0"
+  //  ) {
+  //    //when (rReadGprsInstrMayPassCnt < myReadGprsInstrMayPassCntInitVal) {
+  //    //  rReadGprsInstrMayPassCnt := rReadGprsInstrMayPassCnt + 1
+  //    //} otherwise {
+  //    //}
+  //    rReadGprsInstrMayPassCnt := myReadGprsInstrMayPassCntInitVal
+  //  }
+  //  default {
+  //  }
+  //}
   //when (
   //  io.readGprs.fire
   //  //&& !tempHaveReadGprsHazardAddrCheckVec.asBits.orR
