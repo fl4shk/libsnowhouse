@@ -511,8 +511,10 @@ case class SnowHouseForFmaxScoreboard(
     }
   }
 
-  //def myReadGprsInstrMayPassCntInitVal = cfg.optForFmaxPsExFwdSize - 2//1
-  def myReadGprsInstrMayPassCntInitVal = 2
+  def myReadGprsInstrMayPassCntInitVal = (
+    cfg.optForFmaxPsExFwdSize - 1//2//1
+  )
+  //def myReadGprsInstrMayPassCntInitVal = 2
 
   val rReadGprsInstrMayPassCnt = (
     cfg.optScoreboard
