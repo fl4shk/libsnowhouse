@@ -2596,9 +2596,9 @@ case class SnowHousePipeStagePreFwd(
           rMyPsExSetPcState
           && !outp.regPcSetItCnt(1).lsb
         )
-        || (
-          outp.instrCnt.myPsIdBubble.head
-        )
+        //|| (
+        //  outp.instrCnt.myPsIdBubble.head
+        //)
         || (
           outp.splitOp.opIsMemAccess
           //&& !outp.inpDecodeExt.last.memAccessKind.asBits(1)
