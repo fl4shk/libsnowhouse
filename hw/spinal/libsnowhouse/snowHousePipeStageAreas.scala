@@ -2564,14 +2564,14 @@ case class SnowHousePipeStagePreFwd(
           //  && outp.inpDecodeExt.last.memAccessKind.asBits(1)
           //)
         )
-        && outp.calcForFmaxFwdValidMost(
-          someShouldIgnoreInstr=(
-            !rMyPsExSetPcState
-            //&& !myBranchMispredictEtc
-          ),
-          someNodeIsFiring=upIsFiring,
-          inPsEx=false
-        )
+        //&& outp.calcForFmaxFwdValidMost(
+        //  someShouldIgnoreInstr=(
+        //    !rMyPsExSetPcState
+        //    //&& !myBranchMispredictEtc
+        //  ),
+        //  someNodeIsFiring=upIsFiring,
+        //  inPsEx=false
+        //)
         //&& outp.gprIsNonZeroVec.last.last
         //&& (
         //  (
@@ -2790,6 +2790,7 @@ case class SnowHousePipeStagePreFwd(
               when (!myTempHistFwdOpIsMemAccess(jdx)(idx)) {
                 outp.forFmaxFwdIdx(jdx) := idx + 1
               } otherwise {
+                // loads/stores aren't forwarded
                 outp.forFmaxFwdIdx(jdx) := 0x0
               }
               //outp.myExt(0).rdMemWord(jdx) := (
