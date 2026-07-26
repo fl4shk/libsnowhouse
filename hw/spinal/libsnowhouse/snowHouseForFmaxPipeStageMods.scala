@@ -546,6 +546,7 @@ case class SnowHouseForFmaxScoreboard(
     io.readGprs.valid
     && !io.readGprs.ready
     && !tempHaveReadGprsHazardAddrCheckVec.asBits.orR
+    && io.readGprs.someNodeIsFiring
     //&& !tempHaveReadGprsHazardAddrCheckFwdLimitVec.asBits.orR
   ) {
     rReadGprsInstrMayPassCnt := myReadGprsInstrMayPassCntInitVal
