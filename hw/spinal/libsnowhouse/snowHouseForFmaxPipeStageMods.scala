@@ -368,6 +368,8 @@ case class SnowHouseForFmaxScoreboard(
 
   val tempHaveReadGprsHazardAddrCheckVec = (
     // non-forwardable RAW hazards
+    // TODO: this should be switched to be computed in the "Issue" stage
+    // at some point (for fmax)
     Vec.fill(cfg.optMaxNumScoreboardInstrs)(
       Vec.fill(
         myReadGprsHazardCheckVecInnerSize
@@ -377,6 +379,8 @@ case class SnowHouseForFmaxScoreboard(
     )
   )
   val tempHaveReadGprsHazardAddrCheckFwdLimitVec = (
+    // TODO: this should be switched to be computed in the "Issue" stage
+    // at some point (for fmax)
     cloneOf(
       tempHaveReadGprsHazardAddrCheckVec
     )
