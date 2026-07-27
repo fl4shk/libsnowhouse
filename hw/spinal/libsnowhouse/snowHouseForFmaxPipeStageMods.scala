@@ -1945,6 +1945,32 @@ case class SnowHouseForFmaxPipeStageWriteBack(
       )
     )
   )
+
+  myWbPayloadVec.foreach(item => {
+    if (cfg.optScoreboard) {
+      //item(0) := item(0).getZero
+      item(1) := (
+        RegNext(
+          item(1),
+          init=item(1).getZero
+        )
+      )
+    } else {
+      item(1) := (
+        RegNext(
+          item(1),
+          init=item(1).getZero
+        )
+      )
+    }
+  })
+
+  if (!cfg.optScoreboard) {
+    when (cLink.up.isValid) {
+      myWbPayloadVec.head(1) := myWbPayloadVec.head(0)
+    }
+  }
+
   val myWbValidVec = (
     Vec.fill(currWbPayloadOuterVecSize)(
       Bool()
@@ -2158,24 +2184,6 @@ case class SnowHouseForFmaxPipeStageWriteBack(
     //}
   })
 
-  myWbPayloadVec.foreach(item => {
-    if (cfg.optScoreboard) {
-      //item(0) := item(0).getZero
-      item(1) := (
-        RegNext(
-          item(1),
-          init=item(1).getZero
-        )
-      )
-    } else {
-      item(1) := (
-        RegNext(
-          item(1),
-          init=item(1).getZero
-        )
-      )
-    }
-  })
 
   //myMemWbValid := (
   //  RegNext(myMemWbValid, init=myMemWbValid.getZero)
@@ -2331,9 +2339,6 @@ case class SnowHouseForFmaxPipeStageWriteBack(
       )
     }
   } else {
-    when (cLink.up.isValid) {
-      myWbPayloadVec.head(1) := myWbPayloadVec.head(0)
-    }
   }
 
   //if (cfg.optScoreboard) {
@@ -2457,7 +2462,7 @@ case class SnowHouseForFmaxPipeStageWriteBack(
       when (
         cLink.up.isValid
         && myMemWbPayload(1).outpDecodeExt.opIsMemAccess.last
-        && !myD2hBus.valid
+        && !myD2hBus.fire
       ) {
         cLink.duplicateIt()
       }
@@ -2566,10 +2571,12 @@ case class SnowHouseForFmaxPipeStageWriteBack(
         )
       }
       default {
-        myCurrMmw := (
-          // TODO: support other `rdMemWord` indices
-          myMemWbPayload(1).myExt(0).rdMemWord(1)
-        )
+        if (cfg.optScoreboard) {
+          myCurrMmw := (
+            // TODO: support other `rdMemWord` indices
+            myMemWbPayload(1).myExt(0).rdMemWord(1)
+          )
+        }
       }
     }
     when (
@@ -2644,6 +2651,11 @@ case class SnowHouseForFmaxPipeStageWriteBack(
     }
   )
   cLink.down.ready := True
+  //if (!cfg.optScoreboard) {
+  //  when (cLink.up.isValid) {
+  //    myWbPayloadVec.head(1) := myWbPayloadVec.head(0)
+  //  }
+  //}
 
   //if (cfg.optScoreboard) {
   //  when (io.myRegFileWrPulse.fire) {
@@ -2739,6 +2751,8 @@ case class SnowHouseForFmaxPipeStageWriteBack(
       //myCommitForkStm.head
       myCommitBackStm
     )
+  } else { // if (!cfg.optScoreboard)
+    myCommitBackStm
   }
 
   //val myCommitStmMux = StreamMux(
@@ -2828,6 +2842,9 @@ case class SnowHouseForFmaxPipeStageWriteBack(
       someCommitStm.reorderBufIdx := (
         someMyWbPayload(1).instrCnt.scoreboardIssuePayload.reorderBufIdx
       )
+    } else {
+      //someCommitStm.valid := True
+      someCommitStm.ready := True
     }
     if (
       cfg.optScoreboard
@@ -2938,6 +2955,9 @@ case class SnowHouseForFmaxPipeStageWriteBack(
         }
       }
     ) {
+      if (!cfg.optScoreboard) {
+        someCommitStm.valid := True
+      }
       someCommitStm.regFileWrite.addr := (
         someMyWbPayload(1).gprIdxVec.last
       )
@@ -2964,6 +2984,9 @@ case class SnowHouseForFmaxPipeStageWriteBack(
         }
       }
     } otherwise {
+      if (!cfg.optScoreboard) {
+        someCommitStm.valid := False
+      }
       someCommitStm.regFileWrite.addr := 0x0
       someCommitStm.regFileWrite.data := 0x0
     }
@@ -3030,6 +3053,10 @@ case class SnowHouseForFmaxPipeStageWriteBack(
       } else {
         myNonMemWbFifo.io.pop.ready := someCommitStm.fire
       }
+    } else { // if (!cfg.optScoreboard)
+      //someCommitStm.valid := (
+      //  myWbPayloadVec.head(1).myExt(0).modMemWordValid.head
+      //)
     }
   }
 
@@ -3050,113 +3077,6 @@ case class SnowHouseForFmaxPipeStageWriteBack(
       //someRegFileWrPulseStm=myRegFileWrPulseInpStmVec.head.last,
       isMem=false
     )
-    //val rCommitIdx = {
-    //  val temp = Reg(Flow(UInt(2 bits)))
-    //  temp.init(temp.getZero)
-    //  temp
-    //}
-
-    //setCommitEtc(myMemWbPayload, isMem=true)
-    //when (io.commitEtc.scoreboardTag.fire) {
-    //  //rMemCommitFire := True
-    //  rSeenMyD2hBusFire := False
-    //  myMemWbFifo.io.pop.ready := True
-    //}
-
-    //switch (
-    //  rCommitIdx.fire
-    //  ## rCommitIdx.payload.msb
-    //  ## stickyMyD2hBusFire
-    //) {
-    //  is (M"0-1") {
-    //    setCommitEtc(myMemWbPayload, isMem=true)
-    //    when (io.commitEtc.scoreboardTag.fire) {
-    //      //rMemCommitFire := True
-    //      rSeenMyD2hBusFire := False
-    //      myMemWbFifo.io.pop.ready := True
-    //    }
-    //  }
-    //  is (M"0-0") {
-    //    setCommitEtc(myNonMemWbPayload, isMem=false)
-    //    when (io.commitEtc.scoreboardTag.fire) {
-    //      //rNonMemCommitFire := True
-    //      myNonMemWbFifo.io.pop.ready := True
-    //    }
-    //  }
-    //  is (M"101") {
-    //    setCommitEtc(myMemWbPayload, isMem=true)
-    //    when (io.commitEtc.scoreboardTag.fire) {
-    //      //rMemCommitFire := True
-    //      rSeenMyD2hBusFire := False
-    //      myMemWbFifo.io.pop.ready := True
-    //    }
-    //  }
-    //  is (M"11-") {
-    //    setCommitEtc(myNonMemWbPayload, isMem=false)
-    //    when (io.commitEtc.scoreboardTag.fire) {
-    //      //rNonMemCommitFire := True
-    //      myNonMemWbFifo.io.pop.ready := True
-    //    }
-    //  }
-    //  //is (M"100") 
-    //  default {
-    //    //setCommitEtc(myMemWbPayload, isMem=true)
-    //    //when (io.commitEtc.scoreboardTag.fire) {
-    //    //  //rMemCommitFire := True
-    //    //  rSeenMyD2hBusFire := False
-    //    //  myMemWbFifo.io.pop.ready := True
-    //    //}
-    //    io.commitEtc.scoreboardTag.valid := False
-    //    io.commitEtc.scoreboardTag.payload := (
-    //      io.commitEtc.scoreboardTag.payload.getZero
-    //    )
-    //    io.commitEtc.myRegFileWrPulse.valid := False
-    //    io.commitEtc.myRegFileWrPulse.payload := (
-    //      io.commitEtc.myRegFileWrPulse.payload.getZero
-    //    )
-    //    if (io.dbgInfo != null) {
-    //      io.dbgInfo := io.dbgInfo.getZero
-    //      io.dbgInfo.shouldIgnoreInstrAtRegFileWrite.allowOverride
-    //      io.dbgInfo.myPsIdBubbleAtRegFileWrite.allowOverride
-    //      io.dbgInfo.shouldIgnoreInstrAtRegFileWrite := True
-    //      io.dbgInfo.myPsIdBubbleAtRegFileWrite := True
-    //    }
-    //    //setCommitEtc(myNonMemWbPayload.getZero, isMem=false)
-    //    //when (io.commitEtc.scoreboardTag.fire) {
-    //    //  //rNonMemCommitFire := True
-    //    //  rSeenMyD2hBusFire := False
-    //    //  myNonMemWbFifo.io.pop.ready := True
-    //    //}
-    //  }
-    //}
-    //switch (
-    //  rCommitIdx.fire
-    //  ## (
-    //    //!io.commitEtc.scoreboardTag.valid
-    //    //|| 
-    //    //io.commitEtc.scoreboardTag.isStall
-    //    !io.commitEtc.scoreboardTag.ready
-    //  )
-    //) {
-    //  is (B"01") {
-    //    rCommitIdx.valid := True
-    //    //rCommitIdx.payload.lsb := !rCommitIdx.payload.lsb
-    //    rCommitIdx.payload := rCommitIdx.payload + 1
-    //    //cLink.duplicateIt()
-    //  }
-    //  is (M"10") {
-    //    rCommitIdx.valid := False
-    //    //cLink.duplicateIt()
-    //  }
-    //  is (B"11") {
-    //    //rCommitIdx.payload.lsb := !rCommitIdx.payload.lsb
-    //    rCommitIdx.payload := rCommitIdx.payload + 1
-    //    //cLink.duplicateIt()
-    //  }
-    //  //is (B"00") 
-    //  default {
-    //  }
-    //}
   })
 
   if (!cfg.optScoreboard) {
