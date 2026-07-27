@@ -993,25 +993,47 @@ case class SnowHouseForFmaxPipeStageScoreboardIssue(
   //val pScoreboardIssueInp = Payload(SnowHousePipePayload(cfg=cfg))
   val pScoreboardIssueOutp = Payload(SnowHousePipePayload(cfg=cfg))
   val cLink = CtrlLink()
-  val sLink = StageLink(
+  //val sLink = StageLink(
+  //  up=cLink.down,
+  //  down={
+  //    val temp = Node()
+  //    temp.setName("sLink_down")
+  //    temp
+  //  }
+  //)
+  //val s2mLink = S2MLink(
+  //  up=sLink.down,
+  //  down={
+  //    val temp = Node()
+  //    temp.setName("s2mLink_down")
+  //    temp
+  //  }
+  //)
+
+  val sLinkArr = new ArrayBuffer[StageLink]()
+  val s2mLinkArr = new ArrayBuffer[S2MLink]()
+  sLinkArr += StageLink(
     up=cLink.down,
-    down={
-      val temp = Node()
-      temp.setName("sLink_down")
-      temp
-    }
+    down=Node(),
   )
-  val s2mLink = S2MLink(
-    up=sLink.down,
-    down={
-      val temp = Node()
-      temp.setName("s2mLink_down")
-      temp
-    }
+  //s2mLinkArr += S2MLink(
+  //  up=sLinkArr.last.down,
+  //  down=Node(),
+  //)
+  sLinkArr += StageLink(
+    up=s2mLinkArr.last.down,
+    down=Node()
   )
+  s2mLinkArr += S2MLink(
+    up=sLinkArr.last.down,
+    down=Node(),
+  )
+
   linkArr += cLink
-  linkArr += sLink
-  linkArr += s2mLink
+  linkArr ++= sLinkArr
+  linkArr ++= s2mLinkArr
+  //linkArr += sLink
+  //linkArr += s2mLink
 
   val scoreboard = (
     cfg.optScoreboard
@@ -1115,7 +1137,7 @@ case class SnowHouseForFmaxPipeStageScoreboardIssue(
   scoreboard.io.readGprs << io.myScoreboardReadGprs
   scoreboard.io.reorderBufWrite << io.myScoreboardCommmit
 
-  s2mLink.down.driveTo(io.down)(
+  s2mLinkArr.last.down.driveTo(io.down)(
     con=(outp, node) => {
       outp := node(pScoreboardIssueOutp)
     }
@@ -1179,25 +1201,45 @@ case class SnowHouseForFmaxPipeStageScoreboardReadGprs(
   //val pScoreboardReadGprsInp = Payload(SnowHousePipePayload(cfg=cfg))
   val pScoreboardReadGprsOutp = Payload(SnowHousePipePayload(cfg=cfg))
   val cLink = CtrlLink()
-  val sLink = StageLink(
+  //val sLink = StageLink(
+  //  up=cLink.down,
+  //  down={
+  //    val temp = Node()
+  //    temp.setName("sLink_down")
+  //    temp
+  //  }
+  //)
+  //val s2mLink = S2MLink(
+  //  up=sLink.down,
+  //  down={
+  //    val temp = Node()
+  //    temp.setName("s2mLink_down")
+  //    temp
+  //  }
+  //)
+  val sLinkArr = new ArrayBuffer[StageLink]()
+  val s2mLinkArr = new ArrayBuffer[S2MLink]()
+  sLinkArr += StageLink(
     up=cLink.down,
-    down={
-      val temp = Node()
-      temp.setName("sLink_down")
-      temp
-    }
+    down=Node(),
   )
-  val s2mLink = S2MLink(
-    up=sLink.down,
-    down={
-      val temp = Node()
-      temp.setName("s2mLink_down")
-      temp
-    }
+  //s2mLinkArr += S2MLink(
+  //  up=sLinkArr.last.down,
+  //  down=Node(),
+  //)
+  sLinkArr += StageLink(
+    up=s2mLinkArr.last.down,
+    down=Node()
+  )
+  s2mLinkArr += S2MLink(
+    up=sLinkArr.last.down,
+    down=Node(),
   )
   linkArr += cLink
-  linkArr += sLink
-  linkArr += s2mLink
+  linkArr ++= sLinkArr
+  linkArr ++= s2mLinkArr
+  //linkArr += sLink
+  //linkArr += s2mLink
 
   val myInp = SnowHousePipePayload(cfg=cfg)
   val myOutp = SnowHousePipePayload(cfg=cfg)
@@ -1325,7 +1367,7 @@ case class SnowHouseForFmaxPipeStageScoreboardReadGprs(
   //  cLink.throwIt()
   //}
 
-  s2mLink.down.driveTo(io.down)(
+  s2mLinkArr.last.down.driveTo(io.down)(
     con=(outp, node) => {
       outp := node(pScoreboardReadGprsOutp)
     }
