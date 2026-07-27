@@ -4179,8 +4179,13 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
     myPsExSetPcValid := True
   }
   val rMyTempDstRegPc = {
-    val temp = Reg(Flow(UInt(cfg.mainAddrWidth bits)))
+    val temp = Reg(Flow(
+      Vec.fill(4)(
+        UInt(cfg.mainAddrWidth bits)
+      )
+    ))
     temp.init(temp.getZero)
+    temp
   }
   //myTempDstRegPc := (
   //  RegNext(
@@ -4268,7 +4273,7 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
         myPsExSetPcValid
         && (
           io.laggingRegPc
-          =/= rMyTempDstRegPc.payload
+          =/= rMyTempDstRegPc.payload(0)
           //!LcvFastCmpEq(
           //  left=io.laggingRegPc,
           //  right=rMyTempDstRegPc.payload,
@@ -6874,11 +6879,11 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
             True
           )
           io.psExSetPc.branchTgtBufElem.dstRegPc := (
-            rMyTempDstRegPc.payload
+            rMyTempDstRegPc.payload(1)
           )
         } else {
           def myDstPcRange = (
-            rMyTempDstRegPc.payload.high
+            rMyTempDstRegPc.payload(1).high
             downto log2Up(cfg.instrSizeBytes)
           )
           rMyTempDstRegPc.valid := (
@@ -6886,34 +6891,36 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
             io.upIsFiring
             && !io.shouldIgnoreInstr.last
           )
-          rMyTempDstRegPc.payload := 0x0
-          rMyTempDstRegPc.payload(myDstPcRange) := (
-            //RegNext/*When*/(
-              (
-                if (cfg.optShiftRegPcImmAddend) (
-                  io.laggingRegPcPlus1InstrSize(myDstPcRange)
-                  + (
-                    io.imm.last //- cfg.instrSizeBytes
-                  )
-                ) else (
-                  io.laggingRegPc(myDstPcRange)
-                    + io.imm.last(
-                      io.imm.last.high
-                      downto log2Up(cfg.instrSizeBytes)
+          rMyTempDstRegPc.payload.foreach(payload => {
+            payload := 0x0
+            payload(myDstPcRange) := (
+              //RegNext/*When*/(
+                (
+                  if (cfg.optShiftRegPcImmAddend) (
+                    io.laggingRegPcPlus1InstrSize(myDstPcRange)
+                    + (
+                      io.imm.last //- cfg.instrSizeBytes
                     )
-                    //- 1 // RISC-V stuff here
-                )
-              ).resize(
-                rMyTempDstRegPc.payload(
-                  myDstPcRange
-                ).getWidth
-              )//,
-            //  //cond=io.upIsFiring,
-            //  init=rMyTempDstRegPc(
-            //    myDstPcRange
-            //  ).getZero,
-            //)
-          )
+                  ) else (
+                    io.laggingRegPc(myDstPcRange)
+                      + io.imm.last(
+                        io.imm.last.high
+                        downto log2Up(cfg.instrSizeBytes)
+                      )
+                      //- 1 // RISC-V stuff here
+                  )
+                ).resize(
+                  payload(
+                    myDstPcRange
+                  ).getWidth
+                )//,
+              //  //cond=io.upIsFiring,
+              //  init=rMyTempDstRegPc(
+              //    myDstPcRange
+              //  ).getZero,
+              //)
+            )
+          })
         }
         //def mySrcPcRange = (
         //  io.psExSetPc.branchTgtBufElem.srcRegPc.high
@@ -6962,7 +6969,7 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
             True
           )
           io.psExSetPc.branchTgtBufElem.dstRegPc := (
-            rMyTempDstRegPc.payload
+            rMyTempDstRegPc.payload(2)
             //RegNext(
             //  io.rdMemWord(io.jmpAddrIdx)(
             //    cfg.mainAddrWidth - 1 downto 0
@@ -6977,15 +6984,17 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
             && !io.shouldIgnoreInstr.last
             //!io.shouldIgnoreInstr.last
           )
-          rMyTempDstRegPc.payload := (
-            //RegNext/*When*/(
-              io.rdMemWord(io.jmpAddrIdx)(
-                cfg.mainAddrWidth - 1 downto 0
-              )//,
-            //  //cond=io.upIsFiring,
-            //  init=io.psExSetPc.branchTgtBufElem.dstRegPc.getZero,
-            //)
-          )
+          rMyTempDstRegPc.payload.foreach(payload => {
+            payload := (
+              //RegNext/*When*/(
+                io.rdMemWord(io.jmpAddrIdx)(
+                  cfg.mainAddrWidth - 1 downto 0
+                )//,
+              //  //cond=io.upIsFiring,
+              //  init=io.psExSetPc.branchTgtBufElem.dstRegPc.getZero,
+              //)
+            )
+          })
         }
         //io.psExSetPc.branchTgtBufElem.srcRegPc := (
         //  RegNext(
@@ -7020,7 +7029,7 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
             True
           )
           io.psExSetPc.branchTgtBufElem.dstRegPc := (
-            rMyTempDstRegPc.payload
+            rMyTempDstRegPc.payload(3)
           )
         } else {
           rMyTempDstRegPc.valid := (
@@ -7029,34 +7038,36 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
             && !io.shouldIgnoreInstr.last
             //!io.shouldIgnoreInstr.last
           )
-          rMyTempDstRegPc.payload := (
-            //RegNext/*When*/(
-              (
-                if (cfg.optShiftRegPcImmAddend)(
-                  io.rdMemWord(io.jmpAddrIdx)(
-                    cfg.mainAddrWidth - 1
-                    downto log2Up(cfg.instrSizeBytes)
+          rMyTempDstRegPc.payload.foreach(payload => {
+              payload := (
+              //RegNext/*When*/(
+                (
+                  if (cfg.optShiftRegPcImmAddend)(
+                    io.rdMemWord(io.jmpAddrIdx)(
+                      cfg.mainAddrWidth - 1
+                      downto log2Up(cfg.instrSizeBytes)
+                    )
+                    + (
+                      io.imm.last
+                      //- cfg.instrSizeBytes
+                    )
+                  ) else (
+                    io.rdMemWord(io.jmpAddrIdx)(
+                      cfg.mainAddrWidth - 1 downto 0
+                    )
+                    + (
+                      io.imm.last
+                      //- cfg.instrSizeBytes
+                    )
                   )
-                  + (
-                    io.imm.last
-                    //- cfg.instrSizeBytes
-                  )
-                ) else (
-                  io.rdMemWord(io.jmpAddrIdx)(
-                    cfg.mainAddrWidth - 1 downto 0
-                  )
-                  + (
-                    io.imm.last
-                    //- cfg.instrSizeBytes
-                  )
-                )
-              )(
-                rMyTempDstRegPc.payload.bitsRange
-              ),
-            //  //cond=io.upIsFiring,
-            //  init=rMyTempDstRegPc.payload.getZero,
-            //)
-          )
+                )(
+                  payload.bitsRange
+                ),
+              //  //cond=io.upIsFiring,
+              //  init=rMyTempDstRegPc.payload.getZero,
+              //)
+            )
+          })
         }
         //io.psExSetPc.branchTgtBufElem.srcRegPc := (
         //  RegNext(
