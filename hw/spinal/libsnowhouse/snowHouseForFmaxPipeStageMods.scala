@@ -1010,28 +1010,28 @@ case class SnowHouseForFmaxPipeStageScoreboardIssue(
   //  }
   //)
 
-  val sLinkArr = new ArrayBuffer[StageLink]()
-  val s2mLinkArr = new ArrayBuffer[S2MLink]()
-  sLinkArr += StageLink(
-    up=cLink.down,
-    down=Node(),
-  )
+  //val sLinkArr = new ArrayBuffer[StageLink]()
+  //val s2mLinkArr = new ArrayBuffer[S2MLink]()
+  //sLinkArr += StageLink(
+  //  up=cLink.down,
+  //  down=Node(),
+  //)
+  ////s2mLinkArr += S2MLink(
+  ////  up=sLinkArr.last.down,
+  ////  down=Node(),
+  ////)
+  ////sLinkArr += StageLink(
+  ////  up=sLinkArr.last.down,
+  ////  down=Node()
+  ////)
   //s2mLinkArr += S2MLink(
   //  up=sLinkArr.last.down,
   //  down=Node(),
   //)
-  //sLinkArr += StageLink(
-  //  up=sLinkArr.last.down,
-  //  down=Node()
-  //)
-  s2mLinkArr += S2MLink(
-    up=sLinkArr.last.down,
-    down=Node(),
-  )
 
   linkArr += cLink
-  linkArr ++= sLinkArr
-  linkArr ++= s2mLinkArr
+  //linkArr ++= sLinkArr
+  //linkArr ++= s2mLinkArr
   //linkArr += sLink
   //linkArr += s2mLink
 
@@ -1137,7 +1137,7 @@ case class SnowHouseForFmaxPipeStageScoreboardIssue(
   scoreboard.io.readGprs << io.myScoreboardReadGprs
   scoreboard.io.reorderBufWrite << io.myScoreboardCommmit
 
-  s2mLinkArr.last.down.driveTo(io.down)(
+  cLink.down.driveTo(io.down)(
     con=(outp, node) => {
       outp := node(pScoreboardIssueOutp)
     }
