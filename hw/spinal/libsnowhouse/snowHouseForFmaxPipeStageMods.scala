@@ -1790,30 +1790,59 @@ case class SnowHouseForFmaxPsWbReorderBuf(
           ],
         ) => {
           outp.reorderBufIdx := inp.reorderBufIdx
-          when (
-            wrPulse.fire
-            && wrPulse.addr === inp.reorderBufIdx
-          ) {
-            outp.most := wrPulse.data.most
-          } 
-          .elsewhen (
-            RegNextWhen(
-              wrPulse.addr,
-              cond=wrPulse.fire,
-              init=wrPulse.addr.getZero
-            ) === inp.reorderBufIdx
-          ) {
-            outp.most := (
-              RegNextWhen(
-              wrPulse.data.most,
-                cond=wrPulse.fire,
-                init=wrPulse.data.most.getZero
-              )
+          switch (
+            (
+              wrPulse.fire
+              && wrPulse.addr === inp.reorderBufIdx
             )
-          } 
-          .otherwise {
-            outp.most := rdMemWord.most
+            ## (
+              RegNextWhen(
+                wrPulse.addr,
+                cond=wrPulse.fire,
+                init=wrPulse.addr.getZero
+              ) === inp.reorderBufIdx
+            )
+          ) {
+            is (M"1-") {
+              outp.most := wrPulse.data.most
+            }
+            is (M"01") {
+              outp.most := (
+                RegNextWhen(
+                wrPulse.data.most,
+                  cond=wrPulse.fire,
+                  init=wrPulse.data.most.getZero
+                )
+              )
+            }
+            default {
+              outp.most := rdMemWord.most
+            }
           }
+          //when (
+          //  wrPulse.fire
+          //  && wrPulse.addr === inp.reorderBufIdx
+          //) {
+          //  outp.most := wrPulse.data.most
+          //} 
+          //.elsewhen (
+          //  RegNextWhen(
+          //    wrPulse.addr,
+          //    cond=wrPulse.fire,
+          //    init=wrPulse.addr.getZero
+          //  ) === inp.reorderBufIdx
+          //) {
+          //  outp.most := (
+          //    RegNextWhen(
+          //    wrPulse.data.most,
+          //      cond=wrPulse.fire,
+          //      init=wrPulse.data.most.getZero
+          //    )
+          //  )
+          //} 
+          //.otherwise {
+          //  outp.most := rdMemWord.most
+          //}
         },
         optRdLatency=(
           1//0//1
