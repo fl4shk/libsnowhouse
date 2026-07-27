@@ -1016,12 +1016,12 @@ case class SnowHouseForFmaxPipeStageScoreboardIssue(
     up=cLink.down,
     down=Node(),
   )
-  s2mLinkArr += S2MLink(
-    up=sLinkArr.last.down,
-    down=Node(),
-  )
+  //s2mLinkArr += S2MLink(
+  //  up=sLinkArr.last.down,
+  //  down=Node(),
+  //)
   sLinkArr += StageLink(
-    up=s2mLinkArr.last.down,
+    up=sLinkArr.last.down,
     down=Node()
   )
   s2mLinkArr += S2MLink(
@@ -1223,12 +1223,12 @@ case class SnowHouseForFmaxPipeStageScoreboardReadGprs(
     up=cLink.down,
     down=Node(),
   )
-  s2mLinkArr += S2MLink(
-    up=sLinkArr.last.down,
-    down=Node(),
-  )
+  //s2mLinkArr += S2MLink(
+  //  up=sLinkArr.last.down,
+  //  down=Node(),
+  //)
   sLinkArr += StageLink(
-    up=s2mLinkArr.last.down,
+    up=sLinkArr.last.down,
     down=Node()
   )
   s2mLinkArr += S2MLink(
