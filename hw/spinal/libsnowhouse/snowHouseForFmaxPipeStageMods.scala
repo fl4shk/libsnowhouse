@@ -1239,6 +1239,14 @@ case class SnowHouseForFmaxPipeStageScoreboardReadGprs(
     up=sLinkArr.last.down,
     down=Node()
   )
+  sLinkArr += StageLink(
+    up=sLinkArr.last.down,
+    down=Node()
+  )
+  sLinkArr += StageLink(
+    up=sLinkArr.last.down,
+    down=Node()
+  )
   linkArr += cLink
   linkArr ++= sLinkArr
   //linkArr ++= s2mLinkArr

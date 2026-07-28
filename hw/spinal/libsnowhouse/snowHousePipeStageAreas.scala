@@ -2567,7 +2567,7 @@ case class SnowHousePipeStagePreFwd(
           //)
         )
         && !outp.splitOp.opIsMemAccess
-        && !outp.instrCnt.myPsIdBubble.last
+        //&& !outp.instrCnt.myPsIdBubble.last
         && (
           !rMyPsExSetPcState
           || outp.regPcSetItCnt(1).lsb
@@ -2639,9 +2639,9 @@ case class SnowHousePipeStagePreFwd(
         ),
         when=(
           upIsFiring
-          && (
-            !outp.instrCnt.myPsIdBubble.last
-          )
+          //&& (
+          //  !outp.instrCnt.myPsIdBubble.last
+          //)
           //&& (
           //  outp.gprIsNonZeroVec.last.last
           //)
@@ -7847,7 +7847,7 @@ case class SnowHousePipeStageExecute(
           ////  //|| outp.regPcSetItCnt(1).lsb
           ////  !myShouldIgnoreInstr(0)
           ////)
-          && !outp.instrCnt.myPsIdBubble.last
+          //&& !outp.instrCnt.myPsIdBubble.last
           //&& (
           //  !outp.splitOp.opIsMemAccess
           //  //|| outp.outpDecodeExt.memAccessKind.asBits(1)
