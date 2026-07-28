@@ -1020,10 +1020,10 @@ case class SnowHouseForFmaxPipeStageScoreboardIssue(
   //  up=sLinkArr.last.down,
   //  down=Node(),
   //)
-  sLinkArr += StageLink(
-    up=sLinkArr.last.down,
-    down=Node()
-  )
+  //sLinkArr += StageLink(
+  //  up=sLinkArr.last.down,
+  //  down=Node()
+  //)
   s2mLinkArr += S2MLink(
     up=sLinkArr.last.down,
     down=Node(),
