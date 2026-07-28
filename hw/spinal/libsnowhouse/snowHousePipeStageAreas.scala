@@ -2567,9 +2567,11 @@ case class SnowHousePipeStagePreFwd(
           //)
         )
         && !outp.splitOp.opIsMemAccess
-        //&& (
-        //  !outp.instrCnt.myPsIdBubble.last
-        //)
+        && !outp.instrCnt.myPsIdBubble.last
+        && (
+          !rMyPsExSetPcState
+          || outp.regPcSetItCnt(1).lsb
+        )
         //&& !temp.forceToZero
         //&& outp.calcForFmaxFwdValidMost(
         //  someShouldIgnoreInstr=(
