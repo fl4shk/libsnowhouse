@@ -1810,7 +1810,7 @@ case class SnowHouseForFmaxPsWbReorderBufIo(
   require(
     cfg.optScoreboard
   )
-  val psExFwdInp = (
+  val toPsWbFwdInfo = (
     in(
       SnowHouseForFmaxPsWbReorderBufPsExFwdInfo(
         cfg=cfg,
@@ -1818,7 +1818,7 @@ case class SnowHouseForFmaxPsWbReorderBufIo(
       )
     )
   )
-  val psExFwdOutp = (
+  val fromPsWbFwdInfo = (
     out(
       SnowHouseForFmaxPsWbReorderBufPsExFwdInfo(
         cfg=cfg,
@@ -1883,6 +1883,7 @@ case class SnowHouseForFmaxPsWbReorderBuf(
           ],
         ) => {
           outp.reorderBufIdx := inp.reorderBufIdx
+          outp.most := rdMemWord.most
           switch (
             (
               wrPulse.fire
@@ -1912,30 +1913,6 @@ case class SnowHouseForFmaxPsWbReorderBuf(
               outp.most := rdMemWord.most
             }
           }
-          //when (
-          //  wrPulse.fire
-          //  && wrPulse.addr === inp.reorderBufIdx
-          //) {
-          //  outp.most := wrPulse.data.most
-          //} 
-          //.elsewhen (
-          //  RegNextWhen(
-          //    wrPulse.addr,
-          //    cond=wrPulse.fire,
-          //    init=wrPulse.addr.getZero
-          //  ) === inp.reorderBufIdx
-          //) {
-          //  outp.most := (
-          //    RegNextWhen(
-          //    wrPulse.data.most,
-          //      cond=wrPulse.fire,
-          //      init=wrPulse.data.most.getZero
-          //    )
-          //  )
-          //} 
-          //.otherwise {
-          //  outp.most := rdMemWord.most
-          //}
         },
         optRdLatency=(
           1//0//1
