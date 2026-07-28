@@ -633,8 +633,8 @@ object SnowHouseBranchPredictorKind {
 
 case class SnowHouseForFmaxConfig(
   numPostExPreWbPipeStages: Int=(
-    //1
-    0
+    1
+    //0
   ),
   optMaxNumScoreboardInstrs: Option[Int]=Some(
     //2
@@ -646,6 +646,11 @@ case class SnowHouseForFmaxConfig(
   //  //false
   //)
 ) {
+  require(
+    numPostExPreWbPipeStages >= 1,
+    s"numPostExPreWbPipeStages:${numPostExPreWbPipeStages} "
+    + s"must be >= 1, apparently, for correct behavior of the CPU!"
+  )
 }
 case class SnowHouseConfig(
   haveZeroReg: Option[Int],
