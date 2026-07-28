@@ -2662,12 +2662,12 @@ case class SnowHousePipeStagePreFwd(
         cloneOf(temp)
       )
       myFwdInfoVec := myTempHist
-      for (idx <- 0 until myFwdInfoVec.size - 1) {
-        when (myFwdInfoVec(idx).branchMispredictEtcForceToZero) {
-          myFwdInfoVec(idx).valid := False
-          myFwdInfoVec(idx + 1).valid := False
-        }
-      }
+      //for (idx <- 0 until myFwdInfoVec.size - 1) {
+      //  when (myFwdInfoVec(idx).branchMispredictEtcForceToZero) {
+      //    myFwdInfoVec(idx).valid := False
+      //    myFwdInfoVec(idx + 1).valid := False
+      //  }
+      //}
       //when (
       //  //(
       //  //  !rMyPsExSetPcState
