@@ -2489,9 +2489,9 @@ case class SnowHousePipeStagePreFwd(
     //val data = UInt(cfg.mainWidth bits)
     val addr = UInt(log2Up(cfg.regFileCfg.wordCountArr(0)) bits)
     //val isLoadEtc = Bool() // TODO: atomics that read from the bus/mem
-    val memAccessForceToZero = Bool()
-    val branchMispredictEtcForceToZero = Bool()
-    val anyForceToZero = Bool()
+    //val memAccessForceToZero = Bool()
+    //val branchMispredictEtcForceToZero = Bool()
+    //val anyForceToZero = Bool()
     //val instrResultInPsWb = Bool()
     //val myFwdIdx = UInt(log2Up(cfg.optForFmaxPsExFwdSize) bits)
   }
