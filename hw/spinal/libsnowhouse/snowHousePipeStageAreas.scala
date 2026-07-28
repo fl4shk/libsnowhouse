@@ -2566,9 +2566,9 @@ case class SnowHousePipeStagePreFwd(
           //  && outp.inpDecodeExt.last.memAccessKind.asBits(1)
           //)
         )
-        && (
-          !outp.instrCnt.myPsIdBubble.last
-        )
+        //&& (
+        //  !outp.instrCnt.myPsIdBubble.last
+        //)
         //&& !temp.forceToZero
         //&& outp.calcForFmaxFwdValidMost(
         //  someShouldIgnoreInstr=(
@@ -2613,18 +2613,20 @@ case class SnowHousePipeStagePreFwd(
           //&& !outp.inpDecodeExt.last.memAccessKind.asBits(1)
         )
       )
-      temp.branchMispredictEtcForceToZero := (
-        (
-          (
-            rMyPsExSetPcState
-            || myBranchMispredictEtc
-          )
-          && !outp.regPcSetItCnt(1).lsb
-        )
-      )
+
+      //temp.branchMispredictEtcForceToZero := (
+      //  (
+      //    (
+      //      rMyPsExSetPcState
+      //      || myBranchMispredictEtc
+      //    )
+      //    && !outp.regPcSetItCnt(1).lsb
+      //  )
+      //)
       temp.anyForceToZero := (
-        temp.memAccessForceToZero
-        || temp.branchMispredictEtcForceToZero
+        False
+        //temp.memAccessForceToZero
+        //|| temp.branchMispredictEtcForceToZero
       )
       val myTempHist = History(
         that=temp,
@@ -2647,10 +2649,10 @@ case class SnowHousePipeStagePreFwd(
           ////  || outp.regPcSetItCnt(1).lsb
           ////)
           //&& !outp.instrCnt.myPsIdBubble.last
-          && (
-            !outp.splitOp.opIsMemAccess
-            //|| outp.inpDecodeExt.last.memAccessKind.asBits(1)
-          )
+          //&& (
+          //  !outp.splitOp.opIsMemAccess
+          //  //|| outp.inpDecodeExt.last.memAccessKind.asBits(1)
+          //)
         ),
         init=temp.getZero
       )
@@ -7835,10 +7837,10 @@ case class SnowHousePipeStageExecute(
           ////  !myShouldIgnoreInstr(0)
           ////)
           //&& !outp.instrCnt.myPsIdBubble.last
-          && (
-            !outp.splitOp.opIsMemAccess
-            //|| outp.outpDecodeExt.memAccessKind.asBits(1)
-          )
+          //&& (
+          //  !outp.splitOp.opIsMemAccess
+          //  //|| outp.outpDecodeExt.memAccessKind.asBits(1)
+          //)
         ),
         init=temp.getZero
       )
