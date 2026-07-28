@@ -1945,7 +1945,9 @@ private[libsnowhouse] case class SnowHouseNotForFmax
     ),
     multiCycleBusVec=io.multiCycleBusVec,
     idsIraIrq=io.idsIraIrq,
-    forFmaxRegFileWrPulseArr=null,
+    forFmaxNonScoreboardRegFileWrPulseArr=null,
+    myScoreboardToPsWbFwdInfo=null,
+    myScoreboardFromPsWbFwdInfo=null,
   )
   //--------
   //val pipeStageWb = (
@@ -2363,7 +2365,7 @@ private[libsnowhouse] case class SnowHouseForFmax(
     //  item.io.wrPulse.payload.getZero
     //)
     //item.io.wrPulse := psWb.io.myRegFileWrPulse
-    item.io.wrPulse := psWb.io.commitEtc.myRegFileWrPulse
+    item.io.wrPulse << psWb.io.commitEtc.myRegFileWrPulse
 
     //item.io.wrPulse.valid := psWb.io.commit.fire
     //item.io.wrPulse.payload := (
@@ -2374,7 +2376,11 @@ private[libsnowhouse] case class SnowHouseForFmax(
   //psEx.io.myRegFileWrPulse.payload := (
   //  psWb.io.commit.myRegFileWrPulsePayload
   //)
-  psEx.io.myRegFileWrPulse << psWb.io.commitEtc.myRegFileWrPulse
+  if (!cfg.optScoreboard) {
+    psEx.io.myNonScoreboardRegFileWrPulse << (
+      psWb.io.commitEtc.myRegFileWrPulse
+    )
+  }
   if (cfg.optScoreboard) {
     psScoreboardIssue.io.myScoreboardCommmit << (
       psWb.io.commitEtc.scoreboardTag

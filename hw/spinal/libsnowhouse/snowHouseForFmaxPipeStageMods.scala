@@ -1483,7 +1483,9 @@ case class SnowHouseForFmaxPipeStageExecuteIo(
     ))
   )
   //--------
-  val myRegFileWrPulse = (
+  val myNonScoreboardRegFileWrPulse = (
+    !cfg.optScoreboard
+  ) generate (
     slave(Flow(
       PipeSimpleDualPortMemDrivePayload(
         dataType=UInt(cfg.mainWidth bits),
@@ -1491,6 +1493,39 @@ case class SnowHouseForFmaxPipeStageExecuteIo(
       )
     ))
   )
+  val myScoreboardToPsWbFwdInfo = (
+    cfg.optScoreboard
+  ) generate (
+    out(
+      SnowHouseForFmaxPsWbReorderBufPsExFwdInfo(
+        cfg=cfg,
+        isPsWbOutp=false,
+      )
+    )
+    //Vec.fill(cfg.maxNumGprsPerInstr - 1)(
+    //  //Flow(
+    //    //UInt(cfg.mainWidth bits)
+    //  //)
+    //)
+  )
+  val myScoreboardFromPsWbFwdInfo = (
+    cfg.optScoreboard
+  ) generate (
+    in(
+      //Vec.fill(cfg.maxNumGprsPerInstr - 1)(
+      //  UInt(cfg.mainWidth bits)
+      //)
+      SnowHouseForFmaxPsWbReorderBufPsExFwdInfo(
+        cfg=cfg,
+        isPsWbOutp=true,
+      )
+    )
+  )
+  //if (cfg.optScoreboard) {
+  //  myScoreboardToPsWbRdMemWord.foreach(item => {
+  //    master(item)
+  //  })
+  //}
   //--------
   val psExSetPc = (
     master(Flow(
@@ -1632,9 +1667,15 @@ case class SnowHouseForFmaxPipeStageExecute(
     //pcChangeState=null,
     //shouldIgnoreInstr=null,
     //psExFoundBubble=psExFoundBubble,
-    forFmaxRegFileWrPulseArr=Array(
-      io.myRegFileWrPulse
-    )
+    forFmaxNonScoreboardRegFileWrPulseArr=Array(
+      io.myNonScoreboardRegFileWrPulse
+    ),
+    myScoreboardToPsWbFwdInfo=(
+      io.myScoreboardToPsWbFwdInfo
+    ),
+    myScoreboardFromPsWbFwdInfo=(
+      io.myScoreboardFromPsWbFwdInfo
+    ),
   )
 
   cLink.up.driveFrom(io.up)(
@@ -1680,9 +1721,38 @@ case class SnowHouseForFmaxPsWbCommitEtc(
   )
 }
 
+case class SnowHouseForFmaxPsWbReorderBufPsExFwdInfo(
+  cfg: SnowHouseConfig,
+  isPsWbOutp: Boolean,
+) extends Bundle {
+  require(
+    cfg.optScoreboard
+  )
+
+  //val gprIsNonZeroVec = Vec.fill(cfg.maxNumGprsPerInstr - 1)(
+  //  Bool()
+  //)
+  val valid = (
+    !isPsWbOutp
+  ) generate (
+    Vec.fill(cfg.maxNumGprsPerInstr - 1)(
+      Bool()
+    )
+  )
+  val gprIdxVec = (
+    !isPsWbOutp
+  ) generate (
+    Vec.fill(cfg.maxNumGprsPerInstr - 1)(
+      UInt(log2Up(cfg.numGprs) bits)
+    )
+  )
+  val rdMemWord = Vec.fill(cfg.maxNumGprsPerInstr - 1)(
+    UInt(cfg.mainWidth bits)
+  )
+}
+
 case class SnowHouseForFmaxPsWbReorderBufPayloadMost(
   cfg: SnowHouseConfig,
-  optIncludeBufIdx: Boolean=true,
 ) extends Bundle {
   val commit = (
     cfg.optScoreboard
@@ -1717,7 +1787,10 @@ case class SnowHouseForFmaxPsWbReorderBufPayload(
   cfg: SnowHouseConfig,
   optIncludeBufIdx: Boolean=true,
 ) extends Bundle {
-  val most = SnowHouseForFmaxPsWbReorderBufPayloadMost(cfg=cfg)
+  val most = SnowHouseForFmaxPsWbReorderBufPayloadMost(
+    cfg=cfg,
+    //optIsPush=optIsPush,
+  )
   def commit = most.commit
   def regFileWrite = most.regFileWrite
   def myWbPayload = most.myWbPayload
@@ -1730,9 +1803,29 @@ case class SnowHouseForFmaxPsWbReorderBufPayload(
   )
 }
 
+
 case class SnowHouseForFmaxPsWbReorderBufIo(
   cfg: SnowHouseConfig
 ) extends Bundle {
+  require(
+    cfg.optScoreboard
+  )
+  val psExFwdInp = (
+    in(
+      SnowHouseForFmaxPsWbReorderBufPsExFwdInfo(
+        cfg=cfg,
+        isPsWbOutp=false,
+      )
+    )
+  )
+  val psExFwdOutp = (
+    out(
+      SnowHouseForFmaxPsWbReorderBufPsExFwdInfo(
+        cfg=cfg,
+        isPsWbOutp=true,
+      )
+    )
+  )
   val push = slave(Stream(
     SnowHouseForFmaxPsWbReorderBufPayload(cfg=cfg)
   ))
