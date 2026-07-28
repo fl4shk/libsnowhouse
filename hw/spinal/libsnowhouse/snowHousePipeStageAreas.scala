@@ -2623,9 +2623,8 @@ case class SnowHousePipeStagePreFwd(
         )
       )
       temp.anyForceToZero := (
-        //temp.memAccessForceToZero
-        //|| 
-        temp.branchMispredictEtcForceToZero
+        temp.memAccessForceToZero
+        || temp.branchMispredictEtcForceToZero
       )
       val myTempHist = History(
         that=temp,
