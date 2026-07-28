@@ -2644,10 +2644,10 @@ case class SnowHousePipeStagePreFwd(
           ////  || outp.regPcSetItCnt(1).lsb
           ////)
           && !outp.instrCnt.myPsIdBubble.last
-          //&& (
-          //  !outp.splitOp.opIsMemAccess
-          //  //|| outp.inpDecodeExt.last.memAccessKind.asBits(1)
-          //)
+          && (
+            !outp.splitOp.opIsMemAccess
+            //|| outp.inpDecodeExt.last.memAccessKind.asBits(1)
+          )
         ),
         init=temp.getZero
       )
@@ -7832,10 +7832,10 @@ case class SnowHousePipeStageExecute(
           ////  !myShouldIgnoreInstr(0)
           ////)
           && !outp.instrCnt.myPsIdBubble.last
-          //&& (
-          //  !outp.splitOp.opIsMemAccess
-          //  //|| outp.outpDecodeExt.memAccessKind.asBits(1)
-          //)
+          && (
+            !outp.splitOp.opIsMemAccess
+            //|| outp.outpDecodeExt.memAccessKind.asBits(1)
+          )
         ),
         init=temp.getZero
       )
@@ -8020,9 +8020,13 @@ case class SnowHousePipeStageExecute(
               //  )
               //}
               if (cfg.optScoreboard) {
-                outp.myExt(0).rdMemWord(jdx) := (
-                  inp.myExt(0).rdMemWord(jdx)
-                )
+                //when (
+                //  
+                //) {
+                  outp.myExt(0).rdMemWord(jdx) := (
+                    inp.myExt(0).rdMemWord(jdx)
+                  )
+                //}
               } else { // if (!cfg.optScoreboard)
                 switch (
                   //(
