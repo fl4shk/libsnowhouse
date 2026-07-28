@@ -7545,6 +7545,7 @@ case class SnowHousePipeStageExecute(
     MultiCycleDevPayload,
   ]],
   idsIraIrq: LcvStallIo[Bool, Bool],
+
   forFmaxRegFileWrPulseArr: Seq[
     Flow[
       PipeSimpleDualPortMemDrivePayload[
@@ -7895,12 +7896,14 @@ case class SnowHousePipeStageExecute(
     //    forFmaxRegFileWrPulseArr(0)
     //  )
     //}
+
     val myHistRegFileWrPulse = (
       History(
         that=forFmaxRegFileWrPulseArr(0),
         when=forFmaxRegFileWrPulseArr(0).fire,
         length=(
           2
+          - (if (cfg.optScoreboard) (1) else(0))
           //+ (if (cfg.optScoreboard) (1) else (0))
         ),
         init=forFmaxRegFileWrPulseArr(0).getZero,
@@ -7991,8 +7994,8 @@ case class SnowHousePipeStageExecute(
               //    init=forFmaxRegFileWrPulseArr(0).getZero
               //  )
               //)
-              val myFwdTempToSwitchReversed = (
-                Vec(
+              val myFwdTempToSwitch = (
+                Vec(Vec(
                   myHistRegFileWrPulse.map(myWrPulse => (
                     myWrPulse.fire
                     && (
@@ -8000,35 +8003,9 @@ case class SnowHousePipeStageExecute(
                       === myWrPulse.addr
                     )
                   ))
-                )
+                ).reverse)
               )
-              val myFwdTempToSwitch = Vec.fill(
-                myFwdTempToSwitchReversed.size
-              )(
-                Bool()
-              )
-              for (idx <- 0 until myFwdTempToSwitch.size) {
-                myFwdTempToSwitch(idx) := (
-                  myFwdTempToSwitchReversed(
-                    myFwdTempToSwitch.size - idx - 1
-                  )
-                )
-              }
               switch (
-                //(
-                //  forFmaxRegFileWrPulseArr(0).fire
-                //  && (
-                //    outp.gprIdxVec(jdx)
-                //    === forFmaxRegFileWrPulseArr(0).addr
-                //  )
-                //)
-                //## (
-                //  rSavedRegFileWrPulse.fire
-                //  && (
-                //    outp.gprIdxVec(jdx)
-                //    === rSavedRegFileWrPulse.addr
-                //  )
-                //)
                 myFwdTempToSwitch
                 ## (
                   RegNext(
@@ -8041,26 +8018,31 @@ case class SnowHousePipeStageExecute(
                 )
               ) {
                 is ({
-                  var temp = "1--"
-                  //if (cfg.optScoreboard) {
-                  //  temp += "-"
-                  //}
+                  var temp = (
+                    //"1--"
+                    "1-"
+                  )
+                  if (!cfg.optScoreboard) {
+                    temp += "-"
+                  }
                   MaskedLiteral(temp)
                 }) {
                   outp.myExt(0).rdMemWord(jdx) := (
                     myHistRegFileWrPulse(0).data
                   )
                 }
-                is ({
-                  var temp = "01-"
-                  //if (cfg.optScoreboard) {
-                  //  temp += "-"
-                  //}
-                  MaskedLiteral(temp)
-                }) {
-                  outp.myExt(0).rdMemWord(jdx) := (
-                    myHistRegFileWrPulse(1).data
-                  )
+                if (!cfg.optScoreboard) {
+                  is ({
+                    var temp = "01-"
+                    //if (cfg.optScoreboard) {
+                    //  temp += "-"
+                    //}
+                    MaskedLiteral(temp)
+                  }) {
+                    outp.myExt(0).rdMemWord(jdx) := (
+                      myHistRegFileWrPulse(1).data
+                    )
+                  }
                 }
                 //if (cfg.optScoreboard) {
                 //  is (M"001-") {
@@ -8072,11 +8054,12 @@ case class SnowHousePipeStageExecute(
                 is ({
                   //var temp = "001"
                   val temp = (
-                    //if (cfg.optScoreboard) (
-                    //  "0001"
-                    //) else (
+                    if (cfg.optScoreboard) (
+                      //"0001"
+                      "01"
+                    ) else (
                       "001"
-                    //)
+                    )
                   )
                   MaskedLiteral(temp)
                 }) {
