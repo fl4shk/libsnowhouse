@@ -10299,7 +10299,18 @@ case class SnowHousePipeStageExecute(
           }
           if (cfg.optScoreboard) {
             cLink.duplicateIt()
-            cLink.down(args.currPayload).setAsBubbleMain(Some(True))
+            //cLink.down(args.currPayload).setAsBubbleMain(Some(True))
+            //setOutpModMemWord.io.instrCnt.setAsPsIdBubbleMain()
+            cLink.down(args.currPayload).setAsBubbleMain(
+              //Some(True)
+              None
+            )
+            cLink.down(args.currPayload).instrCnt
+            .myPsExMultiCycleBubble.foreach(
+              item => {
+                item := True
+              }
+            )
             setOutpModMemWord.io.instrCnt.setAsPsIdBubbleMain()
           } else {
             cLink.haltIt()
@@ -10397,7 +10408,18 @@ case class SnowHousePipeStageExecute(
             } elsewhen (rOpIsMultiCycle(idx)) {
               if (cfg.optScoreboard) {
                 cLink.duplicateIt()
-                cLink.down(args.currPayload).setAsBubbleMain(Some(True))
+                //cLink.down(args.currPayload).setAsBubbleMain(Some(True))
+                //setOutpModMemWord.io.instrCnt.setAsPsIdBubbleMain()
+                cLink.down(args.currPayload).setAsBubbleMain(
+                  //Some(True)
+                  None
+                )
+                cLink.down(args.currPayload).instrCnt
+                .myPsExMultiCycleBubble.foreach(
+                  item => {
+                    item := True
+                  }
+                )
                 setOutpModMemWord.io.instrCnt.setAsPsIdBubbleMain()
               } else {
                 cLink.haltIt()
@@ -10457,7 +10479,18 @@ case class SnowHousePipeStageExecute(
       //cLink.haltIt()
       if (cfg.optScoreboard) {
         cLink.duplicateIt()
-        cLink.down(args.currPayload).setAsBubbleMain(Some(True))
+        //cLink.down(args.currPayload).setAsBubbleMain(Some(True))
+        //setOutpModMemWord.io.instrCnt.setAsPsIdBubbleMain()
+        cLink.down(args.currPayload).setAsBubbleMain(
+          //Some(True)
+          None
+        )
+        cLink.down(args.currPayload).instrCnt
+        .myPsExMemAccessBubble.foreach(
+          item => {
+            item := True
+          }
+        )
         setOutpModMemWord.io.instrCnt.setAsPsIdBubbleMain()
       } else {
         cLink.haltIt()
