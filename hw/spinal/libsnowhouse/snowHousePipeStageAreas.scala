@@ -2490,7 +2490,7 @@ case class SnowHousePipeStagePreFwd(
     val addr = UInt(log2Up(cfg.regFileCfg.wordCountArr(0)) bits)
     //val isLoadEtc = Bool() // TODO: atomics that read from the bus/mem
     val memAccessForceToZero = Bool()
-    //val branchMispredictEtcForceToZero = Bool()
+    val branchMispredictEtcForceToZero = Bool()
     val anyForceToZero = Bool()
     //val instrResultInPsWb = Bool()
     //val myFwdIdx = UInt(log2Up(cfg.optForFmaxPsExFwdSize) bits)
@@ -2620,15 +2620,15 @@ case class SnowHousePipeStagePreFwd(
         )
       )
 
-      //temp.branchMispredictEtcForceToZero := (
-      //  (
-      //    (
-      //      rMyPsExSetPcState
-      //      || myBranchMispredictEtc
-      //    )
-      //    && !outp.regPcSetItCnt(1).lsb
-      //  )
-      //)
+      temp.branchMispredictEtcForceToZero := (
+        (
+          (
+            myBranchMispredictEtc
+            || rMyPsExSetPcState
+          )
+          && !outp.regPcSetItCnt(1).lsb
+        )
+      )
       temp.anyForceToZero := (
         //False
         temp.memAccessForceToZero
@@ -2671,15 +2671,15 @@ case class SnowHousePipeStagePreFwd(
         cloneOf(temp)
       )
       myFwdInfoVec := myTempHist
-      //for (idx <- 0 until myFwdInfoVec.size - 1) {
-      //  when (
-      //    //myFwdInfoVec(idx).branchMispredictEtcForceToZero
-      //    myFwdInfoVec(idx).anyForceToZero
-      //  ) {
-      //    myFwdInfoVec(idx).valid := False
-      //    myFwdInfoVec(idx + 1).valid := False
-      //  }
-      //}
+      for (idx <- 0 until myFwdInfoVec.size - 1) {
+        when (
+          myFwdInfoVec(idx).branchMispredictEtcForceToZero
+          //myFwdInfoVec(idx).anyForceToZero
+        ) {
+          //myFwdInfoVec(idx).valid := False
+          myFwdInfoVec(idx + 1).valid := False
+        }
+      }
       //when (
       //  //(
       //  //  !rMyPsExSetPcState
