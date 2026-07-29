@@ -2783,12 +2783,22 @@ case class SnowHouseForFmaxPipeStageWriteBack(
   val myMemCommitFrontStm = (
     cfg.optScoreboard
   ) generate (
-    myCommitFrontStmVec.head.head
+    // NOTE (because of the lack of registe file write forwarding):
+    // (as of this writing) perhaps (?) memory access instructions should
+    // be forcibly *after* non-memory access instructions
+    // since the hazard checking is *only* with regards to memory access
+    // instructions.
+    // A potential eventual upgrade to allow multiple register file
+    // writes in one cycle might help with this?
+    // It is possible that that *WOULD NOT* produce correct behavior unless
+    // I can figure out a way to allow *any* register pair to be written in
+    // the same cycle.
+    myCommitFrontStmVec.head.last//head
   )
   val myNonMemCommitFrontStm = (
     cfg.optScoreboard
   ) generate (
-    myCommitFrontStmVec.head.last
+    myCommitFrontStmVec.head.head//last
   )
   if (cfg.optScoreboard) {
     for (idx <- 0 until myCommitFrontStmVec.size) {
