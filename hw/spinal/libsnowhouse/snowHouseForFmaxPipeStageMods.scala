@@ -2866,7 +2866,7 @@ case class SnowHouseForFmaxPipeStageWriteBack(
       )
       myCommitBackStm.throwWhen(
         myTempReorderBufIdx
-        =/= (
+        === (
           RegNextWhen(
             myTempReorderBufIdx,
             cond=myCommitBackStm.fire,
