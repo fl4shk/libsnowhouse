@@ -3308,8 +3308,8 @@ case class SnowHouseForFmaxPipeStageWriteBack(
           val myInstrCnt = myCommitFinalOutpStm.myWbPayload.instrCnt
           (
             myInstrCnt.myPsIdBubble.last
-            //|| myInstrCnt.myPsExMemAccessBubble.last
-            //|| myInstrCnt.myPsExMultiCycleBubble.last
+            || myInstrCnt.myPsExMemAccessBubble.last
+            || myInstrCnt.myPsExMultiCycleBubble.last
             || (
               !myCommitFinalOutpStm.fire
             )
