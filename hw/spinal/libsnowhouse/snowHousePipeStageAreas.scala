@@ -2639,9 +2639,9 @@ case class SnowHousePipeStagePreFwd(
         ),
         when=(
           upIsFiring
-          //&& (
-          //  !outp.instrCnt.myPsIdBubble.last
-          //)
+          && (
+            !outp.instrCnt.myPsIdBubble.last
+          )
           //&& (
           //  outp.gprIsNonZeroVec.last.last
           //)
@@ -7827,7 +7827,7 @@ case class SnowHousePipeStageExecute(
         ),
         when=(
           cLink.up.isFiring
-          //////&& !outp.instrCnt.myPsIdBubble.last
+          && !outp.instrCnt.myPsIdBubble.last
           ////////&& !outp.splitOp.memAccessKind.
           ////////&& !outp.splitOp.opIsMemAccess
           //////&& (
