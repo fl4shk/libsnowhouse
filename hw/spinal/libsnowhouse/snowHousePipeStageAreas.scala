@@ -2574,13 +2574,6 @@ case class SnowHousePipeStagePreFwd(
     val myTempSaveOutpCondMost = (
       upIsFiring
       && !outp.instrCnt.myPsIdBubble.last
-      && (
-        (
-          !myBranchMispredictEtc
-          && !rMyPsExSetPcState
-        )
-        || outp.regPcSetItCnt(1).lsb
-      )
     )
     val myTempSaveOutpCond = (
       myTempSaveOutpCondMost
@@ -2592,13 +2585,13 @@ case class SnowHousePipeStagePreFwd(
       //&& !outp.instrCnt.myPsIdBubble.head
       myTempSaveOutpCondMost
       && outp.gprIsNonZeroVec.last.last
-      //&& (
-      //  (
-      //    !myBranchMispredictEtc
-      //    && !rMyPsExSetPcState
-      //  )
-      //  || outp.regPcSetItCnt(1).lsb
-      //)
+      && (
+        (
+          !myBranchMispredictEtc
+          && !rMyPsExSetPcState
+        )
+        || outp.regPcSetItCnt(1).lsb
+      )
     ) {
       rSavedMostRecentGprWriteWasMemAccess(
         outp.gprIdxVec.last
@@ -2622,8 +2615,24 @@ case class SnowHousePipeStagePreFwd(
       when (
         RegNext(
           //upIsFiring,//cLink.up.isFiring,
-          myTempSaveOutpCond,
+          (
+            myTempSaveOutpCond
+            //&& (
+            //  (
+            //    !myBranchMispredictEtc
+            //    && !rMyPsExSetPcState
+            //  )
+            //  || outp.regPcSetItCnt(1).lsb
+            //)
+          ),
           init=False
+        )
+        && (
+          (
+            !myBranchMispredictEtc
+            && !rMyPsExSetPcState
+          )
+          || outp.regPcSetItCnt(1).lsb
         )
       ) {
         stickyFwdRegFileWrPulseVec(idx).valid := False
@@ -8042,7 +8051,7 @@ case class SnowHousePipeStageExecute(
       //&& outp.gprIsNonZeroVec.last.last
       && !outp.instrCnt.myPsIdBubble.last
       && !outp.inpDecodeExt.last.opIsMemAccess.head
-      && !myShouldIgnoreInstr.last
+      //&& !myShouldIgnoreInstr.last
     )
     val myHistFwdInfo = {
       val temp = MyFwdInfo()
@@ -8183,9 +8192,12 @@ case class SnowHousePipeStageExecute(
       when (
         RegNext(
           //cLink.up.isFiring,
-          myTempSaveOutpCond,
+          (
+            myTempSaveOutpCond
+          ),
           init=False
         )
+        && !myShouldIgnoreInstr.last
       ) {
         stickyFwdRegFileWrPulseVec(idx).valid := False
       }
