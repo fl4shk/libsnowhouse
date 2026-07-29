@@ -1566,6 +1566,12 @@ case class SnowHouseInstrCnt(
   val myPsIdBubble = Vec.fill(cfg.lowerMyFanoutRegPcSetItCnt)(
     Bool()
   )
+  val myPsExMemAccessBubble = Vec.fill(cfg.lowerMyFanoutRegPcSetItCnt)(
+    Bool()
+  )
+  val myPsExMultiCycleBubble = Vec.fill(cfg.lowerMyFanoutRegPcSetItCnt)(
+    Bool()
+  )
   //val dbgUnfinishedMultiCycleOp = (
   //  cfg.dbgExposeExtrasAtRegFileWrite
   //) generate (
@@ -1580,7 +1586,7 @@ case class SnowHouseInstrCnt(
   //  Bool()
   //)
   //def shouldIgnoreInstr = (pcChangeState === True)
-  def setAsBubbleMain(
+  def setAsPsIdBubbleMain(
     somePsIdBubble: Bool=True
   ): Unit = {
     myPsIdBubble.foreach(item => {
@@ -2321,7 +2327,7 @@ case class SnowHousePipePayload(
     //  item := True
     //})
     if (myPsIdBubble != None) {
-      instrCnt.setAsBubbleMain(somePsIdBubble=myPsIdBubble.get)
+      instrCnt.setAsPsIdBubbleMain(somePsIdBubble=myPsIdBubble.get)
     }
 
     splitOp.setToDefault()

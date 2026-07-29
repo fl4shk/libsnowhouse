@@ -371,6 +371,11 @@ case class SnowHouseForFmaxScoreboard(
     // non-forwardable RAW hazards
     // TODO: this should be switched to be computed in the "Issue" stage
     // at some point (for fmax)
+    //--------
+    // perhaps instead it'd make sense to just add more pipeline stages
+    // (at least one)
+    // between `...ScoreboardReadGprs` and `...PreFwd`?
+    //--------
     Vec.fill(cfg.optMaxNumScoreboardInstrs)(
       Vec.fill(
         myReadGprsHazardCheckVecInnerSize
@@ -379,13 +384,13 @@ case class SnowHouseForFmaxScoreboard(
       )
     )
   )
-  val tempHaveReadGprsHazardAddrCheckFwdLimitVec = (
-    // TODO: this should be switched to be computed in the "Issue" stage
-    // at some point (for fmax)
-    cloneOf(
-      tempHaveReadGprsHazardAddrCheckVec
-    )
-  )
+  //val tempHaveReadGprsHazardAddrCheckFwdLimitVec = (
+  //  // TODO: this should be switched to be computed in the "Issue" stage
+  //  // at some point (for fmax)
+  //  cloneOf(
+  //    tempHaveReadGprsHazardAddrCheckVec
+  //  )
+  //)
 
   val myCommitHazardCheckVecInnerSize = (
     // WAR hazards
@@ -458,15 +463,15 @@ case class SnowHouseForFmaxScoreboard(
           //|| rMyInfoVec(io.readGprs.tag).issueHazardValid
         )
       )
-      tempHaveReadGprsHazardAddrCheckFwdLimitVec(jdx)(idx) := (
-        tempCmp
-        && (
-          //!rMyInfoVec(jdx).readGprsHazardValid
-          //&& 
-          rMyInfoVec(jdx).readGprsHazardValidFwdLimit
-          //|| rMyInfoVec(io.readGprs.tag).issueHazardValid
-        )
-      )
+      //tempHaveReadGprsHazardAddrCheckFwdLimitVec(jdx)(idx) := (
+      //  tempCmp
+      //  && (
+      //    //!rMyInfoVec(jdx).readGprsHazardValid
+      //    //&& 
+      //    rMyInfoVec(jdx).readGprsHazardValidFwdLimit
+      //    //|| rMyInfoVec(io.readGprs.tag).issueHazardValid
+      //  )
+      //)
       //tempHaveReadGprsHazardAddrCheckVec(jdx)(idx) := (
       //  (
       //    //tempRegIdx === myHistLastGprIdx(jdx + 1).last
@@ -505,9 +510,9 @@ case class SnowHouseForFmaxScoreboard(
           rMyInfoVec(jdx).issueHazardValid
           //True
         )
-        rMyInfoVec(jdx).readGprsHazardValidFwdLimit := (
-          True
-        )
+        //rMyInfoVec(jdx).readGprsHazardValidFwdLimit := (
+        //  True
+        //)
       }
     }
   }
@@ -659,7 +664,7 @@ case class SnowHouseForFmaxScoreboard(
       //rMyInfoVec(jdx).hazardValid := False
       rMyInfoVec(jdx).issueHazardValid := False
       rMyInfoVec(jdx).readGprsHazardValid := False
-      rMyInfoVec(jdx).readGprsHazardValidFwdLimit := False
+      //rMyInfoVec(jdx).readGprsHazardValidFwdLimit := False
     } otherwise {
       //myInfoAllocValidVec(jdx) := rMyInfoVec(jdx).allocValid
     }
@@ -2192,6 +2197,7 @@ case class SnowHouseForFmaxPipeStageWriteBack(
       cLink.up.isValid
       && myMemWbPayload(0).splitOp.opIsMemAccess
       && !myMemWbPayload(0).instrCnt.myPsIdBubble.head
+      && !myNonMemWbPayload(0).instrCnt.myPsExMemAccessBubble.last
     )
 
     myMemWbFifo.io.push.payload.instrCnt := (
@@ -2230,6 +2236,7 @@ case class SnowHouseForFmaxPipeStageWriteBack(
       && !myNonMemWbPayload(0).splitOp.opIsMemAccess
       //&& !myNonMemWbPayload(0).inpDecodeExt.last.opIsMemAccess(0)
       && !myNonMemWbPayload(0).instrCnt.myPsIdBubble.last
+      && !myNonMemWbPayload(0).instrCnt.myPsExMultiCycleBubble.last
     )
     myNonMemWbFifo.io.push.payload.instrCnt := (
       myNonMemWbPayload(0).instrCnt
@@ -3284,14 +3291,19 @@ case class SnowHouseForFmaxPipeStageWriteBack(
         )
       )
       io.dbgInfo.myPsIdBubbleAtRegFileWrite := (
-        if (cfg.optScoreboard) (
-          myCommitFinalOutpStm.myWbPayload.instrCnt.myPsIdBubble.last
-          || (
-            !myCommitFinalOutpStm.fire
+        if (cfg.optScoreboard) {
+          val myInstrCnt = myCommitFinalOutpStm.myWbPayload.instrCnt
+          (
+            myInstrCnt.myPsIdBubble.last
+            || myInstrCnt.myPsExMemAccessBubble.last
+            || myInstrCnt.myPsExMultiCycleBubble.last
+            || (
+              !myCommitFinalOutpStm.fire
+            )
           )
-        ) else (
+        } else {
           myCommitFinalOutpStm.myWbPayload.instrCnt.myPsIdBubble.last
-        )
+        }
       )
       when (myCommitFinalOutpStm.myWbPayload.encInstr.payload.orR) {
         io.dbgInfo.encInstrAtRegFileWrite := (
