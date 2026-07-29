@@ -10297,24 +10297,24 @@ case class SnowHousePipeStageExecute(
               setOutpModMemWord.io.opIsMultiCycle(idx)
             )
           }
-          if (cfg.optScoreboard) {
-            cLink.duplicateIt()
-            //cLink.down(args.currPayload).setAsBubbleMain(Some(True))
-            //setOutpModMemWord.io.instrCnt.setAsPsIdBubbleMain()
-            cLink.down(args.currPayload).setAsBubbleMain(
-              //Some(True)
-              None
-            )
-            cLink.down(args.currPayload).instrCnt
-            .myPsExMultiCycleBubble.foreach(
-              item => {
-                item := True
-              }
-            )
-            setOutpModMemWord.io.instrCnt.setAsPsIdBubbleMain()
-          } else {
+          //if (cfg.optScoreboard) {
+          //  cLink.duplicateIt()
+          //  //cLink.down(args.currPayload).setAsBubbleMain(Some(True))
+          //  //setOutpModMemWord.io.instrCnt.setAsPsIdBubbleMain()
+          //  cLink.down(args.currPayload).setAsBubbleMain(
+          //    //Some(True)
+          //    None
+          //  )
+          //  cLink.down(args.currPayload).instrCnt
+          //  .myPsExMultiCycleBubble.foreach(
+          //    item => {
+          //      item := True
+          //    }
+          //  )
+          //  setOutpModMemWord.io.instrCnt.setAsPsIdBubbleMain()
+          //} else {
             cLink.haltIt()
-          }
+          //}
           val toOrReduce = (
             if (!cfg.useLcvDataBus) (
               /*RegNext*/(
@@ -10406,24 +10406,24 @@ case class SnowHousePipeStageExecute(
               psExStallHost.nextValid := False
               rMultiCycleOpState := MultiCycleOpState.Idle
             } elsewhen (rOpIsMultiCycle(idx)) {
-              if (cfg.optScoreboard) {
-                cLink.duplicateIt()
-                //cLink.down(args.currPayload).setAsBubbleMain(Some(True))
-                //setOutpModMemWord.io.instrCnt.setAsPsIdBubbleMain()
-                cLink.down(args.currPayload).setAsBubbleMain(
-                  //Some(True)
-                  None
-                )
-                cLink.down(args.currPayload).instrCnt
-                .myPsExMultiCycleBubble.foreach(
-                  item => {
-                    item := True
-                  }
-                )
-                setOutpModMemWord.io.instrCnt.setAsPsIdBubbleMain()
-              } else {
+              //if (cfg.optScoreboard) {
+              //  cLink.duplicateIt()
+              //  //cLink.down(args.currPayload).setAsBubbleMain(Some(True))
+              //  //setOutpModMemWord.io.instrCnt.setAsPsIdBubbleMain()
+              //  cLink.down(args.currPayload).setAsBubbleMain(
+              //    //Some(True)
+              //    None
+              //  )
+              //  cLink.down(args.currPayload).instrCnt
+              //  .myPsExMultiCycleBubble.foreach(
+              //    item => {
+              //      item := True
+              //    }
+              //  )
+              //  setOutpModMemWord.io.instrCnt.setAsPsIdBubbleMain()
+              //} else {
                 cLink.haltIt()
-              }
+              //}
               //outp.myExt.foreach(item => {
               //  item.modMemWordValid.foreach(mmwValidItem => {
               //    mmwValidItem := False
@@ -10477,24 +10477,24 @@ case class SnowHousePipeStageExecute(
     } else {
       // TODO: improve IPC here by using `cLink.duplicateIt`
       //cLink.haltIt()
-      if (cfg.optScoreboard) {
-        cLink.duplicateIt()
-        //cLink.down(args.currPayload).setAsBubbleMain(Some(True))
-        //setOutpModMemWord.io.instrCnt.setAsPsIdBubbleMain()
-        cLink.down(args.currPayload).setAsBubbleMain(
-          //Some(True)
-          None
-        )
-        cLink.down(args.currPayload).instrCnt
-        .myPsExMemAccessBubble.foreach(
-          item => {
-            item := True
-          }
-        )
-        setOutpModMemWord.io.instrCnt.setAsPsIdBubbleMain()
-      } else {
+      //if (cfg.optScoreboard) {
+      //  cLink.duplicateIt()
+      //  //cLink.down(args.currPayload).setAsBubbleMain(Some(True))
+      //  //setOutpModMemWord.io.instrCnt.setAsPsIdBubbleMain()
+      //  cLink.down(args.currPayload).setAsBubbleMain(
+      //    //Some(True)
+      //    None
+      //  )
+      //  cLink.down(args.currPayload).instrCnt
+      //  .myPsExMemAccessBubble.foreach(
+      //    item => {
+      //      item := True
+      //    }
+      //  )
+      //  setOutpModMemWord.io.instrCnt.setAsPsIdBubbleMain()
+      //} else {
         cLink.haltIt()
-      }
+      //}
       //cLink.duplicateIt()
       //cLink.down
       //cMid0Front.down
