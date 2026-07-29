@@ -2858,12 +2858,25 @@ case class SnowHouseForFmaxPipeStageWriteBack(
   //)
   if (cfg.optScoreboard) {
     //myCommitFinalOutpStm.ready := True
-    myReorderBuf.io.push << (
+    myReorderBuf.io.push << {
       //myCommitForkStm.head
-      myCommitBackStm
-    )
+      val myTempReorderBufIdx = (
+        myCommitBackStm.myWbPayload
+        .instrCnt.scoreboardIssuePayload.reorderBufIdx
+      )
+      myCommitBackStm.throwWhen(
+        myTempReorderBufIdx
+        =/= (
+          RegNextWhen(
+            myTempReorderBufIdx,
+            cond=myCommitBackStm.fire,
+          )
+          init(0x1)
+        )
+      )
+    }
   } else { // if (!cfg.optScoreboard)
-    myCommitBackStm
+    //myCommitBackStm
   }
 
   //val myCommitStmMux = StreamMux(
@@ -3295,8 +3308,8 @@ case class SnowHouseForFmaxPipeStageWriteBack(
           val myInstrCnt = myCommitFinalOutpStm.myWbPayload.instrCnt
           (
             myInstrCnt.myPsIdBubble.last
-            || myInstrCnt.myPsExMemAccessBubble.last
-            || myInstrCnt.myPsExMultiCycleBubble.last
+            //|| myInstrCnt.myPsExMemAccessBubble.last
+            //|| myInstrCnt.myPsExMultiCycleBubble.last
             || (
               !myCommitFinalOutpStm.fire
             )
