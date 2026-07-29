@@ -2566,7 +2566,7 @@ case class SnowHousePipeStagePreFwd(
           //  && outp.inpDecodeExt.last.memAccessKind.asBits(1)
           //)
         )
-        && !outp.splitOp.opIsMemAccess
+        //&& !outp.splitOp.opIsMemAccess
         //&& !outp.instrCnt.myPsIdBubble.last
         && (
           !rMyPsExSetPcState
