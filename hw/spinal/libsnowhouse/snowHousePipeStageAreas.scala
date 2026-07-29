@@ -2553,11 +2553,16 @@ case class SnowHousePipeStagePreFwd(
     //  }
     //}
 
-    val rSavedMostRecentGprWriteWasMemAccessVec = (
-      Vec.fill(cfg.numGprs)(
-        Reg(Bool(), init=False)
+    val rSavedMostRecentGprWriteWasMemAccessVec = {
+      val temp = Reg(
+        Vec.fill(cfg.numGprs)(
+          //Reg(Bool(), init=False)
+          Bool()
+        )
       )
-    )
+      temp.foreach(item => item.init(item.getZero))
+      temp
+    }
     when (
       upIsFiring
       && outp.gprIsNonZeroVec.last.last
