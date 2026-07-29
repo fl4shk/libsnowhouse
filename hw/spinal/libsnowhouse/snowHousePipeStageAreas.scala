@@ -2824,9 +2824,10 @@ case class SnowHousePipeStagePreFwd(
         //  outp.gprIdxVec(jdx)
         //  === myHistFwdInfo(idx + 1).addr
         //)
-        rSavedMostRecentGprWriteWasMemAccessVec(
-          outp.gprIdxVec(jdx)
-        )
+        //rSavedMostRecentGprWriteWasMemAccessVec(
+        //  outp.gprIdxVec(jdx)
+        //)
+        False
       )
       for (idx <- 0 until myTempHistFwdValid(jdx).getWidth) {
         myTempHistFwdValid(jdx)(
@@ -8103,13 +8104,43 @@ case class SnowHousePipeStageExecute(
               //  )
               //}
               if (cfg.optScoreboard) {
-                //when (
-                //  
-                //) {
-                  outp.myExt(0).rdMemWord(jdx) := (
-                    inp.myExt(0).rdMemWord(jdx)
+                switch (
+                  (
+                    forFmaxRegFileWrPulseArr(0).fire
+                    && (
+                      forFmaxRegFileWrPulseArr(0).addr
+                      === outp.gprIdxVec(jdx)
+                    )
                   )
-                //}
+                  ## (
+                    RegNext(
+                      cLink.up.isFiring,
+                      init=False
+                    )
+                    || rose(
+                      cLink.up.isValid
+                    )
+                  )
+                ) {
+                  is (M"1-") {
+                    outp.myExt(0).rdMemWord(jdx) := (
+                      forFmaxRegFileWrPulseArr(0).data
+                    )
+                  }
+                  is (M"01") {
+                    outp.myExt(0).rdMemWord(jdx) := (
+                      inp.myExt(0).rdMemWord(jdx)
+                    )
+                  }
+                  default {
+                    outp.myExt(0).rdMemWord(jdx) := (
+                      RegNext(
+                        outp.myExt(0).rdMemWord(jdx),
+                        init=outp.myExt(0).rdMemWord(jdx).getZero
+                      )
+                    )
+                  }
+                }
               } else { // if (!cfg.optScoreboard)
                 switch (
                   //(
