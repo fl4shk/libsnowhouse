@@ -2600,64 +2600,66 @@ case class SnowHousePipeStagePreFwd(
       )
     }
 
-    val stickyFwdRegFileWrPulseVec = (
-      Vec.fill(cfg.regFileCfg.modRdPortCnt)(
-        Flow(cloneOf(forFmaxRegFileWrPulseArr(0).data))
-      )
-    )
-    stickyFwdRegFileWrPulseVec := (
-      RegNext(
-        stickyFwdRegFileWrPulseVec,
-        init=stickyFwdRegFileWrPulseVec.getZero
-      )
-    )
+    //val stickyFwdRegFileWrPulseVec = (
+    //  Vec.fill(cfg.regFileCfg.modRdPortCnt)(
+    //    Flow(cloneOf(forFmaxRegFileWrPulseArr(0).data))
+    //  )
+    //)
+    //stickyFwdRegFileWrPulseVec := (
+    //  RegNext(
+    //    stickyFwdRegFileWrPulseVec,
+    //    init=stickyFwdRegFileWrPulseVec.getZero
+    //  )
+    //)
     for (idx <- 0 until cfg.regFileCfg.modRdPortCnt) {
-      when (
-        RegNext(
-          //upIsFiring,//cLink.up.isFiring,
-          (
-            myTempSaveOutpCond
-            //&& (
-            //  (
-            //    !myBranchMispredictEtc
-            //    && !rMyPsExSetPcState
-            //  )
-            //  || outp.regPcSetItCnt(1).lsb
-            //)
-          ),
-          init=False
-        )
-        && (
-          (
-            !myBranchMispredictEtc
-            && !rMyPsExSetPcState
-          )
-          || outp.regPcSetItCnt(1).lsb
-        )
-      ) {
-        stickyFwdRegFileWrPulseVec(idx).valid := False
-      }
-      when (
-        forFmaxRegFileWrPulseArr(0).fire
-        && (
-          forFmaxRegFileWrPulseArr(0).addr 
-          === outp.gprIdxVec(idx)
-        )
-      ) {
-        stickyFwdRegFileWrPulseVec(idx).valid := True
-        stickyFwdRegFileWrPulseVec(idx).payload := (
-          forFmaxRegFileWrPulseArr(0).data
-        )
-      }
+      //when (
+      //  RegNext(
+      //    //upIsFiring,//cLink.up.isFiring,
+      //    (
+      //      myTempSaveOutpCond
+      //      //&& (
+      //      //  (
+      //      //    !myBranchMispredictEtc
+      //      //    && !rMyPsExSetPcState
+      //      //  )
+      //      //  || outp.regPcSetItCnt(1).lsb
+      //      //)
+      //    ),
+      //    init=False
+      //  )
+      //  && (
+      //    (
+      //      !myBranchMispredictEtc
+      //      && !rMyPsExSetPcState
+      //    )
+      //    || outp.regPcSetItCnt(1).lsb
+      //  )
+      //) {
+      //  stickyFwdRegFileWrPulseVec(idx).valid := False
+      //}
+
+      //when (
+      //  forFmaxRegFileWrPulseArr(0).fire
+      //  && (
+      //    forFmaxRegFileWrPulseArr(0).addr 
+      //    === outp.gprIdxVec(idx)
+      //  )
+      //) {
+      //  stickyFwdRegFileWrPulseVec(idx).valid := True
+      //  stickyFwdRegFileWrPulseVec(idx).payload := (
+      //    forFmaxRegFileWrPulseArr(0).data
+      //  )
+      //}
+
       switch (
-        //(
-        //  forFmaxRegFileWrPulseArr(0).fire
-        //  && (
-        //    forFmaxRegFileWrPulseArr(0).addr
-        //    === outp.gprIdxVec(idx)
-        //  )
-        //)
-        stickyFwdRegFileWrPulseVec(idx).fire
+        (
+          forFmaxRegFileWrPulseArr(0).fire
+          && (
+            forFmaxRegFileWrPulseArr(0).addr
+            === outp.gprIdxVec(idx)
+          )
+        )
+        //stickyFwdRegFileWrPulseVec(idx).fire
         ## (
           RegNext(
             //cLink.up.isFiring,
@@ -2672,8 +2674,8 @@ case class SnowHousePipeStagePreFwd(
       ) {
         is (M"1-") {
           outp.myExt(0).rdMemWord(idx) := (
-            //forFmaxRegFileWrPulseArr(0).data
-            stickyFwdRegFileWrPulseVec(idx).payload
+            forFmaxRegFileWrPulseArr(0).data
+            //stickyFwdRegFileWrPulseVec(idx).payload
           )
         }
         is (M"01") {
@@ -8177,43 +8179,44 @@ case class SnowHousePipeStageExecute(
     //    forFmaxRegFileWrPulseArr(0)
     //  )
     //}
-    val stickyFwdRegFileWrPulseVec = (
-      Vec.fill(cfg.regFileCfg.modRdPortCnt)(
-        Flow(cloneOf(forFmaxRegFileWrPulseArr(0).data))
-      )
-    )
-    stickyFwdRegFileWrPulseVec := (
-      RegNext(
-        stickyFwdRegFileWrPulseVec,
-        init=stickyFwdRegFileWrPulseVec.getZero
-      )
-    )
-    for (idx <- 0 until cfg.regFileCfg.modRdPortCnt) {
-      when (
-        RegNext(
-          //cLink.up.isFiring,
-          (
-            myTempSaveOutpCond
-          ),
-          init=False
-        )
-        && !myShouldIgnoreInstr.last
-      ) {
-        stickyFwdRegFileWrPulseVec(idx).valid := False
-      }
-      when (
-        forFmaxRegFileWrPulseArr(0).fire
-        && (
-          forFmaxRegFileWrPulseArr(0).addr 
-          === outp.gprIdxVec(idx)
-        )
-      ) {
-        stickyFwdRegFileWrPulseVec(idx).valid := True
-        stickyFwdRegFileWrPulseVec(idx).payload := (
-          forFmaxRegFileWrPulseArr(0).data
-        )
-      }
-    }
+
+    //val stickyFwdRegFileWrPulseVec = (
+    //  Vec.fill(cfg.regFileCfg.modRdPortCnt)(
+    //    Flow(cloneOf(forFmaxRegFileWrPulseArr(0).data))
+    //  )
+    //)
+    //stickyFwdRegFileWrPulseVec := (
+    //  RegNext(
+    //    stickyFwdRegFileWrPulseVec,
+    //    init=stickyFwdRegFileWrPulseVec.getZero
+    //  )
+    //)
+    //for (idx <- 0 until cfg.regFileCfg.modRdPortCnt) {
+    //  when (
+    //    RegNext(
+    //      //cLink.up.isFiring,
+    //      (
+    //        myTempSaveOutpCond
+    //      ),
+    //      init=False
+    //    )
+    //    && !myShouldIgnoreInstr.last
+    //  ) {
+    //    stickyFwdRegFileWrPulseVec(idx).valid := False
+    //  }
+    //  when (
+    //    forFmaxRegFileWrPulseArr(0).fire
+    //    && (
+    //      forFmaxRegFileWrPulseArr(0).addr 
+    //      === outp.gprIdxVec(idx)
+    //    )
+    //  ) {
+    //    stickyFwdRegFileWrPulseVec(idx).valid := True
+    //    stickyFwdRegFileWrPulseVec(idx).payload := (
+    //      forFmaxRegFileWrPulseArr(0).data
+    //    )
+    //  }
+    //}
 
     //for (idx <- 0 until cfg.regFileCfg.modRdPortCnt) {
     //  //when (
@@ -8385,14 +8388,14 @@ case class SnowHousePipeStageExecute(
               //}
               //if (cfg.optScoreboard) {
                 switch (
-                  //(
-                  //  forFmaxRegFileWrPulseArr(0).fire
-                  //  && (
-                  //    forFmaxRegFileWrPulseArr(0).addr
-                  //    === outp.gprIdxVec(jdx)
-                  //  )
-                  //)
-                  stickyFwdRegFileWrPulseVec(jdx).fire
+                  (
+                    forFmaxRegFileWrPulseArr(0).fire
+                    && (
+                      forFmaxRegFileWrPulseArr(0).addr
+                      === outp.gprIdxVec(jdx)
+                    )
+                  )
+                  //stickyFwdRegFileWrPulseVec(jdx).fire
                   ## (
                     RegNext(
                       cLink.up.isFiring,
@@ -8405,8 +8408,8 @@ case class SnowHousePipeStageExecute(
                 ) {
                   is (M"1-") {
                     outp.myExt(0).rdMemWord(jdx) := (
-                      //forFmaxRegFileWrPulseArr(0).data
-                      stickyFwdRegFileWrPulseVec(jdx).payload
+                      forFmaxRegFileWrPulseArr(0).data
+                      //stickyFwdRegFileWrPulseVec(jdx).payload
                     )
                   }
                   is (M"01") {
