@@ -1011,15 +1011,15 @@ case class SnowHouseForFmaxPipeStageScoreboardIssue(
   //)
 
   val sLinkArr = new ArrayBuffer[StageLink]()
-  //val s2mLinkArr = new ArrayBuffer[S2MLink]()
+  val s2mLinkArr = new ArrayBuffer[S2MLink]()
   sLinkArr += StageLink(
     up=cLink.down,
     down=Node(),
   )
-  //s2mLinkArr += S2MLink(
-  //  up=sLinkArr.last.down,
-  //  down=Node(),
-  //)
+  s2mLinkArr += S2MLink(
+    up=sLinkArr.last.down,
+    down=Node(),
+  )
   //sLinkArr += StageLink(
   //  up=sLinkArr.last.down,
   //  down=Node()
@@ -1031,7 +1031,7 @@ case class SnowHouseForFmaxPipeStageScoreboardIssue(
 
   linkArr += cLink
   linkArr ++= sLinkArr
-  //linkArr ++= s2mLinkArr
+  linkArr ++= s2mLinkArr
   //linkArr += sLink
   //linkArr += s2mLink
 
@@ -1137,7 +1137,7 @@ case class SnowHouseForFmaxPipeStageScoreboardIssue(
   scoreboard.io.readGprs << io.myScoreboardReadGprs
   scoreboard.io.reorderBufWrite << io.myScoreboardCommmit
 
-  sLinkArr.last.down.driveTo(io.down)(
+  s2mLinkArr.last.down.driveTo(io.down)(
     con=(outp, node) => {
       outp := node(pScoreboardIssueOutp)
     }
@@ -1218,38 +1218,38 @@ case class SnowHouseForFmaxPipeStageScoreboardReadGprs(
   //  }
   //)
   val sLinkArr = new ArrayBuffer[StageLink]()
-  //val s2mLinkArr = new ArrayBuffer[S2MLink]()
+  val s2mLinkArr = new ArrayBuffer[S2MLink]()
   sLinkArr += StageLink(
     up=cLink.down,
     down=Node(),
   )
+  s2mLinkArr += S2MLink(
+    up=sLinkArr.last.down,
+    down=Node(),
+  )
+  //sLinkArr += StageLink(
+  //  up=sLinkArr.last.down,
+  //  down=Node()
+  //)
   //s2mLinkArr += S2MLink(
   //  up=sLinkArr.last.down,
   //  down=Node(),
   //)
-  sLinkArr += StageLink(
-    up=sLinkArr.last.down,
-    down=Node()
-  )
-  //s2mLinkArr += S2MLink(
+  //sLinkArr += StageLink(
   //  up=sLinkArr.last.down,
-  //  down=Node(),
+  //  down=Node()
   //)
-  sLinkArr += StageLink(
-    up=sLinkArr.last.down,
-    down=Node()
-  )
-  sLinkArr += StageLink(
-    up=sLinkArr.last.down,
-    down=Node()
-  )
-  sLinkArr += StageLink(
-    up=sLinkArr.last.down,
-    down=Node()
-  )
+  //sLinkArr += StageLink(
+  //  up=sLinkArr.last.down,
+  //  down=Node()
+  //)
+  //sLinkArr += StageLink(
+  //  up=sLinkArr.last.down,
+  //  down=Node()
+  //)
   linkArr += cLink
   linkArr ++= sLinkArr
-  //linkArr ++= s2mLinkArr
+  linkArr ++= s2mLinkArr
   //linkArr += sLink
   //linkArr += s2mLink
 
@@ -1379,7 +1379,7 @@ case class SnowHouseForFmaxPipeStageScoreboardReadGprs(
   //  cLink.throwIt()
   //}
 
-  sLinkArr.last.down.driveTo(io.down)(
+  s2mLinkArr.last.down.driveTo(io.down)(
     con=(outp, node) => {
       outp := node(pScoreboardReadGprsOutp)
     }
