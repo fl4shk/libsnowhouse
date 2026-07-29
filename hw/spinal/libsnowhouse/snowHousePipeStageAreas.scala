@@ -2578,6 +2578,13 @@ case class SnowHousePipeStagePreFwd(
     val myTempSaveOutpCond = (
       myTempSaveOutpCondMost
       && !outp.inpDecodeExt.last.opIsMemAccess.head
+      && (
+        (
+          !myBranchMispredictEtc
+          && !rMyPsExSetPcState
+        )
+        || outp.regPcSetItCnt(1).lsb
+      )
     )
 
     when (
@@ -8035,6 +8042,7 @@ case class SnowHousePipeStageExecute(
       //&& outp.gprIsNonZeroVec.last.last
       && !outp.instrCnt.myPsIdBubble.last
       && !outp.inpDecodeExt.last.opIsMemAccess.head
+      && !myShouldIgnoreInstr.last
     )
     val myHistFwdInfo = {
       val temp = MyFwdInfo()
