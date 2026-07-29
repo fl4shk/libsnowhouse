@@ -2590,6 +2590,82 @@ case class SnowHousePipeStagePreFwd(
         outp.splitOp.opIsMemAccess
       )
     }
+
+    val stickyFwdRegFileWrPulseVec = (
+      Vec.fill(cfg.regFileCfg.modRdPortCnt)(
+        Flow(cloneOf(forFmaxRegFileWrPulseArr(0).data))
+      )
+    )
+    stickyFwdRegFileWrPulseVec := (
+      RegNext(
+        stickyFwdRegFileWrPulseVec,
+        init=stickyFwdRegFileWrPulseVec.getZero
+      )
+    )
+    for (idx <- 0 until cfg.regFileCfg.modRdPortCnt) {
+      when (
+        RegNext(
+          upIsFiring,//cLink.up.isFiring,
+          init=False
+        )
+      ) {
+        stickyFwdRegFileWrPulseVec(idx).valid := False
+      }
+      when (
+        forFmaxRegFileWrPulseArr(0).fire
+        && (
+          forFmaxRegFileWrPulseArr(0).addr 
+          === outp.gprIdxVec(idx)
+        )
+      ) {
+        stickyFwdRegFileWrPulseVec(idx).valid := True
+        stickyFwdRegFileWrPulseVec(idx).payload := (
+          forFmaxRegFileWrPulseArr(0).data
+        )
+      }
+      switch (
+        //(
+        //  forFmaxRegFileWrPulseArr(0).fire
+        //  && (
+        //    forFmaxRegFileWrPulseArr(0).addr
+        //    === outp.gprIdxVec(idx)
+        //  )
+        //)
+        stickyFwdRegFileWrPulseVec(idx).fire
+        ## (
+          RegNext(
+            //cLink.up.isFiring,
+            upIsFiring,
+            init=False
+          )
+          || rose(
+            //cLink.up.isValid
+            upIsValid
+          )
+        )
+      ) {
+        is (M"1-") {
+          outp.myExt(0).rdMemWord(idx) := (
+            //forFmaxRegFileWrPulseArr(0).data
+            stickyFwdRegFileWrPulseVec(idx).payload
+          )
+        }
+        is (M"01") {
+          outp.myExt(0).rdMemWord(idx) := (
+            inp.myExt(0).rdMemWord(idx)
+          )
+        }
+        default {
+          outp.myExt(0).rdMemWord(idx) := (
+            RegNext(
+              outp.myExt(0).rdMemWord(idx),
+              init=outp.myExt(0).rdMemWord(idx).getZero
+            )
+          )
+        }
+      }
+    }
+
     //when (
     //  //myWrPulse
     //  forFmaxRegFileWrPulseArr(0).fire
