@@ -2571,11 +2571,20 @@ case class SnowHousePipeStagePreFwd(
     //  temp.init(temp.getZero)
     //  temp
     //}
+    val myTempSaveOutpCondMost = (
+      upIsFiring
+      && !outp.instrCnt.myPsIdBubble.last
+    )
+    val myTempSaveOutpCond = (
+      myTempSaveOutpCondMost
+      && !outp.inpDecodeExt.last.opIsMemAccess.head
+    )
 
     when (
-      upIsFiring
+      //upIsFiring
+      //&& !outp.instrCnt.myPsIdBubble.head
+      myTempSaveOutpCondMost
       && outp.gprIsNonZeroVec.last.last
-      && !outp.instrCnt.myPsIdBubble.head
       && (
         (
           !myBranchMispredictEtc
@@ -2605,7 +2614,8 @@ case class SnowHousePipeStagePreFwd(
     for (idx <- 0 until cfg.regFileCfg.modRdPortCnt) {
       when (
         RegNext(
-          upIsFiring,//cLink.up.isFiring,
+          //upIsFiring,//cLink.up.isFiring,
+          myTempSaveOutpCond,
           init=False
         )
       ) {
@@ -2846,27 +2856,28 @@ case class SnowHousePipeStagePreFwd(
           cfg.optPreFwdForFmaxPsExFwdSize
         ),
         when=(
-          upIsFiring
-          //&& outp.gprIsNonZeroVec.last.last
-          && !outp.instrCnt.myPsIdBubble.last
-          //&& (
-          //  outp.gprIsNonZeroVec.last.last
-          //)
-          ////&& (
-          ////  (
-          ////    //!myBranchMispredictEtc
-          ////    //&& 
-          ////    !rMyPsExSetPcState
-          ////    //&& !myBranchMispredictEtc
-          ////  )
-          ////  || outp.regPcSetItCnt(1).lsb
-          ////)
+          myTempSaveOutpCond
+          //upIsFiring
+          ////&& outp.gprIsNonZeroVec.last.last
           //&& !outp.instrCnt.myPsIdBubble.last
-          && (
-            //!outp.splitOp.opIsMemAccess
-            !outp.inpDecodeExt.last.opIsMemAccess.head
-            //|| outp.inpDecodeExt.last.memAccessKind.asBits(1)
-          )
+          ////&& (
+          ////  outp.gprIsNonZeroVec.last.last
+          ////)
+          //////&& (
+          //////  (
+          //////    //!myBranchMispredictEtc
+          //////    //&& 
+          //////    !rMyPsExSetPcState
+          //////    //&& !myBranchMispredictEtc
+          //////  )
+          //////  || outp.regPcSetItCnt(1).lsb
+          //////)
+          ////&& !outp.instrCnt.myPsIdBubble.last
+          //&& (
+          //  //!outp.splitOp.opIsMemAccess
+          //  !outp.inpDecodeExt.last.opIsMemAccess.head
+          //  //|| outp.inpDecodeExt.last.memAccessKind.asBits(1)
+          //)
         ),
         init=temp.getZero
       )
@@ -8019,6 +8030,12 @@ case class SnowHousePipeStageExecute(
   val myForFmaxFwdArea = (
     cfg.optForFmax
   ) generate (new Area {
+    val myTempSaveOutpCond = (
+      cLink.up.isFiring
+      //&& outp.gprIsNonZeroVec.last.last
+      && !outp.instrCnt.myPsIdBubble.last
+      && !outp.inpDecodeExt.last.opIsMemAccess.head
+    )
     val myHistFwdInfo = {
       val temp = MyFwdInfo()
       //temp.valid := (
@@ -8055,34 +8072,35 @@ case class SnowHousePipeStageExecute(
           cfg.optForFmaxPsExFwdSize
         ),
         when=(
-          cLink.up.isFiring
-          //&& outp.gprIsNonZeroVec.last.last
-          && !outp.instrCnt.myPsIdBubble.last
-          && !outp.inpDecodeExt.last.opIsMemAccess.head
-          ////////&& !outp.splitOp.memAccessKind.
-          ////////&& !outp.splitOp.opIsMemAccess
-          //////&& (
-          //////  !outp.splitOp.opIsMemAccess
-          //////  //|| outp.outpDecodeExt.memAccessKind.asBits(1)
-          //////)
-          ////&& outp.myExt(0).modMemWordValid.last //ram.io.wrEn
-          //&& outp.gprIsNonZeroVec.last.last
-          //&& !myShouldIgnoreInstr(0)
-          ////&& (
-          ////  //(
-          ////  //  //!myBranchMispredictEtc
-          ////  //  //&& 
-          ////  //  !rMyPsExSetPcState
-          ////  //  //&& !myBranchMispredictEtc
-          ////  //)
-          ////  //|| outp.regPcSetItCnt(1).lsb
-          ////  !myShouldIgnoreInstr(0)
-          ////)
+          myTempSaveOutpCond
+          //cLink.up.isFiring
+          ////&& outp.gprIsNonZeroVec.last.last
           //&& !outp.instrCnt.myPsIdBubble.last
-          //&& (
-          //  !outp.splitOp.opIsMemAccess
-          //  //|| outp.outpDecodeExt.memAccessKind.asBits(1)
-          //)
+          //&& !outp.inpDecodeExt.last.opIsMemAccess.head
+          //////////&& !outp.splitOp.memAccessKind.
+          //////////&& !outp.splitOp.opIsMemAccess
+          ////////&& (
+          ////////  !outp.splitOp.opIsMemAccess
+          ////////  //|| outp.outpDecodeExt.memAccessKind.asBits(1)
+          ////////)
+          //////&& outp.myExt(0).modMemWordValid.last //ram.io.wrEn
+          ////&& outp.gprIsNonZeroVec.last.last
+          ////&& !myShouldIgnoreInstr(0)
+          //////&& (
+          //////  //(
+          //////  //  //!myBranchMispredictEtc
+          //////  //  //&& 
+          //////  //  !rMyPsExSetPcState
+          //////  //  //&& !myBranchMispredictEtc
+          //////  //)
+          //////  //|| outp.regPcSetItCnt(1).lsb
+          //////  !myShouldIgnoreInstr(0)
+          //////)
+          ////&& !outp.instrCnt.myPsIdBubble.last
+          ////&& (
+          ////  !outp.splitOp.opIsMemAccess
+          ////  //|| outp.outpDecodeExt.memAccessKind.asBits(1)
+          ////)
         ),
         init=temp.getZero
       )
@@ -8156,7 +8174,8 @@ case class SnowHousePipeStageExecute(
     for (idx <- 0 until cfg.regFileCfg.modRdPortCnt) {
       when (
         RegNext(
-          cLink.up.isFiring,
+          //cLink.up.isFiring,
+          myTempSaveOutpCond,
           init=False
         )
       ) {
