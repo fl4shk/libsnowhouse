@@ -2574,10 +2574,6 @@ case class SnowHousePipeStagePreFwd(
     val myTempSaveOutpCondMost = (
       upIsFiring
       && !outp.instrCnt.myPsIdBubble.last
-    )
-    val myTempSaveOutpCond = (
-      myTempSaveOutpCondMost
-      && !outp.inpDecodeExt.last.opIsMemAccess.head
       && (
         (
           !myBranchMispredictEtc
@@ -2585,6 +2581,10 @@ case class SnowHousePipeStagePreFwd(
         )
         || outp.regPcSetItCnt(1).lsb
       )
+    )
+    val myTempSaveOutpCond = (
+      myTempSaveOutpCondMost
+      && !outp.inpDecodeExt.last.opIsMemAccess.head
     )
 
     when (
@@ -2592,13 +2592,13 @@ case class SnowHousePipeStagePreFwd(
       //&& !outp.instrCnt.myPsIdBubble.head
       myTempSaveOutpCondMost
       && outp.gprIsNonZeroVec.last.last
-      && (
-        (
-          !myBranchMispredictEtc
-          && !rMyPsExSetPcState
-        )
-        || outp.regPcSetItCnt(1).lsb
-      )
+      //&& (
+      //  (
+      //    !myBranchMispredictEtc
+      //    && !rMyPsExSetPcState
+      //  )
+      //  || outp.regPcSetItCnt(1).lsb
+      //)
     ) {
       rSavedMostRecentGprWriteWasMemAccess(
         outp.gprIdxVec.last
