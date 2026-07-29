@@ -2560,7 +2560,14 @@ case class SnowHousePipeStagePreFwd(
           Bool()
         )
       )
-      temp.foreach(item => item.init(item.getZero))
+      //temp.foreach(item => item.init(item.getZero))
+      for (idx <- 0 until temp.size) {
+        KeepAttribute(temp(idx))
+        temp(idx).init(temp(idx).getZero)
+        temp(idx).setName(
+          s"rSavedMostRecentGprWriteWasMemAccessVec_${idx}"
+        )
+      }
       temp
     }
     when (
