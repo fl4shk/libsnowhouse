@@ -1654,9 +1654,11 @@ private[libsnowhouse] case class SnowHouseNotForFmax
               outp=outp,
               inp=inp,
               //link=cFront,
+              upIsValid=cFront.up.isValid,
               upIsFiring=cFront.up.isFiring,
               //psExSetPc=psExSetPc,
               myBranchMispredictEtc=False,
+              forFmaxRegFileWrPulseArr=null
             )
           )
           //cfg.myPrePsExSetBranchPredictionStuff(
@@ -2249,9 +2251,26 @@ private[libsnowhouse] case class SnowHouseForFmax(
           outp := inp
           outp.myExt(0).rdMemWord(idx).allowOverride
           //outp.myExt(0).rdMemWord(idx) := rdMemWord
-          outp.myExt(0).rdMemWord(idx) := (
-            rdMemWord
-          )
+          //when (
+          //  RegNext(
+          //    myExternalInpCond,
+          //    init=False
+          //  )
+          //) {
+            outp.myExt(0).rdMemWord(idx) := (
+              rdMemWord
+            )
+          //}
+          //val stickyWrPulse = cloneOf(wrPulse)
+          //stickyWrPulse := RegNext(
+          //  stickyWrPulse, init=stickyWrPulse.getZero
+          //)
+          //when (
+          //  wrPulse.fire
+          //  && outp.gprIdxVec(idx) === wrPulse.addr
+          //) {
+          //  stickyWrPulse
+          //}
         },
         optRdLatency=(
           1
@@ -2271,7 +2290,7 @@ private[libsnowhouse] case class SnowHouseForFmax(
       )
     )
     myRegFile.last.io.myExternalInpCond := (
-      myRegFile.last.io.rdAddrPipe.valid //False//psExSetPc.fire
+      myRegFile.last.io.rdAddrPipe.fire//valid //False//psExSetPc.fire
     )
   }
   val myRegFileRdAddrPipeFrontVec = Vec.fill(2)(
@@ -2374,6 +2393,7 @@ private[libsnowhouse] case class SnowHouseForFmax(
   //psEx.io.myRegFileWrPulse.payload := (
   //  psWb.io.commit.myRegFileWrPulsePayload
   //)
+  psPreFwd.io.myRegFileWrPulse << psWb.io.commitEtc.myRegFileWrPulse
   psEx.io.myRegFileWrPulse << psWb.io.commitEtc.myRegFileWrPulse
   if (cfg.optScoreboard) {
     psScoreboardIssue.io.myScoreboardCommmit << (

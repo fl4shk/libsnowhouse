@@ -760,12 +760,13 @@ case class SnowHouseConfig(
             //4
             //2
             //3
-            1
-            //2
+            //1
+            2
           ) else (
             0
           )
         )
+        //+ 1 // final forwarding stage for saved WB `myRegFileWrPulse`
       )
       case None => (
         0

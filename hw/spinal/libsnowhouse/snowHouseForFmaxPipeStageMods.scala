@@ -1412,6 +1412,15 @@ case class SnowHouseForFmaxPipeStagePreFwdIo(
   //--------
   val myBranchMispredictEtc = in(Bool())
   //--------
+  val myRegFileWrPulse = (
+    slave(Flow(
+      PipeSimpleDualPortMemDrivePayload(
+        dataType=UInt(cfg.mainWidth bits),
+        wordCount=cfg.regFileCfg.wordCountArr(0),
+      )
+    ))
+  )
+  //--------
 }
 
 case class SnowHouseForFmaxPipeStagePreFwd(
@@ -1463,8 +1472,12 @@ case class SnowHouseForFmaxPipeStagePreFwd(
     outp=myOutp,
     inp=myInp,
     //link=cLink,
+    upIsValid=cLink.up.isValid,
     upIsFiring=cLink.up.isFiring,
     myBranchMispredictEtc=io.myBranchMispredictEtc,
+    forFmaxRegFileWrPulseArr=Array(
+      io.myRegFileWrPulse
+    )
   )
 
   cLink.up.driveFrom(io.up)(
