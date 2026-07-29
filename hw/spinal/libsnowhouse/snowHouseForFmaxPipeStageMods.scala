@@ -2743,9 +2743,13 @@ case class SnowHouseForFmaxPipeStageWriteBack(
       //  )
       //}
       myCurrMmwValid := (
-        !myMemWbPayload(1).gprIsZeroVec.last.last
-        && !myMemWbPayload(1).instrCnt.myPsExMemAccessBubble.last
-        //&& !myMemWbPayload(1).outpDecodeExt.memAccessKind.asBits(1)
+        if (cfg.optScoreboard) (
+          !myMemWbPayload(1).gprIsZeroVec.last.last
+          //&& !myMemWbPayload(1).outpDecodeExt.memAccessKind.asBits(1)
+          && !myMemWbPayload(1).instrCnt.myPsExMemAccessBubble.last
+        ) else (
+          !myMemWbPayload(1).gprIsZeroVec.last.last
+        )
       )
     }
   }
