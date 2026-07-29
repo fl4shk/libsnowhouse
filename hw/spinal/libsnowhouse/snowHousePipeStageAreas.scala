@@ -2570,6 +2570,7 @@ case class SnowHousePipeStagePreFwd(
       }
       temp
     }
+
     when (
       upIsFiring
       && outp.gprIsNonZeroVec.last.last
@@ -2824,10 +2825,10 @@ case class SnowHousePipeStagePreFwd(
         //  outp.gprIdxVec(jdx)
         //  === myHistFwdInfo(idx + 1).addr
         //)
-        //rSavedMostRecentGprWriteWasMemAccessVec(
-        //  outp.gprIdxVec(jdx)
-        //)
-        False
+        rSavedMostRecentGprWriteWasMemAccessVec(
+          outp.gprIdxVec(jdx)
+        )
+        //False
       )
       for (idx <- 0 until myTempHistFwdValid(jdx).getWidth) {
         myTempHistFwdValid(jdx)(
@@ -8141,6 +8142,9 @@ case class SnowHousePipeStageExecute(
                     )
                   }
                 }
+                //outp.myExt(0).rdMemWord(jdx) := (
+                //  inp.myExt(0).rdMemWord(jdx)
+                //)
               } else { // if (!cfg.optScoreboard)
                 switch (
                   //(
