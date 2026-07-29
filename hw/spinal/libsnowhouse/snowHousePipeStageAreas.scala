@@ -7982,7 +7982,8 @@ case class SnowHousePipeStageExecute(
     //}
 
     val myHistRegFileWrPulse = (
-      !cfg.optScoreboard
+      //!cfg.optScoreboard
+      true
     ) generate (
       History(
         that=forFmaxRegFileWrPulseArr(0),
@@ -8080,7 +8081,8 @@ case class SnowHousePipeStageExecute(
               //  )
               //)
               val myFwdTempToSwitch = (
-                !cfg.optScoreboard
+                //!cfg.optScoreboard
+                true
               ) generate (
                 Vec(Vec(
                   myHistRegFileWrPulse.map(myWrPulse => (
@@ -8104,48 +8106,48 @@ case class SnowHousePipeStageExecute(
               //    )
               //  )
               //}
-              if (cfg.optScoreboard) {
-                switch (
-                  (
-                    forFmaxRegFileWrPulseArr(0).fire
-                    && (
-                      forFmaxRegFileWrPulseArr(0).addr
-                      === outp.gprIdxVec(jdx)
-                    )
-                  )
-                  ## (
-                    RegNext(
-                      cLink.up.isFiring,
-                      init=False
-                    )
-                    || rose(
-                      cLink.up.isValid
-                    )
-                  )
-                ) {
-                  is (M"1-") {
-                    outp.myExt(0).rdMemWord(jdx) := (
-                      forFmaxRegFileWrPulseArr(0).data
-                    )
-                  }
-                  is (M"01") {
-                    outp.myExt(0).rdMemWord(jdx) := (
-                      inp.myExt(0).rdMemWord(jdx)
-                    )
-                  }
-                  default {
-                    outp.myExt(0).rdMemWord(jdx) := (
-                      RegNext(
-                        outp.myExt(0).rdMemWord(jdx),
-                        init=outp.myExt(0).rdMemWord(jdx).getZero
-                      )
-                    )
-                  }
-                }
-                //outp.myExt(0).rdMemWord(jdx) := (
-                //  inp.myExt(0).rdMemWord(jdx)
-                //)
-              } else { // if (!cfg.optScoreboard)
+              //if (cfg.optScoreboard) {
+              //  switch (
+              //    (
+              //      forFmaxRegFileWrPulseArr(0).fire
+              //      && (
+              //        forFmaxRegFileWrPulseArr(0).addr
+              //        === outp.gprIdxVec(jdx)
+              //      )
+              //    )
+              //    ## (
+              //      RegNext(
+              //        cLink.up.isFiring,
+              //        init=False
+              //      )
+              //      || rose(
+              //        cLink.up.isValid
+              //      )
+              //    )
+              //  ) {
+              //    is (M"1-") {
+              //      outp.myExt(0).rdMemWord(jdx) := (
+              //        forFmaxRegFileWrPulseArr(0).data
+              //      )
+              //    }
+              //    is (M"01") {
+              //      outp.myExt(0).rdMemWord(jdx) := (
+              //        inp.myExt(0).rdMemWord(jdx)
+              //      )
+              //    }
+              //    default {
+              //      outp.myExt(0).rdMemWord(jdx) := (
+              //        RegNext(
+              //          outp.myExt(0).rdMemWord(jdx),
+              //          init=outp.myExt(0).rdMemWord(jdx).getZero
+              //        )
+              //      )
+              //    }
+              //  }
+              //  //outp.myExt(0).rdMemWord(jdx) := (
+              //  //  inp.myExt(0).rdMemWord(jdx)
+              //  //)
+              //} else { // if (!cfg.optScoreboard)
                 switch (
                   //(
                   //  forFmaxRegFileWrPulseArr(0).fire
@@ -8225,7 +8227,7 @@ case class SnowHousePipeStageExecute(
                     )
                   }
                 }
-              }
+              //}
               //when (
               //  RegNext(
               //    cLink.up.isFiring,
