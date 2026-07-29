@@ -2871,7 +2871,7 @@ case class SnowHouseForFmaxPipeStageWriteBack(
             myTempReorderBufIdx,
             cond=myCommitBackStm.fire,
           )
-          init(0x1)
+          init(0x2)
         )
       )
     }
