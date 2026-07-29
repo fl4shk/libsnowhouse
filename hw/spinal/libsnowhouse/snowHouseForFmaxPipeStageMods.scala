@@ -2195,9 +2195,12 @@ case class SnowHouseForFmaxPipeStageWriteBack(
     //)
     myMemWbFifo.io.push.valid := (
       cLink.up.isValid
-      && myMemWbPayload(0).splitOp.opIsMemAccess
+      && (
+        //myMemWbPayload(0).splitOp.opIsMemAccess
+        myMemWbPayload(0).outpDecodeExt.opIsMemAccess.head
+      )
       && !myMemWbPayload(0).instrCnt.myPsIdBubble.head
-      && !myNonMemWbPayload(0).instrCnt.myPsExMemAccessBubble.last
+      && !myMemWbPayload(0).instrCnt.myPsExMemAccessBubble.last
     )
 
     myMemWbFifo.io.push.payload.instrCnt := (
@@ -2233,7 +2236,10 @@ case class SnowHouseForFmaxPipeStageWriteBack(
 
     myNonMemWbFifo.io.push.valid := (
       cLink.up.isValid
-      && !myNonMemWbPayload(0).splitOp.opIsMemAccess
+      && (
+        //!myNonMemWbPayload(0).splitOp.opIsMemAccess
+        !myNonMemWbPayload(0).outpDecodeExt.opIsMemAccess.head
+      )
       //&& !myNonMemWbPayload(0).inpDecodeExt.last.opIsMemAccess(0)
       && !myNonMemWbPayload(0).instrCnt.myPsIdBubble.last
       && !myNonMemWbPayload(0).instrCnt.myPsExMultiCycleBubble.last
