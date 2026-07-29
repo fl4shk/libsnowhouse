@@ -2489,9 +2489,9 @@ case class SnowHousePipeStagePreFwd(
     //val data = UInt(cfg.mainWidth bits)
     val addr = UInt(log2Up(cfg.regFileCfg.wordCountArr(0)) bits)
     //val isLoadEtc = Bool() // TODO: atomics that read from the bus/mem
-    //val memAccessForceToZero = Bool()
+    val memAccessForceToZero = Bool()
     //val branchMispredictEtcForceToZero = Bool()
-    //val anyForceToZero = Bool()
+    val anyForceToZero = Bool()
     //val instrResultInPsWb = Bool()
     //val myFwdIdx = UInt(log2Up(cfg.optForFmaxPsExFwdSize) bits)
   }
@@ -2600,22 +2600,22 @@ case class SnowHousePipeStagePreFwd(
       )
       //temp.data := outp.myExt(0).modMemWord //ram.io.wrData
       temp.addr := outp.gprIdxVec.last
-      //temp.memAccessForceToZero := (
-      //  //(
-      //  //  (
-      //  //    rMyPsExSetPcState
-      //  //    || myBranchMispredictEtc
-      //  //  )
-      //  //  && !outp.regPcSetItCnt(1).lsb
-      //  //)
-      //  //|| (
-      //  //  outp.instrCnt.myPsIdBubble.head
-      //  //)
-      //  (
-      //    outp.splitOp.opIsMemAccess
-      //    //&& !outp.inpDecodeExt.last.memAccessKind.asBits(1)
-      //  )
-      //)
+      temp.memAccessForceToZero := (
+        //(
+        //  (
+        //    rMyPsExSetPcState
+        //    || myBranchMispredictEtc
+        //  )
+        //  && !outp.regPcSetItCnt(1).lsb
+        //)
+        //|| (
+        //  outp.instrCnt.myPsIdBubble.head
+        //)
+        (
+          outp.splitOp.opIsMemAccess
+          //&& !outp.inpDecodeExt.last.memAccessKind.asBits(1)
+        )
+      )
 
       //temp.branchMispredictEtcForceToZero := (
       //  (
@@ -2626,11 +2626,11 @@ case class SnowHousePipeStagePreFwd(
       //    && !outp.regPcSetItCnt(1).lsb
       //  )
       //)
-      //temp.anyForceToZero := (
-      //  //False
-      //  temp.memAccessForceToZero
-      //  //|| temp.branchMispredictEtcForceToZero
-      //)
+      temp.anyForceToZero := (
+        //False
+        temp.memAccessForceToZero
+        //|| temp.branchMispredictEtcForceToZero
+      )
       val myTempHist = History(
         that=temp,
         length=(
@@ -2793,15 +2793,15 @@ case class SnowHousePipeStagePreFwd(
           //)
         )
 
-        //myTempHistFwdForceToZero(jdx)(idx) := (
-        //  //myHistFwdInfo(idx + 1).valid
-        //  //&& 
-        //  myHistFwdInfo(idx + 1).anyForceToZero
-        //  //&& (
-        //  //  outp.gprIdxVec(jdx)
-        //  //  === myHistFwdInfo(idx + 1).addr
-        //  //)
-        //)
+        myTempHistFwdForceToZero(jdx)(idx) := (
+          //myHistFwdInfo(idx + 1).valid
+          //&& 
+          myHistFwdInfo(idx + 1).anyForceToZero
+          //&& (
+          //  outp.gprIdxVec(jdx)
+          //  === myHistFwdInfo(idx + 1).addr
+          //)
+        )
 
         //myTempHistFwdOpIsNonMemAccess(jdx)(idx) := (
         //  //myHistFwdInfo(idx + 1).valid
@@ -2842,12 +2842,12 @@ case class SnowHousePipeStagePreFwd(
               //+ (("0" * (myTempHistFwdValid(jdx).getWidth - idx - 1)))
               ("-" * (size - idx - 1) + "1" + ("0" * idx))
             })) {
-              //when (!myTempHistFwdForceToZero(jdx)(idx)) {
+              when (!myTempHistFwdForceToZero(jdx)(idx)) {
                 outp.forFmaxFwdIdx(jdx) := idx + 1
-              //} otherwise {
-              //  // loads/stores aren't forwarded
-              //  outp.forFmaxFwdIdx(jdx) := 0x0
-              //}
+              } otherwise {
+                // loads/stores aren't forwarded
+                outp.forFmaxFwdIdx(jdx) := 0x0
+              }
               //outp.myExt(0).rdMemWord(jdx) := (
               //  myHistFwdInfo(
               //    //myHistFwdInfo.size - 1 - idx //(idx + 1)
