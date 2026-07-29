@@ -9899,7 +9899,13 @@ case class SnowHousePipeStageExecute(
               setOutpModMemWord.io.opIsMultiCycle(idx)
             )
           }
-          cLink.haltIt()
+          if (cfg.optScoreboard) {
+            cLink.duplicateIt()
+            cLink.down(args.currPayload).setAsBubbleMain(Some(True))
+            setOutpModMemWord.io.instrCnt.setAsBubbleMain()
+          } else {
+            cLink.haltIt()
+          }
           val toOrReduce = (
             if (!cfg.useLcvDataBus) (
               /*RegNext*/(
@@ -9991,7 +9997,13 @@ case class SnowHousePipeStageExecute(
               psExStallHost.nextValid := False
               rMultiCycleOpState := MultiCycleOpState.Idle
             } elsewhen (rOpIsMultiCycle(idx)) {
-              cLink.haltIt()
+              if (cfg.optScoreboard) {
+                cLink.duplicateIt()
+                cLink.down(args.currPayload).setAsBubbleMain(Some(True))
+                setOutpModMemWord.io.instrCnt.setAsBubbleMain()
+              } else {
+                cLink.haltIt()
+              }
               //outp.myExt.foreach(item => {
               //  item.modMemWordValid.foreach(mmwValidItem => {
               //    mmwValidItem := False
@@ -10044,7 +10056,14 @@ case class SnowHousePipeStageExecute(
       cLink.haltIt()
     } else {
       // TODO: improve IPC here by using `cLink.duplicateIt`
-      cLink.haltIt()
+      //cLink.haltIt()
+      if (cfg.optScoreboard) {
+        cLink.duplicateIt()
+        cLink.down(args.currPayload).setAsBubbleMain(Some(True))
+        setOutpModMemWord.io.instrCnt.setAsBubbleMain()
+      } else {
+        cLink.haltIt()
+      }
       //cLink.duplicateIt()
       //cLink.down
       //cMid0Front.down
