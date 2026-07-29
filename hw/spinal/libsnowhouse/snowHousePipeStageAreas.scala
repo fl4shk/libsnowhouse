@@ -2553,21 +2553,23 @@ case class SnowHousePipeStagePreFwd(
     //  }
     //}
 
-    val rSavedMostRecentGprWriteWasMemAccessVec = {
+    val rSavedMostRecentGprWriteWasMemAccess = {
       val temp = Reg(
-        Vec.fill(cfg.numGprs)(
-          //Reg(Bool(), init=False)
-          Bool()
-        )
+        UInt(cfg.numGprs bits)
+        //Vec.fill(cfg.numGprs)(
+        //  //Reg(Bool(), init=False)
+        //  Bool()
+        //)
       )
       //temp.foreach(item => item.init(item.getZero))
-      for (idx <- 0 until temp.size) {
-        KeepAttribute(temp(idx))
-        temp(idx).init(temp(idx).getZero)
-        temp(idx).setName(
-          s"rSavedMostRecentGprWriteWasMemAccessVec_${idx}"
-        )
-      }
+      //for (idx <- 0 until temp.size) {
+      //  //KeepAttribute(temp(idx))
+      //  temp(idx).init(temp(idx).getZero)
+      //  temp(idx).setName(
+      //    s"rSavedMostRecentGprWriteWasMemAccess_${idx}"
+      //  )
+      //}
+      temp.init(temp.getZero)
       temp
     }
 
@@ -2583,7 +2585,7 @@ case class SnowHousePipeStagePreFwd(
         || outp.regPcSetItCnt(1).lsb
       )
     ) {
-      rSavedMostRecentGprWriteWasMemAccessVec(
+      rSavedMostRecentGprWriteWasMemAccess(
         outp.gprIdxVec.last
       ) := (
         outp.splitOp.opIsMemAccess
@@ -2825,7 +2827,7 @@ case class SnowHousePipeStagePreFwd(
         //  outp.gprIdxVec(jdx)
         //  === myHistFwdInfo(idx + 1).addr
         //)
-        rSavedMostRecentGprWriteWasMemAccessVec(
+        rSavedMostRecentGprWriteWasMemAccess(
           outp.gprIdxVec(jdx)
         )
         //False
