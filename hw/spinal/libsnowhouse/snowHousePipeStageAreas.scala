@@ -7987,7 +7987,13 @@ case class SnowHousePipeStageExecute(
     ) generate (
       History(
         that=forFmaxRegFileWrPulseArr(0),
-        when=forFmaxRegFileWrPulseArr(0).fire,
+        when=(
+          forFmaxRegFileWrPulseArr(0).fire
+          && (
+            forFmaxRegFileWrPulseArr(0).addr
+            === outp.gprIdxVec.last
+          )
+        ),
         length=(
           2
           //+ (if (cfg.optScoreboard) (1) else (0))
