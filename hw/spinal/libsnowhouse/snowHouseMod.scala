@@ -1670,12 +1670,12 @@ private[libsnowhouse] case class SnowHouseNotForFmax
     doModInMid0FrontFunc=Some(
       //(
       //  doModInMid0FrontParams,
-      //  myRegFile1,
+      //  myOtherRegFile,
       //) => 
       mkPipeStageExecute
       //(
       //  doModInMid0FrontParams=doModInMid0FrontParams,
-      //  myRegFile=myRegFile1,
+      //  myRegFile=myOtherRegFile,
       //)
     ),
     doModInBackEtcFunc=(
