@@ -2553,6 +2553,30 @@ case class SnowHousePipeStagePreFwd(
     //  }
     //}
 
+    val rSavedMostRecentGprWriteWasMemAccessVec = (
+      Vec.fill(cfg.numGprs)(
+        Reg(Bool(), init=False)
+      )
+    )
+    when (
+      upIsFiring
+      && outp.gprIsNonZeroVec.last.last
+      && !outp.instrCnt.myPsIdBubble.head
+      && (
+        (
+          !myBranchMispredictEtc
+          && !rMyPsExSetPcState
+        )
+        || outp.regPcSetItCnt(1).lsb
+      )
+    ) {
+      rSavedMostRecentGprWriteWasMemAccessVec(
+        outp.gprIdxVec.last
+      ) := (
+        outp.splitOp.opIsMemAccess
+      )
+    }
+
     val myHistFwdInfo = {
       val temp = MyFwdInfo()
       temp.valid := (
@@ -2603,6 +2627,12 @@ case class SnowHousePipeStagePreFwd(
       )
       //temp.data := outp.myExt(0).modMemWord //ram.io.wrData
       temp.addr := outp.gprIdxVec.last
+
+      //val myTempMemAccessForcetoZero = (
+      //  outp.splitOp.opIsMemAccess
+      //  //&& !outp.inpDecodeExt.last.memAccessKind.asBits(1)
+      //)
+
       //temp.memAccessForceToZero := (
       //  //(
       //  //  (
@@ -2660,7 +2690,7 @@ case class SnowHousePipeStagePreFwd(
           //&& !outp.instrCnt.myPsIdBubble.last
           && (
             //!outp.splitOp.opIsMemAccess
-            !outp.inpDecodeExt.head.opIsMemAccess.head
+            !outp.inpDecodeExt.last.opIsMemAccess.head
             //|| outp.inpDecodeExt.last.memAccessKind.asBits(1)
           )
         ),
@@ -2684,6 +2714,17 @@ case class SnowHousePipeStagePreFwd(
           myFwdInfoVec(idx + 1).valid := False
         }
       }
+      //for (idx <- 0 until myFwdInfoVec.size) {
+      //  when (
+      //    myTempMemAccessForcetoZero
+      //    && (
+      //      outp.gprIdxVec.last === myFwdInfoVec(idx).addr
+      //    )
+      //  ) {
+      //    myFwdInfoVec(idx).valid := False
+      //  }
+      //}
+
       //when (
       //  //(
       //  //  !rMyPsExSetPcState
@@ -2746,13 +2787,13 @@ case class SnowHousePipeStagePreFwd(
     )(
       UInt(myHistFwdInfo.size - 1 bits)
     )
-
-    //val myTempHistFwdForceToZero = Vec.fill(
-    //  cfg.regFileCfg.modRdPortCnt
-    //)(
-    //  //Bool()
-    //  UInt(myHistFwdInfo.size - 1 bits)
-    //)
+    val myTempHistFwdForceToZero = Vec.fill(
+      cfg.regFileCfg.modRdPortCnt
+    )(
+      //Bool()
+      //UInt(myHistFwdInfo.size - 1 bits)
+      Bool()
+    )
 
     //val myTempHistFwdOpIsNonMemAccess = Vec.fill(
     //  cfg.regFileCfg.modRdPortCnt
@@ -2763,6 +2804,18 @@ case class SnowHousePipeStagePreFwd(
 
     for (jdx <- 0 until myTempHistFwdValid.size) {
       //myTempHistFwdValid(jdx).lsb := False
+      myTempHistFwdForceToZero(jdx) := (
+        //myHistFwdInfo(idx + 1).valid
+        //&& 
+        //myHistFwdInfo(idx + 1).anyForceToZero
+        //&& (
+        //  outp.gprIdxVec(jdx)
+        //  === myHistFwdInfo(idx + 1).addr
+        //)
+        rSavedMostRecentGprWriteWasMemAccessVec(
+          outp.gprIdxVec(jdx)
+        )
+      )
       for (idx <- 0 until myTempHistFwdValid(jdx).getWidth) {
         myTempHistFwdValid(jdx)(
           //myTempHistFwdValid(jdx).getWidth - idx - 1
@@ -2801,15 +2854,6 @@ case class SnowHousePipeStagePreFwd(
           //)
         )
 
-        //myTempHistFwdForceToZero(jdx)(idx) := (
-        //  //myHistFwdInfo(idx + 1).valid
-        //  //&& 
-        //  myHistFwdInfo(idx + 1).anyForceToZero
-        //  //&& (
-        //  //  outp.gprIdxVec(jdx)
-        //  //  === myHistFwdInfo(idx + 1).addr
-        //  //)
-        //)
 
         //myTempHistFwdOpIsNonMemAccess(jdx)(idx) := (
         //  //myHistFwdInfo(idx + 1).valid
@@ -2840,7 +2884,8 @@ case class SnowHousePipeStagePreFwd(
       //if (cfg.optScoreboard) {
       //} else { // if (!cfg.optScoreboard)
         switch (
-          myTempHistFwdValid(jdx)
+          myTempHistFwdForceToZero(jdx)
+          ## myTempHistFwdValid(jdx)
         ) {
           val size = myTempHistFwdValid(jdx).getWidth
           for (idx <- 0 until size) {
@@ -2848,9 +2893,9 @@ case class SnowHousePipeStagePreFwd(
               //("-" * idx)
               //+ "1"
               //+ (("0" * (myTempHistFwdValid(jdx).getWidth - idx - 1)))
-              ("-" * (size - idx - 1) + "1" + ("0" * idx))
+              "0" + ("-" * (size - idx - 1) + "1" + ("0" * idx))
             })) {
-              //when (!myTempHistFwdForceToZero(jdx)(idx)) {
+              //when (!myTempHistFwdForceToZero(jdx)) {
                 outp.forFmaxFwdIdx(jdx) := idx + 1
               //} otherwise {
               //  // loads/stores aren't forwarded
@@ -7837,7 +7882,7 @@ case class SnowHousePipeStageExecute(
         when=(
           cLink.up.isFiring
           && !outp.instrCnt.myPsIdBubble.last
-          && !outp.inpDecodeExt.head.opIsMemAccess.head
+          && !outp.inpDecodeExt.last.opIsMemAccess.head
           ////////&& !outp.splitOp.memAccessKind.
           ////////&& !outp.splitOp.opIsMemAccess
           //////&& (
