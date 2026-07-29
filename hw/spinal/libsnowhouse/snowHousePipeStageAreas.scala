@@ -2616,7 +2616,7 @@ case class SnowHousePipeStagePreFwd(
         //)
         (
           outp.splitOp.opIsMemAccess
-          //&& !outp.inpDecodeExt.last.memAccessKind.asBits(1)
+          && !outp.inpDecodeExt.last.memAccessKind.asBits(1)
         )
       )
 
