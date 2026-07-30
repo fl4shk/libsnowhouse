@@ -754,18 +754,18 @@ case class SnowHouseConfig(
           //  myForFmaxCfg.numPostExPreWbPipeStages
           //)
         ) + 3//2//1//2//1//3//2//1//2//1//2//6//5//4//6//5//4//3//2//3//4//5//6//3//6//5//4//3//6//5//4//3//6//5//4//3//2//3//2//3//2//3//2//5//4//3//5
-        //+ (
-        //  if (optScoreboard) (
-        //    //6
-        //    //4
-        //    //2
-        //    //3
-        //    1
-        //    //2
-        //  ) else (
-        //    0
-        //  )
-        //)
+        + (
+          if (optScoreboard) (
+            //6
+            //4
+            //2
+            //3
+            1
+            //2
+          ) else (
+            0
+          )
+        )
         //+ 1 // final forwarding stage for saved WB `myRegFileWrPulse`
       )
       case None => (
