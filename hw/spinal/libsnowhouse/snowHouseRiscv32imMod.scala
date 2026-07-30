@@ -1641,11 +1641,11 @@ object SnowHouseRiscv32imPipeStageInstrDecode {
           }
         }
         //upPayload.gprIdxVec.last := 0x0
-        //if (cfg.optScoreboard) {
-        //  upPayload.gprIdxVec.last := encInstrR.last.rs2
-        //} else {
+        if (cfg.optScoreboard) {
+          upPayload.gprIdxVec.last := encInstrR.last.rs2
+        } else {
           upPayload.gprIdxVec.last := 0x0
-        //}
+        }
         upPayload.gprIdxVec(0) := encInstrR.last.rs1
         upPayload.gprIdxVec(1) := encInstrR.last.rs2
       }
