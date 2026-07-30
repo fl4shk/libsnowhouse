@@ -1707,6 +1707,18 @@ case class SnowHouseForFmaxPsWbCommitEtc(
       )
     )
   )
+  val myScoreboardFwdRegFileWrPulse = (
+    cfg.optScoreboard
+  ) generate (
+    master(
+      Flow(
+        PipeSimpleDualPortMemDrivePayload(
+          dataType=UInt(cfg.mainWidth bits),
+          wordCount=cfg.regFileCfg.wordCountArr(0),
+        )
+      )
+    )
+  )
   val scoreboardTag = (
     cfg.optScoreboard
   ) generate (
@@ -2878,12 +2890,11 @@ case class SnowHouseForFmaxPipeStageWriteBack(
   //)
   if (cfg.optScoreboard) {
     //myCommitFinalOutpStm.ready := True
-    myReorderBuf.io.push << {
-      //myCommitForkStm.head
-      val myTempReorderBufIdx = (
-        myCommitBackStm.myWbPayload
-        .instrCnt.scoreboardIssuePayload.reorderBufIdx
-      )
+    val myTempReorderBufIdx = (
+      myCommitBackStm.myWbPayload
+      .instrCnt.scoreboardIssuePayload.reorderBufIdx
+    )
+    val myTempCommitStm = (
       myCommitBackStm.throwWhen(
         myTempReorderBufIdx
         === (
@@ -2894,6 +2905,16 @@ case class SnowHouseForFmaxPipeStageWriteBack(
           init(0x2)
         )
       )
+    )
+    io.commitEtc.myScoreboardFwdRegFileWrPulse.valid := (
+      myTempCommitStm.fire
+    )
+    io.commitEtc.myScoreboardFwdRegFileWrPulse.payload := (
+      myTempCommitStm.regFileWrite
+    )
+    myReorderBuf.io.push << {
+      //myCommitForkStm.head
+      myTempCommitStm
     }
   } else { // if (!cfg.optScoreboard)
     //myCommitBackStm
