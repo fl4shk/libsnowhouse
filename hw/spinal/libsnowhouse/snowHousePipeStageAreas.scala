@@ -3113,9 +3113,9 @@ case class SnowHousePipeStagePreFwd(
               myHistRegFileWrPulse(1).data
             )
           }
-          is (M"00-") {
+          is (M"001") {
             outp.myPreFwdRdMemWord(jdx) := (
-              myHistRegFileWrPulse(1).data
+              myHistRegFileWrPulse(2).data
             )
           }
           default {
