@@ -2611,88 +2611,89 @@ case class SnowHousePipeStagePreFwd(
     //    init=stickyFwdRegFileWrPulseVec.getZero
     //  )
     //)
-    for (idx <- 0 until cfg.regFileCfg.modRdPortCnt) {
-      //when (
-      //  RegNext(
-      //    //upIsFiring,//cLink.up.isFiring,
-      //    (
-      //      myTempSaveOutpCond
-      //      //&& (
-      //      //  (
-      //      //    !myBranchMispredictEtc
-      //      //    && !rMyPsExSetPcState
-      //      //  )
-      //      //  || outp.regPcSetItCnt(1).lsb
-      //      //)
-      //    ),
-      //    init=False
-      //  )
-      //  && (
-      //    (
-      //      !myBranchMispredictEtc
-      //      && !rMyPsExSetPcState
-      //    )
-      //    || outp.regPcSetItCnt(1).lsb
-      //  )
-      //) {
-      //  stickyFwdRegFileWrPulseVec(idx).valid := False
-      //}
 
-      //when (
-      //  forFmaxRegFileWrPulseArr(0).fire
-      //  && (
-      //    forFmaxRegFileWrPulseArr(0).addr 
-      //    === outp.gprIdxVec(idx)
-      //  )
-      //) {
-      //  stickyFwdRegFileWrPulseVec(idx).valid := True
-      //  stickyFwdRegFileWrPulseVec(idx).payload := (
-      //    forFmaxRegFileWrPulseArr(0).data
-      //  )
-      //}
+    //for (idx <- 0 until cfg.regFileCfg.modRdPortCnt) {
+    //  //when (
+    //  //  RegNext(
+    //  //    //upIsFiring,//cLink.up.isFiring,
+    //  //    (
+    //  //      myTempSaveOutpCond
+    //  //      //&& (
+    //  //      //  (
+    //  //      //    !myBranchMispredictEtc
+    //  //      //    && !rMyPsExSetPcState
+    //  //      //  )
+    //  //      //  || outp.regPcSetItCnt(1).lsb
+    //  //      //)
+    //  //    ),
+    //  //    init=False
+    //  //  )
+    //  //  && (
+    //  //    (
+    //  //      !myBranchMispredictEtc
+    //  //      && !rMyPsExSetPcState
+    //  //    )
+    //  //    || outp.regPcSetItCnt(1).lsb
+    //  //  )
+    //  //) {
+    //  //  stickyFwdRegFileWrPulseVec(idx).valid := False
+    //  //}
 
-      switch (
-        (
-          forFmaxRegFileWrPulseArr(0).fire
-          && (
-            forFmaxRegFileWrPulseArr(0).addr
-            === outp.gprIdxVec(idx)
-          )
-        )
-        //stickyFwdRegFileWrPulseVec(idx).fire
-        ## (
-          RegNext(
-            //cLink.up.isFiring,
-            upIsFiring,
-            init=False
-          )
-          || rose(
-            //cLink.up.isValid
-            upIsValid
-          )
-        )
-      ) {
-        is (M"1-") {
-          outp.myExt(0).rdMemWord(idx) := (
-            forFmaxRegFileWrPulseArr(0).data
-            //stickyFwdRegFileWrPulseVec(idx).payload
-          )
-        }
-        is (M"01") {
-          outp.myExt(0).rdMemWord(idx) := (
-            inp.myExt(0).rdMemWord(idx)
-          )
-        }
-        default {
-          outp.myExt(0).rdMemWord(idx) := (
-            RegNext(
-              outp.myExt(0).rdMemWord(idx),
-              init=outp.myExt(0).rdMemWord(idx).getZero
-            )
-          )
-        }
-      }
-    }
+    //  //when (
+    //  //  forFmaxRegFileWrPulseArr(0).fire
+    //  //  && (
+    //  //    forFmaxRegFileWrPulseArr(0).addr 
+    //  //    === outp.gprIdxVec(idx)
+    //  //  )
+    //  //) {
+    //  //  stickyFwdRegFileWrPulseVec(idx).valid := True
+    //  //  stickyFwdRegFileWrPulseVec(idx).payload := (
+    //  //    forFmaxRegFileWrPulseArr(0).data
+    //  //  )
+    //  //}
+
+    //  switch (
+    //    (
+    //      forFmaxRegFileWrPulseArr(0).fire
+    //      && (
+    //        forFmaxRegFileWrPulseArr(0).addr
+    //        === outp.gprIdxVec(idx)
+    //      )
+    //    )
+    //    //stickyFwdRegFileWrPulseVec(idx).fire
+    //    ## (
+    //      RegNext(
+    //        //cLink.up.isFiring,
+    //        upIsFiring,
+    //        init=False
+    //      )
+    //      || rose(
+    //        //cLink.up.isValid
+    //        upIsValid
+    //      )
+    //    )
+    //  ) {
+    //    is (M"1-") {
+    //      outp.myExt(0).rdMemWord(idx) := (
+    //        forFmaxRegFileWrPulseArr(0).data
+    //        //stickyFwdRegFileWrPulseVec(idx).payload
+    //      )
+    //    }
+    //    is (M"01") {
+    //      outp.myExt(0).rdMemWord(idx) := (
+    //        inp.myExt(0).rdMemWord(idx)
+    //      )
+    //    }
+    //    default {
+    //      outp.myExt(0).rdMemWord(idx) := (
+    //        RegNext(
+    //          outp.myExt(0).rdMemWord(idx),
+    //          init=outp.myExt(0).rdMemWord(idx).getZero
+    //        )
+    //      )
+    //    }
+    //  }
+    //}
 
     //when (
     //  //myWrPulse
@@ -8387,45 +8388,45 @@ case class SnowHousePipeStageExecute(
               //  )
               //}
               //if (cfg.optScoreboard) {
-                switch (
-                  (
-                    forFmaxRegFileWrPulseArr(0).fire
-                    && (
-                      forFmaxRegFileWrPulseArr(0).addr
-                      === outp.gprIdxVec(jdx)
-                    )
-                  )
-                  //stickyFwdRegFileWrPulseVec(jdx).fire
-                  ## (
-                    RegNext(
-                      cLink.up.isFiring,
-                      init=False
-                    )
-                    || rose(
-                      cLink.up.isValid
-                    )
-                  )
-                ) {
-                  is (M"1-") {
-                    outp.myExt(0).rdMemWord(jdx) := (
-                      forFmaxRegFileWrPulseArr(0).data
-                      //stickyFwdRegFileWrPulseVec(jdx).payload
-                    )
-                  }
-                  is (M"01") {
+                //switch (
+                //  (
+                //    forFmaxRegFileWrPulseArr(0).fire
+                //    && (
+                //      forFmaxRegFileWrPulseArr(0).addr
+                //      === outp.gprIdxVec(jdx)
+                //    )
+                //  )
+                //  //stickyFwdRegFileWrPulseVec(jdx).fire
+                //  ## (
+                //    RegNext(
+                //      cLink.up.isFiring,
+                //      init=False
+                //    )
+                //    || rose(
+                //      cLink.up.isValid
+                //    )
+                //  )
+                //) {
+                //  is (M"1-") {
+                //    outp.myExt(0).rdMemWord(jdx) := (
+                //      forFmaxRegFileWrPulseArr(0).data
+                //      //stickyFwdRegFileWrPulseVec(jdx).payload
+                //    )
+                //  }
+                //  is (M"01") {
                     outp.myExt(0).rdMemWord(jdx) := (
                       inp.myExt(0).rdMemWord(jdx)
                     )
-                  }
-                  default {
-                    outp.myExt(0).rdMemWord(jdx) := (
-                      RegNext(
-                        outp.myExt(0).rdMemWord(jdx),
-                        init=outp.myExt(0).rdMemWord(jdx).getZero
-                      )
-                    )
-                  }
-                }
+                //  }
+                //  default {
+                //    outp.myExt(0).rdMemWord(jdx) := (
+                //      RegNext(
+                //        outp.myExt(0).rdMemWord(jdx),
+                //        init=outp.myExt(0).rdMemWord(jdx).getZero
+                //      )
+                //    )
+                //  }
+                //}
                 //outp.myExt(0).rdMemWord(jdx) := (
                 //  inp.myExt(0).rdMemWord(jdx)
                 //)

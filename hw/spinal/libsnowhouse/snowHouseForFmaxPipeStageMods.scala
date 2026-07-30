@@ -428,6 +428,7 @@ case class SnowHouseForFmaxScoreboard(
           //  rMyInfoVec(jdx).hazardValid
           //  //|| io.myTempOpMayNeedHazardCheck
           //)
+          && rMyInfoVec(jdx).issueHazardValid
           && rMyInfoVec(jdx).issueAllocValid
         )
       )
