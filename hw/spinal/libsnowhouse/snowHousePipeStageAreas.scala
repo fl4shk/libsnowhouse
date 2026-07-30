@@ -3119,6 +3119,7 @@ case class SnowHousePipeStagePreFwd(
         }
         switch (
           myTempHistFwdForceToZero(jdx)
+          ## myTempHistFwdForceToZero(jdx)
           ## myTempHistFwdValid(jdx)
         ) {
           val size = myTempHistFwdValid(jdx).getWidth
@@ -3127,9 +3128,11 @@ case class SnowHousePipeStagePreFwd(
               //("-" * idx)
               //+ "1"
               //+ (("0" * (myTempHistFwdValid(jdx).getWidth - idx - 1)))
-              "0" + ("-" * (size - idx - 1) + "1" + ("0" * idx))
+              "00" + ("-" * (size - idx - 1) + "1" + ("0" * idx))
             })) {
-              //when (!myTempHistFwdForceToZero(jdx)) {
+              //when (
+              //  !myTempHistFwdForceToZero(jdx)
+              //) {
                 outp.forFmaxFwdIdx(jdx) := idx + 1
               //} otherwise {
               //  // loads/stores aren't forwarded
