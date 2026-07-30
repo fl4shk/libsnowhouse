@@ -760,8 +760,8 @@ case class SnowHouseConfig(
             //4
             //2
             //3
-            //1
-            2
+            1
+            //2
           ) else (
             0
           )
@@ -1878,7 +1878,9 @@ case class SnowHousePipePayloadNonExt(
     cfg.optForFmax
   ) generate (
     Vec.fill(cfg.regFileCfg.modRdPortCnt)(
-      UInt(log2Up(cfg.optForFmaxPsExFwdSize) bits)
+      UInt(log2Up(
+        cfg.optForFmaxPsExFwdSize + 1
+      ) bits)
     )
   )
   val lcvDataBusSrc = (
@@ -2144,6 +2146,15 @@ case class SnowHousePipePayloadNonExt(
       cfg=cfg.regFileCfg,
     )
   )
+  val myPreFwdRdMemWord = (
+    cfg.optForFmax
+  ) generate (
+    Vec.fill(cfg.regFileCfg.modRdPortCnt)(
+      //Flow(
+        UInt(cfg.mainWidth bits)
+      //)
+    )
+  )
 }
 case class SnowHousePipePayload(
   cfg: SnowHouseConfig,
@@ -2204,6 +2215,7 @@ case class SnowHousePipePayload(
 
   //def myDbusHostPayload = nonExt.myDbusHostPayload
   def myFwd = nonExt.myFwd
+  def myPreFwdRdMemWord = nonExt.myPreFwdRdMemWord
 
   def mkOneExt(ydx: Int) = (
     PipeRegFilePayloadExt(

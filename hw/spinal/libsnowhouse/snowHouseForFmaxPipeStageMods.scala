@@ -2963,7 +2963,8 @@ case class SnowHouseForFmaxPipeStageWriteBack(
     myCommitAlmostFinalOutpStm.regFileWrite
   )
   if (cfg.optScoreboard) {
-    myCommitTrueFinalOutpStm <-< myCommitAlmostFinalOutpStm
+    //myCommitTrueFinalOutpStm <-< myCommitAlmostFinalOutpStm
+    myCommitTrueFinalOutpStm << myCommitAlmostFinalOutpStm
 
     (
       //myCommitAlmostFinalOutpStm
