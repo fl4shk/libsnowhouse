@@ -3002,7 +3002,7 @@ case class SnowHousePipeStagePreFwd(
         that=forFmaxRegFileWrPulseArr(0),
         when=forFmaxRegFileWrPulseArr(0).fire,
         length=(
-          2
+          3//2
           //+ (if (cfg.optScoreboard) (1) else (0))
         ),
         init=forFmaxRegFileWrPulseArr(0).getZero,
@@ -3103,12 +3103,17 @@ case class SnowHousePipeStagePreFwd(
           ).reverse)
         )
         switch (myFwdTempToSwitch.asBits) {
-          is (M"1-") {
+          is (M"1--") {
             outp.myPreFwdRdMemWord(jdx) := (
               myHistRegFileWrPulse(0).data
             )
           }
-          is (M"01") {
+          is (M"01-") {
+            outp.myPreFwdRdMemWord(jdx) := (
+              myHistRegFileWrPulse(1).data
+            )
+          }
+          is (M"00-") {
             outp.myPreFwdRdMemWord(jdx) := (
               myHistRegFileWrPulse(1).data
             )
