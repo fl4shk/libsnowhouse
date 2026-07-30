@@ -2908,6 +2908,7 @@ case class SnowHouseForFmaxPipeStageWriteBack(
     )
     io.commitEtc.myScoreboardFwdRegFileWrPulse.valid := (
       myTempCommitStm.fire
+      && !myTempCommitStm.myWbPayload.splitOp.opIsMemAccess
     )
     io.commitEtc.myScoreboardFwdRegFileWrPulse.payload := (
       myTempCommitStm.regFileWrite
