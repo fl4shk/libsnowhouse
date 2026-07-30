@@ -444,10 +444,10 @@ case class SnowHouseForFmaxScoreboard(
           (
             tempRegIdx === rMyInfoVec(jdx).gprIdxVec.last
           )
-          //|| (
-          //  // technically this is a WAR hazard
-          //  rMyInfoVec(jdx).gprIdxVec(idx) === io.readGprs.gprIdxVec.last
-          //)
+          || (
+            // technically this is a WAR hazard
+            rMyInfoVec(jdx).gprIdxVec(idx) === io.readGprs.gprIdxVec.last
+          )
         )
         //&& tempRegIdx.orR // check for non-zero
         && rMyInfoVec(jdx).gprIsNonZeroVec.last

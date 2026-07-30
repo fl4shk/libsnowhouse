@@ -2857,8 +2857,8 @@ case class SnowHousePipeStagePreFwd(
       val myTempHist = History(
         that=temp,
         length=(
-          //cfg.optForFmaxPsExFwdSize
-          cfg.optPreFwdForFmaxPsExFwdSize
+          cfg.optForFmaxPsExFwdSize
+          //cfg.optPreFwdForFmaxPsExFwdSize
         ),
         when=(
           myTempSaveOutpCond
