@@ -2833,6 +2833,7 @@ case class SnowHouseForFmaxPipeStageWriteBack(
     if (cfg.optScoreboard) (
       StreamArbiterFactory.lowerFirst.noLock.on(
         myCommitFrontStmVec.last
+        //Vec(myCommitFrontStmVec.last.reverse)
       )
     ) else (
       Stream(
@@ -2852,11 +2853,18 @@ case class SnowHouseForFmaxPipeStageWriteBack(
   //    myCommitBackStm
   //  )
   //)
-  val myCommitFinalOutpStm = (
+  val myCommitAlmostFinalOutpStm = (
     if (cfg.optScoreboard) (
       myReorderBuf.io.pop
     ) else (
       myCommitBackStm
+    )
+  )
+  val myCommitTrueFinalOutpStm = (
+    if (cfg.optScoreboard) (
+      cloneOf(myCommitAlmostFinalOutpStm)
+    ) else (
+      myCommitAlmostFinalOutpStm
     )
   )
   //val myCommitForkStm = (
@@ -2944,20 +2952,23 @@ case class SnowHouseForFmaxPipeStageWriteBack(
   io.commitEtc.myRegFileWrPulse.valid := (
     if (cfg.optScoreboard) (
       //myCommitBackStm.fire
-      myCommitFinalOutpStm.fire
+      myCommitAlmostFinalOutpStm.fire//valid
     ) else (
       //myCommitBackStm.valid
-      myCommitFinalOutpStm.valid
+      myCommitAlmostFinalOutpStm.valid
     )
   )
   io.commitEtc.myRegFileWrPulse.payload := (
     //myCommitBackStm.regFileWrite
-    myCommitFinalOutpStm.regFileWrite
+    myCommitAlmostFinalOutpStm.regFileWrite
   )
   if (cfg.optScoreboard) {
+    myCommitTrueFinalOutpStm <-< myCommitAlmostFinalOutpStm
+
     (
-      myCommitFinalOutpStm
+      //myCommitAlmostFinalOutpStm
       //myCommitForkStm.last
+      myCommitTrueFinalOutpStm
     )
     .translateInto(io.commitEtc.scoreboardTag)(
       dataAssignment=(outp, inp) => {
@@ -3218,7 +3229,7 @@ case class SnowHouseForFmaxPipeStageWriteBack(
   if (!cfg.optScoreboard) {
     setCommitEtc(
       someMyWbPayload=myWbPayloadVec.head,
-      someCommitStm=myCommitFinalOutpStm,
+      someCommitStm=myCommitAlmostFinalOutpStm,
       //someRegFileWrPulseStm=myRegFileWrPulseOutpStm,
       isMem=false
     )
@@ -3280,69 +3291,69 @@ case class SnowHouseForFmaxPipeStageWriteBack(
     //)
     when (
       //myCommitOutpStm.fire
-      myCommitFinalOutpStm.fire
+      myCommitAlmostFinalOutpStm.fire
     ) {
       io.dbgInfo.regFileWriteData := (
-        myCommitFinalOutpStm.regFileWrite.data
+        myCommitAlmostFinalOutpStm.regFileWrite.data
       )
       io.dbgInfo.regFileWriteAddr := (
-        myCommitFinalOutpStm.regFileWrite.addr
+        myCommitAlmostFinalOutpStm.regFileWrite.addr
       )
       io.dbgInfo.regFileWriteEnable := (
         if (cfg.optScoreboard) (
           (
-            myCommitFinalOutpStm.regFileWrite.addr =/= 0x0
+            myCommitAlmostFinalOutpStm.regFileWrite.addr =/= 0x0
           )
           && (
-            myCommitFinalOutpStm.fire
+            myCommitAlmostFinalOutpStm.fire
           )
         ) else (
-          myCommitFinalOutpStm.fire
+          myCommitAlmostFinalOutpStm.fire
         )
       )
       io.dbgInfo.laggingRegPcAtRegFileWrite := (
-        myCommitFinalOutpStm.myWbPayload.laggingRegPc.resize(
+        myCommitAlmostFinalOutpStm.myWbPayload.laggingRegPc.resize(
           cfg.mainWidth bits
         )
       )
       io.dbgInfo.shouldIgnoreInstrAtRegFileWrite := (
         if (cfg.optScoreboard) (
-          myCommitFinalOutpStm.myWbPayload.instrCnt.shouldIgnoreInstr.last
+          myCommitAlmostFinalOutpStm.myWbPayload.instrCnt.shouldIgnoreInstr.last
           || (
-            !myCommitFinalOutpStm.fire
+            !myCommitAlmostFinalOutpStm.fire
           )
         ) else (
-          myCommitFinalOutpStm.myWbPayload.instrCnt.shouldIgnoreInstr.last
+          myCommitAlmostFinalOutpStm.myWbPayload.instrCnt.shouldIgnoreInstr.last
         )
       )
       io.dbgInfo.myPsIdBubbleAtRegFileWrite := (
         if (cfg.optScoreboard) {
-          val myInstrCnt = myCommitFinalOutpStm.myWbPayload.instrCnt
+          val myInstrCnt = myCommitAlmostFinalOutpStm.myWbPayload.instrCnt
           (
             myInstrCnt.myPsIdBubble.last
             //|| myInstrCnt.myPsExMemAccessBubble.last
             //|| myInstrCnt.myPsExMultiCycleBubble.last
             || (
-              !myCommitFinalOutpStm.fire
+              !myCommitAlmostFinalOutpStm.fire
             )
           )
         } else {
-          myCommitFinalOutpStm.myWbPayload.instrCnt.myPsIdBubble.last
+          myCommitAlmostFinalOutpStm.myWbPayload.instrCnt.myPsIdBubble.last
         }
       )
-      when (myCommitFinalOutpStm.myWbPayload.encInstr.payload.orR) {
+      when (myCommitAlmostFinalOutpStm.myWbPayload.encInstr.payload.orR) {
         io.dbgInfo.encInstrAtRegFileWrite := (
-          myCommitFinalOutpStm.myWbPayload.encInstr.payload
+          myCommitAlmostFinalOutpStm.myWbPayload.encInstr.payload
         )
       }
       io.dbgInfo.immAtRegFileWrite := (
-        myCommitFinalOutpStm.myWbPayload.imm.last
+        myCommitAlmostFinalOutpStm.myWbPayload.imm.last
       )
       io.dbgInfo.rdMemWordAtRegFileWrite := (
-        myCommitFinalOutpStm.myWbPayload.myExt(0).rdMemWord
+        myCommitAlmostFinalOutpStm.myWbPayload.myExt(0).rdMemWord
       )
       io.dbgInfo.gprIdxVecAtRegFileWrite := (
-        myCommitFinalOutpStm.myWbPayload.gprIdxVec
+        myCommitAlmostFinalOutpStm.myWbPayload.gprIdxVec
       )
     }
   }
