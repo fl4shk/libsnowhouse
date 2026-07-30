@@ -2268,9 +2268,24 @@ case class SnowHousePipeStageInstrDecode(
       rSavedGprMayNeedHazardCheckVec(
         upPayload(1).gprIdxVec.last
       ) := (
-        True
+        //True
+        if (cfg.myHaveZeroReg) (
+          upPayload(1).gprIdxVec.last =/= 0x0
+        ) else (
+          True
+        )
       )
     }
+    val myTempReorderBufIdx = (
+      upPayload(1).instrCnt.scoreboardIssuePayload.reorderBufIdx
+    )
+    myTempReorderBufIdx := (
+      RegNextWhen(
+        (myTempReorderBufIdx + 1),
+        cond=up.isFiring,
+        init=myTempReorderBufIdx.getZero
+      )
+    )
   })
   if (cfg.optScoreboard) {
     upPayload(1).instrCnt.myScoreboardOpMayNeedHazardCheck := (
