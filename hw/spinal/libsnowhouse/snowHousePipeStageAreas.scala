@@ -3002,8 +3002,8 @@ case class SnowHousePipeStagePreFwd(
         that=forFmaxRegFileWrPulseArr(0),
         when=forFmaxRegFileWrPulseArr(0).fire,
         length=(
-          2
-          //3//2
+          //2
+          3//2
           //+ (if (cfg.optScoreboard) (1) else (0))
         ),
         init=forFmaxRegFileWrPulseArr(0).getZero,
@@ -3110,14 +3110,31 @@ case class SnowHousePipeStagePreFwd(
             ))
           ).reverse)
         )
+        //val myFwdTempToSwitchPayload = (
+        //  Vec(Vec(
+        //    myHistRegFileWrPulse.map(myWrPulse => (
+        //      //myWrPulse.fire
+        //      //&&
+        //      (
+        //        outp.gprIdxVec(jdx)
+        //        === myWrPulse.addr
+        //      )
+        //    ))
+        //  ).reverse)
+        //)
         switch (
           myFwdTempToSwitch.asBits
+          //## RegNext
           ## (
             RegNext(upIsFiring, init=False)
             || rose(upIsValid)
           )
         ) {
-          is (M"1--") {
+          is (
+            //M"1--"
+            M"1---"
+            //M"1-"
+          ) {
             //outp.myPreFwdRdMemWord(jdx) := (
             //  myHistRegFileWrPulse(0).data
             //)
@@ -3126,7 +3143,11 @@ case class SnowHousePipeStagePreFwd(
               myHistRegFileWrPulse(0).data
             )
           }
-          is (M"01-") {
+          is (
+            //M"01-"
+            M"01--"
+            //M"01"
+          ) {
             //outp.myPreFwdRdMemWord(jdx) := (
             //  myHistRegFileWrPulse(1).data
             //)
@@ -3135,12 +3156,28 @@ case class SnowHousePipeStagePreFwd(
               myHistRegFileWrPulse(1).data
             )
           }
+          is (
+            //M"01-"
+            M"001-"
+            //M"01"
+          ) {
+            //outp.myPreFwdRdMemWord(jdx) := (
+            //  myHistRegFileWrPulse(2).data
+            //)
+            stickyFwdRegFileWrPulse(jdx).valid := True
+            stickyFwdRegFileWrPulse(jdx).payload := (
+              myHistRegFileWrPulse(2).data
+            )
+          }
           //is (M"001") {
           //  outp.myPreFwdRdMemWord(jdx) := (
           //    myHistRegFileWrPulse(2).data
           //  )
           //}
-          is (M"001") {
+          is (
+            //M"001"
+            M"0001"
+          ) {
             //outp.myPreFwdRdMemWord(jdx) := 0x0
             stickyFwdRegFileWrPulse(jdx).valid := False
             stickyFwdRegFileWrPulse(jdx).payload := 0x0
@@ -3161,6 +3198,88 @@ case class SnowHousePipeStagePreFwd(
             )
           }
         }
+        //switch (
+        //  myFwdTempToSwitchValid.asBits
+        //  ## myFwdTempToSwitchPayload.asBits
+        //  //## (
+        //  //  RegNext(upIsFiring, init=False)
+        //  //  || rose(upIsValid)
+        //  //)
+        //) {
+        //  is (M"1-1-") {
+        //    stickyFwdRegFileWrPulse(jdx).valid := True
+        //    stickyFwdRegFileWrPulse(jdx).payload := (
+        //      myHistRegFileWrPulse(0).data
+        //    )
+        //  }
+        //  is (M"0101") {
+        //    stickyFwdRegFileWrPulse(jdx).valid := True
+        //    stickyFwdRegFileWrPulse(jdx).payload := (
+        //      myHistRegFileWrPulse(1).data
+        //    )
+        //  }
+        //  is (M"1-0-") {
+        //  }
+        //  is (M"0100") {
+        //  }
+        //  default {
+        //    stickyFwdRegFileWrPulse(jdx).valid := (
+        //      RegNext(
+        //        stickyFwdRegFileWrPulse(jdx).valid,
+        //        init=stickyFwdRegFileWrPulse(jdx).valid.getZero
+        //      )
+        //    )
+        //    stickyFwdRegFileWrPulse(jdx).payload := (
+        //      RegNext(
+        //        stickyFwdRegFileWrPulse(jdx).payload,
+        //        init=stickyFwdRegFileWrPulse(jdx).payload.getZero
+        //      )
+        //    )
+        //  }
+        //  //is (M"1--") {
+        //  //  //outp.myPreFwdRdMemWord(jdx) := (
+        //  //  //  myHistRegFileWrPulse(0).data
+        //  //  //)
+        //  //  stickyFwdRegFileWrPulse(jdx).valid := True
+        //  //  stickyFwdRegFileWrPulse(jdx).payload := (
+        //  //    myHistRegFileWrPulse(0).data
+        //  //  )
+        //  //}
+        //  //is (M"01-") {
+        //  //  //outp.myPreFwdRdMemWord(jdx) := (
+        //  //  //  myHistRegFileWrPulse(1).data
+        //  //  //)
+        //  //  stickyFwdRegFileWrPulse(jdx).valid := True
+        //  //  stickyFwdRegFileWrPulse(jdx).payload := (
+        //  //    myHistRegFileWrPulse(1).data
+        //  //  )
+        //  //}
+        //  ////is (M"001") {
+        //  ////  outp.myPreFwdRdMemWord(jdx) := (
+        //  ////    myHistRegFileWrPulse(2).data
+        //  ////  )
+        //  ////}
+        //  //is (M"001") {
+        //  //  //outp.myPreFwdRdMemWord(jdx) := 0x0
+        //  //  stickyFwdRegFileWrPulse(jdx).valid := False
+        //  //  stickyFwdRegFileWrPulse(jdx).payload := 0x0
+        //  //}
+        //  //default {
+        //  //  //outp.myPreFwdRdMemWord(jdx) := 0x0
+        //  //  stickyFwdRegFileWrPulse(jdx).valid := (
+        //  //    RegNext(
+        //  //      stickyFwdRegFileWrPulse(jdx).valid,
+        //  //      init=stickyFwdRegFileWrPulse(jdx).valid.getZero
+        //  //    )
+        //  //  )
+        //  //  stickyFwdRegFileWrPulse(jdx).payload := (
+        //  //    RegNext(
+        //  //      stickyFwdRegFileWrPulse(jdx).payload,
+        //  //      init=stickyFwdRegFileWrPulse(jdx).payload.getZero
+        //  //    )
+        //  //  )
+        //  //}
+        //}
         outp.myPreFwdRdMemWord(jdx) := (
           stickyFwdRegFileWrPulse(jdx).payload
         )
