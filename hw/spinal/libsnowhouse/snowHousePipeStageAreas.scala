@@ -2842,11 +2842,11 @@ case class SnowHousePipeStagePreFwd(
 
       temp.branchMispredictEtcForceToZero := (
         (
-          (
+          //(
             myBranchMispredictEtc
             || rMyPsExSetPcState
-          )
-          && !outp.regPcSetItCnt(1).lsb
+          //)
+          //&& !outp.regPcSetItCnt(1).lsb
         )
       )
       //temp.anyForceToZero := (
