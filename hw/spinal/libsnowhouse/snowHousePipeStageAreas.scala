@@ -3002,10 +3002,18 @@ case class SnowHousePipeStagePreFwd(
         that=forFmaxRegFileWrPulseArr(0),
         when=forFmaxRegFileWrPulseArr(0).fire,
         length=(
-          3//2
+          2
+          //3//2
           //+ (if (cfg.optScoreboard) (1) else (0))
         ),
         init=forFmaxRegFileWrPulseArr(0).getZero,
+      )
+    )
+    val stickyFwdRegFileWrPulse = (
+      Vec.fill(cfg.regFileCfg.modRdPortCnt)(
+        Flow(
+          UInt(cfg.mainWidth bits)
+        )
       )
     )
 
@@ -3102,26 +3110,60 @@ case class SnowHousePipeStagePreFwd(
             ))
           ).reverse)
         )
-        switch (myFwdTempToSwitch.asBits) {
+        switch (
+          myFwdTempToSwitch.asBits
+          ## (
+            RegNext(upIsFiring, init=False)
+            || rose(upIsValid)
+          )
+        ) {
           is (M"1--") {
-            outp.myPreFwdRdMemWord(jdx) := (
+            //outp.myPreFwdRdMemWord(jdx) := (
+            //  myHistRegFileWrPulse(0).data
+            //)
+            stickyFwdRegFileWrPulse(jdx).valid := True
+            stickyFwdRegFileWrPulse(jdx).payload := (
               myHistRegFileWrPulse(0).data
             )
           }
           is (M"01-") {
-            outp.myPreFwdRdMemWord(jdx) := (
+            //outp.myPreFwdRdMemWord(jdx) := (
+            //  myHistRegFileWrPulse(1).data
+            //)
+            stickyFwdRegFileWrPulse(jdx).valid := True
+            stickyFwdRegFileWrPulse(jdx).payload := (
               myHistRegFileWrPulse(1).data
             )
           }
+          //is (M"001") {
+          //  outp.myPreFwdRdMemWord(jdx) := (
+          //    myHistRegFileWrPulse(2).data
+          //  )
+          //}
           is (M"001") {
-            outp.myPreFwdRdMemWord(jdx) := (
-              myHistRegFileWrPulse(2).data
-            )
+            //outp.myPreFwdRdMemWord(jdx) := 0x0
+            stickyFwdRegFileWrPulse(jdx).valid := False
+            stickyFwdRegFileWrPulse(jdx).payload := 0x0
           }
           default {
-            outp.myPreFwdRdMemWord(jdx) := 0x0
+            //outp.myPreFwdRdMemWord(jdx) := 0x0
+            stickyFwdRegFileWrPulse(jdx).valid := (
+              RegNext(
+                stickyFwdRegFileWrPulse(jdx).valid,
+                init=stickyFwdRegFileWrPulse(jdx).valid.getZero
+              )
+            )
+            stickyFwdRegFileWrPulse(jdx).payload := (
+              RegNext(
+                stickyFwdRegFileWrPulse(jdx).payload,
+                init=stickyFwdRegFileWrPulse(jdx).payload.getZero
+              )
+            )
           }
         }
+        outp.myPreFwdRdMemWord(jdx) := (
+          stickyFwdRegFileWrPulse(jdx).payload
+        )
         switch (
           myTempHistFwdForceToZero(jdx)
           ## myTempHistFwdForceToZero(jdx)
@@ -3153,7 +3195,11 @@ case class SnowHousePipeStagePreFwd(
             }
           }
           default {
-            when (!myFwdTempToSwitch.orR) {
+            when (
+              //!myFwdTempToSwitch.orR
+              //!stickyFwdRegFileWrPulse.map(_.fire).orR
+              !stickyFwdRegFileWrPulse(jdx).fire
+            ) {
               outp.forFmaxFwdIdx(jdx) := (
                 0x0
                 //(1 << outp.forFmaxFwdIdx(jdx).getWidth) - 1
