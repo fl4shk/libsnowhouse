@@ -1515,6 +1515,7 @@ case class SnowHousePipeStageInstrDecode(
   //val shouldIgnoreInstr: Bool,
   val doDecodeFunc: (SnowHousePipeStageInstrDecode) => Area,
   //val psIdFoundBubble: Bool,
+  val myScoreboardCommitStm: Stream[SnowHouseScoreboardCommitPayload],
 ) extends Area {
   def cfg = args.cfg
   def modIo = args.io
@@ -1906,9 +1907,22 @@ case class SnowHousePipeStageInstrDecode(
       POST_LD_1
       = newElement();
   }
+  upPayload(1).instrCnt.myPsIdBubble.foreach(item => {
+    item := False
+  })
+  def doSendBubbleMainMost(
+  ): Unit = {
+    require(cfg.useLcvDataBus)
+    cId.duplicateIt()
+    //upPayload(1).setAsBubbleMain(Some(True))
 
-  val myLcvDbusPartAArea = (
+    //down(pId) := upPayload(1)
+    down(pId).setAsBubbleMain(Some(True))
+  }
+
+  val myNonScoreboardLcvDbusPartAArea = (
     cfg.useLcvDataBus
+    && !cfg.optScoreboard
   ) generate (new Area {
     //psIdFoundBubble := RegNext(psIdFoundBubble, init=False)
     down(pId).allowOverride
@@ -2025,16 +2039,6 @@ case class SnowHousePipeStageInstrDecode(
       //  init=False,
       //)
     )
-    upPayload(1).instrCnt.myPsIdBubble.foreach(item => {
-      item := False
-    })
-    def doSendBubbleMainMost(
-    ): Unit = {
-      cId.duplicateIt()
-      upPayload(1).setAsBubbleMain(Some(True))
-
-      down(pId) := upPayload(1)
-    }
     switch (rStallState) {
       is (MyLcvDbusStallState.IDLE) {
         when (up.isValid) {
@@ -2201,6 +2205,72 @@ case class SnowHousePipeStageInstrDecode(
     //  //  upPayload(1).branchTgtBuf
     //  //}
     //}
+  })
+
+  val myScoreboardLcvDbusPartAArea = (
+    cfg.useLcvDataBus
+    && cfg.optScoreboard
+  ) generate (new Area {
+    //psIdFoundBubble := RegNext(psIdFoundBubble, init=False)
+    down(pId).allowOverride
+
+    myScoreboardCommitStm.ready := True
+    val rSavedGprMayNeedHazardCheckVec = (
+      Reg(UInt(cfg.numGprs bits))
+      init(0x0)
+    )
+
+    val myMainHazardCheckVec = Vec.fill(
+      cfg.regFileCfg.modRdPortCnt
+    )(
+      //Bool()
+      //UInt(cfg.numGprs bits)
+      Bool()
+    )
+    for (jdx <- 0 until cfg.regFileCfg.modRdPortCnt) {
+      myMainHazardCheckVec(jdx) := (
+        rSavedGprMayNeedHazardCheckVec(
+          upPayload(1).gprIdxVec(jdx)
+        )
+      )
+    }
+    //when (myMainHazardCheckVec.orR) {
+    //  cId.duplicateIt()
+    //}
+
+    when (
+      //(
+      //  myHistCondAnyBubble(idx + 1)
+      //  //&& upPayload(1).myDoHaveHazardAddrCheckVec(idx)
+      //  && upPayload(1).myDoHaveHazardAddrCheckVec.orR
+      //)
+      myMainHazardCheckVec.orR
+      && !shouldClearExtraDecodeInfo
+    ) {
+      doSendBubbleMainMost()
+    }
+
+    //when (shouldClearExtraDecodeInfo) {
+    //  rSavedGprMayNeedHazardCheckVec
+    //}
+    when (myScoreboardCommitStm.fire) {
+      rSavedGprMayNeedHazardCheckVec(
+        myScoreboardCommitStm.myGprIdx
+      ) := (
+        False
+      )
+    }
+
+    when (
+      myTempOpMayNeedHazardCheck
+      && up.isFiring
+    ) {
+      rSavedGprMayNeedHazardCheckVec(
+        upPayload(1).gprIdxVec.last
+      ) := (
+        True
+      )
+    }
   })
   if (cfg.optScoreboard) {
     upPayload(1).instrCnt.myScoreboardOpMayNeedHazardCheck := (

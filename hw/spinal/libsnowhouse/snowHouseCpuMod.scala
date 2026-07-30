@@ -3805,18 +3805,19 @@ case class SnowHouseCpuConfig(
         numPostExPreWbPipeStages=(
           1
         ),
-        optMaxNumScoreboardInstrs=(
-          //None
-          Some(
-            //6
-            8
-            //4
-            //2
-            //1
-            //32
-            //8
-          )
-        ),
+        optScoreboard=true,
+        //optMaxNumScoreboardInstrs=(
+        //  //None
+        //  Some(
+        //    //6
+        //    8
+        //    //4
+        //    //2
+        //    //1
+        //    //32
+        //    //8
+        //  )
+        //),
         //optDualIssue=(
         //  false
         //),

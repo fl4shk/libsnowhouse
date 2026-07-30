@@ -636,11 +636,12 @@ case class SnowHouseForFmaxConfig(
     1
     //0
   ),
-  optMaxNumScoreboardInstrs: Option[Int]=Some(
-    //2
-    //1
-    8
-  ),
+  optScoreboard: Boolean=true,
+  //optMaxNumScoreboardInstrs: Option[Int]=Some(
+  //  //2
+  //  //1
+  //  8
+  //),
   //optDualIssue: Boolean=(
   //  true
   //  //false
@@ -726,7 +727,8 @@ case class SnowHouseConfig(
   val optScoreboard = (
     optForFmaxCfg match {
       case Some(myForFmaxCfg) => (
-        myForFmaxCfg.optMaxNumScoreboardInstrs != None
+        //myForFmaxCfg.optMaxNumScoreboardInstrs != None
+        myForFmaxCfg.optScoreboard
       )
       case None => (
         false
@@ -754,18 +756,18 @@ case class SnowHouseConfig(
           //  myForFmaxCfg.numPostExPreWbPipeStages
           //)
         ) + 3//2//1//2//1//3//2//1//2//1//2//6//5//4//6//5//4//3//2//3//4//5//6//3//6//5//4//3//6//5//4//3//6//5//4//3//2//3//2//3//2//3//2//5//4//3//5
-        + (
-          if (optScoreboard) (
-            //6
-            //4
-            //2
-            //3
-            1
-            //2
-          ) else (
-            0
-          )
-        )
+        //+ (
+        //  if (optScoreboard) (
+        //    //6
+        //    //4
+        //    //2
+        //    //3
+        //    1
+        //    //2
+        //  ) else (
+        //    0
+        //  )
+        //)
         //+ 1 // final forwarding stage for saved WB `myRegFileWrPulse`
       )
       case None => (
@@ -827,46 +829,47 @@ case class SnowHouseConfig(
       )
     )
   )
-  val optMaxNumScoreboardInstrs = (
-    optForFmaxCfg match {
-      case Some(myForFmaxCfg) => (
-        myForFmaxCfg.optMaxNumScoreboardInstrs match {
-          case Some(myNumScoreboardInstrs) => (
-            myNumScoreboardInstrs
-          )
-          case None => (
-            0
-          )
-        }
-      )
-      case None => (
-        0
-      )
-    }
-  )
+  //val optMaxNumScoreboardInstrs = (
+  //  optForFmaxCfg match {
+  //    case Some(myForFmaxCfg) => (
+  //      myForFmaxCfg.optMaxNumScoreboardInstrs match {
+  //        case Some(myNumScoreboardInstrs) => (
+  //          myNumScoreboardInstrs
+  //        )
+  //        case None => (
+  //          0
+  //        )
+  //      }
+  //    )
+  //    case None => (
+  //      0
+  //    )
+  //  }
+  //)
   val optScoreboardReorderBufWidth = (
-    log2Up(optMaxNumScoreboardInstrs + 1)
+    //log2Up(optMaxNumScoreboardInstrs + 1)
+    log2Up(myPsIdBubbleNumFollowingInstrs + 1)
   )
-  val optNumScoreboardTags = (
-    if (optScoreboard) (
-      (
-        optMaxNumScoreboardInstrs
-        //+ myPsIdBubbleNumFollowingInstrs
-      )
-    ) else (
-      0
-    )
-  )
+  //val optNumScoreboardTags = (
+  //  if (optScoreboard) (
+  //    (
+  //      optMaxNumScoreboardInstrs
+  //      //+ myPsIdBubbleNumFollowingInstrs
+  //    )
+  //  ) else (
+  //    0
+  //  )
+  //)
   val optScoreboardCommitVecSize = (
     2
   )
-  val optScoreboardTagWidth = (
-    if (optScoreboard) (
-      log2Up(optNumScoreboardTags)
-    ) else (
-      0
-    )
-  )
+  //val optScoreboardTagWidth = (
+  //  if (optScoreboard) (
+  //    log2Up(optNumScoreboardTags)
+  //  ) else (
+  //    0
+  //  )
+  //)
   val numMultiIssue = (
     1 // TODO: support multiple issue
   )
@@ -1544,8 +1547,8 @@ case class SnowHouseInstrCnt(
   ) generate (
     SnowHouseScoreboardIssuePayload(cfg=cfg)
   )
-  def scoreboardTag = scoreboardIssuePayload.tag
-  def scoreboardIssueCntOverflow = scoreboardIssuePayload.cntOverflow
+  //def scoreboardTag = scoreboardIssuePayload.tag
+  //def scoreboardIssueCntOverflow = scoreboardIssuePayload.cntOverflow
   val myScoreboardOpMayNeedHazardCheck = (
     cfg.optScoreboard
   ) generate (
@@ -1564,6 +1567,11 @@ case class SnowHouseInstrCnt(
     Bool()
   )
   val myPsIdBubble = Vec.fill(cfg.lowerMyFanoutRegPcSetItCnt)(
+    Bool()
+  )
+  val myScoreboardReadGprsBubble = Vec.fill(
+    cfg.lowerMyFanoutRegPcSetItCnt
+  )(
     Bool()
   )
   val myPsExMemAccessBubble = Vec.fill(cfg.lowerMyFanoutRegPcSetItCnt)(

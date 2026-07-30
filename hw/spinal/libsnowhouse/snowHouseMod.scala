@@ -1889,6 +1889,7 @@ private[libsnowhouse] case class SnowHouseNotForFmax
     //shouldIgnoreInstr=shouldIgnoreInstr,
     doDecodeFunc=cfg.doInstrDecodeFunc,
     //psIdFoundBubble=psIdFoundBubble,
+    myScoreboardCommitStm=null
   )
   //--------
   //val pEx = Payload(SnowHouseRegFileModType(cfg=cfg))
@@ -2190,39 +2191,39 @@ private[libsnowhouse] case class SnowHouseForFmax(
     cfg=cfg,
     doDecodeFunc=cfg.doInstrDecodeFunc
   )
-  val psScoreboardIssue = (
-    cfg.optScoreboard
-  ) generate (
-    SnowHouseForFmaxPipeStageScoreboardIssue(cfg=cfg)
-  )
-  val psScoreboardReadGprs = (
-    cfg.optScoreboard
-  ) generate (
-    SnowHouseForFmaxPipeStageScoreboardReadGprs(cfg=cfg)
-  )
+  //val psScoreboardIssue = (
+  //  cfg.optScoreboard
+  //) generate (
+  //  SnowHouseForFmaxPipeStageScoreboardIssue(cfg=cfg)
+  //)
+  //val psScoreboardReadGprs = (
+  //  cfg.optScoreboard
+  //) generate (
+  //  SnowHouseForFmaxPipeStageScoreboardReadGprs(cfg=cfg)
+  //)
   val psPreFwd = SnowHouseForFmaxPipeStagePreFwd(cfg=cfg)
   val psEx = SnowHouseForFmaxPipeStageExecute(cfg=cfg)
   val psWb = SnowHouseForFmaxPipeStageWriteBack(cfg=cfg)
   //--------
 
   //psId.io.up <-/< psIf.io.down // extra pipeline stage for fmax
-  if (cfg.optScoreboard) {
-    psScoreboardIssue.io.up << psId.io.down
-    psScoreboardReadGprs.io.up << psScoreboardIssue.io.down
+  //if (cfg.optScoreboard) {
+  //  psScoreboardIssue.io.up << psId.io.down
+  //  psScoreboardReadGprs.io.up << psScoreboardIssue.io.down
 
-    //psId.io.myScoreboardReadGprsPayload := (
-    //  psScoreboardReadGprs.io.readGprsPayload
-    //)
-    //psScoreboardReadGprs.io.readGprsReady := (
-    //  psId.io.myScoreboardReadGprsReady
-    //)
-    psScoreboardIssue.io.myScoreboardReadGprs << (
-      psScoreboardReadGprs.io.readGprs
-    )
-    psPreFwd.io.up << psScoreboardReadGprs.io.down
-  } else {
+  //  //psId.io.myScoreboardReadGprsPayload := (
+  //  //  psScoreboardReadGprs.io.readGprsPayload
+  //  //)
+  //  //psScoreboardReadGprs.io.readGprsReady := (
+  //  //  psId.io.myScoreboardReadGprsReady
+  //  //)
+  //  psScoreboardIssue.io.myScoreboardReadGprs << (
+  //    psScoreboardReadGprs.io.readGprs
+  //  )
+  //  psPreFwd.io.up << psScoreboardReadGprs.io.down
+  //} else {
     psPreFwd.io.up <-/< psId.io.down
-  }
+  //}
   psId.io.up << psIf.io.down
   //psPreFwd.io.up << psId.io.down
   //psEx.io.up << psPreFwd.io.down
@@ -2395,10 +2396,12 @@ private[libsnowhouse] case class SnowHouseForFmax(
   //)
   if (cfg.optScoreboard) {
     psPreFwd.io.myRegFileWrPulse << (
-      psWb.io.commitEtc.myScoreboardFwdRegFileWrPulse
+      //psWb.io.commitEtc.myScoreboardFwdRegFileWrPulse
+      psWb.io.commitEtc.myRegFileWrPulse
     )
     psEx.io.myRegFileWrPulse << (
-      psWb.io.commitEtc.myScoreboardFwdRegFileWrPulse
+      //psWb.io.commitEtc.myScoreboardFwdRegFileWrPulse
+      psWb.io.commitEtc.myRegFileWrPulse
     )
   } else {
     psPreFwd.io.myRegFileWrPulse << (
@@ -2409,11 +2412,14 @@ private[libsnowhouse] case class SnowHouseForFmax(
     )
   }
   if (cfg.optScoreboard) {
-    psScoreboardIssue.io.myScoreboardCommmit << (
+    //psScoreboardIssue.io.myScoreboardCommit << (
+    //  psWb.io.commitEtc.scoreboardTag
+    //)
+    psId.io.myScoreboardCommit << (
       psWb.io.commitEtc.scoreboardTag
     )
-    //psId.io.myScoreboardCommmit.valid := psWb.io.commit.fire
-    //psId.io.myScoreboardCommmit.payload := (
+    //psId.io.myScoreboardCommit.valid := psWb.io.commit.fire
+    //psId.io.myScoreboardCommit.payload := (
     //  psWb.io.commit.scoreboardTag
     //)
   }
@@ -2421,10 +2427,11 @@ private[libsnowhouse] case class SnowHouseForFmax(
 
   psIf.io.psExSetPc := psExSetPc
   psId.io.psExSetPc := psExSetPc
-  if (cfg.optScoreboard) {
-    psScoreboardIssue.io.myBranchMispredictEtc := psExSetPc.fire
-    psScoreboardReadGprs.io.myBranchMispredictEtc := psExSetPc.fire
-  }
+
+  //if (cfg.optScoreboard) {
+  //  psScoreboardIssue.io.myBranchMispredictEtc := psExSetPc.fire
+  //  psScoreboardReadGprs.io.myBranchMispredictEtc := psExSetPc.fire
+  //}
   psPreFwd.io.myBranchMispredictEtc := psExSetPc.fire
   psExSetPc := psEx.io.psExSetPc
 

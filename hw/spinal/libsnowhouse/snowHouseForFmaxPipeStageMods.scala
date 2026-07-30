@@ -122,687 +122,692 @@ case class SnowHouseForFmaxPipeStageInstrFetch(
 case class SnowHouseScoreboardIssuePayload(
   cfg: SnowHouseConfig,
 ) extends Bundle {
-  val cntOverflow = Bool()
+  //val cntOverflow = Bool()
 
  // reorder buffer index
   val reorderBufIdx = UInt(cfg.optScoreboardReorderBufWidth bits)
-  val tag = UInt(cfg.optScoreboardTagWidth bits)
+  //val tag = UInt(cfg.optScoreboardTagWidth bits)
 }
 
-case class SnowHouseScoreboardReadGprsPayload(
-  cfg: SnowHouseConfig,
-) extends Bundle {
-  val gprIdxVec = (
-    Vec.fill(cfg.maxNumGprsPerInstr)(
-      UInt(log2Up(cfg.numGprs) bits)
-    )
-  )
-  val regPcSetItCnt = in(
-    Vec.fill(cfg.lowerMyFanoutRegPcSetItCnt)(
-      UInt(
-        //cfg.instrCntWidth bits
-        //2 bits
-        cfg.regPcSetItCntWidth bits
-      ) //Bool()
-    )
-  )
-  val tag = UInt(cfg.optScoreboardTagWidth bits)
-  val someNodeIsFiring = Bool()
-}
+//case class SnowHouseScoreboardReadGprsPayload(
+//  cfg: SnowHouseConfig,
+//) extends Bundle {
+//  val gprIdxVec = (
+//    Vec.fill(cfg.maxNumGprsPerInstr)(
+//      UInt(log2Up(cfg.numGprs) bits)
+//    )
+//  )
+//  val regPcSetItCnt = in(
+//    Vec.fill(cfg.lowerMyFanoutRegPcSetItCnt)(
+//      UInt(
+//        //cfg.instrCntWidth bits
+//        //2 bits
+//        cfg.regPcSetItCntWidth bits
+//      ) //Bool()
+//    )
+//  )
+//  val tag = UInt(cfg.optScoreboardTagWidth bits)
+//  val someNodeIsFiring = Bool()
+//}
 
 case class SnowHouseScoreboardCommitPayload(
   cfg: SnowHouseConfig,
 ) extends Bundle {
-  val tag = UInt(cfg.optScoreboardTagWidth bits)
+  //val tag = UInt(cfg.optScoreboardTagWidth bits)
+  val myGprIdx = UInt(log2Up(cfg.numGprs) bits)
 }
 
-case class SnowHouseForFmaxScoreboardIo(
-  cfg: SnowHouseConfig,
-) extends Bundle {
-  require(
-    cfg.optScoreboard
-  )
-  //--------
-  val myBranchMispredictEtc = in(Bool())
-  val issueRegPcSetItCnt = in(
-    Vec.fill(cfg.lowerMyFanoutRegPcSetItCnt)(
-      UInt(
-        //cfg.instrCntWidth bits
-        //2 bits
-        cfg.regPcSetItCntWidth bits
-      ) //Bool()
-    )
-  )
-  //val regPcSetItCnt = in(
-  //--------
-  val issueGprIdxVec = (
-    in(
-      //Vec.fill(cfg.numMultiIssue)(
-        Vec.fill(cfg.maxNumGprsPerInstr)(
-          UInt(log2Up(cfg.numGprs) bits)
-        )
-      //)
-    )
-  )
-  val issueMyTempOpMayNeedHazardCheck = (
-    in(
-      Bool()
-    )
-  )
-
-  val issue = (
-    //Vec.fill(cfg.numMultiIssue)(
-      Stream(
-        //UInt(cfg.optScoreboardTagWidth bits)
-        SnowHouseScoreboardIssuePayload(cfg=cfg)
-      )
-    //)
-  )
-
-  //val readGprsPayload = (
-  //  in(
-  //    //Vec.fill(cfg.numMultiIssue)(
-  //      //Stream(
-  //        SnowHouseScoreboardReadGprsPayload(cfg=cfg)
-  //      //)
-  //    //)
-  //  )
-  //)
-
-  //val readGprsReady = (
-  //  out(Bool())
-  //)
-  val readGprs = (
-    Stream(SnowHouseScoreboardReadGprsPayload(cfg=cfg))
-  )
-
-  val reorderBufWrite = (
-    //Vec.fill(cfg.numMultiIssue)(
-      Stream(
-        //UInt(cfg.optScoreboardTagWidth bits)
-        SnowHouseScoreboardCommitPayload(cfg=cfg)
-      )
-    //)
-  )
-
-  //for (idx <- 0 until cfg.numMultiIssue) {
-  //  master(issue(idx))
-  //  slave(commit(idx))
-  //}
-  master(issue)
-  slave(readGprs)
-  slave(reorderBufWrite)
-
-  //commit.foreach(item => {
-  //  slave(item)
-  //})
-}
-
-case class SnowHouseForFmaxScoreboard(
-  cfg: SnowHouseConfig,
-) extends Component {
-  require(
-    cfg.optScoreboard
-  )
-  //--------
-  val io = SnowHouseForFmaxScoreboardIo(cfg=cfg)
-  //--------
-  val rMyPsExSetPcState = (
-    Vec.fill(2)(
-      Reg(Bool(), init=False)
-    )
-  )
-
-  //for (idx <- 0 until rMyPsExSetPcState.size) {
-  //  when (!rMyPsExSetPcState(idx)) {
-  //    when (io.myBranchMispredictEtc) {
-  //      rMyPsExSetPcState(idx) := True
-  //    }
-  //  } otherwise {
-  //    when (
-  //      if (idx == 0) (
-  //        io.issue.fire
-  //        && io.issueRegPcSetItCnt(0).lsb
-  //      ) else (
-  //        io.readGprs.fire
-  //        && io.readGprs.regPcSetItCnt(0).lsb
-  //      )
-  //    ) {
-  //      rMyPsExSetPcState(idx) := False
-  //    }
-  //  }
-  //}
-
-  //val myIssueSharedShouldIgnoreCond = (
-  //  !(
-  //    rMyPsExSetPcState.head
-  //    && !io.issueRegPcSetItCnt(1).lsb
-  //  )
-  //)
-  //val myReadGprsSharedShouldIgnoreCond = (
-  //  !(
-  //    rMyPsExSetPcState.last
-  //    && !io.readGprs.regPcSetItCnt(1).lsb
-  //  )
-  //)
-
-  val myInstrAgeWidth = 12//4//5//4//6//8//12
-  val myMaxInstrAge = (
-    // we flush the pipeline when this counter gets close to overflowing!
-    // it is assumed there are fewer pipeline stages
-    // than the subtract amount 
-    (1 << myInstrAgeWidth) - 1 - 32//2//1//8 //- //32//64
-  )
-
-  case class FlushInfoPayload(
-  ) extends Bundle {
-    //val instrAgeCnt = UInt(myInstrAgeWidth bits)
-    val dontCare = Bool()
-  }
-  val rFlushInfo = {
-    val temp = Reg(Flow(FlushInfoPayload()))
-    temp.init(temp.getZero)
-    temp
-  }
-
-  case class MyInfo(
-  ) extends Bundle {
-    //val hazardValid = Bool()
-    val issueHazardValid = Bool()
-    val readGprsHazardValid = Bool()
-    val readGprsHazardValidFwdLimit = Bool()
-    //def fire = hazardValid
-    val issueAllocValid = Bool()
-    val instrAge = UInt(myInstrAgeWidth bits) //cloneOf(rFlushInfo)
-
-    val gprIsNonZeroVec = (
-      Vec.fill(
-        cfg.maxNumGprsPerInstr
-        //1
-      )(
-        Bool()
-      )
-    )
-    val gprIdxVec = (
-      Vec.fill(cfg.maxNumGprsPerInstr)(
-        UInt(log2Up(cfg.numGprs) bits)
-      )
-    )
-  }
-  val rMyInfoVec = (
-    Vec.fill(cfg.optMaxNumScoreboardInstrs)({
-      val temp = (
-        //Vec.fill(cfg.numMultiIssue)(
-          Reg(MyInfo())
-        //)
-      )
-      //temp.foreach(item => item.init(item.getZero))
-      temp.init(temp.getZero)
-      temp
-    })
-  )
-
-
-  val myIssueHazardCheckVecInnerSize = (
-    //(io.gprIdxVec.size - 1) * 2 + 1
-    //io.gprIdxVec.size + 3
-    //io.gprIdxVec.size - 1
-    //(io.gprIdxVec.size - 1) * 2 + 1
-    //io.issueGprIdxVec.size
-    1
-  )
-  val tempHaveIssueHazardAddrCheckVec = (
-    // WAW hazards
-    Vec.fill(cfg.optMaxNumScoreboardInstrs)(
-      Vec.fill(
-        //io.gprIdxVec.size + 2
-        myIssueHazardCheckVecInnerSize
-      )(
-        Bool()
-      )
-    )
-  )
-
-  val myReadGprsHazardCheckVecInnerSize = (
-    io.readGprs.gprIdxVec.size - 1
-  )
-
-  val tempHaveReadGprsHazardAddrCheckVec = (
-    // non-forwardable RAW hazards
-    // TODO: this should be switched to be computed in the "Issue" stage
-    // at some point (for fmax)
-    //--------
-    // perhaps instead it'd make sense to just add more pipeline stages
-    // (at least one)
-    // between `...ScoreboardReadGprs` and `...PreFwd`?
-    //--------
-    Vec.fill(cfg.optMaxNumScoreboardInstrs)(
-      Vec.fill(
-        myReadGprsHazardCheckVecInnerSize
-      )(
-        Bool()
-      )
-    )
-  )
-  //val tempHaveReadGprsHazardAddrCheckFwdLimitVec = (
-  //  // TODO: this should be switched to be computed in the "Issue" stage
-  //  // at some point (for fmax)
-  //  cloneOf(
-  //    tempHaveReadGprsHazardAddrCheckVec
-  //  )
-  //)
-
-  val myCommitHazardCheckVecInnerSize = (
-    // WAR hazards
-    io.issueGprIdxVec.size - 1
-  )
-  val tempHaveCommitHazardAddrCheckVec = (
-    // 
-    Vec.fill(cfg.optMaxNumScoreboardInstrs)(
-      Vec.fill(myCommitHazardCheckVecInnerSize)(
-        Bool()
-      )
-    )
-  )
-
-  for (
-    idx <- 0 until myIssueHazardCheckVecInnerSize//io.gprIdxVec.size + 2
-    //idx <- 0 until upPayload.gprIdxVec.size - 1
-  ) {
-    // WAW hazards
-    val tempRegIdx = io.issueGprIdxVec.last
-    for (jdx <- 0 until tempHaveIssueHazardAddrCheckVec.size) {
-      //tempHaveIssueHazardAddrCheckVec(jdx)(idx) := False
-      tempHaveIssueHazardAddrCheckVec(jdx)(idx) := (
-        //False
-        (
-          //tempRegIdx === myHistLastGprIdx(jdx + 1)(idx % 3)
-
-          //tempRegIdx === rMyInfoVec(jdx).gprIdxVec(
-          //  idx % io.gprIdxVec.size
-          //)
-          tempRegIdx === rMyInfoVec(jdx).gprIdxVec.last
-          //&& tempRegIdx.orR // check for non-zero
-          && rMyInfoVec(jdx).gprIsNonZeroVec.last
-          //&& (
-          //  rMyInfoVec(jdx).hazardValid
-          //  //|| io.myTempOpMayNeedHazardCheck
-          //)
-          && rMyInfoVec(jdx).issueHazardValid
-          && rMyInfoVec(jdx).issueAllocValid
-        )
-      )
-    }
-  }
-
-  for (idx <- 0 until myReadGprsHazardCheckVecInnerSize) {
-    // (non-forwardable) RAW hazards and also some kinds of WAR hazards
-    val tempRegIdx = io.readGprs.gprIdxVec(idx) //io.issueGprIdxVec(idx)
-    for (jdx <- 0 until cfg.optMaxNumScoreboardInstrs) {
-      val tempCmp = (
-        (
-          (
-            tempRegIdx === rMyInfoVec(jdx).gprIdxVec.last
-          )
-          || (
-            // technically this is a WAR hazard
-            rMyInfoVec(jdx).gprIdxVec(idx) === io.readGprs.gprIdxVec.last
-          )
-        )
-        //&& tempRegIdx.orR // check for non-zero
-        && rMyInfoVec(jdx).gprIsNonZeroVec.last
-        //&& (
-        //  rMyInfoVec(jdx).hazardValid
-        //  //|| io.myTempOpMayNeedHazardCheck
-        //)
-        && rMyInfoVec(jdx).issueAllocValid
-      )
-      tempHaveReadGprsHazardAddrCheckVec(jdx)(idx) := (
-        tempCmp
-        && (
-          rMyInfoVec(jdx).readGprsHazardValid
-          //|| rMyInfoVec(io.readGprs.tag).issueHazardValid
-        )
-      )
-      //tempHaveReadGprsHazardAddrCheckFwdLimitVec(jdx)(idx) := (
-      //  tempCmp
-      //  && (
-      //    //!rMyInfoVec(jdx).readGprsHazardValid
-      //    //&& 
-      //    rMyInfoVec(jdx).readGprsHazardValidFwdLimit
-      //    //|| rMyInfoVec(io.readGprs.tag).issueHazardValid
-      //  )
-      //)
-      //tempHaveReadGprsHazardAddrCheckVec(jdx)(idx) := (
-      //  (
-      //    //tempRegIdx === myHistLastGprIdx(jdx + 1).last
-      //    tempRegIdx === rMyInfoVec(jdx).gprIdxVec.last
-      //    //&& tempRegIdx.orR // check for non-zero
-      //    && rMyInfoVec(jdx).gprIsNonZeroVec.last
-      //    && (
-      //      // other "RAW" hazards will be handled via my implementation of
-      //      // fast forwarding!
-      //      rMyInfoVec(jdx).readGprsHazardValid
-      //      || rMyInfoVec(io.readGprs.tag).issueHazardValid
-      //      //rMyInfoVec(io.readGprs.tag).readGprsHazardValid
-      //      //|| io.myTempOpMayNeedHazardCheck
-      //      //|| (
-      //      //  io.readGprs.valid
-      //      //  && io.readGprs.tag === jdx
-      //      //  //&& tempHaveReadGprsHazardAddrCheckVec(jdx).orR
-      //      //  //&& rMyInfoVec(jdx).issueAllocValid
-      //      //  && rMyInfoVec(jdx).issueHazardValid
-      //      //)
-      //    )
-      //    && rMyInfoVec(jdx).issueAllocValid
-      //    //&& io.readGprs.valid
-      //  )
-      //)
-      when (
-        //io.readGprs.valid
-        //&& tempHaveReadGprsHazardAddrCheckVec(jdx).orR
-        //&& 
-        io.readGprs.fire
-        && io.readGprs.tag === jdx
-        && rMyInfoVec(jdx).issueAllocValid
-        //&& rMyInfoVec(jdx).issueHazardValid
-      ) {
-        rMyInfoVec(jdx).readGprsHazardValid := (
-          rMyInfoVec(jdx).issueHazardValid
-          //True
-        )
-        //rMyInfoVec(jdx).readGprsHazardValidFwdLimit := (
-        //  True
-        //)
-      }
-    }
-  }
-
-  //def myReadGprsInstrMayPassCntInitVal = (
-  //  cfg.optForFmaxPsExFwdSize - 3//2//3//2//1//2//1
-  //)
-  //def myReadGprsInstrMayPassCntInitVal = 2
-
-  //val rReadGprsInstrMayPassCnt = (
-  //  cfg.optScoreboard
-  //) generate (
-  //  Reg(UInt(log2Up(myReadGprsInstrMayPassCntInitVal + 1) bits))
-  //  init(myReadGprsInstrMayPassCntInitVal)
-  //)
-  io.readGprs.ready := (
-    (
-      io.readGprs.valid
-      && (
-        !tempHaveReadGprsHazardAddrCheckVec.asBits.orR
-        //&& rReadGprsInstrMayPassCnt.orR
-        //|| (
-        //  io.reorderBufWrite.fire
-        //  && (
-        //    io.reorderBufWrite.tag === io.readGprs.tag
-        //  )
-        //)
-      )
-      //&& !rMyInfoVec(io.readGprs.tag).readGprsHazardValid
-    )
-    //|| rFlushInfo.fire
-  )
-  //--------
-  //when (
-  //  io.readGprs.fire
-  //) {
-  //  rReadGprsInstrMayPassCnt := rReadGprsInstrMayPassCnt - 1
-  //}
-  //when (
-  //  io.readGprs.valid
-  //  && !io.readGprs.ready
-  //  && !tempHaveReadGprsHazardAddrCheckVec.asBits.orR
-  //  && io.readGprs.someNodeIsFiring
-  //  //&& !tempHaveReadGprsHazardAddrCheckFwdLimitVec.asBits.orR
-  //) {
-  //  rReadGprsInstrMayPassCnt := myReadGprsInstrMayPassCntInitVal
-  //}
-  //--------
-  //switch (
-  //  //io.readGprs.fire
-  //  io.readGprs.valid
-  //  ## io.readGprs.ready
-  //  //## io.readGprs.someNodeIsFiring
-  //  ## tempHaveReadGprsHazardAddrCheckVec.asBits.orR
-  //  //## tempHaveReadGprsHazardAddrCheckFwdLimitVec.asBits.orR
-  //  //## (rReadGprsInstrMayPassCnt < myReadGprsInstrMayPassCntInitVal)
-  //) {
-  //  is (
-  //    //M"11--"
-  //    M"11-"
-  //    //M"101"
-  //    //M"101"
-  //  ) {
-  //    rReadGprsInstrMayPassCnt := rReadGprsInstrMayPassCnt - 1
-  //  }
-  //  is (
-  //    //M"0--"
-  //    //M"0-"
-  //    //M"1-0"
-  //    //M"1-0-"
-  //    M"1-0"
-
-  //    //M"1-0"
-  //  ) {
-  //    //when (rReadGprsInstrMayPassCnt < myReadGprsInstrMayPassCntInitVal) {
-  //    //  rReadGprsInstrMayPassCnt := rReadGprsInstrMayPassCnt + 1
-  //    //} otherwise {
-  //    //}
-  //    rReadGprsInstrMayPassCnt := myReadGprsInstrMayPassCntInitVal
-  //  }
-  //  default {
-  //  }
-  //}
-  //when (
-  //  io.readGprs.fire
-  //  //&& !tempHaveReadGprsHazardAddrCheckVec.asBits.orR
-  //  && tempHaveReadGprsHazardAddrCheckFwdLimitVec.asBits.orR
-  //) {
-  //  rReadGprs
-  //}
-
-  //for (idx <- 0 until myCommitHazardCheckVecInnerSize) {
-  //  // WAR hazards
-  //  val tempRegIdx = (
-  //    //rMyInfoVec(io.commit.tag).gprIdxVec(idx)
-  //    rMyInfoVec(io.reorderBufWrite.tag).gprIdxVec.last
-  //  )
-  //  for (jdx <- 0 until cfg.optMaxNumScoreboardInstrs) {
-  //    val myTempInfoGprIdx = (
-  //      //rMyInfoVec(jdx).gprIdxVec.last
-  //      rMyInfoVec(jdx).gprIdxVec(idx)
-  //    )
-  //    tempHaveCommitHazardAddrCheckVec(jdx)(idx) := (
-  //      //tempRegIdx === myHistLastGprIdx(jdx + 1).last
-  //      //tempRegIdx === rMyInfoVec(jdx).gprIdxVec(idx)
-  //      tempRegIdx === myTempInfoGprIdx
-  //      //&& myTempInfoGprIdx.orR // check for non-zero
-  //      && rMyInfoVec(jdx).gprIsNonZeroVec(idx)
-  //      && (
-  //        rMyInfoVec(io.reorderBufWrite.tag).instrAge
-  //        > rMyInfoVec(jdx).instrAge
-  //      )
-  //      //&& rMyInfoVec(io.commit.tag).allocValid
-  //      //&& rMyInfoVec(jdx).hazardValid
-  //      //&& (
-  //      //  //rMyInfoVec(jdx).hazardValid
-  //      //  //|| 
-  //      //  rMyInfoVec(io.commit.tag).hazardValid
-  //      //)
-  //      && rMyInfoVec(jdx).issueAllocValid
-  //      && io.reorderBufWrite.tag =/= jdx
-  //      //&& io.commit.valid
-  //    )
-  //  }
-  //}
-  io.reorderBufWrite.ready := (
-    //io.reorderBufWrite.valid
-    //&& 
-    //!tempHaveCommitHazardAddrCheckVec.asBits.orR
-    True
-  )
-
-  val myInfoAllocValidVec = (
-    Vec.fill(cfg.optMaxNumScoreboardInstrs)(
-      Bool()
-    )
-    //Vec(rMyInfoVec.reverse.map(item => item.hazardValid))
-  )
-
-  for (jdx <- 0 until cfg.optMaxNumScoreboardInstrs) {
-    when (io.reorderBufWrite.fire && io.reorderBufWrite.tag === jdx) {
-      //myInfoAllocValidVec(jdx) := False
-      //tempHaveIssueHazardAddrCheckVec(jdx).foreach(
-      //  item => (
-      //    item := False
-      //  )
-      //)
-      rMyInfoVec(jdx).issueAllocValid := False
-      //rMyInfoVec(jdx).hazardValid := False
-      rMyInfoVec(jdx).issueHazardValid := False
-      rMyInfoVec(jdx).readGprsHazardValid := False
-      //rMyInfoVec(jdx).readGprsHazardValidFwdLimit := False
-    } otherwise {
-      //myInfoAllocValidVec(jdx) := rMyInfoVec(jdx).allocValid
-    }
-    myInfoAllocValidVec(jdx) := rMyInfoVec(jdx).issueAllocValid
-  }
-
-
-  io.issue.payload.allowOverride
-  io.issue.valid := (
-    //True
-    !tempHaveIssueHazardAddrCheckVec.asBits.orR
-    //&& !tempHaveCommitHazardAddrCheckVec.asBits.orR
-    && !rFlushInfo.fire
-  )
-  io.issue.payload := (
-    RegNext(io.issue.payload, init=io.issue.payload.getZero)
-  )
-  //io.issue.cntOverflow := rFlushInfo.fire
-  io.issue.cntOverflow := rFlushInfo.fire
-  io.issue.reorderBufIdx := (
-    RegNextWhen(
-      (io.issue.reorderBufIdx + 1),
-      cond=io.issue.fire,
-      init=io.issue.reorderBufIdx.getZero,
-    )
-  )
-
-// >>> for x in range(8):
-// ...     print(x, bin(x), bin(x ^ 0x7), bin(Bitscan(x ^ 0x7)))
-// ...     
-// 0 0b0 0b111 0b1
-// 1 0b1 0b110 0b10
-// 2 0b10 0b101 0b1
-// 3 0b11 0b100 0b100
-// 4 0b100 0b11 0b1
-// 5 0b101 0b10 0b10
-// 6 0b110 0b1 0b1
-// 7 0b111 0b0 0b0
-
-// >>> for idx in range(size):
-// ...     print(idx, ("-" * (size - idx - 1) + "1" + ("0" * idx)))
-// ...     
-// 0 ---1
-// 1 --10
-// 2 -100
-// 3 1000
-  switch (
-    //io.issue.ready
-    //## 
-    Bitscan(~myInfoAllocValidVec.asBits.asUInt)
-  ) {
-    val size = myInfoAllocValidVec.size
-    for (idx <- 0 until size) {
-      is (MaskedLiteral(
-        //"1" + 
-        ("-" * (size - idx - 1) + "1" + ("0" * idx))
-      )) {
-        // fast-ish (regarding fmax) search to implement the free list
-        // search
-        //io.issue.valid := (
-        //  //True
-        //  !tempHaveIssueHazardAddrCheckVec.asBits.orR
-        //  //&& !tempHaveCommitHazardAddrCheckVec.asBits.orR
-        //  && !rFlushInfo.fire
-        //)
-        //io.issue.payload := (
-        //  RegNext(io.issue.payload, init=io.issue.payload.getZero)
-        //)
-        when (io.issue.fire) {
-          io.issue.tag := idx
-          //rFlushInfo.instrAgeCnt := rFlushInfo.instrAgeCnt + 1
-          //rMyInfoVec(idx).instrAge := rFlushInfo.instrAgeCnt
-          rMyInfoVec(idx).issueHazardValid := (
-            io.issueMyTempOpMayNeedHazardCheck
-            //True
-          )
-          //rMyInfoVec(idx).readGprsHazardValid := (
-          //  io.issueMyTempOpMayNeedHazardCheck
-          //  && tempHaveReadGprsHazardAddrCheckVec.asBits.orR
-          //)
-          rMyInfoVec(idx).issueAllocValid := (
-            //io.myTempOpMayNeedHazardCheck
-            True
-          )
-
-          rMyInfoVec(idx).gprIdxVec := io.issueGprIdxVec
-          rMyInfoVec(idx).gprIsNonZeroVec := (
-            //io.issueGprIdxVec.last.orR // check for non-zero
-            // check for non-zero
-            Vec(io.issueGprIdxVec.map(item => item.orR))
-          )
-          //for (jdx <- 0 until io.gprIdxVec.size) {
-          //  rMyInfoVec(idx).gprIsNonZeroVec(jdx) := (
-          //    io.gprIdxVec(jdx).orR // check for non-zero
-          //  )
-          //}
-        }
-      }
-    }
-    default {
-      io.issue.valid := False
-      //io.issue.payload := 0x0
-      io.issue.payload := (
-        RegNext(io.issue.payload, init=io.issue.payload.getZero)
-      )
-    }
-  }
-  switch (
-    rFlushInfo.fire
-    ## (
-      //(rFlushInfo.instrAgeCnt === myMaxInstrAge)
-      //|| 
-      io.myBranchMispredictEtc
-    )
-    ## myInfoAllocValidVec.orR
-  ) {
-    // flush the pipeline
-    is (M"01-") {
-      rFlushInfo.valid := True
-      //rFlushInfo.instrAgeCnt := 0x0
-
-      //io.issue.cntOverflow := True
-    }
-    is (M"1-0") {
-      // we're done flushing the pipeline
-      // when every element of `rMyInfoVec` has been deallocated
-      rFlushInfo.valid := False
-      //io.issue.cntOverflow := False
-    }
-    default {
-    }
-  }
-  //when (!rFlushInfo.fire) {
-  //  when (rFlushInfo.payload === myMaxInstrAge) {
-  //  }
-  //}
-}
+//case class SnowHouseForFmaxScoreboardIo(
+//  cfg: SnowHouseConfig,
+//) extends Bundle {
+//  require(
+//    cfg.optScoreboard
+//  )
+//  //--------
+//  val myBranchMispredictEtc = in(Bool())
+//  val issueRegPcSetItCnt = in(
+//    Vec.fill(cfg.lowerMyFanoutRegPcSetItCnt)(
+//      UInt(
+//        //cfg.instrCntWidth bits
+//        //2 bits
+//        cfg.regPcSetItCntWidth bits
+//      ) //Bool()
+//    )
+//  )
+//  //val regPcSetItCnt = in(
+//  //--------
+//  val issueGprIdxVec = (
+//    in(
+//      //Vec.fill(cfg.numMultiIssue)(
+//        Vec.fill(cfg.maxNumGprsPerInstr)(
+//          UInt(log2Up(cfg.numGprs) bits)
+//        )
+//      //)
+//    )
+//  )
+//  val issueMyTempOpMayNeedHazardCheck = (
+//    in(
+//      Bool()
+//    )
+//  )
+//
+//  val issue = (
+//    //Vec.fill(cfg.numMultiIssue)(
+//      Stream(
+//        //UInt(cfg.optScoreboardTagWidth bits)
+//        SnowHouseScoreboardIssuePayload(cfg=cfg)
+//      )
+//    //)
+//  )
+//
+//  //val readGprsPayload = (
+//  //  in(
+//  //    //Vec.fill(cfg.numMultiIssue)(
+//  //      //Stream(
+//  //        SnowHouseScoreboardReadGprsPayload(cfg=cfg)
+//  //      //)
+//  //    //)
+//  //  )
+//  //)
+//
+//  //val readGprsReady = (
+//  //  out(Bool())
+//  //)
+//  val readGprs = (
+//    Stream(SnowHouseScoreboardReadGprsPayload(cfg=cfg))
+//  )
+//
+//  val reorderBufWrite = (
+//    //Vec.fill(cfg.numMultiIssue)(
+//      Stream(
+//        //UInt(cfg.optScoreboardTagWidth bits)
+//        SnowHouseScoreboardCommitPayload(cfg=cfg)
+//      )
+//    //)
+//  )
+//
+//  //for (idx <- 0 until cfg.numMultiIssue) {
+//  //  master(issue(idx))
+//  //  slave(commit(idx))
+//  //}
+//  master(issue)
+//  slave(readGprs)
+//  slave(reorderBufWrite)
+//
+//  //commit.foreach(item => {
+//  //  slave(item)
+//  //})
+//}
+//
+//case class SnowHouseForFmaxScoreboard(
+//  cfg: SnowHouseConfig,
+//) extends Component {
+//  require(
+//    cfg.optScoreboard
+//  )
+//  //--------
+//  val io = SnowHouseForFmaxScoreboardIo(cfg=cfg)
+//  //--------
+//  val rMyPsExSetPcState = (
+//    Vec.fill(2)(
+//      Reg(Bool(), init=False)
+//    )
+//  )
+//
+//  //for (idx <- 0 until rMyPsExSetPcState.size) {
+//  //  when (!rMyPsExSetPcState(idx)) {
+//  //    when (io.myBranchMispredictEtc) {
+//  //      rMyPsExSetPcState(idx) := True
+//  //    }
+//  //  } otherwise {
+//  //    when (
+//  //      if (idx == 0) (
+//  //        io.issue.fire
+//  //        && io.issueRegPcSetItCnt(0).lsb
+//  //      ) else (
+//  //        io.readGprs.fire
+//  //        && io.readGprs.regPcSetItCnt(0).lsb
+//  //      )
+//  //    ) {
+//  //      rMyPsExSetPcState(idx) := False
+//  //    }
+//  //  }
+//  //}
+//
+//  //val myIssueSharedShouldIgnoreCond = (
+//  //  !(
+//  //    rMyPsExSetPcState.head
+//  //    && !io.issueRegPcSetItCnt(1).lsb
+//  //  )
+//  //)
+//  //val myReadGprsSharedShouldIgnoreCond = (
+//  //  !(
+//  //    rMyPsExSetPcState.last
+//  //    && !io.readGprs.regPcSetItCnt(1).lsb
+//  //  )
+//  //)
+//
+//  val myInstrAgeWidth = 12//4//5//4//6//8//12
+//  val myMaxInstrAge = (
+//    // we flush the pipeline when this counter gets close to overflowing!
+//    // it is assumed there are fewer pipeline stages
+//    // than the subtract amount 
+//    (1 << myInstrAgeWidth) - 1 - 32//2//1//8 //- //32//64
+//  )
+//
+//  case class FlushInfoPayload(
+//  ) extends Bundle {
+//    //val instrAgeCnt = UInt(myInstrAgeWidth bits)
+//    val dontCare = Bool()
+//  }
+//  val rFlushInfo = {
+//    val temp = Reg(Flow(FlushInfoPayload()))
+//    temp.init(temp.getZero)
+//    temp
+//  }
+//
+//  case class MyInfo(
+//  ) extends Bundle {
+//    //val hazardValid = Bool()
+//    val issueHazardValid = Bool()
+//    val readGprsHazardValid = Bool()
+//    val readGprsHazardValidFwdLimit = Bool()
+//    //def fire = hazardValid
+//    val issueAllocValid = Bool()
+//    val instrAge = UInt(myInstrAgeWidth bits) //cloneOf(rFlushInfo)
+//
+//    val gprIsNonZeroVec = (
+//      Vec.fill(
+//        cfg.maxNumGprsPerInstr
+//        //1
+//      )(
+//        Bool()
+//      )
+//    )
+//    val gprIdxVec = (
+//      Vec.fill(cfg.maxNumGprsPerInstr)(
+//        UInt(log2Up(cfg.numGprs) bits)
+//      )
+//    )
+//  }
+//  val rMyInfoVec = (
+//    Vec.fill(cfg.optMaxNumScoreboardInstrs)({
+//      val temp = (
+//        //Vec.fill(cfg.numMultiIssue)(
+//          Reg(MyInfo())
+//        //)
+//      )
+//      //temp.foreach(item => item.init(item.getZero))
+//      temp.init(temp.getZero)
+//      temp
+//    })
+//  )
+//
+//
+//  val myIssueHazardCheckVecInnerSize = (
+//    //(io.gprIdxVec.size - 1) * 2 + 1
+//    //io.gprIdxVec.size + 3
+//    //io.gprIdxVec.size - 1
+//    //(io.gprIdxVec.size - 1) * 2 + 1
+//    //io.issueGprIdxVec.size
+//    1
+//  )
+//  val tempHaveIssueHazardAddrCheckVec = (
+//    // WAW hazards
+//    Vec.fill(cfg.optMaxNumScoreboardInstrs)(
+//      Vec.fill(
+//        //io.gprIdxVec.size + 2
+//        myIssueHazardCheckVecInnerSize
+//      )(
+//        Bool()
+//      )
+//    )
+//  )
+//
+//  val myReadGprsHazardCheckVecInnerSize = (
+//    io.readGprs.gprIdxVec.size - 1
+//  )
+//
+//  val tempHaveReadGprsHazardAddrCheckVec = (
+//    // non-forwardable RAW hazards
+//    // TODO: this should be switched to be computed in the "Issue" stage
+//    // at some point (for fmax)
+//    //--------
+//    // perhaps instead it'd make sense to just add more pipeline stages
+//    // (at least one)
+//    // between `...ScoreboardReadGprs` and `...PreFwd`?
+//    //--------
+//    Vec.fill(cfg.optMaxNumScoreboardInstrs)(
+//      Vec.fill(
+//        myReadGprsHazardCheckVecInnerSize
+//      )(
+//        Bool()
+//      )
+//    )
+//  )
+//  //val tempHaveReadGprsHazardAddrCheckFwdLimitVec = (
+//  //  // TODO: this should be switched to be computed in the "Issue" stage
+//  //  // at some point (for fmax)
+//  //  cloneOf(
+//  //    tempHaveReadGprsHazardAddrCheckVec
+//  //  )
+//  //)
+//
+//  val myCommitHazardCheckVecInnerSize = (
+//    // WAR hazards
+//    io.issueGprIdxVec.size - 1
+//  )
+//  val tempHaveCommitHazardAddrCheckVec = (
+//    // 
+//    Vec.fill(cfg.optMaxNumScoreboardInstrs)(
+//      Vec.fill(myCommitHazardCheckVecInnerSize)(
+//        Bool()
+//      )
+//    )
+//  )
+//
+//  for (
+//    idx <- 0 until myIssueHazardCheckVecInnerSize//io.gprIdxVec.size + 2
+//    //idx <- 0 until upPayload.gprIdxVec.size - 1
+//  ) {
+//    // WAW hazards
+//    val tempRegIdx = io.issueGprIdxVec.last
+//    for (jdx <- 0 until tempHaveIssueHazardAddrCheckVec.size) {
+//      //tempHaveIssueHazardAddrCheckVec(jdx)(idx) := False
+//      tempHaveIssueHazardAddrCheckVec(jdx)(idx) := (
+//        //False
+//        (
+//          //tempRegIdx === myHistLastGprIdx(jdx + 1)(idx % 3)
+//
+//          //tempRegIdx === rMyInfoVec(jdx).gprIdxVec(
+//          //  idx % io.gprIdxVec.size
+//          //)
+//          tempRegIdx === rMyInfoVec(jdx).gprIdxVec.last
+//          //&& tempRegIdx.orR // check for non-zero
+//          && rMyInfoVec(jdx).gprIsNonZeroVec.last
+//          //&& (
+//          //  rMyInfoVec(jdx).hazardValid
+//          //  //|| io.myTempOpMayNeedHazardCheck
+//          //)
+//          && rMyInfoVec(jdx).issueHazardValid
+//          && rMyInfoVec(jdx).issueAllocValid
+//        )
+//      )
+//    }
+//  }
+//
+//  for (idx <- 0 until myReadGprsHazardCheckVecInnerSize) {
+//    // (non-forwardable) RAW hazards and also some kinds of WAR hazards
+//    val tempRegIdx = io.readGprs.gprIdxVec(idx) //io.issueGprIdxVec(idx)
+//    for (jdx <- 0 until cfg.optMaxNumScoreboardInstrs) {
+//      val tempCmp = (
+//        (
+//          (
+//            tempRegIdx === rMyInfoVec(jdx).gprIdxVec.last
+//            && rMyInfoVec(jdx).readGprsHazardValid
+//          )
+//          || (
+//            // technically this is a WAR hazard
+//            rMyInfoVec(jdx).gprIdxVec(idx) === io.readGprs.gprIdxVec.last
+//            //&& rMyInfoVec(io.readGprs.tag).issueHazardValid
+//            && rMyInfoVec(jdx).issueHazardValid
+//          )
+//        )
+//        //&& tempRegIdx.orR // check for non-zero
+//        && rMyInfoVec(jdx).gprIsNonZeroVec.last
+//        //&& (
+//        //  rMyInfoVec(jdx).hazardValid
+//        //  //|| io.myTempOpMayNeedHazardCheck
+//        //)
+//        && rMyInfoVec(jdx).issueAllocValid
+//        && io.readGprs.tag =/= jdx
+//      )
+//      tempHaveReadGprsHazardAddrCheckVec(jdx)(idx) := (
+//        tempCmp
+//        //&& (
+//        //  rMyInfoVec(jdx).readGprsHazardValid
+//        //  //|| rMyInfoVec(io.readGprs.tag).issueHazardValid
+//        //)
+//      )
+//      //tempHaveReadGprsHazardAddrCheckFwdLimitVec(jdx)(idx) := (
+//      //  tempCmp
+//      //  && (
+//      //    //!rMyInfoVec(jdx).readGprsHazardValid
+//      //    //&& 
+//      //    rMyInfoVec(jdx).readGprsHazardValidFwdLimit
+//      //    //|| rMyInfoVec(io.readGprs.tag).issueHazardValid
+//      //  )
+//      //)
+//      //tempHaveReadGprsHazardAddrCheckVec(jdx)(idx) := (
+//      //  (
+//      //    //tempRegIdx === myHistLastGprIdx(jdx + 1).last
+//      //    tempRegIdx === rMyInfoVec(jdx).gprIdxVec.last
+//      //    //&& tempRegIdx.orR // check for non-zero
+//      //    && rMyInfoVec(jdx).gprIsNonZeroVec.last
+//      //    && (
+//      //      // other "RAW" hazards will be handled via my implementation of
+//      //      // fast forwarding!
+//      //      rMyInfoVec(jdx).readGprsHazardValid
+//      //      || rMyInfoVec(io.readGprs.tag).issueHazardValid
+//      //      //rMyInfoVec(io.readGprs.tag).readGprsHazardValid
+//      //      //|| io.myTempOpMayNeedHazardCheck
+//      //      //|| (
+//      //      //  io.readGprs.valid
+//      //      //  && io.readGprs.tag === jdx
+//      //      //  //&& tempHaveReadGprsHazardAddrCheckVec(jdx).orR
+//      //      //  //&& rMyInfoVec(jdx).issueAllocValid
+//      //      //  && rMyInfoVec(jdx).issueHazardValid
+//      //      //)
+//      //    )
+//      //    && rMyInfoVec(jdx).issueAllocValid
+//      //    //&& io.readGprs.valid
+//      //  )
+//      //)
+//      when (
+//        //io.readGprs.valid
+//        //&& tempHaveReadGprsHazardAddrCheckVec(jdx).orR
+//        //&& 
+//        io.readGprs.fire
+//        && io.readGprs.tag === jdx
+//        && rMyInfoVec(jdx).issueAllocValid
+//        //&& rMyInfoVec(jdx).issueHazardValid
+//      ) {
+//        rMyInfoVec(jdx).readGprsHazardValid := (
+//          rMyInfoVec(jdx).issueHazardValid
+//          //True
+//        )
+//        //rMyInfoVec(jdx).readGprsHazardValidFwdLimit := (
+//        //  True
+//        //)
+//      }
+//    }
+//  }
+//
+//  //def myReadGprsInstrMayPassCntInitVal = (
+//  //  cfg.optForFmaxPsExFwdSize - 3//2//3//2//1//2//1
+//  //)
+//  //def myReadGprsInstrMayPassCntInitVal = 2
+//
+//  //val rReadGprsInstrMayPassCnt = (
+//  //  cfg.optScoreboard
+//  //) generate (
+//  //  Reg(UInt(log2Up(myReadGprsInstrMayPassCntInitVal + 1) bits))
+//  //  init(myReadGprsInstrMayPassCntInitVal)
+//  //)
+//  io.readGprs.ready := (
+//    (
+//      io.readGprs.valid
+//      && (
+//        !tempHaveReadGprsHazardAddrCheckVec.asBits.orR
+//        //&& rReadGprsInstrMayPassCnt.orR
+//        //|| (
+//        //  io.reorderBufWrite.fire
+//        //  && (
+//        //    io.reorderBufWrite.tag === io.readGprs.tag
+//        //  )
+//        //)
+//      )
+//      //&& !rMyInfoVec(io.readGprs.tag).readGprsHazardValid
+//    )
+//    //|| rFlushInfo.fire
+//  )
+//  //--------
+//  //when (
+//  //  io.readGprs.fire
+//  //) {
+//  //  rReadGprsInstrMayPassCnt := rReadGprsInstrMayPassCnt - 1
+//  //}
+//  //when (
+//  //  io.readGprs.valid
+//  //  && !io.readGprs.ready
+//  //  && !tempHaveReadGprsHazardAddrCheckVec.asBits.orR
+//  //  && io.readGprs.someNodeIsFiring
+//  //  //&& !tempHaveReadGprsHazardAddrCheckFwdLimitVec.asBits.orR
+//  //) {
+//  //  rReadGprsInstrMayPassCnt := myReadGprsInstrMayPassCntInitVal
+//  //}
+//  //--------
+//  //switch (
+//  //  //io.readGprs.fire
+//  //  io.readGprs.valid
+//  //  ## io.readGprs.ready
+//  //  //## io.readGprs.someNodeIsFiring
+//  //  ## tempHaveReadGprsHazardAddrCheckVec.asBits.orR
+//  //  //## tempHaveReadGprsHazardAddrCheckFwdLimitVec.asBits.orR
+//  //  //## (rReadGprsInstrMayPassCnt < myReadGprsInstrMayPassCntInitVal)
+//  //) {
+//  //  is (
+//  //    //M"11--"
+//  //    M"11-"
+//  //    //M"101"
+//  //    //M"101"
+//  //  ) {
+//  //    rReadGprsInstrMayPassCnt := rReadGprsInstrMayPassCnt - 1
+//  //  }
+//  //  is (
+//  //    //M"0--"
+//  //    //M"0-"
+//  //    //M"1-0"
+//  //    //M"1-0-"
+//  //    M"1-0"
+//
+//  //    //M"1-0"
+//  //  ) {
+//  //    //when (rReadGprsInstrMayPassCnt < myReadGprsInstrMayPassCntInitVal) {
+//  //    //  rReadGprsInstrMayPassCnt := rReadGprsInstrMayPassCnt + 1
+//  //    //} otherwise {
+//  //    //}
+//  //    rReadGprsInstrMayPassCnt := myReadGprsInstrMayPassCntInitVal
+//  //  }
+//  //  default {
+//  //  }
+//  //}
+//  //when (
+//  //  io.readGprs.fire
+//  //  //&& !tempHaveReadGprsHazardAddrCheckVec.asBits.orR
+//  //  && tempHaveReadGprsHazardAddrCheckFwdLimitVec.asBits.orR
+//  //) {
+//  //  rReadGprs
+//  //}
+//
+//  //for (idx <- 0 until myCommitHazardCheckVecInnerSize) {
+//  //  // WAR hazards
+//  //  val tempRegIdx = (
+//  //    //rMyInfoVec(io.commit.tag).gprIdxVec(idx)
+//  //    rMyInfoVec(io.reorderBufWrite.tag).gprIdxVec.last
+//  //  )
+//  //  for (jdx <- 0 until cfg.optMaxNumScoreboardInstrs) {
+//  //    val myTempInfoGprIdx = (
+//  //      //rMyInfoVec(jdx).gprIdxVec.last
+//  //      rMyInfoVec(jdx).gprIdxVec(idx)
+//  //    )
+//  //    tempHaveCommitHazardAddrCheckVec(jdx)(idx) := (
+//  //      //tempRegIdx === myHistLastGprIdx(jdx + 1).last
+//  //      //tempRegIdx === rMyInfoVec(jdx).gprIdxVec(idx)
+//  //      tempRegIdx === myTempInfoGprIdx
+//  //      //&& myTempInfoGprIdx.orR // check for non-zero
+//  //      && rMyInfoVec(jdx).gprIsNonZeroVec(idx)
+//  //      && (
+//  //        rMyInfoVec(io.reorderBufWrite.tag).instrAge
+//  //        > rMyInfoVec(jdx).instrAge
+//  //      )
+//  //      //&& rMyInfoVec(io.commit.tag).allocValid
+//  //      //&& rMyInfoVec(jdx).hazardValid
+//  //      //&& (
+//  //      //  //rMyInfoVec(jdx).hazardValid
+//  //      //  //|| 
+//  //      //  rMyInfoVec(io.commit.tag).hazardValid
+//  //      //)
+//  //      && rMyInfoVec(jdx).issueAllocValid
+//  //      && io.reorderBufWrite.tag =/= jdx
+//  //      //&& io.commit.valid
+//  //    )
+//  //  }
+//  //}
+//  io.reorderBufWrite.ready := (
+//    //io.reorderBufWrite.valid
+//    //&& 
+//    //!tempHaveCommitHazardAddrCheckVec.asBits.orR
+//    True
+//  )
+//
+//  val myInfoAllocValidVec = (
+//    Vec.fill(cfg.optMaxNumScoreboardInstrs)(
+//      Bool()
+//    )
+//    //Vec(rMyInfoVec.reverse.map(item => item.hazardValid))
+//  )
+//
+//  for (jdx <- 0 until cfg.optMaxNumScoreboardInstrs) {
+//    when (io.reorderBufWrite.fire && io.reorderBufWrite.tag === jdx) {
+//      //myInfoAllocValidVec(jdx) := False
+//      //tempHaveIssueHazardAddrCheckVec(jdx).foreach(
+//      //  item => (
+//      //    item := False
+//      //  )
+//      //)
+//      rMyInfoVec(jdx).issueAllocValid := False
+//      //rMyInfoVec(jdx).hazardValid := False
+//      rMyInfoVec(jdx).issueHazardValid := False
+//      rMyInfoVec(jdx).readGprsHazardValid := False
+//      //rMyInfoVec(jdx).readGprsHazardValidFwdLimit := False
+//    } otherwise {
+//      //myInfoAllocValidVec(jdx) := rMyInfoVec(jdx).allocValid
+//    }
+//    myInfoAllocValidVec(jdx) := rMyInfoVec(jdx).issueAllocValid
+//  }
+//
+//
+//  io.issue.payload.allowOverride
+//  io.issue.valid := (
+//    //True
+//    !tempHaveIssueHazardAddrCheckVec.asBits.orR
+//    //&& !tempHaveCommitHazardAddrCheckVec.asBits.orR
+//    && !rFlushInfo.fire
+//  )
+//  io.issue.payload := (
+//    RegNext(io.issue.payload, init=io.issue.payload.getZero)
+//  )
+//  //io.issue.cntOverflow := rFlushInfo.fire
+//  io.issue.cntOverflow := rFlushInfo.fire
+//  io.issue.reorderBufIdx := (
+//    RegNextWhen(
+//      (io.issue.reorderBufIdx + 1),
+//      cond=io.issue.fire,
+//      init=io.issue.reorderBufIdx.getZero,
+//    )
+//  )
+//
+//// >>> for x in range(8):
+//// ...     print(x, bin(x), bin(x ^ 0x7), bin(Bitscan(x ^ 0x7)))
+//// ...     
+//// 0 0b0 0b111 0b1
+//// 1 0b1 0b110 0b10
+//// 2 0b10 0b101 0b1
+//// 3 0b11 0b100 0b100
+//// 4 0b100 0b11 0b1
+//// 5 0b101 0b10 0b10
+//// 6 0b110 0b1 0b1
+//// 7 0b111 0b0 0b0
+//
+//// >>> for idx in range(size):
+//// ...     print(idx, ("-" * (size - idx - 1) + "1" + ("0" * idx)))
+//// ...     
+//// 0 ---1
+//// 1 --10
+//// 2 -100
+//// 3 1000
+//  switch (
+//    //io.issue.ready
+//    //## 
+//    Bitscan(~myInfoAllocValidVec.asBits.asUInt)
+//  ) {
+//    val size = myInfoAllocValidVec.size
+//    for (idx <- 0 until size) {
+//      is (MaskedLiteral(
+//        //"1" + 
+//        ("-" * (size - idx - 1) + "1" + ("0" * idx))
+//      )) {
+//        // fast-ish (regarding fmax) search to implement the free list
+//        // search
+//        //io.issue.valid := (
+//        //  //True
+//        //  !tempHaveIssueHazardAddrCheckVec.asBits.orR
+//        //  //&& !tempHaveCommitHazardAddrCheckVec.asBits.orR
+//        //  && !rFlushInfo.fire
+//        //)
+//        //io.issue.payload := (
+//        //  RegNext(io.issue.payload, init=io.issue.payload.getZero)
+//        //)
+//        when (io.issue.fire) {
+//          io.issue.tag := idx
+//          //rFlushInfo.instrAgeCnt := rFlushInfo.instrAgeCnt + 1
+//          //rMyInfoVec(idx).instrAge := rFlushInfo.instrAgeCnt
+//          rMyInfoVec(idx).issueHazardValid := (
+//            io.issueMyTempOpMayNeedHazardCheck
+//            //True
+//          )
+//          //rMyInfoVec(idx).readGprsHazardValid := (
+//          //  io.issueMyTempOpMayNeedHazardCheck
+//          //  && tempHaveReadGprsHazardAddrCheckVec.asBits.orR
+//          //)
+//          rMyInfoVec(idx).issueAllocValid := (
+//            //io.myTempOpMayNeedHazardCheck
+//            True
+//          )
+//
+//          rMyInfoVec(idx).gprIdxVec := io.issueGprIdxVec
+//          rMyInfoVec(idx).gprIsNonZeroVec := (
+//            //io.issueGprIdxVec.last.orR // check for non-zero
+//            // check for non-zero
+//            Vec(io.issueGprIdxVec.map(item => item.orR))
+//          )
+//          //for (jdx <- 0 until io.gprIdxVec.size) {
+//          //  rMyInfoVec(idx).gprIsNonZeroVec(jdx) := (
+//          //    io.gprIdxVec(jdx).orR // check for non-zero
+//          //  )
+//          //}
+//        }
+//      }
+//    }
+//    default {
+//      io.issue.valid := False
+//      //io.issue.payload := 0x0
+//      io.issue.payload := (
+//        RegNext(io.issue.payload, init=io.issue.payload.getZero)
+//      )
+//    }
+//  }
+//  switch (
+//    rFlushInfo.fire
+//    ## (
+//      //(rFlushInfo.instrAgeCnt === myMaxInstrAge)
+//      //|| 
+//      io.myBranchMispredictEtc
+//    )
+//    ## myInfoAllocValidVec.orR
+//  ) {
+//    // flush the pipeline
+//    is (M"01-") {
+//      rFlushInfo.valid := True
+//      //rFlushInfo.instrAgeCnt := 0x0
+//
+//      //io.issue.cntOverflow := True
+//    }
+//    is (M"1-0") {
+//      // we're done flushing the pipeline
+//      // when every element of `rMyInfoVec` has been deallocated
+//      rFlushInfo.valid := False
+//      //io.issue.cntOverflow := False
+//    }
+//    default {
+//    }
+//  }
+//  //when (!rFlushInfo.fire) {
+//  //  when (rFlushInfo.payload === myMaxInstrAge) {
+//  //  }
+//  //}
+//}
 
 case class SnowHouseForFmaxPipeStageInstrDecodeIo(
   cfg: SnowHouseConfig
@@ -850,14 +855,14 @@ case class SnowHouseForFmaxPipeStageInstrDecodeIo(
   //  ))
   //)
 
-  //val myScoreboardCommmit = (
-  //  cfg.optScoreboard
-  //) generate (
-  //  slave(Stream(
-  //    //UInt(cfg.optScoreboardTagWidth bits)
-  //    SnowHouseScoreboardCommitPayload(cfg=cfg)
-  //  ))
-  //)
+  val myScoreboardCommit = (
+    cfg.optScoreboard
+  ) generate (
+    slave(Stream(
+      //UInt(cfg.optScoreboardTagWidth bits)
+      SnowHouseScoreboardCommitPayload(cfg=cfg)
+    ))
+  )
   //--------
 }
 
@@ -922,6 +927,7 @@ case class SnowHouseForFmaxPipeStageInstrDecode(
     //shouldIgnoreInstr=null,
     doDecodeFunc=cfg.doInstrDecodeFunc,
     //psIdFoundBubble=psIdFoundBubble,
+    myScoreboardCommitStm=io.myScoreboardCommit
   )
 
   cLink.up.driveFrom(io.up)(
@@ -943,464 +949,482 @@ case class SnowHouseForFmaxPipeStageInstrDecode(
   //--------
 }
 
-case class SnowHouseForFmaxPipeStageScoreboardIssueIo(
-  cfg: SnowHouseConfig
-) extends Bundle {
-  //--------
-  val up = (
-    slave(Stream(
-      SnowHousePipePayload(cfg=cfg)
-    ))
-  )
-  val down = (
-    master(Stream(
-      SnowHousePipePayload(cfg=cfg)
-    ))
-  )
-  //--------
-  val myBranchMispredictEtc = (
-    in(
-      Bool()
-    )
-  )
-  //--------
-  val myScoreboardReadGprs = (
-    slave(Stream(
-      SnowHouseScoreboardReadGprsPayload(cfg=cfg)
-    ))
-  )
-
-  val myScoreboardCommmit = (
-    cfg.optScoreboard
-  ) generate (
-    slave(Stream(
-      //UInt(cfg.optScoreboardTagWidth bits)
-      SnowHouseScoreboardCommitPayload(cfg=cfg)
-    ))
-  )
-  //--------
-}
-
-case class SnowHouseForFmaxPipeStageScoreboardIssue(
-  cfg: SnowHouseConfig
-) extends Component {
-  // technically this is the pipeline stage where the scoreboard itself is
-  // stored too
-  require(
-    cfg.optScoreboard
-  )
-  //--------
-  val io = SnowHouseForFmaxPipeStageScoreboardIssueIo(cfg=cfg)
-  //--------
-  val linkArr = PipeHelper.mkLinkArr()
-
-  //def opInfoMap = cfg.opInfoMap
-
-  //val pScoreboardIssueInp = Payload(SnowHousePipePayload(cfg=cfg))
-  val pScoreboardIssueOutp = Payload(SnowHousePipePayload(cfg=cfg))
-  val cLink = CtrlLink()
-  //val sLink = StageLink(
-  //  up=cLink.down,
-  //  down={
-  //    val temp = Node()
-  //    temp.setName("sLink_down")
-  //    temp
-  //  }
-  //)
-  //val s2mLink = S2MLink(
-  //  up=sLink.down,
-  //  down={
-  //    val temp = Node()
-  //    temp.setName("s2mLink_down")
-  //    temp
-  //  }
-  //)
-
-  val sLinkArr = new ArrayBuffer[StageLink]()
-  val s2mLinkArr = new ArrayBuffer[S2MLink]()
-  sLinkArr += StageLink(
-    up=cLink.down,
-    down=Node(),
-  )
-  s2mLinkArr += S2MLink(
-    up=sLinkArr.last.down,
-    down=Node(),
-  )
-  //sLinkArr += StageLink(
-  //  up=sLinkArr.last.down,
-  //  down=Node()
-  //)
-  //s2mLinkArr += S2MLink(
-  //  up=sLinkArr.last.down,
-  //  down=Node(),
-  //)
-
-  linkArr += cLink
-  linkArr ++= sLinkArr
-  linkArr ++= s2mLinkArr
-  //linkArr += sLink
-  //linkArr += s2mLink
-
-  val scoreboard = (
-    cfg.optScoreboard
-  ) generate (
-    SnowHouseForFmaxScoreboard(cfg=cfg)
-  )
-
-  val myInp = SnowHousePipePayload(cfg=cfg)
-  val myOutp = SnowHousePipePayload(cfg=cfg)
-
-  cLink.up.driveFrom(io.up)(
-    con=(node, inp) => {
-      //node(pScoreboardIssueInp) := inp
-      myInp := inp
-    }
-  )
-
-  myOutp := RegNext(myOutp, init=myOutp.getZero)
-  when (cLink.up.isValid) {
-    myOutp := myInp
-  }
-  
-  //val rMyPsExSetPcState = (
-  //  Reg(Bool(), init=False)
-  //)
-
-  //when (!rMyPsExSetPcState) {
-  //  when (io.myBranchMispredictEtc) {
-  //    rMyPsExSetPcState := True
-  //  }
-  //} otherwise {
-  //  when (
-  //    //cLink.down.isFiring
-  //    cLink.up.isFiring
-  //    && myOutp.regPcSetItCnt(0).lsb
-  //  ) {
-  //    rMyPsExSetPcState := False
-  //  }
-  //}
-
-  //val mySharedNonShouldIgnoreCond = (
-  //  (
-  //    !rMyPsExSetPcState
-  //    || myOutp.regPcSetItCnt(1).lsb
-  //  )
-  //)
-
-  scoreboard.io.myBranchMispredictEtc := io.myBranchMispredictEtc
-
-  scoreboard.io.issueRegPcSetItCnt := (
-    myOutp.regPcSetItCnt
-  )
-  scoreboard.io.issueMyTempOpMayNeedHazardCheck := (
-    myOutp.instrCnt.myScoreboardOpMayNeedHazardCheck
-  )
-  scoreboard.io.issue.ready := (
-    //cLink.up.isFiring // cLink.down.isFiring
-    cLink.down.isFiring
-    //&& mySharedNonShouldIgnoreCond
-    //cLink.down.isFiring
-    //cLink.up.isValid
-    //&& cLink.down.isReady
-  )
-  scoreboard.io.issueGprIdxVec := myOutp.gprIdxVec
-  //myOutp.instrCnt.scoreboardTag.allowOverride
-  //myOutp.instrCnt.scoreboardTag := (
-  //  scoreboard.io.issue.tag
-  //)
-  myOutp.instrCnt.scoreboardIssuePayload.allowOverride
-  myOutp.instrCnt.scoreboardIssuePayload := (
-    scoreboard.io.issue.payload
-  )
-  //myOutp.tempUpMod
-  cLink.down(pScoreboardIssueOutp) := myOutp
-  cLink.down(pScoreboardIssueOutp).allowOverride
-
-  when (
-    !scoreboard.io.issue.valid//fire
-    //&& mySharedNonShouldIgnoreCond
-  ) {
-    cLink.duplicateIt()
-    cLink.down(pScoreboardIssueOutp).setAsBubbleMain(
-      //!scoreboard.io.issue.cntOverflow
-      Some(True)
-    )
-    cLink.down(pScoreboardIssueOutp).gprIdxVec.foreach(gprIdx => {
-      gprIdx := 0x0
-    })
-    //myOutp.instrCnt.scoreboardTag := (
-    //  scoreboard.io.issue.tag
-    //)
-    //myOutp.myDoHaveHazardAddrCheckVec.foreach(
-    //  item => {
-    //    item := True
-    //  }
-    //)
-    //myOutp.myDoHaveHazardAddrCheckVec.head := (
-    //  True
-    //)
-  }
-  scoreboard.io.readGprs << io.myScoreboardReadGprs
-  scoreboard.io.reorderBufWrite << io.myScoreboardCommmit
-
-  s2mLinkArr.last.down.driveTo(io.down)(
-    con=(outp, node) => {
-      outp := node(pScoreboardIssueOutp)
-    }
-  )
-
-  Builder(linkArr)
-}
-case class SnowHouseForFmaxPipeStageScoreboardReadGprsIo(
-  cfg: SnowHouseConfig
-) extends Bundle {
-  val up = (
-    slave(Stream(
-      SnowHousePipePayload(cfg=cfg)
-    ))
-  )
-  val down = (
-    master(Stream(
-      SnowHousePipePayload(cfg=cfg)
-    ))
-  )
-  //--------
-  val readGprs = (
-    master(Stream(
-      SnowHouseScoreboardReadGprsPayload(cfg=cfg)
-    ))
-  )
-  //val readGprsPayload = (
-  //  out(
-  //    //Vec.fill(cfg.numMultiIssue)(
-  //      //Stream(
-  //        SnowHouseScoreboardReadGprsPayload(cfg=cfg)
-  //      //)
-  //    //)
-  //  )
-  //)
-
-  //val readGprsReady = (
-  //  in(Bool())
-  //)
-
-  val myBranchMispredictEtc = (
-    in(
-      Bool()
-    )
-  )
-  //--------
-}
-case class SnowHouseForFmaxPipeStageScoreboardReadGprs(
-  cfg: SnowHouseConfig
-) extends Component {
-  require(
-    cfg.optScoreboard
-  )
-  //--------
-  val io = SnowHouseForFmaxPipeStageScoreboardReadGprsIo(cfg=cfg)
-  //--------
-  val linkArr = PipeHelper.mkLinkArr()
-
-  //def opInfoMap = cfg.opInfoMap
-
-  //val pScoreboardReadGprsInp = Payload(SnowHousePipePayload(cfg=cfg))
-  val pScoreboardReadGprsOutp = Payload(SnowHousePipePayload(cfg=cfg))
-  val cLink = CtrlLink()
-  //val sLink = StageLink(
-  //  up=cLink.down,
-  //  down={
-  //    val temp = Node()
-  //    temp.setName("sLink_down")
-  //    temp
-  //  }
-  //)
-  //val s2mLink = S2MLink(
-  //  up=sLink.down,
-  //  down={
-  //    val temp = Node()
-  //    temp.setName("s2mLink_down")
-  //    temp
-  //  }
-  //)
-  val sLinkArr = new ArrayBuffer[StageLink]()
-  //val s2mLinkArr = new ArrayBuffer[S2MLink]()
-  sLinkArr += StageLink(
-    up=cLink.down,
-    down=Node(),
-  )
-  //sLinkArr += StageLink(
-  //  up=sLinkArr.last.down,
-  //  down=Node(),
-  //)
-  //sLinkArr += StageLink(
-  //  up=sLinkArr.last.down,
-  //  down=Node(),
-  //)
-  //s2mLinkArr += S2MLink(
-  //  up=sLinkArr.last.down,
-  //  down=Node(),
-  //)
-  //sLinkArr += StageLink(
-  //  up=sLinkArr.last.down,
-  //  down=Node()
-  //)
-  //s2mLinkArr += S2MLink(
-  //  up=sLinkArr.last.down,
-  //  down=Node(),
-  //)
-  //sLinkArr += StageLink(
-  //  up=sLinkArr.last.down,
-  //  down=Node()
-  //)
-  //sLinkArr += StageLink(
-  //  up=sLinkArr.last.down,
-  //  down=Node()
-  //)
-  //sLinkArr += StageLink(
-  //  up=sLinkArr.last.down,
-  //  down=Node()
-  //)
-  linkArr += cLink
-  linkArr ++= sLinkArr
-  //linkArr ++= s2mLinkArr
-  //linkArr += sLink
-  //linkArr += s2mLink
-
-  val myInp = SnowHousePipePayload(cfg=cfg)
-  val myOutp = SnowHousePipePayload(cfg=cfg)
-
-  cLink.up.driveFrom(io.up)(
-    con=(node, inp) => {
-      //node(pScoreboardReadGprsInp) := inp
-      myInp := inp
-    }
-  )
-
-  myOutp := RegNext(myOutp, init=myOutp.getZero)
-  when (cLink.up.isValid) {
-    myOutp := myInp
-  }
-
-  io.readGprs.gprIdxVec := myOutp.gprIdxVec
-  io.readGprs.tag := myOutp.instrCnt.scoreboardTag
-  io.readGprs.regPcSetItCnt := myOutp.regPcSetItCnt
-  //val rStallState = Reg(Bool(), init=False)
-
-  //when (!rStallState) {
-  //}
-
-  //val rSeenReadGprsFire = Reg(Bool(), init=False)
-  //val stickyReadGprsFire = (
-  //  io.readGprs.fire
-  //  || rSeenReadGprsFire
-  //)
-
-  //when (io.readGprs.fire) {
-  //  rSeenReadGprsFire := True
-  //}
-  //when (cLink.down.isFiring) {
-  //  rSeenReadGprsFire := False
-  //}
-
-  //val rMyPsExSetPcState = (
-  //  Reg(Bool(), init=False)
-  //)
-
-  //when (!rMyPsExSetPcState) {
-  //  when (io.myBranchMispredictEtc) {
-  //    rMyPsExSetPcState := True
-  //  }
-  //} otherwise {
-  //  when (
-  //    //cLink.down.isFiring
-  //    cLink.up.isFiring
-  //    && myOutp.regPcSetItCnt(0).lsb
-  //  ) {
-  //    rMyPsExSetPcState := False
-  //  }
-  //}
-
-  val mySharedNonShouldIgnoreCond = (
-    //cLink.up.isValid
-    //&& 
-    Vec(myOutp.instrCnt.myPsIdBubble.map(
-      item => (
-        !item
-        //&& (
-        //  !rMyPsExSetPcState
-        //  || !myOutp.regPcSetItCnt(1).lsb
-        //)
-      )
-    ))
-    //&& (
-    //  !rMyPsExSetPcState
-    //  || myOutp.regPcSetItCnt(1).lsb
-    //)
-  )
-
-  io.readGprs.valid := (
-    cLink.up.isValid
-    && cLink.down.isReady
-    //cLink.up.isFiring
-    //cLink.down.isFiring
-    //&& !myOutp.instrCnt.myPsIdBubble.head
-    && mySharedNonShouldIgnoreCond.head
-  )
-  io.readGprs.someNodeIsFiring := (
-    cLink.down.isFiring
-  )
-
-
-  when (
-    cLink.up.isValid
-    && mySharedNonShouldIgnoreCond.last
-    && io.readGprs.valid
-    && !io.readGprs.ready 
-  ) {
-    cLink.duplicateIt()
-    cLink.down(pScoreboardReadGprsOutp).allowOverride
-    cLink.down(pScoreboardReadGprsOutp) := myOutp//.getZero
-
-    cLink.down(pScoreboardReadGprsOutp).setAsBubbleMain(
-      //!scoreboard.io.issue.cntOverflow
-      Some(True)
-      //myPsIdBubble=True,
-      //myUpdateGprIsOrIsntZero=true
-    )
-    //cLink.down(pScoreboardReadGprsOutp).gprIsZeroVec.foreach(
-    //  outerItem => {
-    //    outerItem.foreach(item => {
-    //      item := True
-    //    })
-    //  }
-    //)
-    //innerPsId.upPayload(1).myDoHaveHazardAddrCheckVec.foreach(
-    //  item => {
-    //    item := True
-    //  }
-    //)
-    //innerPsId.upPayload(1).myDoHaveHazardAddrCheckVec.head := (
-    //  True
-    //)
-  } otherwise {
-    cLink.down(pScoreboardReadGprsOutp) := myOutp
-  }
-  //when (
-  //  cLink.up.isValid
-  //  && myInp.instrCnt.myPsIdBubble.head
-  //) {
-  //  cLink.throwIt()
-  //}
-
-  sLinkArr.last.down.driveTo(io.down)(
-    con=(outp, node) => {
-      outp := node(pScoreboardReadGprsOutp)
-    }
-  )
-
-  Builder(linkArr)
-}
+//case class SnowHouseForFmaxPipeStageScoreboardIssueIo(
+//  cfg: SnowHouseConfig
+//) extends Bundle {
+//  //--------
+//  val up = (
+//    slave(Stream(
+//      SnowHousePipePayload(cfg=cfg)
+//    ))
+//  )
+//  val down = (
+//    master(Stream(
+//      SnowHousePipePayload(cfg=cfg)
+//    ))
+//  )
+//  //--------
+//  val myBranchMispredictEtc = (
+//    in(
+//      Bool()
+//    )
+//  )
+//  //--------
+//  val myScoreboardReadGprs = (
+//    slave(Stream(
+//      SnowHouseScoreboardReadGprsPayload(cfg=cfg)
+//    ))
+//  )
+//
+//  val myScoreboardCommit = (
+//    cfg.optScoreboard
+//  ) generate (
+//    slave(Stream(
+//      //UInt(cfg.optScoreboardTagWidth bits)
+//      SnowHouseScoreboardCommitPayload(cfg=cfg)
+//    ))
+//  )
+//  //--------
+//}
+//
+//case class SnowHouseForFmaxPipeStageScoreboardIssue(
+//  cfg: SnowHouseConfig
+//) extends Component {
+//  // technically this is the pipeline stage where the scoreboard itself is
+//  // stored too
+//  require(
+//    cfg.optScoreboard
+//  )
+//  //--------
+//  val io = SnowHouseForFmaxPipeStageScoreboardIssueIo(cfg=cfg)
+//  //--------
+//  val linkArr = PipeHelper.mkLinkArr()
+//
+//  //def opInfoMap = cfg.opInfoMap
+//
+//  //val pScoreboardIssueInp = Payload(SnowHousePipePayload(cfg=cfg))
+//  val pScoreboardIssueOutp = Payload(SnowHousePipePayload(cfg=cfg))
+//  val cLink = CtrlLink()
+//  //val sLink = StageLink(
+//  //  up=cLink.down,
+//  //  down={
+//  //    val temp = Node()
+//  //    temp.setName("sLink_down")
+//  //    temp
+//  //  }
+//  //)
+//  //val s2mLink = S2MLink(
+//  //  up=sLink.down,
+//  //  down={
+//  //    val temp = Node()
+//  //    temp.setName("s2mLink_down")
+//  //    temp
+//  //  }
+//  //)
+//
+//  val sLinkArr = new ArrayBuffer[StageLink]()
+//  val s2mLinkArr = new ArrayBuffer[S2MLink]()
+//  sLinkArr += StageLink(
+//    up=cLink.down,
+//    down=Node(),
+//  )
+//  s2mLinkArr += S2MLink(
+//    up=sLinkArr.last.down,
+//    down=Node(),
+//  )
+//  //sLinkArr += StageLink(
+//  //  up=sLinkArr.last.down,
+//  //  down=Node()
+//  //)
+//  //s2mLinkArr += S2MLink(
+//  //  up=sLinkArr.last.down,
+//  //  down=Node(),
+//  //)
+//
+//  linkArr += cLink
+//  linkArr ++= sLinkArr
+//  linkArr ++= s2mLinkArr
+//  //linkArr += sLink
+//  //linkArr += s2mLink
+//
+//  val scoreboard = (
+//    cfg.optScoreboard
+//  ) generate (
+//    SnowHouseForFmaxScoreboard(cfg=cfg)
+//  )
+//
+//  val myInp = SnowHousePipePayload(cfg=cfg)
+//  val myOutp = SnowHousePipePayload(cfg=cfg)
+//
+//  cLink.up.driveFrom(io.up)(
+//    con=(node, inp) => {
+//      //node(pScoreboardIssueInp) := inp
+//      myInp := inp
+//    }
+//  )
+//
+//  myOutp := RegNext(myOutp, init=myOutp.getZero)
+//  when (cLink.up.isValid) {
+//    myOutp := myInp
+//  }
+//  
+//  //val rMyPsExSetPcState = (
+//  //  Reg(Bool(), init=False)
+//  //)
+//
+//  //when (!rMyPsExSetPcState) {
+//  //  when (io.myBranchMispredictEtc) {
+//  //    rMyPsExSetPcState := True
+//  //  }
+//  //} otherwise {
+//  //  when (
+//  //    //cLink.down.isFiring
+//  //    cLink.up.isFiring
+//  //    && myOutp.regPcSetItCnt(0).lsb
+//  //  ) {
+//  //    rMyPsExSetPcState := False
+//  //  }
+//  //}
+//
+//  //val mySharedNonShouldIgnoreCond = (
+//  //  (
+//  //    !rMyPsExSetPcState
+//  //    || myOutp.regPcSetItCnt(1).lsb
+//  //  )
+//  //)
+//
+//  scoreboard.io.myBranchMispredictEtc := io.myBranchMispredictEtc
+//
+//  scoreboard.io.issueRegPcSetItCnt := (
+//    myOutp.regPcSetItCnt
+//  )
+//  scoreboard.io.issueMyTempOpMayNeedHazardCheck := (
+//    myOutp.instrCnt.myScoreboardOpMayNeedHazardCheck
+//  )
+//  scoreboard.io.issue.ready := (
+//    //cLink.up.isFiring // cLink.down.isFiring
+//    cLink.down.isFiring
+//    //&& mySharedNonShouldIgnoreCond
+//    //cLink.down.isFiring
+//    //cLink.up.isValid
+//    //&& cLink.down.isReady
+//  )
+//  scoreboard.io.issueGprIdxVec := myOutp.gprIdxVec
+//  //myOutp.instrCnt.scoreboardTag.allowOverride
+//  //myOutp.instrCnt.scoreboardTag := (
+//  //  scoreboard.io.issue.tag
+//  //)
+//  myOutp.instrCnt.scoreboardIssuePayload.allowOverride
+//  myOutp.instrCnt.scoreboardIssuePayload := (
+//    scoreboard.io.issue.payload
+//  )
+//  //myOutp.tempUpMod
+//  cLink.down(pScoreboardIssueOutp) := myOutp
+//  cLink.down(pScoreboardIssueOutp).allowOverride
+//
+//  when (
+//    !scoreboard.io.issue.valid//fire
+//    //&& mySharedNonShouldIgnoreCond
+//  ) {
+//    cLink.duplicateIt()
+//    cLink.down(pScoreboardIssueOutp).setAsBubbleMain(
+//      //!scoreboard.io.issue.cntOverflow
+//      Some(True)
+//    )
+//    cLink.down(pScoreboardIssueOutp).gprIdxVec.foreach(gprIdx => {
+//      gprIdx := 0x0
+//    })
+//    //myOutp.instrCnt.scoreboardTag := (
+//    //  scoreboard.io.issue.tag
+//    //)
+//    //myOutp.myDoHaveHazardAddrCheckVec.foreach(
+//    //  item => {
+//    //    item := True
+//    //  }
+//    //)
+//    //myOutp.myDoHaveHazardAddrCheckVec.head := (
+//    //  True
+//    //)
+//  }
+//  scoreboard.io.readGprs << io.myScoreboardReadGprs
+//  scoreboard.io.reorderBufWrite << io.myScoreboardCommit
+//
+//  s2mLinkArr.last.down.driveTo(io.down)(
+//    con=(outp, node) => {
+//      outp := node(pScoreboardIssueOutp)
+//    }
+//  )
+//
+//  Builder(linkArr)
+//}
+//case class SnowHouseForFmaxPipeStageScoreboardReadGprsIo(
+//  cfg: SnowHouseConfig
+//) extends Bundle {
+//  val up = (
+//    slave(Stream(
+//      SnowHousePipePayload(cfg=cfg)
+//    ))
+//  )
+//  val down = (
+//    master(Stream(
+//      SnowHousePipePayload(cfg=cfg)
+//    ))
+//  )
+//  //--------
+//  val readGprs = (
+//    master(Stream(
+//      SnowHouseScoreboardReadGprsPayload(cfg=cfg)
+//    ))
+//  )
+//  //val readGprsPayload = (
+//  //  out(
+//  //    //Vec.fill(cfg.numMultiIssue)(
+//  //      //Stream(
+//  //        SnowHouseScoreboardReadGprsPayload(cfg=cfg)
+//  //      //)
+//  //    //)
+//  //  )
+//  //)
+//
+//  //val readGprsReady = (
+//  //  in(Bool())
+//  //)
+//
+//  val myBranchMispredictEtc = (
+//    in(
+//      Bool()
+//    )
+//  )
+//  //--------
+//}
+//case class SnowHouseForFmaxPipeStageScoreboardReadGprs(
+//  cfg: SnowHouseConfig
+//) extends Component {
+//  require(
+//    cfg.optScoreboard
+//  )
+//  //--------
+//  val io = SnowHouseForFmaxPipeStageScoreboardReadGprsIo(cfg=cfg)
+//  //--------
+//  val linkArr = PipeHelper.mkLinkArr()
+//
+//  //def opInfoMap = cfg.opInfoMap
+//
+//  //val pScoreboardReadGprsInp = Payload(SnowHousePipePayload(cfg=cfg))
+//  val pScoreboardReadGprsOutp = Payload(SnowHousePipePayload(cfg=cfg))
+//  val cLink = CtrlLink()
+//  //val sLink = StageLink(
+//  //  up=cLink.down,
+//  //  down={
+//  //    val temp = Node()
+//  //    temp.setName("sLink_down")
+//  //    temp
+//  //  }
+//  //)
+//  //val s2mLink = S2MLink(
+//  //  up=sLink.down,
+//  //  down={
+//  //    val temp = Node()
+//  //    temp.setName("s2mLink_down")
+//  //    temp
+//  //  }
+//  //)
+//  val sLinkArr = new ArrayBuffer[StageLink]()
+//  //val s2mLinkArr = new ArrayBuffer[S2MLink]()
+//  sLinkArr += StageLink(
+//    up=cLink.down,
+//    down=Node(),
+//  )
+//  //sLinkArr += StageLink(
+//  //  up=sLinkArr.last.down,
+//  //  down=Node(),
+//  //)
+//  //sLinkArr += StageLink(
+//  //  up=sLinkArr.last.down,
+//  //  down=Node(),
+//  //)
+//  //s2mLinkArr += S2MLink(
+//  //  up=sLinkArr.last.down,
+//  //  down=Node(),
+//  //)
+//  //sLinkArr += StageLink(
+//  //  up=sLinkArr.last.down,
+//  //  down=Node()
+//  //)
+//  //s2mLinkArr += S2MLink(
+//  //  up=sLinkArr.last.down,
+//  //  down=Node(),
+//  //)
+//  //sLinkArr += StageLink(
+//  //  up=sLinkArr.last.down,
+//  //  down=Node()
+//  //)
+//  //sLinkArr += StageLink(
+//  //  up=sLinkArr.last.down,
+//  //  down=Node()
+//  //)
+//  //sLinkArr += StageLink(
+//  //  up=sLinkArr.last.down,
+//  //  down=Node()
+//  //)
+//  linkArr += cLink
+//  linkArr ++= sLinkArr
+//  //linkArr ++= s2mLinkArr
+//  //linkArr += sLink
+//  //linkArr += s2mLink
+//
+//  val myInp = SnowHousePipePayload(cfg=cfg)
+//  val myOutp = SnowHousePipePayload(cfg=cfg)
+//
+//  cLink.up.driveFrom(io.up)(
+//    con=(node, inp) => {
+//      //node(pScoreboardReadGprsInp) := inp
+//      myInp := inp
+//    }
+//  )
+//
+//  myOutp := RegNext(myOutp, init=myOutp.getZero)
+//  when (cLink.up.isValid) {
+//    myOutp := myInp
+//  }
+//
+//  io.readGprs.gprIdxVec := myOutp.gprIdxVec
+//  io.readGprs.tag := myOutp.instrCnt.scoreboardTag
+//  io.readGprs.regPcSetItCnt := myOutp.regPcSetItCnt
+//  //val rStallState = Reg(Bool(), init=False)
+//
+//  //when (!rStallState) {
+//  //}
+//
+//  //val rSeenReadGprsFire = Reg(Bool(), init=False)
+//  //val stickyReadGprsFire = (
+//  //  io.readGprs.fire
+//  //  || rSeenReadGprsFire
+//  //)
+//
+//  //when (io.readGprs.fire) {
+//  //  rSeenReadGprsFire := True
+//  //}
+//  //when (cLink.down.isFiring) {
+//  //  rSeenReadGprsFire := False
+//  //}
+//
+//  //val rMyPsExSetPcState = (
+//  //  Reg(Bool(), init=False)
+//  //)
+//
+//  //when (!rMyPsExSetPcState) {
+//  //  when (io.myBranchMispredictEtc) {
+//  //    rMyPsExSetPcState := True
+//  //  }
+//  //} otherwise {
+//  //  when (
+//  //    //cLink.down.isFiring
+//  //    cLink.up.isFiring
+//  //    && myOutp.regPcSetItCnt(0).lsb
+//  //  ) {
+//  //    rMyPsExSetPcState := False
+//  //  }
+//  //}
+//
+//  val mySharedNonShouldIgnoreCond = (
+//    //cLink.up.isValid
+//    //&& 
+//    Vec(myOutp.instrCnt.myPsIdBubble.map(
+//      item => (
+//        !item
+//        //&& (
+//        //  !rMyPsExSetPcState
+//        //  || !myOutp.regPcSetItCnt(1).lsb
+//        //)
+//      )
+//    ))
+//    //&& (
+//    //  !rMyPsExSetPcState
+//    //  || myOutp.regPcSetItCnt(1).lsb
+//    //)
+//  )
+//
+//  io.readGprs.valid := (
+//    cLink.up.isValid
+//    && cLink.down.isReady
+//    //cLink.up.isFiring
+//    //cLink.down.isFiring
+//    //&& !myOutp.instrCnt.myPsIdBubble.head
+//    && mySharedNonShouldIgnoreCond.head
+//  )
+//  io.readGprs.someNodeIsFiring := (
+//    cLink.down.isFiring
+//  )
+//
+//  //val rSentReadGprsBubble = Reg(Bool(), init=False)
+//
+//  when (
+//    cLink.up.isValid
+//    && mySharedNonShouldIgnoreCond.last
+//    && io.readGprs.valid
+//    && !io.readGprs.ready 
+//  ) {
+//    cLink.duplicateIt()
+//    cLink.down(pScoreboardReadGprsOutp).allowOverride
+//    cLink.down(pScoreboardReadGprsOutp) := myOutp//.getZero
+//
+//    cLink.down(pScoreboardReadGprsOutp).setAsBubbleMain(
+//      //!scoreboard.io.issue.cntOverflow
+//      Some(True)
+//      //myPsIdBubble=True,
+//      //myUpdateGprIsOrIsntZero=true
+//    )
+//
+//    //(
+//    //  cLink.down(pScoreboardReadGprsOutp).instrCnt
+//    //).myScoreboardReadGprsBubble.foreach(
+//    //  item => {
+//    //    item := !rSentReadGprsBubble //True
+//    //  }
+//    //)
+//    //when (cLink.down.isFiring) {
+//    //  rSentReadGprsBubble := True
+//    //}
+//
+//    //cLink.down(pScoreboardReadGprsOutp).gprIsZeroVec.foreach(
+//    //  outerItem => {
+//    //    outerItem.foreach(item => {
+//    //      item := True
+//    //    })
+//    //  }
+//    //)
+//    //innerPsId.upPayload(1).myDoHaveHazardAddrCheckVec.foreach(
+//    //  item => {
+//    //    item := True
+//    //  }
+//    //)
+//    //innerPsId.upPayload(1).myDoHaveHazardAddrCheckVec.head := (
+//    //  True
+//    //)
+//  } otherwise {
+//    cLink.down(pScoreboardReadGprsOutp) := myOutp
+//  }
+//
+//  //when (cLink.up.isFiring) {
+//  //  rSentReadGprsBubble := False
+//  //}
+//
+//  //when (
+//  //  cLink.up.isValid
+//  //  && myInp.instrCnt.myPsIdBubble.head
+//  //) {
+//  //  cLink.throwIt()
+//  //}
+//
+//  sLinkArr.last.down.driveTo(io.down)(
+//    con=(outp, node) => {
+//      outp := node(pScoreboardReadGprsOutp)
+//    }
+//  )
+//
+//  Builder(linkArr)
+//}
 
 case class SnowHouseForFmaxPipeStagePreFwdIo(
   cfg: SnowHouseConfig
@@ -2212,7 +2236,10 @@ case class SnowHouseForFmaxPipeStageWriteBack(
         //myMemWbPayload(0).splitOp.opIsMemAccess
         myMemWbPayload(0).outpDecodeExt.opIsMemAccess.head
       )
-      && !myMemWbPayload(0).instrCnt.myPsIdBubble.head
+      && !(
+        myMemWbPayload(0).instrCnt.myPsIdBubble.head
+        //&& !myMemWbPayload(0).instrCnt.myScoreboardReadGprsBubble.head
+      )
       && !myMemWbPayload(0).instrCnt.myPsExMemAccessBubble.last
     )
 
@@ -2254,7 +2281,10 @@ case class SnowHouseForFmaxPipeStageWriteBack(
         !myNonMemWbPayload(0).outpDecodeExt.opIsMemAccess.head
       )
       //&& !myNonMemWbPayload(0).inpDecodeExt.last.opIsMemAccess(0)
-      && !myNonMemWbPayload(0).instrCnt.myPsIdBubble.last
+      && !(
+        myNonMemWbPayload(0).instrCnt.myPsIdBubble.last
+        //&& !myNonMemWbPayload(0).instrCnt.myScoreboardReadGprsBubble.last
+      )
       && !myNonMemWbPayload(0).instrCnt.myPsExMultiCycleBubble.last
     )
     myNonMemWbFifo.io.push.payload.instrCnt := (
@@ -3029,7 +3059,10 @@ case class SnowHouseForFmaxPipeStageWriteBack(
     ) generate (
       myNonMemWbValid
       && someCommitStm.fire
-      && !myNonMemWbPayload(1).instrCnt.myPsIdBubble.head
+      && !(
+        myNonMemWbPayload(1).instrCnt.myPsIdBubble.head
+        //&& !myNonMemWbPayload(1).instrCnt.myScoreboardReadGprsBubble.last
+      )
     )
     if (io.dbgInfo != null) {
       someCommitStm.myWbPayload := someMyWbPayload(1)
@@ -3215,9 +3248,14 @@ case class SnowHouseForFmaxPipeStageWriteBack(
         //) {
         //}
       }
-      someCommitStm.commit.tag := (
-        someMyWbPayload(1).instrCnt.scoreboardTag
+
+      //someCommitStm.commit.tag := (
+      //  someMyWbPayload(1).instrCnt.scoreboardTag
+      //)
+      someCommitStm.commit.myGprIdx := (
+        someMyWbPayload(1).gprIdxVec.last
       )
+
       if (isMem) {
         myMemWbFifo.io.pop.ready := someCommitStm.fire
       } else {
@@ -3353,7 +3391,10 @@ case class SnowHouseForFmaxPipeStageWriteBack(
         if (cfg.optScoreboard) {
           val myInstrCnt = myCommitAlmostFinalOutpStm.myWbPayload.instrCnt
           (
-            myInstrCnt.myPsIdBubble.last
+            (
+              myInstrCnt.myPsIdBubble.last
+              //&& !myInstrCnt.myScoreboardReadGprsBubble.last
+            )
             //|| myInstrCnt.myPsExMemAccessBubble.last
             //|| myInstrCnt.myPsExMultiCycleBubble.last
             || (

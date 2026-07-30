@@ -1705,16 +1705,17 @@ case class SnowHouseRiscv32imConfig(
         1
       ),
       //optDualIssue=true,
-      optMaxNumScoreboardInstrs=(
-        //None
-        Some(
-          //1
-          //2
-          //4
-          //6
-          8
-        )
-      )
+      optScoreboard=true,
+      //optMaxNumScoreboardInstrs=(
+      //  //None
+      //  Some(
+      //    //1
+      //    //2
+      //    //4
+      //    //6
+      //    8
+      //  )
+      //)
     )
   ),
   targetAltera: Boolean=(
