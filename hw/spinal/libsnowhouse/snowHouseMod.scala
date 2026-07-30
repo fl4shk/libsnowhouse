@@ -2393,21 +2393,21 @@ private[libsnowhouse] case class SnowHouseForFmax(
   //psEx.io.myRegFileWrPulse.payload := (
   //  psWb.io.commit.myRegFileWrPulsePayload
   //)
-  //if (cfg.optScoreboard) {
-  //  psPreFwd.io.myRegFileWrPulse << (
-  //    psWb.io.commitEtc.myScoreboardFwdRegFileWrPulse
-  //  )
-  //  psEx.io.myRegFileWrPulse << (
-  //    psWb.io.commitEtc.myScoreboardFwdRegFileWrPulse
-  //  )
-  //} else {
+  if (cfg.optScoreboard) {
+    psPreFwd.io.myRegFileWrPulse << (
+      psWb.io.commitEtc.myScoreboardFwdRegFileWrPulse
+    )
+    psEx.io.myRegFileWrPulse << (
+      psWb.io.commitEtc.myScoreboardFwdRegFileWrPulse
+    )
+  } else {
     psPreFwd.io.myRegFileWrPulse << (
       psWb.io.commitEtc.myRegFileWrPulse
     )
     psEx.io.myRegFileWrPulse << (
       psWb.io.commitEtc.myRegFileWrPulse
     )
-  //}
+  }
   if (cfg.optScoreboard) {
     psScoreboardIssue.io.myScoreboardCommmit << (
       psWb.io.commitEtc.scoreboardTag
