@@ -2902,7 +2902,7 @@ case class SnowHousePipeStagePreFwd(
 
           //myFwdInfoVec(idx).valid := False
           //myFwdInfoVec(idx + 1).valid := False
-          for (jdx <- idx + 1 until myFwdInfoVec.size) {
+          for (jdx <- idx until myFwdInfoVec.size) {
             myFwdInfoVec(jdx).valid := False
           }
         }
