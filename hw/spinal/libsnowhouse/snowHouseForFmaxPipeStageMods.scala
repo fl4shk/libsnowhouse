@@ -1871,35 +1871,36 @@ case class SnowHouseForFmaxPsWbReorderBuf(
           ],
         ) => {
           outp.reorderBufIdx := inp.reorderBufIdx
-          switch (
-            (
-              wrPulse.fire
-              && wrPulse.addr === inp.reorderBufIdx
-            )
-            ## (
-              RegNextWhen(
-                wrPulse.addr,
-                cond=wrPulse.fire,
-                init=wrPulse.addr.getZero
-              ) === inp.reorderBufIdx
-            )
-          ) {
-            is (M"1-") {
-              outp.most := wrPulse.data.most
-            }
-            is (M"01") {
-              outp.most := (
-                RegNextWhen(
-                wrPulse.data.most,
-                  cond=wrPulse.fire,
-                  init=wrPulse.data.most.getZero
-                )
-              )
-            }
-            default {
-              outp.most := rdMemWord.most
-            }
-          }
+          outp.most := rdMemWord.most
+          //switch (
+          //  (
+          //    wrPulse.fire
+          //    && wrPulse.addr === inp.reorderBufIdx
+          //  )
+          //  ## (
+          //    RegNextWhen(
+          //      wrPulse.addr,
+          //      cond=wrPulse.fire,
+          //      init=wrPulse.addr.getZero
+          //    ) === inp.reorderBufIdx
+          //  )
+          //) {
+          //  is (M"1-") {
+          //    outp.most := wrPulse.data.most
+          //  }
+          //  is (M"01") {
+          //    outp.most := (
+          //      RegNextWhen(
+          //      wrPulse.data.most,
+          //        cond=wrPulse.fire,
+          //        init=wrPulse.data.most.getZero
+          //      )
+          //    )
+          //  }
+          //  default {
+          //    outp.most := rdMemWord.most
+          //  }
+          //}
           //when (
           //  wrPulse.fire
           //  && wrPulse.addr === inp.reorderBufIdx
@@ -1950,10 +1951,10 @@ case class SnowHouseForFmaxPsWbReorderBuf(
 
   //myFifo.io.push << io.push
   //myFifo.io.pop.ready := False
-  //val rOccupancy = (
-  //  Reg(UInt(log2Up(myReorderBufSize) bits))
-  //  init(0x0)
-  //)
+  val rOccupancy = (
+    Reg(UInt(log2Up(myReorderBufSize) bits))
+    init(0x0)
+  )
   val rValidVec = Vec.fill(myReorderBufSize)(
     Reg(Bool(), init=False)
   )
@@ -1997,7 +1998,7 @@ case class SnowHouseForFmaxPsWbReorderBuf(
           //!rAttemptPushVec(idx)
           //&& 
           !rValidVec(idx)
-          //&& rOccupancy < myReorderBufSize - 8//- 1
+          && rOccupancy < myReorderBufSize - 8//- 1
           //&& myRam.io.rdAddrPipe.addr =/= idx
           //|| (
           //  //rValidVec(idx)
@@ -2055,7 +2056,7 @@ case class SnowHouseForFmaxPsWbReorderBuf(
   //}
   when (
     myRam.io.rdAddrPipe.fire
-    //myRam.io.rdDataPipe.valid//fire
+    //myRam.io.rdDataPipe.fire//valid//fire
   ) {
     rValidVec(
       myRam.io.rdAddrPipe.addr
@@ -2063,19 +2064,19 @@ case class SnowHouseForFmaxPsWbReorderBuf(
     ) := False
   }
 
-  //switch (
-  //  myRam.io.wrPulse.fire
-  //  ## myRam.io.rdAddrPipe.fire
-  //) {
-  //  is (M"10") {
-  //    rOccupancy := rOccupancy + 1
-  //  }
-  //  is (M"01") {
-  //    rOccupancy := rOccupancy - 1
-  //  }
-  //  default {
-  //  }
-  //}
+  switch (
+    myRam.io.wrPulse.fire
+    ## myRam.io.rdAddrPipe.fire
+  ) {
+    is (M"10") {
+      rOccupancy := rOccupancy + 1
+    }
+    is (M"01") {
+      rOccupancy := rOccupancy - 1
+    }
+    default {
+    }
+  }
 
   //val myTempPushStm = Vec.fill(2)(
   //  cloneOf(io.pop)
