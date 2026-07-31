@@ -2291,7 +2291,12 @@ case class SnowHousePipeStageInstrDecode(
       RegNextWhen(
         (myTempReorderBufIdx + 1),
         cond=(
-          up.isFiring
+          if (cfg.myHaveZeroReg) (
+            up.isFiring
+            && upPayload(1).gprIdxVec.last =/= 0x0
+          ) else (
+            up.isFiring
+          )
           //&& !shouldClearExtraDecodeInfo
         ),
         init=myTempReorderBufIdx.getZero
