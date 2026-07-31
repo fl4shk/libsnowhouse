@@ -2245,7 +2245,7 @@ case class SnowHousePipeStageInstrDecode(
       //  && upPayload(1).myDoHaveHazardAddrCheckVec.orR
       //)
       myMainHazardCheckVec.orR
-      && !shouldClearExtraDecodeInfo
+      //&& !shouldClearExtraDecodeInfo
     ) {
       doSendBubbleMainMost()
     }
@@ -2270,7 +2270,7 @@ case class SnowHousePipeStageInstrDecode(
 
     when (
       myTempOpMayNeedHazardCheck
-      && !shouldClearExtraDecodeInfo
+      //&& !shouldClearExtraDecodeInfo
       && up.isFiring
     ) {
       rSavedGprMayNeedHazardCheckVec(
@@ -2290,7 +2290,10 @@ case class SnowHousePipeStageInstrDecode(
     myTempReorderBufIdx := (
       RegNextWhen(
         (myTempReorderBufIdx + 1),
-        cond=up.isFiring,
+        cond=(
+          up.isFiring
+          //&& !shouldClearExtraDecodeInfo
+        ),
         init=myTempReorderBufIdx.getZero
       )
     )
