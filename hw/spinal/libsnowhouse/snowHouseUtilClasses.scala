@@ -850,9 +850,9 @@ case class SnowHouseConfig(
     //log2Up(optMaxNumScoreboardInstrs + 1)
     (log2Up(myPsIdBubbleNumFollowingInstrs + 1) + 1).max(
       log2Up(
-        16
+        //16
         //64
-        //32
+        32
       )
     )
   )
