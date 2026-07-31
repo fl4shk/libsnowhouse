@@ -2304,7 +2304,7 @@ case class SnowHousePipeStageInstrDecode(
 
     when (
       myTempOpMayNeedHazardCheck
-      //&& !shouldClearExtraDecodeInfo
+      && !shouldClearExtraDecodeInfo
       && up.isFiring
     ) {
       rSavedGprMayNeedHazardCheckVec(
