@@ -1948,11 +1948,40 @@ case class SnowHouseForFmaxPsWbReorderBuf(
     Reg(Bool(), init=False)
   )
 
-  io.push.ready := (
-    //True
-    //!rValidVec.andR
-    !rValidVec(io.push.reorderBufIdx)
-  )
+  val rPushState = Reg(Bool(), init=False)
+
+  switch (rPushState) {
+    is (False) {
+      when (
+        io.push.valid
+        && rValidVec(io.push.reorderBufIdx)
+      ) {
+        rPushState := True
+        io.push.ready := False
+      } otherwise {
+        io.push.ready := True
+      }
+    }
+    is (True) {
+      when (
+        io.push.valid
+        && !rValidVec(io.push.reorderBufIdx)
+      ) {
+        rPushState := False
+        io.push.ready := True
+      } otherwise {
+        io.push.ready := False
+      }
+    }
+  }
+
+  //io.push.ready := (
+  //  //True
+  //  //!rValidVec.andR
+  //  !rValidVec(io.push.reorderBufIdx)
+  //  && !rPushState
+  //)
+
   myRam.io.wrPulse.valid := io.push.fire//valid//fire//valid//valid//fire
   myRam.io.wrPulse.addr := io.push.reorderBufIdx
   //.resize(
