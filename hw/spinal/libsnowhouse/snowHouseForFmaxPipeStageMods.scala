@@ -2588,7 +2588,10 @@ case class SnowHouseForFmaxPipeStageWriteBack(
       || (
         //myMemWbFifo.io.pop.valid
         myMemWbFifo.io.pop.valid
-        && myMemWbFifo.io.pop.payload.instrCnt.shouldIgnoreInstr.head
+        && (
+          myMemWbFifo.io.pop.instrCnt.shouldIgnoreInstr.head
+          || myMemWbFifo.io.pop.instrCnt.myPsIdBubble.head
+        )
         //&& !myMemWbFifo.io.pop.payload.instrCnt.myPsIdBubble.head
       )
     ) else (
@@ -3303,10 +3306,10 @@ case class SnowHouseForFmaxPipeStageWriteBack(
     ) generate (
       myNonMemWbValid
       && someCommitStm.fire
-      && !(
-        myNonMemWbPayload(1).instrCnt.myPsIdBubble.head
-        //&& !myNonMemWbPayload(1).instrCnt.myScoreboardReadGprsBubble.last
-      )
+      //&& !(
+      //  myNonMemWbPayload(1).instrCnt.myPsIdBubble.head
+      //  //&& !myNonMemWbPayload(1).instrCnt.myScoreboardReadGprsBubble.last
+      //)
     )
     if (io.dbgInfo != null) {
       someCommitStm.myWbPayload := someMyWbPayload(1)
