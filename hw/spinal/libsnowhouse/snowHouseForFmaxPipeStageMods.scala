@@ -1731,18 +1731,18 @@ case class SnowHouseForFmaxPsWbCommitEtc(
       )
     )
   )
-  val myScoreboardFwdRegFileWrPulse = (
-    cfg.optScoreboard
-  ) generate (
-    master(
-      Flow(
-        PipeSimpleDualPortMemDrivePayload(
-          dataType=UInt(cfg.mainWidth bits),
-          wordCount=cfg.regFileCfg.wordCountArr(0),
-        )
-      )
-    )
-  )
+  //val myScoreboardFwdRegFileWrPulse = (
+  //  cfg.optScoreboard
+  //) generate (
+  //  master(
+  //    Flow(
+  //      PipeSimpleDualPortMemDrivePayload(
+  //        dataType=UInt(cfg.mainWidth bits),
+  //        wordCount=cfg.regFileCfg.wordCountArr(0),
+  //      )
+  //    )
+  //  )
+  //)
   val scoreboardTag = (
     cfg.optScoreboard
   ) generate (
@@ -1948,8 +1948,12 @@ case class SnowHouseForFmaxPsWbReorderBuf(
     Reg(Bool(), init=False)
   )
 
-  io.push.ready := True
-  myRam.io.wrPulse.valid := io.push.valid//fire//valid//valid//fire
+  io.push.ready := (
+    //True
+    //!rValidVec.andR
+    !rValidVec(io.push.reorderBufIdx)
+  )
+  myRam.io.wrPulse.valid := io.push.fire//valid//fire//valid//valid//fire
   myRam.io.wrPulse.addr := io.push.reorderBufIdx
   //.resize(
   //  log2Up(rValidVec.size) bits
@@ -1973,22 +1977,54 @@ case class SnowHouseForFmaxPsWbReorderBuf(
   //myTempPushStm.head.valid := True
   //myTempPushStm.head.most := io.push.most
   val myRdAddr = cloneOf(myRam.io.rdAddrPipe.addr)
+  //myRdAddr := (
+  //  RegNext(
+  //    myRdAddr,
+  //    init=myRdAddr.getZero
+  //  )
+  //)
+  //when (
+  //  myRam.io.rdAddrPipe.fire
+  //) {
+  //  myRdAddr := (
+  //    RegNext(
+  //      myRdAddr,
+  //      init=myRdAddr.getZero
+  //    ) + 1
+  //  )
+  //}
   myRdAddr := (
     RegNextWhen(
       (myRdAddr + 1),
-      cond=myRam.io.rdAddrPipe.fire,
-      init=myRdAddr.getZero,
+      cond=(
+        myRam.io.rdAddrPipe.fire
+        //|| 
+      ),
+      //init=myRdAddr.getZero,
     )
+    init(0x1)
   )
   //myTempPushStm.last << myTempPushStm.head.haltWhen
   myRam.io.rdAddrPipe.valid := (
+    //rValidVec(
+    //  myRdAddr - 1
+    //)
+    //&& 
     rValidVec(
       myRdAddr
     )
-    || (
-      myRam.io.wrPulse.fire
-      && myRam.io.wrPulse.addr === myRdAddr
-    )
+    //RegNext(
+    //  RegNext(
+    //    rValidVec(
+    //      myRdAddr
+    //    )
+    //  ),
+    //  init=False
+    //)
+    //|| (
+    //  myRam.io.wrPulse.fire
+    //  && myRam.io.wrPulse.addr === myRdAddr
+    //)
   )
   myRam.io.rdAddrPipe.data := myRam.io.rdAddrPipe.data.getZero
   myRam.io.rdAddrPipe.data.reorderBufIdx.allowOverride
@@ -2864,13 +2900,40 @@ case class SnowHouseForFmaxPipeStageWriteBack(
   ) generate (
     myCommitFrontStmVec.head.last//head//last
   )
-  if (cfg.optScoreboard) {
+  val myScoreboardCommitFrontStmArea = (
+    cfg.optScoreboard
+  ) generate (new Area {
+    //for (idx <- 0 until myCommitFrontStmVec.size) {
+    //  myCommitFrontStmVec.last(idx) << (
+    //    myCommitFrontStmVec.head(idx)
+    //  )
+    //}
     for (idx <- 0 until myCommitFrontStmVec.size) {
+      //val myThrowCondVec = Vec.fill(
+      //  myCommitFrontStmVec.size //- 1
+      //)(
+      //  Bool()
+      //)
+      //for (jdx <- 0 until myCommitFrontStmVec.size) {
+      //  myThrowCondVec(jdx) := (
+      //    if (jdx == idx) (
+      //      myCommitFrontStmVec.head(idx).reorderBufIdx
+      //      === RegNextWhen(
+      //        myCommitFrontStmVec.head(idx).reorderBufIdx,
+      //        cond=myCommitFrontStmVec.last(idx),
+      //      )
+      //    ) else {
+      //    }
+      //  )
+      //}
       myCommitFrontStmVec.last(idx) << (
         myCommitFrontStmVec.head(idx)
+        //.throwWhen(
+        //  myThrowCondVec.orR
+        //)
       )
     }
-  }
+  })
   val myCommitBackStm = (
     if (cfg.optScoreboard) (
       StreamArbiterFactory.lowerFirst.noLock.on(
@@ -2924,28 +2987,34 @@ case class SnowHouseForFmaxPipeStageWriteBack(
       myCommitBackStm.myWbPayload
       .instrCnt.scoreboardIssuePayload.reorderBufIdx
     )
-    //val myTempCommitStm = (
-    //  myCommitBackStm
-    //)
     val myTempCommitStm = (
-      myCommitBackStm.throwWhen(
-        myTempReorderBufIdx
-        === (
-          RegNextWhen(
-            myTempReorderBufIdx,
-            cond=myCommitBackStm.fire,
-          )
-          init(0x2)
-        )
-      )
+      myCommitBackStm
     )
-    io.commitEtc.myScoreboardFwdRegFileWrPulse.valid := (
-      myTempCommitStm.fire
-      && !myTempCommitStm.myWbPayload.splitOp.opIsMemAccess
-    )
-    io.commitEtc.myScoreboardFwdRegFileWrPulse.payload := (
-      myTempCommitStm.regFileWrite
-    )
+    //val myTempCommitStm = (
+    //  cloneOf(myCommitBackStm)
+    //)
+    //myTempCommitStm << (
+    //  myCommitBackStm.throwWhen(
+    //    myTempReorderBufIdx
+    //    === (
+    //      RegNextWhen(
+    //        myTempReorderBufIdx,
+    //        cond=(
+    //          myTempCommitStm.fire
+    //          //myCommitBackStm.fire
+    //        ),
+    //      )
+    //      init(0x2)
+    //    )
+    //  )
+    //)
+    //io.commitEtc.myScoreboardFwdRegFileWrPulse.valid := (
+    //  myTempCommitStm.fire
+    //  && !myTempCommitStm.myWbPayload.splitOp.opIsMemAccess
+    //)
+    //io.commitEtc.myScoreboardFwdRegFileWrPulse.payload := (
+    //  myTempCommitStm.regFileWrite
+    //)
     myReorderBuf.io.push << {
       //myCommitForkStm.head
       myTempCommitStm

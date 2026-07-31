@@ -2288,20 +2288,42 @@ case class SnowHousePipeStageInstrDecode(
       upPayload(1).instrCnt.scoreboardIssuePayload.reorderBufIdx
     )
     myTempReorderBufIdx := (
-      RegNextWhen(
-        (myTempReorderBufIdx + 1),
-        cond=(
-          if (cfg.myHaveZeroReg) (
-            up.isFiring
-            && upPayload(1).gprIdxVec.last =/= 0x0
-          ) else (
-            up.isFiring
-          )
-          //&& !shouldClearExtraDecodeInfo
-        ),
+      RegNext(
+        myTempReorderBufIdx,
         init=myTempReorderBufIdx.getZero
       )
     )
+    when (
+      if (cfg.myHaveZeroReg) (
+        up.isFiring
+        //&& upPayload(1).gprIdxVec.last =/= 0x0
+      ) else (
+        up.isFiring
+      )
+    ) {
+      myTempReorderBufIdx := (
+        RegNext(
+          myTempReorderBufIdx,
+          init=myTempReorderBufIdx.getZero
+        )
+        + 1
+      )
+    }
+    //myTempReorderBufIdx := (
+    //  RegNextWhen(
+    //    (myTempReorderBufIdx + 1),
+    //    cond=(
+    //      if (cfg.myHaveZeroReg) (
+    //        up.isFiring
+    //        && upPayload(1).gprIdxVec.last =/= 0x0
+    //      ) else (
+    //        up.isFiring
+    //      )
+    //      //&& !shouldClearExtraDecodeInfo
+    //    ),
+    //    init=myTempReorderBufIdx.getZero
+    //  )
+    //)
   })
   if (cfg.optScoreboard) {
     upPayload(1).instrCnt.myScoreboardOpMayNeedHazardCheck := (
