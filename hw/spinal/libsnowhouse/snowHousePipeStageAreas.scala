@@ -1911,13 +1911,17 @@ case class SnowHousePipeStageInstrDecode(
     item := False
   })
   def doSendBubbleMainMost(
+    myPsIdBubble: Option[Bool]=Some(True)
   ): Unit = {
     require(cfg.useLcvDataBus)
     cId.duplicateIt()
     //upPayload(1).setAsBubbleMain(Some(True))
 
     //down(pId) := upPayload(1)
-    down(pId).setAsBubbleMain(Some(True))
+    down(pId).setAsBubbleMain(
+      //Some(True)
+      myPsIdBubble
+    )
   }
 
   val myNonScoreboardLcvDbusPartAArea = (
@@ -2234,9 +2238,6 @@ case class SnowHousePipeStageInstrDecode(
         )
       )
     }
-    //when (myMainHazardCheckVec.orR) {
-    //  cId.duplicateIt()
-    //}
 
     when (
       //(
@@ -2245,47 +2246,53 @@ case class SnowHousePipeStageInstrDecode(
       //  && upPayload(1).myDoHaveHazardAddrCheckVec.orR
       //)
       myMainHazardCheckVec.orR
-      //&& !shouldClearExtraDecodeInfo
+      && !shouldClearExtraDecodeInfo
     ) {
-      doSendBubbleMainMost()
+      doSendBubbleMainMost(
+        myPsIdBubble=Some(
+          //!shouldClearExtraDecodeInfo
+          True
+        )
+      )
     }
 
-    //when (shouldClearExtraDecodeInfo) {
-    //  rSavedGprMayNeedHazardCheckVec
-    //}
 
     //when (
     //  shouldClearExtraDecodeInfo
     //) {
     //  rSavedGprMayNeedHazardCheckVec := 0x0
     //}
-    val myHistForHazardCheck = (
-      History(
-        that=upPayload(1).gprIdxVec.last,
-        when=up.isFiring,
-        length=(
-          //3
-          4
-          // ID, PreFwd, EX,
-          // EX + 1
-          // (branch mispredict found out from PC *after* the branch
-          // (though, as of this writing,
-          // I think I might need to change the existing
-          // design of EX to be exactly that?))
-        ),
-        init=upPayload(1).gprIdxVec.last.getZero,
-      )
-    )
 
-    when (
-      shouldClearExtraDecodeInfo
-    ) {
-      for (idx <- 0 until myHistForHazardCheck.size) {
-        rSavedGprMayNeedHazardCheckVec(myHistForHazardCheck(idx)) := (
-          False
-        )
-      }
-    }
+
+    //val myHistForHazardCheck = (
+    //  History(
+    //    that=upPayload(1).gprIdxVec.last,
+    //    when=(
+    //      up.isFiring
+    //    ),
+    //    length=(
+    //      //3
+    //      4
+    //      // ID, PreFwd, EX,
+    //      // EX + 1
+    //      // (branch mispredict found out from PC *after* the branch
+    //      // (though, as of this writing,
+    //      // I think I might need to change the existing
+    //      // design of EX to be exactly that?))
+    //    ),
+    //    init=upPayload(1).gprIdxVec.last.getZero,
+    //  )
+    //)
+
+    //when (
+    //  shouldClearExtraDecodeInfo
+    //) {
+    //  for (idx <- 0 until myHistForHazardCheck.size) {
+    //    rSavedGprMayNeedHazardCheckVec(myHistForHazardCheck(idx)) := (
+    //      False
+    //    )
+    //  }
+    //}
 
     when (myScoreboardCommitStm.fire) {
       rSavedGprMayNeedHazardCheckVec(
@@ -2321,12 +2328,21 @@ case class SnowHousePipeStageInstrDecode(
       )
     )
     when (
-      if (cfg.myHaveZeroReg) (
-        up.isFiring
-        //&& upPayload(1).gprIdxVec.last =/= 0x0
-      ) else (
-        up.isFiring
-      )
+      up.isFiring
+      //(
+      //  if (cfg.myHaveZeroReg) (
+      //    //up.isFiring
+      //    down.isFiring
+      //    //&& upPayload(1).gprIdxVec.last =/= 0x0
+      //  ) else (
+      //    //up.isFiring
+      //    down.isFiring
+      //  )
+      //)
+      //&& (
+      //  !myMainHazardCheckVec.orR
+      //  || shouldClearExtraDecodeInfo
+      //)
     ) {
       myTempReorderBufIdx := (
         RegNext(
@@ -2336,6 +2352,34 @@ case class SnowHousePipeStageInstrDecode(
         + 1
       )
     }
+
+    //switch (
+    //  shouldClearExtraDecodeInfo
+    //  ## up.isFiring
+    //) {
+    //  is (M"1-") {
+    //    myTempReorderBufIdx := 0x0
+    //  }
+    //  is (M"01") {
+    //    myTempReorderBufIdx := (
+    //      RegNext(
+    //        myTempReorderBufIdx,
+    //        init=myTempReorderBufIdx.getZero
+    //      )
+    //      + 1
+    //    )
+    //  }
+    //  default {
+    //    myTempReorderBufIdx := (
+    //      RegNext(
+    //        myTempReorderBufIdx,
+    //        init=myTempReorderBufIdx.getZero
+    //      )
+    //    )
+    //  }
+    //}
+
+
     //myTempReorderBufIdx := (
     //  RegNextWhen(
     //    (myTempReorderBufIdx + 1),

@@ -1765,6 +1765,11 @@ case class SnowHouseForFmaxPsWbReorderBufPayloadMost(
     //cloneOf(io.commitEtc.scoreboardTag.payload)
     SnowHouseScoreboardCommitPayload(cfg=cfg)
   )
+
+  //val myShouldIgnoreInstr = (
+  //  Bool()
+  //)
+
   val regFileWrite = (
     //cloneOf(
     //  io.commitEtc.myRegFileWrPulse.payload
@@ -1947,51 +1952,56 @@ case class SnowHouseForFmaxPsWbReorderBuf(
   val rValidVec = Vec.fill(myReorderBufSize)(
     Reg(Bool(), init=False)
   )
-  val rAttemptPushVec = Vec.fill(myReorderBufSize)(
-    Reg(Bool(), init=False)
-  )
+  //val rAttemptPushVec = Vec.fill(myReorderBufSize)(
+  //  Reg(Bool(), init=False)
+  //)
 
-  val rPushState = Reg(Bool(), init=False)
+  //val rPushState = Reg(Bool(), init=False)
 
-  switch (rPushState) {
-    is (False) {
-      when (
-        io.push.valid
-        && rValidVec(io.push.reorderBufIdx)
-      ) {
-        rPushState := True
-        io.push.ready := False
-      } otherwise {
-        io.push.ready := True
-      }
-    }
-    is (True) {
-      when (
-        io.push.valid
-        && !rValidVec(io.push.reorderBufIdx)
-      ) {
-        rPushState := False
-        io.push.ready := True
-      } otherwise {
-        io.push.ready := False
+  //switch (rPushState) {
+  //  is (False) {
+  //    when (
+  //      io.push.valid
+  //      && rValidVec(io.push.reorderBufIdx)
+  //    ) {
+  //      rPushState := True
+  //      io.push.ready := False
+  //    } otherwise {
+  //      io.push.ready := True
+  //    }
+  //  }
+  //  is (True) {
+  //    when (
+  //      io.push.valid
+  //      && !rValidVec(io.push.reorderBufIdx)
+  //    ) {
+  //      rPushState := False
+  //      io.push.ready := True
+  //    } otherwise {
+  //      io.push.ready := False
+  //    }
+  //  }
+  //}
+
+  switch (io.push.reorderBufIdx) {
+    for (idx <- 0 until (1 << io.push.reorderBufIdx.getWidth)) {
+      is (idx) {
+        io.push.ready := (
+          //True
+          //!rValidVec.andR
+          //!rAttemptPushVec(idx)
+          //&& 
+          !rValidVec(idx)
+          || (
+            io.push.valid
+            && io.push.myWbPayload.instrCnt.shouldIgnoreInstr.head
+          )
+          //&& !rPushState
+        )
       }
     }
   }
 
-  //switch (io.push.reorderBufIdx) {
-  //  for (idx <- 0 until (1 << io.push.reorderBufIdx.getWidth)) {
-  //    is (idx) {
-  //      io.push.ready := (
-  //        //True
-  //        //!rValidVec.andR
-  //        //!rAttemptPushVec(idx)
-  //        //&& 
-  //        !rValidVec(idx)
-  //        //&& !rPushState
-  //      )
-  //    }
-  //  }
-  //}
   //io.push.ready := (
   //  //True
   //  //!rValidVec.andR
@@ -2013,7 +2023,10 @@ case class SnowHouseForFmaxPsWbReorderBuf(
   //  rAttemptPushVec(io.push.reorderBufIdx) := False
   //}
 
-  myRam.io.wrPulse.valid := io.push.fire//valid//fire//valid//valid//fire
+  myRam.io.wrPulse.valid := (
+    io.push.fire//valid//fire//valid//valid//fire
+    //&& !rValidVec(io.push.reorderBufIdx)
+  )
   myRam.io.wrPulse.addr := io.push.reorderBufIdx
   //.resize(
   //  log2Up(rValidVec.size) bits
@@ -2021,6 +2034,14 @@ case class SnowHouseForFmaxPsWbReorderBuf(
   myRam.io.wrPulse.data.most := io.push.most
   when (myRam.io.wrPulse.fire) {
     rValidVec(myRam.io.wrPulse.addr) := True
+  }
+  when (
+    io.push.fire
+    //&& !rValidVec(io.push.reorderBufIdx) // check for 
+    && io.push.myWbPayload.instrCnt.shouldIgnoreInstr.head
+  ) {
+    myRam.io.wrPulse.data.regFileWrite.addr := 0x0
+    myRam.io.wrPulse.data.regFileWrite.data := 0x0
   }
   when (
     myRam.io.rdAddrPipe.fire
@@ -2053,6 +2074,7 @@ case class SnowHouseForFmaxPsWbReorderBuf(
   //    ) + 1
   //  )
   //}
+
   myRdAddr := (
     RegNextWhen(
       (myRdAddr + 1),
@@ -2064,7 +2086,43 @@ case class SnowHouseForFmaxPsWbReorderBuf(
     )
     init(0x1)
   )
-  //myTempPushStm.last << myTempPushStm.head.haltWhen
+
+  //when (
+  //  (
+  //    io.push.valid
+  //    && io.push.myWbPayload.instrCnt.shouldIgnoreInstr.last
+  //  )
+  //) {
+  //  io.push.ready := True//False
+  //  myRam.io.wrPulse.valid := False
+  //  myRam.io.rdAddrPipe.valid := False
+  //  myRdAddr := 0x0//0x1//0x0
+  //  rValidVec.foreach(item => item := False)
+  //} otherwise {
+  //  //myTempPushStm.last << myTempPushStm.head.haltWhen
+  //  myRam.io.rdAddrPipe.valid := (
+  //    //rValidVec(
+  //    //  myRdAddr - 1
+  //    //)
+  //    //&& 
+  //    rValidVec(
+  //      myRdAddr
+  //    )
+  //    //RegNext(
+  //    //  RegNext(
+  //    //    rValidVec(
+  //    //      myRdAddr
+  //    //    )
+  //    //  ),
+  //    //  init=False
+  //    //)
+  //    //|| (
+  //    //  myRam.io.wrPulse.fire
+  //    //  && myRam.io.wrPulse.addr === myRdAddr
+  //    //)
+  //  )
+  //}
+
   myRam.io.rdAddrPipe.valid := (
     //rValidVec(
     //  myRdAddr - 1
@@ -2332,9 +2390,13 @@ case class SnowHouseForFmaxPipeStageWriteBack(
         //myMemWbPayload(0).splitOp.opIsMemAccess
         myMemWbPayload(0).outpDecodeExt.opIsMemAccess.head
       )
-      && !(
-        myMemWbPayload(0).instrCnt.myPsIdBubble.head
-        //&& !myMemWbPayload(0).instrCnt.myScoreboardReadGprsBubble.head
+      && (
+        !(
+          myMemWbPayload(0).instrCnt.myPsIdBubble.head
+          //|| myMemWbPayload(0).instrCnt.shouldIgnoreInstr.head
+          //&& !myMemWbPayload(0).instrCnt.myScoreboardReadGprsBubble.head
+        )
+        || myMemWbPayload(0).instrCnt.shouldIgnoreInstr.head
       )
       && !myMemWbPayload(0).instrCnt.myPsExMemAccessBubble.last
     )
@@ -2377,9 +2439,13 @@ case class SnowHouseForFmaxPipeStageWriteBack(
         !myNonMemWbPayload(0).outpDecodeExt.opIsMemAccess.head
       )
       //&& !myNonMemWbPayload(0).inpDecodeExt.last.opIsMemAccess(0)
-      && !(
-        myNonMemWbPayload(0).instrCnt.myPsIdBubble.last
-        //&& !myNonMemWbPayload(0).instrCnt.myScoreboardReadGprsBubble.last
+      && (
+        !(
+          myNonMemWbPayload(0).instrCnt.myPsIdBubble.last
+          //|| myNonMemWbPayload(0).instrCnt.shouldIgnoreInstr.last
+          //&& !myNonMemWbPayload(0).instrCnt.myScoreboardReadGprsBubble.last
+        )
+        || myNonMemWbPayload(0).instrCnt.shouldIgnoreInstr.last
       )
       && !myNonMemWbPayload(0).instrCnt.myPsExMultiCycleBubble.last
     )
@@ -2827,12 +2893,12 @@ case class SnowHouseForFmaxPipeStageWriteBack(
         )
       }
       default {
-        if (cfg.optScoreboard) {
-          myCurrMmw := (
-            // TODO: support other `rdMemWord` indices
-            myMemWbPayload(1).myExt(0).rdMemWord(1)
-          )
-        }
+        //if (cfg.optScoreboard) {
+        //  myCurrMmw := (
+        //    // TODO: support other `rdMemWord` indices
+        //    myMemWbPayload(1).myExt(0).rdMemWord(1)
+        //  )
+        //}
       }
     }
     when (
@@ -3355,6 +3421,11 @@ case class SnowHouseForFmaxPipeStageWriteBack(
             //cLink.up.isValid
             //&& 
             myNonMemWbValid
+            //|| (
+            //  myNonMemWbFifo.io.pop.valid
+            //  && myNonMemWbFifo.io.pop.instrCnt.shouldIgnoreInstr.last
+            //)
+            //|| myNonMemWbPayload(1).instrCnt.shouldIgnoreInstr.last
             //&& rInstrMayPassCnt.orR
             //&& !myNonMemWbPayload(1).instrCnt.myPsIdBubble.last
           )
@@ -3511,17 +3582,21 @@ case class SnowHouseForFmaxPipeStageWriteBack(
       )
       io.dbgInfo.shouldIgnoreInstrAtRegFileWrite := (
         if (cfg.optScoreboard) (
-          myCommitAlmostFinalOutpStm.myWbPayload.instrCnt.shouldIgnoreInstr.last
+          myCommitAlmostFinalOutpStm.myWbPayload
+          .instrCnt.shouldIgnoreInstr.last
           || (
             !myCommitAlmostFinalOutpStm.fire
           )
         ) else (
-          myCommitAlmostFinalOutpStm.myWbPayload.instrCnt.shouldIgnoreInstr.last
+          myCommitAlmostFinalOutpStm.myWbPayload
+          .instrCnt.shouldIgnoreInstr.last
         )
       )
       io.dbgInfo.myPsIdBubbleAtRegFileWrite := (
         if (cfg.optScoreboard) {
-          val myInstrCnt = myCommitAlmostFinalOutpStm.myWbPayload.instrCnt
+          val myInstrCnt = (
+            myCommitAlmostFinalOutpStm.myWbPayload.instrCnt
+          )
           (
             (
               myInstrCnt.myPsIdBubble.last
