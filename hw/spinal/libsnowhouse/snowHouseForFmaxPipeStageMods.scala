@@ -1947,40 +1947,69 @@ case class SnowHouseForFmaxPsWbReorderBuf(
   val rValidVec = Vec.fill(myReorderBufSize)(
     Reg(Bool(), init=False)
   )
+  val rAttemptPushVec = Vec.fill(myReorderBufSize)(
+    Reg(Bool(), init=False)
+  )
 
-  val rPushState = Reg(Bool(), init=False)
+  //val rPushState = Reg(Bool(), init=False)
 
-  switch (rPushState) {
-    is (False) {
-      when (
-        io.push.valid
-        && rValidVec(io.push.reorderBufIdx)
-      ) {
-        rPushState := True
-        io.push.ready := False
-      } otherwise {
-        io.push.ready := True
-      }
-    }
-    is (True) {
-      when (
-        io.push.valid
-        && !rValidVec(io.push.reorderBufIdx)
-      ) {
-        rPushState := False
-        io.push.ready := True
-      } otherwise {
-        io.push.ready := False
+  //switch (rPushState) {
+  //  is (False) {
+  //    when (
+  //      io.push.valid
+  //      && rValidVec(io.push.reorderBufIdx)
+  //    ) {
+  //      rPushState := True
+  //      io.push.ready := False
+  //    } otherwise {
+  //      io.push.ready := True
+  //    }
+  //  }
+  //  is (True) {
+  //    when (
+  //      io.push.valid
+  //      && !rValidVec(io.push.reorderBufIdx)
+  //    ) {
+  //      rPushState := False
+  //      io.push.ready := True
+  //    } otherwise {
+  //      io.push.ready := False
+  //    }
+  //  }
+  //}
+
+  switch (io.push.reorderBufIdx) {
+    for (idx <- 0 until (1 << io.push.reorderBufIdx.getWidth)) {
+      is (idx) {
+        io.push.ready := (
+          //True
+          //!rValidVec.andR
+          !rAttemptPushVec(idx)
+          && !rValidVec(idx)
+          //&& !rPushState
+        )
       }
     }
   }
-
   //io.push.ready := (
   //  //True
   //  //!rValidVec.andR
-  //  !rValidVec(io.push.reorderBufIdx)
-  //  && !rPushState
+  //  !rAttemptPushVec(io.push.reorderBufIdx)
+  //  && !rValidVec(io.push.reorderBufIdx)
+  //  //&& !rPushState
   //)
+  when (
+    io.push.valid
+    && !io.push.ready
+    && !rAttemptPushVec(io.push.reorderBufIdx)
+  ) {
+    rAttemptPushVec(io.push.reorderBufIdx) := True
+  }
+  when (
+    io.push.fire
+  ) {
+    rAttemptPushVec(io.push.reorderBufIdx) := False
+  }
 
   myRam.io.wrPulse.valid := io.push.fire//valid//fire//valid//valid//fire
   myRam.io.wrPulse.addr := io.push.reorderBufIdx
