@@ -2318,17 +2318,21 @@ case class SnowHousePipeStageInstrDecode(
         )
       )
     }
+
     val myTempReorderBufIdx = (
       upPayload(1).instrCnt.scoreboardIssuePayload.reorderBufIdx
     )
+
     myTempReorderBufIdx := (
       RegNext(
         myTempReorderBufIdx,
         init=myTempReorderBufIdx.getZero
       )
     )
+
     when (
-      up.isFiring
+      down.isFiring
+      //up.isFiring
       //(
       //  if (cfg.myHaveZeroReg) (
       //    //up.isFiring
