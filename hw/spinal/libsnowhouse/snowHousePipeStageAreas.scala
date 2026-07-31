@@ -2259,6 +2259,33 @@ case class SnowHousePipeStageInstrDecode(
     //) {
     //  rSavedGprMayNeedHazardCheckVec := 0x0
     //}
+    val myHistForHazardCheck = (
+      History(
+        that=upPayload(1).gprIdxVec.last,
+        when=up.isFiring,
+        length=(
+          //3
+          4
+          // ID, PreFwd, EX,
+          // EX + 1
+          // (branch mispredict found out from PC *after* the branch
+          // (though, as of this writing,
+          // I think I might need to change the existing
+          // design of EX to be exactly that?))
+        ),
+        init=upPayload(1).gprIdxVec.last.getZero,
+      )
+    )
+
+    when (
+      shouldClearExtraDecodeInfo
+    ) {
+      for (idx <- 0 until myHistForHazardCheck.size) {
+        rSavedGprMayNeedHazardCheckVec(myHistForHazardCheck(idx)) := (
+          False
+        )
+      }
+    }
 
     when (myScoreboardCommitStm.fire) {
       rSavedGprMayNeedHazardCheckVec(
@@ -2270,7 +2297,7 @@ case class SnowHousePipeStageInstrDecode(
 
     when (
       myTempOpMayNeedHazardCheck
-      && !shouldClearExtraDecodeInfo
+      //&& !shouldClearExtraDecodeInfo
       && up.isFiring
     ) {
       rSavedGprMayNeedHazardCheckVec(
