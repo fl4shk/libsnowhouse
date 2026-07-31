@@ -2254,11 +2254,11 @@ case class SnowHousePipeStageInstrDecode(
     //  rSavedGprMayNeedHazardCheckVec
     //}
 
-    when (
-      shouldClearExtraDecodeInfo
-    ) {
-      rSavedGprMayNeedHazardCheckVec := 0x0
-    }
+    //when (
+    //  shouldClearExtraDecodeInfo
+    //) {
+    //  rSavedGprMayNeedHazardCheckVec := 0x0
+    //}
 
     when (myScoreboardCommitStm.fire) {
       rSavedGprMayNeedHazardCheckVec(
