@@ -2233,16 +2233,19 @@ case class SnowHousePipeStageInstrDecode(
 
     myScoreboardCommitStm.ready := True
     val rSavedGprTagVec = (
-      Reg(UInt(cfg.numGprs bits))
-      init(0x0)
-    )
-    val rGprInUseCntVec = (
+      //Reg(UInt(cfg.numGprs bits))
+      //init(0x0)
       Vec.fill(cfg.numGprs)(
-        Reg(UInt(5 bits))
-        init(0x0)
+        Reg(Bool(), init=False)
       )
     )
-    myScoreboardSavedGprTagVec := rSavedGprTagVec
+    //val rGprInUseCntVec = (
+    //  Vec.fill(cfg.numGprs)(
+    //    Reg(UInt(5 bits))
+    //    init(0x0)
+    //  )
+    //)
+    myScoreboardSavedGprTagVec := rSavedGprTagVec.reverse.asBits.asUInt
 
     val myMainHazardCheckVec = Vec.fill(
       cfg.regFileCfg.modRdPortCnt
@@ -2376,7 +2379,8 @@ case class SnowHousePipeStageInstrDecode(
           //RegNext(
           //  (
               //!myMainHazardCheckVec.orR
-              !rSavedGprTagVec.orR
+              //(!(rSavedGprTagVec.orR))
+              (rSavedGprTagVec.asBits.asUInt === 0x0)
               && !shouldClearExtraDecodeInfo
           //  ),
           //  init=False
@@ -2387,7 +2391,8 @@ case class SnowHousePipeStageInstrDecode(
         when (
           //RegNext(
             //myMainHazardCheckVec.orR
-            rSavedGprTagVec.orR
+            //rSavedGprTagVec.orR
+            (rSavedGprTagVec.asBits.asUInt =/= 0x0)
             && !shouldClearExtraDecodeInfo,
           //  init=False
           //)
