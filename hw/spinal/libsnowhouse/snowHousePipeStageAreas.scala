@@ -3196,21 +3196,71 @@ case class SnowHousePipeStagePreFwd(
     //  //Bool()
     //  UInt(myHistFwdInfo.size - 1 bits)
     //)
+
+    case class MyRegFileWrPulseFwdInfo(
+    ) extends Bundle {
+      val myRegFileWrPulse = cloneOf(forFmaxRegFileWrPulseArr(0))
+      def addr = myRegFileWrPulse.addr
+      def data = myRegFileWrPulse.data
+      def fire = myRegFileWrPulse.fire
+      def valid = myRegFileWrPulse.valid
+      val branchMispredictEtcForceToZero = Bool()
+    }
+
     val myHistRegFileWrPulse = (
       //!cfg.optScoreboard
       true
-    ) generate (
-      History(
-        that=forFmaxRegFileWrPulseArr(0),
+    ) generate {
+      val temp = MyRegFileWrPulseFwdInfo()
+      temp.myRegFileWrPulse := forFmaxRegFileWrPulseArr(0)
+      temp.branchMispredictEtcForceToZero := (
+        (
+          (
+            myBranchMispredictEtc
+            || rMyPsExSetPcState
+          )
+          && !outp.regPcSetItCnt(1).lsb
+        )
+      )
+
+      val myTempHist = History(
+        that=(
+          //forFmaxRegFileWrPulseArr(0)
+          temp
+        ),
         when=forFmaxRegFileWrPulseArr(0).fire,
         length=(
           //2
           3//2
           //+ (if (cfg.optScoreboard) (1) else (0))
         ),
-        init=forFmaxRegFileWrPulseArr(0).getZero,
+        init=(
+          //forFmaxRegFileWrPulseArr(0).getZero
+          temp.getZero
+        ),
       )
-    )
+
+      val myFwdInfoVec = Vec.fill(myTempHist.size)(
+        cloneOf(temp)
+      )
+      myFwdInfoVec := myTempHist
+      for (idx <- 0 until myFwdInfoVec.size - 1) {
+        when (
+          myFwdInfoVec(idx).branchMispredictEtcForceToZero
+          //myFwdInfoVec(idx).anyForceToZero
+        ) {
+          // don't forward the WB output of the first instruction
+          // following branch mispredict, etc.
+
+          //myFwdInfoVec(idx).valid := False
+          //myFwdInfoVec(idx + 1).valid := False
+          for (jdx <- idx + 1 until myFwdInfoVec.size) {
+            myFwdInfoVec(jdx).valid := False
+          }
+        }
+      }
+      myFwdInfoVec
+    }
     val stickyFwdRegFileWrPulse = (
       Vec.fill(cfg.regFileCfg.modRdPortCnt)(
         Flow(
