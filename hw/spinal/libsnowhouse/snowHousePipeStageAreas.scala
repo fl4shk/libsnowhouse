@@ -3249,12 +3249,10 @@ case class SnowHousePipeStagePreFwd(
           myFwdInfoVec(idx).branchMispredictEtcForceToZero
           //myFwdInfoVec(idx).anyForceToZero
         ) {
-          // don't forward the WB output of the first instruction
-          // following branch mispredict, etc.
-
-          //myFwdInfoVec(idx).valid := False
-          //myFwdInfoVec(idx + 1).valid := False
-          for (jdx <- idx + 1 until myFwdInfoVec.size) {
+          for (
+            jdx <- idx //+ 1 
+            until myFwdInfoVec.size
+          ) {
             myFwdInfoVec(jdx).valid := False
           }
         }
