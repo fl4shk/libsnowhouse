@@ -2405,7 +2405,7 @@ case class SnowHousePipeStageInstrDecode(
             //myMainHazardCheckVec.orR
             //rSavedGprTagVec.orR
             (rSavedGprTagVec.asBits.asUInt =/= 0x0)
-            && !shouldClearExtraDecodeInfo,
+            //&& !shouldClearExtraDecodeInfo,
           //  init=False
           //)
         ) {
