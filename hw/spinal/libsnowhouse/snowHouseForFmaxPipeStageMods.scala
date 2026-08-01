@@ -3462,7 +3462,7 @@ case class SnowHouseForFmaxPipeStageWriteBack(
         //|| !io.myScoreboardSavedGprTagVec(
         //  someMyWbPayload(1).gprIdxVec.last
         //)
-        || !mkScoreboardGprTagOrReduce(someMyWbPayload(1))
+        //|| !mkScoreboardGprTagOrReduce(someMyWbPayload(1))
       )
       && !someMyWbPayload(1).instrCnt.shouldIgnoreInstr.last
       && {
@@ -3748,10 +3748,10 @@ case class SnowHouseForFmaxPipeStageWriteBack(
               //&& !io.myScoreboardSavedGprTagVec(
               //  myCommitAlmostFinalOutpStm.myWbPayload.gprIdxVec.last
               //)
-              && !mkScoreboardGprTagOrReduce(
-                //myMemWbPayload(0)
-                myCommitAlmostFinalOutpStm.myWbPayload
-              )
+              //&& !mkScoreboardGprTagOrReduce(
+              //  //myMemWbPayload(0)
+              //  myCommitAlmostFinalOutpStm.myWbPayload
+              //)
             )
             //|| myInstrCnt.myPsExMemAccessBubble.last
             //|| myInstrCnt.myPsExMultiCycleBubble.last
