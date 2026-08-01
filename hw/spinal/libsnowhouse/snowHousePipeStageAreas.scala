@@ -2318,13 +2318,19 @@ case class SnowHousePipeStageInstrDecode(
           RegNext(
             (
               !myMainHazardCheckVec.orR
-              //&& !shouldClearExtraDecodeInfo
+              && !shouldClearExtraDecodeInfo
             ),
             init=False
           )
         ) {
           rScoreboardFlushState := ScoreboardFlushState.IDLE
-        } otherwise {
+        }
+        when (
+          RegNext(
+            myMainHazardCheckVec.orR,
+            init=False
+          )
+        ) {
           doSendBubbleMainMost(
             myPsIdBubble=Some(
               //!shouldClearExtraDecodeInfo
@@ -2333,6 +2339,26 @@ case class SnowHousePipeStageInstrDecode(
             )
           )
         }
+
+        //when (
+        //  RegNext(
+        //    (
+        //      !myMainHazardCheckVec.orR
+        //      //&& !shouldClearExtraDecodeInfo
+        //    ),
+        //    init=False
+        //  )
+        //) {
+        //  rScoreboardFlushState := ScoreboardFlushState.IDLE
+        //} otherwise {
+        //  doSendBubbleMainMost(
+        //    myPsIdBubble=Some(
+        //      //!shouldClearExtraDecodeInfo
+        //      True
+        //      //False
+        //    )
+        //  )
+        //}
       }
     }
 
