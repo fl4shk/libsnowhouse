@@ -2346,6 +2346,8 @@ case class SnowHouseForFmaxPipeStageWriteBack(
   ) extends Bundle {
     val instrCnt = SnowHouseInstrCnt(cfg=cfg)
     val outpDecodeExt = SnowHouseDecodeExt(cfg=cfg)
+    val scoreboardOpIsMemAccess = Bool()
+
     val encInstr = (
       io.dbgInfo != null
     ) generate (
@@ -2541,6 +2543,9 @@ case class SnowHouseForFmaxPipeStageWriteBack(
     myMemWbFifo.io.push.payload.myExt := (
       myMemWbPayload(0).myExt
     )
+    myMemWbFifo.io.push.payload.scoreboardOpIsMemAccess := (
+      myMemWbPayload(0).splitOp.scoreboardOpIsMemAccess
+    )
 
     myNonMemWbFifo.io.push.valid := (
       cLink.up.isValid
@@ -2569,6 +2574,9 @@ case class SnowHouseForFmaxPipeStageWriteBack(
     )
     myNonMemWbFifo.io.push.payload.outpDecodeExt := (
       myNonMemWbPayload(0).outpDecodeExt
+    )
+    myNonMemWbFifo.io.push.payload.scoreboardOpIsMemAccess := (
+      myNonMemWbPayload(0).splitOp.scoreboardOpIsMemAccess
     )
     if (io.dbgInfo != null) {
       myNonMemWbFifo.io.push.payload.laggingRegPc := (
@@ -2724,6 +2732,9 @@ case class SnowHouseForFmaxPipeStageWriteBack(
       myMemWbPayload(1).outpDecodeExt := (
         myMemWbFifo.io.pop.payload.outpDecodeExt
       )
+      myMemWbPayload(1).splitOp.scoreboardOpIsMemAccess := (
+        myMemWbFifo.io.pop.payload.scoreboardOpIsMemAccess
+      )
       if (io.dbgInfo != null) {
         myMemWbPayload(1).laggingRegPc := (
           myMemWbFifo.io.pop.payload.laggingRegPc
@@ -2758,6 +2769,9 @@ case class SnowHouseForFmaxPipeStageWriteBack(
       )
       myNonMemWbPayload(1).outpDecodeExt := (
         myNonMemWbFifo.io.pop.payload.outpDecodeExt
+      )
+      myNonMemWbPayload(1).splitOp.scoreboardOpIsMemAccess := (
+        myNonMemWbFifo.io.pop.payload.scoreboardOpIsMemAccess
       )
       if (io.dbgInfo != null) {
         myNonMemWbPayload(1).laggingRegPc := (
