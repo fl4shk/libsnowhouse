@@ -3251,27 +3251,27 @@ case class SnowHouseForFmaxPipeStageWriteBack(
       myCommitBackStm.myWbPayload
       .instrCnt.scoreboardIssuePayload.reorderBufIdx
     )
-    val myTempCommitStm = (
-      myCommitBackStm
-    )
     //val myTempCommitStm = (
-    //  cloneOf(myCommitBackStm)
+    //  myCommitBackStm
     //)
-    //myTempCommitStm << (
-    //  myCommitBackStm.throwWhen(
-    //    myTempReorderBufIdx
-    //    === (
-    //      RegNextWhen(
-    //        myTempReorderBufIdx,
-    //        cond=(
-    //          myTempCommitStm.fire
-    //          //myCommitBackStm.fire
-    //        ),
-    //      )
-    //      init(0x2)
-    //    )
-    //  )
-    //)
+    val myTempCommitStm = (
+      cloneOf(myCommitBackStm)
+    )
+    myTempCommitStm << (
+      myCommitBackStm.throwWhen(
+        myTempReorderBufIdx
+        === (
+          RegNextWhen(
+            myTempReorderBufIdx,
+            cond=(
+              myTempCommitStm.fire
+              //myCommitBackStm.fire
+            ),
+          )
+          init(0x2)
+        )
+      )
+    )
     //io.commitEtc.myScoreboardFwdRegFileWrPulse.valid := (
     //  myTempCommitStm.fire
     //  && !myTempCommitStm.myWbPayload.splitOp.opIsMemAccess

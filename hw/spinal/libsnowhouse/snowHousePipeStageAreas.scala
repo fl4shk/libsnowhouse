@@ -2288,6 +2288,15 @@ case class SnowHousePipeStageInstrDecode(
         init=myTempReorderBufIdx.getZero
       )
     )
+    when (up.isFiring) {
+      myTempReorderBufIdx := (
+        RegNext(
+          myTempReorderBufIdx,
+          init=myTempReorderBufIdx.getZero
+        )
+        + 1
+      )
+    }
 
     //when (
     //  //down.isFiring
@@ -2335,15 +2344,15 @@ case class SnowHousePipeStageInstrDecode(
 
     switch (rScoreboardFlushState) {
       is (ScoreboardFlushState.IDLE) {
-        when (up.isFiring) {
-          myTempReorderBufIdx := (
-            RegNext(
-              myTempReorderBufIdx,
-              init=myTempReorderBufIdx.getZero
-            )
-            + 1
-          )
-        }
+        //when (up.isFiring) {
+        //  myTempReorderBufIdx := (
+        //    RegNext(
+        //      myTempReorderBufIdx,
+        //      init=myTempReorderBufIdx.getZero
+        //    )
+        //    + 1
+        //  )
+        //}
 
         when (
           //(
@@ -2369,15 +2378,15 @@ case class SnowHousePipeStageInstrDecode(
         }
       }
       is (ScoreboardFlushState.FLUSH_PIPE) {
-        when (down.isFiring) {
-          myTempReorderBufIdx := (
-            RegNext(
-              myTempReorderBufIdx,
-              init=myTempReorderBufIdx.getZero
-            )
-            + 1
-          )
-        }
+        //when (down.isFiring) {
+        //  myTempReorderBufIdx := (
+        //    RegNext(
+        //      myTempReorderBufIdx,
+        //      init=myTempReorderBufIdx.getZero
+        //    )
+        //    + 1
+        //  )
+        //}
         when (
           //RegNext(
           //  (
