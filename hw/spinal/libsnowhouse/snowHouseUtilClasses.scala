@@ -846,16 +846,6 @@ case class SnowHouseConfig(
   //    )
   //  }
   //)
-  val optScoreboardReorderBufWidth = (
-    //log2Up(optMaxNumScoreboardInstrs + 1)
-    (log2Up(myPsIdBubbleNumFollowingInstrs + 1) + 1).max(
-      log2Up(
-        //16
-        //64
-        32
-      )
-    )
-  )
   //val optNumScoreboardTags = (
   //  if (optScoreboard) (
   //    (
@@ -1145,6 +1135,20 @@ case class SnowHouseConfig(
   )
   regFileCfg.linkArr = None
   def numGprs = regFileCfg.wordCountSum
+
+  val optScoreboardReorderBufWidth = (
+    //log2Up(optMaxNumScoreboardInstrs + 1)
+    (log2Up(myPsIdBubbleNumFollowingInstrs + 1) + 1).max(
+      log2Up(
+        //16
+        //64
+        //32
+        1 << (log2Up(numGprs) + 1)
+        //64
+      )
+    )
+  )
+
   //--------
   val cpyCpyuiOpInfoMap = LinkedHashMap[Int, OpInfo]()
   //val pureCpyOpInfoMap = LinkedHashMap[Int, OpInfo]()
