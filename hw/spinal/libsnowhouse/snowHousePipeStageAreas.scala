@@ -3294,7 +3294,7 @@ case class SnowHousePipeStagePreFwd(
             myBranchMispredictEtc
             || rMyPsExSetPcState
           )
-          && !outp.regPcSetItCnt(1).lsb
+          //&& !outp.regPcSetItCnt(1).lsb
         )
       )
 
