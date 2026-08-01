@@ -2316,6 +2316,22 @@ case class SnowHousePipeStageInstrDecode(
     //  )
     //}
 
+    when (
+      myTempOpMayNeedHazardCheck
+      && !shouldClearExtraDecodeInfo
+      && up.isFiring
+    ) {
+      rSavedGprTagVec(
+        upPayload(1).gprIdxVec.last
+      ) := (
+        //True
+        if (cfg.myHaveZeroReg) (
+          upPayload(1).gprIdxVec.last =/= 0x0
+        ) else (
+          True
+        )
+      )
+    }
 
     switch (rScoreboardFlushState) {
       is (ScoreboardFlushState.IDLE) {
@@ -2346,22 +2362,6 @@ case class SnowHousePipeStageInstrDecode(
           )
         }
 
-        when (
-          myTempOpMayNeedHazardCheck
-          && !shouldClearExtraDecodeInfo
-          && up.isFiring
-        ) {
-          rSavedGprTagVec(
-            upPayload(1).gprIdxVec.last
-          ) := (
-            //True
-            if (cfg.myHaveZeroReg) (
-              upPayload(1).gprIdxVec.last =/= 0x0
-            ) else (
-              True
-            )
-          )
-        }
         when (
           shouldClearExtraDecodeInfo
         ) {
