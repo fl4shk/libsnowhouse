@@ -2003,19 +2003,36 @@ case class SnowHouseForFmaxPsWbReorderBuf(
   //  }
   //}
 
+  //val myPushStm = cloneOf(io.push)
+
   val rMyShouldIgnoreState = Reg(Bool(), init=False)
   when (
-    io.push.fire
-    && io.push.myShouldIgnoreInstr
-  ) {
-    rMyShouldIgnoreState := True
-  }
-  when (
     rMyShouldIgnoreState
-    && !rOccupancy.orR
+    && (
+      !rOccupancy.orR
+      //|| !(
+      //  io.push.fire//valid
+      //  && io.push.myShouldIgnoreInstr
+      //)
+    )
+    //&& (
+    //  !(
+    //    io.push.valid//fire//valid
+    //    && io.push.myShouldIgnoreInstr
+    //  )
+    //)
   ) {
     rMyShouldIgnoreState := False
   }
+
+  when (
+    io.push.fire//valid//fire
+    && io.push.myShouldIgnoreInstr
+    && rOccupancy.orR
+  ) {
+    rMyShouldIgnoreState := True
+  }
+
 
 
   switch (io.push.reorderBufIdx) {
@@ -2028,7 +2045,16 @@ case class SnowHouseForFmaxPsWbReorderBuf(
           //&& 
           !rValidVec(idx)
           && rOccupancy < myReorderBufSize - 8//- 1
-          && !rMyShouldIgnoreState
+          && (
+            !rMyShouldIgnoreState
+            //|| (
+            //  io.push.valid
+            //  && (
+            //    /!io.push.myShouldIgnoreInstr
+            //    io.push.myShouldIgnoreInstr
+            //  )
+            //)
+          )
           //&& myRam.io.rdAddrPipe.addr =/= idx
           //|| (
           //  //rValidVec(idx)
@@ -2065,7 +2091,7 @@ case class SnowHouseForFmaxPsWbReorderBuf(
 
   myRam.io.wrPulse.valid := (
     io.push.fire//fire//valid//fire//valid//valid//fire
-    && !io.push.myShouldIgnoreInstr
+    //&& !io.push.myShouldIgnoreInstr
     //&& !rValidVec(io.push.reorderBufIdx)
     //&& io.push.myWbPayload.instrCnt.shouldIgnoreInstr.head
   )
@@ -2099,8 +2125,14 @@ case class SnowHouseForFmaxPsWbReorderBuf(
   }
 
   switch (
-    myRam.io.wrPulse.fire
-    ## myRam.io.rdAddrPipe.fire
+    (
+      myRam.io.wrPulse.fire
+      //&& !rOccupancy.andR
+    )
+    ## (
+      myRam.io.rdAddrPipe.fire
+      //&& rOccupancy.orR
+    )
   ) {
     is (M"10") {
       rOccupancy := rOccupancy + 1
@@ -2228,6 +2260,10 @@ case class SnowHouseForFmaxPsWbReorderBuf(
     //&& 
     rValidVec(
       myRdAddr
+    )
+    || (
+      rMyShouldIgnoreState
+      && rOccupancy.orR
     )
     //&& myRam.io.rdAddrPipe.addr =/= idx
     //&& rOccupancy >= 1

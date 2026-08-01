@@ -2245,7 +2245,7 @@ case class SnowHousePipeStageInstrDecode(
     //    init(0x0)
     //  )
     //)
-    myScoreboardSavedGprTagVec := rSavedGprTagVec.reverse.asBits.asUInt
+    myScoreboardSavedGprTagVec := rSavedGprTagVec.asBits.asUInt
 
     val myMainHazardCheckVec = Vec.fill(
       cfg.regFileCfg.modRdPortCnt
@@ -2290,7 +2290,7 @@ case class SnowHousePipeStageInstrDecode(
     )
     when (
       up.isFiring
-      && !shouldClearExtraDecodeInfo
+      //&& !shouldClearExtraDecodeInfo
     ) {
       myTempReorderBufIdx := (
         RegNext(
