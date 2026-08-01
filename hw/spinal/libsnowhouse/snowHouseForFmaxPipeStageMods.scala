@@ -154,7 +154,7 @@ case class SnowHouseScoreboardCommitPayload(
   cfg: SnowHouseConfig,
 ) extends Bundle {
   //val tag = UInt(cfg.optScoreboardTagWidth bits)
-  val myGprIdx = UInt(log2Up(cfg.numGprs) bits)
+  val myGprIdx = Flow(UInt(log2Up(cfg.numGprs) bits))
   //val isBubbleEtc = Bool()
 }
 
@@ -3516,7 +3516,18 @@ case class SnowHouseForFmaxPipeStageWriteBack(
           myCurrExt.modMemWord
         }
       }
-      someCommitStm.commit.myGprIdx := (
+      someCommitStm.commit.myGprIdx.valid := (
+        if (isMem) (
+          if (cfg.myHaveZeroReg) (
+            !someMyWbPayload(1).gprIsZeroVec.last.last
+          ) else (
+            True
+          )
+        ) else (
+          False
+        )
+      )
+      someCommitStm.commit.myGprIdx.payload := (
         someMyWbPayload(1).gprIdxVec.last
       )
     } otherwise {
@@ -3525,16 +3536,44 @@ case class SnowHouseForFmaxPipeStageWriteBack(
       }
       someCommitStm.regFileWrite.addr := 0x0
       someCommitStm.regFileWrite.data := 0x0
-      when (someMyWbPayload(1).instrCnt.shouldIgnoreInstr.last) {
-        someCommitStm.commit.myGprIdx := (
-          someMyWbPayload(1).gprIdxVec.last
+      someCommitStm.commit.myGprIdx.payload := (
+        someMyWbPayload(1).gprIdxVec.last
+      )
+
+      someCommitStm.commit.myGprIdx.valid := (
+        if (isMem) (
+          //(
+          //  if (cfg.myHaveZeroReg) (
+          //    !someMyWbPayload(1).gprIsZeroVec.last.last
+          //  ) else (
+          //    True
+          //  )
+          //)
+          //&& someMyWbPayload(1).instrCnt.shouldIgnoreInstr.last
+          False
+        ) else (
+          //False
+          (
+            if (cfg.myHaveZeroReg) (
+              !someMyWbPayload(1).gprIsZeroVec.last.last
+            ) else (
+              True
+            )
+          )
+          && someMyWbPayload(1).instrCnt.shouldIgnoreInstr.last
+          && someMyWbPayload(1).splitOp.scoreboardOpIsMemAccess
         )
-      } otherwise {
-        someCommitStm.commit.myGprIdx := (
-          //someMyWbPayload(1).gprIdxVec.last
-          0x0
-        )
-      }
+      )
+
+      //when (
+      //  someMyWbPayload(1).instrCnt.shouldIgnoreInstr.last
+      //) {
+      //} otherwise {
+      //  someCommitStm.commit.myGprIdx := (
+      //    //someMyWbPayload(1).gprIdxVec.last
+      //    0x0
+      //  )
+      //}
     }
     if (cfg.optScoreboard) {
       //val rSeenUpIsFiring = (

@@ -2267,9 +2267,12 @@ case class SnowHousePipeStageInstrDecode(
       init(ScoreboardFlushState.IDLE)
     )
 
-    when (myScoreboardCommitStm.fire) {
+    when (
+      myScoreboardCommitStm.fire
+      && myScoreboardCommitStm.myGprIdx.fire
+    ) {
       rSavedGprTagVec(
-        myScoreboardCommitStm.myGprIdx
+        myScoreboardCommitStm.myGprIdx.payload
       ) := (
         False
       )
@@ -2471,6 +2474,9 @@ case class SnowHousePipeStageInstrDecode(
     //    init=myTempReorderBufIdx.getZero
     //  )
     //)
+    down(pId).splitOp.scoreboardOpIsMemAccess := (
+      upPayload(1).splitOp.opIsMemAccess
+    )
   })
   if (cfg.optScoreboard) {
     upPayload(1).instrCnt.myScoreboardOpMayNeedHazardCheck := (
@@ -2830,6 +2836,7 @@ case class SnowHousePipeStagePreFwd(
     //    )
     //  }
     //}
+
 
     val rSavedMostRecentGprWriteWasMemAccess = {
       val temp = Reg(UInt(cfg.numGprs bits))
@@ -11070,13 +11077,17 @@ case class SnowHousePipeStageExecute(
       //    item := False
       //  })
       //})
-      if (!cfg.optScoreboard) {
-        outp.gprIdxVec := outp.gprIdxVec.getZero
-      }
       outp.setAsBubbleMain(
         None,
         myUpdateRegPcSetItCnt=false,
       )
+      if (cfg.optScoreboard) {
+        outp.splitOp.scoreboardOpIsMemAccess := (
+          inp.splitOp.scoreboardOpIsMemAccess
+        )
+      } else { // if (!cfg.optScoreboard)
+        outp.gprIdxVec := outp.gprIdxVec.getZero
+      }
       outp.myExt(0).rdMemWord.foreach(item => {
         item := 0x0
       })

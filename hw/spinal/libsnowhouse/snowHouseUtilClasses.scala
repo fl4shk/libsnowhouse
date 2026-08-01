@@ -1735,6 +1735,11 @@ case class SnowHouseSplitOp(
   //)
   val opIsMultiCycle = Bool()
   val opIsMemAccess = Bool()
+  val scoreboardOpIsMemAccess = (
+    cfg.optScoreboard
+  ) generate (
+    Bool()
+  )
   //val opIsJmp = Bool()
   //val nonMultiCycleOp = /*Flow*/(
   //  UInt(log2Up(cfg.nonMultiCycleOpInfoMap.size + 1) bits)
