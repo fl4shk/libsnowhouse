@@ -2272,8 +2272,57 @@ case class SnowHousePipeStageInstrDecode(
       )
     }
 
+    val myTempReorderBufIdx = (
+      upPayload(1).instrCnt.scoreboardIssuePayload.reorderBufIdx
+    )
+
+    myTempReorderBufIdx := (
+      RegNext(
+        myTempReorderBufIdx,
+        init=myTempReorderBufIdx.getZero
+      )
+    )
+
+    //when (
+    //  //down.isFiring
+    //  up.isFiring
+    //  //(
+    //  //  if (cfg.myHaveZeroReg) (
+    //  //    //up.isFiring
+    //  //    down.isFiring
+    //  //    //&& upPayload(1).gprIdxVec.last =/= 0x0
+    //  //  ) else (
+    //  //    //up.isFiring
+    //  //    down.isFiring
+    //  //  )
+    //  //)
+    //  //&& (
+    //  //  !myMainHazardCheckVec.orR
+    //  //  || shouldClearExtraDecodeInfo
+    //  //)
+    //) {
+    //  myTempReorderBufIdx := (
+    //    RegNext(
+    //      myTempReorderBufIdx,
+    //      init=myTempReorderBufIdx.getZero
+    //    )
+    //    + 1
+    //  )
+    //}
+
+
     switch (rScoreboardFlushState) {
       is (ScoreboardFlushState.IDLE) {
+        when (up.isFiring) {
+          myTempReorderBufIdx := (
+            RegNext(
+              myTempReorderBufIdx,
+              init=myTempReorderBufIdx.getZero
+            )
+            + 1
+          )
+        }
+
         when (
           //(
           //  myHistCondAnyBubble(idx + 1)
@@ -2314,10 +2363,20 @@ case class SnowHousePipeStageInstrDecode(
         }
       }
       is (ScoreboardFlushState.FLUSH_PIPE) {
+        when (down.isFiring) {
+          myTempReorderBufIdx := (
+            RegNext(
+              myTempReorderBufIdx,
+              init=myTempReorderBufIdx.getZero
+            )
+            + 1
+          )
+        }
         when (
           //RegNext(
           //  (
-              !myMainHazardCheckVec.orR
+              //!myMainHazardCheckVec.orR
+              !rSavedGprTagVec.orR
               && !shouldClearExtraDecodeInfo
           //  ),
           //  init=False
@@ -2327,7 +2386,8 @@ case class SnowHousePipeStageInstrDecode(
         }
         when (
           //RegNext(
-            myMainHazardCheckVec.orR
+            //myMainHazardCheckVec.orR
+            rSavedGprTagVec.orR
             && !shouldClearExtraDecodeInfo,
           //  init=False
           //)
@@ -2335,8 +2395,8 @@ case class SnowHousePipeStageInstrDecode(
           doSendBubbleMainMost(
             myPsIdBubble=Some(
               //!shouldClearExtraDecodeInfo
-              True
-              //False
+              //True
+              False
             )
           )
         }
@@ -2363,43 +2423,6 @@ case class SnowHousePipeStageInstrDecode(
       }
     }
 
-    val myTempReorderBufIdx = (
-      upPayload(1).instrCnt.scoreboardIssuePayload.reorderBufIdx
-    )
-
-    myTempReorderBufIdx := (
-      RegNext(
-        myTempReorderBufIdx,
-        init=myTempReorderBufIdx.getZero
-      )
-    )
-
-    when (
-      //down.isFiring
-      up.isFiring
-      //(
-      //  if (cfg.myHaveZeroReg) (
-      //    //up.isFiring
-      //    down.isFiring
-      //    //&& upPayload(1).gprIdxVec.last =/= 0x0
-      //  ) else (
-      //    //up.isFiring
-      //    down.isFiring
-      //  )
-      //)
-      //&& (
-      //  !myMainHazardCheckVec.orR
-      //  || shouldClearExtraDecodeInfo
-      //)
-    ) {
-      myTempReorderBufIdx := (
-        RegNext(
-          myTempReorderBufIdx,
-          init=myTempReorderBufIdx.getZero
-        )
-        + 1
-      )
-    }
 
     //switch (
     //  shouldClearExtraDecodeInfo
@@ -11042,7 +11065,9 @@ case class SnowHousePipeStageExecute(
       //    item := False
       //  })
       //})
-      outp.gprIdxVec := outp.gprIdxVec.getZero
+      if (!cfg.optScoreboard) {
+        outp.gprIdxVec := outp.gprIdxVec.getZero
+      }
       outp.setAsBubbleMain(
         None,
         myUpdateRegPcSetItCnt=false,

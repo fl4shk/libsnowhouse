@@ -3525,10 +3525,16 @@ case class SnowHouseForFmaxPipeStageWriteBack(
       }
       someCommitStm.regFileWrite.addr := 0x0
       someCommitStm.regFileWrite.data := 0x0
-      someCommitStm.commit.myGprIdx := (
-        //someMyWbPayload(1).gprIdxVec.last
-        0x0
-      )
+      when (someMyWbPayload(1).instrCnt.shouldIgnoreInstr.last) {
+        someCommitStm.commit.myGprIdx := (
+          someMyWbPayload(1).gprIdxVec.last
+        )
+      } otherwise {
+        someCommitStm.commit.myGprIdx := (
+          //someMyWbPayload(1).gprIdxVec.last
+          0x0
+        )
+      }
     }
     if (cfg.optScoreboard) {
       //val rSeenUpIsFiring = (
