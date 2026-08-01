@@ -8751,7 +8751,10 @@ case class SnowHousePipeStageExecute(
             //    ).data
             //  }
             //)
-            if (idx == 0) {
+            if (
+              idx == 0
+              || idx >= cfg.optForFmaxPsExFwdSize
+            ) {
               //outp.myExt(0).rdMemWord(jdx) := (
               //  RegNext(
               //    outp.myExt(0).rdMemWord(jdx),
@@ -8820,9 +8823,15 @@ case class SnowHousePipeStageExecute(
                     )
                   }
                   is (M"01") {
-                    outp.myExt(0).rdMemWord(jdx) := (
-                      inp.myExt(0).rdMemWord(jdx)
-                    )
+                    if (idx == 0) {
+                      outp.myExt(0).rdMemWord(jdx) := (
+                        inp.myExt(0).rdMemWord(jdx)
+                      )
+                    } else {
+                      outp.myExt(0).rdMemWord(jdx) := (
+                        outp.myPreFwdRdMemWord(jdx)
+                      )
+                    }
                   }
                   default {
                     outp.myExt(0).rdMemWord(jdx) := (
@@ -8975,11 +8984,12 @@ case class SnowHousePipeStageExecute(
               //} otherwise {
               //  outp.myExt(0)
               //}
-            } else {
-              outp.myExt(0).rdMemWord(jdx) := (
-                outp.myPreFwdRdMemWord(jdx)
-              )
-            }
+            } 
+            //else {
+            //  outp.myExt(0).rdMemWord(jdx) := (
+            //    outp.myPreFwdRdMemWord(jdx)
+            //  )
+            //}
             //} otherwise {
             //}
           }
