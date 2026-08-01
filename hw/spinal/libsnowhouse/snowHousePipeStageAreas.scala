@@ -3287,14 +3287,24 @@ case class SnowHousePipeStagePreFwd(
       true
     ) generate {
       val temp = MyRegFileWrPulseFwdInfo()
-      temp.myRegFileWrPulse := forFmaxRegFileWrPulseArr(0)
+      temp.valid := (
+        if (cfg.myHaveZeroReg) (
+          forFmaxRegFileWrPulseArr(0).fire
+          && forFmaxRegFileWrPulseArr(0).addr =/= 0x0
+        ) else (
+          forFmaxRegFileWrPulseArr(0).fire
+        )
+      )
+      temp.myRegFileWrPulse.payload := (
+        forFmaxRegFileWrPulseArr(0).payload
+      )
       temp.branchMispredictEtcForceToZero := (
         (
           (
             myBranchMispredictEtc
             || rMyPsExSetPcState
           )
-          //&& !outp.regPcSetItCnt(1).lsb
+          && !outp.regPcSetItCnt(1).lsb
         )
       )
 
