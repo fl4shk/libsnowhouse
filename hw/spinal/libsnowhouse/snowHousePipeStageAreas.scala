@@ -1516,7 +1516,7 @@ case class SnowHousePipeStageInstrDecode(
   val doDecodeFunc: (SnowHousePipeStageInstrDecode) => Area,
   //val psIdFoundBubble: Bool,
   val myScoreboardCommitStm: Stream[SnowHouseScoreboardCommitPayload],
-  val myScoreboardSavedGprMayNeedHazardCheckVec: UInt,
+  val myScoreboardSavedGprTagVec: UInt,
 ) extends Area {
   def cfg = args.cfg
   def modIo = args.io
@@ -2220,12 +2220,12 @@ case class SnowHousePipeStageInstrDecode(
     down(pId).allowOverride
 
     myScoreboardCommitStm.ready := True
-    val rSavedGprMayNeedHazardCheckVec = (
+    val rSavedGprTagVec = (
       Reg(UInt(cfg.numGprs bits))
       init(0x0)
     )
-    myScoreboardSavedGprMayNeedHazardCheckVec := (
-      rSavedGprMayNeedHazardCheckVec
+    myScoreboardSavedGprTagVec := (
+      rSavedGprTagVec
     )
 
     val myMainHazardCheckVec = Vec.fill(
@@ -2237,7 +2237,7 @@ case class SnowHousePipeStageInstrDecode(
     )
     for (jdx <- 0 until cfg.regFileCfg.modRdPortCnt) {
       myMainHazardCheckVec(jdx) := (
-        rSavedGprMayNeedHazardCheckVec(
+        rSavedGprTagVec(
           upPayload(1).gprIdxVec(jdx)
         )
       )
@@ -2264,7 +2264,7 @@ case class SnowHousePipeStageInstrDecode(
     //when (
     //  shouldClearExtraDecodeInfo
     //) {
-    //  rSavedGprMayNeedHazardCheckVec := 0x0
+    //  rSavedGprTagVec := 0x0
     //}
 
 
@@ -2292,14 +2292,14 @@ case class SnowHousePipeStageInstrDecode(
     //  shouldClearExtraDecodeInfo
     //) {
     //  for (idx <- 0 until myHistForHazardCheck.size) {
-    //    rSavedGprMayNeedHazardCheckVec(myHistForHazardCheck(idx)) := (
+    //    rSavedGprTagVec(myHistForHazardCheck(idx)) := (
     //      False
     //    )
     //  }
     //}
 
     when (myScoreboardCommitStm.fire) {
-      rSavedGprMayNeedHazardCheckVec(
+      rSavedGprTagVec(
         myScoreboardCommitStm.myGprIdx
       ) := (
         False
@@ -2311,7 +2311,7 @@ case class SnowHousePipeStageInstrDecode(
       && !shouldClearExtraDecodeInfo
       && up.isFiring
     ) {
-      rSavedGprMayNeedHazardCheckVec(
+      rSavedGprTagVec(
         upPayload(1).gprIdxVec.last
       ) := (
         //True
