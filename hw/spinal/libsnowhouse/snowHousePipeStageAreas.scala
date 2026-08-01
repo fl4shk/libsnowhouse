@@ -2315,21 +2315,22 @@ case class SnowHousePipeStageInstrDecode(
       }
       is (ScoreboardFlushState.FLUSH_PIPE) {
         when (
-          RegNext(
-            (
+          //RegNext(
+          //  (
               !myMainHazardCheckVec.orR
               && !shouldClearExtraDecodeInfo
-            ),
-            init=False
-          )
+          //  ),
+          //  init=False
+          //)
         ) {
           rScoreboardFlushState := ScoreboardFlushState.IDLE
         }
         when (
-          RegNext(
-            myMainHazardCheckVec.orR,
-            init=False
-          )
+          //RegNext(
+            myMainHazardCheckVec.orR
+            && !shouldClearExtraDecodeInfo,
+          //  init=False
+          //)
         ) {
           doSendBubbleMainMost(
             myPsIdBubble=Some(
