@@ -2288,7 +2288,10 @@ case class SnowHousePipeStageInstrDecode(
         init=myTempReorderBufIdx.getZero
       )
     )
-    when (up.isFiring) {
+    when (
+      up.isFiring
+      && !shouldClearExtraDecodeInfo
+    ) {
       myTempReorderBufIdx := (
         RegNext(
           myTempReorderBufIdx,
@@ -2374,6 +2377,12 @@ case class SnowHousePipeStageInstrDecode(
         when (
           shouldClearExtraDecodeInfo
         ) {
+          doSendBubbleMainMost(
+            myPsIdBubble=Some(
+              //!shouldClearExtraDecodeInfo
+              True
+            )
+          )
           rScoreboardFlushState := ScoreboardFlushState.FLUSH_PIPE
         }
       }

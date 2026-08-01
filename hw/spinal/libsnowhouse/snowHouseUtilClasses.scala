@@ -1143,7 +1143,8 @@ case class SnowHouseConfig(
         //16
         //64
         //32
-        1 << (log2Up(numGprs) + 1)
+        //1 << (log2Up(numGprs) + 1)
+        (1 << (log2Up(numGprs) - 1)).max(16)
         //64
       )
     )

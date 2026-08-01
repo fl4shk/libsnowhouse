@@ -1777,9 +1777,9 @@ case class SnowHouseForFmaxPsWbReorderBufPayloadMost(
     SnowHouseScoreboardCommitPayload(cfg=cfg)
   )
 
-  //val myShouldIgnoreInstr = (
-  //  Bool()
-  //)
+  val myShouldIgnoreInstr = (
+    Bool()
+  )
 
   val regFileWrite = (
     //cloneOf(
@@ -1810,6 +1810,7 @@ case class SnowHouseForFmaxPsWbReorderBufPayload(
 ) extends Bundle {
   val most = SnowHouseForFmaxPsWbReorderBufPayloadMost(cfg=cfg)
   def commit = most.commit
+  def myShouldIgnoreInstr = most.myShouldIgnoreInstr
   def regFileWrite = most.regFileWrite
   def myWbPayload = most.myWbPayload
 
@@ -1833,6 +1834,9 @@ case class SnowHouseForFmaxPsWbReorderBufIo(
       optIncludeBufIdx=false,
     )
   ))
+  //val myBranchMispredictEtc = in(
+  //  Bool()
+  //)
 }
 
 case class SnowHouseForFmaxPsWbReorderBuf(
@@ -1999,6 +2003,21 @@ case class SnowHouseForFmaxPsWbReorderBuf(
   //  }
   //}
 
+  val rMyShouldIgnoreState = Reg(Bool(), init=False)
+  when (
+    io.push.fire
+    && io.push.myShouldIgnoreInstr
+  ) {
+    rMyShouldIgnoreState := True
+  }
+  when (
+    rMyShouldIgnoreState
+    && !rOccupancy.orR
+  ) {
+    rMyShouldIgnoreState := False
+  }
+
+
   switch (io.push.reorderBufIdx) {
     for (idx <- 0 until (1 << io.push.reorderBufIdx.getWidth)) {
       is (idx) {
@@ -2009,6 +2028,7 @@ case class SnowHouseForFmaxPsWbReorderBuf(
           //&& 
           !rValidVec(idx)
           && rOccupancy < myReorderBufSize - 8//- 1
+          && !rMyShouldIgnoreState
           //&& myRam.io.rdAddrPipe.addr =/= idx
           //|| (
           //  //rValidVec(idx)
@@ -2045,6 +2065,7 @@ case class SnowHouseForFmaxPsWbReorderBuf(
 
   myRam.io.wrPulse.valid := (
     io.push.fire//fire//valid//fire//valid//valid//fire
+    && !io.push.myShouldIgnoreInstr
     //&& !rValidVec(io.push.reorderBufIdx)
     //&& io.push.myWbPayload.instrCnt.shouldIgnoreInstr.head
   )
@@ -2053,7 +2074,10 @@ case class SnowHouseForFmaxPsWbReorderBuf(
   //  log2Up(rValidVec.size) bits
   //)
   myRam.io.wrPulse.data.most := io.push.most
-  when (myRam.io.wrPulse.fire) {
+  when (
+    myRam.io.wrPulse.fire
+    //&& !io.push.myShouldIgnoreInstr
+  ) {
     rValidVec(myRam.io.wrPulse.addr) := True
   }
   //when (
@@ -2087,6 +2111,40 @@ case class SnowHouseForFmaxPsWbReorderBuf(
     default {
     }
   }
+
+
+//  switch (
+//    rMyPsExSetPcState
+//    ## Bitscan(~rValidVec.reverse.asBits.asUInt)
+//  ) {
+//    is (
+//      MaskedLiteral(
+//        "0" + ("-" * rValidVec.size)
+//      )
+//    ) {
+//    }
+//
+//// >>> for idx in range(size):
+//// ...     print(idx, ("-" * (size - idx - 1) + "1" + ("0" * idx)))
+//// ...     
+//// 0 ---1
+//// 1 --10
+//// 2 -100
+//// 3 1000
+//    for (idx <- 0 until rValidVec.size) {
+//      is (
+//        MaskedLiteral(
+//          "1"
+//          + ("-" * (rValidVec.size - idx - 1) + "1" + ("0" * idx))
+//        )
+//      ) {
+//      }
+//    }
+//
+//    default {
+//    }
+//  }
+
 
   //val myTempPushStm = Vec.fill(2)(
   //  cloneOf(io.pop)
@@ -3251,27 +3309,30 @@ case class SnowHouseForFmaxPipeStageWriteBack(
       myCommitBackStm.myWbPayload
       .instrCnt.scoreboardIssuePayload.reorderBufIdx
     )
-    //val myTempCommitStm = (
-    //  myCommitBackStm
-    //)
     val myTempCommitStm = (
-      cloneOf(myCommitBackStm)
+      myCommitBackStm
     )
-    myTempCommitStm << (
-      myCommitBackStm.throwWhen(
-        myTempReorderBufIdx
-        === (
-          RegNextWhen(
-            myTempReorderBufIdx,
-            cond=(
-              myTempCommitStm.fire
-              //myCommitBackStm.fire
-            ),
-          )
-          init(0x2)
-        )
-      )
-    )
+    //val myTempCommitStm = (
+    //  cloneOf(myCommitBackStm)
+    //)
+    //myTempCommitStm << (
+    //  myCommitBackStm.throwWhen(
+    //    (
+    //      myTempReorderBufIdx
+    //      === (
+    //        RegNextWhen(
+    //          myTempReorderBufIdx,
+    //          cond=(
+    //            myTempCommitStm.fire
+    //            //myCommitBackStm.fire
+    //          ),
+    //        )
+    //        init(0x2)
+    //      )
+    //    )
+    //    && !myCommitBackStm.myShouldIgnoreInstr
+    //  )
+    //)
     //io.commitEtc.myScoreboardFwdRegFileWrPulse.valid := (
     //  myTempCommitStm.fire
     //  && !myTempCommitStm.myWbPayload.splitOp.opIsMemAccess
@@ -3375,6 +3436,9 @@ case class SnowHouseForFmaxPipeStageWriteBack(
     isMem: Boolean,
   ): Unit = {
     if (cfg.optScoreboard) {
+      someCommitStm.myShouldIgnoreInstr := (
+        someMyWbPayload(1).instrCnt.shouldIgnoreInstr.last
+      )
       someCommitStm.reorderBufIdx := (
         someMyWbPayload(1).instrCnt.scoreboardIssuePayload.reorderBufIdx
       )
