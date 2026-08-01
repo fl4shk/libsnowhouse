@@ -3553,14 +3553,15 @@ case class SnowHouseForFmaxPipeStageWriteBack(
           False
         ) else (
           //False
-          (
-            if (cfg.myHaveZeroReg) (
-              !someMyWbPayload(1).gprIsZeroVec.last.last
-            ) else (
-              True
-            )
-          )
-          && someMyWbPayload(1).instrCnt.shouldIgnoreInstr.last
+          //(
+          //  if (cfg.myHaveZeroReg) (
+          //    !someMyWbPayload(1).gprIsZeroVec.last.last
+          //  ) else (
+          //    True
+          //  )
+          //)
+          //&& 
+          someMyWbPayload(1).instrCnt.shouldIgnoreInstr.last
           && someMyWbPayload(1).splitOp.scoreboardOpIsMemAccess
         )
       )
