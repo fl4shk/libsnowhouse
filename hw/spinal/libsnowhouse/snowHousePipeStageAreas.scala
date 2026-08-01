@@ -2212,21 +2212,37 @@ case class SnowHousePipeStageInstrDecode(
     //}
   })
 
+  object ScoreboardFlushState
+  extends SpinalEnum(defaultEncoding=binaryOneHot) {
+    val
+      IDLE,
+      FLUSH_PIPE
+      = newElement()
+  }
+
   val myScoreboardLcvDbusPartAArea = (
     cfg.useLcvDataBus
     && cfg.optScoreboard
   ) generate (new Area {
     //psIdFoundBubble := RegNext(psIdFoundBubble, init=False)
     down(pId).allowOverride
+    upPayload(1).branchTgtBufElem(1) := (
+      //upPayload(1).branchTgtBufElem(1).getZero
+      myTempBtbElem
+    )
 
     myScoreboardCommitStm.ready := True
     val rSavedGprTagVec = (
       Reg(UInt(cfg.numGprs bits))
       init(0x0)
     )
-    myScoreboardSavedGprTagVec := (
-      rSavedGprTagVec
+    val rGprInUseCntVec = (
+      Vec.fill(cfg.numGprs)(
+        Reg(UInt(5 bits))
+        init(0x0)
+      )
     )
+    myScoreboardSavedGprTagVec := rSavedGprTagVec
 
     val myMainHazardCheckVec = Vec.fill(
       cfg.regFileCfg.modRdPortCnt
@@ -2243,60 +2259,10 @@ case class SnowHousePipeStageInstrDecode(
       )
     }
 
-    when (
-      //(
-      //  myHistCondAnyBubble(idx + 1)
-      //  //&& upPayload(1).myDoHaveHazardAddrCheckVec(idx)
-      //  && upPayload(1).myDoHaveHazardAddrCheckVec.orR
-      //)
-      myMainHazardCheckVec.orR
-      && !shouldClearExtraDecodeInfo
-    ) {
-      doSendBubbleMainMost(
-        myPsIdBubble=Some(
-          //!shouldClearExtraDecodeInfo
-          True
-        )
-      )
-    }
-
-
-    //when (
-    //  shouldClearExtraDecodeInfo
-    //) {
-    //  rSavedGprTagVec := 0x0
-    //}
-
-
-    //val myHistForHazardCheck = (
-    //  History(
-    //    that=upPayload(1).gprIdxVec.last,
-    //    when=(
-    //      up.isFiring
-    //    ),
-    //    length=(
-    //      //3
-    //      4
-    //      // ID, PreFwd, EX,
-    //      // EX + 1
-    //      // (branch mispredict found out from PC *after* the branch
-    //      // (though, as of this writing,
-    //      // I think I might need to change the existing
-    //      // design of EX to be exactly that?))
-    //    ),
-    //    init=upPayload(1).gprIdxVec.last.getZero,
-    //  )
-    //)
-
-    //when (
-    //  shouldClearExtraDecodeInfo
-    //) {
-    //  for (idx <- 0 until myHistForHazardCheck.size) {
-    //    rSavedGprTagVec(myHistForHazardCheck(idx)) := (
-    //      False
-    //    )
-    //  }
-    //}
+    val rScoreboardFlushState = (
+      Reg(ScoreboardFlushState())
+      init(ScoreboardFlushState.IDLE)
+    )
 
     when (myScoreboardCommitStm.fire) {
       rSavedGprTagVec(
@@ -2306,21 +2272,68 @@ case class SnowHousePipeStageInstrDecode(
       )
     }
 
-    when (
-      myTempOpMayNeedHazardCheck
-      && !shouldClearExtraDecodeInfo
-      && up.isFiring
-    ) {
-      rSavedGprTagVec(
-        upPayload(1).gprIdxVec.last
-      ) := (
-        //True
-        if (cfg.myHaveZeroReg) (
-          upPayload(1).gprIdxVec.last =/= 0x0
-        ) else (
-          True
-        )
-      )
+    switch (rScoreboardFlushState) {
+      is (ScoreboardFlushState.IDLE) {
+        when (
+          //(
+          //  myHistCondAnyBubble(idx + 1)
+          //  //&& upPayload(1).myDoHaveHazardAddrCheckVec(idx)
+          //  && upPayload(1).myDoHaveHazardAddrCheckVec.orR
+          //)
+          myMainHazardCheckVec.orR
+          && !shouldClearExtraDecodeInfo
+        ) {
+          doSendBubbleMainMost(
+            myPsIdBubble=Some(
+              //!shouldClearExtraDecodeInfo
+              True
+            )
+          )
+        }
+
+        when (
+          myTempOpMayNeedHazardCheck
+          && !shouldClearExtraDecodeInfo
+          && up.isFiring
+        ) {
+          rSavedGprTagVec(
+            upPayload(1).gprIdxVec.last
+          ) := (
+            //True
+            if (cfg.myHaveZeroReg) (
+              upPayload(1).gprIdxVec.last =/= 0x0
+            ) else (
+              True
+            )
+          )
+        }
+        when (
+          shouldClearExtraDecodeInfo
+        ) {
+          rScoreboardFlushState := ScoreboardFlushState.FLUSH_PIPE
+        }
+      }
+      is (ScoreboardFlushState.FLUSH_PIPE) {
+        when (
+          RegNext(
+            (
+              !myMainHazardCheckVec.orR
+              //&& !shouldClearExtraDecodeInfo
+            ),
+            init=False
+          )
+        ) {
+          rScoreboardFlushState := ScoreboardFlushState.IDLE
+        } otherwise {
+          doSendBubbleMainMost(
+            myPsIdBubble=Some(
+              //!shouldClearExtraDecodeInfo
+              True
+              //False
+            )
+          )
+        }
+      }
     }
 
     val myTempReorderBufIdx = (
