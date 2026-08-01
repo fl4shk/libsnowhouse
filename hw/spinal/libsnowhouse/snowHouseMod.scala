@@ -1889,7 +1889,8 @@ private[libsnowhouse] case class SnowHouseNotForFmax
     //shouldIgnoreInstr=shouldIgnoreInstr,
     doDecodeFunc=cfg.doInstrDecodeFunc,
     //psIdFoundBubble=psIdFoundBubble,
-    myScoreboardCommitStm=null
+    myScoreboardCommitStm=null,
+    myScoreboardSavedGprMayNeedHazardCheckVec=null,
   )
   //--------
   //val pEx = Payload(SnowHouseRegFileModType(cfg=cfg))
@@ -2402,6 +2403,9 @@ private[libsnowhouse] case class SnowHouseForFmax(
     psEx.io.myRegFileWrPulse << (
       //psWb.io.commitEtc.myScoreboardFwdRegFileWrPulse
       psWb.io.commitEtc.myRegFileWrPulse
+    )
+    psWb.io.myScoreboardSavedGprMayNeedHazardCheckVec <> (
+      psId.io.myScoreboardSavedGprMayNeedHazardCheckVec
     )
   } else {
     psPreFwd.io.myRegFileWrPulse << (

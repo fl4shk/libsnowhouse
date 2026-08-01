@@ -1516,6 +1516,7 @@ case class SnowHousePipeStageInstrDecode(
   val doDecodeFunc: (SnowHousePipeStageInstrDecode) => Area,
   //val psIdFoundBubble: Bool,
   val myScoreboardCommitStm: Stream[SnowHouseScoreboardCommitPayload],
+  val myScoreboardSavedGprMayNeedHazardCheckVec: UInt,
 ) extends Area {
   def cfg = args.cfg
   def modIo = args.io
@@ -2223,6 +2224,9 @@ case class SnowHousePipeStageInstrDecode(
       Reg(UInt(cfg.numGprs bits))
       init(0x0)
     )
+    myScoreboardSavedGprMayNeedHazardCheckVec := (
+      rSavedGprMayNeedHazardCheckVec
+    )
 
     val myMainHazardCheckVec = Vec.fill(
       cfg.regFileCfg.modRdPortCnt
@@ -2331,8 +2335,8 @@ case class SnowHousePipeStageInstrDecode(
     )
 
     when (
-      down.isFiring
-      //up.isFiring
+      //down.isFiring
+      up.isFiring
       //(
       //  if (cfg.myHaveZeroReg) (
       //    //up.isFiring

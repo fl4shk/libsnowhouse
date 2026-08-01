@@ -865,6 +865,13 @@ case class SnowHouseForFmaxPipeStageInstrDecodeIo(
     ))
   )
   //--------
+  val myScoreboardSavedGprMayNeedHazardCheckVec = (
+    cfg.optScoreboard
+  ) generate (
+    out(
+      UInt(cfg.numGprs bits)
+    )
+  )
 }
 
 case class SnowHouseForFmaxPipeStageInstrDecode(
@@ -928,7 +935,10 @@ case class SnowHouseForFmaxPipeStageInstrDecode(
     //shouldIgnoreInstr=null,
     doDecodeFunc=cfg.doInstrDecodeFunc,
     //psIdFoundBubble=psIdFoundBubble,
-    myScoreboardCommitStm=io.myScoreboardCommit
+    myScoreboardCommitStm=io.myScoreboardCommit,
+    myScoreboardSavedGprMayNeedHazardCheckVec=(
+      io.myScoreboardSavedGprMayNeedHazardCheckVec
+    )
   )
 
   cLink.up.driveFrom(io.up)(
@@ -2246,6 +2256,14 @@ case class SnowHouseForFmaxPipeStageWriteBackIo(
     SnowHouseForFmaxPsWbCommitEtc(cfg=cfg)
   )
   //--------
+  val myScoreboardSavedGprMayNeedHazardCheckVec = (
+    cfg.optScoreboard
+  ) generate (
+    in(
+      UInt(cfg.numGprs bits)
+    )
+  )
+  //--------
 }
 case class SnowHouseForFmaxPipeStageWriteBack(
   cfg: SnowHouseConfig
@@ -2437,14 +2455,22 @@ case class SnowHouseForFmaxPipeStageWriteBack(
         //myMemWbPayload(0).splitOp.opIsMemAccess
         myMemWbPayload(0).outpDecodeExt.opIsMemAccess.head
       )
-      //&& (
-      //  !(
-      //    myMemWbPayload(0).instrCnt.myPsIdBubble.head
-      //    //|| myMemWbPayload(0).instrCnt.shouldIgnoreInstr.head
-      //    //&& !myMemWbPayload(0).instrCnt.myScoreboardReadGprsBubble.head
-      //  )
-      //  || myMemWbPayload(0).instrCnt.shouldIgnoreInstr.head
-      //)
+      && (
+        //!(
+        //  myMemWbPayload(0).instrCnt.myPsIdBubble.head
+        //  //|| myMemWbPayload(0).instrCnt.shouldIgnoreInstr.head
+        //  //&& !myMemWbPayload(0).instrCnt.myScoreboardReadGprsBubble.head
+        //)
+        //|| myMemWbPayload(0).instrCnt.shouldIgnoreInstr.head
+        !myMemWbPayload(0).instrCnt.myPsIdBubble.last
+        || !io.myScoreboardSavedGprMayNeedHazardCheckVec(
+          myMemWbPayload(0).gprIdxVec.last
+        )
+        //!io.myScoreboardSavedGprMayNeedHazardCheckVec(
+        //  myMemWbPayload(0).gprIdxVec.last
+        //)
+        || myMemWbPayload(0).instrCnt.shouldIgnoreInstr.last
+      )
       && !myMemWbPayload(0).instrCnt.myPsExMemAccessBubble.last
     )
 
@@ -2486,14 +2512,18 @@ case class SnowHouseForFmaxPipeStageWriteBack(
         !myNonMemWbPayload(0).outpDecodeExt.opIsMemAccess.head
       )
       //&& !myNonMemWbPayload(0).inpDecodeExt.last.opIsMemAccess(0)
-      //&& (
-      //  !(
-      //    myNonMemWbPayload(0).instrCnt.myPsIdBubble.last
-      //    //|| myNonMemWbPayload(0).instrCnt.shouldIgnoreInstr.last
-      //    //&& !myNonMemWbPayload(0).instrCnt.myScoreboardReadGprsBubble.last
-      //  )
-      //  || myNonMemWbPayload(0).instrCnt.shouldIgnoreInstr.last
-      //)
+      && (
+        //!(
+        //  myNonMemWbPayload(0).instrCnt.myPsIdBubble.last
+        //  //|| myNonMemWbPayload(0).instrCnt.shouldIgnoreInstr.last
+        //  //&& !myNonMemWbPayload(0).instrCnt.myScoreboardReadGprsBubble.last
+        //)
+        !myNonMemWbPayload(0).instrCnt.myPsIdBubble.last
+        || !io.myScoreboardSavedGprMayNeedHazardCheckVec(
+          myNonMemWbPayload(0).gprIdxVec.last
+        )
+        || myNonMemWbPayload(0).instrCnt.shouldIgnoreInstr.last
+      )
       && !myNonMemWbPayload(0).instrCnt.myPsExMultiCycleBubble.last
     )
     myNonMemWbFifo.io.push.payload.instrCnt := (
@@ -2591,7 +2621,13 @@ case class SnowHouseForFmaxPipeStageWriteBack(
         myMemWbFifo.io.pop.valid
         && (
           myMemWbFifo.io.pop.instrCnt.shouldIgnoreInstr.head
-          || myMemWbFifo.io.pop.instrCnt.myPsIdBubble.head
+          //|| myMemWbFifo.io.pop.instrCnt.myPsIdBubble.head
+          //|| (
+          //  myMemWbFifo.io.pop.instrCnt.myPsIdBubble.head
+          //  && io.myScoreboardSavedGprMayNeedHazardCheckVec(
+          //    myMemWbFifo.io.pop.gprIdxVec.last
+          //  )
+          //)
         )
         //&& !myMemWbFifo.io.pop.payload.instrCnt.myPsIdBubble.head
       )
@@ -3382,7 +3418,13 @@ case class SnowHouseForFmaxPipeStageWriteBack(
         )
       )
       && !someMyWbPayload(1).gprIsZeroVec.last.last
-      && !someMyWbPayload(1).instrCnt.myPsIdBubble.last
+      //&& !someMyWbPayload(1).instrCnt.myPsIdBubble.last
+      && (
+        !someMyWbPayload(1).instrCnt.myPsIdBubble.last
+        || !io.myScoreboardSavedGprMayNeedHazardCheckVec(
+          someMyWbPayload(1).gprIdxVec.last
+        )
+      )
       && !someMyWbPayload(1).instrCnt.shouldIgnoreInstr.last
       && {
         if (cfg.optScoreboard && isMem) {
@@ -3664,6 +3706,9 @@ case class SnowHouseForFmaxPipeStageWriteBack(
             (
               myInstrCnt.myPsIdBubble.last
               //&& !myInstrCnt.myScoreboardReadGprsBubble.last
+              && !io.myScoreboardSavedGprMayNeedHazardCheckVec(
+                myCommitAlmostFinalOutpStm.myWbPayload.gprIdxVec.last
+              )
             )
             //|| myInstrCnt.myPsExMemAccessBubble.last
             //|| myInstrCnt.myPsExMultiCycleBubble.last
