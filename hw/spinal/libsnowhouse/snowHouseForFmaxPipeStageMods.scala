@@ -2057,7 +2057,8 @@ case class SnowHouseForFmaxPsWbReorderBuf(
       when (
         io.push.fire//valid//fire
         && io.push.myShouldIgnoreInstr
-        && rOccupancy >= 2//rOccupancy.orR
+        //&& rOccupancy >= 2//rOccupancy.orR
+        //&& rOccupancy.orR
       ) {
         nextMyShouldIgnoreInstrState := (
           MyShouldIgnoreInstrState.FLUSH //True
@@ -2081,12 +2082,12 @@ case class SnowHouseForFmaxPsWbReorderBuf(
     is (MyShouldIgnoreInstrState.FLUSH) {
       when (
         (
-          //!rOccupancy.orR
-          !(rOccupancy >= 2)
-          //|| !(
-          //  io.push.fire//valid
-          //  && io.push.myShouldIgnoreInstr
-          //)
+          !rOccupancy.orR
+          //!(rOccupancy >= 2)
+          && (
+            io.push.valid//fire//valid
+            && !io.push.myShouldIgnoreInstr
+          )
         )
       ) {
         nextMyShouldIgnoreInstrState := (
@@ -2143,6 +2144,10 @@ case class SnowHouseForFmaxPsWbReorderBuf(
           && rOccupancy < myReorderBufSize - 8//- 1
           && (
             rMyShouldIgnoreInstrState.asBits(0)
+            || (
+              io.push.valid
+              && io.push.myShouldIgnoreInstr
+            )
             //=== MyShouldIgnoreInstrState.IDLE
             //!rMyShouldIgnoreInstrState
             //|| (
@@ -2197,13 +2202,22 @@ case class SnowHouseForFmaxPsWbReorderBuf(
   //.resize(
   //  log2Up(rValidVec.size) bits
   //)
+
   myRam.io.wrPulse.data.most := io.push.most
+  when (
+    io.push.fire
+    && io.push.myShouldIgnoreInstr
+  ) {
+    myRam.io.wrPulse.data.commit.myGprIdx.valid := False
+  }
+
   when (
     myRam.io.wrPulse.fire
     //&& !io.push.myShouldIgnoreInstr
   ) {
     rValidVec(myRam.io.wrPulse.addr) := True
   }
+
   //when (
   //  io.push.valid//fire
   //  //&& !rValidVec(io.push.reorderBufIdx) // check for 
@@ -2375,6 +2389,11 @@ case class SnowHouseForFmaxPsWbReorderBuf(
       rValidVec(
         myRdAddr
       )
+      //&& rOccupancy.orR
+      //&& (
+      //  !rMyShouldIgnoreInstrState.asBits(0)
+      //  || rOccupancy >= 2
+      //)
       //&& !rMyShouldIgnoreInstrState
     )
     //&& rOccupancy.orR
