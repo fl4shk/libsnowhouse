@@ -2005,18 +2005,18 @@ case class SnowHouseForFmaxPsWbReorderBuf(
 
   //val myPushStm = cloneOf(io.push)
 
-  val nextMyShouldIgnoreState = Bool()
-  val rMyShouldIgnoreState = (
+  val nextMyShouldIgnoreInstrState = Bool()
+  val rMyShouldIgnoreInstrState = (
     //Reg(Bool(), init=False)
     RegNext(
-      nextMyShouldIgnoreState,
+      nextMyShouldIgnoreInstrState,
       init=False
     )
   )
-  nextMyShouldIgnoreState := rMyShouldIgnoreState
+  nextMyShouldIgnoreInstrState := rMyShouldIgnoreInstrState
 
   when (
-    rMyShouldIgnoreState
+    rMyShouldIgnoreInstrState
     && (
       !rOccupancy.orR
       //|| !(
@@ -2031,7 +2031,7 @@ case class SnowHouseForFmaxPsWbReorderBuf(
     //  )
     //)
   ) {
-    nextMyShouldIgnoreState := False
+    nextMyShouldIgnoreInstrState := False
   }
 
   when (
@@ -2039,7 +2039,7 @@ case class SnowHouseForFmaxPsWbReorderBuf(
     && io.push.myShouldIgnoreInstr
     && rOccupancy.orR
   ) {
-    nextMyShouldIgnoreState := True
+    nextMyShouldIgnoreInstrState := True
   }
 
 
@@ -2055,7 +2055,7 @@ case class SnowHouseForFmaxPsWbReorderBuf(
           !rValidVec(idx)
           && rOccupancy < myReorderBufSize - 8//- 1
           && (
-            !rMyShouldIgnoreState
+            !rMyShouldIgnoreInstrState
             //|| (
             //  io.push.valid
             //  && (
@@ -2213,7 +2213,7 @@ case class SnowHouseForFmaxPsWbReorderBuf(
   //  )
   //}
 
-  when (!rMyShouldIgnoreState) {
+  when (!rMyShouldIgnoreInstrState) {
     myRdAddr := (
       RegNextWhen(
         (myRdAddr + 1),
@@ -2280,12 +2280,12 @@ case class SnowHouseForFmaxPsWbReorderBuf(
       rValidVec(
         myRdAddr
       )
-      //&& !rMyShouldIgnoreState
+      //&& !rMyShouldIgnoreInstrState
     )
     //&& rOccupancy.orR
     //|| (
-    //  //nextMyShouldIgnoreState
-    //  rMyShouldIgnoreState
+    //  //nextMyShouldIgnoreInstrState
+    //  rMyShouldIgnoreInstrState
     //  && rOccupancy.orR
     //)
     //&& myRam.io.rdAddrPipe.addr =/= idx
@@ -2591,6 +2591,11 @@ case class SnowHouseForFmaxPipeStageWriteBack(
     //  )
     //)
   }
+  //val rMyScoreboardShouldIgnoreInstrState = (
+  //  cfg.optScoreboard
+  //) generate (
+  //  Reg(Bool(), init=False)
+  //)
 
   val myScoreboardWbFifoArea = (
     cfg.optScoreboard
@@ -2604,12 +2609,29 @@ case class SnowHouseForFmaxPipeStageWriteBack(
     //myNonMemWbFifo.io.push.payload := (
     //  myNonMemWbFifo.io.push.payload.getZero
     //)
+
+    val rMyShouldIgnoreInstrState = Reg(Bool(), init=False)
+    when (
+      io.up.fire
+      && io.up.instrCnt.shouldIgnoreInstr.head
+    ) {
+      rMyShouldIgnoreInstrState := True
+    }
+    when (
+      io.up.valid
+      && !io.up.instrCnt.shouldIgnoreInstr.last
+      && !myNonMemWbFifo.io.pop.valid
+    ) {
+      rMyShouldIgnoreInstrState := False
+    }
+
     myMemWbFifo.io.push.valid := (
       cLink.up.isValid
       && (
         //myMemWbPayload(0).splitOp.opIsMemAccess
         myMemWbPayload(0).outpDecodeExt.opIsMemAccess.head
       )
+      && !rMyShouldIgnoreInstrState
       && (
         //!(
         //  myMemWbPayload(0).instrCnt.myPsIdBubble.head
@@ -2779,21 +2801,21 @@ case class SnowHouseForFmaxPipeStageWriteBack(
     if (cfg.optScoreboard) (
       myD2hBus.fire
       || rSeenMyD2hBusFire
-      || (
-        //myMemWbFifo.io.pop.valid
-        myMemWbFifo.io.pop.valid
-        && (
-          myMemWbFifo.io.pop.instrCnt.shouldIgnoreInstr.head
-          //|| myMemWbFifo.io.pop.instrCnt.myPsIdBubble.head
-          //|| (
-          //  myMemWbFifo.io.pop.instrCnt.myPsIdBubble.head
-          //  && io.myScoreboardSavedGprTagVec(
-          //    myMemWbFifo.io.pop.gprIdxVec.last
-          //  )
-          //)
-        )
-        //&& !myMemWbFifo.io.pop.payload.instrCnt.myPsIdBubble.head
-      )
+      //|| (
+      //  //myMemWbFifo.io.pop.valid
+      //  myMemWbFifo.io.pop.valid
+      //  && (
+      //    myMemWbFifo.io.pop.instrCnt.shouldIgnoreInstr.head
+      //    //|| myMemWbFifo.io.pop.instrCnt.myPsIdBubble.head
+      //    //|| (
+      //    //  myMemWbFifo.io.pop.instrCnt.myPsIdBubble.head
+      //    //  && io.myScoreboardSavedGprTagVec(
+      //    //    myMemWbFifo.io.pop.gprIdxVec.last
+      //    //  )
+      //    //)
+      //  )
+      //  //&& !myMemWbFifo.io.pop.payload.instrCnt.myPsIdBubble.head
+      //)
     ) else (
       myD2hBus.fire
     )
@@ -3750,6 +3772,10 @@ case class SnowHouseForFmaxPipeStageWriteBack(
               //!myMemWbPayload(1).instrCnt.myPsIdBubble.last
               myMemWbValid
               && stickyMyD2hBusFire
+              //&& (
+              //  !myNonMemWbValid
+              //  || !someMyWbPayload(1).instrCnt.shouldIgnoreInstr.last
+              //)
             )
           ) else (
             //cLink.up.isFiring
@@ -3761,6 +3787,7 @@ case class SnowHouseForFmaxPipeStageWriteBack(
               !myMemWbValid
               || stickyMyD2hBusFire
               || !someMyWbPayload(1).instrCnt.shouldIgnoreInstr.last
+              || myScoreboardWbFifoArea.rMyShouldIgnoreInstrState
             )
             //|| (
             //  myNonMemWbFifo.io.pop.valid
