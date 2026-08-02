@@ -2050,6 +2050,7 @@ case class SnowHouseForFmaxPsWbReorderBuf(
     val
       IDLE,
       FLUSH,
+      CLEAR_VALID_VEC,
       SET_TO_REORDER_BUF_IDX_ETC
       = newElement()
   }
@@ -2159,7 +2160,8 @@ case class SnowHouseForFmaxPsWbReorderBuf(
         )
       ) {
         nextMyShouldIgnoreInstrState := (
-          MyShouldIgnoreInstrState.SET_TO_REORDER_BUF_IDX_ETC
+          //MyShouldIgnoreInstrState.SET_TO_REORDER_BUF_IDX_ETC
+          MyShouldIgnoreInstrState.CLEAR_VALID_VEC
         )
       } otherwise {
         myRdAddr := (
@@ -2169,6 +2171,13 @@ case class SnowHouseForFmaxPsWbReorderBuf(
           ) + 1
         )
       }
+    }
+    is (MyShouldIgnoreInstrState.CLEAR_VALID_VEC) {
+      rValidVec.foreach(item => item := False)
+        nextMyShouldIgnoreInstrState := (
+          MyShouldIgnoreInstrState.SET_TO_REORDER_BUF_IDX_ETC
+          //MyShouldIgnoreInstrState.CLEAR_VALID_VEC
+        )
     }
     is (MyShouldIgnoreInstrState.SET_TO_REORDER_BUF_IDX_ETC) {
       when (
@@ -2489,9 +2498,9 @@ case class SnowHouseForFmaxPsWbReorderBuf(
         myRdAddr
       )
       //&& rOccupancy.orR
-      //&& (
+      //|| (
       //  !rMyShouldIgnoreInstrState.asBits(0)
-      //  || rOccupancy >= 2
+      //  //|| rOccupancy >= 2
       //)
       //&& !rMyShouldIgnoreInstrState
     )
