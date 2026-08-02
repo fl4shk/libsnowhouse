@@ -3367,24 +3367,26 @@ case class SnowHouseForFmaxPipeStageWriteBack(
       myCommitBackStm.myWbPayload
       .instrCnt.scoreboardIssuePayload.reorderBufIdx
     )
-    //val myTempCommitStm = (
-    //  myCommitBackStm
-    //)
+
     val myTempCommitStm = (
-      cloneOf(myCommitBackStm)
+      myCommitBackStm
     )
-    myTempCommitStm << (
-      myCommitBackStm.haltWhen(
-        (
-          myMemWbFifo.io.pop.valid
-          //|| myNonMemWbFifo.io.pop.valid
-          && !stickyMyD2hBusFire
-        )
-        && (
-          myCommitBackStm.myShouldIgnoreInstr
-        )
-      )
-    )
+    //val myTempCommitStm = (
+    //  cloneOf(myCommitBackStm)
+    //)
+
+    //myTempCommitStm << (
+    //  myCommitBackStm.haltWhen(
+    //    (
+    //      myMemWbFifo.io.pop.valid
+    //      //|| myNonMemWbFifo.io.pop.valid
+    //      && !stickyMyD2hBusFire
+    //    )
+    //    && (
+    //      myCommitBackStm.myShouldIgnoreInstr
+    //    )
+    //  )
+    //)
     //myTempCommitStm << (
     //  myCommitBackStm.throwWhen(
     //    (
@@ -3730,6 +3732,7 @@ case class SnowHouseForFmaxPipeStageWriteBack(
       //) generate (
       //  Reg(Bool(), init=False)
       //)
+
       someCommitStm.valid := (
         (
           if (isMem) (
@@ -3754,6 +3757,10 @@ case class SnowHouseForFmaxPipeStageWriteBack(
             //cLink.up.isValid
             //&& 
             myNonMemWbValid
+            && (
+              !myMemWbValid
+              || !someMyWbPayload(1).instrCnt.shouldIgnoreInstr.last
+            )
             //|| (
             //  myNonMemWbFifo.io.pop.valid
             //  && myNonMemWbFifo.io.pop.instrCnt.shouldIgnoreInstr.last
@@ -3764,6 +3771,7 @@ case class SnowHouseForFmaxPipeStageWriteBack(
           )
         )
       )
+
       if (isMem) {
         //rInstrMayPassCnt := myInstrMayPassCntInitVal
       } else {
