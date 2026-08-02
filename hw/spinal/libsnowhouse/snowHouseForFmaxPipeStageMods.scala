@@ -2052,6 +2052,26 @@ case class SnowHouseForFmaxPsWbReorderBuf(
   //    )
   //  }
   //}
+
+  val myMaxValShouldIgnoreInstrCnt = 4
+  val rMyShouldIgnoreInstrCnt = (
+    Reg(UInt(log2Up(myMaxValShouldIgnoreInstrCnt + 1) + 1 bits))
+    init(0x0)
+  )
+  when (
+    io.push.fire
+    && io.push.myShouldIgnoreInstr
+    && rMyShouldIgnoreInstrCnt < myMaxValShouldIgnoreInstrCnt
+  ) {
+    rMyShouldIgnoreInstrCnt := rMyShouldIgnoreInstrCnt + 1
+  }
+  when (
+    io.push.fire
+    && !io.push.myShouldIgnoreInstr
+  ) {
+    rMyShouldIgnoreInstrCnt := 0x0
+  }
+
   switch (rMyShouldIgnoreInstrState) {
     is (MyShouldIgnoreInstrState.IDLE) {
       when (
@@ -2204,9 +2224,12 @@ case class SnowHouseForFmaxPsWbReorderBuf(
   //)
 
   myRam.io.wrPulse.data.most := io.push.most
+
+
   when (
     io.push.fire
     && io.push.myShouldIgnoreInstr
+    && rMyShouldIgnoreInstrCnt >= myMaxValShouldIgnoreInstrCnt
   ) {
     myRam.io.wrPulse.data.commit.myGprIdx.valid := False
   }
