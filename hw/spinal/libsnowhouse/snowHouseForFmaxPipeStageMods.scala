@@ -1777,9 +1777,8 @@ case class SnowHouseForFmaxPsWbReorderBufPayloadMost(
     SnowHouseScoreboardCommitPayload(cfg=cfg)
   )
 
-  val myShouldIgnoreInstr = (
-    Bool()
-  )
+  val myShouldIgnoreInstr = Bool()
+  val opIsMemAccess = Bool()
 
   val regFileWrite = (
     //cloneOf(
@@ -1811,6 +1810,7 @@ case class SnowHouseForFmaxPsWbReorderBufPayload(
   val most = SnowHouseForFmaxPsWbReorderBufPayloadMost(cfg=cfg)
   def commit = most.commit
   def myShouldIgnoreInstr = most.myShouldIgnoreInstr
+  def opIsMemAccess = most.opIsMemAccess
   def regFileWrite = most.regFileWrite
   def myWbPayload = most.myWbPayload
 
@@ -2053,24 +2053,24 @@ case class SnowHouseForFmaxPsWbReorderBuf(
   //  }
   //}
 
-  val myMaxValShouldIgnoreInstrCnt = 4
-  val rMyShouldIgnoreInstrCnt = (
-    Reg(UInt(log2Up(myMaxValShouldIgnoreInstrCnt + 1) + 1 bits))
-    init(0x0)
-  )
-  when (
-    io.push.fire
-    && io.push.myShouldIgnoreInstr
-    && rMyShouldIgnoreInstrCnt < myMaxValShouldIgnoreInstrCnt
-  ) {
-    rMyShouldIgnoreInstrCnt := rMyShouldIgnoreInstrCnt + 1
-  }
-  when (
-    io.push.fire
-    && !io.push.myShouldIgnoreInstr
-  ) {
-    rMyShouldIgnoreInstrCnt := 0x0
-  }
+  //val myMaxValShouldIgnoreInstrCnt = 4
+  //val rMyShouldIgnoreInstrCnt = (
+  //  Reg(UInt(log2Up(myMaxValShouldIgnoreInstrCnt + 1) + 1 bits))
+  //  init(0x0)
+  //)
+  //when (
+  //  io.push.fire
+  //  && io.push.myShouldIgnoreInstr
+  //  && rMyShouldIgnoreInstrCnt < myMaxValShouldIgnoreInstrCnt
+  //) {
+  //  rMyShouldIgnoreInstrCnt := rMyShouldIgnoreInstrCnt + 1
+  //}
+  //when (
+  //  io.push.fire
+  //  && !io.push.myShouldIgnoreInstr
+  //) {
+  //  rMyShouldIgnoreInstrCnt := 0x0
+  //}
 
   switch (rMyShouldIgnoreInstrState) {
     is (MyShouldIgnoreInstrState.IDLE) {
@@ -2229,7 +2229,8 @@ case class SnowHouseForFmaxPsWbReorderBuf(
   when (
     io.push.fire
     && io.push.myShouldIgnoreInstr
-    && rMyShouldIgnoreInstrCnt >= myMaxValShouldIgnoreInstrCnt
+    //&& rMyShouldIgnoreInstrCnt >= myMaxValShouldIgnoreInstrCnt
+    && !io.push.opIsMemAccess
   ) {
     myRam.io.wrPulse.data.commit.myGprIdx.valid := False
   }
@@ -3677,6 +3678,9 @@ case class SnowHouseForFmaxPipeStageWriteBack(
     if (cfg.optScoreboard) {
       someCommitStm.myShouldIgnoreInstr := (
         someMyWbPayload(1).instrCnt.shouldIgnoreInstr.last
+      )
+      someCommitStm.opIsMemAccess := (
+        someMyWbPayload(1).splitOp.opIsMemAccess
       )
       someCommitStm.reorderBufIdx := (
         someMyWbPayload(1).instrCnt.scoreboardIssuePayload.reorderBufIdx
