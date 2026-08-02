@@ -2152,10 +2152,10 @@ case class SnowHouseForFmaxPsWbReorderBuf(
           !rOccupancy.orR
           //!(rOccupancy >= 2)
           && (
-            !io.push.valid//fire//valid
-            || !io.push.myShouldIgnoreInstr
-            //io.push.valid
-            //&& !io.push.myShouldIgnoreInstr
+            //!io.push.valid//fire//valid
+            //|| !io.push.myShouldIgnoreInstr
+            io.push.valid
+            && !io.push.myShouldIgnoreInstr
           )
         )
       ) {
@@ -2249,9 +2249,8 @@ case class SnowHouseForFmaxPsWbReorderBuf(
           && (
             rMyShouldIgnoreInstrState.asBits(0)
             || (
-              //rMyShouldIgnoreInstrState.asBits(1)
-              //&& 
-              io.push.valid
+              rMyShouldIgnoreInstrState.asBits(1)
+              && io.push.valid
               && io.push.myShouldIgnoreInstr
             )
             //=== MyShouldIgnoreInstrState.IDLE
