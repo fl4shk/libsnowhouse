@@ -2005,42 +2005,124 @@ case class SnowHouseForFmaxPsWbReorderBuf(
 
   //val myPushStm = cloneOf(io.push)
 
-  val nextMyShouldIgnoreInstrState = Bool()
+  object MyShouldIgnoreInstrState
+  extends SpinalEnum(defaultEncoding=binaryOneHot) {
+    val
+      IDLE,
+      FLUSH,
+      SET_TO_REORDER_BUF_IDX
+      = newElement()
+  }
+  val nextMyShouldIgnoreInstrState = MyShouldIgnoreInstrState()//Bool()
   val rMyShouldIgnoreInstrState = (
     //Reg(Bool(), init=False)
     RegNext(
       nextMyShouldIgnoreInstrState,
-      init=False
+      //init=False
     )
+    init(MyShouldIgnoreInstrState.IDLE)
   )
   nextMyShouldIgnoreInstrState := rMyShouldIgnoreInstrState
 
-  when (
-    rMyShouldIgnoreInstrState
-    && (
-      !rOccupancy.orR
-      //|| !(
-      //  io.push.fire//valid
-      //  && io.push.myShouldIgnoreInstr
-      //)
-    )
-    //&& (
-    //  !(
-    //    io.push.valid//fire//valid
-    //    && io.push.myShouldIgnoreInstr
-    //  )
-    //)
-  ) {
-    nextMyShouldIgnoreInstrState := False
+  val myRdAddr = cloneOf(myRam.io.rdAddrPipe.addr)
+  //when (!rMyShouldIgnoreInstrState) {
+  //  myRdAddr := (
+  //    RegNextWhen(
+  //      (myRdAddr + 1),
+  //      cond=(
+  //        myRam.io.rdAddrPipe.fire
+  //        //|| 
+  //      ),
+  //      //init=myRdAddr.getZero,
+  //    )
+  //    init(0x1)
+  //    //init(0x0)
+  //  )
+  //} otherwise {
+  //  when (rOccupancy.orR) {
+  //    myRdAddr := (
+  //      RegNext(
+  //        myRdAddr,
+  //        init=myRdAddr.getZero
+  //      ) + 1
+  //    )
+  //  } otherwise {
+  //    myRdAddr := (
+  //      io.push.reorderBufIdx
+  //    )
+  //  }
+  //}
+  switch (rMyShouldIgnoreInstrState) {
+    is (MyShouldIgnoreInstrState.IDLE) {
+      when (
+        io.push.fire//valid//fire
+        && io.push.myShouldIgnoreInstr
+        && rOccupancy.orR
+      ) {
+        nextMyShouldIgnoreInstrState := (
+          MyShouldIgnoreInstrState.FLUSH //True
+        )
+      }
+      myRdAddr := (
+        RegNextWhen(
+          (myRdAddr + 1),
+          cond=(
+            myRam.io.rdAddrPipe.fire
+            //|| 
+          ),
+          //init=myRdAddr.getZero,
+        )
+        init(0x1)
+        //init(0x0)
+      )
+    }
+    is (MyShouldIgnoreInstrState.FLUSH) {
+      when (
+        (
+          !rOccupancy.orR
+          //|| !(
+          //  io.push.fire//valid
+          //  && io.push.myShouldIgnoreInstr
+          //)
+        )
+      ) {
+        nextMyShouldIgnoreInstrState := (
+          MyShouldIgnoreInstrState.SET_TO_REORDER_BUF_IDX
+        )
+      }
+      myRdAddr := (
+        RegNext(
+          myRdAddr,
+          init=myRdAddr.getZero
+        ) + 1
+      )
+    }
+    is (MyShouldIgnoreInstrState.SET_TO_REORDER_BUF_IDX) {
+      nextMyShouldIgnoreInstrState := (
+        MyShouldIgnoreInstrState.IDLE
+      )
+      myRdAddr := io.push.payload.reorderBufIdx
+    }
   }
+  //when (
+  //  rMyShouldIgnoreInstrState
+  //  && (
+  //    !rOccupancy.orR
+  //    //|| !(
+  //    //  io.push.fire//valid
+  //    //  && io.push.myShouldIgnoreInstr
+  //    //)
+  //  )
+  //  //&& (
+  //  //  !(
+  //  //    io.push.valid//fire//valid
+  //  //    && io.push.myShouldIgnoreInstr
+  //  //  )
+  //  //)
+  //) {
+  //  nextMyShouldIgnoreInstrState := False
+  //}
 
-  when (
-    io.push.fire//valid//fire
-    && io.push.myShouldIgnoreInstr
-    && rOccupancy.orR
-  ) {
-    nextMyShouldIgnoreInstrState := True
-  }
 
 
 
@@ -2055,7 +2137,9 @@ case class SnowHouseForFmaxPsWbReorderBuf(
           !rValidVec(idx)
           && rOccupancy < myReorderBufSize - 8//- 1
           && (
-            !rMyShouldIgnoreInstrState
+            rMyShouldIgnoreInstrState
+            =/= MyShouldIgnoreInstrState.IDLE
+            //!rMyShouldIgnoreInstrState
             //|| (
             //  io.push.valid
             //  && (
@@ -2195,7 +2279,7 @@ case class SnowHouseForFmaxPsWbReorderBuf(
   //)
   //myTempPushStm.head.valid := True
   //myTempPushStm.head.most := io.push.most
-  val myRdAddr = cloneOf(myRam.io.rdAddrPipe.addr)
+  //val myRdAddr = cloneOf(myRam.io.rdAddrPipe.addr)
   //myRdAddr := (
   //  RegNext(
   //    myRdAddr,
@@ -2213,27 +2297,33 @@ case class SnowHouseForFmaxPsWbReorderBuf(
   //  )
   //}
 
-  when (!rMyShouldIgnoreInstrState) {
-    myRdAddr := (
-      RegNextWhen(
-        (myRdAddr + 1),
-        cond=(
-          myRam.io.rdAddrPipe.fire
-          //|| 
-        ),
-        //init=myRdAddr.getZero,
-      )
-      init(0x1)
-      //init(0x0)
-    )
-  } otherwise {
-    myRdAddr := (
-      RegNext(
-        myRdAddr,
-        init=myRdAddr.getZero
-      ) + 1
-    )
-  }
+  //when (!rMyShouldIgnoreInstrState) {
+  //  myRdAddr := (
+  //    RegNextWhen(
+  //      (myRdAddr + 1),
+  //      cond=(
+  //        myRam.io.rdAddrPipe.fire
+  //        //|| 
+  //      ),
+  //      //init=myRdAddr.getZero,
+  //    )
+  //    init(0x1)
+  //    //init(0x0)
+  //  )
+  //} otherwise {
+  //  when (rOccupancy.orR) {
+  //    myRdAddr := (
+  //      RegNext(
+  //        myRdAddr,
+  //        init=myRdAddr.getZero
+  //      ) + 1
+  //    )
+  //  } otherwise {
+  //    myRdAddr := (
+  //      io.push.reorderBufIdx
+  //    )
+  //  }
+  //}
 
   //when (
   //  (
@@ -2610,27 +2700,28 @@ case class SnowHouseForFmaxPipeStageWriteBack(
     //  myNonMemWbFifo.io.push.payload.getZero
     //)
 
-    val rMyShouldIgnoreInstrState = Reg(Bool(), init=False)
+    //val rMyShouldIgnoreInstrState = Reg(Bool(), init=False)
 
-    when (
-      io.up.fire
-      && io.up.instrCnt.shouldIgnoreInstr.head
-    ) {
-      rMyShouldIgnoreInstrState := True
-    }
-    when (
-      io.up.fire
-      && !io.up.instrCnt.shouldIgnoreInstr.last
-      //&& !myNonMemWbFifo.io.pop.valid
-    ) {
-      rMyShouldIgnoreInstrState := False
-    }
+    //when (
+    //  io.up.fire
+    //  && io.up.instrCnt.shouldIgnoreInstr.head
+    //) {
+    //  rMyShouldIgnoreInstrState := True
+    //}
+    //when (
+    //  io.up.valid
+    //  && !io.up.instrCnt.shouldIgnoreInstr.last
+    //  //&& !myNonMemWbFifo.io.pop.valid
+    //) {
+    //  rMyShouldIgnoreInstrState := False
+    //}
 
     myMemWbFifo.io.push.valid := (
       cLink.up.isValid
       && (
         //myMemWbPayload(0).splitOp.opIsMemAccess
         myMemWbPayload(0).outpDecodeExt.opIsMemAccess.head
+        || myMemWbPayload(0).instrCnt.shouldIgnoreInstr.head
       )
       //&& (
       //  !rMyShouldIgnoreInstrState
@@ -2643,7 +2734,7 @@ case class SnowHouseForFmaxPipeStageWriteBack(
         //  //&& !myMemWbPayload(0).instrCnt.myScoreboardReadGprsBubble.head
         //)
         //|| myMemWbPayload(0).instrCnt.shouldIgnoreInstr.head
-        !myMemWbPayload(0).instrCnt.myPsIdBubble.last
+        !myMemWbPayload(0).instrCnt.myPsIdBubble.head
         //|| !io.myScoreboardSavedGprTagVec(
         //  myMemWbPayload(0).gprIdxVec.last
         //)
@@ -2653,7 +2744,7 @@ case class SnowHouseForFmaxPipeStageWriteBack(
         ////)
         //|| myMemWbPayload(0).instrCnt.shouldIgnoreInstr.last
       )
-      && !myMemWbPayload(0).instrCnt.myPsExMemAccessBubble.last
+      && !myMemWbPayload(0).instrCnt.myPsExMemAccessBubble.head
     )
 
     myMemWbFifo.io.push.payload.instrCnt := (
@@ -2694,7 +2785,8 @@ case class SnowHouseForFmaxPipeStageWriteBack(
       cLink.up.isValid
       && (
         //!myNonMemWbPayload(0).splitOp.opIsMemAccess
-        !myNonMemWbPayload(0).outpDecodeExt.opIsMemAccess.head
+        !myNonMemWbPayload(0).outpDecodeExt.opIsMemAccess.last
+        && !myNonMemWbPayload(0).instrCnt.shouldIgnoreInstr.last
       )
       //&& !myNonMemWbPayload(0).inpDecodeExt.last.opIsMemAccess(0)
       && (
@@ -2805,21 +2897,21 @@ case class SnowHouseForFmaxPipeStageWriteBack(
     if (cfg.optScoreboard) (
       myD2hBus.fire
       || rSeenMyD2hBusFire
-      //|| (
-      //  //myMemWbFifo.io.pop.valid
-      //  myMemWbFifo.io.pop.valid
-      //  && (
-      //    myMemWbFifo.io.pop.instrCnt.shouldIgnoreInstr.head
-      //    //|| myMemWbFifo.io.pop.instrCnt.myPsIdBubble.head
-      //    //|| (
-      //    //  myMemWbFifo.io.pop.instrCnt.myPsIdBubble.head
-      //    //  && io.myScoreboardSavedGprTagVec(
-      //    //    myMemWbFifo.io.pop.gprIdxVec.last
-      //    //  )
-      //    //)
-      //  )
-      //  //&& !myMemWbFifo.io.pop.payload.instrCnt.myPsIdBubble.head
-      //)
+      || (
+        //myMemWbFifo.io.pop.valid
+        myMemWbFifo.io.pop.valid
+        && (
+          myMemWbFifo.io.pop.instrCnt.shouldIgnoreInstr.head
+          //|| myMemWbFifo.io.pop.instrCnt.myPsIdBubble.head
+          //|| (
+          //  myMemWbFifo.io.pop.instrCnt.myPsIdBubble.head
+          //  && io.myScoreboardSavedGprTagVec(
+          //    myMemWbFifo.io.pop.gprIdxVec.last
+          //  )
+          //)
+        )
+        //&& !myMemWbFifo.io.pop.payload.instrCnt.myPsIdBubble.head
+      )
     ) else (
       myD2hBus.fire
     )
@@ -3343,8 +3435,8 @@ case class SnowHouseForFmaxPipeStageWriteBack(
   val myCommitBackStm = (
     if (cfg.optScoreboard) (
       StreamArbiterFactory.lowerFirst.noLock.on(
-        myCommitFrontStmVec.last
-        //Vec(myCommitFrontStmVec.last.reverse)
+        //myCommitFrontStmVec.last
+        Vec(myCommitFrontStmVec.last.reverse)
       )
     ) else (
       Stream(
@@ -3726,7 +3818,9 @@ case class SnowHouseForFmaxPipeStageWriteBack(
           //  )
           //)
           //&& someMyWbPayload(1).instrCnt.shouldIgnoreInstr.last
-          False
+          //False
+          someMyWbPayload(1).instrCnt.shouldIgnoreInstr.last
+          && someMyWbPayload(1).splitOp.scoreboardOpIsMemAccess
         ) else (
           //False
           //(
@@ -3737,8 +3831,9 @@ case class SnowHouseForFmaxPipeStageWriteBack(
           //  )
           //)
           //&& 
-          someMyWbPayload(1).instrCnt.shouldIgnoreInstr.last
-          && someMyWbPayload(1).splitOp.scoreboardOpIsMemAccess
+          //someMyWbPayload(1).instrCnt.shouldIgnoreInstr.last
+          //&& someMyWbPayload(1).splitOp.scoreboardOpIsMemAccess
+          False
         )
       )
 
@@ -3776,7 +3871,11 @@ case class SnowHouseForFmaxPipeStageWriteBack(
               //!myMemWbPayload(1).instrCnt.myPsIdBubble.last
               myMemWbValid
               && stickyMyD2hBusFire
-              && !myScoreboardWbFifoArea.rMyShouldIgnoreInstrState
+              //&& (
+              //  !myNonMemWbValid
+              //  || !myNonMemWbPayload(1).instrCnt.shouldIgnoreInstr.last
+              //  || !myScoreboardWbFifoArea.rMyShouldIgnoreInstrState
+              //)
               //&& (
               //  !myNonMemWbValid
               //  || !someMyWbPayload(1).instrCnt.shouldIgnoreInstr.last
@@ -3788,12 +3887,13 @@ case class SnowHouseForFmaxPipeStageWriteBack(
             //cLink.up.isValid
             //&& 
             myNonMemWbValid
-            && (
-              !myMemWbValid
-              || stickyMyD2hBusFire
-              || !someMyWbPayload(1).instrCnt.shouldIgnoreInstr.last
-              || myScoreboardWbFifoArea.rMyShouldIgnoreInstrState
-            )
+            //&& (
+            //  !myMemWbValid
+            //  || stickyMyD2hBusFire
+            //  || !someMyWbPayload(1).instrCnt.shouldIgnoreInstr.last
+            //  || myScoreboardWbFifoArea.rMyShouldIgnoreInstrState
+            //)
+
             //|| (
             //  myNonMemWbFifo.io.pop.valid
             //  && myNonMemWbFifo.io.pop.instrCnt.shouldIgnoreInstr.last
