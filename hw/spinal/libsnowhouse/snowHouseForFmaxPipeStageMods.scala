@@ -2057,7 +2057,7 @@ case class SnowHouseForFmaxPsWbReorderBuf(
       when (
         io.push.fire//valid//fire
         && io.push.myShouldIgnoreInstr
-        && rOccupancy.orR
+        && rOccupancy >= 2//rOccupancy.orR
       ) {
         nextMyShouldIgnoreInstrState := (
           MyShouldIgnoreInstrState.FLUSH //True
@@ -2081,7 +2081,8 @@ case class SnowHouseForFmaxPsWbReorderBuf(
     is (MyShouldIgnoreInstrState.FLUSH) {
       when (
         (
-          !rOccupancy.orR
+          //!rOccupancy.orR
+          !(rOccupancy >= 2)
           //|| !(
           //  io.push.fire//valid
           //  && io.push.myShouldIgnoreInstr
