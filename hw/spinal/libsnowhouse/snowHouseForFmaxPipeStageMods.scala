@@ -2618,9 +2618,9 @@ case class SnowHouseForFmaxPipeStageWriteBack(
       rMyShouldIgnoreInstrState := True
     }
     when (
-      io.up.valid
+      io.up.fire
       && !io.up.instrCnt.shouldIgnoreInstr.last
-      && !myNonMemWbFifo.io.pop.valid
+      //&& !myNonMemWbFifo.io.pop.valid
     ) {
       rMyShouldIgnoreInstrState := False
     }
