@@ -1788,7 +1788,7 @@ case class SnowHouseForFmaxPsWbCommitEtc(
 
 case class SnowHouseForFmaxPsWbReorderBufPayloadMost(
   cfg: SnowHouseConfig,
-  optIncludeBufIdx: Boolean=true,
+  //optIncludeBufIdx: Boolean=true,
 ) extends Bundle {
   val commit = (
     cfg.optScoreboard
@@ -1798,7 +1798,7 @@ case class SnowHouseForFmaxPsWbReorderBufPayloadMost(
   )
 
   val myShouldIgnoreInstr = Bool()
-  val opIsMemAccess = Bool()
+  //val opIsMemAccess = Bool()
 
   val regFileWrite = (
     //cloneOf(
@@ -1830,11 +1830,17 @@ case class SnowHouseForFmaxPsWbReorderBufPayload(
   val most = SnowHouseForFmaxPsWbReorderBufPayloadMost(cfg=cfg)
   def commit = most.commit
   def myShouldIgnoreInstr = most.myShouldIgnoreInstr
-  def opIsMemAccess = most.opIsMemAccess
+  //def opIsMemAccess = most.opIsMemAccess
   def regFileWrite = most.regFileWrite
   def myWbPayload = most.myWbPayload
 
   val reorderBufIdx = (
+    cfg.optScoreboard
+    && optIncludeBufIdx
+  ) generate (
+    UInt(cfg.optScoreboardReorderBufWidth bits)
+  )
+  val postFlushReorderBufIdx = (
     cfg.optScoreboard
     && optIncludeBufIdx
   ) generate (
@@ -1845,6 +1851,10 @@ case class SnowHouseForFmaxPsWbReorderBufPayload(
 case class SnowHouseForFmaxPsWbReorderBufIo(
   cfg: SnowHouseConfig
 ) extends Bundle {
+  require(
+    cfg.optScoreboard
+  )
+
   val push = slave(Stream(
     SnowHouseForFmaxPsWbReorderBufPayload(cfg=cfg)
   ))
@@ -1859,6 +1869,11 @@ case class SnowHouseForFmaxPsWbReorderBufIo(
   //    Bool()
   //  )
   //)
+  val postFlushReorderBufIdx = (
+    in(
+      UInt(cfg.optScoreboardReorderBufWidth bits)
+    )
+  )
   //val myBranchMispredictEtc = in(
   //  Bool()
   //)
@@ -2167,17 +2182,23 @@ case class SnowHouseForFmaxPsWbReorderBuf(
       //myRdAddr := (
       //  io.push.payload.reorderBufIdx - 1
       //)
-      when (io.push.valid) {
-        myRdAddr := io.push.reorderBufIdx - 1
-      } otherwise {
-        myRdAddr := (
-          RegNextWhen(
-            io.push.reorderBufIdx - 1,
-            cond=io.push.fire,
-            init=io.push.reorderBufIdx.getZero
-          )
-        )
-      }
+      myRdAddr := (
+        //io.push.postFlushReorderBufIdx
+        io.postFlushReorderBufIdx - 1
+      )
+
+      //when (io.push.valid) {
+      //  myRdAddr := io.push.reorderBufIdx - 1
+      //} otherwise {
+      //  myRdAddr := (
+      //    RegNextWhen(
+      //      io.push.reorderBufIdx - 1,
+      //      cond=io.push.fire,
+      //      init=io.push.reorderBufIdx.getZero
+      //    )
+      //  )
+      //}
+
       //myRdAddr := (
       //  //io.push.payload.reorderBufIdx - 1
       //)
@@ -3588,10 +3609,26 @@ case class SnowHouseForFmaxPipeStageWriteBack(
   //)
   if (cfg.optScoreboard) {
     //myCommitFinalOutpStm.ready := True
-    val myTempReorderBufIdx = (
-      myCommitBackStm.myWbPayload
-      .instrCnt.scoreboardIssuePayload.reorderBufIdx
+    myReorderBuf.io.postFlushReorderBufIdx := (
+      RegNext(
+        myReorderBuf.io.postFlushReorderBufIdx,
+        init=myReorderBuf.io.postFlushReorderBufIdx.getZero
+      )
     )
+    when (
+      io.up.valid
+      && fell(
+        io.up.instrCnt.shouldIgnoreInstr.last
+      )
+    ) {
+      myReorderBuf.io.postFlushReorderBufIdx := (
+        io.up.instrCnt.scoreboardIssuePayload.reorderBufIdx
+      )
+    }
+    //val myTempReorderBufIdx = (
+    //  myCommitBackStm.myWbPayload
+    //  .instrCnt.scoreboardIssuePayload.reorderBufIdx
+    //)
 
     val myTempCommitStm = (
       myCommitBackStm
@@ -3739,12 +3776,17 @@ case class SnowHouseForFmaxPipeStageWriteBack(
       someCommitStm.myShouldIgnoreInstr := (
         someMyWbPayload(1).instrCnt.shouldIgnoreInstr.last
       )
-      someCommitStm.opIsMemAccess := (
-        someMyWbPayload(1).splitOp.scoreboardOpIsMemAccess
-      )
+      //someCommitStm.opIsMemAccess := (
+      //  someMyWbPayload(1).splitOp.scoreboardOpIsMemAccess
+      //)
       someCommitStm.reorderBufIdx := (
         someMyWbPayload(1).instrCnt.scoreboardIssuePayload.reorderBufIdx
       )
+      //someCommitStm.postFlushReorderBufIdx := (
+      //  //someMyWbPayload(1)
+      //  RegNext(
+      //  )
+      //)
     } else {
       //someCommitStm.valid := True
       someCommitStm.ready := True
