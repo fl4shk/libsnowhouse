@@ -2471,8 +2471,8 @@ case class SnowHousePipeStageInstrDecode(
         rSavedReorderBufIdxAbsDiff := (
           Mux(
             psExSetPc.reorderBufIdx > myTempReorderBufIdx,
-            psExSetPc.reorderBufIdx - myTempReorderBufIdx + 1,
-            myTempReorderBufIdx - psExSetPc.reorderBufIdx + 1,
+            psExSetPc.reorderBufIdx - myTempReorderBufIdx + 2,
+            myTempReorderBufIdx - psExSetPc.reorderBufIdx + 2,
           ).resize(rSavedReorderBufIdxAbsDiff.getWidth)
         )
 
