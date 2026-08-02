@@ -5118,22 +5118,22 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
   val myTempBranchMispredictTakenMost = (
     Vec[Bool](
       //rose
-      (
-        myPsExSetPcValid
-        =/= RegNextWhen(
-          io.branchPredictTkn,
-          cond=io.upIsFiring,
-          init=False
-        )
-        //!LcvFastCmpEq(
-        //  left=myPsExSetPcValid,
-        //  right=RegNext(
-        //    io.branchPredictTkn,
-        //    init=False
-        //  ),
-        //  cmpEqIo=null,
-        //)._1
-      ),
+      //(
+      //  myPsExSetPcValid
+      //  =/= RegNextWhen(
+      //    io.branchPredictTkn,
+      //    cond=io.upIsFiring,
+      //    init=False
+      //  )
+      //  //!LcvFastCmpEq(
+      //  //  left=myPsExSetPcValid,
+      //  //  right=RegNext(
+      //  //    io.branchPredictTkn,
+      //  //    init=False
+      //  //  ),
+      //  //  cmpEqIo=null,
+      //  //)._1
+      //),
       //rose
       (
         myPsExSetPcValid
@@ -5152,14 +5152,14 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
   val myTempBranchMispredictNotTakenMost = (
     Vec[Bool](
       //rose
-      (
-        !myPsExSetPcValid
-        && RegNextWhen(
-          io.branchPredictTkn,
-          cond=io.upIsFiring,
-          init=False
-        )
-      ),
+      //(
+      //  !myPsExSetPcValid
+      //  && RegNextWhen(
+      //    io.branchPredictTkn,
+      //    cond=io.upIsFiring,
+      //    init=False
+      //  )
+      //),
       //rose
       (
         !myPsExSetPcValid
