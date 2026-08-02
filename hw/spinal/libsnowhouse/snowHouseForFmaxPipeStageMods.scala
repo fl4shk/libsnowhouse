@@ -3759,6 +3759,7 @@ case class SnowHouseForFmaxPipeStageWriteBack(
             myNonMemWbValid
             && (
               !myMemWbValid
+              || stickyMyD2hBusFire
               || !someMyWbPayload(1).instrCnt.shouldIgnoreInstr.last
             )
             //|| (
