@@ -2282,17 +2282,24 @@ case class SnowHousePipeStageInstrDecode(
 
     when (
       up.isFiring
-      && myTempOpMayNeedHazardCheck
+      //&& myTempOpMayNeedHazardCheck
       && !shouldClearExtraDecodeInfo
     ) {
       myGprTagInfoFifo.io.push.valid := (
-        (
-          if (cfg.myHaveZeroReg) (
-            upPayload(1).gprIdxVec.last.orR
-          ) else (
-            True
-          )
-        )
+        // this needs to be used for the absolute value of the
+        // difference between the two `reorderBufIdx` signals, which is,
+        // strictly speaking, the difference between the number of
+        // instructions that have been sent from ID.
+        // As such we need to push into the fifo for normal instructions
+        // (not bubbles)
+        True
+        //(
+        //  if (cfg.myHaveZeroReg) (
+        //    upPayload(1).gprIdxVec.last.orR
+        //  ) else (
+        //    True
+        //  )
+        //)
       )
     }
 
@@ -2470,8 +2477,8 @@ case class SnowHousePipeStageInstrDecode(
         rSavedReorderBufIdxAbsDiff := (
           Mux(
             psExSetPc.reorderBufIdx > myTempReorderBufIdx,
-            psExSetPc.reorderBufIdx - myTempReorderBufIdx,
-            myTempReorderBufIdx - psExSetPc.reorderBufIdx,
+            psExSetPc.reorderBufIdx - myTempReorderBufIdx,// + 2,
+            myTempReorderBufIdx - psExSetPc.reorderBufIdx,// + 2,
           ).resize(rSavedReorderBufIdxAbsDiff.getWidth)
         )
 
