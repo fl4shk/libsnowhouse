@@ -2820,7 +2820,10 @@ case class SnowHouseForFmaxPipeStageWriteBack(
       && (
         //myMemWbPayload(0).splitOp.opIsMemAccess
         myMemWbPayload(0).outpDecodeExt.opIsMemAccess.head
-        || myMemWbPayload(0).instrCnt.shouldIgnoreInstr.head
+        || (
+          myMemWbPayload(0).instrCnt.shouldIgnoreInstr.head
+          && !myNonMemWbFifo.io.pop.valid
+        )
       )
       //&& (
       //  !rMyShouldIgnoreInstrState
@@ -3536,8 +3539,8 @@ case class SnowHouseForFmaxPipeStageWriteBack(
   val myCommitBackStm = (
     if (cfg.optScoreboard) (
       StreamArbiterFactory.lowerFirst.noLock.on(
-        myCommitFrontStmVec.last
-        //Vec(myCommitFrontStmVec.last.reverse)
+        //myCommitFrontStmVec.last
+        Vec(myCommitFrontStmVec.last.reverse)
       )
     ) else (
       Stream(
