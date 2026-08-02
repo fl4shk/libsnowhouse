@@ -2288,18 +2288,20 @@ case class SnowHousePipeStageInstrDecode(
         init=myTempReorderBufIdx.getZero
       )
     )
-    when (
-      up.isFiring
-      //&& !shouldClearExtraDecodeInfo
-    ) {
-      myTempReorderBufIdx := (
-        RegNext(
-          myTempReorderBufIdx,
-          init=myTempReorderBufIdx.getZero
-        )
-        + 1
-      )
-    }
+
+    //when (
+    //  up.isFiring
+    //  //down.isFiring
+    //  //&& !shouldClearExtraDecodeInfo
+    //) {
+    //  myTempReorderBufIdx := (
+    //    RegNext(
+    //      myTempReorderBufIdx,
+    //      init=myTempReorderBufIdx.getZero
+    //    )
+    //    + 1
+    //  )
+    //}
 
     //when (
     //  //down.isFiring
@@ -2358,6 +2360,20 @@ case class SnowHousePipeStageInstrDecode(
         //}
 
         when (
+          up.isFiring
+          //down.isFiring
+          //&& !shouldClearExtraDecodeInfo
+        ) {
+          myTempReorderBufIdx := (
+            RegNext(
+              myTempReorderBufIdx,
+              init=myTempReorderBufIdx.getZero
+            )
+            + 1
+          )
+        }
+
+        when (
           //(
           //  myHistCondAnyBubble(idx + 1)
           //  //&& upPayload(1).myDoHaveHazardAddrCheckVec(idx)
@@ -2387,6 +2403,19 @@ case class SnowHousePipeStageInstrDecode(
         }
       }
       is (ScoreboardFlushState.FLUSH_PIPE) {
+        when (
+          //up.isFiring
+          down.isFiring
+          //&& !shouldClearExtraDecodeInfo
+        ) {
+          myTempReorderBufIdx := (
+            RegNext(
+              myTempReorderBufIdx,
+              init=myTempReorderBufIdx.getZero
+            )
+            + 1
+          )
+        }
         //when (down.isFiring) {
         //  myTempReorderBufIdx := (
         //    RegNext(
@@ -8968,6 +8997,12 @@ case class SnowHousePipeStageExecute(
                     )
                     || rose(
                       cLink.up.isValid
+                    )
+                    || (
+                      cLink.up.isValid
+                      && fell(
+                        myShouldIgnoreInstr.last
+                      )
                     )
                   )
                 ) {

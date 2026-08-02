@@ -2005,7 +2005,16 @@ case class SnowHouseForFmaxPsWbReorderBuf(
 
   //val myPushStm = cloneOf(io.push)
 
-  val rMyShouldIgnoreState = Reg(Bool(), init=False)
+  val nextMyShouldIgnoreState = Bool()
+  val rMyShouldIgnoreState = (
+    //Reg(Bool(), init=False)
+    RegNext(
+      nextMyShouldIgnoreState,
+      init=False
+    )
+  )
+  nextMyShouldIgnoreState := rMyShouldIgnoreState
+
   when (
     rMyShouldIgnoreState
     && (
@@ -2022,7 +2031,7 @@ case class SnowHouseForFmaxPsWbReorderBuf(
     //  )
     //)
   ) {
-    rMyShouldIgnoreState := False
+    nextMyShouldIgnoreState := False
   }
 
   when (
@@ -2030,7 +2039,7 @@ case class SnowHouseForFmaxPsWbReorderBuf(
     && io.push.myShouldIgnoreInstr
     && rOccupancy.orR
   ) {
-    rMyShouldIgnoreState := True
+    nextMyShouldIgnoreState := True
   }
 
 
@@ -2050,7 +2059,7 @@ case class SnowHouseForFmaxPsWbReorderBuf(
             //|| (
             //  io.push.valid
             //  && (
-            //    /!io.push.myShouldIgnoreInstr
+            //    //!io.push.myShouldIgnoreInstr
             //    io.push.myShouldIgnoreInstr
             //  )
             //)
@@ -2204,18 +2213,27 @@ case class SnowHouseForFmaxPsWbReorderBuf(
   //  )
   //}
 
-  myRdAddr := (
-    RegNextWhen(
-      (myRdAddr + 1),
-      cond=(
-        myRam.io.rdAddrPipe.fire
-        //|| 
-      ),
-      //init=myRdAddr.getZero,
+  when (!rMyShouldIgnoreState) {
+    myRdAddr := (
+      RegNextWhen(
+        (myRdAddr + 1),
+        cond=(
+          myRam.io.rdAddrPipe.fire
+          //|| 
+        ),
+        //init=myRdAddr.getZero,
+      )
+      init(0x1)
+      //init(0x0)
     )
-    init(0x1)
-    //init(0x0)
-  )
+  } otherwise {
+    myRdAddr := (
+      RegNext(
+        myRdAddr,
+        init=myRdAddr.getZero
+      ) + 1
+    )
+  }
 
   //when (
   //  (
@@ -2258,13 +2276,18 @@ case class SnowHouseForFmaxPsWbReorderBuf(
     //  myRdAddr - 1
     //)
     //&& 
-    rValidVec(
-      myRdAddr
+    (
+      rValidVec(
+        myRdAddr
+      )
+      //&& !rMyShouldIgnoreState
     )
-    || (
-      rMyShouldIgnoreState
-      && rOccupancy.orR
-    )
+    //&& rOccupancy.orR
+    //|| (
+    //  //nextMyShouldIgnoreState
+    //  rMyShouldIgnoreState
+    //  && rOccupancy.orR
+    //)
     //&& myRam.io.rdAddrPipe.addr =/= idx
     //&& rOccupancy >= 1
     //rValidVec(
