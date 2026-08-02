@@ -2138,7 +2138,7 @@ case class SnowHouseForFmaxPsWbReorderBuf(
           && rOccupancy < myReorderBufSize - 8//- 1
           && (
             rMyShouldIgnoreInstrState
-            =/= MyShouldIgnoreInstrState.IDLE
+            === MyShouldIgnoreInstrState.IDLE
             //!rMyShouldIgnoreInstrState
             //|| (
             //  io.push.valid
