@@ -2476,7 +2476,7 @@ case class SnowHousePipeStageInstrDecode(
             //rSavedGprTagVec.orR
             (rSavedGprTagVec.asBits.asUInt =/= 0x0)
             //|| myScoreboardReorderBufInFlushEtc
-            //&& !shouldClearExtraDecodeInfo,
+            && !shouldClearExtraDecodeInfo,
           //  init=False
           //)
         ) {
@@ -2491,7 +2491,7 @@ case class SnowHousePipeStageInstrDecode(
         when (
           myScoreboardReorderBufInFlushEtc
           //&& (rSavedGprTagVec.asBits.asUInt === 0x0)
-          && !shouldClearExtraDecodeInfo
+          //&& !shouldClearExtraDecodeInfo
         ) {
           cId.haltIt()
         }
