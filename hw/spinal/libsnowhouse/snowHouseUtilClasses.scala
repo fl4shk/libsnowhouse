@@ -652,6 +652,7 @@ case class SnowHouseForFmaxConfig(
     s"numPostExPreWbPipeStages:${numPostExPreWbPipeStages} "
     + s"must be >= 1, apparently, for correct behavior of the CPU!"
   )
+  val myScoreboardTagWidth = 4
 }
 case class SnowHouseConfig(
   haveZeroReg: Option[Int],

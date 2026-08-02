@@ -1891,6 +1891,7 @@ private[libsnowhouse] case class SnowHouseNotForFmax
     //psIdFoundBubble=psIdFoundBubble,
     myScoreboardCommitStm=null,
     myScoreboardSavedGprTagVec=null,
+    myScoreboardReorderBufInFlushEtc=null,
   )
   //--------
   //val pEx = Payload(SnowHouseRegFileModType(cfg=cfg))
@@ -2421,6 +2422,9 @@ private[libsnowhouse] case class SnowHouseForFmax(
     //)
     psId.io.myScoreboardCommit << (
       psWb.io.commitEtc.scoreboardTag
+    )
+    psId.io.myScoreboardReorderBufInFlushEtc <> (
+      psWb.io.commitEtc.scoreboardReorderBufInFlushEtc
     )
     //psId.io.myScoreboardCommit.valid := psWb.io.commit.fire
     //psId.io.myScoreboardCommit.payload := (

@@ -259,6 +259,12 @@ case class SnowHousePsExSetPcPayload(
   //val brKindValid = Bool()
   //val taken = Flow(Bool())
   val taken = Flow(SnowHousePsExSetPcTakenPayload(cfg=cfg))
+
+  //val reorderBufIdx = (
+  //  cfg.optScoreboard
+  //) generate (
+  //  UInt(cfg.optScoreboardReorderBufWidth bits)
+  //)
   //val btbWrEn = (
   //  Bool()
   //)
@@ -1517,6 +1523,7 @@ case class SnowHousePipeStageInstrDecode(
   //val psIdFoundBubble: Bool,
   val myScoreboardCommitStm: Stream[SnowHouseScoreboardCommitPayload],
   val myScoreboardSavedGprTagVec: UInt,
+  val myScoreboardReorderBufInFlushEtc: Bool,
 ) extends Area {
   def cfg = args.cfg
   def modIo = args.io
@@ -2239,6 +2246,29 @@ case class SnowHousePipeStageInstrDecode(
         Reg(Bool(), init=False)
       )
     )
+
+    //case class MyFwdInfo(
+    //) extends Bundle {
+    //  val valid = Bool()
+    //  def fire = valid
+    //  val myGprIdx = UInt(log2Up(cfg.numGprs))
+    //  
+    //}
+
+
+    //val rSavedGprTagVec1 = (
+    //  Vec.fill(cfg.numGprs)(
+    //    Reg(Bool(), init=False)
+    //  )
+    //)
+
+    //val rSavedGprIdxVec = (
+    //  Vec.fill(4)(
+    //    Reg(
+    //    )
+    //  )
+    //)
+
     //val rGprInUseCntVec = (
     //  Vec.fill(cfg.numGprs)(
     //    Reg(UInt(5 bits))
@@ -2406,6 +2436,7 @@ case class SnowHousePipeStageInstrDecode(
         when (
           //up.isFiring
           down.isFiring
+          //&& !myScoreboardReorderBufInFlushEtc
           //&& !shouldClearExtraDecodeInfo
         ) {
           myTempReorderBufIdx := (
@@ -2432,6 +2463,7 @@ case class SnowHousePipeStageInstrDecode(
               //(!(rSavedGprTagVec.orR))
               (rSavedGprTagVec.asBits.asUInt === 0x0)
               && !shouldClearExtraDecodeInfo
+              && !myScoreboardReorderBufInFlushEtc
           //  ),
           //  init=False
           //)
@@ -2443,6 +2475,7 @@ case class SnowHousePipeStageInstrDecode(
             //myMainHazardCheckVec.orR
             //rSavedGprTagVec.orR
             (rSavedGprTagVec.asBits.asUInt =/= 0x0)
+            //|| myScoreboardReorderBufInFlushEtc
             //&& !shouldClearExtraDecodeInfo,
           //  init=False
           //)
@@ -2454,6 +2487,13 @@ case class SnowHousePipeStageInstrDecode(
               False
             )
           )
+        }
+        when (
+          myScoreboardReorderBufInFlushEtc
+          //&& (rSavedGprTagVec.asBits.asUInt === 0x0)
+          && !shouldClearExtraDecodeInfo
+        ) {
+          cId.haltIt()
         }
 
         //when (
@@ -5118,22 +5158,22 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
   val myTempBranchMispredictTakenMost = (
     Vec[Bool](
       //rose
-      //(
-      //  myPsExSetPcValid
-      //  =/= RegNextWhen(
-      //    io.branchPredictTkn,
-      //    cond=io.upIsFiring,
-      //    init=False
-      //  )
-      //  //!LcvFastCmpEq(
-      //  //  left=myPsExSetPcValid,
-      //  //  right=RegNext(
-      //  //    io.branchPredictTkn,
-      //  //    init=False
-      //  //  ),
-      //  //  cmpEqIo=null,
-      //  //)._1
-      //),
+      (
+        myPsExSetPcValid
+        =/= RegNextWhen(
+          io.branchPredictTkn,
+          cond=io.upIsFiring,
+          init=False
+        )
+        //!LcvFastCmpEq(
+        //  left=myPsExSetPcValid,
+        //  right=RegNext(
+        //    io.branchPredictTkn,
+        //    init=False
+        //  ),
+        //  cmpEqIo=null,
+        //)._1
+      ),
       //rose
       (
         myPsExSetPcValid
@@ -5152,14 +5192,14 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
   val myTempBranchMispredictNotTakenMost = (
     Vec[Bool](
       //rose
-      //(
-      //  !myPsExSetPcValid
-      //  && RegNextWhen(
-      //    io.branchPredictTkn,
-      //    cond=io.upIsFiring,
-      //    init=False
-      //  )
-      //),
+      (
+        !myPsExSetPcValid
+        && RegNextWhen(
+          io.branchPredictTkn,
+          cond=io.upIsFiring,
+          init=False
+        )
+      ),
       //rose
       (
         !myPsExSetPcValid
@@ -5212,6 +5252,11 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
     //  ) 
     //)
   )
+  //if (cfg.optScoreboard) {
+  //  io.psExSetPc.reorderBufIdx := (
+  //    io.instrCnt.scoreboardIssuePayload.reorderBufIdx
+  //  )
+  //}
   io.psExSetPc.branchTgtBufElem.srcRegPc := (
     io.psExSetPc.branchTgtBufElem.srcRegPc.getZero
   )
@@ -10685,6 +10730,18 @@ case class SnowHousePipeStageExecute(
   //    init=outp.branchTgtBufElem(1).getZero,
   //  )
   //)
+  //if (cfg.optScoreboard) {
+  //  psExSetPc.reorderBufIdx.allowOverride
+  //  psExSetPc.reorderBufIdx := (
+  //    RegNextWhen(
+  //      setOutpModMemWord.io.psExSetPc.reorderBufIdx,
+  //      cond=setOutpModMemWord.io.psExSetPc.fire,
+  //      init=(
+  //        setOutpModMemWord.io.psExSetPc.reorderBufIdx.getZero
+  //      ),
+  //    )
+  //  )
+  //}
   psExSetPc.branchTgtBufElem.allowOverride
   psExSetPc.branchTgtBufElem := (
     RegNextWhen(

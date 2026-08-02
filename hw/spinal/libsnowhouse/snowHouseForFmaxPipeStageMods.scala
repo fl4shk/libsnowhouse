@@ -155,6 +155,8 @@ case class SnowHouseScoreboardCommitPayload(
 ) extends Bundle {
   //val tag = UInt(cfg.optScoreboardTagWidth bits)
   val myGprIdx = Flow(UInt(log2Up(cfg.numGprs) bits))
+  //val reorderBufInFlush = Bool()
+  //val tag = UInt(cfg.optForFmaxCfg.get.myScoreboardTagWidth bits)
   //val isBubbleEtc = Bool()
 }
 
@@ -864,6 +866,13 @@ case class SnowHouseForFmaxPipeStageInstrDecodeIo(
       SnowHouseScoreboardCommitPayload(cfg=cfg)
     ))
   )
+  val myScoreboardReorderBufInFlushEtc = (
+    cfg.optScoreboard
+  ) generate (
+    in(
+      Bool()
+    )
+  )
   //--------
   val myScoreboardSavedGprTagVec = (
     cfg.optScoreboard
@@ -872,6 +881,7 @@ case class SnowHouseForFmaxPipeStageInstrDecodeIo(
       UInt(cfg.numGprs bits)
     )
   )
+  //--------
 }
 
 case class SnowHouseForFmaxPipeStageInstrDecode(
@@ -938,6 +948,9 @@ case class SnowHouseForFmaxPipeStageInstrDecode(
     myScoreboardCommitStm=io.myScoreboardCommit,
     myScoreboardSavedGprTagVec=(
       io.myScoreboardSavedGprTagVec
+    ),
+    myScoreboardReorderBufInFlushEtc=(
+      io.myScoreboardReorderBufInFlushEtc
     )
   )
 
@@ -1754,6 +1767,13 @@ case class SnowHouseForFmaxPsWbCommitEtc(
   //    )
   //  )
   //)
+  val scoreboardReorderBufInFlushEtc = (
+    cfg.optScoreboard
+  ) generate (
+    out(
+      Bool()
+    )
+  )
   val scoreboardTag = (
     cfg.optScoreboard
   ) generate (
@@ -1834,6 +1854,11 @@ case class SnowHouseForFmaxPsWbReorderBufIo(
       optIncludeBufIdx=false,
     )
   ))
+  val inFlushEtc = (
+    out(
+      Bool()
+    )
+  )
   //val myBranchMispredictEtc = in(
   //  Bool()
   //)
@@ -2053,24 +2078,30 @@ case class SnowHouseForFmaxPsWbReorderBuf(
   //  }
   //}
 
-  val myMaxValShouldIgnoreInstrCnt = 4//3//4//3//4
-  val rMyShouldIgnoreInstrCnt = (
-    Reg(UInt(log2Up(myMaxValShouldIgnoreInstrCnt + 1) + 1 bits))
-    init(0x0)
+  //val myMaxValShouldIgnoreInstrCnt = 4//3//4//3//4
+  //val rMyShouldIgnoreInstrCnt = (
+  //  Reg(UInt(log2Up(myMaxValShouldIgnoreInstrCnt + 1) + 1 bits))
+  //  init(0x0)
+  //)
+  //when (
+  //  io.push.fire
+  //  && io.push.myShouldIgnoreInstr
+  //  && rMyShouldIgnoreInstrCnt < myMaxValShouldIgnoreInstrCnt
+  //) {
+  //  rMyShouldIgnoreInstrCnt := rMyShouldIgnoreInstrCnt + 1
+  //}
+  //when (
+  //  io.push.fire
+  //  && !io.push.myShouldIgnoreInstr
+  //) {
+  //  rMyShouldIgnoreInstrCnt := 0x0
+  //}
+  //io.inFlushEtc.setAsReg() init(False)
+  io.inFlushEtc := !rMyShouldIgnoreInstrState.asBits(0)
+  myRdAddr := (
+    RegNext(myRdAddr)
+    init(0x1)
   )
-  when (
-    io.push.fire
-    && io.push.myShouldIgnoreInstr
-    && rMyShouldIgnoreInstrCnt < myMaxValShouldIgnoreInstrCnt
-  ) {
-    rMyShouldIgnoreInstrCnt := rMyShouldIgnoreInstrCnt + 1
-  }
-  when (
-    io.push.fire
-    && !io.push.myShouldIgnoreInstr
-  ) {
-    rMyShouldIgnoreInstrCnt := 0x0
-  }
 
   switch (rMyShouldIgnoreInstrState) {
     is (MyShouldIgnoreInstrState.IDLE) {
@@ -2105,8 +2136,8 @@ case class SnowHouseForFmaxPsWbReorderBuf(
           !rOccupancy.orR
           //!(rOccupancy >= 2)
           && (
-            io.push.valid//fire//valid
-            && !io.push.myShouldIgnoreInstr
+            !io.push.valid//fire//valid
+            || !io.push.myShouldIgnoreInstr
           )
         )
       ) {
@@ -2122,12 +2153,17 @@ case class SnowHouseForFmaxPsWbReorderBuf(
       )
     }
     is (MyShouldIgnoreInstrState.SET_TO_REORDER_BUF_IDX_ETC) {
-      nextMyShouldIgnoreInstrState := (
-        MyShouldIgnoreInstrState.IDLE
-      )
-      myRdAddr := (
-        io.push.payload.reorderBufIdx - 1
-      )
+      when (io.push.valid) {
+        nextMyShouldIgnoreInstrState := (
+          MyShouldIgnoreInstrState.IDLE
+        )
+        myRdAddr := (
+          io.push.payload.reorderBufIdx - 1
+        )
+      }
+      //myRdAddr := (
+      //  io.push.payload.reorderBufIdx - 1
+      //)
     }
   }
   //when (
@@ -2225,14 +2261,13 @@ case class SnowHouseForFmaxPsWbReorderBuf(
 
   myRam.io.wrPulse.data.most := io.push.most
 
-
   when (
     io.push.fire
     && io.push.myShouldIgnoreInstr
-    && rMyShouldIgnoreInstrCnt >= myMaxValShouldIgnoreInstrCnt
+    //&& rMyShouldIgnoreInstrCnt >= myMaxValShouldIgnoreInstrCnt
     //&& io.push.opIsMemAccess
   ) {
-    myRam.io.wrPulse.data.commit.myGprIdx.valid := False
+    myRam.io.wrPulse.data.commit.myGprIdx.valid := True
   }
 
   when (
@@ -3664,6 +3699,9 @@ case class SnowHouseForFmaxPipeStageWriteBack(
       dataAssignment=(outp, inp) => {
         outp := inp.commit
       }
+    )
+    io.commitEtc.scoreboardReorderBufInFlushEtc := (
+      myReorderBuf.io.inFlushEtc
     )
   }
 
