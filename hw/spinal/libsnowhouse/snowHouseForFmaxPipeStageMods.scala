@@ -2174,10 +2174,11 @@ case class SnowHouseForFmaxPsWbReorderBuf(
     }
     is (MyShouldIgnoreInstrState.CLEAR_VALID_VEC) {
       rValidVec.foreach(item => item := False)
-        nextMyShouldIgnoreInstrState := (
-          MyShouldIgnoreInstrState.SET_TO_REORDER_BUF_IDX_ETC
-          //MyShouldIgnoreInstrState.CLEAR_VALID_VEC
-        )
+      nextMyShouldIgnoreInstrState := (
+        MyShouldIgnoreInstrState.SET_TO_REORDER_BUF_IDX_ETC
+        //MyShouldIgnoreInstrState.CLEAR_VALID_VEC
+      )
+      rOccupancy := 0x0
     }
     is (MyShouldIgnoreInstrState.SET_TO_REORDER_BUF_IDX_ETC) {
       when (
