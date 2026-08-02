@@ -260,11 +260,11 @@ case class SnowHousePsExSetPcPayload(
   //val taken = Flow(Bool())
   val taken = Flow(SnowHousePsExSetPcTakenPayload(cfg=cfg))
 
-  //val reorderBufIdx = (
-  //  cfg.optScoreboard
-  //) generate (
-  //  UInt(cfg.optScoreboardReorderBufWidth bits)
-  //)
+  val reorderBufIdx = (
+    cfg.optScoreboard
+  ) generate (
+    UInt(cfg.optScoreboardReorderBufWidth bits)
+  )
   //val btbWrEn = (
   //  Bool()
   //)
@@ -1523,7 +1523,7 @@ case class SnowHousePipeStageInstrDecode(
   //val psIdFoundBubble: Bool,
   val myScoreboardCommitStm: Stream[SnowHouseScoreboardCommitPayload],
   val myScoreboardSavedGprTagVec: UInt,
-  val myScoreboardReorderBufInFlushEtc: Bool,
+  //val myScoreboardReorderBufInFlushEtc: Bool,
 ) extends Area {
   def cfg = args.cfg
   def modIo = args.io
@@ -2247,41 +2247,64 @@ case class SnowHousePipeStageInstrDecode(
       )
     )
 
-    //case class MyFwdInfo(
-    //) extends Bundle {
-    //  val valid = Bool()
-    //  def fire = valid
-    //  val myGprIdx = UInt(log2Up(cfg.numGprs))
-    //  
-    //}
-
-
-    //val rSavedGprTagVec1 = (
+    //val rSavedGprTagOtherVec = (
     //  Vec.fill(cfg.numGprs)(
     //    Reg(Bool(), init=False)
     //  )
     //)
 
-    //val rSavedGprIdxVec = (
-    //  Vec.fill(4)(
-    //    Reg(
-    //    )
-    //  )
-    //)
+    case class MyGprTagInfo(
+    ) extends Bundle {
+      //val valid = Bool()
+      //def fire = valid
+      val myGprIdx = UInt(log2Up(cfg.numGprs) bits)
+    }
 
-    //val rGprInUseCntVec = (
-    //  Vec.fill(cfg.numGprs)(
-    //    Reg(UInt(5 bits))
-    //    init(0x0)
-    //  )
-    //)
+
+    val myGprTagInfoFifo = (
+      StreamFifo(
+        dataType=MyGprTagInfo(),
+        depth=8,
+        latency=(
+          0
+        ),
+        forFMax=true,
+      )
+    )
+    myGprTagInfoFifo.io.flush := False
+    myGprTagInfoFifo.io.push.valid := False
+    myGprTagInfoFifo.io.push.payload := (
+      myGprTagInfoFifo.io.push.payload.getZero
+    )
+    myGprTagInfoFifo.io.pop.ready := False
+
+    when (
+      up.isFiring
+      && !shouldClearExtraDecodeInfo
+    ) {
+      myGprTagInfoFifo.io.push.valid := (
+        if (cfg.myHaveZeroReg) (
+          upPayload(1).gprIdxVec.last.orR
+        ) else (
+          True
+        )
+      )
+      myGprTagInfoFifo.io.push.myGprIdx := upPayload(1).gprIdxVec.last
+    }
+
+    //when (
+    //  up.isFiring
+    //  && !shouldClearExtraDecodeInfo
+    //  && myGprTagInfoFifo.io.availability <= 2
+    //) {
+    //  myGprTagInfoFifo.io.pop.ready := True
+    //}
+
     myScoreboardSavedGprTagVec := rSavedGprTagVec.asBits.asUInt
 
     val myMainHazardCheckVec = Vec.fill(
       cfg.regFileCfg.modRdPortCnt
     )(
-      //Bool()
-      //UInt(cfg.numGprs bits)
       Bool()
     )
     for (jdx <- 0 until cfg.regFileCfg.modRdPortCnt) {
@@ -2308,7 +2331,15 @@ case class SnowHousePipeStageInstrDecode(
       )
     }
 
-    val myTempReorderBufIdx = (
+    val rSavedReorderBufIdxAbsDiff = (
+      Reg(
+        UInt(
+          log2Up(myGprTagInfoFifo.depth + 1) + 1 bits
+        )
+      )
+    )
+
+    def myTempReorderBufIdx = (
       upPayload(1).instrCnt.scoreboardIssuePayload.reorderBufIdx
     )
 
@@ -2320,8 +2351,8 @@ case class SnowHousePipeStageInstrDecode(
     )
 
     //when (
-    //  up.isFiring
-    //  //down.isFiring
+    //  //up.isFiring
+    //  down.isFiring
     //  //&& !shouldClearExtraDecodeInfo
     //) {
     //  myTempReorderBufIdx := (
@@ -2360,6 +2391,23 @@ case class SnowHousePipeStageInstrDecode(
     //  )
     //}
 
+    //when (
+    //  //(
+    //  //  myHistCondAnyBubble(idx + 1)
+    //  //  //&& upPayload(1).myDoHaveHazardAddrCheckVec(idx)
+    //  //  && upPayload(1).myDoHaveHazardAddrCheckVec.orR
+    //  //)
+    //  myMainHazardCheckVec.orR
+    //  && !shouldClearExtraDecodeInfo
+    //) {
+    //  doSendBubbleMainMost(
+    //    myPsIdBubble=Some(
+    //      //!shouldClearExtraDecodeInfo
+    //      True
+    //    )
+    //  )
+    //}
+
     when (
       myTempOpMayNeedHazardCheck
       && !shouldClearExtraDecodeInfo
@@ -2370,25 +2418,14 @@ case class SnowHousePipeStageInstrDecode(
       ) := (
         //True
         if (cfg.myHaveZeroReg) (
-          upPayload(1).gprIdxVec.last =/= 0x0
+          upPayload(1).gprIdxVec.last.orR //=/= 0x0
         ) else (
           True
         )
       )
     }
-
     switch (rScoreboardFlushState) {
       is (ScoreboardFlushState.IDLE) {
-        //when (up.isFiring) {
-        //  myTempReorderBufIdx := (
-        //    RegNext(
-        //      myTempReorderBufIdx,
-        //      init=myTempReorderBufIdx.getZero
-        //    )
-        //    + 1
-        //  )
-        //}
-
         when (
           up.isFiring
           //down.isFiring
@@ -2402,34 +2439,44 @@ case class SnowHousePipeStageInstrDecode(
             + 1
           )
         }
-
-        when (
-          //(
-          //  myHistCondAnyBubble(idx + 1)
-          //  //&& upPayload(1).myDoHaveHazardAddrCheckVec(idx)
-          //  && upPayload(1).myDoHaveHazardAddrCheckVec.orR
-          //)
-          myMainHazardCheckVec.orR
-          && !shouldClearExtraDecodeInfo
-        ) {
-          doSendBubbleMainMost(
-            myPsIdBubble=Some(
-              //!shouldClearExtraDecodeInfo
-              True
-            )
-          )
-        }
-
+       when (
+         myMainHazardCheckVec.orR
+         && !shouldClearExtraDecodeInfo
+       ) {
+         doSendBubbleMainMost(
+           myPsIdBubble=Some(
+             //!shouldClearExtraDecodeInfo
+             True
+           )
+         )
+       }
         when (
           shouldClearExtraDecodeInfo
         ) {
           doSendBubbleMainMost(
             myPsIdBubble=Some(
               //!shouldClearExtraDecodeInfo
-              True
+              //True
+              False
             )
           )
           rScoreboardFlushState := ScoreboardFlushState.FLUSH_PIPE
+        }
+
+        rSavedReorderBufIdxAbsDiff := (
+          Mux(
+            psExSetPc.reorderBufIdx > myTempReorderBufIdx,
+            psExSetPc.reorderBufIdx - myTempReorderBufIdx,
+            myTempReorderBufIdx - psExSetPc.reorderBufIdx,
+          ).resize(rSavedReorderBufIdxAbsDiff.getWidth)
+        )
+
+        when (
+          up.isFiring
+          && !shouldClearExtraDecodeInfo
+          && myGprTagInfoFifo.io.availability <= 2
+        ) {
+          myGprTagInfoFifo.io.pop.ready := True
         }
       }
       is (ScoreboardFlushState.FLUSH_PIPE) {
@@ -2447,28 +2494,18 @@ case class SnowHousePipeStageInstrDecode(
             + 1
           )
         }
-        //when (down.isFiring) {
-        //  myTempReorderBufIdx := (
-        //    RegNext(
-        //      myTempReorderBufIdx,
-        //      init=myTempReorderBufIdx.getZero
-        //    )
-        //    + 1
-        //  )
-        //}
         when (
-          //RegNext(
-          //  (
-              //!myMainHazardCheckVec.orR
-              //(!(rSavedGprTagVec.orR))
-              (rSavedGprTagVec.asBits.asUInt === 0x0)
-              && !shouldClearExtraDecodeInfo
-              && !myScoreboardReorderBufInFlushEtc
-          //  ),
-          //  init=False
+          (rSavedGprTagVec.asBits.asUInt === 0x0)
+          && !shouldClearExtraDecodeInfo
+          //&& (
+          //  //!myGprTagInfoFifo.io.pop.valid
+          //  //|| 
+          //  !rSavedReorderBufIdxAbsDiff.orR
           //)
+          //&& !myScoreboardReorderBufInFlushEtc
         ) {
           rScoreboardFlushState := ScoreboardFlushState.IDLE
+          myGprTagInfoFifo.io.flush := True
         }
         when (
           //RegNext(
@@ -2488,35 +2525,169 @@ case class SnowHousePipeStageInstrDecode(
             )
           )
         }
-        when (
-          myScoreboardReorderBufInFlushEtc
-          //&& (rSavedGprTagVec.asBits.asUInt === 0x0)
-          //&& !shouldClearExtraDecodeInfo
-        ) {
-          cId.haltIt()
-        }
 
+        myGprTagInfoFifo.io.pop.ready := rSavedReorderBufIdxAbsDiff.orR
+
+        when (
+          myGprTagInfoFifo.io.pop.fire
+        ) {
+          rSavedReorderBufIdxAbsDiff := rSavedReorderBufIdxAbsDiff - 1
+          rSavedGprTagVec(
+            myGprTagInfoFifo.io.pop.myGprIdx
+          ) := False
+        }
         //when (
-        //  RegNext(
-        //    (
-        //      !myMainHazardCheckVec.orR
-        //      //&& !shouldClearExtraDecodeInfo
-        //    ),
-        //    init=False
-        //  )
+        //  myGprTagInfoFifo.io.pop.valid
+        //  && rSavedReorderBufIdxAbsDiff.orR
         //) {
-        //  rScoreboardFlushState := ScoreboardFlushState.IDLE
-        //} otherwise {
-        //  doSendBubbleMainMost(
-        //    myPsIdBubble=Some(
-        //      //!shouldClearExtraDecodeInfo
-        //      True
-        //      //False
-        //    )
-        //  )
         //}
       }
     }
+
+    //switch (rScoreboardFlushState) {
+    //  is (ScoreboardFlushState.IDLE) {
+    //    //when (up.isFiring) {
+    //    //  myTempReorderBufIdx := (
+    //    //    RegNext(
+    //    //      myTempReorderBufIdx,
+    //    //      init=myTempReorderBufIdx.getZero
+    //    //    )
+    //    //    + 1
+    //    //  )
+    //    //}
+
+    //    when (
+    //      up.isFiring
+    //      //down.isFiring
+    //      //&& !shouldClearExtraDecodeInfo
+    //    ) {
+    //      myTempReorderBufIdx := (
+    //        RegNext(
+    //          myTempReorderBufIdx,
+    //          init=myTempReorderBufIdx.getZero
+    //        )
+    //        + 1
+    //      )
+    //    }
+
+    //    when (
+    //      //(
+    //      //  myHistCondAnyBubble(idx + 1)
+    //      //  //&& upPayload(1).myDoHaveHazardAddrCheckVec(idx)
+    //      //  && upPayload(1).myDoHaveHazardAddrCheckVec.orR
+    //      //)
+    //      myMainHazardCheckVec.orR
+    //      && !shouldClearExtraDecodeInfo
+    //    ) {
+    //      doSendBubbleMainMost(
+    //        myPsIdBubble=Some(
+    //          //!shouldClearExtraDecodeInfo
+    //          True
+    //        )
+    //      )
+    //    }
+
+    //    when (
+    //      shouldClearExtraDecodeInfo
+    //    ) {
+    //      doSendBubbleMainMost(
+    //        myPsIdBubble=Some(
+    //          //!shouldClearExtraDecodeInfo
+    //          //True
+    //          False
+    //        )
+    //      )
+    //      rScoreboardFlushState := ScoreboardFlushState.FLUSH_PIPE
+    //    }
+    //  }
+    //  is (ScoreboardFlushState.FLUSH_PIPE) {
+    //    when (
+    //      //up.isFiring
+    //      down.isFiring
+    //      //&& !myScoreboardReorderBufInFlushEtc
+    //      //&& !shouldClearExtraDecodeInfo
+    //    ) {
+    //      myTempReorderBufIdx := (
+    //        RegNext(
+    //          myTempReorderBufIdx,
+    //          init=myTempReorderBufIdx.getZero
+    //        )
+    //        + 1
+    //      )
+    //    }
+    //    //when (down.isFiring) {
+    //    //  myTempReorderBufIdx := (
+    //    //    RegNext(
+    //    //      myTempReorderBufIdx,
+    //    //      init=myTempReorderBufIdx.getZero
+    //    //    )
+    //    //    + 1
+    //    //  )
+    //    //}
+    //    when (
+    //      //RegNext(
+    //      //  (
+    //          //!myMainHazardCheckVec.orR
+    //          //(!(rSavedGprTagVec.orR))
+    //          (rSavedGprTagVec.asBits.asUInt === 0x0)
+    //          && !shouldClearExtraDecodeInfo
+
+    //          //&& !myScoreboardReorderBufInFlushEtc
+    //      //  ),
+    //      //  init=False
+    //      //)
+    //    ) {
+    //      rScoreboardFlushState := ScoreboardFlushState.IDLE
+    //    }
+    //    when (
+    //      //RegNext(
+    //        //myMainHazardCheckVec.orR
+    //        //rSavedGprTagVec.orR
+    //        (rSavedGprTagVec.asBits.asUInt =/= 0x0)
+    //        //|| myScoreboardReorderBufInFlushEtc
+    //        && !shouldClearExtraDecodeInfo,
+    //      //  init=False
+    //      //)
+    //    ) {
+    //      doSendBubbleMainMost(
+    //        myPsIdBubble=Some(
+    //          //!shouldClearExtraDecodeInfo
+    //          //True
+    //          False
+    //        )
+    //      )
+    //    }
+
+    //    //when (
+    //    //  myScoreboardReorderBufInFlushEtc
+    //    //  //&& (rSavedGprTagVec.asBits.asUInt === 0x0)
+    //    //  //&& !shouldClearExtraDecodeInfo
+    //    //) {
+    //    //  cId.haltIt()
+    //    //}
+
+    //    //when (
+    //    //  RegNext(
+    //    //    (
+    //    //      !myMainHazardCheckVec.orR
+    //    //      //&& !shouldClearExtraDecodeInfo
+    //    //    ),
+    //    //    init=False
+    //    //  )
+    //    //) {
+    //    //  rScoreboardFlushState := ScoreboardFlushState.IDLE
+    //    //} otherwise {
+    //    //  doSendBubbleMainMost(
+    //    //    myPsIdBubble=Some(
+    //    //      //!shouldClearExtraDecodeInfo
+    //    //      True
+    //    //      //False
+    //    //    )
+    //    //  )
+    //    //}
+    //  }
+    //}
+
 
 
     //switch (
@@ -5252,11 +5423,11 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
     //  ) 
     //)
   )
-  //if (cfg.optScoreboard) {
-  //  io.psExSetPc.reorderBufIdx := (
-  //    io.instrCnt.scoreboardIssuePayload.reorderBufIdx
-  //  )
-  //}
+  if (cfg.optScoreboard) {
+    io.psExSetPc.reorderBufIdx := (
+      io.instrCnt.scoreboardIssuePayload.reorderBufIdx
+    )
+  }
   io.psExSetPc.branchTgtBufElem.srcRegPc := (
     io.psExSetPc.branchTgtBufElem.srcRegPc.getZero
   )
@@ -10730,18 +10901,6 @@ case class SnowHousePipeStageExecute(
   //    init=outp.branchTgtBufElem(1).getZero,
   //  )
   //)
-  //if (cfg.optScoreboard) {
-  //  psExSetPc.reorderBufIdx.allowOverride
-  //  psExSetPc.reorderBufIdx := (
-  //    RegNextWhen(
-  //      setOutpModMemWord.io.psExSetPc.reorderBufIdx,
-  //      cond=setOutpModMemWord.io.psExSetPc.fire,
-  //      init=(
-  //        setOutpModMemWord.io.psExSetPc.reorderBufIdx.getZero
-  //      ),
-  //    )
-  //  )
-  //}
   psExSetPc.branchTgtBufElem.allowOverride
   psExSetPc.branchTgtBufElem := (
     RegNextWhen(
@@ -10813,6 +10972,20 @@ case class SnowHousePipeStageExecute(
   //    init=False
   //  )
   //)
+
+  if (cfg.optScoreboard) {
+    psExSetPc.reorderBufIdx.allowOverride
+    psExSetPc.reorderBufIdx := (
+      RegNextWhen(
+        setOutpModMemWord.io.psExSetPc.reorderBufIdx,
+        cond=setOutpModMemWord.io.psExSetPc.fire,
+        init=(
+          setOutpModMemWord.io.psExSetPc.reorderBufIdx.getZero
+        ),
+      )
+    )
+  }
+
   if (!cfg.useLcvDataBus) {
     myDbus.allowOverride
     myDbus.sendData := (
