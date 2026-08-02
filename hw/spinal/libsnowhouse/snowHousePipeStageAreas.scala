@@ -2286,6 +2286,7 @@ case class SnowHousePipeStageInstrDecode(
       && !shouldClearExtraDecodeInfo
     ) {
       myGprTagInfoFifo.io.push.valid := (
+        //True
         (
           if (cfg.myHaveZeroReg) (
             upPayload(1).gprIdxVec.last.orR
@@ -2470,8 +2471,8 @@ case class SnowHousePipeStageInstrDecode(
         rSavedReorderBufIdxAbsDiff := (
           Mux(
             psExSetPc.reorderBufIdx > myTempReorderBufIdx,
-            psExSetPc.reorderBufIdx - myTempReorderBufIdx,
-            myTempReorderBufIdx - psExSetPc.reorderBufIdx,
+            psExSetPc.reorderBufIdx - myTempReorderBufIdx + 1,
+            myTempReorderBufIdx - psExSetPc.reorderBufIdx + 1,
           ).resize(rSavedReorderBufIdxAbsDiff.getWidth)
         )
 
@@ -2503,7 +2504,8 @@ case class SnowHousePipeStageInstrDecode(
           && !shouldClearExtraDecodeInfo
           && (
             !myGprTagInfoFifo.io.pop.valid
-            || !rSavedReorderBufIdxAbsDiff.orR
+            //|| !rSavedReorderBufIdxAbsDiff.orR
+            || rSavedReorderBufIdxAbsDiff.msb
           )
           //&& !myScoreboardReorderBufInFlushEtc
         ) {
@@ -2529,7 +2531,10 @@ case class SnowHousePipeStageInstrDecode(
           )
         }
 
-        myGprTagInfoFifo.io.pop.ready := rSavedReorderBufIdxAbsDiff.orR
+        myGprTagInfoFifo.io.pop.ready := (
+          //rSavedReorderBufIdxAbsDiff.orR
+          !rSavedReorderBufIdxAbsDiff.msb
+        )
 
         when (
           myGprTagInfoFifo.io.pop.fire
