@@ -3536,8 +3536,8 @@ case class SnowHouseForFmaxPipeStageWriteBack(
   val myCommitBackStm = (
     if (cfg.optScoreboard) (
       StreamArbiterFactory.lowerFirst.noLock.on(
-        //myCommitFrontStmVec.last
-        Vec(myCommitFrontStmVec.last.reverse)
+        myCommitFrontStmVec.last
+        //Vec(myCommitFrontStmVec.last.reverse)
       )
     ) else (
       Stream(
