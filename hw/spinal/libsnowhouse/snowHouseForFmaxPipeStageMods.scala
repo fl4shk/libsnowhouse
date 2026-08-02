@@ -2611,6 +2611,7 @@ case class SnowHouseForFmaxPipeStageWriteBack(
     //)
 
     val rMyShouldIgnoreInstrState = Reg(Bool(), init=False)
+
     when (
       io.up.fire
       && io.up.instrCnt.shouldIgnoreInstr.head
@@ -2631,10 +2632,10 @@ case class SnowHouseForFmaxPipeStageWriteBack(
         //myMemWbPayload(0).splitOp.opIsMemAccess
         myMemWbPayload(0).outpDecodeExt.opIsMemAccess.head
       )
-      && (
-        !rMyShouldIgnoreInstrState
-        || !myNonMemWbValid
-      )
+      //&& (
+      //  !rMyShouldIgnoreInstrState
+      //  || !myNonMemWbValid
+      //)
       && (
         //!(
         //  myMemWbPayload(0).instrCnt.myPsIdBubble.head
@@ -3775,6 +3776,7 @@ case class SnowHouseForFmaxPipeStageWriteBack(
               //!myMemWbPayload(1).instrCnt.myPsIdBubble.last
               myMemWbValid
               && stickyMyD2hBusFire
+              && !myScoreboardWbFifoArea.rMyShouldIgnoreInstrState
               //&& (
               //  !myNonMemWbValid
               //  || !someMyWbPayload(1).instrCnt.shouldIgnoreInstr.last
