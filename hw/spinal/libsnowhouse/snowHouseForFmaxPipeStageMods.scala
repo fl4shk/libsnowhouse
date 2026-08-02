@@ -2156,20 +2156,23 @@ case class SnowHouseForFmaxPsWbReorderBuf(
       }
     }
     is (MyShouldIgnoreInstrState.SET_TO_REORDER_BUF_IDX_ETC) {
-      //when (io.push.valid) {
+      when (
+        io.push.valid
+        && !io.push.myShouldIgnoreInstr
+      ) {
         nextMyShouldIgnoreInstrState := (
           MyShouldIgnoreInstrState.IDLE
         )
-      //}
+      }
       //myRdAddr := (
       //  io.push.payload.reorderBufIdx - 1
       //)
       when (io.push.valid) {
-        myRdAddr := io.push.reorderBufIdx
+        myRdAddr := io.push.reorderBufIdx - 1
       } otherwise {
         myRdAddr := (
           RegNextWhen(
-            io.push.reorderBufIdx,
+            io.push.reorderBufIdx - 1,
             cond=io.push.fire,
             init=io.push.reorderBufIdx.getZero
           )
