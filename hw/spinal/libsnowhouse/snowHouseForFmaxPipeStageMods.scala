@@ -2010,7 +2010,7 @@ case class SnowHouseForFmaxPsWbReorderBuf(
     val
       IDLE,
       FLUSH,
-      SET_TO_REORDER_BUF_IDX
+      SET_TO_REORDER_BUF_IDX_ETC
       = newElement()
   }
   val nextMyShouldIgnoreInstrState = MyShouldIgnoreInstrState()//Bool()
@@ -2068,6 +2068,8 @@ case class SnowHouseForFmaxPsWbReorderBuf(
           (myRdAddr + 1),
           cond=(
             myRam.io.rdAddrPipe.fire
+            //|| rose(rMyShouldIgnoreInstrState.asBits(0))
+            || rMyShouldIgnoreInstrState.asBits(2)
             //|| 
           ),
           //init=myRdAddr.getZero,
@@ -2087,7 +2089,7 @@ case class SnowHouseForFmaxPsWbReorderBuf(
         )
       ) {
         nextMyShouldIgnoreInstrState := (
-          MyShouldIgnoreInstrState.SET_TO_REORDER_BUF_IDX
+          MyShouldIgnoreInstrState.SET_TO_REORDER_BUF_IDX_ETC
         )
       }
       myRdAddr := (
@@ -2097,11 +2099,13 @@ case class SnowHouseForFmaxPsWbReorderBuf(
         ) + 1
       )
     }
-    is (MyShouldIgnoreInstrState.SET_TO_REORDER_BUF_IDX) {
+    is (MyShouldIgnoreInstrState.SET_TO_REORDER_BUF_IDX_ETC) {
       nextMyShouldIgnoreInstrState := (
         MyShouldIgnoreInstrState.IDLE
       )
-      myRdAddr := io.push.payload.reorderBufIdx
+      myRdAddr := (
+        io.push.payload.reorderBufIdx - 1
+      )
     }
   }
   //when (
@@ -2137,8 +2141,8 @@ case class SnowHouseForFmaxPsWbReorderBuf(
           !rValidVec(idx)
           && rOccupancy < myReorderBufSize - 8//- 1
           && (
-            rMyShouldIgnoreInstrState
-            === MyShouldIgnoreInstrState.IDLE
+            rMyShouldIgnoreInstrState.asBits(0)
+            //=== MyShouldIgnoreInstrState.IDLE
             //!rMyShouldIgnoreInstrState
             //|| (
             //  io.push.valid
@@ -2888,15 +2892,16 @@ case class SnowHouseForFmaxPipeStageWriteBack(
   //when (myD2hBus.fire) {
   //  rSeenD2hBusFire := True
   //}
-  val rSeenMyD2hBusFire = (
-    cfg.optScoreboard
-  ) generate (
-    Reg(Bool(), init=False)
-  )
-  val stickyMyD2hBusFire = (
+  //val rSeenMyD2hBusFire = (
+  //  cfg.optScoreboard
+  //) generate (
+  //  Reg(Bool(), init=False)
+  //)
+  val stickyMyD2hBusValid = (
     if (cfg.optScoreboard) (
-      myD2hBus.fire
-      || rSeenMyD2hBusFire
+      //myD2hBus.fire
+      myD2hBus.valid
+      //|| rSeenMyD2hBusFire
       || (
         //myMemWbFifo.io.pop.valid
         myMemWbFifo.io.pop.valid
@@ -2953,9 +2958,9 @@ case class SnowHouseForFmaxPipeStageWriteBack(
       )
     )
 
-    when (myD2hBus.fire) {
-      rSeenMyD2hBusFire := True
-    }
+    //when (myD2hBus.fire) {
+    //  rSeenMyD2hBusFire := True
+    //}
     when (
       myMemWbFifo.io.pop.valid
     ) {
@@ -3096,6 +3101,7 @@ case class SnowHouseForFmaxPipeStageWriteBack(
           //|| rCurrWbPayloadOuterIdx.lsb
           //&& 
           myMemWbValid
+          && myMemWbFifo.io.pop.ready
         ) else (
           cLink.up.isValid
         )
@@ -3640,9 +3646,16 @@ case class SnowHouseForFmaxPipeStageWriteBack(
       cfg.optScoreboard
       && isMem
     ) {
-      when (someCommitStm.fire) {
-        rSeenMyD2hBusFire := False
-      }
+      //when (
+      //  someCommitStm.fire
+      //) {
+      //  rSeenMyD2hBusFire := False
+      //}
+      //when (
+      //  myD2hBus.fire
+      //) {
+      //  rSeenMyD2hBusFire := True
+      //}
     }
     val myNonMemRegFileWrPulseValidPartial = (
       cfg.optScoreboard
@@ -3870,7 +3883,7 @@ case class SnowHouseForFmaxPipeStageWriteBack(
               //True
               //!myMemWbPayload(1).instrCnt.myPsIdBubble.last
               myMemWbValid
-              && stickyMyD2hBusFire
+              && stickyMyD2hBusValid
               //&& (
               //  !myNonMemWbValid
               //  || !myNonMemWbPayload(1).instrCnt.shouldIgnoreInstr.last
