@@ -3508,8 +3508,9 @@ case class SnowHousePipeStagePreFwd(
           myFwdTempToSwitch.asBits
           //## RegNext
           ## (
-            RegNext(upIsFiring, init=False)
-            || rose(upIsValid)
+            //RegNext(upIsFiring, init=False)
+            //|| rose(upIsValid)
+            upIsValid
           )
         ) {
           is (
@@ -8991,19 +8992,20 @@ case class SnowHousePipeStageExecute(
                   )
                   //stickyFwdRegFileWrPulseVec(jdx).fire
                   ## (
-                    RegNext(
-                      cLink.up.isFiring,
-                      init=False
-                    )
-                    || rose(
-                      cLink.up.isValid
-                    )
-                    || (
-                      cLink.up.isValid
-                      && fell(
-                        myShouldIgnoreInstr.last
-                      )
-                    )
+                    cLink.up.isValid
+                    //RegNext(
+                    //  cLink.up.isFiring,
+                    //  init=False
+                    //)
+                    //|| rose(
+                    //  cLink.up.isValid
+                    //)
+                    //|| (
+                    //  cLink.up.isValid
+                    //  && fell(
+                    //    myShouldIgnoreInstr.last
+                    //  )
+                    //)
                   )
                 ) {
                   is (M"1-") {
