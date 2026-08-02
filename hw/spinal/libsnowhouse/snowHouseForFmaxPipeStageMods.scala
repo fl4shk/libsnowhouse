@@ -2915,7 +2915,6 @@ case class SnowHouseForFmaxPipeStageWriteBack(
         myNonMemWbFifo.io.pop.payload.myExt
       )
     }
-  } else {
   }
 
   //if (cfg.optScoreboard) {
@@ -3368,12 +3367,23 @@ case class SnowHouseForFmaxPipeStageWriteBack(
       myCommitBackStm.myWbPayload
       .instrCnt.scoreboardIssuePayload.reorderBufIdx
     )
-    val myTempCommitStm = (
-      myCommitBackStm
-    )
     //val myTempCommitStm = (
-    //  cloneOf(myCommitBackStm)
+    //  myCommitBackStm
     //)
+    val myTempCommitStm = (
+      cloneOf(myCommitBackStm)
+    )
+    myTempCommitStm << (
+      myCommitBackStm.haltWhen(
+        (
+          myMemWbFifo.io.pop.valid
+          //|| myNonMemWbFifo.io.pop.valid
+        )
+        && (
+          myCommitBackStm.myShouldIgnoreInstr
+        )
+      )
+    )
     //myTempCommitStm << (
     //  myCommitBackStm.throwWhen(
     //    (
