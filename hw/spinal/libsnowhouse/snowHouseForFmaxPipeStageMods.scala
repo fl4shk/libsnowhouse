@@ -2631,7 +2631,10 @@ case class SnowHouseForFmaxPipeStageWriteBack(
         //myMemWbPayload(0).splitOp.opIsMemAccess
         myMemWbPayload(0).outpDecodeExt.opIsMemAccess.head
       )
-      && !rMyShouldIgnoreInstrState
+      && (
+        !rMyShouldIgnoreInstrState
+        || !myNonMemWbValid
+      )
       && (
         //!(
         //  myMemWbPayload(0).instrCnt.myPsIdBubble.head
