@@ -3378,6 +3378,7 @@ case class SnowHouseForFmaxPipeStageWriteBack(
         (
           myMemWbFifo.io.pop.valid
           //|| myNonMemWbFifo.io.pop.valid
+          && !stickyMyD2hBusFire
         )
         && (
           myCommitBackStm.myShouldIgnoreInstr
