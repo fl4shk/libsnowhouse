@@ -1926,34 +1926,78 @@ case class SnowHouseForFmaxPsWbReorderBuf(
             ]
           ],
         ) => {
-          outp.reorderBufIdx := inp.reorderBufIdx
+          //outp.reorderBufIdx := inp.reorderBufIdx
           //outp.most := rdMemWord.most
+          val myHistWrPulseEtc = (
+            History(
+              that=wrPulse,
+              when=(
+                wrPulse.fire
+                && (
+                  rMyShouldIgnoreInstrState.asBits(0)
+                  || (
+                    rMyShouldIgnoreInstrState.asBits(1)
+                    && !io.push.myPsIdBubble
+                  )
+                )
+                && wrPulse.addr === inp.reorderBufIdx
+              ),
+              length=2,
+              init=wrPulse.getZero
+            )
+          )
           switch (
-            (
-              wrPulse.fire
-              && wrPulse.addr === inp.reorderBufIdx
-            )
-            ## (
-              RegNextWhen(
-                wrPulse.addr,
-                cond=wrPulse.fire,
-                init=wrPulse.addr.getZero
-              ) === inp.reorderBufIdx
-            )
+            //(
+            //  wrPulse.fire
+            //  && (
+            //    rMyShouldIgnoreInstrState.asBits(0)
+            //    || (
+            //      rMyShouldIgnoreInstrState.asBits(1)
+            //      && !io.push.myPsIdBubble
+            //    )
+            //  )
+            //  && wrPulse.addr === inp.reorderBufIdx
+            //)
+            //## (
+            //  RegNextWhen(
+            //    wrPulse.addr,
+            //    cond=wrPulse.fire,
+            //    init=wrPulse.addr.getZero
+            //  ) === inp.reorderBufIdx
+            //)
+
+            //myHistWrPulseEtc.reverse.asBits
+            myHistWrPulseEtc(0).fire
+            ## myHistWrPulseEtc(1).fire
           ) {
             is (M"1-") {
-              outp.most := wrPulse.data.most
+              outp.most := (
+                //wrPulse.data.most
+                myHistWrPulseEtc(0).data.most
+              )
+              outp.reorderBufIdx := (
+                myHistWrPulseEtc(0).addr
+              )
             }
             is (M"01") {
               outp.most := (
-                RegNextWhen(
-                wrPulse.data.most,
-                  cond=wrPulse.fire,
-                  init=wrPulse.data.most.getZero
-                )
+                //wrPulse.data.most
+                myHistWrPulseEtc(1).data.most
               )
+              outp.reorderBufIdx := (
+                myHistWrPulseEtc(1).addr
+              )
+              //outp.most := (
+              //  //myHistWrPulseEtc(1).
+              //  //RegNextWhen(
+              //  //  wrPulse.data.most,
+              //  //  cond=wrPulse.fire,
+              //  //  init=wrPulse.data.most.getZero
+              //  //)
+              //)
             }
             default {
+              outp.reorderBufIdx := inp.reorderBufIdx
               outp.most := rdMemWord.most
             }
           }
