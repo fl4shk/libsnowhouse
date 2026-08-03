@@ -1767,13 +1767,13 @@ case class SnowHouseForFmaxPsWbCommitEtc(
   //    )
   //  )
   //)
-  //val scoreboardReorderBufInFlushEtc = (
-  //  cfg.optScoreboard
-  //) generate (
-  //  out(
-  //    Bool()
-  //  )
-  //)
+  val scoreboardReorderBufInFlushEtc = (
+    cfg.optScoreboard
+  ) generate (
+    out(
+      Bool()
+    )
+  )
   val scoreboardTag = (
     cfg.optScoreboard
   ) generate (
@@ -1864,11 +1864,11 @@ case class SnowHouseForFmaxPsWbReorderBufIo(
       optIncludeBufIdx=false,
     )
   ))
-  //val inFlushEtc = (
-  //  out(
-  //    Bool()
-  //  )
-  //)
+  val inFlushEtc = (
+    out(
+      Bool()
+    )
+  )
   val postFlushReorderBufIdx = (
     in(
       UInt(cfg.optScoreboardReorderBufWidth bits)
@@ -2113,7 +2113,7 @@ case class SnowHouseForFmaxPsWbReorderBuf(
   //  rMyShouldIgnoreInstrCnt := 0x0
   //}
   //io.inFlushEtc.setAsReg() init(False)
-  //io.inFlushEtc := !rMyShouldIgnoreInstrState.asBits(0)
+  io.inFlushEtc := !rMyShouldIgnoreInstrState.asBits(0)
   myRdAddr := (
     RegNext(myRdAddr)
     init(0x1)
@@ -2253,7 +2253,7 @@ case class SnowHouseForFmaxPsWbReorderBuf(
           //!rAttemptPushVec(idx)
           //&& 
           !rValidVec(idx)
-          && rOccupancy < myReorderBufSize - 8//- 1
+          && rOccupancy < myReorderBufSize - 4//8//- 1
           && (
             rMyShouldIgnoreInstrState.asBits(0)
             || (
@@ -3776,9 +3776,9 @@ case class SnowHouseForFmaxPipeStageWriteBack(
         outp := inp.commit
       }
     )
-    //io.commitEtc.scoreboardReorderBufInFlushEtc := (
-    //  myReorderBuf.io.inFlushEtc
-    //)
+    io.commitEtc.scoreboardReorderBufInFlushEtc := (
+      myReorderBuf.io.inFlushEtc
+    )
   }
 
   def setCommitEtc(
