@@ -2501,27 +2501,31 @@ case class SnowHousePipeStageInstrDecode(
             + 1
           )
         }
+
         when (
-          (rSavedGprTagVec.asBits.asUInt === 0x0)
-          && !shouldClearExtraDecodeInfo
+          //(rSavedGprTagVec.asBits.asUInt === 0x0)
+          //&& 
+          !shouldClearExtraDecodeInfo
           && (
             !myGprTagInfoFifo.io.pop.valid
             //|| !rSavedReorderBufIdxAbsDiff.orR
             || rSavedReorderBufIdxAbsDiff.msb
           )
-          //&& !myScoreboardReorderBufInFlushEtc
+          && !myScoreboardReorderBufInFlushEtc
         ) {
           rScoreboardFlushState := ScoreboardFlushState.IDLE
           myGprTagInfoFifo.io.flush := True
         }
+
         when (
           //RegNext(
             //myMainHazardCheckVec.orR
             //rSavedGprTagVec.orR
             (
-              (rSavedGprTagVec.asBits.asUInt =/= 0x0)
-              //|| myScoreboardReorderBufInFlushEtc
-              && !shouldClearExtraDecodeInfo,
+              //(rSavedGprTagVec.asBits.asUInt =/= 0x0)
+              ////|| myScoreboardReorderBufInFlushEtc
+              //&& 
+              !shouldClearExtraDecodeInfo
             )
             || (
               myScoreboardReorderBufInFlushEtc
