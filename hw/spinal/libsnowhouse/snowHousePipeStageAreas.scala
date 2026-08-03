@@ -1523,7 +1523,7 @@ case class SnowHousePipeStageInstrDecode(
   //val psIdFoundBubble: Bool,
   val myScoreboardCommitStm: Stream[SnowHouseScoreboardCommitPayload],
   val myScoreboardSavedGprTagVec: UInt,
-  //val myScoreboardReorderBufInFlushEtc: Bool,
+  val myScoreboardReorderBufInFlushEtc: Bool,
 ) extends Area {
   def cfg = args.cfg
   def modIo = args.io
@@ -2430,6 +2430,7 @@ case class SnowHousePipeStageInstrDecode(
       )
     }
     switch (rScoreboardFlushState) {
+      //--------
       is (ScoreboardFlushState.IDLE) {
         when (
           up.isFiring
@@ -2444,17 +2445,17 @@ case class SnowHousePipeStageInstrDecode(
             + 1
           )
         }
-       when (
-         myMainHazardCheckVec.orR
-         && !shouldClearExtraDecodeInfo
-       ) {
-         doSendBubbleMainMost(
-           myPsIdBubble=Some(
-             //!shouldClearExtraDecodeInfo
-             True
-           )
-         )
-       }
+        when (
+          myMainHazardCheckVec.orR
+          && !shouldClearExtraDecodeInfo
+        ) {
+          doSendBubbleMainMost(
+            myPsIdBubble=Some(
+              //!shouldClearExtraDecodeInfo
+              True
+            )
+          )
+        }
         when (
           shouldClearExtraDecodeInfo
         ) {
@@ -2484,6 +2485,7 @@ case class SnowHousePipeStageInstrDecode(
           myGprTagInfoFifo.io.pop.ready := True
         }
       }
+      //--------
       is (ScoreboardFlushState.FLUSH_PIPE) {
         when (
           //up.isFiring
@@ -2516,9 +2518,14 @@ case class SnowHousePipeStageInstrDecode(
           //RegNext(
             //myMainHazardCheckVec.orR
             //rSavedGprTagVec.orR
-            (rSavedGprTagVec.asBits.asUInt =/= 0x0)
-            //|| myScoreboardReorderBufInFlushEtc
-            && !shouldClearExtraDecodeInfo,
+            (
+              (rSavedGprTagVec.asBits.asUInt =/= 0x0)
+              //|| myScoreboardReorderBufInFlushEtc
+              && !shouldClearExtraDecodeInfo,
+            )
+            || (
+              myScoreboardReorderBufInFlushEtc
+            )
           //  init=False
           //)
         ) {
@@ -2526,7 +2533,8 @@ case class SnowHousePipeStageInstrDecode(
             myPsIdBubble=Some(
               //!shouldClearExtraDecodeInfo
               //True
-              False
+              //False
+              myScoreboardReorderBufInFlushEtc
             )
           )
         }
