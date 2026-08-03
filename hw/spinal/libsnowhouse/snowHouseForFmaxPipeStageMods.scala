@@ -1926,72 +1926,96 @@ case class SnowHouseForFmaxPsWbReorderBuf(
             ]
           ],
         ) => {
-          //outp.reorderBufIdx := inp.reorderBufIdx
+          outp.reorderBufIdx := inp.reorderBufIdx
           //outp.most := rdMemWord.most
-          val myHistWrPulseEtc = (
-            History(
-              that=wrPulse,
-              when=(
-                wrPulse.fire
-                && myExternalInpCond
-                && wrPulse.addr === inp.reorderBufIdx
-              ),
-              length=2,
-              init=wrPulse.getZero
-            )
-          )
+          //val myTempWrPulse = (
+          //  cloneOf(wrPulse)
+          //)
+          //myTempWrPulse.valid := (
+          //  wrPulse.fire
+          //  //&& myExternalInpCond
+          //)
+          //myTempWrPulse.payload := wrPulse.payload
+
+          //val myHistWrPulseEtc = (
+          //  History(
+          //    that=myTempWrPulse,
+          //    when=(
+          //      myTempWrPulse.fire
+          //      //&& wrPulse.addr === inp.reorderBufIdx
+          //    ),
+          //    length=(
+          //      2
+          //      //1
+          //    ),
+          //    init=myTempWrPulse.getZero
+          //  )
+          //)
           switch (
-            //(
-            //  wrPulse.fire
-            //  && (
-            //    rMyShouldIgnoreInstrState.asBits(0)
-            //    || (
-            //      rMyShouldIgnoreInstrState.asBits(1)
-            //      && !io.push.myPsIdBubble
-            //    )
-            //  )
-            //  && wrPulse.addr === inp.reorderBufIdx
-            //)
-            //## (
-            //  RegNextWhen(
-            //    wrPulse.addr,
-            //    cond=wrPulse.fire,
-            //    init=wrPulse.addr.getZero
-            //  ) === inp.reorderBufIdx
-            //)
+            (
+              wrPulse.fire
+              //&& (
+              //  rMyShouldIgnoreInstrState.asBits(0)
+              //  || (
+              //    rMyShouldIgnoreInstrState.asBits(1)
+              //    && !io.push.myPsIdBubble
+              //  )
+              //)
+              && myExternalInpCond
+              && wrPulse.addr === inp.reorderBufIdx
+            )
+            ## (
+              RegNextWhen(
+                wrPulse.addr,
+                cond=(
+                  wrPulse.fire
+                  && myExternalInpCond
+                ),
+                init=wrPulse.addr.getZero
+              ) === inp.reorderBufIdx
+              && myExternalInpCond
+            )
 
             //myHistWrPulseEtc.reverse.asBits
-            myHistWrPulseEtc(0).fire
-            ## myHistWrPulseEtc(1).fire
+            //myHistWrPulseEtc(0).fire
+            //## myHistWrPulseEtc(1).fire
           ) {
             is (M"1-") {
               outp.most := (
-                //wrPulse.data.most
-                myHistWrPulseEtc(0).data.most
+                wrPulse.data.most
+                //myHistWrPulseEtc(0).data.most
               )
-              outp.reorderBufIdx := (
-                myHistWrPulseEtc(0).addr
-              )
-            }
-            is (M"01") {
-              outp.most := (
-                //wrPulse.data.most
-                myHistWrPulseEtc(1).data.most
-              )
-              outp.reorderBufIdx := (
-                myHistWrPulseEtc(1).addr
-              )
-              //outp.most := (
-              //  //myHistWrPulseEtc(1).
-              //  //RegNextWhen(
-              //  //  wrPulse.data.most,
-              //  //  cond=wrPulse.fire,
-              //  //  init=wrPulse.data.most.getZero
-              //  //)
+              //outp.reorderBufIdx := (
+              //  myHistWrPulseEtc(0).addr
               //)
             }
+            is (M"01") {
+              //outp.most := (
+              //  //wrPulse.data.most
+              //  //myHistWrPulseEtc(1).data.most
+              //)
+              //outp.reorderBufIdx := (
+              //  myHistWrPulseEtc(1).addr
+              //)
+              outp.most := (
+                //myHistWrPulseEtc(1).
+                //RegNextWhen(
+                //  wrPulse.data.most,
+                //  cond=wrPulse.fire,
+                //  init=wrPulse.data.most.getZero
+                //)
+                RegNextWhen(
+                  wrPulse.data.most,
+                  cond=(
+                    wrPulse.fire
+                    && myExternalInpCond
+                  ),
+                  init=wrPulse.data.most.getZero
+                )
+              )
+            }
             default {
-              outp.reorderBufIdx := inp.reorderBufIdx
+              //outp.reorderBufIdx := inp.reorderBufIdx
               outp.most := rdMemWord.most
             }
           }
@@ -2105,6 +2129,7 @@ case class SnowHouseForFmaxPsWbReorderBuf(
   )
   nextMyShouldIgnoreInstrState := rMyShouldIgnoreInstrState
   myRam.io.myExternalInpCond := (
+    //True
     rMyShouldIgnoreInstrState.asBits(0)
     || (
       rMyShouldIgnoreInstrState.asBits(1)
