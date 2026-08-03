@@ -2502,8 +2502,9 @@ case class SnowHousePipeStageInstrDecode(
           )
         }
         when (
-          (rSavedGprTagVec.asBits.asUInt === 0x0)
-          && !shouldClearExtraDecodeInfo
+          //(rSavedGprTagVec.asBits.asUInt === 0x0)
+          //&& 
+          !shouldClearExtraDecodeInfo
           && (
             !myGprTagInfoFifo.io.pop.valid
             //|| !rSavedReorderBufIdxAbsDiff.orR
