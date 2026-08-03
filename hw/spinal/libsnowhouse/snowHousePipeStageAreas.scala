@@ -2437,6 +2437,9 @@ case class SnowHousePipeStageInstrDecode(
           up.isFiring
           //down.isFiring
           //&& !shouldClearExtraDecodeInfo
+          //|| (
+          //  down.isFiring
+          //)
         ) {
           myTempReorderBufIdx := (
             RegNext(
@@ -2470,12 +2473,19 @@ case class SnowHousePipeStageInstrDecode(
           rScoreboardFlushState := ScoreboardFlushState.FLUSH_PIPE
         }
 
-        rSavedReorderBufIdxAbsDiff := (
+        val tempAbsDiff = (
           Mux(
             psExSetPc.reorderBufIdx > myTempReorderBufIdx,
             psExSetPc.reorderBufIdx - myTempReorderBufIdx + 2,
             myTempReorderBufIdx - psExSetPc.reorderBufIdx + 2,
           ).resize(rSavedReorderBufIdxAbsDiff.getWidth)
+        )
+        rSavedReorderBufIdxAbsDiff := (
+          Mux(
+            tempAbsDiff >= 3,
+            tempAbsDiff,
+            U(s"${tempAbsDiff.getWidth}'d3"),
+          )
         )
 
         when (
