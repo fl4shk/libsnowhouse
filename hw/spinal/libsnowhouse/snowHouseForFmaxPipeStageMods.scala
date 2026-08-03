@@ -2132,10 +2132,10 @@ case class SnowHouseForFmaxPsWbReorderBuf(
     //True
     (
       rMyShouldIgnoreInstrState.asBits(0)
-      //|| (
-      //  rMyShouldIgnoreInstrState.asBits(1)
-      //  //&& !io.push.myPsIdBubble
-      //)
+      || (
+        rMyShouldIgnoreInstrState.asBits(1)
+        //&& !io.push.myPsIdBubble
+      )
     )
     && 
     (
