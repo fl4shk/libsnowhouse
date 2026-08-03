@@ -1973,7 +1973,7 @@ case class SnowHouseForFmaxPsWbReorderBuf(
                 ),
                 init=wrPulse.addr.getZero
               ) === inp.reorderBufIdx
-              && myExternalInpCond
+              //&& myExternalInpCond
             )
 
             //myHistWrPulseEtc.reverse.asBits
