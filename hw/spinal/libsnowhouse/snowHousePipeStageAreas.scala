@@ -2239,6 +2239,7 @@ case class SnowHousePipeStageInstrDecode(
     )
 
     myScoreboardCommitStm.ready := True
+
     val rSavedGprTagVec = (
       //Reg(UInt(cfg.numGprs bits))
       //init(0x0)
@@ -2247,9 +2248,18 @@ case class SnowHousePipeStageInstrDecode(
       )
     )
 
-    //val rSavedGprTagOtherVec = (
+    //val rSavedGprInUseCntVec = (
+    //  // handle RAW hazards when we run out of forwarding history
     //  Vec.fill(cfg.numGprs)(
-    //    Reg(Bool(), init=False)
+    //    //Reg(Bool(), init=False)
+    //    Reg(UInt(
+    //      3 bits
+    //      //log2Up(cfg.myPsIdBubbleNumFollowingInstrs + 1) + 1 bits
+    //    ))
+    //    init(
+    //      //0x3
+    //      cfg.myPsIdBubbleNumFollowingInstrs - 1
+    //    )
     //  )
     //)
 
@@ -2325,6 +2335,11 @@ case class SnowHousePipeStageInstrDecode(
       Reg(ScoreboardFlushState())
       init(ScoreboardFlushState.IDLE)
     )
+
+    //for (
+    //  idx <- 0 until cfg.regFileCfg.modRdPortCnt
+    //) {
+    //}
 
     when (
       myScoreboardCommitStm.fire
