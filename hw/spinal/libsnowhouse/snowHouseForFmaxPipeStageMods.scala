@@ -2441,6 +2441,16 @@ case class SnowHouseForFmaxPsWbReorderBuf(
   //)
 
   myRam.io.wrPulse.data.most := io.push.most
+  val myAssertValidCond = (
+    myRam.io.wrPulse.fire
+    && (
+      rMyShouldIgnoreInstrState.asBits(0)
+      || (
+        rMyShouldIgnoreInstrState.asBits(1)
+        && !io.push.myPsIdBubble
+      )
+    )
+  )
 
   when (
     io.push.fire
@@ -2452,15 +2462,8 @@ case class SnowHouseForFmaxPsWbReorderBuf(
   }
 
   when (
-    myRam.io.wrPulse.fire
-    && (
-      rMyShouldIgnoreInstrState.asBits(0)
-      || (
-        rMyShouldIgnoreInstrState.asBits(1)
-        && !io.push.myPsIdBubble
-      )
-    )
     //&& !io.push.myShouldIgnoreInstr
+    myAssertValidCond
   ) {
     rValidVec(myRam.io.wrPulse.addr) := True
   }
@@ -2643,6 +2646,11 @@ case class SnowHouseForFmaxPsWbReorderBuf(
     (
       rValidVec(
         myRdAddr
+      )
+      || (
+        //myRam.io.wrPulse.fire
+        myAssertValidCond
+        && myRam.io.wrPulse.addr === myRdAddr
       )
       //&& rOccupancy.orR
       //|| (
