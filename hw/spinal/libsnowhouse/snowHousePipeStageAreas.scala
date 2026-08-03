@@ -2332,24 +2332,27 @@ case class SnowHousePipeStageInstrDecode(
       ## (
         if (cfg.myHaveZeroReg) (
           myScoreboardCommitStm.fire
-          && !myScoreboardCommitStm.myGprIdx.fire
-          && myScoreboardCommitStm.myGprIdx.payload.orR
+          //&& !myScoreboardCommitStm.myGprIdx.fire
+          //&& myScoreboardCommitStm.myGprIdx.payload.orR
+          && myScoreboardCommitStm.myFwdValid
+          && myScoreboardCommitStm.myGprIdx.orR
         ) else (
           myScoreboardCommitStm.fire
-          && !myScoreboardCommitStm.myGprIdx.fire
+          //&& !myScoreboardCommitStm.myGprIdx.fire
+          && myScoreboardCommitStm.myFwdValid
         )
       )
       ## (
         if (cfg.myHaveZeroReg) (
           (
             upPayload(1).gprIdxVec.last
-            === myScoreboardCommitStm.myGprIdx.payload
+            === myScoreboardCommitStm.myGprIdx
           )
-          && myScoreboardCommitStm.myGprIdx.payload.orR
+          && myScoreboardCommitStm.myGprIdx.orR
         ) else (
           (
             upPayload(1).gprIdxVec.last
-            === myScoreboardCommitStm.myGprIdx.payload
+            === myScoreboardCommitStm.myGprIdx
           )
         )
       )
@@ -2361,10 +2364,10 @@ case class SnowHousePipeStageInstrDecode(
       }
       is (M"01-") {
         rSavedGprInUseCntVec(
-          myScoreboardCommitStm.myGprIdx.payload
+          myScoreboardCommitStm.myGprIdx
         ) := (
           rSavedGprInUseCntVec(
-            myScoreboardCommitStm.myGprIdx.payload
+            myScoreboardCommitStm.myGprIdx
           ) + 1
         )
       }
@@ -2373,10 +2376,10 @@ case class SnowHousePipeStageInstrDecode(
           rSavedGprInUseCntVec(upPayload(1).gprIdxVec.last) - 1
         )
         rSavedGprInUseCntVec(
-          myScoreboardCommitStm.myGprIdx.payload
+          myScoreboardCommitStm.myGprIdx
         ) := (
           rSavedGprInUseCntVec(
-            myScoreboardCommitStm.myGprIdx.payload
+            myScoreboardCommitStm.myGprIdx
           ) + 1
         )
       }
@@ -2527,10 +2530,10 @@ case class SnowHousePipeStageInstrDecode(
 
     when (
       myScoreboardCommitStm.fire
-      && myScoreboardCommitStm.myGprIdx.fire
+      && myScoreboardCommitStm.myNonFwdValid
     ) {
       rSavedGprTagVec(
-        myScoreboardCommitStm.myGprIdx.payload
+        myScoreboardCommitStm.myGprIdx
       ) := (
         False
       )
@@ -2722,12 +2725,12 @@ case class SnowHousePipeStageInstrDecode(
             + 1
           )
         }
-        rSavedGprInUseCntVec.foreach(item => {
-          item := (
-            //cfg.myPsIdBubbleNumFollowingInstrs - 1
-            cfg.optForFmaxPsExFwdSize - 1
-          )
-        })
+        //rSavedGprInUseCntVec.foreach(item => {
+        //  item := (
+        //    //cfg.myPsIdBubbleNumFollowingInstrs - 1
+        //    cfg.optForFmaxPsExFwdSize - 1
+        //  )
+        //})
         when (
           //(rSavedGprTagVec.asBits.asUInt === 0x0)
           //&& 
