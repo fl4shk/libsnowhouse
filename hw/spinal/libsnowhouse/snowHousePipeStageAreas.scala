@@ -2337,13 +2337,13 @@ case class SnowHousePipeStageInstrDecode(
       )
     }
 
-    val rSavedReorderBufIdxAbsDiff = (
-      Reg(
-        UInt(
-          log2Up(myGprTagInfoFifo.depth + 1) + 1 bits
-        )
-      )
-    )
+    //val rSavedReorderBufIdxAbsDiff = (
+    //  Reg(
+    //    UInt(
+    //      log2Up(myGprTagInfoFifo.depth + 1) + 1 bits
+    //    )
+    //  )
+    //)
 
     def myTempReorderBufIdx = (
       upPayload(1).instrCnt.scoreboardIssuePayload.reorderBufIdx
@@ -2473,20 +2473,23 @@ case class SnowHousePipeStageInstrDecode(
           rScoreboardFlushState := ScoreboardFlushState.FLUSH_PIPE
         }
 
-        val tempAbsDiff = (
-          Mux(
-            psExSetPc.reorderBufIdx > myTempReorderBufIdx,
-            psExSetPc.reorderBufIdx - myTempReorderBufIdx + 2,
-            myTempReorderBufIdx - psExSetPc.reorderBufIdx + 2,
-          ).resize(rSavedReorderBufIdxAbsDiff.getWidth)
-        )
-        rSavedReorderBufIdxAbsDiff := (
-          Mux(
-            tempAbsDiff >= 3,
-            tempAbsDiff,
-            U(s"${tempAbsDiff.getWidth}'d3"),
-          )
-        )
+        //val tempAbsDiff = (
+        //  Mux(
+        //    psExSetPc.reorderBufIdx > myTempReorderBufIdx,
+        //    psExSetPc.reorderBufIdx - myTempReorderBufIdx + 2,
+        //    myTempReorderBufIdx - psExSetPc.reorderBufIdx + 2,
+        //  ).resize(rSavedReorderBufIdxAbsDiff.getWidth)
+        //)
+        //rSavedReorderBufIdxAbsDiff := (
+        //  tempAbsDiff
+        //)
+        //rSavedReorderBufIdxAbsDiff := (
+        //  Mux(
+        //    tempAbsDiff >= 3,
+        //    tempAbsDiff,
+        //    U(s"${tempAbsDiff.getWidth}'d3"),
+        //  )
+        //)
 
         when (
           up.isFiring
@@ -2519,7 +2522,7 @@ case class SnowHousePipeStageInstrDecode(
           && (
             !myGprTagInfoFifo.io.pop.valid
             //|| !rSavedReorderBufIdxAbsDiff.orR
-            || rSavedReorderBufIdxAbsDiff.msb
+            //|| rSavedReorderBufIdxAbsDiff.msb
           )
           && !myScoreboardReorderBufInFlushEtc
         ) {
@@ -2539,7 +2542,7 @@ case class SnowHousePipeStageInstrDecode(
             //|| 
             (
               myGprTagInfoFifo.io.pop.valid
-              || !rSavedReorderBufIdxAbsDiff.msb
+              //|| !rSavedReorderBufIdxAbsDiff.msb
             )
             || (
               myScoreboardReorderBufInFlushEtc
@@ -2559,27 +2562,28 @@ case class SnowHousePipeStageInstrDecode(
 
         myGprTagInfoFifo.io.pop.ready := (
           //rSavedReorderBufIdxAbsDiff.orR
-          !rSavedReorderBufIdxAbsDiff.msb
+          //!rSavedReorderBufIdxAbsDiff.msb
+          True
         )
 
         when (
           myGprTagInfoFifo.io.pop.fire
         ) {
-          rSavedReorderBufIdxAbsDiff := rSavedReorderBufIdxAbsDiff - 1
+          //rSavedReorderBufIdxAbsDiff := rSavedReorderBufIdxAbsDiff - 1
           rSavedGprTagVec(
             myGprTagInfoFifo.io.pop.myGprIdx
           ) := False
         }
-        when (
-          !myGprTagInfoFifo.io.pop.valid
-        ) {
-          rSavedReorderBufIdxAbsDiff.msb := True
-        }
-        when (
-          rSavedReorderBufIdxAbsDiff.msb
-        ) {
-          myGprTagInfoFifo.io.flush := True
-        }
+        //when (
+        //  !myGprTagInfoFifo.io.pop.valid
+        //) {
+        //  rSavedReorderBufIdxAbsDiff.msb := True
+        //}
+        //when (
+        //  rSavedReorderBufIdxAbsDiff.msb
+        //) {
+        //  myGprTagInfoFifo.io.flush := True
+        //}
         //when (
         //  myGprTagInfoFifo.io.pop.valid
         //  && rSavedReorderBufIdxAbsDiff.orR
