@@ -2130,14 +2130,14 @@ case class SnowHouseForFmaxPsWbReorderBuf(
   nextMyShouldIgnoreInstrState := rMyShouldIgnoreInstrState
   myRam.io.myExternalInpCond := (
     //True
-    //(
-    //  rMyShouldIgnoreInstrState.asBits(0)
-    //  || (
-    //    rMyShouldIgnoreInstrState.asBits(1)
-    //    //&& !io.push.myPsIdBubble
-    //  )
-    //)
-    //&& 
+    (
+      rMyShouldIgnoreInstrState.asBits(0)
+      //|| (
+      //  rMyShouldIgnoreInstrState.asBits(1)
+      //  //&& !io.push.myPsIdBubble
+      //)
+    )
+    && 
     (
       !io.push.myPsIdBubble
     )
