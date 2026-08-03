@@ -2266,7 +2266,8 @@ case class SnowHousePipeStageInstrDecode(
         dataType=MyGprTagInfo(),
         depth=8,
         latency=(
-          0
+          //0
+          1
         ),
         forFMax=true,
       )
@@ -2510,20 +2511,25 @@ case class SnowHousePipeStageInstrDecode(
             //|| !rSavedReorderBufIdxAbsDiff.orR
             || rSavedReorderBufIdxAbsDiff.msb
           )
-          //&& !myScoreboardReorderBufInFlushEtc
+          && !myScoreboardReorderBufInFlushEtc
         ) {
           rScoreboardFlushState := ScoreboardFlushState.IDLE
-          myGprTagInfoFifo.io.flush := True
+          //myGprTagInfoFifo.io.flush := True
         }
 
         when (
           //RegNext(
             //myMainHazardCheckVec.orR
             //rSavedGprTagVec.orR
+            //(
+            //  (rSavedGprTagVec.asBits.asUInt =/= 0x0)
+            //  //|| myScoreboardReorderBufInFlushEtc
+            //  && !shouldClearExtraDecodeInfo
+            //)
+            //|| 
             (
-              (rSavedGprTagVec.asBits.asUInt =/= 0x0)
-              //|| myScoreboardReorderBufInFlushEtc
-              && !shouldClearExtraDecodeInfo,
+              myGprTagInfoFifo.io.pop.valid
+              || !rSavedReorderBufIdxAbsDiff.msb
             )
             || (
               myScoreboardReorderBufInFlushEtc
@@ -2553,6 +2559,16 @@ case class SnowHousePipeStageInstrDecode(
           rSavedGprTagVec(
             myGprTagInfoFifo.io.pop.myGprIdx
           ) := False
+        }
+        when (
+          !myGprTagInfoFifo.io.pop.valid
+        ) {
+          rSavedReorderBufIdxAbsDiff.msb := True
+        }
+        when (
+          rSavedReorderBufIdxAbsDiff.msb
+        ) {
+          myGprTagInfoFifo.io.flush := True
         }
         //when (
         //  myGprTagInfoFifo.io.pop.valid
