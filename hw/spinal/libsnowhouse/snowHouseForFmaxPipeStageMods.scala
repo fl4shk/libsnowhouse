@@ -155,7 +155,9 @@ case class SnowHouseScoreboardCommitPayload(
 ) extends Bundle {
   //val tag = UInt(cfg.optScoreboardTagWidth bits)
   //val myGprIdx = Flow(UInt(log2Up(cfg.numGprs) bits))
-  val myGprIdx = UInt(log2Up(cfg.numGprs) bits)
+  val gprIdxVec = Vec.fill(cfg.maxNumGprsPerInstr)(
+    UInt(log2Up(cfg.numGprs) bits)
+  )
   val myFwdValid = Bool()
   val myNonFwdValid = Bool()
   //val reorderBufInFlush = Bool()
@@ -4151,8 +4153,8 @@ case class SnowHouseForFmaxPipeStageWriteBack(
           )
         )
       }
-      someCommitStm.commit.myGprIdx := (
-        someMyWbPayload(1).gprIdxVec.last
+      someCommitStm.commit.gprIdxVec := (
+        someMyWbPayload(1).gprIdxVec
       )
     } otherwise {
       if (!cfg.optScoreboard) {
@@ -4160,8 +4162,8 @@ case class SnowHouseForFmaxPipeStageWriteBack(
       }
       someCommitStm.regFileWrite.addr := 0x0
       someCommitStm.regFileWrite.data := 0x0
-      someCommitStm.commit.myGprIdx := (
-        someMyWbPayload(1).gprIdxVec.last
+      someCommitStm.commit.gprIdxVec := (
+        someMyWbPayload(1).gprIdxVec
       )
 
       if (isNonFwd) {
