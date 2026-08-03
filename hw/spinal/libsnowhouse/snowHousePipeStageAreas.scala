@@ -2313,7 +2313,8 @@ case class SnowHousePipeStageInstrDecode(
         ))
         init(
           //0x3
-          cfg.myPsIdBubbleNumFollowingInstrs - 1
+          //cfg.myPsIdBubbleNumFollowingInstrs - 1
+          cfg.optForFmaxPsExFwdSize - 1
         )
       )
     )
@@ -2723,7 +2724,8 @@ case class SnowHousePipeStageInstrDecode(
         }
         rSavedGprInUseCntVec.foreach(item => {
           item := (
-            cfg.myPsIdBubbleNumFollowingInstrs - 1
+            //cfg.myPsIdBubbleNumFollowingInstrs - 1
+            cfg.optForFmaxPsExFwdSize - 1
           )
         })
         when (
