@@ -2241,9 +2241,6 @@ case class SnowHouseForFmaxPsWbReorderBuf(
   //  nextMyShouldIgnoreInstrState := False
   //}
 
-
-
-
   switch (io.push.reorderBufIdx) {
     for (idx <- 0 until (1 << io.push.reorderBufIdx.getWidth)) {
       is (idx) {
