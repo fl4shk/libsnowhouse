@@ -2248,20 +2248,166 @@ case class SnowHousePipeStageInstrDecode(
       )
     )
 
-    //val rSavedGprInUseCntVec = (
-    //  // handle RAW hazards when we run out of forwarding history
-    //  Vec.fill(cfg.numGprs)(
-    //    //Reg(Bool(), init=False)
-    //    Reg(UInt(
-    //      3 bits
-    //      //log2Up(cfg.myPsIdBubbleNumFollowingInstrs + 1) + 1 bits
-    //    ))
-    //    init(
-    //      //0x3
-    //      cfg.myPsIdBubbleNumFollowingInstrs - 1
+    //val myGprUseCntRamArr = {
+    //  Array.fill(cfg.maxNumGprsPerInstr)({
+    //    // handle RAW hazards, i.e. for when we run out of room in the
+    //    // forwarding history tables in the PreFwd and EX
+    //    val depth = cfg.numGprs
+    //    val ramCfg = RamSimpleDualPortConfig(
+    //      wordType=UInt(
+    //        //3 bits
+    //        //log2Up(cfg.myPsIdBubbleNumFollowingInstrs + 1) + 1 bits
+    //        //log2Up(cfg.optForFmaxPsExFwdSize + 1) + 1 bits
+    //        log2Up(cfg.optForFmaxPsExFwdSize + 1) + 1 bits
+    //      ),
+    //      depth=depth,
+    //      initBigInt=Some(
+    //        Array.fill(depth)(
+    //          //BigInt(0)
+    //          BigInt(cfg.optForFmaxPsExFwdSize - 1)
+    //        )
+    //      ),
+    //      arrRamStyleAltera="no_rw_check, MLAB",
+    //      arrRamStyleXilinx="auto",
+    //      doAsyncRead=true
     //    )
-    //  )
-    //)
+    //    RamSimpleDualPort(cfg=ramCfg)
+    //    //val temp = Mem(
+    //    //  wordType=(
+    //    //    UInt(
+    //    //      //3 bits
+    //    //      //log2Up(cfg.myPsIdBubbleNumFollowingInstrs + 1) + 1 bits
+    //    //      //log2Up(cfg.optForFmaxPsExFwdSize + 1) + 1 bits
+    //    //      log2Up(cfg.optForFmaxPsExFwdSize + 1) + 1 bits
+    //    //    )
+    //    //  ),
+    //    //  wordCount=(
+    //    //    cfg.numGprs
+    //    //  )
+    //    //)
+    //    //temp.initBigInt(
+    //    //  Array.fill(temp.wordCount)(
+    //    //    //BigInt(0)
+    //    //    BigInt(cfg.optForFmaxPsExFwdSize - 1)
+    //    //  )
+    //    //)
+    //    //temp
+    //  })
+    //}
+    //for (idx <- 0 until cfg.maxNumGprsPerInstr) {
+    //  val ram = myGprUseCntRamArr(idx)
+    //  ram.io.ramIo.rdEn := True
+    //  ram.io.ramIo.rdAddr := upPayload(1).gprIdxVec(idx)
+    //  //ram.io.ramIo.wrEn := 
+    //  ram.io.ramIo.wrAddr := upPayload(1).gprIdxVec.last
+    //}
+
+    val rSavedGprInUseCntVec = (
+      Vec.fill(cfg.numGprs)(
+        //Reg(Bool(), init=False)
+        Reg(UInt(
+          //3 bits
+          //log2Up(cfg.myPsIdBubbleNumFollowingInstrs + 1) + 1 bits
+          //log2Up(cfg.optForFmaxPsExFwdSize + 1) + 1 bits
+          log2Up(cfg.optForFmaxPsExFwdSize + 1) + 1 bits
+        ))
+        init(
+          //0x3
+          cfg.myPsIdBubbleNumFollowingInstrs - 1
+        )
+      )
+    )
+    val myPartialWriteTagInfoCond = (
+      up.isFiring
+      && !shouldClearExtraDecodeInfo
+    )
+
+    switch (
+      (
+        myPartialWriteTagInfoCond
+        && !myTempOpMayNeedHazardCheck
+        && upPayload(1).gprIdxVec.last.orR
+      )
+      ## (
+        if (cfg.myHaveZeroReg) (
+          myScoreboardCommitStm.fire
+          && !myScoreboardCommitStm.myGprIdx.fire
+          && myScoreboardCommitStm.myGprIdx.payload.orR
+        ) else (
+          myScoreboardCommitStm.fire
+          && !myScoreboardCommitStm.myGprIdx.fire
+        )
+      )
+      ## (
+        if (cfg.myHaveZeroReg) (
+          (
+            upPayload(1).gprIdxVec.last
+            === myScoreboardCommitStm.myGprIdx.payload
+          )
+          && myScoreboardCommitStm.myGprIdx.payload.orR
+        ) else (
+          (
+            upPayload(1).gprIdxVec.last
+            === myScoreboardCommitStm.myGprIdx.payload
+          )
+        )
+      )
+    ) {
+      is (M"10-") {
+        rSavedGprInUseCntVec(upPayload(1).gprIdxVec.last) := (
+          rSavedGprInUseCntVec(upPayload(1).gprIdxVec.last) - 1
+        )
+      }
+      is (M"01-") {
+        rSavedGprInUseCntVec(
+          myScoreboardCommitStm.myGprIdx.payload
+        ) := (
+          rSavedGprInUseCntVec(
+            myScoreboardCommitStm.myGprIdx.payload
+          ) + 1
+        )
+      }
+      is (M"110") {
+        rSavedGprInUseCntVec(upPayload(1).gprIdxVec.last) := (
+          rSavedGprInUseCntVec(upPayload(1).gprIdxVec.last) - 1
+        )
+        rSavedGprInUseCntVec(
+          myScoreboardCommitStm.myGprIdx.payload
+        ) := (
+          rSavedGprInUseCntVec(
+            myScoreboardCommitStm.myGprIdx.payload
+          ) + 1
+        )
+      }
+      //is (M"100") {
+      //  rSavedGprInUseCntVec(upPayload(1).gprIdxVec.last) := (
+      //    rSavedGprInUseCntVec(upPayload(1).gprIdxVec.last) - 1
+      //  )
+      //}
+      //is (M"010") {
+      //  rSavedGprInUseCntVec(
+      //    myScoreboardCommitStm.myGprIdx.payload
+      //  ) := (
+      //    rSavedGprInUseCntVec(
+      //      myScoreboardCommitStm.myGprIdx.payload
+      //    ) + 1
+      //  )
+      //}
+      //is (M"110") {
+      //  rSavedGprInUseCntVec(upPayload(1).gprIdxVec.last) := (
+      //    rSavedGprInUseCntVec(upPayload(1).gprIdxVec.last) - 1
+      //  )
+      //  rSavedGprInUseCntVec(
+      //    myScoreboardCommitStm.myGprIdx.payload
+      //  ) := (
+      //    rSavedGprInUseCntVec(
+      //      myScoreboardCommitStm.myGprIdx.payload
+      //    ) + 1
+      //  )
+      //}
+      default {
+      }
+    }
 
     case class MyGprTagInfo(
     ) extends Bundle {
@@ -2291,10 +2437,29 @@ case class SnowHousePipeStageInstrDecode(
 
     myGprTagInfoFifo.io.pop.ready := False
 
+
     when (
-      up.isFiring
+      myPartialWriteTagInfoCond
       && myTempOpMayNeedHazardCheck
-      && !shouldClearExtraDecodeInfo
+    ) {
+      myGprTagInfoFifo.io.push.valid := (
+        //True
+        (
+          if (cfg.myHaveZeroReg) (
+            upPayload(1).gprIdxVec.last.orR
+          ) else (
+            True
+          )
+        )
+      )
+    }
+
+    when (
+      //up.isFiring
+      //&& myTempOpMayNeedHazardCheck
+      //&& !shouldClearExtraDecodeInfo
+      myPartialWriteTagInfoCond
+      && myTempOpMayNeedHazardCheck
     ) {
       myGprTagInfoFifo.io.push.valid := (
         //True
@@ -2318,17 +2483,35 @@ case class SnowHousePipeStageInstrDecode(
 
     myScoreboardSavedGprTagVec := rSavedGprTagVec.asBits.asUInt
 
-    val myMainHazardCheckVec = Vec.fill(
+    val myMemEtcHazardCheckVec = Vec.fill(
+      cfg.regFileCfg.modRdPortCnt
+    )(
+      Bool()
+    )
+    val myNonMemEtcHazardCheckVec = Vec.fill(
       cfg.regFileCfg.modRdPortCnt
     )(
       Bool()
     )
     for (jdx <- 0 until cfg.regFileCfg.modRdPortCnt) {
-      myMainHazardCheckVec(jdx) := (
-        rSavedGprTagVec(
-          upPayload(1).gprIdxVec(jdx)
-        )
-      )
+      //myMainHazardCheckVec(jdx) := (
+      //  rSavedGprTagVec(
+      //    upPayload(1).gprIdxVec(jdx)
+      //  )
+      //)
+      switch (upPayload(1).gprIdxVec(jdx)) {
+        for (idx <- 0 until cfg.numGprs) {
+          is (idx) {
+            myMemEtcHazardCheckVec(jdx) := (
+              rSavedGprTagVec(idx)
+              //|| rSavedGprInUseCntVec(idx).msb
+            )
+            myNonMemEtcHazardCheckVec(jdx) := (
+              rSavedGprInUseCntVec(idx).msb
+            )
+          }
+        }
+      }
     }
 
     val rScoreboardFlushState = (
@@ -2430,9 +2613,10 @@ case class SnowHousePipeStageInstrDecode(
     //}
 
     when (
-      myTempOpMayNeedHazardCheck
-      && !shouldClearExtraDecodeInfo
-      && up.isFiring
+      myPartialWriteTagInfoCond
+      && myTempOpMayNeedHazardCheck
+      //&& !shouldClearExtraDecodeInfo
+      //&& up.isFiring
     ) {
       rSavedGprTagVec(
         upPayload(1).gprIdxVec.last
@@ -2465,7 +2649,7 @@ case class SnowHousePipeStageInstrDecode(
           )
         }
         when (
-          myMainHazardCheckVec.orR
+          myMemEtcHazardCheckVec.orR
           && !shouldClearExtraDecodeInfo
         ) {
           doSendBubbleMainMost(
@@ -2474,10 +2658,17 @@ case class SnowHousePipeStageInstrDecode(
               True
             )
           )
-        }
-        when (
-          shouldClearExtraDecodeInfo
+        } elsewhen (
+          myNonMemEtcHazardCheckVec.orR
+          && !shouldClearExtraDecodeInfo
         ) {
+          doSendBubbleMainMost(
+            myPsIdBubble=Some(
+              False
+            )
+          )
+        }
+        when (shouldClearExtraDecodeInfo) {
           doSendBubbleMainMost(
             myPsIdBubble=Some(
               //!shouldClearExtraDecodeInfo
@@ -2530,6 +2721,11 @@ case class SnowHousePipeStageInstrDecode(
             + 1
           )
         }
+        rSavedGprInUseCntVec.foreach(item => {
+          item := (
+            cfg.myPsIdBubbleNumFollowingInstrs - 1
+          )
+        })
         when (
           //(rSavedGprTagVec.asBits.asUInt === 0x0)
           //&& 
