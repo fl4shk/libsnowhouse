@@ -1933,13 +1933,7 @@ case class SnowHouseForFmaxPsWbReorderBuf(
               that=wrPulse,
               when=(
                 wrPulse.fire
-                && (
-                  rMyShouldIgnoreInstrState.asBits(0)
-                  || (
-                    rMyShouldIgnoreInstrState.asBits(1)
-                    && !io.push.myPsIdBubble
-                  )
-                )
+                && myExternalInpCond
                 && wrPulse.addr === inp.reorderBufIdx
               ),
               length=2,
@@ -2110,6 +2104,13 @@ case class SnowHouseForFmaxPsWbReorderBuf(
     init(MyShouldIgnoreInstrState.IDLE)
   )
   nextMyShouldIgnoreInstrState := rMyShouldIgnoreInstrState
+  myRam.io.myExternalInpCond := (
+    rMyShouldIgnoreInstrState.asBits(0)
+    || (
+      rMyShouldIgnoreInstrState.asBits(1)
+      && !io.push.myPsIdBubble
+    )
+  )
 
   val myRdAddr = cloneOf(myRam.io.rdAddrPipe.addr)
   //when (!rMyShouldIgnoreInstrState) {
