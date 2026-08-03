@@ -2131,13 +2131,21 @@ case class SnowHouseForFmaxPsWbReorderBuf(
           MyShouldIgnoreInstrState.FLUSH //True
         )
       }
+      //when (
+      //  RegNext(
+      //    myRam.io.rdAddrPipe.fire,
+      //    init=False
+      //  )
+      //) {
+      //} elsewhen (
+      //)
       myRdAddr := (
         RegNextWhen(
           (myRdAddr + 1),
           cond=(
             myRam.io.rdAddrPipe.fire
             //|| rose(rMyShouldIgnoreInstrState.asBits(0))
-            || rMyShouldIgnoreInstrState.asBits(2)
+            || rMyShouldIgnoreInstrState.asBits(3)
             //|| 
           ),
           //init=myRdAddr.getZero,
