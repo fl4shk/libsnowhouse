@@ -1593,6 +1593,9 @@ case class SnowHouseInstrCnt(
   val myPsIdOtherBubble = Vec.fill(cfg.lowerMyFanoutRegPcSetItCnt)(
     Bool()
   )
+  val myPsIdFwdBubble = Vec.fill(cfg.lowerMyFanoutRegPcSetItCnt)(
+    Bool()
+  )
 
   //val myReorderBufFlushPsIdBubble = (
   //  Vec.fill(cfg.lowerMyFanoutRegPcSetItCnt)(
