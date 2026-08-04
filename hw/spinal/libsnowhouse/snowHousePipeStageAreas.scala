@@ -2857,8 +2857,12 @@ case class SnowHousePipeStageInstrDecode(
       is (ScoreboardFlushState.IDLE) {
         when (
           up.isFiring
-          //down.isFiring
-          //&& !shouldClearExtraDecodeInfo
+          //|| 
+          //(
+          //  down.isFiring
+          //  && myNonFwdHazardCheckVec.orR
+          //  && !shouldClearExtraDecodeInfo
+          //)
           //|| (
           //  down.isFiring
           //)
@@ -2875,13 +2879,37 @@ case class SnowHousePipeStageInstrDecode(
           myNonFwdHazardCheckVec.orR
           && !shouldClearExtraDecodeInfo
         ) {
+          when (
+            down.isFiring
+          ) {
+            myTempReorderBufIdx := (
+              RegNext(
+                myTempReorderBufIdx,
+                init=myTempReorderBufIdx.getZero
+              )
+              + 1
+            )
+          }
           doSendBubbleMainMost(
             myPsIdBubble=Some(
               //!shouldClearExtraDecodeInfo
-              True
+              //True
+              False
             ),
+            myPsIdFwdBubble=Some(
+              True
+            )
             //myUpdateGprIsOrIsntZero=false,
           )
+          //when (
+          //myTempReorderBufIdx := (
+          //  RegNextWhen(
+          //    myTempReorderBufIdx,
+          //    cond=up.isFiring,
+          //    init=myTempReorderBufIdx.getZero
+          //  )
+          //  + 1
+          //)
         } elsewhen (
           myFwdHazardCheckVec.orR
           && !shouldClearExtraDecodeInfo
