@@ -597,6 +597,10 @@ auto MeltedMoonDebugRiscvEmu::exec_one_instr(
         &_my_exec_one_instr_ret.enc_instr,
         sizeof(_enc_instr_r)
     );
+    //_my_exec_one_instr_ret.rd = _enc_instr_r.rd;
+    //_my_exec_one_instr_ret.rs1 = _enc_instr_r.rs1;
+    //_my_exec_one_instr_ret.rs2 = _enc_instr_r.rs2;
+
     static constexpr u32 ENC_INSTR_EBREAK = 0x00100073u;
     static constexpr u32 ENC_INSTR_ECALL = 0x00000073u;
     u32 my_temp_enc_instr = 0;
@@ -709,6 +713,9 @@ auto MeltedMoonDebugRiscvEmu::exec_one_instr(
 
     switch (temp_enc_instr_r.opcode) {
     case Rv32RType::Op::AddRdRs1Rs2.op: {
+        _my_exec_one_instr_ret.rd = _enc_instr_r.rd;
+        _my_exec_one_instr_ret.rs1 = _enc_instr_r.rs1;
+        _my_exec_one_instr_ret.rs2 = _enc_instr_r.rs2;
         switch (temp_enc_instr_r.funct7) {
         case Rv32RType::Op::AddRdRs1Rs2.f7: {
             switch (temp_enc_instr_r.funct3) {
@@ -945,6 +952,9 @@ auto MeltedMoonDebugRiscvEmu::exec_one_instr(
     }
         break;
     case Rv32IType::Op::AddiRdRs1Imm.op: {
+        _my_exec_one_instr_ret.rd = _enc_instr_r.rd;
+        _my_exec_one_instr_ret.rs1 = _enc_instr_r.rs1;
+        //_my_exec_one_instr_ret.rs2 = _enc_instr_r.rs2;
         std::memcpy(&_enc_instr_i, &temp_enc_instr_r, sizeof(u32));
         std::string instr_name;
         switch (_enc_instr_i.funct3) {
@@ -1051,6 +1061,9 @@ auto MeltedMoonDebugRiscvEmu::exec_one_instr(
 
     case Rv32IType::Op::LbRdRs1Imm.op: {
         std::memcpy(&_enc_instr_i, &temp_enc_instr_r, sizeof(u32));
+        _my_exec_one_instr_ret.rd = _enc_instr_r.rd;
+        _my_exec_one_instr_ret.rs1 = _enc_instr_r.rs1;
+        //_my_exec_one_instr_ret.rs2 = _enc_instr_r.rs2;
         switch (_enc_instr_i.funct3) {
         //--------
         case Rv32IType::Op::LbRdRs1Imm.f3: {
@@ -1099,6 +1112,11 @@ auto MeltedMoonDebugRiscvEmu::exec_one_instr(
     case Rv32IType::Op::JalrRdRs1Imm.op: {
         // = {.op=0x67, .f3=0x0, .imm11dt5=-1};
         // rd = PC+4; PC = rs1 + imm
+
+        _my_exec_one_instr_ret.rd = _enc_instr_r.rd;
+        _my_exec_one_instr_ret.rs1 = _enc_instr_r.rs1;
+        //_my_exec_one_instr_ret.rs2 = _enc_instr_r.rs2;
+
         std::memcpy(&_enc_instr_i, &temp_enc_instr_r, sizeof(u32));
         _pc = inp_rs1 + _enc_instr_i.my_temp_imm();
         _write_gpr_rd(
@@ -1108,6 +1126,9 @@ auto MeltedMoonDebugRiscvEmu::exec_one_instr(
         break;
 
     case Rv32SType::Op::SbRs2Rs1Imm.op: {
+        //_my_exec_one_instr_ret.rd = _enc_instr_r.rd;
+        _my_exec_one_instr_ret.rs1 = _enc_instr_r.rs1;
+        _my_exec_one_instr_ret.rs2 = _enc_instr_r.rs2;
         std::memcpy(&_enc_instr_s, &temp_enc_instr_r, sizeof(u32));
         switch (_enc_instr_s.funct3) {
         case Rv32SType::Op::SbRs2Rs1Imm.f3: {
@@ -1142,6 +1163,9 @@ auto MeltedMoonDebugRiscvEmu::exec_one_instr(
     }
         break;
     case Rv32BType::Op::BeqRs1Rs2Imm.op: {
+        //_my_exec_one_instr_ret.rd = _enc_instr_r.rd;
+        _my_exec_one_instr_ret.rs1 = _enc_instr_r.rs1;
+        _my_exec_one_instr_ret.rs2 = _enc_instr_r.rs2;
         std::memcpy(&_enc_instr_b, &temp_enc_instr_r, sizeof(u32));
         switch (_enc_instr_b.funct3) {
         case Rv32BType::Op::BeqRs1Rs2Imm.f3: {
@@ -1201,8 +1225,11 @@ auto MeltedMoonDebugRiscvEmu::exec_one_instr(
         break;
 
     case Rv32JType::Op::JalRdImm.op: {
-        // = {.op=0x6f};
         // rd = PC+4; PC += imm
+        _my_exec_one_instr_ret.rd = _enc_instr_r.rd;
+        //_my_exec_one_instr_ret.rs1 = _enc_instr_r.rs1;
+        //_my_exec_one_instr_ret.rs2 = _enc_instr_r.rs2;
+        // = {.op=0x6f};
         std::memcpy(&_enc_instr_j, &temp_enc_instr_r, sizeof(u32));
         _pc = saved_pc + _enc_instr_j.my_temp_imm();
         //_pc = _pc + _enc_instr_j.my_temp_imm();
@@ -1213,6 +1240,9 @@ auto MeltedMoonDebugRiscvEmu::exec_one_instr(
         break;
     case Rv32UType::Op::LuiRdImm31Downto12.op: {
         // = {.op=0x37},
+        _my_exec_one_instr_ret.rd = _enc_instr_r.rd;
+        //_my_exec_one_instr_ret.rs1 = _enc_instr_r.rs1;
+        //_my_exec_one_instr_ret.rs2 = _enc_instr_r.rs2;
         std::memcpy(&_enc_instr_u, &temp_enc_instr_r, sizeof(u32));
         _write_gpr_rd(
             _enc_instr_u.my_temp_imm()
@@ -1221,6 +1251,9 @@ auto MeltedMoonDebugRiscvEmu::exec_one_instr(
         break;
     case Rv32UType::Op::AuipcRdImm31Downto12.op: {
         // = {.op=0x17};
+        _my_exec_one_instr_ret.rd = _enc_instr_r.rd;
+        //_my_exec_one_instr_ret.rs1 = _enc_instr_r.rs1;
+        //_my_exec_one_instr_ret.rs2 = _enc_instr_r.rs2;
         std::memcpy(&_enc_instr_u, &temp_enc_instr_r, sizeof(u32));
         _write_gpr_rd(
             saved_pc + _enc_instr_u.my_temp_imm()

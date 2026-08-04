@@ -118,6 +118,9 @@ public:     // types
         u32 saved_pc = 0;
         u32 pc = 0;
         u32 enc_instr = 0;
+        u32 rd = 0u;;
+        u32 rs1 = 0u;
+        u32 rs2 = 0u;
         u32 imm = 0;
         std::optional<u32> bus_addr = std::nullopt;
         #ifdef MELTED_MOON_DO_DISASM
