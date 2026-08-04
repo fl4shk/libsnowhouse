@@ -3093,17 +3093,17 @@ case class SnowHousePipeStageInstrDecode(
       !myScoreboardReorderBufPsIdCanIssue
     ) {
       //cId.haltIt()
-      when (
-        down.isFiring
-      ) {
-        myTempReorderBufIdx := (
-          RegNext(
-            myTempReorderBufIdx,
-            init=myTempReorderBufIdx.getZero
-          )
-          + 1
-        )
-      }
+      //when (
+      //  down.isFiring
+      //) {
+      //  myTempReorderBufIdx := (
+      //    RegNext(
+      //      myTempReorderBufIdx,
+      //      init=myTempReorderBufIdx.getZero
+      //    )
+      //    + 1
+      //  )
+      //}
       doSendBubbleMainMost(
         myPsIdBubble=None,
         myPsIdOtherBubble=Some(
