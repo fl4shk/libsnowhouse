@@ -2306,7 +2306,7 @@ case class SnowHouseForFmaxPsWbReorderBuf(
       //rSavedMyRdAddr := (
       //  myRdAddr - 1
       //)
-      val rFlushCnt = myReorderBufSize - 1
+      rFlushCnt := myReorderBufSize - 1
     }
     is (MyShouldIgnoreInstrState.FLUSH) {
       when (
