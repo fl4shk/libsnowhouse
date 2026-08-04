@@ -3896,85 +3896,85 @@ case class SnowHousePipeStagePreFwd(
     //  UInt(myHistFwdInfo.size - 1 bits)
     //)
 
-    case class MyRegFileWrPulseFwdInfo(
-    ) extends Bundle {
-      val myRegFileWrPulse = cloneOf(forFmaxRegFileWrPulseArr(0))
-      def addr = myRegFileWrPulse.addr
-      def data = myRegFileWrPulse.data
-      def fire = myRegFileWrPulse.fire
-      def valid = myRegFileWrPulse.valid
-      val branchMispredictEtcForceToZero = Bool()
-    }
+    //case class MyRegFileWrPulseFwdInfo(
+    //) extends Bundle {
+    //  val myRegFileWrPulse = cloneOf(forFmaxRegFileWrPulseArr(0))
+    //  def addr = myRegFileWrPulse.addr
+    //  def data = myRegFileWrPulse.data
+    //  def fire = myRegFileWrPulse.fire
+    //  def valid = myRegFileWrPulse.valid
+    //  val branchMispredictEtcForceToZero = Bool()
+    //}
 
-    val myHistRegFileWrPulse = (
-      //!cfg.optScoreboard
-      true
-    ) generate {
-      val temp = MyRegFileWrPulseFwdInfo()
-      temp.valid := (
-        if (cfg.myHaveZeroReg) (
-          forFmaxRegFileWrPulseArr(0).fire
-          && forFmaxRegFileWrPulseArr(0).addr =/= 0x0
-        ) else (
-          forFmaxRegFileWrPulseArr(0).fire
-        )
-      )
-      temp.myRegFileWrPulse.payload := (
-        forFmaxRegFileWrPulseArr(0).payload
-      )
-      temp.branchMispredictEtcForceToZero := (
-        (
-          (
-            myBranchMispredictEtc
-            || rMyPsExSetPcState
-          )
-          && !outp.regPcSetItCnt(1).lsb
-        )
-      )
+    //val myHistRegFileWrPulse = (
+    //  //!cfg.optScoreboard
+    //  true
+    //) generate {
+    //  val temp = MyRegFileWrPulseFwdInfo()
+    //  temp.valid := (
+    //    if (cfg.myHaveZeroReg) (
+    //      forFmaxRegFileWrPulseArr(0).fire
+    //      && forFmaxRegFileWrPulseArr(0).addr =/= 0x0
+    //    ) else (
+    //      forFmaxRegFileWrPulseArr(0).fire
+    //    )
+    //  )
+    //  temp.myRegFileWrPulse.payload := (
+    //    forFmaxRegFileWrPulseArr(0).payload
+    //  )
+    //  temp.branchMispredictEtcForceToZero := (
+    //    (
+    //      (
+    //        myBranchMispredictEtc
+    //        || rMyPsExSetPcState
+    //      )
+    //      && !outp.regPcSetItCnt(1).lsb
+    //    )
+    //  )
 
-      val myTempHist = History(
-        that=(
-          //forFmaxRegFileWrPulseArr(0)
-          temp
-        ),
-        when=forFmaxRegFileWrPulseArr(0).fire,
-        length=(
-          //2
-          3//2
-          //+ (if (cfg.optScoreboard) (1) else (0))
-        ),
-        init=(
-          //forFmaxRegFileWrPulseArr(0).getZero
-          temp.getZero
-        ),
-      )
+    //  val myTempHist = History(
+    //    that=(
+    //      //forFmaxRegFileWrPulseArr(0)
+    //      temp
+    //    ),
+    //    when=forFmaxRegFileWrPulseArr(0).fire,
+    //    length=(
+    //      //2
+    //      3//2
+    //      //+ (if (cfg.optScoreboard) (1) else (0))
+    //    ),
+    //    init=(
+    //      //forFmaxRegFileWrPulseArr(0).getZero
+    //      temp.getZero
+    //    ),
+    //  )
 
-      val myFwdInfoVec = Vec.fill(myTempHist.size)(
-        cloneOf(temp)
-      )
-      myFwdInfoVec := myTempHist
-      for (idx <- 0 until myFwdInfoVec.size - 1) {
-        when (
-          myFwdInfoVec(idx).branchMispredictEtcForceToZero
-          //myFwdInfoVec(idx).anyForceToZero
-        ) {
-          for (
-            jdx <- idx //+ 1 
-            until myFwdInfoVec.size
-          ) {
-            myFwdInfoVec(jdx).valid := False
-          }
-        }
-      }
-      myFwdInfoVec
-    }
-    val stickyFwdRegFileWrPulse = (
-      Vec.fill(cfg.regFileCfg.modRdPortCnt)(
-        Flow(
-          UInt(cfg.mainWidth bits)
-        )
-      )
-    )
+    //  val myFwdInfoVec = Vec.fill(myTempHist.size)(
+    //    cloneOf(temp)
+    //  )
+    //  myFwdInfoVec := myTempHist
+    //  for (idx <- 0 until myFwdInfoVec.size - 1) {
+    //    when (
+    //      myFwdInfoVec(idx).branchMispredictEtcForceToZero
+    //      //myFwdInfoVec(idx).anyForceToZero
+    //    ) {
+    //      for (
+    //        jdx <- idx //+ 1 
+    //        until myFwdInfoVec.size
+    //      ) {
+    //        myFwdInfoVec(jdx).valid := False
+    //      }
+    //    }
+    //  }
+    //  myFwdInfoVec
+    //}
+    //val stickyFwdRegFileWrPulse = (
+    //  Vec.fill(cfg.regFileCfg.modRdPortCnt)(
+    //    Flow(
+    //      UInt(cfg.mainWidth bits)
+    //    )
+    //  )
+    //)
 
     for (jdx <- 0 until myTempHistFwdValid.size) {
       //myTempHistFwdValid(jdx).lsb := False
@@ -4058,17 +4058,17 @@ case class SnowHousePipeStagePreFwd(
 // 3 1000
       //if (cfg.optScoreboard) {
       //} else { // if (!cfg.optScoreboard)
-        val myFwdTempToSwitch = (
-          Vec(Vec(
-            myHistRegFileWrPulse.map(myWrPulse => (
-              myWrPulse.fire
-              && (
-                outp.gprIdxVec(jdx)
-                === myWrPulse.addr
-              )
-            ))
-          ).reverse)
-        )
+        //val myFwdTempToSwitch = (
+        //  Vec(Vec(
+        //    myHistRegFileWrPulse.map(myWrPulse => (
+        //      myWrPulse.fire
+        //      && (
+        //        outp.gprIdxVec(jdx)
+        //        === myWrPulse.addr
+        //      )
+        //    ))
+        //  ).reverse)
+        //)
         //val myFwdTempToSwitchPayload = (
         //  Vec(Vec(
         //    myHistRegFileWrPulse.map(myWrPulse => (
@@ -4081,83 +4081,83 @@ case class SnowHousePipeStagePreFwd(
         //    ))
         //  ).reverse)
         //)
-        switch (
-          myFwdTempToSwitch.asBits
-          //## RegNext
-          ## (
-            //RegNext(upIsFiring, init=False)
-            //|| rose(upIsValid)
-            upIsValid
-          )
-        ) {
-          is (
-            //M"1--"
-            M"1---"
-            //M"1-"
-          ) {
-            //outp.myPreFwdRdMemWord(jdx) := (
-            //  myHistRegFileWrPulse(0).data
-            //)
-            stickyFwdRegFileWrPulse(jdx).valid := True
-            stickyFwdRegFileWrPulse(jdx).payload := (
-              myHistRegFileWrPulse(0).data
-            )
-          }
-          is (
-            //M"01-"
-            M"01--"
-            //M"01"
-          ) {
-            //outp.myPreFwdRdMemWord(jdx) := (
-            //  myHistRegFileWrPulse(1).data
-            //)
-            stickyFwdRegFileWrPulse(jdx).valid := True
-            stickyFwdRegFileWrPulse(jdx).payload := (
-              myHistRegFileWrPulse(1).data
-            )
-          }
-          is (
-            //M"01-"
-            M"001-"
-            //M"01"
-          ) {
-            //outp.myPreFwdRdMemWord(jdx) := (
-            //  myHistRegFileWrPulse(2).data
-            //)
-            stickyFwdRegFileWrPulse(jdx).valid := True
-            stickyFwdRegFileWrPulse(jdx).payload := (
-              myHistRegFileWrPulse(2).data
-            )
-          }
-          //is (M"001") {
-          //  outp.myPreFwdRdMemWord(jdx) := (
-          //    myHistRegFileWrPulse(2).data
-          //  )
-          //}
-          is (
-            //M"001"
-            M"0001"
-          ) {
-            //outp.myPreFwdRdMemWord(jdx) := 0x0
-            stickyFwdRegFileWrPulse(jdx).valid := False
-            stickyFwdRegFileWrPulse(jdx).payload := 0x0
-          }
-          default {
-            //outp.myPreFwdRdMemWord(jdx) := 0x0
-            stickyFwdRegFileWrPulse(jdx).valid := (
-              RegNext(
-                stickyFwdRegFileWrPulse(jdx).valid,
-                init=stickyFwdRegFileWrPulse(jdx).valid.getZero
-              )
-            )
-            stickyFwdRegFileWrPulse(jdx).payload := (
-              RegNext(
-                stickyFwdRegFileWrPulse(jdx).payload,
-                init=stickyFwdRegFileWrPulse(jdx).payload.getZero
-              )
-            )
-          }
-        }
+        //switch (
+        //  myFwdTempToSwitch.asBits
+        //  //## RegNext
+        //  ## (
+        //    //RegNext(upIsFiring, init=False)
+        //    //|| rose(upIsValid)
+        //    upIsValid
+        //  )
+        //) {
+        //  is (
+        //    //M"1--"
+        //    M"1---"
+        //    //M"1-"
+        //  ) {
+        //    //outp.myPreFwdRdMemWord(jdx) := (
+        //    //  myHistRegFileWrPulse(0).data
+        //    //)
+        //    stickyFwdRegFileWrPulse(jdx).valid := True
+        //    stickyFwdRegFileWrPulse(jdx).payload := (
+        //      myHistRegFileWrPulse(0).data
+        //    )
+        //  }
+        //  is (
+        //    //M"01-"
+        //    M"01--"
+        //    //M"01"
+        //  ) {
+        //    //outp.myPreFwdRdMemWord(jdx) := (
+        //    //  myHistRegFileWrPulse(1).data
+        //    //)
+        //    stickyFwdRegFileWrPulse(jdx).valid := True
+        //    stickyFwdRegFileWrPulse(jdx).payload := (
+        //      myHistRegFileWrPulse(1).data
+        //    )
+        //  }
+        //  is (
+        //    //M"01-"
+        //    M"001-"
+        //    //M"01"
+        //  ) {
+        //    //outp.myPreFwdRdMemWord(jdx) := (
+        //    //  myHistRegFileWrPulse(2).data
+        //    //)
+        //    stickyFwdRegFileWrPulse(jdx).valid := True
+        //    stickyFwdRegFileWrPulse(jdx).payload := (
+        //      myHistRegFileWrPulse(2).data
+        //    )
+        //  }
+        //  //is (M"001") {
+        //  //  outp.myPreFwdRdMemWord(jdx) := (
+        //  //    myHistRegFileWrPulse(2).data
+        //  //  )
+        //  //}
+        //  is (
+        //    //M"001"
+        //    M"0001"
+        //  ) {
+        //    //outp.myPreFwdRdMemWord(jdx) := 0x0
+        //    stickyFwdRegFileWrPulse(jdx).valid := False
+        //    stickyFwdRegFileWrPulse(jdx).payload := 0x0
+        //  }
+        //  default {
+        //    //outp.myPreFwdRdMemWord(jdx) := 0x0
+        //    stickyFwdRegFileWrPulse(jdx).valid := (
+        //      RegNext(
+        //        stickyFwdRegFileWrPulse(jdx).valid,
+        //        init=stickyFwdRegFileWrPulse(jdx).valid.getZero
+        //      )
+        //    )
+        //    stickyFwdRegFileWrPulse(jdx).payload := (
+        //      RegNext(
+        //        stickyFwdRegFileWrPulse(jdx).payload,
+        //        init=stickyFwdRegFileWrPulse(jdx).payload.getZero
+        //      )
+        //    )
+        //  }
+        //}
         //switch (
         //  myFwdTempToSwitchValid.asBits
         //  ## myFwdTempToSwitchPayload.asBits
@@ -4240,9 +4240,9 @@ case class SnowHousePipeStagePreFwd(
         //  //  )
         //  //}
         //}
-        outp.myPreFwdRdMemWord(jdx) := (
-          stickyFwdRegFileWrPulse(jdx).payload
-        )
+        //outp.myPreFwdRdMemWord(jdx) := (
+        //  stickyFwdRegFileWrPulse(jdx).payload
+        //)
         switch (
           myTempHistFwdForceToZero(jdx)
           ## myTempHistFwdForceToZero(jdx)
@@ -4274,20 +4274,20 @@ case class SnowHousePipeStagePreFwd(
             }
           }
           default {
-            when (
-              //!myFwdTempToSwitch.orR
-              //!stickyFwdRegFileWrPulse.map(_.fire).orR
-              !stickyFwdRegFileWrPulse(jdx).fire
-            ) {
+            //when (
+            //  //!myFwdTempToSwitch.orR
+            //  //!stickyFwdRegFileWrPulse.map(_.fire).orR
+            //  !stickyFwdRegFileWrPulse(jdx).fire
+            //) {
               outp.forFmaxFwdIdx(jdx) := (
                 0x0
                 //(1 << outp.forFmaxFwdIdx(jdx).getWidth) - 1
               )
-            } otherwise {
-              outp.forFmaxFwdIdx(jdx) := (
-                cfg.optForFmaxPsExFwdSize
-              )
-            }
+            //} otherwise {
+            //  outp.forFmaxFwdIdx(jdx) := (
+            //    cfg.optForFmaxPsExFwdSize
+            //  )
+            //}
             //outp.myExt(0).rdMemWord(jdx) := (
             //  inp.myExt(0).rdMemWord(jdx)
             //)
@@ -9493,7 +9493,7 @@ case class SnowHousePipeStageExecute(
           idx
           //<- 0 until myTempHistFwdValid(jdx).getWidth
           //<- 0 until (1 << outp.optForFmaxFwdIdx(jdx).getWidth)
-          <- 0 until cfg.optForFmaxPsExFwdSize + 1 //- 1
+          <- 0 until cfg.optForFmaxPsExFwdSize //+ 1 //- 1
         ) {
           is (
             //MaskedLiteral({
@@ -9523,7 +9523,7 @@ case class SnowHousePipeStageExecute(
             //)
             if (
               idx == 0
-              || idx >= cfg.optForFmaxPsExFwdSize
+              //|| idx >= cfg.optForFmaxPsExFwdSize
             ) {
               //outp.myExt(0).rdMemWord(jdx) := (
               //  RegNext(
@@ -9575,6 +9575,21 @@ case class SnowHousePipeStageExecute(
                       === outp.gprIdxVec(jdx)
                     )
                   )
+                  ## (
+                    (
+                      RegNextWhen(
+                        forFmaxRegFileWrPulseArr(0).addr,
+                        cond=(
+                          forFmaxRegFileWrPulseArr(0).fire
+                        ),
+                        init=forFmaxRegFileWrPulseArr(0).addr.getZero
+                        //&& (
+                        //  forFmaxRegFileWrPulseArr(0).addr
+                        //  === outp.gprIdxVec(jdx)
+                        //)
+                      ) === outp.gprIdxVec(jdx)
+                    )
+                  )
                   //stickyFwdRegFileWrPulseVec(jdx).fire
                   ## (
                     cLink.up.isValid
@@ -9593,22 +9608,41 @@ case class SnowHousePipeStageExecute(
                     //)
                   )
                 ) {
-                  is (M"1-") {
+                  is (
+                    //M"1-"
+                    M"1--"
+                  ) {
                     outp.myExt(0).rdMemWord(jdx) := (
                       forFmaxRegFileWrPulseArr(0).data
                       //stickyFwdRegFileWrPulseVec(jdx).payload
                     )
                   }
-                  is (M"01") {
-                    if (idx == 0) {
+                  is (
+                    M"01-"
+                  ) {
+                    outp.myExt(0).rdMemWord(jdx) := (
+                      RegNextWhen(
+                        forFmaxRegFileWrPulseArr(0).data,
+                        cond=(
+                          forFmaxRegFileWrPulseArr(0).fire
+                        ),
+                        init=forFmaxRegFileWrPulseArr(0).data.getZero
+                      )
+                    )
+                  }
+                  is (
+                    //M"01"
+                    M"001"
+                  ) {
+                    //if (idx == 0) {
                       outp.myExt(0).rdMemWord(jdx) := (
                         inp.myExt(0).rdMemWord(jdx)
                       )
-                    } else {
-                      outp.myExt(0).rdMemWord(jdx) := (
-                        outp.myPreFwdRdMemWord(jdx)
-                      )
-                    }
+                    //} else {
+                    //  outp.myExt(0).rdMemWord(jdx) := (
+                    //    outp.myPreFwdRdMemWord(jdx)
+                    //  )
+                    //}
                   }
                   default {
                     outp.myExt(0).rdMemWord(jdx) := (

@@ -1925,7 +1925,7 @@ case class SnowHousePipePayloadNonExt(
   ) generate (
     Vec.fill(cfg.regFileCfg.modRdPortCnt)(
       UInt(log2Up(
-        cfg.optForFmaxPsExFwdSize + 1
+        cfg.optForFmaxPsExFwdSize //+ 1
       ) bits)
     )
   )
