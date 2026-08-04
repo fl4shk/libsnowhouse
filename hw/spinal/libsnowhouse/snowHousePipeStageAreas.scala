@@ -3025,8 +3025,8 @@ case class SnowHousePipeStageInstrDecode(
     for (idx <- 0 until cfg.numGprs) {
       when (
         //myPartialWriteTagInfoCond
-        up.isFiring
-        //down.isFiring
+        //up.isFiring
+        down.isFiring
         && !shouldClearExtraDecodeInfo
         && rMyFwdGprTagVec(idx).fire
         && !rMyFwdGprTagVec(idx).cnt.msb
