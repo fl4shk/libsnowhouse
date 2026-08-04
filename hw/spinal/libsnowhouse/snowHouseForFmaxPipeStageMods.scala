@@ -4556,6 +4556,15 @@ case class SnowHouseForFmaxPipeStageWriteBack(
       io.dbgInfo.gprIdxVecAtRegFileWrite := (
         myCommitAlmostFinalOutpStm.myWbPayload.gprIdxVec
       )
+    } otherwise {
+      if (cfg.optScoreboard) {
+        io.dbgInfo.shouldIgnoreInstrAtRegFileWrite := (
+          True
+        )
+        io.dbgInfo.myPsIdBubbleAtRegFileWrite := (
+          True
+        )
+      }
     }
   }
 
