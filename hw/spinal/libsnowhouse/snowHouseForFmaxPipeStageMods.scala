@@ -2421,11 +2421,13 @@ case class SnowHouseForFmaxPsWbReorderBuf(
           //&& 
           !rValidVec(idx)
           && (
-            rOccupancy < myReorderBufSize - myOccupancySubAmount
+            //rOccupancy < myReorderBufSize - myOccupancySubAmount
+            io.psIdCanIssue
             || (
               myRdAddr === idx
             )
           )
+          //&& io.psIdCanIssue
           //2//6//4//8//- 1
           && (
             !rMyShouldIgnoreInstrState.asBits(2)
