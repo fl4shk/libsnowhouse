@@ -11956,17 +11956,45 @@ case class SnowHousePipeStageExecute(
   //  )
   //}
   //for (idx <- 0 until cfg.regFileCfg.memArrSize) {
-    outp.instrCnt.scoreboardIssuePayload.nonBubbleTag := (
-      RegNextWhen(
-        (outp.instrCnt.scoreboardIssuePayload.nonBubbleTag + 1),
-        cond=(
-          cLink.up.isFiring
-          && !myShouldIgnoreInstr.last
-          && !outp.instrCnt.myPsIdBubble.last
-        )
-      )
-      init(0x0)
+    val myNonBubbleTag = (
+      outp.instrCnt.scoreboardIssuePayload.nonBubbleTag
     )
+    myNonBubbleTag := (
+      (
+        RegNext(
+          myNonBubbleTag.asSInt,
+          //init=myNonBubbleTag
+        )
+        init(
+          //-1
+          0x0
+        )
+      ).asUInt
+    )
+    when (
+      cLink.up.isFiring
+    ) {
+      when (
+        !myShouldIgnoreInstr.last
+        && !outp.instrCnt.myPsIdBubble.last
+      ) {
+        myNonBubbleTag := (
+          RegNext(myNonBubbleTag) + 1
+        )
+      }
+    }
+
+    //myNonBubbleTag := (
+    //  RegNextWhen(
+    //    (myNonBubbleTag + 1),
+    //    cond=(
+    //      cLink.up.isFiring
+    //      && !myShouldIgnoreInstr.last
+    //      && !outp.instrCnt.myPsIdBubble.last
+    //    )
+    //  )
+    //  init(0x0)
+    //)
 
     when (myShouldIgnoreInstr.last) {
       //outp.gprIsZeroVec.last.foreach(item => {
