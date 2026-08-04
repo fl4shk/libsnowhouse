@@ -2339,7 +2339,10 @@ case class SnowHouseForFmaxPsWbReorderBuf(
           ) + 1
         )
       }
-      when (!rSeenFullFlush) {
+      when (
+        !rSeenFullFlush
+        && myRam.io.rdAddrPipe.fire
+      ) {
         rFlushCnt := rFlushCnt - 1
       }
 
