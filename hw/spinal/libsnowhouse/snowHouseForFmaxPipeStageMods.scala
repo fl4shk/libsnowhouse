@@ -1846,6 +1846,13 @@ case class SnowHouseForFmaxPsWbReorderBufPayload(
   def regFileWrite = most.regFileWrite
   def myWbPayload = most.myWbPayload
 
+  //val myOpIsNonFwd = (
+  //  cfg.optScoreboard
+  //  && optIncludeBufIdx
+  //) generate (
+  //  Bool()
+  //)
+
   val reorderBufIdx = (
     cfg.optScoreboard
     && optIncludeBufIdx
@@ -4194,62 +4201,66 @@ case class SnowHouseForFmaxPipeStageWriteBack(
       //    False
       //  )
       //)
-      if (isNonFwd) {
-        someCommitStm.commit.myNonFwdValid := (
-          //if (cfg.myHaveZeroReg) (
-          //  !someMyWbPayload(1).gprIsZeroVec.last.last
-          //) else (
-          //  True
-          //)
-          True
-        )
-        someCommitStm.commit.myFwdValid := False
-      } else {
-        someCommitStm.commit.myNonFwdValid := False
-        someCommitStm.commit.myFwdValid := (
-          //if (cfg.myHaveZeroReg) (
-          //  !someMyWbPayload(1).gprIsZeroVec.last.last
-          //) else (
-          //  True
-          //)
-          True
+      if (cfg.optScoreboard) {
+        if (isNonFwd) {
+          someCommitStm.commit.myNonFwdValid := (
+            //if (cfg.myHaveZeroReg) (
+            //  !someMyWbPayload(1).gprIsZeroVec.last.last
+            //) else (
+            //  True
+            //)
+            True
+          )
+          someCommitStm.commit.myFwdValid := False
+        } else {
+          someCommitStm.commit.myNonFwdValid := False
+          someCommitStm.commit.myFwdValid := (
+            //if (cfg.myHaveZeroReg) (
+            //  !someMyWbPayload(1).gprIsZeroVec.last.last
+            //) else (
+            //  True
+            //)
+            True
+          )
+        }
+        someCommitStm.commit.gprIdxVec := (
+          someMyWbPayload(1).gprIdxVec
         )
       }
-      someCommitStm.commit.gprIdxVec := (
-        someMyWbPayload(1).gprIdxVec
-      )
     } otherwise {
       if (!cfg.optScoreboard) {
         someCommitStm.valid := False
       }
       someCommitStm.regFileWrite.addr := 0x0
       someCommitStm.regFileWrite.data := 0x0
-      someCommitStm.commit.gprIdxVec := (
-        someMyWbPayload(1).gprIdxVec
-      )
 
-      if (isNonFwd) {
-        someCommitStm.commit.myFwdValid := False
-        someCommitStm.commit.myNonFwdValid := (
-          someMyWbPayload(1).instrCnt.shouldIgnoreInstr.last
-          && someMyWbPayload(1).splitOp.scoreboardOpIsMemAccess
-          //&& !someMyWbPayload(1).instrCnt.myPsIdBubble.head
-          //&& myNonFwdWbValid
-          && (
-            //someMyWbPayload(1).
-            haveNewNonFwdTag
+      if (cfg.optScoreboard) {
+        someCommitStm.commit.gprIdxVec := (
+          someMyWbPayload(1).gprIdxVec
+        )
+        if (isNonFwd) {
+          someCommitStm.commit.myFwdValid := False
+          someCommitStm.commit.myNonFwdValid := (
+            someMyWbPayload(1).instrCnt.shouldIgnoreInstr.last
+            && someMyWbPayload(1).splitOp.scoreboardOpIsMemAccess
+            //&& !someMyWbPayload(1).instrCnt.myPsIdBubble.head
+            //&& myNonFwdWbValid
+            && (
+              //someMyWbPayload(1).
+              haveNewNonFwdTag
+            )
           )
-        )
-      } else {
-        someCommitStm.commit.myNonFwdValid := False
-        someCommitStm.commit.myFwdValid := (
-          //False
-          //!someMyWbPayload(1).splitOp.scoreboardOpIsMemAccess
-          //!someMyWbPayload(1).instrCnt.myPsIdBubble.last
-          //someMyWbPayload(1).instrCnt.myPsIdReorderBufForceValid.last
-          //&& myFwdWbValid
-          haveNewFwdTag
-        )
+        } else {
+          someCommitStm.commit.myNonFwdValid := False
+          someCommitStm.commit.myFwdValid := (
+            //False
+            //!someMyWbPayload(1).splitOp.scoreboardOpIsMemAccess
+            //!someMyWbPayload(1).instrCnt.myPsIdBubble.last
+            //someMyWbPayload(1).instrCnt.myPsIdReorderBufForceValid.last
+            //&& myFwdWbValid
+            haveNewFwdTag
+          )
+        }
       }
 
       //someCommitStm.commit.myGprIdx.valid := (
@@ -4349,26 +4360,10 @@ case class SnowHouseForFmaxPipeStageWriteBack(
         )
       )
 
-      if (isNonFwd) {
-        //rInstrMayPassCnt := myInstrMayPassCntInitVal
-      } else {
-        //switch (
-        //  myNonFwdWbValid
-        //  ## someCommitStm.fire
-        //) {
-        //  is (M"11") {
-        //    rInstrMayPassCnt := rInstrMayPassCnt - 1
-        //  }
-        //  is (M"0-") {
-        //    rInstrMayPassCnt := myInstrMayPassCntInitVal
-        //  }
-        //}
-        //when (
-        //  myNonFwdWbValid
-        //  && someCommitStm.fire
-        //) {
-        //}
-      }
+      //if (isNonFwd) {
+      //  someCommitStm.opIsFwd
+      //} else {
+      //}
 
       //someCommitStm.commit.tag := (
       //  someMyWbPayload(1).instrCnt.scoreboardTag
@@ -4476,6 +4471,55 @@ case class SnowHouseForFmaxPipeStageWriteBack(
     //    io.dbgInfo.gprIdxVecAtRegFileWrite
     //  )
     //)
+
+    val myDbgTempNonFwdTag = (
+      io.dbgInfo != null
+    ) generate (
+      //someMyWbPayload(1).instrCnt.scoreboardIssuePayload.nonFwdTag
+      myCommitAlmostFinalOutpStm
+      .myWbPayload.instrCnt.scoreboardIssuePayload.nonFwdTag
+    )
+    val myDbgTempFwdTag = (
+      io.dbgInfo != null
+    ) generate (
+      //someMyWbPayload(1).instrCnt.scoreboardIssuePayload.fwdTag
+      myCommitAlmostFinalOutpStm
+      .myWbPayload.instrCnt.scoreboardIssuePayload.fwdTag
+    )
+    val myDbgHistNonFwdTag = (
+      io.dbgInfo != null
+    ) generate (
+      History(
+        that=myDbgTempNonFwdTag,
+        when=myCommitAlmostFinalOutpStm.fire,
+        length=2,
+        init=(
+          U(s"${myDbgTempNonFwdTag.getWidth}'d1")
+        )
+      )
+    )
+    val myDbgHaveNewNonFwdTag = (
+      io.dbgInfo != null
+    ) generate (
+      myDbgHistNonFwdTag(0) =/= myDbgHistNonFwdTag(1)
+    )
+    val myDbgHistFwdTag = (
+      io.dbgInfo != null
+    ) generate (
+      History(
+        that=myDbgTempFwdTag,
+        when=myCommitAlmostFinalOutpStm.fire,
+        length=2,
+        init=(
+          U(s"${myDbgTempFwdTag.getWidth}'d1")
+        )
+      )
+    )
+    val myDbgHaveNewFwdTag = (
+      io.dbgInfo != null
+    ) generate (
+      myDbgHistFwdTag(0) =/= myDbgHistFwdTag(1)
+    )
     when (
       //myCommitOutpStm.fire
       myCommitAlmostFinalOutpStm.fire
@@ -4505,10 +4549,21 @@ case class SnowHouseForFmaxPipeStageWriteBack(
       )
       io.dbgInfo.shouldIgnoreInstrAtRegFileWrite := (
         if (cfg.optScoreboard) (
-          myCommitAlmostFinalOutpStm.myWbPayload
-          .instrCnt.shouldIgnoreInstr.last
-          || (
-            !myCommitAlmostFinalOutpStm.fire
+          (
+            (
+              myCommitAlmostFinalOutpStm.myWbPayload
+              .instrCnt.shouldIgnoreInstr.last
+              || (
+                !myCommitAlmostFinalOutpStm.fire
+              )
+            )
+            && (
+              Mux(
+                !myCommitAlmostFinalOutpStm.commit.opIsFwd,
+                myDbgHaveNewNonFwdTag,
+                myDbgHaveNewFwdTag,
+              )
+            )
           )
         ) else (
           myCommitAlmostFinalOutpStm.myWbPayload
@@ -4522,20 +4577,29 @@ case class SnowHouseForFmaxPipeStageWriteBack(
           )
           (
             (
-              myInstrCnt.myPsIdBubble.last
-              //&& !myInstrCnt.myScoreboardReadGprsBubble.last
-              //&& !io.myScoreboardSavedGprTagVec(
-              //  myCommitAlmostFinalOutpStm.myWbPayload.gprIdxVec.last
-              //)
-              //&& !mkScoreboardGprTagOrReduce(
-              //  //myNonFwdWbPayload(0)
-              //  myCommitAlmostFinalOutpStm.myWbPayload
-              //)
+              (
+                myInstrCnt.myPsIdBubble.last
+                //&& !myInstrCnt.myScoreboardReadGprsBubble.last
+                //&& !io.myScoreboardSavedGprTagVec(
+                //  myCommitAlmostFinalOutpStm.myWbPayload.gprIdxVec.last
+                //)
+                //&& !mkScoreboardGprTagOrReduce(
+                //  //myNonFwdWbPayload(0)
+                //  myCommitAlmostFinalOutpStm.myWbPayload
+                //)
+              )
+              //|| myInstrCnt.myPsExMemAccessBubble.last
+              //|| myInstrCnt.myPsExMultiCycleBubble.last
+              || (
+                !myCommitAlmostFinalOutpStm.fire
+              )
             )
-            //|| myInstrCnt.myPsExMemAccessBubble.last
-            //|| myInstrCnt.myPsExMultiCycleBubble.last
-            || (
-              !myCommitAlmostFinalOutpStm.fire
+            && (
+              Mux(
+                !myCommitAlmostFinalOutpStm.commit.opIsFwd,
+                myDbgHaveNewNonFwdTag,
+                myDbgHaveNewFwdTag,
+              )
             )
           )
         } else {
@@ -4559,10 +4623,20 @@ case class SnowHouseForFmaxPipeStageWriteBack(
     } otherwise {
       if (cfg.optScoreboard) {
         io.dbgInfo.shouldIgnoreInstrAtRegFileWrite := (
-          True
+          //True
+          Mux(
+            !myCommitAlmostFinalOutpStm.commit.opIsFwd,
+            myDbgHaveNewNonFwdTag,
+            myDbgHaveNewFwdTag,
+          )
         )
         io.dbgInfo.myPsIdBubbleAtRegFileWrite := (
-          True
+          //True
+          Mux(
+            !myCommitAlmostFinalOutpStm.commit.opIsFwd,
+            myDbgHaveNewNonFwdTag,
+            myDbgHaveNewFwdTag,
+          )
         )
       }
     }
