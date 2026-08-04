@@ -2461,123 +2461,39 @@ case class SnowHousePipeStageInstrDecode(
     //} otherwise {
     //}
 
-    def myLeftCond(
-      someLeftGprIdx: UInt
-    ) = (
-      (
-        if (cfg.myHaveZeroReg) (
-          myPartialWriteTagInfoCond
-          //&& !myTempOpMayNeedHazardCheck
-          && someLeftGprIdx.orR
-        ) else (
-          myPartialWriteTagInfoCond
-          //&& !myTempOpMayNeedHazardCheck
-        )
-      )
-    )
-    def myRightCond(
-      someRightGprIdx: UInt
-    ) = (
-      if (cfg.myHaveZeroReg) (
-        myScoreboardCommitStm.fire
-        && (
-           myScoreboardCommitStm.myNonFwdValid
-          || myScoreboardCommitStm.myFwdValid
-        )
-        && someRightGprIdx.orR
-      ) else (
-        myScoreboardCommitStm.fire
-        && (
-          myScoreboardCommitStm.myNonFwdValid
-          || myScoreboardCommitStm.myFwdValid
-        )
-      )
-    )
+    //def myLeftCond(
+    //  someLeftGprIdx: UInt
+    //) = (
+    //  (
+    //    if (cfg.myHaveZeroReg) (
+    //      myPartialWriteTagInfoCond
+    //      //&& !myTempOpMayNeedHazardCheck
+    //      && someLeftGprIdx.orR
+    //    ) else (
+    //      myPartialWriteTagInfoCond
+    //      //&& !myTempOpMayNeedHazardCheck
+    //    )
+    //  )
+    //)
+    //def myRightCond(
+    //  someRightGprIdx: UInt
+    //) = (
+    //  if (cfg.myHaveZeroReg) (
+    //    myScoreboardCommitStm.fire
+    //    && (
+    //       myScoreboardCommitStm.myNonFwdValid
+    //      || myScoreboardCommitStm.myFwdValid
+    //    )
+    //    && someRightGprIdx.orR
+    //  ) else (
+    //    myScoreboardCommitStm.fire
+    //    && (
+    //      myScoreboardCommitStm.myNonFwdValid
+    //      || myScoreboardCommitStm.myFwdValid
+    //    )
+    //  )
+    //)
 
-    for (idx <- 0 until cfg.numGprs) {
-      when (
-        //myPartialWriteTagInfoCond
-        //up.isFiring
-        down.isFiring
-        && rMyFwdGprTagVec(idx).fire
-        && !rMyFwdGprTagVec(idx).cnt.msb
-        //&& myScoreboardCommitStm.fire
-        //&& (
-        //  myScoreboardCommitStm.fwdTag
-        //  === 
-        //)
-      ) {
-        rMyFwdGprTagVec(idx).cnt := (
-          rMyFwdGprTagVec(idx).cnt - 1
-        )
-      }
-      when (
-        rMyFwdGprTagVec(idx).fire
-        && myScoreboardCommitStm.fire
-        && myScoreboardCommitStm.opIsFwd
-        && (
-          rMyFwdGprTagVec(idx).tag
-          === myScoreboardCommitStm.fwdTag
-        )
-      ) {
-        rMyFwdGprTagVec(idx).valid := False
-      }
-    }
-
-    switch (
-      (
-        //myPartialWriteTagInfoCond
-        //up.isFiring
-        down.isFiring
-        && !myTempOpMayNeedHazardCheck
-        && !upPayload(1).inpDecodeExt.head.opIsMemAccess.last
-      )
-      ## myLeftGprIdxVec.last
-    ) {
-      for (idx <- 0 until cfg.numGprs) {
-        if (
-          !cfg.myHaveZeroReg
-          || idx != 0
-        ) {
-          is (
-            (1 << log2Up(cfg.numGprs))
-            | idx
-          ) {
-            //when (
-            //  !rMyFwdGprTagVec(idx).fire
-            //) {
-              rMyFwdGprTagVec(idx).valid := True
-              when (!rMyFwdGprTagVec(idx).fire) {
-                rMyFwdGprTagVec(idx).cnt := (
-                  cfg.optForFmaxPsExFwdSize - 2//1
-                )
-              }
-              rMyFwdGprTagVec(idx).tag := myTempFwdTag
-            //}
-            //when (
-            //  !rMyFwdGprTagVec(idx).fire
-            //  && upPayload(1).inpDecodeExt.head.opIsMemAccess.last
-            //) {
-            //  rMyFwdGprTagVec(idx).tag := myTempNonFwdTag
-            //}
-            //when (
-            //  !rMyFwdGprTagVec(idx).fire
-            //  && !upPayload(1).inpDecodeExt.head.opIsMemAccess.last
-            //) {
-            //  rMyFwdGprTagVec(idx).tag := myTempFwdTag
-            //}
-
-            //rMyGprInUseCntVec(idx) := (
-            //  cfg.optForFmaxPsExFwdSize - 1
-            //)
-          }
-        }
-      }
-      if (cfg.myHaveZeroReg) {
-        default {
-        }
-      }
-    }
 
     //when (
     //  someCommitStm
@@ -2986,17 +2902,17 @@ case class SnowHousePipeStageInstrDecode(
               + 1
             )
           }
-          //doSendBubbleMainMost(
-          //  myPsIdBubble=Some(
-          //    True
-          //    //False
-          //  ),
-          //  myPsIdReorderBufForceValid=Some(
-          //    True,
-          //    //False
-          //  )
-          //  //myUpdateGprIsOrIsntZero=false,
-          //)
+          doSendBubbleMainMost(
+            myPsIdBubble=Some(
+              //True
+              False
+            ),
+            //myPsIdReorderBufForceValid=Some(
+            //  True,
+            //  //False
+            //)
+            //myUpdateGprIsOrIsntZero=false,
+          )
         }
         when (shouldClearExtraDecodeInfo) {
           doSendBubbleMainMost(
@@ -3060,6 +2976,9 @@ case class SnowHousePipeStageInstrDecode(
         //    cfg.optForFmaxPsExFwdSize - 1
         //  )
         //})
+        rMyFwdGprTagVec.foreach(item => {
+          item.valid := False
+        })
         when (
           //(rMyNonFwdGprTagVec.asBits.asUInt === 0x0)
           //&& 
@@ -3134,6 +3053,93 @@ case class SnowHousePipeStageInstrDecode(
         //  && rSavedReorderBufIdxAbsDiff.orR
         //) {
         //}
+      }
+    }
+
+    for (idx <- 0 until cfg.numGprs) {
+      when (
+        //myPartialWriteTagInfoCond
+        up.isFiring
+        //down.isFiring
+        && !shouldClearExtraDecodeInfo
+        && rMyFwdGprTagVec(idx).fire
+        && !rMyFwdGprTagVec(idx).cnt.msb
+        //&& myScoreboardCommitStm.fire
+        //&& (
+        //  myScoreboardCommitStm.fwdTag
+        //  === 
+        //)
+      ) {
+        rMyFwdGprTagVec(idx).cnt := (
+          rMyFwdGprTagVec(idx).cnt - 1
+        )
+      }
+      when (
+        rMyFwdGprTagVec(idx).fire
+        && myScoreboardCommitStm.fire
+        && myScoreboardCommitStm.opIsFwd
+        && (
+          rMyFwdGprTagVec(idx).tag
+          === myScoreboardCommitStm.fwdTag
+        )
+      ) {
+        rMyFwdGprTagVec(idx).valid := False
+      }
+    }
+
+    switch (
+      (
+        //myPartialWriteTagInfoCond
+        up.isFiring
+        //down.isFiring
+        && !shouldClearExtraDecodeInfo
+        && !myTempOpMayNeedHazardCheck
+        && !upPayload(1).inpDecodeExt.head.opIsMemAccess.last
+      )
+      ## myLeftGprIdxVec.last
+    ) {
+      for (idx <- 0 until cfg.numGprs) {
+        if (
+          !cfg.myHaveZeroReg
+          || idx != 0
+        ) {
+          is (
+            (1 << log2Up(cfg.numGprs))
+            | idx
+          ) {
+            //when (
+            //  !rMyFwdGprTagVec(idx).fire
+            //) {
+              when (!rMyFwdGprTagVec(idx).fire) {
+                rMyFwdGprTagVec(idx).valid := True
+                rMyFwdGprTagVec(idx).cnt := (
+                  cfg.optForFmaxPsExFwdSize - 2//1
+                )
+                rMyFwdGprTagVec(idx).tag := myTempFwdTag
+              }
+            //}
+            //when (
+            //  !rMyFwdGprTagVec(idx).fire
+            //  && upPayload(1).inpDecodeExt.head.opIsMemAccess.last
+            //) {
+            //  rMyFwdGprTagVec(idx).tag := myTempNonFwdTag
+            //}
+            //when (
+            //  !rMyFwdGprTagVec(idx).fire
+            //  && !upPayload(1).inpDecodeExt.head.opIsMemAccess.last
+            //) {
+            //  rMyFwdGprTagVec(idx).tag := myTempFwdTag
+            //}
+
+            //rMyGprInUseCntVec(idx) := (
+            //  cfg.optForFmaxPsExFwdSize - 1
+            //)
+          }
+        }
+      }
+      if (cfg.myHaveZeroReg) {
+        default {
+        }
       }
     }
 
