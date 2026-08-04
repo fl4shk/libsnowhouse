@@ -164,6 +164,7 @@ case class SnowHouseScoreboardCommitPayload(
   val myNonFwdValid = Bool()
   val nonFwdTag = UInt(cfg.optScoreboardReorderBufWidth bits)
   val fwdTag = UInt(cfg.optScoreboardReorderBufWidth bits)
+  val opIsFwd = Bool()
   //val reorderBufInFlush = Bool()
   //val tag = UInt(cfg.optForFmaxCfg.get.myScoreboardTagWidth bits)
   //val isBubbleEtc = Bool()
@@ -4095,9 +4096,11 @@ case class SnowHouseForFmaxPipeStageWriteBack(
     if (isNonFwd) {
       someCommitStm.commit.nonFwdTag := myHistNonFwdTag(0)
       someCommitStm.commit.fwdTag := 0x0
+      someCommitStm.commit.opIsFwd := False
     } else {
       someCommitStm.commit.nonFwdTag := 0x0
       someCommitStm.commit.fwdTag := myHistFwdTag(0)
+      someCommitStm.commit.opIsFwd := True
     }
     when (
       (

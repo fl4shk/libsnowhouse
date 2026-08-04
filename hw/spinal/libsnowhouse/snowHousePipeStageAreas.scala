@@ -2513,6 +2513,7 @@ case class SnowHousePipeStageInstrDecode(
       when (
         rMyFwdGprTagVec(idx).fire
         && myScoreboardCommitStm.fire
+        && myScoreboardCommitStm.opIsFwd
         && (
           rMyFwdGprTagVec(idx).tag
           === myScoreboardCommitStm.fwdTag
