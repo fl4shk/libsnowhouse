@@ -2422,6 +2422,9 @@ case class SnowHouseForFmaxPsWbReorderBuf(
           !rValidVec(idx)
           && (
             rOccupancy < myReorderBufSize - myOccupancySubAmount
+            || (
+              myRdAddr === idx
+            )
           )
           //2//6//4//8//- 1
           && (
