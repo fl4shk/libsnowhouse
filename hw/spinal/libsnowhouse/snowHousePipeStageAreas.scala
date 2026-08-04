@@ -1923,7 +1923,7 @@ case class SnowHousePipeStageInstrDecode(
     myPsIdBubble: Option[Bool]=Some(True),
     //myUpdateGprIsOrIsntZero: Boolean=true,
     //myPsIdReorderBufForceValid: Option[Bool]=None,
-    myPsIdFwdBubble: Option[Bool]=None,
+    myPsIdOtherBubble: Option[Bool]=None,
   ): Unit = {
     require(cfg.useLcvDataBus)
     cId.duplicateIt()
@@ -1936,9 +1936,9 @@ case class SnowHousePipeStageInstrDecode(
       //myUpdateGprIsOrIsntZero=myUpdateGprIsOrIsntZero
       //myPsIdReorderBufForceValid=myPsIdReorderBufForceValid,
     )
-    if (myPsIdFwdBubble != None) {
-      down(pId).instrCnt.myPsIdFwdBubble.foreach(item => {
-        item := myPsIdFwdBubble.get
+    if (myPsIdOtherBubble != None) {
+      down(pId).instrCnt.myPsIdOtherBubble.foreach(item => {
+        item := myPsIdOtherBubble.get
       })
     }
   }
@@ -2876,7 +2876,10 @@ case class SnowHousePipeStageInstrDecode(
           )
         }
         when (
-          myNonFwdHazardCheckVec.orR
+          (
+            myNonFwdHazardCheckVec.orR
+            || myFwdHazardCheckVec.orR
+          )
           && !shouldClearExtraDecodeInfo
         ) {
           when (
@@ -2896,7 +2899,7 @@ case class SnowHousePipeStageInstrDecode(
               //True
               False
             ),
-            myPsIdFwdBubble=Some(
+            myPsIdOtherBubble=Some(
               True
             )
             //myUpdateGprIsOrIsntZero=false,
@@ -2910,31 +2913,32 @@ case class SnowHousePipeStageInstrDecode(
           //  )
           //  + 1
           //)
-        } elsewhen (
-          myFwdHazardCheckVec.orR
-          && !shouldClearExtraDecodeInfo
-        ) {
-          when (
-            down.isFiring
-          ) {
-            myTempReorderBufIdx := (
-              RegNext(
-                myTempReorderBufIdx,
-                init=myTempReorderBufIdx.getZero
-              )
-              + 1
-            )
-          }
-          doSendBubbleMainMost(
-            myPsIdBubble=Some(
-              //True
-              False
-            ),
-            myPsIdFwdBubble=Some(
-              True
-            )
-          )
-        }
+        } 
+        //elsewhen (
+        //  myFwdHazardCheckVec.orR
+        //  && !shouldClearExtraDecodeInfo
+        //) {
+        //  when (
+        //    down.isFiring
+        //  ) {
+        //    myTempReorderBufIdx := (
+        //      RegNext(
+        //        myTempReorderBufIdx,
+        //        init=myTempReorderBufIdx.getZero
+        //      )
+        //      + 1
+        //    )
+        //  }
+        //  doSendBubbleMainMost(
+        //    myPsIdBubble=Some(
+        //      //True
+        //      False
+        //    ),
+        //    myPsIdFwdBubble=Some(
+        //      True
+        //    )
+        //  )
+        //}
         when (shouldClearExtraDecodeInfo) {
           doSendBubbleMainMost(
             myPsIdBubble=Some(
@@ -11726,7 +11730,7 @@ case class SnowHousePipeStageExecute(
       cLink.up.isFiring
       && !myShouldIgnoreInstr.last
       && !outp.instrCnt.myPsIdBubble.last
-      && !outp.instrCnt.myPsIdFwdBubble.last
+      && !outp.instrCnt.myPsIdOtherBubble.last
     ) {
       myNonBubbleTag := (
         RegNext(myNonBubbleTag) + 1
