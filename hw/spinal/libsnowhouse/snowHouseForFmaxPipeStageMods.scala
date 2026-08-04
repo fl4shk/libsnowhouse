@@ -4557,8 +4557,8 @@ case class SnowHouseForFmaxPipeStageWriteBack(
                 !myCommitAlmostFinalOutpStm.fire
               )
             )
-            && (
-              Mux(
+            || (
+              !Mux(
                 !myCommitAlmostFinalOutpStm.commit.opIsFwd,
                 myDbgHaveNewNonFwdTag,
                 myDbgHaveNewFwdTag,
@@ -4594,8 +4594,8 @@ case class SnowHouseForFmaxPipeStageWriteBack(
                 !myCommitAlmostFinalOutpStm.fire
               )
             )
-            && (
-              Mux(
+            || (
+              !Mux(
                 !myCommitAlmostFinalOutpStm.commit.opIsFwd,
                 myDbgHaveNewNonFwdTag,
                 myDbgHaveNewFwdTag,
@@ -4624,7 +4624,7 @@ case class SnowHouseForFmaxPipeStageWriteBack(
       if (cfg.optScoreboard) {
         io.dbgInfo.shouldIgnoreInstrAtRegFileWrite := (
           //True
-          Mux(
+          !Mux(
             !myCommitAlmostFinalOutpStm.commit.opIsFwd,
             myDbgHaveNewNonFwdTag,
             myDbgHaveNewFwdTag,
@@ -4632,7 +4632,7 @@ case class SnowHouseForFmaxPipeStageWriteBack(
         )
         io.dbgInfo.myPsIdBubbleAtRegFileWrite := (
           //True
-          Mux(
+          !Mux(
             !myCommitAlmostFinalOutpStm.commit.opIsFwd,
             myDbgHaveNewNonFwdTag,
             myDbgHaveNewFwdTag,
