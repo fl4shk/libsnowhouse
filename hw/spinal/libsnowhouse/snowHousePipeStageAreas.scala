@@ -2514,8 +2514,8 @@ case class SnowHousePipeStageInstrDecode(
         rMyFwdGprTagVec(idx).fire
         && myScoreboardCommitStm.fire
         && (
-          myScoreboardCommitStm.fwdTag
-          === rMyFwdGprTagVec(idx).tag
+          rMyFwdGprTagVec(idx).tag
+          === myScoreboardCommitStm.fwdTag
         )
       ) {
         rMyFwdGprTagVec(idx).valid := False
