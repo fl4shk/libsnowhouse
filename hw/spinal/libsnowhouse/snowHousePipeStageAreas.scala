@@ -2547,9 +2547,11 @@ case class SnowHousePipeStageInstrDecode(
             //  !rMyFwdGprTagVec(idx).fire
             //) {
               rMyFwdGprTagVec(idx).valid := True
-              rMyFwdGprTagVec(idx).cnt := (
-                cfg.optForFmaxPsExFwdSize - 2//1
-              )
+              when (!rMyFwdGprTagVec(idx).fire) {
+                rMyFwdGprTagVec(idx).cnt := (
+                  cfg.optForFmaxPsExFwdSize - 2//1
+                )
+              }
               rMyFwdGprTagVec(idx).tag := myTempFwdTag
             //}
             //when (
