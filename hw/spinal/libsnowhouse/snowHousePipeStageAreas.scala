@@ -2278,7 +2278,7 @@ case class SnowHousePipeStageInstrDecode(
       val valid = Bool()
       def fire = valid
       val tag = UInt(cfg.optScoreboardReorderBufWidth bits)
-      val cnt = UInt(log2Up(cfg.optForFmaxPsExFwdSize - 1 + 1) + 1 bits)
+      val cnt = UInt(log2Up(cfg.optForFmaxPsExFwdSize - 2 + 1) + 1 bits)
     }
 
     val rMyFwdGprTagVec = {
@@ -2546,7 +2546,7 @@ case class SnowHousePipeStageInstrDecode(
             //) {
               rMyFwdGprTagVec(idx).valid := True
               rMyFwdGprTagVec(idx).cnt := (
-                cfg.optForFmaxPsExFwdSize - 1
+                cfg.optForFmaxPsExFwdSize - 2//1
               )
               rMyFwdGprTagVec(idx).tag := myTempFwdTag
             //}
