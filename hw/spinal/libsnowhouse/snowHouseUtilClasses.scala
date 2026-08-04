@@ -1150,6 +1150,7 @@ case class SnowHouseConfig(
         //64
         //8
         16
+        //32
       )
     )
   )

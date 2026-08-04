@@ -884,6 +884,13 @@ case class SnowHouseForFmaxPipeStageInstrDecodeIo(
       Bool()
     )
   )
+  val myScoreboardReorderBufPsIdCanIssue = (
+    cfg.optScoreboard
+  ) generate (
+    in(
+      Bool()
+    )
+  )
   //--------
   val myScoreboardSavedGprTagVec = (
     cfg.optScoreboard
@@ -962,7 +969,10 @@ case class SnowHouseForFmaxPipeStageInstrDecode(
     ),
     myScoreboardReorderBufInFlushEtc=(
       io.myScoreboardReorderBufInFlushEtc
-    )
+    ),
+    myScoreboardReorderBufPsIdCanIssue=(
+      io.myScoreboardReorderBufPsIdCanIssue
+    ),
   )
 
   cLink.up.driveFrom(io.up)(
@@ -1785,6 +1795,13 @@ case class SnowHouseForFmaxPsWbCommitEtc(
       Bool()
     )
   )
+  val scoreboardReorderBufPsIdCanIssue = (
+    cfg.optScoreboard
+  ) generate (
+    out(
+      Bool()
+    )
+  )
   val scoreboardTag = (
     cfg.optScoreboard
   ) generate (
@@ -1889,6 +1906,11 @@ case class SnowHouseForFmaxPsWbReorderBufIo(
       Bool()
     )
   )
+  val psIdCanIssue = (
+    out(
+      Bool()
+    )
+  )
   val postFlushReorderBufIdx = (
     in(
       UInt(cfg.optScoreboardReorderBufWidth bits)
@@ -1910,6 +1932,9 @@ case class SnowHouseForFmaxPsWbReorderBuf(
   //--------
   val myReorderBufSize = (
     1 << cfg.optScoreboardReorderBufWidth
+  )
+  val myOccupancySubAmount = (
+    8
   )
   //val myFifo = (
   //  StreamFifo(
@@ -2377,6 +2402,15 @@ case class SnowHouseForFmaxPsWbReorderBuf(
   //  nextMyShouldIgnoreInstrState := False
   //}
 
+  io.psIdCanIssue := (
+    rOccupancy
+    < (
+      myReorderBufSize
+      - myOccupancySubAmount
+      - (cfg.myPsIdBubbleNumFollowingInstrs + 1)
+    )
+  )
+
   switch (io.push.reorderBufIdx) {
     for (idx <- 0 until (1 << io.push.reorderBufIdx.getWidth)) {
       is (idx) {
@@ -2386,7 +2420,10 @@ case class SnowHouseForFmaxPsWbReorderBuf(
           //!rAttemptPushVec(idx)
           //&& 
           !rValidVec(idx)
-          && rOccupancy < myReorderBufSize - 8//2//6//4//8//- 1
+          && (
+            rOccupancy < myReorderBufSize - myOccupancySubAmount
+          )
+          //2//6//4//8//- 1
           && (
             !rMyShouldIgnoreInstrState.asBits(2)
             && (
@@ -3950,6 +3987,9 @@ case class SnowHouseForFmaxPipeStageWriteBack(
     )
     io.commitEtc.scoreboardReorderBufInFlushEtc := (
       myReorderBuf.io.inFlushEtc
+    )
+    io.commitEtc.scoreboardReorderBufPsIdCanIssue := (
+      myReorderBuf.io.psIdCanIssue
     )
   }
 
