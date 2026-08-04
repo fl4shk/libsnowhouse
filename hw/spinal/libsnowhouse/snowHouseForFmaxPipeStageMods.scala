@@ -2180,10 +2180,10 @@ case class SnowHouseForFmaxPsWbReorderBuf(
         && !io.push.myPsIdBubble
       )
     )
-    && 
-    (
-      !io.push.myPsIdBubble
-    )
+    //&& 
+    //(
+    //  !io.push.myPsIdBubble
+    //)
   )
 
   val myRdAddr = cloneOf(myRam.io.rdAddrPipe.addr)
