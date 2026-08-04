@@ -2436,15 +2436,15 @@ case class SnowHousePipeStageInstrDecode(
       if (cfg.myHaveZeroReg) (
         myScoreboardCommitStm.fire
         && (
-          myScoreboardCommitStm.myNonFwdValid
-          || myScoreboardCommitStm.myNonFwdValid
+           myScoreboardCommitStm.myNonFwdValid
+          || myScoreboardCommitStm.myFwdValid
         )
         && someRightGprIdx.orR
       ) else (
         myScoreboardCommitStm.fire
         && (
           myScoreboardCommitStm.myNonFwdValid
-          || myScoreboardCommitStm.myNonFwdValid
+          || myScoreboardCommitStm.myFwdValid
         )
       )
     )
