@@ -2422,11 +2422,11 @@ case class SnowHousePipeStageInstrDecode(
       (
         if (cfg.myHaveZeroReg) (
           myPartialWriteTagInfoCond
-          && !myTempOpMayNeedHazardCheck
+          //&& !myTempOpMayNeedHazardCheck
           && someLeftGprIdx.orR
         ) else (
           myPartialWriteTagInfoCond
-          && !myTempOpMayNeedHazardCheck
+          //&& !myTempOpMayNeedHazardCheck
         )
       )
     )
@@ -2435,11 +2435,11 @@ case class SnowHousePipeStageInstrDecode(
     ) = (
       if (cfg.myHaveZeroReg) (
         myScoreboardCommitStm.fire
-        && myScoreboardCommitStm.myFwdValid
+        //&& myScoreboardCommitStm.myFwdValid
         && someRightGprIdx.orR
       ) else (
         myScoreboardCommitStm.fire
-        && myScoreboardCommitStm.myFwdValid
+        //&& myScoreboardCommitStm.myFwdValid
       )
     )
 
@@ -2447,29 +2447,8 @@ case class SnowHousePipeStageInstrDecode(
       val left = myLeftGprIdxVec(idx)
       val right = myRightGprIdxVec(idx)
       switch (
-        (
-          //if (cfg.myHaveZeroReg) (
-          //  myPartialWriteTagInfoCond
-          //  && !myTempOpMayNeedHazardCheck
-          //  && myFindFirstRdGprIdx._2.orR
-          //) else (
-          //  myPartialWriteTagInfoCond
-          //  && !myTempOpMayNeedHazardCheck
-          //)
-          myLeftCond(left)
-        )
-        ## (
-          //if (cfg.myHaveZeroReg) (
-          //  myScoreboardCommitStm.fire
-          //  && myScoreboardCommitStm.myFwdValid
-          //  && myRightGprIdx.orR
-          //) else (
-          //  myScoreboardCommitStm.fire
-          //  && myScoreboardCommitStm.myFwdValid
-          //)
-          myRightCond(right)
-        )
-        //## myFindFirstRdGprIdx._1
+        myLeftCond(left)
+        ## myRightCond(right)
         ## (
           left === right
           && left.orR
