@@ -2136,7 +2136,7 @@ case class SnowHouseForFmaxPsWbReorderBuf(
     rMyShouldIgnoreInstrState.asBits(0)
     || (
       rMyShouldIgnoreInstrState.asBits(1)
-      && !io.push.myPsIdBubble
+      //&& !io.push.myPsIdBubble // is this needed anywhere?
     )
   )
   val myAssertValidCond = (
