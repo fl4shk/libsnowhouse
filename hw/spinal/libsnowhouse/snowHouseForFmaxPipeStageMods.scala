@@ -4140,21 +4140,23 @@ case class SnowHouseForFmaxPipeStageWriteBack(
       //)
       if (isNonFwd) {
         someCommitStm.commit.myNonFwdValid := (
-          if (cfg.myHaveZeroReg) (
-            !someMyWbPayload(1).gprIsZeroVec.last.last
-          ) else (
-            True
-          )
+          //if (cfg.myHaveZeroReg) (
+          //  !someMyWbPayload(1).gprIsZeroVec.last.last
+          //) else (
+          //  True
+          //)
+          True
         )
         someCommitStm.commit.myFwdValid := False
       } else {
         someCommitStm.commit.myNonFwdValid := False
         someCommitStm.commit.myFwdValid := (
-          if (cfg.myHaveZeroReg) (
-            !someMyWbPayload(1).gprIsZeroVec.last.last
-          ) else (
-            True
-          )
+          //if (cfg.myHaveZeroReg) (
+          //  !someMyWbPayload(1).gprIsZeroVec.last.last
+          //) else (
+          //  True
+          //)
+          True
         )
       }
       someCommitStm.commit.gprIdxVec := (
@@ -4175,11 +4177,16 @@ case class SnowHouseForFmaxPipeStageWriteBack(
         someCommitStm.commit.myNonFwdValid := (
           someMyWbPayload(1).instrCnt.shouldIgnoreInstr.last
           && someMyWbPayload(1).splitOp.scoreboardOpIsMemAccess
+          && !someMyWbPayload(1).instrCnt.myPsIdBubble.head
+          && myNonFwdWbValid
         )
       } else {
         someCommitStm.commit.myNonFwdValid := False
         someCommitStm.commit.myFwdValid := (
-          False
+          //False
+          //!someMyWbPayload(1).splitOp.scoreboardOpIsMemAccess
+          !someMyWbPayload(1).instrCnt.myPsIdBubble.last
+          && myFwdWbValid
         )
       }
 

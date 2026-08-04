@@ -1919,7 +1919,8 @@ case class SnowHousePipeStageInstrDecode(
     item := False
   })
   def doSendBubbleMainMost(
-    myPsIdBubble: Option[Bool]=Some(True)
+    myPsIdBubble: Option[Bool]=Some(True),
+    myUpdateGprIsOrIsntZero: Boolean=true,
   ): Unit = {
     require(cfg.useLcvDataBus)
     cId.duplicateIt()
@@ -1928,7 +1929,8 @@ case class SnowHousePipeStageInstrDecode(
     //down(pId) := upPayload(1)
     down(pId).setAsBubbleMain(
       //Some(True)
-      myPsIdBubble
+      myPsIdBubble,
+      myUpdateGprIsOrIsntZero=myUpdateGprIsOrIsntZero
     )
   }
 
@@ -2784,7 +2786,8 @@ case class SnowHousePipeStageInstrDecode(
             myPsIdBubble=Some(
               //!shouldClearExtraDecodeInfo
               True
-            )
+            ),
+            //myUpdateGprIsOrIsntZero=false,
           )
         } elsewhen (
           myFwdHazardCheckVec.orR
@@ -2810,7 +2813,8 @@ case class SnowHousePipeStageInstrDecode(
           doSendBubbleMainMost(
             myPsIdBubble=Some(
               False
-            )
+            ),
+            //myUpdateGprIsOrIsntZero=false,
           )
         }
         when (shouldClearExtraDecodeInfo) {
