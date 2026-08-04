@@ -3106,6 +3106,9 @@ case class SnowHousePipeStageInstrDecode(
       }
       doSendBubbleMainMost(
         myPsIdBubble=None,
+        myPsIdOtherBubble=Some(
+          True
+        ),
         myPsIdFwdBubble=Some(
           True
         )
