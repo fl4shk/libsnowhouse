@@ -2115,7 +2115,7 @@ case class SnowHouseForFmaxPsWbReorderBuf(
     val
       IDLE,
       FLUSH,
-      CLEAR_VALID_VEC_ETC,
+      //CLEAR_VALID_VEC_ETC,
       SET_TO_REORDER_BUF_IDX_ETC
       = newElement()
   }
@@ -2295,7 +2295,8 @@ case class SnowHouseForFmaxPsWbReorderBuf(
           cond=(
             myRam.io.rdAddrPipe.fire
             //|| rose(rMyShouldIgnoreInstrState.asBits(0))
-            || rMyShouldIgnoreInstrState.asBits(3)
+            //|| rMyShouldIgnoreInstrState.asBits(3)
+            || rMyShouldIgnoreInstrState.asBits(2)
             //|| 
           ),
           //init=myRdAddr.getZero,
@@ -2328,8 +2329,8 @@ case class SnowHouseForFmaxPsWbReorderBuf(
         )
       ) {
         nextMyShouldIgnoreInstrState := (
-          //MyShouldIgnoreInstrState.SET_TO_REORDER_BUF_IDX_ETC
-          MyShouldIgnoreInstrState.CLEAR_VALID_VEC_ETC
+          MyShouldIgnoreInstrState.SET_TO_REORDER_BUF_IDX_ETC
+          //MyShouldIgnoreInstrState.CLEAR_VALID_VEC_ETC
         )
       } otherwise {
         myRdAddr := (
@@ -2371,14 +2372,14 @@ case class SnowHouseForFmaxPsWbReorderBuf(
       //  }
       //}
     }
-    is (MyShouldIgnoreInstrState.CLEAR_VALID_VEC_ETC) {
-      rValidVec.foreach(item => item := False)
-      rOccupancy := 0x0
-      nextMyShouldIgnoreInstrState := (
-        MyShouldIgnoreInstrState.SET_TO_REORDER_BUF_IDX_ETC
-        //MyShouldIgnoreInstrState.CLEAR_VALID_VEC_ETC
-      )
-    }
+    //is (MyShouldIgnoreInstrState.CLEAR_VALID_VEC_ETC) {
+    //  rValidVec.foreach(item => item := False)
+    //  rOccupancy := 0x0
+    //  nextMyShouldIgnoreInstrState := (
+    //    MyShouldIgnoreInstrState.SET_TO_REORDER_BUF_IDX_ETC
+    //    //MyShouldIgnoreInstrState.CLEAR_VALID_VEC_ETC
+    //  )
+    //}
     is (MyShouldIgnoreInstrState.SET_TO_REORDER_BUF_IDX_ETC) {
       when (
         io.push.valid
@@ -2470,9 +2471,10 @@ case class SnowHouseForFmaxPsWbReorderBuf(
           //&& io.psIdCanIssue
           //2//6//4//8//- 1
           && (
-            !rMyShouldIgnoreInstrState.asBits(2)
-            && (
-              !rMyShouldIgnoreInstrState.asBits(3)
+            //!rMyShouldIgnoreInstrState.asBits(2)
+            (
+              //!rMyShouldIgnoreInstrState.asBits(3)
+              !rMyShouldIgnoreInstrState.asBits(2)
               //rMyShouldIgnoreInstrState.asBits(3)
               || (
                 io.push.valid
