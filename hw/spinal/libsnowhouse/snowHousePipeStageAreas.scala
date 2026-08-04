@@ -2497,7 +2497,8 @@ case class SnowHousePipeStageInstrDecode(
     for (idx <- 0 until cfg.numGprs) {
       when (
         //myPartialWriteTagInfoCond
-        up.isFiring
+        //up.isFiring
+        down.isFiring
         && rMyFwdGprTagVec(idx).fire
         && !rMyFwdGprTagVec(idx).cnt.msb
         //&& myScoreboardCommitStm.fire
@@ -2526,7 +2527,8 @@ case class SnowHousePipeStageInstrDecode(
     switch (
       (
         //myPartialWriteTagInfoCond
-        up.isFiring
+        //up.isFiring
+        down.isFiring
         && !myTempOpMayNeedHazardCheck
         && !upPayload(1).inpDecodeExt.head.opIsMemAccess.last
       )
