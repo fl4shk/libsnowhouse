@@ -2110,8 +2110,63 @@ case class SnowHouseForFmaxPsWbReorderBuf(
     )
   )
 
+  object MyShouldIgnoreInstrState
+  extends SpinalEnum(defaultEncoding=binaryOneHot) {
+    val
+      IDLE,
+      FLUSH,
+      CLEAR_VALID_VEC_ETC,
+      SET_TO_REORDER_BUF_IDX_ETC
+      = newElement()
+  }
+  val nextMyShouldIgnoreInstrState = MyShouldIgnoreInstrState()//Bool()
+  val rMyShouldIgnoreInstrState = (
+    //Reg(Bool(), init=False)
+    RegNext(
+      nextMyShouldIgnoreInstrState,
+      //init=False
+    )
+    init(MyShouldIgnoreInstrState.IDLE)
+  )
+  nextMyShouldIgnoreInstrState := rMyShouldIgnoreInstrState
+
+  val myRdAddr = cloneOf(myRam.io.rdAddrPipe.addr)
+
+  val myAssertValidCondMost = (
+    rMyShouldIgnoreInstrState.asBits(0)
+    || (
+      rMyShouldIgnoreInstrState.asBits(1)
+      && !io.push.myPsIdBubble
+    )
+  )
+  val myAssertValidCond = (
+    myRam.io.wrPulse.fire
+    && myAssertValidCondMost
+  )
+  myRam.io.myExternalInpCond := (
+    myAssertValidCondMost
+    ////True
+    //(
+    //  rMyShouldIgnoreInstrState.asBits(0)
+    //  || (
+    //    rMyShouldIgnoreInstrState.asBits(1)
+    //    && !io.push.myPsIdBubble
+    //  )
+    //)
+    ////&& 
+    ////(
+    ////  !io.push.myPsIdBubble
+    ////)
+  )
+
   //myFifo.io.push << io.push
   //myFifo.io.pop.ready := False
+  val rFlushCnt = (
+    Reg(UInt(cfg.optScoreboardReorderBufWidth + 1 bits))
+    init(myReorderBufSize - 1)
+  )
+  val rSeenFullFlush = rFlushCnt.msb
+
   val rOccupancy = (
     Reg(UInt(log2Up(myReorderBufSize) bits))
     init(0x0)
@@ -2152,41 +2207,6 @@ case class SnowHouseForFmaxPsWbReorderBuf(
 
   //val myPushStm = cloneOf(io.push)
 
-  object MyShouldIgnoreInstrState
-  extends SpinalEnum(defaultEncoding=binaryOneHot) {
-    val
-      IDLE,
-      FLUSH,
-      CLEAR_VALID_VEC_ETC,
-      SET_TO_REORDER_BUF_IDX_ETC
-      = newElement()
-  }
-  val nextMyShouldIgnoreInstrState = MyShouldIgnoreInstrState()//Bool()
-  val rMyShouldIgnoreInstrState = (
-    //Reg(Bool(), init=False)
-    RegNext(
-      nextMyShouldIgnoreInstrState,
-      //init=False
-    )
-    init(MyShouldIgnoreInstrState.IDLE)
-  )
-  nextMyShouldIgnoreInstrState := rMyShouldIgnoreInstrState
-  myRam.io.myExternalInpCond := (
-    //True
-    (
-      rMyShouldIgnoreInstrState.asBits(0)
-      || (
-        rMyShouldIgnoreInstrState.asBits(1)
-        && !io.push.myPsIdBubble
-      )
-    )
-    //&& 
-    //(
-    //  !io.push.myPsIdBubble
-    //)
-  )
-
-  val myRdAddr = cloneOf(myRam.io.rdAddrPipe.addr)
   //when (!rMyShouldIgnoreInstrState) {
   //  myRdAddr := (
   //    RegNextWhen(
@@ -2286,11 +2306,15 @@ case class SnowHouseForFmaxPsWbReorderBuf(
       //rSavedMyRdAddr := (
       //  myRdAddr - 1
       //)
+      val rFlushCnt = myReorderBufSize - 1
     }
     is (MyShouldIgnoreInstrState.FLUSH) {
       when (
         (
-          !rOccupancy.orR
+          (
+            !rOccupancy.orR
+            || rSeenFullFlush
+          )
           //!(rOccupancy >= 2)
           && (
             //!io.push.valid//fire//valid
@@ -2314,6 +2338,9 @@ case class SnowHouseForFmaxPsWbReorderBuf(
             init=myRdAddr.getZero
           ) + 1
         )
+      }
+      when (!rSeenFullFlush) {
+        rFlushCnt := rFlushCnt - 1
       }
 
       //switch ({
@@ -2419,14 +2446,24 @@ case class SnowHouseForFmaxPsWbReorderBuf(
           //!rValidVec.andR
           //!rAttemptPushVec(idx)
           //&& 
-          !rValidVec(idx)
-          && (
-            //rOccupancy < myReorderBufSize - myOccupancySubAmount
-            io.psIdCanIssue
+          (
+            (
+              !rValidVec(idx)
+              && io.psIdCanIssue
+            )
             || (
-              myRdAddr === idx
+              //myRam.io.rdAddrPipe.fire
+              myAssertValidCondMost
+              && myRdAddr === idx
             )
           )
+          //&& (
+          //  //rOccupancy < myReorderBufSize - myOccupancySubAmount
+          //  io.psIdCanIssue
+          //  || (
+          //    myRdAddr === idx
+          //  )
+          //)
           //&& io.psIdCanIssue
           //2//6//4//8//- 1
           && (
@@ -2501,16 +2538,6 @@ case class SnowHouseForFmaxPsWbReorderBuf(
   //)
 
   myRam.io.wrPulse.data.most := io.push.most
-  val myAssertValidCond = (
-    myRam.io.wrPulse.fire
-    && (
-      rMyShouldIgnoreInstrState.asBits(0)
-      || (
-        rMyShouldIgnoreInstrState.asBits(1)
-        && !io.push.myPsIdBubble
-      )
-    )
-  )
 
   when (
     io.push.fire
