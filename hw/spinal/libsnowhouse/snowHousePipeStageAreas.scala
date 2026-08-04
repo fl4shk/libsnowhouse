@@ -3472,11 +3472,13 @@ case class SnowHousePipeStagePreFwd(
     val myTempSaveOutpCondMost = (
       upIsFiring
       && !outp.instrCnt.myPsIdBubble.last
-      && !outp.instrCnt.myPsIdFwdBubble.last
     )
     val myTempSaveOutpCond = (
       myTempSaveOutpCondMost
-      && !outp.inpDecodeExt.last.opIsMemAccess.head
+      && (
+        !outp.inpDecodeExt.last.opIsMemAccess.head
+        || outp.instrCnt.myPsIdFwdBubble.head
+      )
     )
 
     when (
@@ -4945,7 +4947,6 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
     )
     && (
       !io.instrCnt.myPsIdBubble(idx)
-      && !io.instrCnt.myPsIdFwdBubble(idx)
     )
     //myModMemWordValid
   )
@@ -9225,8 +9226,10 @@ case class SnowHousePipeStageExecute(
       cLink.up.isFiring
       //&& outp.gprIsNonZeroVec.last.last
       && !outp.instrCnt.myPsIdBubble.last
-      && !outp.instrCnt.myPsIdFwdBubble.last
-      && !outp.inpDecodeExt.last.opIsMemAccess.head
+      && (
+        !outp.inpDecodeExt.last.opIsMemAccess.head
+        || outp.instrCnt.myPsIdFwdBubble.head
+      )
       //&& !myShouldIgnoreInstr.last
     )
     val myHistFwdInfo = {
@@ -10124,7 +10127,6 @@ case class SnowHousePipeStageExecute(
         tempCondNonLcvDbus
         && (
           !outp.instrCnt.myPsIdBubble.head
-          && !outp.instrCnt.myPsIdFwdBubble.head
           //&& !io.lcvDbus.h2dBus.valid
         )
       )
@@ -10661,31 +10663,30 @@ case class SnowHousePipeStageExecute(
       //cLink.down(args.currPayload).outpDecodeExt.allowOverride
       //cLink.up(args.currPayload) := outp
     }
-
-    //val rInstrCntMem = (
-    //  cfg.optScoreboard
-    //) generate (
-    //  Reg(cloneOf(outp.instrCnt.mem))
-    //  init(0)
-    //)
-    //val rInstrCntNonMem = (
-    //  cfg.optScoreboard
-    //) generate (
-    //  Reg(cloneOf(outp.instrCnt.nonMem))
-    //  init(0)
-    //)
-    //if (cfg.optScoreboard) {
-    //  outp.instrCnt.mem := rInstrCntMem
-    //  outp.instrCnt.nonMem := rInstrCntNonMem
-    //  when (
-    //    !myH2dBus.valid
-    //    && !rSeenH2dBusFire
-    //    && cLink.up.isFiring
-    //    && !outp.instrCnt.myPsIdBubble.head
-    //  ) {
-    //    rInstrCntNonMem := rInstrCntNonMem + 1
-    //  }
-    //}
+    val rInstrCntMem = (
+      cfg.optScoreboard
+    ) generate (
+      Reg(cloneOf(outp.instrCnt.mem))
+      init(0)
+    )
+    val rInstrCntNonMem = (
+      cfg.optScoreboard
+    ) generate (
+      Reg(cloneOf(outp.instrCnt.nonMem))
+      init(0)
+    )
+    if (cfg.optScoreboard) {
+      outp.instrCnt.mem := rInstrCntMem
+      outp.instrCnt.nonMem := rInstrCntNonMem
+      when (
+        !myH2dBus.valid
+        && !rSeenH2dBusFire
+        && cLink.up.isFiring
+        && !outp.instrCnt.myPsIdBubble.head
+      ) {
+        rInstrCntNonMem := rInstrCntNonMem + 1
+      }
+    }
     when (
       if (cfg.optScoreboard) (
         myH2dBus.valid
@@ -10745,7 +10746,7 @@ case class SnowHousePipeStageExecute(
     when (myH2dBus.fire) {
       //rInstrCntMem.lsb := !rInstrCntMem.lsb
       if (cfg.optScoreboard) {
-        //rInstrCntMem := rInstrCntMem + 1
+        rInstrCntMem := rInstrCntMem + 1
         rSeenH2dBusFire := True
         //cLink.down(args.currPayload).instrCnt.shouldIgnoreInstr := (
         //  myShouldIgnoreInstr
@@ -11744,7 +11745,6 @@ case class SnowHousePipeStageExecute(
       cLink.up.isFiring
       && !myShouldIgnoreInstr.last
       && !outp.instrCnt.myPsIdBubble.last
-      && !outp.instrCnt.myPsIdFwdBubble.last
       && !outp.instrCnt.myPsIdOtherBubble.last
     ) {
       myNonBubbleTag := (
