@@ -2823,7 +2823,8 @@ case class SnowHousePipeStageInstrDecode(
     }
     when (
       up.isFiring
-      && upPayload(1).inpDecodeExt.head.opIsMemAccess.last
+      //&& upPayload(1).inpDecodeExt.head.opIsMemAccess.last
+      && upPayload(1).splitOp.opIsMemAccess
     ) {
       myTempNonFwdTag := (
         RegNext(
@@ -2834,7 +2835,8 @@ case class SnowHousePipeStageInstrDecode(
     }
     when (
       up.isFiring
-      && !upPayload(1).inpDecodeExt.head.opIsMemAccess.last
+      //&& !upPayload(1).inpDecodeExt.head.opIsMemAccess.last
+      && !upPayload(1).splitOp.opIsMemAccess
     ) {
       myTempFwdTag := (
         RegNext(
