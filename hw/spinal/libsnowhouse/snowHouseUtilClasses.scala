@@ -1584,11 +1584,15 @@ case class SnowHouseInstrCnt(
   val myPsIdBubble = Vec.fill(cfg.lowerMyFanoutRegPcSetItCnt)(
     Bool()
   )
-  val myPsIdReorderBufForceValid = Vec.fill(
-    cfg.lowerMyFanoutRegPcSetItCnt
-  )(
+  //val myPsIdReorderBufForceValid = Vec.fill(
+  //  cfg.lowerMyFanoutRegPcSetItCnt
+  //)(
+  //  Bool()
+  //)
+  val myPsIdFwdBubble = Vec.fill(cfg.lowerMyFanoutRegPcSetItCnt)(
     Bool()
   )
+
   //val myReorderBufFlushPsIdBubble = (
   //  Vec.fill(cfg.lowerMyFanoutRegPcSetItCnt)(
   //    Bool()
@@ -2372,7 +2376,7 @@ case class SnowHousePipePayload(
     myPsIdBubble: Option[Bool]=Some(True),
     myUpdateGprIsOrIsntZero: Boolean=true,
     myUpdateRegPcSetItCnt: Boolean=true,
-    myPsIdReorderBufForceValid: Option[Bool]=None,
+    //myPsIdReorderBufForceValid: Option[Bool]=None,
   ): Unit = {
     //instrCnt.myPsIdBubble.foreach(item => {
     //  item := True
@@ -2380,13 +2384,13 @@ case class SnowHousePipePayload(
     if (myPsIdBubble != None) {
       instrCnt.setAsPsIdBubbleMain(somePsIdBubble=myPsIdBubble.get)
     }
-    if (myPsIdReorderBufForceValid != None) {
-      instrCnt.myPsIdReorderBufForceValid.foreach(item => {
-        item := (
-          myPsIdReorderBufForceValid.get
-        )
-      })
-    }
+    //if (myPsIdReorderBufForceValid != None) {
+    //  instrCnt.myPsIdReorderBufForceValid.foreach(item => {
+    //    item := (
+    //      myPsIdReorderBufForceValid.get
+    //    )
+    //  })
+    //}
 
     splitOp.setToDefault()
     branchTgtBufElem(0) := (

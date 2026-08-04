@@ -1921,7 +1921,8 @@ case class SnowHousePipeStageInstrDecode(
   def doSendBubbleMainMost(
     myPsIdBubble: Option[Bool]=Some(True),
     //myUpdateGprIsOrIsntZero: Boolean=true,
-    myPsIdReorderBufForceValid: Option[Bool]=None,
+    //myPsIdReorderBufForceValid: Option[Bool]=None,
+    myPsIdFwdBubble: Option[Bool]=None,
   ): Unit = {
     require(cfg.useLcvDataBus)
     cId.duplicateIt()
@@ -1932,8 +1933,13 @@ case class SnowHousePipeStageInstrDecode(
       //Some(True)
       myPsIdBubble=myPsIdBubble,
       //myUpdateGprIsOrIsntZero=myUpdateGprIsOrIsntZero
-      myPsIdReorderBufForceValid=myPsIdReorderBufForceValid,
+      //myPsIdReorderBufForceValid=myPsIdReorderBufForceValid,
     )
+    if (myPsIdFwdBubble != None) {
+      down(pId).instrCnt.myPsIdFwdBubble.foreach(item => {
+        item := myPsIdFwdBubble.get
+      })
+    }
   }
 
   val myNonScoreboardLcvDbusPartAArea = (
@@ -2912,6 +2918,9 @@ case class SnowHousePipeStageInstrDecode(
             //  //False
             //)
             //myUpdateGprIsOrIsntZero=false,
+            myPsIdFwdBubble=Some(
+              True
+            )
           )
         }
         when (shouldClearExtraDecodeInfo) {
@@ -11973,15 +11982,13 @@ case class SnowHousePipeStageExecute(
     )
     when (
       cLink.up.isFiring
+      && !myShouldIgnoreInstr.last
+      && !outp.instrCnt.myPsIdBubble.last
+      && !outp.instrCnt.myPsIdFwdBubble.last
     ) {
-      when (
-        !myShouldIgnoreInstr.last
-        && !outp.instrCnt.myPsIdBubble.last
-      ) {
-        myNonBubbleTag := (
-          RegNext(myNonBubbleTag) + 1
-        )
-      }
+      myNonBubbleTag := (
+        RegNext(myNonBubbleTag) + 1
+      )
     }
 
     //myNonBubbleTag := (
