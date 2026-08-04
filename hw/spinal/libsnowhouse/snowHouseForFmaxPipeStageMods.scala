@@ -126,6 +126,8 @@ case class SnowHouseScoreboardIssuePayload(
 
  // reorder buffer index
   val reorderBufIdx = UInt(cfg.optScoreboardReorderBufWidth bits)
+  val nonFwdTag = UInt(cfg.optScoreboardReorderBufWidth bits)
+  val fwdTag = UInt(cfg.optScoreboardReorderBufWidth bits)
   //val tag = UInt(cfg.optScoreboardTagWidth bits)
 }
 
@@ -3948,6 +3950,47 @@ case class SnowHouseForFmaxPipeStageWriteBack(
     //],
     isNonFwd: Boolean,
   ): Unit = {
+    val myTempNonFwdTag = (
+      someMyWbPayload(1).instrCnt.scoreboardIssuePayload.nonFwdTag
+    )
+    val myTempFwdTag = (
+      someMyWbPayload(1).instrCnt.scoreboardIssuePayload.fwdTag
+    )
+    val myHistNonFwdTag = (
+      isNonFwd
+    ) generate (
+      History(
+        that=myTempNonFwdTag,
+        when=someCommitStm.fire,
+        length=2,
+        init=(
+          U(s"${myTempNonFwdTag.getWidth}'d1")
+        )
+      )
+    )
+    val haveNewNonFwdTag = (
+      isNonFwd
+    ) generate (
+      myHistNonFwdTag(0) =/= myHistNonFwdTag(1)
+    )
+    val myHistFwdTag = (
+      !isNonFwd
+    ) generate (
+      History(
+        that=myTempFwdTag,
+        when=someCommitStm.fire,
+        length=2,
+        init=(
+          U(s"${myTempFwdTag.getWidth}'d1")
+        )
+      )
+    )
+    val haveNewFwdTag = (
+      !isNonFwd
+    ) generate (
+      myHistFwdTag(0) =/= myHistFwdTag(1)
+    )
+
     if (cfg.optScoreboard) {
       someCommitStm.myShouldIgnoreInstr := (
         someMyWbPayload(1).instrCnt.shouldIgnoreInstr.last
@@ -4177,16 +4220,22 @@ case class SnowHouseForFmaxPipeStageWriteBack(
         someCommitStm.commit.myNonFwdValid := (
           someMyWbPayload(1).instrCnt.shouldIgnoreInstr.last
           && someMyWbPayload(1).splitOp.scoreboardOpIsMemAccess
-          && !someMyWbPayload(1).instrCnt.myPsIdBubble.head
-          && myNonFwdWbValid
+          //&& !someMyWbPayload(1).instrCnt.myPsIdBubble.head
+          //&& myNonFwdWbValid
+          && (
+            //someMyWbPayload(1).
+            haveNewNonFwdTag
+          )
         )
       } else {
         someCommitStm.commit.myNonFwdValid := False
         someCommitStm.commit.myFwdValid := (
           //False
           //!someMyWbPayload(1).splitOp.scoreboardOpIsMemAccess
-          !someMyWbPayload(1).instrCnt.myPsIdBubble.last
-          && myFwdWbValid
+          //!someMyWbPayload(1).instrCnt.myPsIdBubble.last
+          //someMyWbPayload(1).instrCnt.myPsIdReorderBufForceValid.last
+          //&& myFwdWbValid
+          haveNewFwdTag
         )
       }
 

@@ -1920,7 +1920,8 @@ case class SnowHousePipeStageInstrDecode(
   })
   def doSendBubbleMainMost(
     myPsIdBubble: Option[Bool]=Some(True),
-    myUpdateGprIsOrIsntZero: Boolean=true,
+    //myUpdateGprIsOrIsntZero: Boolean=true,
+    myPsIdReorderBufForceValid: Option[Bool]=None,
   ): Unit = {
     require(cfg.useLcvDataBus)
     cId.duplicateIt()
@@ -1929,8 +1930,9 @@ case class SnowHousePipeStageInstrDecode(
     //down(pId) := upPayload(1)
     down(pId).setAsBubbleMain(
       //Some(True)
-      myPsIdBubble,
-      myUpdateGprIsOrIsntZero=myUpdateGprIsOrIsntZero
+      myPsIdBubble=myPsIdBubble,
+      //myUpdateGprIsOrIsntZero=myUpdateGprIsOrIsntZero
+      myPsIdReorderBufForceValid=myPsIdReorderBufForceValid,
     )
   }
 
@@ -2673,8 +2675,28 @@ case class SnowHousePipeStageInstrDecode(
     //  )
     //)
 
+    def myTempNonFwdTag = (
+      upPayload(1).instrCnt.scoreboardIssuePayload.nonFwdTag
+    )
+    def myTempFwdTag = (
+      upPayload(1).instrCnt.scoreboardIssuePayload.fwdTag
+    )
+
     def myTempReorderBufIdx = (
       upPayload(1).instrCnt.scoreboardIssuePayload.reorderBufIdx
+    )
+
+    myTempNonFwdTag := (
+      RegNext(
+        myTempNonFwdTag,
+        init=myTempNonFwdTag.getZero
+      )
+    )
+    myTempFwdTag := (
+      RegNext(
+        myTempFwdTag,
+        init=myTempFwdTag.getZero
+      )
     )
 
     myTempReorderBufIdx := (
@@ -2759,6 +2781,29 @@ case class SnowHousePipeStageInstrDecode(
         )
       )
     }
+    when (
+      up.isFiring
+      && upPayload(1).inpDecodeExt.head.opIsMemAccess.last
+    ) {
+      myTempNonFwdTag := (
+        RegNext(
+          myTempNonFwdTag,
+          init=myTempNonFwdTag.getZero
+        ) + 1
+      )
+    }
+    when (
+      up.isFiring
+      && !upPayload(1).inpDecodeExt.head.opIsMemAccess.last
+    ) {
+      myTempFwdTag := (
+        RegNext(
+          myTempFwdTag,
+          init=myTempFwdTag.getZero
+        ) + 1
+      )
+    }
+
     switch (rScoreboardFlushState) {
       //--------
       is (ScoreboardFlushState.IDLE) {
@@ -2793,6 +2838,13 @@ case class SnowHousePipeStageInstrDecode(
           myFwdHazardCheckVec.orR
           && !shouldClearExtraDecodeInfo
         ) {
+          //doSendBubbleMainMost(
+          //  myPsIdBubble=Some(
+          //    //!shouldClearExtraDecodeInfo
+          //    True
+          //  ),
+          //  //myUpdateGprIsOrIsntZero=false,
+          //)
           //cId.haltIt()
           when (
             down.isFiring
@@ -2810,12 +2862,17 @@ case class SnowHousePipeStageInstrDecode(
               + 1
             )
           }
-          doSendBubbleMainMost(
-            myPsIdBubble=Some(
-              False
-            ),
-            //myUpdateGprIsOrIsntZero=false,
-          )
+          //doSendBubbleMainMost(
+          //  myPsIdBubble=Some(
+          //    True
+          //    //False
+          //  ),
+          //  myPsIdReorderBufForceValid=Some(
+          //    True,
+          //    //False
+          //  )
+          //  //myUpdateGprIsOrIsntZero=false,
+          //)
         }
         when (shouldClearExtraDecodeInfo) {
           doSendBubbleMainMost(
@@ -2823,7 +2880,10 @@ case class SnowHousePipeStageInstrDecode(
               //!shouldClearExtraDecodeInfo
               //True
               False
-            )
+            ),
+            //myPsIdReorderBufForceValid=Some(
+            //  True,
+            //)
           )
           rScoreboardFlushState := ScoreboardFlushState.FLUSH_PIPE
         }
