@@ -128,6 +128,7 @@ case class SnowHouseScoreboardIssuePayload(
   val reorderBufIdx = UInt(cfg.optScoreboardReorderBufWidth bits)
   val nonFwdTag = UInt(cfg.optScoreboardReorderBufWidth bits)
   val fwdTag = UInt(cfg.optScoreboardReorderBufWidth bits)
+  val nonBubbleTag = UInt(cfg.optScoreboardReorderBufWidth bits)
   //val tag = UInt(cfg.optScoreboardTagWidth bits)
 }
 
@@ -4472,54 +4473,79 @@ case class SnowHouseForFmaxPipeStageWriteBack(
     //  )
     //)
 
-    val myDbgTempNonFwdTag = (
+    val myDbgTempNonBubbleTag = (
       io.dbgInfo != null
     ) generate (
       //someMyWbPayload(1).instrCnt.scoreboardIssuePayload.nonFwdTag
       myCommitAlmostFinalOutpStm
-      .myWbPayload.instrCnt.scoreboardIssuePayload.nonFwdTag
+      .myWbPayload.instrCnt.scoreboardIssuePayload.nonBubbleTag
     )
-    val myDbgTempFwdTag = (
-      io.dbgInfo != null
-    ) generate (
-      //someMyWbPayload(1).instrCnt.scoreboardIssuePayload.fwdTag
-      myCommitAlmostFinalOutpStm
-      .myWbPayload.instrCnt.scoreboardIssuePayload.fwdTag
-    )
-    val myDbgHistNonFwdTag = (
+    val myDbgHistNonBubbleTag = (
       io.dbgInfo != null
     ) generate (
       History(
-        that=myDbgTempNonFwdTag,
+        that=myDbgTempNonBubbleTag,
         when=myCommitAlmostFinalOutpStm.fire,
         length=2,
         init=(
-          U(s"${myDbgTempNonFwdTag.getWidth}'d1")
+          U(s"${myDbgTempNonBubbleTag.getWidth}'d1")
         )
       )
     )
-    val myDbgHaveNewNonFwdTag = (
+    val myDbgHaveNewNonBubbleTag = (
       io.dbgInfo != null
     ) generate (
-      myDbgHistNonFwdTag(0) =/= myDbgHistNonFwdTag(1)
+      myDbgHistNonBubbleTag(0) =/= myDbgHistNonBubbleTag(1)
     )
-    val myDbgHistFwdTag = (
-      io.dbgInfo != null
-    ) generate (
-      History(
-        that=myDbgTempFwdTag,
-        when=myCommitAlmostFinalOutpStm.fire,
-        length=2,
-        init=(
-          U(s"${myDbgTempFwdTag.getWidth}'d1")
-        )
-      )
-    )
-    val myDbgHaveNewFwdTag = (
-      io.dbgInfo != null
-    ) generate (
-      myDbgHistFwdTag(0) =/= myDbgHistFwdTag(1)
-    )
+
+    //val myDbgTempNonFwdTag = (
+    //  io.dbgInfo != null
+    //) generate (
+    //  //someMyWbPayload(1).instrCnt.scoreboardIssuePayload.nonFwdTag
+    //  myCommitAlmostFinalOutpStm
+    //  .myWbPayload.instrCnt.scoreboardIssuePayload.nonFwdTag
+    //)
+    //val myDbgTempFwdTag = (
+    //  io.dbgInfo != null
+    //) generate (
+    //  //someMyWbPayload(1).instrCnt.scoreboardIssuePayload.fwdTag
+    //  myCommitAlmostFinalOutpStm
+    //  .myWbPayload.instrCnt.scoreboardIssuePayload.fwdTag
+    //)
+    //val myDbgHistNonFwdTag = (
+    //  io.dbgInfo != null
+    //) generate (
+    //  History(
+    //    that=myDbgTempNonFwdTag,
+    //    when=myCommitAlmostFinalOutpStm.fire,
+    //    length=2,
+    //    init=(
+    //      U(s"${myDbgTempNonFwdTag.getWidth}'d1")
+    //    )
+    //  )
+    //)
+    //val myDbgHaveNewNonFwdTag = (
+    //  io.dbgInfo != null
+    //) generate (
+    //  myDbgHistNonFwdTag(0) =/= myDbgHistNonFwdTag(1)
+    //)
+    //val myDbgHistFwdTag = (
+    //  io.dbgInfo != null
+    //) generate (
+    //  History(
+    //    that=myDbgTempFwdTag,
+    //    when=myCommitAlmostFinalOutpStm.fire,
+    //    length=2,
+    //    init=(
+    //      U(s"${myDbgTempFwdTag.getWidth}'d1")
+    //    )
+    //  )
+    //)
+    //val myDbgHaveNewFwdTag = (
+    //  io.dbgInfo != null
+    //) generate (
+    //  myDbgHistFwdTag(0) =/= myDbgHistFwdTag(1)
+    //)
     when (
       //myCommitOutpStm.fire
       myCommitAlmostFinalOutpStm.fire
@@ -4558,11 +4584,12 @@ case class SnowHouseForFmaxPipeStageWriteBack(
               )
             )
             || (
-              !Mux(
-                !myCommitAlmostFinalOutpStm.commit.opIsFwd,
-                myDbgHaveNewNonFwdTag,
-                myDbgHaveNewFwdTag,
-              )
+              !myDbgHaveNewNonBubbleTag
+              //!Mux(
+              //  !myCommitAlmostFinalOutpStm.commit.opIsFwd,
+              //  myDbgHaveNewNonFwdTag,
+              //  myDbgHaveNewFwdTag,
+              //)
             )
           )
         ) else (
@@ -4595,11 +4622,12 @@ case class SnowHouseForFmaxPipeStageWriteBack(
               )
             )
             || (
-              !Mux(
-                !myCommitAlmostFinalOutpStm.commit.opIsFwd,
-                myDbgHaveNewNonFwdTag,
-                myDbgHaveNewFwdTag,
-              )
+              !myDbgHaveNewNonBubbleTag
+              //!Mux(
+              //  !myCommitAlmostFinalOutpStm.commit.opIsFwd,
+              //  myDbgHaveNewNonFwdTag,
+              //  myDbgHaveNewFwdTag,
+              //)
             )
           )
         } else {

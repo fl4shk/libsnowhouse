@@ -2264,8 +2264,6 @@ case class SnowHousePipeStageInstrDecode(
       )
     )
 
-
-
     val rMyNonFwdGprTagVec = (
       //Reg(UInt(cfg.numGprs bits))
       //init(0x0)
@@ -11958,6 +11956,17 @@ case class SnowHousePipeStageExecute(
   //  )
   //}
   //for (idx <- 0 until cfg.regFileCfg.memArrSize) {
+    outp.instrCnt.scoreboardIssuePayload.nonBubbleTag := (
+      RegNextWhen(
+        (outp.instrCnt.scoreboardIssuePayload.nonBubbleTag + 1),
+        cond=(
+          cLink.up.isFiring
+          && !myShouldIgnoreInstr.last
+          && !outp.instrCnt.myPsIdBubble.last
+        )
+      )
+      init(0x0)
+    )
 
     when (myShouldIgnoreInstr.last) {
       //outp.gprIsZeroVec.last.foreach(item => {
