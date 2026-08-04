@@ -4621,24 +4621,24 @@ case class SnowHouseForFmaxPipeStageWriteBack(
         myCommitAlmostFinalOutpStm.myWbPayload.gprIdxVec
       )
     } otherwise {
-      //if (cfg.optScoreboard) {
-      //  io.dbgInfo.shouldIgnoreInstrAtRegFileWrite := (
-      //    //True
-      //    !Mux(
-      //      !myCommitAlmostFinalOutpStm.commit.opIsFwd,
-      //      myDbgHaveNewNonFwdTag,
-      //      myDbgHaveNewFwdTag,
-      //    )
-      //  )
-      //  io.dbgInfo.myPsIdBubbleAtRegFileWrite := (
-      //    //True
-      //    !Mux(
-      //      !myCommitAlmostFinalOutpStm.commit.opIsFwd,
-      //      myDbgHaveNewNonFwdTag,
-      //      myDbgHaveNewFwdTag,
-      //    )
-      //  )
-      //}
+      if (cfg.optScoreboard) {
+        io.dbgInfo.shouldIgnoreInstrAtRegFileWrite := (
+          True
+          //!Mux(
+          //  !myCommitAlmostFinalOutpStm.commit.opIsFwd,
+          //  myDbgHaveNewNonFwdTag,
+          //  myDbgHaveNewFwdTag,
+          //)
+        )
+        io.dbgInfo.myPsIdBubbleAtRegFileWrite := (
+          True
+          //!Mux(
+          //  !myCommitAlmostFinalOutpStm.commit.opIsFwd,
+          //  myDbgHaveNewNonFwdTag,
+          //  myDbgHaveNewFwdTag,
+          //)
+        )
+      }
     }
   }
 
