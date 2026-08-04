@@ -2377,6 +2377,7 @@ case class SnowHousePipeStageInstrDecode(
 
     val myPartialWriteTagInfoCond = (
       up.isFiring
+      && myScoreboardReorderBufPsIdCanIssue
       && !shouldClearExtraDecodeInfo
     )
 
@@ -2862,6 +2863,30 @@ case class SnowHousePipeStageInstrDecode(
       //--------
       is (ScoreboardFlushState.IDLE) {
         when (
+          !myScoreboardReorderBufPsIdCanIssue
+          && !shouldClearExtraDecodeInfo
+        ) {
+          //cId.haltIt()
+          //cId.haltIt()
+          //doSendBubbleMainMost(
+          //  
+          //)
+          doSendBubbleMainMost(
+            myPsIdBubble=Some(
+              //!shouldClearExtraDecodeInfo
+              True
+              //False
+            ),
+            //myPsIdOtherBubble=Some(
+            //  True
+            //),
+            //myPsIdFwdBubble=Some(
+            //  myFwdHazardCheckVec.orR
+            //),
+            ////myUpdateGprIsOrIsntZero=false,
+          )
+        }
+        when (
           up.isFiring
           //|| 
           //(
@@ -2886,6 +2911,7 @@ case class SnowHousePipeStageInstrDecode(
             myNonFwdHazardCheckVec.orR
             || myFwdHazardCheckVec.orR
           )
+          && myScoreboardReorderBufPsIdCanIssue
           && !shouldClearExtraDecodeInfo
         ) {
           when (
@@ -2959,6 +2985,7 @@ case class SnowHousePipeStageInstrDecode(
 
         when (
           up.isFiring
+          && myScoreboardReorderBufPsIdCanIssue
           && !shouldClearExtraDecodeInfo
           && myGprTagInfoFifo.io.availability <= 2
         ) {
@@ -2967,6 +2994,13 @@ case class SnowHousePipeStageInstrDecode(
       }
       //--------
       is (ScoreboardFlushState.FLUSH_PIPE) {
+        when (
+          !myScoreboardReorderBufPsIdCanIssue
+          //&& !shouldClearExtraDecodeInfo
+        ) {
+          //cId.haltIt()
+        }
+
         when (down.isFiring) {
           myTempReorderBufIdx := (
             RegNext(
@@ -3089,28 +3123,28 @@ case class SnowHousePipeStageInstrDecode(
       }
     }
 
-    when (
-      !myScoreboardReorderBufPsIdCanIssue
-    ) {
-      //cId.haltIt()
-      //doSendBubbleMainMost(
-      //  
-      //)
-      doSendBubbleMainMost(
-        myPsIdBubble=Some(
-          //!shouldClearExtraDecodeInfo
-          //True
-          False
-        ),
-        myPsIdOtherBubble=Some(
-          True
-        ),
-        myPsIdFwdBubble=Some(
-          myFwdHazardCheckVec.orR
-        ),
-        //myUpdateGprIsOrIsntZero=false,
-      )
-    }
+    //when (
+    //  !myScoreboardReorderBufPsIdCanIssue
+    //) {
+    //  //cId.haltIt()
+    //  //doSendBubbleMainMost(
+    //  //  
+    //  //)
+    //  doSendBubbleMainMost(
+    //    myPsIdBubble=Some(
+    //      //!shouldClearExtraDecodeInfo
+    //      //True
+    //      False
+    //    ),
+    //    myPsIdOtherBubble=Some(
+    //      True
+    //    ),
+    //    myPsIdFwdBubble=Some(
+    //      myFwdHazardCheckVec.orR
+    //    ),
+    //    //myUpdateGprIsOrIsntZero=false,
+    //  )
+    //}
 
     down(pId).splitOp.scoreboardOpIsMemAccess := (
       upPayload(1).splitOp.opIsMemAccess
