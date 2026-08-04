@@ -2459,11 +2459,15 @@ case class SnowHouseForFmaxPsWbReorderBuf(
 
   when (
     io.push.fire
-    && io.push.myShouldIgnoreInstr
+    && (
+      io.push.myShouldIgnoreInstr
+      || io.push.myPsIdBubble
+    )
     //&& rMyShouldIgnoreInstrCnt >= myMaxValShouldIgnoreInstrCnt
     //&& io.push.opIsMemAccess
   ) {
     myRam.io.wrPulse.data.commit.myNonFwdValid := False//True
+    myRam.io.wrPulse.data.commit.myFwdValid := False//True
     //myRam.io.wrPulse.data.commit.myGprIdx.valid := False//True
   }
 

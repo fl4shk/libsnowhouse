@@ -2396,17 +2396,23 @@ case class SnowHousePipeStageInstrDecode(
     )(
       UInt(log2Up(cfg.numGprs) bits)
     )
+    val myRightGprIdxVec = Vec.fill(
+      cfg.regFileCfg.modRdPortCnt
+    )(
+      UInt(log2Up(cfg.numGprs) bits)
+    )
 
     for (idx <- 0 until cfg.regFileCfg.modRdPortCnt) {
       myLeftGprIdxVec(idx) := upPayload(1).gprIdxVec(idx)
+      myRightGprIdxVec(idx) := myScoreboardCommitStm.gprIdxVec(idx)
     }
 
-    val myRightGprIdx = myScoreboardCommitStm.gprIdxVec.last
-    val myFindFirstRdGprIdx = myLeftGprIdxVec.sFindFirst(
-      item => (
-        item === myRightGprIdx
-      )
-    )
+    //val myRightGprIdx = myScoreboardCommitStm.gprIdxVec.last
+    //val myFindFirstRdGprIdx = myLeftGprIdxVec.sFindFirst(
+    //  item => (
+    //    item === myRightGprIdx
+    //  )
+    //)
     //when (myFindFirstRdGprIdx._1) {
     //} otherwise {
     //}
@@ -2424,111 +2430,123 @@ case class SnowHousePipeStageInstrDecode(
         )
       )
     )
-    val myRightCond = (
+    def myRightCond(
+      someRightGprIdx: UInt
+    ) = (
       if (cfg.myHaveZeroReg) (
         myScoreboardCommitStm.fire
         && myScoreboardCommitStm.myFwdValid
-        && myRightGprIdx.orR
+        && someRightGprIdx.orR
       ) else (
         myScoreboardCommitStm.fire
         && myScoreboardCommitStm.myFwdValid
       )
     )
 
-    //switch (
-    //  (
-    //    if (cfg.myHaveZeroReg) (
-    //      myPartialWriteTagInfoCond
-    //      && !myTempOpMayNeedHazardCheck
-    //      && myFindFirstRdGprIdx._2.orR
-    //    ) else (
-    //      myPartialWriteTagInfoCond
-    //      && !myTempOpMayNeedHazardCheck
-    //    )
-    //  )
-    //  ## (
-    //    if (cfg.myHaveZeroReg) (
-    //      myScoreboardCommitStm.fire
-    //      && myScoreboardCommitStm.myFwdValid
-    //      && myRightGprIdx.orR
-    //    ) else (
-    //      myScoreboardCommitStm.fire
-    //      && myScoreboardCommitStm.myFwdValid
-    //    )
-    //  )
-    //  ## myFindFirstRdGprIdx._1
-    //) {
-    //  is (M"10-") {
-    //    //rSavedGprInUseCntVec(myGprIdxLeft) := (
-    //    //  rSavedGprInUseCntVec(myGprIdxLeft) - 1
-    //    //)
-    //  }
-    //  is (M"01-") {
-    //    rSavedGprInUseCntVec(myRightGprIdx) := (
-    //      rSavedGprInUseCntVec(myRightGprIdx) + 1
-    //    )
-    //  }
-    //  is (M"110") {
-    //    //rSavedGprInUseCntVec(myGprIdxLeft) := (
-    //    //  rSavedGprInUseCntVec(myGprIdxLeft) - 1
-    //    //)
-    //    rSavedGprInUseCntVec(myRightGprIdx) := (
-    //      rSavedGprInUseCntVec(myRightGprIdx) + 1
-    //    )
-    //  }
-    //  default {
-    //  }
-    //}
-
-    if (cfg.regFileCfg.modRdPortCnt == 2) {
-      when (myFindFirstRdGprIdx._1) {
-        //when (myLeftGprIdxVec(0) =/= myLeftGprIdxVec(1)) {
-        //}
-        switch (myFindFirstRdGprIdx._2) {
-          for (idx <- 0 until cfg.regFileCfg.modRdPortCnt) {
-            is (idx) {
-              val myTempLeftGprIdx = (
-                myLeftGprIdxVec(
-                  (idx + 1) % cfg.regFileCfg.modRdPortCnt
-                )
-              )
-              rSavedGprInUseCntVec(myTempLeftGprIdx) := (
-                rSavedGprInUseCntVec(myTempLeftGprIdx) - 1
-              )
-            }
-          }
-        }
-      } otherwise {
-        myLeftGprIdxVec.foreach(item => {
-          when (myLeftCond(item)) {
-            rSavedGprInUseCntVec(item) := (
-              rSavedGprInUseCntVec(item) - 1
-            )
-          }
-        })
-        when (myRightCond) {
-          rSavedGprInUseCntVec(myRightGprIdx) := (
-            rSavedGprInUseCntVec(myRightGprIdx) + 1
+    for (idx <- 0 until cfg.regFileCfg.modRdPortCnt) {
+      val left = myLeftGprIdxVec(idx)
+      val right = myRightGprIdxVec(idx)
+      switch (
+        (
+          //if (cfg.myHaveZeroReg) (
+          //  myPartialWriteTagInfoCond
+          //  && !myTempOpMayNeedHazardCheck
+          //  && myFindFirstRdGprIdx._2.orR
+          //) else (
+          //  myPartialWriteTagInfoCond
+          //  && !myTempOpMayNeedHazardCheck
+          //)
+          myLeftCond(left)
+        )
+        ## (
+          //if (cfg.myHaveZeroReg) (
+          //  myScoreboardCommitStm.fire
+          //  && myScoreboardCommitStm.myFwdValid
+          //  && myRightGprIdx.orR
+          //) else (
+          //  myScoreboardCommitStm.fire
+          //  && myScoreboardCommitStm.myFwdValid
+          //)
+          myRightCond(right)
+        )
+        //## myFindFirstRdGprIdx._1
+        ## (
+          left === right
+          && left.orR
+        )
+      ) {
+        is (M"10-") {
+          rSavedGprInUseCntVec(left) := (
+            rSavedGprInUseCntVec(left) - 1
           )
         }
+        is (M"01-") {
+          rSavedGprInUseCntVec(right) := (
+            rSavedGprInUseCntVec(right) + 1
+          )
+        }
+        is (M"110") {
+          rSavedGprInUseCntVec(left) := (
+            rSavedGprInUseCntVec(left) - 1
+          )
+          rSavedGprInUseCntVec(right) := (
+            rSavedGprInUseCntVec(right) + 1
+          )
+        }
+        default {
+        }
       }
-      //when (
-      //  myFindFirstRdGprIdx._1
-      //) {
-      //} otherwise {
-      //}
-      //when (
-      //) {
-      //}
-    } 
+    }
+
+    //if (cfg.regFileCfg.modRdPortCnt == 2) {
+    //  when (myFindFirstRdGprIdx._1) {
+    //    //when (myLeftGprIdxVec(0) =/= myLeftGprIdxVec(1)) {
+    //    //}
+    //    switch (myFindFirstRdGprIdx._2) {
+    //      for (idx <- 0 until cfg.regFileCfg.modRdPortCnt) {
+    //        is (idx) {
+    //          val myTempLeftGprIdx = (
+    //            myLeftGprIdxVec(
+    //              (idx + 1) % cfg.regFileCfg.modRdPortCnt
+    //            )
+    //          )
+    //          rSavedGprInUseCntVec(myTempLeftGprIdx) := (
+    //            rSavedGprInUseCntVec(myTempLeftGprIdx) - 1
+    //          )
+    //        }
+    //      }
+    //    }
+    //  } otherwise {
+    //    myLeftGprIdxVec.foreach(item => {
+    //      when (myLeftCond(item)) {
+    //        rSavedGprInUseCntVec(item) := (
+    //          rSavedGprInUseCntVec(item) - 1
+    //        )
+    //      }
+    //    })
+    //    when (myRightCond) {
+    //      rSavedGprInUseCntVec(myRightGprIdx) := (
+    //        rSavedGprInUseCntVec(myRightGprIdx) + 1
+    //      )
+    //    }
+    //  }
+    //  //when (
+    //  //  myFindFirstRdGprIdx._1
+    //  //) {
+    //  //} otherwise {
+    //  //}
+    //  //when (
+    //  //) {
+    //  //}
+    //} 
     //else if (cfg.regFileCfg.modRdPortCnt == 3) {
     //} 
-    else {
-      require(
-        false,
-        "Not yet implemented"
-      )
-    }
+    //else {
+    //  require(
+    //    false,
+    //    "Not yet implemented"
+    //  )
+    //}
 
     //switch (
     //) {
@@ -2788,6 +2806,22 @@ case class SnowHousePipeStageInstrDecode(
           && !shouldClearExtraDecodeInfo
         ) {
           //cId.haltIt()
+          when (
+            down.isFiring
+            //down.isFiring
+            //&& !shouldClearExtraDecodeInfo
+            //|| (
+            //  down.isFiring
+            //)
+          ) {
+            myTempReorderBufIdx := (
+              RegNext(
+                myTempReorderBufIdx,
+                init=myTempReorderBufIdx.getZero
+              )
+              + 1
+            )
+          }
           doSendBubbleMainMost(
             myPsIdBubble=Some(
               False
