@@ -1154,6 +1154,11 @@ case class SnowHouseConfig(
       )
     )
   )
+  val optScoreboardTagWidth = (
+    //6
+    //optScoreboardReorderBufWidth
+    4
+  )
 
   //--------
   val cpyCpyuiOpInfoMap = LinkedHashMap[Int, OpInfo]()
@@ -1633,7 +1638,7 @@ case class SnowHouseInstrCnt(
   ) = (
     shouldIgnoreInstr(idx)
     || myPsIdBubble(idx)
-    || myPsIdFwdBubble(idx)
+    //|| myPsIdFwdBubble(idx)
   )
   def myScoreboardNonFwdPsWbBubbleMost = (
     myScoreboardPsWbBubbleMost(

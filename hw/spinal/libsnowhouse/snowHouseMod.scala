@@ -1656,8 +1656,8 @@ private[libsnowhouse] case class SnowHouseNotForFmax
               //link=cFront,
               upIsValid=cFront.up.isValid,
               upIsFiring=cFront.up.isFiring,
-              //psExSetPc=psExSetPc,
-              myBranchMispredictEtc=False,
+              psExSetPc=psExSetPc,
+              //myBranchMispredictEtc=False,
               forFmaxRegFileWrPulseArr=null
             )
           )
@@ -2444,8 +2444,9 @@ private[libsnowhouse] case class SnowHouseForFmax(
   //  psScoreboardIssue.io.myBranchMispredictEtc := psExSetPc.fire
   //  psScoreboardReadGprs.io.myBranchMispredictEtc := psExSetPc.fire
   //}
-  psPreFwd.io.myBranchMispredictEtc := psExSetPc.fire
-  psExSetPc := psEx.io.psExSetPc
+  //psPreFwd.io.myBranchMispredictEtc := psExSetPc.fire
+  psPreFwd.io.psExSetPc << psExSetPc
+  psExSetPc << psEx.io.psExSetPc
 
   if (io.idsIraIrq != null) {
     psEx.io.idsIraIrq <> io.idsIraIrq

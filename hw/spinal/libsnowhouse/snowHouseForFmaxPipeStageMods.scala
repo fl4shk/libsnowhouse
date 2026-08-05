@@ -126,9 +126,19 @@ case class SnowHouseScoreboardIssuePayload(
 
  // reorder buffer index
   val reorderBufIdx = UInt(cfg.optScoreboardReorderBufWidth bits)
-  val nonFwdTag = UInt(cfg.optScoreboardReorderBufWidth bits)
-  val fwdTag = UInt(cfg.optScoreboardReorderBufWidth bits)
-  val nonBubbleTag = UInt(cfg.optScoreboardReorderBufWidth bits)
+  val nonFwdTag = UInt(
+    //cfg.optScoreboardReorderBufWidth bits
+    cfg.optScoreboardTagWidth bits
+  )
+  val fwdTag = UInt(
+    //cfg.optScoreboardReorderBufWidth bits
+    cfg.optScoreboardTagWidth bits
+  )
+  val nonBubbleTag = UInt(
+    //cfg.optScoreboardReorderBufWidth bits
+    //cfg.optScoreboardReorderBufWidth bits
+    cfg.optScoreboardTagWidth bits
+  )
   //val tag = UInt(cfg.optScoreboardTagWidth bits)
 }
 
@@ -1485,7 +1495,14 @@ case class SnowHouseForFmaxPipeStagePreFwdIo(
     ))
   )
   //--------
-  val myBranchMispredictEtc = in(Bool())
+  //val myBranchMispredictEtc = in(Bool())
+  val psExSetPc = (
+    slave(Flow(
+      SnowHousePsExSetPcPayload(
+        cfg=cfg
+      )
+    ))
+  )
   //--------
   val myRegFileWrPulse = (
     slave(Flow(
@@ -1510,8 +1527,8 @@ case class SnowHouseForFmaxPipeStagePreFwd(
 
   //def opInfoMap = cfg.opInfoMap
 
-  //val pPreExInp = Payload(SnowHousePipePayload(cfg=cfg))
-  val pPreExOutp = Payload(SnowHousePipePayload(cfg=cfg))
+  //val pPreFwdInp = Payload(SnowHousePipePayload(cfg=cfg))
+  val pPreFwdOutp = Payload(SnowHousePipePayload(cfg=cfg))
   val cLink = CtrlLink()
   //val sLink = StageLink(
   //  up=cLink.down,
@@ -1549,7 +1566,8 @@ case class SnowHouseForFmaxPipeStagePreFwd(
     //link=cLink,
     upIsValid=cLink.up.isValid,
     upIsFiring=cLink.up.isFiring,
-    myBranchMispredictEtc=io.myBranchMispredictEtc,
+    psExSetPc=io.psExSetPc,
+    //myBranchMispredictEtc=io.myBranchMispredictEtc,
     forFmaxRegFileWrPulseArr=Array(
       io.myRegFileWrPulse
     )
@@ -1557,18 +1575,18 @@ case class SnowHouseForFmaxPipeStagePreFwd(
 
   cLink.up.driveFrom(io.up)(
     con=(node, inp) => {
-      //node(pPreExInp) := inp
+      //node(pPreFwdInp) := inp
       myInp := inp
-      node(pPreExOutp) := myOutp
+      node(pPreFwdOutp) := myOutp
     }
   )
   //when (cLink.up.valid) {
   //}
-  //cLink.up(pPreExOutp) := myOutp
+  //cLink.up(pPreFwdOutp) := myOutp
 
   cLink.down.driveTo(io.down)(
     con=(outp, node) => {
-      outp := node(pPreExOutp)
+      outp := node(pPreFwdOutp)
     }
   )
 
@@ -2490,7 +2508,8 @@ case class SnowHouseForFmaxPsWbReorderBuf(
           //&& 
 
           myOccupancy < myReorderBufSize - 2//1
-          && (
+          && 
+          (
             (
               !rValidVec(idx)
               //&& rOccupancy < myReorderBufSize
@@ -2499,13 +2518,13 @@ case class SnowHouseForFmaxPsWbReorderBuf(
               //  rOccupancy < (myReorderBufSize - myOccupancySubAmount)
               //)
             )
-            || (
-              //myRam.io.rdAddrPipe.fire
-              //myAssertValidCondMost
-              //&& 
-              myRdAddr === idx
-              //&& rOccupancy.orR
-            )
+            //|| (
+            //  //myRam.io.rdAddrPipe.fire
+            //  //myAssertValidCondMost
+            //  //&& 
+            //  myRdAddr === idx
+            //  //&& rOccupancy.orR
+            //)
           )
           //&& (
           //  rOccupancy < (myReorderBufSize - myOccupancySubAmount)
@@ -2793,7 +2812,7 @@ case class SnowHouseForFmaxPsWbReorderBuf(
       rValidVec(
         myRdAddr
       )
-      && rValidVec.asBits.orR//myOccupancy.orR
+      //&& rValidVec.asBits.orR//myOccupancy.orR
       //|| (
       //  //myRam.io.wrPulse.fire
       //  //myAssertValidCond
