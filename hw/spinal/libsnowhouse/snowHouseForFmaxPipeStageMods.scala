@@ -3296,6 +3296,12 @@ case class SnowHouseForFmaxPipeStageWriteBack(
         !myNonFwdWbFifo.io.push.ready
         && !myFwdWbFifo.io.push.ready
       )
+      || (
+        io.up.valid
+        && io.up.instrCnt.shouldIgnoreInstr.last
+        && myNonFwdWbFifo.io.pop.valid
+        && !myNonFwdWbFifo.io.pop.ready
+      )
     ) {
       cLink.duplicateIt()
     }
