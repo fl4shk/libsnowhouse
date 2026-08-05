@@ -2880,10 +2880,14 @@ case class SnowHousePipeStageInstrDecode(
           (
             myScoreboardCommitStm.fire
             && myScoreboardCommitStm.opIsFwd
+            && myScoreboardCommitStm.myFwdValid
             && (
               rMyFwdGprTagVec(idx).tag
               === myScoreboardCommitStm.fwdTag
             )
+            //&& (
+            //  myScoreboardCommitStm
+            //)
           )
           || (
             myScoreboardBubbleRetireStm.fire
