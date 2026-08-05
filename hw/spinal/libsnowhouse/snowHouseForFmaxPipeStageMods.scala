@@ -4079,38 +4079,45 @@ case class SnowHouseForFmaxPipeStageWriteBack(
       myReorderBuf.io.psIdCanIssue
     )
   }
-    val myReorderBufSize = (
-      cfg.optScoreboard
-    ) generate (
-      1 << cfg.optScoreboardReorderBufWidth
-    )
-    val myNonFwdStallPassCntRstVal = (
-      cfg.optScoreboard
-    ) generate (
-      myReorderBufSize - 8
-    )
-    val rNonFwdStallPassCnt = (
-      cfg.optScoreboard
-    ) generate (
-      Reg(UInt(log2Up(myReorderBufSize) + 1 bits))
-      init(myNonFwdStallPassCntRstVal)
-    )
+  val myReorderBufSize = (
+    cfg.optScoreboard
+  ) generate (
+    1 << cfg.optScoreboardReorderBufWidth
+  )
+  val myStallPassCntRstVal = (
+    cfg.optScoreboard
+  ) generate (
+    myReorderBufSize - 8
+  )
+  val rNonFwdStallPassCnt = (
+    cfg.optScoreboard
+  ) generate (
+    Reg(UInt(log2Up(myReorderBufSize) + 1 bits))
+    init(myStallPassCntRstVal)
+  )
+  val rFwdStallPassCnt = (
+    cfg.optScoreboard
+  ) generate (
+    Reg(UInt(log2Up(myReorderBufSize) + 1 bits))
+    init(myStallPassCntRstVal)
+  )
 
-    if (cfg.optScoreboard) {
-      when (
-        myNonFwdWbValid
-        && myFwdCommitFrontStm.fire
-      ) {
-        rNonFwdStallPassCnt := rNonFwdStallPassCnt - 1
-      }
-
-      when (
-        myNonFwdWbValid
-        && myNonFwdCommitFrontStm.fire
-      ) {
-        rNonFwdStallPassCnt := myNonFwdStallPassCntRstVal
-      }
+  if (cfg.optScoreboard) {
+    when (
+      myNonFwdWbValid
+      && !myNonFwdWbPayload(1).instrCnt.shouldIgnoreInstr.last
+      && myFwdCommitFrontStm.fire
+    ) {
+      rNonFwdStallPassCnt := rNonFwdStallPassCnt - 1
     }
+
+    when (
+      myNonFwdWbValid
+      && myNonFwdCommitFrontStm.fire
+    ) {
+      rNonFwdStallPassCnt := myStallPassCntRstVal
+    }
+  }
 
 
   def setCommitEtc(
