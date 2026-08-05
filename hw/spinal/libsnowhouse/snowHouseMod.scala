@@ -1890,6 +1890,7 @@ private[libsnowhouse] case class SnowHouseNotForFmax
     doDecodeFunc=cfg.doInstrDecodeFunc,
     //psIdFoundBubble=psIdFoundBubble,
     myScoreboardCommitStm=null,
+    myScoreboardBubbleRetireStm=null,
     myScoreboardSavedGprTagVec=null,
     myScoreboardReorderBufInFlushEtc=null,
     myScoreboardReorderBufPsIdCanIssue=null,
@@ -2422,7 +2423,10 @@ private[libsnowhouse] case class SnowHouseForFmax(
     //  psWb.io.commitEtc.scoreboardTag
     //)
     psId.io.myScoreboardCommit << (
-      psWb.io.commitEtc.scoreboardTag
+      psWb.io.commitEtc.scoreboardCommmit
+    )
+    psId.io.myScoreboardBubbleRetire << (
+      psWb.io.commitEtc.scoreboardBubbleRetire
     )
     psId.io.myScoreboardReorderBufInFlushEtc <> (
       psWb.io.commitEtc.scoreboardReorderBufInFlushEtc

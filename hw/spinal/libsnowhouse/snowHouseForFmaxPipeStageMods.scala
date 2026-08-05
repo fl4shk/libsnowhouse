@@ -173,8 +173,8 @@ case class SnowHouseScoreboardCommitPayload(
   )
   val myFwdValid = Bool()
   val myNonFwdValid = Bool()
-  val nonFwdTag = UInt(cfg.optScoreboardReorderBufWidth bits)
-  val fwdTag = UInt(cfg.optScoreboardReorderBufWidth bits)
+  val nonFwdTag = UInt(cfg.optScoreboardTagWidth bits)
+  val fwdTag = UInt(cfg.optScoreboardTagWidth bits)
   val opIsFwd = Bool()
   //val reorderBufInFlush = Bool()
   //val tag = UInt(cfg.optForFmaxCfg.get.myScoreboardTagWidth bits)
@@ -887,6 +887,14 @@ case class SnowHouseForFmaxPipeStageInstrDecodeIo(
       SnowHouseScoreboardCommitPayload(cfg=cfg)
     ))
   )
+  val myScoreboardBubbleRetire = (
+    cfg.optScoreboard
+  ) generate (
+    slave(Stream(
+      //UInt(cfg.optScoreboardTagWidth bits)
+      SnowHouseScoreboardCommitPayload(cfg=cfg)
+    ))
+  )
   val myScoreboardReorderBufInFlushEtc = (
     cfg.optScoreboard
   ) generate (
@@ -973,7 +981,12 @@ case class SnowHouseForFmaxPipeStageInstrDecode(
     //shouldIgnoreInstr=null,
     doDecodeFunc=cfg.doInstrDecodeFunc,
     //psIdFoundBubble=psIdFoundBubble,
-    myScoreboardCommitStm=io.myScoreboardCommit,
+    myScoreboardCommitStm=(
+      io.myScoreboardCommit
+    ),
+    myScoreboardBubbleRetireStm=(
+      io.myScoreboardBubbleRetire
+    ),
     myScoreboardSavedGprTagVec=(
       io.myScoreboardSavedGprTagVec
     ),
@@ -1820,7 +1833,17 @@ case class SnowHouseForFmaxPsWbCommitEtc(
       Bool()
     )
   )
-  val scoreboardTag = (
+  val scoreboardCommmit = (
+    cfg.optScoreboard
+  ) generate (
+    master(
+      Stream(
+        //UInt(cfg.optScoreboardTagWidth bits)
+        SnowHouseScoreboardCommitPayload(cfg=cfg)
+      )
+    )
+  )
+  val scoreboardBubbleRetire = (
     cfg.optScoreboard
   ) generate (
     master(
@@ -3931,6 +3954,30 @@ case class SnowHouseForFmaxPipeStageWriteBack(
         io.up.instrCnt.scoreboardIssuePayload.reorderBufIdx
       )
     }
+
+    
+    io.commitEtc.scoreboardBubbleRetire.valid := (
+      io.up.fire
+      && (
+        io.up.instrCnt.myScoreboardPsWbBubbleMost(1)
+        || io.up.instrCnt.myPsIdFwdBubble(1)
+      )
+    )
+    io.commitEtc.scoreboardBubbleRetire.opIsFwd := (
+      !io.up.splitOp.opIsMemAccess
+      //True
+      //!io.up.instrCnt.scoreboard
+    )
+    io.commitEtc.scoreboardBubbleRetire.fwdTag := (
+      io.up.instrCnt.scoreboardIssuePayload.fwdTag
+    )
+    //when (
+    //) {
+    //  io.commitEtc.scoreboardBubbleRetire.opIsFwd := (
+    //    io.up.instrCnt.shouldIgnoreInstr(1)
+    //    || io.up.instrCnt
+    //  )
+    //}
     //val myTempReorderBufIdx = (
     //  myCommitBackStm.myWbPayload
     //  .instrCnt.scoreboardIssuePayload.reorderBufIdx
@@ -4060,7 +4107,7 @@ case class SnowHouseForFmaxPipeStageWriteBack(
       //myCommitForkStm.last
       myCommitTrueFinalOutpStm
     )
-    .translateInto(io.commitEtc.scoreboardTag)(
+    .translateInto(io.commitEtc.scoreboardCommmit)(
       dataAssignment=(outp, inp) => {
         outp := inp.commit
       }
@@ -4266,8 +4313,8 @@ case class SnowHouseForFmaxPipeStageWriteBack(
         //0x0
       )
       someCommitStm.commit.opIsFwd := (
-        //False
-        someMyWbPayload(1).instrCnt.shouldIgnoreInstr.last
+        False
+        //someMyWbPayload(1).instrCnt.shouldIgnoreInstr.last
       )
     } else {
       someCommitStm.commit.nonFwdTag := 0x0
