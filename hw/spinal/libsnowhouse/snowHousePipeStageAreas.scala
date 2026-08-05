@@ -3060,40 +3060,40 @@ case class SnowHousePipeStageInstrDecode(
 
         myGprTagInfoFifo.io.pop.ready := True
 
-        switch (
-          (
-            myGprTagInfoFifo.io.pop.valid 
-            && myGprTagInfoFifo.io.pop.opIsFwd
-          )
-          ## myGprTagInfoFifo.io.pop.myGprIdx
-        ) {
-          for (idx <- 0 until cfg.numGprs) {
-            is (
-              (1 << log2Up(cfg.numGprs))
-              | idx
-            ) {
-              rFwdTagAllocVec(myGprTagInfoFifo.io.pop.fwdTag) := False
-              rMyFwdGprTagVec(idx).valid := False
+        //switch (
+        //  (
+        //    myGprTagInfoFifo.io.pop.valid 
+        //    && myGprTagInfoFifo.io.pop.opIsFwd
+        //  )
+        //  ## myGprTagInfoFifo.io.pop.myGprIdx
+        //) {
+        //  for (idx <- 0 until cfg.numGprs) {
+        //    is (
+        //      (1 << log2Up(cfg.numGprs))
+        //      | idx
+        //    ) {
+        //      rFwdTagAllocVec(myGprTagInfoFifo.io.pop.fwdTag) := False
+        //      rMyFwdGprTagVec(idx).valid := False
 
-            }
-          }
-        }
-        switch (
-          (
-            myGprTagInfoFifo.io.pop.valid 
-            && !myGprTagInfoFifo.io.pop.opIsFwd
-          )
-          ## myGprTagInfoFifo.io.pop.myGprIdx
-        ) {
-          for (idx <- 0 until cfg.numGprs) {
-            is (
-              (1 << log2Up(cfg.numGprs))
-              | idx
-            ) {
-              rMyNonFwdGprTagVec(idx) := False
-            }
-          }
-        }
+        //    }
+        //  }
+        //}
+        //switch (
+        //  (
+        //    myGprTagInfoFifo.io.pop.valid 
+        //    && !myGprTagInfoFifo.io.pop.opIsFwd
+        //  )
+        //  ## myGprTagInfoFifo.io.pop.myGprIdx
+        //) {
+        //  for (idx <- 0 until cfg.numGprs) {
+        //    is (
+        //      (1 << log2Up(cfg.numGprs))
+        //      | idx
+        //    ) {
+        //      rMyNonFwdGprTagVec(idx) := False
+        //    }
+        //  }
+        //}
       }
     }
 
