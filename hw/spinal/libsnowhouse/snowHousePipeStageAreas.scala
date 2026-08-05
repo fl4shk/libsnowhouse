@@ -3709,6 +3709,7 @@ case class SnowHousePipeStagePreFwd(
       && (
         !outp.inpDecodeExt.last.opIsMemAccess.head
         //|| outp.instrCnt.myPsIdFwdBubble.head
+        && !outp.instrCnt.myPsIdFwdBubble.head
       )
     )
 
@@ -9460,6 +9461,7 @@ case class SnowHousePipeStageExecute(
       && (
         !outp.inpDecodeExt.last.opIsMemAccess.head
         //|| outp.instrCnt.myPsIdFwdBubble.head
+        && !outp.instrCnt.myPsIdFwdBubble.head
       )
       //&& !myShouldIgnoreInstr.last
     )
