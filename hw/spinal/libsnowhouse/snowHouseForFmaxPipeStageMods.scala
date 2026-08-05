@@ -3968,8 +3968,16 @@ case class SnowHouseForFmaxPipeStageWriteBack(
       //True
       //!io.up.instrCnt.scoreboard
     )
+    io.commitEtc.scoreboardBubbleRetire.myNonFwdValid := (
+      io.up.splitOp.scoreboardOpIsMemAccess
+      && !io.up.instrCnt.myPsIdBubble(1)
+      && !io.up.instrCnt.myPsIdFwdBubble(1)
+    )
     io.commitEtc.scoreboardBubbleRetire.fwdTag := (
       io.up.instrCnt.scoreboardIssuePayload.fwdTag
+    )
+    io.commitEtc.scoreboardBubbleRetire.gprIdxVec.last := (
+      io.up.gprIdxVec.last
     )
     //when (
     //) {

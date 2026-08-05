@@ -2570,6 +2570,17 @@ case class SnowHousePipeStageInstrDecode(
         False
       )
     }
+    when (
+      myScoreboardBubbleRetireStm.fire
+      //&& !myScoreboardBubbleRetireStm.opIsFwd
+      && myScoreboardBubbleRetireStm.myNonFwdValid
+    ) {
+      rMyNonFwdGprTagVec(
+        myScoreboardBubbleRetireStm.gprIdxVec.last
+      ) := (
+        False
+      )
+    }
 
     //val rSavedReorderBufIdxAbsDiff = (
     //  Reg(
@@ -2804,11 +2815,23 @@ case class SnowHousePipeStageInstrDecode(
       }
       when (
         rMyFwdGprTagVec(idx).fire
-        && myScoreboardCommitStm.fire
-        && myScoreboardCommitStm.opIsFwd
         && (
-          rMyFwdGprTagVec(idx).tag
-          === myScoreboardCommitStm.fwdTag
+          (
+            myScoreboardCommitStm.fire
+            && myScoreboardCommitStm.opIsFwd
+            && (
+              rMyFwdGprTagVec(idx).tag
+              === myScoreboardCommitStm.fwdTag
+            )
+          )
+          || (
+            myScoreboardBubbleRetireStm.fire
+            && myScoreboardBubbleRetireStm.opIsFwd
+            && (
+              rMyFwdGprTagVec(idx).tag
+              === myScoreboardBubbleRetireStm.fwdTag
+            )
+          )
         )
       ) {
         //rFwdTagAllocVec(myScoreboardCommitStm.fwdTag) := False
