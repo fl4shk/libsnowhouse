@@ -3317,28 +3317,33 @@ case class SnowHouseForFmaxPipeStageWriteBack(
   //) generate (
   //  Reg(Bool(), init=False)
   //)
+  val myNonFwdShouldIgnoreInstr = (
+    cfg.optScoreboard
+  ) generate (
+    //myNonFwdWbFifo.io.pop.valid
+    myNonFwdWbFifo.io.pop.valid
+    && (
+      myNonFwdWbFifo.io.pop.instrCnt.shouldIgnoreInstr.head
+      //|| myNonFwdWbFifo.io.pop.instrCnt.myPsIdBubble.head
+      //|| (
+      //  myNonFwdWbFifo.io.pop.instrCnt.myPsIdBubble.head
+      //  && io.myScoreboardSavedGprTagVec(
+      //    myNonFwdWbFifo.io.pop.gprIdxVec.last
+      //  )
+      //)
+    )
+    //&& !myNonFwdWbFifo.io.pop.payload.instrCnt.myPsIdBubble.head
+  )
   val stickyMyD2hBusValid = (
     if (cfg.optScoreboard) (
       //myD2hBus.fire
       myD2hBus.valid
       //|| rSeenMyD2hBusFire
-      || (
-        //myNonFwdWbFifo.io.pop.valid
-        myNonFwdWbFifo.io.pop.valid
-        && (
-          myNonFwdWbFifo.io.pop.instrCnt.shouldIgnoreInstr.head
-          //|| myNonFwdWbFifo.io.pop.instrCnt.myPsIdBubble.head
-          //|| (
-          //  myNonFwdWbFifo.io.pop.instrCnt.myPsIdBubble.head
-          //  && io.myScoreboardSavedGprTagVec(
-          //    myNonFwdWbFifo.io.pop.gprIdxVec.last
-          //  )
-          //)
-        )
-        //&& !myNonFwdWbFifo.io.pop.payload.instrCnt.myPsIdBubble.head
-      )
+      || myNonFwdShouldIgnoreInstr
     ) else (
-      myD2hBus.fire
+      // TODO: determine whether this works!
+      //myD2hBus.fire
+      myD2hBus.valid
     )
   )
 
@@ -4072,6 +4077,7 @@ case class SnowHouseForFmaxPipeStageWriteBack(
     //  PipeSimpleDualPortMemDrivePayload[UInt]
     //],
     isNonFwd: Boolean,
+    someMyShouldIgnoreInstrState: Bool,
   ): Unit = {
     val myTempNonFwdTag = (
       someMyWbPayload(1).instrCnt.scoreboardIssuePayload.nonFwdTag
@@ -4443,6 +4449,9 @@ case class SnowHouseForFmaxPipeStageWriteBack(
               myNonFwdWbValid
               && stickyMyD2hBusValid
               //&& (
+              //  someMyShouldIgnoreInstrState
+              //)
+              //&& (
               //  !myFwdWbValid
               //  || !myFwdWbPayload(1).instrCnt.shouldIgnoreInstr.last
               //  || !myScoreboardWbFifoArea.rMyShouldIgnoreInstrState
@@ -4458,6 +4467,10 @@ case class SnowHouseForFmaxPipeStageWriteBack(
             //cLink.up.isValid
             //&& 
             myFwdWbValid
+            //&& (
+            //  
+            //  my
+            //)
             //&& (
             //  !myNonFwdWbValid
             //  || stickyMyD2hBusFire
@@ -4508,19 +4521,22 @@ case class SnowHouseForFmaxPipeStageWriteBack(
   val myScoreboardArea = (
     cfg.optScoreboard
   ) generate (new Area {
+    val rMyShouldIgnoreInstrState = Reg(Bool(), init=False)
     setCommitEtc(
       someMyWbPayload=myNonFwdWbPayload,
       someCommitStm=myMemCommitFrontStm,
       //someCommitStm=myCommitInpStmVec.head.head,
       //someRegFileWrPulseStm=myRegFileWrPulseInpStmVec.head.head,
-      isNonFwd=true
+      isNonFwd=true,
+      someMyShouldIgnoreInstrState=rMyShouldIgnoreInstrState,
     )
     setCommitEtc(
       someMyWbPayload=myFwdWbPayload,
       someCommitStm=myNonMemCommitFrontStm,
       //someCommitStm=myCommitInpStmVec.head.last,
       //someRegFileWrPulseStm=myRegFileWrPulseInpStmVec.head.last,
-      isNonFwd=false
+      isNonFwd=false,
+      someMyShouldIgnoreInstrState=rMyShouldIgnoreInstrState,
     )
   })
 
@@ -4529,7 +4545,8 @@ case class SnowHouseForFmaxPipeStageWriteBack(
       someMyWbPayload=myWbPayloadVec.head,
       someCommitStm=myCommitAlmostFinalOutpStm,
       //someRegFileWrPulseStm=myRegFileWrPulseOutpStm,
-      isNonFwd=false
+      isNonFwd=false,
+      someMyShouldIgnoreInstrState=null,
     )
   }
   if (io.dbgInfo != null) {
