@@ -3708,7 +3708,7 @@ case class SnowHousePipeStagePreFwd(
       myTempSaveOutpCondMost
       && (
         !outp.inpDecodeExt.last.opIsMemAccess.head
-        || outp.instrCnt.myPsIdFwdBubble.head
+        //|| outp.instrCnt.myPsIdFwdBubble.head
       )
     )
 
@@ -9459,7 +9459,7 @@ case class SnowHousePipeStageExecute(
       && !outp.instrCnt.myPsIdBubble.last
       && (
         !outp.inpDecodeExt.last.opIsMemAccess.head
-        || outp.instrCnt.myPsIdFwdBubble.head
+        //|| outp.instrCnt.myPsIdFwdBubble.head
       )
       //&& !myShouldIgnoreInstr.last
     )
