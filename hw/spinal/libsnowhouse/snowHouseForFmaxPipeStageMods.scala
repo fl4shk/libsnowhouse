@@ -2267,8 +2267,8 @@ case class SnowHouseForFmaxPsWbReorderBuf(
   myRdAddr := (
     RegNext(myRdAddr)
     init(
-      //0x1
-      0x0
+      0x1
+      //0x0
     )
   )
   //val rSavedMyRdAddr = (
@@ -2284,8 +2284,8 @@ case class SnowHouseForFmaxPsWbReorderBuf(
       (
         RegNext(myRdAddr)
         init(
-          //0x1
-          0x0
+          0x1
+          //0x0
         )
       ) + 1
     )
@@ -2489,7 +2489,7 @@ case class SnowHouseForFmaxPsWbReorderBuf(
           //!rAttemptPushVec(idx)
           //&& 
 
-          myOccupancy < myReorderBufSize
+          myOccupancy < myReorderBufSize - 2//1
           && (
             (
               !rValidVec(idx)

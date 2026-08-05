@@ -2603,6 +2603,9 @@ case class SnowHousePipeStageInstrDecode(
         )
       )
     }
+
+    val rMostRecentIncrWasFlushEnd = Reg(Bool(), init=False)
+
     when (
       up.isFiring
       //down.isFiring
@@ -2630,14 +2633,18 @@ case class SnowHousePipeStageInstrDecode(
       )
     }
 
+
     when (
-      RegNext(
-        (
-          up.isFiring
-          //&& !rose(rScoreboardFlushState.asBits(0))
-        ),
-        init=False
-      )
+      //RegNext(
+      //  (
+      //    up.isFiring
+      //    //&& !rose(rScoreboardFlushState.asBits(0))
+      //  ),
+      //  init=False
+      //)
+
+      up.isFiring
+      //&& !rMostRecentIncrWasFlushEnd
       //&& !rose(rScoreboardFlushState.asBits(0))
       //||
       //(
@@ -2789,8 +2796,13 @@ case class SnowHousePipeStageInstrDecode(
           shouldClearExtraDecodeInfo
         ) {
           rScoreboardFlushState := ScoreboardFlushState.FLUSH
-          myTempReorderBufIdx := psExSetPc.reorderBufIdx
+          myTempReorderBufIdx := psExSetPc.reorderBufIdx //- 1
         }
+        //when (
+        //  up.isFiring
+        //) {
+        //  rMostRecentIncrWasFlushEnd := False
+        //}
       }
       is (ScoreboardFlushState.FLUSH) {
         myTempReorderBufIdx := (
@@ -2837,6 +2849,7 @@ case class SnowHousePipeStageInstrDecode(
           && !shouldClearExtraDecodeInfo
           && !myGprTagInfoFifo.io.pop.valid
         ) {
+          //rMostRecentIncrWasFlushEnd := True
           //when (
           //  up.isFiring
           //) {
