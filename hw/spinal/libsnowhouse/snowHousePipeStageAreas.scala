@@ -2255,11 +2255,6 @@ case class SnowHousePipeStageInstrDecode(
       Reg(ScoreboardFlushState())
       init(ScoreboardFlushState.IDLE)
     )
-    val myInFlushCond = (
-      shouldClearExtraDecodeInfo
-      || rScoreboardFlushState.asBits(1)
-    )
-
 
     upPayload(1).branchTgtBufElem(1) := (
       //upPayload(1).branchTgtBufElem(1).getZero
@@ -2447,6 +2442,16 @@ case class SnowHousePipeStageInstrDecode(
         forFMax=true,
       )
     )
+    val myInFlushCond = (
+      shouldClearExtraDecodeInfo
+      || (
+        rScoreboardFlushState.asBits(1)
+        //&& !up.isFiring
+        && up.isValid
+        && !myGprTagInfoFifo.io.pop.valid
+      )
+    )
+
     myGprTagInfoFifo.io.flush := False
     myGprTagInfoFifo.io.push.valid := False
     //myGprTagInfoFifo.io.push.payload := (
@@ -2626,8 +2631,15 @@ case class SnowHousePipeStageInstrDecode(
     }
 
     when (
-      up.isFiring
-      //|| 
+      RegNext(
+        (
+          up.isFiring
+          //&& !rose(rScoreboardFlushState.asBits(0))
+        ),
+        init=False
+      )
+      //&& !rose(rScoreboardFlushState.asBits(0))
+      //||
       //(
       //  down.isFiring
       //  && myNonFwdHazardCheckVec.orR
@@ -2821,9 +2833,19 @@ case class SnowHousePipeStageInstrDecode(
         }
 
         when (
-          !shouldClearExtraDecodeInfo
+          up.isFiring
+          && !shouldClearExtraDecodeInfo
           && !myGprTagInfoFifo.io.pop.valid
         ) {
+          //when (
+          //  up.isFiring
+          //) {
+            myTempReorderBufIdx := (
+              RegNext(
+                myTempReorderBufIdx
+              ) + 1
+            )
+          //}
           //doSendBubbleMainMost(
           //  myPsIdBubble=Some(
           //    //!myInFlushCond//shouldClearExtraDecodeInfo

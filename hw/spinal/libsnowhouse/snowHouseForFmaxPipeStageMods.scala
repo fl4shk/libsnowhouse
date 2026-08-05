@@ -2266,7 +2266,10 @@ case class SnowHouseForFmaxPsWbReorderBuf(
   )
   myRdAddr := (
     RegNext(myRdAddr)
-    init(0x1)
+    init(
+      //0x1
+      0x0
+    )
   )
   //val rSavedMyRdAddr = (
   //  Reg(cloneOf(myRdAddr))
@@ -2280,7 +2283,10 @@ case class SnowHouseForFmaxPsWbReorderBuf(
     myRdAddr := (
       (
         RegNext(myRdAddr)
-        init(0x1)
+        init(
+          //0x1
+          0x0
+        )
       ) + 1
     )
   }
