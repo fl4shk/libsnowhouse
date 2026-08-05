@@ -2786,7 +2786,7 @@ case class SnowHouseForFmaxPsWbReorderBuf(
       rValidVec(
         myRdAddr
       )
-      && myOccupancy.orR
+      && rValidVec.asBits.orR//myOccupancy.orR
       //|| (
       //  //myRam.io.wrPulse.fire
       //  //myAssertValidCond
@@ -3829,12 +3829,12 @@ case class SnowHouseForFmaxPipeStageWriteBack(
   //  Reg(UInt(log2Up(cfg.optForFmaxPsExFwdSize) bits))
   //  init(myInstrMayPassCntInitVal)
   //)
-  val myMemCommitFrontStm = (
+  val myNonFwdCommitFrontStm = (
     cfg.optScoreboard
   ) generate (
     myCommitFrontStmVec.head.head//last//head
   )
-  val myNonMemCommitFrontStm = (
+  val myFwdCommitFrontStm = (
     cfg.optScoreboard
   ) generate (
     myCommitFrontStmVec.head.last//head//last
@@ -4441,6 +4441,38 @@ case class SnowHouseForFmaxPipeStageWriteBack(
       //  Reg(Bool(), init=False)
       //)
 
+      val myReorderBufSize = (
+        1 << cfg.optScoreboardReorderBufWidth
+      )
+      val myNonFwdStallPassCntRstVal = (
+        myReorderBufSize - 8
+      )
+      val rNonFwdStallPassCnt = (
+        !isNonFwd
+      ) generate (
+        Reg(UInt(log2Up(myReorderBufSize) bits))
+        init(myNonFwdStallPassCntRstVal)
+      )
+      if (!isNonFwd) {
+        when (
+          myNonFwdWbValid
+          && someCommitStm.fire
+        ) {
+          rNonFwdStallPassCnt := rNonFwdStallPassCnt - 1
+        }
+        when (
+          !myNonFwdWbValid
+          && myNonFwdCommitFrontStm.fire
+        ) {
+          rNonFwdStallPassCnt := myNonFwdStallPassCntRstVal
+        }
+        //when (
+        //  !myNonFwdWbValid
+        //  && someCommitStm.fire
+        //) {
+        //}
+      }
+
       someCommitStm.valid := (
         (
           if (isNonFwd) (
@@ -4477,6 +4509,7 @@ case class SnowHouseForFmaxPipeStageWriteBack(
             //cLink.up.isValid
             //&& 
             myFwdWbValid
+            && !rNonFwdStallPassCnt.msb
             //&& (
             //  
             //  my
@@ -4534,7 +4567,7 @@ case class SnowHouseForFmaxPipeStageWriteBack(
     val rMyShouldIgnoreInstrState = Reg(Bool(), init=False)
     setCommitEtc(
       someMyWbPayload=myNonFwdWbPayload,
-      someCommitStm=myMemCommitFrontStm,
+      someCommitStm=myNonFwdCommitFrontStm,
       //someCommitStm=myCommitInpStmVec.head.head,
       //someRegFileWrPulseStm=myRegFileWrPulseInpStmVec.head.head,
       isNonFwd=true,
@@ -4542,7 +4575,7 @@ case class SnowHouseForFmaxPipeStageWriteBack(
     )
     setCommitEtc(
       someMyWbPayload=myFwdWbPayload,
-      someCommitStm=myNonMemCommitFrontStm,
+      someCommitStm=myFwdCommitFrontStm,
       //someCommitStm=myCommitInpStmVec.head.last,
       //someRegFileWrPulseStm=myRegFileWrPulseInpStmVec.head.last,
       isNonFwd=false,

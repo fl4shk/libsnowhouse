@@ -3233,40 +3233,41 @@ case class SnowHousePipeStageInstrDecode(
     //  })
     //}
 
-    when (
-      !myScoreboardReorderBufPsIdCanIssue
-    ) {
-      //cId.haltIt()
-      //when (
-      //  down.isFiring
-      //) {
-      //  myTempReorderBufIdx := (
-      //    RegNext(
-      //      myTempReorderBufIdx,
-      //      init=myTempReorderBufIdx.getZero
-      //    )
-      //    + 1
-      //  )
-      //}
-      doSendBubbleMainMost(
-        myPsIdBubble=(
-          //Some(True)
-          None
-        ),
-        myPsIdOtherBubble=(
-          None
-          //Some(
-          //  True
-          //)
-        ),
-        myPsIdFwdBubble=(
-          None
-          //Some(
-          //  True
-          //)
-        )
-      )
-    }
+    //when (
+    //  !myScoreboardReorderBufPsIdCanIssue
+    //) {
+    //  //cId.haltIt()
+    //  //when (
+    //  //  down.isFiring
+    //  //) {
+    //  //  myTempReorderBufIdx := (
+    //  //    RegNext(
+    //  //      myTempReorderBufIdx,
+    //  //      init=myTempReorderBufIdx.getZero
+    //  //    )
+    //  //    + 1
+    //  //  )
+    //  //}
+    //  doSendBubbleMainMost(
+    //    myPsIdBubble=(
+    //      //Some(True)
+    //      None
+    //    ),
+    //    myPsIdOtherBubble=(
+    //      None
+    //      //Some(
+    //      //  True
+    //      //)
+    //    ),
+    //    myPsIdFwdBubble=(
+    //      None
+    //      //Some(
+    //      //  True
+    //      //)
+    //    )
+    //  )
+    //}
+
 
     down(pId).splitOp.scoreboardOpIsMemAccess := (
       upPayload(1).splitOp.opIsMemAccess
