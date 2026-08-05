@@ -2376,8 +2376,9 @@ case class SnowHousePipeStageInstrDecode(
     //)
 
     val myPartialWriteTagInfoCond = (
-      up.isFiring
-      && !shouldClearExtraDecodeInfo
+      down.isFiring
+      //up.isFiring
+      //&& !shouldClearExtraDecodeInfo
     )
 
     //require(
@@ -2827,9 +2828,10 @@ case class SnowHousePipeStageInstrDecode(
 
     when (
       myPartialWriteTagInfoCond
-      && myTempOpMayNeedHazardCheck
+      //&& myTempOpMayNeedHazardCheck
       //&& !shouldClearExtraDecodeInfo
       //&& up.isFiring
+      && upPayload(1).splitOp.opIsMemAccess
     ) {
       rMyNonFwdGprTagVec(
         upPayload(1).gprIdxVec.last
@@ -2843,7 +2845,8 @@ case class SnowHousePipeStageInstrDecode(
       )
     }
     when (
-      up.isFiring
+      //up.isFiring
+      down.isFiring
       //&& upPayload(1).inpDecodeExt.head.opIsMemAccess.last
       && upPayload(1).splitOp.opIsMemAccess
     ) {
@@ -2855,7 +2858,8 @@ case class SnowHousePipeStageInstrDecode(
       )
     }
     when (
-      up.isFiring
+      //up.isFiring
+      down.isFiring
       //&& !upPayload(1).inpDecodeExt.head.opIsMemAccess.last
       && !upPayload(1).splitOp.opIsMemAccess
     ) {
@@ -2894,7 +2898,7 @@ case class SnowHousePipeStageInstrDecode(
         myNonFwdHazardCheckVec.orR
         || myFwdHazardCheckVec.orR
       )
-      && !shouldClearExtraDecodeInfo
+      //&& !shouldClearExtraDecodeInfo
     ) {
       doSendBubbleMainMost(
         myPsIdBubble=Some(
@@ -3155,8 +3159,8 @@ case class SnowHousePipeStageInstrDecode(
     for (idx <- 0 until cfg.numGprs) {
       when (
         //myPartialWriteTagInfoCond
-        up.isFiring
-        //down.isFiring
+        //up.isFiring
+        down.isFiring
         //&& !myNonFwdHazardCheckVec.orR
         //&& !shouldClearExtraDecodeInfo
         && rMyFwdGprTagVec(idx).fire

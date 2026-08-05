@@ -2170,12 +2170,13 @@ case class SnowHouseForFmaxPsWbReorderBuf(
   )
   val rSeenFullFlush = rFlushCnt.msb
 
-  val rOccupancy = (
-    Reg(UInt(log2Up(myReorderBufSize) bits))
-    init(0x0)
-  )
   val rValidVec = Vec.fill(myReorderBufSize)(
     Reg(Bool(), init=False)
+  )
+  val myOccupancy = (
+    //Reg(UInt(log2Up(myReorderBufSize) + 1 bits))
+    //init(0x0)
+    CountOne(rValidVec.asBits.asUInt)
   )
   //val rAttemptPushVec = Vec.fill(myReorderBufSize)(
   //  Reg(Bool(), init=False)
@@ -2460,15 +2461,16 @@ case class SnowHouseForFmaxPsWbReorderBuf(
   //}
 
   io.psIdCanIssue := (
-    io.push.fire
-    || (
-      rOccupancy
-      < (
-        myReorderBufSize
-        - myOccupancySubAmount
-        - (cfg.myPsIdBubbleNumFollowingInstrs + 1)
-      )
-    )
+    True
+    //io.push.fire
+    //|| (
+    //  rOccupancy
+    //  < (
+    //    myReorderBufSize
+    //    - myOccupancySubAmount
+    //    - (cfg.myPsIdBubbleNumFollowingInstrs + 1)
+    //  )
+    //)
   )
 
   switch (io.push.reorderBufIdx) {
@@ -2479,19 +2481,23 @@ case class SnowHouseForFmaxPsWbReorderBuf(
           //!rValidVec.andR
           //!rAttemptPushVec(idx)
           //&& 
-          (
+
+          myOccupancy < myReorderBufSize
+          && (
             (
               !rValidVec(idx)
+              //&& rOccupancy < myReorderBufSize
               //&& io.psIdCanIssue
-              && (
-                rOccupancy < (myReorderBufSize - myOccupancySubAmount)
-              )
+              //&& (
+              //  rOccupancy < (myReorderBufSize - myOccupancySubAmount)
+              //)
             )
             || (
               //myRam.io.rdAddrPipe.fire
               //myAssertValidCondMost
               //&& 
               myRdAddr === idx
+              //&& rOccupancy.orR
             )
           )
           //&& (
@@ -2619,33 +2625,33 @@ case class SnowHouseForFmaxPsWbReorderBuf(
     ) := False
   }
 
-  switch (
-    (
-      myRam.io.wrPulse.fire
-      //&& !io.push.myPsIdBubble
-      //&& (
-      //  rMyShouldIgnoreInstrState.asBits(0)
-      //  || (
-      //    rMyShouldIgnoreInstrState.asBits(1)
-      //    && !io.push.myPsIdBubble
-      //  )
-      //)
-      //&& !rOccupancy.andR
-    )
-    ## (
-      myRam.io.rdAddrPipe.fire
-      //&& rOccupancy.orR
-    )
-  ) {
-    is (M"10") {
-      rOccupancy := rOccupancy + 1
-    }
-    is (M"01") {
-      rOccupancy := rOccupancy - 1
-    }
-    default {
-    }
-  }
+  //switch (
+  //  (
+  //    myRam.io.wrPulse.fire
+  //    //&& !io.push.myPsIdBubble
+  //    //&& (
+  //    //  rMyShouldIgnoreInstrState.asBits(0)
+  //    //  || (
+  //    //    rMyShouldIgnoreInstrState.asBits(1)
+  //    //    && !io.push.myPsIdBubble
+  //    //  )
+  //    //)
+  //    //&& !rOccupancy.andR
+  //  )
+  //  ## (
+  //    myRam.io.rdAddrPipe.fire
+  //    //&& rOccupancy.orR
+  //  )
+  //) {
+  //  is (M"10") {
+  //    myOccupancy := myOccupancy + 1
+  //  }
+  //  is (M"01") {
+  //    myOccupancy := myOccupancy - 1
+  //  }
+  //  default {
+  //  }
+  //}
 
 
 //  switch (
@@ -2780,13 +2786,14 @@ case class SnowHouseForFmaxPsWbReorderBuf(
       rValidVec(
         myRdAddr
       )
-      || (
-        //myRam.io.wrPulse.fire
-        //myAssertValidCond
-        //&& myRam.io.wrPulse.addr === myRdAddr
-        io.push.fire
-        && myRam.io.wrPulse.addr === myRdAddr
-      )
+      && myOccupancy.orR
+      //|| (
+      //  //myRam.io.wrPulse.fire
+      //  //myAssertValidCond
+      //  //&& myRam.io.wrPulse.addr === myRdAddr
+      //  io.push.fire
+      //  && myRam.io.wrPulse.addr === myRdAddr
+      //)
       //&& rOccupancy.orR
       //|| (
       //  !rMyShouldIgnoreInstrState.asBits(0)
