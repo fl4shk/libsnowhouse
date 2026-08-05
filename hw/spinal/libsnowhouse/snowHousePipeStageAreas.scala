@@ -2831,7 +2831,10 @@ case class SnowHousePipeStageInstrDecode(
       //&& myTempOpMayNeedHazardCheck
       //&& !shouldClearExtraDecodeInfo
       //&& up.isFiring
-      && upPayload(1).splitOp.opIsMemAccess
+      && (
+        upPayload(1).splitOp.opIsMemAccess
+        //&& !shouldClearExtraDecodeInfo
+      )
     ) {
       rMyNonFwdGprTagVec(
         upPayload(1).gprIdxVec.last
@@ -2848,7 +2851,10 @@ case class SnowHousePipeStageInstrDecode(
       //up.isFiring
       down.isFiring
       //&& upPayload(1).inpDecodeExt.head.opIsMemAccess.last
-      && upPayload(1).splitOp.opIsMemAccess
+      && (
+        upPayload(1).splitOp.opIsMemAccess
+        || shouldClearExtraDecodeInfo
+      )
     ) {
       myTempNonFwdTag := (
         RegNext(
@@ -2862,6 +2868,7 @@ case class SnowHousePipeStageInstrDecode(
       down.isFiring
       //&& !upPayload(1).inpDecodeExt.head.opIsMemAccess.last
       && !upPayload(1).splitOp.opIsMemAccess
+      && !shouldClearExtraDecodeInfo
     ) {
       myTempFwdTag := (
         RegNext(
@@ -2898,7 +2905,7 @@ case class SnowHousePipeStageInstrDecode(
         myNonFwdHazardCheckVec.orR
         || myFwdHazardCheckVec.orR
       )
-      //&& !shouldClearExtraDecodeInfo
+      && !shouldClearExtraDecodeInfo
     ) {
       doSendBubbleMainMost(
         myPsIdBubble=Some(
