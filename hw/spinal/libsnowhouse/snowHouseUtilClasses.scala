@@ -1158,6 +1158,7 @@ case class SnowHouseConfig(
     //6
     //optScoreboardReorderBufWidth
     4
+    //3
   )
 
   //--------

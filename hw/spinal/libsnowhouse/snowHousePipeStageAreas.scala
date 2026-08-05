@@ -2299,7 +2299,7 @@ case class SnowHousePipeStageInstrDecode(
     ) extends Bundle {
       val valid = Bool()
       def fire = valid
-      val tag = UInt(cfg.optScoreboardReorderBufWidth bits)
+      val tag = UInt(cfg.optScoreboardTagWidth bits)
       val cnt = UInt(log2Up(cfg.optForFmaxPsExFwdSize - 2 + 1) + 1 bits)
     }
 
@@ -2677,7 +2677,7 @@ case class SnowHousePipeStageInstrDecode(
       ## Bitscan(~rNonFwdTagAllocVec.asBits.asUInt)
     ) {
       val size = rNonFwdTagAllocVec.size
-      for (idx <- 0 until size) {
+      for (idx <- 1 until size) {
         is (MaskedLiteral(
           "1"
           + ("-" * (size - idx - 1) + "1" + ("0" * idx))
@@ -2709,7 +2709,7 @@ case class SnowHousePipeStageInstrDecode(
       ## Bitscan(~rFwdTagAllocVec.asBits.asUInt)
     ) {
       val size = rFwdTagAllocVec.size
-      for (idx <- 0 until size) {
+      for (idx <- 1 until size) {
         is (MaskedLiteral(
           "1"
           + ("-" * (size - idx - 1) + "1" + ("0" * idx))
@@ -2817,13 +2817,16 @@ case class SnowHousePipeStageInstrDecode(
           //True
           //False
           myNonFwdHazardCheckVec.orR
+          //&& !myInFlushCond
           //&& !myInFlushCond//shouldClearExtraDecodeInfo
         ),
         myPsIdOtherBubble=Some(
           True
+          //!myInFlushCond
         ),
         myPsIdFwdBubble=Some(
           myFwdHazardCheckVec.orR
+          //&& !myInFlushCond
           //&& !myInFlushCond//shouldClearExtraDecodeInfo
         ),
         //myUpdateGprIsOrIsntZero=false,
