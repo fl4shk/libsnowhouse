@@ -2652,10 +2652,10 @@ case class SnowHousePipeStageInstrDecode(
         myNonFwdHazardCheckVec.orR
         || myFwdHazardCheckVec.orR
       )
-      //&& (
-      //  //!myInFlushCond//shouldClearExtraDecodeInfo
-      //  !myInFlushCond
-      //)
+      && (
+        //!myInFlushCond//shouldClearExtraDecodeInfo
+        !myInFlushCond
+      )
     ) {
       doSendBubbleMainMost(
         myPsIdBubble=Some(
@@ -2682,7 +2682,7 @@ case class SnowHousePipeStageInstrDecode(
         //up.isFiring
         down.isFiring
         //&& !myNonFwdHazardCheckVec.orR
-        //&& !myInFlushCond//shouldClearExtraDecodeInfo
+        && !myInFlushCond//shouldClearExtraDecodeInfo
         && rMyFwdGprTagVec(idx).fire
         && !rMyFwdGprTagVec(idx).cnt.msb
         //&& myScoreboardCommitStm.fire
@@ -2781,31 +2781,72 @@ case class SnowHousePipeStageInstrDecode(
         }
       }
       is (ScoreboardFlushState.FLUSH) {
-        //doSendBubbleMainMost(
-        //  myPsIdBubble=Some(
-        //    //!myInFlushCond//shouldClearExtraDecodeInfo
-        //    //True
-        //    //False
-        //    //myNonFwdHazardCheckVec.orR
-        //    //&& !myInFlushCond//shouldClearExtraDecodeInfo
-        //    //True
-        //    False
-        //  ),
-        //  myPsIdOtherBubble=Some(
-        //    True
-        //  ),
-        //  myPsIdFwdBubble=Some(
-        //    True
-        //    //False
-        //    //myFwdHazardCheckVec.orR
-        //    //&& !myInFlushCond//shouldClearExtraDecodeInfo
-        //  ),
-        //)
+        myTempReorderBufIdx := (
+          RegNext(
+            myTempReorderBufIdx
+          )
+        )
+        when (
+          !shouldClearExtraDecodeInfo
+          && myGprTagInfoFifo.io.pop.valid
+        ) {
+          //myTempReorderBufIdx := (
+          //  RegNext(
+          //    myTempReorderBufIdx
+          //  )
+          //)
+          doSendBubbleMainMost(
+            myPsIdBubble=Some(
+              //!myInFlushCond//shouldClearExtraDecodeInfo
+              //True
+              //False
+              //myNonFwdHazardCheckVec.orR
+              //&& !myInFlushCond//shouldClearExtraDecodeInfo
+              //True
+              //False
+              True
+            ),
+            myPsIdOtherBubble=Some(
+              //True
+              False
+            ),
+            myPsIdFwdBubble=Some(
+              False
+              //True
+              //False
+              //myFwdHazardCheckVec.orR
+              //&& !myInFlushCond//shouldClearExtraDecodeInfo
+            ),
+          )
+        }
 
         when (
           !shouldClearExtraDecodeInfo
           && !myGprTagInfoFifo.io.pop.valid
         ) {
+          //doSendBubbleMainMost(
+          //  myPsIdBubble=Some(
+          //    //!myInFlushCond//shouldClearExtraDecodeInfo
+          //    //True
+          //    //False
+          //    //myNonFwdHazardCheckVec.orR
+          //    //&& !myInFlushCond//shouldClearExtraDecodeInfo
+          //    //True
+          //    //False
+          //    True
+          //  ),
+          //  myPsIdOtherBubble=Some(
+          //    //True
+          //    False
+          //  ),
+          //  myPsIdFwdBubble=Some(
+          //    False
+          //    //True
+          //    //False
+          //    //myFwdHazardCheckVec.orR
+          //    //&& !myInFlushCond//shouldClearExtraDecodeInfo
+          //  ),
+          //)
           rScoreboardFlushState := ScoreboardFlushState.IDLE
         }
 

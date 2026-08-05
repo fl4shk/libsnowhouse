@@ -1911,11 +1911,12 @@ case class SnowHouseForFmaxPsWbReorderBufIo(
       Bool()
     )
   )
-  val postFlushReorderBufIdx = (
-    in(
-      UInt(cfg.optScoreboardReorderBufWidth bits)
-    )
-  )
+
+  //val postFlushReorderBufIdx = (
+  //  in(
+  //    UInt(cfg.optScoreboardReorderBufWidth bits)
+  //  )
+  //)
   //val myBranchMispredictEtc = in(
   //  Bool()
   //)
@@ -3882,12 +3883,17 @@ case class SnowHouseForFmaxPipeStageWriteBack(
   //    synchronous=true,
   //  )
   //)
+  val myPostFlushReorderBufIdx = (
+    cfg.optScoreboard
+  ) generate (
+    UInt(cfg.optScoreboardReorderBufWidth bits)
+  )
   if (cfg.optScoreboard) {
     //myCommitFinalOutpStm.ready := True
-    myReorderBuf.io.postFlushReorderBufIdx := (
+    myPostFlushReorderBufIdx := (
       RegNext(
-        myReorderBuf.io.postFlushReorderBufIdx,
-        init=myReorderBuf.io.postFlushReorderBufIdx.getZero
+        myPostFlushReorderBufIdx,
+        init=myPostFlushReorderBufIdx.getZero
       )
     )
     when (
@@ -3896,7 +3902,7 @@ case class SnowHouseForFmaxPipeStageWriteBack(
         io.up.instrCnt.shouldIgnoreInstr.last
       )
     ) {
-      myReorderBuf.io.postFlushReorderBufIdx := (
+      myPostFlushReorderBufIdx := (
         io.up.instrCnt.scoreboardIssuePayload.reorderBufIdx
       )
     }
