@@ -2665,6 +2665,27 @@ case class SnowHousePipeStageInstrDecode(
         Reg(Bool(), init=False)
       )
     )
+    val rFwdTagAllocVec = (
+      Vec.fill(1 << myTempFwdTag.getWidth)(
+        Reg(Bool(), init=False)
+      )
+    )
+
+    val myReducedNonFwdTagAllocVec = (
+      Vec.fill(rNonFwdTagAllocVec.size - 1)(
+        Bool()
+      )
+    )
+    val myReducedFwdTagAllocVec = (
+      Vec.fill(rFwdTagAllocVec.size - 1)(
+        Bool()
+      )
+    )
+
+    for (idx <- 0 until (1 << myTempNonFwdTag.getWidth) - 1) {
+      myReducedNonFwdTagAllocVec(idx) := rNonFwdTagAllocVec(idx + 1)
+      myReducedFwdTagAllocVec(idx) := rFwdTagAllocVec(idx + 1)
+    }
 
     switch (
       //io.issue.ready
@@ -2674,29 +2695,27 @@ case class SnowHousePipeStageInstrDecode(
         //&& !upPayload(1).inpDecodeExt.head.opIsMemAccess.last
         && upPayload(1).splitOp.opIsMemAccess
       )
-      ## Bitscan(~rNonFwdTagAllocVec.asBits.asUInt)
+      ## Bitscan(
+        //~rNonFwdTagAllocVec.asBits.asUInt
+        ~myReducedNonFwdTagAllocVec.asBits.asUInt
+      )
     ) {
-      val size = rNonFwdTagAllocVec.size
-      for (idx <- 1 until size) {
+      val size = myReducedNonFwdTagAllocVec.size
+      for (idx <- 0 until size) {
         is (MaskedLiteral(
           "1"
           + ("-" * (size - idx - 1) + "1" + ("0" * idx))
         )) {
           // fast-ish (regarding fmax) search to implement the free list
           // search
-          myTempNonFwdTag := idx
-          rNonFwdTagAllocVec(idx) := True
+          myTempNonFwdTag := idx + 1
+          rNonFwdTagAllocVec(idx + 1) := True
         }
       }
       default {
       }
     }
 
-    val rFwdTagAllocVec = (
-      Vec.fill(1 << myTempFwdTag.getWidth)(
-        Reg(Bool(), init=False)
-      )
-    )
 
     switch (
       //io.issue.ready
@@ -2706,18 +2725,21 @@ case class SnowHousePipeStageInstrDecode(
         //&& !upPayload(1).inpDecodeExt.head.opIsMemAccess.last
         && !upPayload(1).splitOp.opIsMemAccess
       )
-      ## Bitscan(~rFwdTagAllocVec.asBits.asUInt)
+      ## Bitscan(
+        //~rFwdTagAllocVec.asBits.asUInt
+        ~myReducedFwdTagAllocVec.asBits.asUInt
+      )
     ) {
-      val size = rFwdTagAllocVec.size
-      for (idx <- 1 until size) {
+      val size = myReducedFwdTagAllocVec.size
+      for (idx <- 0 until size) {
         is (MaskedLiteral(
           "1"
           + ("-" * (size - idx - 1) + "1" + ("0" * idx))
         )) {
           // fast-ish (regarding fmax) search to implement the free list
           // search
-          myTempFwdTag := idx
-          rFwdTagAllocVec(idx) := True
+          myTempFwdTag := idx + 1
+          rFwdTagAllocVec(idx + 1) := True
         }
       }
       default {
