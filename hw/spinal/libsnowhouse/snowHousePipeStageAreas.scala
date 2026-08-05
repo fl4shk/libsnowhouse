@@ -1951,6 +1951,10 @@ case class SnowHousePipeStageInstrDecode(
         item := myPsIdFwdBubble.get
       })
     }
+    if (cfg.optScoreboard) {
+      down(pId).instrCnt.scoreboardIssuePayload.fwdTag := 0x0
+      down(pId).instrCnt.scoreboardIssuePayload.nonFwdTag := 0x0
+    }
   }
 
   val myNonScoreboardLcvDbusPartAArea = (
@@ -2946,7 +2950,7 @@ case class SnowHousePipeStageInstrDecode(
           (1 << myScoreboardBubbleRetireStm.fwdTag.getWidth)
           | idx
         ) {
-          // Bubbles being retired means we need to clear our fwd tag
+          // Bubbles being retired means we need to clear our tag
           // allocations used for those bubbles!
           rFwdTagAllocVec(idx) := False
         }
@@ -2972,9 +2976,6 @@ case class SnowHousePipeStageInstrDecode(
           (1 << myScoreboardCommitStm.nonFwdTag.getWidth)
           | idx
         ) {
-          // needed because the tag stored in `rMyFwdGprTagVec` gets
-          // overwritten sometimes by a "can-be-forwarded-from"
-          // instruction writing to the same register!
           rNonFwdTagAllocVec(idx) := False
         }
       }
@@ -2998,7 +2999,7 @@ case class SnowHousePipeStageInstrDecode(
           (1 << myScoreboardBubbleRetireStm.nonFwdTag.getWidth)
           | idx
         ) {
-          // Bubbles being retired means we need to clear our fwd tag
+          // Bubbles being retired means we need to clear our tag
           // allocations used for those bubbles!
           rNonFwdTagAllocVec(idx) := False
         }
