@@ -2460,11 +2460,14 @@ case class SnowHouseForFmaxPsWbReorderBuf(
   //}
 
   io.psIdCanIssue := (
-    rOccupancy
-    < (
-      myReorderBufSize
-      - myOccupancySubAmount
-      - (cfg.myPsIdBubbleNumFollowingInstrs + 1)
+    io.push.fire
+    || (
+      rOccupancy
+      < (
+        myReorderBufSize
+        - myOccupancySubAmount
+        - (cfg.myPsIdBubbleNumFollowingInstrs + 1)
+      )
     )
   )
 

@@ -3232,7 +3232,7 @@ case class SnowHousePipeStageInstrDecode(
     when (
       !myScoreboardReorderBufPsIdCanIssue
     ) {
-      cId.haltIt()
+      //cId.haltIt()
       //when (
       //  down.isFiring
       //) {
@@ -3244,15 +3244,24 @@ case class SnowHousePipeStageInstrDecode(
       //    + 1
       //  )
       //}
-      //doSendBubbleMainMost(
-      //  myPsIdBubble=None,
-      //  myPsIdOtherBubble=Some(
-      //    True
-      //  ),
-      //  myPsIdFwdBubble=Some(
-      //    True
-      //  )
-      //)
+      doSendBubbleMainMost(
+        myPsIdBubble=(
+          //Some(True)
+          None
+        ),
+        myPsIdOtherBubble=(
+          None
+          //Some(
+          //  True
+          //)
+        ),
+        myPsIdFwdBubble=(
+          None
+          //Some(
+          //  True
+          //)
+        )
+      )
     }
 
     down(pId).splitOp.scoreboardOpIsMemAccess := (
