@@ -1627,6 +1627,25 @@ case class SnowHouseInstrCnt(
   //  Bool()
   //)
   //def shouldIgnoreInstr = (pcChangeState === True)
+
+  def myScoreboardPsWbBubbleMost(
+    idx: Int
+  ) = (
+    shouldIgnoreInstr(idx)
+    || myPsIdBubble(idx)
+    || myPsIdFwdBubble(idx)
+  )
+  def myScoreboardNonFwdPsWbBubbleMost = (
+    myScoreboardPsWbBubbleMost(
+      0
+    )
+  )
+  def myScoreboardFwdPsWbBubbleMost = (
+    myScoreboardPsWbBubbleMost(
+      cfg.lowerMyFanoutRegPcSetItCnt - 1
+    )
+  )
+
   def setAsPsIdBubbleMain(
     somePsIdBubble: Bool=True
   ): Unit = {

@@ -1825,8 +1825,8 @@ case class SnowHouseForFmaxPsWbReorderBufPayloadMost(
     SnowHouseScoreboardCommitPayload(cfg=cfg)
   )
 
-  val myShouldIgnoreInstr = Bool()
-  val myPsIdBubble = Bool()
+  //val myShouldIgnoreInstr = Bool()
+  //val myPsIdBubble = Bool()
   //val opIsMemAccess = Bool()
 
   val regFileWrite = (
@@ -1858,8 +1858,8 @@ case class SnowHouseForFmaxPsWbReorderBufPayload(
 ) extends Bundle {
   val most = SnowHouseForFmaxPsWbReorderBufPayloadMost(cfg=cfg)
   def commit = most.commit
-  def myShouldIgnoreInstr = most.myShouldIgnoreInstr
-  def myPsIdBubble = most.myPsIdBubble
+  //def myShouldIgnoreInstr = most.myShouldIgnoreInstr
+  //def myPsIdBubble = most.myPsIdBubble
   //def opIsMemAccess = most.opIsMemAccess
   def regFileWrite = most.regFileWrite
   def myWbPayload = most.myWbPayload
@@ -3147,37 +3147,11 @@ case class SnowHouseForFmaxPipeStageWriteBack(
 
     myNonFwdWbFifo.io.push.valid := (
       cLink.up.isValid
-      && (
-        //myNonFwdWbPayload(0).splitOp.opIsMemAccess
-        (
-          myNonFwdWbPayload(0).outpDecodeExt.opIsMemAccess.head
-          //&& (
-          //  //!(
-          //  //  myNonFwdWbPayload(0).instrCnt.myPsIdBubble.head
-          //  //  //|| myNonFwdWbPayload(0).instrCnt.shouldIgnoreInstr.head
-          //  //  //&& !myNonFwdWbPayload(0).instrCnt.myScoreboardReadGprsBubble.head
-          //  //)
-          //  //|| myNonFwdWbPayload(0).instrCnt.shouldIgnoreInstr.head
-          //  !myNonFwdWbPayload(0).instrCnt.myPsIdBubble.head
-          //  //|| !io.myScoreboardSavedGprTagVec(
-          //  //  myNonFwdWbPayload(0).gprIdxVec.last
-          //  //)
-          //  //|| !mkScoreboardGprTagOrReduce(myNonFwdWbPayload(0))
-          //  ////!io.myScoreboardSavedGprTagVec(
-          //  ////  myNonFwdWbPayload(0).gprIdxVec.last
-          //  ////)
-          //  //|| myNonFwdWbPayload(0).instrCnt.shouldIgnoreInstr.last
-          //)
-        )
-        || (
-          myNonFwdWbPayload(0).instrCnt.shouldIgnoreInstr.head
-          && !myFwdWbFifo.io.pop.valid
-        )
-      )
-      //&& (
-      //  !rMyShouldIgnoreInstrState
-      //  || !myFwdWbValid
-      //)
+      && myNonFwdWbPayload(0).outpDecodeExt.opIsMemAccess.head
+      //&& !myNonFwdWbPayload(0).instrCnt.shouldIgnoreInstr.head
+      //&& !myNonFwdWbPayload(0).instrCnt.myPsIdBubble.head
+      //&& !myNonFwdWbPayload(0).instrCnt.myPsIdFwdBubble.head
+      && !myNonFwdWbPayload(0).instrCnt.myScoreboardNonFwdPsWbBubbleMost
       && !myNonFwdWbPayload(0).instrCnt.myPsExMemAccessBubble.head
     )
 
@@ -3217,25 +3191,11 @@ case class SnowHouseForFmaxPipeStageWriteBack(
 
     myFwdWbFifo.io.push.valid := (
       cLink.up.isValid
-      && (
-        //!myFwdWbPayload(0).splitOp.opIsMemAccess
-        !myFwdWbPayload(0).outpDecodeExt.opIsMemAccess.last
-        && !myFwdWbPayload(0).instrCnt.shouldIgnoreInstr.last
-      )
-      //&& !myFwdWbPayload(0).inpDecodeExt.last.opIsMemAccess(0)
-      //&& (
-      //  //!(
-      //  //  myFwdWbPayload(0).instrCnt.myPsIdBubble.last
-      //  //  //|| myFwdWbPayload(0).instrCnt.shouldIgnoreInstr.last
-      //  //  //&& !myFwdWbPayload(0).instrCnt.myScoreboardReadGprsBubble.last
-      //  //)
-      //  //!myFwdWbPayload(0).instrCnt.myPsIdBubble.last
-      //  //|| !io.myScoreboardSavedGprTagVec(
-      //  //  myFwdWbPayload(0).gprIdxVec.last
-      //  //)
-      //  //|| !mkScoreboardGprTagOrReduce(myFwdWbPayload(0))
-      //  //|| myFwdWbPayload(0).instrCnt.shouldIgnoreInstr.last
-      //)
+      && !myFwdWbPayload(0).outpDecodeExt.opIsMemAccess.last
+      //&& !myFwdWbPayload(0).instrCnt.shouldIgnoreInstr.last
+      //&& !myFwdWbPayload(0).instrCnt.myPsIdBubble.last
+      //&& !myFwdWbPayload(0).instrCnt.myPsIdFwdBubble.last
+      && !myFwdWbPayload(0).instrCnt.myScoreboardFwdPsWbBubbleMost
       && !myFwdWbPayload(0).instrCnt.myPsExMultiCycleBubble.last
     )
     myFwdWbFifo.io.push.payload.instrCnt := (
@@ -3327,29 +3287,31 @@ case class SnowHouseForFmaxPipeStageWriteBack(
   //) generate (
   //  Reg(Bool(), init=False)
   //)
-  val myNonFwdShouldIgnoreInstr = (
-    cfg.optScoreboard
-  ) generate (
-    //myNonFwdWbFifo.io.pop.valid
-    myNonFwdWbFifo.io.pop.valid
-    && (
-      myNonFwdWbFifo.io.pop.instrCnt.shouldIgnoreInstr.head
-      //|| myNonFwdWbFifo.io.pop.instrCnt.myPsIdBubble.head
-      //|| (
-      //  myNonFwdWbFifo.io.pop.instrCnt.myPsIdBubble.head
-      //  && io.myScoreboardSavedGprTagVec(
-      //    myNonFwdWbFifo.io.pop.gprIdxVec.last
-      //  )
-      //)
-    )
-    //&& !myNonFwdWbFifo.io.pop.payload.instrCnt.myPsIdBubble.head
-  )
+
+  //val myNonFwdShouldIgnoreInstr = (
+  //  cfg.optScoreboard
+  //) generate (
+  //  //myNonFwdWbFifo.io.pop.valid
+  //  myNonFwdWbFifo.io.pop.valid
+  //  && (
+  //    myNonFwdWbFifo.io.pop.instrCnt.shouldIgnoreInstr.head
+  //    //|| myNonFwdWbFifo.io.pop.instrCnt.myPsIdBubble.head
+  //    //|| (
+  //    //  myNonFwdWbFifo.io.pop.instrCnt.myPsIdBubble.head
+  //    //  && io.myScoreboardSavedGprTagVec(
+  //    //    myNonFwdWbFifo.io.pop.gprIdxVec.last
+  //    //  )
+  //    //)
+  //  )
+  //  //&& !myNonFwdWbFifo.io.pop.payload.instrCnt.myPsIdBubble.head
+  //)
+
   val stickyMyD2hBusValid = (
     if (cfg.optScoreboard) (
       //myD2hBus.fire
       myD2hBus.valid
       //|| rSeenMyD2hBusFire
-      || myNonFwdShouldIgnoreInstr
+      //|| myNonFwdShouldIgnoreInstr
     ) else (
       // TODO: determine whether this works!
       //myD2hBus.fire
@@ -4079,45 +4041,45 @@ case class SnowHouseForFmaxPipeStageWriteBack(
       myReorderBuf.io.psIdCanIssue
     )
   }
-  val myReorderBufSize = (
-    cfg.optScoreboard
-  ) generate (
-    1 << cfg.optScoreboardReorderBufWidth
-  )
-  val myStallPassCntRstVal = (
-    cfg.optScoreboard
-  ) generate (
-    myReorderBufSize - 8
-  )
-  val rNonFwdStallPassCnt = (
-    cfg.optScoreboard
-  ) generate (
-    Reg(UInt(log2Up(myReorderBufSize) + 1 bits))
-    init(myStallPassCntRstVal)
-  )
-  val rFwdStallPassCnt = (
-    cfg.optScoreboard
-  ) generate (
-    Reg(UInt(log2Up(myReorderBufSize) + 1 bits))
-    init(myStallPassCntRstVal)
-  )
+  //val myReorderBufSize = (
+  //  cfg.optScoreboard
+  //) generate (
+  //  1 << cfg.optScoreboardReorderBufWidth
+  //)
+  //val myStallPassCntRstVal = (
+  //  cfg.optScoreboard
+  //) generate (
+  //  myReorderBufSize - 8
+  //)
+  //val rNonFwdStallPassCnt = (
+  //  cfg.optScoreboard
+  //) generate (
+  //  Reg(UInt(log2Up(myReorderBufSize) + 1 bits))
+  //  init(myStallPassCntRstVal)
+  //)
+  //val rFwdStallPassCnt = (
+  //  cfg.optScoreboard
+  //) generate (
+  //  Reg(UInt(log2Up(myReorderBufSize) + 1 bits))
+  //  init(myStallPassCntRstVal)
+  //)
 
-  if (cfg.optScoreboard) {
-    when (
-      myNonFwdWbValid
-      && !myNonFwdWbPayload(1).instrCnt.shouldIgnoreInstr.last
-      && myFwdCommitFrontStm.fire
-    ) {
-      rNonFwdStallPassCnt := rNonFwdStallPassCnt - 1
-    }
+  //if (cfg.optScoreboard) {
+  //  when (
+  //    myNonFwdWbValid
+  //    && !myNonFwdWbPayload(1).instrCnt.shouldIgnoreInstr.last
+  //    && myFwdCommitFrontStm.fire
+  //  ) {
+  //    rNonFwdStallPassCnt := rNonFwdStallPassCnt - 1
+  //  }
 
-    when (
-      myNonFwdWbValid
-      && myNonFwdCommitFrontStm.fire
-    ) {
-      rNonFwdStallPassCnt := myStallPassCntRstVal
-    }
-  }
+  //  when (
+  //    myNonFwdWbValid
+  //    && myNonFwdCommitFrontStm.fire
+  //  ) {
+  //    rNonFwdStallPassCnt := myStallPassCntRstVal
+  //  }
+  //}
 
 
   def setCommitEtc(
@@ -4167,15 +4129,15 @@ case class SnowHouseForFmaxPipeStageWriteBack(
     )
 
     if (cfg.optScoreboard) {
-      someCommitStm.myShouldIgnoreInstr := (
-        someMyWbPayload(1).instrCnt.shouldIgnoreInstr.last
-        //&& !someMyWbPayload(1).instrCnt.myPsIdBubble.last
-      )
-      someCommitStm.myPsIdBubble := (
-        False
-        //someMyWbPayload(1).instrCnt.myPsIdBubble.last
-        //&& !someMyWbPayload(1).instrCnt.myPsIdBubble.last
-      )
+      //someCommitStm.myShouldIgnoreInstr := (
+      //  someMyWbPayload(1).instrCnt.shouldIgnoreInstr.last
+      //  //&& !someMyWbPayload(1).instrCnt.myPsIdBubble.last
+      //)
+      //someCommitStm.myPsIdBubble := (
+      //  False
+      //  //someMyWbPayload(1).instrCnt.myPsIdBubble.last
+      //  //&& !someMyWbPayload(1).instrCnt.myPsIdBubble.last
+      //)
       //someCommitStm.opIsMemAccess := (
       //  someMyWbPayload(1).splitOp.scoreboardOpIsMemAccess
       //)
@@ -4303,14 +4265,14 @@ case class SnowHouseForFmaxPipeStageWriteBack(
       )
       && !someMyWbPayload(1).gprIsZeroVec.last.last
       //&& !someMyWbPayload(1).instrCnt.myPsIdBubble.last
-      && (
-        !someMyWbPayload(1).instrCnt.myPsIdBubble.last
-        //|| !io.myScoreboardSavedGprTagVec(
-        //  someMyWbPayload(1).gprIdxVec.last
-        //)
-        //|| !mkScoreboardGprTagOrReduce(someMyWbPayload(1))
-      )
-      && !someMyWbPayload(1).instrCnt.shouldIgnoreInstr.last
+      //&& (
+      //  !someMyWbPayload(1).instrCnt.myPsIdBubble.last
+      //  //|| !io.myScoreboardSavedGprTagVec(
+      //  //  someMyWbPayload(1).gprIdxVec.last
+      //  //)
+      //  //|| !mkScoreboardGprTagOrReduce(someMyWbPayload(1))
+      //)
+      //&& !someMyWbPayload(1).instrCnt.shouldIgnoreInstr.last
       && {
         if (cfg.optScoreboard && isNonFwd) {
           stickyMemMmwValid
@@ -4517,7 +4479,7 @@ case class SnowHouseForFmaxPipeStageWriteBack(
             //cLink.up.isValid
             //&& 
             myFwdWbValid
-            && !rNonFwdStallPassCnt.msb
+            //&& !rNonFwdStallPassCnt.msb
             //&& (
             //  
             //  my
