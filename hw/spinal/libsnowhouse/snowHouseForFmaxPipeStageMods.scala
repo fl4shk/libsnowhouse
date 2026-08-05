@@ -3976,6 +3976,9 @@ case class SnowHouseForFmaxPipeStageWriteBack(
     io.commitEtc.scoreboardBubbleRetire.fwdTag := (
       io.up.instrCnt.scoreboardIssuePayload.fwdTag
     )
+    io.commitEtc.scoreboardBubbleRetire.nonFwdTag := (
+      io.up.instrCnt.scoreboardIssuePayload.nonFwdTag
+    )
     io.commitEtc.scoreboardBubbleRetire.gprIdxVec.last := (
       io.up.gprIdxVec.last
     )
