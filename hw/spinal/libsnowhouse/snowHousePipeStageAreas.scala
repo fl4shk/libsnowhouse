@@ -2466,12 +2466,12 @@ case class SnowHousePipeStageInstrDecode(
     //)
     val myInFlushCond = (
       shouldClearExtraDecodeInfo
-      //|| (
-      //  rScoreboardFlushState.asBits(1)
-      //  //&& !up.isFiring
-      //  //&& up.isValid
-      //  //&& !myGprTagInfoFifo.io.pop.valid
-      //)
+      || (
+        rScoreboardFlushState.asBits(1)
+        //&& !up.isFiring
+        //&& up.isValid
+        //&& !myGprTagInfoFifo.io.pop.valid
+      )
     )
 
     //myGprTagInfoFifo.io.flush := False
@@ -2850,16 +2850,22 @@ case class SnowHousePipeStageInstrDecode(
     when (
       (
         (
-          myNonFwdHazardCheckVec.orR
-          || myFwdHazardCheckVec.orR
+          (
+            myNonFwdHazardCheckVec.orR
+            || myFwdHazardCheckVec.orR
+          )
+          //&& (
+          //  //!myInFlushCond//shouldClearExtraDecodeInfo
+          //  !myInFlushCond
+          //)
         )
-        && (
-          //!myInFlushCond//shouldClearExtraDecodeInfo
-          !myInFlushCond
-        )
+        || myReducedFwdTagAllocVec.asBits.andR
+        || myReducedNonFwdTagAllocVec.asBits.andR
       )
-      || myReducedFwdTagAllocVec.asBits.andR
-      || myReducedNonFwdTagAllocVec.asBits.andR
+      && (
+        //!myInFlushCond//shouldClearExtraDecodeInfo
+        !myInFlushCond
+      )
     ) {
       doSendBubbleMainMost(
         myPsIdBubble=Some(
