@@ -2711,7 +2711,7 @@ case class SnowHousePipeStageInstrDecode(
           up.isFiring
           || (
             down.isFiring
-            && myInFlushCond
+            && !myInFlushCond
           )
         )
         //&& !upPayload(1).inpDecodeExt.head.opIsMemAccess.last
@@ -2748,10 +2748,10 @@ case class SnowHousePipeStageInstrDecode(
         //down.isFiring
         (
           up.isFiring
-          || (
-            down.isFiring
-            && myInFlushCond
-          )
+          //|| (
+          //  down.isFiring
+          //  && myInFlushCond
+          //)
         )
         //&& !upPayload(1).inpDecodeExt.head.opIsMemAccess.last
         && !upPayload(1).splitOp.opIsMemAccess
