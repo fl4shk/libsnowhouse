@@ -1929,6 +1929,7 @@ case class SnowHousePipeStageInstrDecode(
     //myPsIdReorderBufForceValid: Option[Bool]=None,
     myPsIdOtherBubble: Option[Bool]=None,
     myPsIdFwdBubble: Option[Bool]=None,
+    myInFlushCond: Option[Bool]=None,
   ): Unit = {
     require(cfg.useLcvDataBus)
     cId.duplicateIt()
@@ -1951,9 +1952,21 @@ case class SnowHousePipeStageInstrDecode(
         item := myPsIdFwdBubble.get
       })
     }
-    if (cfg.optScoreboard) {
-      down(pId).instrCnt.scoreboardIssuePayload.fwdTag := 0x0
-      down(pId).instrCnt.scoreboardIssuePayload.nonFwdTag := 0x0
+    if (
+      cfg.optScoreboard
+      && myInFlushCond != None
+    ) {
+      when (myInFlushCond.get) {
+        down(pId).instrCnt.scoreboardIssuePayload.fwdTag := 0x0
+        down(pId).instrCnt.scoreboardIssuePayload.nonFwdTag := 0x0
+      } otherwise {
+        down(pId).instrCnt.scoreboardIssuePayload.fwdTag := (
+          upPayload(1).instrCnt.scoreboardIssuePayload.fwdTag
+        )
+        down(pId).instrCnt.scoreboardIssuePayload.nonFwdTag := (
+          upPayload(1).instrCnt.scoreboardIssuePayload.nonFwdTag
+        )
+      }
     }
   }
 
@@ -2694,10 +2707,17 @@ case class SnowHousePipeStageInstrDecode(
     switch (
       //io.issue.ready
       (
-        up.isFiring
-        //down.isFiring
+        (
+          up.isFiring
+          || (
+            down.isFiring
+            && !myInFlushCond
+          )
+        )
         //&& !upPayload(1).inpDecodeExt.head.opIsMemAccess.last
         && upPayload(1).splitOp.opIsMemAccess
+        //&& !myNonFwdHazardCheckVec.orR
+        //&& !myInFlushCond
       )
       ## Bitscan(
         //~rNonFwdTagAllocVec.asBits.asUInt
@@ -2724,10 +2744,18 @@ case class SnowHousePipeStageInstrDecode(
     switch (
       //io.issue.ready
       (
-        up.isFiring
+        //up.isFiring
         //down.isFiring
+        (
+          up.isFiring
+          || (
+            down.isFiring
+            && !myInFlushCond
+          )
+        )
         //&& !upPayload(1).inpDecodeExt.head.opIsMemAccess.last
         && !upPayload(1).splitOp.opIsMemAccess
+        //&& !myFwdHazardCheckVec.orR
       )
       ## Bitscan(
         //~rFwdTagAllocVec.asBits.asUInt
@@ -2856,6 +2884,7 @@ case class SnowHousePipeStageInstrDecode(
           //&& !myInFlushCond//shouldClearExtraDecodeInfo
         ),
         //myUpdateGprIsOrIsntZero=false,
+        myInFlushCond=Some(myInFlushCond)
       )
     }
 
