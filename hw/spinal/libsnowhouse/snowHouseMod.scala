@@ -2366,14 +2366,26 @@ private[libsnowhouse] case class SnowHouseForFmax(
     myPostExPreWbStmVec != null
   ) {
     for (idx <- 0 until myPostExPreWbStmVec.size) {
-      if (idx == 0) {
-        myPostExPreWbStmVec(idx) <-< psEx.io.down
-      } //else 
-      //if (idx + 1 == myPostExPreWbStmVec.size) {
-      //  psWb.io.up <-< myPostExPreWbStmVec(idx)
-      //}
-      else {
-        myPostExPreWbStmVec(idx) <-< myPostExPreWbStmVec(idx - 1)
+      if (cfg.optScoreboard) {
+        if (idx == 0) {
+          myPostExPreWbStmVec(idx) <-/< psEx.io.down
+        } //else 
+        //if (idx + 1 == myPostExPreWbStmVec.size) {
+        //  psWb.io.up <-< myPostExPreWbStmVec(idx)
+        //}
+        else {
+          myPostExPreWbStmVec(idx) <-/< myPostExPreWbStmVec(idx - 1)
+        }
+      } else { // if (!cfg.optScoreboard)
+        if (idx == 0) {
+          myPostExPreWbStmVec(idx) <-< psEx.io.down
+        } //else 
+        //if (idx + 1 == myPostExPreWbStmVec.size) {
+        //  psWb.io.up <-< myPostExPreWbStmVec(idx)
+        //}
+        else {
+          myPostExPreWbStmVec(idx) <-< myPostExPreWbStmVec(idx - 1)
+        }
       }
     }
     psWb.io.up << myPostExPreWbStmVec.last
