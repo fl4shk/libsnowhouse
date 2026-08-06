@@ -4086,13 +4086,13 @@ case class SnowHouseForFmaxPipeStageWriteBack(
         io.up.instrCnt.scoreboardIssuePayload.reorderBufIdx
       )
     }
-
     
     io.commitEtc.scoreboardBubbleRetire.valid := (
       io.up.fire
       && (
-        io.up.instrCnt.myScoreboardPsWbBubbleMost(1)
-        || io.up.instrCnt.myPsIdFwdBubble(1)
+        io.up.instrCnt.shouldIgnoreInstr(1)
+        //io.up.instrCnt.myScoreboardPsWbBubbleMost(1)
+        //|| io.up.instrCnt.myPsIdFwdBubble(1)
       )
       //&& (
       //  io.up.instrCnt.scoreboardIssuePayload.nonBubbleTag
