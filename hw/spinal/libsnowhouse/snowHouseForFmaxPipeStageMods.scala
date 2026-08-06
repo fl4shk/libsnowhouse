@@ -2537,7 +2537,8 @@ case class SnowHouseForFmaxPsWbReorderBuf(
           //!rAttemptPushVec(idx)
           //&& 
 
-          myOccupancy < myReorderBufSize - 2//1
+          //myOccupancy < myReorderBufSize - 2//1
+          !myOccupancy.msb
           && 
           (
             (
