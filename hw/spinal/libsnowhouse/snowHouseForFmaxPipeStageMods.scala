@@ -4063,11 +4063,15 @@ case class SnowHouseForFmaxPipeStageWriteBack(
       myCommitBackStm
     )
   )
-  val myCommitTrueFinalOutpStm = (
+  val myCommitTrueFinalOutpStmVec = (
     if (cfg.optScoreboard) (
-      cloneOf(myCommitAlmostFinalOutpStm)
+      Vec.fill(2)(
+        cloneOf(myCommitAlmostFinalOutpStm)
+      )
     ) else (
-      myCommitAlmostFinalOutpStm
+      Vec(
+        myCommitAlmostFinalOutpStm
+      )
     )
   )
   //val myCommitForkStm = (
@@ -4278,13 +4282,24 @@ case class SnowHouseForFmaxPipeStageWriteBack(
   )
 
   if (cfg.optScoreboard) {
-    myCommitTrueFinalOutpStm <-< myCommitAlmostFinalOutpStm
+    for (idx <- 0 until myCommitTrueFinalOutpStmVec.size) {
+      if (idx == 0) {
+        myCommitTrueFinalOutpStmVec(idx) <-/< (
+          myCommitAlmostFinalOutpStm
+        )
+      } else {
+        myCommitTrueFinalOutpStmVec(idx) <-/< (
+          myCommitTrueFinalOutpStmVec(idx - 1)
+        )
+      }
+    }
+    //myCommitTrueFinalOutpStm <-< myCommitAlmostFinalOutpStm
     //myCommitTrueFinalOutpStm << myCommitAlmostFinalOutpStm
 
     (
       //myCommitAlmostFinalOutpStm
       //myCommitForkStm.last
-      myCommitTrueFinalOutpStm
+      myCommitTrueFinalOutpStmVec.last
     )
     .translateInto(io.commitEtc.scoreboardCommmit)(
       dataAssignment=(outp, inp) => {
