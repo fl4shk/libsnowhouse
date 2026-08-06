@@ -4204,6 +4204,11 @@ case class SnowHouseForFmaxPipeStageWriteBack(
     ) generate (
       someMyWbPayload(1).instrCnt.scoreboardIssuePayload.fwdTag
     )
+    val myTempNonBubbleTag = (
+      cfg.optScoreboard
+    ) generate (
+      someMyWbPayload(1).instrCnt.scoreboardIssuePayload.nonBubbleTag
+    )
     val myHistNonFwdTag = (
       cfg.optScoreboard
       //&& isNonFwd
@@ -4241,6 +4246,25 @@ case class SnowHouseForFmaxPipeStageWriteBack(
       //&& !isNonFwd
     ) generate (
       myHistFwdTag(0) =/= myHistFwdTag(1)
+    )
+    val myHistNonBubbleTag = (
+      cfg.optScoreboard
+      //&& !isNonNonBubble
+    ) generate (
+      History(
+        that=myTempNonBubbleTag,
+        when=someCommitStm.fire,
+        length=2,
+        init=(
+          U(s"${myTempNonBubbleTag.getWidth}'d1")
+        )
+      )
+    )
+    val haveNewNonBubbleTag = (
+      cfg.optScoreboard
+      //&& !isNonNonBubble
+    ) generate (
+      myHistNonBubbleTag(0) =/= myHistNonBubbleTag(1)
     )
 
     if (cfg.optScoreboard) {
@@ -4497,10 +4521,11 @@ case class SnowHouseForFmaxPipeStageWriteBack(
             && someMyWbPayload(1).splitOp.scoreboardOpIsMemAccess
             //&& !someMyWbPayload(1).instrCnt.myPsIdBubble.head
             //&& myNonFwdWbValid
-            //&& (
-            //  //someMyWbPayload(1).
-            //  haveNewNonFwdTag
-            //)
+            && (
+              //someMyWbPayload(1).
+              //haveNewNonFwdTag
+              haveNewNonBubbleTag
+            )
           )
         } else {
           someCommitStm.commit.myNonFwdValid := False
@@ -4511,7 +4536,7 @@ case class SnowHouseForFmaxPipeStageWriteBack(
             //someMyWbPayload(1).instrCnt.myPsIdReorderBufForceValid.last
             //&& myFwdWbValid
             //haveNewFwdTag
-            True
+            haveNewNonBubbleTag
           )
         }
       }
