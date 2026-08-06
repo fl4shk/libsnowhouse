@@ -4187,13 +4187,18 @@ case class SnowHouseForFmaxPipeStageWriteBack(
     someMyShouldIgnoreInstrState: Bool,
   ): Unit = {
     val myTempNonFwdTag = (
+      cfg.optScoreboard
+    ) generate (
       someMyWbPayload(1).instrCnt.scoreboardIssuePayload.nonFwdTag
     )
     val myTempFwdTag = (
+      cfg.optScoreboard
+    ) generate (
       someMyWbPayload(1).instrCnt.scoreboardIssuePayload.fwdTag
     )
     val myHistNonFwdTag = (
-      isNonFwd
+      cfg.optScoreboard
+      //&& isNonFwd
     ) generate (
       History(
         that=myTempNonFwdTag,
@@ -4205,11 +4210,15 @@ case class SnowHouseForFmaxPipeStageWriteBack(
       )
     )
     val haveNewNonFwdTag = (
-      isNonFwd
+      cfg.optScoreboard
+      //&& isNonFwd
     ) generate (
       myHistNonFwdTag(0) =/= myHistNonFwdTag(1)
     )
     val myHistFwdTag = (
+      cfg.optScoreboard
+      //&& !isNonFwd
+    ) generate (
       History(
         that=myTempFwdTag,
         when=someCommitStm.fire,
@@ -4220,6 +4229,9 @@ case class SnowHouseForFmaxPipeStageWriteBack(
       )
     )
     val haveNewFwdTag = (
+      cfg.optScoreboard
+      //&& !isNonFwd
+    ) generate (
       myHistFwdTag(0) =/= myHistFwdTag(1)
     )
 
@@ -4472,7 +4484,7 @@ case class SnowHouseForFmaxPipeStageWriteBack(
           someCommitStm.commit.myNonFwdValid := (
             (
               someMyWbPayload(1).instrCnt.shouldIgnoreInstr.last
-              //|| someMyWbPayload(1).gprIsZeroVec.last.last
+              || someMyWbPayload(1).gprIsZeroVec.last.last
             )
             && someMyWbPayload(1).splitOp.scoreboardOpIsMemAccess
             //&& !someMyWbPayload(1).instrCnt.myPsIdBubble.head

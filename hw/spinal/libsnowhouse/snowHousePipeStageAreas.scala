@@ -3035,7 +3035,8 @@ case class SnowHousePipeStageInstrDecode(
     switch (
       (
         myScoreboardCommitStm.fire
-        && myScoreboardCommitStm.opIsFwd
+        //&& myScoreboardCommitStm.opIsFwd
+        && myScoreboardCommitStm.myNonFwdValid
       )
       ## (
         myScoreboardCommitStm.nonFwdTag
@@ -3057,7 +3058,8 @@ case class SnowHousePipeStageInstrDecode(
     switch (
       (
         myScoreboardBubbleRetireStm.fire
-        && myScoreboardBubbleRetireStm.opIsFwd
+        //&& myScoreboardBubbleRetireStm.opIsFwd
+        && myScoreboardBubbleRetireStm.myNonFwdValid
       )
       ## (
         myScoreboardBubbleRetireStm.nonFwdTag
