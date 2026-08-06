@@ -1960,6 +1960,12 @@ case class SnowHouseForFmaxPsWbReorderBufIo(
     )
   )
 
+  val occupancy = (
+    out(
+      UInt(cfg.optScoreboardReorderBufWidth + 1 bits)
+    )
+  )
+
   //val postFlushReorderBufIdx = (
   //  in(
   //    UInt(cfg.optScoreboardReorderBufWidth bits)
@@ -2222,11 +2228,14 @@ case class SnowHouseForFmaxPsWbReorderBuf(
   val rValidVec = Vec.fill(myReorderBufSize)(
     Reg(Bool(), init=False)
   )
-  //val myOccupancy = (
-  //  //Reg(UInt(log2Up(myReorderBufSize) + 1 bits))
-  //  //init(0x0)
-  //  CountOne(rValidVec.asBits.asUInt)
-  //)
+  val myOccupancy = (
+    //Reg(UInt(log2Up(myReorderBufSize) + 1 bits))
+    //init(0x0)
+    CountOne(rValidVec.asBits.asUInt)
+  )
+  io.occupancy := (
+    RegNext(myOccupancy)
+  )
   //val rAttemptPushVec = Vec.fill(myReorderBufSize)(
   //  Reg(Bool(), init=False)
   //)
@@ -2539,8 +2548,13 @@ case class SnowHouseForFmaxPsWbReorderBuf(
 
           //myOccupancy < myReorderBufSize - 2//1
           //!myOccupancy.msb
-          !rValidVec.asBits.andR // check whether it's full
-          && 
+          //!rValidVec.asBits.andR // check whether it's full
+          //&& 
+          //(
+          //  myOccupancy < myReorderBufSize - 3
+          //  || io.push.commit.myNonFwdValid
+          //)
+          //&&
           (
             (
               !rValidVec(idx)
@@ -4284,45 +4298,51 @@ case class SnowHouseForFmaxPipeStageWriteBack(
       myReorderBuf.io.psIdCanIssue
     )
   }
-  //val myReorderBufSize = (
-  //  cfg.optScoreboard
-  //) generate (
-  //  1 << cfg.optScoreboardReorderBufWidth
-  //)
-  //val myStallPassCntRstVal = (
-  //  cfg.optScoreboard
-  //) generate (
-  //  myReorderBufSize - 8
-  //)
-  //val rNonFwdStallPassCnt = (
-  //  cfg.optScoreboard
-  //) generate (
-  //  Reg(UInt(log2Up(myReorderBufSize) + 1 bits))
-  //  init(myStallPassCntRstVal)
-  //)
-  //val rFwdStallPassCnt = (
-  //  cfg.optScoreboard
-  //) generate (
-  //  Reg(UInt(log2Up(myReorderBufSize) + 1 bits))
-  //  init(myStallPassCntRstVal)
-  //)
+  val myScoreboardStallPassCheckArea = (
+    cfg.optScoreboard
+  ) generate (new Area {
+    val myReorderBufSize = (
+      1 << cfg.optScoreboardReorderBufWidth
+    )
+    val myStallPassMaxOccupancy = (
+      myReorderBufSize - 4//8
+    )
+    //val rNonFwdStallPassCnt = (
+    //  Reg(UInt(log2Up(myReorderBufSize) + 1 bits))
+    //  init(myStallPassCntRstVal)
+    //)
+    //val rFwdStallPassCnt = (
+    //  Reg(UInt(log2Up(myReorderBufSize) + 1 bits))
+    //  init(myStallPassCntRstVal)
+    //)
 
-  //if (cfg.optScoreboard) {
-  //  when (
-  //    myNonFwdWbValid
-  //    && !myNonFwdWbPayload(1).instrCnt.shouldIgnoreInstr.last
-  //    && myFwdCommitFrontStm.fire
-  //  ) {
-  //    rNonFwdStallPassCnt := rNonFwdStallPassCnt - 1
-  //  }
+    val rAllowFwdCommit = (
+      RegNext(
+        !myNonFwdWbValid
+        || myReorderBuf.io.occupancy < myStallPassMaxOccupancy
+      )
+    )
+    //when (
+    //  myNonFwdWbValid
+    //  && 
+    //) {
+    //}
 
-  //  when (
-  //    myNonFwdWbValid
-  //    && myNonFwdCommitFrontStm.fire
-  //  ) {
-  //    rNonFwdStallPassCnt := myStallPassCntRstVal
-  //  }
-  //}
+    //when (
+    //  myNonFwdWbValid
+    //  //&& !myNonFwdWbPayload(1).instrCnt.shouldIgnoreInstr.last
+    //  && myFwdCommitFrontStm.fire
+    //) {
+    //  //rNonFwdStallPassCnt := rNonFwdStallPassCnt - 1
+    //}
+
+    //when (
+    //  myNonFwdWbValid
+    //  && myNonFwdCommitFrontStm.fire
+    //) {
+    //  rNonFwdStallPassCnt := myStallPassCntRstVal
+    //}
+  })
 
 
   def setCommitEtc(
@@ -4690,7 +4710,8 @@ case class SnowHouseForFmaxPipeStageWriteBack(
             //cLink.up.isValid
             //&& 
             myFwdWbValid
-            //&& !rNonFwdStallPassCnt.msb
+            && myScoreboardStallPassCheckArea.rAllowFwdCommit
+            //&& !myScoreboardStallPassCheckArea.rNonFwdStallPassCnt.msb
             //&& (
             //  
             //  my
