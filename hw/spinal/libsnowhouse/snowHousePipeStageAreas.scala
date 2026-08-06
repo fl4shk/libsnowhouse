@@ -2968,6 +2968,7 @@ case class SnowHousePipeStageInstrDecode(
           || (
             myScoreboardBubbleRetireStm.fire
             && myScoreboardBubbleRetireStm.opIsFwd
+            //&& myScoreboardBubbleRetireStm.myFwdValid
             && (
               rMyFwdGprTagVec(idx).tag
               === myScoreboardBubbleRetireStm.fwdTag
@@ -2984,6 +2985,7 @@ case class SnowHousePipeStageInstrDecode(
       (
         myScoreboardCommitStm.fire
         && myScoreboardCommitStm.opIsFwd
+        && myScoreboardCommitStm.myFwdValid
       )
       ## (
         myScoreboardCommitStm.fwdTag
@@ -3009,6 +3011,7 @@ case class SnowHousePipeStageInstrDecode(
       (
         myScoreboardBubbleRetireStm.fire
         && myScoreboardBubbleRetireStm.opIsFwd
+        //&& myScoreboardBubbleRetireStm.myFwdValid
       )
       ## (
         myScoreboardBubbleRetireStm.fwdTag

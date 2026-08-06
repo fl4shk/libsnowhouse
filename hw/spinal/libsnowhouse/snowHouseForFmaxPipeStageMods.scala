@@ -3853,14 +3853,6 @@ case class SnowHouseForFmaxPipeStageWriteBack(
     )
   )
 
-  //def myInstrMayPassCntInitVal = cfg.optForFmaxPsExFwdSize - 2//1
-
-  //val rInstrMayPassCnt = (
-  //  cfg.optScoreboard
-  //) generate (
-  //  Reg(UInt(log2Up(cfg.optForFmaxPsExFwdSize) bits))
-  //  init(myInstrMayPassCntInitVal)
-  //)
   val myNonFwdCommitFrontStm = (
     cfg.optScoreboard
   ) generate (
@@ -3871,6 +3863,125 @@ case class SnowHouseForFmaxPipeStageWriteBack(
   ) generate (
     myCommitFrontStmVec.head.last//head//last
   )
+
+  val myTempNonFwdTag = (
+    cfg.optScoreboard
+  ) generate (
+    myNonFwdWbPayload(1).instrCnt.scoreboardIssuePayload.nonFwdTag
+  )
+  val myTempFwdTag = (
+    cfg.optScoreboard
+  ) generate (
+    myFwdWbPayload(1).instrCnt.scoreboardIssuePayload.fwdTag
+  )
+  val myTempNonBubbleTag = (
+    cfg.optScoreboard
+  ) generate (
+    myFwdWbPayload(1).instrCnt.scoreboardIssuePayload.nonBubbleTag
+  )
+  val myTempNonBubbleNonFwdTag = (
+    cfg.optScoreboard
+  ) generate (
+    myNonFwdWbPayload(1).instrCnt.scoreboardIssuePayload
+    .nonBubbleNonFwdTag
+  )
+  val myTempNonBubbleFwdTag = (
+    cfg.optScoreboard
+  ) generate (
+    myFwdWbPayload(1).instrCnt.scoreboardIssuePayload
+    .nonBubbleFwdTag
+  )
+  val myHistNonFwdTag = (
+    cfg.optScoreboard
+    //&& isNonFwd
+  ) generate (
+    History(
+      that=myTempNonFwdTag,
+      when=myNonFwdCommitFrontStm.fire,
+      length=2,
+      init=(
+        U(s"${myTempNonFwdTag.getWidth}'d2")
+      )
+    )
+  )
+  //val haveNewNonFwdTag = (
+  //  cfg.optScoreboard
+  //  //&& isNonFwd
+  //) generate (
+  //  myHistNonFwdTag(0) =/= myHistNonFwdTag(1)
+  //)
+  val myHistFwdTag = (
+    cfg.optScoreboard
+    //&& !isNonFwd
+  ) generate (
+    History(
+      that=myTempFwdTag,
+      when=myFwdCommitFrontStm.fire,
+      length=2,
+      init=(
+        U(s"${myTempFwdTag.getWidth}'d2")
+      )
+    )
+  )
+  //val haveNewFwdTag = (
+  //  cfg.optScoreboard
+  //  //&& !isNonFwd
+  //) generate (
+  //  myHistFwdTag(0) =/= myHistFwdTag(1)
+  //)
+  val myHistNonBubbleTag = (
+    cfg.optScoreboard
+  ) generate (
+    History(
+      that=myTempNonBubbleTag,
+      when=myFwdCommitFrontStm.fire,
+      length=2,
+      init=(
+        U(s"${myTempNonBubbleTag.getWidth}'d2")
+      )
+    )
+  )
+  val haveNewNonBubbleTag = (
+    cfg.optScoreboard
+  ) generate (
+    myHistNonBubbleTag(0) =/= myHistNonBubbleTag(1)
+  )
+  val myHistNonBubbleNonFwdTag = (
+    cfg.optScoreboard
+  ) generate (
+    History(
+      that=myTempNonBubbleNonFwdTag,
+      when=myNonFwdCommitFrontStm.fire,
+      length=2,
+      init=(
+        U(s"${myTempNonBubbleNonFwdTag.getWidth}'d2")
+      )
+    )
+  )
+  val haveNewNonBubbleNonFwdTag = (
+    cfg.optScoreboard
+  ) generate (
+    myHistNonBubbleNonFwdTag(0) =/= myHistNonBubbleNonFwdTag(1)
+  )
+
+  val myHistNonBubbleFwdTag = (
+    cfg.optScoreboard
+  ) generate (
+    History(
+      that=myTempNonBubbleFwdTag,
+      when=myFwdCommitFrontStm.fire,
+      length=2,
+      init=(
+        U(s"${myTempNonBubbleFwdTag.getWidth}'d2")
+      )
+    )
+  )
+  val haveNewNonBubbleFwdTag = (
+    cfg.optScoreboard
+  ) generate (
+    myHistNonBubbleFwdTag(0) =/= myHistNonBubbleFwdTag(1)
+  )
+
   val myScoreboardCommitFrontStmArea = (
     cfg.optScoreboard
   ) generate (new Area {
@@ -3983,9 +4094,24 @@ case class SnowHouseForFmaxPipeStageWriteBack(
         io.up.instrCnt.myScoreboardPsWbBubbleMost(1)
         || io.up.instrCnt.myPsIdFwdBubble(1)
       )
+      //&& (
+      //  io.up.instrCnt.scoreboardIssuePayload.nonBubbleTag
+      //  =/= (
+      //    RegNextWhen(
+      //      io.up.instrCnt.scoreboardIssuePayload.nonBubbleTag,
+      //      cond=io.up.fire,
+      //      init=({
+      //        val myWidth = cfg.optScoreboardTagWidth
+      //        U(s"${myWidth}'d2")
+      //      })
+      //    )
+      //  )
+      //)
     )
     io.commitEtc.scoreboardBubbleRetire.opIsFwd := (
-      !io.up.splitOp.opIsMemAccess
+      //!io.up.splitOp.opIsMemAccess
+      !io.up.splitOp.scoreboardOpIsNonFwd
+      && !io.up.gprIsZeroVec.last.last
       //True
       //!io.up.instrCnt.scoreboard
     )
@@ -4130,6 +4256,7 @@ case class SnowHouseForFmaxPipeStageWriteBack(
     //myCommitBackStm.regFileWrite
     myCommitAlmostFinalOutpStm.regFileWrite
   )
+
   if (cfg.optScoreboard) {
     //myCommitTrueFinalOutpStm <-< myCommitAlmostFinalOutpStm
     myCommitTrueFinalOutpStm << myCommitAlmostFinalOutpStm
@@ -4201,124 +4328,6 @@ case class SnowHouseForFmaxPipeStageWriteBack(
     isNonFwd: Boolean,
     someMyShouldIgnoreInstrState: Bool,
   ): Unit = {
-    val myTempNonFwdTag = (
-      cfg.optScoreboard
-    ) generate (
-      someMyWbPayload(1).instrCnt.scoreboardIssuePayload.nonFwdTag
-    )
-    val myTempFwdTag = (
-      cfg.optScoreboard
-    ) generate (
-      someMyWbPayload(1).instrCnt.scoreboardIssuePayload.fwdTag
-    )
-    val myTempNonBubbleTag = (
-      cfg.optScoreboard
-    ) generate (
-      someMyWbPayload(1).instrCnt.scoreboardIssuePayload.nonBubbleTag
-    )
-    val myTempNonBubbleNonFwdTag = (
-      cfg.optScoreboard
-    ) generate (
-      someMyWbPayload(1).instrCnt.scoreboardIssuePayload
-      .nonBubbleNonFwdTag
-    )
-    val myTempNonBubbleFwdTag = (
-      cfg.optScoreboard
-    ) generate (
-      someMyWbPayload(1).instrCnt.scoreboardIssuePayload
-      .nonBubbleFwdTag
-    )
-    val myHistNonFwdTag = (
-      cfg.optScoreboard
-      //&& isNonFwd
-    ) generate (
-      History(
-        that=myTempNonFwdTag,
-        when=someCommitStm.fire,
-        length=2,
-        init=(
-          U(s"${myTempNonFwdTag.getWidth}'d1")
-        )
-      )
-    )
-    //val haveNewNonFwdTag = (
-    //  cfg.optScoreboard
-    //  //&& isNonFwd
-    //) generate (
-    //  myHistNonFwdTag(0) =/= myHistNonFwdTag(1)
-    //)
-    val myHistFwdTag = (
-      cfg.optScoreboard
-      //&& !isNonFwd
-    ) generate (
-      History(
-        that=myTempFwdTag,
-        when=someCommitStm.fire,
-        length=2,
-        init=(
-          U(s"${myTempFwdTag.getWidth}'d1")
-        )
-      )
-    )
-    //val haveNewFwdTag = (
-    //  cfg.optScoreboard
-    //  //&& !isNonFwd
-    //) generate (
-    //  myHistFwdTag(0) =/= myHistFwdTag(1)
-    //)
-    val myHistNonBubbleTag = (
-      cfg.optScoreboard
-    ) generate (
-      History(
-        that=myTempNonBubbleTag,
-        when=someCommitStm.fire,
-        length=2,
-        init=(
-          U(s"${myTempNonBubbleTag.getWidth}'d2")
-        )
-      )
-    )
-    val haveNewNonBubbleTag = (
-      cfg.optScoreboard
-    ) generate (
-      myHistNonBubbleTag(0) =/= myHistNonBubbleTag(1)
-    )
-    val myHistNonBubbleNonFwdTag = (
-      cfg.optScoreboard
-    ) generate (
-      History(
-        that=myTempNonBubbleNonFwdTag,
-        when=someCommitStm.fire,
-        length=2,
-        init=(
-          U(s"${myTempNonBubbleNonFwdTag.getWidth}'d2")
-        )
-      )
-    )
-    val haveNewNonBubbleNonFwdTag = (
-      cfg.optScoreboard
-    ) generate (
-      myHistNonBubbleNonFwdTag(0) =/= myHistNonBubbleNonFwdTag(1)
-    )
-
-    val myHistNonBubbleFwdTag = (
-      cfg.optScoreboard
-    ) generate (
-      History(
-        that=myTempNonBubbleFwdTag,
-        when=someCommitStm.fire,
-        length=2,
-        init=(
-          U(s"${myTempNonBubbleFwdTag.getWidth}'d2")
-        )
-      )
-    )
-    val haveNewNonBubbleFwdTag = (
-      cfg.optScoreboard
-    ) generate (
-      myHistNonBubbleFwdTag(0) =/= myHistNonBubbleFwdTag(1)
-    )
-
     if (cfg.optScoreboard) {
       //someCommitStm.myShouldIgnoreInstr := (
       //  someMyWbPayload(1).instrCnt.shouldIgnoreInstr.last
