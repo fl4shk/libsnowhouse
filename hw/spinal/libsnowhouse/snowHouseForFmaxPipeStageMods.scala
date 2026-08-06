@@ -3208,10 +3208,10 @@ case class SnowHouseForFmaxPipeStageWriteBack(
       //&& !myNonFwdWbPayload(0).instrCnt.myPsIdBubble.head
       //&& !myNonFwdWbPayload(0).instrCnt.myPsIdFwdBubble.head
       && !myNonFwdWbPayload(0).instrCnt.myScoreboardNonFwdPsWbBubbleMost
-      //&& (
-      //  !myNonFwdWbPayload(0).instrCnt.myPsIdOtherBubble.head
-      //  || myNonFwdWbPayload(0).instrCnt.myPsIdFwdBubble.head
-      //)
+      && (
+        !myNonFwdWbPayload(0).instrCnt.myPsIdOtherBubble.head
+        || myNonFwdWbPayload(0).instrCnt.myPsIdFwdBubble.head
+      )
       && !myNonFwdWbPayload(0).instrCnt.myPsExMemAccessBubble.head
     )
 
@@ -3256,10 +3256,10 @@ case class SnowHouseForFmaxPipeStageWriteBack(
       //&& !myFwdWbPayload(0).instrCnt.myPsIdBubble.last
       //&& !myFwdWbPayload(0).instrCnt.myPsIdFwdBubble.last
       && !myFwdWbPayload(0).instrCnt.myScoreboardFwdPsWbBubbleMost
-      //&& (
-      //  !myFwdWbPayload(0).instrCnt.myPsIdOtherBubble.last
-      //  || myFwdWbPayload(0).instrCnt.myPsIdFwdBubble.last
-      //)
+      && (
+        !myFwdWbPayload(0).instrCnt.myPsIdOtherBubble.last
+        || myFwdWbPayload(0).instrCnt.myPsIdFwdBubble.last
+      )
       && !myFwdWbPayload(0).instrCnt.myPsExMultiCycleBubble.last
     )
     myFwdWbFifo.io.push.payload.instrCnt := (
