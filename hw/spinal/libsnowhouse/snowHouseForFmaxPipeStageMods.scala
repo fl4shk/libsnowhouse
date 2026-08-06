@@ -4937,6 +4937,10 @@ case class SnowHouseForFmaxPipeStageWriteBack(
               .instrCnt.shouldIgnoreInstr.last
               || (
                 !myCommitAlmostFinalOutpStm.fire
+                || (
+                  !myCommitAlmostFinalOutpStm.commit.nonFwdTag.orR
+                  && !myCommitAlmostFinalOutpStm.commit.fwdTag.orR
+                )
               )
             )
             || (
@@ -4975,6 +4979,10 @@ case class SnowHouseForFmaxPipeStageWriteBack(
               //|| myInstrCnt.myPsExMultiCycleBubble.last
               || (
                 !myCommitAlmostFinalOutpStm.fire
+                || (
+                  !myCommitAlmostFinalOutpStm.commit.nonFwdTag.orR
+                  && !myCommitAlmostFinalOutpStm.commit.fwdTag.orR
+                )
               )
             )
             || (
