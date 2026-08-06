@@ -2626,6 +2626,7 @@ case class SnowHousePipeStageInstrDecode(
       //&& myTempOpMayNeedHazardCheck
       //&& !myInFlushCond//shouldClearExtraDecodeInfo
       //&& up.isFiring
+      && !myInFlushCond
       && upPayload(1).splitOp.opIsMemAccess
     ) {
       rMyNonFwdGprTagVec(
@@ -3107,7 +3108,7 @@ case class SnowHousePipeStageInstrDecode(
         //myPartialWriteTagInfoCond
         up.isFiring
         //down.isFiring
-        //&& !myInFlushCond//shouldClearExtraDecodeInfo
+        && !myInFlushCond//shouldClearExtraDecodeInfo
         && !myNonFwdHazardCheckVec.orR
         //&& !myTempOpMayNeedHazardCheck
         //&& !upPayload(1).inpDecodeExt.head.opIsMemAccess.last
@@ -12113,8 +12114,9 @@ case class SnowHousePipeStageExecute(
       when (
         cLink.up.isFiring
         && !myShouldIgnoreInstr.last
-        && !outp.instrCnt.myPsIdBubble.last
-        //&& !outp.instrCnt.myPsIdOtherBubble.last
+        && !outp.instrCnt.myPsIdBubble(0)
+        && !outp.instrCnt.myPsIdInFlushBubble(0)
+        //&& !outp.instrCnt.myPsIdOtherBubble(0)
       ) {
         myTempReorderBufIdx := (
           RegNext(myTempReorderBufIdx) + 1
@@ -12146,19 +12148,22 @@ case class SnowHousePipeStageExecute(
           init=myNonBubbleFwdTag.getZero
         )
       )
-      val myNonBubbleIncrCondMain = (
+      def myNonBubbleIncrCondMain(
+        idx: Int
+      ) = (
         cLink.up.isFiring
         && !myShouldIgnoreInstr.last
-        && !outp.instrCnt.myPsIdBubble.last
-        && !outp.instrCnt.myPsIdOtherBubble.last
+        && !outp.instrCnt.myPsIdBubble(idx)
+        && !outp.instrCnt.myPsIdOtherBubble(idx)
+        && !outp.instrCnt.myPsIdInFlushBubble(idx)
       )
-      when (myNonBubbleIncrCondMain) {
+      when (myNonBubbleIncrCondMain(1)) {
         myNonBubbleTag := (
           RegNext(myNonBubbleTag) + 1
         )
       }
       when (
-        myNonBubbleIncrCondMain
+        myNonBubbleIncrCondMain(2)
         && outp.splitOp.scoreboardOpIsNonFwd
       ) {
         myNonBubbleNonFwdTag := (
@@ -12166,7 +12171,7 @@ case class SnowHousePipeStageExecute(
         )
       }
       when (
-        myNonBubbleIncrCondMain
+        myNonBubbleIncrCondMain(3)
         && !outp.splitOp.scoreboardOpIsNonFwd
       ) {
         myNonBubbleFwdTag := (
