@@ -1783,7 +1783,7 @@ case class SnowHouseSplitOp(
   //)
   val opIsMultiCycle = Bool()
   val opIsMemAccess = Bool()
-  val scoreboardOpIsMemAccess = (
+  val scoreboardOpIsNonFwd = (
     cfg.optScoreboard
   ) generate (
     Bool()

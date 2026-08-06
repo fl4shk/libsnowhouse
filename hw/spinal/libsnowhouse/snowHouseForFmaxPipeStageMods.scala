@@ -136,6 +136,13 @@ case class SnowHouseScoreboardIssuePayload(
   )
   val nonBubbleTag = UInt(
     //cfg.optScoreboardReorderBufWidth bits
+    cfg.optScoreboardTagWidth bits
+  )
+  val nonBubbleNonFwdTag = UInt(
+    //cfg.optScoreboardReorderBufWidth bits
+    cfg.optScoreboardTagWidth bits
+  )
+  val nonBubbleFwdTag = UInt(
     //cfg.optScoreboardReorderBufWidth bits
     cfg.optScoreboardTagWidth bits
   )
@@ -3031,7 +3038,7 @@ case class SnowHouseForFmaxPipeStageWriteBack(
   ) extends Bundle {
     val instrCnt = SnowHouseInstrCnt(cfg=cfg)
     val outpDecodeExt = SnowHouseDecodeExt(cfg=cfg)
-    val scoreboardOpIsMemAccess = Bool()
+    val scoreboardOpIsNonFwd = Bool()
 
     val encInstr = (
       io.dbgInfo != null
@@ -3201,10 +3208,10 @@ case class SnowHouseForFmaxPipeStageWriteBack(
       //&& !myNonFwdWbPayload(0).instrCnt.myPsIdBubble.head
       //&& !myNonFwdWbPayload(0).instrCnt.myPsIdFwdBubble.head
       && !myNonFwdWbPayload(0).instrCnt.myScoreboardNonFwdPsWbBubbleMost
-      && (
-        !myNonFwdWbPayload(0).instrCnt.myPsIdOtherBubble.head
-        || myNonFwdWbPayload(0).instrCnt.myPsIdFwdBubble.head
-      )
+      //&& (
+      //  !myNonFwdWbPayload(0).instrCnt.myPsIdOtherBubble.head
+      //  || myNonFwdWbPayload(0).instrCnt.myPsIdFwdBubble.head
+      //)
       && !myNonFwdWbPayload(0).instrCnt.myPsExMemAccessBubble.head
     )
 
@@ -3238,8 +3245,8 @@ case class SnowHouseForFmaxPipeStageWriteBack(
     myNonFwdWbFifo.io.push.payload.myExt := (
       myNonFwdWbPayload(0).myExt
     )
-    myNonFwdWbFifo.io.push.payload.scoreboardOpIsMemAccess := (
-      myNonFwdWbPayload(0).splitOp.scoreboardOpIsMemAccess
+    myNonFwdWbFifo.io.push.payload.scoreboardOpIsNonFwd := (
+      myNonFwdWbPayload(0).splitOp.scoreboardOpIsNonFwd
     )
 
     myFwdWbFifo.io.push.valid := (
@@ -3249,10 +3256,10 @@ case class SnowHouseForFmaxPipeStageWriteBack(
       //&& !myFwdWbPayload(0).instrCnt.myPsIdBubble.last
       //&& !myFwdWbPayload(0).instrCnt.myPsIdFwdBubble.last
       && !myFwdWbPayload(0).instrCnt.myScoreboardFwdPsWbBubbleMost
-      && (
-        !myFwdWbPayload(0).instrCnt.myPsIdOtherBubble.last
-        || myFwdWbPayload(0).instrCnt.myPsIdFwdBubble.last
-      )
+      //&& (
+      //  !myFwdWbPayload(0).instrCnt.myPsIdOtherBubble.last
+      //  || myFwdWbPayload(0).instrCnt.myPsIdFwdBubble.last
+      //)
       && !myFwdWbPayload(0).instrCnt.myPsExMultiCycleBubble.last
     )
     myFwdWbFifo.io.push.payload.instrCnt := (
@@ -3261,8 +3268,8 @@ case class SnowHouseForFmaxPipeStageWriteBack(
     myFwdWbFifo.io.push.payload.outpDecodeExt := (
       myFwdWbPayload(0).outpDecodeExt
     )
-    myFwdWbFifo.io.push.payload.scoreboardOpIsMemAccess := (
-      myFwdWbPayload(0).splitOp.scoreboardOpIsMemAccess
+    myFwdWbFifo.io.push.payload.scoreboardOpIsNonFwd := (
+      myFwdWbPayload(0).splitOp.scoreboardOpIsNonFwd
     )
     if (io.dbgInfo != null) {
       myFwdWbFifo.io.push.payload.laggingRegPc := (
@@ -3432,8 +3439,8 @@ case class SnowHouseForFmaxPipeStageWriteBack(
       myNonFwdWbPayload(1).outpDecodeExt := (
         myNonFwdWbFifo.io.pop.payload.outpDecodeExt
       )
-      myNonFwdWbPayload(1).splitOp.scoreboardOpIsMemAccess := (
-        myNonFwdWbFifo.io.pop.payload.scoreboardOpIsMemAccess
+      myNonFwdWbPayload(1).splitOp.scoreboardOpIsNonFwd := (
+        myNonFwdWbFifo.io.pop.payload.scoreboardOpIsNonFwd
       )
       if (io.dbgInfo != null) {
         myNonFwdWbPayload(1).laggingRegPc := (
@@ -3470,8 +3477,8 @@ case class SnowHouseForFmaxPipeStageWriteBack(
       myFwdWbPayload(1).outpDecodeExt := (
         myFwdWbFifo.io.pop.payload.outpDecodeExt
       )
-      myFwdWbPayload(1).splitOp.scoreboardOpIsMemAccess := (
-        myFwdWbFifo.io.pop.payload.scoreboardOpIsMemAccess
+      myFwdWbPayload(1).splitOp.scoreboardOpIsNonFwd := (
+        myFwdWbFifo.io.pop.payload.scoreboardOpIsNonFwd
       )
       if (io.dbgInfo != null) {
         myFwdWbPayload(1).laggingRegPc := (
@@ -3983,7 +3990,7 @@ case class SnowHouseForFmaxPipeStageWriteBack(
       //!io.up.instrCnt.scoreboard
     )
     io.commitEtc.scoreboardBubbleRetire.myNonFwdValid := (
-      io.up.splitOp.scoreboardOpIsMemAccess
+      io.up.splitOp.scoreboardOpIsNonFwd
       && !io.up.instrCnt.myPsIdBubble(1)
       && !io.up.instrCnt.myPsIdFwdBubble(1)
     )
@@ -4209,6 +4216,18 @@ case class SnowHouseForFmaxPipeStageWriteBack(
     ) generate (
       someMyWbPayload(1).instrCnt.scoreboardIssuePayload.nonBubbleTag
     )
+    val myTempNonBubbleNonFwdTag = (
+      cfg.optScoreboard
+    ) generate (
+      someMyWbPayload(1).instrCnt.scoreboardIssuePayload
+      .nonBubbleNonFwdTag
+    )
+    val myTempNonBubbleFwdTag = (
+      cfg.optScoreboard
+    ) generate (
+      someMyWbPayload(1).instrCnt.scoreboardIssuePayload
+      .nonBubbleFwdTag
+    )
     val myHistNonFwdTag = (
       cfg.optScoreboard
       //&& isNonFwd
@@ -4222,12 +4241,12 @@ case class SnowHouseForFmaxPipeStageWriteBack(
         )
       )
     )
-    val haveNewNonFwdTag = (
-      cfg.optScoreboard
-      //&& isNonFwd
-    ) generate (
-      myHistNonFwdTag(0) =/= myHistNonFwdTag(1)
-    )
+    //val haveNewNonFwdTag = (
+    //  cfg.optScoreboard
+    //  //&& isNonFwd
+    //) generate (
+    //  myHistNonFwdTag(0) =/= myHistNonFwdTag(1)
+    //)
     val myHistFwdTag = (
       cfg.optScoreboard
       //&& !isNonFwd
@@ -4241,15 +4260,14 @@ case class SnowHouseForFmaxPipeStageWriteBack(
         )
       )
     )
-    val haveNewFwdTag = (
-      cfg.optScoreboard
-      //&& !isNonFwd
-    ) generate (
-      myHistFwdTag(0) =/= myHistFwdTag(1)
-    )
+    //val haveNewFwdTag = (
+    //  cfg.optScoreboard
+    //  //&& !isNonFwd
+    //) generate (
+    //  myHistFwdTag(0) =/= myHistFwdTag(1)
+    //)
     val myHistNonBubbleTag = (
       cfg.optScoreboard
-      //&& !isNonNonBubble
     ) generate (
       History(
         that=myTempNonBubbleTag,
@@ -4262,9 +4280,43 @@ case class SnowHouseForFmaxPipeStageWriteBack(
     )
     val haveNewNonBubbleTag = (
       cfg.optScoreboard
-      //&& !isNonNonBubble
     ) generate (
       myHistNonBubbleTag(0) =/= myHistNonBubbleTag(1)
+    )
+    val myHistNonBubbleNonFwdTag = (
+      cfg.optScoreboard
+    ) generate (
+      History(
+        that=myTempNonBubbleNonFwdTag,
+        when=someCommitStm.fire,
+        length=2,
+        init=(
+          U(s"${myTempNonBubbleNonFwdTag.getWidth}'d1")
+        )
+      )
+    )
+    val haveNewNonBubbleNonFwdTag = (
+      cfg.optScoreboard
+    ) generate (
+      myHistNonBubbleNonFwdTag(0) =/= myHistNonBubbleNonFwdTag(1)
+    )
+
+    val myHistNonBubbleFwdTag = (
+      cfg.optScoreboard
+    ) generate (
+      History(
+        that=myTempNonBubbleFwdTag,
+        when=someCommitStm.fire,
+        length=2,
+        init=(
+          U(s"${myTempNonBubbleFwdTag.getWidth}'d1")
+        )
+      )
+    )
+    val haveNewNonBubbleFwdTag = (
+      cfg.optScoreboard
+    ) generate (
+      myHistNonBubbleFwdTag(0) =/= myHistNonBubbleFwdTag(1)
     )
 
     if (cfg.optScoreboard) {
@@ -4518,13 +4570,13 @@ case class SnowHouseForFmaxPipeStageWriteBack(
               someMyWbPayload(1).instrCnt.shouldIgnoreInstr.last
               || someMyWbPayload(1).gprIsZeroVec.last.last
             )
-            && someMyWbPayload(1).splitOp.scoreboardOpIsMemAccess
+            && someMyWbPayload(1).splitOp.scoreboardOpIsNonFwd
             //&& !someMyWbPayload(1).instrCnt.myPsIdBubble.head
             //&& myNonFwdWbValid
             && (
               //someMyWbPayload(1).
               //haveNewNonFwdTag
-              haveNewNonBubbleTag
+              haveNewNonBubbleNonFwdTag
             )
           )
         } else {
@@ -4536,7 +4588,7 @@ case class SnowHouseForFmaxPipeStageWriteBack(
             //someMyWbPayload(1).instrCnt.myPsIdReorderBufForceValid.last
             //&& myFwdWbValid
             //haveNewFwdTag
-            haveNewNonBubbleTag
+            haveNewNonBubbleFwdTag
           )
         }
       }

@@ -3335,7 +3335,7 @@ case class SnowHousePipeStageInstrDecode(
     //}
 
 
-    down(pId).splitOp.scoreboardOpIsMemAccess := (
+    down(pId).splitOp.scoreboardOpIsNonFwd := (
       upPayload(1).splitOp.opIsMemAccess
     )
   })
@@ -12072,6 +12072,16 @@ case class SnowHousePipeStageExecute(
     ) generate (
       outp.instrCnt.scoreboardIssuePayload.nonBubbleTag
     )
+    val myNonBubbleNonFwdTag = (
+      cfg.optScoreboard
+    ) generate (
+      outp.instrCnt.scoreboardIssuePayload.nonBubbleNonFwdTag
+    )
+    val myNonBubbleFwdTag = (
+      cfg.optScoreboard
+    ) generate (
+      outp.instrCnt.scoreboardIssuePayload.nonBubbleFwdTag
+    )
 
     val myTempReorderBufIdx = (
       cfg.optScoreboard
@@ -12098,6 +12108,7 @@ case class SnowHousePipeStageExecute(
         )
       }
 
+
       myNonBubbleTag := (
         (
           RegNext(
@@ -12110,14 +12121,43 @@ case class SnowHousePipeStageExecute(
           )
         ).asUInt
       )
-      when (
+      myNonBubbleNonFwdTag := (
+        RegNext(
+          myNonBubbleNonFwdTag,
+          init=myNonBubbleNonFwdTag.getZero
+        )
+      )
+      myNonBubbleFwdTag := (
+        RegNext(
+          myNonBubbleFwdTag,
+          init=myNonBubbleFwdTag.getZero
+        )
+      )
+      val myNonBubbleIncrCondMain = (
         cLink.up.isFiring
         && !myShouldIgnoreInstr.last
         && !outp.instrCnt.myPsIdBubble.last
         && !outp.instrCnt.myPsIdOtherBubble.last
-      ) {
+      )
+      when (myNonBubbleIncrCondMain) {
         myNonBubbleTag := (
           RegNext(myNonBubbleTag) + 1
+        )
+      }
+      when (
+        myNonBubbleIncrCondMain
+        && outp.splitOp.scoreboardOpIsNonFwd
+      ) {
+        myNonBubbleNonFwdTag := (
+          RegNext(myNonBubbleNonFwdTag) + 1
+        )
+      }
+      when (
+        myNonBubbleIncrCondMain
+        && !outp.splitOp.scoreboardOpIsNonFwd
+      ) {
+        myNonBubbleFwdTag := (
+          RegNext(myNonBubbleFwdTag) + 1
         )
       }
     }
@@ -12153,8 +12193,8 @@ case class SnowHousePipeStageExecute(
         myUpdateRegPcSetItCnt=false,
       )
       if (cfg.optScoreboard) {
-        outp.splitOp.scoreboardOpIsMemAccess := (
-          inp.splitOp.scoreboardOpIsMemAccess
+        outp.splitOp.scoreboardOpIsNonFwd := (
+          inp.splitOp.scoreboardOpIsNonFwd
         )
       } else { // if (!cfg.optScoreboard)
         outp.gprIdxVec := outp.gprIdxVec.getZero
