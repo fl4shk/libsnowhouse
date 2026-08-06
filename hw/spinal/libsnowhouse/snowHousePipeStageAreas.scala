@@ -2862,10 +2862,11 @@ case class SnowHousePipeStageInstrDecode(
         || myReducedFwdTagAllocVec.asBits.andR
         || myReducedNonFwdTagAllocVec.asBits.andR
       )
-      && (
-        //!myInFlushCond//shouldClearExtraDecodeInfo
-        !myInFlushCond
-      )
+      //&& (
+      //  //!myInFlushCond//shouldClearExtraDecodeInfo
+      //  !myInFlushCond
+      //)
+      || myInFlushCond
     ) {
       doSendBubbleMainMost(
         myPsIdBubble=Some(
