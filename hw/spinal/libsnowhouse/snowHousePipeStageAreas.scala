@@ -2985,7 +2985,7 @@ case class SnowHousePipeStageInstrDecode(
       (
         myScoreboardCommitStm.fire
         && myScoreboardCommitStm.opIsFwd
-        && myScoreboardCommitStm.myFwdValid
+        //&& myScoreboardCommitStm.myFwdValid
       )
       ## (
         myScoreboardCommitStm.fwdTag
