@@ -4470,7 +4470,10 @@ case class SnowHouseForFmaxPipeStageWriteBack(
         if (isNonFwd) {
           someCommitStm.commit.myFwdValid := False
           someCommitStm.commit.myNonFwdValid := (
-            someMyWbPayload(1).instrCnt.shouldIgnoreInstr.last
+            (
+              someMyWbPayload(1).instrCnt.shouldIgnoreInstr.last
+              || someMyWbPayload(1).gprIsZeroVec.last.last
+            )
             && someMyWbPayload(1).splitOp.scoreboardOpIsMemAccess
             //&& !someMyWbPayload(1).instrCnt.myPsIdBubble.head
             //&& myNonFwdWbValid
