@@ -1956,17 +1956,17 @@ case class SnowHousePipeStageInstrDecode(
       cfg.optScoreboard
       && myInFlushCond != None
     ) {
-      when (!myInFlushCond.get) {
+      //when (!myInFlushCond.get) {
         down(pId).instrCnt.scoreboardIssuePayload.fwdTag := 0x0
         down(pId).instrCnt.scoreboardIssuePayload.nonFwdTag := 0x0
-      } otherwise {
-        down(pId).instrCnt.scoreboardIssuePayload.fwdTag := (
-          upPayload(1).instrCnt.scoreboardIssuePayload.fwdTag
-        )
-        down(pId).instrCnt.scoreboardIssuePayload.nonFwdTag := (
-          upPayload(1).instrCnt.scoreboardIssuePayload.nonFwdTag
-        )
-      }
+      //} otherwise {
+      //  down(pId).instrCnt.scoreboardIssuePayload.fwdTag := (
+      //    upPayload(1).instrCnt.scoreboardIssuePayload.fwdTag
+      //  )
+      //  down(pId).instrCnt.scoreboardIssuePayload.nonFwdTag := (
+      //    upPayload(1).instrCnt.scoreboardIssuePayload.nonFwdTag
+      //  )
+      //}
     }
   }
 
@@ -2469,8 +2469,8 @@ case class SnowHousePipeStageInstrDecode(
       //|| (
       //  rScoreboardFlushState.asBits(1)
       //  //&& !up.isFiring
-      //  && up.isValid
-      //  && !myGprTagInfoFifo.io.pop.valid
+      //  //&& up.isValid
+      //  //&& !myGprTagInfoFifo.io.pop.valid
       //)
     )
 
@@ -2709,10 +2709,10 @@ case class SnowHousePipeStageInstrDecode(
       (
         (
           up.isFiring
-          || (
-            down.isFiring
-            && !myInFlushCond
-          )
+          //|| (
+          //  down.isFiring
+          //  && !myInFlushCond
+          //)
         )
         //&& !upPayload(1).inpDecodeExt.head.opIsMemAccess.last
         && upPayload(1).splitOp.opIsMemAccess
@@ -2858,12 +2858,8 @@ case class SnowHousePipeStageInstrDecode(
           !myInFlushCond
         )
       )
-      || (
-        rFwdTagAllocVec.asBits.andR
-      )
-      || (
-        rNonFwdTagAllocVec.asBits.andR
-      )
+      || myReducedFwdTagAllocVec.asBits.andR
+      || myReducedNonFwdTagAllocVec.asBits.andR
     ) {
       doSendBubbleMainMost(
         myPsIdBubble=Some(
