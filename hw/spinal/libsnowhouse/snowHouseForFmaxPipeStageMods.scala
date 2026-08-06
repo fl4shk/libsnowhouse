@@ -4323,7 +4323,7 @@ case class SnowHouseForFmaxPipeStageWriteBack(
       1 << cfg.optScoreboardReorderBufWidth
     )
     val myStallPassMaxOccupancy = (
-      myReorderBufSize - 4//8
+      myReorderBufSize - 8//4//8
     )
     //val rNonFwdStallPassCnt = (
     //  Reg(UInt(log2Up(myReorderBufSize) + 1 bits))
