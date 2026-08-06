@@ -1982,11 +1982,11 @@ case class SnowHouseForFmaxPsWbReorderBuf(
   val myReorderBufSize = (
     1 << cfg.optScoreboardReorderBufWidth
   )
-  val myOccupancySubAmount = (
-    //8
-    //4
-    6
-  )
+  //val myOccupancySubAmount = (
+  //  //8
+  //  //4
+  //  6
+  //)
   //val myFifo = (
   //  StreamFifo(
   //    dataType=SnowHouseForFmaxPsWbReorderBufPayload(cfg=cfg),
@@ -2222,11 +2222,11 @@ case class SnowHouseForFmaxPsWbReorderBuf(
   val rValidVec = Vec.fill(myReorderBufSize)(
     Reg(Bool(), init=False)
   )
-  val myOccupancy = (
-    //Reg(UInt(log2Up(myReorderBufSize) + 1 bits))
-    //init(0x0)
-    CountOne(rValidVec.asBits.asUInt)
-  )
+  //val myOccupancy = (
+  //  //Reg(UInt(log2Up(myReorderBufSize) + 1 bits))
+  //  //init(0x0)
+  //  CountOne(rValidVec.asBits.asUInt)
+  //)
   //val rAttemptPushVec = Vec.fill(myReorderBufSize)(
   //  Reg(Bool(), init=False)
   //)
@@ -2538,7 +2538,8 @@ case class SnowHouseForFmaxPsWbReorderBuf(
           //&& 
 
           //myOccupancy < myReorderBufSize - 2//1
-          !myOccupancy.msb
+          //!myOccupancy.msb
+          !rValidVec.asBits.andR // check whether it's full
           && 
           (
             (
