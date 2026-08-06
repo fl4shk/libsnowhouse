@@ -4472,15 +4472,15 @@ case class SnowHouseForFmaxPipeStageWriteBack(
           someCommitStm.commit.myNonFwdValid := (
             (
               someMyWbPayload(1).instrCnt.shouldIgnoreInstr.last
-              || someMyWbPayload(1).gprIsZeroVec.last.last
+              //|| someMyWbPayload(1).gprIsZeroVec.last.last
             )
             && someMyWbPayload(1).splitOp.scoreboardOpIsMemAccess
             //&& !someMyWbPayload(1).instrCnt.myPsIdBubble.head
             //&& myNonFwdWbValid
-            && (
-              //someMyWbPayload(1).
-              haveNewNonFwdTag
-            )
+            //&& (
+            //  //someMyWbPayload(1).
+            //  haveNewNonFwdTag
+            //)
           )
         } else {
           someCommitStm.commit.myNonFwdValid := False
@@ -4490,7 +4490,8 @@ case class SnowHouseForFmaxPipeStageWriteBack(
             //!someMyWbPayload(1).instrCnt.myPsIdBubble.last
             //someMyWbPayload(1).instrCnt.myPsIdReorderBufForceValid.last
             //&& myFwdWbValid
-            haveNewFwdTag
+            //haveNewFwdTag
+            True
           )
         }
       }
