@@ -4274,7 +4274,7 @@ case class SnowHouseForFmaxPipeStageWriteBack(
         when=someCommitStm.fire,
         length=2,
         init=(
-          U(s"${myTempNonBubbleTag.getWidth}'d1")
+          U(s"${myTempNonBubbleTag.getWidth}'d2")
         )
       )
     )
@@ -4291,7 +4291,7 @@ case class SnowHouseForFmaxPipeStageWriteBack(
         when=someCommitStm.fire,
         length=2,
         init=(
-          U(s"${myTempNonBubbleNonFwdTag.getWidth}'d1")
+          U(s"${myTempNonBubbleNonFwdTag.getWidth}'d2")
         )
       )
     )
@@ -4309,7 +4309,7 @@ case class SnowHouseForFmaxPipeStageWriteBack(
         when=someCommitStm.fire,
         length=2,
         init=(
-          U(s"${myTempNonBubbleFwdTag.getWidth}'d1")
+          U(s"${myTempNonBubbleFwdTag.getWidth}'d2")
         )
       )
     )
