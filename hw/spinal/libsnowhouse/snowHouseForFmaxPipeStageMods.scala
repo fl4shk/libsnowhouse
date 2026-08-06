@@ -4091,6 +4091,7 @@ case class SnowHouseForFmaxPipeStageWriteBack(
       io.up.fire
       && (
         io.up.instrCnt.shouldIgnoreInstr(1)
+        && !io.up.instrCnt.myPsIdInFlushBubble(1)
         //io.up.instrCnt.myScoreboardPsWbBubbleMost(1)
         //|| io.up.instrCnt.myPsIdFwdBubble(1)
       )

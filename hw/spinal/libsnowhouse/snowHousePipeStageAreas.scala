@@ -1956,6 +1956,9 @@ case class SnowHousePipeStageInstrDecode(
       cfg.optScoreboard
       && myInFlushCond != None
     ) {
+      down(pId).instrCnt.myPsIdInFlushBubble.foreach(item => {
+        item := myInFlushCond.get
+      })
       //when (!myInFlushCond.get) {
         down(pId).instrCnt.scoreboardIssuePayload.fwdTag := 0x0
         down(pId).instrCnt.scoreboardIssuePayload.nonFwdTag := 0x0
@@ -2713,6 +2716,7 @@ case class SnowHousePipeStageInstrDecode(
           //  down.isFiring
           //  && !myInFlushCond
           //)
+          && !myInFlushCond
         )
         //&& !upPayload(1).inpDecodeExt.head.opIsMemAccess.last
         && upPayload(1).splitOp.opIsMemAccess
@@ -2737,6 +2741,7 @@ case class SnowHousePipeStageInstrDecode(
         }
       }
       default {
+        myTempNonFwdTag := 0x0
       }
     }
 
@@ -2752,6 +2757,7 @@ case class SnowHousePipeStageInstrDecode(
           //  down.isFiring
           //  && myInFlushCond
           //)
+          && !myInFlushCond
         )
         //&& !upPayload(1).inpDecodeExt.head.opIsMemAccess.last
         && !upPayload(1).splitOp.opIsMemAccess
@@ -2775,6 +2781,7 @@ case class SnowHousePipeStageInstrDecode(
         }
       }
       default {
+        myTempFwdTag := 0x0
       }
     }
 
@@ -2890,7 +2897,7 @@ case class SnowHousePipeStageInstrDecode(
               //&& !myInFlushCond//shouldClearExtraDecodeInfo
             ),
             //myUpdateGprIsOrIsntZero=false,
-            myInFlushCond=None,//Some(myInFlushCond)
+            myInFlushCond=Some(myInFlushCond)//None
           )
         }
         when (myInFlushCond) {
@@ -2928,6 +2935,9 @@ case class SnowHousePipeStageInstrDecode(
             myInFlushCond=None//myInFlushCond,//Some(myInFlushCond)
           )
         }
+        upPayload(1).instrCnt.myPsIdInFlushBubble.foreach(item => {
+          item := myInFlushCond
+        })
       }
     }
 
