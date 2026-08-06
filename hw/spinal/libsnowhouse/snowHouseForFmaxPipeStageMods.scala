@@ -4065,7 +4065,10 @@ case class SnowHouseForFmaxPipeStageWriteBack(
   )
   val myCommitTrueFinalOutpStmVec = (
     if (cfg.optScoreboard) (
-      Vec.fill(2)(
+      Vec.fill(
+        //2
+        1
+      )(
         cloneOf(myCommitAlmostFinalOutpStm)
       )
     ) else (
