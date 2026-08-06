@@ -4111,7 +4111,10 @@ case class SnowHouseForFmaxPipeStageWriteBack(
     io.commitEtc.scoreboardBubbleRetire.opIsFwd := (
       //!io.up.splitOp.opIsMemAccess
       !io.up.splitOp.scoreboardOpIsNonFwd
-      && !io.up.gprIsZeroVec.last.last
+      && (
+        io.up.instrCnt.shouldIgnoreInstr.last
+        || !io.up.gprIsZeroVec.last.last
+      )
       //True
       //!io.up.instrCnt.scoreboard
     )
