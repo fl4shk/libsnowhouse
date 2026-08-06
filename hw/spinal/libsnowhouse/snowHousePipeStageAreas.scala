@@ -2466,12 +2466,12 @@ case class SnowHousePipeStageInstrDecode(
     //)
     val myInFlushCond = (
       shouldClearExtraDecodeInfo
-      || (
-        rScoreboardFlushState.asBits(1)
-        //&& !up.isFiring
-        //&& up.isValid
-        //&& !myGprTagInfoFifo.io.pop.valid
-      )
+      //|| (
+      //  rScoreboardFlushState.asBits(1)
+      //  //&& !up.isFiring
+      //  //&& up.isValid
+      //  //&& !myGprTagInfoFifo.io.pop.valid
+      //)
     )
 
     //myGprTagInfoFifo.io.flush := False
@@ -2847,48 +2847,88 @@ case class SnowHousePipeStageInstrDecode(
     //  )
     //}
 
-    when (
-      (
-        (
+    switch (rScoreboardFlushState) {
+      is (ScoreboardFlushState.IDLE) {
+        when (
           (
-            myNonFwdHazardCheckVec.orR
-            || myFwdHazardCheckVec.orR
+            (
+              (
+                myNonFwdHazardCheckVec.orR
+                || myFwdHazardCheckVec.orR
+              )
+              //&& (
+              //  //!myInFlushCond//shouldClearExtraDecodeInfo
+              //  !myInFlushCond
+              //)
+            )
+            || myReducedFwdTagAllocVec.asBits.andR
+            || myReducedNonFwdTagAllocVec.asBits.andR
           )
           //&& (
           //  //!myInFlushCond//shouldClearExtraDecodeInfo
           //  !myInFlushCond
           //)
-        )
-        || myReducedFwdTagAllocVec.asBits.andR
-        || myReducedNonFwdTagAllocVec.asBits.andR
-      )
-      //&& (
-      //  //!myInFlushCond//shouldClearExtraDecodeInfo
-      //  !myInFlushCond
-      //)
-      || myInFlushCond
-    ) {
-      doSendBubbleMainMost(
-        myPsIdBubble=Some(
-          //!myInFlushCond//shouldClearExtraDecodeInfo
-          //True
-          //False
-          myNonFwdHazardCheckVec.orR
           //&& !myInFlushCond
-          //&& !myInFlushCond//shouldClearExtraDecodeInfo
-        ),
-        myPsIdOtherBubble=Some(
-          True
-          //!myInFlushCond
-        ),
-        myPsIdFwdBubble=Some(
-          myFwdHazardCheckVec.orR
-          //&& !myInFlushCond
-          //&& !myInFlushCond//shouldClearExtraDecodeInfo
-        ),
-        //myUpdateGprIsOrIsntZero=false,
-        myInFlushCond=Some(myInFlushCond)
-      )
+          || myInFlushCond
+        ) {
+          doSendBubbleMainMost(
+            myPsIdBubble=Some(
+              //!myInFlushCond//shouldClearExtraDecodeInfo
+              //True
+              //False
+              myNonFwdHazardCheckVec.orR
+              //&& !myInFlushCond
+              //&& !myInFlushCond//shouldClearExtraDecodeInfo
+            ),
+            myPsIdOtherBubble=Some(
+              True
+              //!myInFlushCond
+            ),
+            myPsIdFwdBubble=Some(
+              myFwdHazardCheckVec.orR
+              //&& !myInFlushCond
+              //&& !myInFlushCond//shouldClearExtraDecodeInfo
+            ),
+            //myUpdateGprIsOrIsntZero=false,
+            myInFlushCond=None,//Some(myInFlushCond)
+          )
+        }
+        when (myInFlushCond) {
+          rScoreboardFlushState := ScoreboardFlushState.FLUSH
+        }
+      }
+      is (ScoreboardFlushState.FLUSH) {
+        when (
+          !myInFlushCond
+          && !myReducedFwdTagAllocVec.asBits.orR
+          && !myReducedNonFwdTagAllocVec.asBits.orR
+        ) {
+          rScoreboardFlushState := ScoreboardFlushState.IDLE
+        }
+        when (!myInFlushCond) {
+          doSendBubbleMainMost(
+            myPsIdBubble=Some(
+              //!myInFlushCond//shouldClearExtraDecodeInfo
+              //True
+              //False
+              myNonFwdHazardCheckVec.orR
+              //&& !myInFlushCond
+              //&& !myInFlushCond//shouldClearExtraDecodeInfo
+            ),
+            myPsIdOtherBubble=Some(
+              True
+              //!myInFlushCond
+            ),
+            myPsIdFwdBubble=Some(
+              myFwdHazardCheckVec.orR
+              //&& !myInFlushCond
+              //&& !myInFlushCond//shouldClearExtraDecodeInfo
+            ),
+            //myUpdateGprIsOrIsntZero=false,
+            myInFlushCond=None//myInFlushCond,//Some(myInFlushCond)
+          )
+        }
+      }
     }
 
     for (idx <- 0 until cfg.numGprs) {
