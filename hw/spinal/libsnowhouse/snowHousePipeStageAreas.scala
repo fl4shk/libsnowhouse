@@ -1956,7 +1956,7 @@ case class SnowHousePipeStageInstrDecode(
       cfg.optScoreboard
       && myInFlushCond != None
     ) {
-      when (myInFlushCond.get) {
+      when (!myInFlushCond.get) {
         down(pId).instrCnt.scoreboardIssuePayload.fwdTag := 0x0
         down(pId).instrCnt.scoreboardIssuePayload.nonFwdTag := 0x0
       } otherwise {
@@ -2711,7 +2711,7 @@ case class SnowHousePipeStageInstrDecode(
           up.isFiring
           || (
             down.isFiring
-            && !myInFlushCond
+            && myInFlushCond
           )
         )
         //&& !upPayload(1).inpDecodeExt.head.opIsMemAccess.last
@@ -2750,7 +2750,7 @@ case class SnowHousePipeStageInstrDecode(
           up.isFiring
           || (
             down.isFiring
-            && !myInFlushCond
+            && myInFlushCond
           )
         )
         //&& !upPayload(1).inpDecodeExt.head.opIsMemAccess.last
