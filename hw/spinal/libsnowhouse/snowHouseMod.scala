@@ -2233,7 +2233,7 @@ private[libsnowhouse] case class SnowHouseForFmax(
     //)
     //psPreFwd.io.up << psScoreboardReadGprs.io.down
     psScoreboardIssue.io.up <-/< psId.io.down
-    psPreFwd.io.up <-/< psScoreboardIssue.io.down
+    psPreFwd.io.up << psScoreboardIssue.io.down
   } else {
     psPreFwd.io.up <-/< psId.io.down
   }
