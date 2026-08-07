@@ -4458,7 +4458,10 @@ case class SnowHouseForFmaxPipeStageWriteBack(
     if (cfg.optScoreboard) (
       //myCommitBackStm.fire
       //myCommitAlmostFinalOutpStm.fire//valid
-      myCommitTrueFinalOutpStmVec.last.fire//valid
+
+      RegNext(
+        myCommitTrueFinalOutpStmVec.last.fire//valid
+      )
     ) else (
       //myCommitBackStm.valid
       myCommitAlmostFinalOutpStm.valid
@@ -4467,13 +4470,19 @@ case class SnowHouseForFmaxPipeStageWriteBack(
   io.commitEtc.myRegFileWrPulse.payload := (
     //myCommitBackStm.regFileWrite
     //myCommitAlmostFinalOutpStm.regFileWrite
-    myCommitTrueFinalOutpStmVec.last.regFileWrite
+    if (cfg.optScoreboard) (
+      RegNext(
+        myCommitTrueFinalOutpStmVec.last.regFileWrite
+      )
+    ) else (
+      myCommitAlmostFinalOutpStm.regFileWrite
+    )
   )
 
   if (cfg.optScoreboard) {
     for (idx <- 0 until myCommitTrueFinalOutpStmVec.size) {
       if (idx == 0) {
-        myCommitTrueFinalOutpStmVec(idx) <-< (
+        myCommitTrueFinalOutpStmVec(idx) << (
           myCommitAlmostFinalOutpStm
         )
       } else {
@@ -4509,7 +4518,7 @@ case class SnowHouseForFmaxPipeStageWriteBack(
       1 << cfg.optScoreboardReorderBufWidth
     )
     val myStallPassMaxOccupancy = (
-      myReorderBufSize - 8//4//8
+      myReorderBufSize - 6//8//4//8
     )
     //val rNonFwdStallPassCnt = (
     //  Reg(UInt(log2Up(myReorderBufSize) + 1 bits))

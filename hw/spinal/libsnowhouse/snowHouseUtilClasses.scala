@@ -675,8 +675,8 @@ case class SnowHouseConfig(
   optForFmaxCfg: Option[SnowHouseForFmaxConfig]=Some(
     SnowHouseForFmaxConfig(
       numPostExPreWbPipeStages=(
-        //1
-        0
+        1
+        //0
       ),
       //optDualIssue=(
       //  //false
