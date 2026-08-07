@@ -138,7 +138,20 @@ int main(int argc, char** argv) {
                     //    screen_palette[(my_screen_buf[k] * 3u) + 2u]
                     //    | 0x7u
                     //);
-                    u16* item = (u16*)(*fb_start) + k;
+                    u8* pal_idx = (u8*)(*fb_start) + k;
+                    u16* item = (
+                        (u16*)(
+                            (*fb_start)
+                            + (
+                                MeltedMoonDebugRiscvEmu::ADDR_PAL_START
+                                - MeltedMoonDebugRiscvEmu::ADDR_FB_START
+                            )
+                        )
+                        + (*pal_idx)
+                    );
+
+
+                    //u16* item = (u16*)(*fb_start) + k;
                     const u32 r = (
                         ((((*item) >> 0) & 0x1f) << 3) | 0x7
                     );

@@ -8,6 +8,8 @@ using namespace liborangepower::integer_types;
 
 static constexpr size_t SCREENWIDTH = 320u;
 static constexpr size_t SCREENHEIGHT = 200u;
+static constexpr size_t PALETTE_SIZE = 256u;
+//static constexpr size_t FULL_SCREEN_HEIGHT = 240u;
 
 using Field = std::pair<size_t, size_t>;
 static consteval inline size_t field_width(
@@ -51,10 +53,6 @@ static constexpr inline u64 zero_extend(u64 val, size_t width) {
 
 class MeltedMoonDebugRiscvEmu final {
 public:     // constants
-    // 64 MiB of main RAM
-    static constexpr size_t MEM_SIZE = (
-        64ull * 1024ull * 1024ull
-    );
     static constexpr u32 ADDR_PRINT = 0x6000000ul;
     static constexpr u32 ADDR_EXIT = 0x6000004ul;
     static constexpr u32 ADDR_TIMER_USEC_LO = 0x6000000ul;
@@ -82,8 +80,23 @@ public:     // constants
     static constexpr u32 ADDR_FB_START = 0x2000000ul;
     static constexpr u32 ADDR_FB_END = (
         ADDR_FB_START
-        + ((SCREENWIDTH * SCREENHEIGHT - 1) * sizeof(u16))
+        + (
+            (SCREENWIDTH * SCREENHEIGHT - 1) //* sizeof(u16)
+        )
     );
+    static constexpr u32 ADDR_PAL_START = 0x4000000ul;
+    static constexpr u32 ADDR_PAL_END = (
+        ADDR_PAL_START
+        + (PALETTE_SIZE - 1) * sizeof(u16)
+    );
+    // 64 MiB of main RAM, plus the palette
+    // for this emulator, we just dynamically allocate the
+    // (admittedly tiny) memory for the palette along with the main memory
+    static constexpr size_t MEM_SIZE = (
+        64ull * 1024ull * 1024ull
+        + (PALETTE_SIZE * sizeof(u16))
+    );
+
     static constexpr size_t NUM_GPRS = 32u;
     static constexpr std::array<const char*, NUM_GPRS> GPR_NAMES_ARR = {
         "zero",                 // x0,
