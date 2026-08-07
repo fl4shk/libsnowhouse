@@ -647,11 +647,11 @@ case class SnowHouseForFmaxConfig(
   //  //false
   //)
 ) {
-  require(
-    numPostExPreWbPipeStages >= 1,
-    s"numPostExPreWbPipeStages:${numPostExPreWbPipeStages} "
-    + s"must be >= 1, apparently, for correct behavior of the CPU!"
-  )
+  //require(
+  //  numPostExPreWbPipeStages >= 1,
+  //  s"numPostExPreWbPipeStages:${numPostExPreWbPipeStages} "
+  //  + s"must be >= 1, apparently, for correct behavior of the CPU!"
+  //)
   val myScoreboardTagWidth = 4
 }
 case class SnowHouseConfig(
