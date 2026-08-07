@@ -886,44 +886,44 @@ case class SnowHouseForFmaxPipeStageInstrDecodeIo(
   //  ))
   //)
 
-  val myScoreboardCommit = (
-    cfg.optScoreboard
-  ) generate (
-    slave(Stream(
-      //UInt(cfg.optScoreboardTagWidth bits)
-      SnowHouseScoreboardCommitPayload(cfg=cfg)
-    ))
-  )
-  val myScoreboardBubbleRetire = (
-    cfg.optScoreboard
-  ) generate (
-    slave(Stream(
-      //UInt(cfg.optScoreboardTagWidth bits)
-      SnowHouseScoreboardCommitPayload(cfg=cfg)
-    ))
-  )
-  val myScoreboardReorderBufInFlushEtc = (
-    cfg.optScoreboard
-  ) generate (
-    in(
-      Bool()
-    )
-  )
-  val myScoreboardReorderBufPsIdCanIssue = (
-    cfg.optScoreboard
-  ) generate (
-    in(
-      Bool()
-    )
-  )
-  //--------
-  val myScoreboardSavedGprTagVec = (
-    cfg.optScoreboard
-  ) generate (
-    out(
-      UInt(cfg.numGprs bits)
-    )
-  )
+  //val myScoreboardCommit = (
+  //  cfg.optScoreboard
+  //) generate (
+  //  slave(Stream(
+  //    //UInt(cfg.optScoreboardTagWidth bits)
+  //    SnowHouseScoreboardCommitPayload(cfg=cfg)
+  //  ))
+  //)
+  //val myScoreboardBubbleRetire = (
+  //  cfg.optScoreboard
+  //) generate (
+  //  slave(Stream(
+  //    //UInt(cfg.optScoreboardTagWidth bits)
+  //    SnowHouseScoreboardCommitPayload(cfg=cfg)
+  //  ))
+  //)
+  //val myScoreboardReorderBufInFlushEtc = (
+  //  cfg.optScoreboard
+  //) generate (
+  //  in(
+  //    Bool()
+  //  )
+  //)
+  //val myScoreboardReorderBufPsIdCanIssue = (
+  //  cfg.optScoreboard
+  //) generate (
+  //  in(
+  //    Bool()
+  //  )
+  //)
+  ////--------
+  //val myScoreboardSavedGprTagVec = (
+  //  cfg.optScoreboard
+  //) generate (
+  //  out(
+  //    UInt(cfg.numGprs bits)
+  //  )
+  //)
   //--------
 }
 
@@ -988,6 +988,190 @@ case class SnowHouseForFmaxPipeStageInstrDecode(
     //shouldIgnoreInstr=null,
     doDecodeFunc=cfg.doInstrDecodeFunc,
     //psIdFoundBubble=psIdFoundBubble,
+    //myScoreboardCommitStm=(
+    //  io.myScoreboardCommit
+    //),
+    //myScoreboardBubbleRetireStm=(
+    //  io.myScoreboardBubbleRetire
+    //),
+    //myScoreboardSavedGprTagVec=(
+    //  io.myScoreboardSavedGprTagVec
+    //),
+    //myScoreboardReorderBufInFlushEtc=(
+    //  io.myScoreboardReorderBufInFlushEtc
+    //),
+    //myScoreboardReorderBufPsIdCanIssue=(
+    //  io.myScoreboardReorderBufPsIdCanIssue
+    //),
+  )
+
+  cLink.up.driveFrom(io.up)(
+    con=(node, inp) => {
+      node(pIdInp) := inp
+    }
+  )
+
+
+  s2mLink.down.driveTo(
+    io.down
+  )(
+    con=(outp, node) => {
+      outp := node(pIdOutp)
+    }
+  )
+
+  Builder(linkArr)
+  //--------
+}
+
+case class SnowHouseForFmaxPipeStageScoreboardIssueIo(
+  cfg: SnowHouseConfig
+) extends Bundle {
+  //--------
+  val up = (
+    slave(Stream(
+      SnowHousePipePayload(cfg=cfg)
+    ))
+  )
+  val down = (
+    master(Stream(
+      SnowHousePipePayload(cfg=cfg)
+    ))
+  )
+  //--------
+  val psExSetPc = (
+    slave(Flow(
+      SnowHousePsExSetPcPayload(cfg=cfg)
+    ))
+  )
+  //--------
+  //val myScoreboardReadGprsPayload = (
+  //  in(
+  //    //Vec.fill(cfg.numMultiIssue)(
+  //      //Stream(
+  //        SnowHouseScoreboardReadGprsPayload(cfg=cfg)
+  //      //)
+  //    //)
+  //  )
+  //)
+  //val myScoreboardReadGprsReady = (
+  //  out(Bool())
+  //)
+
+  //val myBranchMispredictEtc = (
+  //  in(
+  //    Bool()
+  //  )
+  //)
+  ////--------
+  //val myScoreboardReadGprs = (
+  //  slave(Stream(
+  //    SnowHouseScoreboardReadGprsPayload(cfg=cfg)
+  //  ))
+  //)
+
+  val myScoreboardCommit = (
+    cfg.optScoreboard
+  ) generate (
+    slave(Stream(
+      //UInt(cfg.optScoreboardTagWidth bits)
+      SnowHouseScoreboardCommitPayload(cfg=cfg)
+    ))
+  )
+  val myScoreboardBubbleRetire = (
+    cfg.optScoreboard
+  ) generate (
+    slave(Stream(
+      //UInt(cfg.optScoreboardTagWidth bits)
+      SnowHouseScoreboardCommitPayload(cfg=cfg)
+    ))
+  )
+  val myScoreboardReorderBufInFlushEtc = (
+    cfg.optScoreboard
+  ) generate (
+    in(
+      Bool()
+    )
+  )
+  val myScoreboardReorderBufPsIdCanIssue = (
+    cfg.optScoreboard
+  ) generate (
+    in(
+      Bool()
+    )
+  )
+  //--------
+  val myScoreboardSavedGprTagVec = (
+    cfg.optScoreboard
+  ) generate (
+    out(
+      UInt(cfg.numGprs bits)
+    )
+  )
+  //--------
+}
+
+case class SnowHouseForFmaxPipeStageScoreboardIssue(
+  cfg: SnowHouseConfig,
+  //val doDecodeFunc: (SnowHousePipeStageScoreboardIssue) => Area,
+) extends Component {
+  //--------
+  val io = SnowHouseForFmaxPipeStageScoreboardIssueIo(cfg=cfg)
+  //def up = io.up
+  //def down = io.down
+  //--------
+  val linkArr = PipeHelper.mkLinkArr()
+
+  //def opInfoMap = cfg.opInfoMap
+
+  val pScoreboardIssueInp = Payload(SnowHousePipePayload(cfg=cfg))
+  val pScoreboardIssueOutp = Payload(SnowHousePipePayload(cfg=cfg))
+  val cLink = CtrlLink()
+  val sLink = StageLink(
+    up=cLink.down,
+    down={
+      val temp = Node()
+      temp.setName("sLink_down")
+      temp
+    }
+  )
+  val s2mLink = S2MLink(
+    up=sLink.down,
+    down={
+      val temp = Node()
+      temp.setName("s2mLink_down")
+      temp
+    }
+  )
+  linkArr += cLink
+  linkArr += sLink
+  linkArr += s2mLink
+
+  val innerPsId = SnowHousePipeStageScoreboardIssue(
+    SnowHousePipeStageArgs(
+      cfg=cfg,
+      io=null,
+      link=cLink,
+      prevPayload=pScoreboardIssueInp,
+      currPayload=(
+        pScoreboardIssueOutp
+        //regFile.io.frontPayload
+      ),
+      myDbusIo=(
+        //if (!cfg.useLcvDataBus) (
+        //  myDbusIo
+        //) else (
+          null.asInstanceOf[SnowHouseDbusIo]
+        //)
+      ),
+      regFile=null,
+    ),
+    //psIdHaltIt=null,
+    //psExSetPc=io.psExSetPc,
+    //pcChangeState=null,
+    //shouldIgnoreInstr=null,
+    //doDecodeFunc=cfg.doScoreboardIssueFunc,
+    //psIdFoundBubble=psIdFoundBubble,
     myScoreboardCommitStm=(
       io.myScoreboardCommit
     ),
@@ -1007,7 +1191,7 @@ case class SnowHouseForFmaxPipeStageInstrDecode(
 
   cLink.up.driveFrom(io.up)(
     con=(node, inp) => {
-      node(pIdInp) := inp
+      node(pScoreboardIssueInp) := inp
     }
   )
 
@@ -1016,7 +1200,7 @@ case class SnowHouseForFmaxPipeStageInstrDecode(
     io.down
   )(
     con=(outp, node) => {
-      outp := node(pIdOutp)
+      outp := node(pScoreboardIssueOutp)
     }
   )
 
