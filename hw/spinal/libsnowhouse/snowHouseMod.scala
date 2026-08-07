@@ -57,7 +57,7 @@ case class SnowHouseInstrDataDualRamIo(
   val dbusExtraReady = (
     !cfg.useLcvDataBus
   ) generate (
-    Vec.fill(cfg.lowerMyFanout)(
+    Vec.fill(cfg.lowerMyFanoutMain)(
       Bool()
     )
   )
@@ -1200,7 +1200,7 @@ private[libsnowhouse] case class SnowHouseDbusIo(
   )
 
   val dbusExtraReady = (
-    Vec.fill(cfg.lowerMyFanout)(
+    Vec.fill(cfg.lowerMyFanoutMain)(
       Bool()
     )
   )
@@ -1577,7 +1577,7 @@ private[libsnowhouse] case class SnowHouseNotForFmax
   //  if (!cfg.useLcvDataBus) (
   //    io.dbusExtraReady
   //  ) else (
-  //    Vec.fill(cfg.lowerMyFanout)(
+  //    Vec.fill(cfg.lowerMyFanoutMain)(
   //      Bool()
   //    )
   //  )

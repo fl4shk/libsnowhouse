@@ -1151,14 +1151,17 @@ case class SnowHousePipeStageInstrFetch(
         node(pIf).encInstr.payload.allowOverride
         node(pIf).psIfRegPcSetItCnt.allowOverride
         node(pIf).regPc.allowOverride
-        node(pIf).laggingRegPc.allowOverride
+        //node(pIf).laggingRegPc.allowOverride
+        node(pIf).myRegPcVec.allowOverride
         node(pIf).branchPredictTkn.allowOverride
         node(pIf).branchTgtBufElem.allowOverride
 
         node(pIf).encInstr.payload := payload.instr
         node(pIf).psIfRegPcSetItCnt := payload.psIfRegPcSetItCnt
         node(pIf).regPc := payload.myIbusRegPcInfo.regPc
-        node(pIf).laggingRegPc := payload.myIbusRegPcInfo.regPc
+        node(pIf).myRegPcVec.foreach(item => {
+          item := payload.myIbusRegPcInfo.regPc
+        })
         node(pIf).branchPredictTkn := (
           payload.myIbusRegPcInfo.branchPredictTkn
           //True
@@ -4570,15 +4573,21 @@ case class SnowHousePipeStageExecuteSetOutpModMemWordIo(
       )
     )
   )
-  val laggingRegPc = setAsInp(UInt(
-    //cfg.mainWidth bits
-    cfg.mainAddrWidth bits
+  //val laggingRegPc = setAsInp(UInt(
+  //  //cfg.mainWidth bits
+  //  cfg.mainAddrWidth bits
+  //))
+  val myRegPcVec = setAsInp(Vec.fill(
+    cfg.lowerMyFanoutRegPc
+  )(
+    UInt(cfg.mainAddrWidth bits)
   ))
+  def laggingRegPc = myRegPcVec(0)
   val laggingRegPcPlus1InstrSize = setAsInp(UInt(
     //cfg.mainWidth bits
     cfg.mainAddrWidth bits
   ))
-  val regPcSetItCnt = setAsInp(Vec.fill(cfg.lowerMyFanoutRegPcSetItCnt)(
+  val regPcSetItCnt = setAsInp(Vec.fill(cfg.lowerMyFanoutMain)(
     UInt(
       //1 bits
       cfg.regPcSetItCntWidth bits
@@ -4613,7 +4622,7 @@ case class SnowHousePipeStageExecuteSetOutpModMemWordIo(
   val shouldIgnoreInstr = (
     /*setAsOutp*/
     setAsInp(
-      Vec.fill(cfg.lowerMyFanoutRegPcSetItCnt)(
+      Vec.fill(cfg.lowerMyFanoutMain)(
         Bool()
       )
     )
@@ -5877,7 +5886,7 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
       (
         myPsExSetPcValid
         && (
-          io.laggingRegPc
+          io.myRegPcVec(0)
           =/= rMyTempDstRegPc.payload(0)
           //!LcvFastCmpEq(
           //  left=io.laggingRegPc,
@@ -5906,7 +5915,7 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
           //io.laggingRegPc
           //=/= io.mySavedRegPcPlusInstrSize.last
           (
-            io.laggingRegPc
+            io.myRegPcVec(1)
             =/= io.mySavedRegPcPlusInstrSize.last
           )
           //!LcvFastCmpEq(
@@ -5975,9 +5984,9 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
   io.psExSetPc.taken.myPsExSetPcValid := myPsExSetPcValid
   io.psExSetPc.taken.srcRegPc := (
     RegNextWhen(
-      io.laggingRegPc,
+      io.myRegPcVec(2),
       cond=io.upIsFiring,
-      init=io.laggingRegPc.getZero,
+      init=io.myRegPcVec(2).getZero,
     )
   )
   //io.psExSetPc.taken.reallyTaken
@@ -8512,7 +8521,7 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
                       io.imm.last //- cfg.instrSizeBytes
                     )
                   ) else (
-                    io.laggingRegPc(myDstPcRange)
+                    io.myRegPcVec(3)(myDstPcRange)
                       + io.imm.last(
                         io.imm.last.high
                         downto log2Up(cfg.instrSizeBytes)
@@ -9302,11 +9311,11 @@ case class SnowHousePipeStageExecute(
   //}
 
   val myShouldIgnoreInstr = (
-    Vec.fill(cfg.lowerMyFanoutRegPcSetItCnt)(
+    Vec.fill(cfg.lowerMyFanoutMain)(
       Bool()
     )
   )
-  for (idx <- 0 until cfg.lowerMyFanoutRegPcSetItCnt) {
+  for (idx <- 0 until cfg.lowerMyFanoutMain) {
     outp.instrCnt.shouldIgnoreInstr(idx) := (
       myShouldIgnoreInstr(idx)
     )
@@ -9317,7 +9326,7 @@ case class SnowHousePipeStageExecute(
   //  //)))
   //  //temp.init(temp.getZero)
   //  //temp
-  //  Vec.fill(cfg.lowerMyFanoutRegPcSetItCnt)(
+  //  Vec.fill(cfg.lowerMyFanoutMain)(
   //    Reg(Bool(), init=False)
   //  )
   //}
@@ -9325,7 +9334,7 @@ case class SnowHousePipeStageExecute(
   //  rTakeJumpCnt.fire
   //) {
   //}
-  for (idx <- 0 until cfg.lowerMyFanoutRegPcSetItCnt) {
+  for (idx <- 0 until cfg.lowerMyFanoutMain) {
     myShouldIgnoreInstr(idx) := (
       //rTakeJumpState(idx)
       RegNext(
@@ -10461,7 +10470,7 @@ case class SnowHousePipeStageExecute(
   //setOutpModMemWord.io.regPcPlusImmRealDst := (
   //  outp.branchTgtBufElem(1).dstRegPc
   //)
-  setOutpModMemWord.io.laggingRegPc := outp.laggingRegPc
+  setOutpModMemWord.io.myRegPcVec := outp.myRegPcVec
   setOutpModMemWord.io.laggingRegPcPlus1InstrSize := (
     outp.laggingRegPcPlus1InstrSize
   )
@@ -11010,7 +11019,7 @@ case class SnowHousePipeStageExecute(
   //psExSetPc.valid1.allowOverride
   psExSetPc.taken.allowOverride
   psExSetPc.nextPc.allowOverride
-  for (idx <- 0 until cfg.lowerMyFanoutRegPcSetItCnt) {
+  for (idx <- 0 until cfg.lowerMyFanoutMain) {
     setOutpModMemWord.io.shouldIgnoreInstr(idx) := (
       myShouldIgnoreInstr(idx)
     )
@@ -11030,10 +11039,10 @@ case class SnowHousePipeStageExecute(
     //  init=False
     //)
   )
-  val nextPsExSetPcValid = Vec.fill(cfg.lowerMyFanoutRegPcSetItCnt)(
+  val nextPsExSetPcValid = Vec.fill(cfg.lowerMyFanoutMain)(
     Bool()
   )
-  for (idx <- 0 until cfg.lowerMyFanoutRegPcSetItCnt) {
+  for (idx <- 0 until cfg.lowerMyFanoutMain) {
     nextPsExSetPcValid(idx) := (
       setOutpModMemWord.io.psExSetPc.valid
       && RegNext(
@@ -11081,7 +11090,7 @@ case class SnowHousePipeStageExecute(
       init=setOutpModMemWord.io.psExSetPc.taken.payload.getZero
     )
   )
-  for (idx <- 0 until cfg.lowerMyFanoutRegPcSetItCnt) {
+  for (idx <- 0 until cfg.lowerMyFanoutMain) {
     when (nextPsExSetPcValid(idx)) {
       myShouldIgnoreInstr(idx) := True
     }

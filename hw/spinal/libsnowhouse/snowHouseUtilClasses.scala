@@ -956,13 +956,16 @@ case class SnowHouseConfig(
     + s"mySrcRegPcCmpEqRangeHi:${mySrcRegPcCmpEqRangeHi} "
     + s"mySrcRegPcCmpEqRangeLo:${mySrcRegPcCmpEqRangeLo}"
   )
-  def lowerMyFanout = 4
-  def lowerMyFanoutRegPcSetItCnt = (
+  //def lowerMyFanout = 4
+  def lowerMyFanoutMain = (
     //2
     //3
     4
     //5
     //1
+  )
+  def lowerMyFanoutRegPc = (
+    4
   )
   def lowerMyFanoutNextPc = (
     2
@@ -1582,57 +1585,57 @@ case class SnowHouseInstrCnt(
   val jmp = UInt(cfg.instrCntWidth bits)
   val mem = UInt(cfg.instrCntWidth bits)
   val nonMem = UInt(cfg.instrCntWidth bits)
-  val shouldIgnoreInstr = Vec.fill(cfg.lowerMyFanoutRegPcSetItCnt)(
+  val shouldIgnoreInstr = Vec.fill(cfg.lowerMyFanoutMain)(
     Bool()
   )
-  val fwdCanDoItInfo = Vec.fill(cfg.lowerMyFanoutRegPcSetItCnt)(
+  val fwdCanDoItInfo = Vec.fill(cfg.lowerMyFanoutMain)(
     Bool()
   )
-  val myPsIdBubble = Vec.fill(cfg.lowerMyFanoutRegPcSetItCnt)(
+  val myPsIdBubble = Vec.fill(cfg.lowerMyFanoutMain)(
     Bool()
   )
   //val myPsIdReorderBufForceValid = Vec.fill(
-  //  cfg.lowerMyFanoutRegPcSetItCnt
+  //  cfg.lowerMyFanoutMain
   //)(
   //  Bool()
   //)
-  val myPsIdOtherBubble = Vec.fill(cfg.lowerMyFanoutRegPcSetItCnt)(
+  val myPsIdOtherBubble = Vec.fill(cfg.lowerMyFanoutMain)(
     Bool()
   )
-  val myPsIdFwdBubble = Vec.fill(cfg.lowerMyFanoutRegPcSetItCnt)(
+  val myPsIdFwdBubble = Vec.fill(cfg.lowerMyFanoutMain)(
     Bool()
   )
-  val myPsIdInFlushBubble = Vec.fill(cfg.lowerMyFanoutRegPcSetItCnt)(
+  val myPsIdInFlushBubble = Vec.fill(cfg.lowerMyFanoutMain)(
     Bool()
   )
 
   //val myReorderBufFlushPsIdBubble = (
-  //  Vec.fill(cfg.lowerMyFanoutRegPcSetItCnt)(
+  //  Vec.fill(cfg.lowerMyFanoutMain)(
   //    Bool()
   //  )
   //)
   //val myScoreboardReadGprsBubble = Vec.fill(
-  //  cfg.lowerMyFanoutRegPcSetItCnt
+  //  cfg.lowerMyFanoutMain
   //)(
   //  Bool()
   //)
-  val myPsExMemAccessBubble = Vec.fill(cfg.lowerMyFanoutRegPcSetItCnt)(
+  val myPsExMemAccessBubble = Vec.fill(cfg.lowerMyFanoutMain)(
     Bool()
   )
-  val myPsExMultiCycleBubble = Vec.fill(cfg.lowerMyFanoutRegPcSetItCnt)(
+  val myPsExMultiCycleBubble = Vec.fill(cfg.lowerMyFanoutMain)(
     Bool()
   )
   //val dbgUnfinishedMultiCycleOp = (
   //  cfg.dbgExposeExtrasAtRegFileWrite
   //) generate (
-  //  Vec.fill(cfg.lowerMyFanoutRegPcSetItCnt)(
+  //  Vec.fill(cfg.lowerMyFanoutMain)(
   //    Bool()
   //  )
   //)
-  //val myPsIdPreBubble = Vec.fill(cfg.lowerMyFanoutRegPcSetItCnt)(
+  //val myPsIdPreBubble = Vec.fill(cfg.lowerMyFanoutMain)(
   //  Bool()
   //)
-  //val myPsIdEitherBubble = Vec.fill(cfg.lowerMyFanoutRegPcSetItCnt)(
+  //val myPsIdEitherBubble = Vec.fill(cfg.lowerMyFanoutMain)(
   //  Bool()
   //)
   //def shouldIgnoreInstr = (pcChangeState === True)
@@ -1651,7 +1654,7 @@ case class SnowHouseInstrCnt(
   )
   def myScoreboardFwdPsWbBubbleMost = (
     myScoreboardPsWbBubbleMost(
-      cfg.lowerMyFanoutRegPcSetItCnt - 1
+      cfg.lowerMyFanoutMain - 1
     )
   )
 
@@ -2145,14 +2148,23 @@ case class SnowHousePipePayloadNonExt(
     //cfg.mainWidth bits
     cfg.mainAddrWidth bits
   )//.simPublic()
-  val laggingRegPc = /*Vec.fill(2)*/(
-    //Vec.fill(3)(
-      UInt(
-        //cfg.mainWidth bits
-        cfg.mainAddrWidth bits
-      )//.simPublic()
-    //)
+  //val laggingRegPc = /*Vec.fill(2)*/(
+  //  //Vec.fill(3)(
+  //    UInt(
+  //      //cfg.mainWidth bits
+  //      cfg.mainAddrWidth bits
+  //    )//.simPublic()
+  //  //)
+  //)
+  val myRegPcVec = (
+    // duplicated from laggingRegPc for
+    Vec.fill(cfg.lowerMyFanoutRegPc)(
+      UInt(cfg.mainAddrWidth bits)
+    )
   )
+  //def laggingRegPc = (
+  //  myRegPcVec(0)
+  //)
   def myHistRegPcSize = (
     3
   )
@@ -2190,7 +2202,7 @@ case class SnowHousePipePayloadNonExt(
     cfg.mainAddrWidth bits
   )
   val psIfRegPcSetItCnt = UInt(cfg.myPsIfRegPcSetItCntWidth bits)
-  val regPcSetItCnt = Vec.fill(cfg.lowerMyFanoutRegPcSetItCnt)(
+  val regPcSetItCnt = Vec.fill(cfg.lowerMyFanoutMain)(
     UInt(
       //cfg.instrCntWidth bits
       //2 bits
@@ -2269,7 +2281,8 @@ case class SnowHousePipePayload(
   def psExSetPc = nonExt.psExSetPc
   def psExSetOutpModMemWordIo = nonExt.psExSetOutpModMemWordIo
   def regPc = nonExt.regPc
-  def laggingRegPc = nonExt.laggingRegPc
+  def myRegPcVec = nonExt.myRegPcVec
+  def laggingRegPc = nonExt.myRegPcVec.head
   def laggingRegPcPlus1InstrSize = nonExt.laggingRegPcPlus1InstrSize
   def myHistRegPcSize = (
     nonExt.myHistRegPcSize

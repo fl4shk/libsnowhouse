@@ -158,7 +158,7 @@ case class SnowHouseScoreboardIssuePayload(
 //    )
 //  )
 //  val regPcSetItCnt = in(
-//    Vec.fill(cfg.lowerMyFanoutRegPcSetItCnt)(
+//    Vec.fill(cfg.lowerMyFanoutMain)(
 //      UInt(
 //        //cfg.instrCntWidth bits
 //        //2 bits
@@ -197,7 +197,7 @@ case class SnowHouseScoreboardCommitPayload(
 //  //--------
 //  val myBranchMispredictEtc = in(Bool())
 //  val issueRegPcSetItCnt = in(
-//    Vec.fill(cfg.lowerMyFanoutRegPcSetItCnt)(
+//    Vec.fill(cfg.lowerMyFanoutMain)(
 //      UInt(
 //        //cfg.instrCntWidth bits
 //        //2 bits

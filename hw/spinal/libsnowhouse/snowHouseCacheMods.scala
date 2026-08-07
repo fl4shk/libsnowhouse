@@ -54,7 +54,7 @@ case class SnowHouseCacheIo(
     )
   )
   val busExtraReady = out(Vec.fill(
-    cfg.lowerMyFanout
+    cfg.lowerMyFanoutMain
   )(
     Bool()
   ))
