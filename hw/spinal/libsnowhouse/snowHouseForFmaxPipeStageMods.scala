@@ -3539,7 +3539,6 @@ case class SnowHouseForFmaxPipeStageWriteBack(
   }
 
   val myD2hBus = cloneOf(io.myLcvDbusD2hStm)
-  //val rSeenD2hBusFire = Reg(Bool(), init=False)
 
   //val rInstrCntMem = (
   //  Reg(cloneOf(myWbPayloadVec.head(1).instrCnt.mem))
@@ -3549,14 +3548,14 @@ case class SnowHouseForFmaxPipeStageWriteBack(
   //  Reg(cloneOf(myWbPayloadVec.head(1).instrCnt.nonMem))
   //  init(0x0)
   //)
-  //when (myD2hBus.fire) {
-  //  rSeenD2hBusFire := True
-  //}
-  //val rSeenMyD2hBusFire = (
-  //  cfg.optScoreboard
-  //) generate (
-  //  Reg(Bool(), init=False)
-  //)
+  val rSeenMyD2hBusFire = (
+    cfg.optScoreboard
+  ) generate (
+    Reg(Bool(), init=False)
+  )
+  when (myD2hBus.fire) {
+    rSeenMyD2hBusFire := True
+  }
 
   //val myNonFwdShouldIgnoreInstr = (
   //  cfg.optScoreboard
@@ -3576,18 +3575,23 @@ case class SnowHouseForFmaxPipeStageWriteBack(
   //  //&& !myNonFwdWbFifo.io.pop.payload.instrCnt.myPsIdBubble.head
   //)
 
-  val stickyMyD2hBusValid = (
+  val stickyMyD2hBusFire = (
     if (cfg.optScoreboard) (
-      //myD2hBus.fire
-      myD2hBus.valid
-      //|| rSeenMyD2hBusFire
+      myD2hBus.fire
+      //myD2hBus.valid
+      || rSeenMyD2hBusFire
       //|| myNonFwdShouldIgnoreInstr
     ) else (
       // TODO: determine whether this works!
-      //myD2hBus.fire
-      myD2hBus.valid
+      myD2hBus.fire
+      //myD2hBus.valid
     )
   )
+  when (
+    myNonFwdWbFifo.io.pop.fire
+  ) {
+    rSeenMyD2hBusFire := False
+  }
 
   val stickyMemMmw = (
     cfg.optScoreboard
@@ -3768,7 +3772,8 @@ case class SnowHouseForFmaxPipeStageWriteBack(
           //|| rCurrWbPayloadOuterIdx.lsb
           //&& 
           myNonFwdWbValid
-          && myNonFwdWbFifo.io.pop.ready
+          && !rSeenMyD2hBusFire
+          //&& myNonFwdWbFifo.io.pop.ready
         ) else (
           cLink.up.isValid
         )
@@ -4458,10 +4463,7 @@ case class SnowHouseForFmaxPipeStageWriteBack(
     if (cfg.optScoreboard) (
       //myCommitBackStm.fire
       //myCommitAlmostFinalOutpStm.fire//valid
-
-      RegNext(
-        myCommitTrueFinalOutpStmVec.last.fire//valid
-      )
+      myCommitTrueFinalOutpStmVec.last.fire//valid
     ) else (
       //myCommitBackStm.valid
       myCommitAlmostFinalOutpStm.valid
@@ -4471,9 +4473,7 @@ case class SnowHouseForFmaxPipeStageWriteBack(
     //myCommitBackStm.regFileWrite
     //myCommitAlmostFinalOutpStm.regFileWrite
     if (cfg.optScoreboard) (
-      RegNext(
-        myCommitTrueFinalOutpStmVec.last.regFileWrite
-      )
+      myCommitTrueFinalOutpStmVec.last.regFileWrite
     ) else (
       myCommitAlmostFinalOutpStm.regFileWrite
     )
@@ -4482,7 +4482,7 @@ case class SnowHouseForFmaxPipeStageWriteBack(
   if (cfg.optScoreboard) {
     for (idx <- 0 until myCommitTrueFinalOutpStmVec.size) {
       if (idx == 0) {
-        myCommitTrueFinalOutpStmVec(idx) << (
+        myCommitTrueFinalOutpStmVec(idx) <-< (
           myCommitAlmostFinalOutpStm
         )
       } else {
@@ -4903,7 +4903,7 @@ case class SnowHouseForFmaxPipeStageWriteBack(
               //True
               //!myNonFwdWbPayload(1).instrCnt.myPsIdBubble.last
               myNonFwdWbValid
-              && stickyMyD2hBusValid
+              && stickyMyD2hBusFire
               //&& (
               //  someMyShouldIgnoreInstrState
               //)
