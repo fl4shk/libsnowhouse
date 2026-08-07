@@ -4483,11 +4483,11 @@ case class SnowHouseForFmaxPipeStageWriteBack(
   if (cfg.optScoreboard) {
     for (idx <- 0 until myCommitTrueFinalOutpStmVec.size) {
       if (idx == 0) {
-        myCommitTrueFinalOutpStmVec(idx) <-< (
+        myCommitTrueFinalOutpStmVec(idx) <-/< (
           myCommitAlmostFinalOutpStm
         )
       } else {
-        myCommitTrueFinalOutpStmVec(idx) <-< (
+        myCommitTrueFinalOutpStmVec(idx) <-/< (
           myCommitTrueFinalOutpStmVec(idx - 1)
         )
       }
