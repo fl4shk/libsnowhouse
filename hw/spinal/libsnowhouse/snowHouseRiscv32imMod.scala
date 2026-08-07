@@ -1701,8 +1701,8 @@ case class SnowHouseRiscv32imConfig(
   optForFmaxCfg: Option[SnowHouseForFmaxConfig]=Some(
     SnowHouseForFmaxConfig(
       numPostExPreWbPipeStages=(
-        //0
-        1
+        0
+        //1
       ),
       //optDualIssue=true,
       optScoreboard=true,
