@@ -2439,7 +2439,7 @@ case class SnowHousePipeStageScoreboardIssue(
       !isNonFwd
     ) generate (
       UInt(log2Up(
-        cfg.optForFmaxPsExFwdSize - 1//2//3
+        cfg.optForFmaxPsExFwdSize - 2//3
         + 1
       ) + 1 bits)
     )
@@ -3144,7 +3144,7 @@ case class SnowHousePipeStageScoreboardIssue(
           rMyFwdGprTagVec(idx).valid := True
           when (!rMyFwdGprTagVec(idx).fire) {
             rMyFwdGprTagVec(idx).cnt := (
-              cfg.optForFmaxPsExFwdSize - 1//2//3//2//1
+              cfg.optForFmaxPsExFwdSize - 2//3//2//1
             )
             //rMyFwdGprTagVec(idx).tag := myTempFwdTag
           }
@@ -9766,26 +9766,27 @@ case class SnowHousePipeStageExecute(
                     )
                   )
                   //stickyFwdRegFileWrPulseVec(jdx).fire
-                  ## (
-                    cLink.up.isValid
-                    //RegNext(
-                    //  cLink.up.isFiring,
-                    //  init=False
-                    //)
-                    //|| rose(
-                    //  cLink.up.isValid
-                    //)
-                    //|| (
-                    //  cLink.up.isValid
-                    //  && fell(
-                    //    myShouldIgnoreInstr.last
-                    //  )
-                    //)
-                  )
+                  //## (
+                  //  cLink.up.isValid
+                  //  //RegNext(
+                  //  //  cLink.up.isFiring,
+                  //  //  init=False
+                  //  //)
+                  //  //|| rose(
+                  //  //  cLink.up.isValid
+                  //  //)
+                  //  //|| (
+                  //  //  cLink.up.isValid
+                  //  //  && fell(
+                  //  //    myShouldIgnoreInstr.last
+                  //  //  )
+                  //  //)
+                  //)
                 ) {
                   is (
                     //M"1-"
-                    M"1--"
+                    //M"1--"
+                    M"1-"
                   ) {
                     outp.myExt(0).rdMemWord(jdx) := (
                       forFmaxRegFileWrPulseArr(0).data
@@ -9793,7 +9794,8 @@ case class SnowHousePipeStageExecute(
                     )
                   }
                   is (
-                    M"01-"
+                    //M"01-"
+                    M"01"
                   ) {
                     outp.myExt(0).rdMemWord(jdx) := (
                       RegNextWhen(
@@ -9805,27 +9807,30 @@ case class SnowHousePipeStageExecute(
                       )
                     )
                   }
-                  is (
-                    //M"01"
-                    M"001"
-                  ) {
-                    //if (idx == 0) {
-                      outp.myExt(0).rdMemWord(jdx) := (
-                        inp.myExt(0).rdMemWord(jdx)
-                      )
-                    //} else {
-                    //  outp.myExt(0).rdMemWord(jdx) := (
-                    //    outp.myPreFwdRdMemWord(jdx)
-                    //  )
-                    //}
-                  }
+                  //is (
+                  //  //M"01"
+                  //  M"001"
+                  //) {
+                  //  //if (idx == 0) {
+                  //    outp.myExt(0).rdMemWord(jdx) := (
+                  //      inp.myExt(0).rdMemWord(jdx)
+                  //    )
+                  //  //} else {
+                  //  //  outp.myExt(0).rdMemWord(jdx) := (
+                  //  //    outp.myPreFwdRdMemWord(jdx)
+                  //  //  )
+                  //  //}
+                  //}
                   default {
                     outp.myExt(0).rdMemWord(jdx) := (
-                      RegNext(
-                        outp.myExt(0).rdMemWord(jdx),
-                        init=outp.myExt(0).rdMemWord(jdx).getZero
-                      )
+                      inp.myExt(0).rdMemWord(jdx)
                     )
+                    //outp.myExt(0).rdMemWord(jdx) := (
+                    //  RegNext(
+                    //    outp.myExt(0).rdMemWord(jdx),
+                    //    init=outp.myExt(0).rdMemWord(jdx).getZero
+                    //  )
+                    //)
                   }
                 }
                 //outp.myExt(0).rdMemWord(jdx) := (
