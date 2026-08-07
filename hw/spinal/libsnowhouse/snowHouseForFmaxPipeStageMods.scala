@@ -1147,7 +1147,7 @@ case class SnowHouseForFmaxPipeStageScoreboardIssue(
   linkArr += sLink
   linkArr += s2mLink
 
-  val innerPsId = SnowHousePipeStageScoreboardIssue(
+  val innerPsScoreboardIssue = SnowHousePipeStageScoreboardIssue(
     SnowHousePipeStageArgs(
       cfg=cfg,
       io=null,
