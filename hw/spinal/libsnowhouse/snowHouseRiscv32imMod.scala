@@ -485,6 +485,7 @@ object Riscv32imOpInfoMap {
   //--------
 
   opInfoMap += (
+    // rd = rs1 << rs2[0:4]
     Rv32RType.Op.SllRdRs1Rs2 -> OpInfo./*mkAlu*//*mkAluShift*/mkMultiCycle(
       dstArr=Array[DstKind](DstKind.Gpr),
       srcArr=Array[SrcKind](SrcKind.Gpr, SrcKind.Gpr),
@@ -499,19 +500,23 @@ object Riscv32imOpInfoMap {
   )
   opInfoMap += (
     // rd = rs1 << imm[0:4]
-    Rv32IType.Op.SlliRdRs1Imm -> OpInfo./*mkAlu*//*mkAluShift*/mkMultiCycle(
+    Rv32IType.Op.SlliRdRs1Imm -> OpInfo.mkAlu/*mkAluShift*//*mkMultiCycle*/(
       dstArr=Array[DstKind](DstKind.Gpr),
       srcArr=Array[SrcKind](SrcKind.Gpr, SrcKind.Imm()),
       //aluShiftOp=AluShiftOpKind.Lsl,
-      multiCycleOp=(
-        MultiCycleOpKind.Lsl
-      ),
+      //multiCycleOp=(
+      //  MultiCycleOpKind.Lsl
+      //),
+      aluOp=(
+        AluOpKind.Lsl
+      )
       //aluOp=(
       //  AluOpKind.LcvAlu(LcvAluDel1InpOpEnum.LSL)
       //)
     )
   )
   opInfoMap += (
+    // rd = rs1 >> rs2[0:4]
     Rv32RType.Op.SrlRdRs1Rs2 -> OpInfo./*mkAlu*//*mkAluShift*/mkMultiCycle(
       dstArr=Array[DstKind](DstKind.Gpr),
       srcArr=Array[SrcKind](SrcKind.Gpr, SrcKind.Gpr),
@@ -526,13 +531,16 @@ object Riscv32imOpInfoMap {
   )
   opInfoMap += (
     // rd = rs1 >> imm[0:4]
-    Rv32IType.Op.SrliRdRs1Imm -> OpInfo./*mkAlu*//*mkAluShift*/mkMultiCycle(
+    Rv32IType.Op.SrliRdRs1Imm -> OpInfo.mkAlu/*mkAluShift*//*mkMultiCycle*/(
       dstArr=Array[DstKind](DstKind.Gpr),
       srcArr=Array[SrcKind](SrcKind.Gpr, SrcKind.Imm()),
       //aluShiftOp=AluShiftOpKind.Lsr,
-      multiCycleOp=(
-        MultiCycleOpKind.Lsr
-      ),
+      //multiCycleOp=(
+      //  MultiCycleOpKind.Lsr
+      //),
+      aluOp=(
+        AluOpKind.Lsr
+      )
       //aluOp=(
       //  AluOpKind.LcvAlu(LcvAluDel1InpOpEnum.LSL)
       //)
@@ -541,6 +549,7 @@ object Riscv32imOpInfoMap {
 
 
   opInfoMap += (
+    // rd = rs1 >> rs2[0:4] msb-extends
     Rv32RType.Op.SraRdRs1Rs2 -> OpInfo./*mkAlu*//*mkAluShift*/mkMultiCycle(
       dstArr=Array[DstKind](DstKind.Gpr),
       srcArr=Array[SrcKind](SrcKind.Gpr, SrcKind.Gpr),
@@ -556,13 +565,16 @@ object Riscv32imOpInfoMap {
 
   opInfoMap += (
     // rd = rs1 >> imm[0:4] msb-extends
-    Rv32IType.Op.SraiRdRs1Imm -> OpInfo./*mkAlu*//*mkAluShift*/mkMultiCycle(
+    Rv32IType.Op.SraiRdRs1Imm -> OpInfo.mkAlu/*mkAluShift*//*mkMultiCycle*/(
       dstArr=Array[DstKind](DstKind.Gpr),
       srcArr=Array[SrcKind](SrcKind.Gpr, SrcKind.Imm()),
       //aluShiftOp=AluShiftOpKind.Asr,
-      multiCycleOp=(
-        MultiCycleOpKind.Asr
-      ),
+      //multiCycleOp=(
+      //  MultiCycleOpKind.Asr
+      //),
+      aluOp=(
+        AluOpKind.Asr
+      )
       //aluOp=(
       //  AluOpKind.LcvAlu(LcvAluDel1InpOpEnum.LSL)
       //)

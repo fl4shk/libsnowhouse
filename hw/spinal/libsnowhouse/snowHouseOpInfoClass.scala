@@ -1908,6 +1908,139 @@ object AluOpKind {
   //  )
   //  def validArgsSet = _validArgsSet
   //}
+  case object Lsl extends AluOpKind {
+    private[libsnowhouse] val _validArgsSet = LinkedHashSet[
+      OpKindValidArgs
+    ](
+      //minD=1, maxD=1, minS=2, maxS=2
+      OpKindValidArgs(
+        // word
+        //dstSize=1, srcSize=2
+        dst=Array[HashSet[DstKind]](
+          HashSet(DstKind.Gpr),
+        ),
+        src=Array[HashSet[SrcKind]](
+          HashSet(SrcKind.Gpr, SrcKind.Pc),
+          HashSet(SrcKind.Gpr, SrcKind.Pc, SrcKind.Imm(/*None*/)),
+        ),
+        cond=HashSet[CondKind](
+          CondKind.Always
+        ),
+      )
+    )
+    def validArgsSet = _validArgsSet
+    def binopFunc(
+      cfg: SnowHouseConfig, left: UInt, right: UInt, carry: Bool
+    )(
+      width: Int=cfg.mainWidth
+    ) = {
+      val ret = InstrResult(cfg=cfg)(width=width)
+      //when (left < right) {
+      //  ret.main := 1
+      //} otherwise {
+      //  ret.main := 0
+      //}
+      //ret.main := Cat(
+      //  left < right
+      //).asUInt.resize(ret.main.getWidth)
+      ret.main := (
+        (left << right(log2Up(ret.main.getWidth) - 1 downto 0)).resize(
+          ret.main.getWidth
+        )
+      )
+      ret.flagV := False
+      ret.flagC := False
+      ret
+    }
+  }
+  case object Lsr extends AluOpKind {
+    private[libsnowhouse] val _validArgsSet = LinkedHashSet[
+      OpKindValidArgs
+    ](
+      //minD=1, maxD=1, minS=2, maxS=2
+      OpKindValidArgs(
+        // word
+        //dstSize=1, srcSize=2
+        dst=Array[HashSet[DstKind]](
+          HashSet(DstKind.Gpr),
+        ),
+        src=Array[HashSet[SrcKind]](
+          HashSet(SrcKind.Gpr, SrcKind.Pc),
+          HashSet(SrcKind.Gpr, SrcKind.Pc, SrcKind.Imm(/*None*/)),
+        ),
+        cond=HashSet[CondKind](
+          CondKind.Always
+        ),
+      )
+    )
+    def validArgsSet = _validArgsSet
+    def binopFunc(
+      cfg: SnowHouseConfig, left: UInt, right: UInt, carry: Bool
+    )(
+      width: Int=cfg.mainWidth
+    ) = {
+      val ret = InstrResult(cfg=cfg)(width=width)
+      //when (left < right) {
+      //  ret.main := 1
+      //} otherwise {
+      //  ret.main := 0
+      //}
+      //ret.main := Cat(
+      //  left < right
+      //).asUInt.resize(ret.main.getWidth)
+      ret.main := (
+        left >> right(log2Up(ret.main.getWidth) - 1 downto 0)
+      )
+      ret.flagV := False
+      ret.flagC := False
+      ret
+    }
+  }
+  case object Asr extends AluOpKind {
+    private[libsnowhouse] val _validArgsSet = LinkedHashSet[
+      OpKindValidArgs
+    ](
+      //minD=1, maxD=1, minS=2, maxS=2
+      OpKindValidArgs(
+        // word
+        //dstSize=1, srcSize=2
+        dst=Array[HashSet[DstKind]](
+          HashSet(DstKind.Gpr),
+        ),
+        src=Array[HashSet[SrcKind]](
+          HashSet(SrcKind.Gpr, SrcKind.Pc),
+          HashSet(SrcKind.Gpr, SrcKind.Pc, SrcKind.Imm(/*None*/)),
+        ),
+        cond=HashSet[CondKind](
+          CondKind.Always
+        ),
+      )
+    )
+    def validArgsSet = _validArgsSet
+    def binopFunc(
+      cfg: SnowHouseConfig, left: UInt, right: UInt, carry: Bool
+    )(
+      width: Int=cfg.mainWidth
+    ) = {
+      val ret = InstrResult(cfg=cfg)(width=width)
+      //when (left < right) {
+      //  ret.main := 1
+      //} otherwise {
+      //  ret.main := 0
+      //}
+      //ret.main := Cat(
+      //  left < right
+      //).asUInt.resize(ret.main.getWidth)
+      ret.main := (
+        (
+          left.asSInt >> right(log2Up(ret.main.getWidth) - 1 downto 0)
+        ).asUInt
+      )
+      ret.flagV := False
+      ret.flagC := False
+      ret
+    }
+  }
                                       
   case object Sltu extends AluOpKind {
     private[libsnowhouse] val _validArgsSet = LinkedHashSet[
