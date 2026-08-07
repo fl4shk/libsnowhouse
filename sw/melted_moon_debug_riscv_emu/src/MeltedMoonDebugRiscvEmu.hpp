@@ -87,14 +87,14 @@ public:     // constants
     static constexpr u32 ADDR_PAL_START = 0x4000000ul;
     static constexpr u32 ADDR_PAL_END = (
         ADDR_PAL_START
-        + (PALETTE_SIZE - 1) * sizeof(u16)
+        + (PALETTE_SIZE - 1) * sizeof(u32)
     );
     // 64 MiB of main RAM, plus the palette
     // for this emulator, we just dynamically allocate the
     // (admittedly tiny) memory for the palette along with the main memory
     static constexpr size_t MEM_SIZE = (
         64ull * 1024ull * 1024ull
-        + (PALETTE_SIZE * sizeof(u16))
+        + (PALETTE_SIZE * sizeof(u32))
     );
 
     static constexpr size_t NUM_GPRS = 32u;
