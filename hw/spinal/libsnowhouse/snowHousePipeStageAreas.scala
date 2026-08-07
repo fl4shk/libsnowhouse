@@ -2380,9 +2380,11 @@ case class SnowHousePipeStageScoreboardIssue(
   val upPayload = Vec.fill(2)(
     SnowHousePipePayload(cfg=cfg)
   )
-  upPayload(0) := up(pId)
+  //upPayload(0) := up(pId)
+  upPayload(0) := RegNext(upPayload(0), init=upPayload(0).getZero)
   upPayload(1) := RegNext(upPayload(1), init=upPayload(1).getZero)
   when (up.isValid) {
+    upPayload(0) := up(pId)
     upPayload(1) := upPayload(0)
   }
   upPayload(1).allowOverride
