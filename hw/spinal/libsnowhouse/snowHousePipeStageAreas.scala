@@ -2439,7 +2439,7 @@ case class SnowHousePipeStageScoreboardIssue(
       !isNonFwd
     ) generate (
       UInt(log2Up(
-        cfg.optForFmaxPsExFwdSize - 2//3
+        cfg.optForFmaxPsExFwdSize - 2//1//2//3
         + 1
       ) + 1 bits)
     )
@@ -3144,7 +3144,7 @@ case class SnowHousePipeStageScoreboardIssue(
           rMyFwdGprTagVec(idx).valid := True
           when (!rMyFwdGprTagVec(idx).fire) {
             rMyFwdGprTagVec(idx).cnt := (
-              cfg.optForFmaxPsExFwdSize - 2//3//2//1
+              cfg.optForFmaxPsExFwdSize - 2//1//2//3//2//1
             )
             //rMyFwdGprTagVec(idx).tag := myTempFwdTag
           }
