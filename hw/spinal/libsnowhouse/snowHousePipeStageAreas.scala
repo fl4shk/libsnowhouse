@@ -2435,7 +2435,10 @@ case class SnowHousePipeStageScoreboardIssue(
     val cnt = (
       !isNonFwd
     ) generate (
-      UInt(log2Up(cfg.optForFmaxPsExFwdSize - 3 + 1) + 1 bits)
+      UInt(log2Up(
+        cfg.optForFmaxPsExFwdSize - 2//3
+        + 1
+      ) + 1 bits)
     )
   }
 
@@ -3138,7 +3141,7 @@ case class SnowHousePipeStageScoreboardIssue(
           rMyFwdGprTagVec(idx).valid := True
           when (!rMyFwdGprTagVec(idx).fire) {
             rMyFwdGprTagVec(idx).cnt := (
-              cfg.optForFmaxPsExFwdSize - 3//2//1
+              cfg.optForFmaxPsExFwdSize - 2//3//2//1
             )
             //rMyFwdGprTagVec(idx).tag := myTempFwdTag
           }
