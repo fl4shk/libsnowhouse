@@ -4462,8 +4462,8 @@ case class SnowHouseForFmaxPipeStageWriteBack(
   io.commitEtc.myRegFileWrPulse.valid := (
     if (cfg.optScoreboard) (
       //myCommitBackStm.fire
-      myCommitAlmostFinalOutpStm.valid//fire//valid
-      //myCommitTrueFinalOutpStmVec.last.fire//valid
+      //myCommitAlmostFinalOutpStm.valid//fire//valid
+      myCommitTrueFinalOutpStmVec.last.fire//valid
     ) else (
       //myCommitBackStm.valid
       myCommitAlmostFinalOutpStm.valid
@@ -4473,8 +4473,8 @@ case class SnowHouseForFmaxPipeStageWriteBack(
     //myCommitBackStm.regFileWrite
     //myCommitAlmostFinalOutpStm.regFileWrite
     if (cfg.optScoreboard) (
-      //myCommitTrueFinalOutpStmVec.last.regFileWrite
-      myCommitAlmostFinalOutpStm.regFileWrite
+      myCommitTrueFinalOutpStmVec.last.regFileWrite
+      //myCommitAlmostFinalOutpStm.regFileWrite
     ) else (
       myCommitAlmostFinalOutpStm.regFileWrite
     )
