@@ -5794,7 +5794,10 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
   }
   val rMyTempDstRegPc = {
     val temp = Reg(Flow(
-      Vec.fill(4)(
+      Vec.fill(
+        //4
+        cfg.lowerMyFanoutRegPc
+      )(
         UInt(cfg.mainAddrWidth bits)
       )
     ))
