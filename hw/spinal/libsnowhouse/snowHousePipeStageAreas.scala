@@ -1645,6 +1645,12 @@ case class SnowHousePipeStageInstrDecode(
   when (psExSetPc.valid) {
     shouldClearExtraDecodeInfo := True
   }
+  if (cfg.optScoreboard) {
+    upPayload(1).instrCnt.myPsIdInFlushBubble.allowOverride
+    upPayload(1).instrCnt.myPsIdInFlushBubble.foreach(item => {
+      shouldClearExtraDecodeInfo
+    })
+  }
   //--------
   val mySeenPsIfRegPcSetItCntLsb = upPayload(1).psIfRegPcSetItCnt(0)
   val rSavedSeenPsIfRegPcSetItCntLsb = Reg(Bool(), init=False)
