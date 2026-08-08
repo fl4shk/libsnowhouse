@@ -2124,9 +2124,16 @@ case class SnowHouseForFmaxPsWbReorderBufIo(
     cfg.optScoreboard
   )
 
-  val push = slave(Stream(
-    SnowHouseForFmaxPsWbReorderBufPayload(cfg=cfg)
-  ))
+  val push = (
+    Vec.fill(2)(
+      Stream(
+        SnowHouseForFmaxPsWbReorderBufPayload(cfg=cfg)
+      )
+    )
+  )
+  push.foreach(item => {
+    slave(item)
+  })
   val pop = master(Stream(
     SnowHouseForFmaxPsWbReorderBufPayload(
       cfg=cfg,
@@ -2187,7 +2194,7 @@ case class SnowHouseForFmaxPsWbReorderBuf(
   //)
 
   val myRam = (
-    WrPulseRdPipeRam(
+    DualWrPulseRdPipeRam(
       cfg=WrPulseRdPipeRamConfig(
         modType=SnowHouseForFmaxPsWbReorderBufPayload(
           cfg=cfg,
@@ -2204,11 +2211,11 @@ case class SnowHouseForFmaxPsWbReorderBuf(
           rdMemWord: SnowHouseForFmaxPsWbReorderBufPayload,
           upIsFiring: Bool,
           myExternalInpCond: Bool,
-          wrPulse: Flow[
+          wrPulseVec: Vec[Flow[
             PipeSimpleDualPortMemDrivePayload[
               SnowHouseForFmaxPsWbReorderBufPayload
             ]
-          ],
+          ]],
         ) => {
           outp.reorderBufIdx := inp.reorderBufIdx
           //outp.most := rdMemWord.most
@@ -2235,66 +2242,78 @@ case class SnowHouseForFmaxPsWbReorderBuf(
           //    init=myTempWrPulse.getZero
           //  )
           //)
+
           switch (
             (
-              wrPulse.fire
-              //&& (
-              //  rMyShouldIgnoreInstrState.asBits(0)
-              //  || (
-              //    rMyShouldIgnoreInstrState.asBits(1)
-              //    && !io.push.myPsIdBubble
-              //  )
-              //)
+              wrPulseVec.head.fire
               && myExternalInpCond
-              && wrPulse.addr === inp.reorderBufIdx
+              && wrPulseVec.head.addr === inp.reorderBufIdx
+            )
+            ## (
+              wrPulseVec.last.fire
+              && myExternalInpCond
+              && wrPulseVec.last.addr === inp.reorderBufIdx
             )
             ## (
               RegNextWhen(
-                wrPulse.addr,
+                wrPulseVec.head.addr,
                 cond=(
-                  wrPulse.fire
+                  wrPulseVec.head.fire
                   && myExternalInpCond
                 ),
-                init=wrPulse.addr.getZero
+                init=wrPulseVec.head.addr.getZero
               ) === inp.reorderBufIdx
-              //&& myExternalInpCond
             )
-
-            //myHistWrPulseEtc.reverse.asBits
-            //myHistWrPulseEtc(0).fire
-            //## myHistWrPulseEtc(1).fire
+            ## (
+              RegNextWhen(
+                wrPulseVec.last.addr,
+                cond=(
+                  wrPulseVec.last.fire
+                  && myExternalInpCond
+                ),
+                init=wrPulseVec.last.addr.getZero
+              ) === inp.reorderBufIdx
+            )
           ) {
-            is (M"1-") {
-              outp.most := (
-                wrPulse.data.most
-                //myHistWrPulseEtc(0).data.most
-              )
-              //outp.reorderBufIdx := (
-              //  myHistWrPulseEtc(0).addr
-              //)
+            is (
+              //M"1-"
+              M"1---"
+            ) {
+              outp.most := wrPulseVec.head.data.most
             }
-            is (M"01") {
-              //outp.most := (
-              //  //wrPulse.data.most
-              //  //myHistWrPulseEtc(1).data.most
-              //)
-              //outp.reorderBufIdx := (
-              //  myHistWrPulseEtc(1).addr
-              //)
+            is (
+              //M"1-"
+              M"01--"
+            ) {
+              outp.most := wrPulseVec.last.data.most
+            }
+            is (
+              //M"01"
+              M"001-"
+            ) {
               outp.most := (
-                //myHistWrPulseEtc(1).
-                //RegNextWhen(
-                //  wrPulse.data.most,
-                //  cond=wrPulse.fire,
-                //  init=wrPulse.data.most.getZero
-                //)
                 RegNextWhen(
-                  wrPulse.data.most,
+                  wrPulseVec.head.data.most,
                   cond=(
-                    wrPulse.fire
+                    wrPulseVec.head.fire
                     && myExternalInpCond
                   ),
-                  init=wrPulse.data.most.getZero
+                  init=wrPulseVec.head.data.most.getZero
+                )
+              )
+            }
+            is (
+              //M"01"
+              M"0001"
+            ) {
+              outp.most := (
+                RegNextWhen(
+                  wrPulseVec.last.data.most,
+                  cond=(
+                    wrPulseVec.last.fire
+                    && myExternalInpCond
+                  ),
+                  init=wrPulseVec.last.data.most.getZero
                 )
               )
             }
@@ -2351,58 +2370,19 @@ case class SnowHouseForFmaxPsWbReorderBuf(
     )
   )
 
-  //object MyShouldIgnoreInstrState
-  //extends SpinalEnum(defaultEncoding=binaryOneHot) {
-  //  val
-  //    IDLE,
-  //    FLUSH//,
-  //    //CLEAR_VALID_VEC_ETC,
-  //    //SET_TO_REORDER_BUF_IDX_ETC
-  //    = newElement()
-  //}
-  //val nextMyShouldIgnoreInstrState = MyShouldIgnoreInstrState()//Bool()
-  //val rMyShouldIgnoreInstrState = (
-  //  //Reg(Bool(), init=False)
-  //  RegNext(
-  //    nextMyShouldIgnoreInstrState,
-  //    //init=False
-  //  )
-  //  init(MyShouldIgnoreInstrState.IDLE)
-  //)
-  //nextMyShouldIgnoreInstrState := rMyShouldIgnoreInstrState
-
   val myRdAddr = cloneOf(myRam.io.rdAddrPipe.addr)
 
-  //val myAssertValidCondMost = (
-  //  rMyShouldIgnoreInstrState.asBits(0)
-  //  || (
-  //    rMyShouldIgnoreInstrState.asBits(1)
-  //    //&& !io.push.myPsIdBubble // is this needed anywhere?
-  //  )
-  //)
-  val myAssertValidCond = (
-    myRam.io.wrPulse.fire
+  val myAssertValidCondVec = (
+    Vec(
+      myRam.io.wrPulse.fire,
+      myRam.io.otherWrPulse.fire,
+    )
     //&& myAssertValidCondMost
   )
   myRam.io.myExternalInpCond := (
     True
-    //myAssertValidCondMost
-    ////True
-    //(
-    //  rMyShouldIgnoreInstrState.asBits(0)
-    //  || (
-    //    rMyShouldIgnoreInstrState.asBits(1)
-    //    && !io.push.myPsIdBubble
-    //  )
-    //)
-    ////&& 
-    ////(
-    ////  !io.push.myPsIdBubble
-    ////)
   )
 
-  //myFifo.io.push << io.push
-  //myFifo.io.pop.ready := False
   val rFlushCnt = (
     Reg(UInt(cfg.optScoreboardReorderBufWidth + 1 bits))
     init(myReorderBufSize - 1)
@@ -2420,86 +2400,6 @@ case class SnowHouseForFmaxPsWbReorderBuf(
   io.occupancy := (
     RegNext(myOccupancy)
   )
-  //val rAttemptPushVec = Vec.fill(myReorderBufSize)(
-  //  Reg(Bool(), init=False)
-  //)
-
-  //val rPushState = Reg(Bool(), init=False)
-
-  //switch (rPushState) {
-  //  is (False) {
-  //    when (
-  //      io.push.valid
-  //      && rValidVec(io.push.reorderBufIdx)
-  //    ) {
-  //      rPushState := True
-  //      io.push.ready := False
-  //    } otherwise {
-  //      io.push.ready := True
-  //    }
-  //  }
-  //  is (True) {
-  //    when (
-  //      io.push.valid
-  //      && !rValidVec(io.push.reorderBufIdx)
-  //    ) {
-  //      rPushState := False
-  //      io.push.ready := True
-  //    } otherwise {
-  //      io.push.ready := False
-  //    }
-  //  }
-  //}
-
-  //val myPushStm = cloneOf(io.push)
-
-  //when (!rMyShouldIgnoreInstrState) {
-  //  myRdAddr := (
-  //    RegNextWhen(
-  //      (myRdAddr + 1),
-  //      cond=(
-  //        myRam.io.rdAddrPipe.fire
-  //        //|| 
-  //      ),
-  //      //init=myRdAddr.getZero,
-  //    )
-  //    init(0x1)
-  //    //init(0x0)
-  //  )
-  //} otherwise {
-  //  when (rOccupancy.orR) {
-  //    myRdAddr := (
-  //      RegNext(
-  //        myRdAddr,
-  //        init=myRdAddr.getZero
-  //      ) + 1
-  //    )
-  //  } otherwise {
-  //    myRdAddr := (
-  //      io.push.reorderBufIdx
-  //    )
-  //  }
-  //}
-
-  //val myMaxValShouldIgnoreInstrCnt = 4//3//4//3//4
-  //val rMyShouldIgnoreInstrCnt = (
-  //  Reg(UInt(log2Up(myMaxValShouldIgnoreInstrCnt + 1) + 1 bits))
-  //  init(0x0)
-  //)
-  //when (
-  //  io.push.fire
-  //  && io.push.myShouldIgnoreInstr
-  //  && rMyShouldIgnoreInstrCnt < myMaxValShouldIgnoreInstrCnt
-  //) {
-  //  rMyShouldIgnoreInstrCnt := rMyShouldIgnoreInstrCnt + 1
-  //}
-  //when (
-  //  io.push.fire
-  //  && !io.push.myShouldIgnoreInstr
-  //) {
-  //  rMyShouldIgnoreInstrCnt := 0x0
-  //}
-  //io.inFlushEtc.setAsReg() init(False)
   io.inFlushEtc := (
     //!rMyShouldIgnoreInstrState.asBits(0)
     //rMyShouldIgnoreInstrState.asBits(1)
@@ -2532,181 +2432,6 @@ case class SnowHouseForFmaxPsWbReorderBuf(
     )
   }
 
-  //switch (rMyShouldIgnoreInstrState) {
-  //  is (MyShouldIgnoreInstrState.IDLE) {
-  //    when (
-  //      io.push.fire//valid//fire
-  //      && io.push.myShouldIgnoreInstr
-  //      //&& rOccupancy >= 2//rOccupancy.orR
-  //      //&& (
-  //      //  rOccupancy.orR
-  //      //  || !myRam.io.rdAddrPipe.fire
-  //      //)
-  //    ) {
-  //      nextMyShouldIgnoreInstrState := (
-  //        MyShouldIgnoreInstrState.FLUSH //True
-  //      )
-  //    }
-  //    when (
-  //      RegNext(
-  //        myRam.io.rdAddrPipe.fire,
-  //        init=False
-  //      )
-  //    ) {
-  //      myRdAddr := (
-  //        (
-  //          RegNext(myRdAddr)
-  //          init(0x1)
-  //        ) + 1
-  //      )
-  //    }
-
-  //    //myRdAddr := (
-  //    //  RegNextWhen(
-  //    //    (myRdAddr + 1),
-  //    //    cond=(
-  //    //      myRam.io.rdAddrPipe.fire
-  //    //      //|| rose(rMyShouldIgnoreInstrState.asBits(0))
-  //    //      //|| rMyShouldIgnoreInstrState.asBits(3)
-  //    //      || rMyShouldIgnoreInstrState.asBits(2)
-  //    //      //|| 
-  //    //    ),
-  //    //    //init=myRdAddr.getZero,
-  //    //  )
-  //    //  init(0x1)
-  //    //  //init(0x0)
-  //    //)
-  //    //rSavedMyRdAddr := (
-  //    //  myRdAddr - 1
-  //    //)
-  //    rFlushCnt := myReorderBufSize - 1
-  //  }
-  //  is (MyShouldIgnoreInstrState.FLUSH) {
-  //    when (
-  //      (
-  //        (
-  //          !rOccupancy.orR
-  //          || rSeenFullFlush
-  //        )
-  //        //!(rOccupancy >= 2)
-  //        && (
-  //          //!io.push.valid//fire//valid
-  //          //|| !io.push.myShouldIgnoreInstr
-  //          io.push.valid
-  //          && (
-  //            !io.push.myShouldIgnoreInstr
-  //            //|| io.push.myPsIdBubble
-  //            && !io.push.myPsIdBubble
-  //          )
-  //        )
-  //      )
-  //    ) {
-  //      nextMyShouldIgnoreInstrState := (
-  //        MyShouldIgnoreInstrState.IDLE
-  //        //MyShouldIgnoreInstrState.SET_TO_REORDER_BUF_IDX_ETC
-  //        //MyShouldIgnoreInstrState.CLEAR_VALID_VEC_ETC
-  //      )
-  //    } otherwise {
-  //      myRdAddr := (
-  //        RegNext(
-  //          myRdAddr,
-  //          init=myRdAddr.getZero
-  //        ) + 1
-  //      )
-  //    }
-  //    when (
-  //      !rSeenFullFlush
-  //      && myRam.io.rdAddrPipe.fire
-  //    ) {
-  //      rFlushCnt := rFlushCnt - 1
-  //    }
-
-  //    //switch ({
-  //    //  val x = ~(rValidVec.asBits.asUInt)
-  //    //  x & ~(x - 1)
-  //    //  //+ rSavedMyRdAddr
-  //    //}) {
-  //    //  // >>> for idx in range(size):
-  //    //  // ...     print(idx, ("-" * (size - idx - 1) + "1" + ("0" * idx)))
-  //    //  // ...     
-  //    //  // 0 ---1
-  //    //  // 1 --10
-  //    //  // 2 -100
-  //    //  // 3 1000
-  //    //  for (idx <- 0 until rValidVec.size) {
-  //    //    is (
-  //    //      MaskedLiteral(
-  //    //        //"1"
-  //    //        //+ 
-  //    //        ("-" * (rValidVec.size - idx - 1) + "1" + ("0" * idx))
-  //    //      )
-  //    //    ) {
-  //    //      myRdAddr := rSavedMyRdAddr + idx
-  //    //    }
-  //    //  }
-  //    //}
-  //  }
-  //  //is (MyShouldIgnoreInstrState.CLEAR_VALID_VEC_ETC) {
-  //  //  rValidVec.foreach(item => item := False)
-  //  //  rOccupancy := 0x0
-  //  //  nextMyShouldIgnoreInstrState := (
-  //  //    MyShouldIgnoreInstrState.SET_TO_REORDER_BUF_IDX_ETC
-  //  //    //MyShouldIgnoreInstrState.CLEAR_VALID_VEC_ETC
-  //  //  )
-  //  //}
-  //  //is (MyShouldIgnoreInstrState.SET_TO_REORDER_BUF_IDX_ETC) {
-  //  //  when (
-  //  //    io.push.valid
-  //  //    && !io.push.myShouldIgnoreInstr
-  //  //  ) {
-  //  //    nextMyShouldIgnoreInstrState := (
-  //  //      MyShouldIgnoreInstrState.IDLE
-  //  //    )
-  //  //  }
-  //  //  //myRdAddr := (
-  //  //  //  io.push.payload.reorderBufIdx - 1
-  //  //  //)
-
-  //  //  //myRdAddr := (
-  //  //  //  //io.push.postFlushReorderBufIdx
-  //  //  //  io.postFlushReorderBufIdx - 1
-  //  //  //)
-
-  //  //  //when (io.push.valid) {
-  //  //  //  myRdAddr := io.push.reorderBufIdx - 1
-  //  //  //} otherwise {
-  //  //  //  myRdAddr := (
-  //  //  //    RegNextWhen(
-  //  //  //      io.push.reorderBufIdx - 1,
-  //  //  //      cond=io.push.fire,
-  //  //  //      init=io.push.reorderBufIdx.getZero
-  //  //  //    )
-  //  //  //  )
-  //  //  //}
-
-  //  //  //myRdAddr := (
-  //  //  //  //io.push.payload.reorderBufIdx - 1
-  //  //  //)
-  //  //}
-  //}
-  //when (
-  //  rMyShouldIgnoreInstrState
-  //  && (
-  //    !rOccupancy.orR
-  //    //|| !(
-  //    //  io.push.fire//valid
-  //    //  && io.push.myShouldIgnoreInstr
-  //    //)
-  //  )
-  //  //&& (
-  //  //  !(
-  //  //    io.push.valid//fire//valid
-  //  //    && io.push.myShouldIgnoreInstr
-  //  //  )
-  //  //)
-  //) {
-  //  nextMyShouldIgnoreInstrState := False
-  //}
 
   io.psIdCanIssue := (
     True
@@ -2721,164 +2446,35 @@ case class SnowHouseForFmaxPsWbReorderBuf(
     //)
   )
 
-  switch (io.push.reorderBufIdx) {
-    for (idx <- 0 until (1 << io.push.reorderBufIdx.getWidth)) {
-      is (idx) {
-        io.push.ready := (
-          //True
-          //!rValidVec.andR
-          //!rAttemptPushVec(idx)
-          //&& 
-
-          //myOccupancy < myReorderBufSize - 2//1
-          //!myOccupancy.msb
-          //!rValidVec.asBits.andR // check whether it's full
-          //&& 
-          //(
-          //  myOccupancy < myReorderBufSize - 3
-          //  || io.push.commit.myNonFwdValid
-          //)
-          //&&
-          (
-            (
-              !rValidVec(idx)
-              //&& rOccupancy < myReorderBufSize
-              //&& io.psIdCanIssue
-              //&& (
-              //  rOccupancy < (myReorderBufSize - myOccupancySubAmount)
-              //)
-            )
-            //|| (
-            //  //myRam.io.rdAddrPipe.fire
-            //  //myAssertValidCondMost
-            //  //&& 
-            //  myRdAddr === idx
-            //  //&& rOccupancy.orR
-            //)
+  io.push.foreach(push => {
+    switch (push.reorderBufIdx) {
+      for (idx <- 0 until (1 << push.reorderBufIdx.getWidth)) {
+        is (idx) {
+          push.ready := (
+            !rValidVec(idx)
           )
-          //&& (
-          //  rOccupancy < (myReorderBufSize - myOccupancySubAmount)
-          //)
-          //&& (
-          //  //rOccupancy < myReorderBufSize - myOccupancySubAmount
-          //  io.psIdCanIssue
-          //  || (
-          //    myRdAddr === idx
-          //  )
-          //)
-          //&& io.psIdCanIssue
-          //2//6//4//8//- 1
-          //&& (
-          //  //!rMyShouldIgnoreInstrState.asBits(2)
-          //  (
-          //    //!rMyShouldIgnoreInstrState.asBits(3)
-          //    !rMyShouldIgnoreInstrState.asBits(2)
-          //    //rMyShouldIgnoreInstrState.asBits(3)
-          //    || (
-          //      io.push.valid
-          //      && io.push.myShouldIgnoreInstr
-          //    )
-          //  )
-          //  //rMyShouldIgnoreInstrState.asBits(0)
-          //  //|| (
-          //  //  rMyShouldIgnoreInstrState.asBits(1)
-          //  //  //&& io.push.valid
-          //  //  //&& io.push.myShouldIgnoreInstr
-          //  //)
-          //  //=== MyShouldIgnoreInstrState.IDLE
-          //  //!rMyShouldIgnoreInstrState
-          //  //|| (
-          //  //  io.push.valid
-          //  //  && (
-          //  //    //!io.push.myShouldIgnoreInstr
-          //  //    io.push.myShouldIgnoreInstr
-          //  //  )
-          //  //)
-          //)
-          //&& myRam.io.rdAddrPipe.addr =/= idx
-          //|| (
-          //  //rValidVec(idx)
-          //  //&& 
-          //  io.push.valid
-          //  && io.push.myWbPayload.instrCnt.shouldIgnoreInstr.head
-          //)
-          //&& !rPushState
-        )
+        }
       }
     }
-  }
+  })
 
-  //io.push.ready := (
-  //  //True
-  //  //!rValidVec.andR
-  //  !rAttemptPushVec(io.push.reorderBufIdx)
-  //  && !rValidVec(io.push.reorderBufIdx)
-  //  //&& !rPushState
-  //)
+  myRam.io.wrPulse.valid := io.push.head.fire
+  myRam.io.wrPulse.addr := io.push.head.reorderBufIdx
+  myRam.io.wrPulse.data.most := io.push.head.most
 
-  //when (
-  //  io.push.valid
-  //  && !io.push.ready
-  //  && !rAttemptPushVec(io.push.reorderBufIdx)
-  //) {
-  //  rAttemptPushVec(io.push.reorderBufIdx) := True
-  //}
-  //when (
-  //  io.push.fire
-  //) {
-  //  rAttemptPushVec(io.push.reorderBufIdx) := False
-  //}
+  myRam.io.otherWrPulse.valid := io.push.last.fire
+  myRam.io.otherWrPulse.addr := io.push.last.reorderBufIdx
+  myRam.io.otherWrPulse.data.most := io.push.last.most
 
-  myRam.io.wrPulse.valid := (
-    io.push.fire//fire//valid//fire//valid//valid//fire
-    //&& !io.push.myShouldIgnoreInstr
-    //&& !rValidVec(io.push.reorderBufIdx)
-    //&& io.push.myWbPayload.instrCnt.shouldIgnoreInstr.head
-  )
-  myRam.io.wrPulse.addr := io.push.reorderBufIdx
-  //.resize(
-  //  log2Up(rValidVec.size) bits
-  //)
-
-  myRam.io.wrPulse.data.most := io.push.most
-
-  //when (
-  //  io.push.fire
-  //  && (
-  //    io.push.myShouldIgnoreInstr
-  //    || io.push.myPsIdBubble
-  //  )
-  //  //&& rMyShouldIgnoreInstrCnt >= myMaxValShouldIgnoreInstrCnt
-  //  //&& io.push.opIsMemAccess
-  //) {
-  //  myRam.io.wrPulse.data.commit.myNonFwdValid := False//True
-  //  myRam.io.wrPulse.data.commit.myFwdValid := False//True
-  //  //myRam.io.wrPulse.data.commit.myGprIdx.valid := False//True
-  //}
-
-  when (
-    //&& !io.push.myShouldIgnoreInstr
-    myAssertValidCond
-  ) {
+  when (myAssertValidCondVec.head) {
     rValidVec(myRam.io.wrPulse.addr) := True
   }
+  when (myAssertValidCondVec.last) {
+    rValidVec(myRam.io.otherWrPulse.addr) := True
+  }
 
-  //when (
-  //  io.push.valid//fire
-  //  //&& !rValidVec(io.push.reorderBufIdx) // check for 
-  //  && io.push.myWbPayload.instrCnt.shouldIgnoreInstr.head
-  //) {
-  //  myRam.io.wrPulse.data.regFileWrite.addr := 0x0
-  //  myRam.io.wrPulse.data.regFileWrite.data := 0x0
-  //}
-  when (
-    myRam.io.rdAddrPipe.fire
-    //myRam.io.rdDataPipe.fire//valid//fire
-  ) {
-    rValidVec(
-      myRam.io.rdAddrPipe.addr
-      //myRam.io.rdDataPipe.reorderBufIdx
-    ) := False
+  when (myRam.io.rdAddrPipe.fire) {
+    rValidVec(myRam.io.rdAddrPipe.addr) := False
   }
 
   //switch (
@@ -2910,213 +2506,16 @@ case class SnowHouseForFmaxPsWbReorderBuf(
   //}
 
 
-//  switch (
-//    rMyPsExSetPcState
-//    ## Bitscan(~rValidVec.reverse.asBits.asUInt)
-//  ) {
-//    is (
-//      MaskedLiteral(
-//        "0" + ("-" * rValidVec.size)
-//      )
-//    ) {
-//    }
-//
-//// >>> for idx in range(size):
-//// ...     print(idx, ("-" * (size - idx - 1) + "1" + ("0" * idx)))
-//// ...     
-//// 0 ---1
-//// 1 --10
-//// 2 -100
-//// 3 1000
-//    for (idx <- 0 until rValidVec.size) {
-//      is (
-//        MaskedLiteral(
-//          "1"
-//          + ("-" * (rValidVec.size - idx - 1) + "1" + ("0" * idx))
-//        )
-//      ) {
-//      }
-//    }
-//
-//    default {
-//    }
-//  }
-
-
-  //val myTempPushStm = Vec.fill(2)(
-  //  cloneOf(io.pop)
-  //  //Stream(
-  //  //  cloneOf(io.push.payload)
-  //  //)
-  //)
-  //myTempPushStm.head.valid := True
-  //myTempPushStm.head.most := io.push.most
-  //val myRdAddr = cloneOf(myRam.io.rdAddrPipe.addr)
-  //myRdAddr := (
-  //  RegNext(
-  //    myRdAddr,
-  //    init=myRdAddr.getZero
-  //  )
-  //)
-  //when (
-  //  myRam.io.rdAddrPipe.fire
-  //) {
-  //  myRdAddr := (
-  //    RegNext(
-  //      myRdAddr,
-  //      init=myRdAddr.getZero
-  //    ) + 1
-  //  )
-  //}
-
-  //when (!rMyShouldIgnoreInstrState) {
-  //  myRdAddr := (
-  //    RegNextWhen(
-  //      (myRdAddr + 1),
-  //      cond=(
-  //        myRam.io.rdAddrPipe.fire
-  //        //|| 
-  //      ),
-  //      //init=myRdAddr.getZero,
-  //    )
-  //    init(0x1)
-  //    //init(0x0)
-  //  )
-  //} otherwise {
-  //  when (rOccupancy.orR) {
-  //    myRdAddr := (
-  //      RegNext(
-  //        myRdAddr,
-  //        init=myRdAddr.getZero
-  //      ) + 1
-  //    )
-  //  } otherwise {
-  //    myRdAddr := (
-  //      io.push.reorderBufIdx
-  //    )
-  //  }
-  //}
-
-  //when (
-  //  (
-  //    io.push.valid
-  //    && io.push.myWbPayload.instrCnt.shouldIgnoreInstr.last
-  //  )
-  //) {
-  //  io.push.ready := True//False
-  //  myRam.io.wrPulse.valid := False
-  //  myRam.io.rdAddrPipe.valid := False
-  //  myRdAddr := 0x0//0x1//0x0
-  //  rValidVec.foreach(item => item := False)
-  //} otherwise {
-  //  //myTempPushStm.last << myTempPushStm.head.haltWhen
-  //  myRam.io.rdAddrPipe.valid := (
-  //    //rValidVec(
-  //    //  myRdAddr - 1
-  //    //)
-  //    //&& 
-  //    rValidVec(
-  //      myRdAddr
-  //    )
-  //    //RegNext(
-  //    //  RegNext(
-  //    //    rValidVec(
-  //    //      myRdAddr
-  //    //    )
-  //    //  ),
-  //    //  init=False
-  //    //)
-  //    //|| (
-  //    //  myRam.io.wrPulse.fire
-  //    //  && myRam.io.wrPulse.addr === myRdAddr
-  //    //)
-  //  )
-  //}
-
   myRam.io.rdAddrPipe.valid := (
-    //rValidVec(
-    //  myRdAddr - 1
-    //)
-    //&& 
-    (
-      rValidVec(
-        myRdAddr
-      )
-      //&& rValidVec.asBits.orR//myOccupancy.orR
-      //|| (
-      //  //myRam.io.wrPulse.fire
-      //  //myAssertValidCond
-      //  //&& myRam.io.wrPulse.addr === myRdAddr
-      //  io.push.fire
-      //  && myRam.io.wrPulse.addr === myRdAddr
-      //)
-      //&& rOccupancy.orR
-      //|| (
-      //  !rMyShouldIgnoreInstrState.asBits(0)
-      //  //|| rOccupancy >= 2
-      //)
-      //&& !rMyShouldIgnoreInstrState
+    rValidVec(
+      myRdAddr
     )
-    //&& rOccupancy.orR
-    //|| (
-    //  //nextMyShouldIgnoreInstrState
-    //  rMyShouldIgnoreInstrState
-    //  && rOccupancy.orR
-    //)
-    //&& myRam.io.rdAddrPipe.addr =/= idx
-    //&& rOccupancy >= 1
-    //rValidVec(
-    //  RegNextWhen(
-    //    //rValidVec(
-    //      myRdAddr,
-    //    //),
-    //    cond=myRam.io.wrPulse.fire,
-    //    //init=myRdAddr.getZero
-    //  )
-    //  init(0x1)
-    //)
-
-    //&& rValidVec(
-    //  myRdAddr + 1
-    //)
-
-    //RegNext(
-    //  RegNext(
-    //    rValidVec(
-    //      myRdAddr
-    //    )
-    //  ),
-    //  init=False
-    //)
-    //|| (
-    //  myRam.io.wrPulse.fire
-    //  && myRam.io.wrPulse.addr === myRdAddr
-    //)
   )
   myRam.io.rdAddrPipe.data := myRam.io.rdAddrPipe.data.getZero
   myRam.io.rdAddrPipe.data.reorderBufIdx.allowOverride
   myRam.io.rdAddrPipe.data.reorderBufIdx := myRdAddr
   myRam.io.rdAddrPipe.addr := myRdAddr
   
-  //myTempPushStm.last.translateInto(myRam.io.rdAddrPipe)(
-  //  dataAssignment=(outp, inp) => {
-  //    //outp.data.most := inp.most
-  //    //outp.data.most := outp
-  //    outp.addr := (
-  //      //inp.reorderBufIdx
-  //      //RegNextWhen(
-  //      //  (outp.addr + 1),
-  //      //  cond=myRam.io.rdAddrPipe.fire,
-  //      //  init=outp.addr.getZero,
-  //      //)
-  //      myRdAddr
-  //    )
-  //    //when (myRam.io.rdAddrPipe.fire) {
-  //    //  rValidVec(outp.addr) := False
-  //    //}
-  //  }
-  //)
-
   io.pop << myRam.io.rdDataPipe
 }
 
@@ -4221,18 +3620,18 @@ case class SnowHouseForFmaxPipeStageWriteBack(
       )
     }
   })
-  val myCommitBackStm = (
-    if (cfg.optScoreboard) (
-      StreamArbiterFactory.lowerFirst.noLock.on(
-        myCommitFrontStmVec.last
-        //Vec(myCommitFrontStmVec.last.reverse)
-      )
-    ) else (
-      Stream(
-        SnowHouseForFmaxPsWbReorderBufPayload(cfg=cfg)
-      )
-    )
-  )
+  //val myCommitBackStm = (
+  //  if (cfg.optScoreboard) (
+  //    StreamArbiterFactory.lowerFirst.noLock.on(
+  //      myCommitFrontStmVec.last
+  //      //Vec(myCommitFrontStmVec.last.reverse)
+  //    )
+  //  ) else (
+  //    Stream(
+  //      SnowHouseForFmaxPsWbReorderBufPayload(cfg=cfg)
+  //    )
+  //  )
+  //)
   val myReorderBuf = (
     cfg.optScoreboard
   ) generate (
@@ -4249,7 +3648,10 @@ case class SnowHouseForFmaxPipeStageWriteBack(
     if (cfg.optScoreboard) (
       myReorderBuf.io.pop
     ) else (
-      myCommitBackStm
+      //myCommitBackStm
+      Stream(
+        SnowHouseForFmaxPsWbReorderBufPayload(cfg=cfg)
+      )
     )
   )
   val myCommitTrueFinalOutpStmVec = (
@@ -4275,11 +3677,13 @@ case class SnowHouseForFmaxPipeStageWriteBack(
   //    synchronous=true,
   //  )
   //)
+
   val myPostFlushReorderBufIdx = (
     cfg.optScoreboard
   ) generate (
     UInt(cfg.optScoreboardReorderBufWidth bits)
   )
+
   if (cfg.optScoreboard) {
     //myCommitFinalOutpStm.ready := True
     myPostFlushReorderBufIdx := (
@@ -4357,9 +3761,9 @@ case class SnowHouseForFmaxPipeStageWriteBack(
     //  .instrCnt.scoreboardIssuePayload.reorderBufIdx
     //)
 
-    val myTempCommitStm = (
-      myCommitBackStm
-    )
+    //val myTempCommitStm = (
+    //  myCommitBackStm
+    //)
     //val myTempCommitStm = (
     //  cloneOf(myCommitBackStm)
     //)
@@ -4401,9 +3805,15 @@ case class SnowHouseForFmaxPipeStageWriteBack(
     //io.commitEtc.myScoreboardFwdRegFileWrPulse.payload := (
     //  myTempCommitStm.regFileWrite
     //)
-    myReorderBuf.io.push << {
+    myReorderBuf.io.push.head << {
       //myCommitForkStm.head
-      myTempCommitStm
+      //myTempCommitStm
+      myCommitFrontStmVec.last.head
+    }
+    myReorderBuf.io.push.last << {
+      //myCommitForkStm.head
+      //myTempCommitStm
+      myCommitFrontStmVec.last.last
     }
   } else { // if (!cfg.optScoreboard)
     //myCommitBackStm

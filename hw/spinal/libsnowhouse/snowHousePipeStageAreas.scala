@@ -1076,9 +1076,9 @@ case class SnowHousePipeStageInstrFetch(
       word: MyIbusTempPayload,
       upIsFiring: Bool,
       myExternalInpCond: Bool,
-      wrPulse: Flow[
+      wrPulseVec: Vec[Flow[
         PipeSimpleDualPortMemDrivePayload[MyIbusTempPayload]
-      ],
+      ]],
     ): Unit = {
       outp.psIfRegPcSetItCnt := word.psIfRegPcSetItCnt
       outp.myIbusRegPcInfo := word.myIbusRegPcInfo
