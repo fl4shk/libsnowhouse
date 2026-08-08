@@ -10942,10 +10942,26 @@ case class SnowHousePipeStageExecute(
     //  }
     //}
     if (cfg.optScoreboard) {
+      //when (
+      //  myH2dBus.valid
+      //  && !myH2dBus.ready
+      //  && !rSavedDbusHostPayload.fire
+      //) {
+      //  cLink.down(args.currPayload).setAsBubbleMain(None)
+      //  cLink.down(args.currPayload).instrCnt
+      //  .myPsExMemAccessBubble.foreach(
+      //    item => {
+      //      item := True
+      //    }
+      //  )
+      //  setOutpModMemWord.io.instrCnt.setAsPsIdBubbleMain()
+      //}
+
       when (
         myH2dBus.valid
         && !myH2dBus.ready
         && !rSavedDbusHostPayload.fire
+        && cLink.up.isFiring
       ) {
         cLink.down(args.currPayload).setAsBubbleMain(None)
         cLink.down(args.currPayload).instrCnt
@@ -10955,14 +10971,7 @@ case class SnowHousePipeStageExecute(
           }
         )
         setOutpModMemWord.io.instrCnt.setAsPsIdBubbleMain()
-      }
 
-      when (
-        myH2dBus.valid
-        && !myH2dBus.ready
-        && !rSavedDbusHostPayload.fire
-        && cLink.up.isFiring
-      ) {
         rSavedDbusHostPayload.valid := True
         rSavedDbusHostPayload.payload := (
           setOutpModMemWord.io.dbusHostPayload
