@@ -10819,7 +10819,37 @@ case class SnowHousePipeStageExecute(
       //io.lcvDbus.h2dBus
       myLcvDbusH2dStm
     )
-    def myDbusHostPayload = setOutpModMemWord.io.dbusHostPayload
+    //val rSavedDbusHostPayload = (
+    //  cfg.optScoreboard
+    //) generate {
+    //  val temp = Reg(
+    //    Flow(cloneOf(setOutpModMemWord.io.dbusHostPayload))
+    //  )
+    //  temp.init(temp.getZero)
+    //  temp
+    //}
+
+    //val rSavedOutp = (
+    //  cfg.optScoreboard
+    //) generate {
+    //  val temp = Reg(
+    //    cloneOf(outp),
+    //    init=outp.getZero
+    //  )
+    //  temp
+    //}
+    //def myDbusHostPayload = setOutpModMemWord.io.dbusHostPayload
+    val myDbusHostPayload = (
+      //if (cfg.optScoreboard) (
+      //  Mux(
+      //    !rSavedDbusHostPayload.fire,
+      //    setOutpModMemWord.io.dbusHostPayload,
+      //    rSavedDbusHostPayload.payload,
+      //  )
+      //) else (
+        setOutpModMemWord.io.dbusHostPayload
+      //)
+    )
 
     //outp.myDbusHostPayload := myDbusHostPayload
     //outp.myDbusHostPayload.src.allowOverride
@@ -10877,30 +10907,30 @@ case class SnowHousePipeStageExecute(
       //cLink.down(args.currPayload).outpDecodeExt.allowOverride
       //cLink.up(args.currPayload) := outp
     }
-    val rInstrCntMem = (
-      cfg.optScoreboard
-    ) generate (
-      Reg(cloneOf(outp.instrCnt.mem))
-      init(0)
-    )
-    val rInstrCntNonMem = (
-      cfg.optScoreboard
-    ) generate (
-      Reg(cloneOf(outp.instrCnt.nonMem))
-      init(0)
-    )
-    if (cfg.optScoreboard) {
-      outp.instrCnt.mem := rInstrCntMem
-      outp.instrCnt.nonMem := rInstrCntNonMem
-      when (
-        !myH2dBus.valid
-        && !rSeenH2dBusFire
-        && cLink.up.isFiring
-        && !outp.instrCnt.myPsIdBubble.head
-      ) {
-        rInstrCntNonMem := rInstrCntNonMem + 1
-      }
-    }
+    //val rInstrCntMem = (
+    //  cfg.optScoreboard
+    //) generate (
+    //  Reg(cloneOf(outp.instrCnt.mem))
+    //  init(0)
+    //)
+    //val rInstrCntNonMem = (
+    //  cfg.optScoreboard
+    //) generate (
+    //  Reg(cloneOf(outp.instrCnt.nonMem))
+    //  init(0)
+    //)
+    //if (cfg.optScoreboard) {
+    //  outp.instrCnt.mem := rInstrCntMem
+    //  outp.instrCnt.nonMem := rInstrCntNonMem
+    //  when (
+    //    !myH2dBus.valid
+    //    && !rSeenH2dBusFire
+    //    && cLink.up.isFiring
+    //    && !outp.instrCnt.myPsIdBubble.head
+    //  ) {
+    //    rInstrCntNonMem := rInstrCntNonMem + 1
+    //  }
+    //}
     when (
       if (cfg.optScoreboard) (
         myH2dBus.valid
@@ -10960,7 +10990,7 @@ case class SnowHousePipeStageExecute(
     when (myH2dBus.fire) {
       //rInstrCntMem.lsb := !rInstrCntMem.lsb
       if (cfg.optScoreboard) {
-        rInstrCntMem := rInstrCntMem + 1
+        //rInstrCntMem := rInstrCntMem + 1
         rSeenH2dBusFire := True
         //cLink.down(args.currPayload).instrCnt.shouldIgnoreInstr := (
         //  myShouldIgnoreInstr
