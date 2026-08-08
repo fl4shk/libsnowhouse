@@ -10955,7 +10955,14 @@ case class SnowHousePipeStageExecute(
           }
         )
         setOutpModMemWord.io.instrCnt.setAsPsIdBubbleMain()
+      }
 
+      when (
+        myH2dBus.valid
+        && !myH2dBus.ready
+        && !rSavedDbusHostPayload.fire
+        && cLink.up.isFiring
+      ) {
         rSavedDbusHostPayload.valid := True
         rSavedDbusHostPayload.payload := (
           setOutpModMemWord.io.dbusHostPayload
