@@ -3484,7 +3484,7 @@ case class SnowHouseForFmaxPipeStageWriteBack(
     StreamFork(
       myCommitFrontStmVec.last.last,
       portCount=2,
-      synchronous=true,
+      synchronous=false,
     )
   )
   val myFwdCommitFrontFinalStm = (
@@ -3492,9 +3492,9 @@ case class SnowHouseForFmaxPipeStageWriteBack(
   )
   for (idx <- 0 until myFwdCommitFrontFork.size) {
     if (idx < myFwdCommitFrontFork.size - 1) {
-      myFwdCommitFrontFinalStm(idx) <-< myFwdCommitFrontFork(idx)
+      myFwdCommitFrontFinalStm(idx) << myFwdCommitFrontFork(idx)
     } else {
-      myFwdCommitFrontFinalStm(idx) <-< myFwdCommitFrontFork(idx)
+      myFwdCommitFrontFinalStm(idx) << myFwdCommitFrontFork(idx)
     }
   }
 
