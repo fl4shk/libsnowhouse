@@ -4515,7 +4515,7 @@ case class SnowHouseForFmaxPipeStageWriteBack(
       io.dbgInfo != null
     ) generate (
       //someMyWbPayload(1).instrCnt.scoreboardIssuePayload.nonFwdTag
-      myCommitAlmostFinalOutpStm
+      myReorderBuf.io.pop
       .myWbPayload.instrCnt.scoreboardCheckPayload.nonBubbleTag
     )
     val myDbgHistNonBubbleTag = (
@@ -4523,7 +4523,7 @@ case class SnowHouseForFmaxPipeStageWriteBack(
     ) generate (
       History(
         that=myDbgTempNonBubbleTag,
-        when=myCommitAlmostFinalOutpStm.fire,
+        when=myReorderBuf.io.pop.fire,
         length=2,
         init=(
           U(s"${myDbgTempNonBubbleTag.getWidth}'d1")
