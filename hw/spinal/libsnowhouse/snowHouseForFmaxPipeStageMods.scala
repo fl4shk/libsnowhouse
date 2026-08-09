@@ -2713,9 +2713,9 @@ case class SnowHouseForFmaxPipeStageWriteBack(
       MyWbPayload()
     ),
     depth=(
-      //4
+      4
       //2
-      1
+      //1
     ),
     latency=0,
     forFMax=true
@@ -2726,9 +2726,9 @@ case class SnowHouseForFmaxPipeStageWriteBack(
       MyWbPayload()
     ),
     depth=(
-      //4
+      4
       //2
-      1
+      //1
     ),
     latency=0,
     forFMax=true
@@ -3491,7 +3491,11 @@ case class SnowHouseForFmaxPipeStageWriteBack(
     cloneOf(myFwdCommitFrontFork)
   )
   for (idx <- 0 until myFwdCommitFrontFork.size) {
-    myFwdCommitFrontFinalStm(idx) <-/< myFwdCommitFrontFork(idx)
+    if (idx < myFwdCommitFrontFork.size - 1) {
+      myFwdCommitFrontFinalStm(idx) <-< myFwdCommitFrontFork(idx)
+    } else {
+      myFwdCommitFrontFinalStm(idx) <-< myFwdCommitFrontFork(idx)
+    }
   }
 
   val myTempNonFwdTag = (
