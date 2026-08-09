@@ -1581,7 +1581,7 @@ case class SnowHouseInstrCnt(
   val scoreboardIssuePayload = (
     cfg.optScoreboard
   ) generate (
-    SnowHouseScoreboardIssuePayload(cfg=cfg)
+    SnowHouseScoreboardCheckPayload(cfg=cfg)
   )
   //def scoreboardTag = scoreboardIssuePayload.tag
   //def scoreboardIssueCntOverflow = scoreboardIssuePayload.cntOverflow

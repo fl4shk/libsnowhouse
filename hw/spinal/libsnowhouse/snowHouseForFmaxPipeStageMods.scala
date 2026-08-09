@@ -1127,22 +1127,22 @@ case class SnowHouseForFmaxPipeStageScoreboardCheck(
   val pScoreboardCheckInp = Payload(SnowHousePipePayload(cfg=cfg))
   val pScoreboardCheckOutp = Payload(SnowHousePipePayload(cfg=cfg))
   val cLink = CtrlLink()
-  val sLink = StageLink(
-    up=cLink.down,
-    down={
-      val temp = Node()
-      temp.setName("sLink_down")
-      temp
-    }
-  )
-  val s2mLink = S2MLink(
-    up=sLink.down,
-    down={
-      val temp = Node()
-      temp.setName("s2mLink_down")
-      temp
-    }
-  )
+  //val sLink = StageLink(
+  //  up=cLink.down,
+  //  down={
+  //    val temp = Node()
+  //    temp.setName("sLink_down")
+  //    temp
+  //  }
+  //)
+  //val s2mLink = S2MLink(
+  //  up=sLink.down,
+  //  down={
+  //    val temp = Node()
+  //    temp.setName("s2mLink_down")
+  //    temp
+  //  }
+  //)
   linkArr += cLink
   //linkArr += sLink
   //linkArr += s2mLink
@@ -1196,7 +1196,7 @@ case class SnowHouseForFmaxPipeStageScoreboardCheck(
   )
 
 
-  s2mLink.down.driveTo(
+  cLink.down.driveTo(
     io.down
   )(
     con=(outp, node) => {
@@ -2184,17 +2184,12 @@ case class SnowHouseForFmaxPsWbReorderBuf(
   //  //4
   //  6
   //)
-  //val myFifo = (
-  //  StreamFifo(
-  //    dataType=SnowHouseForFmaxPsWbReorderBufPayload(cfg=cfg),
-  //    depth=myReorderBufSize,
-  //    latency=0,
-  //    forFMax=true,
-  //  )
-  //)
+  val myPushStm = (
+    StreamArbiterFactory.lowerFirst.noLock.on(io.push)
+  )
 
   val myRam = (
-    DualWrPulseRdPipeRam(
+    WrPulseRdPipeRam(
       cfg=WrPulseRdPipeRamConfig(
         modType=SnowHouseForFmaxPsWbReorderBufPayload(
           cfg=cfg,
@@ -2250,12 +2245,12 @@ case class SnowHouseForFmaxPsWbReorderBuf(
               && wrPulseVec.head.addr === inp.reorderBufIdx
               && inp.commit.myNonFwdValid
             )
-            ## (
-              wrPulseVec.last.fire
-              //&& myExternalInpCond
-              && wrPulseVec.last.addr === inp.reorderBufIdx
-              && inp.commit.opIsFwd
-            )
+            //## (
+            //  wrPulseVec.last.fire
+            //  //&& myExternalInpCond
+            //  && wrPulseVec.last.addr === inp.reorderBufIdx
+            //  && inp.commit.opIsFwd
+            //)
             ## (
               RegNextWhen(
                 wrPulseVec.head.addr,
@@ -2267,33 +2262,33 @@ case class SnowHouseForFmaxPsWbReorderBuf(
               ) === inp.reorderBufIdx
               && inp.commit.myNonFwdValid
             )
-            ## (
-              RegNextWhen(
-                wrPulseVec.last.addr,
-                cond=(
-                  wrPulseVec.last.fire
-                  //&& myExternalInpCond
-                ),
-                init=wrPulseVec.last.addr.getZero
-              ) === inp.reorderBufIdx
-              && inp.commit.opIsFwd
-            )
+            //## (
+            //  RegNextWhen(
+            //    wrPulseVec.last.addr,
+            //    cond=(
+            //      wrPulseVec.last.fire
+            //      //&& myExternalInpCond
+            //    ),
+            //    init=wrPulseVec.last.addr.getZero
+            //  ) === inp.reorderBufIdx
+            //  && inp.commit.opIsFwd
+            //)
           ) {
             is (
-              //M"1-"
-              M"1---"
+              M"1-"
+              //M"1---"
             ) {
               outp.most := wrPulseVec.head.data.most
             }
+            //is (
+            //  //M"1-"
+            //  M"01--"
+            //) {
+            //  outp.most := wrPulseVec.last.data.most
+            //}
             is (
-              //M"1-"
-              M"01--"
-            ) {
-              outp.most := wrPulseVec.last.data.most
-            }
-            is (
-              //M"01"
-              M"001-"
+              M"01"
+              //M"001-"
             ) {
               outp.most := (
                 RegNextWhen(
@@ -2306,21 +2301,21 @@ case class SnowHouseForFmaxPsWbReorderBuf(
                 )
               )
             }
-            is (
-              //M"01"
-              M"0001"
-            ) {
-              outp.most := (
-                RegNextWhen(
-                  wrPulseVec.last.data.most,
-                  cond=(
-                    wrPulseVec.last.fire
-                    //&& myExternalInpCond
-                  ),
-                  init=wrPulseVec.last.data.most.getZero
-                )
-              )
-            }
+            //is (
+            //  //M"01"
+            //  M"0001"
+            //) {
+            //  outp.most := (
+            //    RegNextWhen(
+            //      wrPulseVec.last.data.most,
+            //      cond=(
+            //        wrPulseVec.last.fire
+            //        //&& myExternalInpCond
+            //      ),
+            //      init=wrPulseVec.last.data.most.getZero
+            //    )
+            //  )
+            //}
             default {
               //outp.reorderBufIdx := inp.reorderBufIdx
               outp.most := rdMemWord.most
@@ -2379,7 +2374,7 @@ case class SnowHouseForFmaxPsWbReorderBuf(
   val myAssertValidCondVec = (
     Vec(
       myRam.io.wrPulse.fire,
-      myRam.io.otherWrPulse.fire,
+      //myRam.io.otherWrPulse.fire,
     )
     //&& myAssertValidCondMost
   )
@@ -2450,32 +2445,45 @@ case class SnowHouseForFmaxPsWbReorderBuf(
     //)
   )
 
-  io.push.foreach(push => {
-    switch (push.reorderBufIdx) {
-      for (idx <- 0 until (1 << push.reorderBufIdx.getWidth)) {
-        is (idx) {
-          push.ready := (
-            !rValidVec(idx)
-          )
-        }
+  //io.push.foreach(push => {
+  //  switch (push.reorderBufIdx) {
+  //    for (idx <- 0 until (1 << push.reorderBufIdx.getWidth)) {
+  //      is (idx) {
+  //        push.ready := (
+  //          !rValidVec(idx)
+  //        )
+  //      }
+  //    }
+  //  }
+  //})
+  switch (myPushStm.reorderBufIdx) {
+    for (idx <- 0 until (1 << myPushStm.reorderBufIdx.getWidth)) {
+      is (idx) {
+        myPushStm.ready := (
+          !rValidVec(idx)
+        )
       }
     }
-  })
+  }
 
-  myRam.io.wrPulse.valid := io.push.head.fire
-  myRam.io.wrPulse.addr := io.push.head.reorderBufIdx
-  myRam.io.wrPulse.data.most := io.push.head.most
+  myRam.io.wrPulse.valid := myPushStm.fire
+  myRam.io.wrPulse.addr := myPushStm.reorderBufIdx
+  myRam.io.wrPulse.data.most := myPushStm.most
 
-  myRam.io.otherWrPulse.valid := io.push.last.fire
-  myRam.io.otherWrPulse.addr := io.push.last.reorderBufIdx
-  myRam.io.otherWrPulse.data.most := io.push.last.most
+  //myRam.io.wrPulse.valid := io.push.head.fire
+  //myRam.io.wrPulse.addr := io.push.head.reorderBufIdx
+  //myRam.io.wrPulse.data.most := io.push.head.most
+
+  //myRam.io.otherWrPulse.valid := io.push.last.fire
+  //myRam.io.otherWrPulse.addr := io.push.last.reorderBufIdx
+  //myRam.io.otherWrPulse.data.most := io.push.last.most
 
   when (myAssertValidCondVec.head) {
     rValidVec(myRam.io.wrPulse.addr) := True
   }
-  when (myAssertValidCondVec.last) {
-    rValidVec(myRam.io.otherWrPulse.addr) := True
-  }
+  //when (myAssertValidCondVec.last) {
+  //  rValidVec(myRam.io.otherWrPulse.addr) := True
+  //}
 
   when (myRam.io.rdAddrPipe.fire) {
     rValidVec(myRam.io.rdAddrPipe.addr) := False
