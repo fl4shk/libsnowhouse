@@ -2246,33 +2246,37 @@ case class SnowHouseForFmaxPsWbReorderBuf(
           switch (
             (
               wrPulseVec.head.fire
-              && myExternalInpCond
+              //&& myExternalInpCond
               && wrPulseVec.head.addr === inp.reorderBufIdx
+              && inp.commit.myNonFwdValid
             )
             ## (
               wrPulseVec.last.fire
-              && myExternalInpCond
+              //&& myExternalInpCond
               && wrPulseVec.last.addr === inp.reorderBufIdx
+              && inp.commit.opIsFwd
             )
             ## (
               RegNextWhen(
                 wrPulseVec.head.addr,
                 cond=(
                   wrPulseVec.head.fire
-                  && myExternalInpCond
+                  //&& myExternalInpCond
                 ),
                 init=wrPulseVec.head.addr.getZero
               ) === inp.reorderBufIdx
+              && inp.commit.myNonFwdValid
             )
             ## (
               RegNextWhen(
                 wrPulseVec.last.addr,
                 cond=(
                   wrPulseVec.last.fire
-                  && myExternalInpCond
+                  //&& myExternalInpCond
                 ),
                 init=wrPulseVec.last.addr.getZero
               ) === inp.reorderBufIdx
+              && inp.commit.opIsFwd
             )
           ) {
             is (
@@ -2296,7 +2300,7 @@ case class SnowHouseForFmaxPsWbReorderBuf(
                   wrPulseVec.head.data.most,
                   cond=(
                     wrPulseVec.head.fire
-                    && myExternalInpCond
+                    //&& myExternalInpCond
                   ),
                   init=wrPulseVec.head.data.most.getZero
                 )
@@ -2311,7 +2315,7 @@ case class SnowHouseForFmaxPsWbReorderBuf(
                   wrPulseVec.last.data.most,
                   cond=(
                     wrPulseVec.last.fire
-                    && myExternalInpCond
+                    //&& myExternalInpCond
                   ),
                   init=wrPulseVec.last.data.most.getZero
                 )
