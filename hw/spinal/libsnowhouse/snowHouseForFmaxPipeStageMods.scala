@@ -2713,9 +2713,9 @@ case class SnowHouseForFmaxPipeStageWriteBack(
       MyWbPayload()
     ),
     depth=(
-      4
+      //4
       //2
-      //1
+      1
     ),
     latency=0,
     forFMax=true
