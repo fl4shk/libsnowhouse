@@ -2439,7 +2439,7 @@ case class SnowHousePipeStageScoreboardIssue(
       !isNonFwd
     ) generate (
       UInt(log2Up(
-        cfg.optForFmaxPsExFwdSize - 2//1//2//1//2//3
+        cfg.optForFmaxPsExFwdSize - 2//1//2//3
         + 1
       ) + 1 bits)
     )
@@ -3144,7 +3144,7 @@ case class SnowHousePipeStageScoreboardIssue(
           rMyFwdGprTagVec(idx).valid := True
           when (!rMyFwdGprTagVec(idx).fire) {
             rMyFwdGprTagVec(idx).cnt := (
-              cfg.optForFmaxPsExFwdSize - 2//1//2//1//2//3//2//1
+              cfg.optForFmaxPsExFwdSize - 2//1//2//3//2//1
             )
             //rMyFwdGprTagVec(idx).tag := myTempFwdTag
           }
@@ -10819,36 +10819,36 @@ case class SnowHousePipeStageExecute(
       //io.lcvDbus.h2dBus
       myLcvDbusH2dStm
     )
-    val rSavedDbusHostPayload = (
-      cfg.optScoreboard
-    ) generate {
-      val temp = Reg(
-        Flow(cloneOf(setOutpModMemWord.io.dbusHostPayload))
-      )
-      temp.init(temp.getZero)
-      temp
-    }
+    //val rSavedDbusHostPayload = (
+    //  cfg.optScoreboard
+    //) generate {
+    //  val temp = Reg(
+    //    Flow(cloneOf(setOutpModMemWord.io.dbusHostPayload))
+    //  )
+    //  temp.init(temp.getZero)
+    //  temp
+    //}
 
-    val rSavedOutp = (
-      cfg.optScoreboard
-    ) generate {
-      val temp = Reg(
-        cloneOf(outp),
-        init=outp.getZero
-      )
-      temp
-    }
+    //val rSavedOutp = (
+    //  cfg.optScoreboard
+    //) generate {
+    //  val temp = Reg(
+    //    cloneOf(outp),
+    //    init=outp.getZero
+    //  )
+    //  temp
+    //}
     //def myDbusHostPayload = setOutpModMemWord.io.dbusHostPayload
     val myDbusHostPayload = (
-      if (cfg.optScoreboard) (
-        Mux(
-          !rSavedDbusHostPayload.fire,
-          setOutpModMemWord.io.dbusHostPayload,
-          rSavedDbusHostPayload.payload,
-        )
-      ) else (
+      //if (cfg.optScoreboard) (
+      //  Mux(
+      //    !rSavedDbusHostPayload.fire,
+      //    setOutpModMemWord.io.dbusHostPayload,
+      //    rSavedDbusHostPayload.payload,
+      //  )
+      //) else (
         setOutpModMemWord.io.dbusHostPayload
-      )
+      //)
     )
 
     //outp.myDbusHostPayload := myDbusHostPayload
@@ -10874,10 +10874,7 @@ case class SnowHousePipeStageExecute(
       //False
       (
         if (cfg.optScoreboard) (
-          (
-            cLink.up.isValid
-            || rSavedDbusHostPayload.fire
-          )
+          cLink.up.isValid
           && myTempDownIsReady
           && !rSeenH2dBusFire
           //&& !outp.instrCnt.myPsIdBubble.head
@@ -10886,14 +10883,7 @@ case class SnowHousePipeStageExecute(
           && myTempDownIsReady
         )
       )
-      && (
-        if (cfg.optScoreboard) (
-          setOutpModMemWord.io.opIsMemAccess.last
-          || rSavedDbusHostPayload.fire
-        ) else (
-          setOutpModMemWord.io.opIsMemAccess.last
-        )
-      )
+      && setOutpModMemWord.io.opIsMemAccess.last
       //&& cMid0Front.down.isReady
     )
     myH2dBus.byteSize := myDbusHostPayload.myLcvDbusByteSize
@@ -10941,68 +10931,11 @@ case class SnowHousePipeStageExecute(
     //    rInstrCntNonMem := rInstrCntNonMem + 1
     //  }
     //}
-    if (cfg.optScoreboard) {
-      //when (
-      //  myH2dBus.valid
-      //  && !myH2dBus.ready
-      //  && !rSavedDbusHostPayload.fire
-      //) {
-      //  cLink.down(args.currPayload).setAsBubbleMain(None)
-      //  cLink.down(args.currPayload).instrCnt
-      //  .myPsExMemAccessBubble.foreach(
-      //    item => {
-      //      item := True
-      //    }
-      //  )
-      //  setOutpModMemWord.io.instrCnt.setAsPsIdBubbleMain()
-      //}
-
-      when (
-        myH2dBus.valid
-        && !myH2dBus.ready
-        && !rSavedDbusHostPayload.fire
-        && cLink.up.isFiring
-      ) {
-        cLink.down(args.currPayload).setAsBubbleMain(None)
-        cLink.down(args.currPayload).instrCnt
-        .myPsExMemAccessBubble.foreach(
-          item => {
-            item := True
-          }
-        )
-        setOutpModMemWord.io.instrCnt.setAsPsIdBubbleMain()
-
-        rSavedDbusHostPayload.valid := True
-        rSavedDbusHostPayload.payload := (
-          setOutpModMemWord.io.dbusHostPayload
-        )
-        rSavedOutp := outp
-      }
-
-      when (
-        //myH2dBus.valid
-        //&& !myH2dBus.ready
-        //&& !rSeenH2dBusFire
-        //cLink.up.isFiring
-        cLink.down.isFiring
-        && (
-          myH2dBus.fire
-          || rSeenH2dBusFire
-        )
-        && rSavedDbusHostPayload.fire
-      ) {
-        cLink.duplicateIt()
-        rSavedDbusHostPayload.valid := False
-        cLink.down(args.currPayload) := rSavedOutp
-      }
-    }
     when (
       if (cfg.optScoreboard) (
         myH2dBus.valid
         //&& myTempDownIsReady
         && !myH2dBus.ready
-        && setOutpModMemWord.io.opIsMemAccess.last
-        && rSavedDbusHostPayload.fire
       ) else (
         myH2dBus.valid
         && !myH2dBus.ready
@@ -11084,19 +11017,7 @@ case class SnowHousePipeStageExecute(
       nextPrevTxnWasHazard := True
     }
     if (cfg.optScoreboard) {
-      when (
-        (
-          cLink.up.isFiring
-          //&& (
-          //  rSeenH2dBusFire
-          //)
-          && !rSavedDbusHostPayload.fire
-        )
-        || (
-          cLink.down.isFiring
-          && rSavedDbusHostPayload.fire
-        )
-      ) {
+      when (cLink.up.isFiring) {
         rSeenH2dBusFire := False
       }
     }
