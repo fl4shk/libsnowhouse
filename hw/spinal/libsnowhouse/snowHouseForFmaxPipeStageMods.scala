@@ -3789,7 +3789,8 @@ case class SnowHouseForFmaxPipeStageWriteBack(
         ),
         latency=(
           //2
-          1
+          //1
+          0
         ),
         forFMax=true,
       )
