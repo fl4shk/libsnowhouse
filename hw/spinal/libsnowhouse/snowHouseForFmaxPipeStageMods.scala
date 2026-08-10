@@ -2186,7 +2186,7 @@ case class SnowHouseForFmaxPsWbReorderBuf(
   //  6
   //)
   val myPushStm = (
-    StreamArbiterFactory.lowerFirst.noLock.on(io.push)
+    StreamArbiterFactory.lowerFirst.noLock.on(io.push.reverse)
   )
 
   val myRam = (
