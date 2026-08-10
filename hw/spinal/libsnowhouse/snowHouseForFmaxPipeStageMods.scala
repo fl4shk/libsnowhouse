@@ -2186,7 +2186,7 @@ case class SnowHouseForFmaxPsWbReorderBuf(
   //  6
   //)
   val myPushStm = (
-    StreamArbiterFactory.lowerFirst.noLock.on(io.push.reverse)
+    StreamArbiterFactory.lowerFirst.noLock.on(io.push)
   )
 
   val myRam = (
@@ -3789,8 +3789,7 @@ case class SnowHouseForFmaxPipeStageWriteBack(
         ),
         latency=(
           //2
-          //1
-          0
+          1
         ),
         forFMax=true,
       )
@@ -4062,7 +4061,9 @@ case class SnowHouseForFmaxPipeStageWriteBack(
     //  )
     //}
     myCommitAlmostFinalFrontOutpStmVec.head.head << (
-      myReorderBuf.io.pop
+      myReorderBuf.io.pop.throwWhen(
+        myReorderBuf.io.pop.commit.opIsFwd
+      )
     )
 
     myCommitAlmostFinalFrontOutpStmVec.last.head << (
