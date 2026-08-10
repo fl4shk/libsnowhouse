@@ -4081,7 +4081,7 @@ case class SnowHouseForFmaxPipeStageWriteBack(
         //)
         //myCommitAlmostFinalBackOutpStm.translateInto(
         //)
-        myCommitTrueFinalOutpStmVec(idx) << (
+        myCommitTrueFinalOutpStmVec(idx) <-/< (
           myCommitAlmostFinalBackOutpStm
         )
       } else {
