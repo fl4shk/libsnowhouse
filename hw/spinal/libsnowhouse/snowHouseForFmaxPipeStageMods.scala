@@ -3782,8 +3782,8 @@ case class SnowHouseForFmaxPipeStageWriteBack(
           cloneOf(myFwdCommitFrontFinalStm.last.payload)
         ),
         depth=(
-          1
-          //4
+          //1
+          4
           //8
           //16
         ),
