@@ -10828,37 +10828,37 @@ case class SnowHousePipeStageExecute(
       //io.lcvDbus.h2dBus
       myLcvDbusH2dStm
     )
-    val rSavedDbusHostPayload = (
-      cfg.optScoreboard
-    ) generate {
-      val temp = Reg(
-        Flow(cloneOf(setOutpModMemWord.io.dbusHostPayload))
-      )
-      temp.init(temp.getZero)
-      temp
-    }
+    //val rSavedDbusHostPayload = (
+    //  cfg.optScoreboard
+    //) generate {
+    //  val temp = Reg(
+    //    Flow(cloneOf(setOutpModMemWord.io.dbusHostPayload))
+    //  )
+    //  temp.init(temp.getZero)
+    //  temp
+    //}
 
-    val rSavedOutp = (
-      cfg.optScoreboard
-    ) generate {
-      val temp = Reg(
-        cloneOf(outp),
-        init=outp.getZero
-      )
-      temp
-    }
-    //def myDbusHostPayload = setOutpModMemWord.io.dbusHostPayload
-    val myDbusHostPayload = (
-      if (cfg.optScoreboard) (
-        Mux(
-          !rSavedDbusHostPayload.fire,
-          setOutpModMemWord.io.dbusHostPayload,
-          rSavedDbusHostPayload.payload,
-        )
-      ) else (
-        setOutpModMemWord.io.dbusHostPayload
-      )
-    )
+    //val rSavedOutp = (
+    //  cfg.optScoreboard
+    //) generate {
+    //  val temp = Reg(
+    //    cloneOf(outp),
+    //    init=outp.getZero
+    //  )
+    //  temp
+    //}
+    def myDbusHostPayload = setOutpModMemWord.io.dbusHostPayload
+    //val myDbusHostPayload = (
+    //  //if (cfg.optScoreboard) (
+    //  //  Mux(
+    //  //    !rSavedDbusHostPayload.fire,
+    //  //    setOutpModMemWord.io.dbusHostPayload,
+    //  //    rSavedDbusHostPayload.payload,
+    //  //  )
+    //  //) else (
+    //    setOutpModMemWord.io.dbusHostPayload
+    //  //)
+    //)
 
     //outp.myDbusHostPayload := myDbusHostPayload
     //outp.myDbusHostPayload.src.allowOverride
@@ -10885,7 +10885,7 @@ case class SnowHousePipeStageExecute(
         if (cfg.optScoreboard) (
           (
             cLink.up.isValid
-            || rSavedDbusHostPayload.fire
+            //|| rSavedDbusHostPayload.fire
           )
           && myTempDownIsReady
           && !rSeenH2dBusFire
@@ -10898,7 +10898,7 @@ case class SnowHousePipeStageExecute(
       && (
         if (cfg.optScoreboard) (
           setOutpModMemWord.io.opIsMemAccess.last
-          || rSavedDbusHostPayload.fire
+          //|| rSavedDbusHostPayload.fire
         ) else (
           setOutpModMemWord.io.opIsMemAccess.last
         )
@@ -10966,62 +10966,62 @@ case class SnowHousePipeStageExecute(
       //  setOutpModMemWord.io.instrCnt.setAsPsIdBubbleMain()
       //}
 
-      when (
-        myH2dBus.valid
-        && !myH2dBus.ready
-        && !rSavedDbusHostPayload.fire
-        && cLink.up.isFiring
-      ) {
-        cLink.down(args.currPayload).setAsBubbleMain(None)
-        cLink.down(args.currPayload).instrCnt
-        .myPsExMemAccessBubble.foreach(
-          item => {
-            item := True
-          }
-        )
-        setOutpModMemWord.io.instrCnt.setAsPsIdBubbleMain()
+      //when (
+      //  myH2dBus.valid
+      //  && !myH2dBus.ready
+      //  && !rSavedDbusHostPayload.fire
+      //  && cLink.up.isFiring
+      //) {
+      //  cLink.down(args.currPayload).setAsBubbleMain(None)
+      //  cLink.down(args.currPayload).instrCnt
+      //  .myPsExMemAccessBubble.foreach(
+      //    item => {
+      //      item := True
+      //    }
+      //  )
+      //  setOutpModMemWord.io.instrCnt.setAsPsIdBubbleMain()
 
-        rSavedDbusHostPayload.valid := True
-        rSavedDbusHostPayload.payload := (
-          setOutpModMemWord.io.dbusHostPayload
-        )
-        //rSavedOutp := outp
-      }
+      //  rSavedDbusHostPayload.valid := True
+      //  rSavedDbusHostPayload.payload := (
+      //    setOutpModMemWord.io.dbusHostPayload
+      //  )
+      //  rSavedOutp := outp
+      //}
 
-      when (
-        !rSavedDbusHostPayload.fire
-      ) {
-        rSavedOutp := outp
-      }
-      rSavedOutp.myExt.foreach(myExt => {
-        myExt.modMemWord.allowOverride
-        myExt.modMemWord := 0x0
-      })
+      //when (
+      //  !rSavedDbusHostPayload.fire
+      //) {
+      //  rSavedOutp := outp
+      //}
+      //rSavedOutp.myExt.foreach(myExt => {
+      //  myExt.modMemWord.allowOverride
+      //  myExt.modMemWord := 0x0
+      //})
 
-      when (
-        //myH2dBus.valid
-        //&& !myH2dBus.ready
-        //&& !rSeenH2dBusFire
-        //cLink.up.isFiring
-        cLink.down.isFiring
-        && (
-          myH2dBus.fire
-          || rSeenH2dBusFire
-        )
-        && rSavedDbusHostPayload.fire
-      ) {
-        cLink.duplicateIt()
-        rSavedDbusHostPayload.valid := False
-        cLink.down(args.currPayload) := rSavedOutp
-      }
+      //when (
+      //  //myH2dBus.valid
+      //  //&& !myH2dBus.ready
+      //  //&& !rSeenH2dBusFire
+      //  //cLink.up.isFiring
+      //  cLink.down.isFiring
+      //  && (
+      //    myH2dBus.fire
+      //    || rSeenH2dBusFire
+      //  )
+      //  && rSavedDbusHostPayload.fire
+      //) {
+      //  cLink.duplicateIt()
+      //  rSavedDbusHostPayload.valid := False
+      //  cLink.down(args.currPayload) := rSavedOutp
+      //}
     }
     when (
       if (cfg.optScoreboard) (
         myH2dBus.valid
         //&& myTempDownIsReady
         && !myH2dBus.ready
-        && setOutpModMemWord.io.opIsMemAccess.last
-        && rSavedDbusHostPayload.fire
+        //&& setOutpModMemWord.io.opIsMemAccess.last
+        //&& rSavedDbusHostPayload.fire
       ) else (
         myH2dBus.valid
         && !myH2dBus.ready
@@ -11104,17 +11104,18 @@ case class SnowHousePipeStageExecute(
     }
     if (cfg.optScoreboard) {
       when (
-        (
-          cLink.up.isFiring
-          //&& (
-          //  rSeenH2dBusFire
-          //)
-          && !rSavedDbusHostPayload.fire
-        )
-        || (
-          cLink.down.isFiring
-          && rSavedDbusHostPayload.fire
-        )
+        cLink.up.isFiring
+        //(
+        //  cLink.up.isFiring
+        //  //&& (
+        //  //  rSeenH2dBusFire
+        //  //)
+        //  && !rSavedDbusHostPayload.fire
+        //)
+        //|| (
+        //  cLink.down.isFiring
+        //  && rSavedDbusHostPayload.fire
+        //)
       ) {
         rSeenH2dBusFire := False
       }
