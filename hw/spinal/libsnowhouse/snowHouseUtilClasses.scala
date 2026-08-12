@@ -976,7 +976,8 @@ case class SnowHouseConfig(
     //1
   )
   def lowerMyFanoutRegPc = (
-    4
+    //4
+    8
   )
   def lowerMyFanoutNextPc = (
     2

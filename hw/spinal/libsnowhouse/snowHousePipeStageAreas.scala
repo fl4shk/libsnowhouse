@@ -5795,8 +5795,8 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
   val rMyTempDstRegPc = {
     val temp = Reg(Flow(
       Vec.fill(
-        //4
-        cfg.lowerMyFanoutRegPc
+        4
+        //cfg.lowerMyFanoutRegPc
       )(
         UInt(cfg.mainAddrWidth bits)
       )
@@ -8513,36 +8513,41 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
             io.upIsFiring
             && !io.shouldIgnoreInstr.last
           )
-          rMyTempDstRegPc.payload.foreach(payload => {
-            payload := 0x0
-            payload(myDstPcRange) := (
-              //RegNext/*When*/(
-                (
-                  if (cfg.optShiftRegPcImmAddend) (
-                    io.laggingRegPcPlus1InstrSize(myDstPcRange)
-                    + (
-                      io.imm.last //- cfg.instrSizeBytes
-                    )
-                  ) else (
-                    io.myRegPcVec(3)(myDstPcRange)
-                      + io.imm.last(
-                        io.imm.last.high
-                        downto log2Up(cfg.instrSizeBytes)
+          for (idx <- 0 until rMyTempDstRegPc.payload.size) {
+            val payload = rMyTempDstRegPc.payload(idx)
+            //rMyTempDstRegPc.payload.foreach(payload => {
+              payload := 0x0
+              payload(myDstPcRange) := (
+                //RegNext/*When*/(
+                  (
+                    if (cfg.optShiftRegPcImmAddend) (
+                      io.laggingRegPcPlus1InstrSize(myDstPcRange)
+                      + (
+                        io.imm.last //- cfg.instrSizeBytes
                       )
-                      //- 1 // RISC-V stuff here
-                  )
-                ).resize(
-                  payload(
-                    myDstPcRange
-                  ).getWidth
-                )//,
-              //  //cond=io.upIsFiring,
-              //  init=rMyTempDstRegPc(
-              //    myDstPcRange
-              //  ).getZero,
-              //)
-            )
-          })
+                    ) else (
+                      io.myRegPcVec(
+                        idx + rMyTempDstRegPc.payload.size
+                      )(myDstPcRange)
+                        + io.imm.last(
+                          io.imm.last.high
+                          downto log2Up(cfg.instrSizeBytes)
+                        )
+                        //- 1 // RISC-V stuff here
+                    )
+                  ).resize(
+                    payload(
+                      myDstPcRange
+                    ).getWidth
+                  )//,
+                //  //cond=io.upIsFiring,
+                //  init=rMyTempDstRegPc(
+                //    myDstPcRange
+                //  ).getZero,
+                //)
+              )
+            //})
+          }
         }
         //def mySrcPcRange = (
         //  io.psExSetPc.branchTgtBufElem.srcRegPc.high
@@ -10415,7 +10420,7 @@ case class SnowHousePipeStageExecute(
       next=(
         //outp.branchTgtBufElem(1).srcRegPc
         //outp.laggingRegPc
-        outp.myRegPcVec.last
+        outp.myRegPcVec(4)
         //+ (1 * cfg.instrSizeBytes)
         - (1 * cfg.instrSizeBytes)
         //- (3 * cfg.instrSizeBytes)
@@ -10428,7 +10433,7 @@ case class SnowHousePipeStageExecute(
       init=(
         //outp.branchTgtBufElem(1).srcRegPc.getZero
         //outp.laggingRegPc.getZero
-        outp.myRegPcVec.last.getZero
+        outp.myRegPcVec(4).getZero
       ),
     )
   )
@@ -10437,7 +10442,7 @@ case class SnowHousePipeStageExecute(
       next=(
         //outp.branchTgtBufElem(1).srcRegPc
         //outp.laggingRegPc
-        outp.myRegPcVec.last.getZero
+        outp.myRegPcVec(5).getZero
         + (1 * cfg.instrSizeBytes)
         //- (1 * cfg.instrSizeBytes)
         //- (3 * cfg.instrSizeBytes)
@@ -10450,7 +10455,7 @@ case class SnowHousePipeStageExecute(
       init=(
         //outp.branchTgtBufElem(1).srcRegPc.getZero
         //outp.laggingRegPc.getZero
-        outp.myRegPcVec.last.getZero
+        outp.myRegPcVec(5).getZero
       ),
     )
     ////outp.myHistRegPcPlusInstrSize.head
@@ -11622,14 +11627,14 @@ case class SnowHousePipeStageExecute(
     RegNextWhen(
       RegNext(
         //outp.laggingRegPc,
-        outp.myRegPcVec(2),
+        outp.myRegPcVec(6),
         //cond=cMid0Front.up.isFiring,
         init=outp.laggingRegPc.getZero,
       ),
       cond=setOutpModMemWord.io.psExSetPc.fire,
       init=(
         //outp.laggingRegPc.getZero
-        outp.myRegPcVec(2).getZero.getZero
+        outp.myRegPcVec(6).getZero.getZero
       ),
     )
   )
