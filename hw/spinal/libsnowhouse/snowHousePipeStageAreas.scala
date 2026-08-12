@@ -10984,6 +10984,10 @@ case class SnowHousePipeStageExecute(
       ) {
         rSavedOutp := outp
       }
+      rSavedOutp.myExt.foreach(myExt => {
+        myExt.modMemWord.allowOverride
+        myExt.modMemWord := 0x0
+      })
 
       when (
         //myH2dBus.valid
