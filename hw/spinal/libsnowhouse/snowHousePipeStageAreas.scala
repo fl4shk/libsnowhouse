@@ -10976,6 +10976,12 @@ case class SnowHousePipeStageExecute(
         rSavedDbusHostPayload.payload := (
           setOutpModMemWord.io.dbusHostPayload
         )
+        //rSavedOutp := outp
+      }
+
+      when (
+        !rSavedDbusHostPayload.fire
+      ) {
         rSavedOutp := outp
       }
 
