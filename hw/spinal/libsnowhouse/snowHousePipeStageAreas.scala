@@ -10414,7 +10414,8 @@ case class SnowHousePipeStageExecute(
     RegNextWhen(
       next=(
         //outp.branchTgtBufElem(1).srcRegPc
-        outp.laggingRegPc
+        //outp.laggingRegPc
+        outp.myRegPcVec.last
         //+ (1 * cfg.instrSizeBytes)
         - (1 * cfg.instrSizeBytes)
         //- (3 * cfg.instrSizeBytes)
@@ -10426,7 +10427,8 @@ case class SnowHousePipeStageExecute(
       ),
       init=(
         //outp.branchTgtBufElem(1).srcRegPc.getZero
-        outp.laggingRegPc.getZero
+        //outp.laggingRegPc.getZero
+        outp.myRegPcVec.last.getZero
       ),
     )
   )
@@ -10434,7 +10436,8 @@ case class SnowHousePipeStageExecute(
     RegNextWhen(
       next=(
         //outp.branchTgtBufElem(1).srcRegPc
-        outp.laggingRegPc
+        //outp.laggingRegPc
+        outp.myRegPcVec.last.getZero
         + (1 * cfg.instrSizeBytes)
         //- (1 * cfg.instrSizeBytes)
         //- (3 * cfg.instrSizeBytes)
@@ -10446,7 +10449,8 @@ case class SnowHousePipeStageExecute(
       ),
       init=(
         //outp.branchTgtBufElem(1).srcRegPc.getZero
-        outp.laggingRegPc.getZero
+        //outp.laggingRegPc.getZero
+        outp.myRegPcVec.last.getZero
       ),
     )
     ////outp.myHistRegPcPlusInstrSize.head
@@ -11617,12 +11621,16 @@ case class SnowHousePipeStageExecute(
   psExSetPc.branchTgtBufElem.srcRegPc := (
     RegNextWhen(
       RegNext(
-        outp.laggingRegPc,
+        //outp.laggingRegPc,
+        outp.myRegPcVec(2),
         //cond=cMid0Front.up.isFiring,
         init=outp.laggingRegPc.getZero,
       ),
       cond=setOutpModMemWord.io.psExSetPc.fire,
-      init=outp.laggingRegPc.getZero,
+      init=(
+        //outp.laggingRegPc.getZero
+        outp.myRegPcVec(2).getZero.getZero
+      ),
     )
   )
   //psExSetPc.branchTgtBufElem.includesLdBubble.allowOverride
