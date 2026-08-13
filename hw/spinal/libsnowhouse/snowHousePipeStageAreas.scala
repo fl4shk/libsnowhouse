@@ -2280,7 +2280,7 @@ case class SnowHousePipeStageInstrDecode(
   }
 }
 
-case class SnowHousePipeStageScoreboardIssue(
+case class SnowHousePipeStageScoreboardCheck(
   val args: SnowHousePipeStageArgs,
   //val psIdHaltIt: Bool,
   //val psExSetPc: Flow[SnowHousePsExSetPcPayload],
@@ -2298,11 +2298,11 @@ case class SnowHousePipeStageScoreboardIssue(
   val myScoreboardReorderBufPsIdCanIssue: Bool,
 ) extends Area {
   def cfg = args.cfg
-  def cScoreboardIssue = args.link
-  def down = cScoreboardIssue.down
-  def up = cScoreboardIssue.up
+  def cScoreboardCheck = args.link
+  def down = cScoreboardCheck.down
+  def up = cScoreboardCheck.up
   def pId = args.prevPayload
-  def pScoreboardIssue = args.currPayload
+  def pScoreboardCheck = args.currPayload
 
   require(
     cfg.optScoreboard
@@ -2317,23 +2317,23 @@ case class SnowHousePipeStageScoreboardIssue(
     myInFlushCond: Option[Bool]=None,
   ): Unit = {
     require(cfg.useLcvDataBus)
-    cScoreboardIssue.duplicateIt()
+    cScoreboardCheck.duplicateIt()
     //upPayload(1).setAsBubbleMain(Some(True))
 
-    //down(pScoreboardIssue) := upPayload(1)
-    down(pScoreboardIssue).setAsBubbleMain(
+    //down(pScoreboardCheck) := upPayload(1)
+    down(pScoreboardCheck).setAsBubbleMain(
       //Some(True)
       myPsIdBubble=myPsIdBubble,
       //myUpdateGprIsOrIsntZero=myUpdateGprIsOrIsntZero
       //myPsIdReorderBufForceValid=myPsIdReorderBufForceValid,
     )
     if (myPsIdOtherBubble != None) {
-      down(pScoreboardIssue).instrCnt.myPsIdOtherBubble.foreach(item => {
+      down(pScoreboardCheck).instrCnt.myPsIdOtherBubble.foreach(item => {
         item := myPsIdOtherBubble.get
       })
     }
     if (myPsIdFwdBubble != None) {
-      down(pScoreboardIssue).instrCnt.myPsIdFwdBubble.foreach(item => {
+      down(pScoreboardCheck).instrCnt.myPsIdFwdBubble.foreach(item => {
         item := myPsIdFwdBubble.get
       })
     }
@@ -2342,22 +2342,22 @@ case class SnowHousePipeStageScoreboardIssue(
       && myInFlushCond != None
     ) {
       down(
-        pScoreboardIssue
+        pScoreboardCheck
       ).instrCnt.myPsIdInFlushBubble.foreach(item => {
         item := myInFlushCond.get
       })
       //when (!myInFlushCond.get) {
         down(
-          pScoreboardIssue
+          pScoreboardCheck
         ).instrCnt.scoreboardIssuePayload.fwdTag := 0x0
         down(
-          pScoreboardIssue
+          pScoreboardCheck
         ).instrCnt.scoreboardIssuePayload.nonFwdTag := 0x0
       //} otherwise {
-      //  down(pScoreboardIssue).instrCnt.scoreboardIssuePayload.fwdTag := (
+      //  down(pScoreboardCheck).instrCnt.scoreboardIssuePayload.fwdTag := (
       //    upPayload(1).instrCnt.scoreboardIssuePayload.fwdTag
       //  )
-      //  down(pScoreboardIssue).instrCnt.scoreboardIssuePayload.nonFwdTag := (
+      //  down(pScoreboardCheck).instrCnt.scoreboardIssuePayload.nonFwdTag := (
       //    upPayload(1).instrCnt.scoreboardIssuePayload.nonFwdTag
       //  )
       //}
@@ -2373,7 +2373,7 @@ case class SnowHousePipeStageScoreboardIssue(
   }
 
   //psIdFoundBubble := RegNext(psIdFoundBubble, init=False)
-  down(pScoreboardIssue).allowOverride
+  down(pScoreboardCheck).allowOverride
 
   val rScoreboardFlushState = (
     Reg(ScoreboardFlushState())
@@ -2391,7 +2391,7 @@ case class SnowHousePipeStageScoreboardIssue(
     upPayload(1) := upPayload(0)
   }
   upPayload(1).allowOverride
-  down(pScoreboardIssue) := upPayload(1)
+  down(pScoreboardCheck) := upPayload(1)
 
   //upPayload(1).branchTgtBufElem(1) := (
   //  //upPayload(1).branchTgtBufElem(1).getZero
@@ -3200,7 +3200,7 @@ case class SnowHousePipeStageScoreboardIssue(
   }
 
 
-  down(pScoreboardIssue).splitOp.scoreboardOpIsNonFwd := (
+  down(pScoreboardCheck).splitOp.scoreboardOpIsNonFwd := (
     upPayload(1).splitOp.opIsMemAccess
   )
 }

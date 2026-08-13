@@ -119,7 +119,7 @@ case class SnowHouseForFmaxPipeStageInstrFetch(
   //--------
 }
 
-case class SnowHouseScoreboardIssuePayload(
+case class SnowHouseScoreboardCheckPayload(
   cfg: SnowHouseConfig,
 ) extends Bundle {
   //val cntOverflow = Bool()
@@ -226,7 +226,7 @@ case class SnowHouseScoreboardCommitPayload(
 //    //Vec.fill(cfg.numMultiIssue)(
 //      Stream(
 //        //UInt(cfg.optScoreboardTagWidth bits)
-//        SnowHouseScoreboardIssuePayload(cfg=cfg)
+//        SnowHouseScoreboardCheckPayload(cfg=cfg)
 //      )
 //    //)
 //  )
@@ -1024,7 +1024,7 @@ case class SnowHouseForFmaxPipeStageInstrDecode(
   //--------
 }
 
-case class SnowHouseForFmaxPipeStageScoreboardIssueIo(
+case class SnowHouseForFmaxPipeStageScoreboardCheckIo(
   cfg: SnowHouseConfig
 ) extends Bundle {
   //--------
@@ -1111,12 +1111,12 @@ case class SnowHouseForFmaxPipeStageScoreboardIssueIo(
   //--------
 }
 
-case class SnowHouseForFmaxPipeStageScoreboardIssue(
+case class SnowHouseForFmaxPipeStageScoreboardCheck(
   cfg: SnowHouseConfig,
-  //val doDecodeFunc: (SnowHousePipeStageScoreboardIssue) => Area,
+  //val doDecodeFunc: (SnowHousePipeStageScoreboardCheck) => Area,
 ) extends Component {
   //--------
-  val io = SnowHouseForFmaxPipeStageScoreboardIssueIo(cfg=cfg)
+  val io = SnowHouseForFmaxPipeStageScoreboardCheckIo(cfg=cfg)
   //def up = io.up
   //def down = io.down
   //--------
@@ -1124,8 +1124,8 @@ case class SnowHouseForFmaxPipeStageScoreboardIssue(
 
   //def opInfoMap = cfg.opInfoMap
 
-  val pScoreboardIssueInp = Payload(SnowHousePipePayload(cfg=cfg))
-  val pScoreboardIssueOutp = Payload(SnowHousePipePayload(cfg=cfg))
+  val pScoreboardCheckInp = Payload(SnowHousePipePayload(cfg=cfg))
+  val pScoreboardCheckOutp = Payload(SnowHousePipePayload(cfg=cfg))
   val cLink = CtrlLink()
   val sLink = StageLink(
     up=cLink.down,
@@ -1147,14 +1147,14 @@ case class SnowHouseForFmaxPipeStageScoreboardIssue(
   linkArr += sLink
   linkArr += s2mLink
 
-  val innerPsScoreboardIssue = SnowHousePipeStageScoreboardIssue(
+  val innerPsScoreboardCheck = SnowHousePipeStageScoreboardCheck(
     SnowHousePipeStageArgs(
       cfg=cfg,
       io=null,
       link=cLink,
-      prevPayload=pScoreboardIssueInp,
+      prevPayload=pScoreboardCheckInp,
       currPayload=(
-        pScoreboardIssueOutp
+        pScoreboardCheckOutp
         //regFile.io.frontPayload
       ),
       myDbusIo=(
@@ -1170,7 +1170,7 @@ case class SnowHouseForFmaxPipeStageScoreboardIssue(
     //psExSetPc=io.psExSetPc,
     //pcChangeState=null,
     //shouldIgnoreInstr=null,
-    //doDecodeFunc=cfg.doScoreboardIssueFunc,
+    //doDecodeFunc=cfg.doScoreboardCheckFunc,
     //psIdFoundBubble=psIdFoundBubble,
     myScoreboardCommitStm=(
       io.myScoreboardCommit
@@ -1191,7 +1191,7 @@ case class SnowHouseForFmaxPipeStageScoreboardIssue(
 
   cLink.up.driveFrom(io.up)(
     con=(node, inp) => {
-      node(pScoreboardIssueInp) := inp
+      node(pScoreboardCheckInp) := inp
     }
   )
 
@@ -1200,7 +1200,7 @@ case class SnowHouseForFmaxPipeStageScoreboardIssue(
     io.down
   )(
     con=(outp, node) => {
-      outp := node(pScoreboardIssueOutp)
+      outp := node(pScoreboardCheckOutp)
     }
   )
 
@@ -1208,7 +1208,7 @@ case class SnowHouseForFmaxPipeStageScoreboardIssue(
   //--------
 }
 
-//case class SnowHouseForFmaxPipeStageScoreboardIssueIo(
+//case class SnowHouseForFmaxPipeStageScoreboardCheckIo(
 //  cfg: SnowHouseConfig
 //) extends Bundle {
 //  //--------
@@ -1246,7 +1246,7 @@ case class SnowHouseForFmaxPipeStageScoreboardIssue(
 //  //--------
 //}
 //
-//case class SnowHouseForFmaxPipeStageScoreboardIssue(
+//case class SnowHouseForFmaxPipeStageScoreboardCheck(
 //  cfg: SnowHouseConfig
 //) extends Component {
 //  // technically this is the pipeline stage where the scoreboard itself is
@@ -1255,14 +1255,14 @@ case class SnowHouseForFmaxPipeStageScoreboardIssue(
 //    cfg.optScoreboard
 //  )
 //  //--------
-//  val io = SnowHouseForFmaxPipeStageScoreboardIssueIo(cfg=cfg)
+//  val io = SnowHouseForFmaxPipeStageScoreboardCheckIo(cfg=cfg)
 //  //--------
 //  val linkArr = PipeHelper.mkLinkArr()
 //
 //  //def opInfoMap = cfg.opInfoMap
 //
-//  //val pScoreboardIssueInp = Payload(SnowHousePipePayload(cfg=cfg))
-//  val pScoreboardIssueOutp = Payload(SnowHousePipePayload(cfg=cfg))
+//  //val pScoreboardCheckInp = Payload(SnowHousePipePayload(cfg=cfg))
+//  val pScoreboardCheckOutp = Payload(SnowHousePipePayload(cfg=cfg))
 //  val cLink = CtrlLink()
 //  //val sLink = StageLink(
 //  //  up=cLink.down,
@@ -1317,7 +1317,7 @@ case class SnowHouseForFmaxPipeStageScoreboardIssue(
 //
 //  cLink.up.driveFrom(io.up)(
 //    con=(node, inp) => {
-//      //node(pScoreboardIssueInp) := inp
+//      //node(pScoreboardCheckInp) := inp
 //      myInp := inp
 //    }
 //  )
@@ -1378,19 +1378,19 @@ case class SnowHouseForFmaxPipeStageScoreboardIssue(
 //    scoreboard.io.issue.payload
 //  )
 //  //myOutp.tempUpMod
-//  cLink.down(pScoreboardIssueOutp) := myOutp
-//  cLink.down(pScoreboardIssueOutp).allowOverride
+//  cLink.down(pScoreboardCheckOutp) := myOutp
+//  cLink.down(pScoreboardCheckOutp).allowOverride
 //
 //  when (
 //    !scoreboard.io.issue.valid//fire
 //    //&& mySharedNonShouldIgnoreCond
 //  ) {
 //    cLink.duplicateIt()
-//    cLink.down(pScoreboardIssueOutp).setAsBubbleMain(
+//    cLink.down(pScoreboardCheckOutp).setAsBubbleMain(
 //      //!scoreboard.io.issue.cntOverflow
 //      Some(True)
 //    )
-//    cLink.down(pScoreboardIssueOutp).gprIdxVec.foreach(gprIdx => {
+//    cLink.down(pScoreboardCheckOutp).gprIdxVec.foreach(gprIdx => {
 //      gprIdx := 0x0
 //    })
 //    //myOutp.instrCnt.scoreboardTag := (
@@ -1410,7 +1410,7 @@ case class SnowHouseForFmaxPipeStageScoreboardIssue(
 //
 //  s2mLinkArr.last.down.driveTo(io.down)(
 //    con=(outp, node) => {
-//      outp := node(pScoreboardIssueOutp)
+//      outp := node(pScoreboardCheckOutp)
 //    }
 //  )
 //
