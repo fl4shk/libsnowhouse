@@ -4069,6 +4069,19 @@ case class SnowHouseForFmaxPipeStageWriteBack(
     myCommitFrontStmVec.head.last//head//last
   )
 
+  val myFwdCommitFrontFork = (
+    cfg.optScoreboard
+  ) generate (
+    StreamFork(
+      input=(
+        //myFwdCommitFrontStm
+        myCommitFrontStmVec.last.last
+      ),
+      portCount=2,
+      synchronous=true,
+    )
+  )
+
   val myTempNonFwdTag = (
     cfg.optScoreboard
   ) generate (
@@ -4195,6 +4208,7 @@ case class SnowHouseForFmaxPipeStageWriteBack(
     //    myCommitFrontStmVec.head(idx)
     //  )
     //}
+
     for (idx <- 0 until myCommitFrontStmVec.size) {
       //val myThrowCondVec = Vec.fill(
       //  myCommitFrontStmVec.size //- 1
@@ -4213,25 +4227,37 @@ case class SnowHouseForFmaxPipeStageWriteBack(
       //    }
       //  )
       //}
-      myCommitFrontStmVec.last(idx) << (
-        myCommitFrontStmVec.head(idx)
-        //.throwWhen(
-        //  myThrowCondVec.orR
-        //)
-      )
+      if (idx == 0) {
+        myCommitFrontStmVec.last(idx) << (
+          myCommitFrontStmVec.head(idx)
+        )
+      } else {
+        myCommitFrontStmVec.last(idx) << (
+          myCommitFrontStmVec.head(idx)
+          //myFwdCommitFrontFork.last
+        )
+      }
     }
   })
   val myCommitBackStm = (
-    if (cfg.optScoreboard) (
+    if (cfg.optScoreboard) {
+      val myTempFwdStm = cloneOf(myFwdCommitFrontFork.head)
+      myTempFwdStm <-< myFwdCommitFrontFork.head
+
       StreamArbiterFactory.lowerFirst.noLock.on(
-        myCommitFrontStmVec.last
+        //myCommitFrontStmVec.last
+        Vec(
+          myCommitFrontStmVec.last.head,
+          myTempFwdStm
+          //myFwdCommitFrontFork.head,
+        )
         //Vec(myCommitFrontStmVec.last.reverse)
       )
-    ) else (
+    } else {
       Stream(
         SnowHouseForFmaxPsWbReorderBufPayload(cfg=cfg)
       )
-    )
+    }
   )
   val myReorderBuf = (
     cfg.optScoreboard
@@ -4245,9 +4271,36 @@ case class SnowHouseForFmaxPipeStageWriteBack(
   //    myCommitBackStm
   //  )
   //)
-  val myCommitAlmostFinalOutpStm = (
+  val myCommitAlmostFinalFrontOutpStmVec = (
+    cfg.optScoreboard
+  ) generate (
+    Vec(
+      Vec(
+        myReorderBuf.io.pop.throwWhen(
+          myReorderBuf.io.pop.commit.opIsFwd
+        ),
+        myFwdCommitFrontFork.last,
+      ),
+      Vec(
+        cloneOf(myReorderBuf.io.pop),
+        cloneOf(myFwdCommitFrontFork.last),
+      )
+    )
+  )
+  if (cfg.optScoreboard) {
+    myCommitAlmostFinalFrontOutpStmVec.last.head <-< (
+      myCommitAlmostFinalFrontOutpStmVec.head.head
+    )
+    myCommitAlmostFinalFrontOutpStmVec.last.last <-< (
+      myCommitAlmostFinalFrontOutpStmVec.head.last
+    )
+  }
+  val myCommitAlmostFinalBackOutpStm = (
     if (cfg.optScoreboard) (
-      myReorderBuf.io.pop
+      //myReorderBuf.io.pop
+      StreamArbiterFactory.lowerFirst.noLock.on(
+        myCommitAlmostFinalFrontOutpStmVec.last
+      )
     ) else (
       myCommitBackStm
     )
@@ -4258,11 +4311,11 @@ case class SnowHouseForFmaxPipeStageWriteBack(
         //2
         1
       )(
-        cloneOf(myCommitAlmostFinalOutpStm)
+        cloneOf(myCommitAlmostFinalBackOutpStm)
       )
     ) else (
       Vec(
-        myCommitAlmostFinalOutpStm
+        myCommitAlmostFinalBackOutpStm
       )
     )
   )
@@ -4462,11 +4515,11 @@ case class SnowHouseForFmaxPipeStageWriteBack(
   io.commitEtc.myRegFileWrPulse.valid := (
     if (cfg.optScoreboard) (
       //myCommitBackStm.fire
-      myCommitAlmostFinalOutpStm.valid//fire//valid
+      myCommitAlmostFinalBackOutpStm.valid//fire//valid
       //myCommitTrueFinalOutpStmVec.last.fire//valid
     ) else (
       //myCommitBackStm.valid
-      myCommitAlmostFinalOutpStm.valid
+      myCommitAlmostFinalBackOutpStm.valid
     )
   )
   io.commitEtc.myRegFileWrPulse.payload := (
@@ -4474,9 +4527,9 @@ case class SnowHouseForFmaxPipeStageWriteBack(
     //myCommitAlmostFinalOutpStm.regFileWrite
     if (cfg.optScoreboard) (
       //myCommitTrueFinalOutpStmVec.last.regFileWrite
-      myCommitAlmostFinalOutpStm.regFileWrite
+      myCommitAlmostFinalBackOutpStm.regFileWrite
     ) else (
-      myCommitAlmostFinalOutpStm.regFileWrite
+      myCommitAlmostFinalBackOutpStm.regFileWrite
     )
   )
 
@@ -4484,7 +4537,7 @@ case class SnowHouseForFmaxPipeStageWriteBack(
     for (idx <- 0 until myCommitTrueFinalOutpStmVec.size) {
       if (idx == 0) {
         myCommitTrueFinalOutpStmVec(idx) <-< (
-          myCommitAlmostFinalOutpStm
+          myCommitAlmostFinalBackOutpStm
         )
       } else {
         myCommitTrueFinalOutpStmVec(idx) <-< (
@@ -5002,7 +5055,7 @@ case class SnowHouseForFmaxPipeStageWriteBack(
   if (!cfg.optScoreboard) {
     setCommitEtc(
       someMyWbPayload=myWbPayloadVec.head,
-      someCommitStm=myCommitAlmostFinalOutpStm,
+      someCommitStm=myCommitAlmostFinalBackOutpStm,
       //someRegFileWrPulseStm=myRegFileWrPulseOutpStm,
       isNonFwd=false,
       someMyShouldIgnoreInstrState=null,
@@ -5068,7 +5121,7 @@ case class SnowHouseForFmaxPipeStageWriteBack(
       io.dbgInfo != null
     ) generate (
       //someMyWbPayload(1).instrCnt.scoreboardCheckPayload.nonFwdTag
-      myCommitAlmostFinalOutpStm
+      myReorderBuf.io.pop
       .myWbPayload.instrCnt.scoreboardCheckPayload.nonBubbleTag
     )
     val myDbgHistNonBubbleTag = (
@@ -5076,7 +5129,7 @@ case class SnowHouseForFmaxPipeStageWriteBack(
     ) generate (
       History(
         that=myDbgTempNonBubbleTag,
-        when=myCommitAlmostFinalOutpStm.fire,
+        when=myReorderBuf.io.pop.fire,
         length=2,
         init=(
           U(s"${myDbgTempNonBubbleTag.getWidth}'d1")
@@ -5139,28 +5192,28 @@ case class SnowHouseForFmaxPipeStageWriteBack(
     //)
     when (
       //myCommitOutpStm.fire
-      myCommitAlmostFinalOutpStm.fire
+      myReorderBuf.io.pop.fire
     ) {
       io.dbgInfo.regFileWriteData := (
-        myCommitAlmostFinalOutpStm.regFileWrite.data
+        myReorderBuf.io.pop.regFileWrite.data
       )
       io.dbgInfo.regFileWriteAddr := (
-        myCommitAlmostFinalOutpStm.regFileWrite.addr
+        myReorderBuf.io.pop.regFileWrite.addr
       )
       io.dbgInfo.regFileWriteEnable := (
         if (cfg.optScoreboard) (
           (
-            myCommitAlmostFinalOutpStm.regFileWrite.addr =/= 0x0
+            myReorderBuf.io.pop.regFileWrite.addr =/= 0x0
           )
           && (
-            myCommitAlmostFinalOutpStm.fire
+            myReorderBuf.io.pop.fire
           )
         ) else (
-          myCommitAlmostFinalOutpStm.fire
+          myReorderBuf.io.pop.fire
         )
       )
       io.dbgInfo.laggingRegPcAtRegFileWrite := (
-        myCommitAlmostFinalOutpStm.myWbPayload.laggingRegPc.resize(
+        myReorderBuf.io.pop.myWbPayload.laggingRegPc.resize(
           cfg.mainWidth bits
         )
       )
@@ -5168,13 +5221,13 @@ case class SnowHouseForFmaxPipeStageWriteBack(
         if (cfg.optScoreboard) (
           (
             (
-              myCommitAlmostFinalOutpStm.myWbPayload
+              myReorderBuf.io.pop.myWbPayload
               .instrCnt.shouldIgnoreInstr.last
               || (
-                !myCommitAlmostFinalOutpStm.fire
+                !myReorderBuf.io.pop.fire
                 || (
-                  !myCommitAlmostFinalOutpStm.commit.nonFwdTag.orR
-                  && !myCommitAlmostFinalOutpStm.commit.fwdTag.orR
+                  !myReorderBuf.io.pop.commit.nonFwdTag.orR
+                  && !myReorderBuf.io.pop.commit.fwdTag.orR
                 )
               )
             )
@@ -5188,14 +5241,14 @@ case class SnowHouseForFmaxPipeStageWriteBack(
             )
           )
         ) else (
-          myCommitAlmostFinalOutpStm.myWbPayload
+          myReorderBuf.io.pop.myWbPayload
           .instrCnt.shouldIgnoreInstr.last
         )
       )
       io.dbgInfo.myPsIdBubbleAtRegFileWrite := (
         if (cfg.optScoreboard) {
           val myInstrCnt = (
-            myCommitAlmostFinalOutpStm.myWbPayload.instrCnt
+            myReorderBuf.io.pop.myWbPayload.instrCnt
           )
           (
             (
@@ -5213,10 +5266,10 @@ case class SnowHouseForFmaxPipeStageWriteBack(
               //|| myInstrCnt.myPsExMemAccessBubble.last
               //|| myInstrCnt.myPsExMultiCycleBubble.last
               || (
-                !myCommitAlmostFinalOutpStm.fire
+                !myReorderBuf.io.pop.fire
                 || (
-                  !myCommitAlmostFinalOutpStm.commit.nonFwdTag.orR
-                  && !myCommitAlmostFinalOutpStm.commit.fwdTag.orR
+                  !myReorderBuf.io.pop.commit.nonFwdTag.orR
+                  && !myReorderBuf.io.pop.commit.fwdTag.orR
                 )
               )
             )
@@ -5230,22 +5283,22 @@ case class SnowHouseForFmaxPipeStageWriteBack(
             )
           )
         } else {
-          myCommitAlmostFinalOutpStm.myWbPayload.instrCnt.myPsIdBubble.last
+          myReorderBuf.io.pop.myWbPayload.instrCnt.myPsIdBubble.last
         }
       )
-      when (myCommitAlmostFinalOutpStm.myWbPayload.encInstr.payload.orR) {
+      when (myReorderBuf.io.pop.myWbPayload.encInstr.payload.orR) {
         io.dbgInfo.encInstrAtRegFileWrite := (
-          myCommitAlmostFinalOutpStm.myWbPayload.encInstr.payload
+          myReorderBuf.io.pop.myWbPayload.encInstr.payload
         )
       }
       io.dbgInfo.immAtRegFileWrite := (
-        myCommitAlmostFinalOutpStm.myWbPayload.imm.last
+        myReorderBuf.io.pop.myWbPayload.imm.last
       )
       io.dbgInfo.rdMemWordAtRegFileWrite := (
-        myCommitAlmostFinalOutpStm.myWbPayload.myExt(0).rdMemWord
+        myReorderBuf.io.pop.myWbPayload.myExt(0).rdMemWord
       )
       io.dbgInfo.gprIdxVecAtRegFileWrite := (
-        myCommitAlmostFinalOutpStm.myWbPayload.gprIdxVec
+        myReorderBuf.io.pop.myWbPayload.gprIdxVec
       )
     } otherwise {
       if (cfg.optScoreboard) {
