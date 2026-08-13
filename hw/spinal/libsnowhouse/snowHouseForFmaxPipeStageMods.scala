@@ -3316,8 +3316,7 @@ case class SnowHouseForFmaxPipeStageWriteBack(
     depth=(
       //4
       //2
-      //1
-      4
+      1
     ),
     latency=0,
     forFMax=true
