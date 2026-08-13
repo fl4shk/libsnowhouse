@@ -3782,14 +3782,15 @@ case class SnowHouseForFmaxPipeStageWriteBack(
           cloneOf(myFwdCommitFrontFinalStm.last.payload)
         ),
         depth=(
-          1
-          //4
+          //1
+          4
           //8
           //16
         ),
         latency=(
           //2
-          1
+          //1
+          0
         ),
         forFMax=true,
       )
@@ -4028,6 +4029,7 @@ case class SnowHouseForFmaxPipeStageWriteBack(
     //    outp.most := inp.most
     //  }
     //)
+
     myFwdReorderBufPushFifoArr.last.io.pop.translateInto(
       myCommitAlmostFinalFrontOutpStmVec.head.last
     )(
