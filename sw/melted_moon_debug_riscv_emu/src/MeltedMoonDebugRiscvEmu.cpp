@@ -1388,7 +1388,7 @@ void MeltedMoonDebugRiscvEmu::_bus_write(
         } else {
             if (
                 temp_addr == ADDR_FB_END
-                && byte_count == sizeof(u16)
+                && byte_count == sizeof(u8)//sizeof(u16)
             ) {
                 _my_exec_one_instr_ret.sw_wrote_to_fb_end = (
                     &_mem[ADDR_FB_START]

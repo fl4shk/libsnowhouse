@@ -138,20 +138,38 @@ int main(int argc, char** argv) {
                     //    screen_palette[(my_screen_buf[k] * 3u) + 2u]
                     //    | 0x7u
                     //);
-                    u16* item = (u16*)(*fb_start) + k;
-                    const u32 r = (
-                        ((((*item) >> 0) & 0x1f) << 3) | 0x7
+                    u8* pal_idx = (u8*)(*fb_start) + k;
+                    u32* item = (
+                        (u32*)(
+                            (*fb_start)
+                            + (
+                                MeltedMoonDebugRiscvEmu::ADDR_PAL_START
+                                - MeltedMoonDebugRiscvEmu::ADDR_FB_START
+                            )
+                        )
+                        + (*pal_idx)
                     );
-                    const u32 g = (
-                        ((((*item) >> 5) & 0x1f) << 3) | 0x7
-                    );
-                    const u32 b = (
-                        ((((*item) >> 10) & 0x1f) << 3) | 0x7
-                    );
+
+
+                    //u16* item = (u16*)(*fb_start) + k;
+                    //const u32 r = (
+                    //    ((((*item) >> 0) & 0x1f) << 3) | 0x7
+                    //);
+                    //const u32 g = (
+                    //    ((((*item) >> 5) & 0x1f) << 3) | 0x7
+                    //);
+                    //const u32 b = (
+                    //    ((((*item) >> 10) & 0x1f) << 3) | 0x7
+                    //);
+                    //pixels[l] = (
+                    //    ((r & 0xffu) << 16u)
+                    //    | ((g & 0xffu) << 8u)
+                    //    | ((b & 0xffu) << 0u)
+                    //);
                     pixels[l] = (
-                        ((r & 0xffu) << 16u)
-                        | ((g & 0xffu) << 8u)
-                        | ((b & 0xffu) << 0u)
+                        (((*item) & 0xffu) << 16u)
+                        | ((((*item) >> 8) & 0xffu) << 8u)
+                        | ((((*item) >> 16) & 0xffu) << 0u)
                     );
                 }
             }
