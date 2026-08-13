@@ -1373,8 +1373,8 @@ case class SnowHouseForFmaxPipeStageScoreboardCheck(
 //  //myOutp.instrCnt.scoreboardTag := (
 //  //  scoreboard.io.issue.tag
 //  //)
-//  myOutp.instrCnt.scoreboardIssuePayload.allowOverride
-//  myOutp.instrCnt.scoreboardIssuePayload := (
+//  myOutp.instrCnt.scoreboardCheckPayload.allowOverride
+//  myOutp.instrCnt.scoreboardCheckPayload := (
 //    scoreboard.io.issue.payload
 //  )
 //  //myOutp.tempUpMod
@@ -4072,28 +4072,28 @@ case class SnowHouseForFmaxPipeStageWriteBack(
   val myTempNonFwdTag = (
     cfg.optScoreboard
   ) generate (
-    myNonFwdWbPayload(1).instrCnt.scoreboardIssuePayload.nonFwdTag
+    myNonFwdWbPayload(1).instrCnt.scoreboardCheckPayload.nonFwdTag
   )
   val myTempFwdTag = (
     cfg.optScoreboard
   ) generate (
-    myFwdWbPayload(1).instrCnt.scoreboardIssuePayload.fwdTag
+    myFwdWbPayload(1).instrCnt.scoreboardCheckPayload.fwdTag
   )
   val myTempNonBubbleTag = (
     cfg.optScoreboard
   ) generate (
-    myFwdWbPayload(1).instrCnt.scoreboardIssuePayload.nonBubbleTag
+    myFwdWbPayload(1).instrCnt.scoreboardCheckPayload.nonBubbleTag
   )
   val myTempNonBubbleNonFwdTag = (
     cfg.optScoreboard
   ) generate (
-    myNonFwdWbPayload(1).instrCnt.scoreboardIssuePayload
+    myNonFwdWbPayload(1).instrCnt.scoreboardCheckPayload
     .nonBubbleNonFwdTag
   )
   val myTempNonBubbleFwdTag = (
     cfg.optScoreboard
   ) generate (
-    myFwdWbPayload(1).instrCnt.scoreboardIssuePayload
+    myFwdWbPayload(1).instrCnt.scoreboardCheckPayload
     .nonBubbleFwdTag
   )
   val myHistNonFwdTag = (
@@ -4295,7 +4295,7 @@ case class SnowHouseForFmaxPipeStageWriteBack(
       )
     ) {
       myPostFlushReorderBufIdx := (
-        io.up.instrCnt.scoreboardIssuePayload.reorderBufIdx
+        io.up.instrCnt.scoreboardCheckPayload.reorderBufIdx
       )
     }
     
@@ -4308,10 +4308,10 @@ case class SnowHouseForFmaxPipeStageWriteBack(
         //|| io.up.instrCnt.myPsIdFwdBubble(1)
       )
       //&& (
-      //  io.up.instrCnt.scoreboardIssuePayload.nonBubbleTag
+      //  io.up.instrCnt.scoreboardCheckPayload.nonBubbleTag
       //  =/= (
       //    RegNextWhen(
-      //      io.up.instrCnt.scoreboardIssuePayload.nonBubbleTag,
+      //      io.up.instrCnt.scoreboardCheckPayload.nonBubbleTag,
       //      cond=io.up.fire,
       //      init=({
       //        val myWidth = cfg.optScoreboardTagWidth
@@ -4337,10 +4337,10 @@ case class SnowHouseForFmaxPipeStageWriteBack(
       && !io.up.instrCnt.myPsIdFwdBubble(1)
     )
     io.commitEtc.scoreboardBubbleRetire.fwdTag := (
-      io.up.instrCnt.scoreboardIssuePayload.fwdTag
+      io.up.instrCnt.scoreboardCheckPayload.fwdTag
     )
     io.commitEtc.scoreboardBubbleRetire.nonFwdTag := (
-      io.up.instrCnt.scoreboardIssuePayload.nonFwdTag
+      io.up.instrCnt.scoreboardCheckPayload.nonFwdTag
     )
     io.commitEtc.scoreboardBubbleRetire.gprIdxVec.last := (
       io.up.gprIdxVec.last
@@ -4354,7 +4354,7 @@ case class SnowHouseForFmaxPipeStageWriteBack(
     //}
     //val myTempReorderBufIdx = (
     //  myCommitBackStm.myWbPayload
-    //  .instrCnt.scoreboardIssuePayload.reorderBufIdx
+    //  .instrCnt.scoreboardCheckPayload.reorderBufIdx
     //)
 
     val myTempCommitStm = (
@@ -4582,7 +4582,7 @@ case class SnowHouseForFmaxPipeStageWriteBack(
       //  someMyWbPayload(1).splitOp.scoreboardOpIsMemAccess
       //)
       someCommitStm.reorderBufIdx := (
-        someMyWbPayload(1).instrCnt.scoreboardIssuePayload.reorderBufIdx
+        someMyWbPayload(1).instrCnt.scoreboardCheckPayload.reorderBufIdx
       )
       //someCommitStm.postFlushReorderBufIdx := (
       //  //someMyWbPayload(1)
@@ -5067,9 +5067,9 @@ case class SnowHouseForFmaxPipeStageWriteBack(
     val myDbgTempNonBubbleTag = (
       io.dbgInfo != null
     ) generate (
-      //someMyWbPayload(1).instrCnt.scoreboardIssuePayload.nonFwdTag
+      //someMyWbPayload(1).instrCnt.scoreboardCheckPayload.nonFwdTag
       myCommitAlmostFinalOutpStm
-      .myWbPayload.instrCnt.scoreboardIssuePayload.nonBubbleTag
+      .myWbPayload.instrCnt.scoreboardCheckPayload.nonBubbleTag
     )
     val myDbgHistNonBubbleTag = (
       io.dbgInfo != null
@@ -5092,16 +5092,16 @@ case class SnowHouseForFmaxPipeStageWriteBack(
     //val myDbgTempNonFwdTag = (
     //  io.dbgInfo != null
     //) generate (
-    //  //someMyWbPayload(1).instrCnt.scoreboardIssuePayload.nonFwdTag
+    //  //someMyWbPayload(1).instrCnt.scoreboardCheckPayload.nonFwdTag
     //  myCommitAlmostFinalOutpStm
-    //  .myWbPayload.instrCnt.scoreboardIssuePayload.nonFwdTag
+    //  .myWbPayload.instrCnt.scoreboardCheckPayload.nonFwdTag
     //)
     //val myDbgTempFwdTag = (
     //  io.dbgInfo != null
     //) generate (
-    //  //someMyWbPayload(1).instrCnt.scoreboardIssuePayload.fwdTag
+    //  //someMyWbPayload(1).instrCnt.scoreboardCheckPayload.fwdTag
     //  myCommitAlmostFinalOutpStm
-    //  .myWbPayload.instrCnt.scoreboardIssuePayload.fwdTag
+    //  .myWbPayload.instrCnt.scoreboardCheckPayload.fwdTag
     //)
     //val myDbgHistNonFwdTag = (
     //  io.dbgInfo != null

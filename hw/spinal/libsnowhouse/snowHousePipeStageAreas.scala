@@ -1969,14 +1969,14 @@ case class SnowHousePipeStageInstrDecode(
     //    item := myInFlushCond.get
     //  })
     //  //when (!myInFlushCond.get) {
-    //    down(pId).instrCnt.scoreboardIssuePayload.fwdTag := 0x0
-    //    down(pId).instrCnt.scoreboardIssuePayload.nonFwdTag := 0x0
+    //    down(pId).instrCnt.scoreboardCheckPayload.fwdTag := 0x0
+    //    down(pId).instrCnt.scoreboardCheckPayload.nonFwdTag := 0x0
     //  //} otherwise {
-    //  //  down(pId).instrCnt.scoreboardIssuePayload.fwdTag := (
-    //  //    upPayload(1).instrCnt.scoreboardIssuePayload.fwdTag
+    //  //  down(pId).instrCnt.scoreboardCheckPayload.fwdTag := (
+    //  //    upPayload(1).instrCnt.scoreboardCheckPayload.fwdTag
     //  //  )
-    //  //  down(pId).instrCnt.scoreboardIssuePayload.nonFwdTag := (
-    //  //    upPayload(1).instrCnt.scoreboardIssuePayload.nonFwdTag
+    //  //  down(pId).instrCnt.scoreboardCheckPayload.nonFwdTag := (
+    //  //    upPayload(1).instrCnt.scoreboardCheckPayload.nonFwdTag
     //  //  )
     //  //}
     //}
@@ -2349,16 +2349,16 @@ case class SnowHousePipeStageScoreboardCheck(
       //when (!myInFlushCond.get) {
         down(
           pScoreboardCheck
-        ).instrCnt.scoreboardIssuePayload.fwdTag := 0x0
+        ).instrCnt.scoreboardCheckPayload.fwdTag := 0x0
         down(
           pScoreboardCheck
-        ).instrCnt.scoreboardIssuePayload.nonFwdTag := 0x0
+        ).instrCnt.scoreboardCheckPayload.nonFwdTag := 0x0
       //} otherwise {
-      //  down(pScoreboardCheck).instrCnt.scoreboardIssuePayload.fwdTag := (
-      //    upPayload(1).instrCnt.scoreboardIssuePayload.fwdTag
+      //  down(pScoreboardCheck).instrCnt.scoreboardCheckPayload.fwdTag := (
+      //    upPayload(1).instrCnt.scoreboardCheckPayload.fwdTag
       //  )
-      //  down(pScoreboardCheck).instrCnt.scoreboardIssuePayload.nonFwdTag := (
-      //    upPayload(1).instrCnt.scoreboardIssuePayload.nonFwdTag
+      //  down(pScoreboardCheck).instrCnt.scoreboardCheckPayload.nonFwdTag := (
+      //    upPayload(1).instrCnt.scoreboardCheckPayload.nonFwdTag
       //  )
       //}
     }
@@ -2402,10 +2402,10 @@ case class SnowHousePipeStageScoreboardCheck(
   myScoreboardBubbleRetireStm.ready := True
 
   def myTempNonFwdTag = (
-    upPayload(1).instrCnt.scoreboardIssuePayload.nonFwdTag
+    upPayload(1).instrCnt.scoreboardCheckPayload.nonFwdTag
   )
   def myTempFwdTag = (
-    upPayload(1).instrCnt.scoreboardIssuePayload.fwdTag
+    upPayload(1).instrCnt.scoreboardCheckPayload.fwdTag
   )
 
   myTempNonFwdTag := (
@@ -2571,10 +2571,10 @@ case class SnowHousePipeStageScoreboardCheck(
   //  //def fire = valid
   //  val opIsFwd = Bool()
   //  val nonFwdTag = (
-  //    cloneOf(upPayload(1).instrCnt.scoreboardIssuePayload.nonFwdTag)
+  //    cloneOf(upPayload(1).instrCnt.scoreboardCheckPayload.nonFwdTag)
   //  )
   //  val fwdTag = (
-  //    cloneOf(upPayload(1).instrCnt.scoreboardIssuePayload.fwdTag)
+  //    cloneOf(upPayload(1).instrCnt.scoreboardCheckPayload.fwdTag)
   //  )
   //  //val gprIdxVec = Vec.fill(
   //  //  cfg.maxNumGprsPerInstr
@@ -3518,7 +3518,7 @@ case class SnowHousePipeStagePreFwd(
     //val myTempReorderBufIdx = (
     //  cfg.optScoreboard
     //) generate (
-    //  outp.instrCnt.scoreboardIssuePayload.reorderBufIdx
+    //  outp.instrCnt.scoreboardCheckPayload.reorderBufIdx
     //)
 
     //if (cfg.optScoreboard) {
@@ -5965,7 +5965,7 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
   )
   if (cfg.optScoreboard) {
     io.psExSetPc.reorderBufIdx := (
-      io.instrCnt.scoreboardIssuePayload.reorderBufIdx
+      io.instrCnt.scoreboardCheckPayload.reorderBufIdx
     )
   }
   io.psExSetPc.branchTgtBufElem.srcRegPc := (
@@ -11943,23 +11943,23 @@ case class SnowHousePipeStageExecute(
     val myNonBubbleTag = (
       cfg.optScoreboard
     ) generate (
-      outp.instrCnt.scoreboardIssuePayload.nonBubbleTag
+      outp.instrCnt.scoreboardCheckPayload.nonBubbleTag
     )
     val myNonBubbleNonFwdTag = (
       cfg.optScoreboard
     ) generate (
-      outp.instrCnt.scoreboardIssuePayload.nonBubbleNonFwdTag
+      outp.instrCnt.scoreboardCheckPayload.nonBubbleNonFwdTag
     )
     val myNonBubbleFwdTag = (
       cfg.optScoreboard
     ) generate (
-      outp.instrCnt.scoreboardIssuePayload.nonBubbleFwdTag
+      outp.instrCnt.scoreboardCheckPayload.nonBubbleFwdTag
     )
 
     val myTempReorderBufIdx = (
       cfg.optScoreboard
     ) generate (
-      outp.instrCnt.scoreboardIssuePayload.reorderBufIdx
+      outp.instrCnt.scoreboardCheckPayload.reorderBufIdx
     )
     if (cfg.optScoreboard) {
       //myTempReorderBufIdx := myNonBubbleTag

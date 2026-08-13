@@ -1577,13 +1577,13 @@ case class SnowHouseInstrCnt(
   //    bits
   //  )
   //)
-  val scoreboardIssuePayload = (
+  val scoreboardCheckPayload = (
     cfg.optScoreboard
   ) generate (
     SnowHouseScoreboardCheckPayload(cfg=cfg)
   )
-  //def scoreboardTag = scoreboardIssuePayload.tag
-  //def scoreboardIssueCntOverflow = scoreboardIssuePayload.cntOverflow
+  //def scoreboardTag = scoreboardCheckPayload.tag
+  //def scoreboardCheckCntOverflow = scoreboardCheckPayload.cntOverflow
   val myScoreboardOpMayNeedHazardCheck = (
     cfg.optScoreboard
   ) generate (
