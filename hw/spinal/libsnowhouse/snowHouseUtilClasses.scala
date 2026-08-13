@@ -1152,21 +1152,26 @@ case class SnowHouseConfig(
 
   val optScoreboardReorderBufWidth = (
     //log2Up(optMaxNumScoreboardInstrs + 1)
-    (log2Up(myPsIdBubbleNumFollowingInstrs + 1) + 1).max(
-      log2Up(
-        //16
-        //64
-        //32
-        //1 << (log2Up(numGprs) + 1)
-        //(1 << log2Up(numGprs)).max(16)
-        //(1 << (log2Up(numGprs) - 1)).max(16)
-        //64
-        //8
-        16
-        //32
-      )
-    )
+    //(log2Up(myPsIdBubbleNumFollowingInstrs + 1) + 1).max(
+    //  log2Up(
+    //    //16
+    //    //64
+    //    //32
+    //    //1 << (log2Up(numGprs) + 1)
+    //    //(1 << log2Up(numGprs)).max(16)
+    //    //(1 << (log2Up(numGprs) - 1)).max(16)
+    //    //64
+    //    //8
+    //    16
+    //    //32
+    //  )
+    //)
+    log2Up(16)
   )
+  //val optScoreboardReorderBufArrSize = (
+  //  4
+  //  //1
+  //)
   val optScoreboardTagWidth = (
     //6
     //optScoreboardReorderBufWidth
