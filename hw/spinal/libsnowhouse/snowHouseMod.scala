@@ -2258,9 +2258,9 @@ private[libsnowhouse] case class SnowHouseForFmax(
           rdMemWord: UInt,
           upIsFiring: Bool,
           myExternalInpCond: Bool,
-          wrPulse: Flow[
+          wrPulseVec: Vec[Flow[
             PipeSimpleDualPortMemDrivePayload[UInt]
-          ],
+          ]],
         ) => {
           outp := inp
           outp.myExt(0).rdMemWord(idx).allowOverride

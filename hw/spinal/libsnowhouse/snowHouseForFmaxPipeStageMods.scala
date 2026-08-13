@@ -2204,11 +2204,11 @@ case class SnowHouseForFmaxPsWbReorderBuf(
           rdMemWord: SnowHouseForFmaxPsWbReorderBufPayload,
           upIsFiring: Bool,
           myExternalInpCond: Bool,
-          wrPulse: Flow[
+          wrPulseVec: Vec[Flow[
             PipeSimpleDualPortMemDrivePayload[
               SnowHouseForFmaxPsWbReorderBufPayload
             ]
-          ],
+          ]],
         ) => {
           outp.reorderBufIdx := inp.reorderBufIdx
           //outp.most := rdMemWord.most
@@ -2237,7 +2237,7 @@ case class SnowHouseForFmaxPsWbReorderBuf(
           //)
           switch (
             (
-              wrPulse.fire
+              wrPulseVec.head.fire
               //&& (
               //  rMyShouldIgnoreInstrState.asBits(0)
               //  || (
@@ -2246,16 +2246,16 @@ case class SnowHouseForFmaxPsWbReorderBuf(
               //  )
               //)
               && myExternalInpCond
-              && wrPulse.addr === inp.reorderBufIdx
+              && wrPulseVec.head.addr === inp.reorderBufIdx
             )
             ## (
               RegNextWhen(
-                wrPulse.addr,
+                wrPulseVec.head.addr,
                 cond=(
-                  wrPulse.fire
+                  wrPulseVec.head.fire
                   && myExternalInpCond
                 ),
-                init=wrPulse.addr.getZero
+                init=wrPulseVec.head.addr.getZero
               ) === inp.reorderBufIdx
               //&& myExternalInpCond
             )
@@ -2266,7 +2266,7 @@ case class SnowHouseForFmaxPsWbReorderBuf(
           ) {
             is (M"1-") {
               outp.most := (
-                wrPulse.data.most
+                wrPulseVec.head.data.most
                 //myHistWrPulseEtc(0).data.most
               )
               //outp.reorderBufIdx := (
@@ -2289,12 +2289,12 @@ case class SnowHouseForFmaxPsWbReorderBuf(
                 //  init=wrPulse.data.most.getZero
                 //)
                 RegNextWhen(
-                  wrPulse.data.most,
+                  wrPulseVec.head.data.most,
                   cond=(
-                    wrPulse.fire
+                    wrPulseVec.head.fire
                     && myExternalInpCond
                   ),
-                  init=wrPulse.data.most.getZero
+                  init=wrPulseVec.head.data.most.getZero
                 )
               )
             }
