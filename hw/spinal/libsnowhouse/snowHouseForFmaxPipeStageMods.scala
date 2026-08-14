@@ -2871,7 +2871,7 @@ case class SnowHouseForFmaxPsWbReorderBuf(
               //## myTempEarlyCommit(idx)
               ## (myTempValid & myTempEarlyCommit)
             ) {
-              is (M"---01") {
+              is (M"-----01") {
                 if (mySwitchIdx == mySwitchIdxRdAddr) {
                   doIncr(1)
                 } else {
@@ -2881,7 +2881,7 @@ case class SnowHouseForFmaxPsWbReorderBuf(
                   rValidVec(mkIncrIdx(0)) := False
                 }
               }
-              is (M"--011") {
+              is (M"----011") {
                 if (mySwitchIdx == mySwitchIdxRdAddr) {
                   doIncr(2)
                 } else {
@@ -2895,7 +2895,7 @@ case class SnowHouseForFmaxPsWbReorderBuf(
                   rValidVec(mkIncrIdx(1)) := False
                 }
               }
-              is (M"-0111") {
+              is (M"---0111") {
                 if (mySwitchIdx == mySwitchIdxRdAddr) {
                   doIncr(3)
                 } else {
@@ -2913,7 +2913,7 @@ case class SnowHouseForFmaxPsWbReorderBuf(
                   rValidVec(mkIncrIdx(2)) := False
                 }
               }
-              is (M"-1111") {
+              is (M"--01111") {
                 if (mySwitchIdx == mySwitchIdxRdAddr) {
                   doIncr(4)
                 } else {
@@ -2935,7 +2935,57 @@ case class SnowHouseForFmaxPsWbReorderBuf(
                   rValidVec(mkIncrIdx(3)) := False
                 }
               }
-              is (M"1---0") {
+              is (M"-011111") {
+                if (mySwitchIdx == mySwitchIdxRdAddr) {
+                  doIncr(5)
+                } else {
+                  //rEarlyCommitVec(jdx)(idx) := False
+                  //rEarlyCommitVec(jdx)(idx + 1) := False
+                  //rEarlyCommitVec(jdx)(idx + 2) := False
+                  //rEarlyCommitVec(jdx)(idx + 3) := False
+                  //rValidVec(myValidVecBaseJdx + idx) := False
+                  //rValidVec(myValidVecBaseJdx + idx + 1) := False
+                  //rValidVec(myValidVecBaseJdx + idx + 2) := False
+                  //rValidVec(myValidVecBaseJdx + idx + 3) := False
+                  rEarlyCommitVec(mkIncrIdx(0)) := False
+                  rEarlyCommitVec(mkIncrIdx(1)) := False
+                  rEarlyCommitVec(mkIncrIdx(2)) := False
+                  rEarlyCommitVec(mkIncrIdx(3)) := False
+                  rEarlyCommitVec(mkIncrIdx(4)) := False
+                  rValidVec(mkIncrIdx(0)) := False
+                  rValidVec(mkIncrIdx(1)) := False
+                  rValidVec(mkIncrIdx(2)) := False
+                  rValidVec(mkIncrIdx(3)) := False
+                  rValidVec(mkIncrIdx(4)) := False
+                }
+              }
+              is (M"-111111") {
+                if (mySwitchIdx == mySwitchIdxRdAddr) {
+                  doIncr(6)
+                } else {
+                  //rEarlyCommitVec(jdx)(idx) := False
+                  //rEarlyCommitVec(jdx)(idx + 1) := False
+                  //rEarlyCommitVec(jdx)(idx + 2) := False
+                  //rEarlyCommitVec(jdx)(idx + 3) := False
+                  //rValidVec(myValidVecBaseJdx + idx) := False
+                  //rValidVec(myValidVecBaseJdx + idx + 1) := False
+                  //rValidVec(myValidVecBaseJdx + idx + 2) := False
+                  //rValidVec(myValidVecBaseJdx + idx + 3) := False
+                  rEarlyCommitVec(mkIncrIdx(0)) := False
+                  rEarlyCommitVec(mkIncrIdx(1)) := False
+                  rEarlyCommitVec(mkIncrIdx(2)) := False
+                  rEarlyCommitVec(mkIncrIdx(3)) := False
+                  rEarlyCommitVec(mkIncrIdx(4)) := False
+                  rEarlyCommitVec(mkIncrIdx(5)) := False
+                  rValidVec(mkIncrIdx(0)) := False
+                  rValidVec(mkIncrIdx(1)) := False
+                  rValidVec(mkIncrIdx(2)) := False
+                  rValidVec(mkIncrIdx(3)) := False
+                  rValidVec(mkIncrIdx(4)) := False
+                  rValidVec(mkIncrIdx(5)) := False
+                }
+              }
+              is (M"1-----0") {
                 if (mySwitchIdx == mySwitchIdxRdAddr) {
                   doIncr(1)
                 } else {
