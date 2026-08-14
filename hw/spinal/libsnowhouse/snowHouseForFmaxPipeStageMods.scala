@@ -2870,7 +2870,7 @@ case class SnowHouseForFmaxPsWbReorderBuf(
                     doIncr(1)
                   } else {
                     rEarlyCommitVec(jdx)(idx) := False
-                    rValidVec(myValidVecBaseJdx) := False
+                    rValidVec(myValidVecBaseJdx + idx) := False
                   }
                 }
                 is (M"-0011") {
@@ -2879,8 +2879,8 @@ case class SnowHouseForFmaxPsWbReorderBuf(
                   } else {
                     rEarlyCommitVec(jdx)(idx) := False
                     rEarlyCommitVec(jdx)(idx + 1) := False
-                    rValidVec(myValidVecBaseJdx) := False
-                    rValidVec(myValidVecBaseJdx + 1) := False
+                    rValidVec(myValidVecBaseJdx + idx) := False
+                    rValidVec(myValidVecBaseJdx + idx + 1) := False
                   }
                 }
                 is (M"-0111") {
@@ -2890,9 +2890,9 @@ case class SnowHouseForFmaxPsWbReorderBuf(
                     rEarlyCommitVec(jdx)(idx) := False
                     rEarlyCommitVec(jdx)(idx + 1) := False
                     rEarlyCommitVec(jdx)(idx + 2) := False
-                    rValidVec(myValidVecBaseJdx) := False
-                    rValidVec(myValidVecBaseJdx + 1) := False
-                    rValidVec(myValidVecBaseJdx + 2) := False
+                    rValidVec(myValidVecBaseJdx + idx) := False
+                    rValidVec(myValidVecBaseJdx + idx + 1) := False
+                    rValidVec(myValidVecBaseJdx + idx + 2) := False
                   }
                 }
                 is (M"-1111") {
@@ -2903,10 +2903,10 @@ case class SnowHouseForFmaxPsWbReorderBuf(
                     rEarlyCommitVec(jdx)(idx + 1) := False
                     rEarlyCommitVec(jdx)(idx + 2) := False
                     rEarlyCommitVec(jdx)(idx + 3) := False
-                    rValidVec(myValidVecBaseJdx) := False
-                    rValidVec(myValidVecBaseJdx + 1) := False
-                    rValidVec(myValidVecBaseJdx + 2) := False
-                    rValidVec(myValidVecBaseJdx + 3) := False
+                    rValidVec(myValidVecBaseJdx + idx) := False
+                    rValidVec(myValidVecBaseJdx + idx + 1) := False
+                    rValidVec(myValidVecBaseJdx + idx + 2) := False
+                    rValidVec(myValidVecBaseJdx + idx + 3) := False
                   }
                 }
                 is (M"1---0") {
