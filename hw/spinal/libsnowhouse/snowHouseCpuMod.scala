@@ -3655,6 +3655,29 @@ case class SnowHouseCpuConfig(
   )
   val pipeName="SnowHouseCpu"
   //--------
+  val optForFmaxCfg = Some(
+    SnowHouseForFmaxConfig(
+      numPostExPreWbPipeStages=(
+        1
+      ),
+      optScoreboard=true,
+      //optMaxNumScoreboardInstrs=(
+      //  //None
+      //  Some(
+      //    //6
+      //    8
+      //    //4
+      //    //2
+      //    //1
+      //    //32
+      //    //8
+      //  )
+      //),
+      //optDualIssue=(
+      //  false
+      //),
+    )
+  )
   val shCfg = SnowHouseConfig(
     haveZeroReg=Some(0),
     irqCfg=(
@@ -3763,6 +3786,7 @@ case class SnowHouseCpuConfig(
             regFileMemRamStyleXilinx
           ),
         ),
+        optScoreboard=optForFmaxCfg.get.optScoreboard,
         haveIcache=true,
         icacheDepthWords=icacheDepthWords,
         icacheLineSizeBytes=icacheLineSizeBytes,
@@ -3800,29 +3824,7 @@ case class SnowHouseCpuConfig(
       myIrqJmpOp
     },
     //optForFmaxPostNumPostExPreWbPipeStages=None,
-    optForFmaxCfg=Some(
-      SnowHouseForFmaxConfig(
-        numPostExPreWbPipeStages=(
-          1
-        ),
-        optScoreboard=true,
-        //optMaxNumScoreboardInstrs=(
-        //  //None
-        //  Some(
-        //    //6
-        //    8
-        //    //4
-        //    //2
-        //    //1
-        //    //32
-        //    //8
-        //  )
-        //),
-        //optDualIssue=(
-        //  false
-        //),
-      )
-    ),
+    optForFmaxCfg=optForFmaxCfg,
     optShiftRegPcImmAddend=true,
     //irqRetIraOp={
     //  var myIrqRetIraOp: Int = 0x0

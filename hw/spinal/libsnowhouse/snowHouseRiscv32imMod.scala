@@ -1790,7 +1790,9 @@ case class SnowHouseRiscv32imConfig(
   ),
 ) {
   //--------
-  val instrMainWidth = 32
+  val instrMainWidth = (
+    32
+  )
   val mainWidth = (
     32
     //16
@@ -1913,6 +1915,14 @@ case class SnowHouseRiscv32imConfig(
             regFileMemRamStyleXilinx
           ),
         ),
+        optScoreboard=optForFmaxCfg match {
+          case Some(forFmaxCfg) => {
+            forFmaxCfg.optScoreboard,
+          }
+          case None => {
+            false
+          }
+        },
         haveIcache=true,
         icacheDepthWords=icacheDepthWords,
         icacheNumWays=icacheNumWays,
@@ -3634,9 +3644,25 @@ case class SnowHouseRiscv32imWithDuplDualRam(
     tempArr
   }
 
+  val myLcvIbusEtcCfg = cfg.shCfg.subCfg.lcvIbusEtcCfg.hiBusCfg
+
+  val myInstrDwAdapter = LcvBusSimpleReadBurstOnlyDataWidthAdapter(
+    cfg=LcvBusDataWidthAdapterConfig(
+      loBusMainCfg=myLcvIbusEtcCfg.mainCfg,
+      hiBusDataWidth=cfg.shCfg.mainWidth,
+      loBusCacheCfg=myLcvIbusEtcCfg.cacheCfg,
+      hiBusCacheCfg=myLcvIbusEtcCfg.cacheCfg,
+    )
+  )
   val myInstrMem = LcvBusMem(
     cfg=LcvBusMemConfig(
-      busCfg=cfg.shCfg.subCfg.lcvIbusEtcCfg.hiBusCfg,
+      busCfg=(
+        //cfg.shCfg.subCfg.lcvIbusEtcCfg.hiBusCfg
+        //LcvBusConfig(
+        //  mainCfg
+        //)
+        myInstrDwAdapter.cfg.hiBusCfg
+      ),
       depth=myMemDepth,
       initBigInt=Some(myMemInitBigInt),
     )
@@ -3671,7 +3697,11 @@ case class SnowHouseRiscv32imWithDuplDualRam(
     }
   )
   cpu.io.lcvIbus.d2hBus << icache.io.loBus.d2hBus
-  myInstrMem.io.bus <-/< icache.io.hiBus 
+
+
+  //myInstrMem.io.bus <-/< icache.io.hiBus 
+  myInstrDwAdapter.io.loBus <-/< icache.io.hiBus
+  myInstrMem.io.bus <-/< myInstrDwAdapter.io.hiBus
 
   cpu.io.lcvDbus.h2dBus.translateInto(dcache.io.loBus.h2dBus)(
     dataAssignment=(outp, inp) => {

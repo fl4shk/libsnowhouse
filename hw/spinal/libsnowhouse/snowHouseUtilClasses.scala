@@ -313,6 +313,7 @@ case class SnowHouseSubConfig(
   instrMainWidth: Int,
   optMainAddrWidth: Option[Int],
   shRegFileCfg: SnowHouseRegFileConfig,
+  optScoreboard: Boolean,
   //haveIcache: Boolean=false,
   //--------
   //srcWidth: Int=1,
@@ -391,8 +392,12 @@ case class SnowHouseSubConfig(
   val lcvIbusMainCfg = (
     LcvBusMainConfig(
       dataWidth=(
-        //instrMainWidth
-        shRegFileCfg.mainWidth
+        if (optScoreboard) (
+          instrMainWidth * 2 // dual-issue
+        ) else (
+          instrMainWidth
+        )
+        //shRegFileCfg.mainWidth
       ),
       addrWidth=shRegFileCfg.mainWidth,
       allowBurst=false,
@@ -2260,7 +2265,34 @@ case class SnowHousePipePayloadNonExt(
 case class SnowHousePipePayload(
   cfg: SnowHouseConfig,
 ) extends Bundle with PipeRegFilePayloadBase[UInt, Bool] {
-  val nonExt = SnowHousePipePayloadNonExt(cfg=cfg)
+  val mySomeExtVecSize = (
+    if (cfg.optScoreboard) (
+      2
+    ) else (
+      1
+    )
+  )
+
+  val nonExtVec = Vec.fill(
+    mySomeExtVecSize
+  )(
+    SnowHousePipePayloadNonExt(cfg=cfg)
+  )
+  private var myDualIssueIdx: Int = 0
+
+  def nonExt = nonExtVec(myDualIssueIdx)
+
+  def setToNonFwd(): Unit = {
+    if (cfg.optScoreboard) {
+      myDualIssueIdx = 0
+    }
+  }
+  def setToFwd(): Unit = {
+    if (cfg.optScoreboard) {
+      myDualIssueIdx = 1
+    }
+  }
+
   def forFmaxFwdIdx = nonExt.forFmaxFwdIdx
   def shouldFinishJump = nonExt.shouldFinishJump
   //def psIfReadyIshCond = nonExt.psIfReadyIshCond
@@ -2325,13 +2357,19 @@ case class SnowHousePipePayload(
       wordCount=cfg.regFileCfg.wordCountArr(ydx),
     )
   )
-  val myExt = Vec[PipeRegFilePayloadExt[UInt, Bool]]{
-    val myArr = ArrayBuffer[PipeRegFilePayloadExt[UInt, Bool]]()
-    for (ydx <- 0 until cfg.regFileCfg.memArrSize) {
-      myArr += mkOneExt(ydx=ydx)
-    }
-    myArr
+  val myExtVec = {
+    Vec.fill(mySomeExtVecSize)(
+      Vec[PipeRegFilePayloadExt[UInt, Bool]]{
+        val myArr = ArrayBuffer[PipeRegFilePayloadExt[UInt, Bool]]()
+        for (ydx <- 0 until cfg.regFileCfg.memArrSize) {
+          myArr += mkOneExt(ydx=ydx)
+        }
+        myArr
+      }
+    )
   } //simPublic()
+  def myExt = myExtVec(myDualIssueIdx)
+
   def setPipeRegFileExt(
     inpExt: PipeRegFilePayloadExt[UInt, Bool],
     ydx: Int,
