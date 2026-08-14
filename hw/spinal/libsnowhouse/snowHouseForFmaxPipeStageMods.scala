@@ -2081,7 +2081,10 @@ case class SnowHouseForFmaxPsWbReorderBufPayloadMost(
     || cfg.exposeRegFileWriteEnableToIo
     || cfg.dbgExposeExtrasAtRegFileWrite
   ) generate (
-    SnowHousePipePayload(cfg=cfg)
+    SnowHousePipePayload(
+      cfg=cfg,
+      optEnableDualIssue=false,
+    )
   )
 }
 case class SnowHouseForFmaxPsWbReorderBufPayload(
@@ -3511,7 +3514,10 @@ case class SnowHouseForFmaxPipeStageWriteBackIo(
   //--------
   val up = (
     slave(Stream(
-      SnowHousePipePayload(cfg=cfg)
+      SnowHousePipePayload(
+        cfg=cfg,
+        //optEnableDualIssue=false,
+      )
     ))
   )
   val dbgInfo = (
@@ -3583,7 +3589,10 @@ case class SnowHouseForFmaxPipeStageWriteBack(
   val myWbPayloadVec = (
     Vec.fill(currWbPayloadOuterVecSize)(
       Vec.fill(2)(
-        SnowHousePipePayload(cfg=cfg)
+        SnowHousePipePayload(
+          cfg=cfg,
+          optEnableDualIssue=false,
+        )
       )
     )
   )
@@ -4405,8 +4414,11 @@ case class SnowHouseForFmaxPipeStageWriteBack(
       //node(pwbInp) := inp
       //myWbPayload(0) := inp
       if (cfg.optScoreboard) {
-        myNonFwdWbPayload(0) := inp
-        myFwdWbPayload(0) := inp
+        myNonFwdWbPayload(0).nonExtVec(0) := inp.nonExtVec(0)
+        myNonFwdWbPayload(0).myExtVec(0) := inp.myExtVec(0)
+        myFwdWbPayload(0).nonExtVec(0) := inp.nonExtVec(0)
+        myFwdWbPayload(0).myExtVec(0) := inp.myExtVec(0)
+        //myFwdWbPayload(0) := inp
       } else {
         myWbPayloadVec.head(0) := inp
       }
@@ -5672,7 +5684,9 @@ case class SnowHouseForFmaxPipeStageWriteBack(
           myCommitAlmostFinalBackOutpStm.myWbPayload.instrCnt.myPsIdBubble.last
         }
       )
-      when (myCommitAlmostFinalBackOutpStm.myWbPayload.encInstr.payload.orR) {
+      when (
+        myCommitAlmostFinalBackOutpStm.myWbPayload.encInstr.payload.orR
+      ) {
         io.dbgInfo.encInstrAtRegFileWrite := (
           myCommitAlmostFinalBackOutpStm.myWbPayload.encInstr.payload
         )

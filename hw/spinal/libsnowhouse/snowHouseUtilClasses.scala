@@ -2264,9 +2264,14 @@ case class SnowHousePipePayloadNonExt(
 }
 case class SnowHousePipePayload(
   cfg: SnowHouseConfig,
+  optEnableDualIssue: Boolean=true,
 ) extends Bundle with PipeRegFilePayloadBase[UInt, Bool] {
+  val myEnableDualIssue = (
+    cfg.optScoreboard
+    && optEnableDualIssue
+  )
   val mySomeExtVecSize = (
-    if (cfg.optScoreboard) (
+    if (myEnableDualIssue) (
       2
     ) else (
       1
@@ -2283,12 +2288,12 @@ case class SnowHousePipePayload(
   def nonExt = nonExtVec(myDualIssueIdx)
 
   def setToNonFwd(): Unit = {
-    if (cfg.optScoreboard) {
+    if (myEnableDualIssue) {
       myDualIssueIdx = 0
     }
   }
   def setToFwd(): Unit = {
-    if (cfg.optScoreboard) {
+    if (myEnableDualIssue) {
       myDualIssueIdx = 1
     }
   }
