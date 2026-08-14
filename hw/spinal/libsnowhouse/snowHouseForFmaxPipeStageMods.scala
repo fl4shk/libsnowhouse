@@ -2176,8 +2176,8 @@ case class SnowHouseForFmaxPsWbReorderBuf(
     ).toInt
   )
   val myEarlyCommitInnerSize = (
-    //4
-    2
+    4
+    //2
   )
   val myEarlyCommitOuterSize = (
     (myReorderBufSize / myEarlyCommitInnerSize).toInt
@@ -2802,28 +2802,213 @@ case class SnowHouseForFmaxPsWbReorderBuf(
             //  + s"${myRdEarlyCommitOuterIdx.getWidth} "
             //  + s"${myRdEarlyCommitInnerIdx.getWidth} "
             //)
+
+            //--------
+            val myTempValid = {
+              val temp = myEarlyCommitValidVec(jdx).asBits.asUInt
+              if (mySwitchIdx == mySwitchIdxRdAddr) (
+                RegNext(
+                  temp,
+                  init=temp.getZero
+                )
+              ) else (
+                temp
+              )
+            }
+            val myTempEarlyCommit = {
+              val temp = rEarlyCommitVec(jdx).asBits.asUInt
+              if (mySwitchIdx == mySwitchIdxRdAddr) (
+                RegNext(
+                  temp,
+                  init=temp.getZero
+                )
+              ) else (
+                temp
+              )
+            }
             if (idx == 0) {
-              switch ({
-                val myTempToSwitch = (
-                  myEarlyCommitValidVec(jdx).asBits.asUInt
-                  ## rEarlyCommitVec(jdx).asBits.asUInt
-                )
-                if (mySwitchIdx == mySwitchIdxRdAddr) (
-                  RegNext/*When*/(
-                    myTempToSwitch,
-                    //cond=myRam.io.rdAddrPipe.fire,
-                    init=myTempToSwitch.getZero
-                  )
-                ) else (
-                  myTempToSwitch
-                )
-              }) {
-                is (M"01--") {
+              //switch ({
+              //  val myTempToSwitch = (
+              //    myEarlyCommitValidVec(jdx).asBits.asUInt
+              //    ## rEarlyCommitVec(jdx).asBits.asUInt
+              //  )
+              //  if (mySwitchIdx == mySwitchIdxRdAddr) (
+              //    RegNext(
+              //      myTempToSwitch,
+              //      init=myTempToSwitch.getZero
+              //    )
+              //  ) else (
+              //    myTempToSwitch
+              //  )
+              //}) {
+              //  for (
+              //    kdx <- 0 until myEarlyCommitValidVec(jdx).getWidth
+              //  ) {
+              //    for (
+              //      ldx <- 0 until rEarlyCommitVec(jdx).size
+              //    ) {
+              //      is (
+              //        (kdx << rEarlyCommitVec(jdx).size)
+              //        | (ldx)
+              //      ) {
+              //      }
+              //    }
+              //  }
+              //}
+
+              //when (
+              //  
+              //) {
+              //}
+              switch (
+                myTempValid(idx)
+                //## myTempEarlyCommit(idx)
+                ## (myTempValid & myTempEarlyCommit)
+              ) {
+                is (M"-0001") {
                   if (mySwitchIdx == mySwitchIdxRdAddr) {
                     doIncr(1)
                   } else {
                     rEarlyCommitVec(jdx)(idx) := False
                     rValidVec(myValidVecBaseJdx) := False
+                  }
+                }
+                is (M"-0011") {
+                  if (mySwitchIdx == mySwitchIdxRdAddr) {
+                    doIncr(2)
+                  } else {
+                    rEarlyCommitVec(jdx)(idx) := False
+                    rEarlyCommitVec(jdx)(idx + 1) := False
+                    rValidVec(myValidVecBaseJdx) := False
+                    rValidVec(myValidVecBaseJdx + 1) := False
+                  }
+                }
+                is (M"-0111") {
+                  if (mySwitchIdx == mySwitchIdxRdAddr) {
+                    doIncr(3)
+                  } else {
+                    rEarlyCommitVec(jdx)(idx) := False
+                    rEarlyCommitVec(jdx)(idx + 1) := False
+                    rEarlyCommitVec(jdx)(idx + 2) := False
+                    rValidVec(myValidVecBaseJdx) := False
+                    rValidVec(myValidVecBaseJdx + 1) := False
+                    rValidVec(myValidVecBaseJdx + 2) := False
+                  }
+                }
+                is (M"-1111") {
+                  if (mySwitchIdx == mySwitchIdxRdAddr) {
+                    doIncr(4)
+                  } else {
+                    rEarlyCommitVec(jdx)(idx) := False
+                    rEarlyCommitVec(jdx)(idx + 1) := False
+                    rEarlyCommitVec(jdx)(idx + 2) := False
+                    rEarlyCommitVec(jdx)(idx + 3) := False
+                    rValidVec(myValidVecBaseJdx) := False
+                    rValidVec(myValidVecBaseJdx + 1) := False
+                    rValidVec(myValidVecBaseJdx + 2) := False
+                    rValidVec(myValidVecBaseJdx + 3) := False
+                  }
+                }
+                is (M"1---0") {
+                  if (mySwitchIdx == mySwitchIdxRdAddr) {
+                    doIncr(1)
+                  } else {
+                    rEarlyCommitVec(jdx)(idx) := False
+                    rValidVec(myValidVecBaseJdx + idx) := False
+                  }
+                }
+                default {
+                }
+              }
+
+              //when (myTempValid(idx)) {
+              //  if (mySwitchIdx == mySwitchIdxRdAddr) {
+              //    doIncr(1)
+              //  } else {
+              //    rEarlyCommitVec(jdx)(idx) := False
+              //    rValidVec(myValidVecBaseJdx + idx) := False
+              //  }
+              //}
+            } else if (idx == 1) {
+              //switch (
+              //) {
+              //}
+              switch (
+                myTempValid(idx)
+                //(myTempValid(idx) && !myTempEarlyCommit(idx))
+                ## (
+                  myTempValid(idx + 2 downto idx)
+                  & myTempEarlyCommit(idx + 2 downto idx)
+                )
+              ) {
+                is (M"-001") {
+                  if (mySwitchIdx == mySwitchIdxRdAddr) {
+                    doIncr(1)
+                  } else {
+                    rEarlyCommitVec(jdx)(idx) := False
+                    rValidVec(myValidVecBaseJdx + idx) := False
+                  }
+                }
+                is (M"-011") {
+                  if (mySwitchIdx == mySwitchIdxRdAddr) {
+                    doIncr(2)
+                  } else {
+                    rEarlyCommitVec(jdx)(idx) := False
+                    rEarlyCommitVec(jdx)(idx + 1) := False
+                    rValidVec(myValidVecBaseJdx + idx) := False
+                    rValidVec(myValidVecBaseJdx + idx + 1) := False
+                  }
+                }
+                is (M"-111") {
+                  if (mySwitchIdx == mySwitchIdxRdAddr) {
+                    doIncr(3)
+                  } else {
+                    rEarlyCommitVec(jdx)(idx) := False
+                    rEarlyCommitVec(jdx)(idx + 1) := False
+                    rEarlyCommitVec(jdx)(idx + 2) := False
+                    rValidVec(myValidVecBaseJdx + idx) := False
+                    rValidVec(myValidVecBaseJdx + idx + 1) := False
+                    rValidVec(myValidVecBaseJdx + idx + 2) := False
+                  }
+                }
+                is (M"1--0") {
+                  if (mySwitchIdx == mySwitchIdxRdAddr) {
+                    doIncr(1)
+                  } else {
+                    rEarlyCommitVec(jdx)(idx) := False
+                    rValidVec(myValidVecBaseJdx + idx) := False
+                  }
+                }
+                default {
+                }
+              }
+              //when (myTempValid(idx)) {
+              //  if (mySwitchIdx == mySwitchIdxRdAddr) {
+              //    doIncr(1)
+              //  } else {
+              //    rEarlyCommitVec(jdx)(idx) := False
+              //    rValidVec(myValidVecBaseJdx + idx) := False
+              //  }
+              //}
+            } else if (idx == 2) {
+              //when (myTempValid(idx)) {
+              //  if (mySwitchIdx == mySwitchIdxRdAddr) {
+              //    doIncr(1)
+              //  } else {
+              //    rEarlyCommitVec(jdx)(idx) := False
+              //    rValidVec(myValidVecBaseJdx + idx) := False
+              //  }
+              //}
+              switch (
+                myTempValid(idx + 1 downto idx)
+                ## myTempEarlyCommit(idx + 1 downto idx)
+              ) {
+                is (M"01--") {
+                  if (mySwitchIdx == mySwitchIdxRdAddr) {
+                    doIncr(1)
+                  } else {
+                    rEarlyCommitVec(jdx)(idx) := False
+                    rValidVec(myValidVecBaseJdx + idx) := False
                   }
                 }
                 is (M"11-0") {
@@ -2848,34 +3033,52 @@ case class SnowHouseForFmaxPsWbReorderBuf(
                   } else {
                     rEarlyCommitVec(jdx)(idx) := False
                     rEarlyCommitVec(jdx)(idx + 1) := False
-                    rValidVec(myValidVecBaseJdx) := False
-                    rValidVec(myValidVecBaseJdx + 1) := False
+                    rValidVec(myValidVecBaseJdx + idx) := False
+                    rValidVec(myValidVecBaseJdx + idx + 1) := False
                   }
                 }
-                //is (M"1111") {
-                //  doIncr(2)
-                //}
-                //is (M"00--")
-                //is (M"10--")
                 default {
                 }
               }
-            } else if (idx == 1) {
-              when ({
-                //myEarlyCommitValidVec(jdx)(idx)
-                val temp = (
-                  rValidVec(myValidVecBaseJdx + idx)
-                )
-                if (mySwitchIdx == mySwitchIdxRdAddr) (
-                  RegNext/*When*/(
-                    temp,
-                    //cond=myRam.io.rdAddrPipe.fire,
-                    init=temp.getZero
-                  )
-                ) else (
-                  temp
-                )
-              }) {
+              //switch (
+              //  myTempValid(idx)
+              //  //(myTempValid(idx) && !myTempEarlyCommit(idx))
+              //  ## (
+              //    myTempValid(idx + 1 downto idx)
+              //    & myTempEarlyCommit(idx + 1 downto idx)
+              //  )
+              //) {
+              //  is (M"-01") {
+              //    if (mySwitchIdx == mySwitchIdxRdAddr) {
+              //      doIncr(1)
+              //    } else {
+              //      rEarlyCommitVec(jdx)(idx) := False
+              //      rValidVec(myValidVecBaseJdx + idx) := False
+              //    }
+              //  }
+              //  is (M"-11") {
+              //    if (mySwitchIdx == mySwitchIdxRdAddr) {
+              //      doIncr(2)
+              //    } else {
+              //      rEarlyCommitVec(jdx)(idx) := False
+              //      rEarlyCommitVec(jdx)(idx + 1) := False
+              //      rValidVec(myValidVecBaseJdx + idx) := False
+              //      rValidVec(myValidVecBaseJdx + idx + 1) := False
+              //    }
+              //  }
+              //  is (M"1-0") {
+              //    if (mySwitchIdx == mySwitchIdxRdAddr) {
+              //      doIncr(1)
+              //    } else {
+              //      rEarlyCommitVec(jdx)(idx) := False
+              //      rValidVec(myValidVecBaseJdx + idx) := False
+              //    }
+              //  }
+              //  default {
+              //  }
+              //}
+            } else if (idx == 3) {
+              when (myTempValid(idx)) {
                 if (mySwitchIdx == mySwitchIdxRdAddr) {
                   doIncr(1)
                 } else {
@@ -2883,23 +3086,111 @@ case class SnowHouseForFmaxPsWbReorderBuf(
                   rValidVec(myValidVecBaseJdx + idx) := False
                 }
               }
-              //switch (
-              //  myEarlyCommitValidVec(jdx)(idx)
-              //  ## rEarlyCommitVec(jdx)(idx)
-              //) {
-              //  is (M"10") {
-              //    doIncr(1)
-              //  }
-              //  is (M"11") {
-              //  }
-              //  default {
-              //  }
-              //}
             } else {
-              require(
-                false
-              )
+              require(false)
             }
+            //--------
+            // BEGIN: max idx == 2
+            //if (idx == 0) {
+            //  switch ({
+            //    val myTempToSwitch = (
+            //      myEarlyCommitValidVec(jdx).asBits.asUInt
+            //      ## rEarlyCommitVec(jdx).asBits.asUInt
+            //    )
+            //    if (mySwitchIdx == mySwitchIdxRdAddr) (
+            //      RegNext/*When*/(
+            //        myTempToSwitch,
+            //        //cond=myRam.io.rdAddrPipe.fire,
+            //        init=myTempToSwitch.getZero
+            //      )
+            //    ) else (
+            //      myTempToSwitch
+            //    )
+            //  }) {
+            //    is (M"01--") {
+            //      if (mySwitchIdx == mySwitchIdxRdAddr) {
+            //        doIncr(1)
+            //      } else {
+            //        rEarlyCommitVec(jdx)(idx) := False
+            //        rValidVec(myValidVecBaseJdx) := False
+            //      }
+            //    }
+            //    is (M"11-0") {
+            //      if (mySwitchIdx == mySwitchIdxRdAddr) {
+            //        doIncr(1)
+            //      } else {
+            //        rEarlyCommitVec(jdx)(idx) := False
+            //        rValidVec(myValidVecBaseJdx + idx) := False
+            //      }
+            //    }
+            //    is (M"1101") {
+            //      if (mySwitchIdx == mySwitchIdxRdAddr) {
+            //        doIncr(1)
+            //      } else {
+            //        rEarlyCommitVec(jdx)(idx) := False
+            //        rValidVec(myValidVecBaseJdx + idx) := False
+            //      }
+            //    }
+            //    is (M"1111") {
+            //      if (mySwitchIdx == mySwitchIdxRdAddr) {
+            //        doIncr(2)
+            //      } else {
+            //        rEarlyCommitVec(jdx)(idx) := False
+            //        rEarlyCommitVec(jdx)(idx + 1) := False
+            //        rValidVec(myValidVecBaseJdx) := False
+            //        rValidVec(myValidVecBaseJdx + 1) := False
+            //      }
+            //    }
+            //    //is (M"1111") {
+            //    //  doIncr(2)
+            //    //}
+            //    //is (M"00--")
+            //    //is (M"10--")
+            //    default {
+            //    }
+            //  }
+            //} else if (idx == 1) {
+            //  when ({
+            //    //myEarlyCommitValidVec(jdx)(idx)
+            //    val temp = (
+            //      rValidVec(myValidVecBaseJdx + idx)
+            //    )
+            //    if (mySwitchIdx == mySwitchIdxRdAddr) (
+            //      RegNext/*When*/(
+            //        temp,
+            //        //cond=myRam.io.rdAddrPipe.fire,
+            //        init=temp.getZero
+            //      )
+            //    ) else (
+            //      temp
+            //    )
+            //  }) {
+            //    if (mySwitchIdx == mySwitchIdxRdAddr) {
+            //      doIncr(1)
+            //    } else {
+            //      rEarlyCommitVec(jdx)(idx) := False
+            //      rValidVec(myValidVecBaseJdx + idx) := False
+            //    }
+            //  }
+            //  //switch (
+            //  //  myEarlyCommitValidVec(jdx)(idx)
+            //  //  ## rEarlyCommitVec(jdx)(idx)
+            //  //) {
+            //  //  is (M"10") {
+            //  //    doIncr(1)
+            //  //  }
+            //  //  is (M"11") {
+            //  //  }
+            //  //  default {
+            //  //  }
+            //  //}
+            //} else {
+            //  require(
+            //    false
+            //  )
+            //}
+            // END: max idx == 2
+            //--------
             //switch (
             //  myEarlyCommitValidVec(jdx).asBits.asUInt
             //  ## rEarlyCommitVec(jdx).asBits.asUInt
