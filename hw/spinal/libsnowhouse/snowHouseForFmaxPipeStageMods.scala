@@ -2865,7 +2865,7 @@ case class SnowHouseForFmaxPsWbReorderBuf(
                 //## myTempEarlyCommit(idx)
                 ## (myTempValid & myTempEarlyCommit)
               ) {
-                is (M"-0001") {
+                is (M"---01") {
                   if (mySwitchIdx == mySwitchIdxRdAddr) {
                     doIncr(1)
                   } else {
@@ -2873,7 +2873,7 @@ case class SnowHouseForFmaxPsWbReorderBuf(
                     rValidVec(myValidVecBaseJdx + idx) := False
                   }
                 }
-                is (M"-0011") {
+                is (M"--011") {
                   if (mySwitchIdx == mySwitchIdxRdAddr) {
                     doIncr(2)
                   } else {
@@ -2941,7 +2941,7 @@ case class SnowHouseForFmaxPsWbReorderBuf(
                   & myTempEarlyCommit(idx + 2 downto idx)
                 )
               ) {
-                is (M"-001") {
+                is (M"--01") {
                   if (mySwitchIdx == mySwitchIdxRdAddr) {
                     doIncr(1)
                   } else {
