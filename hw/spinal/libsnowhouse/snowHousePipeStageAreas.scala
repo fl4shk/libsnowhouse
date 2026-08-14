@@ -11965,10 +11965,13 @@ case class SnowHousePipeStageExecute(
       //myTempReorderBufIdx := myNonBubbleTag
       myTempReorderBufIdx := (
         //myNonBubbleTag
-        RegNext(
-          myTempReorderBufIdx,
-          init=myTempReorderBufIdx.getZero
-        )
+        (
+          RegNext(
+            myTempReorderBufIdx.asSInt
+            //init=myTempReorderBufIdx.getZero
+          )
+          init(-1)
+        ).asUInt
       )
       when (
         cLink.up.isFiring

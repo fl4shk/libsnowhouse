@@ -2701,8 +2701,8 @@ case class SnowHouseForFmaxPsWbReorderBuf(
   myRdAddr := (
     RegNext(myRdAddr)
     init(
-      0x1
-      //0x0
+      //0x1
+      0x0
     )
   )
 
@@ -2732,9 +2732,21 @@ case class SnowHouseForFmaxPsWbReorderBuf(
   //val mySwitchIdxEarlyCommitVec = 2
   val mySwitchIdxLim = 2//3
   for (mySwitchIdx <- 0 until mySwitchIdxLim) {
+    //val myTempOccupancyCond = (
+    //  myOccupancy > myReorderBufSize - 8//6
+    //)
     switch (
       (
         if (mySwitchIdx == mySwitchIdxRdAddr) (
+          //(
+          //  //io.occupancy < (myReorderBufSize - 6)
+          //  //myOcupancy < (myReorderBufSize - 6)
+          //  RegNext(
+          //    myTempOccupancyCond,
+          //    init=False
+          //  )
+          //)
+          //## 
           RegNext(
             myRam.io.rdAddrPipe.fire,
             init=False
@@ -2742,6 +2754,8 @@ case class SnowHouseForFmaxPsWbReorderBuf(
           ## RegNext(myRdEarlyCommitOuterIdx)
           ## RegNext(myRdEarlyCommitInnerIdx)
         ) else ( //if (mySwitchIdx == mySwitchIdxValidVecEtc)
+          //myTempOccupancyCond
+          //## 
           myRam.io.rdAddrPipe.fire
           ## myRdEarlyCommitOuterIdx
           ## myRdEarlyCommitInnerIdx
@@ -2758,58 +2772,84 @@ case class SnowHouseForFmaxPsWbReorderBuf(
           jdx << myRdEarlyCommitInnerIdx.getWidth
         )
         for (idx <- 0 until (1 << myRdEarlyCommitInnerIdx.getWidth)) {
+          def doIncr(
+            myIncrAmount: Int
+          ): Unit = {
+            require(
+              mySwitchIdx == mySwitchIdxRdAddr
+            )
+            myRdAddr := (
+              (
+                RegNext(myRdAddr)
+                //init(0x1)
+                init(0x0)
+              ) + (
+                myIncrAmount
+              )
+            )
+          }
           is (
             //(1 << myRdEarlyCommitOuterIdx.getWidth)
             //| (jdx)
+            //(1 << (log2Up(myReorderBufSize) + 1))
+            //| 
             (1 << log2Up(myReorderBufSize))
             | (jdx << myWrEarlyCommitInnerIdx.getWidth)
             | (idx)
           ) {
-            def doIncr(
-              myIncrAmount: Int
-            ): Unit = {
-              require(
-                mySwitchIdx == mySwitchIdxRdAddr
-              )
-              myRdAddr := (
-                (
-                  RegNext(myRdAddr)
-                  init(0x1)
-                ) + (
-                  myIncrAmount
-                )
-              )
-            }
-            println(
-              s"jdx:${jdx} idx:${idx} "
-              + s"${myRdEarlyCommitOuterIdx.getWidth} "
-              + s"${myRdEarlyCommitInnerIdx.getWidth} "
-            )
+            //println(
+            //  s"jdx:${jdx} idx:${idx} "
+            //  + s"${myRdEarlyCommitOuterIdx.getWidth} "
+            //  + s"${myRdEarlyCommitInnerIdx.getWidth} "
+            //)
             if (idx == 0) {
-              switch (
-                myEarlyCommitValidVec(jdx).asBits.asUInt
-                ## rEarlyCommitVec(jdx).asBits.asUInt
-              ) {
-                //is (M"0101") {
-                //}
+              switch ({
+                val myTempToSwitch = (
+                  myEarlyCommitValidVec(jdx).asBits.asUInt
+                  ## rEarlyCommitVec(jdx).asBits.asUInt
+                )
+                if (mySwitchIdx == mySwitchIdxRdAddr) (
+                  RegNext/*When*/(
+                    myTempToSwitch,
+                    //cond=myRam.io.rdAddrPipe.fire,
+                    init=myTempToSwitch.getZero
+                  )
+                ) else (
+                  myTempToSwitch
+                )
+              }) {
                 is (M"01--") {
                   if (mySwitchIdx == mySwitchIdxRdAddr) {
                     doIncr(1)
                   } else {
                     rEarlyCommitVec(jdx)(idx) := False
+                    rValidVec(myValidVecBaseJdx) := False
                   }
                 }
                 is (M"11-0") {
                   if (mySwitchIdx == mySwitchIdxRdAddr) {
                     doIncr(1)
+                  } else {
+                    rEarlyCommitVec(jdx)(idx) := False
+                    rValidVec(myValidVecBaseJdx + idx) := False
                   }
                 }
-                is (M"11-1") {
+                is (M"1101") {
+                  if (mySwitchIdx == mySwitchIdxRdAddr) {
+                    doIncr(1)
+                  } else {
+                    rEarlyCommitVec(jdx)(idx) := False
+                    rValidVec(myValidVecBaseJdx + idx) := False
+                  }
+                }
+                is (M"1111") {
                   if (mySwitchIdx == mySwitchIdxRdAddr) {
                     doIncr(2)
                   } else {
                     rEarlyCommitVec(jdx)(idx) := False
                     rEarlyCommitVec(jdx)(idx + 1) := False
+                    rValidVec(myValidVecBaseJdx) := False
+                    rValidVec(myValidVecBaseJdx + 1) := False
                   }
                 }
                 //is (M"1111") {
@@ -2821,13 +2861,26 @@ case class SnowHouseForFmaxPsWbReorderBuf(
                 }
               }
             } else if (idx == 1) {
-              when (
-                myEarlyCommitValidVec(jdx)(idx)
-              ) {
+              when ({
+                //myEarlyCommitValidVec(jdx)(idx)
+                val temp = (
+                  rValidVec(myValidVecBaseJdx + idx)
+                )
+                if (mySwitchIdx == mySwitchIdxRdAddr) (
+                  RegNext/*When*/(
+                    temp,
+                    //cond=myRam.io.rdAddrPipe.fire,
+                    init=temp.getZero
+                  )
+                ) else (
+                  temp
+                )
+              }) {
                 if (mySwitchIdx == mySwitchIdxRdAddr) {
                   doIncr(1)
                 } else {
                   rEarlyCommitVec(jdx)(idx) := False
+                  rValidVec(myValidVecBaseJdx + idx) := False
                 }
               }
               //switch (
@@ -2857,9 +2910,35 @@ case class SnowHouseForFmaxPsWbReorderBuf(
             //  }
             //}
           }
+          //is (
+          //  //(1 << (log2Up(myReorderBufSize) + 1))
+          //  //|
+          //  (1 << log2Up(myReorderBufSize))
+          //  | (jdx << myWrEarlyCommitInnerIdx.getWidth)
+          //  | (idx)
+          //) {
+          //  if (mySwitchIdx == mySwitchIdxRdAddr) {
+          //    doIncr(1)
+          //  } else {
+          //    rEarlyCommitVec(jdx)(idx) := False
+          //    rValidVec(myValidVecBaseJdx + idx) := False
+          //  }
+          //}
         }
       }
       default {
+        //when (
+        //  myRam.io.rdAddrPipe.fire
+        //  //myRam.io.rdDataPipe.fire//valid//fire
+        //) {
+        //  rValidVec(
+        //    myRam.io.rdAddrPipe.addr
+        //    //myRam.io.rdDataPipe.reorderBufIdx
+        //  ) := False
+        //  rEarlyCommitVec(
+        //    myRam.io.rdAddrPipe.addr
+        //  ) := False
+        //}
       }
     }
   }
@@ -4116,9 +4195,10 @@ case class SnowHouseForFmaxPipeStageWriteBack(
   ) generate (
     Vec(
       Vec(
-        myReorderBuf.io.pop.throwWhen(
-          myReorderBuf.io.pop.commit.opIsFwd
-        ),
+        //myReorderBuf.io.pop.throwWhen(
+        //  myReorderBuf.io.pop.commit.opIsFwd
+        //),
+        myReorderBuf.io.pop,
         myFwdCommitFrontFork.last,
       ),
       Vec(
@@ -5032,28 +5112,28 @@ case class SnowHouseForFmaxPipeStageWriteBack(
     //)
     when (
       //myCommitOutpStm.fire
-      myReorderBuf.io.pop.fire
+      myCommitAlmostFinalBackOutpStm.fire
     ) {
       io.dbgInfo.regFileWriteData := (
-        myReorderBuf.io.pop.regFileWrite.data
+        myCommitAlmostFinalBackOutpStm.regFileWrite.data
       )
       io.dbgInfo.regFileWriteAddr := (
-        myReorderBuf.io.pop.regFileWrite.addr
+        myCommitAlmostFinalBackOutpStm.regFileWrite.addr
       )
       io.dbgInfo.regFileWriteEnable := (
         if (cfg.optScoreboard) (
           (
-            myReorderBuf.io.pop.regFileWrite.addr =/= 0x0
+            myCommitAlmostFinalBackOutpStm.regFileWrite.addr =/= 0x0
           )
           && (
-            myReorderBuf.io.pop.fire
+            myCommitAlmostFinalBackOutpStm.fire
           )
         ) else (
-          myReorderBuf.io.pop.fire
+          myCommitAlmostFinalBackOutpStm.fire
         )
       )
       io.dbgInfo.laggingRegPcAtRegFileWrite := (
-        myReorderBuf.io.pop.myWbPayload.laggingRegPc.resize(
+        myCommitAlmostFinalBackOutpStm.myWbPayload.laggingRegPc.resize(
           cfg.mainWidth bits
         )
       )
@@ -5061,34 +5141,34 @@ case class SnowHouseForFmaxPipeStageWriteBack(
         if (cfg.optScoreboard) (
           (
             (
-              myReorderBuf.io.pop.myWbPayload
+              myCommitAlmostFinalBackOutpStm.myWbPayload
               .instrCnt.shouldIgnoreInstr.last
               || (
-                !myReorderBuf.io.pop.fire
+                !myCommitAlmostFinalBackOutpStm.fire
                 || (
-                  !myReorderBuf.io.pop.commit.nonFwdTag.orR
-                  && !myReorderBuf.io.pop.commit.fwdTag.orR
+                  !myCommitAlmostFinalBackOutpStm.commit.nonFwdTag.orR
+                  && !myCommitAlmostFinalBackOutpStm.commit.fwdTag.orR
                 )
               )
             )
             || (
               !myDbgHaveNewNonBubbleTag
               //!Mux(
-              //  !myCommitAlmostFinalOutpStm.commit.opIsFwd,
+              //  !myCommitAlmostFinalBackOutpStm.commit.opIsFwd,
               //  myDbgHaveNewNonFwdTag,
               //  myDbgHaveNewFwdTag,
               //)
             )
           )
         ) else (
-          myReorderBuf.io.pop.myWbPayload
+          myCommitAlmostFinalBackOutpStm.myWbPayload
           .instrCnt.shouldIgnoreInstr.last
         )
       )
       io.dbgInfo.myPsIdBubbleAtRegFileWrite := (
         if (cfg.optScoreboard) {
           val myInstrCnt = (
-            myReorderBuf.io.pop.myWbPayload.instrCnt
+            myCommitAlmostFinalBackOutpStm.myWbPayload.instrCnt
           )
           (
             (
@@ -5096,56 +5176,56 @@ case class SnowHouseForFmaxPipeStageWriteBack(
                 myInstrCnt.myPsIdBubble.last
                 //&& !myInstrCnt.myScoreboardReadGprsBubble.last
                 //&& !io.myScoreboardSavedGprTagVec(
-                //  myCommitAlmostFinalOutpStm.myWbPayload.gprIdxVec.last
+                //  myCommitAlmostFinalBackOutpStm.myWbPayload.gprIdxVec.last
                 //)
                 //&& !mkScoreboardGprTagOrReduce(
                 //  //myNonFwdWbPayload(0)
-                //  myCommitAlmostFinalOutpStm.myWbPayload
+                //  myCommitAlmostFinalBackOutpStm.myWbPayload
                 //)
               )
               //|| myInstrCnt.myPsExMemAccessBubble.last
               //|| myInstrCnt.myPsExMultiCycleBubble.last
               || (
-                !myReorderBuf.io.pop.fire
+                !myCommitAlmostFinalBackOutpStm.fire
                 || (
-                  !myReorderBuf.io.pop.commit.nonFwdTag.orR
-                  && !myReorderBuf.io.pop.commit.fwdTag.orR
+                  !myCommitAlmostFinalBackOutpStm.commit.nonFwdTag.orR
+                  && !myCommitAlmostFinalBackOutpStm.commit.fwdTag.orR
                 )
               )
             )
             || (
               !myDbgHaveNewNonBubbleTag
               //!Mux(
-              //  !myCommitAlmostFinalOutpStm.commit.opIsFwd,
+              //  !myCommitAlmostFinalBackOutpStm.commit.opIsFwd,
               //  myDbgHaveNewNonFwdTag,
               //  myDbgHaveNewFwdTag,
               //)
             )
           )
         } else {
-          myReorderBuf.io.pop.myWbPayload.instrCnt.myPsIdBubble.last
+          myCommitAlmostFinalBackOutpStm.myWbPayload.instrCnt.myPsIdBubble.last
         }
       )
-      when (myReorderBuf.io.pop.myWbPayload.encInstr.payload.orR) {
+      when (myCommitAlmostFinalBackOutpStm.myWbPayload.encInstr.payload.orR) {
         io.dbgInfo.encInstrAtRegFileWrite := (
-          myReorderBuf.io.pop.myWbPayload.encInstr.payload
+          myCommitAlmostFinalBackOutpStm.myWbPayload.encInstr.payload
         )
       }
       io.dbgInfo.immAtRegFileWrite := (
-        myReorderBuf.io.pop.myWbPayload.imm.last
+        myCommitAlmostFinalBackOutpStm.myWbPayload.imm.last
       )
       io.dbgInfo.rdMemWordAtRegFileWrite := (
-        myReorderBuf.io.pop.myWbPayload.myExt(0).rdMemWord
+        myCommitAlmostFinalBackOutpStm.myWbPayload.myExt(0).rdMemWord
       )
       io.dbgInfo.gprIdxVecAtRegFileWrite := (
-        myReorderBuf.io.pop.myWbPayload.gprIdxVec
+        myCommitAlmostFinalBackOutpStm.myWbPayload.gprIdxVec
       )
     } otherwise {
       if (cfg.optScoreboard) {
         io.dbgInfo.shouldIgnoreInstrAtRegFileWrite := (
           True
           //!Mux(
-          //  !myCommitAlmostFinalOutpStm.commit.opIsFwd,
+          //  !myCommitAlmostFinalBackOutpStm.commit.opIsFwd,
           //  myDbgHaveNewNonFwdTag,
           //  myDbgHaveNewFwdTag,
           //)
@@ -5153,7 +5233,7 @@ case class SnowHouseForFmaxPipeStageWriteBack(
         io.dbgInfo.myPsIdBubbleAtRegFileWrite := (
           True
           //!Mux(
-          //  !myCommitAlmostFinalOutpStm.commit.opIsFwd,
+          //  !myCommitAlmostFinalBackOutpStm.commit.opIsFwd,
           //  myDbgHaveNewNonFwdTag,
           //  myDbgHaveNewFwdTag,
           //)
