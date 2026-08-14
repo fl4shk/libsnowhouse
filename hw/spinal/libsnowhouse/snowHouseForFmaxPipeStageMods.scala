@@ -4195,10 +4195,10 @@ case class SnowHouseForFmaxPipeStageWriteBack(
   ) generate (
     Vec(
       Vec(
-        //myReorderBuf.io.pop.throwWhen(
-        //  myReorderBuf.io.pop.commit.opIsFwd
-        //),
-        myReorderBuf.io.pop,
+        myReorderBuf.io.pop.throwWhen(
+          myReorderBuf.io.pop.commit.opIsFwd
+        ),
+        //myReorderBuf.io.pop,
         myFwdCommitFrontFork.last,
       ),
       Vec(
