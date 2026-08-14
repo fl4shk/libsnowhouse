@@ -2176,12 +2176,13 @@ case class SnowHouseForFmaxPsWbReorderBuf(
     ).toInt
   )
   val myEarlyCommitInnerSize = (
-    4
+    6
+    //4
     //2
   )
-  val myEarlyCommitOuterSize = (
-    (myReorderBufSize / myEarlyCommitInnerSize).toInt
-  )
+  //val myEarlyCommitOuterSize = (
+  //  (myReorderBufSize / myEarlyCommitInnerSize).toInt
+  //)
   //val myOccupancySubAmount = (
   //  //8
   //  //4
