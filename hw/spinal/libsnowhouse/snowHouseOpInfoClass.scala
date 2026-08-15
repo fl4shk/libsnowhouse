@@ -1945,7 +1945,7 @@ object AluOpKind {
     }
   }
   case object Lsl2Add extends AluOpKind {
-    // risc-v sh1add
+    // risc-v sh2add
     private[libsnowhouse] val _validArgsSet = LinkedHashSet[
       OpKindValidArgs
     ](
@@ -1981,7 +1981,7 @@ object AluOpKind {
     }
   }
   case object Lsl3Add extends AluOpKind {
-    // risc-v sh1add
+    // risc-v sh3add
     private[libsnowhouse] val _validArgsSet = LinkedHashSet[
       OpKindValidArgs
     ](
@@ -2010,6 +2010,88 @@ object AluOpKind {
       val ret = InstrResult(cfg=cfg)(width=width)
       ret.main := (
         right + Cat(left, U"3'b000").asUInt.resize(ret.main.getWidth)
+      )
+      ret.flagV := False
+      ret.flagC := False
+      ret
+    }
+  }
+  case object CzeroEqz extends AluOpKind {
+    // risc-v czero.eqz
+    private[libsnowhouse] val _validArgsSet = LinkedHashSet[
+      OpKindValidArgs
+    ](
+      //minD=1, maxD=1, minS=2, maxS=2
+      OpKindValidArgs(
+        // word
+        //dstSize=1, srcSize=2
+        dst=Array[HashSet[DstKind]](
+          HashSet(DstKind.Gpr),
+        ),
+        src=Array[HashSet[SrcKind]](
+          HashSet(SrcKind.Gpr, SrcKind.Pc),
+          HashSet(SrcKind.Gpr, SrcKind.Pc, SrcKind.Imm(/*None*/)),
+        ),
+        cond=HashSet[CondKind](
+          CondKind.Always
+        ),
+      )
+    )
+    def validArgsSet = _validArgsSet
+    def binopFunc(
+      cfg: SnowHouseConfig, left: UInt, right: UInt, carry: Bool
+    )(
+      width: Int=cfg.mainWidth
+    ) = {
+      val ret = InstrResult(cfg=cfg)(width=width)
+      ret.main := (
+        //right + Cat(left, U"3'b000").asUInt.resize(ret.main.getWidth)
+        Mux(
+          right === 0x0,
+          ret.main.getZero,
+          left,
+        )
+      )
+      ret.flagV := False
+      ret.flagC := False
+      ret
+    }
+  }
+  case object CzeroNez extends AluOpKind {
+    // risc-v czero.nez
+    private[libsnowhouse] val _validArgsSet = LinkedHashSet[
+      OpKindValidArgs
+    ](
+      //minD=1, maxD=1, minS=2, maxS=2
+      OpKindValidArgs(
+        // word
+        //dstSize=1, srcSize=2
+        dst=Array[HashSet[DstKind]](
+          HashSet(DstKind.Gpr),
+        ),
+        src=Array[HashSet[SrcKind]](
+          HashSet(SrcKind.Gpr, SrcKind.Pc),
+          HashSet(SrcKind.Gpr, SrcKind.Pc, SrcKind.Imm(/*None*/)),
+        ),
+        cond=HashSet[CondKind](
+          CondKind.Always
+        ),
+      )
+    )
+    def validArgsSet = _validArgsSet
+    def binopFunc(
+      cfg: SnowHouseConfig, left: UInt, right: UInt, carry: Bool
+    )(
+      width: Int=cfg.mainWidth
+    ) = {
+      val ret = InstrResult(cfg=cfg)(width=width)
+      ret.main := (
+        //right + Cat(left, U"3'b000").asUInt.resize(ret.main.getWidth)
+        Mux(
+          right =/= 0x0,
+          ret.main.getZero,
+          left,
+        )
       )
       ret.flagV := False
       ret.flagC := False

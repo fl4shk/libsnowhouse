@@ -101,6 +101,7 @@ object Rv32RType {
     val SltRdRs1Rs2 = OpFields(op=0x33, f3=0x2, f7=0x00)
     val SltuRdRs1Rs2 = OpFields(op=0x33, f3=0x3, f7=0x00)
     //--------
+    // "M" extension
     val MulRdRs1Rs2 = OpFields(op=0x33, f3=0x0, f7=0x01)
     val MulhRdRs1Rs2 = OpFields(op=0x33, f3=0x1, f7=0x01)
     val MulhsuRdRs1Rs2 = OpFields(op=0x33, f3=0x2, f7=0x01)
@@ -110,9 +111,14 @@ object Rv32RType {
     val RemRdRs1Rs2 = OpFields(op=0x33, f3=0x6, f7=0x01)
     val RemuRdRs1Rs2 = OpFields(op=0x33, f3=0x7, f7=0x01)
     //--------
+    // "Zba" extension
     val Sh1addRdRs1Rs2 = OpFields(op=0x33, f3=0x2, f7=0x10)
     val Sh2addRdRs1Rs2 = OpFields(op=0x33, f3=0x4, f7=0x10)
     val Sh3addRdRs1Rs2 = OpFields(op=0x33, f3=0x6, f7=0x10)
+    //--------
+    // "Zicond" extension
+    val CzeroEqzRdRs1Rs2 = OpFields(op=0x33, f3=0x5, f7=0x7)
+    val CzeroNezRdRs1Rs2 = OpFields(op=0x33, f3=0x7, f7=0x7)
     //--------
   }
 
@@ -516,6 +522,29 @@ object Riscv32OpInfoMap {
       srcArr=Array[SrcKind](SrcKind.Gpr, SrcKind.Gpr),
       aluOp=(
         AluOpKind.Lsl3Add
+        //AluOpKind.LcvAlu(LcvAluDel1InpOpEnum.ADD)
+      ),
+    )
+  )
+  //--------
+  opInfoMap += (
+    //--------
+    Rv32RType.Op.CzeroEqzRdRs1Rs2 -> OpInfo.mkAlu(
+      dstArr=Array[DstKind](DstKind.Gpr),
+      srcArr=Array[SrcKind](SrcKind.Gpr, SrcKind.Gpr),
+      aluOp=(
+        AluOpKind.CzeroEqz
+        //AluOpKind.LcvAlu(LcvAluDel1InpOpEnum.ADD)
+      ),
+    )
+  )
+  opInfoMap += (
+    //--------
+    Rv32RType.Op.CzeroNezRdRs1Rs2 -> OpInfo.mkAlu(
+      dstArr=Array[DstKind](DstKind.Gpr),
+      srcArr=Array[SrcKind](SrcKind.Gpr, SrcKind.Gpr),
+      aluOp=(
+        AluOpKind.CzeroNez
         //AluOpKind.LcvAlu(LcvAluDel1InpOpEnum.ADD)
       ),
     )
@@ -1561,6 +1590,7 @@ object SnowHouseRiscv32PipeStageInstrDecode {
             }
           }
           is (Sh1addRdRs1Rs2.f7) {
+            // "Zba" extension
             switch (encInstrR.last.funct3) {
               is (Sh1addRdRs1Rs2.f3) {
                 setOp(Sh1addRdRs1Rs2, encInstrR.last)
@@ -1572,6 +1602,14 @@ object SnowHouseRiscv32PipeStageInstrDecode {
               default {
                 setOp(Sh3addRdRs1Rs2, encInstrR.last)
               }
+            }
+          }
+          is (CzeroEqzRdRs1Rs2.f7) {
+            // "Zicond" extension
+            when (!encInstrR.last.funct3(1)) {
+              setOp(CzeroEqzRdRs1Rs2, encInstrR.last)
+            } otherwise {
+              setOp(CzeroNezRdRs1Rs2, encInstrR.last)
             }
           }
           default {

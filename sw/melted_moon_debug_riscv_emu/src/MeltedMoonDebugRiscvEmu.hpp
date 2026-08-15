@@ -181,6 +181,7 @@ public:     // types
                 SltRdRs1Rs2 = {.op=0x33, .f3=0x2, .f7=0x00},
                 SltuRdRs1Rs2 = {.op=0x33, .f3=0x3, .f7=0x00},
                 //------
+                // "M" extension
                 MulRdRs1Rs2 = {.op=0x33, .f3=0x0, .f7=0x01},
                 MulhRdRs1Rs2 = {.op=0x33, .f3=0x1, .f7=0x01},
                 MulhsuRdRs1Rs2 = {.op=0x33, .f3=0x2, .f7=0x01},
@@ -190,9 +191,15 @@ public:     // types
                 RemRdRs1Rs2 = {.op=0x33, .f3=0x6, .f7=0x01},
                 RemuRdRs1Rs2 = {.op=0x33, .f3=0x7, .f7=0x01},
                 //--------
+                // "Zba" extension
                 Sh1addRdRs1Rs2 = {.op=0x33, .f3=0x2, .f7=0x10},
                 Sh2addRdRs1Rs2 = {.op=0x33, .f3=0x4, .f7=0x10},
-                Sh3addRdRs1Rs2 = {.op=0x33, .f3=0x6, .f7=0x10};
+                Sh3addRdRs1Rs2 = {.op=0x33, .f3=0x6, .f7=0x10},
+                //--------
+                // "Zicond" extension
+                CzeroEqzRdRs1Rs2 = {.op=0x33, .f3=0x5, .f7=0x7},
+                CzeroNezRdRs1Rs2 = {.op=0x33, .f3=0x7, .f7=0x7};
+                //--------
             //--------
         };
     };

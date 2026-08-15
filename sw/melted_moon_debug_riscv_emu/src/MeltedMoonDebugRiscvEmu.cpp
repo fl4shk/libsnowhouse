@@ -871,6 +871,7 @@ auto MeltedMoonDebugRiscvEmu::exec_one_instr(
             break;
         //------
         case Rv32RType::Op::Sh1addRdRs1Rs2.f7: {
+            // "Zba" extension
             switch (temp_enc_instr_r.funct3) {
             case Rv32RType::Op::Sh1addRdRs1Rs2.f3: {
                 _write_gpr_rd(
@@ -900,8 +901,34 @@ auto MeltedMoonDebugRiscvEmu::exec_one_instr(
             }
         }
             break;
+        case Rv32RType::Op::CzeroEqzRdRs1Rs2.f7: {
+            switch (temp_enc_instr_r.funct3) {
+            case Rv32RType::Op::CzeroEqzRdRs1Rs2.f3: {
+                _write_gpr_rd(
+                    (inp_rs2 == 0x0u)
+                    ? 0x0u
+                    : inp_rs1
+                );
+            }
+                break;
+            case Rv32RType::Op::CzeroNezRdRs1Rs2.f3: {
+                _write_gpr_rd(
+                    (inp_rs2 != 0x0u)
+                    ? 0x0u
+                    : inp_rs1
+                );
+            }
+                break;
+            default: {
+                bad_instr();
+            }
+                break;
+            }
+        }
+            break;
         //--------
         case Rv32RType::Op::MulRdRs1Rs2.f7: {
+            // "M" extension
             switch (temp_enc_instr_r.funct3) {
             case Rv32RType::Op::MulRdRs1Rs2.f3: {
                 // {.op=0x33, .f3=0x0, .f7=0x01},
