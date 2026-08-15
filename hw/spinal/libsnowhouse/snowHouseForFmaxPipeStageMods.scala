@@ -1843,7 +1843,7 @@ case class SnowHouseForFmaxPipeStageExecuteIo(
   //--------
   val myLcvDbusH2dStm = (
     master(Stream(
-      LcvBusH2dPayload(cfg=cfg.subCfg.lcvIbusEtcCfg.loBusCfg)
+      LcvBusH2dPayload(cfg=cfg.subCfg.lcvDbusEtcCfg.loBusCfg)
     ))
   )
   val multiCycleBusVec = (
@@ -3531,7 +3531,7 @@ case class SnowHouseForFmaxPipeStageWriteBackIo(
   //--------
   val myLcvDbusD2hStm = (
     slave(Stream(
-      LcvBusD2hPayload(cfg=cfg.subCfg.lcvIbusEtcCfg.loBusCfg)
+      LcvBusD2hPayload(cfg=cfg.subCfg.lcvDbusEtcCfg.loBusCfg)
     ))
   )
   //--------
@@ -4416,8 +4416,8 @@ case class SnowHouseForFmaxPipeStageWriteBack(
       if (cfg.optScoreboard) {
         myNonFwdWbPayload(0).nonExtVec(0) := inp.nonExtVec(0)
         myNonFwdWbPayload(0).myExtVec(0) := inp.myExtVec(0)
-        myFwdWbPayload(0).nonExtVec(0) := inp.nonExtVec(1)
-        myFwdWbPayload(0).myExtVec(0) := inp.myExtVec(1)
+        myFwdWbPayload(0).nonExtVec(0) := inp.nonExtVec(0)
+        myFwdWbPayload(0).myExtVec(0) := inp.myExtVec(0)
         //myFwdWbPayload(0) := inp
       } else {
         myWbPayloadVec.head(0) := inp
