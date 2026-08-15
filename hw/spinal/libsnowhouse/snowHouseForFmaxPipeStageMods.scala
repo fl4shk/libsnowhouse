@@ -4416,8 +4416,8 @@ case class SnowHouseForFmaxPipeStageWriteBack(
       if (cfg.optScoreboard) {
         myNonFwdWbPayload(0).nonExtVec(0) := inp.nonExtVec(0)
         myNonFwdWbPayload(0).myExtVec(0) := inp.myExtVec(0)
-        myFwdWbPayload(0).nonExtVec(0) := inp.nonExtVec(0)
-        myFwdWbPayload(0).myExtVec(0) := inp.myExtVec(0)
+        myFwdWbPayload(0).nonExtVec(0) := inp.nonExtVec(1)
+        myFwdWbPayload(0).myExtVec(0) := inp.myExtVec(1)
         //myFwdWbPayload(0) := inp
       } else {
         myWbPayloadVec.head(0) := inp
