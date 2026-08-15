@@ -1937,7 +1937,7 @@ object AluOpKind {
     ) = {
       val ret = InstrResult(cfg=cfg)(width=width)
       ret.main := (
-        left + Cat(right, False).asUInt.resize(ret.main.getWidth)
+        right + Cat(left, False).asUInt.resize(ret.main.getWidth)
       )
       ret.flagV := False
       ret.flagC := False
@@ -1973,7 +1973,7 @@ object AluOpKind {
     ) = {
       val ret = InstrResult(cfg=cfg)(width=width)
       ret.main := (
-        left + Cat(right, U"2'b00").asUInt.resize(ret.main.getWidth)
+        right + Cat(left, U"2'b00").asUInt.resize(ret.main.getWidth)
       )
       ret.flagV := False
       ret.flagC := False
@@ -2009,7 +2009,7 @@ object AluOpKind {
     ) = {
       val ret = InstrResult(cfg=cfg)(width=width)
       ret.main := (
-        left + Cat(right, U"3'b000").asUInt.resize(ret.main.getWidth)
+        right + Cat(left, U"3'b000").asUInt.resize(ret.main.getWidth)
       )
       ret.flagV := False
       ret.flagC := False

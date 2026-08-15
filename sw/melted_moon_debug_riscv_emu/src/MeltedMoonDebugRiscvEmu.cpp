@@ -874,25 +874,33 @@ auto MeltedMoonDebugRiscvEmu::exec_one_instr(
             switch (temp_enc_instr_r.funct3) {
             case Rv32RType::Op::Sh1addRdRs1Rs2.f3: {
                 _write_gpr_rd(
-                    inp_rs1 + u32(inp_rs2 << 1u)
+                    //inp_rs1 + u32(inp_rs2 << 1u)
+                    inp_rs2 + u32(inp_rs1 << 1u)
                 );
             }
                 break;
             case Rv32RType::Op::Sh2addRdRs1Rs2.f3: {
                 _write_gpr_rd(
-                    inp_rs1 + u32(inp_rs2 << 2u)
+                    //inp_rs1 + u32(inp_rs2 << 2u)
+                    inp_rs2 + u32(inp_rs1 << 2u)
                 );
             }
                 break;
             case Rv32RType::Op::Sh3addRdRs1Rs2.f3: {
                 _write_gpr_rd(
-                    inp_rs1 + u32(inp_rs2 << 3u)
+                    //inp_rs1 + u32(inp_rs2 << 3u)
+                    inp_rs2 + u32(inp_rs1 << 3u)
                 );
+            }
+                break;
+            default: {
+                bad_instr();
             }
                 break;
             }
         }
             break;
+        //--------
         case Rv32RType::Op::MulRdRs1Rs2.f7: {
             switch (temp_enc_instr_r.funct3) {
             case Rv32RType::Op::MulRdRs1Rs2.f3: {
