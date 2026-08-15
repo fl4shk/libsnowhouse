@@ -136,6 +136,23 @@ std::optional<std::string> MeltedMoonDebugRiscvEmu::disasm_one_instr(
             }
         }
             break;
+        case Rv32RType::Op::Sh1addRdRs1Rs2.f7: {
+            switch (temp_enc_instr_r.funct3) {
+            case Rv32RType::Op::Sh1addRdRs1Rs2.f3: {
+                instr_name = "sh1add";
+            }
+                break;
+            case Rv32RType::Op::Sh2addRdRs1Rs2.f3: {
+                instr_name = "sh2add";
+            }
+                break;
+            case Rv32RType::Op::Sh3addRdRs1Rs2.f3: {
+                instr_name = "sh3add";
+            }
+                break;
+            }
+        }
+            break;
         //------
         case Rv32RType::Op::MulRdRs1Rs2.f7: {
             switch (temp_enc_instr_r.funct3) {
@@ -853,6 +870,29 @@ auto MeltedMoonDebugRiscvEmu::exec_one_instr(
         }
             break;
         //------
+        case Rv32RType::Op::Sh1addRdRs1Rs2.f7: {
+            switch (temp_enc_instr_r.funct3) {
+            case Rv32RType::Op::Sh1addRdRs1Rs2.f3: {
+                _write_gpr_rd(
+                    inp_rs1 + u32(inp_rs2 << 1u)
+                );
+            }
+                break;
+            case Rv32RType::Op::Sh2addRdRs1Rs2.f3: {
+                _write_gpr_rd(
+                    inp_rs1 + u32(inp_rs2 << 2u)
+                );
+            }
+                break;
+            case Rv32RType::Op::Sh3addRdRs1Rs2.f3: {
+                _write_gpr_rd(
+                    inp_rs1 + u32(inp_rs2 << 3u)
+                );
+            }
+                break;
+            }
+        }
+            break;
         case Rv32RType::Op::MulRdRs1Rs2.f7: {
             switch (temp_enc_instr_r.funct3) {
             case Rv32RType::Op::MulRdRs1Rs2.f3: {

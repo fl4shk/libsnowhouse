@@ -188,7 +188,11 @@ public:     // types
                 DivRdRs1Rs2 = {.op=0x33, .f3=0x4, .f7=0x01},
                 DivuRdRs1Rs2 = {.op=0x33, .f3=0x5, .f7=0x01},
                 RemRdRs1Rs2 = {.op=0x33, .f3=0x6, .f7=0x01},
-                RemuRdRs1Rs2 = {.op=0x33, .f3=0x7, .f7=0x01};
+                RemuRdRs1Rs2 = {.op=0x33, .f3=0x7, .f7=0x01},
+                //--------
+                Sh1addRdRs1Rs2 = {.op=0x33, .f3=0x2, .f7=0x10},
+                Sh2addRdRs1Rs2 = {.op=0x33, .f3=0x4, .f7=0x10},
+                Sh3addRdRs1Rs2 = {.op=0x33, .f3=0x6, .f7=0x10};
             //--------
         };
     };
