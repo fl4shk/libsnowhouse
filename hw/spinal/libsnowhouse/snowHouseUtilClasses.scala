@@ -427,6 +427,7 @@ case class SnowHouseSubConfig(
         kind=LcvCacheKind.I,
         lineSizeBytes=icacheLineSizeBytes,
         depthWords=icacheDepthWords,
+        numWays=icacheNumWays,
         numCpus=1,
         lineWordMemRamStyleAltera=icacheLineWordMemRamStyleAltera,
         lineWordMemRamStyleXilinx=icacheLineWordMemRamStyleXilinx,
