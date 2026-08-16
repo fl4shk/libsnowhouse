@@ -4302,7 +4302,7 @@ case class SnowHouseForFmaxPipeStageWriteBack(
       //--------
       is (M"10--") {
         // zero-extending sub-word load or full-word load
-        myCurrMmw := myD2hBus.data
+        myCurrMmw := myD2hBus.data.resize(myCurrMmw.getWidth)
       }
       is (M"1100") {
         // LoadS, Sz8

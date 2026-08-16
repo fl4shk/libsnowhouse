@@ -459,7 +459,10 @@ case class SnowHouseSubConfig(
   )
   val lcvDbusMainCfg = (
     LcvBusMainConfig(
-      dataWidth=shRegFileCfg.mainWidth,
+      dataWidth=(
+        (shRegFileCfg.mainWidth * 2).max(64)
+        //shRegFileCfg.mainWidth
+      ),
       addrWidth=shRegFileCfg.mainWidth,
       allowBurst=false,
       burstAlwaysMaxSize=false,

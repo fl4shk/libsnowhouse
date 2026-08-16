@@ -10869,7 +10869,9 @@ case class SnowHousePipeStageExecute(
       ).asUInt
     )
     myH2dBus.addr := myDbusHostPayload.addr
-    myH2dBus.data := myDbusHostPayload.data
+    myH2dBus.data := myDbusHostPayload.data.resize(
+      myH2dBus.data.getWidth
+    )
     myH2dBus.isWrite := myDbusHostPayload.accKind.asBits(1)
 
     if (cfg.optScoreboard) {
