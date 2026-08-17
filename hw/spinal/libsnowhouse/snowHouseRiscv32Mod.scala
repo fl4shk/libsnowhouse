@@ -3734,24 +3734,24 @@ case class SnowHouseRiscv32WithDuplDualRam(
     tempArr
   }
 
-  val myLcvIbusEtcCfg = cfg.shCfg.subCfg.lcvIbusEtcCfg.hiBusCfg
+  //val myLcvIbusEtcCfg = cfg.shCfg.subCfg.lcvIbusEtcCfg.hiBusCfg
 
-  val myInstrDwAdapter = LcvBusSimpleBurstOnlyDataWidthDownAdapter(
-    cfg=LcvBusDataWidthAdapterConfig(
-      loBusMainCfg=myLcvIbusEtcCfg.mainCfg,
-      hiBusDataWidth=cfg.shCfg.mainWidth,
-      loBusCacheCfg=myLcvIbusEtcCfg.cacheCfg,
-      hiBusCacheCfg=myLcvIbusEtcCfg.cacheCfg,
-    )
-  )
+  //val myInstrDwAdapter = LcvBusSimpleBurstOnlyDataWidthDownAdapter(
+  //  cfg=LcvBusDataWidthAdapterConfig(
+  //    loBusMainCfg=myLcvIbusEtcCfg.mainCfg,
+  //    hiBusDataWidth=cfg.shCfg.mainWidth,
+  //    loBusCacheCfg=myLcvIbusEtcCfg.cacheCfg,
+  //    hiBusCacheCfg=myLcvIbusEtcCfg.cacheCfg,
+  //  )
+  //)
   val myInstrMem = LcvBusMem(
     cfg=LcvBusMemConfig(
       busCfg=(
-        //cfg.shCfg.subCfg.lcvIbusEtcCfg.hiBusCfg
+        cfg.shCfg.subCfg.lcvIbusEtcCfg.hiBusCfg
         //LcvBusConfig(
         //  mainCfg
         //)
-        myInstrDwAdapter.cfg.hiBusCfg
+        //myInstrDwAdapter.cfg.hiBusCfg
       ),
       depth=myMemDepth,
       initBigInt=Some(myMemInitBigInt),
@@ -3761,20 +3761,20 @@ case class SnowHouseRiscv32WithDuplDualRam(
     cfg=cfg.shCfg.subCfg.lcvIbusEtcCfg
   )
 
-  val myLcvDbusEtcCfg = cfg.shCfg.subCfg.lcvDbusEtcCfg.hiBusCfg
-  val myDataDwAdapter = LcvBusSimpleBurstOnlyDataWidthDownAdapter(
-    cfg=LcvBusDataWidthAdapterConfig(
-      loBusMainCfg=myLcvDbusEtcCfg.mainCfg,
-      hiBusDataWidth=cfg.shCfg.mainWidth,
-      loBusCacheCfg=myLcvDbusEtcCfg.cacheCfg,
-      hiBusCacheCfg=myLcvDbusEtcCfg.cacheCfg,
-    )
-  )
+  //val myLcvDbusEtcCfg = cfg.shCfg.subCfg.lcvDbusEtcCfg.hiBusCfg
+  //val myDataDwAdapter = LcvBusSimpleBurstOnlyDataWidthDownAdapter(
+  //  cfg=LcvBusDataWidthAdapterConfig(
+  //    loBusMainCfg=myLcvDbusEtcCfg.mainCfg,
+  //    hiBusDataWidth=cfg.shCfg.mainWidth,
+  //    loBusCacheCfg=myLcvDbusEtcCfg.cacheCfg,
+  //    hiBusCacheCfg=myLcvDbusEtcCfg.cacheCfg,
+  //  )
+  //)
   val myDataMem = LcvBusMem(
     cfg=LcvBusMemConfig(
       busCfg=(
-        //cfg.shCfg.subCfg.lcvDbusEtcCfg.hiBusCfg
-        myDataDwAdapter.cfg.hiBusCfg
+        cfg.shCfg.subCfg.lcvDbusEtcCfg.hiBusCfg
+        //myDataDwAdapter.cfg.hiBusCfg
       ),
       depth=myMemDepth,
       initBigInt=Some(myMemInitBigInt),
@@ -3801,9 +3801,9 @@ case class SnowHouseRiscv32WithDuplDualRam(
   cpu.io.lcvIbus.d2hBus << icache.io.loBus.d2hBus
 
 
-  //myInstrMem.io.bus <-/< icache.io.hiBus 
-  myInstrDwAdapter.io.loBus <-/< icache.io.hiBus
-  myInstrMem.io.bus <-/< myInstrDwAdapter.io.hiBus
+  myInstrMem.io.bus <-/< icache.io.hiBus 
+  //myInstrDwAdapter.io.loBus <-/< icache.io.hiBus
+  //myInstrMem.io.bus <-/< myInstrDwAdapter.io.hiBus
 
   cpu.io.lcvDbus.h2dBus.translateInto(dcache.io.loBus.h2dBus)(
     dataAssignment=(outp, inp) => {
@@ -3814,9 +3814,9 @@ case class SnowHouseRiscv32WithDuplDualRam(
   )
   cpu.io.lcvDbus.d2hBus << dcache.io.loBus.d2hBus
 
-  myDataDwAdapter.io.loBus <-/< dcache.io.hiBus
-  myDataMem.io.bus <-/< myDataDwAdapter.io.hiBus
-  //myDataMem.io.bus <-/< dcache.io.hiBus 
+  //myDataDwAdapter.io.loBus <-/< dcache.io.hiBus
+  //myDataMem.io.bus <-/< myDataDwAdapter.io.hiBus
+  myDataMem.io.bus <-/< dcache.io.hiBus 
 
   if (io.dbgInfo != null) {
     io.dbgInfo := cpu.io.dbgInfo

@@ -392,11 +392,11 @@ case class SnowHouseSubConfig(
   val lcvIbusMainCfg = (
     LcvBusMainConfig(
       dataWidth=(
-        if (optScoreboard) (
-          instrMainWidth * 2 // dual-issue
-        ) else (
+        //if (optScoreboard) (
+        //  instrMainWidth * 2 // dual-issue
+        //) else (
           instrMainWidth
-        )
+        //)
         //shRegFileCfg.mainWidth
       ),
       addrWidth=shRegFileCfg.mainWidth,
@@ -460,8 +460,8 @@ case class SnowHouseSubConfig(
   val lcvDbusMainCfg = (
     LcvBusMainConfig(
       dataWidth=(
-        (shRegFileCfg.mainWidth * 2).max(64)
-        //shRegFileCfg.mainWidth
+        //(shRegFileCfg.mainWidth * 2).max(64)
+        shRegFileCfg.mainWidth
       ),
       addrWidth=shRegFileCfg.mainWidth,
       allowBurst=false,
@@ -2271,8 +2271,9 @@ case class SnowHousePipePayload(
   optEnableDualIssue: Boolean=true,
 ) extends Bundle with PipeRegFilePayloadBase[UInt, Bool] {
   val myEnableDualIssue = (
-    cfg.optScoreboard
-    && optEnableDualIssue
+    //cfg.optScoreboard
+    //&& optEnableDualIssue
+    false
   )
   val mySomeExtVecSize = (
     if (myEnableDualIssue) (
