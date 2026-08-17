@@ -55,7 +55,7 @@ object Riscv32Op {
   //): (Int, (Int, Int), String) = {
   //  val ret = (_opCnt, kind, name)
   //  if (update) {
-  //    _opCnt += 1
+  //    _opCnt += 
   //  }
   //  ret
   //}
@@ -101,6 +101,7 @@ object Rv32RType {
     val SltRdRs1Rs2 = OpFields(op=0x33, f3=0x2, f7=0x00)
     val SltuRdRs1Rs2 = OpFields(op=0x33, f3=0x3, f7=0x00)
     //--------
+    // "M" extension
     val MulRdRs1Rs2 = OpFields(op=0x33, f3=0x0, f7=0x01)
     val MulhRdRs1Rs2 = OpFields(op=0x33, f3=0x1, f7=0x01)
     val MulhsuRdRs1Rs2 = OpFields(op=0x33, f3=0x2, f7=0x01)
@@ -109,6 +110,15 @@ object Rv32RType {
     val DivuRdRs1Rs2 = OpFields(op=0x33, f3=0x5, f7=0x01)
     val RemRdRs1Rs2 = OpFields(op=0x33, f3=0x6, f7=0x01)
     val RemuRdRs1Rs2 = OpFields(op=0x33, f3=0x7, f7=0x01)
+    //--------
+    // "Zba" extension
+    val Sh1addRdRs1Rs2 = OpFields(op=0x33, f3=0x2, f7=0x10)
+    val Sh2addRdRs1Rs2 = OpFields(op=0x33, f3=0x4, f7=0x10)
+    val Sh3addRdRs1Rs2 = OpFields(op=0x33, f3=0x6, f7=0x10)
+    //--------
+    // "Zicond" extension
+    val CzeroEqzRdRs1Rs2 = OpFields(op=0x33, f3=0x5, f7=0x7)
+    val CzeroNezRdRs1Rs2 = OpFields(op=0x33, f3=0x7, f7=0x7)
     //--------
   }
 
@@ -357,7 +367,7 @@ object Rv32UType {
   }
 }
 
-object Riscv32imOpInfoMap {
+object Riscv32OpInfoMap {
   val opInfoMap = LinkedHashMap[Any, OpInfo]()
 
   opInfoMap += (
@@ -480,6 +490,63 @@ object Riscv32imOpInfoMap {
       dstArr=Array[DstKind](DstKind.Gpr),
       srcArr=Array[SrcKind](SrcKind.Gpr, SrcKind.Gpr),
       multiCycleOp=MultiCycleOpKind.Smod,
+    )
+  )
+  //--------
+  opInfoMap += (
+    //--------
+    Rv32RType.Op.Sh1addRdRs1Rs2 -> OpInfo.mkAlu(
+      dstArr=Array[DstKind](DstKind.Gpr),
+      srcArr=Array[SrcKind](SrcKind.Gpr, SrcKind.Gpr),
+      aluOp=(
+        AluOpKind.Lsl1Add
+        //AluOpKind.LcvAlu(LcvAluDel1InpOpEnum.ADD)
+      ),
+    )
+  )
+  opInfoMap += (
+    //--------
+    Rv32RType.Op.Sh2addRdRs1Rs2 -> OpInfo.mkAlu(
+      dstArr=Array[DstKind](DstKind.Gpr),
+      srcArr=Array[SrcKind](SrcKind.Gpr, SrcKind.Gpr),
+      aluOp=(
+        AluOpKind.Lsl2Add
+        //AluOpKind.LcvAlu(LcvAluDel1InpOpEnum.ADD)
+      ),
+    )
+  )
+  opInfoMap += (
+    //--------
+    Rv32RType.Op.Sh3addRdRs1Rs2 -> OpInfo.mkAlu(
+      dstArr=Array[DstKind](DstKind.Gpr),
+      srcArr=Array[SrcKind](SrcKind.Gpr, SrcKind.Gpr),
+      aluOp=(
+        AluOpKind.Lsl3Add
+        //AluOpKind.LcvAlu(LcvAluDel1InpOpEnum.ADD)
+      ),
+    )
+  )
+  //--------
+  opInfoMap += (
+    //--------
+    Rv32RType.Op.CzeroEqzRdRs1Rs2 -> OpInfo.mkAlu(
+      dstArr=Array[DstKind](DstKind.Gpr),
+      srcArr=Array[SrcKind](SrcKind.Gpr, SrcKind.Gpr),
+      aluOp=(
+        AluOpKind.CzeroEqz
+        //AluOpKind.LcvAlu(LcvAluDel1InpOpEnum.ADD)
+      ),
+    )
+  )
+  opInfoMap += (
+    //--------
+    Rv32RType.Op.CzeroNezRdRs1Rs2 -> OpInfo.mkAlu(
+      dstArr=Array[DstKind](DstKind.Gpr),
+      srcArr=Array[SrcKind](SrcKind.Gpr, SrcKind.Gpr),
+      aluOp=(
+        AluOpKind.CzeroNez
+        //AluOpKind.LcvAlu(LcvAluDel1InpOpEnum.ADD)
+      ),
     )
   )
   //--------
@@ -832,7 +899,7 @@ object Riscv32imOpInfoMap {
     )
   )
 }
-object SnowHouseRiscv32imPipeStageInstrDecode {
+object SnowHouseRiscv32PipeStageInstrDecode {
   def apply(
     psId: SnowHousePipeStageInstrDecode
   ) = new Area {
@@ -1522,6 +1589,29 @@ object SnowHouseRiscv32imPipeStageInstrDecode {
               setOp(SraRdRs1Rs2, encInstrR.last)
             }
           }
+          is (Sh1addRdRs1Rs2.f7) {
+            // "Zba" extension
+            switch (encInstrR.last.funct3) {
+              is (Sh1addRdRs1Rs2.f3) {
+                setOp(Sh1addRdRs1Rs2, encInstrR.last)
+              }
+              is (Sh2addRdRs1Rs2.f3) {
+                setOp(Sh2addRdRs1Rs2, encInstrR.last)
+              }
+              //is (Sh3addRdRs1Rs2.f3) 
+              default {
+                setOp(Sh3addRdRs1Rs2, encInstrR.last)
+              }
+            }
+          }
+          is (CzeroEqzRdRs1Rs2.f7) {
+            // "Zicond" extension
+            when (!encInstrR.last.funct3(1)) {
+              setOp(CzeroEqzRdRs1Rs2, encInstrR.last)
+            } otherwise {
+              setOp(CzeroNezRdRs1Rs2, encInstrR.last)
+            }
+          }
           default {
             // assume it's one of the `M` extension instructions
             //psId.myTempOpMayNeedHazardCheck := True
@@ -1695,7 +1785,7 @@ object SnowHouseRiscv32imPipeStageInstrDecode {
   }
 }
 
-case class SnowHouseRiscv32imConfig(
+case class SnowHouseRiscv32Config(
   optFormal: Boolean,
   optMainAddrWidth: Option[Int]=None,
   optForFmaxCfg: Option[SnowHouseForFmaxConfig]=Some(
@@ -1790,7 +1880,9 @@ case class SnowHouseRiscv32imConfig(
   ),
 ) {
   //--------
-  val instrMainWidth = 32
+  val instrMainWidth = (
+    32
+  )
   val mainWidth = (
     32
     //16
@@ -1800,7 +1892,7 @@ case class SnowHouseRiscv32imConfig(
     //3
     2
   )
-  val pipeName="SnowHouseRiscv32im"
+  val pipeName="SnowHouseRiscv32"
   //--------
   val shCfg = SnowHouseConfig(
     haveZeroReg=Some(0),
@@ -1913,6 +2005,14 @@ case class SnowHouseRiscv32imConfig(
             regFileMemRamStyleXilinx
           ),
         ),
+        //optScoreboard=optForFmaxCfg match {
+        //  case Some(forFmaxCfg) => {
+        //    forFmaxCfg.optScoreboard,
+        //  }
+        //  case None => {
+        //    false
+        //  }
+        //},
         haveIcache=true,
         icacheDepthWords=icacheDepthWords,
         icacheNumWays=icacheNumWays,
@@ -1935,7 +2035,7 @@ case class SnowHouseRiscv32imConfig(
         optCacheBusSrcWidth=None,
       )
     },
-    opInfoMap=Riscv32imOpInfoMap.opInfoMap,
+    opInfoMap=Riscv32OpInfoMap.opInfoMap,
     irqJmpOp={
       var myIrqJmpOp: Int = 0x0
       //for (
@@ -1954,7 +2054,7 @@ case class SnowHouseRiscv32imConfig(
     optForFmaxCfg=(
       optForFmaxCfg
     ),
-    doInstrDecodeFunc=SnowHouseRiscv32imPipeStageInstrDecode.apply,
+    doInstrDecodeFunc=SnowHouseRiscv32PipeStageInstrDecode.apply,
     optBranchPredictorKind=Some(
       //SnowHouseBranchPredictorKind.FwdNotTknBakTkn(
       //  branchTgtBufSizeLog2=(
@@ -1986,8 +2086,8 @@ case class SnowHouseRiscv32imConfig(
   val program = ArrayBuffer[AsmStmt]()
 }
 
-case class SnowHouseRiscv32imWithoutRamIo(
-  cfg: SnowHouseRiscv32imConfig
+case class SnowHouseRiscv32WithoutRamIo(
+  cfg: SnowHouseRiscv32Config
 ) extends Bundle {
   val lcvIbus = (
     master(LcvBusIo(
@@ -2026,7 +2126,7 @@ case class SnowHouseRiscv32imWithoutRamIo(
 }
 
 
-case class SnowHouseRiscv32imAddMultiCycle(
+case class SnowHouseRiscv32AddMultiCycle(
   cpuIo: SnowHouseIo,
   //bridge: SnowHouseMcDualBusToMcBusBridge,
 ) extends Area {
@@ -2076,7 +2176,7 @@ case class SnowHouseRiscv32imAddMultiCycle(
                   init=dstVec(0).getZero,
                 )
                 setName(
-                  "SnowHouseRiscv32imCpy32_AddRaPcImm_rDst"
+                  "SnowHouseRiscv32Cpy32_AddRaPcImm_rDst"
                 )
               )
               multiCycleBus.ready := False
@@ -2107,7 +2207,7 @@ case class SnowHouseRiscv32imAddMultiCycle(
   }
 }
 
-case class SnowHouseRiscv32imDivmod(
+case class SnowHouseRiscv32Divmod(
   cpuIo: SnowHouseIo
   //bridge: SnowHouseMcDualBusToMcBusBridge,
 ) extends Area {
@@ -2826,7 +2926,7 @@ case class SnowHouseRiscv32imDivmod(
   }
 }
 
-case class SnowHouseRiscv32imMulIo(
+case class SnowHouseRiscv32MulIo(
   cfg: SnowHouseConfig,
 ) extends Bundle {
   val multiCycleBus = slave(
@@ -2856,10 +2956,10 @@ case class SnowHouseRiscv32imMulIo(
   //val outpProd = out(UInt(cfg.mainWidth * 2 bits))
   //val isSigned = in(Bool())
 }
-//case class SnowHouseRiscv32imMul(
+//case class SnowHouseRiscv32Mul(
 //  cfg: SnowHouseConfig
 //) extends Component {
-//  val io = SnowHouseRiscv32imMulIo(cfg=cfg)
+//  val io = SnowHouseRiscv32MulIo(cfg=cfg)
 //  def multiCycleBus = io.multiCycleBus
 //  //val rIsSignedFullProd = Reg(Bool(), init=False)
 //  val rSignVec = (
@@ -2893,7 +2993,7 @@ case class SnowHouseRiscv32imMulIo(
 //  val rState = (
 //    Reg(State())
 //    init(State.IDLE)
-//    //setName("SnowHouseRiscv32imMul32_Umul_rState")
+//    //setName("SnowHouseRiscv32Mul32_Umul_rState")
 //  )
 //  val low = (mainWidth >> 1) - 1 downto 0
 //  val high = (mainWidth - 1 downto (mainWidth >> 1))
@@ -3076,10 +3176,10 @@ case class SnowHouseRiscv32imMulIo(
 //  }
 //}
 
-case class SnowHouseRiscv32imMul(
+case class SnowHouseRiscv32Mul(
   cfg: SnowHouseConfig
 ) extends Component {
-  val io = SnowHouseRiscv32imMulIo(cfg=cfg)
+  val io = SnowHouseRiscv32MulIo(cfg=cfg)
   def multiCycleBus = io.multiCycleBus
 
   def srcVec = multiCycleBus.sendData.srcVec
@@ -3244,14 +3344,14 @@ case class SnowHouseRiscv32imMul(
   //  }
   //}
 }
-case class SnowHouseRiscv32imMul32(
+case class SnowHouseRiscv32Mul32(
   cpuIo: SnowHouseIo,
   //bridge: SnowHouseMcDualBusToMcBusBridge,
 ) extends Area {
   def cfg = cpuIo.cfg
   //def cfg = bridge.cfg
 
-  val myMul = SnowHouseRiscv32imMul(cfg=cfg)
+  val myMul = SnowHouseRiscv32Mul(cfg=cfg)
   //val innerMap = cfg.multiCycleOpInfoMap.get(MultiCycleOpGroup.Mul).get
   for (
     ((group, _), busIdx)
@@ -3262,7 +3362,7 @@ case class SnowHouseRiscv32imMul32(
     }
   }
 }
-case class SnowHouseRiscv32imShift32LowLatency(
+case class SnowHouseRiscv32Shift32LowLatency(
   cpuIo: SnowHouseIo,
   //bridge: SnowHouseMcDualBusToMcBusBridge,
 ) extends Area {
@@ -3498,7 +3598,7 @@ case class SnowHouseRiscv32imShift32LowLatency(
     }
   }
 }
-case class SnowHouseRiscv32imMultiCycleInstrArea(
+case class SnowHouseRiscv32MultiCycleInstrArea(
   cpuIo: SnowHouseIo
 ) extends Area {
   //for ((multiCycleBus, idx) <- cpuIo.multiCycleBusVec.view.zipWithIndex) {
@@ -3509,12 +3609,12 @@ case class SnowHouseRiscv32imMultiCycleInstrArea(
   //    })
   //  }
   //}
-  //val lslRc = SnowHouseRiscv32imLsl32(cpuIo=cpuIo, immShift=false)
-  //val lslImm = SnowHouseRiscv32imLsl32(cpuIo=cpuIo, immShift=true)
-  //val lsrRc = SnowHouseRiscv32imLsr32(cpuIo=cpuIo, immShift=false)
-  //val lsrImm = SnowHouseRiscv32imLsr32(cpuIo=cpuIo, immShift=true)
-  //val asrRc = SnowHouseRiscv32imAsr32(cpuIo=cpuIo, immShift=false)
-  //val asrImm = SnowHouseRiscv32imAsr32(cpuIo=cpuIo, immShift=true)
+  //val lslRc = SnowHouseRiscv32Lsl32(cpuIo=cpuIo, immShift=false)
+  //val lslImm = SnowHouseRiscv32Lsl32(cpuIo=cpuIo, immShift=true)
+  //val lsrRc = SnowHouseRiscv32Lsr32(cpuIo=cpuIo, immShift=false)
+  //val lsrImm = SnowHouseRiscv32Lsr32(cpuIo=cpuIo, immShift=true)
+  //val asrRc = SnowHouseRiscv32Asr32(cpuIo=cpuIo, immShift=false)
+  //val asrImm = SnowHouseRiscv32Asr32(cpuIo=cpuIo, immShift=true)
   //val bridgeArr = Array.fill(
   //  cpuIo.cfg.multiCycleOpInfoMap.view.size
   //)(
@@ -3553,30 +3653,30 @@ case class SnowHouseRiscv32imMultiCycleInstrArea(
 
   //--------
   val shift32/*shiftSlt32*/ = (
-    //SnowHouseRiscv32imShift32(cpuIo=cpuIo)
-    //SnowHouseRiscv32imShiftSlt32LowLatency(cpuIo=cpuIo)
-    SnowHouseRiscv32imShift32LowLatency(
+    //SnowHouseRiscv32Shift32(cpuIo=cpuIo)
+    //SnowHouseRiscv32ShiftSlt32LowLatency(cpuIo=cpuIo)
+    SnowHouseRiscv32Shift32LowLatency(
       cpuIo=cpuIo
       //bridge=bridge
     )
   )
-  //val cpyAdd32 = SnowHouseRiscv32imCpyAdd32(cpuIo=cpuIo)
-  val addMultiCycle = SnowHouseRiscv32imAddMultiCycle(cpuIo=cpuIo)
-  val mul32 = SnowHouseRiscv32imMul32(cpuIo=cpuIo)
-  //val divmod32 = SnowHouseRiscv32imDivmod32(cpuIo=cpuIo)
-  //val divmodw = SnowHouseRiscv32imDivmodw(cpuIo=cpuIo)
-  val divmod = SnowHouseRiscv32imDivmod(cpuIo=cpuIo)
+  //val cpyAdd32 = SnowHouseRiscv32CpyAdd32(cpuIo=cpuIo)
+  val addMultiCycle = SnowHouseRiscv32AddMultiCycle(cpuIo=cpuIo)
+  val mul32 = SnowHouseRiscv32Mul32(cpuIo=cpuIo)
+  //val divmod32 = SnowHouseRiscv32Divmod32(cpuIo=cpuIo)
+  //val divmodw = SnowHouseRiscv32Divmodw(cpuIo=cpuIo)
+  val divmod = SnowHouseRiscv32Divmod(cpuIo=cpuIo)
   //--------
 }
-case class SnowHouseRiscv32imWithoutRam(
-  cfg: SnowHouseRiscv32imConfig
+case class SnowHouseRiscv32WithoutRam(
+  cfg: SnowHouseRiscv32Config
 ) extends Component {
   //--------
-  val io = SnowHouseRiscv32imWithoutRamIo(cfg=cfg)
+  val io = SnowHouseRiscv32WithoutRamIo(cfg=cfg)
   val cpu = SnowHouse(cfg=cfg.shCfg)
   //--------
   val multiCycleInstrArea = (
-    SnowHouseRiscv32imMultiCycleInstrArea(cpuIo=cpu.io)
+    SnowHouseRiscv32MultiCycleInstrArea(cpuIo=cpu.io)
   )
   //--------
   io.lcvIbus << cpu.io.lcvIbus
@@ -3586,8 +3686,8 @@ case class SnowHouseRiscv32imWithoutRam(
     io.dbgInfo := cpu.io.dbgInfo
   }
 }
-case class SnowHouseRiscv32imWithDuplDualRamIo(
-  cfg: SnowHouseRiscv32imConfig
+case class SnowHouseRiscv32WithDuplDualRamIo(
+  cfg: SnowHouseRiscv32Config
 ) extends Bundle {
   val dbgInfo = (
     cfg.dbgExposeExtrasAtRegFileWrite
@@ -3613,12 +3713,12 @@ case class SnowHouseRiscv32imWithDuplDualRamIo(
     dbgInfo.encInstrAtRegFileWrite
   )
 }
-case class SnowHouseRiscv32imWithDuplDualRam(
-  cfg: SnowHouseRiscv32imConfig
+case class SnowHouseRiscv32WithDuplDualRam(
+  cfg: SnowHouseRiscv32Config
 ) extends Component {
-  val io = SnowHouseRiscv32imWithDuplDualRamIo(cfg=cfg)
+  val io = SnowHouseRiscv32WithDuplDualRamIo(cfg=cfg)
 
-  val cpu = SnowHouseRiscv32imWithoutRam(cfg=cfg)
+  val cpu = SnowHouseRiscv32WithoutRam(cfg=cfg)
   val program = SnowHouseRam32InitFromBin(
     filename=cfg.programStr
   )
@@ -3634,9 +3734,25 @@ case class SnowHouseRiscv32imWithDuplDualRam(
     tempArr
   }
 
+  //val myLcvIbusEtcCfg = cfg.shCfg.subCfg.lcvIbusEtcCfg.hiBusCfg
+
+  //val myInstrDwAdapter = LcvBusSimpleBurstOnlyDataWidthDownAdapter(
+  //  cfg=LcvBusDataWidthAdapterConfig(
+  //    loBusMainCfg=myLcvIbusEtcCfg.mainCfg,
+  //    hiBusDataWidth=cfg.shCfg.mainWidth,
+  //    loBusCacheCfg=myLcvIbusEtcCfg.cacheCfg,
+  //    hiBusCacheCfg=myLcvIbusEtcCfg.cacheCfg,
+  //  )
+  //)
   val myInstrMem = LcvBusMem(
     cfg=LcvBusMemConfig(
-      busCfg=cfg.shCfg.subCfg.lcvIbusEtcCfg.hiBusCfg,
+      busCfg=(
+        cfg.shCfg.subCfg.lcvIbusEtcCfg.hiBusCfg
+        //LcvBusConfig(
+        //  mainCfg
+        //)
+        //myInstrDwAdapter.cfg.hiBusCfg
+      ),
       depth=myMemDepth,
       initBigInt=Some(myMemInitBigInt),
     )
@@ -3645,9 +3761,21 @@ case class SnowHouseRiscv32imWithDuplDualRam(
     cfg=cfg.shCfg.subCfg.lcvIbusEtcCfg
   )
 
+  //val myLcvDbusEtcCfg = cfg.shCfg.subCfg.lcvDbusEtcCfg.hiBusCfg
+  //val myDataDwAdapter = LcvBusSimpleBurstOnlyDataWidthDownAdapter(
+  //  cfg=LcvBusDataWidthAdapterConfig(
+  //    loBusMainCfg=myLcvDbusEtcCfg.mainCfg,
+  //    hiBusDataWidth=cfg.shCfg.mainWidth,
+  //    loBusCacheCfg=myLcvDbusEtcCfg.cacheCfg,
+  //    hiBusCacheCfg=myLcvDbusEtcCfg.cacheCfg,
+  //  )
+  //)
   val myDataMem = LcvBusMem(
     cfg=LcvBusMemConfig(
-      busCfg=cfg.shCfg.subCfg.lcvDbusEtcCfg.hiBusCfg,
+      busCfg=(
+        cfg.shCfg.subCfg.lcvDbusEtcCfg.hiBusCfg
+        //myDataDwAdapter.cfg.hiBusCfg
+      ),
       depth=myMemDepth,
       initBigInt=Some(myMemInitBigInt),
     )
@@ -3671,7 +3799,11 @@ case class SnowHouseRiscv32imWithDuplDualRam(
     }
   )
   cpu.io.lcvIbus.d2hBus << icache.io.loBus.d2hBus
+
+
   myInstrMem.io.bus <-/< icache.io.hiBus 
+  //myInstrDwAdapter.io.loBus <-/< icache.io.hiBus
+  //myInstrMem.io.bus <-/< myInstrDwAdapter.io.hiBus
 
   cpu.io.lcvDbus.h2dBus.translateInto(dcache.io.loBus.h2dBus)(
     dataAssignment=(outp, inp) => {
@@ -3681,6 +3813,9 @@ case class SnowHouseRiscv32imWithDuplDualRam(
     }
   )
   cpu.io.lcvDbus.d2hBus << dcache.io.loBus.d2hBus
+
+  //myDataDwAdapter.io.loBus <-/< dcache.io.hiBus
+  //myDataMem.io.bus <-/< myDataDwAdapter.io.hiBus
   myDataMem.io.bus <-/< dcache.io.hiBus 
 
   if (io.dbgInfo != null) {
@@ -3689,8 +3824,8 @@ case class SnowHouseRiscv32imWithDuplDualRam(
 }
 
 
-case class SnowHouseRiscv32imWithSharedRamIo(
-  cfg: SnowHouseRiscv32imConfig
+case class SnowHouseRiscv32WithSharedRamIo(
+  cfg: SnowHouseRiscv32Config
 ) extends Bundle {
   val dbgInfo = (
     cfg.dbgExposeExtrasAtRegFileWrite
@@ -3716,12 +3851,12 @@ case class SnowHouseRiscv32imWithSharedRamIo(
     dbgInfo.encInstrAtRegFileWrite
   )
 }
-case class SnowHouseRiscv32imWithSharedRam(
-  cfg: SnowHouseRiscv32imConfig
+case class SnowHouseRiscv32WithSharedRam(
+  cfg: SnowHouseRiscv32Config
 ) extends Component {
-  val io = SnowHouseRiscv32imWithSharedRamIo(cfg=cfg)
+  val io = SnowHouseRiscv32WithSharedRamIo(cfg=cfg)
 
-  val cpu = SnowHouseRiscv32imWithoutRam(cfg=cfg)
+  val cpu = SnowHouseRiscv32WithoutRam(cfg=cfg)
   val program = SnowHouseRam32InitFromBin(
     filename=cfg.programStr
   )
@@ -3804,14 +3939,14 @@ case class SnowHouseRiscv32imWithSharedRam(
   }
 }
 
-object SnowHouseRiscv32imWithoutRamToVerilog extends App {
+object SnowHouseRiscv32WithoutRamToVerilog extends App {
   Config.spinal.generateVerilog({
     //val cfg = SnowHouseCpuConfig(
     //  optFormal=(
     //    false
     //  )
     //)
-    val cfg = SnowHouseRiscv32imConfig(
+    val cfg = SnowHouseRiscv32Config(
       optFormal=(
         //true
         false
@@ -3839,23 +3974,23 @@ object SnowHouseRiscv32imWithoutRamToVerilog extends App {
       //exposeRegFileWriteDataToIo=true,
     )
     //val testProgram = SnowHouseCpuTestProgram(cfg=cfg)
-    SnowHouseRiscv32imWithoutRam(cfg=cfg)
+    SnowHouseRiscv32WithoutRam(cfg=cfg)
   })
 }
-object SnowHouseRiscv32imTestProgramArr {
+object SnowHouseRiscv32TestProgramArr {
   val programStrNoExtBasenameArr = Array[String](
     "rv32ui-p-lw",
     "rv32ui-p-sw",
-    "rv32ui-p-lhu",
-    "rv32ui-p-lbu",
-    "rv32ui-p-sb",
-    "rv32ui-p-sh",
-    "rv32ui-p-lh",
-    "rv32ui-p-lb",
-    "rv32ui-p-st_ld",
-    "rv32ui-p-ld_st",
-    "rv32ui-p-jalr",
-    "rv32ui-p-jal",
+    //"rv32ui-p-lhu",
+    //"rv32ui-p-lbu",
+    //"rv32ui-p-sb",
+    //"rv32ui-p-sh",
+    //"rv32ui-p-lh",
+    //"rv32ui-p-lb",
+    //"rv32ui-p-st_ld",
+    //"rv32ui-p-ld_st",
+    //"rv32ui-p-jalr",
+    //"rv32ui-p-jal",
     //--------
     //"rv32ui-p-slti",
     //"rv32ui-p-or",
@@ -3889,10 +4024,10 @@ object SnowHouseRiscv32imTestProgramArr {
     //"rv32ui-p-bne",
   )
 }
-object SnowHouseRiscv32imWithDuplDualRamSim extends App {
+object SnowHouseRiscv32WithDuplDualRamSim extends App {
   
   val programStrNoExtBasenameArr = (
-    SnowHouseRiscv32imTestProgramArr.programStrNoExtBasenameArr
+    SnowHouseRiscv32TestProgramArr.programStrNoExtBasenameArr
   )
 
   val testOptTwoCycleRegFileReads = (
@@ -3918,7 +4053,7 @@ object SnowHouseRiscv32imWithDuplDualRamSim extends App {
       8192 * 2
     )
 
-    val cfg = SnowHouseRiscv32imConfig(
+    val cfg = SnowHouseRiscv32Config(
       optFormal=(
         //true
         false
@@ -3937,7 +4072,7 @@ object SnowHouseRiscv32imWithDuplDualRamSim extends App {
     )
     Config.sim.compile({
       val toComp = (
-        SnowHouseRiscv32imWithDuplDualRam(
+        SnowHouseRiscv32WithDuplDualRam(
           cfg=cfg
         )
       )
@@ -4017,10 +4152,10 @@ object SnowHouseRiscv32imWithDuplDualRamSim extends App {
   }
 }
 
-object SnowHouseRiscv32imWithSharedRamSim extends App {
+object SnowHouseRiscv32WithSharedRamSim extends App {
   
   val programStrNoExtBasenameArr = (
-    SnowHouseRiscv32imTestProgramArr.programStrNoExtBasenameArr
+    SnowHouseRiscv32TestProgramArr.programStrNoExtBasenameArr
   )
 
   val testOptTwoCycleRegFileReads = (
@@ -4046,7 +4181,7 @@ object SnowHouseRiscv32imWithSharedRamSim extends App {
       8192 * 2
     )
 
-    val cfg = SnowHouseRiscv32imConfig(
+    val cfg = SnowHouseRiscv32Config(
       optFormal=(
         //true
         false
@@ -4065,7 +4200,7 @@ object SnowHouseRiscv32imWithSharedRamSim extends App {
     )
     Config.sim.compile({
       val toComp = (
-        SnowHouseRiscv32imWithSharedRam(
+        SnowHouseRiscv32WithSharedRam(
           cfg=cfg
         )
       )
@@ -4144,6 +4279,6 @@ object SnowHouseRiscv32imWithSharedRamSim extends App {
     }}
   }
 }
-//object Riscv32imOp {
+//object Riscv32Op {
 //  private var _opCnt: Int = 0
 //}
