@@ -136,6 +136,23 @@ std::optional<std::string> MeltedMoonDebugRiscvEmu::disasm_one_instr(
             }
         }
             break;
+        case Rv32RType::Op::Sh1addRdRs1Rs2.f7: {
+            switch (temp_enc_instr_r.funct3) {
+            case Rv32RType::Op::Sh1addRdRs1Rs2.f3: {
+                instr_name = "sh1add";
+            }
+                break;
+            case Rv32RType::Op::Sh2addRdRs1Rs2.f3: {
+                instr_name = "sh2add";
+            }
+                break;
+            case Rv32RType::Op::Sh3addRdRs1Rs2.f3: {
+                instr_name = "sh3add";
+            }
+                break;
+            }
+        }
+            break;
         //------
         case Rv32RType::Op::MulRdRs1Rs2.f7: {
             switch (temp_enc_instr_r.funct3) {
@@ -853,7 +870,65 @@ auto MeltedMoonDebugRiscvEmu::exec_one_instr(
         }
             break;
         //------
+        case Rv32RType::Op::Sh1addRdRs1Rs2.f7: {
+            // "Zba" extension
+            switch (temp_enc_instr_r.funct3) {
+            case Rv32RType::Op::Sh1addRdRs1Rs2.f3: {
+                _write_gpr_rd(
+                    //inp_rs1 + u32(inp_rs2 << 1u)
+                    inp_rs2 + u32(inp_rs1 << 1u)
+                );
+            }
+                break;
+            case Rv32RType::Op::Sh2addRdRs1Rs2.f3: {
+                _write_gpr_rd(
+                    //inp_rs1 + u32(inp_rs2 << 2u)
+                    inp_rs2 + u32(inp_rs1 << 2u)
+                );
+            }
+                break;
+            case Rv32RType::Op::Sh3addRdRs1Rs2.f3: {
+                _write_gpr_rd(
+                    //inp_rs1 + u32(inp_rs2 << 3u)
+                    inp_rs2 + u32(inp_rs1 << 3u)
+                );
+            }
+                break;
+            default: {
+                bad_instr();
+            }
+                break;
+            }
+        }
+            break;
+        case Rv32RType::Op::CzeroEqzRdRs1Rs2.f7: {
+            switch (temp_enc_instr_r.funct3) {
+            case Rv32RType::Op::CzeroEqzRdRs1Rs2.f3: {
+                _write_gpr_rd(
+                    (inp_rs2 == 0x0u)
+                    ? 0x0u
+                    : inp_rs1
+                );
+            }
+                break;
+            case Rv32RType::Op::CzeroNezRdRs1Rs2.f3: {
+                _write_gpr_rd(
+                    (inp_rs2 != 0x0u)
+                    ? 0x0u
+                    : inp_rs1
+                );
+            }
+                break;
+            default: {
+                bad_instr();
+            }
+                break;
+            }
+        }
+            break;
+        //--------
         case Rv32RType::Op::MulRdRs1Rs2.f7: {
+            // "M" extension
             switch (temp_enc_instr_r.funct3) {
             case Rv32RType::Op::MulRdRs1Rs2.f3: {
                 // {.op=0x33, .f3=0x0, .f7=0x01},
@@ -1387,8 +1462,21 @@ void MeltedMoonDebugRiscvEmu::_bus_write(
             std::exit(1);
         } else {
             if (
-                temp_addr == ADDR_FB_END
-                && byte_count == sizeof(u8)//sizeof(u16)
+                //(temp_addr & 0x3u) == (ADDR_FB_END & 0x3u)
+                ////&& byte_count == sizeof(u8)//sizeof(u16)
+                (
+                    (temp_addr & ~0b11u) == (ADDR_FB_END & ~0b11u)
+                    && byte_count == sizeof(u32)
+                )
+                || (
+                    (temp_addr & ~0b1u) == (ADDR_FB_END & ~0b1u)
+                    && byte_count == sizeof(u16)
+                )
+                || (
+                    temp_addr == ADDR_FB_END
+                    && byte_count == sizeof(u8)
+                )
+
             ) {
                 _my_exec_one_instr_ret.sw_wrote_to_fb_end = (
                     &_mem[ADDR_FB_START]

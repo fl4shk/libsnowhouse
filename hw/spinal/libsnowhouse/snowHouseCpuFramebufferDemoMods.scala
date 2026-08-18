@@ -94,6 +94,7 @@ case class SnowHouseCpuFramebufferDemoConfig(
       //true
       false
     ),
+    optDblBufAddrSliceVal=None
   )
 }
 
