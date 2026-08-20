@@ -7,9 +7,9 @@ using namespace liborangepower::misc_output;
 using namespace liborangepower::integer_types;
 
 static constexpr size_t SCREENWIDTH = 320u;
-static constexpr size_t SCREENHEIGHT = 200u;
+//static constexpr size_t SCREENHEIGHT = 200u;
+static constexpr size_t FULL_SCREENHEIGHT = 240u;
 static constexpr size_t PALETTE_SIZE = 256u;
-//static constexpr size_t FULL_SCREEN_HEIGHT = 240u;
 
 using Field = std::pair<size_t, size_t>;
 static consteval inline size_t field_width(
@@ -77,11 +77,18 @@ public:     // constants
     static constexpr u32 ADDR_IDIV64_OUTP_REMA_LO = 0x6000028ul;
     static constexpr u32 ADDR_IDIV64_OUTP_REMA_HI = 0x600002cul;
 
-    static constexpr u32 ADDR_FB_START = 0x2000000ul;
-    static constexpr u32 ADDR_FB_END = (
-        ADDR_FB_START
+    static constexpr u32 ADDR_FB_0_START = 0x0000000ul;
+    static constexpr u32 ADDR_FB_0_END = (
+        ADDR_FB_0_START
         + (
-            (SCREENWIDTH * SCREENHEIGHT - 1) //* sizeof(u16)
+            (SCREENWIDTH * FULL_SCREENHEIGHT - 1) //* sizeof(u16)
+        )
+    );
+    static constexpr u32 ADDR_FB_1_START = 0x2000000ul;
+    static constexpr u32 ADDR_FB_1_END = (
+        ADDR_FB_1_START
+        + (
+            (SCREENWIDTH * FULL_SCREENHEIGHT - 1) //* sizeof(u16)
         )
     );
     static constexpr u32 ADDR_PAL_START = 0x4000000ul;
@@ -126,6 +133,8 @@ public:     // types
         );
     public:     // variables
         std::optional<u8*> sw_wrote_to_fb_end = std::nullopt;
+        u8* pal = nullptr;
+        //bool which_fb = false;
         bool sw_read_from_tp = false;
         std::array<u32, NUM_GPRS>* gpr_file = nullptr;
         u32 saved_pc = 0;
@@ -521,6 +530,8 @@ private:        // variables
     bool _seen_final_start_print_cond = false;
     std::string _to_dbg_print;
     std::unique_ptr<u8[]> _mem;
+    std::unique_ptr<u8[]> _fb_0_mem;
+    std::unique_ptr<u8[]> _fb_1_mem;
     std::array<u32, NUM_GPRS> _gpr_file;
     //snowhousecpu_dasm_info_t _dasm;
     u32 _instr_start_pc = 0u;

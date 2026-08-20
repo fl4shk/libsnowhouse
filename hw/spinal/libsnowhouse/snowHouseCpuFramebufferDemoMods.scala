@@ -553,7 +553,7 @@ case class SnowHouseCpuFramebufferDemo(
   myFbArbiter.io.hostVec.head <-/< (
     myTempFbDbusSlicerDevBus
   )
-  myFbArbiter.io.hostVec.last <-/< myFbCtrl.io.bus
+  myFbArbiter.io.hostVec.last <-/< myFbCtrl.io.hiBus
   myFbMem.io.bus << myFbArbiter.io.dev
 
   //io.fbBus <-/< myFbArbiter.io.dev

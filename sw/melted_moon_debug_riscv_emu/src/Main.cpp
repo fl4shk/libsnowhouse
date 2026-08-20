@@ -71,8 +71,8 @@ int main(int argc, char** argv) {
         "Melted Moon - Somewhat Of A Simulator!",   // title
         SDL_WINDOWPOS_CENTERED, // x
         SDL_WINDOWPOS_CENTERED, // y
-        SCREENWIDTH * 2,            // WIDTH
-        SCREENHEIGHT * 2,           // HEIGHT
+        SCREENWIDTH * 2,        // WIDTH
+        FULL_SCREENHEIGHT * 2,  // HEIGHT
                                 // flags
         (
             SDL_WINDOW_SHOWN
@@ -89,11 +89,11 @@ int main(int argc, char** argv) {
         SDL_PIXELFORMAT_ARGB8888,
         SDL_TEXTUREACCESS_STATIC,
         SCREENWIDTH * 2,
-        SCREENHEIGHT * 2
+        FULL_SCREENHEIGHT * 2
     );
 
     std::unique_ptr<Uint32[]> pixels(
-        new Uint32[SCREENWIDTH * 2 * SCREENHEIGHT * 2]
+        new Uint32[SCREENWIDTH * 2 * FULL_SCREENHEIGHT * 2]
     );
 
 
@@ -122,7 +122,7 @@ int main(int argc, char** argv) {
             //printout(
             //    "testificate!\n"
             //);
-            for (size_t j=0; j<SCREENHEIGHT * 2; ++j) {
+            for (size_t j=0; j<FULL_SCREENHEIGHT * 2; ++j) {
                 for (size_t i=0; i<SCREENWIDTH * 2; ++i) {
                     const size_t k = (j >> 1) * SCREENWIDTH + (i >> 1);
                     const size_t l = j * SCREENWIDTH * 2 + i;
@@ -141,11 +141,22 @@ int main(int argc, char** argv) {
                     u8* pal_idx = (u8*)(*fb_start) + k;
                     u32* item = (
                         (u32*)(
-                            (*fb_start)
-                            + (
-                                MeltedMoonDebugRiscvEmu::ADDR_PAL_START
-                                - MeltedMoonDebugRiscvEmu::ADDR_FB_START
-                            )
+                            //(*fb_start)
+                            //+ (
+                            //    MeltedMoonDebugRiscvEmu::ADDR_PAL_START
+                            //    - (
+                            //        !exec_temp.which_fb
+                            //        ? (
+                            //            MeltedMoonDebugRiscvEmu
+                            //            ::ADDR_FB_0_START
+                            //        )
+                            //        : (
+                            //            MeltedMoonDebugRiscvEmu
+                            //            ::ADDR_FB_1_START
+                            //        )
+                            //    )
+                            //)
+                            exec_temp.pal
                         )
                         + (*pal_idx)
                     );
@@ -166,6 +177,7 @@ int main(int argc, char** argv) {
                     //    | ((g & 0xffu) << 8u)
                     //    | ((b & 0xffu) << 0u)
                     //);
+
                     pixels[l] = (
                         (((*item) & 0xffu) << 16u)
                         | ((((*item) >> 8) & 0xffu) << 8u)
@@ -187,7 +199,7 @@ int main(int argc, char** argv) {
             SDL_RenderPresent(renderer);
             memset(
                 pixels.get(), 0,
-                sizeof(Uint32) * SCREENWIDTH * 2 * SCREENHEIGHT *2
+                sizeof(Uint32) * SCREENWIDTH * 2 * FULL_SCREENHEIGHT *2
             );
         }
     }
