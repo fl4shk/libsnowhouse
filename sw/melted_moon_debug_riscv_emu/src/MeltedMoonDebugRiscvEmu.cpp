@@ -1522,50 +1522,50 @@ void MeltedMoonDebugRiscvEmu::_bus_write(
             std::exit(1);
         } else {
             if ((addr & 0x8000000) != 0x0u) {
-                if (
-                    //(temp_addr & 0x3u) == (ADDR_FB_END & 0x3u)
-                    ////&& byte_count == sizeof(u8)//sizeof(u16)
-                    (
-                        (temp_addr & ~0b11u) == (ADDR_FB_0_END & ~0b11u)
-                        && byte_count == sizeof(u32)
-                    )
-                    || (
-                        (temp_addr & ~0b1u) == (ADDR_FB_0_END & ~0b1u)
-                        && byte_count == sizeof(u16)
-                    )
-                    || (
-                        temp_addr == ADDR_FB_0_END
-                        && byte_count == sizeof(u8)
-                    )
-                ) {
-                    _my_exec_one_instr_ret.sw_wrote_to_fb_end = (
-                        &_fb_0_mem[0x0u]
-                    );
-                    _my_exec_one_instr_ret.pal = &_mem[ADDR_PAL_START];
-                    //_my_exec_one_instr_ret.which_fb = false;
-                } else if (
-                    //(temp_addr & 0x3u) == (ADDR_FB_END & 0x3u)
-                    ////&& byte_count == sizeof(u8)//sizeof(u16)
-                    (
-                        (temp_addr & ~0b11u) == (ADDR_FB_1_END & ~0b11u)
-                        && byte_count == sizeof(u32)
-                    )
-                    || (
-                        (temp_addr & ~0b1u) == (ADDR_FB_1_END & ~0b1u)
-                        && byte_count == sizeof(u16)
-                    )
-                    || (
-                        temp_addr == ADDR_FB_1_END
-                        && byte_count == sizeof(u8)
-                    )
-                ) {
-                    _my_exec_one_instr_ret.sw_wrote_to_fb_end = (
-                        &_fb_1_mem[0x0u]
-                    );
-                    _my_exec_one_instr_ret.pal = &_mem[ADDR_PAL_START];
-                    //_my_exec_one_instr_ret.
-                    //_my_exec_one_instr_ret.which_fb = true;
-                }
+                //if (
+                //    //(temp_addr & 0x3u) == (ADDR_FB_END & 0x3u)
+                //    ////&& byte_count == sizeof(u8)//sizeof(u16)
+                //    (
+                //        (temp_addr & ~0b11u) == (ADDR_FB_0_END & ~0b11u)
+                //        && byte_count == sizeof(u32)
+                //    )
+                //    || (
+                //        (temp_addr & ~0b1u) == (ADDR_FB_0_END & ~0b1u)
+                //        && byte_count == sizeof(u16)
+                //    )
+                //    || (
+                //        temp_addr == ADDR_FB_0_END
+                //        && byte_count == sizeof(u8)
+                //    )
+                //) {
+                //    _my_exec_one_instr_ret.sw_wrote_to_fb_end = (
+                //        &_fb_0_mem[0x0u]
+                //    );
+                //    _my_exec_one_instr_ret.pal = &_mem[ADDR_PAL_START];
+                //    //_my_exec_one_instr_ret.which_fb = false;
+                //} else if (
+                //    //(temp_addr & 0x3u) == (ADDR_FB_END & 0x3u)
+                //    ////&& byte_count == sizeof(u8)//sizeof(u16)
+                //    (
+                //        (temp_addr & ~0b11u) == (ADDR_FB_1_END & ~0b11u)
+                //        && byte_count == sizeof(u32)
+                //    )
+                //    || (
+                //        (temp_addr & ~0b1u) == (ADDR_FB_1_END & ~0b1u)
+                //        && byte_count == sizeof(u16)
+                //    )
+                //    || (
+                //        temp_addr == ADDR_FB_1_END
+                //        && byte_count == sizeof(u8)
+                //    )
+                //) {
+                //    _my_exec_one_instr_ret.sw_wrote_to_fb_end = (
+                //        &_fb_1_mem[0x0u]
+                //    );
+                //    _my_exec_one_instr_ret.pal = &_mem[ADDR_PAL_START];
+                //    //_my_exec_one_instr_ret.
+                //    //_my_exec_one_instr_ret.which_fb = true;
+                //}
 
                 if (
                     temp_addr >= ADDR_FB_0_START
@@ -1590,6 +1590,21 @@ void MeltedMoonDebugRiscvEmu::_bus_write(
                     && temp_addr <= ADDR_PAL_END
                 ) {
                     memcpy(&_mem[temp_addr], &data, byte_count);
+                } else if (
+                    temp_addr == ADDR_FB_PAGE
+                ) {
+                    memcpy(&_mem[temp_addr], &data, byte_count);
+
+                    if (!(data & 0b1u)) {
+                        _my_exec_one_instr_ret.sw_wrote_to_fb_end = (
+                            &_fb_1_mem[0x0u]
+                        );
+                    } else {
+                        _my_exec_one_instr_ret.sw_wrote_to_fb_end = (
+                            &_fb_0_mem[0x0u]
+                        );
+                    }
+                    _my_exec_one_instr_ret.pal = &_mem[ADDR_PAL_START];
                 } else {
                     std::fprintf(
                         stderr,

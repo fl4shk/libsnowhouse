@@ -96,6 +96,8 @@ public:     // constants
         ADDR_PAL_START
         + (PALETTE_SIZE - 1) * sizeof(u32)
     );
+    static constexpr u32 ADDR_FB_PAGE = 0x4000400ul;
+
     // 64 MiB of main RAM, plus the palette
     // for this emulator, we just dynamically allocate the
     // (admittedly tiny) memory for the palette along with the main memory
