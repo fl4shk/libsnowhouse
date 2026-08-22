@@ -1572,44 +1572,43 @@ void MeltedMoonDebugRiscvEmu::_bus_write(
                     temp_addr >= ADDR_FB_0_START
                     && temp_addr <= ADDR_FB_0_END
                 ) {
-                    if (!(u32(_mem[ADDR_FB_PAGE]) & 0b1u)) {
+                    //if (!(u32(_mem[ADDR_FB_PAGE]) & 0b1u)) {
                         memcpy(
                             &_fb_0_mem[temp_addr - ADDR_FB_0_START],
                             &data,
                             byte_count
                         );
-                    } else {
-                        memcpy(
-                            &_fb_1_mem[temp_addr - ADDR_FB_0_START],
-                            &data,
-                            byte_count
-                        );
-                    }
+                    //} else {
+                    //    memcpy(
+                    //        &_fb_1_mem[temp_addr - ADDR_FB_0_START],
+                    //        &data,
+                    //        byte_count
+                    //    );
+                    //}
                 }
-                //else if (
-                //    temp_addr >= ADDR_FB_1_START
-                //    && temp_addr <= ADDR_FB_1_END
-                //) {
-                //    //memcpy(
-                //    //    &_fb_1_mem[temp_addr - ADDR_FB_1_START],
-                //    //    &data,
-                //    //    byte_count
-                //    //);
-                //    if ((u32(_mem[ADDR_FB_PAGE]) & 0b1u)) {
-                //        memcpy(
-                //            &_fb_0_mem[temp_addr - ADDR_FB_1_START],
-                //            &data,
-                //            byte_count
-                //        );
-                //    } else {
-                //        memcpy(
-                //            &_fb_1_mem[temp_addr - ADDR_FB_1_START],
-                //            &data,
-                //            byte_count
-                //        );
-                //    }
-                //}
                 else if (
+                    temp_addr >= ADDR_FB_1_START
+                    && temp_addr <= ADDR_FB_1_END
+                ) {
+                    memcpy(
+                        &_fb_1_mem[temp_addr - ADDR_FB_1_START],
+                        &data,
+                        byte_count
+                    );
+                    //if ((!u32(_mem[ADDR_FB_PAGE]) & 0b1u)) {
+                    //    memcpy(
+                    //        &_fb_0_mem[temp_addr - ADDR_FB_1_START],
+                    //        &data,
+                    //        byte_count
+                    //    );
+                    //} else {
+                    //    memcpy(
+                    //        &_fb_1_mem[temp_addr - ADDR_FB_1_START],
+                    //        &data,
+                    //        byte_count
+                    //    );
+                    //}
+                } else if (
                     temp_addr >= ADDR_PAL_START
                     && temp_addr <= ADDR_PAL_END
                 ) {
@@ -1617,10 +1616,9 @@ void MeltedMoonDebugRiscvEmu::_bus_write(
                 } else if (
                     temp_addr == ADDR_FB_PAGE
                 ) {
-
                     if (
-                        //!(data & 0b1u)
-                        !(_mem[temp_addr])
+                        !(data & 0b1u)
+                        //!(_mem[temp_addr])
                     ) {
                         _my_exec_one_instr_ret.sw_wrote_to_fb_end = (
                             &_fb_0_mem[0x0u]
