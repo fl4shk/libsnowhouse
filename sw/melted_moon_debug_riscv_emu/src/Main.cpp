@@ -108,7 +108,7 @@ int main(int argc, char** argv) {
         //u32 temp_fb_addr;
         auto exec_temp = emu.exec_one_instr(tp);
         if (exec_temp.sw_read_from_tp) {
-            update_tp_cnt = 0u;
+            //update_tp_cnt = 0u;
         } else {
             ++update_tp_cnt;
             if (update_tp_cnt >= 16u) {
@@ -116,6 +116,7 @@ int main(int argc, char** argv) {
                 gettimeofday(&tp, nullptr);
             }
         }
+        //gettimeofday(&tp, nullptr);
         //gettimeofday(&tp, nullptr);
 
         if (auto fb_start = exec_temp.sw_wrote_to_fb_end; fb_start) {
