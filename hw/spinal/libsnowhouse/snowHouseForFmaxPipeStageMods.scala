@@ -2634,7 +2634,11 @@ case class SnowHouseForFmaxPsWbReorderBuf(
   switch (
     (
       myAssertValidCond
-      && io.push.commit.opIsFwd
+
+
+      // later, change to some condition indicating that there was *no*
+      // exception, i.e. that we *can* early commit
+      //&& io.push.commit.opIsFwd
     )
     ## myWrEarlyCommitOuterIdx
     ## myWrEarlyCommitInnerIdx
@@ -4454,6 +4458,18 @@ case class SnowHouseForFmaxPipeStageWriteBack(
     myCommitFrontStmVec.head.last//head//last
   )
 
+  val myNonFwdCommitFrontFork = (
+    cfg.optScoreboard
+  ) generate (
+    StreamFork(
+      input=(
+        myCommitFrontStmVec.last.head
+      ),
+      portCount=2,
+      synchronous=true,
+    )
+  )
+
   val myFwdCommitFrontFork = (
     cfg.optScoreboard
   ) generate (
@@ -4626,13 +4642,17 @@ case class SnowHouseForFmaxPipeStageWriteBack(
   })
   val myCommitBackStm = (
     if (cfg.optScoreboard) {
+      val myTempNonFwdStm = cloneOf(myNonFwdCommitFrontFork.head)
+      myTempNonFwdStm <-< myNonFwdCommitFrontFork.head
+
       val myTempFwdStm = cloneOf(myFwdCommitFrontFork.head)
       myTempFwdStm <-< myFwdCommitFrontFork.head
 
       StreamArbiterFactory.lowerFirst.noLock.on(
         //myCommitFrontStmVec.last
         Vec(
-          myCommitFrontStmVec.last.head,
+          //myCommitFrontStmVec.last.head,
+          myTempNonFwdStm,
           myTempFwdStm
           //myFwdCommitFrontFork.head,
         )
@@ -4661,19 +4681,27 @@ case class SnowHouseForFmaxPipeStageWriteBack(
   ) generate (
     Vec(
       Vec(
-        myReorderBuf.io.pop.throwWhen(
-          myReorderBuf.io.pop.commit.opIsFwd
-        ),
+        //myReorderBuf.io.pop.throwWhen(
+        //  // TODO: precise exceptions and stuff
+        //  //myReorderBuf.io.pop.commit.opIsFwd
+        //  True
+        //),
         //myReorderBuf.io.pop,
+        myNonFwdCommitFrontFork.last,
         myFwdCommitFrontFork.last,
       ),
       Vec(
-        cloneOf(myReorderBuf.io.pop),
+        //cloneOf(myReorderBuf.io.pop),
+        //cloneOf(myReorderBuf.io)
+        cloneOf(myNonFwdCommitFrontFork.last),
         cloneOf(myFwdCommitFrontFork.last),
       )
     )
   )
   if (cfg.optScoreboard) {
+    // TODO: precise exceptions and stuff
+    myReorderBuf.io.pop.ready := True
+
     myCommitAlmostFinalFrontOutpStmVec.last.head <-< (
       myCommitAlmostFinalFrontOutpStmVec.head.head
     )
