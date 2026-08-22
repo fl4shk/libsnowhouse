@@ -1381,7 +1381,8 @@ auto MeltedMoonDebugRiscvEmu::exec_one_instr(
         break;
     }
     const bool my_final_start_print_cond = (
-        prev_to_dbg_print != _to_dbg_print
+        true
+        //prev_to_dbg_print != _to_dbg_print
         //&& _to_dbg_print == "reading lump:4eb"
         //false
     );
@@ -1571,21 +1572,44 @@ void MeltedMoonDebugRiscvEmu::_bus_write(
                     temp_addr >= ADDR_FB_0_START
                     && temp_addr <= ADDR_FB_0_END
                 ) {
-                    memcpy(
-                        &_fb_0_mem[temp_addr - ADDR_FB_0_START],
-                        &data,
-                        byte_count
-                    );
-                } else if (
-                    temp_addr >= ADDR_FB_1_START
-                    && temp_addr <= ADDR_FB_1_END
-                ) {
-                    memcpy(
-                        &_fb_1_mem[temp_addr - ADDR_FB_1_START],
-                        &data,
-                        byte_count
-                    );
-                } else if (
+                    if (!(u32(_mem[ADDR_FB_PAGE]) & 0b1u)) {
+                        memcpy(
+                            &_fb_0_mem[temp_addr - ADDR_FB_0_START],
+                            &data,
+                            byte_count
+                        );
+                    } else {
+                        memcpy(
+                            &_fb_1_mem[temp_addr - ADDR_FB_0_START],
+                            &data,
+                            byte_count
+                        );
+                    }
+                }
+                //else if (
+                //    temp_addr >= ADDR_FB_1_START
+                //    && temp_addr <= ADDR_FB_1_END
+                //) {
+                //    //memcpy(
+                //    //    &_fb_1_mem[temp_addr - ADDR_FB_1_START],
+                //    //    &data,
+                //    //    byte_count
+                //    //);
+                //    if ((u32(_mem[ADDR_FB_PAGE]) & 0b1u)) {
+                //        memcpy(
+                //            &_fb_0_mem[temp_addr - ADDR_FB_1_START],
+                //            &data,
+                //            byte_count
+                //        );
+                //    } else {
+                //        memcpy(
+                //            &_fb_1_mem[temp_addr - ADDR_FB_1_START],
+                //            &data,
+                //            byte_count
+                //        );
+                //    }
+                //}
+                else if (
                     temp_addr >= ADDR_PAL_START
                     && temp_addr <= ADDR_PAL_END
                 ) {
@@ -1593,17 +1617,20 @@ void MeltedMoonDebugRiscvEmu::_bus_write(
                 } else if (
                     temp_addr == ADDR_FB_PAGE
                 ) {
-                    memcpy(&_mem[temp_addr], &data, byte_count);
 
-                    if (!(data & 0b1u)) {
-                        _my_exec_one_instr_ret.sw_wrote_to_fb_end = (
-                            &_fb_1_mem[0x0u]
-                        );
-                    } else {
+                    if (
+                        //!(data & 0b1u)
+                        !(_mem[temp_addr])
+                    ) {
                         _my_exec_one_instr_ret.sw_wrote_to_fb_end = (
                             &_fb_0_mem[0x0u]
                         );
+                    } else {
+                        _my_exec_one_instr_ret.sw_wrote_to_fb_end = (
+                            &_fb_1_mem[0x0u]
+                        );
                     }
+                    memcpy(&_mem[temp_addr], &data, byte_count);
                     _my_exec_one_instr_ret.pal = &_mem[ADDR_PAL_START];
                 } else {
                     std::fprintf(
@@ -1794,27 +1821,55 @@ u32 MeltedMoonDebugRiscvEmu::_bus_read(
                     //    &data,
                     //    byte_count
                     //);
-                    memcpy( 
-                        &ret,
-                        &_fb_0_mem[temp_addr - ADDR_FB_0_START],
-                        byte_count
-                    );
-                } else if (
-                    temp_addr >= ADDR_FB_1_START
-                    && temp_addr <= ADDR_FB_1_END
-                ) {
-                    //memcpy(
-                    //    &_fb_1_mem[temp_addr - ADDR_FB_1_START],
-                    //    &data,
+                    //memcpy( 
+                    //    &ret,
+                    //    &_fb_0_mem[temp_addr - ADDR_FB_0_START],
                     //    byte_count
                     //);
-                    //memcpy(&ret, &_mem[temp_addr], byte_count);
-                    memcpy( 
-                        &ret,
-                        &_fb_1_mem[temp_addr - ADDR_FB_1_START],
-                        byte_count
-                    );
-                } else if (
+                    if (!(u32(_mem[ADDR_FB_PAGE]) & 0b1u)) {
+                        memcpy(
+                            &ret,
+                            &_fb_0_mem[temp_addr - ADDR_FB_0_START],
+                            byte_count
+                        );
+                    } else {
+                        memcpy(
+                            &ret,
+                            &_fb_1_mem[temp_addr - ADDR_FB_0_START],
+                            byte_count
+                        );
+                    }
+                } 
+                //else if (
+                //    temp_addr >= ADDR_FB_1_START
+                //    && temp_addr <= ADDR_FB_1_END
+                //) {
+                //    //memcpy(
+                //    //    &_fb_1_mem[temp_addr - ADDR_FB_1_START],
+                //    //    &data,
+                //    //    byte_count
+                //    //);
+                //    //memcpy(&ret, &_mem[temp_addr], byte_count);
+                //    //memcpy(
+                //    //    &ret,
+                //    //    &_fb_1_mem[temp_addr - ADDR_FB_1_START],
+                //    //    byte_count
+                //    //);
+                //    if ((u32(_mem[ADDR_FB_PAGE]) & 0b1u)) {
+                //        memcpy(
+                //            &ret,
+                //            &_fb_0_mem[temp_addr - ADDR_FB_1_START],
+                //            byte_count
+                //        );
+                //    } else {
+                //        memcpy(
+                //            &ret,
+                //            &_fb_1_mem[temp_addr - ADDR_FB_1_START],
+                //            byte_count
+                //        );
+                //    }
+                //}
+                else if (
                     temp_addr >= ADDR_PAL_START
                     && temp_addr <= ADDR_PAL_END
                 ) {
