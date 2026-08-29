@@ -1063,7 +1063,7 @@ case class SnowHouseLcvBusInstrDataSharedRam(
     )
   )
 
-  myArbiter.io.en := True
+  //myArbiter.io.en := True
   myArbiter.io.forceHost := myArbiter.io.forceHost.getZero
   val myDeburster = (
     LcvBusDeburster(cfg=LcvBusDebursterConfig(

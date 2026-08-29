@@ -446,7 +446,7 @@ case class SnowHouseCpuFramebufferDemo(
       kind=LcvBusArbiterKind.Priority
     )
   )
-  myFbArbiter.io.en := True
+  //myFbArbiter.io.en := True
 
   myFbDbusSlicer.io.host.h2dBus <-/< cpu.io.lcvDbus.h2dBus
   cpu.io.lcvDbus.d2hBus << myFbDbusSlicer.io.host.d2hBus
