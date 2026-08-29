@@ -423,14 +423,14 @@ case class SnowHouseSubConfig(
         lineSizeBytes=icacheLineSizeBytes,
         depthWords=icacheDepthWords,
         numWays=icacheNumWays,
-        numCpus=1,
+        //numCpus=1,
         lineWordMemRamStyleAltera=icacheLineWordMemRamStyleAltera,
         lineWordMemRamStyleXilinx=icacheLineWordMemRamStyleXilinx,
         lineAttrsMemRamStyleAltera=icacheLineAttrsMemRamStyleAltera,
         lineAttrsMemRamStyleXilinx=icacheLineAttrsMemRamStyleXilinx,
         optMainAddrWidth=optMainAddrWidth,
       ),
-      hiBusCacheCfg=None,
+      //hiBusCacheCfg=None,
       busD2hFifoLatency=0,
     )
   )
@@ -471,14 +471,14 @@ case class SnowHouseSubConfig(
         lineSizeBytes=dcacheLineSizeBytes,
         depthWords=dcacheDepthWords,
         numWays=dcacheNumWays,
-        numCpus=1,
+        //numCpus=1,
         lineWordMemRamStyleAltera=dcacheLineWordMemRamStyleAltera,
         lineWordMemRamStyleXilinx=dcacheLineWordMemRamStyleXilinx,
         lineAttrsMemRamStyleAltera=dcacheLineAttrsMemRamStyleAltera,
         lineAttrsMemRamStyleXilinx=dcacheLineAttrsMemRamStyleXilinx,
         optMainAddrWidth=optMainAddrWidth,
       ),
-      hiBusCacheCfg=None,
+      //hiBusCacheCfg=None,
       busD2hFifoLatency=0,
     )
   )
