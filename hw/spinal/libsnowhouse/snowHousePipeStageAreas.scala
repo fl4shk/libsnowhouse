@@ -3243,7 +3243,16 @@ object Bitscan {
   def apply(
     x: UInt
   ): UInt = (
-    x & ~(x - 1)
+    //x & ~(x - 1)
+
+    // potentially slightly faster in terms of fmax? Found that this is
+    // equivalent to the formula above (the below one is the version found
+    // in the book "Hacker's Delight"),
+    // but, maybe there's an even better way?
+    // In this case it might make more sense to compile this formula into
+    // a single LUT delay (depending on the size of `x`)
+    // *instead of using a carry chain*
+    x & (-x.asSInt).asUInt
   )
 }
 case class SnowHousePipeStagePreFwd(
