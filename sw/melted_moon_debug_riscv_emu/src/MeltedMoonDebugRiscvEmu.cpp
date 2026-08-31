@@ -152,9 +152,30 @@ std::optional<std::string> MeltedMoonDebugRiscvEmu::disasm_one_instr(
                 instr_name = "sh3add";
             }
                 break;
+            default: {
+                //bad_instr();
+                return std::nullopt;
+            }
             }
         }
             break;
+        case Rv32RType::Op::CzeroEqzRdRs1Rs2.f7: {
+            switch (temp_enc_instr_r.funct3) {
+            case Rv32RType::Op::CzeroEqzRdRs1Rs2.f3: {
+                instr_name = "czero.eqz";
+            }
+                break;
+            case Rv32RType::Op::CzeroNezRdRs1Rs2.f3: {
+                instr_name = "czero.nez";
+            }
+                break;
+            default: {
+                //bad_instr();
+                return std::nullopt;
+            }
+                break;
+            }
+        }
         //------
         case Rv32RType::Op::MulRdRs1Rs2.f7: {
             switch (temp_enc_instr_r.funct3) {
