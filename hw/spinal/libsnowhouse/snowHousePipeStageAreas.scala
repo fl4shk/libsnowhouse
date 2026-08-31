@@ -744,13 +744,13 @@ case class SnowHouseBranchTgtBuf(
 
   val myDirectMappedArea = (
     branchTgtBufNumWays == 1
-  ) generate (new Area {
+  ) generate new Area {
     val btbSingle = SnowHouseBranchTgtBufSingle(cfg=cfg)
     io <> btbSingle.io
-  })
+  }
   val myNonDirectMappedArea = (
     branchTgtBufNumWays > 1
-  ) generate (new Area {
+  ) generate new Area {
     //val tgtBufRdAddr = (
     //  UInt(log2Up(branchTgtBufSize) bits)
     //)
@@ -919,7 +919,7 @@ case class SnowHouseBranchTgtBuf(
     //  tgtBufRdAddr
     //) {
     //}
-  })
+  }
 
 }
 
@@ -1917,9 +1917,9 @@ case class SnowHousePipeStageInstrDecode(
 
   val myNonLcvDbusPartAArea = (
     !cfg.useLcvDataBus
-  ) generate (new Area {
+  ) generate new Area {
     upPayload(1).branchTgtBufElem(1) := myTempBtbElem
-  })
+  }
 
   object MyLcvDbusStallState
   extends SpinalEnum(defaultEncoding=binaryOneHot) {
@@ -1985,7 +1985,7 @@ case class SnowHousePipeStageInstrDecode(
   val myNonScoreboardLcvDbusPartAArea = (
     cfg.useLcvDataBus
     && !cfg.optScoreboard
-  ) generate (new Area {
+  ) generate new Area {
     //psIdFoundBubble := RegNext(psIdFoundBubble, init=False)
     down(pId).allowOverride
     //val mySeenDownFire = Bool()
@@ -2267,7 +2267,7 @@ case class SnowHousePipeStageInstrDecode(
     //  //  upPayload(1).branchTgtBuf
     //  //}
     //}
-  })
+  }
 
   if (cfg.optScoreboard) {
     upPayload(1).branchTgtBufElem(1) := (
@@ -3511,7 +3511,7 @@ case class SnowHousePipeStagePreFwd(
 
   val myForFmaxFwdArea = (
     cfg.optForFmax
-  ) generate (new Area {
+  ) generate new Area {
     val rMyPsExSetPcState = (
       Reg(Bool(), init=False)
     )
@@ -4469,7 +4469,7 @@ case class SnowHousePipeStagePreFwd(
         }
       //}
     }
-  })
+  }
 }
 
 //private[libsnowhouse] object PcChangeState
@@ -9404,7 +9404,7 @@ case class SnowHousePipeStageExecute(
   }
   val myForFmaxFwdArea = (
     cfg.optForFmax
-  ) generate (new Area {
+  ) generate new Area {
     val myTempSaveOutpCond = (
       cLink.up.isFiring
       //&& outp.gprIsNonZeroVec.last.last
@@ -10001,7 +10001,7 @@ case class SnowHousePipeStageExecute(
         //}
       }
     }
-  })
+  }
 
   //val savedPsMemStallHost = (
   //  LcvStallHostSaved(
@@ -10193,12 +10193,12 @@ case class SnowHousePipeStageExecute(
   )
   //val myNonLcvDbusTempArea = (
   //  !cfg.useLcvDataBus
-  //) generate (new Area{
+  //) generate new Area {
   //  setOutpModMemWord.io.irqIraRegPc := outp.irqIraRegPc.head
-  //})
+  //}
   //val myLcvDusTempArea = (
   //  cfg.useLcvDataBus
-  //) generate (new Area {
+  //) generate new Area {
   //  //val mySeenDownFire = Bool()
   //  //val rSavedSeenDownFire
   //  val rStallState = Reg(Bool(), init=False)
@@ -10241,7 +10241,7 @@ case class SnowHousePipeStageExecute(
   //    //  item := False
   //    //})
   //  }
-  //})
+  //}
   val rIrqHndlState = {
     val temp = Reg(
       Bool()
@@ -10794,7 +10794,7 @@ case class SnowHousePipeStageExecute(
 
   val myNonLcvDbusPartAArea = (
     !cfg.useLcvDataBus
-  ) generate (new Area{
+  ) generate new Area {
     setOutpModMemWord.io.irqIraRegPc := outp.irqIraRegPc
     //cMid0Front.up(outpPipePayloadA) := outp
     //doHandleMyDbusPartA()
@@ -10807,10 +10807,10 @@ case class SnowHousePipeStageExecute(
         myDoStall(stallKindMem) := True
       }
     }
-  })
+  }
   val myLcvDbusPartAArea = (
     cfg.useLcvDataBus
-  ) generate (new Area {
+  ) generate new Area {
     //val mySeenDownFire = Bool()
     //val rSavedSeenDownFire
 
@@ -11002,7 +11002,7 @@ case class SnowHousePipeStageExecute(
     }
 
     setOutpModMemWord.io.irqIraRegPc := outp.irqIraRegPc
-  })
+  }
 
 
   //val rSavedJmpCnt = {
@@ -11188,7 +11188,7 @@ case class SnowHousePipeStageExecute(
   }
   val myNonLcvDbusBtbElemValidArea = (
     !cfg.useLcvDataBus   
-  ) generate (new Area {
+  ) generate new Area {
     setOutpModMemWord.io.btbElemValid := (
       //if (!cfg.useLcvDataBus) (
         outp.branchTgtBufElem(0).valid
@@ -11201,10 +11201,10 @@ case class SnowHousePipeStageExecute(
     doSetOtherSetOutpMmwBranchPredictorInputs(
       //false
     )
-  })
+  }
   val myLcvDbusBtbElemValidArea = (
     cfg.useLcvDataBus   
-  ) generate (new Area {
+  ) generate new Area {
     setOutpModMemWord.io.btbElemValid := (
       //if (!cfg.useLcvDataBus) (
         outp.branchTgtBufElem(0).valid
@@ -11218,10 +11218,10 @@ case class SnowHousePipeStageExecute(
     doSetOtherSetOutpMmwBranchPredictorInputs(
       //false
     )
-  })
+  }
   //val myLcvDbusBtbElemValidArea = (
   //  cfg.useLcvDataBus
-  //) generate (new Area {
+  //) generate new Area {
   //  // TODO: (maybe) move this logic to `SnowHousePipeStageInstrDecode`
   //  val rState = Reg(Bool(), init=False)
   //  //when (
@@ -11349,7 +11349,7 @@ case class SnowHousePipeStageExecute(
   //  //  ## outp.branchTgtBufElem(0).includesLdBubble
   //  //) {
   //  //}
-  //})
+  //}
   //setOutpModMemWord.io.splitOp.kind.allowOverride
   setOutpModMemWord.io.splitOp.allowOverride
   setOutpModMemWord.io.splitOp.jmpBrAlwaysEqNeOp.allowOverride
@@ -11600,7 +11600,7 @@ case class SnowHousePipeStageExecute(
   val myHavePsExStallArea0 = (
     //!cfg.optForFmax
     cfg.havePsExStall
-  ) generate (new Area {
+  ) generate new Area {
     val rMultiCycleOpState = {
       val temp = Reg(MultiCycleOpState())
       temp.init(MultiCycleOpState.Idle)
@@ -11663,10 +11663,10 @@ case class SnowHousePipeStageExecute(
         }
       }
     }
-  })
+  }
   val myNonLcvDbusPartBArea = (
     !cfg.useLcvDataBus
-  ) generate (new Area {
+  ) generate new Area {
     when (setOutpModMemWord.io.opIsMemAccess.head) {
       nextPrevTxnWasHazard := True
       when (cLink.up.isFiring) {
@@ -11677,15 +11677,15 @@ case class SnowHousePipeStageExecute(
     when (cLink.up.isFiring) {
       myDbus.sendData := setOutpModMemWord.io.dbusHostPayload
     }
-  })
+  }
   val myLcvDbusPartBArea = (
     cfg.useLcvDataBus
-  ) generate (new Area {
-  })
+  ) generate new Area {
+  }
   val myHavePsExStallArea1 = (
     //!cfg.optForFmax
     cfg.havePsExStall
-  ) generate (new Area {
+  ) generate new Area {
     val rMultiCycleOpState = myHavePsExStallArea0.rMultiCycleOpState
     val rOpIsMultiCycle = myHavePsExStallArea0.rOpIsMultiCycle
     for (myPsExStallHost <- psExStallHostArr.view) {
@@ -11883,7 +11883,7 @@ case class SnowHousePipeStageExecute(
         psExStallHost.nextValid := False
       }
     })
-  })
+  }
   for (idx <- 0 until doCheckHazard.size) {
     doCheckHazard(idx) := (
       RegNextWhen(
@@ -12489,7 +12489,7 @@ case class SnowHousePipeStageMem(
 
   val myNonLcvDbusArea = (
     !cfg.useLcvDataBus
-  ) generate (new Area {
+  ) generate new Area {
     def tempExtLeft(ydx: Int) = midModPayload(extIdxUp).myExt(ydx)
     def tempExtRight(ydx: Int) = cMem.up(prevPayload).myExt(ydx)
     val rDbusState = (
@@ -12544,10 +12544,10 @@ case class SnowHousePipeStageMem(
         )
       })
     }
-  })
+  }
   //val myLcvDbusArea = (
   //  cfg.useLcvDataBus
-  //) generate (new Area {
+  //) generate new Area {
   //  when (
   //    ////RegNext(
   //    //  RegNext(myDbus.nextValid, init=False),
@@ -12572,7 +12572,7 @@ case class SnowHousePipeStageMem(
   //      mmwValidItem := False
   //    })
   //  }
-  //})
+  //}
 
   def setMidModStages(): Unit = {
     regFile.io.midModStages(0) := midModPayload
@@ -12917,7 +12917,7 @@ case class SnowHousePipeStageWriteBack(
   //--------
   val myLcvDbusArea = (
     cfg.useLcvDataBus
-  ) generate (new Area {
+  ) generate new Area {
     //myDbusIo.myDbusExtraValid := (
     //  cWb.up.isValid
     //  && myWbPayload.outpDecodeExt.opIsMemAccess.last
@@ -13118,5 +13118,5 @@ case class SnowHousePipeStageWriteBack(
         )
       }
     }
-  })
+  }
 }
