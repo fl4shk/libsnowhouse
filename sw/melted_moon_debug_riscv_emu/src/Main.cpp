@@ -67,7 +67,7 @@ int main(int argc, char** argv) {
         std::exit(1);
     }
 
-    SDL_Window* window = SDL_CreateWindow(
+    sdl::Window window = SDL_CreateWindow(
         "Melted Moon - Somewhat Of A Simulator!",   // title
         SDL_WINDOWPOS_CENTERED, // x
         SDL_WINDOWPOS_CENTERED, // y
@@ -79,12 +79,12 @@ int main(int argc, char** argv) {
             //| SDL_WINDOW_RESIZABLE
         )
     );
-    SDL_Renderer* renderer = SDL_CreateRenderer(
+    sdl::Renderer renderer = SDL_CreateRenderer(
         window, // window
         -1,     // index
         0       // flags
     );
-    SDL_Texture* texture = SDL_CreateTexture(
+    sdl::Texture texture = SDL_CreateTexture(
         renderer,
         SDL_PIXELFORMAT_ARGB8888,
         SDL_TEXTUREACCESS_STATIC,
@@ -96,26 +96,62 @@ int main(int argc, char** argv) {
         new Uint32[SCREENWIDTH * 2 * FULL_SCREENHEIGHT * 2]
     );
 
-
     //struct timeval tp;
-    size_t update_tp_cnt = 0u;
+    //size_t update_tp_cnt = 0u;
     struct timeval tp;
     gettimeofday(&tp, nullptr);
     //for (size_t instr_cnt=0; instr_cnt < 1024u; ++instr_cnt) 
-    for (;;) 
-    {
+    bool do_exit = false;
+
+    SDL_AddTimer(
+        Uint32(1u), // interval (ms)
+        [](Uint32 interval, void* tp_void_ptr) -> Uint32 {
+            gettimeofday((struct timeval*)tp_void_ptr, nullptr);
+            return interval;
+        },
+        &tp
+    );
+    auto temp_func = [](
+        Uint32 interval, void* do_exit_void_ptr
+    ) -> Uint32 {
+        SDL_Event e;
+        while (SDL_PollEvent(&e) != 0) {
+            if (e.type == SDL_QUIT) {
+                printf("Exiting...\n");
+                *(bool*)do_exit_void_ptr = true;
+                break;
+            }
+            //else if (
+            //    liborangepower::sdl::handle_key_events(
+            //        e,
+            //        _key_status_umap, 
+            //        ksm_perf_total_backup
+            //    )
+            //) {
+            //}
+        }
+        return interval;
+    };
+    SDL_AddTimer(
+        Uint32(100), // interval (ms)
+        temp_func,
+        &do_exit
+    );
+
+    while (!do_exit) {
         //u16 temp_fb_data;
         //u32 temp_fb_addr;
         auto exec_temp = emu.exec_one_instr(tp);
-        if (exec_temp.sw_read_from_tp) {
-            //update_tp_cnt = 0u;
-        } else {
-            ++update_tp_cnt;
-            if (update_tp_cnt >= 16u) {
-                update_tp_cnt = 0u;
-                gettimeofday(&tp, nullptr);
-            }
-        }
+        //if (exec_temp.sw_read_from_tp) {
+        //    //update_tp_cnt = 0u;
+        //} else {
+        //    ++update_tp_cnt;
+        //    if (update_tp_cnt >= 16u) {
+        //        update_tp_cnt = 0u;
+        //        gettimeofday(&tp, nullptr);
+        //    }
+        //}
+
         //gettimeofday(&tp, nullptr);
         //gettimeofday(&tp, nullptr);
 
@@ -205,10 +241,9 @@ int main(int argc, char** argv) {
         }
     }
 
-
-    SDL_DestroyTexture(texture);
-    SDL_DestroyRenderer(renderer);
-    SDL_DestroyWindow(window);
+    //SDL_DestroyTexture(texture);
+    //SDL_DestroyRenderer(renderer);
+    //SDL_DestroyWindow(window);
 
     return 0;
 }

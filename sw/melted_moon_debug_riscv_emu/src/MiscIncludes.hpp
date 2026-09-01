@@ -12,6 +12,9 @@
 #include "liborangepower_src/strings/sconcat_etc.hpp"
 #include "liborangepower_src/sdl2/sdl.hpp"
 #include "liborangepower_src/sdl2/sdl_render.hpp"
+#include "liborangepower_src/sdl2/sdl_video.hpp"
+//#include "liborangepower_src/sd2l/sdl_timer.hpp"
+//#include "liborangepower_src/sdl2"
 
 //#define SNOWHOUSECPU_DONT_INCLUDE_BFD_HEADER
 //#include "opcode/snowhousecpu.h"
@@ -20,7 +23,9 @@
 
 #include <SDL.h>
 #include <SDL_video.h>
+#include <SDL_timer.h>
 using liborangepower::strings::sconcat;
+namespace sdl = liborangepower::sdl;
 
 #include <sys/time.h>
 

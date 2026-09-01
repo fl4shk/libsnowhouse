@@ -65,6 +65,84 @@ std::optional<std::string> MeltedMoonDebugRiscvEmu::disasm_one_instr(
     std::memcpy(&temp_enc_instr_r, &some_enc_instr, sizeof(u32));
 
     switch (temp_enc_instr_r.opcode) {
+    case Rv32CsrType::Op::CsrrwRdRs1Csr.op: {
+        Rv32CsrType::EncInstr temp_enc_instr_csr;
+        std::memcpy(&temp_enc_instr_csr, &some_enc_instr, sizeof(u32));
+
+        switch (temp_enc_instr_csr.funct3) {
+        // CSR Read/Write
+        case Rv32CsrType::Op::CsrrwRdRs1Csr.f3: {
+            return sconcat(
+                "csrrw", " ",
+                GPR_NAMES_ARR[temp_enc_instr_csr.rd], ", ",
+                GPR_NAMES_ARR[temp_enc_instr_csr.rs1_uimm4dt0], ", ",
+                std::hex, temp_enc_instr_csr.csr, std::dec
+            );
+        }
+            break;
+
+        // CSR Read & Set Bits
+        case Rv32CsrType::Op::CsrrsRdRs1Csr.f3: {
+            return sconcat(
+                "csrrs", " ",
+                GPR_NAMES_ARR[temp_enc_instr_csr.rd], ", ",
+                GPR_NAMES_ARR[temp_enc_instr_csr.rs1_uimm4dt0], ", ",
+                std::hex, temp_enc_instr_csr.csr, std::dec
+            );
+        }
+            break;
+
+        // CSR Read & Clear Bits
+        case Rv32CsrType::Op::CsrrcRdRs1Csr.f3: {
+            return sconcat(
+                "csrrc", " ",
+                GPR_NAMES_ARR[temp_enc_instr_csr.rd], ", ",
+                GPR_NAMES_ARR[temp_enc_instr_csr.rs1_uimm4dt0], ", ",
+                std::hex, temp_enc_instr_csr.csr, std::dec
+            );
+        }
+            break;
+
+        // CSR Read/Write Immediate
+        case Rv32CsrType::Op::CsrrwiRdUimmCsr.f3: {
+            return sconcat(
+                "csrrwi", " ",
+                GPR_NAMES_ARR[temp_enc_instr_csr.rd], ", ",
+                std::hex, temp_enc_instr_csr.rs1_uimm4dt0, std::dec, ", ",
+                std::hex, temp_enc_instr_csr.csr, std::dec
+            );
+        }
+            break;
+
+        // CSR Read & Set Bits Immediate
+        case Rv32CsrType::Op::CsrrsiRdUimmCsr.f3: {
+            return sconcat(
+                "csrrsi", " ",
+                GPR_NAMES_ARR[temp_enc_instr_csr.rd], ", ",
+                std::hex, temp_enc_instr_csr.rs1_uimm4dt0, std::dec, ", ",
+                std::hex, temp_enc_instr_csr.csr, std::dec
+            );
+        }
+            break;
+
+        // CSR Read & Clear Bits Immediate
+        case Rv32CsrType::Op::CsrrciRdUimmCsr.f3: {
+            return sconcat(
+                "csrrci", " ",
+                GPR_NAMES_ARR[temp_enc_instr_csr.rd], ", ",
+                std::hex, temp_enc_instr_csr.rs1_uimm4dt0, std::dec, ", ",
+                std::hex, temp_enc_instr_csr.csr, std::dec
+            );
+        }
+            break;
+
+        default: {
+            return std::nullopt;
+        }
+            break;
+        }
+    }
+        break;
     case Rv32RType::Op::AddRdRs1Rs2.op: {
         std::string instr_name;
         switch (temp_enc_instr_r.funct7) {

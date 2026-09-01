@@ -151,14 +151,64 @@ public:     // types
         std::string disasm_str;
         #endif      // DEBUG
     };
+    class Rv32CsrType final {
+    public:     // types
+        static constexpr Field field_opcode = {6u, 0u};
+        static constexpr Field field_rd = {11u, 7u};
+        static constexpr Field field_funct3 = {14u, 12u};
+        static constexpr Field field_rs1_uimm4dt0 = {19u, 15u};
+        //static constexpr Field field_uimm4dt0 = {19u, 15u};
+        static constexpr Field field_csr = {20u, 31u};
+
+        class EncInstr final {
+        public:     // variables
+            u32 opcode: field_width(field_opcode);
+            u32 rd: field_width(field_rd);
+            u32 funct3: field_width(field_funct3);
+            u32 rs1_uimm4dt0: field_width(field_rs1_uimm4dt0);
+            u32 csr: field_width(field_csr);
+        };
+
+        class OpFields final {
+        public:     // variables
+            //static constexpr u32 OP_CONST = 0b1110011u;
+            u32 op;
+            u32 f3;
+        };
+
+        class Op final {
+        public:     // constants
+            // all of these are atomic
+            static constexpr OpFields
+                // CSR Read/Write
+                CsrrwRdRs1Csr = {.op=0x73, .f3=0x1},
+
+                // CSR Read & Set Bits
+                CsrrsRdRs1Csr = {.op=0x73, .f3=0x2},
+
+                // CSR Read & Clear Bits
+                CsrrcRdRs1Csr = {.op=0x73, .f3=0x3},
+
+                // CSR Read/Write Immediate
+                CsrrwiRdUimmCsr = {.op=0x73, .f3=0x5},
+
+                // CSR Read & Set Bits Immediate
+                CsrrsiRdUimmCsr = {.op=0x73, .f3=0x6},
+
+                // CSR Read & Clear Bits Immediate
+                CsrrciRdUimmCsr = {.op=0x73, .f3=0x7};
+        };
+        
+    };
+
     class Rv32RType final {
     public:     // types
         static constexpr Field field_opcode = {6u, 0u};
         static constexpr Field field_rd = {11u, 7u};
         static constexpr Field field_funct3 = {14u, 12u};
-        static constexpr Field field_rs1 = {19, 15};
-        static constexpr Field field_rs2 = {24, 20};
-        static constexpr Field field_funct7 = {31, 25};
+        static constexpr Field field_rs1 = {19u, 15u};
+        static constexpr Field field_rs2 = {24u, 20u};
+        static constexpr Field field_funct7 = {31u, 25u};
 
         class EncInstr final {
         public:     // variables
