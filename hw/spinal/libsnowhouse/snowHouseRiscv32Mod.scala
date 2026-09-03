@@ -566,16 +566,17 @@ object Riscv32OpInfoMap {
   )
   opInfoMap += (
     // rd = rs1 << imm[0:4]
-    Rv32IType.Op.SlliRdRs1Imm -> OpInfo./*mkAlu*//*mkAluShift*/mkMultiCycle(
+    Rv32IType.Op.SlliRdRs1Imm -> OpInfo.mkAlu/*mkAluShift*//*mkMultiCycle*/(
       dstArr=Array[DstKind](DstKind.Gpr),
       srcArr=Array[SrcKind](SrcKind.Gpr, SrcKind.Imm()),
       //aluShiftOp=AluShiftOpKind.Lsl,
-      multiCycleOp=(
-        MultiCycleOpKind.Lsl
-      ),
-      //aluOp=(
-      //  AluOpKind.LcvAlu(LcvAluDel1InpOpEnum.LSL)
-      //)
+      //multiCycleOp=(
+      //  MultiCycleOpKind.Lsl
+      //),
+      aluOp=(
+        //AluOpKind.LcvAlu(LcvAluDel1InpOpEnum.LSL)
+        AluOpKind.Lsl
+      )
     )
   )
   opInfoMap += (
@@ -593,16 +594,17 @@ object Riscv32OpInfoMap {
   )
   opInfoMap += (
     // rd = rs1 >> imm[0:4]
-    Rv32IType.Op.SrliRdRs1Imm -> OpInfo./*mkAlu*//*mkAluShift*/mkMultiCycle(
+    Rv32IType.Op.SrliRdRs1Imm -> OpInfo.mkAlu/*mkAluShift*//*mkMultiCycle*/(
       dstArr=Array[DstKind](DstKind.Gpr),
       srcArr=Array[SrcKind](SrcKind.Gpr, SrcKind.Imm()),
       //aluShiftOp=AluShiftOpKind.Lsr,
-      multiCycleOp=(
-        MultiCycleOpKind.Lsr
-      ),
-      //aluOp=(
-      //  AluOpKind.LcvAlu(LcvAluDel1InpOpEnum.LSL)
-      //)
+      //multiCycleOp=(
+      //  MultiCycleOpKind.Lsr
+      //),
+      aluOp=(
+        //AluOpKind.LcvAlu(LcvAluDel1InpOpEnum.LSL)
+        AluOpKind.Lsr
+      )
     )
   )
 
@@ -623,16 +625,17 @@ object Riscv32OpInfoMap {
 
   opInfoMap += (
     // rd = rs1 >> imm[0:4] msb-extends
-    Rv32IType.Op.SraiRdRs1Imm -> OpInfo./*mkAlu*//*mkAluShift*/mkMultiCycle(
+    Rv32IType.Op.SraiRdRs1Imm -> OpInfo.mkAlu/*mkAluShift*//*mkMultiCycle*/(
       dstArr=Array[DstKind](DstKind.Gpr),
       srcArr=Array[SrcKind](SrcKind.Gpr, SrcKind.Imm()),
       //aluShiftOp=AluShiftOpKind.Asr,
-      multiCycleOp=(
-        MultiCycleOpKind.Asr
-      ),
-      //aluOp=(
-      //  AluOpKind.LcvAlu(LcvAluDel1InpOpEnum.LSL)
-      //)
+      //multiCycleOp=(
+      //  MultiCycleOpKind.Asr
+      //),
+      aluOp=(
+        //AluOpKind.LcvAlu(LcvAluDel1InpOpEnum.LSL)
+        AluOpKind.Asr
+      )
     )
   )
 
