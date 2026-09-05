@@ -1177,8 +1177,9 @@ case class SnowHouseConfig(
   val optScoreboardTagWidth = (
     //6
     //optScoreboardReorderBufWidth
-    4
+    //4
     //3
+    log2Up(numGprs)
   )
 
   //--------

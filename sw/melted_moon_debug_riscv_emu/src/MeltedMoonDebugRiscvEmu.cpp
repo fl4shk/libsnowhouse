@@ -1936,6 +1936,23 @@ u32 MeltedMoonDebugRiscvEmu::_bus_read(
                             byte_count
                         );
                     }
+                } else if (
+                    temp_addr >= ADDR_FB_1_START
+                    && temp_addr <= ADDR_FB_1_END
+                ) {
+                    if (!(u32(_mem[ADDR_FB_PAGE]) & 0b1u)) {
+                        memcpy(
+                            &ret,
+                            &_fb_1_mem[temp_addr - ADDR_FB_1_START],
+                            byte_count
+                        );
+                    } else {
+                        memcpy(
+                            &ret,
+                            &_fb_0_mem[temp_addr - ADDR_FB_1_START],
+                            byte_count
+                        );
+                    }
                 } 
                 //else if (
                 //    temp_addr >= ADDR_FB_1_START
