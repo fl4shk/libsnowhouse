@@ -3133,14 +3133,14 @@ case class SnowHousePipeStageScoreboardCheck(
     upPayload(1).gprIdxVec.last := myTempRenameTag//myTempFwdTag
   }
 
-  for (zdx <- 0 until upPayload(1).gprIdxVec.size - 1) {
-    when (
-      myFwdRenameCondMost
-      && upPayload(0).gprIdxVec(zdx) === upPayload(0).gprIdxVec.last
-    ) {
-      upPayload(1).gprIdxVec(zdx) := myTempRenameTag//myTempFwdTag//upPayload(1).gprIdxVec.last
-    }
-  }
+  //for (zdx <- 0 until upPayload(1).gprIdxVec.size - 1) {
+  //  when (
+  //    myFwdRenameCondMost
+  //    && upPayload(0).gprIdxVec(zdx) === upPayload(0).gprIdxVec.last
+  //  ) {
+  //    upPayload(1).gprIdxVec(zdx) := myTempRenameTag//myTempFwdTag//upPayload(1).gprIdxVec.last
+  //  }
+  //}
 
   switch (
     myFwdRenameCond
@@ -3208,12 +3208,12 @@ case class SnowHousePipeStageScoreboardCheck(
     ),
     enable=myNonFwdRenameCondNonZero,
   )
-  when (
-    //myNonFwdRenameCond
-    myNonFwdRenameCondNonZero
-  ) {
-    upPayload(1).gprIdxVec.last := myTempRenameTag//myTempNonFwdTag
-  }
+  //when (
+  //  //myNonFwdRenameCond
+  //  myNonFwdRenameCondNonZero
+  //) {
+  //  upPayload(1).gprIdxVec.last := myTempRenameTag//myTempNonFwdTag
+  //}
 
   for (zdx <- 0 until upPayload(1).gprIdxVec.size - 1) {
     when (
