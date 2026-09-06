@@ -146,6 +146,7 @@ case class SnowHouseScoreboardCheckPayload(
     //cfg.optScoreboardReorderBufWidth bits
     cfg.optScoreboardTagWidth bits
   )
+  val renameTag = UInt(log2Up(cfg.numGprs) bits)
   //val tag = UInt(cfg.optScoreboardTagWidth bits)
 }
 
@@ -182,6 +183,7 @@ case class SnowHouseScoreboardCommitPayload(
   val myNonFwdValid = Bool()
   val nonFwdTag = UInt(cfg.optScoreboardTagWidth bits)
   val fwdTag = UInt(cfg.optScoreboardTagWidth bits)
+  val renameTag = UInt(log2Up(cfg.numGprs) bits)
   val opIsFwd = Bool()
   //val reorderBufInFlush = Bool()
   //val tag = UInt(cfg.optForFmaxCfg.get.myScoreboardTagWidth bits)
@@ -4510,6 +4512,16 @@ case class SnowHouseForFmaxPipeStageWriteBack(
     myFwdWbPayload(1).instrCnt.scoreboardCheckPayload
     .nonBubbleFwdTag
   )
+  val myRenameTempNonFwdTag = (
+    cfg.optScoreboard
+  ) generate (
+    myNonFwdWbPayload(1).instrCnt.scoreboardCheckPayload.renameTag
+  )
+  val myRenameTempFwdTag = (
+    cfg.optScoreboard
+  ) generate (
+    myFwdWbPayload(1).instrCnt.scoreboardCheckPayload.renameTag
+  )
   val myHistNonFwdTag = (
     cfg.optScoreboard
     //&& isNonFwd
@@ -4815,6 +4827,9 @@ case class SnowHouseForFmaxPipeStageWriteBack(
     io.commitEtc.scoreboardBubbleRetire.gprIdxVec.last := (
       io.up.gprIdxVec.last
     )
+    io.commitEtc.scoreboardBubbleRetire.renameTag := (
+      io.up.instrCnt.scoreboardCheckPayload.renameTag
+    )
     //when (
     //) {
     //  io.commitEtc.scoreboardBubbleRetire.opIsFwd := (
@@ -5032,10 +5047,12 @@ case class SnowHouseForFmaxPipeStageWriteBack(
       someCommitStm.commit.nonFwdTag := myHistNonFwdTag(0)
       someCommitStm.commit.fwdTag := myHistFwdTag(0)
       someCommitStm.commit.opIsFwd := False
+      someCommitStm.commit.renameTag := myRenameTempNonFwdTag
     } else {
       someCommitStm.commit.nonFwdTag := 0x0
       someCommitStm.commit.fwdTag := myHistFwdTag(0)
       someCommitStm.commit.opIsFwd := True
+      someCommitStm.commit.renameTag := myRenameTempFwdTag
     }
     when (
       (

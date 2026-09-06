@@ -1179,6 +1179,7 @@ case class SnowHouseConfig(
     //optScoreboardReorderBufWidth
     4
     //3
+    //log2Up(numGprs)
   )
 
   //--------
