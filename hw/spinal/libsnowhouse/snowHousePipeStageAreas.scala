@@ -3208,21 +3208,21 @@ case class SnowHousePipeStageScoreboardCheck(
     ),
     enable=myNonFwdRenameCondNonZero,
   )
-  //when (
-  //  //myNonFwdRenameCond
-  //  myNonFwdRenameCondNonZero
-  //) {
-  //  upPayload(1).gprIdxVec.last := myTempRenameTag//myTempNonFwdTag
-  //}
-
-  for (zdx <- 0 until upPayload(1).gprIdxVec.size - 1) {
-    when (
-      myNonFwdRenameCondMost
-      && upPayload(0).gprIdxVec(zdx) === upPayload(0).gprIdxVec.last
-    ) {
-      upPayload(1).gprIdxVec(zdx) := myTempRenameTag//myTempNonFwdTag//upPayload(1).gprIdxVec.last
-    }
+  when (
+    //myNonFwdRenameCond
+    myNonFwdRenameCondNonZero
+  ) {
+    upPayload(1).gprIdxVec.last := myTempRenameTag//myTempNonFwdTag
   }
+
+  //for (zdx <- 0 until upPayload(1).gprIdxVec.size - 1) {
+  //  when (
+  //    myNonFwdRenameCondMost
+  //    && upPayload(0).gprIdxVec(zdx) === upPayload(0).gprIdxVec.last
+  //  ) {
+  //    upPayload(1).gprIdxVec(zdx) := myTempRenameTag//myTempNonFwdTag//upPayload(1).gprIdxVec.last
+  //  }
+  //}
 
   switch (
     myNonFwdRenameCond
