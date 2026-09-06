@@ -146,6 +146,9 @@ case class SnowHouseScoreboardCheckPayload(
     //cfg.optScoreboardReorderBufWidth bits
     cfg.optScoreboardTagWidth bits
   )
+  val renamedArchReg = (
+    UInt(log2Up(cfg.numGprs) bits)
+  )
   //val tag = UInt(cfg.optScoreboardTagWidth bits)
 }
 
@@ -183,6 +186,10 @@ case class SnowHouseScoreboardCommitPayload(
   val nonFwdTag = UInt(cfg.optScoreboardTagWidth bits)
   val fwdTag = UInt(cfg.optScoreboardTagWidth bits)
   val opIsFwd = Bool()
+
+  val renamedArchReg = (
+    UInt(log2Up(cfg.numGprs) bits)
+  )
   //val reorderBufInFlush = Bool()
   //val tag = UInt(cfg.optForFmaxCfg.get.myScoreboardTagWidth bits)
   //val isBubbleEtc = Bool()
@@ -4510,6 +4517,18 @@ case class SnowHouseForFmaxPipeStageWriteBack(
     myFwdWbPayload(1).instrCnt.scoreboardCheckPayload
     .nonBubbleFwdTag
   )
+
+  val myTempNonFwdRenamedArchReg = (
+    cfg.optScoreboard
+  ) generate (
+    myNonFwdWbPayload(1).instrCnt.scoreboardCheckPayload.renamedArchReg
+  )
+  val myTempFwdRenamedArchReg = (
+    cfg.optScoreboard
+  ) generate (
+    myFwdWbPayload(1).instrCnt.scoreboardCheckPayload.renamedArchReg
+  )
+
   val myHistNonFwdTag = (
     cfg.optScoreboard
     //&& isNonFwd
@@ -5032,10 +5051,12 @@ case class SnowHouseForFmaxPipeStageWriteBack(
       someCommitStm.commit.nonFwdTag := myHistNonFwdTag(0)
       someCommitStm.commit.fwdTag := myHistFwdTag(0)
       someCommitStm.commit.opIsFwd := False
+      someCommitStm.commit.renamedArchReg := myTempNonFwdRenamedArchReg
     } else {
       someCommitStm.commit.nonFwdTag := 0x0
       someCommitStm.commit.fwdTag := myHistFwdTag(0)
       someCommitStm.commit.opIsFwd := True
+      someCommitStm.commit.renamedArchReg := myTempFwdRenamedArchReg
     }
     when (
       (
@@ -5449,7 +5470,8 @@ case class SnowHouseForFmaxPipeStageWriteBack(
         myDbgCommitBackStm.regFileWrite.data
       )
       io.dbgInfo.regFileWriteAddr := (
-        myDbgCommitBackStm.regFileWrite.addr
+        //myDbgCommitBackStm.regFileWrite.addr
+        myDbgCommitBackStm.commit.renamedArchReg
       )
       io.dbgInfo.regFileWriteEnable := (
         if (cfg.optScoreboard) (

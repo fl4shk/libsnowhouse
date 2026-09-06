@@ -2280,6 +2280,7 @@ case class SnowHousePipeStageInstrDecode(
   }
 }
 
+// this module is (supposed to be) doing register renaming too
 case class SnowHousePipeStageScoreboardCheck(
   val args: SnowHousePipeStageArgs,
   //val psIdHaltIt: Bool,
@@ -2374,6 +2375,29 @@ case class SnowHousePipeStageScoreboardCheck(
 
   //psIdFoundBubble := RegNext(psIdFoundBubble, init=False)
   down(pScoreboardCheck).allowOverride
+
+  case class MyRenameTblElem(
+  ) extends Bundle {
+    val opIsFwd = Bool()
+    //val physIdx = UInt(log2Up(cfg.numGprs) bits)
+  }
+
+  val rMyRenameTbl = {
+    //Mem(
+    //  wordType=MyRenameTblElem(),
+    //  wordCount=cfg.numGprs
+    //)
+    //.initBigInt({
+    //  Array.fill(cfg.numGprs)(BigInt(0))
+    //})
+    val temp = Vec.fill(cfg.numGprs)(
+      Reg(MyRenameTblElem())
+    )
+    for (idx <- 0 until temp.size) {
+      temp(idx).opIsFwd.init(True)
+    }
+    temp
+  }
 
   val rScoreboardFlushState = (
     Reg(ScoreboardFlushState())
@@ -2733,7 +2757,6 @@ case class SnowHousePipeStageScoreboardCheck(
     }
   }
 
-
   switch (
     //io.issue.ready
     (
@@ -2772,6 +2795,9 @@ case class SnowHousePipeStageScoreboardCheck(
       myTempFwdTag := 0x0
     }
   }
+
+  //myRenameTbl.write(
+  //)
 
   //when (
   //  rFwdTagAllocVec.asBits.andR
@@ -3119,17 +3145,25 @@ case class SnowHousePipeStageScoreboardCheck(
   //) {
   //}
 
+  val mySetFwdTagCond = (
+    //myPartialWriteTagInfoCond
+    up.isFiring
+    //down.isFiring
+    && !myInFlushCond(0)//shouldClearExtraDecodeInfo
+    && !myNonFwdHazardCheckVec.orR
+    //&& !myTempOpMayNeedHazardCheck
+    //&& !upPayload(1).inpDecodeExt.head.opIsMemAccess.last
+  )
+
+  when (
+    mySetFwdTagCond
+    && upPayload(1).gprIsNonZeroVec.last.last
+  ) {
+    upPayload(1).gprIdxVec.last := myTempFwdTag
+  }
+
   switch (
-    (
-      //myPartialWriteTagInfoCond
-      up.isFiring
-      //down.isFiring
-      && !myInFlushCond(0)//shouldClearExtraDecodeInfo
-      && !myNonFwdHazardCheckVec.orR
-      //&& !myTempOpMayNeedHazardCheck
-      //&& !upPayload(1).inpDecodeExt.head.opIsMemAccess.last
-      && !upPayload(1).splitOp.opIsMemAccess
-    )
+    mySetFwdTagCond
     ## myLeftGprIdxVec.last
   ) {
     for (idx <- 0 until cfg.numGprs) {
@@ -3149,6 +3183,49 @@ case class SnowHousePipeStageScoreboardCheck(
             //rMyFwdGprTagVec(idx).tag := myTempFwdTag
           }
           rMyFwdGprTagVec(idx).tag := myTempFwdTag
+          //rMyRenameTbl(idx).opIsFwd := True
+        }
+      }
+    }
+    if (cfg.myHaveZeroReg) {
+      default {
+      }
+    }
+  }
+
+  val mySetNonFwdTagCond = (
+    //myPartialWriteTagInfoCond
+    up.isFiring
+    //down.isFiring
+    && !myInFlushCond(1)//shouldClearExtraDecodeInfo
+    && !myNonFwdHazardCheckVec.orR
+    //&& !myTempOpMayNeedHazardCheck
+    //&& !upPayload(1).inpDecodeExt.head.opIsMemAccess.last
+    && upPayload(1).splitOp.opIsMemAccess
+  )
+  when (
+    mySetNonFwdTagCond
+    && upPayload(1).gprIsNonZeroVec.last.last
+  ) {
+    upPayload(1).gprIdxVec.last := myTempNonFwdTag
+  }
+  switch (
+    (
+      mySetNonFwdTagCond
+      || mySetFwdTagCond
+    )
+    ## upPayload(0).gprIdxVec.last
+  ) {
+    for (idx <- 0 until cfg.numGprs) {
+      if (
+        !cfg.myHaveZeroReg
+        || idx != 0
+      ) {
+        is (
+          (1 << log2Up(cfg.numGprs))
+          | idx
+        ) {
+          rMyRenameTbl(idx).opIsFwd := mySetFwdTagCond
         }
       }
     }
@@ -3159,16 +3236,7 @@ case class SnowHousePipeStageScoreboardCheck(
   }
 
   switch (
-    (
-      //myPartialWriteTagInfoCond
-      up.isFiring
-      //down.isFiring
-      && !myInFlushCond(1)//shouldClearExtraDecodeInfo
-      && !myNonFwdHazardCheckVec.orR
-      //&& !myTempOpMayNeedHazardCheck
-      //&& !upPayload(1).inpDecodeExt.head.opIsMemAccess.last
-      && upPayload(1).splitOp.opIsMemAccess
-    )
+    mySetNonFwdTagCond
     ## myLeftGprIdxVec.last
   ) {
     for (idx <- 0 until cfg.numGprs) {
@@ -3190,6 +3258,7 @@ case class SnowHousePipeStageScoreboardCheck(
             //rMyNonFwdGprTagVec(idx).tag := myTempFwdTag
           //}
           rMyNonFwdGprTagVec(idx).tag := myTempNonFwdTag
+          //rMyRenameTbl(idx).opIsFwd := False
         }
       }
     }
@@ -3199,6 +3268,36 @@ case class SnowHousePipeStageScoreboardCheck(
     }
   }
 
+  for ((gprIdx, zdx) <- upPayload(1).gprIdxVec.view.zipWithIndex) {
+    if (zdx < upPayload(1).gprIdxVec.size - 1) {
+      val tempZdx = (
+        zdx.max(cfg.regFileCfg.modMemWordValidSize - 1)
+      )
+      switch (
+        upPayload(1).gprIsNonZeroVec(zdx)(tempZdx)
+        ## rMyRenameTbl(upPayload(0).gprIdxVec(zdx)).opIsFwd
+      ) {
+        is (M"11") {
+          upPayload(1).gprIdxVec(zdx) := rMyFwdGprTagVec(
+            upPayload(0).gprIdxVec(zdx)
+          ).tag
+        }
+        is (M"10") {
+          upPayload(1).gprIdxVec(zdx) := rMyNonFwdGprTagVec(
+            upPayload(0).gprIdxVec(zdx)
+          ).tag
+        }
+        default {
+        }
+      }
+    }
+    //else {
+    //}
+  }
+
+  upPayload(1).instrCnt.scoreboardCheckPayload.renamedArchReg := (
+    upPayload(0).gprIdxVec.last
+  )
 
   down(pScoreboardCheck).splitOp.scoreboardOpIsNonFwd := (
     upPayload(1).splitOp.opIsMemAccess
