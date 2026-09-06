@@ -2312,20 +2312,20 @@ case class SnowHousePipeStageScoreboardCheck(
   //  val opIsFwd = Bool()
   //}
 
-  val myRenameTbl = (
-    Mem(
-      wordType=UInt(log2Up(cfg.numGprs) bits),
-      wordCount=cfg.numGprs,
-    )
-    .initBigInt({
-      Array.fill(cfg.numGprs)(BigInt(0))
-      //val temp = new ArrayBuffer[BigInt]()
-      //for (idx <- 0 until cfg.numGprs) {
-      //  temp += BigInt(idx)
-      //}
-      //temp.toSeq
-    })
-  )
+  //val myRenameTbl = (
+  //  Mem(
+  //    wordType=UInt(log2Up(cfg.numGprs) bits),
+  //    wordCount=cfg.numGprs,
+  //  )
+  //  .initBigInt({
+  //    //Array.fill(cfg.numGprs)(BigInt(0))
+  //    val temp = new ArrayBuffer[BigInt]()
+  //    for (idx <- 0 until cfg.numGprs) {
+  //      temp += BigInt(idx)
+  //    }
+  //    temp.toSeq
+  //  })
+  //)
 
   require(
     cfg.optScoreboard
@@ -2417,11 +2417,12 @@ case class SnowHousePipeStageScoreboardCheck(
 
   for ((gprIdx, zdx) <- upPayload(1).gprIdxVec.view.zipWithIndex) {
     if (zdx < upPayload(1).gprIdxVec.view.size - 1) {
-      gprIdx := myRenameTbl.readAsync(
-        address=upPayload(0).gprIdxVec(zdx)
-      )
+      //gprIdx := myRenameTbl.readAsync(
+      //  address=upPayload(0).gprIdxVec(zdx),
+      //  readUnderWrite=writeFirst
+      //)
     }
-    upPayload(1).myExt(0).memAddr(zdx) := gprIdx
+    //upPayload(1).myExt(0).memAddr(zdx) := gprIdx
   }
 
   down(pScoreboardCheck) := upPayload(1)
@@ -2798,7 +2799,7 @@ case class SnowHousePipeStageScoreboardCheck(
         rMyFwdGprTagVec(idx).cnt - 1
       )
     }
-    when (
+    val myFwdClearCond = (
       rMyFwdGprTagVec(idx).fire
       && (
         (
@@ -2820,10 +2821,18 @@ case class SnowHousePipeStageScoreboardCheck(
           )
         )
       )
+    )
+    //myRenameTbl.write(
+    //  address=idx,
+    //  data=U(s"${log2Up(cfg.numGprs)}'d0"),
+    //  enable=myFwdClearCond
+    //)
+    when (
+      myFwdClearCond
     ) {
       rMyFwdGprTagVec(idx).valid := False
     }
-    when (
+    val myNonFwdClearCond = (
       rMyNonFwdGprTagVec(idx).fire
       && (
         (
@@ -2848,6 +2857,15 @@ case class SnowHousePipeStageScoreboardCheck(
           )
         )
       )
+    )
+
+    //myRenameTbl.write(
+    //  address=idx,
+    //  data=U(s"${log2Up(cfg.numGprs)}'d0"),
+    //  enable=myNonFwdClearCond
+    //)
+    when (
+      myNonFwdClearCond
     ) {
       rMyNonFwdGprTagVec(idx).valid := False
     }
@@ -2962,6 +2980,7 @@ case class SnowHousePipeStageScoreboardCheck(
     up.isFiring
     //down.isFiring
     && !myInFlushCond(0)//shouldClearExtraDecodeInfo
+    //&& !myFwdHazardCheckVec.orR
     && !myNonFwdHazardCheckVec.orR
     //&& !myTempOpMayNeedHazardCheck
     //&& !upPayload(1).inpDecodeExt.head.opIsMemAccess.last
@@ -2976,11 +2995,11 @@ case class SnowHousePipeStageScoreboardCheck(
     )
   )
 
-  myRenameTbl.write(
-    address=upPayload(1).gprIdxVec.last,
-    data=myTempFwdTag,
-    enable=myFwdRenameCondNonZero,
-  )
+  //myRenameTbl.write(
+  //  address=upPayload(0).gprIdxVec.last,
+  //  data=myTempFwdTag,
+  //  enable=myFwdRenameCondNonZero,
+  //)
   when (
     //myFwdRenameCond
     myFwdRenameCondNonZero
@@ -3024,11 +3043,13 @@ case class SnowHousePipeStageScoreboardCheck(
     up.isFiring
     //down.isFiring
     && !myInFlushCond(1)//shouldClearExtraDecodeInfo
+    //&& !myFwdHazardCheckVec.orR
     && !myNonFwdHazardCheckVec.orR
     //&& !myTempOpMayNeedHazardCheck
     //&& !upPayload(1).inpDecodeExt.head.opIsMemAccess.last
     && upPayload(1).splitOp.opIsMemAccess
   )
+
   val myNonFwdRenameCondNonZero = (
     if (cfg.myHaveZeroReg) (
       myNonFwdRenameCond && upPayload(1).gprIsNonZeroVec.last.last
@@ -3037,11 +3058,11 @@ case class SnowHousePipeStageScoreboardCheck(
     )
   )
 
-  myRenameTbl.write(
-    address=upPayload(1).gprIdxVec.last,
-    data=myTempNonFwdTag,
-    enable=myNonFwdRenameCondNonZero,
-  )
+  //myRenameTbl.write(
+  //  address=upPayload(0).gprIdxVec.last,
+  //  data=myTempNonFwdTag,
+  //  enable=myNonFwdRenameCondNonZero,
+  //)
   when (
     //myNonFwdRenameCond
     myNonFwdRenameCondNonZero
