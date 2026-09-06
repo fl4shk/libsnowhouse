@@ -2318,12 +2318,12 @@ case class SnowHousePipeStageScoreboardCheck(
       wordCount=cfg.numGprs,
     )
     .initBigInt({
-      //Array.fill(cfg.numGprs)(BigInt(0))
-      val temp = new ArrayBuffer[BigInt]()
-      for (idx <- 0 until cfg.numGprs) {
-        temp += BigInt(idx)
-      }
-      temp.toSeq
+      Array.fill(cfg.numGprs)(BigInt(0))
+      //val temp = new ArrayBuffer[BigInt]()
+      //for (idx <- 0 until cfg.numGprs) {
+      //  temp += BigInt(idx)
+      //}
+      //temp.toSeq
     })
   )
 
@@ -2415,28 +2415,6 @@ case class SnowHousePipeStageScoreboardCheck(
   }
   upPayload(1).allowOverride
 
-  for ((gprIdx, zdx) <- upPayload(1).gprIdxVec.view.zipWithIndex) {
-    if (zdx < upPayload(1).gprIdxVec.view.size - 1) {
-      gprIdx := myRenameTbl.readAsync(
-        address=upPayload(0).gprIdxVec(zdx),
-        readUnderWrite=writeFirst
-      )
-    } else {
-      myPrevRenameTag := myRenameTbl.readAsync(
-        address=upPayload(0).gprIdxVec(zdx),
-        readUnderWrite=writeFirst
-      )
-    }
-    upPayload(1).myExt(0).memAddr(zdx) := gprIdx
-  }
-
-  down(pScoreboardCheck) := upPayload(1)
-
-  //upPayload(1).branchTgtBufElem(1) := (
-  //  //upPayload(1).branchTgtBufElem(1).getZero
-  //  myTempBtbElem
-  //)
-
   myScoreboardCommitStm.ready := True
   myScoreboardBubbleRetireStm.ready := True
 
@@ -2454,6 +2432,32 @@ case class SnowHousePipeStageScoreboardCheck(
     //upPayload(1).instrCnt.scoreboardCheckPayload.renameTag
     UInt(log2Up(cfg.numGprs) bits)
   )
+
+  for ((gprIdx, zdx) <- upPayload(1).gprIdxVec.view.zipWithIndex) {
+    if (zdx < upPayload(1).gprIdxVec.view.size - 1) {
+      gprIdx := myRenameTbl.readAsync(
+        address=upPayload(0).gprIdxVec(zdx),
+        //readUnderWrite=writeFirst
+      )
+    } else {
+      myPrevRenameTag := myRenameTbl.readAsync(
+        address=upPayload(0).gprIdxVec(zdx),
+        //readUnderWrite=readFirst
+      )
+    }
+    upPayload(1).myExt(0).memAddr(zdx) := gprIdx
+  }
+
+  upPayload(1).instrCnt.scoreboardCheckPayload.renameTblElem := (
+    upPayload(0).gprIdxVec.last
+  )
+
+  down(pScoreboardCheck) := upPayload(1)
+
+  //upPayload(1).branchTgtBufElem(1) := (
+  //  //upPayload(1).branchTgtBufElem(1).getZero
+  //  myTempBtbElem
+  //)
 
   myTempNonFwdTag := (
     RegNext(
@@ -2627,7 +2631,7 @@ case class SnowHousePipeStageScoreboardCheck(
   )
   val rRenameTagAllocVec = (
     Vec.fill(1 << myCurrRenameTag.getWidth)(
-      Reg(Bool(), init=True)
+      Reg(Bool(), init=False)
     )
   )
 
@@ -2756,7 +2760,10 @@ case class SnowHousePipeStageScoreboardCheck(
         ~myReducedRenameTagAllocVec.asBits.asUInt
       )
     ) {
-      val size = myReducedRenameTagAllocVec.size
+      val size = (
+        //rRenameTagAllocVec.size
+        myReducedRenameTagAllocVec.size
+      )
       for (idx <- 0 until size) {
         is (MaskedLiteral(
           "1"
@@ -2795,7 +2802,7 @@ case class SnowHousePipeStageScoreboardCheck(
           )
           || myReducedFwdTagAllocVec.asBits.andR
           || myReducedNonFwdTagAllocVec.asBits.andR
-          //|| myReducedRenameTagAllocVec.asBits.andR
+          || myReducedRenameTagAllocVec.asBits.andR
         )
         //&& (
         //  //!myInFlushCond//shouldClearExtraDecodeInfo
@@ -2835,6 +2842,7 @@ case class SnowHousePipeStageScoreboardCheck(
         !myInFlushCond(3)
         && !myReducedFwdTagAllocVec.asBits.orR
         && !myReducedNonFwdTagAllocVec.asBits.orR
+        && !myReducedRenameTagAllocVec.asBits.orR
       ) {
         rScoreboardFlushState := ScoreboardFlushState.IDLE
       }
@@ -3062,6 +3070,7 @@ case class SnowHousePipeStageScoreboardCheck(
         || myScoreboardCommitStm.myNonFwdValid
       )
     )
+    //## myScoreboardCommitStm.gprIdxVec.last//renameTag
     ## myScoreboardCommitStm.renameTag
   ) {
     for (
@@ -3087,6 +3096,7 @@ case class SnowHousePipeStageScoreboardCheck(
         || myScoreboardBubbleRetireStm.myNonFwdValid
       )
     )
+    //## myScoreboardBubbleRetireStm.gprIdxVec.last//renameTag
     ## myScoreboardBubbleRetireStm.renameTag
   ) {
     for (
@@ -3106,6 +3116,7 @@ case class SnowHousePipeStageScoreboardCheck(
     default {
     }
   }
+
   //--------
   val myFwdRenameCondMost = (
     //down.isFiring
@@ -3119,7 +3130,9 @@ case class SnowHousePipeStageScoreboardCheck(
   )
   val myFwdRenameCondMostNonZero = (
     if (cfg.myHaveZeroReg) (
-      myFwdRenameCondMost && upPayload(1).gprIsNonZeroVec.last.last
+      myFwdRenameCondMost
+      && upPayload(0).gprIdxVec.last.orR
+      //&& upPayload(1).gprIsNonZeroVec.last.last
     ) else (
       myFwdRenameCondMost
     )
@@ -3133,7 +3146,9 @@ case class SnowHousePipeStageScoreboardCheck(
 
   val myFwdRenameCondNonZero = (
     if (cfg.myHaveZeroReg) (
-      myFwdRenameCond && upPayload(1).gprIsNonZeroVec.last.last
+      myFwdRenameCond 
+      && upPayload(0).gprIdxVec.last.orR
+      //&& upPayload(1).gprIsNonZeroVec.last.last
     ) else (
       myFwdRenameCond
     )
@@ -3145,7 +3160,10 @@ case class SnowHousePipeStageScoreboardCheck(
       //myTempFwdTag
       myCurrRenameTag
     ),
-    enable=myFwdRenameCondNonZero,
+    enable=(
+      myFwdRenameCondNonZero
+      && up.isFiring
+    ),
   )
   when (
     //myFwdRenameCond
@@ -3208,7 +3226,9 @@ case class SnowHousePipeStageScoreboardCheck(
 
   val myNonFwdRenameCondMostNonZero = (
     if (cfg.myHaveZeroReg) (
-      myNonFwdRenameCondMost && upPayload(1).gprIsNonZeroVec.last.last
+      myNonFwdRenameCondMost
+      //&& upPayload(0).gprIdxVec.last.orR
+      && upPayload(1).gprIsNonZeroVec.last.last
     ) else (
       myNonFwdRenameCondMost
     )
@@ -3222,7 +3242,9 @@ case class SnowHousePipeStageScoreboardCheck(
 
   val myNonFwdRenameCondNonZero = (
     if (cfg.myHaveZeroReg) (
-      myNonFwdRenameCond && upPayload(1).gprIsNonZeroVec.last.last
+      myNonFwdRenameCond
+      //&& upPayload(0).gprIdxVec.last.orR
+      && upPayload(1).gprIsNonZeroVec.last.last
     ) else (
       myNonFwdRenameCond
     )
@@ -3234,7 +3256,10 @@ case class SnowHousePipeStageScoreboardCheck(
       //myTempNonFwdTag
       myCurrRenameTag
     ),
-    enable=myNonFwdRenameCondNonZero,
+    enable=(
+      myNonFwdRenameCondNonZero
+      && up.isFiring
+    ),
   )
   when (
     //myNonFwdRenameCond
@@ -3242,6 +3267,11 @@ case class SnowHousePipeStageScoreboardCheck(
   ) {
     upPayload(1).gprIdxVec.last := myCurrRenameTag//myTempNonFwdTag
   }
+
+  //when (!myCurrRenameTag.orR) {
+  //  doSendBubbleMainMost
+  //  
+  //}
 
   //for (zdx <- 0 until upPayload(1).gprIdxVec.size - 1) {
   //  when (

@@ -2449,12 +2449,12 @@ private[libsnowhouse] case class SnowHouseForFmax(
     psScoreboardCheck.io.myScoreboardBubbleRetire << (
       psWb.io.commitEtc.scoreboardBubbleRetire
     )
-    psScoreboardCheck.io.myScoreboardReorderBufInFlushEtc <> (
-      psWb.io.commitEtc.scoreboardReorderBufInFlushEtc
-    )
-    psScoreboardCheck.io.myScoreboardReorderBufPsIdCanIssue <> (
-      psWb.io.commitEtc.scoreboardReorderBufPsIdCanIssue
-    )
+    //psScoreboardCheck.io.myScoreboardReorderBufInFlushEtc <> (
+    //  psWb.io.commitEtc.scoreboardReorderBufInFlushEtc
+    //)
+    //psScoreboardCheck.io.myScoreboardReorderBufPsIdCanIssue <> (
+    //  psWb.io.commitEtc.scoreboardReorderBufPsIdCanIssue
+    //)
     //psId.io.myScoreboardCommit.valid := psWb.io.commit.fire
     //psId.io.myScoreboardCommit.payload := (
     //  psWb.io.commit.scoreboardTag
