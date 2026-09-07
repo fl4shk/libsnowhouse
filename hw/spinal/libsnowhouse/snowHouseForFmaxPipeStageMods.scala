@@ -150,6 +150,12 @@ case class SnowHouseScoreboardCheckPayload(
     UInt(log2Up(cfg.numGprs) bits)
   )
   //val tag = UInt(cfg.optScoreboardTagWidth bits)
+  val fwdChkptIdx = (
+    UInt(cfg.optForFmaxRenameChkptIdxWidth bits)
+  )
+  val nonFwdChkptIdx = (
+    UInt(cfg.optForFmaxRenameChkptIdxWidth bits)
+  )
 }
 
 //case class SnowHouseScoreboardReadGprsPayload(
@@ -189,6 +195,12 @@ case class SnowHouseScoreboardCommitPayload(
 
   val archGprIdx = (
     UInt(log2Up(cfg.numGprs) bits)
+  )
+  val fwdChkptIdx = (
+    UInt(cfg.optForFmaxRenameChkptIdxWidth bits)
+  )
+  val nonFwdChkptIdx = (
+    UInt(cfg.optForFmaxRenameChkptIdxWidth bits)
   )
   //val reorderBufInFlush = Bool()
   //val tag = UInt(cfg.optForFmaxCfg.get.myScoreboardTagWidth bits)
@@ -4528,6 +4540,17 @@ case class SnowHouseForFmaxPipeStageWriteBack(
     myFwdWbPayload(1).instrCnt.scoreboardCheckPayload.archGprIdx
   )
 
+  val myTempNonFwdChkptIdx = (
+    cfg.optScoreboard
+  ) generate (
+    myNonFwdWbPayload(1).instrCnt.scoreboardCheckPayload.nonFwdChkptIdx
+  )
+  val myTempFwdChkptIdx = (
+    cfg.optScoreboard
+  ) generate (
+    myFwdWbPayload(1).instrCnt.scoreboardCheckPayload.fwdChkptIdx
+  )
+
   val myHistNonFwdTag = (
     cfg.optScoreboard
     //&& isNonFwd
@@ -5051,11 +5074,15 @@ case class SnowHouseForFmaxPipeStageWriteBack(
       someCommitStm.commit.fwdTag := myHistFwdTag(0)
       someCommitStm.commit.opIsFwd := False
       someCommitStm.commit.archGprIdx := myTempNonFwdArchGprIdx
+      someCommitStm.commit.fwdChkptIdx := myTempFwdChkptIdx
+      someCommitStm.commit.nonFwdChkptIdx := myTempNonFwdChkptIdx
     } else {
       someCommitStm.commit.nonFwdTag := 0x0
       someCommitStm.commit.fwdTag := myHistFwdTag(0)
       someCommitStm.commit.opIsFwd := True
       someCommitStm.commit.archGprIdx := myTempFwdArchGprIdx
+      someCommitStm.commit.fwdChkptIdx := myTempFwdChkptIdx
+      someCommitStm.commit.nonFwdChkptIdx := myTempNonFwdChkptIdx
     }
     when (
       (

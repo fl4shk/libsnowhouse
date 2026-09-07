@@ -788,27 +788,49 @@ case class SnowHouseConfig(
       )
     }
   )
-  val optPreFwdForFmaxPsExFwdSize = (
-    (optForFmaxPsExFwdSize, optForFmaxPsExFwdSize + 3, 3)
-    //optForFmaxCfg match {
-    //  case Some(myForFmaxCfg) => (
-    //    myForFmaxCfg.numPostExPreWbPipeStages + 1//3//2//1//2//1//2//6//5//4//6//5//4//3//2//3//4//5//6//3//6//5//4//3//6//5//4//3//6//5//4//3//2//3//2//3//2//3//2//5//4//3//5
-    //    + (
-    //      if (optScoreboard) (
-    //        6
-    //        //4
-    //        //2
-    //        //3
-    //      ) else (
-    //        0
-    //      )
-    //    )
-    //  )
-    //  case None => (
-    //    0
-    //  )
-    //}
+  val optForFmaxRenameChkptIdxWidth = (
+    optForFmaxCfg match {
+      case Some(myForFmaxCfg) => (
+        (
+          log2Up(
+            //0
+            + 1 // psScoreboardCheck:   s:1 s2m:1
+            + 1 // psPreFwd:            s:0 s2m:0; RegFile optRdLatency=1
+            + myForFmaxCfg.numPostExPreWbPipeStages 
+              // psEx:
+            + 1 // for good measure for bubble retirement...
+          )
+        ).max(log2Up(16))
+      )
+      case None => (
+        0
+      )
+    }
   )
+  val optForFmaxRenameChkptArrSize = (
+    1 << optForFmaxRenameChkptIdxWidth
+  )
+  //val optPreFwdForFmaxPsExFwdSize = (
+  //  (optForFmaxPsExFwdSize, optForFmaxPsExFwdSize + 3, 3)
+  //  //optForFmaxCfg match {
+  //  //  case Some(myForFmaxCfg) => (
+  //  //    myForFmaxCfg.numPostExPreWbPipeStages + 1//3//2//1//2//1//2//6//5//4//6//5//4//3//2//3//4//5//6//3//6//5//4//3//6//5//4//3//6//5//4//3//2//3//2//3//2//3//2//5//4//3//5
+  //  //    + (
+  //  //      if (optScoreboard) (
+  //  //        6
+  //  //        //4
+  //  //        //2
+  //  //        //3
+  //  //      ) else (
+  //  //        0
+  //  //      )
+  //  //    )
+  //  //  )
+  //  //  case None => (
+  //  //    0
+  //  //  )
+  //  //}
+  //)
   val myPsIdBubbleNumFollowingInstrs = (
     //1
     //+ 

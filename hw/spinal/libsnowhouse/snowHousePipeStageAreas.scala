@@ -2280,6 +2280,42 @@ case class SnowHousePipeStageInstrDecode(
   }
 }
 
+case class SnowHouseChkptMem[
+  WordT <: Data
+](
+  cfg: SnowHouseConfig,
+  wordType: HardType[WordT],
+) extends Area {
+  val myChkptMem = (
+    Mem(
+      wordType=wordType(),
+      wordCount=cfg.optForFmaxRenameChkptArrSize
+    )
+    .initBigInt({
+      Array.fill(cfg.optForFmaxRenameChkptArrSize)(BigInt(0))
+    })
+  )
+  val rMemIdx = (
+    Reg(UInt(cfg.optForFmaxRenameChkptIdxWidth bits))
+    init(0x0)
+  )
+
+  def write(
+    data: WordT,
+    doIncrIdx: Boolean,
+    enable: Bool=True,
+  ): Unit = {
+    myChkptMem.write(
+      address=rMemIdx,
+      data=data,
+      enable=enable,
+    )
+    if (doIncrIdx) {
+      rMemIdx := rMemIdx + 1
+    }
+  }
+}
+
 // this module is (supposed to be) doing register renaming too
 case class SnowHousePipeStageScoreboardCheck(
   val args: SnowHousePipeStageArgs,
@@ -2378,6 +2414,9 @@ case class SnowHousePipeStageScoreboardCheck(
 
   case class MyRenameTblElem(
   ) extends Bundle {
+    //val fullOpIsFwdVec = Vec.fill(cfg.optForFmaxBranchChkptArrSize)(
+    //  Bool()
+    //)
     val opIsFwd = Bool()
     //val physIdx = UInt(log2Up(cfg.numGprs) bits)
   }
@@ -2480,6 +2519,31 @@ case class SnowHousePipeStageScoreboardCheck(
     temp
   }
 
+  val myNonFwdChkptMem = (
+    SnowHouseChkptMem(
+      cfg=cfg,
+      wordType=MyGprTagInfo(isNonFwd=true),
+    )
+  )
+  upPayload(1).instrCnt.scoreboardCheckPayload.nonFwdChkptIdx := (
+    myNonFwdChkptMem.rMemIdx
+  )
+
+  //val myNonFwdChkptMem = (
+  //  Mem(
+  //    wordType=MyGprTagInfo(isNonFwd=true),
+  //    wordCount=cfg.optForFmaxRenameChkptArrSize
+  //  )
+  //  .initBigInt({
+  //    Array.fill(cfg.optForFmaxRenameChkptArrSize)(BigInt(0))
+  //  })
+  //)
+  //val rMyNonFwdChkptIdx = (
+  //  Reg(
+  //    UInt
+  //  )
+  //)
+
   val rMyFwdGprTagVec = {
     //Reg(UInt(cfg.numGprs bits))
     //init(0x0)
@@ -2490,6 +2554,27 @@ case class SnowHousePipeStageScoreboardCheck(
     temp.foreach(item => item.init(item.getZero))
     temp
   }
+
+  //val myFwdChkptMem = (
+  //  Mem(
+  //    wordType=MyGprTagInfo(isNonFwd=false),
+  //    wordCount=cfg.optForFmaxRenameChkptArrSize
+  //  )
+  //  .initBigInt({
+  //    Array.fill(cfg.optForFmaxRenameChkptArrSize)(BigInt(0))
+  //  })
+  //)
+
+  val myFwdChkptMem = (
+    SnowHouseChkptMem(
+      cfg=cfg,
+      wordType=MyGprTagInfo(isNonFwd=false),
+    )
+  )
+
+  upPayload(1).instrCnt.scoreboardCheckPayload.fwdChkptIdx := (
+    myFwdChkptMem.rMemIdx
+  )
 
   //val myGprUseCntRamArr = {
   //  Array.fill(cfg.maxNumGprsPerInstr)({
@@ -3011,6 +3096,19 @@ case class SnowHousePipeStageScoreboardCheck(
         rMyFwdGprTagVec(idx).cnt - 1
       )
     }
+    val myFwdBubbleCondMost = (
+      myScoreboardBubbleRetireStm.fire
+      && myScoreboardBubbleRetireStm.opIsFwd
+      //&& myScoreboardBubbleRetireStm.myFwdValid
+      && (
+        rMyFwdGprTagVec(idx).tag
+        === myScoreboardBubbleRetireStm.fwdTag
+      )
+    )
+    val myFwdBubbleCond = (
+      rMyFwdGprTagVec(idx).fire
+      && myFwdBubbleCondMost
+    )
     when (
       rMyFwdGprTagVec(idx).fire
       && (
@@ -3026,20 +3124,29 @@ case class SnowHousePipeStageScoreboardCheck(
           //  myScoreboardCommitStm
           //)
         )
-        || (
-          myScoreboardBubbleRetireStm.fire
-          && myScoreboardBubbleRetireStm.opIsFwd
-          //&& myScoreboardBubbleRetireStm.myFwdValid
-          && (
-            rMyFwdGprTagVec(idx).tag
-            === myScoreboardBubbleRetireStm.fwdTag
-          )
-        )
+        || myFwdBubbleCondMost
       )
     ) {
       //rFwdTagAllocVec(myScoreboardCommitStm.fwdTag) := False
       rMyFwdGprTagVec(idx).valid := False
     }
+    when (myFwdBubbleCond) {
+      // TODO: restore an element of rMyRenameTbl here! 
+    }
+    val myNonFwdBubbleCondMost = (
+      myScoreboardBubbleRetireStm.fire
+      //&& !myScoreboardBubbleRetireStm.opIsFwd
+      && myScoreboardBubbleRetireStm.myNonFwdValid
+      && (
+        rMyNonFwdGprTagVec(idx).tag
+        === myScoreboardBubbleRetireStm.nonFwdTag
+      )
+    )
+    val myNonFwdBubbleCond = (
+      rMyNonFwdGprTagVec(idx).fire
+      && myNonFwdBubbleCondMost
+    )
+
     when (
       rMyNonFwdGprTagVec(idx).fire
       && (
@@ -3055,19 +3162,14 @@ case class SnowHousePipeStageScoreboardCheck(
           //  myScoreboardCommitStm
           //)
         )
-        || (
-          myScoreboardBubbleRetireStm.fire
-          //&& !myScoreboardBubbleRetireStm.opIsFwd
-          && myScoreboardBubbleRetireStm.myNonFwdValid
-          && (
-            rMyNonFwdGprTagVec(idx).tag
-            === myScoreboardBubbleRetireStm.nonFwdTag
-          )
-        )
+        || myNonFwdBubbleCondMost
       )
     ) {
       //rNonFwdTagAllocVec(myScoreboardCommitStm.fwdTag) := False
       rMyNonFwdGprTagVec(idx).valid := False
+    }
+    when (myNonFwdBubbleCond) {
+      // TODO: restore an element of rMyRenameTbl here! 
     }
   }
   //--------
