@@ -1711,8 +1711,8 @@ object SnowHouseRiscv32PipeStageInstrDecode {
             setOp(LhuRdRs1Imm, encInstrI.last)
           }
         }
-        upPayload.gprIdxVec.last := encInstrR.last.rd
-        upPayload.gprIdxVec(0) := encInstrR.last.rs1
+        upPayload.gprIdxVec.last := encInstrR.last.rd.resized
+        upPayload.gprIdxVec(0) := encInstrR.last.rs1.resized
         upPayload.gprIdxVec(1) := 0x0
       }
       is (JalrRdRs1Imm.op) {
@@ -1739,8 +1739,8 @@ object SnowHouseRiscv32PipeStageInstrDecode {
         //} else {
           upPayload.gprIdxVec.last := 0x0
         //}
-        upPayload.gprIdxVec(0) := encInstrR.last.rs1
-        upPayload.gprIdxVec(1) := encInstrR.last.rs2
+        upPayload.gprIdxVec(0) := encInstrR.last.rs1.resized
+        upPayload.gprIdxVec(1) := encInstrR.last.rs2.resized
       }
       is (BeqRs1Rs2Imm.op) {
         setImm(encInstr=encInstrB.last)

@@ -1242,7 +1242,12 @@ case class SnowHouseDebugInfo(
   val regFileWriteAddr = (
     cfg.exposeRegFileWriteAddrToIo
   ) generate (
-    UInt(log2Up(cfg.regFileCfg.wordCountArr(0)) bits)
+    UInt(
+      log2Up(
+        //cfg.regFileCfg.wordCountArr(0)
+        cfg.numGprs
+      ) bits
+    )
   )
   val regFileWriteEnable = (
     cfg.exposeRegFileWriteEnableToIo
@@ -2251,7 +2256,10 @@ private[libsnowhouse] case class SnowHouseForFmax(
       cfg=WrPulseRdPipeRamConfig(
         modType=SnowHousePipePayload(cfg=cfg),
         wordType=UInt(cfg.mainWidth bits),
-        wordCount=cfg.regFileCfg.wordCountArr(0),
+        wordCount=(
+          //cfg.regFileCfg.wordCountArr(0)
+          cfg.numGprs
+        ),
         setWordFunc=(
           outp: SnowHousePipePayload,
           inp: SnowHousePipePayload,
@@ -2295,7 +2303,10 @@ private[libsnowhouse] case class SnowHouseForFmax(
         ),
         initBigInt=Some({
           val myArr = new ArrayBuffer[BigInt]()
-          myArr ++= Array.fill(cfg.regFileCfg.wordCountArr(0))(BigInt(0))
+          myArr ++= Array.fill(
+            //cfg.regFileCfg.wordCountArr(0)
+            cfg.numGprs
+          )(BigInt(0))
           Array(myArr.toSeq)
         }),
         arrRamStyleAltera=cfg.regFileCfg.memRamStyleAltera,

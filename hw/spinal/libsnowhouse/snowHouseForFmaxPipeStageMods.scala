@@ -2642,7 +2642,6 @@ case class SnowHouseForFmaxPsWbReorderBuf(
     (
       myAssertValidCond
 
-
       // later, change to some condition indicating that there was *no*
       // exception, i.e. that we *can* early commit
       //&& io.push.commit.opIsFwd

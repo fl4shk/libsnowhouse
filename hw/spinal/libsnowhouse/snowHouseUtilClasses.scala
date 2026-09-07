@@ -25,18 +25,18 @@ case class SnowHouseRegFileConfig(
   memRamStyleXilinx: String="auto",
   //linkArr: Option[ArrayBuffer[Link]]=None,
 ) {
-  assert(
+  require(
     wordCountArr.size > 0,
     s"wordCountArr.size (${wordCountArr.size}) must be greater than zero"
   )
   for ((wordCount, wordCountIdx) <- wordCountArr.view.zipWithIndex) {
-    assert(
+    require(
       wordCount > 0,
       s"wordCount (value:${wordCount} index:${wordCountIdx}) "
       + s"must be greater than zero"
     )
   }
-  assert(
+  require(
     modRdPortCnt >= 2
     && modRdPortCnt <= 3,
     s"modRdPortCnt (${modRdPortCnt}) must be >= 2 and <= 3 "
@@ -49,7 +49,7 @@ case class SnowHouseRegFileConfig(
     optHowToSlice match {
       case Some(optHowToSlice) => {
         //var cnt: Int = 0
-        assert(
+        require(
           optHowToSlice.size == wordCountArr.size,
           s"howToSlice.size (${optHowToSlice.size}) "
           + s"is not equal to wordCountArr.size (${wordCountArr.size})"
@@ -64,13 +64,13 @@ case class SnowHouseRegFileConfig(
         val foundSet = LinkedHashSet[Int]()
         for (sliceHowSet <- optHowToSlice.view) {
           for (sliceHow: Int <- sliceHowSet.view) {
-            assert (
+            require (
               sliceHow >= 0
               && sliceHow < wordCountSum,
               s"sliceHow of ${sliceHow} is outside valid range of "
               + s"(0 inclusive, ${wordCountSum} exclusive)"
             )
-            assert(
+            require(
               !foundSet.contains(sliceHow),
               s"duplicate sliceHow: ${sliceHow}"
             )
@@ -142,7 +142,7 @@ object SnowHouseIrqConfig {
 //case class SnowHouseIrqConfig(
 //  numIrqs: Int
 //) {
-//  assert(
+//  require(
 //    numIrqs > 0,
 //    s"numIrqs (${numIrqs}) must be greater than 0.",
 //  )
@@ -177,32 +177,32 @@ case class SnowHouseCacheConfig(
   var bridgeCfg: LcvStallToTilelinkConfig=null,
 ) {
   //--------
-  assert(
+  require(
     addrWidth == (1 << log2Up(addrWidth)),
     s"addrWidth: need power of two: "
     + s"${addrWidth} != ${(1 << log2Up(addrWidth))}"
   )
-  assert(
+  require(
     addrWidth == (addrWidth / 8).toInt * 8,
     s"addrWidth: need multiple of 8: "
     + s"${addrWidth} != ${(addrWidth / 8).toInt * 8}"
   )
-  assert(
+  require(
     wordWidth == (1 << log2Up(wordWidth)),
     s"wordWidth: need power of two: "
     + s"${wordWidth} != ${(1 << log2Up(wordWidth))}"
   )
-  assert(
+  require(
     wordWidth == (wordWidth / 8).toInt * 8,
     s"wordWidth: need multiple of 8: "
     + s"${wordWidth} != ${(wordWidth / 8).toInt * 8}"
   )
-  assert(
+  require(
     lineSizeBytes == (1 << log2Up(lineSizeBytes)),
     s"lineSizeBytes: need power of two: "
     + s"${lineSizeBytes} != ${(1 << log2Up(lineSizeBytes))}"
   )
-  assert(
+  require(
     depthWords == (1 << log2Up(depthWords)),
     s"depthWords: need power of two: "
     + s"${depthWords} != ${(1 << log2Up(depthWords))}"
@@ -488,7 +488,7 @@ case class SnowHouseSubConfig(
         cacheBusSrcWidth
       }
       case None => {
-        //assert(
+        //require(
         //  totalNumBusHosts == 2,
         //  s"totalNumBusHosts:${totalNumBusHosts} must be 2 in this case"
         //)
@@ -1027,7 +1027,7 @@ case class SnowHouseConfig(
 
     }
     if (foundAnyDst) {
-      assert(
+      require(
         foundAnySrc,
         s"Can't have only destinations for AluFlags"
       )
@@ -1054,14 +1054,14 @@ case class SnowHouseConfig(
     found
   }
 
-  assert(
+  require(
     (instrMainWidth / 8) * 8 == instrMainWidth,
     s"instrMainWidth must be a multiple of 8"
   )
   // TODO: support more than 3 general purpose registers per instruction
   // (probably going up to 4 or 5 or something at max?)
   val maxNumGprsPerInstr = regFileModRdPortCnt + 1
-  assert(
+  require(
     //4 >= (1 << instrCntWidth),
     instrCntWidth >= 3,
     s"instrCntWidth (${instrCntWidth}) must be at least 3"
@@ -1089,7 +1089,13 @@ case class SnowHouseConfig(
     )
   }
   def mainWidth = shRegFileCfg.mainWidth
-  def regFileWordCountArr = shRegFileCfg.wordCountArr
+  def regFileWordCountArr = (
+    if (optScoreboard) (
+      shRegFileCfg.wordCountArr.map(item => item * 2)
+    ) else (
+      shRegFileCfg.wordCountArr
+    )
+  )
   def regFileModRdPortCnt = shRegFileCfg.modRdPortCnt
   def regFileModStageCnt = (
     //if (!useLcvDataBus) (
@@ -1150,7 +1156,13 @@ case class SnowHouseConfig(
     numForkJoin=/*2*/1,
   )
   regFileCfg.linkArr = None
-  def numGprs = regFileCfg.wordCountSum
+  def numGprs = (
+    //if (optScoreboard) (
+    //  regFileCfg.wordCountSum * 2
+    //) else (
+      regFileCfg.wordCountSum
+    //)
+  )
 
   val optScoreboardReorderBufWidth = (
     //log2Up(optMaxNumScoreboardInstrs + 1)
@@ -1178,7 +1190,10 @@ case class SnowHouseConfig(
     //6
     //optScoreboardReorderBufWidth
     //4
-    log2Up(numGprs) //- 1
+
+    // This is intended to be used to split
+    // the two free lists of physical registers in half.
+    log2Up(numGprs) - 1
     //3
   )
 
@@ -1217,7 +1232,7 @@ case class SnowHouseConfig(
           //}
           memAccOpInfoMap += (idx -> opInfo)
         //} else {
-        //  assert(
+        //  require(
         //    false,
         //    s"Error: Atomic operations are not yet implemented: "
         //    + s"opInfo(${opInfo}), instructionIndex:${idx}"
@@ -1241,20 +1256,20 @@ case class SnowHouseConfig(
         case Some(myGet) => {
           opInfo.findValidArgs(myGet) match {
             case Some(OpInfoValidArgsTuple(validArgs, setIdx)) => {
-              assert(
+              require(
                 //validArgs.cond.contains(opInfo.cond),
                 validArgs.cond.size > 0,
                 s"Error: This `OpKindBase` is not yet implemented: "
                 + s"opInfo(${opInfo}), instructionIndex:${idx}"
               )
-              assert(
+              require(
                 validArgs.cond.contains(opInfo.cond),
                 s"Error: unsupported condition: "
                 + s"opInfo(${opInfo}), instructionIndex:${idx}"
               )
             }
             case None => {
-              assert(
+              require(
                 false,
                 s"Error: unsupported combination or "
                 + s"number of destination/source operands: "
@@ -1264,7 +1279,7 @@ case class SnowHouseConfig(
           }
         }
         case None => {
-          assert(
+          require(
             false,
             s"debug: ${opInfo.select} ${idx}"
           )
@@ -1278,7 +1293,7 @@ case class SnowHouseConfig(
         //  case Some(validArgs) => {
         //  }
         //  case None => {
-        //    assert(
+        //    require(
         //      false,
         //      s"Error: unsupported combination or "
         //      + s"number of destination/source operands: "
@@ -1288,7 +1303,7 @@ case class SnowHouseConfig(
         //}
         opInfo.cpyOp.get match {
           case CpyOpKind.Cpy => {
-            //assert(
+            //require(
             //  opInfo.dstArr.find(_ == DstKind.Pc) == None,
             //  s"Error: unsupported PC as destination of a CpyOpKind.Cpy "
             //  + s"instruction: "
@@ -1299,7 +1314,7 @@ case class SnowHouseConfig(
             cpyCpyuiAluNonShiftOpInfoMap += (idx -> opInfo)
           }
           case CpyOpKind.Cpyu => {
-            //assert(
+            //require(
             //  opInfo.dstArr.find(_ == DstKind.Pc) == None,
             //  s"Error: unsupported PC as destination of a CpyOpKind.Cpyui "
             //  + s"instruction: "
@@ -1321,7 +1336,7 @@ case class SnowHouseConfig(
             cpyCpyuiAluNonShiftOpInfoMap += (idx -> opInfo)
           }
           case CpyOpKind.Jmp => { // non-relative jumps
-            //assert(
+            //require(
             //  opInfo.dstArr.find(_ == DstKind.Pc) != None,
             //  s"Error: unsupported lack of PC as (any) destination of a "
             //  + s"CpyOpKind.Jmp "
@@ -1367,7 +1382,7 @@ case class SnowHouseConfig(
       }
       case OpSelect.Alu => {
         checkValidArgs(opInfo.aluOp)
-        //assert(
+        //require(
         //  opInfo.findValidArgs(opInfo.aluOp.get) != None,
         //  s"Error: unsupported combination or "
         //  + s"number of destination/source operands: "
@@ -1392,7 +1407,7 @@ case class SnowHouseConfig(
       }
       case OpSelect.MultiCycle => {
         checkValidArgs(opInfo.multiCycleOp)
-        //assert(
+        //require(
         //  opInfo.findValidArgs(opInfo.multiCycleOp.get) != None,
         //  s"Error: unsupported combination or "
         //  + s"number of destination/source operands: "
