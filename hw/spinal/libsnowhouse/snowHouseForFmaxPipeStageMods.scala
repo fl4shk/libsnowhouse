@@ -4812,67 +4812,67 @@ case class SnowHouseForFmaxPipeStageWriteBack(
     //}
     
     //--------
-    io.commitEtc.scoreboardBubbleRetire.valid := False
-    io.commitEtc.scoreboardBubbleRetire.payload := (
-      io.commitEtc.scoreboardBubbleRetire.payload.getZero
+    //io.commitEtc.scoreboardBubbleRetire.valid := False
+    //io.commitEtc.scoreboardBubbleRetire.payload := (
+    //  io.commitEtc.scoreboardBubbleRetire.payload.getZero
+    //)
+    io.commitEtc.scoreboardBubbleRetire.valid := (
+      io.up.fire
+      && (
+        io.up.instrCnt.myScoreboardPsWbBubbleMost(1)
+        //io.up.instrCnt.shouldIgnoreInstr(1)
+        && !io.up.instrCnt.myPsIdInFlushBubble(1)
+        //|| io.up.instrCnt.myPsIdFwdBubble(1)
+      )
+      //&& (
+      //  io.up.instrCnt.scoreboardCheckPayload.nonBubbleTag
+      //  =/= (
+      //    RegNextWhen(
+      //      io.up.instrCnt.scoreboardCheckPayload.nonBubbleTag,
+      //      cond=io.up.fire,
+      //      init=({
+      //        val myWidth = cfg.optScoreboardTagWidth
+      //        U(s"${myWidth}'d2")
+      //      })
+      //    )
+      //  )
+      //)
     )
-    //io.commitEtc.scoreboardBubbleRetire.valid := (
-    //  io.up.fire
-    //  && (
-    //    io.up.instrCnt.myScoreboardPsWbBubbleMost(1)
-    //    //io.up.instrCnt.shouldIgnoreInstr(1)
-    //    && !io.up.instrCnt.myPsIdInFlushBubble(1)
-    //    //|| io.up.instrCnt.myPsIdFwdBubble(1)
+    io.commitEtc.scoreboardBubbleRetire.opIsFwd := (
+      //!io.up.splitOp.opIsMemAccess
+      !io.up.splitOp.scoreboardOpIsNonFwd
+      && (
+        io.up.instrCnt.shouldIgnoreInstr.last
+        || !io.up.gprIsZeroVec.last.last
+      )
+      //True
+      //!io.up.instrCnt.scoreboard
+    )
+    io.commitEtc.scoreboardBubbleRetire.myNonFwdValid := (
+      io.up.splitOp.scoreboardOpIsNonFwd
+      && !io.up.instrCnt.myPsIdBubble(1)
+      && !io.up.instrCnt.myPsIdFwdBubble(1)
+    )
+    io.commitEtc.scoreboardBubbleRetire.fwdTag := (
+      io.up.instrCnt.scoreboardCheckPayload.fwdTag
+    )
+    io.commitEtc.scoreboardBubbleRetire.nonFwdTag := (
+      io.up.instrCnt.scoreboardCheckPayload.nonFwdTag
+    )
+    io.commitEtc.scoreboardBubbleRetire.gprIdxVec.last := (
+      io.up.gprIdxVec.last
+    )
+    //when (
+    //) {
+    //  io.commitEtc.scoreboardBubbleRetire.opIsFwd := (
+    //    io.up.instrCnt.shouldIgnoreInstr(1)
+    //    || io.up.instrCnt
     //  )
-    //  //&& (
-    //  //  io.up.instrCnt.scoreboardCheckPayload.nonBubbleTag
-    //  //  =/= (
-    //  //    RegNextWhen(
-    //  //      io.up.instrCnt.scoreboardCheckPayload.nonBubbleTag,
-    //  //      cond=io.up.fire,
-    //  //      init=({
-    //  //        val myWidth = cfg.optScoreboardTagWidth
-    //  //        U(s"${myWidth}'d2")
-    //  //      })
-    //  //    )
-    //  //  )
-    //  //)
+    //}
+    //val myTempReorderBufIdx = (
+    //  myCommitBackStm.myWbPayload
+    //  .instrCnt.scoreboardCheckPayload.reorderBufIdx
     //)
-    //io.commitEtc.scoreboardBubbleRetire.opIsFwd := (
-    //  //!io.up.splitOp.opIsMemAccess
-    //  !io.up.splitOp.scoreboardOpIsNonFwd
-    //  && (
-    //    io.up.instrCnt.shouldIgnoreInstr.last
-    //    || !io.up.gprIsZeroVec.last.last
-    //  )
-    //  //True
-    //  //!io.up.instrCnt.scoreboard
-    //)
-    //io.commitEtc.scoreboardBubbleRetire.myNonFwdValid := (
-    //  io.up.splitOp.scoreboardOpIsNonFwd
-    //  && !io.up.instrCnt.myPsIdBubble(1)
-    //  && !io.up.instrCnt.myPsIdFwdBubble(1)
-    //)
-    //io.commitEtc.scoreboardBubbleRetire.fwdTag := (
-    //  io.up.instrCnt.scoreboardCheckPayload.fwdTag
-    //)
-    //io.commitEtc.scoreboardBubbleRetire.nonFwdTag := (
-    //  io.up.instrCnt.scoreboardCheckPayload.nonFwdTag
-    //)
-    //io.commitEtc.scoreboardBubbleRetire.gprIdxVec.last := (
-    //  io.up.gprIdxVec.last
-    //)
-    ////when (
-    ////) {
-    ////  io.commitEtc.scoreboardBubbleRetire.opIsFwd := (
-    ////    io.up.instrCnt.shouldIgnoreInstr(1)
-    ////    || io.up.instrCnt
-    ////  )
-    ////}
-    ////val myTempReorderBufIdx = (
-    ////  myCommitBackStm.myWbPayload
-    ////  .instrCnt.scoreboardCheckPayload.reorderBufIdx
-    ////)
     //--------
 
     val myTempCommitStm = (
