@@ -4763,30 +4763,31 @@ case class SnowHouseForFmaxPipeStageWriteBack(
   //    synchronous=true,
   //  )
   //)
-  val myPostFlushReorderBufIdx = (
-    cfg.optScoreboard
-  ) generate (
-    UInt(cfg.optScoreboardReorderBufWidth bits)
-  )
+  //val myPostFlushReorderBufIdx = (
+  //  cfg.optScoreboard
+  //) generate (
+  //  UInt(cfg.optScoreboardReorderBufWidth bits)
+  //)
   if (cfg.optScoreboard) {
     //myCommitFinalOutpStm.ready := True
-    myPostFlushReorderBufIdx := (
-      RegNext(
-        myPostFlushReorderBufIdx,
-        init=myPostFlushReorderBufIdx.getZero
-      )
-    )
-    when (
-      io.up.valid
-      && fell(
-        io.up.instrCnt.shouldIgnoreInstr.last
-      )
-    ) {
-      myPostFlushReorderBufIdx := (
-        io.up.instrCnt.scoreboardCheckPayload.reorderBufIdx
-      )
-    }
+    //myPostFlushReorderBufIdx := (
+    //  RegNext(
+    //    myPostFlushReorderBufIdx,
+    //    init=myPostFlushReorderBufIdx.getZero
+    //  )
+    //)
+    //when (
+    //  io.up.valid
+    //  && fell(
+    //    io.up.instrCnt.shouldIgnoreInstr.last
+    //  )
+    //) {
+    //  myPostFlushReorderBufIdx := (
+    //    io.up.instrCnt.scoreboardCheckPayload.reorderBufIdx
+    //  )
+    //}
     
+    //--------
     io.commitEtc.scoreboardBubbleRetire.valid := (
       io.up.fire
       && (
