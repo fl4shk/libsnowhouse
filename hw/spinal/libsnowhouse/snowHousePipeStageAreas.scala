@@ -2769,7 +2769,7 @@ case class SnowHousePipeStageScoreboardCheck(
         upPayload := rSavedUpPayload.payload
         myInstrSchedFinishingCond := down.isFiring
 
-        cScoreboardCheck.duplicateIt()
+        //cScoreboardCheck.duplicateIt()
 
         when (
           myReducedFwdTagAllocVec.asBits.andR
