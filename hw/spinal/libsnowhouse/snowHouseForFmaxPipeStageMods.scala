@@ -134,6 +134,10 @@ case class SnowHouseScoreboardCheckPayload(
     //cfg.optScoreboardReorderBufWidth bits
     cfg.optScoreboardTagWidth bits
   )
+  val prevNonFwdTag = UInt(cfg.optScoreboardTagWidth bits)
+  val prevFwdTag = UInt(cfg.optScoreboardTagWidth bits)
+
+
   val nonBubbleTag = UInt(
     //cfg.optScoreboardReorderBufWidth bits
     cfg.optScoreboardTagWidth bits
@@ -149,6 +153,9 @@ case class SnowHouseScoreboardCheckPayload(
   val archGprIdx = (
     UInt(log2Up(cfg.numGprs) bits)
   )
+  //val prevPhysGprIdx = (
+  //  UInt(log2Up(cfg.numGprs) bits)
+  //)
   //val tag = UInt(cfg.optScoreboardTagWidth bits)
   val fwdChkptIdx = (
     UInt(cfg.optForFmaxRenameChkptIdxWidth bits)
@@ -191,11 +198,18 @@ case class SnowHouseScoreboardCommitPayload(
   val myNonFwdValid = Bool()
   val nonFwdTag = UInt(cfg.optScoreboardTagWidth bits)
   val fwdTag = UInt(cfg.optScoreboardTagWidth bits)
+
+  val prevNonFwdTag = UInt(cfg.optScoreboardTagWidth bits)
+  val prevFwdTag = UInt(cfg.optScoreboardTagWidth bits)
+
   val opIsFwd = Bool()
 
   val archGprIdx = (
     UInt(log2Up(cfg.numGprs) bits)
   )
+  //val prevPhysGprIdx = (
+  //  UInt(log2Up(cfg.numGprs) bits)
+  //)
   val fwdChkptIdx = (
     UInt(cfg.optForFmaxRenameChkptIdxWidth bits)
   )

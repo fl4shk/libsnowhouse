@@ -2311,7 +2311,9 @@ case class SnowHouseChkptMem[
       enable=enable,
     )
     if (doIncrIdx) {
-      rMemIdx := rMemIdx + 1
+      when (enable) {
+        rMemIdx := rMemIdx + 1
+      }
     }
   }
 }
@@ -2634,7 +2636,6 @@ case class SnowHousePipeStageScoreboardCheck(
       }
     }
   }
-
 
 //// >>> for x in range(8):
 //// ...     print(x, bin(x), bin(x ^ 0x7), bin(Bitscan(x ^ 0x7)))
@@ -3238,9 +3239,14 @@ case class SnowHousePipeStageScoreboardCheck(
     data=rMyRenameTbl,
     doIncrIdx=true,
     enable=(
-      up.isFiring
-      && !myInFlushCond(0)
-      && upPayload(1).splitOp.haveAnyJmpBrOp
+      RegNext(
+        (
+          up.isFiring
+          && !myInFlushCond(0)
+          && upPayload(1).splitOp.haveAnyJmpBrOp()
+        ),
+        init=False
+      )
     )
   )
 }

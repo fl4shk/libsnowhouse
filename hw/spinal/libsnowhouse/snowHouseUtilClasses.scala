@@ -1947,8 +1947,8 @@ case class SnowHouseSplitOp(
   }
   def haveAnyJmpBrOp(
   ): Bool = {
-    //exSetNextPcKind =/= SnowHousePsExSetNextPcKind.Dont
-    !exSetNextPcKind.asBits(0)
+    exSetNextPcKind =/= SnowHousePsExSetNextPcKind.Dont
+    //!exSetNextPcKind.asBits(0)
   }
   def setToDefault(
   ): Unit = {
