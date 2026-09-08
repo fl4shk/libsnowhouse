@@ -1849,6 +1849,7 @@ case class SnowHouseSplitOp(
   ) generate (
     Bool()
   )
+
   //val opIsJmp = Bool()
   //val nonMultiCycleOp = /*Flow*/(
   //  UInt(log2Up(cfg.nonMultiCycleOpInfoMap.size + 1) bits)
@@ -1871,6 +1872,7 @@ case class SnowHouseSplitOp(
   val exSetNextPcKind = (
     SnowHousePsExSetNextPcKind(encoding=binarySequential)
   )
+
   val jmpBrOpIsEq = Bool()
   val jmpBrOpIsNe = Bool()
 
@@ -1945,7 +1947,8 @@ case class SnowHouseSplitOp(
   }
   def haveAnyJmpBrOp(
   ): Bool = {
-    exSetNextPcKind =/= SnowHousePsExSetNextPcKind.Dont
+    //exSetNextPcKind =/= SnowHousePsExSetNextPcKind.Dont
+    !exSetNextPcKind.asBits(0)
   }
   def setToDefault(
   ): Unit = {

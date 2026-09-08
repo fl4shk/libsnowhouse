@@ -2303,7 +2303,7 @@ case class SnowHouseChkptMem[
   def write(
     data: WordT,
     doIncrIdx: Boolean,
-    enable: Bool=True,
+    enable: Bool,//=True,
   ): Unit = {
     myChkptMem.write(
       address=rMemIdx,
@@ -2437,6 +2437,12 @@ case class SnowHousePipeStageScoreboardCheck(
     }
     temp
   }
+  val myRenameTblChkptMem = (
+    SnowHouseChkptMem(
+      cfg=cfg,
+      wordType=cloneOf(rMyRenameTbl)
+    )
+  )
 
   val rScoreboardFlushState = (
     Reg(ScoreboardFlushState())
@@ -2484,14 +2490,6 @@ case class SnowHousePipeStageScoreboardCheck(
     )
   )
 
-  //val rMyNonFwdGprTagVec = (
-  //  //Reg(UInt(cfg.numGprs bits))
-  //  //init(0x0)
-  //  Vec.fill(cfg.numGprs)(
-  //    Reg(Bool(), init=False)
-  //  )
-  //)
-
   case class MyGprTagInfo(
     isNonFwd: Boolean
   ) extends Bundle {
@@ -2509,8 +2507,6 @@ case class SnowHousePipeStageScoreboardCheck(
   }
 
   val rMyNonFwdGprTagVec = {
-    //Reg(UInt(cfg.numGprs bits))
-    //init(0x0)
     val temp = Vec.fill(cfg.numGprs >> 1)(
       //Reg(Bool(), init=False)
       Reg(MyGprTagInfo(isNonFwd=true))
@@ -2519,36 +2515,19 @@ case class SnowHousePipeStageScoreboardCheck(
     temp
   }
 
-  val myNonFwdChkptMem = (
-    SnowHouseChkptMem(
-      cfg=cfg,
-      wordType=MyGprTagInfo(isNonFwd=true),
-    )
-  )
-  upPayload(1).instrCnt.scoreboardCheckPayload.nonFwdChkptIdx := (
-    myNonFwdChkptMem.rMemIdx
-  )
-
   //val myNonFwdChkptMem = (
-  //  Mem(
+  //  SnowHouseChkptMem(
+  //    cfg=cfg,
   //    wordType=MyGprTagInfo(isNonFwd=true),
-  //    wordCount=cfg.optForFmaxRenameChkptArrSize
-  //  )
-  //  .initBigInt({
-  //    Array.fill(cfg.optForFmaxRenameChkptArrSize)(BigInt(0))
-  //  })
-  //)
-  //val rMyNonFwdChkptIdx = (
-  //  Reg(
-  //    UInt
   //  )
   //)
+  upPayload(1).instrCnt.scoreboardCheckPayload.nonFwdChkptIdx := (
+    //myNonFwdChkptMem.rMemIdx
+    myRenameTblChkptMem.rMemIdx
+  )
 
   val rMyFwdGprTagVec = {
-    //Reg(UInt(cfg.numGprs bits))
-    //init(0x0)
     val temp = Vec.fill(cfg.numGprs >> 1)(
-      //Reg(Bool(), init=False)
       Reg(MyGprTagInfo(isNonFwd=false))
     )
     temp.foreach(item => item.init(item.getZero))
@@ -2556,101 +2535,15 @@ case class SnowHousePipeStageScoreboardCheck(
   }
 
   //val myFwdChkptMem = (
-  //  Mem(
+  //  SnowHouseChkptMem(
+  //    cfg=cfg,
   //    wordType=MyGprTagInfo(isNonFwd=false),
-  //    wordCount=cfg.optForFmaxRenameChkptArrSize
   //  )
-  //  .initBigInt({
-  //    Array.fill(cfg.optForFmaxRenameChkptArrSize)(BigInt(0))
-  //  })
   //)
-
-  val myFwdChkptMem = (
-    SnowHouseChkptMem(
-      cfg=cfg,
-      wordType=MyGprTagInfo(isNonFwd=false),
-    )
-  )
 
   upPayload(1).instrCnt.scoreboardCheckPayload.fwdChkptIdx := (
-    myFwdChkptMem.rMemIdx
-  )
-
-  //val myGprUseCntRamArr = {
-  //  Array.fill(cfg.maxNumGprsPerInstr)({
-  //    // handle RAW hazards, i.e. for when we run out of room in the
-  //    // forwarding history tables in the PreFwd and EX
-  //    val depth = cfg.numGprs
-  //    val ramCfg = RamSimpleDualPortConfig(
-  //      wordType=UInt(
-  //        //3 bits
-  //        //log2Up(cfg.myPsIdBubbleNumFollowingInstrs + 1) + 1 bits
-  //        //log2Up(cfg.optForFmaxPsExFwdSize + 1) + 1 bits
-  //        log2Up(cfg.optForFmaxPsExFwdSize + 1) + 1 bits
-  //      ),
-  //      depth=depth,
-  //      initBigInt=Some(
-  //        Array.fill(depth)(
-  //          //BigInt(0)
-  //          BigInt(cfg.optForFmaxPsExFwdSize - 1)
-  //        )
-  //      ),
-  //      arrRamStyleAltera="no_rw_check, MLAB",
-  //      arrRamStyleXilinx="auto",
-  //      doAsyncRead=true
-  //    )
-  //    RamSimpleDualPort(cfg=ramCfg)
-  //    //val temp = Mem(
-  //    //  wordType=(
-  //    //    UInt(
-  //    //      //3 bits
-  //    //      //log2Up(cfg.myPsIdBubbleNumFollowingInstrs + 1) + 1 bits
-  //    //      //log2Up(cfg.optForFmaxPsExFwdSize + 1) + 1 bits
-  //    //      log2Up(cfg.optForFmaxPsExFwdSize + 1) + 1 bits
-  //    //    )
-  //    //  ),
-  //    //  wordCount=(
-  //    //    cfg.numGprs
-  //    //  )
-  //    //)
-  //    //temp.initBigInt(
-  //    //  Array.fill(temp.wordCount)(
-  //    //    //BigInt(0)
-  //    //    BigInt(cfg.optForFmaxPsExFwdSize - 1)
-  //    //  )
-  //    //)
-  //    //temp
-  //  })
-  //}
-  //for (idx <- 0 until cfg.maxNumGprsPerInstr) {
-  //  val ram = myGprUseCntRamArr(idx)
-  //  ram.io.ramIo.rdEn := True
-  //  ram.io.ramIo.rdAddr := upPayload(1).gprIdxVec(idx)
-  //  //ram.io.ramIo.wrEn := 
-  //  ram.io.ramIo.wrAddr := upPayload(1).gprIdxVec.last
-  //}
-
-  //val rMyGprInUseCntVec = (
-  //  Vec.fill(cfg.numGprs)(
-  //    //Reg(Bool(), init=False)
-  //    Reg(UInt(
-  //      //3 bits
-  //      //log2Up(cfg.myPsIdBubbleNumFollowingInstrs + 1) + 1 bits
-  //      //log2Up(cfg.optForFmaxPsExFwdSize + 1) + 1 bits
-  //      log2Up(cfg.optForFmaxPsExFwdSize + 1) + 1 bits
-  //    ))
-  //    init(
-  //      //0x3
-  //      //cfg.myPsIdBubbleNumFollowingInstrs - 1
-  //      cfg.optForFmaxPsExFwdSize - 1
-  //    )
-  //  )
-  //)
-
-  val myPartialWriteTagInfoCond = (
-    //down.isFiring
-    up.isFiring
-    //&& !myInFlushCond//shouldClearExtraDecodeInfo
+    //myFwdChkptMem.rMemIdx
+    myRenameTblChkptMem.rMemIdx
   )
 
   val myArchGprIdxVec = Vec.fill(
@@ -2690,42 +2583,6 @@ case class SnowHousePipeStageScoreboardCheck(
     //myRightGprIdxVec(idx) := myScoreboardCommitStm.gprIdxVec(idx)
   }
 
-  //case class MyGprTagInfo(
-  //) extends Bundle {
-  //  //val valid = Bool()
-  //  //def fire = valid
-  //  val opIsFwd = Bool()
-  //  val nonFwdTag = (
-  //    cloneOf(upPayload(1).instrCnt.scoreboardCheckPayload.nonFwdTag)
-  //  )
-  //  val fwdTag = (
-  //    cloneOf(upPayload(1).instrCnt.scoreboardCheckPayload.fwdTag)
-  //  )
-  //  //val gprIdxVec = Vec.fill(
-  //  //  cfg.maxNumGprsPerInstr
-  //  //)(
-  //  //  UInt(log2Up(cfg.numGprs) bits)
-  //  //)
-
-  //  val myGprIdx = UInt(log2Up(cfg.numGprs) bits)
-
-  //}
-
-  //val myGprTagInfoFifo = (
-  //  StreamFifo(
-  //    dataType=MyGprTagInfo(),
-  //    depth=(
-  //      8
-  //      //16
-  //    ),
-  //    latency=(
-  //      //0
-  //      1
-  //    ),
-  //    forFMax=true,
-  //  )
-  //)
-
   def myInFlushCond(
     idx: Int
   ) = (
@@ -2745,15 +2602,11 @@ case class SnowHousePipeStageScoreboardCheck(
     Bool()
   )
   for (jdx <- 0 until cfg.regFileCfg.modRdPortCnt) {
-    //myMainHazardCheckVec(jdx) := (
-    //  rMyNonFwdGprTagVec(
-    //    upPayload(1).gprIdxVec(jdx)
-    //  )
-    //)
     switch (
-      //upPayload(1).gprIdxVec(jdx)
-      myArchGprIdxVec(jdx)
-      //myPhysGprIdxVec(jdx)
+      //myArchGprIdxVec(jdx)
+      myPhysGprIdxVec(jdx)(
+        myArchGprIdxVec(jdx).high downto 0
+      )
     ) {
       for (idx <- 0 until (cfg.numGprs >> 1)) {
         is (idx) {
@@ -2768,19 +2621,12 @@ case class SnowHousePipeStageScoreboardCheck(
               idx
               //rMyFwdGprTagVec(idx).tag
             )
-            //rMyFwdGprTagVec(idx)
           )
 
           myNonFwdHazardCheckVec(jdx) := (
-            //rMyNonFwdGprTagVec(idx)
-            //|| rSavedGprInUseCntVec(idx).msb
             tempNonFwd.fire
           )
           myFwdHazardCheckVec(jdx) := (
-            ////rMyGprInUseCntVec(idx).msb
-            //rMyFwdGprTagVec(idx).fire
-            //// old stuff from before register renaming is below
-            //&& rMyFwdGprTagVec(idx).cnt.msb 
             tempFwd.fire
             && tempFwd.cnt.msb
           )
@@ -2810,10 +2656,6 @@ case class SnowHousePipeStageScoreboardCheck(
 // 2 -100
 // 3 1000
 
-  //val myFwdTagAllocVec = (
-  //  Vec(rMyFwdGprTagVec.map(item => item.fire))
-  //)
-
   val rNonFwdTagAllocVec = (
     Vec.fill(1 << myTempNonFwdTag.getWidth)(
       Reg(Bool(), init=False)
@@ -2842,20 +2684,12 @@ case class SnowHousePipeStageScoreboardCheck(
   }
 
   switch (
-    //io.issue.ready
     (
       (
         up.isFiring
-        //|| (
-        //  down.isFiring
-        //  && !myInFlushCond
-        //)
         && !myInFlushCond(0)
       )
-      //&& !upPayload(1).inpDecodeExt.head.opIsMemAccess.last
       && upPayload(1).splitOp.opIsMemAccess
-      //&& !myNonFwdHazardCheckVec.orR
-      //&& !myInFlushCond
     )
     ## Bitscan(
       //~rNonFwdTagAllocVec.asBits.asUInt
@@ -2880,21 +2714,13 @@ case class SnowHousePipeStageScoreboardCheck(
   }
 
   switch (
-    //io.issue.ready
     (
-      //up.isFiring
       //down.isFiring
       (
         up.isFiring
-        //|| (
-        //  down.isFiring
-        //  && myInFlushCond
-        //)
         && !myInFlushCond(1)
       )
-      //&& !upPayload(1).inpDecodeExt.head.opIsMemAccess.last
       && !upPayload(1).splitOp.opIsMemAccess
-      //&& !myFwdHazardCheckVec.orR
     )
     ## Bitscan(
       //~rFwdTagAllocVec.asBits.asUInt
@@ -2918,122 +2744,20 @@ case class SnowHousePipeStageScoreboardCheck(
     }
   }
 
-  //myRenameTbl.write(
-  //)
-
-  //when (
-  //  rFwdTagAllocVec.asBits.andR
-  //) {
-  //  doSendBubbleMainMost(
-  //    myPsIdBubble=Some(
-  //      //!myInFlushCond//shouldClearExtraDecodeInfo
-  //      //True
-  //      //False
-  //      myNonFwdHazardCheckVec.orR
-  //      //&& !myInFlushCond//shouldClearExtraDecodeInfo
-  //    ),
-  //    myPsIdOtherBubble=Some(
-  //      True
-  //    ),
-  //    myPsIdFwdBubble=Some(
-  //      myFwdHazardCheckVec.orR
-  //      //&& !myInFlushCond//shouldClearExtraDecodeInfo
-  //    ),
-  //    //myUpdateGprIsOrIsntZero=false,
-  //  )
-  //}
-
-  //when (
-  //  up.isFiring
-  //  //down.isFiring
-  //  //&& !upPayload(1).inpDecodeExt.head.opIsMemAccess.last
-  //  && !upPayload(1).splitOp.opIsMemAccess
-  //) {
-  //  myTempFwdTag := (
-  //    RegNext(
-  //      myTempFwdTag,
-  //      init=myTempFwdTag.getZero
-  //    ) + 1
-  //  )
-  //}
-
-
-  //when (
-  //  //RegNext(
-  //  //  (
-  //  //    up.isFiring
-  //  //    //&& !rose(rScoreboardFlushState.asBits(0))
-  //  //  ),
-  //  //  init=False
-  //  //)
-
-  //  up.isFiring
-  //  //&& !rMostRecentIncrWasFlushEnd
-  //  //&& !rose(rScoreboardFlushState.asBits(0))
-  //  //||
-  //  //(
-  //  //  down.isFiring
-  //  //  && myNonFwdHazardCheckVec.orR
-  //  //  && !myInFlushCond//shouldClearExtraDecodeInfo
-  //  //)
-  //  //|| 
-  //  //(
-  //  //  down.isFiring
-  //  //)
-  //) {
-  //  myTempReorderBufIdx := (
-  //    RegNext(
-  //      myTempReorderBufIdx,
-  //      init=myTempReorderBufIdx.getZero
-  //    )
-  //    + 1
-  //  )
-  //}
-
   switch (rScoreboardFlushState) {
     is (ScoreboardFlushState.IDLE) {
       when (
-        (
-          (
-            (
-              myNonFwdHazardCheckVec.orR
-              || myFwdHazardCheckVec.orR
-            )
-            //&& (
-            //  //!myInFlushCond//shouldClearExtraDecodeInfo
-            //  !myInFlushCond
-            //)
-          )
-          || myReducedFwdTagAllocVec.asBits.andR
-          || myReducedNonFwdTagAllocVec.asBits.andR
-        )
-        //&& (
-        //  //!myInFlushCond//shouldClearExtraDecodeInfo
-        //  !myInFlushCond
-        //)
-        //&& !myInFlushCond
+        myNonFwdHazardCheckVec.orR
+        || myFwdHazardCheckVec.orR
+        || myReducedFwdTagAllocVec.asBits.andR
+        || myReducedNonFwdTagAllocVec.asBits.andR
         || myInFlushCond(2)
       ) {
         doSendBubbleMainMost(
-          myPsIdBubble=Some(
-            //!myInFlushCond//shouldClearExtraDecodeInfo
-            //True
-            //False
-            myNonFwdHazardCheckVec.orR
-            //&& !myInFlushCond
-            //&& !myInFlushCond//shouldClearExtraDecodeInfo
-          ),
-          myPsIdOtherBubble=Some(
-            True
-            //!myInFlushCond
-          ),
-          myPsIdFwdBubble=Some(
-            myFwdHazardCheckVec.orR
-            //&& !myInFlushCond
-            //&& !myInFlushCond//shouldClearExtraDecodeInfo
-          ),
-          //myUpdateGprIsOrIsntZero=false,
-          myInFlushCond=Some(myInFlushCond(2))//None
+          myPsIdBubble=Some(myNonFwdHazardCheckVec.orR),
+          myPsIdOtherBubble=Some(True),
+          myPsIdFwdBubble=Some(myFwdHazardCheckVec.orR),
+          myInFlushCond=Some(myInFlushCond(2))
         )
       }
       when (myInFlushCond(2)) {
@@ -3050,25 +2774,10 @@ case class SnowHousePipeStageScoreboardCheck(
       }
       when (!myInFlushCond(3)) {
         doSendBubbleMainMost(
-          myPsIdBubble=Some(
-            //!myInFlushCond//shouldClearExtraDecodeInfo
-            //True
-            //False
-            myNonFwdHazardCheckVec.orR
-            //&& !myInFlushCond
-            //&& !myInFlushCond//shouldClearExtraDecodeInfo
-          ),
-          myPsIdOtherBubble=Some(
-            True
-            //!myInFlushCond
-          ),
-          myPsIdFwdBubble=Some(
-            myFwdHazardCheckVec.orR
-            //&& !myInFlushCond
-            //&& !myInFlushCond//shouldClearExtraDecodeInfo
-          ),
-          //myUpdateGprIsOrIsntZero=false,
-          myInFlushCond=None//myInFlushCond,//Some(myInFlushCond)
+          myPsIdBubble=Some(myNonFwdHazardCheckVec.orR),
+          myPsIdOtherBubble=Some(True),
+          myPsIdFwdBubble=Some(myFwdHazardCheckVec.orR),
+          myInFlushCond=None
         )
       }
       upPayload(1).instrCnt.myPsIdInFlushBubble.foreach(item => {
@@ -3079,18 +2788,10 @@ case class SnowHousePipeStageScoreboardCheck(
 
   for (idx <- 0 until (cfg.numGprs >> 1)) {
     when (
-      //myPartialWriteTagInfoCond
       //up.isFiring
       down.isFiring
-      //&& !myNonFwdHazardCheckVec.orR
-      //&& !myInFlushCond//shouldClearExtraDecodeInfo
       && rMyFwdGprTagVec(idx).fire
       && !rMyFwdGprTagVec(idx).cnt.msb
-      //&& myScoreboardCommitStm.fire
-      //&& (
-      //  myScoreboardCommitStm.fwdTag
-      //  === 
-      //)
     ) {
       rMyFwdGprTagVec(idx).cnt := (
         rMyFwdGprTagVec(idx).cnt - 1
@@ -3120,19 +2821,20 @@ case class SnowHousePipeStageScoreboardCheck(
             rMyFwdGprTagVec(idx).tag
             === myScoreboardCommitStm.fwdTag
           )
-          //&& (
-          //  myScoreboardCommitStm
-          //)
         )
         || myFwdBubbleCondMost
       )
     ) {
-      //rFwdTagAllocVec(myScoreboardCommitStm.fwdTag) := False
       rMyFwdGprTagVec(idx).valid := False
     }
     when (myFwdBubbleCond) {
       // TODO: restore an element of rMyRenameTbl here! 
+      cScoreboardCheck.haltIt()
+      rMyRenameTbl := myRenameTblChkptMem.myChkptMem.readAsync(
+        address=myScoreboardBubbleRetireStm.fwdChkptIdx,
+      )
     }
+
     val myNonFwdBubbleCondMost = (
       myScoreboardBubbleRetireStm.fire
       //&& !myScoreboardBubbleRetireStm.opIsFwd
@@ -3158,9 +2860,6 @@ case class SnowHousePipeStageScoreboardCheck(
             rMyNonFwdGprTagVec(idx).tag
             === myScoreboardCommitStm.nonFwdTag
           )
-          //&& (
-          //  myScoreboardCommitStm
-          //)
         )
         || myNonFwdBubbleCondMost
       )
@@ -3168,8 +2867,13 @@ case class SnowHousePipeStageScoreboardCheck(
       //rNonFwdTagAllocVec(myScoreboardCommitStm.fwdTag) := False
       rMyNonFwdGprTagVec(idx).valid := False
     }
+
     when (myNonFwdBubbleCond) {
       // TODO: restore an element of rMyRenameTbl here! 
+      cScoreboardCheck.haltIt()
+      rMyRenameTbl := myRenameTblChkptMem.myChkptMem.readAsync(
+        address=myScoreboardBubbleRetireStm.nonFwdChkptIdx,
+      )
     }
   }
   //--------
@@ -3177,7 +2881,7 @@ case class SnowHousePipeStageScoreboardCheck(
     (
       myScoreboardCommitStm.fire
       && myScoreboardCommitStm.opIsFwd
-      //&& myScoreboardCommitStm.myFwdValid
+      && myScoreboardCommitStm.myFwdValid
     )
     ## (
       myScoreboardCommitStm.fwdTag
@@ -3230,7 +2934,7 @@ case class SnowHousePipeStageScoreboardCheck(
   switch (
     (
       myScoreboardCommitStm.fire
-      //&& myScoreboardCommitStm.opIsFwd
+      //&& !myScoreboardCommitStm.opIsFwd
       && myScoreboardCommitStm.myNonFwdValid
     )
     ## (
@@ -3253,7 +2957,7 @@ case class SnowHousePipeStageScoreboardCheck(
   switch (
     (
       myScoreboardBubbleRetireStm.fire
-      //&& myScoreboardBubbleRetireStm.opIsFwd
+      //&& !myScoreboardBubbleRetireStm.opIsFwd
       && myScoreboardBubbleRetireStm.myNonFwdValid
     )
     ## (
@@ -3278,20 +2982,9 @@ case class SnowHousePipeStageScoreboardCheck(
   }
   //--------
 
-  //when (
-  //  myScoreboardCommitStm.fire
-  //  && myScorebor
-  //) {
-  //}
-
   val mySetFwdTagCondMost = (
-    //myPartialWriteTagInfoCond
     up.isFiring
-    //down.isFiring
-    && !myInFlushCond(0)//shouldClearExtraDecodeInfo
-    //&& !myNonFwdHazardCheckVec.orR
-    //&& !myTempOpMayNeedHazardCheck
-    //&& !upPayload(1).inpDecodeExt.head.opIsMemAccess.last
+    && !myInFlushCond(0)
     && !upPayload(1).splitOp.opIsMemAccess
   )
 
@@ -3307,12 +3000,49 @@ case class SnowHousePipeStageScoreboardCheck(
     )
   }
 
+  val mySharedFwdAllocCond = (
+    mySetFwdTagCondMost
+    && !myNonFwdHazardCheckVec.orR
+  )
   switch (
-    (
-      mySetFwdTagCondMost
-      && !myNonFwdHazardCheckVec.orR
-    )
-    ## myArchGprIdxVec.last
+    mySharedFwdAllocCond
+    ## myTempFwdTag
+  ) {
+    for (idx <- 0 until (cfg.numGprs >> 1)) {
+      is (
+        (1 << log2Up(cfg.numGprs >> 1))
+        | idx
+      ) {
+        //val tempIdx = (
+        //  //idx
+        //  myTempFwdTag
+        //  // TODO: does this need to actually be `myTempFwdTag`?
+        //  // `myTempFwdTag` is the new physical GPR idx, so maybe?
+        //)
+        rMyFwdGprTagVec(
+          idx
+          //tempIdx
+        ).valid := True
+        when (!rMyFwdGprTagVec(
+          idx
+          //tempIdx
+        ).fire) {
+          rMyFwdGprTagVec(
+            idx
+            //tempIdx
+          ).cnt := (
+            cfg.optForFmaxPsExFwdSize - 2//1//2//3//2//1
+          )
+
+          // TODO: determine if this is corrrect!
+          //rMyFwdGprTagVec(idx).tag := myTempFwdTag
+        }
+      }
+    }
+  }
+  switch (
+    mySharedFwdAllocCond
+    ## myArchGprIdxVec.last//myPhysGprIdxVec.last//
   ) {
     for (idx <- 0 until (cfg.numGprs >> 1)) {
       if (
@@ -3323,15 +3053,33 @@ case class SnowHousePipeStageScoreboardCheck(
           (1 << log2Up(cfg.numGprs >> 1))
           | idx
         ) {
-          rMyFwdGprTagVec(idx).valid := True
-          when (!rMyFwdGprTagVec(idx).fire) {
-            rMyFwdGprTagVec(idx).cnt := (
-              cfg.optForFmaxPsExFwdSize - 2//1//2//3//2//1
-            )
-            //rMyFwdGprTagVec(idx).tag := myTempFwdTag
-          }
+          //val tempIdx = (
+          //  idx
+          //  //myTempFwdTag
+          //  // TODO: does this need to actually be `myTempFwdTag`?
+          //)
+          //rMyFwdGprTagVec(
+          //  //idx
+          //  tempIdx
+          //).valid := True
+          //when (!rMyFwdGprTagVec(
+          //  //idx
+          //  tempIdx
+          //).fire) {
+          //  rMyFwdGprTagVec(
+          //    //idx
+          //    tempIdx
+          //  ).cnt := (
+          //    cfg.optForFmaxPsExFwdSize - 2//1//2//3//2//1
+          //  )
+
+          //  // TODO: determine if this is corrrect!
+          //  //rMyFwdGprTagVec(idx).tag := myTempFwdTag
+          //}
+
+          // arch registers use this too!
+          // The tag itself is stored 
           rMyFwdGprTagVec(idx).tag := myTempFwdTag
-          //rMyRenameTbl(idx).opIsFwd := True
         }
       }
     }
@@ -3342,13 +3090,8 @@ case class SnowHousePipeStageScoreboardCheck(
   }
 
   val mySetNonFwdTagCondMost = (
-    //myPartialWriteTagInfoCond
     up.isFiring
-    //down.isFiring
-    && !myInFlushCond(1)//shouldClearExtraDecodeInfo
-    //&& !myNonFwdHazardCheckVec.orR
-    //&& !myTempOpMayNeedHazardCheck
-    //&& !upPayload(1).inpDecodeExt.head.opIsMemAccess.last
+    && !myInFlushCond(1)
     && upPayload(1).splitOp.opIsMemAccess
   )
   when (
@@ -3368,7 +3111,7 @@ case class SnowHousePipeStageScoreboardCheck(
       mySetNonFwdTagCondMost
       || mySetFwdTagCondMost
     )
-    ## myArchGprIdxVec.last //upPayload(0).gprIdxVec.last
+    ## myPhysGprIdxVec.last//myArchGprIdxVec.last //upPayload(0).gprIdxVec.last
   ) {
     for (idx <- 0 until (cfg.numGprs >> 1)) {
       if (
@@ -3389,11 +3132,33 @@ case class SnowHousePipeStageScoreboardCheck(
     }
   }
 
+  val mySharedNonFwdAllocCond = (
+    mySetNonFwdTagCondMost
+    && !myNonFwdHazardCheckVec.orR
+  )
+
   switch (
-    (
-      mySetNonFwdTagCondMost
-      && !myNonFwdHazardCheckVec.orR
-    )
+    mySharedNonFwdAllocCond
+    ## myTempNonFwdTag
+  ) {
+    for (idx <- 0 until (cfg.numGprs >> 1)) {
+      is (
+        (1 << log2Up(cfg.numGprs >> 1))
+        | idx
+      ) {
+        // NOTE:
+        // RAW hazard detection should be based on *physical* registers,
+        // *not* architectural registers, so that means 
+        rMyNonFwdGprTagVec(
+          idx
+          //myTempNonFwdTag
+        ).valid := True
+      }
+    }
+  }
+
+  switch (
+    mySharedNonFwdAllocCond
     ## myArchGprIdxVec.last
   ) {
     for (idx <- 0 until (cfg.numGprs >> 1)) {
@@ -3405,17 +3170,8 @@ case class SnowHousePipeStageScoreboardCheck(
           (1 << log2Up(cfg.numGprs >> 1))
           | idx
         ) {
-          rMyNonFwdGprTagVec(idx).valid := True
-          //when (
-          //  !rMyNonFwdGprTagVec(idx).fire
-          //) {
-            //rMyNonFwdGprTagVec(idx).cnt := (
-            //  cfg.optForFmaxPsExFwdSize - 2//1
-            //)
-            //rMyNonFwdGprTagVec(idx).tag := myTempFwdTag
-          //}
+          //rMyNonFwdGprTagVec(idx).valid := True
           rMyNonFwdGprTagVec(idx).tag := myTempNonFwdTag
-          //rMyRenameTbl(idx).opIsFwd := False
         }
       }
     }
@@ -3475,6 +3231,17 @@ case class SnowHousePipeStageScoreboardCheck(
 
   down(pScoreboardCheck).splitOp.scoreboardOpIsNonFwd := (
     upPayload(1).splitOp.opIsMemAccess
+  )
+
+
+  myRenameTblChkptMem.write(
+    data=rMyRenameTbl,
+    doIncrIdx=true,
+    enable=(
+      up.isFiring
+      && !myInFlushCond(0)
+      && upPayload(1).splitOp.haveAnyJmpBrOp
+    )
   )
 }
 
