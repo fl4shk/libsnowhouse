@@ -638,6 +638,7 @@ case class SnowHouseForFmaxConfig(
     //0
   ),
   optScoreboard: Boolean=true,
+  optScoreboardOooSchedule: Boolean=true,
   //optMaxNumScoreboardInstrs: Option[Int]=Some(
   //  //2
   //  //1
