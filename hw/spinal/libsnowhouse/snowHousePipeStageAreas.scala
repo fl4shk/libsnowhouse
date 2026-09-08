@@ -2417,35 +2417,35 @@ case class SnowHousePipeStageScoreboardCheck(
     val rawVec = Vec.fill(cfg.regFileCfg.modRdPortCnt)(
       Bool()
     )
-    val waw = (
-      doOooSchedule
-    ) generate (
-      Bool()
-    )
-    val war = (
-      doOooSchedule
-    ) generate (
-      Bool()
-    )
+    //val waw = (
+    //  doOooSchedule
+    //) generate (
+    //  Bool()
+    //)
+    //val war = (
+    //  doOooSchedule
+    //) generate (
+    //  Bool()
+    //)
   }
 
   val myNonFwdHazardCheck = MyHazardCheck()
-  val myOtherNonFwdHazardCheckVec = (
-    doOooSchedule
-  ) generate (
-    Vec.fill(2)(
-      MyHazardCheck()
-    )
-  )
+  //val myOtherNonFwdHazardCheckVec = (
+  //  doOooSchedule
+  //) generate (
+  //  Vec.fill(2)(
+  //    MyHazardCheck()
+  //  )
+  //)
 
   val myFwdHazardCheck = MyHazardCheck()
-  val myOtherFwdHazardCheckVec = (
-    doOooSchedule
-  ) generate (
-    Vec.fill(2)(
-      MyHazardCheck()
-    )
-  )
+  //val myOtherFwdHazardCheckVec = (
+  //  doOooSchedule
+  //) generate (
+  //  Vec.fill(2)(
+  //    MyHazardCheck()
+  //  )
+  //)
 
   case class MyGprTagInfo(
     isNonFwd: Boolean
@@ -2503,7 +2503,8 @@ case class SnowHousePipeStageScoreboardCheck(
   }
 
   val myInOrderScheduleArea = (
-    !doOooSchedule
+    //!doOooSchedule
+    true
   ) generate new Area {
     when (up.isValid) {
       upPayload(0) := up(pId)
@@ -2526,94 +2527,94 @@ case class SnowHousePipeStageScoreboardCheck(
     }
   }
 
-  val myOooScheduleArea = (
-    doOooSchedule
-  ) generate new Area {
-    val myRealUpPayload = cloneOf(upPayload)
-    myRealUpPayload.foreach(item => {
-      item := RegNext(item, init=item.getZero)
-    })
+  //val myOooScheduleArea = (
+  //  doOooSchedule
+  //) generate new Area {
+  //  val myRealUpPayload = cloneOf(upPayload)
+  //  myRealUpPayload.foreach(item => {
+  //    item := RegNext(item, init=item.getZero)
+  //  })
 
-    val rSavedUpPayload = {
-      val temp = Reg(Flow(cloneOf(upPayload)))
-      temp.init(temp.getZero)
-      temp
-    }
+  //  val rSavedUpPayload = {
+  //    val temp = Reg(Flow(cloneOf(upPayload)))
+  //    temp.init(temp.getZero)
+  //    temp
+  //  }
 
-    when (up.isValid) {
-      myRealUpPayload(0) := up(pId)
-      myRealUpPayload(1) := myRealUpPayload(0)
-    }
+  //  when (up.isValid) {
+  //    myRealUpPayload(0) := up(pId)
+  //    myRealUpPayload(1) := myRealUpPayload(0)
+  //  }
 
-    for (jdx <- 0 until cfg.maxNumGprsPerInstr) {
-      switch (upPayload(1).gprIdxVec(jdx)) {
-        for (idx <- 0 until cfg.numGprs) {
-          is (idx) {
-            val tempNonFwd = rMyNonFwdGprTagVec(idx).hazardCond
-            val tempFwd = rMyFwdGprTagVec(idx).hazardCond
+  //  for (jdx <- 0 until cfg.maxNumGprsPerInstr) {
+  //    switch (upPayload(1).gprIdxVec(jdx)) {
+  //      for (idx <- 0 until cfg.numGprs) {
+  //        is (idx) {
+  //          val tempNonFwd = rMyNonFwdGprTagVec(idx).hazardCond
+  //          val tempFwd = rMyFwdGprTagVec(idx).hazardCond
 
-            if (jdx < cfg.maxNumGprsPerInstr - 1) {
-              myNonFwdHazardCheck.rawVec(jdx) := tempNonFwd
-              myFwdHazardCheck.rawVec(jdx) := tempFwd
-            } else {
-              myNonFwdHazardCheck.waw := tempNonFwd
-              myFwdHazardCheck.waw := tempFwd
-            }
-          }
-        }
-      }
+  //          if (jdx < cfg.maxNumGprsPerInstr - 1) {
+  //            myNonFwdHazardCheck.rawVec(jdx) := tempNonFwd
+  //            myFwdHazardCheck.rawVec(jdx) := tempFwd
+  //          } else {
+  //            myNonFwdHazardCheck.waw := tempNonFwd
+  //            myFwdHazardCheck.waw := tempFwd
+  //          }
+  //        }
+  //      }
+  //    }
 
-      //switch (myRealUpPayload(1).gprIdxVec(jdx)) {
-      //  for (idx <- 0 until cfg.numGprs) {
-      //    is (idx) {
-      //      val tempNonFwd = rMyNonFwdGprTagVec(idx).hazardCond
-      //      val tempFwd = rMyFwdGprTagVec(idx).hazardCond
+  //    //switch (myRealUpPayload(1).gprIdxVec(jdx)) {
+  //    //  for (idx <- 0 until cfg.numGprs) {
+  //    //    is (idx) {
+  //    //      val tempNonFwd = rMyNonFwdGprTagVec(idx).hazardCond
+  //    //      val tempFwd = rMyFwdGprTagVec(idx).hazardCond
 
-      //      if (jdx < cfg.maxNumGprsPerInstr - 1) {
-      //        myOtherNonFwdHazardCheckVec.head.rawVec(jdx) := (
-      //          tempNonFwd
-      //        )
-      //        myOtherFwdHazardCheckVec.head.rawVec(jdx) := (
-      //          tempFwd
-      //        )
-      //      } else {
-      //        myOtherNonFwdHazardCheckVec.head.waw := (
-      //          tempNonFwd
-      //        )
-      //        myOtherFwdHazardCheckVec.head.waw := (
-      //          tempFwd
-      //        )
-      //      }
-      //    }
-      //  }
-      //}
+  //    //      if (jdx < cfg.maxNumGprsPerInstr - 1) {
+  //    //        myOtherNonFwdHazardCheckVec.head.rawVec(jdx) := (
+  //    //          tempNonFwd
+  //    //        )
+  //    //        myOtherFwdHazardCheckVec.head.rawVec(jdx) := (
+  //    //          tempFwd
+  //    //        )
+  //    //      } else {
+  //    //        myOtherNonFwdHazardCheckVec.head.waw := (
+  //    //          tempNonFwd
+  //    //        )
+  //    //        myOtherFwdHazardCheckVec.head.waw := (
+  //    //          tempFwd
+  //    //        )
+  //    //      }
+  //    //    }
+  //    //  }
+  //    //}
 
-      //switch (rSavedUpPayload.payload(1).gprIdxVec(jdx)) {
-      //  for (idx <- 0 until cfg.numGprs) {
-      //    is (idx) {
-      //      val tempNonFwd = rMyNonFwdGprTagVec(idx).hazardCond
-      //      val tempFwd = rMyFwdGprTagVec(idx).hazardCond
+  //    //switch (rSavedUpPayload.payload(1).gprIdxVec(jdx)) {
+  //    //  for (idx <- 0 until cfg.numGprs) {
+  //    //    is (idx) {
+  //    //      val tempNonFwd = rMyNonFwdGprTagVec(idx).hazardCond
+  //    //      val tempFwd = rMyFwdGprTagVec(idx).hazardCond
 
-      //      if (jdx < cfg.maxNumGprsPerInstr - 1) {
-      //        myOtherNonFwdHazardCheckVec.last.rawVec(jdx) := (
-      //          tempNonFwd
-      //        )
-      //        myOtherFwdHazardCheckVec.last.rawVec(jdx) := (
-      //          tempFwd
-      //        )
-      //      } else {
-      //        myOtherNonFwdHazardCheckVec.last.waw := (
-      //          tempNonFwd
-      //        )
-      //        myOtherFwdHazardCheckVec.last.waw := (
-      //          tempFwd
-      //        )
-      //      }
-      //    }
-      //  }
-      //}
-    }
-  }
+  //    //      if (jdx < cfg.maxNumGprsPerInstr - 1) {
+  //    //        myOtherNonFwdHazardCheckVec.last.rawVec(jdx) := (
+  //    //          tempNonFwd
+  //    //        )
+  //    //        myOtherFwdHazardCheckVec.last.rawVec(jdx) := (
+  //    //          tempFwd
+  //    //        )
+  //    //      } else {
+  //    //        myOtherNonFwdHazardCheckVec.last.waw := (
+  //    //          tempNonFwd
+  //    //        )
+  //    //        myOtherFwdHazardCheckVec.last.waw := (
+  //    //          tempFwd
+  //    //        )
+  //    //      }
+  //    //    }
+  //    //  }
+  //    //}
+  //  }
+  //}
 
   val rNonFwdTagAllocVec = (
     Vec.fill(1 << myTempNonFwdTag.getWidth)(
@@ -2645,27 +2646,27 @@ case class SnowHousePipeStageScoreboardCheck(
   val myInstrSchedFinishingCond = (
     Bool()
   )
-  if (!doOooSchedule) {
+  //if (!doOooSchedule) {
     myInstrSchedFinishingCond := up.isFiring
-  }
+  //}
 
   switch (rScoreboardFlushState) {
-    val myRealUpPayload = (
-      doOooSchedule
-    ) generate (
-      myOooScheduleArea.myRealUpPayload
-    )
-    val rSavedUpPayload = (
-      doOooSchedule
-    ) generate (
-      myOooScheduleArea.rSavedUpPayload
-    )
+    //val myRealUpPayload = (
+    //  doOooSchedule
+    //) generate (
+    //  myOooScheduleArea.myRealUpPayload
+    //)
+    //val rSavedUpPayload = (
+    //  doOooSchedule
+    //) generate (
+    //  myOooScheduleArea.rSavedUpPayload
+    //)
 
     is (ScoreboardFlushState.IDLE) {
-      if (doOooSchedule) {
-        upPayload := myRealUpPayload
-        myInstrSchedFinishingCond := up.isFiring
-      }
+      //if (doOooSchedule) {
+      //  upPayload := myRealUpPayload
+      //  myInstrSchedFinishingCond := up.isFiring
+      //}
 
       val mySharedBubbleCondMost = (
         myNonFwdHazardCheck.rawVec.orR
@@ -2691,18 +2692,18 @@ case class SnowHousePipeStageScoreboardCheck(
       //)
 
       when (
-        (
-          if (doOooSchedule) (
-            mySharedBubbleCond
-            && !rSavedUpPayload.fire
-            // NOTE:
-            // we (should) only have `rSavedUpPayload.fire` when there's
-            // no flush being done by the ID pipeline stage with regards to 
-            // the instruction info saved in `rSavedUpPayload`.
-          ) else (
-            mySharedBubbleCond
-          )
-        )
+        //(
+        //  if (doOooSchedule) (
+        //    mySharedBubbleCond
+        //    && !rSavedUpPayload.fire
+        //    // NOTE:
+        //    // we (should) only have `rSavedUpPayload.fire` when there's
+        //    // no flush being done by the ID pipeline stage with regards to 
+        //    // the instruction info saved in `rSavedUpPayload`.
+        //  ) else (
+        //  )
+        //)
+        mySharedBubbleCond
         || myReducedFwdTagAllocVec.asBits.andR
         || myReducedNonFwdTagAllocVec.asBits.andR
       ) {
@@ -2716,113 +2717,113 @@ case class SnowHousePipeStageScoreboardCheck(
         )
       }
 
-      if (doOooSchedule) {
-        when (
-          !rSavedUpPayload.fire
-          && mySharedBubbleCondMost
-          && !myInFlushCond(2)
-        ) {
-          rSavedUpPayload.valid := True
-          rSavedUpPayload.payload := myRealUpPayload
-        }
-        when (
-          rSavedUpPayload.fire
-          && up.isFiring
-        ) {
-          //rSavedUpPayload.valid := False
-          rScoreboardFlushState := (
-            ScoreboardFlushState.NON_FLUSH_HANDLE_OOO_SAVED_PAYLOAD
-          )
-        }
+      //if (doOooSchedule) {
+      //  when (
+      //    !rSavedUpPayload.fire
+      //    && mySharedBubbleCondMost
+      //    && !myInFlushCond(2)
+      //  ) {
+      //    rSavedUpPayload.valid := True
+      //    rSavedUpPayload.payload := myRealUpPayload
+      //  }
+      //  when (
+      //    rSavedUpPayload.fire
+      //    && up.isFiring
+      //  ) {
+      //    //rSavedUpPayload.valid := False
+      //    rScoreboardFlushState := (
+      //      ScoreboardFlushState.NON_FLUSH_HANDLE_OOO_SAVED_PAYLOAD
+      //    )
+      //  }
 
-        switch (
-          rSavedUpPayload.fire
-          ## myInFlushCond(2)
-        ) {
-          is (M"01") {
-            rScoreboardFlushState := (
-              ScoreboardFlushState.FLUSH
-            )
-          }
-          is (M"11") {
-            rScoreboardFlushState := (
-              ScoreboardFlushState.FLUSH_HANDLE_OOO_SAVED_PAYLOAD
-            )
-          }
-          is (M"00") {
-          }
-          // is (M"10")
-          default {
-            //upPayload := rSavedUpPayload.payload
-          }
-        }
-      } else {
+      //  switch (
+      //    rSavedUpPayload.fire
+      //    ## myInFlushCond(2)
+      //  ) {
+      //    is (M"01") {
+      //      rScoreboardFlushState := (
+      //        ScoreboardFlushState.FLUSH
+      //      )
+      //    }
+      //    is (M"11") {
+      //      rScoreboardFlushState := (
+      //        ScoreboardFlushState.FLUSH_HANDLE_OOO_SAVED_PAYLOAD
+      //      )
+      //    }
+      //    is (M"00") {
+      //    }
+      //    // is (M"10")
+      //    default {
+      //      //upPayload := rSavedUpPayload.payload
+      //    }
+      //  }
+      //} else {
         when (myInFlushCond(2)) {
           rScoreboardFlushState := ScoreboardFlushState.FLUSH
         }
-      }
+      //}
     }
-    if (doOooSchedule) {
-      def doIt(
-        nextStateIdle: Boolean
-      ): Unit = {
-        upPayload := rSavedUpPayload.payload
-        myInstrSchedFinishingCond := down.isFiring
+    //if (doOooSchedule) {
+    //  def doIt(
+    //    nextStateIdle: Boolean
+    //  ): Unit = {
+    //    upPayload := rSavedUpPayload.payload
+    //    myInstrSchedFinishingCond := down.isFiring
 
-        //cScoreboardCheck.duplicateIt()
+    //    //cScoreboardCheck.duplicateIt()
 
-        when (
-          myReducedFwdTagAllocVec.asBits.andR
-          || myReducedNonFwdTagAllocVec.asBits.andR
-        ) {
-          doSendBubbleMainMost(
-            myPsIdBubble=Some(myNonFwdHazardCheck.rawVec.orR),
-            myPsIdOtherBubble=Some(True),
-            myPsIdFwdBubble=Some(myFwdHazardCheck.rawVec.orR),
-            myInFlushCond=Some(myInFlushCond(2))
-          )
-        } elsewhen (
-          myInstrSchedFinishingCond
-        ) {
-          rSavedUpPayload.valid := False
-          rScoreboardFlushState := (
-            if (nextStateIdle) (
-              ScoreboardFlushState.IDLE
-            ) else (
-              ScoreboardFlushState.FLUSH
-            )
-          )
-        }
-      }
-      is (ScoreboardFlushState.NON_FLUSH_HANDLE_OOO_SAVED_PAYLOAD) {
-        doIt(nextStateIdle=true)
-      }
-      is (ScoreboardFlushState.FLUSH_HANDLE_OOO_SAVED_PAYLOAD) {
-        doIt(nextStateIdle=false)
-        //upPayload := rSavedUpPayload.payload
+    //    when (
+    //      myReducedFwdTagAllocVec.asBits.andR
+    //      || myReducedNonFwdTagAllocVec.asBits.andR
+    //    ) {
+    //      doSendBubbleMainMost(
+    //        myPsIdBubble=Some(myNonFwdHazardCheck.rawVec.orR),
+    //        myPsIdOtherBubble=Some(True),
+    //        myPsIdFwdBubble=Some(myFwdHazardCheck.rawVec.orR),
+    //        myInFlushCond=Some(myInFlushCond(2))
+    //      )
+    //    } elsewhen (
+    //      myInstrSchedFinishingCond
+    //    ) {
+    //      rSavedUpPayload.valid := False
+    //      rScoreboardFlushState := (
+    //        if (nextStateIdle) (
+    //          ScoreboardFlushState.IDLE
+    //        ) else (
+    //          ScoreboardFlushState.FLUSH
+    //        )
+    //      )
+    //    }
+    //  }
+    //  is (ScoreboardFlushState.NON_FLUSH_HANDLE_OOO_SAVED_PAYLOAD) {
+    //    doIt(nextStateIdle=true)
+    //  }
+    //  is (ScoreboardFlushState.FLUSH_HANDLE_OOO_SAVED_PAYLOAD) {
+    //    doIt(nextStateIdle=false)
+    //    //upPayload := rSavedUpPayload.payload
 
-        //when (
-        //  myReducedFwdTagAllocVec.asBits.andR
-        //  || myReducedNonFwdTagAllocVec.asBits.andR
-        //) {
-        //  doSendBubbleMainMost(
-        //    myPsIdBubble=Some(myNonFwdHazardCheck.rawVec.orR),
-        //    myPsIdOtherBubble=Some(True),
-        //    myPsIdFwdBubble=Some(myFwdHazardCheck.rawVec.orR),
-        //    myInFlushCond=Some(myInFlushCond(2))
-        //  )
-        //}
-        //when (up.isFiring) {
-        //  rSavedUpPayload.valid := False
-        //  rScoreboardFlushState := ScoreboardFlushState.FLUSH
-        //}
-      }
-    }
+    //    //when (
+    //    //  myReducedFwdTagAllocVec.asBits.andR
+    //    //  || myReducedNonFwdTagAllocVec.asBits.andR
+    //    //) {
+    //    //  doSendBubbleMainMost(
+    //    //    myPsIdBubble=Some(myNonFwdHazardCheck.rawVec.orR),
+    //    //    myPsIdOtherBubble=Some(True),
+    //    //    myPsIdFwdBubble=Some(myFwdHazardCheck.rawVec.orR),
+    //    //    myInFlushCond=Some(myInFlushCond(2))
+    //    //  )
+    //    //}
+    //    //when (up.isFiring) {
+    //    //  rSavedUpPayload.valid := False
+    //    //  rScoreboardFlushState := ScoreboardFlushState.FLUSH
+    //    //}
+    //  }
+    //}
     is (ScoreboardFlushState.FLUSH) {
-      if (doOooSchedule) {
-        upPayload := myRealUpPayload
-        myInstrSchedFinishingCond := up.isFiring
-      }
+      //if (doOooSchedule) {
+      //  upPayload := myRealUpPayload
+      //  myInstrSchedFinishingCond := up.isFiring
+      //}
       when (
         !myInFlushCond(3)
         && !myReducedFwdTagAllocVec.asBits.orR
@@ -3392,6 +3393,7 @@ object Bitscan {
     x & (-x.asSInt).asUInt
   )
 }
+
 case class SnowHousePipeStagePreFwd(
   cfg: SnowHouseConfig,
   outp: SnowHousePipePayload,
