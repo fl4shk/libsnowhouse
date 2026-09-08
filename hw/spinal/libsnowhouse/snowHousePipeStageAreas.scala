@@ -2308,6 +2308,10 @@ case class SnowHousePipeStageScoreboardCheck(
     cfg.optScoreboard
   )
 
+  def doOooIssue = (
+    cfg.optForFmaxCfg.get.optScoreboardOooIssue
+  )
+
   def doSendBubbleMainMost(
     myPsIdBubble: Option[Bool]=Some(True),
     //myUpdateGprIsOrIsntZero: Boolean=true,
@@ -2386,11 +2390,88 @@ case class SnowHousePipeStageScoreboardCheck(
   //upPayload(0) := up(pId)
   upPayload(0) := RegNext(upPayload(0), init=upPayload(0).getZero)
   upPayload(1) := RegNext(upPayload(1), init=upPayload(1).getZero)
-  when (up.isValid) {
-    upPayload(0) := up(pId)
-    upPayload(1) := upPayload(0)
-  }
   upPayload(1).allowOverride
+
+  val myInOrderIssueArea = (
+    !doOooIssue
+  ) generate new Area {
+    when (up.isValid) {
+      upPayload(0) := up(pId)
+      upPayload(1) := upPayload(0)
+    }
+  }
+
+  val myOooIssueArea = (
+    doOooIssue
+  ) generate new Area {
+    val myOooRdBuf = LcvOooRdSlidingBuf(
+      cfg=LcvOooRdSlidingBufConfig(
+        wordType=(
+          cloneOf(upPayload(1))
+          //cloneOf(upPayload(1).myRegPcVec.head)
+        ),
+        depth=(
+          2
+          //4
+        ),
+      )
+    )
+    myOooRdBuf.io.push.valid := (
+      up.isValid
+      && (
+        //!down.isFiring
+        //|| 
+        !down.isReady
+        //!up.isReady
+      )
+    )
+    myOooRdBuf.io.push.payload := up(pId)//.myRegPcVec.head
+
+    val myPopValidVec = Vec(myOooRdBuf.io.pop.map(item => item.valid))
+    //when (myPopValidVec.orR) {
+    //}
+
+    myOooRdBuf.io.pop.foreach(item => item.ready := False)
+
+    //when (
+    //  up.isValid
+    //  && !myPopValidVec.orR
+    //) {
+    //  upPayload(0) := up(pId)
+    //  upPayload(1) := upPayload(0)
+    //}
+
+    switch (
+      up.isValid
+      ## myPopValidVec.asBits
+    ) {
+      is (M"-01") {
+        cScoreboardCheck.duplicateIt()
+
+        upPayload(0) := myOooRdBuf.io.pop(0).payload
+        upPayload(1) := upPayload(0)
+        myOooRdBuf.io.pop(0).ready := down.isFiring
+        myOooRdBuf.io.pop(1).ready := False
+      }
+      is (M"-1-") {
+        // for the purposes of debugging `LcvOooRdSlidingBuf`,
+        // the older instruction should be processed first!
+        cScoreboardCheck.duplicateIt()
+
+        upPayload(0) := myOooRdBuf.io.pop(1).payload
+        upPayload(1) := upPayload(0)
+        myOooRdBuf.io.pop(0).ready := False
+        myOooRdBuf.io.pop(1).ready := down.isFiring
+      }
+      is (M"100") {
+        upPayload(0) := up(pId)
+        upPayload(1) := upPayload(0)
+      }
+      default {
+      }
+    }
+  }
+
   down(pScoreboardCheck) := upPayload(1)
 
   //upPayload(1).branchTgtBufElem(1) := (
