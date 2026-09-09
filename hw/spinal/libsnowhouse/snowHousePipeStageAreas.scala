@@ -2556,6 +2556,8 @@ case class SnowHousePipeStageScoreboardCheck(
     myReducedFwdTagAllocVec(idx) := rFwdTagAllocVec(idx + 1)
   }
 
+  down(pScoreboardCheck) := upPayload(1)
+
   val myInOrderIssueArea = (
     !doOooIssue
   ) generate new Area {
@@ -2799,7 +2801,7 @@ case class SnowHousePipeStageScoreboardCheck(
       }
       is (M"01110") {
         cScoreboardCheck.duplicateIt()
-        doPopHead(doUpIsFiring=false)
+        doPopLast(doUpIsFiring=false)
       }
       is (M"01111") {
         cScoreboardCheck.duplicateIt()
@@ -2810,7 +2812,7 @@ case class SnowHousePipeStageScoreboardCheck(
       is (M"01100") {
         upPayload(0) := up(pId)
         upPayload(1) := upPayload(0)
-        // okay, now we can go to the 
+        // okay, now we can go to the next state!
         rScoreboardFlushState := ScoreboardFlushState.FLUSH
       }
       is (M"11---") {
@@ -2892,8 +2894,6 @@ case class SnowHousePipeStageScoreboardCheck(
   ) = (
     someUpPayload0.instrCnt.myPsIdInFlushBubble(idx)
   )
-
-  down(pScoreboardCheck) := upPayload(1)
 
   //upPayload(1).branchTgtBufElem(1) := (
   //  //upPayload(1).branchTgtBufElem(1).getZero
