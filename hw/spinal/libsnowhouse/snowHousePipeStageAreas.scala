@@ -2403,7 +2403,13 @@ case class SnowHousePipeStageScoreboardCheck(
   down(pScoreboardCheck).allowOverride
 
   val rScoreboardFlushState = (
-    Reg(ScoreboardFlushState())
+    Reg(ScoreboardFlushState(
+      if (doOooIssue) (
+        binarySequential
+      ) else (
+        binaryOneHot
+      )
+    ))
     init(ScoreboardFlushState.IDLE)
   )
 
@@ -2415,6 +2421,141 @@ case class SnowHousePipeStageScoreboardCheck(
   upPayload(1) := RegNext(upPayload(1), init=upPayload(1).getZero)
   upPayload(1).allowOverride
 
+  case class MyGprTagInfo(
+    isNonFwd: Boolean
+  ) extends Bundle {
+    val valid = Bool()
+    def fire = valid
+    val tag = UInt(cfg.optScoreboardTagWidth bits)
+    val cnt = (
+      !isNonFwd
+    ) generate (
+      UInt(log2Up(
+        cfg.optForFmaxPsExFwdSize - 2//1//2//3
+        + 1
+      ) + 1 bits)
+    )
+
+    def haveRaWHazard = (
+      if (isNonFwd) (
+        this.fire
+      ) else (
+        this.fire
+        && this.cnt.msb
+      )
+    )
+  }
+
+  val rMyNonFwdGprTagVec = {
+    //Reg(UInt(cfg.numGprs bits))
+    //init(0x0)
+    val temp = Vec.fill(cfg.numGprs)(
+      //Reg(Bool(), init=False)
+      Reg(MyGprTagInfo(isNonFwd=true))
+    )
+    temp.foreach(item => item.init(item.getZero))
+    temp
+  }
+
+  val rMyFwdGprTagVec = {
+    //Reg(UInt(cfg.numGprs bits))
+    //init(0x0)
+    val temp = Vec.fill(cfg.numGprs)(
+      //Reg(Bool(), init=False)
+      Reg(MyGprTagInfo(isNonFwd=false))
+    )
+    temp.foreach(item => item.init(item.getZero))
+    temp
+  }
+
+  val myNonFwdHazardCheckVec = Vec.fill(
+    cfg.regFileCfg.modRdPortCnt
+  )(
+    Bool()
+  )
+  val myFwdHazardCheckVec = Vec.fill(
+    cfg.regFileCfg.modRdPortCnt
+  )(
+    Bool()
+  )
+
+  val myOooRdBufDepth = (
+    doOooIssue
+  ) generate (
+    2
+  )
+
+  val myOooNonFwdRaWHazardCheckVec = (
+    doOooIssue
+  ) generate (
+    Vec.fill(myOooRdBufDepth)(
+      Vec.fill(
+        //cfg.maxNumGprsPerInstr
+        cfg.regFileCfg.modRdPortCnt
+      )(
+        Bool()
+      )
+    )
+  )
+  val myOooFwdRaWHazardCheckVec = (
+    doOooIssue
+  ) generate (
+    Vec.fill(myOooRdBufDepth)(
+      Vec.fill(
+        //cfg.maxNumGprsPerInstr
+        cfg.regFileCfg.modRdPortCnt
+      )(
+        Bool()
+      )
+    )
+  )
+
+  for (jdx <- 0 until cfg.regFileCfg.modRdPortCnt) {
+    switch (upPayload(1).gprIdxVec(jdx)) {
+      for (idx <- 0 until cfg.numGprs) {
+        is (idx) {
+          myNonFwdHazardCheckVec(jdx) := (
+            //rMyNonFwdGprTagVec(idx).fire
+            rMyNonFwdGprTagVec(idx).haveRaWHazard
+          )
+          myFwdHazardCheckVec(jdx) := (
+            ////rMyGprInUseCntVec(idx).msb
+            //rMyFwdGprTagVec(idx).fire
+            //&& rMyFwdGprTagVec(idx).cnt.msb
+            rMyFwdGprTagVec(idx).haveRaWHazard
+          )
+        }
+      }
+    }
+  }
+
+  val rNonFwdTagAllocVec = (
+    Vec.fill(1 << myTempNonFwdTag.getWidth)(
+      Reg(Bool(), init=False)
+    )
+  )
+  val rFwdTagAllocVec = (
+    Vec.fill(1 << myTempFwdTag.getWidth)(
+      Reg(Bool(), init=False)
+    )
+  )
+
+  val myReducedNonFwdTagAllocVec = (
+    Vec.fill(rNonFwdTagAllocVec.size - 1)(
+      Bool()
+    )
+  )
+  val myReducedFwdTagAllocVec = (
+    Vec.fill(rFwdTagAllocVec.size - 1)(
+      Bool()
+    )
+  )
+
+  for (idx <- 0 until (1 << myTempNonFwdTag.getWidth) - 1) {
+    myReducedNonFwdTagAllocVec(idx) := rNonFwdTagAllocVec(idx + 1)
+    myReducedFwdTagAllocVec(idx) := rFwdTagAllocVec(idx + 1)
+  }
+
   val myInOrderIssueArea = (
     !doOooIssue
   ) generate new Area {
@@ -2422,28 +2563,53 @@ case class SnowHousePipeStageScoreboardCheck(
       upPayload(0) := up(pId)
       upPayload(1) := upPayload(0)
     }
+    switch (rScoreboardFlushState) {
+      is (ScoreboardFlushState.IDLE) {
+        when (
+          myNonFwdHazardCheckVec.orR
+          || myFwdHazardCheckVec.orR
+          || myReducedFwdTagAllocVec.asBits.andR
+          || myReducedNonFwdTagAllocVec.asBits.andR
+          || myInFlushCond(2)
+        ) {
+          doSendBubbleMainMost(
+            myPsIdBubble=Some(myNonFwdHazardCheckVec.orR),
+            myPsIdOtherBubble=Some(True),
+            myPsIdFwdBubble=Some(myFwdHazardCheckVec.orR),
+            myInFlushCond=Some(myInFlushCond(2))//None
+          )
+        }
+        when (myInFlushCond(2)) {
+          rScoreboardFlushState := ScoreboardFlushState.FLUSH
+        }
+      }
+      is (ScoreboardFlushState.FLUSH) {
+        when (
+          !myInFlushCond(3)
+          && !myReducedFwdTagAllocVec.asBits.orR
+          && !myReducedNonFwdTagAllocVec.asBits.orR
+        ) {
+          rScoreboardFlushState := ScoreboardFlushState.IDLE
+        }
+        when (!myInFlushCond(3)) {
+          doSendBubbleMainMost(
+            myPsIdBubble=Some(myNonFwdHazardCheckVec.orR),
+            myPsIdOtherBubble=Some(True),
+            myPsIdFwdBubble=Some(myFwdHazardCheckVec.orR),
+            myInFlushCond=None
+          )
+        }
+        upPayload(1).instrCnt.myPsIdInFlushBubble.foreach(item => {
+          item := myInFlushCond(3)
+        })
+      }
+    }
+
   }
 
   val myOooIssueArea = (
     doOooIssue
   ) generate new Area {
-    val myDbgOooRdBuf = LcvOooRdSlidingBuf(
-      cfg=LcvOooRdSlidingBufConfig(
-        wordType=(
-          //cloneOf(upPayload(1))
-          cloneOf(upPayload(1).myRegPcVec.head)
-        ),
-        depth=(
-          2
-          //4
-        ),
-      )
-    )
-    myDbgOooRdBuf.io.push.valid := False
-    myDbgOooRdBuf.io.push.payload := 0x0
-    myDbgOooRdBuf.io.pop.foreach(item => {
-      item.ready := False
-    })
     val myOooRdBuf = LcvOooRdSlidingBuf(
       cfg=LcvOooRdSlidingBufConfig(
         wordType=(
@@ -2451,106 +2617,281 @@ case class SnowHousePipeStageScoreboardCheck(
           //cloneOf(upPayload(1).myRegPcVec.head)
         ),
         depth=(
-          2
+          myOooRdBufDepth
+          //2
           //4
         ),
       )
     )
 
     val myPopValidVec = Vec(myOooRdBuf.io.pop.map(item => item.valid))
-    myOooRdBuf.io.push.valid := (
-      up.isValid
-      && down.isReady
-      //&& !myPopValidVec.andR // check for if it's not full!
-      //&& (
-      //  !down.isFiring
-      //  //|| 
-      //  //!down.isReady
-      //  //!up.isReady
-      //)
-    )
+    //myOooRdBuf.io.push.valid := (
+    //  up.isValid
+    //  && down.isReady
+    //)
     //cScoreboardCheck.throwIt()
       
+    myOooRdBuf.io.push.valid := (
+      up.isValid
+      && !myInFlushCondMain(
+        someUpPayload0=up(pId),
+        idx=2,
+      )
+      && down.isReady
+      && !rScoreboardFlushState.asBits(0) // check for IDLE
+    )
     myOooRdBuf.io.push.payload := up(pId)//.myRegPcVec.head
     myOooRdBuf.io.pop.foreach(item => item.ready := False)
 
+    for (kdx <- 0 until myOooRdBuf.cfg.depth) {
+      for (jdx <- 0 until cfg.regFileCfg.modRdPortCnt) {
+        switch (
+          //upPayload(1).gprIdxVec(jdx)
+          myOooRdBuf.io.pop(kdx).valid
+          ## myOooRdBuf.io.pop(kdx).gprIdxVec(jdx)
+        ) {
+          for (idx <- 0 until cfg.numGprs) {
+            is (
+              (1 << log2Up(cfg.numGprs))
+              | idx
+            ) {
+              myOooNonFwdRaWHazardCheckVec(kdx)(jdx) := (
+                rMyNonFwdGprTagVec(idx).haveRaWHazard
+              )
+              myOooFwdRaWHazardCheckVec(kdx)(jdx) := (
+                rMyFwdGprTagVec(idx).haveRaWHazard
+              )
+            }
+          }
+          default {
+            myOooNonFwdRaWHazardCheckVec(kdx)(jdx) := False
+            myOooFwdRaWHazardCheckVec(kdx)(jdx) := False
+          }
+        }
+      }
+    }
+
+    when (
+      myOooRdBuf.io.pop.head.valid
+      && myOooRdBuf.io.pop.last.valid
+      && (
+        myOooRdBuf.io.pop.head.gprIdxVec.last
+        === myOooRdBuf.io.pop.last.gprIdxVec.last
+      )
+    ) {
+    }
+
+    val myTempInFlushCondVec = (
+      myOooRdBuf.io.pop.map(
+        outerItem => (
+          Vec(
+            outerItem.instrCnt.myPsIdInFlushBubble.map(item => (
+              outerItem.valid
+              && item
+            ))
+          )
+          //Vec(
+          //  (
+          //    item.valid
+          //    && myInFlushCondMain(
+          //      item.payload,
+          //      idx=0
+          //    )
+          //  ),
+          //  (
+          //    item.valid
+          //    && myInFlushCondMain(
+          //      item.payload,
+          //      idx=1
+          //    )
+          //  ),
+          //  (
+          //    item.valid
+          //    && myInFlushCondMain(
+          //      item.payload,
+          //      idx=2
+          //    )
+          //  ),
+          //  (
+          //    item.valid
+          //    && myInFlushCondMain(
+          //      item.payload,
+          //      idx=3
+          //    )
+          //  )
+          //)
+        )
+      )
+    )
+
     //when (
     //  up.isValid
-    //  && !myPopValidVec.orR
+    //  //&& rScoreboardFlushState.asBits(1) // check for FLUSH
+    //  && rScoreboardFlushState.asBits(0) // check for FLUSH
     //) {
     //  upPayload(0) := up(pId)
     //  upPayload(1) := upPayload(0)
     //}
 
-    //when (
-    //  myOooRdBuf.io.push.fire
-    //) {
-    //}
-
-    //when (
-    //  myOooRdBuf.io.push.valid
-    //  && !myOooRdBuf.io.push.ready
-    //) {
-    //  cScoreboardCheck.duplicateIt
-    //}
+    def doPopHead(
+      doUpIsFiring: Boolean,
+    ): Unit = {
+      upPayload(0) := myOooRdBuf.io.pop(0).payload
+      upPayload(1) := upPayload(0)
+      myOooRdBuf.io.pop(0).ready := (
+        if (doUpIsFiring) (
+          up.isFiring
+        ) else (
+          down.isFiring
+        )
+      )
+      myOooRdBuf.io.pop(1).ready := False
+    }
+    def doPopLast(
+      doUpIsFiring: Boolean,
+    ): Unit = {
+      upPayload(0) := myOooRdBuf.io.pop(1).payload
+      upPayload(1) := upPayload(0)
+      myOooRdBuf.io.pop(0).ready := False
+      myOooRdBuf.io.pop(1).ready := (
+        if (doUpIsFiring) (
+          up.isFiring
+        ) else (
+          down.isFiring
+        )
+      )
+    }
 
     switch (
-      //up.isValid
-      //## 
-      myPopValidVec.asBits
+      rScoreboardFlushState.asBits(0)
+      ## up.isValid
+      ## myInFlushCondMain(
+        someUpPayload0=up(pId),
+        idx=3,
+      )
+      ## myPopValidVec.asBits
     ) {
-      is (
-        //M"-01"
-        M"01"
-      ) {
-        //cScoreboardCheck.duplicateIt()
-
-        upPayload(0) := myOooRdBuf.io.pop(0).payload
-        upPayload(1) := upPayload(0)
-        myOooRdBuf.io.pop(0).ready := (
-          //down.isFiring
-          up.isFiring
-        )
-        myOooRdBuf.io.pop(1).ready := False
+      is (M"0-001") {
+        doPopHead(doUpIsFiring=true)
       }
-      is (
-        //M"-1-"
-        M"1-"
-        //M"10"
-      ) {
-        //cScoreboardCheck.duplicateIt()
-        // for the purposes of debugging `LcvOooRdSlidingBuf`,
-        // the older instruction should be processed first!
-
-        upPayload(0) := myOooRdBuf.io.pop(1).payload
-        upPayload(1) := upPayload(0)
-        myOooRdBuf.io.pop(0).ready := False
-        myOooRdBuf.io.pop(1).ready := (
-          //down.isFiring
-          up.isFiring
-        )
+      is (M"0-010") {
+        doPopLast(doUpIsFiring=true)
       }
-      //is (
-      //  M"11"
-      //) {
-      //  // for the purposes of debugging `LcvOooRdSlidingBuf`,
-      //  // the older instruction should be processed first!
-      //  cScoreboardCheck.duplicateIt()
-      //  upPayload(0) := myOooRdBuf.io.pop(1).payload
-      //  upPayload(1) := upPayload(0)
-      //  myOooRdBuf.io.pop(0).ready := False
-      //  myOooRdBuf.io.pop(1).ready := (
-      //    down.isFiring
-      //  )
-      //}
-      //is (M"100") {
-      //  //upPayload(0) := up(pId)
-      //  //upPayload(1) := upPayload(0)
-      //}
+      is (M"0-011") {
+        // here we do dependency checking and try to schedule
+        // instructions out-of-order
+        // instead of stalling when there's a RaW hazard in the older
+        // instruction!
+        // As of this writing, the OoO issue window is very small,
+        // only up to two instructions.
+        // That could potentially be increased, maybe even without too
+        // much fmax loss?
+        //--------
+        // DEBUG: Let's try in-order scheduling using both buffer slots,
+        // and later implement OoO scheduling once in-order scheduling
+        // using the buffer is working correctly!
+        doPopLast(doUpIsFiring=true)
+        //--------
+      }
+      is (M"01101") {
+        cScoreboardCheck.duplicateIt()
+        doPopHead(doUpIsFiring=false)
+      }
+      is (M"01110") {
+        cScoreboardCheck.duplicateIt()
+        doPopHead(doUpIsFiring=false)
+      }
+      is (M"01111") {
+        cScoreboardCheck.duplicateIt()
+        // Let's just schedule in-order here, as we have an upcoming
+        // pipeline flush anyway.
+        doPopLast(doUpIsFiring=false)
+      }
+      is (M"01100") {
+        upPayload(0) := up(pId)
+        upPayload(1) := upPayload(0)
+        // okay, now we can go to the 
+        rScoreboardFlushState := ScoreboardFlushState.FLUSH
+      }
+      is (M"11---") {
+        upPayload(0) := up(pId)
+        upPayload(1) := upPayload(0)
+      }
       default {
       }
     }
+
+    switch (rScoreboardFlushState) {
+      is (ScoreboardFlushState.IDLE) {
+        when (
+          myNonFwdHazardCheckVec.orR
+          || myFwdHazardCheckVec.orR
+          || myReducedFwdTagAllocVec.asBits.andR
+          || myReducedNonFwdTagAllocVec.asBits.andR
+          || myInFlushCond(2)
+        ) {
+          doSendBubbleMainMost(
+            myPsIdBubble=Some(myNonFwdHazardCheckVec.orR),
+            myPsIdOtherBubble=Some(True),
+            myPsIdFwdBubble=Some(myFwdHazardCheckVec.orR),
+            myInFlushCond=Some(myInFlushCond(2))//None
+          )
+        }
+      }
+      is (ScoreboardFlushState.FLUSH) {
+        // This uses the same logic as for the in-order scheduling!
+        when (
+          !myInFlushCond(3)
+          && !myReducedFwdTagAllocVec.asBits.orR
+          && !myReducedNonFwdTagAllocVec.asBits.orR
+        ) {
+          rScoreboardFlushState := ScoreboardFlushState.IDLE
+        }
+        when (!myInFlushCond(3)) {
+          doSendBubbleMainMost(
+            myPsIdBubble=Some(myNonFwdHazardCheckVec.orR),
+            myPsIdOtherBubble=Some(True),
+            myPsIdFwdBubble=Some(myFwdHazardCheckVec.orR),
+            myInFlushCond=None
+          )
+        }
+        upPayload(1).instrCnt.myPsIdInFlushBubble.foreach(item => {
+          item := myInFlushCond(3)
+        })
+      }
+    }
   }
+
+  def myInFlushCond(
+    idx: Int
+  ) = (
+    //shouldClearExtraDecodeInfo
+    //upPayload(1).instrCnt.myPsIdInFlushBubble(idx)
+    //if (!doOooIssue) (
+    //  upPayload(0).instrCnt.myPsIdInFlushBubble(idx)
+    //) else {
+    //  //val temp = Vec.fill(
+    //  //)(
+    //  //  Bool()
+    //  //)
+    //  upPayload(0).instrCnt.myPsIdInFlushBubble(idx)
+    //  //myOooIssueArea.myOooRdBuf
+    //}
+    //if (!doOooIssue) (
+      myInFlushCondMain(
+        someUpPayload0=upPayload(0),
+        idx=idx
+      )
+    //) else (
+    //  myOooIssueArea.
+    //)
+  )
+  def myInFlushCondMain(
+    someUpPayload0: SnowHousePipePayload,
+    idx: Int
+  ) = (
+    someUpPayload0.instrCnt.myPsIdInFlushBubble(idx)
+  )
 
   down(pScoreboardCheck) := upPayload(1)
 
@@ -2582,56 +2923,12 @@ case class SnowHousePipeStageScoreboardCheck(
     )
   )
 
-  case class MyGprTagInfo(
-    isNonFwd: Boolean
-  ) extends Bundle {
-    val valid = Bool()
-    def fire = valid
-    val tag = UInt(cfg.optScoreboardTagWidth bits)
-    val cnt = (
-      !isNonFwd
-    ) generate (
-      UInt(log2Up(
-        cfg.optForFmaxPsExFwdSize - 2//1//2//3
-        + 1
-      ) + 1 bits)
-    )
-  }
-
-  val rMyNonFwdGprTagVec = {
-    //Reg(UInt(cfg.numGprs bits))
-    //init(0x0)
-    val temp = Vec.fill(cfg.numGprs)(
-      //Reg(Bool(), init=False)
-      Reg(MyGprTagInfo(isNonFwd=true))
-    )
-    temp.foreach(item => item.init(item.getZero))
-    temp
-  }
-
-  val rMyFwdGprTagVec = {
-    //Reg(UInt(cfg.numGprs bits))
-    //init(0x0)
-    val temp = Vec.fill(cfg.numGprs)(
-      //Reg(Bool(), init=False)
-      Reg(MyGprTagInfo(isNonFwd=false))
-    )
-    temp.foreach(item => item.init(item.getZero))
-    temp
-  }
-
   val myLeftGprIdxVec = Vec.fill(
     //cfg.regFileCfg.modRdPortCnt
     cfg.maxNumGprsPerInstr
   )(
     UInt(log2Up(cfg.numGprs) bits)
   )
-  //val myRightGprIdxVec = Vec.fill(
-  //  //cfg.regFileCfg.modRdPortCnt
-  //  cfg.maxNumGprsPerInstr
-  //)(
-  //  UInt(log2Up(cfg.numGprs) bits)
-  //)
 
   for (
     //idx <- 0 until cfg.regFileCfg.modRdPortCnt
@@ -2639,41 +2936,6 @@ case class SnowHousePipeStageScoreboardCheck(
   ) {
     myLeftGprIdxVec(idx) := upPayload(1).gprIdxVec(idx)
     //myRightGprIdxVec(idx) := myScoreboardCommitStm.gprIdxVec(idx)
-  }
-
-  def myInFlushCond(
-    idx: Int
-  ) = (
-    //shouldClearExtraDecodeInfo
-    //upPayload(1).instrCnt.myPsIdInFlushBubble(idx)
-    upPayload(0).instrCnt.myPsIdInFlushBubble(idx)
-  )
-
-  val myNonFwdHazardCheckVec = Vec.fill(
-    cfg.regFileCfg.modRdPortCnt
-  )(
-    Bool()
-  )
-  val myFwdHazardCheckVec = Vec.fill(
-    cfg.regFileCfg.modRdPortCnt
-  )(
-    Bool()
-  )
-  for (jdx <- 0 until cfg.regFileCfg.modRdPortCnt) {
-    switch (upPayload(1).gprIdxVec(jdx)) {
-      for (idx <- 0 until cfg.numGprs) {
-        is (idx) {
-          myNonFwdHazardCheckVec(jdx) := (
-            rMyNonFwdGprTagVec(idx).fire
-          )
-          myFwdHazardCheckVec(jdx) := (
-            //rMyGprInUseCntVec(idx).msb
-            rMyFwdGprTagVec(idx).fire
-            && rMyFwdGprTagVec(idx).cnt.msb
-          )
-        }
-      }
-    }
   }
 
 
@@ -2697,48 +2959,11 @@ case class SnowHousePipeStageScoreboardCheck(
 // 2 -100
 // 3 1000
 
-  val rNonFwdTagAllocVec = (
-    Vec.fill(1 << myTempNonFwdTag.getWidth)(
-      Reg(Bool(), init=False)
-    )
-  )
-  val rFwdTagAllocVec = (
-    Vec.fill(1 << myTempFwdTag.getWidth)(
-      Reg(Bool(), init=False)
-    )
-  )
-
-  val myReducedNonFwdTagAllocVec = (
-    Vec.fill(rNonFwdTagAllocVec.size - 1)(
-      Bool()
-    )
-  )
-  val myReducedFwdTagAllocVec = (
-    Vec.fill(rFwdTagAllocVec.size - 1)(
-      Bool()
-    )
-  )
-
-  for (idx <- 0 until (1 << myTempNonFwdTag.getWidth) - 1) {
-    myReducedNonFwdTagAllocVec(idx) := rNonFwdTagAllocVec(idx + 1)
-    myReducedFwdTagAllocVec(idx) := rFwdTagAllocVec(idx + 1)
-  }
-
   switch (
-    //io.issue.ready
     (
-      (
-        up.isFiring
-        //|| (
-        //  down.isFiring
-        //  && !myInFlushCond
-        //)
-        && !myInFlushCond(0)
-      )
-      //&& !upPayload(1).inpDecodeExt.head.opIsMemAccess.last
+      up.isFiring
+      && !myInFlushCond(0)
       && upPayload(1).splitOp.opIsMemAccess
-      //&& !myNonFwdHazardCheckVec.orR
-      //&& !myInFlushCond
     )
     ## Bitscan(
       //~rNonFwdTagAllocVec.asBits.asUInt
@@ -2766,12 +2991,8 @@ case class SnowHousePipeStageScoreboardCheck(
   switch (
     //io.issue.ready
     (
-      //up.isFiring
-      //down.isFiring
-      (
-        up.isFiring
-        && !myInFlushCond(1)
-      )
+      up.isFiring
+      && !myInFlushCond(1)
       && !upPayload(1).splitOp.opIsMemAccess
     )
     ## Bitscan(
@@ -2793,54 +3014,6 @@ case class SnowHousePipeStageScoreboardCheck(
     }
     default {
       myTempFwdTag := 0x0
-    }
-  }
-
-  switch (rScoreboardFlushState) {
-    is (ScoreboardFlushState.IDLE) {
-      when (
-        (
-          (
-            (
-              myNonFwdHazardCheckVec.orR
-              || myFwdHazardCheckVec.orR
-            )
-          )
-          || myReducedFwdTagAllocVec.asBits.andR
-          || myReducedNonFwdTagAllocVec.asBits.andR
-        )
-        || myInFlushCond(2)
-      ) {
-        doSendBubbleMainMost(
-          myPsIdBubble=Some(myNonFwdHazardCheckVec.orR),
-          myPsIdOtherBubble=Some(True),
-          myPsIdFwdBubble=Some(myFwdHazardCheckVec.orR),
-          myInFlushCond=Some(myInFlushCond(2))//None
-        )
-      }
-      when (myInFlushCond(2)) {
-        rScoreboardFlushState := ScoreboardFlushState.FLUSH
-      }
-    }
-    is (ScoreboardFlushState.FLUSH) {
-      when (
-        !myInFlushCond(3)
-        && !myReducedFwdTagAllocVec.asBits.orR
-        && !myReducedNonFwdTagAllocVec.asBits.orR
-      ) {
-        rScoreboardFlushState := ScoreboardFlushState.IDLE
-      }
-      when (!myInFlushCond(3)) {
-        doSendBubbleMainMost(
-          myPsIdBubble=Some(myNonFwdHazardCheckVec.orR),
-          myPsIdOtherBubble=Some(True),
-          myPsIdFwdBubble=Some(myFwdHazardCheckVec.orR),
-          myInFlushCond=None
-        )
-      }
-      upPayload(1).instrCnt.myPsIdInFlushBubble.foreach(item => {
-        item := myInFlushCond(3)
-      })
     }
   }
 

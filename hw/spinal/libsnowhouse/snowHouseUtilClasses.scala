@@ -738,6 +738,12 @@ case class SnowHouseConfig(
       )
     }
   )
+  val optScoreboardOooIssue = (
+    optForFmaxCfg match {
+      case Some(myForFmaxCfg) => myForFmaxCfg.optScoreboardOooIssue
+      case None => false
+    }
+  )
   val numMultiCommit = (
     if (optScoreboard) (
       2
@@ -1090,7 +1096,15 @@ case class SnowHouseConfig(
     )
   }
   def mainWidth = shRegFileCfg.mainWidth
-  def regFileWordCountArr = shRegFileCfg.wordCountArr
+  def regFileWordCountArr = (
+    if (optScoreboardOooIssue) (
+      shRegFileCfg.wordCountArr.map(
+        item => item * 4//3//2
+      )
+    ) else (
+      shRegFileCfg.wordCountArr
+    )
+  )
   def regFileModRdPortCnt = shRegFileCfg.modRdPortCnt
   def regFileModStageCnt = (
     //if (!useLcvDataBus) (
@@ -1179,7 +1193,7 @@ case class SnowHouseConfig(
     //6
     //optScoreboardReorderBufWidth
     //4
-    log2Up(numGprs)
+    log2Up(numGprs) - 1
     //3
   )
 
