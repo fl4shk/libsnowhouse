@@ -2779,13 +2779,13 @@ case class SnowHousePipeStageScoreboardCheck(
       )
       ## myPopValidVec.asBits
     ) {
-      is (M"0-001") {
+      is (M"01001") {
         doPopHead(doUpIsFiring=true)
       }
-      is (M"0-010") {
+      is (M"01010") {
         doPopLast(doUpIsFiring=true)
       }
-      is (M"0-011") {
+      is (M"01011") {
         // here we do dependency checking and try to schedule
         // instructions out-of-order
         // instead of stalling when there's a RaW hazard in the older
