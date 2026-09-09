@@ -2280,28 +2280,28 @@ case class SnowHousePipeStageInstrDecode(
   }
 }
 
-case class SnowHouseHazardDetectorIo(
-  cfg: SnowHouseConfig,
-) extends Bundle {
-  val push = (
-    slave(Flow(
-      SnowHousePipePayload(cfg=cfg)
-    ))
-  )
-  val pop = (
-    master(Flow(
-      SnowHousePipePayload(cfg=cfg)
-    ))
-  )
-}
-
-case class SnowHouseHazardDetector(
-  cfg: SnowHouseConfig,
-) extends Component {
-  //--------
-  val io = SnowHouseHazardDetectorIo(cfg=cfg)
-  //--------
-}
+//case class SnowHouseHazardDetectorIo(
+//  cfg: SnowHouseConfig,
+//) extends Bundle {
+//  val push = (
+//    slave(Flow(
+//      SnowHousePipePayload(cfg=cfg)
+//    ))
+//  )
+//  val pop = (
+//    master(Flow(
+//      SnowHousePipePayload(cfg=cfg)
+//    ))
+//  )
+//}
+//
+//case class SnowHouseHazardDetector(
+//  cfg: SnowHouseConfig,
+//) extends Component {
+//  //--------
+//  val io = SnowHouseHazardDetectorIo(cfg=cfg)
+//  //--------
+//}
 
 case class SnowHousePipeStageScoreboardCheck(
   val args: SnowHousePipeStageArgs,
@@ -2415,138 +2415,142 @@ case class SnowHousePipeStageScoreboardCheck(
   upPayload(1) := RegNext(upPayload(1), init=upPayload(1).getZero)
   upPayload(1).allowOverride
 
-  //val myInOrderIssueArea = (
-  //  !doOooIssue
-  //) generate new Area {
+  val myInOrderIssueArea = (
+    !doOooIssue
+  ) generate new Area {
     when (up.isValid) {
       upPayload(0) := up(pId)
       upPayload(1) := upPayload(0)
     }
-  //}
+  }
 
-  //val myOooIssueArea = (
-  //  doOooIssue
-  //) generate new Area {
-  //  val myDbgOooRdBuf = LcvOooRdSlidingBuf(
-  //    cfg=LcvOooRdSlidingBufConfig(
-  //      wordType=(
-  //        //cloneOf(upPayload(1))
-  //        cloneOf(upPayload(1).myRegPcVec.head)
-  //      ),
-  //      depth=(
-  //        2
-  //        //4
-  //      ),
-  //    )
-  //  )
-  //  myDbgOooRdBuf.io.push.valid := False
-  //  myDbgOooRdBuf.io.push.payload := 0x0
-  //  myDbgOooRdBuf.io.pop.foreach(item => {
-  //    item.ready := False
-  //  })
-  //  val myOooRdBuf = LcvOooRdSlidingBuf(
-  //    cfg=LcvOooRdSlidingBufConfig(
-  //      wordType=(
-  //        cloneOf(upPayload(1))
-  //        //cloneOf(upPayload(1).myRegPcVec.head)
-  //      ),
-  //      depth=(
-  //        2
-  //        //4
-  //      ),
-  //    )
-  //  )
+  val myOooIssueArea = (
+    doOooIssue
+  ) generate new Area {
+    val myDbgOooRdBuf = LcvOooRdSlidingBuf(
+      cfg=LcvOooRdSlidingBufConfig(
+        wordType=(
+          //cloneOf(upPayload(1))
+          cloneOf(upPayload(1).myRegPcVec.head)
+        ),
+        depth=(
+          2
+          //4
+        ),
+      )
+    )
+    myDbgOooRdBuf.io.push.valid := False
+    myDbgOooRdBuf.io.push.payload := 0x0
+    myDbgOooRdBuf.io.pop.foreach(item => {
+      item.ready := False
+    })
+    val myOooRdBuf = LcvOooRdSlidingBuf(
+      cfg=LcvOooRdSlidingBufConfig(
+        wordType=(
+          cloneOf(upPayload(1))
+          //cloneOf(upPayload(1).myRegPcVec.head)
+        ),
+        depth=(
+          2
+          //4
+        ),
+      )
+    )
 
-  //  val myPopValidVec = Vec(myOooRdBuf.io.pop.map(item => item.valid))
-  //  myOooRdBuf.io.push.valid := (
-  //    up.isValid
-  //    && down.isReady
-  //    //&& !myPopValidVec.andR // check for if it's not full!
-  //    //&& (
-  //    //  !down.isFiring
-  //    //  //|| 
-  //    //  //!down.isReady
-  //    //  //!up.isReady
-  //    //)
-  //  )
-  //  cScoreboardCheck.throwIt()
-  //    
-  //  myOooRdBuf.io.push.payload := up(pId)//.myRegPcVec.head
-  //  myOooRdBuf.io.pop.foreach(item => item.ready := False)
+    val myPopValidVec = Vec(myOooRdBuf.io.pop.map(item => item.valid))
+    myOooRdBuf.io.push.valid := (
+      up.isValid
+      && down.isReady
+      //&& !myPopValidVec.andR // check for if it's not full!
+      //&& (
+      //  !down.isFiring
+      //  //|| 
+      //  //!down.isReady
+      //  //!up.isReady
+      //)
+    )
+    //cScoreboardCheck.throwIt()
+      
+    myOooRdBuf.io.push.payload := up(pId)//.myRegPcVec.head
+    myOooRdBuf.io.pop.foreach(item => item.ready := False)
 
-  //  //when (
-  //  //  up.isValid
-  //  //  && !myPopValidVec.orR
-  //  //) {
-  //  //  upPayload(0) := up(pId)
-  //  //  upPayload(1) := upPayload(0)
-  //  //}
+    //when (
+    //  up.isValid
+    //  && !myPopValidVec.orR
+    //) {
+    //  upPayload(0) := up(pId)
+    //  upPayload(1) := upPayload(0)
+    //}
 
-  //  //when (
-  //  //  myOooRdBuf.io.push.fire
-  //  //) {
-  //  //}
+    //when (
+    //  myOooRdBuf.io.push.fire
+    //) {
+    //}
 
-  //  //when (
-  //  //  myOooRdBuf.io.push.valid
-  //  //  && !myOooRdBuf.io.push.ready
-  //  //) {
-  //  //  cScoreboardCheck.duplicateIt
-  //  //}
+    //when (
+    //  myOooRdBuf.io.push.valid
+    //  && !myOooRdBuf.io.push.ready
+    //) {
+    //  cScoreboardCheck.duplicateIt
+    //}
 
-  //  //switch (
-  //  //  //up.isValid
-  //  //  //## 
-  //  //  myPopValidVec.asBits
-  //  //) {
-  //  //  is (
-  //  //    //M"-01"
-  //  //    M"01"
-  //  //  ) {
-  //  //    //cScoreboardCheck.duplicateIt()
+    switch (
+      //up.isValid
+      //## 
+      myPopValidVec.asBits
+    ) {
+      is (
+        //M"-01"
+        M"01"
+      ) {
+        //cScoreboardCheck.duplicateIt()
 
-  //  //    upPayload(0) := myOooRdBuf.io.pop(0).payload
-  //  //    upPayload(1) := upPayload(0)
-  //  //    myOooRdBuf.io.pop(0).ready := (
-  //  //      down.isFiring
-  //  //    )
-  //  //    myOooRdBuf.io.pop(1).ready := False
-  //  //  }
-  //  //  is (
-  //  //    //M"-1-"
-  //  //    //M"1-"
-  //  //    M"10"
-  //  //  ) {
-  //  //    //cScoreboardCheck.duplicateIt()
+        upPayload(0) := myOooRdBuf.io.pop(0).payload
+        upPayload(1) := upPayload(0)
+        myOooRdBuf.io.pop(0).ready := (
+          //down.isFiring
+          up.isFiring
+        )
+        myOooRdBuf.io.pop(1).ready := False
+      }
+      is (
+        //M"-1-"
+        M"1-"
+        //M"10"
+      ) {
+        //cScoreboardCheck.duplicateIt()
+        // for the purposes of debugging `LcvOooRdSlidingBuf`,
+        // the older instruction should be processed first!
 
-  //  //    upPayload(0) := myOooRdBuf.io.pop(1).payload
-  //  //    upPayload(1) := upPayload(0)
-  //  //    myOooRdBuf.io.pop(0).ready := False
-  //  //    myOooRdBuf.io.pop(1).ready := (
-  //  //      down.isFiring
-  //  //    )
-  //  //  }
-  //  //  is (
-  //  //    M"11"
-  //  //  ) {
-  //  //    // for the purposes of debugging `LcvOooRdSlidingBuf`,
-  //  //    // the older instruction should be processed first!
-  //  //    cScoreboardCheck.duplicateIt()
-  //  //    upPayload(0) := myOooRdBuf.io.pop(1).payload
-  //  //    upPayload(1) := upPayload(0)
-  //  //    myOooRdBuf.io.pop(0).ready := False
-  //  //    myOooRdBuf.io.pop(1).ready := (
-  //  //      down.isFiring
-  //  //    )
-  //  //  }
-  //  //  //is (M"100") {
-  //  //  //  //upPayload(0) := up(pId)
-  //  //  //  //upPayload(1) := upPayload(0)
-  //  //  //}
-  //  //  default {
-  //  //  }
-  //  //}
-  //}
+        upPayload(0) := myOooRdBuf.io.pop(1).payload
+        upPayload(1) := upPayload(0)
+        myOooRdBuf.io.pop(0).ready := False
+        myOooRdBuf.io.pop(1).ready := (
+          //down.isFiring
+          up.isFiring
+        )
+      }
+      //is (
+      //  M"11"
+      //) {
+      //  // for the purposes of debugging `LcvOooRdSlidingBuf`,
+      //  // the older instruction should be processed first!
+      //  cScoreboardCheck.duplicateIt()
+      //  upPayload(0) := myOooRdBuf.io.pop(1).payload
+      //  upPayload(1) := upPayload(0)
+      //  myOooRdBuf.io.pop(0).ready := False
+      //  myOooRdBuf.io.pop(1).ready := (
+      //    down.isFiring
+      //  )
+      //}
+      //is (M"100") {
+      //  //upPayload(0) := up(pId)
+      //  //upPayload(1) := upPayload(0)
+      //}
+      default {
+      }
+    }
+  }
 
   down(pScoreboardCheck) := upPayload(1)
 
