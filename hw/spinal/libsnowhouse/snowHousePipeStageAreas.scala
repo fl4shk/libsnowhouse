@@ -2770,6 +2770,8 @@ case class SnowHousePipeStageScoreboardCheck(
       )
     }
 
+    val rPingPongBlockState = Reg(Bool(), init=False)
+
     switch (
       rScoreboardFlushState.asBits(0)
       ## up.isValid
@@ -2781,9 +2783,15 @@ case class SnowHousePipeStageScoreboardCheck(
     ) {
       is (M"01001") {
         doPopHead(doUpIsFiring=true)
+        when (up.isFiring) {
+          rPingPongBlockState := False
+        }
       }
       is (M"01010") {
         doPopLast(doUpIsFiring=true)
+        when (up.isFiring) {
+          rPingPongBlockState := False
+        }
       }
       is (M"01011") {
         // here we do dependency checking and try to schedule
@@ -2800,7 +2808,7 @@ case class SnowHousePipeStageScoreboardCheck(
         // using the buffer is working correctly!
         //doPopLast(doUpIsFiring=true)
         //--------
-        when (
+        val myOooOkayCondMost = (
           !myOooWaWHazardCheck
           && !myOooWaRHazardCheckVec.orR
           && (
@@ -2815,7 +2823,20 @@ case class SnowHousePipeStageScoreboardCheck(
             !myOooRdBuf.io.pop.last.splitOp.haveAnyJmpBrOp()
             && !myOooRdBuf.io.pop.head.splitOp.haveAnyJmpBrOp()
           )
+        )
+
+        val myOooOkayCond = (
+          myOooOkayCondMost
+          && !rPingPongBlockState
+        )
+        when (
+          myOooOkayCondMost
+          && up.isFiring
         ) {
+          rPingPongBlockState := True
+        }
+        when (myOooOkayCond) {
+          //rPingPongBlockState := up.isFiring
           doPopHead(doUpIsFiring=true)
         } otherwise {
           doPopLast(doUpIsFiring=true)
@@ -2824,25 +2845,30 @@ case class SnowHousePipeStageScoreboardCheck(
       }
       is (M"01101") {
         cScoreboardCheck.duplicateIt()
+        rPingPongBlockState := False
         doPopHead(doUpIsFiring=false)
       }
       is (M"01110") {
         cScoreboardCheck.duplicateIt()
+        //rPingPongBlockState := False
         doPopLast(doUpIsFiring=false)
       }
       is (M"01111") {
         cScoreboardCheck.duplicateIt()
+        //rPingPongBlockState := False
         // Let's just schedule in-order here, as we have an upcoming
         // pipeline flush anyway.
         doPopLast(doUpIsFiring=false)
       }
       is (M"01100") {
+        //rPingPongBlockState := False
         upPayload(0) := up(pId)
         upPayload(1) := upPayload(0)
         // okay, now we can go to the next state!
         rScoreboardFlushState := ScoreboardFlushState.FLUSH
       }
       is (M"11---") {
+        rPingPongBlockState := False
         upPayload(0) := up(pId)
         upPayload(1) := upPayload(0)
       }
