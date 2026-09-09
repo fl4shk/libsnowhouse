@@ -2835,17 +2835,21 @@ case class SnowHousePipeStageScoreboardCheck(
         ) {
           rPingPongBlockState := True
         }
+
         when (myOooOkayCond) {
           //rPingPongBlockState := up.isFiring
           doPopHead(doUpIsFiring=true)
         } otherwise {
           doPopLast(doUpIsFiring=true)
         }
+        upPayload(1).instrCnt.scoreboardCheckPayload.haveOooIssue := (
+          myOooOkayCond
+        )
         //--------
       }
       is (M"01101") {
         cScoreboardCheck.duplicateIt()
-        rPingPongBlockState := False
+        //rPingPongBlockState := False
         doPopHead(doUpIsFiring=false)
       }
       is (M"01110") {
@@ -12068,12 +12072,20 @@ case class SnowHousePipeStageExecute(
       outp.instrCnt.scoreboardCheckPayload.nonBubbleFwdTag
     )
 
+    val myTempHaveOooIssue = (
+      cfg.optScoreboardOooIssue
+    ) generate (
+      outp.instrCnt.scoreboardCheckPayload.haveOooIssue
+    )
+
     val myTempReorderBufIdx = (
       cfg.optScoreboard
     ) generate (
       outp.instrCnt.scoreboardCheckPayload.reorderBufIdx
     )
-    if (cfg.optScoreboard) {
+    val myHaveScoreboardArea = (
+      cfg.optScoreboard
+    ) generate new Area {
       //myTempReorderBufIdx := myNonBubbleTag
       myTempReorderBufIdx := (
         //myNonBubbleTag
@@ -12085,17 +12097,72 @@ case class SnowHousePipeStageExecute(
           init(-1)
         ).asUInt
       )
-      when (
+      val myTempCond = (
         cLink.up.isFiring
         && !myShouldIgnoreInstr.last
         && !outp.instrCnt.myPsIdBubble(0)
         && !outp.instrCnt.myPsIdInFlushBubble(0)
         //&& !outp.instrCnt.myPsIdOtherBubble(0)
-      ) {
-        myTempReorderBufIdx := (
-          RegNext(myTempReorderBufIdx) + 1
-        )
+      )
+      val rHaveOooIssueState = (
+        cfg.optScoreboardOooIssue
+      ) generate (
+        Reg(Bool(), init=False) 
+      )
+      val rPrevHadOooIssueState = (
+        cfg.optScoreboardOooIssue
+      ) generate (
+        Reg(Bool(), init=False)
+      )
+
+      if (!cfg.optScoreboardOooIssue) {
+        when (myTempCond) {
+          myTempReorderBufIdx := (
+            RegNext(myTempReorderBufIdx) + 1
+          )
+        }
+      } else {
+        switch (
+          myTempCond
+          ## myTempHaveOooIssue
+          ## rHaveOooIssueState
+          ## rPrevHadOooIssueState
+        ) {
+          is (M"1000") {
+            myTempReorderBufIdx := (
+              RegNext(myTempReorderBufIdx) + 1
+            )
+          }
+          is (M"1001") {
+            myTempReorderBufIdx := (
+              RegNext(myTempReorderBufIdx) + 2
+            )
+            rPrevHadOooIssueState := False
+          }
+          is (M"110-") {
+            myTempReorderBufIdx := (
+              RegNext(myTempReorderBufIdx) + 2
+            )
+            rHaveOooIssueState := True
+          }
+          is (M"101-") {
+            myTempReorderBufIdx := (
+              // the previous instruction was issued OoO,
+              // so we need to subtract one to maintain proper ordering
+              RegNext(myTempReorderBufIdx) - 1
+            )
+            rHaveOooIssueState := False
+            rPrevHadOooIssueState := True
+          }
+          //is (M"111") {
+          //  myTempReorderBufIdx := (
+          //  )
+          //}
+          default {
+          }
+        }
       }
+
 
 
       myNonBubbleTag := (

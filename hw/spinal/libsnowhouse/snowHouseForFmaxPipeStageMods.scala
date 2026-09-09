@@ -124,7 +124,12 @@ case class SnowHouseScoreboardCheckPayload(
 ) extends Bundle {
   //val cntOverflow = Bool()
 
- // reorder buffer index
+  // reorder buffer index
+  val haveOooIssue = (
+    cfg.optScoreboardOooIssue
+  ) generate (
+    Bool()
+  )
   val reorderBufIdx = UInt(cfg.optScoreboardReorderBufWidth bits)
   val nonFwdTag = UInt(
     //cfg.optScoreboardReorderBufWidth bits
