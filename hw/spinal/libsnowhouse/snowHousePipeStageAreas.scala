@@ -2281,6 +2281,15 @@ case class SnowHousePipeStageInstrDecode(
   if (cfg.optScoreboardOooIssueWindow != None) {
     upPayload(1).splitOp.scoreboardOpCanBeOooIssued.last := (
       (
+        // looks like maybe an instruction that's the destination of a
+        // branch needs to *also* NOT be scheduled OoO
+        RegNextWhen(
+          !upPayload(1).splitOp.haveAnyJmpBrOp(),
+          cond=cId.up.isFiring,
+          init=False,
+        )
+      )
+      && (
         // Force branches/jumps/calls/returns, etc. to be in-order
         // At the time of writing, I'm not sure how I would handle
         // scheduling OoO branches!
