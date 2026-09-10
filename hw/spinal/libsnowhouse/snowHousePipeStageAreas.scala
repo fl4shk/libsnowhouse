@@ -2633,6 +2633,25 @@ case class SnowHousePipeStageScoreboardCheck(
       )
     )
 
+    val myDbgOooRdBuf = LcvOooRdSlidingBuf(
+      cfg=LcvOooRdSlidingBufConfig(
+        wordType=(
+          //cloneOf(upPayload(1).)
+          cloneOf(upPayload(1).myRegPcVec.head)
+        ),
+        depth=(
+          myOooRdBufDepth
+          //2
+          //4
+        ),
+      )
+    )
+    myDbgOooRdBuf.io.push.valid := False
+    myDbgOooRdBuf.io.push.payload := 0x0
+    myDbgOooRdBuf.io.pop.foreach(item => {
+      item.ready := False
+    })
+
     val myOooRdBuf = LcvOooRdSlidingBuf(
       cfg=LcvOooRdSlidingBufConfig(
         wordType=(
@@ -2648,6 +2667,7 @@ case class SnowHousePipeStageScoreboardCheck(
     )
 
     //val myPopValidVec = Vec(myOooRdBuf.io.pop.map(item => item.valid))
+    val myFullPopValidVec = Vec(myOooRdBuf.io.pop.map(item => item.valid))
     val myPopValidVec = Vec.fill(myOooRdBufDepth - 1)(
       Bool()
     )
@@ -2664,7 +2684,10 @@ case class SnowHousePipeStageScoreboardCheck(
       )
       && down.isReady
       && !rScoreboardFlushState.asBits(0) // check for IDLE
-      && !myPopValidVec.andR
+      && (
+        //!myPopValidVec.andR
+        !myFullPopValidVec.andR
+      )
     )
     myOooRdBuf.io.push.payload := up(pId)//.myRegPcVec.head
     myOooRdBuf.io.pop.foreach(item => item.ready := False)
