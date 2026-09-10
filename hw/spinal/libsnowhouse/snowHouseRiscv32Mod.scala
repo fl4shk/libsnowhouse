@@ -1063,6 +1063,7 @@ object SnowHouseRiscv32PipeStageInstrDecode {
     upPayload.gprIdxVec.last := encInstrR.last.rd.resized
 
     upPayload.splitOp.setToDefault()
+    upPayload.splitOp.scoreboardOpCanBeOooIssued.head := True
     upPayload.splitOp.opIsDualWidth := False
     upPayload.aluOp := (
       LcvAluDel1InpOpEnum.ZERO

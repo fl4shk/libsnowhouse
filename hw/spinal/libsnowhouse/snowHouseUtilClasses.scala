@@ -642,9 +642,9 @@ case class SnowHouseForFmaxConfig(
     //false
     //true
     Some(
-      //8
+      8
       //1
-      2
+      //2
     )
   ),
   //optMaxNumScoreboardInstrs: Option[Int]=Some(
@@ -1849,7 +1849,9 @@ case class SnowHouseSplitOp(
   val scoreboardOpCanBeOooIssued = (
     cfg.optScoreboardOooIssueWindow != None
   ) generate (
-    Bool()
+    Vec.fill(2)(
+      Bool()
+    )
   )
 
   //val opIsJmp = Bool()

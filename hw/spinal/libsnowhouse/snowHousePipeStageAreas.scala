@@ -2279,7 +2279,7 @@ case class SnowHousePipeStageInstrDecode(
     )
   }
   if (cfg.optScoreboardOooIssueWindow != None) {
-    upPayload(1).splitOp.scoreboardOpCanBeOooIssued := (
+    upPayload(1).splitOp.scoreboardOpCanBeOooIssued.last := (
       (
         // Force branches/jumps/calls/returns, etc. to be in-order
         // At the time of writing, I'm not sure how I would handle
@@ -2970,10 +2970,8 @@ case class SnowHousePipeStageScoreboardCheck(
             !myOooFwdRaWHazardCheckVec.head.orR
             && !myOooNonFwdRaWHazardCheckVec.head.orR
           )
-          && (
-            myOooRdBuf.io.pop(2).splitOp.scoreboardOpCanBeOooIssued
-            && myOooRdBuf.io.pop(1).splitOp.scoreboardOpCanBeOooIssued
-          )
+          && myOooRdBuf.io.pop(2).splitOp.scoreboardOpCanBeOooIssued.andR
+          && myOooRdBuf.io.pop(1).splitOp.scoreboardOpCanBeOooIssued.andR
           //&& (
           //  // Force branches/jumps/calls/returns, etc. to be in-order
           //  // At the time of writing, I'm not sure how I would handle
