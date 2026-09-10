@@ -2114,6 +2114,12 @@ case class SnowHouseForFmaxPsWbReorderBufPayload(
   ) generate (
     UInt(cfg.optScoreboardReorderBufWidth bits)
   )
+  val bubble = (
+    cfg.optScoreboard
+    && optIncludeBufIdx
+  ) generate (
+    Bool()
+  )
   //val postFlushReorderBufIdx = (
   //  cfg.optScoreboard
   //  && optIncludeBufIdx
@@ -2596,14 +2602,17 @@ case class SnowHouseForFmaxPsWbReorderBuf(
     for (idx <- 0 until (1 << io.push.reorderBufIdx.getWidth)) {
       is (idx) {
         io.push.ready := (
-          !rValidVec(idx)
+          (io.push.valid && io.push.bubble)
+          || !rValidVec(idx)
         )
       }
     }
   }
 
   myRam.io.wrPulse.valid := (
-    io.push.fire//fire//valid//fire//valid//valid//fire
+    io.push.fire
+    && !io.push.bubble
+    //fire//valid//fire//valid//valid//fire
     //&& !io.push.myShouldIgnoreInstr
     //&& !rValidVec(io.push.reorderBufIdx)
     //&& io.push.myWbPayload.instrCnt.shouldIgnoreInstr.head
@@ -5019,6 +5028,15 @@ case class SnowHouseForFmaxPipeStageWriteBack(
       someCommitStm.reorderBufIdx := (
         someMyWbPayload(1).instrCnt.scoreboardCheckPayload.reorderBufIdx
       )
+      someCommitStm.bubble := {
+        val myInstrCnt = someMyWbPayload(1).instrCnt
+        (
+          //myInstrCnt.myPsIdBubble(0)
+          //|| myInstrCnt.myPsIdInFlushBubble(0)
+          myInstrCnt.myPsIdFwdBubble(0)
+          || myInstrCnt.myPsIdOtherBubble(0)
+        )
+      }
     } else {
       //someCommitStm.valid := True
       someCommitStm.ready := True
@@ -5401,6 +5419,7 @@ case class SnowHouseForFmaxPipeStageWriteBack(
     if (cfg.optScoreboard) {
       myDbgReorderBuf.io.push.valid := (
         myCommitAlmostFinalBackOutpStm.fire
+        && !myCommitAlmostFinalBackOutpStm.bubble
       )
       myDbgReorderBuf.io.push.myWord := (
         myCommitAlmostFinalBackOutpStm.payload

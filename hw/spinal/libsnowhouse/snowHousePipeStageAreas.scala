@@ -12102,7 +12102,8 @@ case class SnowHousePipeStageExecute(
         && !myShouldIgnoreInstr.last
         && !outp.instrCnt.myPsIdBubble(0)
         && !outp.instrCnt.myPsIdInFlushBubble(0)
-        //&& !outp.instrCnt.myPsIdOtherBubble(0)
+        && !outp.instrCnt.myPsIdFwdBubble(0)
+        && !outp.instrCnt.myPsIdOtherBubble(0)
       )
       val rHaveOooIssueState = (
         cfg.optScoreboardOooIssue
@@ -12123,10 +12124,18 @@ case class SnowHousePipeStageExecute(
         }
       } else {
         switch (
-          myTempCond
+          (
+            myTempCond
+            //&& !outp.instrCnt.myPsIdOtherBubble(0)
+          )
           ## myTempHaveOooIssue
-          ## rHaveOooIssueState
-          ## rPrevHadOooIssueState
+          ## (
+            rHaveOooIssueState //&& !outp.instrCnt.myPsIdOtherBubble(0)
+          )
+          ## (
+            rPrevHadOooIssueState //&& !outp.instrCnt.myPsIdOtherBubble(0)
+          )
+          //## outp.instrCnt.myPsIdOtherBubble(0)
         ) {
           is (M"1000") {
             myTempReorderBufIdx := (
