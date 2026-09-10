@@ -642,7 +642,8 @@ case class SnowHouseForFmaxConfig(
     //false
     //true
     Some(
-      8
+      4
+      //8
       //1
       //2
     )
