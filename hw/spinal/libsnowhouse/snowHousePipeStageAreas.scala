@@ -2716,12 +2716,15 @@ case class SnowHousePipeStageScoreboardCheck(
       // NOTE:
       // we do the two checks for `valid` in the big `switch` statement!  
       val temp = (
-        myOooRdBuf.io.pop.head.gprIdxVec(idx)
-        === myOooRdBuf.io.pop.last.gprIdxVec.last
+        //myOooRdBuf.io.pop.head.gprIdxVec(idx)
+        //=== myOooRdBuf.io.pop.last.gprIdxVec.last
+        myOooRdBuf.io.pop.last.gprIdxVec(idx)
+        === myOooRdBuf.io.pop.head.gprIdxVec.last
       )
       myOooWaRHazardCheckVec(idx) := (
         if (cfg.myHaveZeroReg) (
-          temp && myOooRdBuf.io.pop.head.gprIsNonZeroVec(idx).last
+          //temp && myOooRdBuf.io.pop.head.gprIsNonZeroVec(idx).last
+          temp && myOooRdBuf.io.pop.last.gprIsNonZeroVec(idx).last
         ) else (
           temp
         )
