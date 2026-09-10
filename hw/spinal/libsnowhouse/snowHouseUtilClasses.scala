@@ -643,7 +643,8 @@ case class SnowHouseForFmaxConfig(
     //true
     Some(
       //8
-      1
+      //1
+      2
     )
   ),
   //optMaxNumScoreboardInstrs: Option[Int]=Some(
