@@ -2600,11 +2600,12 @@ case class SnowHousePipeStageScoreboardCheck(
     doOooIssue
   ) generate new Area {
     val myOooRdBufDepth = (
-      2
+      //2
+      3
     )
 
     val myOooNonFwdRaWHazardCheckVec = (
-      Vec.fill(myOooRdBufDepth)(
+      Vec.fill(myOooRdBufDepth - 1)(
         Vec.fill(
           //cfg.maxNumGprsPerInstr
           cfg.regFileCfg.modRdPortCnt
@@ -2615,7 +2616,7 @@ case class SnowHousePipeStageScoreboardCheck(
     )
 
     val myOooFwdRaWHazardCheckVec = (
-      Vec.fill(myOooRdBufDepth)(
+      Vec.fill(myOooRdBufDepth - 1)(
         Vec.fill(
           //cfg.maxNumGprsPerInstr
           cfg.regFileCfg.modRdPortCnt
@@ -2646,7 +2647,10 @@ case class SnowHousePipeStageScoreboardCheck(
       )
     )
 
-    val myPopValidVec = Vec(myOooRdBuf.io.pop.map(item => item.valid))
+    //val myPopValidVec = Vec(myOooRdBuf.io.pop.map(item => item.valid))
+    val myPopValidVec = Vec.fill(myOooRdBufDepth - 1)(
+      Bool()
+    )
     //myOooRdBuf.io.push.valid := (
     //  up.isValid
     //  && down.isReady
@@ -2665,7 +2669,9 @@ case class SnowHousePipeStageScoreboardCheck(
     myOooRdBuf.io.push.payload := up(pId)//.myRegPcVec.head
     myOooRdBuf.io.pop.foreach(item => item.ready := False)
 
-    for (kdx <- 0 until myOooRdBuf.cfg.depth) {
+    for (kdx <- 1 until myOooRdBuf.cfg.depth) {
+      val myKdx = kdx - 1
+      myPopValidVec(myKdx) := myOooRdBuf.io.pop(kdx).valid
       for (jdx <- 0 until cfg.regFileCfg.modRdPortCnt) {
         switch (
           //upPayload(1).gprIdxVec(jdx)
@@ -2679,26 +2685,26 @@ case class SnowHousePipeStageScoreboardCheck(
               //| 
               idx
             ) {
-              if (kdx == 0) {
-                myOooNonFwdRaWHazardCheckVec(kdx)(jdx) := (
+              if (myKdx == 0) {
+                myOooNonFwdRaWHazardCheckVec(myKdx)(jdx) := (
                   rMyNonFwdGprTagVec(idx).haveRaWHazard
                   || (
                     idx
-                    === myOooRdBuf.io.pop.last.gprIdxVec.last
+                    === myOooRdBuf.io.pop(2).gprIdxVec.last
                   )
                 )
-                myOooFwdRaWHazardCheckVec(kdx)(jdx) := (
+                myOooFwdRaWHazardCheckVec(myKdx)(jdx) := (
                   rMyFwdGprTagVec(idx).haveRaWHazard
                   //|| (
                   //  idx
-                  //  === myOooRdBuf.io.pop.last.gprIdxVec.last
+                  //  === myOooRdBuf.io.pop(2).gprIdxVec.last
                   //)
                 )
-              } else if (kdx == 1) {
-                myOooNonFwdRaWHazardCheckVec(kdx)(jdx) := (
+              } else if (myKdx == 1) {
+                myOooNonFwdRaWHazardCheckVec(myKdx)(jdx) := (
                   rMyNonFwdGprTagVec(idx).haveRaWHazard
                 )
-                myOooFwdRaWHazardCheckVec(kdx)(jdx) := (
+                myOooFwdRaWHazardCheckVec(myKdx)(jdx) := (
                   rMyFwdGprTagVec(idx).haveRaWHazard
                 )
               } else {
@@ -2707,25 +2713,25 @@ case class SnowHousePipeStageScoreboardCheck(
             }
           }
           //default {
-          //  myOooNonFwdRaWHazardCheckVec(kdx)(jdx) := False
-          //  myOooFwdRaWHazardCheckVec(kdx)(jdx) := False
+          //  myOooNonFwdRaWHazardCheckVec(myKdx)(jdx) := False
+          //  myOooFwdRaWHazardCheckVec(myKdx)(jdx) := False
           //}
         }
       }
     }
 
     myOooWaWHazardCheck := {
-      //myOooRdBuf.io.pop.head.valid
-      //&& myOooRdBuf.io.pop.last.valid
+      //myOooRdBuf.io.pop(1).valid
+      //&& myOooRdBuf.io.pop(2).valid
       //&& 
       // NOTE:
       // we do the two checks for `valid` in the big `switch` statement!  
       val temp = (
-        myOooRdBuf.io.pop.head.gprIdxVec.last
-        === myOooRdBuf.io.pop.last.gprIdxVec.last
+        myOooRdBuf.io.pop(1).gprIdxVec.last
+        === myOooRdBuf.io.pop(2).gprIdxVec.last
       )
       if (cfg.myHaveZeroReg) (
-        temp && myOooRdBuf.io.pop.last.gprIsNonZeroVec.last.last
+        temp && myOooRdBuf.io.pop(2).gprIsNonZeroVec.last.last
       ) else (
         temp
       )
@@ -2734,15 +2740,15 @@ case class SnowHousePipeStageScoreboardCheck(
       // NOTE:
       // we do the two checks for `valid` in the big `switch` statement!  
       val temp = (
-        //myOooRdBuf.io.pop.head.gprIdxVec(idx)
-        //=== myOooRdBuf.io.pop.last.gprIdxVec.last
-        myOooRdBuf.io.pop.last.gprIdxVec(idx)
-        === myOooRdBuf.io.pop.head.gprIdxVec.last
+        //myOooRdBuf.io.pop(1).gprIdxVec(idx)
+        //=== myOooRdBuf.io.pop(2).gprIdxVec.last
+        myOooRdBuf.io.pop(2).gprIdxVec(idx)
+        === myOooRdBuf.io.pop(1).gprIdxVec.last
       )
       myOooWaRHazardCheckVec(idx) := (
         if (cfg.myHaveZeroReg) (
-          //temp && myOooRdBuf.io.pop.head.gprIsNonZeroVec(idx).last
-          temp && myOooRdBuf.io.pop.last.gprIsNonZeroVec(idx).last
+          //temp && myOooRdBuf.io.pop(1).gprIsNonZeroVec(idx).last
+          temp && myOooRdBuf.io.pop(2).gprIsNonZeroVec(idx).last
         ) else (
           temp
         )
@@ -2765,24 +2771,24 @@ case class SnowHousePipeStageScoreboardCheck(
     def doPopHead(
       doUpIsFiring: Boolean,
     ): Unit = {
-      upPayload(0) := myOooRdBuf.io.pop(0).payload
+      upPayload(0) := myOooRdBuf.io.pop(1).payload
       upPayload(1) := upPayload(0)
-      myOooRdBuf.io.pop(0).ready := (
+      myOooRdBuf.io.pop(1).ready := (
         if (doUpIsFiring) (
           up.isFiring
         ) else (
           down.isFiring
         )
       )
-      myOooRdBuf.io.pop(1).ready := False
+      myOooRdBuf.io.pop(2).ready := False
     }
     def doPopLast(
       doUpIsFiring: Boolean,
     ): Unit = {
-      upPayload(0) := myOooRdBuf.io.pop(1).payload
+      upPayload(0) := myOooRdBuf.io.pop(2).payload
       upPayload(1) := upPayload(0)
-      myOooRdBuf.io.pop(0).ready := False
-      myOooRdBuf.io.pop(1).ready := (
+      myOooRdBuf.io.pop(1).ready := False
+      myOooRdBuf.io.pop(2).ready := (
         if (doUpIsFiring) (
           up.isFiring
         ) else (
@@ -2941,15 +2947,15 @@ case class SnowHousePipeStageScoreboardCheck(
             && !myOooNonFwdRaWHazardCheckVec.head.orR
           )
           && (
-            myOooRdBuf.io.pop.last.splitOp.scoreboardOpCanBeOooIssued
-            && myOooRdBuf.io.pop.head.splitOp.scoreboardOpCanBeOooIssued
+            myOooRdBuf.io.pop(2).splitOp.scoreboardOpCanBeOooIssued
+            && myOooRdBuf.io.pop(1).splitOp.scoreboardOpCanBeOooIssued
           )
           //&& (
           //  // Force branches/jumps/calls/returns, etc. to be in-order
           //  // At the time of writing, I'm not sure how I would handle
           //  // scheduling OoO branches!
-          //  !myOooRdBuf.io.pop.last.splitOp.haveAnyJmpBrOp()
-          //  && !myOooRdBuf.io.pop.head.splitOp.haveAnyJmpBrOp()
+          //  !myOooRdBuf.io.pop(2).splitOp.haveAnyJmpBrOp()
+          //  && !myOooRdBuf.io.pop(1).splitOp.haveAnyJmpBrOp()
           //)
           //&& (
           //  // force memory instructions to be in-order (i.e., for MMIO)
@@ -2957,8 +2963,8 @@ case class SnowHousePipeStageScoreboardCheck(
           //  // for?
           //  // For some kinds of (probably just embedded) systems, perhaps
           //  // this check doesn't need to be done?
-          //  !myOooRdBuf.io.pop.last.splitOp.opIsMemAccess
-          //  || !myOooRdBuf.io.pop.head.splitOp.opIsMemAccess
+          //  !myOooRdBuf.io.pop(2).splitOp.opIsMemAccess
+          //  || !myOooRdBuf.io.pop(1).splitOp.opIsMemAccess
           //)
         )
 
