@@ -12326,92 +12326,189 @@ case class SnowHousePipeStageExecute(
         cfg.optScoreboardOooIssueWindow != None
       ) generate new Area {
         
-        val rHaveOooIssueState = Reg(Bool(), init=False) 
-        val rPrevHadOooIssueState = Reg(Bool(), init=False)
-        val rSavedOooIssueCntThing = (
-          Reg(UInt(myTempOooIssueCnt.payload.asBits.getWidth + 1 bits))
+        //val rHaveOooIssueState = Reg(Bool(), init=False) 
+        //val rPrevHadOooIssueState = Reg(Bool(), init=False)
+        //val rSavedOooIssueCntThing = (
+        //  Reg(UInt(myTempOooIssueCnt.payload.asBits.getWidth + 1 bits))
+        //  //init(0x0)
+        //)
+        //val rSavedReorderBufIdxVec = (
+        //  Vec.fill(2)(
+        //    Reg(cloneOf(myTempReorderBufIdx))
+        //    //init(0x0)
+        //  )
+        //)
+
+        // Since we *don't* schedule branches OoO,
+        // Let's try just subtracting the program counters of the two
+        // instructions to get an amount to increment by!
+        // 
+        // This a little bit of a hack!
+        val rSavedPcVec = (
+          //--------
+          //Reg(
+          //  UInt(
+          //    cfg.mainAddrWidth bits
+          //    //cfg.optScoreboardReorderBufWidth bits
+          //  )
+          //)
           //init(0x0)
-        )
-        val rSavedReorderBufIdxVec = (
-          Vec.fill(2)(
-            Reg(cloneOf(myTempReorderBufIdx))
-            //init(0x0)
+
+          Vec(
+            RegNextWhen(
+              outp.myRegPcVec.head, //+ cfg.instrSizeBytes,
+              cond=(
+                myTempCond
+                && !myTempOooIssueCnt.fire
+              ),
+            )
+            init(0x0),
+            RegNextWhen(
+              outp.myRegPcVec.head, //+ cfg.instrSizeBytes,
+              cond=(
+                myTempCond
+                //&& myTempOooIssueCnt.fire
+              ),
+            )
+            init(0x0),
+            RegNextWhen(
+              outp.myRegPcVec.head, //+ cfg.instrSizeBytes,
+              cond=(
+                myTempCond
+                && myTempOooIssueCnt.fire
+              ),
+            )
+            init(0x0),
           )
+          //--------
+          //val temp = Flow(
+          //  Reg(UInt(
+          //    cfg.mainAddrWidth bits
+          //    //cfg.optScoreboardReorderBufWidth bits
+          //  ))
+          //)
+          //temp.init(temp.getZero)
+          //temp
+        )
+        val rPrevInstrWasIssuedOoo = (
+          Reg(Bool(), init=False)
         )
 
-        switch (
-          (
-            myTempCond
-            && myTempOooIssueCnt.fire
+        //val myOooPcSliceRange = (
+        //)
+        val tempSubVec = rSavedPcVec.map(item => (
+          (outp.myRegPcVec.head.asSInt - item.asSInt)(
+            myTempReorderBufIdx.high + log2Up(cfg.instrSizeBytes)
+            downto log2Up(cfg.instrSizeBytes)
           )
-          ## rHaveOooIssueState
+        ))
+
+        switch (
+          myTempCond
+          ## myTempOooIssueCnt.fire
         ) {
-          is (M"10") {
-            rSavedOooIssueCntThing := 0x1//0x0
-          }
           is (M"11") {
-            rSavedOooIssueCntThing := rSavedOooIssueCntThing + 1
+            rPrevInstrWasIssuedOoo := True
+          }
+          is (M"10") {
+            rPrevInstrWasIssuedOoo := False
           }
           default {
           }
         }
+        //when (
+        //  myTempCond
+        //  && myTempOooIssueCnt.fire
+        //  && !rPrevInstrWasIssuedOoo
+        //) {
+        //  rPrevOooPc := (
+        //    RegNextWhen(
+        //      outp.myRegPcVec.head, //+ cfg.instrSizeBytes,
+        //      cond=(
+        //        myTempCond
+        //        && !myTempOooIssueCnt.fire
+        //      ),
+        //    )
+        //  )
+        //}
 
         switch (
           (
             myTempCond
-            //&& !outp.instrCnt.myPsIdOtherBubble(0)
+            //&& myTempOooIssueCnt.fire
           )
-          ## myTempOooIssueCnt.fire
-          ## rHaveOooIssueState
-          ## rPrevHadOooIssueState
-          //## outp.instrCnt.myPsIdOtherBubble(0)
+          ## (
+            //!myTempOooIssueCnt.fire
+            //&& rPrevInstrWasIssuedOoo
+            //myTempOooIssueCnt.fire
+            //=/= rPrevInstrWasIssuedOoo
+            //myTempOooIssueCnt.fire
+            //|| rPrevInstrWasIssuedOoo
+            myTempOooIssueCnt.fire
+            && !rPrevInstrWasIssuedOoo
+          )
+          ## (
+            !myTempOooIssueCnt.fire
+            && rPrevInstrWasIssuedOoo
+          )
+          ## (
+            RegNextWhen(
+              (
+                !myTempOooIssueCnt.fire
+                && rPrevInstrWasIssuedOoo
+              ),
+              cond=myTempCond,
+              init=False
+            )
+          )
+          //## rPrevOooPc.fire
+          //## outp.splitOp.haveAnyJmpBrOp()
         ) {
-          is (M"1000") {
-            myTempReorderBufIdx := (
-              RegNext(myTempReorderBufIdx) + 1
-            )
-          }
-          is (M"1001") {
-            myTempReorderBufIdx := (
-              //RegNext(myTempReorderBufIdx) + rSavedOooIssueCnt //2
-              //rSavedOooIssueCnt + 2
-              //rSavedReorderBufIdx + rSavedOooIssueCntVec.head
-              rSavedReorderBufIdxVec.last + rSavedOooIssueCntThing
-            )
-            rPrevHadOooIssueState := False
-          }
           is (
-            //M"110-"
+            //M"10"
+            //M"110"
+            //M"11"
+            //M"110"
+            //M"110"
             M"110-"
           ) {
             myTempReorderBufIdx := (
-              RegNext(myTempReorderBufIdx) + 2
+              (
+                RegNext(myTempReorderBufIdx.asSInt)
+                + tempSubVec.head
+              ).asUInt
             )
-            rSavedReorderBufIdxVec.last := (
-              RegNext(myTempReorderBufIdx) + 2
-            )
-            rSavedReorderBufIdxVec.head := (
-              //myTempReorderBufIdx
-              RegNext(myTempReorderBufIdx) + 1//2
-            )
-            //rSavedOooIssueCntThing := myTempOooIssueCnt.payload
-            //rSavedOooIssueCntThing := 1//0x0
-            rHaveOooIssueState := True
-            rPrevHadOooIssueState := False
           }
-          is (M"101-") {
+          is (
+            //M"1-1"
+            M"1-1-"
+          ) {
             myTempReorderBufIdx := (
-              //// the previous instruction was issued OoO,
-              //// so we need to subtract one to maintain proper ordering
-              ////RegNext(myTempReorderBufIdx) - 1
-              rSavedReorderBufIdxVec.head //- 1//3//2//1
+              (
+                RegNext(myTempReorderBufIdx.asSInt)
+                + tempSubVec.last
+              ).asUInt
             )
-            rHaveOooIssueState := False
-            rPrevHadOooIssueState := True
           }
-          is (M"1110") {
+          is (
+            //M"10-"
+            //M"10"
+            //M"100"
+            M"1001"
+          ) {
             //myTempReorderBufIdx := (
+            //  RegNext(myTempReorderBufIdx) + 1
             //)
+            myTempReorderBufIdx := (
+              (
+                RegNext(myTempReorderBufIdx.asSInt)
+                + tempSubVec(1)
+              ).asUInt
+            )
+          }
+          is (
+            M"1000"
+          ) {
             myTempReorderBufIdx := (
               RegNext(myTempReorderBufIdx) + 1
             )
@@ -12419,6 +12516,97 @@ case class SnowHousePipeStageExecute(
           default {
           }
         }
+        //when (
+        //  myTempCond
+        //  //cLink.up.isFiring
+        //  //&& !outp.instrCnt.myPsIdBubble(0)
+        //  //&& !outp.instrCnt.myPsIdInFlushBubble(0)
+        //  //&& !outp.instrCnt.myPsIdFwdBubble(0)
+        //  //&& !outp.instrCnt.myPsIdOtherBubble(0)
+        //) {
+        //  rPrevOooPc := outp.myRegPcVec.last
+        //}
+
+        //switch (
+        //  (
+        //    myTempCond
+        //    && myTempOooIssueCnt.fire
+        //  )
+        //  ## rHaveOooIssueState
+        //) {
+        //  is (M"10") {
+        //    rSavedOooIssueCntThing := 0x1//0x0
+        //  }
+        //  is (M"11") {
+        //    rSavedOooIssueCntThing := rSavedOooIssueCntThing + 1
+        //  }
+        //  default {
+        //  }
+        //}
+
+        //switch (
+        //  (
+        //    myTempCond
+        //    //&& !outp.instrCnt.myPsIdOtherBubble(0)
+        //  )
+        //  ## myTempOooIssueCnt.fire
+        //  ## rHaveOooIssueState
+        //  ## rPrevHadOooIssueState
+        //  //## outp.instrCnt.myPsIdOtherBubble(0)
+        //) {
+        //  is (M"1000") {
+        //    myTempReorderBufIdx := (
+        //      RegNext(myTempReorderBufIdx) + 1
+        //    )
+        //  }
+        //  is (M"1001") {
+        //    myTempReorderBufIdx := (
+        //      //RegNext(myTempReorderBufIdx) + rSavedOooIssueCnt //2
+        //      //rSavedOooIssueCnt + 2
+        //      //rSavedReorderBufIdx + rSavedOooIssueCntVec.head
+        //      rSavedReorderBufIdxVec.last + rSavedOooIssueCntThing
+        //    )
+        //    rPrevHadOooIssueState := False
+        //  }
+        //  is (
+        //    //M"110-"
+        //    M"110-"
+        //  ) {
+        //    myTempReorderBufIdx := (
+        //      RegNext(myTempReorderBufIdx) + 2
+        //    )
+        //    rSavedReorderBufIdxVec.last := (
+        //      RegNext(myTempReorderBufIdx) + 2
+        //    )
+        //    rSavedReorderBufIdxVec.head := (
+        //      //myTempReorderBufIdx
+        //      RegNext(myTempReorderBufIdx) + 1//2
+        //    )
+        //    //rSavedOooIssueCntThing := myTempOooIssueCnt.payload
+        //    //rSavedOooIssueCntThing := 1//0x0
+        //    rHaveOooIssueState := True
+        //    //rPrevHadOooIssueState := False
+        //  }
+        //  is (M"101-") {
+        //    myTempReorderBufIdx := (
+        //      //// the previous instruction was issued OoO,
+        //      //// so we need to subtract one to maintain proper ordering
+        //      ////RegNext(myTempReorderBufIdx) - 1
+        //      rSavedReorderBufIdxVec.head //- 1//3//2//1
+        //    )
+        //    rHaveOooIssueState := False
+        //    rPrevHadOooIssueState := True
+        //  }
+        //  is (M"1110") {
+        //    //myTempReorderBufIdx := (
+        //    //)
+        //    myTempReorderBufIdx := (
+        //      RegNext(myTempReorderBufIdx) + 1
+        //    )
+        //  }
+        //  default {
+        //  }
+        //}
       }
 
 
