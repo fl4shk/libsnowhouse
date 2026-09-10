@@ -125,11 +125,20 @@ case class SnowHouseScoreboardCheckPayload(
   //val cntOverflow = Bool()
 
   // reorder buffer index
-  val haveOooIssue = (
-    cfg.optScoreboardOooIssue
+  val myOooIssueCnt = (
+    cfg.optScoreboardOooIssueWindow != None
   ) generate (
-    Bool()
+    Flow(
+      UInt(
+        log2Up(cfg.optScoreboardOooIssueWindow.get).max(1) bits
+      )
+    )
+    //Bool()
   )
+  def haveOooIssue = (
+    !myOooIssueCnt.fire
+  )
+
   val reorderBufIdx = UInt(cfg.optScoreboardReorderBufWidth bits)
   val nonFwdTag = UInt(
     //cfg.optScoreboardReorderBufWidth bits

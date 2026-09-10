@@ -638,9 +638,13 @@ case class SnowHouseForFmaxConfig(
     //0
   ),
   optScoreboard: Boolean=true,
-  optScoreboardOooIssue: Boolean=(
+  optScoreboardOooIssueWindow: Option[Int]=(
     //false
-    true
+    //true
+    Some(
+      //8
+      1
+    )
   ),
   //optMaxNumScoreboardInstrs: Option[Int]=Some(
   //  //2
@@ -658,6 +662,15 @@ case class SnowHouseForFmaxConfig(
   //  + s"must be >= 1, apparently, for correct behavior of the CPU!"
   //)
   //val myScoreboardTagWidth = 4
+  optScoreboardOooIssueWindow match {
+    case Some(window) => {
+      require(
+        window >= 1
+      )
+    }
+    case None => {
+    }
+  }
 }
 case class SnowHouseConfig(
   haveZeroReg: Option[Int],
@@ -741,10 +754,12 @@ case class SnowHouseConfig(
       )
     }
   )
-  val optScoreboardOooIssue = (
+  val optScoreboardOooIssueWindow = (
     optForFmaxCfg match {
-      case Some(myForFmaxCfg) => myForFmaxCfg.optScoreboardOooIssue
-      case None => false
+      case Some(myForFmaxCfg) => (
+        myForFmaxCfg.optScoreboardOooIssueWindow
+      )
+      case None => None
     }
   )
   val numMultiCommit = (
@@ -1100,7 +1115,7 @@ case class SnowHouseConfig(
   }
   def mainWidth = shRegFileCfg.mainWidth
   def regFileWordCountArr = (
-    if (optScoreboardOooIssue) (
+    if (optScoreboardOooIssueWindow != None) (
       shRegFileCfg.wordCountArr.map(
         item => item * 4//3//2
       )
@@ -1830,6 +1845,12 @@ case class SnowHouseSplitOp(
   ) generate (
     Bool()
   )
+  val scoreboardOpCanBeOooIssued = (
+    cfg.optScoreboardOooIssueWindow != None
+  ) generate (
+    Bool()
+  )
+
   //val opIsJmp = Bool()
   //val nonMultiCycleOp = /*Flow*/(
   //  UInt(log2Up(cfg.nonMultiCycleOpInfoMap.size + 1) bits)

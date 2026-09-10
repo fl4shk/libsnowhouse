@@ -2278,6 +2278,24 @@ case class SnowHousePipeStageInstrDecode(
       myTempOpMayNeedHazardCheck
     )
   }
+  if (cfg.optScoreboardOooIssueWindow != None) {
+    upPayload(1).splitOp.scoreboardOpCanBeOooIssued := (
+      (
+        // Force branches/jumps/calls/returns, etc. to be in-order
+        // At the time of writing, I'm not sure how I would handle
+        // scheduling OoO branches!
+        !upPayload(1).splitOp.haveAnyJmpBrOp()
+      )
+      && (
+        // force memory instructions to be in-order (i.e., for MMIO)
+        // perhaps this should actually be an optional thing to check
+        // for?
+        // For some kinds of (probably just embedded) systems, perhaps
+        // this check doesn't need to be done?
+        !upPayload(1).splitOp.opIsMemAccess
+      )
+    )
+  }
 }
 
 //case class SnowHouseHazardDetectorIo(
@@ -2332,7 +2350,7 @@ case class SnowHousePipeStageScoreboardCheck(
   )
 
   def doOooIssue = (
-    cfg.optForFmaxCfg.get.optScoreboardOooIssue
+    cfg.optScoreboardOooIssueWindow != None
   )
 
   def doSendBubbleMainMost(
@@ -2773,7 +2791,21 @@ case class SnowHousePipeStageScoreboardCheck(
       )
     }
 
-    val rPingPongBlockState = Reg(Bool(), init=False)
+    //val rPingPongBlockState = Reg(Bool(), init=False)
+    val rPingPongBlockCnt = {
+      val temp = Reg(
+        cloneOf(
+          upPayload(1).instrCnt.scoreboardCheckPayload.myOooIssueCnt
+        )
+      )
+      temp.valid.init(temp.valid.getZero)
+      temp.payload.init(cfg.optScoreboardOooIssueWindow.get - 1)
+      temp
+    }
+    def rPingPongBlockState = rPingPongBlockCnt.valid
+    //val rPingPongBlockCnt = (
+    //  
+    //)
 
     switch (
       rScoreboardFlushState.asBits(0)
@@ -2786,15 +2818,101 @@ case class SnowHousePipeStageScoreboardCheck(
     ) {
       is (M"01001") {
         doPopHead(doUpIsFiring=true)
-        when (up.isFiring) {
-          rPingPongBlockState := False
+
+        //switch (
+        //  up.isFiring
+        //  ## rPingPongBlockState
+        //  ## rPingPongBlockCnt.payload.orR
+        //) {
+        //  //is (M"101") {
+        //  //  //rPingPongBlockCnt.payload := rPingPongBlockCnt.payload -1
+        //  //}
+        //  is (M"100") {
+        //    rPingPongBlockState := True
+        //    rPingPongBlockCnt.payload := (
+        //      cfg.optScoreboardOooIssueWindow.get - 1
+        //    )
+        //  }
+        //  default {
+        //  }
+        //}
+        when (
+          up.isFiring
+          && !rPingPongBlockState
+        ) {
+          rPingPongBlockState := True
+          rPingPongBlockCnt.payload := (
+            cfg.optScoreboardOooIssueWindow.get - 1
+          )
         }
+
+        //switch (
+        //  up.isFiring
+        //  ## rPingPongBlockState
+        //  ## rPingPongBlockCnt.payload.orR
+        //) {
+        //  is (M"101") {
+        //    rPingPongBlockCnt.payload := rPingPongBlockCnt.payload -1
+        //  }
+        //  is (M"100") {
+        //    rPingPongBlockState := True
+        //    rPingPongBlockCnt.payload := (
+        //      cfg.optScoreboardOooIssueWindow.get - 1
+        //    )
+        //  }
+        //  default {
+        //  }
+        //}
+
+        //switch (
+        //  up.isFiring
+        //  ## rPingPongBlockCnt.payload.orR
+        //) {
+        //  is (M"10") {
+        //    rPingPongBlockState := False
+        //  }
+        //  is (M"11") {
+        //    rPingPongBlockCnt.payload := rPingPongBlockCnt.payload - 1
+        //  }
+        //}
+        //when (up.isFiring) {
+        //  rPingPongBlockState := False
+        //}
       }
       is (M"01010") {
         doPopLast(doUpIsFiring=true)
-        when (up.isFiring) {
-          rPingPongBlockState := False
+
+        when (
+          up.isFiring
+          && !rPingPongBlockState
+        ) {
+          rPingPongBlockState := True
+          rPingPongBlockCnt.payload := (
+            cfg.optScoreboardOooIssueWindow.get - 1
+          )
         }
+
+        //switch (
+        //  up.isFiring
+        //  ## rPingPongBlockState
+        //  ## rPingPongBlockCnt.payload.orR
+        //) {
+        //  //is (M"101") {
+        //  //  //rPingPongBlockCnt.payload := rPingPongBlockCnt.payload -1
+        //  //}
+        //  is (M"100") {
+        //    rPingPongBlockState := True
+        //    rPingPongBlockCnt.payload := (
+        //      cfg.optScoreboardOooIssueWindow.get - 1
+        //    )
+        //  }
+        //  default {
+        //  }
+        //}
+
+        //when (up.isFiring) {
+        //  rPingPongBlockState := False
+        //}
       }
       is (M"01011") {
         // here we do dependency checking and try to schedule
@@ -2823,20 +2941,69 @@ case class SnowHousePipeStageScoreboardCheck(
             && !myOooNonFwdRaWHazardCheckVec.head.orR
           )
           && (
-            !myOooRdBuf.io.pop.last.splitOp.haveAnyJmpBrOp()
-            && !myOooRdBuf.io.pop.head.splitOp.haveAnyJmpBrOp()
+            myOooRdBuf.io.pop.last.splitOp.scoreboardOpCanBeOooIssued
+            && myOooRdBuf.io.pop.head.splitOp.scoreboardOpCanBeOooIssued
           )
+          //&& (
+          //  // Force branches/jumps/calls/returns, etc. to be in-order
+          //  // At the time of writing, I'm not sure how I would handle
+          //  // scheduling OoO branches!
+          //  !myOooRdBuf.io.pop.last.splitOp.haveAnyJmpBrOp()
+          //  && !myOooRdBuf.io.pop.head.splitOp.haveAnyJmpBrOp()
+          //)
+          //&& (
+          //  // force memory instructions to be in-order (i.e., for MMIO)
+          //  // perhaps this should actually be an optional thing to check
+          //  // for?
+          //  // For some kinds of (probably just embedded) systems, perhaps
+          //  // this check doesn't need to be done?
+          //  !myOooRdBuf.io.pop.last.splitOp.opIsMemAccess
+          //  || !myOooRdBuf.io.pop.head.splitOp.opIsMemAccess
+          //)
         )
 
         val myOooOkayCond = (
           myOooOkayCondMost
-          && !rPingPongBlockState
+          && rPingPongBlockState
         )
-        when (
-          myOooOkayCondMost
-          && up.isFiring
+        //when (
+        //  myOooOkayCondMost
+        //  && up.isFiring
+        //) {
+        //  rPingPongBlockState := True
+        //}
+
+        //when (
+        //  myOooOkayCondMost
+        //  && up.isFiring
+        //) {
+        //}
+
+        //switch (
+        //  up.isFiring
+        //  ## rPingPongBlockState
+        //  ## rPingPongBlockCnt.payload.orR
+        //) {
+        //  is (M"111") {
+        //    rPingPongBlockCnt.payload := rPingPongBlockCnt.payload -1
+        //  }
+        //}
+
+        switch (
+          (
+            myOooOkayCond
+            && up.isFiring
+          )
+          ## rPingPongBlockCnt.payload.orR
         ) {
-          rPingPongBlockState := True
+          is (M"11") {
+            rPingPongBlockCnt.payload := rPingPongBlockCnt.payload - 1
+          }
+          is (M"10") {
+            rPingPongBlockState := False
+          }
+          default {
+          }
         }
 
         when (myOooOkayCond) {
@@ -2845,9 +3012,11 @@ case class SnowHousePipeStageScoreboardCheck(
         } otherwise {
           doPopLast(doUpIsFiring=true)
         }
-        upPayload(1).instrCnt.scoreboardCheckPayload.haveOooIssue := (
-          myOooOkayCond
+        def myOooIssueCnt = (
+          upPayload(1).instrCnt.scoreboardCheckPayload.myOooIssueCnt
         )
+        myOooIssueCnt.valid := myOooOkayCond
+        myOooIssueCnt.payload := rPingPongBlockCnt.payload
         //--------
       }
       is (M"01101") {
@@ -2875,7 +3044,11 @@ case class SnowHousePipeStageScoreboardCheck(
         rScoreboardFlushState := ScoreboardFlushState.FLUSH
       }
       is (M"11---") {
-        rPingPongBlockState := False
+        //rPingPongBlockState := False
+        rPingPongBlockState := True
+        rPingPongBlockCnt.payload := (
+          cfg.optScoreboardOooIssueWindow.get - 1
+        )
         upPayload(0) := up(pId)
         upPayload(1) := upPayload(0)
       }
@@ -12075,10 +12248,10 @@ case class SnowHousePipeStageExecute(
       outp.instrCnt.scoreboardCheckPayload.nonBubbleFwdTag
     )
 
-    val myTempHaveOooIssue = (
-      cfg.optScoreboardOooIssue
+    val myTempOooIssueCnt = (
+      cfg.optScoreboardOooIssueWindow != None
     ) generate (
-      outp.instrCnt.scoreboardCheckPayload.haveOooIssue
+      outp.instrCnt.scoreboardCheckPayload.myOooIssueCnt
     )
 
     val myTempReorderBufIdx = (
@@ -12109,17 +12282,17 @@ case class SnowHousePipeStageExecute(
         && !outp.instrCnt.myPsIdOtherBubble(0)
       )
       val rHaveOooIssueState = (
-        cfg.optScoreboardOooIssue
+        cfg.optScoreboardOooIssueWindow != None
       ) generate (
         Reg(Bool(), init=False) 
       )
       val rPrevHadOooIssueState = (
-        cfg.optScoreboardOooIssue
+        cfg.optScoreboardOooIssueWindow != None
       ) generate (
         Reg(Bool(), init=False)
       )
 
-      if (!cfg.optScoreboardOooIssue) {
+      if (cfg.optScoreboardOooIssueWindow == None) {
         when (myTempCond) {
           myTempReorderBufIdx := (
             RegNext(myTempReorderBufIdx) + 1
@@ -12131,7 +12304,7 @@ case class SnowHousePipeStageExecute(
             myTempCond
             //&& !outp.instrCnt.myPsIdOtherBubble(0)
           )
-          ## myTempHaveOooIssue
+          ## myTempOooIssueCnt.fire
           ## (
             rHaveOooIssueState //&& !outp.instrCnt.myPsIdOtherBubble(0)
           )
