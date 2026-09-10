@@ -2672,6 +2672,7 @@ case class SnowHousePipeStageScoreboardCheck(
     for (kdx <- 1 until myOooRdBuf.cfg.depth) {
       val myKdx = kdx - 1
       myPopValidVec(myKdx) := myOooRdBuf.io.pop(kdx).valid
+
       for (jdx <- 0 until cfg.regFileCfg.modRdPortCnt) {
         switch (
           //upPayload(1).gprIdxVec(jdx)
