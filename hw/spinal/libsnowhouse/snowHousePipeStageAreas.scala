@@ -12397,6 +12397,7 @@ case class SnowHousePipeStageExecute(
             //rSavedOooIssueCntThing := myTempOooIssueCnt.payload
             //rSavedOooIssueCntThing := 1//0x0
             rHaveOooIssueState := True
+            rPrevHadOooIssueState := False
           }
           is (M"101-") {
             myTempReorderBufIdx := (
