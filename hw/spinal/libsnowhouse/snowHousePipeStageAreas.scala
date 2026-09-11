@@ -2969,7 +2969,7 @@ case class SnowHousePipeStageScoreboardCheck(
     //--------
     val myBufPop = myOooRdBuf.io.pop
     val myOooOkayCondMost = (
-      RegNext(
+      //RegNext(
         (
           !myOooWaWHazardCheck
           && !myOooWaRHazardCheckVec.orR
@@ -2986,10 +2986,10 @@ case class SnowHousePipeStageScoreboardCheck(
             && myBufPop(1).splitOp.scoreboardOpCanBeOooIssued.last//andR
           )
           //&& myPopValidVec.head
-          && myPopValidVec.andR
+          //&& myPopValidVec.andR
         ),
-        init=False
-      )
+      //  init=False
+      //)
     )
 
     val myOooOkayCond = (
