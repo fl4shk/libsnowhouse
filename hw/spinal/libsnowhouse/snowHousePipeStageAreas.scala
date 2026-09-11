@@ -2650,13 +2650,17 @@ case class SnowHousePipeStageScoreboardCheck(
   val myOooIssueArea = (
     doOooIssue
   ) generate new Area {
+    val myOooRdBufWindow = 2
     val myOooRdBufDepth = (
       //2
       3
     )
+    val myOooRdBufExtraSize = (
+      myOooRdBufDepth - myOooRdBufWindow
+    )
 
     val myOooNonFwdRaWHazardCheckVec = (
-      Vec.fill(myOooRdBufDepth - 1)(
+      Vec.fill(myOooRdBufWindow)(
         Vec.fill(
           //cfg.maxNumGprsPerInstr
           cfg.regFileCfg.modRdPortCnt
@@ -2667,7 +2671,7 @@ case class SnowHousePipeStageScoreboardCheck(
     )
 
     val myOooFwdRaWHazardCheckVec = (
-      Vec.fill(myOooRdBufDepth - 1)(
+      Vec.fill(myOooRdBufWindow)(
         Vec.fill(
           //cfg.maxNumGprsPerInstr
           cfg.regFileCfg.modRdPortCnt
@@ -2719,7 +2723,7 @@ case class SnowHousePipeStageScoreboardCheck(
 
     //val myPopValidVec = Vec(myOooRdBuf.io.pop.map(item => item.valid))
     val myFullPopValidVec = Vec(myOooRdBuf.io.pop.map(item => item.valid))
-    val myPopValidVec = Vec.fill(myOooRdBufDepth - 1)(
+    val myPopValidVec = Vec.fill(myOooRdBufWindow)(
       Bool()
     )
     //myOooRdBuf.io.push.valid := (
@@ -2790,9 +2794,24 @@ case class SnowHousePipeStageScoreboardCheck(
     //}
     myOooRdBuf.io.pop.foreach(item => item.ready := False)
 
-    for (kdx <- 1 until myOooRdBuf.cfg.depth) {
-      val myKdx = kdx - 1
-      myPopValidVec(myKdx) := myOooRdBuf.io.pop(kdx).valid
+    for (kdx <- myOooRdBufExtraSize until myOooRdBuf.cfg.depth) {
+      val myKdx = kdx - myOooRdBufExtraSize
+      if (myKdx == 0) {
+        myPopValidVec(myKdx) := (
+          //RegNext(
+            myOooRdBuf.io.pop(kdx).valid//,
+          //  init=False
+          //)
+        )
+      } else if (myKdx == 1) {
+        myPopValidVec(myKdx) := (
+          myOooRdBuf.io.pop(kdx).valid
+        )
+      } else {
+        require(
+          false
+        )
+      }
 
       for (jdx <- 0 until cfg.regFileCfg.modRdPortCnt) {
         switch (
@@ -2966,6 +2985,7 @@ case class SnowHousePipeStageScoreboardCheck(
             myBufPop(2).splitOp.scoreboardOpCanBeOooIssued.last//andR
             && myBufPop(1).splitOp.scoreboardOpCanBeOooIssued.last//andR
           )
+          && myPopValidVec.head
         ),
         init=False
       )
