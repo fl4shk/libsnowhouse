@@ -2315,7 +2315,7 @@ case class SnowHousePipeStageInstrDecode(
             )
           )
         }
-        temp.orR
+        temp.andR
       }
       && (
         // looks like maybe an instruction that's the destination of a
