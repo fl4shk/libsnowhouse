@@ -2280,43 +2280,44 @@ case class SnowHousePipeStageInstrDecode(
   }
   if (cfg.optScoreboardOooIssueWindow != None) {
     upPayload(1).splitOp.scoreboardOpCanBeOooIssued.last := (
-      {
-        // RaW hazards should prevent OoO scheduling
-        //RegNextWhen(
-        //  upPayload(1).gprIdx
-        //)
-        val temp = Vec.fill(cfg.regFileCfg.modRdPortCnt)(
-          Bool()
-        )
-        for (idx <- 0 until cfg.regFileCfg.modRdPortCnt) {
-          val rPrevWrGprIdx = (
-            RegNextWhen(
-              upPayload(1).gprIdxVec.last,
-              cond=cId.up.isFiring,
-            )
-            init(0x0)
-          )
-          val myMainCond = (
-            upPayload(1).gprIdxVec(idx)
-            === rPrevWrGprIdx
-          )
-          temp(idx) := (
-            if (cfg.myHaveZeroReg) (
-              !myMainCond
-              || (
-                RegNextWhen(
-                  !upPayload(1).gprIsNonZeroVec.last.last,
-                  cond=cId.up.isFiring,
-                  init=False
-                )
-              )
-            ) else (
-              !myMainCond
-            )
-          )
-        }
-        temp.andR
-      }
+      //{
+      //  // RaW hazards should prevent OoO scheduling
+      //  //RegNextWhen(
+      //  //  upPayload(1).gprIdx
+      //  //)
+      //  val temp = Vec.fill(cfg.regFileCfg.modRdPortCnt)(
+      //    Bool()
+      //  )
+      //  for (idx <- 0 until cfg.regFileCfg.modRdPortCnt) {
+      //    val rPrevWrGprIdx = (
+      //      RegNextWhen(
+      //        upPayload(1).gprIdxVec.last,
+      //        cond=cId.up.isFiring,
+      //      )
+      //      init(0x0)
+      //    )
+      //    val myMainCond = (
+      //      upPayload(1).gprIdxVec(idx)
+      //      === rPrevWrGprIdx
+      //    )
+      //    temp(idx) := (
+      //      if (cfg.myHaveZeroReg) (
+      //        !myMainCond
+      //        || (
+      //          RegNextWhen(
+      //            !upPayload(1).gprIsNonZeroVec.last.last,
+      //            cond=cId.up.isFiring,
+      //            init=False
+      //          )
+      //        )
+      //      ) else (
+      //        !myMainCond
+      //      )
+      //    )
+      //  }
+      //  temp.andR
+      //}
+      upPayload(1).splitOp.scoreboardOpCanBeOooIssued.head
       && (
         // looks like maybe an instruction that's the destination of a
         // branch needs to *also* NOT be scheduled OoO
@@ -2508,7 +2509,8 @@ case class SnowHousePipeStageScoreboardCheck(
         this.fire
       ) else (
         this.fire
-        && this.cnt.msb
+        && 
+        this.cnt.msb
       )
     )
   }
@@ -2739,6 +2741,50 @@ case class SnowHousePipeStageScoreboardCheck(
       )
     )
     myOooRdBuf.io.push.payload := up(pId)//.myRegPcVec.head
+    myOooRdBuf.io.push.splitOp.scoreboardOpCanBeOooIssued.last
+      .allowOverride
+    myOooRdBuf.io.push.splitOp.scoreboardOpCanBeOooIssued.last := {
+      // RaW hazards should prevent OoO scheduling
+      //RegNextWhen(
+      //  upPayload(1).gprIdx
+      //)
+      val temp = Vec.fill(cfg.regFileCfg.modRdPortCnt)(
+        Bool()
+      )
+      val myPayload = up(pId)
+
+      for (idx <- 0 until cfg.regFileCfg.modRdPortCnt) {
+        val rPrevWrGprIdx = (
+          RegNextWhen(
+            myPayload.gprIdxVec.last,
+            cond=myOooRdBuf.io.push.fire,//cId.up.isFiring,
+          )
+          init(0x0)
+        )
+        val myMainCond = (
+          myPayload.gprIdxVec(idx)
+          === rPrevWrGprIdx
+        )
+        temp(idx) := (
+          if (cfg.myHaveZeroReg) (
+            !myMainCond
+            || (
+              RegNextWhen(
+                !myPayload.gprIsNonZeroVec.last.last,
+                cond=myOooRdBuf.io.push.fire,//cId.up.isFiring,
+                init=False
+              )
+            )
+          ) else (
+            !myMainCond
+          )
+        )
+      }
+      (
+        myPayload.splitOp.scoreboardOpCanBeOooIssued.last
+        && temp.andR
+      )
+    }
     myOooRdBuf.io.pop.foreach(item => item.ready := False)
 
     for (kdx <- 1 until myOooRdBuf.cfg.depth) {
@@ -2762,12 +2808,7 @@ case class SnowHousePipeStageScoreboardCheck(
                 myOooNonFwdRaWHazardCheckVec(myKdx)(jdx) := (
                   rMyNonFwdGprTagVec(idx).haveRaWHazard
                   //|| (
-                  // // NOTE:
-                  // // this is found in the Instruction Decode stage's
-                  // // computation of
-                  // // `splitOp.scoreboardOpCanBeOooIssued.last`
-                  //  idx
-                  //  === myOooRdBuf.io.pop(2).gprIdxVec.last
+                  //  idx === myOooRdBuf.io.pop(2).gprIdxVec.last
                   //)
                 )
                 myOooFwdRaWHazardCheckVec(myKdx)(jdx) := (
@@ -2917,8 +2958,8 @@ case class SnowHousePipeStageScoreboardCheck(
         && !myOooNonFwdRaWHazardCheckVec.head.orR
       )
       && (
-        myBufPop(2).splitOp.scoreboardOpCanBeOooIssued.andR
-        && myBufPop(1).splitOp.scoreboardOpCanBeOooIssued.andR
+        myBufPop(2).splitOp.scoreboardOpCanBeOooIssued.last//andR
+        && myBufPop(1).splitOp.scoreboardOpCanBeOooIssued.last//andR
       )
     )
 
@@ -3313,6 +3354,7 @@ case class SnowHousePipeStageScoreboardCheck(
         rMyFwdGprTagVec(idx).cnt - 1
       )
     }
+
     //switch (
     //  (
     //    //up.isFiring
@@ -3332,6 +3374,7 @@ case class SnowHousePipeStageScoreboardCheck(
     //    //)
     //  }
     //}
+
     when (
       rMyFwdGprTagVec(idx).fire
       && (
