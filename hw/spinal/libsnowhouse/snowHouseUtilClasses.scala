@@ -2152,6 +2152,20 @@ case class SnowHousePipePayloadNonExt(
   val gprIdxVec = Vec.fill(cfg.maxNumGprsPerInstr)(
     UInt(log2Up(cfg.numGprs) bits)
   ) //simPublic()
+  val readsGprIdxVec = (
+    cfg.optScoreboardOooIssueWindow != None
+  ) generate (
+    Vec.fill(cfg.numGprs)(
+      Bool()
+    )
+  )
+  val writesGprIdxVec = (
+    cfg.optScoreboardOooIssueWindow != None
+  ) generate (
+    Vec.fill(cfg.numGprs)(
+      Bool()
+    )
+  )
   //val scoreboardGprIdxVec = (
   //  cfg.optScoreboard
   //) generate (
@@ -2338,6 +2352,8 @@ case class SnowHousePipePayload(
   def aluOp = nonExt.aluOp
   //def aluModMemWordValid = nonExt.aluModMemWordValid
   def gprIdxVec = nonExt.gprIdxVec
+  def readsGprIdxVec = nonExt.readsGprIdxVec
+  def writesGprIdxVec = nonExt.writesGprIdxVec
   //def scoreboardGprIdxVec = nonExt.scoreboardGprIdxVec
   def gprIsZeroVec = nonExt.gprIsZeroVec
   def gprIsNonZeroVec = nonExt.gprIsNonZeroVec

@@ -2279,6 +2279,27 @@ case class SnowHousePipeStageInstrDecode(
     )
   }
   if (cfg.optScoreboardOooIssueWindow != None) {
+    upPayload(1).readsGprIdxVec.foreach(item => {
+      item := False
+    })
+    upPayload(1).writesGprIdxVec.foreach(item => {
+      item := False
+    })
+    for (jdx <- 0 until cfg.maxNumGprsPerInstr) {
+      val gprIdx = upPayload(1).gprIdxVec(jdx)
+      switch (gprIdx) {
+        val leftLim = (if (cfg.myHaveZeroReg) (1) else (0))
+        for (idx <- leftLim until cfg.numGprs) {
+          is (idx) {
+            if (jdx < cfg.maxNumGprsPerInstr - 1) {
+              upPayload(1).readsGprIdxVec(idx) := True
+            } else {
+              upPayload(1).writesGprIdxVec(idx) := True
+            }
+          }
+        }
+      }
+    }
     upPayload(1).splitOp.scoreboardOpCanBeOooIssued.last := (
       //{
       //  // RaW hazards should prevent OoO scheduling
@@ -2830,7 +2851,8 @@ case class SnowHousePipeStageScoreboardCheck(
                 myOooNonFwdRaWHazardCheckVec(myKdx)(jdx) := (
                   rMyNonFwdGprTagVec(idx).haveRaWHazard
                   || (
-                    idx === myOooRdBuf.io.pop(2).gprIdxVec.last
+                    //idx === myOooRdBuf.io.pop(2).gprIdxVec.last
+                    myOooRdBuf.io.pop(2).readsGprIdxVec(idx)
                   )
                 )
                 myOooFwdRaWHazardCheckVec(myKdx)(jdx) := (
