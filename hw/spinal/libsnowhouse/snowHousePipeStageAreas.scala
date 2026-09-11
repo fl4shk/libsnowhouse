@@ -2849,6 +2849,43 @@ case class SnowHousePipeStageScoreboardCheck(
     //  
     //)
 
+    // here we do dependency checking and try to schedule
+    // instructions out-of-order
+    // instead of stalling when there's a RaW hazard in the older
+    // instruction!
+    // As of this writing, the OoO issue window is very small,
+    // only up to two instructions.
+    // That could potentially be increased, maybe even without too
+    // much fmax loss?
+    //--------
+    // DEBUG: Let's try in-order scheduling using both buffer slots,
+    // and later implement OoO scheduling once in-order scheduling
+    // using the buffer is working correctly!
+    //doPopLast(doUpIsFiring=true)
+    //--------
+    val myBufPop = myOooRdBuf.io.pop
+    val myOooOkayCondMost = (
+      !myOooWaWHazardCheck
+      && !myOooWaRHazardCheckVec.orR
+      && (
+        myOooFwdRaWHazardCheckVec.last.orR
+        || myOooNonFwdRaWHazardCheckVec.last.orR
+      )
+      && (
+        !myOooFwdRaWHazardCheckVec.head.orR
+        && !myOooNonFwdRaWHazardCheckVec.head.orR
+      )
+      && (
+        myBufPop(2).splitOp.scoreboardOpCanBeOooIssued.andR
+        && myBufPop(1).splitOp.scoreboardOpCanBeOooIssued.andR
+      )
+    )
+
+    val myOooOkayCond = (
+      myOooOkayCondMost
+      && rPingPongBlockState
+    )
+
     switch (
       rScoreboardFlushState.asBits(0)
       ## up.isValid
@@ -2857,8 +2894,9 @@ case class SnowHousePipeStageScoreboardCheck(
         idx=3,
       )
       ## myPopValidVec.asBits
+      ## myOooOkayCond
     ) {
-      is (M"01001") {
+      is (M"01001-") {
         doPopHead(doUpIsFiring=true)
 
         //switch (
@@ -2921,7 +2959,7 @@ case class SnowHousePipeStageScoreboardCheck(
         //  rPingPongBlockState := False
         //}
       }
-      is (M"01010") {
+      is (M"01010-") {
         doPopLast(doUpIsFiring=true)
 
         when (
@@ -2956,86 +2994,12 @@ case class SnowHousePipeStageScoreboardCheck(
         //  rPingPongBlockState := False
         //}
       }
-      is (M"01011") {
-        // here we do dependency checking and try to schedule
-        // instructions out-of-order
-        // instead of stalling when there's a RaW hazard in the older
-        // instruction!
-        // As of this writing, the OoO issue window is very small,
-        // only up to two instructions.
-        // That could potentially be increased, maybe even without too
-        // much fmax loss?
-        //--------
-        // DEBUG: Let's try in-order scheduling using both buffer slots,
-        // and later implement OoO scheduling once in-order scheduling
-        // using the buffer is working correctly!
-        //doPopLast(doUpIsFiring=true)
-        //--------
-        val myBufPop = myOooRdBuf.io.pop
-        val myOooOkayCondMost = (
-          !myOooWaWHazardCheck
-          && !myOooWaRHazardCheckVec.orR
-          && (
-            myOooFwdRaWHazardCheckVec.last.orR
-            || myOooNonFwdRaWHazardCheckVec.last.orR
-          )
-          && (
-            !myOooFwdRaWHazardCheckVec.head.orR
-            && !myOooNonFwdRaWHazardCheckVec.head.orR
-          )
-          && (
-            myBufPop(2).splitOp.scoreboardOpCanBeOooIssued.andR
-            && myBufPop(1).splitOp.scoreboardOpCanBeOooIssued.andR
-          )
-          //&& (
-          //  // Force branches/jumps/calls/returns, etc. to be in-order
-          //  // At the time of writing, I'm not sure how I would handle
-          //  // scheduling OoO branches!
-          //  !myOooRdBuf.io.pop(2).splitOp.haveAnyJmpBrOp()
-          //  && !myOooRdBuf.io.pop(1).splitOp.haveAnyJmpBrOp()
-          //)
-          //&& (
-          //  // force memory instructions to be in-order (i.e., for MMIO)
-          //  // perhaps this should actually be an optional thing to check
-          //  // for?
-          //  // For some kinds of (probably just embedded) systems, perhaps
-          //  // this check doesn't need to be done?
-          //  !myOooRdBuf.io.pop(2).splitOp.opIsMemAccess
-          //  || !myOooRdBuf.io.pop(1).splitOp.opIsMemAccess
-          //)
-        )
-
-        val myOooOkayCond = (
-          myOooOkayCondMost
-          && rPingPongBlockState
-        )
-        //when (
-        //  myOooOkayCondMost
-        //  && up.isFiring
-        //) {
-        //  rPingPongBlockState := True
-        //}
-
-        //when (
-        //  myOooOkayCondMost
-        //  && up.isFiring
-        //) {
-        //}
-
-        //switch (
-        //  up.isFiring
-        //  ## rPingPongBlockState
-        //  ## rPingPongBlockCnt.payload.orR
-        //) {
-        //  is (M"111") {
-        //    rPingPongBlockCnt.payload := rPingPongBlockCnt.payload -1
-        //  }
-        //}
-
+      is (M"010111") {
         switch (
           (
-            myOooOkayCond
-            && up.isFiring
+            //myOooOkayCond
+            //&& 
+            up.isFiring
           )
           ## rPingPongBlockCnt.payload.orR
         ) {
@@ -3048,13 +3012,14 @@ case class SnowHousePipeStageScoreboardCheck(
           default {
           }
         }
+        doPopHead(doUpIsFiring=true)
 
-        when (myOooOkayCond) {
-          //rPingPongBlockState := up.isFiring
-          doPopHead(doUpIsFiring=true)
-        } otherwise {
-          doPopLast(doUpIsFiring=true)
-        }
+        //when (myOooOkayCond) {
+        //  //rPingPongBlockState := up.isFiring
+        //  doPopHead(doUpIsFiring=true)
+        //} otherwise {
+        //  doPopLast(doUpIsFiring=true)
+        //}
         def myOooIssueCnt = (
           upPayload(1).instrCnt.scoreboardCheckPayload.myOooIssueCnt
         )
@@ -3062,31 +3027,34 @@ case class SnowHousePipeStageScoreboardCheck(
         myOooIssueCnt.payload := rPingPongBlockCnt.payload
         //--------
       }
-      is (M"01101") {
+      is (M"010110") {
+        doPopLast(doUpIsFiring=true)
+      }
+      is (M"01101-") {
         cScoreboardCheck.duplicateIt()
         //rPingPongBlockState := False
         doPopHead(doUpIsFiring=false)
       }
-      is (M"01110") {
+      is (M"01110-") {
         cScoreboardCheck.duplicateIt()
         //rPingPongBlockState := False
         doPopLast(doUpIsFiring=false)
       }
-      is (M"01111") {
+      is (M"01111-") {
         cScoreboardCheck.duplicateIt()
         //rPingPongBlockState := False
         // Let's just schedule in-order here, as we have an upcoming
         // pipeline flush anyway.
         doPopLast(doUpIsFiring=false)
       }
-      is (M"01100") {
+      is (M"01100-") {
         //rPingPongBlockState := False
         upPayload(0) := up(pId)
         upPayload(1) := upPayload(0)
         // okay, now we can go to the next state!
         rScoreboardFlushState := ScoreboardFlushState.FLUSH
       }
-      is (M"11---") {
+      is (M"11----") {
         //rPingPongBlockState := False
         rPingPongBlockState := True
         rPingPongBlockCnt.payload := (
