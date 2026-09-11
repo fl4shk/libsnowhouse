@@ -802,9 +802,9 @@ case class SnowHouseConfig(
             //&& optScoreboardOooIssueWindow == None
           ) (
             //6
-            //4
+            4
             //2
-            3
+            //3
             //1
             //2
           ) else (
