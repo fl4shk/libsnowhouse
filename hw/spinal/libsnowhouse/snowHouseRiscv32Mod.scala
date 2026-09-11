@@ -1063,7 +1063,9 @@ object SnowHouseRiscv32PipeStageInstrDecode {
     upPayload.gprIdxVec.last := encInstrR.last.rd.resized
 
     upPayload.splitOp.setToDefault()
-    upPayload.splitOp.scoreboardOpCanBeOooIssued.head := True
+    if (upPayload.splitOp.scoreboardOpCanBeOooIssued != null) {
+      upPayload.splitOp.scoreboardOpCanBeOooIssued.head := True
+    }
     upPayload.splitOp.opIsDualWidth := False
     upPayload.aluOp := (
       LcvAluDel1InpOpEnum.ZERO
@@ -3995,7 +3997,7 @@ object SnowHouseRiscv32TestProgramArr {
     //"rv32ui-p-ld_st",
     //"rv32ui-p-jalr",
     //"rv32ui-p-jal",
-    //--------
+    ////--------
     //"rv32ui-p-slti",
     //"rv32ui-p-or",
     //"rv32ui-p-andi",

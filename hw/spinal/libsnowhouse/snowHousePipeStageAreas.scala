@@ -12364,30 +12364,36 @@ case class SnowHousePipeStageExecute(
           //init(0x0)
 
           Vec(
-            RegNextWhen(
-              outp.myRegPcVec.head, //+ cfg.instrSizeBytes,
-              cond=(
-                myTempCond
-                && !myTempOooIssueCnt.fire
-              ),
-            )
-            init(0x0),
-            RegNextWhen(
-              outp.myRegPcVec.head, //+ cfg.instrSizeBytes,
-              cond=(
-                myTempCond
-                //&& myTempOooIssueCnt.fire
-              ),
-            )
-            init(0x0),
-            RegNextWhen(
-              outp.myRegPcVec.head, //+ cfg.instrSizeBytes,
-              cond=(
-                myTempCond
-                && myTempOooIssueCnt.fire
-              ),
-            )
-            init(0x0),
+            (
+              RegNextWhen(
+                outp.myRegPcVec.head, //+ cfg.instrSizeBytes,
+                cond=(
+                  myTempCond
+                  && !myTempOooIssueCnt.fire
+                ),
+              )
+              init(0x0)
+            ),
+            (
+              RegNextWhen(
+                outp.myRegPcVec.head, //+ cfg.instrSizeBytes,
+                cond=(
+                  myTempCond
+                  //&& myTempOooIssueCnt.fire
+                ),
+              )
+              init(0x0)
+            ),
+            (
+              RegNextWhen(
+                outp.myRegPcVec.head, //+ cfg.instrSizeBytes,
+                cond=(
+                  myTempCond
+                  && myTempOooIssueCnt.fire
+                ),
+              )
+              init(0x0)
+            ),
           )
           //--------
           //val temp = Flow(

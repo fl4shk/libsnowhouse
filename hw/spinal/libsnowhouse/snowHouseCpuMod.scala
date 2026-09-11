@@ -1361,6 +1361,11 @@ object SnowHouseCpuPipeStageInstrDecode {
     //  (1 << upPayload.splitOp.jmpBrAlwaysEqNeOp.getWidth) - 1
     //)
     upPayload.splitOp.setToDefault()
+    if (upPayload.splitOp.scoreboardOpCanBeOooIssued != null) {
+      upPayload.splitOp.scoreboardOpCanBeOooIssued.head := (
+        !instrIsPre
+      )
+    }
     psId.myTempOpIsDualWidth := (
       RegNextWhen(
         next=instrIsPre,
