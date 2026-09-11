@@ -2741,50 +2741,53 @@ case class SnowHousePipeStageScoreboardCheck(
       )
     )
     myOooRdBuf.io.push.payload := up(pId)//.myRegPcVec.head
-    myOooRdBuf.io.push.splitOp.scoreboardOpCanBeOooIssued.last
-      .allowOverride
-    myOooRdBuf.io.push.splitOp.scoreboardOpCanBeOooIssued.last := {
-      // RaW hazards should prevent OoO scheduling
-      //RegNextWhen(
-      //  upPayload(1).gprIdx
-      //)
-      val temp = Vec.fill(cfg.regFileCfg.modRdPortCnt)(
-        Bool()
-      )
-      val myPayload = up(pId)
+    //myOooRdBuf.io.push.splitOp.scoreboardOpCanBeOooIssued.last
+    //  .allowOverride
+    //myOooRdBuf.io.push.splitOp.scoreboardOpCanBeOooIssued.last := {
+    //  // RaW hazards should prevent OoO scheduling
+    //  //RegNextWhen(
+    //  //  upPayload(1).gprIdx
+    //  //)
+    //  val temp = Vec.fill(cfg.regFileCfg.modRdPortCnt)(
+    //    Bool()
+    //  )
+    //  val myPayload = up(pId)
 
-      for (idx <- 0 until cfg.regFileCfg.modRdPortCnt) {
-        val rPrevWrGprIdx = (
-          RegNextWhen(
-            myPayload.gprIdxVec.last,
-            cond=myOooRdBuf.io.push.fire,//cId.up.isFiring,
-          )
-          init(0x0)
-        )
-        val myMainCond = (
-          myPayload.gprIdxVec(idx)
-          === rPrevWrGprIdx
-        )
-        temp(idx) := (
-          if (cfg.myHaveZeroReg) (
-            !myMainCond
-            || (
-              RegNextWhen(
-                !myPayload.gprIsNonZeroVec.last.last,
-                cond=myOooRdBuf.io.push.fire,//cId.up.isFiring,
-                init=False
-              )
-            )
-          ) else (
-            !myMainCond
-          )
-        )
-      }
-      (
-        myPayload.splitOp.scoreboardOpCanBeOooIssued.last
-        && temp.andR
-      )
-    }
+    //  for (idx <- 0 until cfg.regFileCfg.modRdPortCnt) {
+    //    val rPrevWrGprIdx = (
+    //      RegNextWhen(
+    //        myPayload.gprIdxVec.last,
+    //        cond=(
+    //          myOooRdBuf.io.push.fire//cId.up.isFiring,
+    //          && myOooRdBuf.io.push.splitOp.scoreboardOpCanBeOooIssued.last
+    //        ),
+    //      )
+    //      init(0x0)
+    //    )
+    //    val myMainCond = (
+    //      myPayload.gprIdxVec(idx)
+    //      === rPrevWrGprIdx
+    //    )
+    //    temp(idx) := (
+    //      if (cfg.myHaveZeroReg) (
+    //        !myMainCond
+    //        || (
+    //          RegNextWhen(
+    //            !myPayload.gprIsNonZeroVec.last.last,
+    //            cond=myOooRdBuf.io.push.fire,//cId.up.isFiring,
+    //            init=False
+    //          )
+    //        )
+    //      ) else (
+    //        !myMainCond
+    //      )
+    //    )
+    //  }
+    //  (
+    //    myPayload.splitOp.scoreboardOpCanBeOooIssued.last
+    //    && temp.andR
+    //  )
+    //}
     myOooRdBuf.io.pop.foreach(item => item.ready := False)
 
     for (kdx <- 1 until myOooRdBuf.cfg.depth) {
@@ -2807,9 +2810,9 @@ case class SnowHousePipeStageScoreboardCheck(
               if (myKdx == 0) {
                 myOooNonFwdRaWHazardCheckVec(myKdx)(jdx) := (
                   rMyNonFwdGprTagVec(idx).haveRaWHazard
-                  //|| (
-                  //  idx === myOooRdBuf.io.pop(2).gprIdxVec.last
-                  //)
+                  || (
+                    idx === myOooRdBuf.io.pop(2).gprIdxVec.last
+                  )
                 )
                 myOooFwdRaWHazardCheckVec(myKdx)(jdx) := (
                   rMyFwdGprTagVec(idx).haveRaWHazard
