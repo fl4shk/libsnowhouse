@@ -2950,19 +2950,24 @@ case class SnowHousePipeStageScoreboardCheck(
     //--------
     val myBufPop = myOooRdBuf.io.pop
     val myOooOkayCondMost = (
-      !myOooWaWHazardCheck
-      && !myOooWaRHazardCheckVec.orR
-      && (
-        myOooFwdRaWHazardCheckVec.last.orR
-        || myOooNonFwdRaWHazardCheckVec.last.orR
-      )
-      && (
-        !myOooFwdRaWHazardCheckVec.head.orR
-        && !myOooNonFwdRaWHazardCheckVec.head.orR
-      )
-      && (
-        myBufPop(2).splitOp.scoreboardOpCanBeOooIssued.last//andR
-        && myBufPop(1).splitOp.scoreboardOpCanBeOooIssued.last//andR
+      RegNext(
+        (
+          !myOooWaWHazardCheck
+          && !myOooWaRHazardCheckVec.orR
+          && (
+            myOooFwdRaWHazardCheckVec.last.orR
+            || myOooNonFwdRaWHazardCheckVec.last.orR
+          )
+          && (
+            !myOooFwdRaWHazardCheckVec.head.orR
+            && !myOooNonFwdRaWHazardCheckVec.head.orR
+          )
+          && (
+            myBufPop(2).splitOp.scoreboardOpCanBeOooIssued.last//andR
+            && myBufPop(1).splitOp.scoreboardOpCanBeOooIssued.last//andR
+          )
+        ),
+        init=False
       )
     )
 
