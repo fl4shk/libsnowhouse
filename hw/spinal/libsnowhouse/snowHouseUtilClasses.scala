@@ -797,7 +797,10 @@ case class SnowHouseConfig(
           //)
         ) + 3//2//1//2//1//3//2//1//2//1//2//6//5//4//6//5//4//3//2//3//4//5//6//3//6//5//4//3//6//5//4//3//6//5//4//3//2//3//2//3//2//3//2//5//4//3//5
         + (
-          if (optScoreboard) (
+          if (
+            optScoreboard
+            && optScoreboardOooIssueWindow == None
+          ) (
             //6
             //4
             2
