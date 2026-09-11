@@ -2852,7 +2852,7 @@ case class SnowHousePipeStageScoreboardCheck(
                   rMyNonFwdGprTagVec(idx).haveRaWHazard
                   || (
                     //idx === myOooRdBuf.io.pop(2).gprIdxVec.last
-                    myOooRdBuf.io.pop(2).readsGprIdxVec(idx)
+                    myOooRdBuf.io.pop(2).writesGprIdxVec(idx)
                   )
                 )
                 myOooFwdRaWHazardCheckVec(myKdx)(jdx) := (
