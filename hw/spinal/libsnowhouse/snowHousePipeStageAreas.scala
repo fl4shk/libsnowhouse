@@ -2507,9 +2507,8 @@ case class SnowHousePipeStageScoreboardCheck(
       if (isNonFwd) (
         this.fire
       ) else (
-        //this.fire
-        //&& 
-        this.cnt.msb
+        this.fire
+        && this.cnt.msb
       )
     )
   }
@@ -3304,35 +3303,35 @@ case class SnowHousePipeStageScoreboardCheck(
   }
 
   for (idx <- 0 until cfg.numGprs) {
-    //when (
-    //  //up.isFiring
-    //  down.isFiring
-    //  && rMyFwdGprTagVec(idx).fire
-    //  && !rMyFwdGprTagVec(idx).cnt.msb
-    //) {
-    //  rMyFwdGprTagVec(idx).cnt := (
-    //    rMyFwdGprTagVec(idx).cnt - 1
-    //  )
-    //}
-    switch (
-      (
-        //up.isFiring
-        down.isFiring
-      )
-      ## rMyFwdGprTagVec(idx).fire
-      ## rMyFwdGprTagVec(idx).cnt.msb
+    when (
+      //up.isFiring
+      down.isFiring
+      && rMyFwdGprTagVec(idx).fire
+      && !rMyFwdGprTagVec(idx).cnt.msb
     ) {
-      is (M"110") {
-        rMyFwdGprTagVec(idx).cnt := (
-          rMyFwdGprTagVec(idx).cnt - 1
-        )
-      }
-      is (M"101") {
-        rMyFwdGprTagVec(idx).cnt := (
-          cfg.optForFmaxPsExFwdSize - 2
-        )
-      }
+      rMyFwdGprTagVec(idx).cnt := (
+        rMyFwdGprTagVec(idx).cnt - 1
+      )
     }
+    //switch (
+    //  (
+    //    //up.isFiring
+    //    down.isFiring
+    //  )
+    //  ## rMyFwdGprTagVec(idx).fire
+    //  ## rMyFwdGprTagVec(idx).cnt.msb
+    //) {
+    //  is (M"110") {
+    //    rMyFwdGprTagVec(idx).cnt := (
+    //      rMyFwdGprTagVec(idx).cnt - 1
+    //    )
+    //  }
+    //  is (M"101") {
+    //    rMyFwdGprTagVec(idx).cnt := (
+    //      cfg.optForFmaxPsExFwdSize - 2
+    //    )
+    //  }
+    //}
     when (
       rMyFwdGprTagVec(idx).fire
       && (
