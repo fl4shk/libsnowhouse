@@ -2280,7 +2280,44 @@ case class SnowHousePipeStageInstrDecode(
   }
   if (cfg.optScoreboardOooIssueWindow != None) {
     upPayload(1).splitOp.scoreboardOpCanBeOooIssued.last := (
-      (
+      {
+        // RaW hazards should prevent OoO scheduling
+        //RegNextWhen(
+        //  upPayload(1).gprIdx
+        //)
+        val temp = Vec.fill(cfg.regFileCfg.modRdPortCnt)(
+          Bool()
+        )
+        for (idx <- 0 until cfg.regFileCfg.modRdPortCnt) {
+          val rPrevWrGprIdx = (
+            RegNextWhen(
+              upPayload(1).gprIdxVec.last,
+              cond=cId.up.isFiring,
+            )
+            init(0x0)
+          )
+          val myMainCond = (
+            upPayload(1).gprIdxVec(idx)
+            === rPrevWrGprIdx
+          )
+          temp(idx) := (
+            if (cfg.myHaveZeroReg) (
+              !myMainCond
+              || (
+                RegNextWhen(
+                  upPayload(1).gprIsNonZeroVec.last.last,
+                  cond=cId.up.isFiring,
+                  init=False
+                )
+              )
+            ) else (
+              !myMainCond
+            )
+          )
+        }
+        temp.orR
+      }
+      && (
         // looks like maybe an instruction that's the destination of a
         // branch needs to *also* NOT be scheduled OoO
         RegNextWhen(
@@ -2470,8 +2507,9 @@ case class SnowHousePipeStageScoreboardCheck(
       if (isNonFwd) (
         this.fire
       ) else (
-        this.fire
-        && this.cnt.msb
+        //this.fire
+        //&& 
+        this.cnt.msb
       )
     )
   }
@@ -2724,10 +2762,14 @@ case class SnowHousePipeStageScoreboardCheck(
               if (myKdx == 0) {
                 myOooNonFwdRaWHazardCheckVec(myKdx)(jdx) := (
                   rMyNonFwdGprTagVec(idx).haveRaWHazard
-                  || (
-                    idx
-                    === myOooRdBuf.io.pop(2).gprIdxVec.last
-                  )
+                  //|| (
+                  // // NOTE:
+                  // // this is found in the Instruction Decode stage's
+                  // // computation of
+                  // // `splitOp.scoreboardOpCanBeOooIssued.last`
+                  //  idx
+                  //  === myOooRdBuf.io.pop(2).gprIdxVec.last
+                  //)
                 )
                 myOooFwdRaWHazardCheckVec(myKdx)(jdx) := (
                   rMyFwdGprTagVec(idx).haveRaWHazard
@@ -3262,15 +3304,34 @@ case class SnowHousePipeStageScoreboardCheck(
   }
 
   for (idx <- 0 until cfg.numGprs) {
-    when (
-      //up.isFiring
-      down.isFiring
-      && rMyFwdGprTagVec(idx).fire
-      && !rMyFwdGprTagVec(idx).cnt.msb
-    ) {
-      rMyFwdGprTagVec(idx).cnt := (
-        rMyFwdGprTagVec(idx).cnt - 1
+    //when (
+    //  //up.isFiring
+    //  down.isFiring
+    //  && rMyFwdGprTagVec(idx).fire
+    //  && !rMyFwdGprTagVec(idx).cnt.msb
+    //) {
+    //  rMyFwdGprTagVec(idx).cnt := (
+    //    rMyFwdGprTagVec(idx).cnt - 1
+    //  )
+    //}
+    switch (
+      (
+        //up.isFiring
+        down.isFiring
       )
+      ## rMyFwdGprTagVec(idx).fire
+      ## rMyFwdGprTagVec(idx).cnt.msb
+    ) {
+      is (M"110") {
+        rMyFwdGprTagVec(idx).cnt := (
+          rMyFwdGprTagVec(idx).cnt - 1
+        )
+      }
+      is (M"101") {
+        rMyFwdGprTagVec(idx).cnt := (
+          cfg.optForFmaxPsExFwdSize - 2
+        )
+      }
     }
     when (
       rMyFwdGprTagVec(idx).fire
