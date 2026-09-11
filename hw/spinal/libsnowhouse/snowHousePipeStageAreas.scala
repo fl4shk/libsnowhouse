@@ -2284,7 +2284,10 @@ case class SnowHousePipeStageInstrDecode(
         // looks like maybe an instruction that's the destination of a
         // branch needs to *also* NOT be scheduled OoO
         RegNextWhen(
-          !upPayload(1).splitOp.haveAnyJmpBrOp(),
+          (
+            !upPayload(1).splitOp.haveAnyJmpBrOp()
+            && !shouldClearExtraDecodeInfo
+          ),
           cond=cId.up.isFiring,
           init=False,
         )
