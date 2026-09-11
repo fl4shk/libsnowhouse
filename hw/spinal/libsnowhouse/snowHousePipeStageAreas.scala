@@ -3328,9 +3328,9 @@ case class SnowHousePipeStageScoreboardCheck(
         )
       }
       is (M"101") {
-        rMyFwdGprTagVec(idx).cnt := (
-          cfg.optForFmaxPsExFwdSize - 2
-        )
+        //rMyFwdGprTagVec(idx).cnt := (
+        //  cfg.optForFmaxPsExFwdSize - 2
+        //)
       }
     }
     when (
@@ -3357,6 +3357,9 @@ case class SnowHousePipeStageScoreboardCheck(
     ) {
       //rFwdTagAllocVec(myScoreboardCommitStm.fwdTag) := False
       rMyFwdGprTagVec(idx).valid := False
+      rMyFwdGprTagVec(idx).cnt := (
+        cfg.optForFmaxPsExFwdSize - 2
+      )
     }
     when (
       rMyNonFwdGprTagVec(idx).fire
