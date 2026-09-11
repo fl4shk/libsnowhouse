@@ -2985,7 +2985,8 @@ case class SnowHousePipeStageScoreboardCheck(
             myBufPop(2).splitOp.scoreboardOpCanBeOooIssued.last//andR
             && myBufPop(1).splitOp.scoreboardOpCanBeOooIssued.last//andR
           )
-          && myPopValidVec.head
+          //&& myPopValidVec.head
+          && myPopValidVec.andR
         ),
         init=False
       )
