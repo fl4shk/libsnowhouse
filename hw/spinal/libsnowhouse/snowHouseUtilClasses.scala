@@ -1120,13 +1120,13 @@ case class SnowHouseConfig(
   }
   def mainWidth = shRegFileCfg.mainWidth
   def regFileWordCountArr = (
-    if (optScoreboardOooIssueWindow != None) (
-      shRegFileCfg.wordCountArr.map(
-        item => item * 4//3//2
-      )
-    ) else (
+    //if (optScoreboardOooIssueWindow != None) (
+    //  shRegFileCfg.wordCountArr.map(
+    //    item => item * 4//3//2
+    //  )
+    //) else (
       shRegFileCfg.wordCountArr
-    )
+    //)
   )
   def regFileModRdPortCnt = shRegFileCfg.modRdPortCnt
   def regFileModStageCnt = (
@@ -1215,8 +1215,8 @@ case class SnowHouseConfig(
   val optScoreboardTagWidth = (
     //6
     //optScoreboardReorderBufWidth
-    //4
-    log2Up(numGprs) - 1
+    4
+    //log2Up(numGprs) - 1
     //3
   )
 
