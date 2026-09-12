@@ -3765,7 +3765,8 @@ case class SnowHouseRiscv32WithDuplDualRam(
   )
   val myIcachePrefetcher = LcvBusCachePrefetcher(
     cfg=LcvBusCachePrefetcherConfig(
-      innerCfg=cfg.shCfg.subCfg.lcvIbusEtcCfg
+      innerCfg=cfg.shCfg.subCfg.lcvIbusEtcCfg,
+      numLinesAhead=1,
     )
   )
   val icache = LcvBusCache(
