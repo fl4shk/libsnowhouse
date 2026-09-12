@@ -3763,9 +3763,16 @@ case class SnowHouseRiscv32WithDuplDualRam(
       initBigInt=Some(myMemInitBigInt),
     )
   )
+  val myIcachePrefetcher = LcvBusCachePrefetcher(
+    cfg=LcvBusCachePrefetcherConfig(
+      innerCfg=cfg.shCfg.subCfg.lcvIbusEtcCfg
+    )
+  )
   val icache = LcvBusCache(
     cfg=cfg.shCfg.subCfg.lcvIbusEtcCfg
   )
+  icache.io.loBus << myIcachePrefetcher.io.hiBus 
+  myIcachePrefetcher.io.haveHit << icache.io.haveHit
 
   //val myLcvDbusEtcCfg = cfg.shCfg.subCfg.lcvDbusEtcCfg.hiBusCfg
   //val myDataDwAdapter = LcvBusSimpleBurstOnlyDataWidthDownAdapter(
@@ -3797,14 +3804,20 @@ case class SnowHouseRiscv32WithDuplDualRam(
 
   //myInstrMem.io.bus << cpu.io.lcvIbus
   //myDataMem.io.bus <-/< cpu.io.lcvDbus
-  cpu.io.lcvIbus.h2dBus.translateInto(icache.io.loBus.h2dBus)(
+  cpu.io.lcvIbus.h2dBus.translateInto(
+    //icache.io.loBus.h2dBus
+    myIcachePrefetcher.io.loBus.h2dBus
+  )(
     dataAssignment=(outp, inp) => {
       outp.addr.allowOverride
       outp := inp
       outp.addr.msb := False
     }
   )
-  cpu.io.lcvIbus.d2hBus << icache.io.loBus.d2hBus
+  cpu.io.lcvIbus.d2hBus << (
+    //icache.io.loBus.d2hBus
+    myIcachePrefetcher.io.loBus.d2hBus
+  )
 
 
   myInstrMem.io.bus <-/< icache.io.hiBus 
