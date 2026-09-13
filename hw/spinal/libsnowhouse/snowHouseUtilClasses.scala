@@ -432,7 +432,7 @@ case class SnowHouseSubConfig(
       ),
       //hiBusCacheCfg=None,
       busD2hFifoLatency=0,
-      //prefetchNumLinesAhead=Some(4),
+      prefetchNumLinesAhead=Some(4),
     )
   )
   val dcacheCfg = (
