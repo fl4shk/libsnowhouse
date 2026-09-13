@@ -2743,6 +2743,8 @@ case class SnowHousePipeStageScoreboardCheck(
     )
 
     //val myPopValidVec = Vec(myOooRdBuf.io.pop.map(item => item.valid))
+
+    val myTempOooRdBufPopVec = cloneOf(myOooRdBuf.io.pop)
     val myFullPopValidVec = Vec(myOooRdBuf.io.pop.map(item => item.valid))
     val myPopValidVec = Vec.fill(myOooRdBufWindow)(
       Bool()
@@ -2813,20 +2815,33 @@ case class SnowHousePipeStageScoreboardCheck(
     //    && temp.andR
     //  )
     //}
-    myOooRdBuf.io.pop.foreach(item => item.ready := False)
 
+    //myOooRdBuf.io.pop.foreach(item => item.ready := False)
+    //val myTempOooRdBufPopVec = Vec.fill(myOooRdBufWindow)(
+    //  Stream(cloneOf(myOooRdBuf.io.pop.head.payload))
+    //)
+
+    for (kdx <- 0 until myOooRdBufExtraSize) {
+      myTempOooRdBufPopVec(kdx) := myTempOooRdBufPopVec(kdx).getZero
+      myOooRdBuf.io.pop(kdx).ready := False
+    }
     for (kdx <- myOooRdBufExtraSize until myOooRdBuf.cfg.depth) {
+      myTempOooRdBufPopVec(kdx).ready := False
+      myTempOooRdBufPopVec(kdx) << myOooRdBuf.io.pop(kdx)
+
       val myKdx = kdx - myOooRdBufExtraSize
       if (myKdx == 0) {
         myPopValidVec(myKdx) := (
           //RegNext(
-            myOooRdBuf.io.pop(kdx).valid//,
+            //myOooRdBuf.io.pop(kdx).valid//,
+            myTempOooRdBufPopVec(kdx).valid
           //  init=False
           //)
         )
       } else if (myKdx == 1) {
         myPopValidVec(myKdx) := (
-          myOooRdBuf.io.pop(kdx).valid
+          //myOooRdBuf.io.pop(kdx).valid
+          myTempOooRdBufPopVec(kdx).valid
         )
       } else {
         require(
@@ -2839,7 +2854,8 @@ case class SnowHousePipeStageScoreboardCheck(
           //upPayload(1).gprIdxVec(jdx)
           //myOooRdBuf.io.pop(kdx).valid
           //## 
-          myOooRdBuf.io.pop(kdx).gprIdxVec(jdx)
+          //myOooRdBuf.io.pop(kdx).gprIdxVec(jdx)
+          myTempOooRdBufPopVec(kdx).gprIdxVec(jdx)
         ) {
           for (idx <- 0 until cfg.numGprs) {
             is (
@@ -2852,7 +2868,8 @@ case class SnowHousePipeStageScoreboardCheck(
                   rMyNonFwdGprTagVec(idx).haveRaWHazard
                   || (
                     //idx === myOooRdBuf.io.pop(2).gprIdxVec.last
-                    myOooRdBuf.io.pop(2).writesGprIdxVec(idx)
+                    //myOooRdBuf.io.pop(2).writesGprIdxVec(idx)
+                    myTempOooRdBufPopVec(2).writesGprIdxVec(idx)
                   )
                 )
                 myOooFwdRaWHazardCheckVec(myKdx)(jdx) := (
@@ -2889,11 +2906,14 @@ case class SnowHousePipeStageScoreboardCheck(
       // NOTE:
       // we do the two checks for `valid` in the big `switch` statement!  
       val temp = (
-        myOooRdBuf.io.pop(1).gprIdxVec.last
-        === myOooRdBuf.io.pop(2).gprIdxVec.last
+        //myOooRdBuf.io.pop(1).gprIdxVec.last
+        //=== myOooRdBuf.io.pop(2).gprIdxVec.last
+        myTempOooRdBufPopVec(1).gprIdxVec.last
+        === myTempOooRdBufPopVec(2).gprIdxVec.last
       )
       if (cfg.myHaveZeroReg) (
-        temp && myOooRdBuf.io.pop(2).gprIsNonZeroVec.last.last
+        //temp && myOooRdBuf.io.pop(2).gprIsNonZeroVec.last.last
+        temp && myTempOooRdBufPopVec(2).gprIsNonZeroVec.last.last
       ) else (
         temp
       )
@@ -2904,13 +2924,16 @@ case class SnowHousePipeStageScoreboardCheck(
       val temp = (
         //myOooRdBuf.io.pop(1).gprIdxVec(idx)
         //=== myOooRdBuf.io.pop(2).gprIdxVec.last
-        myOooRdBuf.io.pop(2).gprIdxVec(idx)
-        === myOooRdBuf.io.pop(1).gprIdxVec.last
+        //myOooRdBuf.io.pop(2).gprIdxVec(idx)
+        //=== myOooRdBuf.io.pop(1).gprIdxVec.last
+        myTempOooRdBufPopVec(2).gprIdxVec(idx)
+        === myTempOooRdBufPopVec(1).gprIdxVec.last
       )
       myOooWaRHazardCheckVec(idx) := (
         if (cfg.myHaveZeroReg) (
           //temp && myOooRdBuf.io.pop(1).gprIsNonZeroVec(idx).last
-          temp && myOooRdBuf.io.pop(2).gprIsNonZeroVec(idx).last
+          //temp && myOooRdBuf.io.pop(2).gprIsNonZeroVec(idx).last
+          temp && myTempOooRdBufPopVec(2).gprIsNonZeroVec(idx).last
         ) else (
           temp
         )
@@ -2918,7 +2941,8 @@ case class SnowHousePipeStageScoreboardCheck(
     }
 
     val myTempInFlushCondVec = (
-      myOooRdBuf.io.pop.map(
+      //myOooRdBuf.io.pop
+      myTempOooRdBufPopVec.map(
         outerItem => (
           Vec(
             outerItem.instrCnt.myPsIdInFlushBubble.map(item => (
@@ -2933,24 +2957,25 @@ case class SnowHousePipeStageScoreboardCheck(
     def doPopHead(
       doUpIsFiring: Boolean,
     ): Unit = {
-      upPayload(0) := myOooRdBuf.io.pop(1).payload
+      //upPayload(0) := myOooRdBuf.io.pop(1).payload
+      upPayload(0) := myTempOooRdBufPopVec(1).payload
       upPayload(1) := upPayload(0)
-      myOooRdBuf.io.pop(1).ready := (
+      myTempOooRdBufPopVec(1).ready := (
         if (doUpIsFiring) (
           up.isFiring
         ) else (
           down.isFiring
         )
       )
-      myOooRdBuf.io.pop(2).ready := False
+      myTempOooRdBufPopVec(2).ready := False
     }
     def doPopLast(
       doUpIsFiring: Boolean,
     ): Unit = {
-      upPayload(0) := myOooRdBuf.io.pop(2).payload
+      upPayload(0) := myTempOooRdBufPopVec(2).payload
       upPayload(1) := upPayload(0)
-      myOooRdBuf.io.pop(1).ready := False
-      myOooRdBuf.io.pop(2).ready := (
+      myTempOooRdBufPopVec(1).ready := False
+      myTempOooRdBufPopVec(2).ready := (
         if (doUpIsFiring) (
           up.isFiring
         ) else (
@@ -2989,7 +3014,7 @@ case class SnowHousePipeStageScoreboardCheck(
     // using the buffer is working correctly!
     //doPopLast(doUpIsFiring=true)
     //--------
-    val myBufPop = myOooRdBuf.io.pop
+    val myBufPop = myTempOooRdBufPopVec
     val myOooOkayCondMost = (
       //RegNext(
         (
