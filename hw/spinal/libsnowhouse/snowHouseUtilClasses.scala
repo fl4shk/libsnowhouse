@@ -330,6 +330,7 @@ case class SnowHouseSubConfig(
   icacheLineWordMemRamStyleXilinx: String="auto",
   icacheLineAttrsMemRamStyleAltera: String="no_rw_check, MLAB",
   icacheLineAttrsMemRamStyleXilinx: String="auto",
+  icachePrefetchNumLinesAhead: Option[Int]=Some(2),
   //--------
   haveDcache: Boolean=true,
   dcacheDepthWords: Int=(
@@ -432,7 +433,13 @@ case class SnowHouseSubConfig(
       ),
       //hiBusCacheCfg=None,
       busD2hFifoLatency=0,
-      prefetchNumLinesAhead=Some(4),
+      prefetchNumLinesAhead=(
+        // MeltedMoon DOOM Timedemo 3 FPS:
+        //None      // 2134 * 35 / 4422 = 16.89 FPS
+        //Some(2)
+        //Some(4)   // 2134 * 35 / 4453 = 16.77 FPS
+        icachePrefetchNumLinesAhead
+      ),
     )
   )
   val dcacheCfg = (

@@ -1862,6 +1862,12 @@ case class SnowHouseRiscv32Config(
     //"auto"
     "block"
   ),
+  icachePrefetchNumLinesAhead: Option[Int]=(
+    // Melted Moon DOOM Timedemo 3 FPS:
+    //None      // 2134 * 35 / 4422 = 16.89 FPS
+    Some(2)
+    //Some(4)   // 2134 * 35 / 4453 = 16.77 FPS
+  ),
   dcacheLineWordMemRamStyleAltera: String=(
     "no_rw_check, M10K"
   ),
@@ -2028,6 +2034,7 @@ case class SnowHouseRiscv32Config(
         icacheLineWordMemRamStyleXilinx=icacheLineWordMemRamStyleXilinx,
         icacheLineAttrsMemRamStyleAltera=icacheLineAttrsMemRamStyleAltera,
         icacheLineAttrsMemRamStyleXilinx=icacheLineAttrsMemRamStyleXilinx,
+        icachePrefetchNumLinesAhead=icachePrefetchNumLinesAhead,
         haveDcache=true,
         dcacheDepthWords=dcacheDepthWords,
         dcacheNumWays=dcacheNumWays,
