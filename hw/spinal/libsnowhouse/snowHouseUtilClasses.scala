@@ -434,10 +434,6 @@ case class SnowHouseSubConfig(
       //hiBusCacheCfg=None,
       busD2hFifoLatency=0,
       prefetchNumLinesAhead=(
-        // MeltedMoon DOOM Timedemo 3 FPS:
-        //None      // 2134 * 35 / 4422 = 16.89 FPS
-        //Some(2)
-        //Some(4)   // 2134 * 35 / 4453 = 16.77 FPS
         icachePrefetchNumLinesAhead
       ),
     )
