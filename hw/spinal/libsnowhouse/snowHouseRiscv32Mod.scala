@@ -1879,6 +1879,9 @@ case class SnowHouseRiscv32Config(
     //"auto"
     "block"
   ),
+  dcachePrefetchNumLinesAhead: Option[Int]=(
+    Some(2),
+  ),
   branchTgtBufSizeLog2: Int=(
     //log2Up(128)
     log2Up(64)
@@ -2041,6 +2044,7 @@ case class SnowHouseRiscv32Config(
         dcacheLineWordMemRamStyleXilinx=dcacheLineWordMemRamStyleXilinx,
         dcacheLineAttrsMemRamStyleAltera=dcacheLineAttrsMemRamStyleAltera,
         dcacheLineAttrsMemRamStyleXilinx=dcacheLineAttrsMemRamStyleXilinx,
+        dcachePrefetchNumLinesAhead=dcachePrefetchNumLinesAhead,
         totalNumBusHosts=2,
         optCacheBusSrcWidth=None,
       )

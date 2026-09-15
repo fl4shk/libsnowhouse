@@ -330,7 +330,7 @@ case class SnowHouseSubConfig(
   icacheLineWordMemRamStyleXilinx: String="auto",
   icacheLineAttrsMemRamStyleAltera: String="no_rw_check, MLAB",
   icacheLineAttrsMemRamStyleXilinx: String="auto",
-  icachePrefetchNumLinesAhead: Option[Int]=Some(2),
+  icachePrefetchNumLinesAhead: Option[Int]=Some(16),
   //--------
   haveDcache: Boolean=true,
   dcacheDepthWords: Int=(
@@ -346,6 +346,7 @@ case class SnowHouseSubConfig(
   dcacheLineWordMemRamStyleXilinx: String="auto",
   dcacheLineAttrsMemRamStyleAltera: String="no_rw_check, MLAB",
   dcacheLineAttrsMemRamStyleXilinx: String="auto",
+  dcachePrefetchNumLinesAhead: Option[Int]=Some(2),
   //--------
   totalNumBusHosts: Int=2,
   optCacheBusSrcWidth: Option[Int]=None,
@@ -484,6 +485,9 @@ case class SnowHouseSubConfig(
       ),
       //hiBusCacheCfg=None,
       busD2hFifoLatency=0,
+      prefetchNumLinesAhead=(
+        dcachePrefetchNumLinesAhead
+      ),
     )
   )
   val cacheBusSrcWidth = (
