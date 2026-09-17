@@ -1862,6 +1862,9 @@ case class SnowHouseRiscv32Config(
     //"auto"
     "block"
   ),
+  icacheBusD2hFifoLatency: Int=(
+    0
+  ),
   icachePrefetchNumLinesAhead: Option[Int]=(
     Some(2),
   ),
@@ -1878,6 +1881,9 @@ case class SnowHouseRiscv32Config(
   dcacheLineAttrsMemRamStyleXilinx: String=(
     //"auto"
     "block"
+  ),
+  dcacheBusD2hFifoLatency: Int=(
+    0
   ),
   dcachePrefetchNumLinesAhead: Option[Int]=(
     Some(2),
@@ -2034,6 +2040,7 @@ case class SnowHouseRiscv32Config(
         icacheLineWordMemRamStyleXilinx=icacheLineWordMemRamStyleXilinx,
         icacheLineAttrsMemRamStyleAltera=icacheLineAttrsMemRamStyleAltera,
         icacheLineAttrsMemRamStyleXilinx=icacheLineAttrsMemRamStyleXilinx,
+        icacheBusD2hFifoLatency=icacheBusD2hFifoLatency,
         icachePrefetchNumLinesAhead=icachePrefetchNumLinesAhead,
         haveDcache=true,
         dcacheDepthWords=dcacheDepthWords,
@@ -2044,6 +2051,7 @@ case class SnowHouseRiscv32Config(
         dcacheLineWordMemRamStyleXilinx=dcacheLineWordMemRamStyleXilinx,
         dcacheLineAttrsMemRamStyleAltera=dcacheLineAttrsMemRamStyleAltera,
         dcacheLineAttrsMemRamStyleXilinx=dcacheLineAttrsMemRamStyleXilinx,
+        dcacheBusD2hFifoLatency=dcacheBusD2hFifoLatency,
         dcachePrefetchNumLinesAhead=dcachePrefetchNumLinesAhead,
         totalNumBusHosts=2,
         optCacheBusSrcWidth=None,
