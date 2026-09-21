@@ -55,7 +55,7 @@ static constexpr inline u64 zero_extend(u64 val, size_t width) {
 class MeltedMoonDebugRiscvEmu final {
 public:     // constants
      // increment this over time!
-    static constexpr u64 SAVESTATE_VERSION = 0x0u;
+    static constexpr u64 SAVESTATE_VERSION = 0x1ull;
     
     static constexpr u32 ADDR_PRINT = 0x6000000ul;
     static constexpr u32 ADDR_EXIT = 0x6000004ul;
@@ -592,6 +592,8 @@ private:        // variables
     //snowhousecpu_dasm_info_t _dasm;
     u32 _instr_start_pc = 0u;
     u32 _pc = 0u;
+    u64 _saved_timeval_sec = 0x0u;
+    u64 _saved_timeval_usec = 0x0u;
     u64 _mmio_udiv64_inp_left = 0x0ul;
     u64 _mmio_udiv64_inp_right = 0x0ul;
     u64 _mmio_udiv64_outp_quot = 0x0ul;
@@ -618,6 +620,7 @@ private:        // variables
 
     //std::optional<u8*> _sw_wrote_to_fb_end = std::nullopt;
     timeval* _tp = nullptr;
+    //timeval _saved_tp;
     //bool _sw_read_from_tp = false;
     ExecOneInstrRet _my_exec_one_instr_ret;
     bool _do_printing = true;
@@ -638,6 +641,9 @@ public:     // functions
 
     void write_savestate(const char* filename);
     void read_savestate(const char* filename);
+    inline timeval saved_tp() const {
+        return 
+    }
     
     //inline int my_dasm_rd32_func(u8* buf, size_t offset) {
     //    //memcpy(buf, &rd32_buf_src, sizeof(rd32_buf_src));

@@ -674,6 +674,9 @@ auto MeltedMoonDebugRiscvEmu::exec_one_instr(
     const std::optional<u32>& n_enc_instr
 ) -> ExecOneInstrRet {
     _tp = &n_tp;
+    _saved_timeval_sec = n_tp.tv_sec;
+    _saved_timeval_usec = n_tp.tv_usec;
+
     _do_printing = n_do_printing;
 
     //_my_exec_one_instr_ret.sw_wrote_to_fb_end = std::nullopt;
