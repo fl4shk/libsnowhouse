@@ -647,6 +647,9 @@ public:     // functions
         ret.tv_usec = _saved_timeval_usec;
         return ret;
     }
+    inline const std::array<u32, NUM_GPRS>& gpr_file() const {
+        return _gpr_file;
+    }
     
     //inline int my_dasm_rd32_func(u8* buf, size_t offset) {
     //    //memcpy(buf, &rd32_buf_src, sizeof(rd32_buf_src));
