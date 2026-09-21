@@ -1,4 +1,5 @@
 #include "MeltedMoonDebugRiscvEmu.hpp"
+#include <meta>
 
 MeltedMoonDebugRiscvEmu::MeltedMoonDebugRiscvEmu(
     const char* filename, u32 s_do_extra_print_start_pc
@@ -2008,4 +2009,256 @@ u32 MeltedMoonDebugRiscvEmu::_bus_read(
         );
     }
     return ret;
+}
+
+namespace meta = std::meta;
+//static consteval auto melted_moon_debug_riscv_emu_member_named(
+//)
+
+//template<typename T>
+//consteval T my_extract(
+//    meta::info info
+//) {
+//    return meta::extract<T>(info);
+//}
+
+void MeltedMoonDebugRiscvEmu::write_savestate(
+    const char* filename
+) {
+    //constexpr auto ctx = std::meta::access_context::current();
+    //for (
+    //    constexpr std::meta::info field:
+    //    std::meta::nonstatic_data_members_of(
+    //        ^^MeltedMoonDebugRiscvEmu, ctx
+    //    )
+    //) {
+    //}
+    //std::printf(
+    //    "write_savestate(): "
+    //    "number of automatically serdes members: %llu\n",
+    //    (unsigned long long)_num_automatic_serdes_members()
+    //);
+    //template for (
+    //    constexpr auto const x: {size_t(0), _num_members()}
+    //) {
+    //    std::cout << [:_member_at(x):] << " ";
+    //}
+
+    if (auto f = std::fopen(filename, "w"); f) {
+        //--------
+        {
+            u64 my_savestate_version = SAVESTATE_VERSION;
+            std::fwrite(
+                &my_savestate_version,
+                sizeof(my_savestate_version), 1u,
+                f
+            );
+
+            std::fwrite(
+                &_gpr_file[0],
+                sizeof(u32), NUM_GPRS,
+                f
+            );
+
+            //std::array<u32, NUM_GPRS> _gpr_file;
+            //std::string _to_dbg_print;
+            //std::unique_ptr<u8[]> _mem;
+            //std::unique_ptr<u8[]> _fb_0_mem;
+            //std::unique_ptr<u8[]> _fb_1_mem;
+
+            u64 temp_to_dbg_print_size = u64(_to_dbg_print.size());
+            std::fwrite(
+                &temp_to_dbg_print_size,
+                sizeof(temp_to_dbg_print_size), 1ul,
+                f
+            );
+            std::fwrite(
+                _to_dbg_print.data(),
+                sizeof(char), temp_to_dbg_print_size,
+                f
+            );
+            std::fwrite(
+                _mem.get(),
+                sizeof(u8), MEM_SIZE, 
+                f
+            );
+            std::fwrite(
+                _fb_0_mem.get(),
+                sizeof(u8), SCREENWIDTH * FULL_SCREENHEIGHT, 
+                f
+            );
+            std::fwrite(
+                _fb_1_mem.get(),
+                sizeof(u8), SCREENWIDTH * FULL_SCREENHEIGHT, 
+                f
+            );
+        }
+        //--------
+        {
+            template for (
+                constexpr auto member:
+                std::define_static_array(meta::nonstatic_data_members_of(
+                    ^^MeltedMoonDebugRiscvEmu,
+                    meta::access_context::current()
+                ))
+            ) {
+                if constexpr (
+                    //std::is_arithmetic_v<decltype(extracted)>
+                    meta::is_arithmetic_type(meta::type_of(member))
+                ) {
+                    auto extracted = (*this).[:member:];
+
+                    printout(
+                        "NOTE: saving this member: ",
+                        "\"",
+                            //meta::display_string_of(^^member).data(),
+                            meta::identifier_of(member).data(),
+                        "\"",
+                        ": ",
+                        extracted,
+                        "\n"
+                    );
+
+                    std::fwrite(
+                        &extracted,
+                        sizeof(char), sizeof(extracted),
+                        f
+                    );
+                }
+            }
+        }
+        //--------
+        std::fclose(f);
+    } else {
+        std::fprintf(
+            stderr,
+            "write_savestate(): "
+            "ERROR: "
+            "couldn't open filename \"%s\"\n",
+            filename
+        );
+        std::exit(1);
+    }
+}
+void MeltedMoonDebugRiscvEmu::read_savestate(
+    const char* filename
+) {
+    if (auto f = std::fopen(filename, "r"); f) {
+        //--------
+        {
+            u64 my_savestate_version = SAVESTATE_VERSION;
+            std::fread(
+                &my_savestate_version,
+                sizeof(my_savestate_version), 1u,
+                f
+            );
+            if (my_savestate_version != SAVESTATE_VERSION) {
+                std::fprintf(
+                    stderr,
+                    "read_savestate(): "
+                    "ERROR: "
+                    "Savestate file \"%s\" "
+                    "has a different savestate version (0x%llx) "
+                    "instead of the expected savestate version (0x%llx)!"
+                    "\n",
+                    filename,
+                    (unsigned long long)my_savestate_version,
+                    (unsigned long long)SAVESTATE_VERSION
+                );
+                std::exit(1);
+            }
+
+            std::fread(
+                &_gpr_file[0],
+                sizeof(u32), NUM_GPRS,
+                f
+            );
+
+            //std::array<u32, NUM_GPRS> _gpr_file;
+            //std::string _to_dbg_print;
+            //std::unique_ptr<u8[]> _mem;
+            //std::unique_ptr<u8[]> _fb_0_mem;
+            //std::unique_ptr<u8[]> _fb_1_mem;
+
+            u64 temp_to_dbg_print_size = 0;
+            std::fread(
+                &temp_to_dbg_print_size,
+                sizeof(temp_to_dbg_print_size), 1ul,
+                f
+            );
+
+            std::unique_ptr<char[]> my_to_dbg_print_buf(
+                new char[temp_to_dbg_print_size]
+            );
+
+            std::fread(
+                my_to_dbg_print_buf.get(),
+                sizeof(char), temp_to_dbg_print_size,
+                f
+            );
+            for (u64 i=0; i<temp_to_dbg_print_size; ++i) {
+                _to_dbg_print += my_to_dbg_print_buf[i];
+            }
+
+            std::fread(
+                _mem.get(),
+                sizeof(u8), MEM_SIZE, 
+                f
+            );
+            std::fread(
+                _fb_0_mem.get(),
+                sizeof(u8), SCREENWIDTH * FULL_SCREENHEIGHT, 
+                f
+            );
+            std::fread(
+                _fb_1_mem.get(),
+                sizeof(u8), SCREENWIDTH * FULL_SCREENHEIGHT, 
+                f
+            );
+        }
+        //--------
+        {
+            template for (
+                constexpr auto member:
+                std::define_static_array(meta::nonstatic_data_members_of(
+                    ^^MeltedMoonDebugRiscvEmu,
+                    meta::access_context::current()
+                ))
+            ) {
+                if constexpr (
+                    //std::is_arithmetic_v<decltype(extracted)>
+                    meta::is_arithmetic_type(meta::type_of(member))
+                ) {
+                    auto& extracted = (*this).[:member:];
+
+                    std::fread(
+                        &extracted,
+                        sizeof(char), sizeof(extracted),
+                        f
+                    );
+
+                    printout(
+                        "NOTE: restoring this member: ",
+                        "\"",
+                            meta::identifier_of(member).data(),
+                        "\"",
+                        ": ",
+                        extracted,
+                        "\n"
+                    );
+                }
+            }
+        }
+        //--------
+        std::fclose(f);
+    } else {
+        std::fprintf(
+            stderr,
+            "read_savestate(): "
+            "ERROR: "
+            "couldn't open filename \"%s\"\n",
+            filename
+        );
+        std::exit(1);
+    }
 }

@@ -2,6 +2,7 @@
 #define src_melted_moon_debug_riscv_emu_hpp
 
 #include "MiscIncludes.hpp"
+#include <meta>
 
 using namespace liborangepower::misc_output;
 using namespace liborangepower::integer_types;
@@ -53,6 +54,9 @@ static constexpr inline u64 zero_extend(u64 val, size_t width) {
 
 class MeltedMoonDebugRiscvEmu final {
 public:     // constants
+     // increment this over time!
+    static constexpr u64 SAVESTATE_VERSION = 0x0u;
+    
     static constexpr u32 ADDR_PRINT = 0x6000000ul;
     static constexpr u32 ADDR_EXIT = 0x6000004ul;
     static constexpr u32 ADDR_TIMER_USEC_LO = 0x6000000ul;
@@ -580,11 +584,11 @@ private:        // variables
     u32 _do_extra_print_start_pc = 0;
     bool _seen_do_extra_print_start_pc = false;
     bool _seen_final_start_print_cond = false;
+    std::array<u32, NUM_GPRS> _gpr_file;
     std::string _to_dbg_print;
     std::unique_ptr<u8[]> _mem;
     std::unique_ptr<u8[]> _fb_0_mem;
     std::unique_ptr<u8[]> _fb_1_mem;
-    std::array<u32, NUM_GPRS> _gpr_file;
     //snowhousecpu_dasm_info_t _dasm;
     u32 _instr_start_pc = 0u;
     u32 _pc = 0u;
@@ -631,6 +635,9 @@ public:     // functions
     MeltedMoonDebugRiscvEmu& operator = (
         MeltedMoonDebugRiscvEmu&& to_move
     ) = default;
+
+    void write_savestate(const char* filename);
+    void read_savestate(const char* filename);
     
     //inline int my_dasm_rd32_func(u8* buf, size_t offset) {
     //    //memcpy(buf, &rd32_buf_src, sizeof(rd32_buf_src));
@@ -791,6 +798,86 @@ private:        // functions
         }
     }
     //bool _do_disassemble();
+
+    //consteval auto _member_at(int n) {
+    //    namespace meta = std::meta;
+    //    auto ctx = meta::access_context::current();
+    //    return meta::nonstatic_data_members_of(
+    //        ^^MeltedMoonDebugRiscvEmu, ctx
+    //    )[n];
+    //}
+
+    //consteval bool _is_automatic_serdes_at(int n) {
+    //    //namespace meta = std::meta;
+    //    //return meta::is_arithmetic_type(meta::type_of(info));
+    //    namespace meta = std::meta;
+    //    auto ctx = meta::access_context::current();
+    //    auto temp = meta::nonstatic_data_members_of(
+    //        ^^MeltedMoonDebugRiscvEmu, ctx
+    //    )[n];
+    //    return meta::is_arithmetic_type(meta::type_of(temp));
+    //}
+
+    //consteval auto _num_members() {
+    //    //return _automatic_serdes_members().size();
+    //    namespace meta = std::meta;
+    //    auto ctx = meta::access_context::current();
+    //    auto temp = meta::nonstatic_data_members_of(
+    //        ^^MeltedMoonDebugRiscvEmu, ctx
+    //    );
+    //    return temp.size();
+    //}
+
+    //consteval auto _num_automatic_serdes_members() {
+    //    //return _automatic_serdes_members().size();
+    //    namespace meta = std::meta;
+    //    auto ctx = meta::access_context::current();
+    //    auto temp = meta::nonstatic_data_members_of(
+    //        ^^MeltedMoonDebugRiscvEmu, ctx
+    //    );
+    //    auto my_vec = meta::nonstatic_data_members_of(
+    //        ^^MeltedMoonDebugRiscvEmu, ctx
+    //    );
+
+    //    //size_t ret = 0u;
+    //    size_t my_size = 0;
+    //    for (size_t i=0; i<temp.size(); ++i) {
+    //        if (_is_automatic_serdes_at(i)) {
+    //            //ret.push_back(temp[i]);
+    //            //my_vec.push_back(temp[i]);
+    //            ++my_size;
+    //        }
+    //    }
+    //    return my_size;
+    //}
+
+    //consteval auto _automatic_serdes_members() {
+    //    namespace meta = std::meta;
+    //    auto ctx = meta::access_context::current();
+    //    auto temp = meta::nonstatic_data_members_of(
+    //        ^^MeltedMoonDebugRiscvEmu, ctx
+    //    );
+    //    auto my_vec = meta::nonstatic_data_members_of(
+    //        ^^MeltedMoonDebugRiscvEmu, ctx
+    //    );
+
+    //    for (size_t i=0; i<temp.size(); ++i) {
+    //        if (_is_automatic_serdes_at(i)) {
+    //            //ret.push_back(temp[i]);
+    //            my_vec.push_back(temp[i]);
+    //        }
+    //    }
+    //    std::array<meta::info, _num_automatic_serdes_members()> ret;
+    //    for (size_t i=0; i<ret.size(); ++i) {
+    //        ret[i] = my_vec[i];
+    //    }
+
+    //    return ret;
+    //}
+
+    //consteval auto _write_savestate_single_impl(
+    //) {
+    //}
 };
 
 #endif      // src_melted_moon_debug_riscv_emu_hpp

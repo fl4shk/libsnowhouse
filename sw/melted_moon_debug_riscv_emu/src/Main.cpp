@@ -54,13 +54,21 @@ int main(int argc, char** argv) {
         emu = MeltedMoonDebugRiscvEmu(argv[1]);
     } else if (argc == 3) {
         emu = MeltedMoonDebugRiscvEmu(argv[1], std::atoi(argv[2]));
+    } else if (argc == 4) {
+        emu = MeltedMoonDebugRiscvEmu(argv[1], std::atoi(argv[2]));
+        emu.read_savestate(argv[3]);
     } else {
         std::fprintf(
             stderr,
             "Usage 0: %s <program_filename:string>\n"
             "Usage 1: %s "
                 "<program_filename:string> "
-                "<do_extra_print_start_pc:uint32>\n",
+                "<do_extra_print_start_pc:uint32>\n"
+            "Usage 2: %s "
+                "<program_filename:string> "
+                "<do_extra_print_start_pc:uint32> "
+                "<savestate_filename:string>\n",
+            argv[0],
             argv[0],
             argv[0]
         );
@@ -240,6 +248,7 @@ int main(int argc, char** argv) {
             );
         }
     }
+    emu.write_savestate("savestate_outp.bin");
 
     //SDL_DestroyTexture(texture);
     //SDL_DestroyRenderer(renderer);
