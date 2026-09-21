@@ -642,7 +642,10 @@ public:     // functions
     void write_savestate(const char* filename);
     void read_savestate(const char* filename);
     inline timeval saved_tp() const {
-        return 
+        timeval ret;
+        ret.tv_sec = _saved_timeval_sec;
+        ret.tv_usec = _saved_timeval_usec;
+        return ret;
     }
     
     //inline int my_dasm_rd32_func(u8* buf, size_t offset) {
