@@ -2118,7 +2118,9 @@ void MeltedMoonDebugRiscvEmu::write_savestate(
                             meta::identifier_of(member).data(),
                         "\"",
                         ": ",
+                        std::hex,
                         extracted,
+                        std::dec,
                         "\n"
                     );
 
@@ -2246,7 +2248,9 @@ void MeltedMoonDebugRiscvEmu::read_savestate(
                             meta::identifier_of(member).data(),
                         "\"",
                         ": ",
+                        std::hex,
                         extracted,
+                        std::dec,
                         "\n"
                     );
                 }
