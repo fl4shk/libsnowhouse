@@ -2054,7 +2054,8 @@ void MeltedMoonDebugRiscvEmu::write_savestate(
         printout(
             "NOTE: Writing savestate file \"", filename, "\" ",
             "from state at pc:",
-            std::hex, _pc, std::dec
+            std::hex, _pc, std::dec,
+            "\n"
         );
         //printout(
         //    "NOTE: saving this member: ",
@@ -2280,7 +2281,8 @@ void MeltedMoonDebugRiscvEmu::read_savestate(
         printout(
             "NOTE: Restored savestate file \"", filename, "\" ",
             "and now state is at pc:",
-            std::hex, _pc, std::dec
+            std::hex, _pc, std::dec,
+            "\n"
         );
     } else {
         std::fprintf(
