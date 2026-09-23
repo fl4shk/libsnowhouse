@@ -2048,6 +2048,26 @@ void MeltedMoonDebugRiscvEmu::write_savestate(
     //}
 
     if (auto f = std::fopen(filename, "w"); f) {
+        //printout(
+        //    "NOTE: Writing savestate file \"", filename, "\""
+        //);
+        printout(
+            "NOTE: Writing savestate file \"", filename, "\" ",
+            "from state at pc:",
+            std::hex, _pc, std::dec
+        );
+        //printout(
+        //    "NOTE: saving this member: ",
+        //    "\"",
+        //        //meta::display_string_of(^^member).data(),
+        //        meta::identifier_of(member).data(),
+        //    "\"",
+        //    ": ",
+        //    std::hex,
+        //    extracted,
+        //    std::dec,
+        //    "\n"
+        //);
         //--------
         {
             u64 my_savestate_version = SAVESTATE_VERSION;
@@ -2111,18 +2131,18 @@ void MeltedMoonDebugRiscvEmu::write_savestate(
                 ) {
                     auto extracted = (*this).[:member:];
 
-                    printout(
-                        "NOTE: saving this member: ",
-                        "\"",
-                            //meta::display_string_of(^^member).data(),
-                            meta::identifier_of(member).data(),
-                        "\"",
-                        ": ",
-                        std::hex,
-                        extracted,
-                        std::dec,
-                        "\n"
-                    );
+                    //printout(
+                    //    "NOTE: saving this member: ",
+                    //    "\"",
+                    //        //meta::display_string_of(^^member).data(),
+                    //        meta::identifier_of(member).data(),
+                    //    "\"",
+                    //    ": ",
+                    //    std::hex,
+                    //    extracted,
+                    //    std::dec,
+                    //    "\n"
+                    //);
 
                     std::fwrite(
                         &extracted,
@@ -2241,23 +2261,27 @@ void MeltedMoonDebugRiscvEmu::read_savestate(
                         sizeof(char), sizeof(extracted),
                         f
                     );
-
-                    printout(
-                        "NOTE: restoring this member: ",
-                        "\"",
-                            meta::identifier_of(member).data(),
-                        "\"",
-                        ": ",
-                        std::hex,
-                        extracted,
-                        std::dec,
-                        "\n"
-                    );
+                    //printout(
+                    //    "NOTE: restoring this member: ",
+                    //    "\"",
+                    //        meta::identifier_of(member).data(),
+                    //    "\"",
+                    //    ": ",
+                    //    std::hex,
+                    //    extracted,
+                    //    std::dec,
+                    //    "\n"
+                    //);
                 }
             }
         }
         //--------
         std::fclose(f);
+        printout(
+            "NOTE: Restored savestate file \"", filename, "\" ",
+            "and now state is at pc:",
+            std::hex, _pc, std::dec
+        );
     } else {
         std::fprintf(
             stderr,
