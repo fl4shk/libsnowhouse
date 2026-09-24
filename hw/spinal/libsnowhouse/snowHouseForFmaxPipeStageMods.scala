@@ -4457,52 +4457,66 @@ case class SnowHouseForFmaxPipeStageWriteBack(
   //val myCommitSel = UInt(1 bits)
 
 
-  val myCommitFrontStmVec = (
-    cfg.optScoreboard
-  ) generate (
-    Vec.fill(2)(
-      Vec.fill(myWbPayloadVec.size)(
-        //cloneOf(io.commitEtc.scoreboardTag)
-        Stream(
-          SnowHouseForFmaxPsWbReorderBufPayload(cfg=cfg)
-        )
-      )
-    )
-  )
+  //--------
+  // BEGIN: old early commit stuff
+  //val myCommitFrontStmVec = (
+  //  cfg.optScoreboard
+  //) generate (
+  //  Vec.fill(2)(
+  //    Vec.fill(myWbPayloadVec.size)(
+  //      //cloneOf(io.commitEtc.scoreboardTag)
+  //      Stream(
+  //        SnowHouseForFmaxPsWbReorderBufPayload(cfg=cfg)
+  //      )
+  //    )
+  //  )
+  //)
 
-  val myNonFwdCommitFrontStm = (
-    cfg.optScoreboard
-  ) generate (
-    myCommitFrontStmVec.head.head//last//head
-  )
+  //val myNonFwdCommitFrontStm = (
+  //  cfg.optScoreboard
+  //) generate (
+  //  myCommitFrontStmVec.head.head//last//head
+  //)
+  //val myFwdCommitFrontStm = (
+  //  cfg.optScoreboard
+  //) generate (
+  //  myCommitFrontStmVec.head.last//head//last
+  //)
+
+  //val myNonFwdCommitFrontFork = (
+  //  cfg.optScoreboard
+  //) generate (
+  //  StreamFork(
+  //    input=(
+  //      myCommitFrontStmVec.last.head
+  //    ),
+  //    portCount=2,
+  //    synchronous=true,
+  //  )
+  //)
+
+  //val myFwdCommitFrontFork = (
+  //  cfg.optScoreboard
+  //) generate (
+  //  StreamFork(
+  //    input=(
+  //      //myFwdCommitFrontStm
+  //      myCommitFrontStmVec.last.last
+  //    ),
+  //    portCount=2,
+  //    synchronous=true,
+  //  )
+  //)
+  // END: old early commit stuff
+  //--------
   val myFwdCommitFrontStm = (
-    cfg.optScoreboard
-  ) generate (
-    myCommitFrontStmVec.head.last//head//last
-  )
-
-  val myNonFwdCommitFrontFork = (
-    cfg.optScoreboard
-  ) generate (
-    StreamFork(
-      input=(
-        myCommitFrontStmVec.last.head
-      ),
-      portCount=2,
-      synchronous=true,
+    Stream(
+      SnowHouseForFmaxPsWbReorderBufPayload(cfg=cfg)
     )
   )
-
-  val myFwdCommitFrontFork = (
-    cfg.optScoreboard
-  ) generate (
-    StreamFork(
-      input=(
-        //myFwdCommitFrontStm
-        myCommitFrontStmVec.last.last
-      ),
-      portCount=2,
-      synchronous=true,
+  val myNonFwdCommitFrontStm = (
+    Stream(
+      SnowHouseForFmaxPsWbReorderBufPayload(cfg=cfg)
     )
   )
 
@@ -4627,50 +4641,74 @@ case class SnowHouseForFmaxPipeStageWriteBack(
   val myScoreboardCommitFrontStmArea = (
     cfg.optScoreboard
   ) generate new Area {
-    //for (idx <- 0 until myCommitFrontStmVec.size) {
-    //  myCommitFrontStmVec.last(idx) << (
-    //    myCommitFrontStmVec.head(idx)
-    //  )
-    //}
+    // BEGIN: old early commit stuff
+    ////for (idx <- 0 until myCommitFrontStmVec.size) {
+    ////  myCommitFrontStmVec.last(idx) << (
+    ////    myCommitFrontStmVec.head(idx)
+    ////  )
+    ////}
 
-    for (idx <- 0 until myCommitFrontStmVec.size) {
-      //val myThrowCondVec = Vec.fill(
-      //  myCommitFrontStmVec.size //- 1
-      //)(
-      //  Bool()
-      //)
-      //for (jdx <- 0 until myCommitFrontStmVec.size) {
-      //  myThrowCondVec(jdx) := (
-      //    if (jdx == idx) (
-      //      myCommitFrontStmVec.head(idx).reorderBufIdx
-      //      === RegNextWhen(
-      //        myCommitFrontStmVec.head(idx).reorderBufIdx,
-      //        cond=myCommitFrontStmVec.last(idx),
-      //      )
-      //    ) else {
-      //    }
-      //  )
-      //}
-      if (idx == 0) {
-        myCommitFrontStmVec.last(idx) << (
-          myCommitFrontStmVec.head(idx)
-        )
-      } else {
-        myCommitFrontStmVec.last(idx) << (
-          myCommitFrontStmVec.head(idx)
-          //myFwdCommitFrontFork.last
-        )
-      }
-    }
+    //for (idx <- 0 until myCommitFrontStmVec.size) {
+    //  //val myThrowCondVec = Vec.fill(
+    //  //  myCommitFrontStmVec.size //- 1
+    //  //)(
+    //  //  Bool()
+    //  //)
+    //  //for (jdx <- 0 until myCommitFrontStmVec.size) {
+    //  //  myThrowCondVec(jdx) := (
+    //  //    if (jdx == idx) (
+    //  //      myCommitFrontStmVec.head(idx).reorderBufIdx
+    //  //      === RegNextWhen(
+    //  //        myCommitFrontStmVec.head(idx).reorderBufIdx,
+    //  //        cond=myCommitFrontStmVec.last(idx),
+    //  //      )
+    //  //    ) else {
+    //  //    }
+    //  //  )
+    //  //}
+    //  if (idx == 0) {
+    //    myCommitFrontStmVec.last(idx) << (
+    //      myCommitFrontStmVec.head(idx)
+    //    )
+    //  } else {
+    //    myCommitFrontStmVec.last(idx) << (
+    //      myCommitFrontStmVec.head(idx)
+    //      //myFwdCommitFrontFork.last
+    //    )
+    //  }
+    //}
+    // END: old early commit stuff
   }
   val myCommitBackStm = (
     if (cfg.optScoreboard) {
-      val myTempNonFwdStm = cloneOf(myNonFwdCommitFrontFork.head)
-      myTempNonFwdStm <-< myNonFwdCommitFrontFork.head
+      //--------
+      // BEGIN: old early commit stuff
+      //val myTempNonFwdStm = cloneOf(myNonFwdCommitFrontFork.head)
+      //myTempNonFwdStm <-< myNonFwdCommitFrontFork.head
 
-      val myTempFwdStm = cloneOf(myFwdCommitFrontFork.head)
-      myTempFwdStm <-< myFwdCommitFrontFork.head
+      //val myTempFwdStm = cloneOf(myFwdCommitFrontFork.head)
+      //myTempFwdStm <-< myFwdCommitFrontFork.head
 
+      //StreamArbiterFactory.lowerFirst.noLock.on(
+      //  //myCommitFrontStmVec.last
+      //  Vec(
+      //    //myCommitFrontStmVec.last.head,
+      //    myTempNonFwdStm,
+      //    myTempFwdStm
+      //    //myFwdCommitFrontFork.head,
+      //  )
+      //  //Vec(myCommitFrontStmVec.last.reverse)
+      //)
+      // END: old early commit stuff
+      //--------
+      //Stream(
+      //  SnowHouseForFmaxPsWbReorderBufPayload(cfg=cfg)
+      //)
+      val myTempNonFwdStm = cloneOf(myNonFwdCommitFrontStm)
+      myTempNonFwdStm <-< myNonFwdCommitFrontStm
+
+      val myTempFwdStm = cloneOf(myFwdCommitFrontStm)
+      myTempFwdStm <-< myFwdCommitFrontStm
       StreamArbiterFactory.lowerFirst.noLock.on(
         //myCommitFrontStmVec.last
         Vec(
@@ -4681,6 +4719,7 @@ case class SnowHouseForFmaxPipeStageWriteBack(
         )
         //Vec(myCommitFrontStmVec.last.reverse)
       )
+      //--------
     } else {
       Stream(
         SnowHouseForFmaxPsWbReorderBufPayload(cfg=cfg)
@@ -4690,7 +4729,15 @@ case class SnowHouseForFmaxPipeStageWriteBack(
   val myReorderBuf = (
     cfg.optScoreboard
   ) generate (
-    SnowHouseForFmaxPsWbReorderBuf(cfg=cfg)
+    //SnowHouseForFmaxPsWbReorderBuf(cfg=cfg)
+    LcvSimpleReorderBuf(
+      cfg=LcvSimpleReorderBufConfig(
+        wordType=SnowHouseForFmaxPsWbReorderBufPayload(cfg=cfg),
+        reorderBufIdxWidth=(
+          cfg.optScoreboardReorderBufWidth
+        ),
+      )
+    )
   )
   //val myCommitFinalInpStm = (
   //  if (cfg.optScoreboard) (
@@ -4700,47 +4747,56 @@ case class SnowHouseForFmaxPipeStageWriteBack(
   //  )
   //)
 
-  val myCommitAlmostFinalFrontOutpStmVec = (
-    cfg.optScoreboard
-  ) generate (
-    Vec(
-      Vec(
-        //myReorderBuf.io.pop.throwWhen(
-        //  // TODO: precise exceptions and stuff
-        //  //myReorderBuf.io.pop.commit.opIsFwd
-        //  True
-        //),
-        //myReorderBuf.io.pop,
-        myNonFwdCommitFrontFork.last,
-        myFwdCommitFrontFork.last,
-      ),
-      Vec(
-        //cloneOf(myReorderBuf.io.pop),
-        //cloneOf(myReorderBuf.io)
-        cloneOf(myNonFwdCommitFrontFork.last),
-        cloneOf(myFwdCommitFrontFork.last),
-      )
-    )
-  )
+  // BEGIN: old early commit stuff
+  //val myCommitAlmostFinalFrontOutpStmVec = (
+  //  cfg.optScoreboard
+  //) generate (
+  //  Vec(
+  //    Vec(
+  //      //myReorderBuf.io.pop.throwWhen(
+  //      //  // TODO: precise exceptions and stuff
+  //      //  //myReorderBuf.io.pop.commit.opIsFwd
+  //      //  True
+  //      //),
+  //      //myReorderBuf.io.pop,
+  //      myNonFwdCommitFrontFork.last,
+  //      myFwdCommitFrontFork.last,
+  //    ),
+  //    Vec(
+  //      //cloneOf(myReorderBuf.io.pop),
+  //      //cloneOf(myReorderBuf.io)
+  //      cloneOf(myNonFwdCommitFrontFork.last),
+  //      cloneOf(myFwdCommitFrontFork.last),
+  //    )
+  //  )
+  //)
+  // END: old early commit stuff
   if (cfg.optScoreboard) {
+    // BEGIN: old early commit stuff
     // TODO: precise exceptions and stuff
-    //if (io.dbgInfo == null) {
-      myReorderBuf.io.pop.ready := True
-    //}
+    ////if (io.dbgInfo == null) {
+    //  myReorderBuf.io.pop.ready := True
+    ////}
 
-    myCommitAlmostFinalFrontOutpStmVec.last.head <-< (
-      myCommitAlmostFinalFrontOutpStmVec.head.head
-    )
-    myCommitAlmostFinalFrontOutpStmVec.last.last <-< (
-      myCommitAlmostFinalFrontOutpStmVec.head.last
-    )
+    //myCommitAlmostFinalFrontOutpStmVec.last.head <-< (
+    //  myCommitAlmostFinalFrontOutpStmVec.head.head
+    //)
+    //myCommitAlmostFinalFrontOutpStmVec.last.last <-< (
+    //  myCommitAlmostFinalFrontOutpStmVec.head.last
+    //)
+    // END: old early commit stuff
   }
   val myCommitAlmostFinalBackOutpStm = (
     if (cfg.optScoreboard) (
-      //myReorderBuf.io.pop
-      StreamArbiterFactory.lowerFirst.noLock.on(
-        myCommitAlmostFinalFrontOutpStmVec.last
-      )
+      //--------
+      myReorderBuf.io.pop
+      //--------
+      // BEGIN: old early commit stuff
+      //StreamArbiterFactory.lowerFirst.noLock.on(
+      //  myCommitAlmostFinalFrontOutpStmVec.last
+      //)
+      // END: old early commit stuff
+      //--------
     ) else (
       myCommitBackStm
     )
@@ -4851,7 +4907,14 @@ case class SnowHouseForFmaxPipeStageWriteBack(
     //)
 
     val myTempCommitStm = (
-      myCommitBackStm
+      //--------
+      // BEGIN: old early commit stuff
+      //myCommitBackStm
+      // END: old early commit stuff
+      //--------
+      myCommitBackStm.throwWhen(
+        myCommitBackStm.bubble
+      )
     )
     //val myTempCommitStm = (
     //  cloneOf(myCommitBackStm)
@@ -4894,12 +4957,19 @@ case class SnowHouseForFmaxPipeStageWriteBack(
     //io.commitEtc.myScoreboardFwdRegFileWrPulse.payload := (
     //  myTempCommitStm.regFileWrite
     //)
-    myReorderBuf.io.push << {
-      //myCommitForkStm.head
-      myTempCommitStm
-    }
-  } else { // if (!cfg.optScoreboard)
-    //myCommitBackStm
+
+    // BEGIN: old early commit stuff
+    //myReorderBuf.io.push << {
+    //  //myCommitForkStm.head
+    //  myTempCommitStm
+    //}
+    // END: old early commit stuff
+    myTempCommitStm.translateInto(myReorderBuf.io.push)(
+      dataAssignment=(outp, inp) => {
+        outp.myWord := inp
+        outp.reorderBufIdx := inp.reorderBufIdx
+      }
+    )
   }
 
   //val myCommitStmMux = StreamMux(
@@ -4998,12 +5068,14 @@ case class SnowHouseForFmaxPipeStageWriteBack(
         outp := inp.commit
       }
     )
-    io.commitEtc.scoreboardReorderBufInFlushEtc := (
-      myReorderBuf.io.inFlushEtc
-    )
-    io.commitEtc.scoreboardReorderBufPsIdCanIssue := (
-      myReorderBuf.io.psIdCanIssue
-    )
+    // BEGIN: old early commit stuff
+    //io.commitEtc.scoreboardReorderBufInFlushEtc := (
+    //  myReorderBuf.io.inFlushEtc
+    //)
+    //io.commitEtc.scoreboardReorderBufPsIdCanIssue := (
+    //  myReorderBuf.io.psIdCanIssue
+    //)
+    // END: old early commit stuff
   }
   val myScoreboardStallPassCheckArea = (
     cfg.optScoreboard
@@ -5413,37 +5485,49 @@ case class SnowHouseForFmaxPipeStageWriteBack(
     //  )
     //)
 
-    val myDbgReorderBuf = (
-      cfg.optScoreboard
-    ) generate (
-      LcvSimpleReorderBuf(
-        cfg=LcvSimpleReorderBufConfig(
-          wordType=cloneOf(myCommitAlmostFinalBackOutpStm.payload),
-          reorderBufIdxWidth=(
-            cfg.optScoreboardReorderBufWidth
-          ),
-        )
-      )
-    )
+    //--------
+    // BEGIN: old early commit stuff
+    //val myDbgReorderBuf = (
+    //  cfg.optScoreboard
+    //) generate (
+    //  LcvSimpleReorderBuf(
+    //    cfg=LcvSimpleReorderBufConfig(
+    //      wordType=cloneOf(myCommitAlmostFinalBackOutpStm.payload),
+    //      reorderBufIdxWidth=(
+    //        cfg.optScoreboardReorderBufWidth
+    //      ),
+    //    )
+    //  )
+    //)
+    // END: old early commit stuff
+    //--------
     if (cfg.optScoreboard) {
-      myDbgReorderBuf.io.push.valid := (
-        myCommitAlmostFinalBackOutpStm.fire
-        && !myCommitAlmostFinalBackOutpStm.bubble
-      )
-      myDbgReorderBuf.io.push.myWord := (
-        myCommitAlmostFinalBackOutpStm.payload
-      )
-      myDbgReorderBuf.io.push.reorderBufIdx := (
-        myCommitAlmostFinalBackOutpStm.reorderBufIdx
-      )
-      myDbgReorderBuf.io.pop.ready := True
+      // BEGIN: old early commit stuff
+      //myDbgReorderBuf.io.push.valid := (
+      //  myCommitAlmostFinalBackOutpStm.fire
+      //  && !myCommitAlmostFinalBackOutpStm.bubble
+      //)
+      //myDbgReorderBuf.io.push.myWord := (
+      //  myCommitAlmostFinalBackOutpStm.payload
+      //)
+      //myDbgReorderBuf.io.push.reorderBufIdx := (
+      //  myCommitAlmostFinalBackOutpStm.reorderBufIdx
+      //)
+      //myDbgReorderBuf.io.pop.ready := True
+      // END: old early commit stuff
     }
 
     def myDbgCommitBackStm = (
       //myDbgReorderBuf.io.pop
       //myReorderBuf.io.pop
       if (cfg.optScoreboard) (
-        myDbgReorderBuf.io.pop
+        //--------
+        // BEGIN: old early commit stuff
+        //myDbgReorderBuf.io.pop
+        // END: old early commit stuff
+        //--------
+        myCommitAlmostFinalBackOutpStm
+        //--------
       ) else (
         myCommitAlmostFinalBackOutpStm
       )

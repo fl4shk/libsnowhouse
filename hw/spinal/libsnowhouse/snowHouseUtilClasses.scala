@@ -687,10 +687,10 @@ case class SnowHouseForFmaxConfig(
       )
     }
     case None => {
-      require(
-        false,
-        "Not yet implemented"
-      )
+      //require(
+      //  false,
+      //  "Not yet implemented"
+      //)
     }
   }
 }
