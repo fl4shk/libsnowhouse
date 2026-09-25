@@ -2493,11 +2493,11 @@ case class SnowHousePipeStageScoreboardCheck(
 
   val rScoreboardFlushState = (
     Reg(ScoreboardFlushState(
-      if (doOooIssue) (
-        binarySequential
-      ) else (
+      //if (doOooIssue) (
+      //  binarySequential
+      //) else (
         binaryOneHot
-      )
+      //)
     ))
     init(ScoreboardFlushState.IDLE)
   )
@@ -2761,7 +2761,9 @@ case class SnowHousePipeStageScoreboardCheck(
         idx=2,
       )
       && down.isReady
-      && !rScoreboardFlushState.asBits(0) // check for IDLE
+      && !rScoreboardFlushState.asBits(
+        ScoreboardFlushState.IDLE.position
+      )
       && (
         //!myPopValidVec.andR
         !myFullPopValidVec.andR
@@ -3045,7 +3047,7 @@ case class SnowHousePipeStageScoreboardCheck(
     )
 
     switch (
-      rScoreboardFlushState.asBits(0)
+      rScoreboardFlushState.asBits(ScoreboardFlushState.IDLE.position)
       ## up.isValid
       ## myInFlushCondMain(
         someUpPayload0=up(pId),
@@ -3361,22 +3363,41 @@ case class SnowHousePipeStageScoreboardCheck(
 // 2 -100
 // 3 1000
 
+// >>> for idx in range(size):
+// ...     print(idx, "-" * (size - idx - 1) + "0" + ("1" * idx))
+// ...     
+// 0 -------0
+// 1 ------01
+// 2 -----011
+// 3 ----0111
+// 4 ---01111
+// 5 --011111
+// 6 -0111111
+// 7 01111111
+
+
   switch (
     (
       up.isFiring
       && !myInFlushCond(0)
       && upPayload(1).splitOp.opIsMemAccess
     )
-    ## Bitscan(
-      //~rNonFwdTagAllocVec.asBits.asUInt
-      ~myReducedNonFwdTagAllocVec.asBits.asUInt
-    )
+    //## Bitscan(
+    //  //~rNonFwdTagAllocVec.asBits.asUInt
+    //  ~myReducedNonFwdTagAllocVec.asBits.asUInt
+    //)
+    ## myReducedNonFwdTagAllocVec.asBits.asUInt
   ) {
     val size = myReducedNonFwdTagAllocVec.size
     for (idx <- 0 until size) {
       is (MaskedLiteral(
         "1"
-        + ("-" * (size - idx - 1) + "1" + ("0" * idx))
+        + ("-" * (size - idx - 1) + "0" + ("1" * idx))
+        //--------
+        // BEGIN: old `Bitscan(~x)` free list search
+        //"1"
+        //+ ("-" * (size - idx - 1) + "1" + ("0" * idx))
+        //--------
       )) {
         // fast-ish (regarding fmax) search to implement the free list
         // search
@@ -3397,16 +3418,23 @@ case class SnowHousePipeStageScoreboardCheck(
       && !myInFlushCond(1)
       && !upPayload(1).splitOp.opIsMemAccess
     )
-    ## Bitscan(
-      //~rFwdTagAllocVec.asBits.asUInt
-      ~myReducedFwdTagAllocVec.asBits.asUInt
-    )
+    //## Bitscan(
+    //  //~rFwdTagAllocVec.asBits.asUInt
+    //  ~myReducedFwdTagAllocVec.asBits.asUInt
+    //)
+    ## myReducedFwdTagAllocVec.asBits.asUInt
   ) {
     val size = myReducedFwdTagAllocVec.size
     for (idx <- 0 until size) {
       is (MaskedLiteral(
+        //--------
         "1"
-        + ("-" * (size - idx - 1) + "1" + ("0" * idx))
+        + ("-" * (size - idx - 1) + "0" + ("1" * idx))
+        //--------
+        // BEGIN: old `Bitscan(~x)` free list search
+        //"1"
+        //+ ("-" * (size - idx - 1) + "1" + ("0" * idx))
+        //--------
       )) {
         // fast-ish (regarding fmax) search to implement the free list
         // search
