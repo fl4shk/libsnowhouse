@@ -1232,10 +1232,14 @@ case class SnowHouseConfig(
   //  4
   //  //1
   //)
+  val optScoreboardNumTagsPerKind = (
+    12
+  )
   val optScoreboardTagWidth = (
     //6
     //optScoreboardReorderBufWidth
-    4
+    //4
+    log2Up(optScoreboardNumTagsPerKind)
     //log2Up(numGprs) - 1
     //3
   )
@@ -2183,6 +2187,18 @@ case class SnowHousePipePayloadNonExt(
     cfg.optScoreboardOooIssueWindow != None
   ) generate (
     Vec.fill(cfg.numGprs)(
+      Bool()
+    )
+  )
+  val myOooWaWHazardCheck = (
+    cfg.optScoreboardOooIssueWindow != None
+  ) generate (
+    Bool()
+  )
+  val myOooWaRHazardCheckVec = (
+    cfg.optScoreboardOooIssueWindow != None
+  ) generate (
+    Vec.fill(cfg.regFileCfg.modRdPortCnt)(
       Bool()
     )
   )

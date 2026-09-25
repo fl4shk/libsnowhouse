@@ -2531,8 +2531,7 @@ case class SnowHousePipeStageScoreboardCheck(
         this.fire
       ) else (
         this.fire
-        && 
-        this.cnt.msb
+        && this.cnt.msb
       )
     )
   }
@@ -2590,22 +2589,34 @@ case class SnowHousePipeStageScoreboardCheck(
   }
 
   val rNonFwdTagAllocWakeUpVec = (
-    Vec.fill(1 << myTempNonFwdTag.getWidth)(
+    Vec.fill(
+      //1 << myTempNonFwdTag.getWidth
+      cfg.optScoreboardNumTagsPerKind
+    )(
       Reg(Bool(), init=False)
     )
   )
   val rNonFwdTagAllocVec = (
-    Vec.fill(1 << myTempNonFwdTag.getWidth)(
+    Vec.fill(
+      //1 << myTempNonFwdTag.getWidth
+      cfg.optScoreboardNumTagsPerKind
+    )(
       Reg(Bool(), init=False)
     )
   )
   val rFwdTagAllocWakeUpVec = (
-    Vec.fill(1 << myTempNonFwdTag.getWidth)(
+    Vec.fill(
+      //1 << myTempNonFwdTag.getWidth
+      cfg.optScoreboardNumTagsPerKind
+    )(
       Reg(Bool(), init=False)
     )
   )
   val rFwdTagAllocVec = (
-    Vec.fill(1 << myTempFwdTag.getWidth)(
+    Vec.fill(
+      //1 << myTempFwdTag.getWidth
+      cfg.optScoreboardNumTagsPerKind
+    )(
       Reg(Bool(), init=False)
     )
   )
@@ -2621,7 +2632,10 @@ case class SnowHousePipeStageScoreboardCheck(
     )
   )
 
-  for (idx <- 0 until (1 << myTempNonFwdTag.getWidth) - 1) {
+  for (
+    //idx <- 0 until 1 << myTempNonFwdTag.getWidth) - 1
+    idx <- 0 until cfg.optScoreboardNumTagsPerKind - 1
+  ) {
     myReducedNonFwdTagAllocVec(idx) := rNonFwdTagAllocVec(idx + 1)
     myReducedFwdTagAllocVec(idx) := rFwdTagAllocVec(idx + 1)
   }
@@ -2749,17 +2763,25 @@ case class SnowHousePipeStageScoreboardCheck(
           //2
           //4
         ),
-        shiftEveryCycle=true,
+        shiftEveryCycle=(
+          true
+        ),
         optDataAssignment=Some(
           (
             outp: SnowHousePipePayload,
             inp: SnowHousePipePayload,
             idx: Int,
+            pop: Vec[Stream[SnowHousePipePayload]],
           ) => {
             outp := inp
             //if (idx == 0) {
             //  //outp
             //}
+            if (idx == 0) {
+              when (pop.last.valid) {
+              } otherwise {
+              }
+            }
           }
         )
       )
@@ -3082,23 +3104,6 @@ case class SnowHousePipeStageScoreboardCheck(
       is (M"01001-") {
         doPopHead(doUpIsFiring=true)
 
-        //switch (
-        //  up.isFiring
-        //  ## rPingPongBlockState
-        //  ## rPingPongBlockCnt.payload.orR
-        //) {
-        //  //is (M"101") {
-        //  //  //rPingPongBlockCnt.payload := rPingPongBlockCnt.payload -1
-        //  //}
-        //  is (M"100") {
-        //    rPingPongBlockState := True
-        //    rPingPongBlockCnt.payload := (
-        //      cfg.optScoreboardOooIssueWindow.get - 1
-        //    )
-        //  }
-        //  default {
-        //  }
-        //}
         when (
           up.isFiring
           && !rPingPongBlockState
@@ -3108,39 +3113,6 @@ case class SnowHousePipeStageScoreboardCheck(
             cfg.optScoreboardOooIssueWindow.get - 1
           )
         }
-
-        //switch (
-        //  up.isFiring
-        //  ## rPingPongBlockState
-        //  ## rPingPongBlockCnt.payload.orR
-        //) {
-        //  is (M"101") {
-        //    rPingPongBlockCnt.payload := rPingPongBlockCnt.payload -1
-        //  }
-        //  is (M"100") {
-        //    rPingPongBlockState := True
-        //    rPingPongBlockCnt.payload := (
-        //      cfg.optScoreboardOooIssueWindow.get - 1
-        //    )
-        //  }
-        //  default {
-        //  }
-        //}
-
-        //switch (
-        //  up.isFiring
-        //  ## rPingPongBlockCnt.payload.orR
-        //) {
-        //  is (M"10") {
-        //    rPingPongBlockState := False
-        //  }
-        //  is (M"11") {
-        //    rPingPongBlockCnt.payload := rPingPongBlockCnt.payload - 1
-        //  }
-        //}
-        //when (up.isFiring) {
-        //  rPingPongBlockState := False
-        //}
       }
       is (M"01010-") {
         doPopLast(doUpIsFiring=true)
@@ -3154,28 +3126,6 @@ case class SnowHousePipeStageScoreboardCheck(
             cfg.optScoreboardOooIssueWindow.get - 1
           )
         }
-
-        //switch (
-        //  up.isFiring
-        //  ## rPingPongBlockState
-        //  ## rPingPongBlockCnt.payload.orR
-        //) {
-        //  //is (M"101") {
-        //  //  //rPingPongBlockCnt.payload := rPingPongBlockCnt.payload -1
-        //  //}
-        //  is (M"100") {
-        //    rPingPongBlockState := True
-        //    rPingPongBlockCnt.payload := (
-        //      cfg.optScoreboardOooIssueWindow.get - 1
-        //    )
-        //  }
-        //  default {
-        //  }
-        //}
-
-        //when (up.isFiring) {
-        //  rPingPongBlockState := False
-        //}
       }
       is (M"010111") {
         switch (
@@ -3197,12 +3147,6 @@ case class SnowHousePipeStageScoreboardCheck(
         }
         doPopHead(doUpIsFiring=true)
 
-        //when (myOooOkayCond) {
-        //  //rPingPongBlockState := up.isFiring
-        //  doPopHead(doUpIsFiring=true)
-        //} otherwise {
-        //  doPopLast(doUpIsFiring=true)
-        //}
         def myOooIssueCnt = (
           upPayload(1).instrCnt.scoreboardCheckPayload.myOooIssueCnt
         )
@@ -3215,30 +3159,25 @@ case class SnowHousePipeStageScoreboardCheck(
       }
       is (M"01101-") {
         cScoreboardCheck.duplicateIt()
-        //rPingPongBlockState := False
         doPopHead(doUpIsFiring=false)
       }
       is (M"01110-") {
         cScoreboardCheck.duplicateIt()
-        //rPingPongBlockState := False
         doPopLast(doUpIsFiring=false)
       }
       is (M"01111-") {
         cScoreboardCheck.duplicateIt()
-        //rPingPongBlockState := False
         // Let's just schedule in-order here, as we have an upcoming
         // pipeline flush anyway.
         doPopLast(doUpIsFiring=false)
       }
       is (M"01100-") {
-        //rPingPongBlockState := False
         upPayload(0) := up(pId)
         upPayload(1) := upPayload(0)
         // okay, now we can go to the next state!
         rScoreboardFlushState := ScoreboardFlushState.FLUSH
       }
       is (M"11----") {
-        //rPingPongBlockState := False
         rPingPongBlockState := True
         rPingPongBlockCnt.payload := (
           cfg.optScoreboardOooIssueWindow.get - 1
@@ -3624,7 +3563,8 @@ case class SnowHousePipeStageScoreboardCheck(
     )
   ) {
     for (
-      idx <- 0 until (1 << myScoreboardCommitStm.fwdTag.getWidth)
+      //idx <- 0 until (1 << myScoreboardCommitStm.fwdTag.getWidth)
+      idx <- 0 until cfg.optScoreboardNumTagsPerKind
     ) {
       is (
         (1 << myScoreboardCommitStm.fwdTag.getWidth)
@@ -3651,8 +3591,8 @@ case class SnowHousePipeStageScoreboardCheck(
     )
   ) {
     for (
-      idx <- 0
-      until (1 << myScoreboardBubbleRetireStm.fwdTag.getWidth)
+      //idx <- 0 until (1 << myScoreboardBubbleRetireStm.fwdTag.getWidth)
+      idx <- 0 until cfg.optScoreboardNumTagsPerKind
     ) {
       is (
         (1 << myScoreboardBubbleRetireStm.fwdTag.getWidth)
@@ -3685,7 +3625,8 @@ case class SnowHousePipeStageScoreboardCheck(
     )
   ) {
     for (
-      idx <- 0 until (1 << myScoreboardCommitStm.nonFwdTag.getWidth)
+      //idx <- 0 until (1 << myScoreboardCommitStm.nonFwdTag.getWidth)
+      idx <- 0 until cfg.optScoreboardNumTagsPerKind
     ) {
       is (
         (1 << myScoreboardCommitStm.nonFwdTag.getWidth)
@@ -3709,8 +3650,8 @@ case class SnowHousePipeStageScoreboardCheck(
     )
   ) {
     for (
-      idx <- 0
-      until (1 << myScoreboardBubbleRetireStm.nonFwdTag.getWidth)
+      //idx <- 0 until (1 << myScoreboardBubbleRetireStm.nonFwdTag.getWidth)
+      idx <- 0 until cfg.optScoreboardNumTagsPerKind
     ) {
       is (
         (1 << myScoreboardBubbleRetireStm.nonFwdTag.getWidth)
@@ -3733,68 +3674,95 @@ case class SnowHousePipeStageScoreboardCheck(
   }
   //--------
 
-  switch (
-    (
-      up.isFiring
-      //down.isFiring
-      && !myInFlushCond(0)//shouldClearExtraDecodeInfo
-      && !myNonFwdHazardCheckVec.orR
-      && !upPayload(1).splitOp.opIsMemAccess
+  for (jdx <- 0 until 2) {
+    val myFwdCond = (
+      (
+        up.isFiring
+        //down.isFiring
+        && !myInFlushCond(0)//shouldClearExtraDecodeInfo
+        && !myNonFwdHazardCheckVec.orR
+        && !upPayload(1).splitOp.opIsMemAccess
+      )
+      ## myLeftGprIdxVec.last
     )
-    ## myLeftGprIdxVec.last
-  ) {
-    for (idx <- 0 until cfg.numGprs) {
-      if (
-        !cfg.myHaveZeroReg
-        || idx != 0
-      ) {
-        is (
-          (1 << log2Up(cfg.numGprs))
-          | idx
+    switch (
+      if (jdx == 0) (
+        myFwdCond
+      ) else (
+        RegNext(RegNext(myFwdCond))
+      )
+    ) {
+      for (idx <- 0 until cfg.numGprs) {
+        if (
+          !cfg.myHaveZeroReg
+          || idx != 0
         ) {
-          rMyFwdGprTagVec(idx).valid := True
-          when (!rMyFwdGprTagVec(idx).fire) {
-            rMyFwdGprTagVec(idx).cnt := (
-              cfg.optForFmaxPsExFwdSize - 2//1//2//3//2//1
-            )
-            //rMyFwdGprTagVec(idx).tag := myTempFwdTag
+          is (
+            (1 << log2Up(cfg.numGprs))
+            | idx
+          ) {
+            if (jdx == 0) {
+              rMyFwdGprTagVec(idx).valid := True
+              when (!rMyFwdGprTagVec(idx).fire) {
+                rMyFwdGprTagVec(idx).cnt := (
+                  cfg.optForFmaxPsExFwdSize - 2//1//2//3//2//1
+                )
+                //rMyFwdGprTagVec(idx).tag := myTempFwdTag
+              }
+            } else {
+              rMyFwdGprTagVec(idx).tag := (
+                RegNext(RegNext(myTempFwdTag))
+              )
+            }
           }
-          rMyFwdGprTagVec(idx).tag := myTempFwdTag
+        }
+      }
+      if (cfg.myHaveZeroReg) {
+        default {
         }
       }
     }
-    if (cfg.myHaveZeroReg) {
-      default {
-      }
-    }
-  }
 
-  switch (
-    (
-      up.isFiring
-      //down.isFiring
-      && !myInFlushCond(1)//shouldClearExtraDecodeInfo
-      && !myNonFwdHazardCheckVec.orR
-      && upPayload(1).splitOp.opIsMemAccess
+    val myNonFwdCond = (
+      (
+        up.isFiring
+        //down.isFiring
+        && !myInFlushCond(1)//shouldClearExtraDecodeInfo
+        && !myNonFwdHazardCheckVec.orR
+        && upPayload(1).splitOp.opIsMemAccess
+      )
+      ## myLeftGprIdxVec.last
     )
-    ## myLeftGprIdxVec.last
-  ) {
-    for (idx <- 0 until cfg.numGprs) {
-      if (
-        !cfg.myHaveZeroReg
-        || idx != 0
-      ) {
-        is (
-          (1 << log2Up(cfg.numGprs))
-          | idx
+
+    switch (
+      if (jdx == 0) (
+        myNonFwdCond
+      ) else (
+        RegNext(RegNext(myNonFwdCond))
+      )
+    ) {
+      for (idx <- 0 until cfg.numGprs) {
+        if (
+          !cfg.myHaveZeroReg
+          || idx != 0
         ) {
-          rMyNonFwdGprTagVec(idx).valid := True
-          rMyNonFwdGprTagVec(idx).tag := myTempNonFwdTag
+          is (
+            (1 << log2Up(cfg.numGprs))
+            | idx
+          ) {
+            if (jdx == 0) {
+              rMyNonFwdGprTagVec(idx).valid := True
+            } else {
+              rMyNonFwdGprTagVec(idx).tag := (
+                RegNext(RegNext(myTempNonFwdTag))
+              )
+            }
+          }
         }
       }
-    }
-    if (cfg.myHaveZeroReg) {
-      default {
+      if (cfg.myHaveZeroReg) {
+        default {
+        }
       }
     }
   }
