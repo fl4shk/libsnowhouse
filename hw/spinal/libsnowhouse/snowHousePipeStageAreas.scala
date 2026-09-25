@@ -3009,7 +3009,8 @@ case class SnowHousePipeStageScoreboardCheck(
       upPayload(1) := upPayload(0)
       myTempOooRdBufPopVec(1).ready := (
         if (doUpIsFiring) (
-          up.isFiring
+          //up.isFiring
+          up.isReady
         ) else (
           down.isFiring
         )
@@ -3024,7 +3025,8 @@ case class SnowHousePipeStageScoreboardCheck(
       myTempOooRdBufPopVec(1).ready := False
       myTempOooRdBufPopVec(2).ready := (
         if (doUpIsFiring) (
-          up.isFiring
+          //up.isFiring
+          up.isReady
         ) else (
           down.isFiring
         )
@@ -3105,7 +3107,8 @@ case class SnowHousePipeStageScoreboardCheck(
         doPopHead(doUpIsFiring=true)
 
         when (
-          up.isFiring
+          //up.isFiring
+          up.isReady
           && !rPingPongBlockState
         ) {
           rPingPongBlockState := True
@@ -3118,7 +3121,8 @@ case class SnowHousePipeStageScoreboardCheck(
         doPopLast(doUpIsFiring=true)
 
         when (
-          up.isFiring
+          //up.isFiring
+          up.isReady
           && !rPingPongBlockState
         ) {
           rPingPongBlockState := True
@@ -3132,7 +3136,8 @@ case class SnowHousePipeStageScoreboardCheck(
           (
             //myOooOkayCond
             //&& 
-            up.isFiring
+            //up.isFiring
+            up.isReady
           )
           ## rPingPongBlockCnt.payload.orR
         ) {
