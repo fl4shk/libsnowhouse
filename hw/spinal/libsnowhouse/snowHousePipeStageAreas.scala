@@ -2665,7 +2665,6 @@ case class SnowHousePipeStageScoreboardCheck(
         })
       }
     }
-
   }
 
   val myOooIssueArea = (
@@ -2709,24 +2708,24 @@ case class SnowHousePipeStageScoreboardCheck(
       )
     )
 
-    val myDbgOooRdBuf = LcvOooRdSlidingBuf(
-      cfg=LcvOooRdSlidingBufConfig(
-        wordType=(
-          //cloneOf(upPayload(1).)
-          cloneOf(upPayload(1).myRegPcVec.head)
-        ),
-        depth=(
-          myOooRdBufDepth
-          //2
-          //4
-        ),
-      )
-    )
-    myDbgOooRdBuf.io.push.valid := False
-    myDbgOooRdBuf.io.push.payload := 0x0
-    myDbgOooRdBuf.io.pop.foreach(item => {
-      item.ready := False
-    })
+    //val myDbgOooRdBuf = LcvOooRdSlidingBuf(
+    //  cfg=LcvOooRdSlidingBufConfig(
+    //    wordType=(
+    //      //cloneOf(upPayload(1).)
+    //      cloneOf(upPayload(1).myRegPcVec.head)
+    //    ),
+    //    depth=(
+    //      myOooRdBufDepth
+    //      //2
+    //      //4
+    //    ),
+    //  )
+    //)
+    //myDbgOooRdBuf.io.push.valid := False
+    //myDbgOooRdBuf.io.push.payload := 0x0
+    //myDbgOooRdBuf.io.pop.foreach(item => {
+    //  item.ready := False
+    //})
 
     val myOooRdBuf = LcvOooRdSlidingBuf(
       cfg=LcvOooRdSlidingBufConfig(
@@ -2739,6 +2738,7 @@ case class SnowHousePipeStageScoreboardCheck(
           //2
           //4
         ),
+        shiftEveryCycle=false,
       )
     )
 
@@ -2761,7 +2761,7 @@ case class SnowHousePipeStageScoreboardCheck(
         idx=2,
       )
       && down.isReady
-      && !rScoreboardFlushState.asBits(
+      && rScoreboardFlushState.asBits(
         ScoreboardFlushState.IDLE.position
       )
       && (
