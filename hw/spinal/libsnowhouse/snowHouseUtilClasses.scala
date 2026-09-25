@@ -2186,6 +2186,7 @@ case class SnowHousePipePayloadNonExt(
       Bool()
     )
   )
+  //val myScoreboardWawVec
   //val scoreboardGprIdxVec = (
   //  cfg.optScoreboard
   //) generate (

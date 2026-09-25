@@ -2516,6 +2516,7 @@ case class SnowHousePipeStageScoreboardCheck(
     val valid = Bool()
     def fire = valid
     val tag = UInt(cfg.optScoreboardTagWidth bits)
+    val wakeUp = Bool()
     val cnt = (
       !isNonFwd
     ) generate (
@@ -2588,7 +2589,17 @@ case class SnowHousePipeStageScoreboardCheck(
     }
   }
 
+  val rNonFwdTagAllocWakeUpVec = (
+    Vec.fill(1 << myTempNonFwdTag.getWidth)(
+      Reg(Bool(), init=False)
+    )
+  )
   val rNonFwdTagAllocVec = (
+    Vec.fill(1 << myTempNonFwdTag.getWidth)(
+      Reg(Bool(), init=False)
+    )
+  )
+  val rFwdTagAllocWakeUpVec = (
     Vec.fill(1 << myTempNonFwdTag.getWidth)(
       Reg(Bool(), init=False)
     )
@@ -2738,7 +2749,19 @@ case class SnowHousePipeStageScoreboardCheck(
           //2
           //4
         ),
-        shiftEveryCycle=false,
+        shiftEveryCycle=true,
+        optDataAssignment=Some(
+          (
+            outp: SnowHousePipePayload,
+            inp: SnowHousePipePayload,
+            idx: Int,
+          ) => {
+            outp := inp
+            //if (idx == 0) {
+            //  //outp
+            //}
+          }
+        )
       )
     )
 
@@ -3227,22 +3250,52 @@ case class SnowHousePipeStageScoreboardCheck(
       }
     }
 
+    when (
+      rScoreboardFlushState.asBits(ScoreboardFlushState.IDLE.position)
+      && (
+        myNonFwdHazardCheckVec.orR
+        || myFwdHazardCheckVec.orR
+        || myReducedFwdTagAllocVec.asBits.andR
+        || myReducedNonFwdTagAllocVec.asBits.andR
+        || myInFlushCond(2)
+      )
+    ) {
+      doSendBubbleMainMost(
+        myPsIdBubble=Some(myNonFwdHazardCheckVec.orR),
+        myPsIdOtherBubble=Some(True),
+        myPsIdFwdBubble=Some(myFwdHazardCheckVec.orR),
+        myInFlushCond=Some(myInFlushCond(2))//None
+      )
+    }
+
+    when (
+      rScoreboardFlushState.asBits(ScoreboardFlushState.FLUSH.position)
+      && !myInFlushCond(3)
+    ) {
+      doSendBubbleMainMost(
+        myPsIdBubble=Some(myNonFwdHazardCheckVec.orR),
+        myPsIdOtherBubble=Some(True),
+        myPsIdFwdBubble=Some(myFwdHazardCheckVec.orR),
+        myInFlushCond=None
+      )
+    }
+
     switch (rScoreboardFlushState) {
       is (ScoreboardFlushState.IDLE) {
-        when (
-          myNonFwdHazardCheckVec.orR
-          || myFwdHazardCheckVec.orR
-          || myReducedFwdTagAllocVec.asBits.andR
-          || myReducedNonFwdTagAllocVec.asBits.andR
-          || myInFlushCond(2)
-        ) {
-          doSendBubbleMainMost(
-            myPsIdBubble=Some(myNonFwdHazardCheckVec.orR),
-            myPsIdOtherBubble=Some(True),
-            myPsIdFwdBubble=Some(myFwdHazardCheckVec.orR),
-            myInFlushCond=Some(myInFlushCond(2))//None
-          )
-        }
+        //when (
+        //  myNonFwdHazardCheckVec.orR
+        //  || myFwdHazardCheckVec.orR
+        //  || myReducedFwdTagAllocVec.asBits.andR
+        //  || myReducedNonFwdTagAllocVec.asBits.andR
+        //  || myInFlushCond(2)
+        //) {
+        //  doSendBubbleMainMost(
+        //    myPsIdBubble=Some(myNonFwdHazardCheckVec.orR),
+        //    myPsIdOtherBubble=Some(True),
+        //    myPsIdFwdBubble=Some(myFwdHazardCheckVec.orR),
+        //    myInFlushCond=Some(myInFlushCond(2))//None
+        //  )
+        //}
       }
       is (ScoreboardFlushState.FLUSH) {
         // This uses the same logic as for the in-order scheduling!
@@ -3253,14 +3306,14 @@ case class SnowHousePipeStageScoreboardCheck(
         ) {
           rScoreboardFlushState := ScoreboardFlushState.IDLE
         }
-        when (!myInFlushCond(3)) {
-          doSendBubbleMainMost(
-            myPsIdBubble=Some(myNonFwdHazardCheckVec.orR),
-            myPsIdOtherBubble=Some(True),
-            myPsIdFwdBubble=Some(myFwdHazardCheckVec.orR),
-            myInFlushCond=None
-          )
-        }
+        //when (!myInFlushCond(3)) {
+        //  doSendBubbleMainMost(
+        //    myPsIdBubble=Some(myNonFwdHazardCheckVec.orR),
+        //    myPsIdOtherBubble=Some(True),
+        //    myPsIdFwdBubble=Some(myFwdHazardCheckVec.orR),
+        //    myInFlushCond=None
+        //  )
+        //}
         upPayload(1).instrCnt.myPsIdInFlushBubble.foreach(item => {
           item := myInFlushCond(3)
         })
@@ -3447,6 +3500,19 @@ case class SnowHousePipeStageScoreboardCheck(
     }
   }
 
+  //val rNonFwdWakeUpVec = Vec.fill(cfg.numGprs)(
+  //  Reg(Bool(), init=False)
+  //)
+  //val rFwdWakeUpVec = Vec.fill(cfg.numGprs)(
+  //  Reg(Bool(), init=False)
+  //)
+
+  //val rNonFwdWakeUpVec = Vec.fill(cfg.numGprs)(
+  //  Reg(Bool(), init=False)
+  //)
+  //val rFwdWakeUpVec = Vec.fill(cfg.numGprs)(
+  //  Reg(Bool(), init=False)
+  //)
   for (idx <- 0 until cfg.numGprs) {
     when (
       //up.isFiring
@@ -3501,11 +3567,18 @@ case class SnowHousePipeStageScoreboardCheck(
         )
       )
     ) {
-      //rFwdTagAllocVec(myScoreboardCommitStm.fwdTag) := False
+      ////rFwdTagAllocVec(myScoreboardCommitStm.fwdTag) := False
+      //rMyFwdGprTagVec(idx).valid := False
+      ////rMyFwdGprTagVec(idx).cnt := (
+      ////  cfg.optForFmaxPsExFwdSize - 2
+      ////)
+      //rFwdWakeUpVec(idx) := True
+      rMyFwdGprTagVec(idx).wakeUp := True
+    }
+
+    when (rMyFwdGprTagVec(idx).wakeUp) {
+      rMyFwdGprTagVec(idx).wakeUp := False
       rMyFwdGprTagVec(idx).valid := False
-      //rMyFwdGprTagVec(idx).cnt := (
-      //  cfg.optForFmaxPsExFwdSize - 2
-      //)
     }
     when (
       rMyNonFwdGprTagVec(idx).fire
@@ -3528,7 +3601,14 @@ case class SnowHousePipeStageScoreboardCheck(
         )
       )
     ) {
-      //rNonFwdTagAllocVec(myScoreboardCommitStm.fwdTag) := False
+      ////rNonFwdTagAllocVec(myScoreboardCommitStm.fwdTag) := False
+      //rMyNonFwdGprTagVec(idx).valid := False
+      //rNonFwdWakeUpVec(idx) := True
+      rMyNonFwdGprTagVec(idx).wakeUp := True
+    }
+
+    when (rMyNonFwdGprTagVec(idx).wakeUp) {
+      rMyNonFwdGprTagVec(idx).wakeUp := False
       rMyNonFwdGprTagVec(idx).valid := False
     }
   }
@@ -3553,7 +3633,8 @@ case class SnowHousePipeStageScoreboardCheck(
         // needed because the tag stored in `rMyFwdGprTagVec` gets
         // overwritten sometimes by a "can-be-forwarded-from"
         // instruction writing to the same register!
-        rFwdTagAllocVec(idx) := False
+        //rFwdTagAllocVec(idx) := False
+        rFwdTagAllocWakeUpVec(idx) := True
       }
     }
     default {
@@ -3579,10 +3660,17 @@ case class SnowHousePipeStageScoreboardCheck(
       ) {
         // Bubbles being retired means we need to clear our tag
         // allocations used for those bubbles!
-        rFwdTagAllocVec(idx) := False
+        //rFwdTagAllocVec(idx) := False
+        rFwdTagAllocWakeUpVec(idx) := True
       }
     }
     default {
+    }
+  }
+  for (idx <- 0 until rFwdTagAllocVec.size) {
+    when (rFwdTagAllocWakeUpVec(idx)) {
+      rFwdTagAllocWakeUpVec(idx) := False
+      rFwdTagAllocVec(idx) := False
     }
   }
   //--------
@@ -3603,7 +3691,8 @@ case class SnowHousePipeStageScoreboardCheck(
         (1 << myScoreboardCommitStm.nonFwdTag.getWidth)
         | idx
       ) {
-        rNonFwdTagAllocVec(idx) := False
+        //rNonFwdTagAllocVec(idx) := False
+        rNonFwdTagAllocWakeUpVec(idx) := True
       }
     }
     default {
@@ -3629,10 +3718,17 @@ case class SnowHousePipeStageScoreboardCheck(
       ) {
         // Bubbles being retired means we need to clear our tag
         // allocations used for those bubbles!
-        rNonFwdTagAllocVec(idx) := False
+        //rNonFwdTagAllocVec(idx) := False
+        rNonFwdTagAllocWakeUpVec(idx) := True
       }
     }
     default {
+    }
+  }
+  for (idx <- 0 until rNonFwdTagAllocVec.size) {
+    when (rNonFwdTagAllocWakeUpVec(idx)) {
+      rNonFwdTagAllocWakeUpVec(idx) := False
+      rNonFwdTagAllocVec(idx) := False
     }
   }
   //--------
