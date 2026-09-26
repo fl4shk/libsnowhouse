@@ -3694,7 +3694,8 @@ case class SnowHousePipeStageScoreboardCheck(
       if (jdx == 0) (
         myFwdCond
       ) else (
-        RegNext(RegNext(myFwdCond))
+        //RegNext(RegNext(myFwdCond))
+        myFwdCond
       )
     ) {
       for (idx <- 0 until cfg.numGprs) {
@@ -3716,7 +3717,8 @@ case class SnowHousePipeStageScoreboardCheck(
               }
             } else {
               rMyFwdGprTagVec(idx).tag := (
-                RegNext(RegNext(myTempFwdTag))
+                //RegNext(RegNext(myTempFwdTag))
+                myTempFwdTag
               )
             }
           }
@@ -3743,7 +3745,8 @@ case class SnowHousePipeStageScoreboardCheck(
       if (jdx == 0) (
         myNonFwdCond
       ) else (
-        RegNext(RegNext(myNonFwdCond))
+        //RegNext(RegNext(myNonFwdCond))
+        myNonFwdCond
       )
     ) {
       for (idx <- 0 until cfg.numGprs) {
@@ -3759,7 +3762,8 @@ case class SnowHousePipeStageScoreboardCheck(
               rMyNonFwdGprTagVec(idx).valid := True
             } else {
               rMyNonFwdGprTagVec(idx).tag := (
-                RegNext(RegNext(myTempNonFwdTag))
+                //RegNext(RegNext(myTempNonFwdTag))
+                myTempNonFwdTag
               )
             }
           }
