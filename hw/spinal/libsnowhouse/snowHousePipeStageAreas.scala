@@ -3668,6 +3668,7 @@ case class SnowHousePipeStageScoreboardCheck(
         //down.isFiring
         && !myInFlushCond(0)//shouldClearExtraDecodeInfo
         && !myNonFwdHazardCheckVec.orR
+        && !myFwdHazardCheckVec.orR
         && !upPayload(1).splitOp.opIsMemAccess
       )
       ## myLeftGprIdxVec.last
@@ -3723,6 +3724,7 @@ case class SnowHousePipeStageScoreboardCheck(
         //down.isFiring
         && !myInFlushCond(1)//shouldClearExtraDecodeInfo
         && !myNonFwdHazardCheckVec.orR
+        && !myFwdHazardCheckVec.orR
         && upPayload(1).splitOp.opIsMemAccess
       )
       ## myLeftGprIdxVec.last
