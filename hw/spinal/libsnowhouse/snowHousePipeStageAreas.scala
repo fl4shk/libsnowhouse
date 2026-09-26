@@ -3695,7 +3695,7 @@ case class SnowHousePipeStageScoreboardCheck(
         myFwdCond
       ) else (
         //RegNext(
-          RegNext(myFwdCond, init=False),
+          RegNext(myFwdCond, init=myFwdCond.getZero)
         //  init=False
         //)
       )
@@ -3749,7 +3749,7 @@ case class SnowHousePipeStageScoreboardCheck(
         myNonFwdCond
       ) else (
         //RegNext(
-          RegNext(myNonFwdCond, init=False)
+          RegNext(myNonFwdCond, init=myNonFwdCond.getZero)
         //)
       )
     ) {
