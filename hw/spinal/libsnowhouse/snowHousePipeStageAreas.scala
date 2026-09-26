@@ -3560,8 +3560,8 @@ case class SnowHousePipeStageScoreboardCheck(
         // needed because the tag stored in `rMyFwdGprTagVec` gets
         // overwritten sometimes by a "can-be-forwarded-from"
         // instruction writing to the same register!
-        rFwdTagAllocVec(idx) := False
-        //rFwdTagAllocWakeUpVec(idx) := True
+        //rFwdTagAllocVec(idx) := False
+        rFwdTagAllocWakeUpVec(idx) := True
       }
     }
     default {
@@ -3587,19 +3587,19 @@ case class SnowHousePipeStageScoreboardCheck(
       ) {
         // Bubbles being retired means we need to clear our tag
         // allocations used for those bubbles!
-        rFwdTagAllocVec(idx) := False
-        //rFwdTagAllocWakeUpVec(idx) := True
+        //rFwdTagAllocVec(idx) := False
+        rFwdTagAllocWakeUpVec(idx) := True
       }
     }
     default {
     }
   }
-  //for (idx <- 0 until rFwdTagAllocVec.size) {
-  //  when (rFwdTagAllocWakeUpVec(idx)) {
-  //    rFwdTagAllocWakeUpVec(idx) := False
-  //    rFwdTagAllocVec(idx) := False
-  //  }
-  //}
+  for (idx <- 0 until rFwdTagAllocVec.size) {
+    when (rFwdTagAllocWakeUpVec(idx)) {
+      rFwdTagAllocWakeUpVec(idx) := False
+      rFwdTagAllocVec(idx) := False
+    }
+  }
   //--------
   switch (
     (
@@ -3619,8 +3619,8 @@ case class SnowHousePipeStageScoreboardCheck(
         (1 << myScoreboardCommitStm.nonFwdTag.getWidth)
         | idx
       ) {
-        rNonFwdTagAllocVec(idx) := False
-        //rNonFwdTagAllocWakeUpVec(idx) := True
+        //rNonFwdTagAllocVec(idx) := False
+        rNonFwdTagAllocWakeUpVec(idx) := True
       }
     }
     default {
@@ -3646,19 +3646,19 @@ case class SnowHousePipeStageScoreboardCheck(
       ) {
         // Bubbles being retired means we need to clear our tag
         // allocations used for those bubbles!
-        rNonFwdTagAllocVec(idx) := False
-        //rNonFwdTagAllocWakeUpVec(idx) := True
+        //rNonFwdTagAllocVec(idx) := False
+        rNonFwdTagAllocWakeUpVec(idx) := True
       }
     }
     default {
     }
   }
-  //for (idx <- 0 until rNonFwdTagAllocVec.size) {
-  //  when (rNonFwdTagAllocWakeUpVec(idx)) {
-  //    rNonFwdTagAllocWakeUpVec(idx) := False
-  //    rNonFwdTagAllocVec(idx) := False
-  //  }
-  //}
+  for (idx <- 0 until rNonFwdTagAllocVec.size) {
+    when (rNonFwdTagAllocWakeUpVec(idx)) {
+      rNonFwdTagAllocWakeUpVec(idx) := False
+      rNonFwdTagAllocVec(idx) := False
+    }
+  }
   //--------
 
   for (jdx <- 0 until 2) {
@@ -3668,7 +3668,7 @@ case class SnowHousePipeStageScoreboardCheck(
         //down.isFiring
         && !myInFlushCond(0)//shouldClearExtraDecodeInfo
         && !myNonFwdHazardCheckVec.orR
-        && !myFwdHazardCheckVec.orR
+        //&& !myFwdHazardCheckVec.orR
         && !upPayload(1).splitOp.opIsMemAccess
       )
       ## myLeftGprIdxVec.last
@@ -3724,7 +3724,7 @@ case class SnowHousePipeStageScoreboardCheck(
         //down.isFiring
         && !myInFlushCond(1)//shouldClearExtraDecodeInfo
         && !myNonFwdHazardCheckVec.orR
-        && !myFwdHazardCheckVec.orR
+        //&& !myFwdHazardCheckVec.orR
         && upPayload(1).splitOp.opIsMemAccess
       )
       ## myLeftGprIdxVec.last
