@@ -3552,6 +3552,7 @@ case class SnowHousePipeStageScoreboardCheck(
       myScoreboardCommitStm.fire
       && myScoreboardCommitStm.opIsFwd
       //&& myScoreboardCommitStm.myFwdValid
+      && myScoreboardCommitStm.gprIdxVec.last.orR
     )
     ## (
       myScoreboardCommitStm.fwdTag
@@ -3580,6 +3581,7 @@ case class SnowHousePipeStageScoreboardCheck(
       myScoreboardBubbleRetireStm.fire
       && myScoreboardBubbleRetireStm.opIsFwd
       //&& myScoreboardBubbleRetireStm.myFwdValid
+      && myScoreboardBubbleRetireStm.gprIdxVec.last.orR
     )
     ## (
       myScoreboardBubbleRetireStm.fwdTag
@@ -3617,6 +3619,7 @@ case class SnowHousePipeStageScoreboardCheck(
       myScoreboardCommitStm.fire
       //&& myScoreboardCommitStm.opIsFwd
       && myScoreboardCommitStm.myNonFwdValid
+      && myScoreboardCommitStm.gprIdxVec.last.orR
     )
     ## (
       myScoreboardCommitStm.nonFwdTag
@@ -3642,6 +3645,7 @@ case class SnowHousePipeStageScoreboardCheck(
       myScoreboardBubbleRetireStm.fire
       //&& myScoreboardBubbleRetireStm.opIsFwd
       && myScoreboardBubbleRetireStm.myNonFwdValid
+      && myScoreboardBubbleRetireStm.gprIdxVec.last.orR
     )
     ## (
       myScoreboardBubbleRetireStm.nonFwdTag
