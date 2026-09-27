@@ -3488,6 +3488,9 @@ case class SnowHousePipeStageScoreboardCheck(
             rMyFwdGprTagVec(idx).tag
             === myScoreboardCommitStm.fwdTag
           )
+          && (
+            myScoreboardCommitStm.gprIdxVec.last.orR
+          )
         )
         || (
           myScoreboardBubbleRetireStm.fire
@@ -3495,6 +3498,9 @@ case class SnowHousePipeStageScoreboardCheck(
           && (
             rMyFwdGprTagVec(idx).tag
             === myScoreboardBubbleRetireStm.fwdTag
+          )
+          && (
+            myScoreboardBubbleRetireStm.gprIdxVec.last.orR
           )
         )
       )
@@ -3523,6 +3529,9 @@ case class SnowHousePipeStageScoreboardCheck(
             rMyNonFwdGprTagVec(idx).tag
             === myScoreboardCommitStm.nonFwdTag
           )
+          && (
+            myScoreboardCommitStm.gprIdxVec.last.orR
+          )
         )
         || (
           myScoreboardBubbleRetireStm.fire
@@ -3530,6 +3539,9 @@ case class SnowHousePipeStageScoreboardCheck(
           && (
             rMyNonFwdGprTagVec(idx).tag
             === myScoreboardBubbleRetireStm.nonFwdTag
+          )
+          && (
+            myScoreboardBubbleRetireStm.gprIdxVec.last.orR
           )
         )
       )
@@ -3552,7 +3564,7 @@ case class SnowHousePipeStageScoreboardCheck(
       myScoreboardCommitStm.fire
       && myScoreboardCommitStm.opIsFwd
       //&& myScoreboardCommitStm.myFwdValid
-      && myScoreboardCommitStm.gprIdxVec.last.orR
+      //&& myScoreboardCommitStm.gprIdxVec.last.orR
     )
     ## (
       myScoreboardCommitStm.fwdTag
@@ -3581,7 +3593,7 @@ case class SnowHousePipeStageScoreboardCheck(
       myScoreboardBubbleRetireStm.fire
       && myScoreboardBubbleRetireStm.opIsFwd
       //&& myScoreboardBubbleRetireStm.myFwdValid
-      && myScoreboardBubbleRetireStm.gprIdxVec.last.orR
+      //&& myScoreboardBubbleRetireStm.gprIdxVec.last.orR
     )
     ## (
       myScoreboardBubbleRetireStm.fwdTag
@@ -3619,7 +3631,7 @@ case class SnowHousePipeStageScoreboardCheck(
       myScoreboardCommitStm.fire
       //&& myScoreboardCommitStm.opIsFwd
       && myScoreboardCommitStm.myNonFwdValid
-      && myScoreboardCommitStm.gprIdxVec.last.orR
+      //&& myScoreboardCommitStm.gprIdxVec.last.orR
     )
     ## (
       myScoreboardCommitStm.nonFwdTag
@@ -3645,7 +3657,7 @@ case class SnowHousePipeStageScoreboardCheck(
       myScoreboardBubbleRetireStm.fire
       //&& myScoreboardBubbleRetireStm.opIsFwd
       && myScoreboardBubbleRetireStm.myNonFwdValid
-      && myScoreboardBubbleRetireStm.gprIdxVec.last.orR
+      //&& myScoreboardBubbleRetireStm.gprIdxVec.last.orR
     )
     ## (
       myScoreboardBubbleRetireStm.nonFwdTag
