@@ -2516,7 +2516,7 @@ case class SnowHousePipeStageScoreboardCheck(
     val valid = Bool()
     def fire = valid
     val tag = UInt(cfg.optScoreboardTagWidth bits)
-    val wakeUp = Bool()
+    //val wakeUp = Bool()
     val cnt = (
       !isNonFwd
     ) generate (
@@ -2588,14 +2588,14 @@ case class SnowHousePipeStageScoreboardCheck(
     }
   }
 
-  val rNonFwdTagAllocWakeUpVec = (
-    Vec.fill(
-      //1 << myTempNonFwdTag.getWidth
-      cfg.optScoreboardNumTagsPerKind
-    )(
-      Reg(Bool(), init=False)
-    )
-  )
+  //val rNonFwdTagAllocWakeUpVec = (
+  //  Vec.fill(
+  //    //1 << myTempNonFwdTag.getWidth
+  //    cfg.optScoreboardNumTagsPerKind
+  //  )(
+  //    Reg(Bool(), init=False)
+  //  )
+  //)
   val rNonFwdTagAllocVec = (
     Vec.fill(
       //1 << myTempNonFwdTag.getWidth
@@ -2604,14 +2604,14 @@ case class SnowHousePipeStageScoreboardCheck(
       Reg(Bool(), init=False)
     )
   )
-  val rFwdTagAllocWakeUpVec = (
-    Vec.fill(
-      //1 << myTempNonFwdTag.getWidth
-      cfg.optScoreboardNumTagsPerKind
-    )(
-      Reg(Bool(), init=False)
-    )
-  )
+  //val rFwdTagAllocWakeUpVec = (
+  //  Vec.fill(
+  //    //1 << myTempNonFwdTag.getWidth
+  //    cfg.optScoreboardNumTagsPerKind
+  //  )(
+  //    Reg(Bool(), init=False)
+  //  )
+  //)
   val rFwdTagAllocVec = (
     Vec.fill(
       //1 << myTempFwdTag.getWidth
@@ -3490,21 +3490,21 @@ case class SnowHousePipeStageScoreboardCheck(
           )
         )
       )
-      && !rMyFwdGprTagVec(idx).wakeUp
+      //&& !rMyFwdGprTagVec(idx).wakeUp
     ) {
-      ////rFwdTagAllocVec(myScoreboardCommitStm.fwdTag) := False
-      //rMyFwdGprTagVec(idx).valid := False
-      ////rMyFwdGprTagVec(idx).cnt := (
-      ////  cfg.optForFmaxPsExFwdSize - 2
-      ////)
-      ////rFwdWakeUpVec(idx) := True
-      rMyFwdGprTagVec(idx).wakeUp := True
+      //rFwdTagAllocVec(myScoreboardCommitStm.fwdTag) := False
+      rMyFwdGprTagVec(idx).valid := False
+      //rMyFwdGprTagVec(idx).cnt := (
+      //  cfg.optForFmaxPsExFwdSize - 2
+      //)
+      //rFwdWakeUpVec(idx) := True
+      //rMyFwdGprTagVec(idx).wakeUp := True
     }
 
-    when (rMyFwdGprTagVec(idx).wakeUp) {
-      rMyFwdGprTagVec(idx).wakeUp := False
-      rMyFwdGprTagVec(idx).valid := False
-    }
+    //when (rMyFwdGprTagVec(idx).wakeUp) {
+    //  rMyFwdGprTagVec(idx).wakeUp := False
+    //  rMyFwdGprTagVec(idx).valid := False
+    //}
     when (
       rMyNonFwdGprTagVec(idx).fire
       && (
@@ -3525,18 +3525,18 @@ case class SnowHousePipeStageScoreboardCheck(
           )
         )
       )
-      && !rMyNonFwdGprTagVec(idx).wakeUp
+      //&& !rMyNonFwdGprTagVec(idx).wakeUp
     ) {
-      //////rNonFwdTagAllocVec(myScoreboardCommitStm.fwdTag) := False
-      //rMyNonFwdGprTagVec(idx).valid := False
-      ////rNonFwdWakeUpVec(idx) := True
-      rMyNonFwdGprTagVec(idx).wakeUp := True
+      ////rNonFwdTagAllocVec(myScoreboardCommitStm.fwdTag) := False
+      rMyNonFwdGprTagVec(idx).valid := False
+      //rNonFwdWakeUpVec(idx) := True
+      //rMyNonFwdGprTagVec(idx).wakeUp := True
     }
 
-    when (rMyNonFwdGprTagVec(idx).wakeUp) {
-      rMyNonFwdGprTagVec(idx).wakeUp := False
-      rMyNonFwdGprTagVec(idx).valid := False
-    }
+    //when (rMyNonFwdGprTagVec(idx).wakeUp) {
+    //  rMyNonFwdGprTagVec(idx).wakeUp := False
+    //  rMyNonFwdGprTagVec(idx).valid := False
+    //}
   }
   //--------
   switch (
@@ -3560,8 +3560,8 @@ case class SnowHousePipeStageScoreboardCheck(
         // needed because the tag stored in `rMyFwdGprTagVec` gets
         // overwritten sometimes by a "can-be-forwarded-from"
         // instruction writing to the same register!
-        //rFwdTagAllocVec(idx) := False
-        rFwdTagAllocWakeUpVec(idx) := True
+        rFwdTagAllocVec(idx) := False
+        //rFwdTagAllocWakeUpVec(idx) := True
       }
     }
     default {
@@ -3587,19 +3587,19 @@ case class SnowHousePipeStageScoreboardCheck(
       ) {
         // Bubbles being retired means we need to clear our tag
         // allocations used for those bubbles!
-        //rFwdTagAllocVec(idx) := False
-        rFwdTagAllocWakeUpVec(idx) := True
+        rFwdTagAllocVec(idx) := False
+        //rFwdTagAllocWakeUpVec(idx) := True
       }
     }
     default {
     }
   }
-  for (idx <- 0 until rFwdTagAllocVec.size) {
-    when (rFwdTagAllocWakeUpVec(idx)) {
-      rFwdTagAllocWakeUpVec(idx) := False
-      rFwdTagAllocVec(idx) := False
-    }
-  }
+  //for (idx <- 0 until rFwdTagAllocVec.size) {
+  //  when (rFwdTagAllocWakeUpVec(idx)) {
+  //    rFwdTagAllocWakeUpVec(idx) := False
+  //    rFwdTagAllocVec(idx) := False
+  //  }
+  //}
   //--------
   switch (
     (
@@ -3619,8 +3619,8 @@ case class SnowHousePipeStageScoreboardCheck(
         (1 << myScoreboardCommitStm.nonFwdTag.getWidth)
         | idx
       ) {
-        //rNonFwdTagAllocVec(idx) := False
-        rNonFwdTagAllocWakeUpVec(idx) := True
+        rNonFwdTagAllocVec(idx) := False
+        //rNonFwdTagAllocWakeUpVec(idx) := True
       }
     }
     default {
@@ -3646,19 +3646,19 @@ case class SnowHousePipeStageScoreboardCheck(
       ) {
         // Bubbles being retired means we need to clear our tag
         // allocations used for those bubbles!
-        //rNonFwdTagAllocVec(idx) := False
-        rNonFwdTagAllocWakeUpVec(idx) := True
+        rNonFwdTagAllocVec(idx) := False
+        //rNonFwdTagAllocWakeUpVec(idx) := True
       }
     }
     default {
     }
   }
-  for (idx <- 0 until rNonFwdTagAllocVec.size) {
-    when (rNonFwdTagAllocWakeUpVec(idx)) {
-      rNonFwdTagAllocWakeUpVec(idx) := False
-      rNonFwdTagAllocVec(idx) := False
-    }
-  }
+  //for (idx <- 0 until rNonFwdTagAllocVec.size) {
+  //  when (rNonFwdTagAllocWakeUpVec(idx)) {
+  //    rNonFwdTagAllocWakeUpVec(idx) := False
+  //    rNonFwdTagAllocVec(idx) := False
+  //  }
+  //}
   //--------
 
   for (jdx <- 0 until 2) {
