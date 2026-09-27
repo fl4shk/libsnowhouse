@@ -3384,7 +3384,7 @@ case class SnowHousePipeStageScoreboardCheck(
       up.isFiring
       && !myInFlushCond(0)
       && upPayload(1).splitOp.opIsMemAccess
-      && upPayload(1).gprIsNonZeroVec.last.last
+      //&& upPayload(1).gprIsNonZeroVec.last.last
     )
     //## Bitscan(
     //  //~rNonFwdTagAllocVec.asBits.asUInt
@@ -3421,7 +3421,7 @@ case class SnowHousePipeStageScoreboardCheck(
       up.isFiring
       && !myInFlushCond(1)
       && !upPayload(1).splitOp.opIsMemAccess
-      && upPayload(1).gprIsNonZeroVec.last.last
+      //&& upPayload(1).gprIsNonZeroVec.last.last
     )
     //## Bitscan(
     //  //~rFwdTagAllocVec.asBits.asUInt
