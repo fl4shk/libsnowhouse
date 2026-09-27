@@ -3384,6 +3384,7 @@ case class SnowHousePipeStageScoreboardCheck(
       up.isFiring
       && !myInFlushCond(0)
       && upPayload(1).splitOp.opIsMemAccess
+      && upPayload(1).gprIsNonZeroVec.last.last
     )
     //## Bitscan(
     //  //~rNonFwdTagAllocVec.asBits.asUInt
@@ -3420,6 +3421,7 @@ case class SnowHousePipeStageScoreboardCheck(
       up.isFiring
       && !myInFlushCond(1)
       && !upPayload(1).splitOp.opIsMemAccess
+      && upPayload(1).gprIsNonZeroVec.last.last
     )
     //## Bitscan(
     //  //~rFwdTagAllocVec.asBits.asUInt
@@ -3676,18 +3678,20 @@ case class SnowHousePipeStageScoreboardCheck(
         && !myNonFwdHazardCheckVec.orR
         //&& !myFwdHazardCheckVec.orR
         && !upPayload(1).splitOp.opIsMemAccess
+        //&& upPayload(1).gprIsNonZeroVec.last.last
       )
       ## myLeftGprIdxVec.last
     )
+
     switch (
       if (jdx == 0) (
         myFwdCond
       ) else (
-        //RegNext(
-          //RegNext(myFwdCond, init=myFwdCond.getZero)
-        //  init=False
-        //)
-        myFwdCond
+        RegNext(
+          RegNext(myFwdCond, init=myFwdCond.getZero),
+          init=myFwdCond.getZero
+        )
+        //myFwdCond
       )
     ) {
       for (idx <- 0 until cfg.numGprs) {
@@ -3709,10 +3713,11 @@ case class SnowHousePipeStageScoreboardCheck(
               }
             } else {
               rMyFwdGprTagVec(idx).tag := (
-                //RegNext(
-                //  RegNext(myTempFwdTag, init=myTempFwdTag.getZero)
-                //)
-                myTempFwdTag
+                RegNext(
+                  RegNext(myTempFwdTag, init=myTempFwdTag.getZero),
+                  init=myTempFwdTag.getZero
+                )
+                //myTempFwdTag
               )
             }
           }
@@ -3732,6 +3737,7 @@ case class SnowHousePipeStageScoreboardCheck(
         && !myNonFwdHazardCheckVec.orR
         //&& !myFwdHazardCheckVec.orR
         && upPayload(1).splitOp.opIsMemAccess
+        //&& upPayload(1).gprIsNonZeroVec.last.last
       )
       ## myLeftGprIdxVec.last
     )
@@ -3740,10 +3746,10 @@ case class SnowHousePipeStageScoreboardCheck(
       if (jdx == 0) (
         myNonFwdCond
       ) else (
-        //RegNext(
-        //  RegNext(myNonFwdCond, init=myNonFwdCond.getZero)
-        //)
-        myNonFwdCond
+        RegNext(
+          RegNext(myNonFwdCond, init=myNonFwdCond.getZero)
+        )
+        //myNonFwdCond
       )
     ) {
       for (idx <- 0 until cfg.numGprs) {
@@ -3759,10 +3765,11 @@ case class SnowHousePipeStageScoreboardCheck(
               rMyNonFwdGprTagVec(idx).valid := True
             } else {
               rMyNonFwdGprTagVec(idx).tag := (
-                //RegNext(
-                //  RegNext(myTempNonFwdTag, init=myTempNonFwdTag.getZero)
-                //)
-                myTempNonFwdTag
+                RegNext(
+                  RegNext(myTempNonFwdTag, init=myTempNonFwdTag.getZero),
+                  init=myTempNonFwdTag,
+                )
+                //myTempNonFwdTag
               )
             }
           }
