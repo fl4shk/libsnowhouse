@@ -3548,7 +3548,7 @@ case class SnowHousePipeStageScoreboardCheck(
       && RegNext(
         RegNext(
           !(
-            myFwdCond(1)
+            myFwdCond.msb
             && (upPayload(1).gprIdxVec.last === idx)
           )
         )
@@ -3596,7 +3596,7 @@ case class SnowHousePipeStageScoreboardCheck(
       && RegNext(
         RegNext(
           !(
-            myNonFwdCond(1)
+            myNonFwdCond.msb
             && (upPayload(1).gprIdxVec.last === idx)
           )
         )
