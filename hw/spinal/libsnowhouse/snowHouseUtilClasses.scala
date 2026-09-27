@@ -1233,7 +1233,8 @@ case class SnowHouseConfig(
   //  //1
   //)
   val optScoreboardNumTagsPerKind = (
-    12
+    //12
+    32
   )
   val optScoreboardTagWidth = (
     //6
