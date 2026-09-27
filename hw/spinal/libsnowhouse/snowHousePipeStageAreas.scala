@@ -2516,7 +2516,7 @@ case class SnowHousePipeStageScoreboardCheck(
     val valid = Bool()
     def fire = valid
     val tag = UInt(cfg.optScoreboardTagWidth bits)
-    //val wakeUp = Bool()
+    val wakeUp = Bool()
     val cnt = (
       !isNonFwd
     ) generate (
@@ -3465,6 +3465,34 @@ case class SnowHousePipeStageScoreboardCheck(
   //val rFwdWakeUpVec = Vec.fill(cfg.numGprs)(
   //  Reg(Bool(), init=False)
   //)
+
+  val myFwdCond = (
+    (
+      up.isFiring
+      //down.isFiring
+      && !myInFlushCond(0)//shouldClearExtraDecodeInfo
+      && !myNonFwdHazardCheckVec.orR
+      //&& !myFwdHazardCheckVec.orR
+      && !upPayload(1).splitOp.opIsMemAccess
+      //&& upPayload(1).gprIsNonZeroVec.last.last
+    )
+    ## myLeftGprIdxVec.last
+  )
+
+  val myNonFwdCond = (
+    (
+      up.isFiring
+      //down.isFiring
+      && !myInFlushCond(1)//shouldClearExtraDecodeInfo
+      && !myNonFwdHazardCheckVec.orR
+      //&& !myFwdHazardCheckVec.orR
+      && upPayload(1).splitOp.opIsMemAccess
+      //&& upPayload(1).gprIsNonZeroVec.last.last
+    )
+    ## myLeftGprIdxVec.last
+  )
+
+
   for (idx <- 0 until cfg.numGprs) {
     when (
       //up.isFiring
@@ -3488,9 +3516,9 @@ case class SnowHousePipeStageScoreboardCheck(
             rMyFwdGprTagVec(idx).tag
             === myScoreboardCommitStm.fwdTag
           )
-          && (
-            myScoreboardCommitStm.gprIdxVec.last.orR
-          )
+          //&& (
+          //  myScoreboardCommitStm.gprIdxVec.last.orR
+          //)
         )
         || (
           myScoreboardBubbleRetireStm.fire
@@ -3499,26 +3527,36 @@ case class SnowHousePipeStageScoreboardCheck(
             rMyFwdGprTagVec(idx).tag
             === myScoreboardBubbleRetireStm.fwdTag
           )
-          && (
-            myScoreboardBubbleRetireStm.gprIdxVec.last.orR
-          )
+          //&& (
+          //  myScoreboardBubbleRetireStm.gprIdxVec.last.orR
+          //)
         )
       )
       //&& !rMyFwdGprTagVec(idx).wakeUp
     ) {
-      //rFwdTagAllocVec(myScoreboardCommitStm.fwdTag) := False
-      rMyFwdGprTagVec(idx).valid := False
-      //rMyFwdGprTagVec(idx).cnt := (
-      //  cfg.optForFmaxPsExFwdSize - 2
-      //)
-      //rFwdWakeUpVec(idx) := True
-      //rMyFwdGprTagVec(idx).wakeUp := True
+      ////rFwdTagAllocVec(myScoreboardCommitStm.fwdTag) := False
+      //rMyFwdGprTagVec(idx).valid := False
+      ////rMyFwdGprTagVec(idx).cnt := (
+      ////  cfg.optForFmaxPsExFwdSize - 2
+      ////)
+      ////rFwdWakeUpVec(idx) := True
+      rMyFwdGprTagVec(idx).wakeUp := True
     }
 
-    //when (rMyFwdGprTagVec(idx).wakeUp) {
-    //  rMyFwdGprTagVec(idx).wakeUp := False
-    //  rMyFwdGprTagVec(idx).valid := False
-    //}
+    when (
+      rMyFwdGprTagVec(idx).wakeUp
+      && RegNext(
+        RegNext(
+          !(
+            myFwdCond(1)
+            && (upPayload(1).gprIdxVec.last === idx)
+          )
+        )
+      )
+    ) {
+      rMyFwdGprTagVec(idx).wakeUp := False
+      rMyFwdGprTagVec(idx).valid := False
+    }
     when (
       rMyNonFwdGprTagVec(idx).fire
       && (
@@ -3548,15 +3586,25 @@ case class SnowHousePipeStageScoreboardCheck(
       //&& !rMyNonFwdGprTagVec(idx).wakeUp
     ) {
       ////rNonFwdTagAllocVec(myScoreboardCommitStm.fwdTag) := False
-      rMyNonFwdGprTagVec(idx).valid := False
-      //rNonFwdWakeUpVec(idx) := True
-      //rMyNonFwdGprTagVec(idx).wakeUp := True
+      //rMyNonFwdGprTagVec(idx).valid := False
+      ////rNonFwdWakeUpVec(idx) := True
+      rMyNonFwdGprTagVec(idx).wakeUp := True
     }
 
-    //when (rMyNonFwdGprTagVec(idx).wakeUp) {
-    //  rMyNonFwdGprTagVec(idx).wakeUp := False
-    //  rMyNonFwdGprTagVec(idx).valid := False
-    //}
+    when (
+      rMyNonFwdGprTagVec(idx).wakeUp
+      && RegNext(
+        RegNext(
+          !(
+            myNonFwdCond(1)
+            && (upPayload(1).gprIdxVec.last === idx)
+          )
+        )
+      )
+    ) {
+      rMyNonFwdGprTagVec(idx).wakeUp := False
+      rMyNonFwdGprTagVec(idx).valid := False
+    }
   }
   //--------
   switch (
@@ -3692,19 +3740,6 @@ case class SnowHousePipeStageScoreboardCheck(
   //--------
 
   for (jdx <- 0 until 2) {
-    val myFwdCond = (
-      (
-        up.isFiring
-        //down.isFiring
-        && !myInFlushCond(0)//shouldClearExtraDecodeInfo
-        && !myNonFwdHazardCheckVec.orR
-        //&& !myFwdHazardCheckVec.orR
-        && !upPayload(1).splitOp.opIsMemAccess
-        //&& upPayload(1).gprIsNonZeroVec.last.last
-      )
-      ## myLeftGprIdxVec.last
-    )
-
     switch (
       if (jdx == 0) (
         myFwdCond
@@ -3750,19 +3785,6 @@ case class SnowHousePipeStageScoreboardCheck(
         }
       }
     }
-
-    val myNonFwdCond = (
-      (
-        up.isFiring
-        //down.isFiring
-        && !myInFlushCond(1)//shouldClearExtraDecodeInfo
-        && !myNonFwdHazardCheckVec.orR
-        //&& !myFwdHazardCheckVec.orR
-        && upPayload(1).splitOp.opIsMemAccess
-        //&& upPayload(1).gprIsNonZeroVec.last.last
-      )
-      ## myLeftGprIdxVec.last
-    )
 
     switch (
       if (jdx == 0) (
