@@ -2493,11 +2493,11 @@ case class SnowHousePipeStageScoreboardCheck(
 
   val rScoreboardFlushState = (
     Reg(ScoreboardFlushState(
-      //if (doOooIssue) (
-      //  binarySequential
-      //) else (
+      if (doOooIssue) (
+        binarySequential
+      ) else (
         binaryOneHot
-      //)
+      )
     ))
     init(ScoreboardFlushState.IDLE)
   )
@@ -2806,8 +2806,9 @@ case class SnowHousePipeStageScoreboardCheck(
         idx=2,
       )
       && down.isReady
-      && rScoreboardFlushState.asBits(
-        ScoreboardFlushState.IDLE.position
+      && !rScoreboardFlushState.asBits(
+        //ScoreboardFlushState.IDLE.position
+        0
       )
       && (
         //!myPopValidVec.andR
@@ -3094,7 +3095,10 @@ case class SnowHousePipeStageScoreboardCheck(
     )
 
     switch (
-      rScoreboardFlushState.asBits(ScoreboardFlushState.IDLE.position)
+      rScoreboardFlushState.asBits(
+        //ScoreboardFlushState.IDLE.position
+        0
+      )
       ## up.isValid
       ## myInFlushCondMain(
         someUpPayload0=up(pId),
@@ -3195,7 +3199,8 @@ case class SnowHousePipeStageScoreboardCheck(
     }
 
     when (
-      rScoreboardFlushState.asBits(ScoreboardFlushState.IDLE.position)
+      //rScoreboardFlushState.asBits(ScoreboardFlushState.IDLE.position)
+      !rScoreboardFlushState.asBits(0)
       && (
         myNonFwdHazardCheckVec.orR
         || myFwdHazardCheckVec.orR
@@ -3213,7 +3218,8 @@ case class SnowHousePipeStageScoreboardCheck(
     }
 
     when (
-      rScoreboardFlushState.asBits(ScoreboardFlushState.FLUSH.position)
+      //rScoreboardFlushState.asBits(ScoreboardFlushState.FLUSH.position)
+      rScoreboardFlushState.asBits(0)
       && !myInFlushCond(3)
     ) {
       doSendBubbleMainMost(
