@@ -3171,14 +3171,14 @@ case class SnowHousePipeStageScoreboardCheck(
         || myFwdHazardCheckVec.orR
         || myReducedFwdTagAllocVec.asBits.andR
         || myReducedNonFwdTagAllocVec.asBits.andR
-        || myInFlushCond(2)
+        //|| myInFlushCond(2)
       )
     ) {
       doSendBubbleMainMost(
         myPsIdBubble=Some(myNonFwdHazardCheckVec.orR),
         myPsIdOtherBubble=Some(True),
         myPsIdFwdBubble=Some(myFwdHazardCheckVec.orR),
-        myInFlushCond=Some(myInFlushCond(2))//None
+        myInFlushCond=None//Some(myInFlushCond(2))//None
       )
     }
 
