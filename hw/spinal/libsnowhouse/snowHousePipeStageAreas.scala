@@ -3036,16 +3036,17 @@ case class SnowHousePipeStageScoreboardCheck(
       //rScoreboardFlushState.asBits(ScoreboardFlushState.IDLE.position)
       //## 
       up.isValid
-      ## myInFlushCondMain(
-        someUpPayload0=up(pId),
-        idx=3,
-      )
+      //## myInFlushCondMain(
+      //  someUpPayload0=up(pId),
+      //  idx=3,
+      //)
       ## myPopValidVec.asBits
       ## myOooOkayCond
     ) {
       is (
         //M"01001-"
-        M"1001-"
+        //M"1001-"
+        M"101-"
       ) {
         doPopHead(doUpIsFiring=true)
 
@@ -3062,7 +3063,8 @@ case class SnowHousePipeStageScoreboardCheck(
       }
       is (
         //M"01010-"
-        M"1010-"
+        //M"1010-"
+        M"110-"
       ) {
         doPopLast(doUpIsFiring=true)
 
@@ -3079,7 +3081,8 @@ case class SnowHousePipeStageScoreboardCheck(
       }
       is (
         //M"010111"
-        M"10111"
+        //M"10111"
+        M"1111"
       ) {
         switch (
           (
@@ -3110,44 +3113,45 @@ case class SnowHousePipeStageScoreboardCheck(
       }
       is (
         //M"010110"
-        M"10110"
+        //M"10110"
+        M"1110"
       ) {
         doPopLast(doUpIsFiring=true)
       }
-      is (
-        //M"01101-"
-        M"1101-"
-      ) {
-        cScoreboardCheck.duplicateIt()
-        doPopHead(doUpIsFiring=false)
-      }
-      is (
-        //M"01110-"
-        M"1110-"
-      ) {
-        cScoreboardCheck.duplicateIt()
-        doPopLast(doUpIsFiring=false)
-      }
-      is (
-        //M"01111-"
-        M"1111-"
-      ) {
-        cScoreboardCheck.duplicateIt()
-        // Let's just schedule in-order here, as we have an upcoming
-        // pipeline flush anyway.
-        doPopLast(doUpIsFiring=false)
-      }
-      is (
-        //M"01100-"
-        M"1100-"
-      ) {
-        upPayload(0) := up(pId)
-        upPayload(1) := upPayload(0)
-        // okay, now we can go to the next state!
-        if (rScoreboardFlushState != null) {
-          rScoreboardFlushState := ScoreboardFlushState.FLUSH
-        }
-      }
+      //is (
+      //  //M"01101-"
+      //  M"1101-"
+      //) {
+      //  cScoreboardCheck.duplicateIt()
+      //  doPopHead(doUpIsFiring=false)
+      //}
+      //is (
+      //  //M"01110-"
+      //  M"1110-"
+      //) {
+      //  cScoreboardCheck.duplicateIt()
+      //  doPopLast(doUpIsFiring=false)
+      //}
+      //is (
+      //  //M"01111-"
+      //  M"1111-"
+      //) {
+      //  cScoreboardCheck.duplicateIt()
+      //  // Let's just schedule in-order here, as we have an upcoming
+      //  // pipeline flush anyway.
+      //  doPopLast(doUpIsFiring=false)
+      //}
+      //is (
+      //  //M"01100-"
+      //  M"1100-"
+      //) {
+      //  upPayload(0) := up(pId)
+      //  upPayload(1) := upPayload(0)
+      //  // okay, now we can go to the next state!
+      //  if (rScoreboardFlushState != null) {
+      //    rScoreboardFlushState := ScoreboardFlushState.FLUSH
+      //  }
+      //}
       //is (
       //  //M"11----"
       //  M"1----"
