@@ -2812,7 +2812,24 @@ case class SnowHousePipeStageScoreboardCheck(
     )
 
     val myBufPushStm = cloneOf(myOooRdBuf.io.push)
-    myOooRdBuf.io.push <-/< myBufPushStm
+    myOooRdBuf.io.push << myBufPushStm
+    myOooRdBuf.io.en := (
+      //myBufPushCondMost
+
+      up.isValid
+      && (
+        //!myPopValidVec.andR
+        !myFullPopValidVec.andR
+      )
+      && down.isReady
+      //up.isValid
+      //&& !myInFlushCondMain(
+      //  someUpPayload0=up(pId),
+      //  idx=2,
+      //)
+      //&& down.isReady
+      //&& myBufPushStm.ready
+    )
       
     //myOooRdBuf.io.push.valid 
     myBufPushStm.valid := (
