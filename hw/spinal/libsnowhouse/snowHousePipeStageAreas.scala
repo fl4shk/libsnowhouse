@@ -2810,8 +2810,12 @@ case class SnowHousePipeStageScoreboardCheck(
       )
       && down.isReady
     )
+
+    val myBufPushStm = cloneOf(myOooRdBuf.io.push)
+    myOooRdBuf.io.push <-/< myBufPushStm
       
-    myOooRdBuf.io.push.valid := (
+    //myOooRdBuf.io.push.valid 
+    myBufPushStm.valid := (
       //up.isValid
       //&& !myInFlushCondMain(
       //  someUpPayload0=up(pId),
@@ -2826,9 +2830,11 @@ case class SnowHousePipeStageScoreboardCheck(
         //!myPopValidVec.andR
         !myFullPopValidVec.andR
       )
-      && myOooRdBuf.io.push.ready
+      //&& myOooRdBuf.io.push.ready
+      && myBufPushStm.ready
     )
-    myOooRdBuf.io.push.payload := up(pId)//.myRegPcVec.head
+    //myOooRdBuf.io.push.payload := up(pId)//.myRegPcVec.head
+    myBufPushStm.payload := up(pId)//.myRegPcVec.head
 
     //myOooRdBuf.io.pop.foreach(item => item.ready := False)
 
