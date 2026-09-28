@@ -2816,58 +2816,6 @@ case class SnowHousePipeStageScoreboardCheck(
       )
     )
     myOooRdBuf.io.push.payload := up(pId)//.myRegPcVec.head
-    //myOooRdBuf.io.push.splitOp.scoreboardOpCanBeOooIssued.last
-    //  .allowOverride
-    //myOooRdBuf.io.push.splitOp.scoreboardOpCanBeOooIssued.last := {
-    //  // RaW hazards should prevent OoO scheduling
-    //  //RegNextWhen(
-    //  //  upPayload(1).gprIdx
-    //  //)
-    //  val temp = Vec.fill(cfg.regFileCfg.modRdPortCnt)(
-    //    Bool()
-    //  )
-    //  val myPayload = up(pId)
-
-    //  for (idx <- 0 until cfg.regFileCfg.modRdPortCnt) {
-    //    val rPrevWrGprIdx = (
-    //      RegNextWhen(
-    //        myPayload.gprIdxVec.last,
-    //        cond=(
-    //          myOooRdBuf.io.push.fire//cId.up.isFiring,
-    //          && myOooRdBuf.io.push.splitOp.scoreboardOpCanBeOooIssued.last
-    //        ),
-    //      )
-    //      init(0x0)
-    //    )
-    //    val myMainCond = (
-    //      myPayload.gprIdxVec(idx)
-    //      === rPrevWrGprIdx
-    //    )
-    //    temp(idx) := (
-    //      if (cfg.myHaveZeroReg) (
-    //        !myMainCond
-    //        || (
-    //          RegNextWhen(
-    //            !myPayload.gprIsNonZeroVec.last.last,
-    //            cond=myOooRdBuf.io.push.fire,//cId.up.isFiring,
-    //            init=False
-    //          )
-    //        )
-    //      ) else (
-    //        !myMainCond
-    //      )
-    //    )
-    //  }
-    //  (
-    //    myPayload.splitOp.scoreboardOpCanBeOooIssued.last
-    //    && temp.andR
-    //  )
-    //}
-
-    //myOooRdBuf.io.pop.foreach(item => item.ready := False)
-    //val myTempOooRdBufPopVec = Vec.fill(myOooRdBufWindow)(
-    //  Stream(cloneOf(myOooRdBuf.io.pop.head.payload))
-    //)
 
     for (kdx <- 0 until myOooRdBufExtraSize) {
       myTempOooRdBufPopVec(kdx) := myTempOooRdBufPopVec(kdx).getZero
@@ -2879,18 +2827,9 @@ case class SnowHousePipeStageScoreboardCheck(
 
       val myKdx = kdx - myOooRdBufExtraSize
       if (myKdx == 0) {
-        myPopValidVec(myKdx) := (
-          //RegNext(
-            //myOooRdBuf.io.pop(kdx).valid//,
-            myTempOooRdBufPopVec(kdx).valid
-          //  init=False
-          //)
-        )
+        myPopValidVec(myKdx) := myTempOooRdBufPopVec(kdx).valid
       } else if (myKdx == 1) {
-        myPopValidVec(myKdx) := (
-          //myOooRdBuf.io.pop(kdx).valid
-          myTempOooRdBufPopVec(kdx).valid
-        )
+        myPopValidVec(myKdx) := myTempOooRdBufPopVec(kdx).valid
       } else {
         require(
           false
@@ -2898,34 +2837,18 @@ case class SnowHousePipeStageScoreboardCheck(
       }
 
       for (jdx <- 0 until cfg.regFileCfg.modRdPortCnt) {
-        switch (
-          //upPayload(1).gprIdxVec(jdx)
-          //myOooRdBuf.io.pop(kdx).valid
-          //## 
-          //myOooRdBuf.io.pop(kdx).gprIdxVec(jdx)
-          myTempOooRdBufPopVec(kdx).gprIdxVec(jdx)
-        ) {
+        switch (myTempOooRdBufPopVec(kdx).gprIdxVec(jdx)) {
           for (idx <- 0 until cfg.numGprs) {
             is (
-              //(1 << log2Up(cfg.numGprs))
-              //| 
               idx
             ) {
               if (myKdx == 0) {
                 myOooNonFwdRaWHazardCheckVec(myKdx)(jdx) := (
                   rMyNonFwdGprTagVec(idx).haveRaWHazard
-                  || (
-                    //idx === myOooRdBuf.io.pop(2).gprIdxVec.last
-                    //myOooRdBuf.io.pop(2).writesGprIdxVec(idx)
-                    myTempOooRdBufPopVec(2).writesGprIdxVec(idx)
-                  )
+                  || myTempOooRdBufPopVec(2).writesGprIdxVec(idx)
                 )
                 myOooFwdRaWHazardCheckVec(myKdx)(jdx) := (
                   rMyFwdGprTagVec(idx).haveRaWHazard
-                  //|| (
-                  //  idx
-                  //  === myOooRdBuf.io.pop(2).gprIdxVec.last
-                  //)
                 )
               } else if (myKdx == 1) {
                 myOooNonFwdRaWHazardCheckVec(myKdx)(jdx) := (
@@ -2939,10 +2862,6 @@ case class SnowHousePipeStageScoreboardCheck(
               }
             }
           }
-          //default {
-          //  myOooNonFwdRaWHazardCheckVec(myKdx)(jdx) := False
-          //  myOooFwdRaWHazardCheckVec(myKdx)(jdx) := False
-          //}
         }
       }
     }
@@ -3018,6 +2937,7 @@ case class SnowHousePipeStageScoreboardCheck(
       )
       myTempOooRdBufPopVec(2).ready := False
     }
+
     def doPopLast(
       doUpIsFiring: Boolean,
     ): Unit = {
@@ -3534,17 +3454,17 @@ case class SnowHousePipeStageScoreboardCheck(
             RegNext(
               !(
                 myFwdCond.msb
-                //&& (upPayload(1).gprIdxVec.last === idx)
-                && {
-                  val temp = Vec(upPayload(1).gprIdxVec.map(_ === idx))
-                  val temp1 = Vec.fill(temp.size - 1)(Bool())
-                  temp1.zipWithIndex.foreach{
-                    case (item, idx) => {
-                      item := temp(idx)
-                    }
-                  }
-                  temp1.orR
-                }
+                && (upPayload(1).gprIdxVec.last === idx)
+                //&& {
+                //  val temp = Vec(upPayload(1).gprIdxVec.map(_ === idx))
+                //  val temp1 = Vec.fill(temp.size - 1)(Bool())
+                //  temp1.zipWithIndex.foreach{
+                //    case (item, idx) => {
+                //      item := temp(idx)
+                //    }
+                //  }
+                //  temp1.orR
+                //}
               )
             )
           )
@@ -3603,18 +3523,18 @@ case class SnowHousePipeStageScoreboardCheck(
             RegNext(
               !(
                 myNonFwdCond.msb
-                //&& (upPayload(1).gprIdxVec.last === idx)
+                && (upPayload(1).gprIdxVec.last === idx)
                 //&& (Vec(upPayload(1).gprIdxVec.map(_ === idx)).orR)
-                && {
-                  val temp = Vec(upPayload(1).gprIdxVec.map(_ === idx))
-                  val temp1 = Vec.fill(temp.size - 1)(Bool())
-                  temp1.zipWithIndex.foreach{
-                    case (item, idx) => {
-                      item := temp(idx)
-                    }
-                  }
-                  temp1.orR
-                }
+                //&& {
+                //  val temp = Vec(upPayload(1).gprIdxVec.map(_ === idx))
+                //  val temp1 = Vec.fill(temp.size - 1)(Bool())
+                //  temp1.zipWithIndex.foreach{
+                //    case (item, idx) => {
+                //      item := temp(idx)
+                //    }
+                //  }
+                //  temp1.orR
+                //}
               )
             )
           )
