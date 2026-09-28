@@ -3532,6 +3532,14 @@ case class SnowHousePipeStageScoreboardCheck(
           //)
         )
       )
+      && RegNext(
+        RegNext(
+          !(
+            myFwdCond.msb
+            && (upPayload(1).gprIdxVec.last === idx)
+          )
+        )
+      )
       //&& !rMyFwdGprTagVec(idx).wakeUp
     ) {
       ////rFwdTagAllocVec(myScoreboardCommitStm.fwdTag) := False
@@ -3545,14 +3553,14 @@ case class SnowHousePipeStageScoreboardCheck(
 
     when (
       rMyFwdGprTagVec(idx).wakeUp
-      && RegNext(
-        RegNext(
-          !(
-            myFwdCond.msb
-            && (upPayload(1).gprIdxVec.last === idx)
-          )
-        )
-      )
+      //&& RegNext(
+      //  RegNext(
+      //    !(
+      //      myFwdCond.msb
+      //      && (upPayload(1).gprIdxVec.last === idx)
+      //    )
+      //  )
+      //)
     ) {
       rMyFwdGprTagVec(idx).wakeUp := False
       rMyFwdGprTagVec(idx).valid := False
@@ -3583,6 +3591,14 @@ case class SnowHousePipeStageScoreboardCheck(
           )
         )
       )
+      && RegNext(
+        RegNext(
+          !(
+            myNonFwdCond.msb
+            && (upPayload(1).gprIdxVec.last === idx)
+          )
+        )
+      )
       //&& !rMyNonFwdGprTagVec(idx).wakeUp
     ) {
       ////rNonFwdTagAllocVec(myScoreboardCommitStm.fwdTag) := False
@@ -3593,14 +3609,14 @@ case class SnowHousePipeStageScoreboardCheck(
 
     when (
       rMyNonFwdGprTagVec(idx).wakeUp
-      && RegNext(
-        RegNext(
-          !(
-            myNonFwdCond.msb
-            && (upPayload(1).gprIdxVec.last === idx)
-          )
-        )
-      )
+      //&& RegNext(
+      //  RegNext(
+      //    !(
+      //      myNonFwdCond.msb
+      //      && (upPayload(1).gprIdxVec.last === idx)
+      //    )
+      //  )
+      //)
     ) {
       rMyNonFwdGprTagVec(idx).wakeUp := False
       rMyNonFwdGprTagVec(idx).valid := False
