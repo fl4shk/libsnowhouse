@@ -3530,13 +3530,23 @@ case class SnowHousePipeStageScoreboardCheck(
           //&& (
           //  myScoreboardBubbleRetireStm.gprIdxVec.last.orR
           //)
-        )
-      )
-      && RegNext(
-        RegNext(
-          !(
-            myFwdCond.msb
-            && (upPayload(1).gprIdxVec.last === idx)
+          && RegNext(
+            RegNext(
+              !(
+                myFwdCond.msb
+                //&& (upPayload(1).gprIdxVec.last === idx)
+                && {
+                  val temp = Vec(upPayload(1).gprIdxVec.map(_ === idx))
+                  val temp1 = Vec.fill(temp.size - 1)(Bool())
+                  temp1.zipWithIndex.foreach{
+                    case (item, idx) => {
+                      item := temp(idx)
+                    }
+                  }
+                  temp1.orR
+                }
+              )
+            )
           )
         )
       )
@@ -3589,13 +3599,24 @@ case class SnowHousePipeStageScoreboardCheck(
           && (
             myScoreboardBubbleRetireStm.gprIdxVec.last.orR
           )
-        )
-      )
-      && RegNext(
-        RegNext(
-          !(
-            myNonFwdCond.msb
-            && (upPayload(1).gprIdxVec.last === idx)
+          && RegNext(
+            RegNext(
+              !(
+                myNonFwdCond.msb
+                //&& (upPayload(1).gprIdxVec.last === idx)
+                //&& (Vec(upPayload(1).gprIdxVec.map(_ === idx)).orR)
+                && {
+                  val temp = Vec(upPayload(1).gprIdxVec.map(_ === idx))
+                  val temp1 = Vec.fill(temp.size - 1)(Bool())
+                  temp1.zipWithIndex.foreach{
+                    case (item, idx) => {
+                      item := temp(idx)
+                    }
+                  }
+                  temp1.orR
+                }
+              )
+            )
           )
         )
       )
