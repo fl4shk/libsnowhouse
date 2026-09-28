@@ -2492,6 +2492,8 @@ case class SnowHousePipeStageScoreboardCheck(
   down(pScoreboardCheck).allowOverride
 
   val rScoreboardFlushState = (
+    !doOooIssue
+  ) generate (
     Reg(ScoreboardFlushState(
       //if (doOooIssue) (
       //  binarySequential
@@ -2798,75 +2800,34 @@ case class SnowHousePipeStageScoreboardCheck(
     //  up.isValid
     //  && down.isReady
     //)
-      
-    myOooRdBuf.io.push.valid := (
+    val myBufPushCondMost = (
       up.isValid
       && !myInFlushCondMain(
         someUpPayload0=up(pId),
         idx=2,
       )
       && down.isReady
-      && rScoreboardFlushState.asBits(
-        ScoreboardFlushState.IDLE.position
-      )
+    )
+      
+    myOooRdBuf.io.push.valid := (
+      //up.isValid
+      //&& !myInFlushCondMain(
+      //  someUpPayload0=up(pId),
+      //  idx=2,
+      //)
+      //&& down.isReady
+      ////&& rScoreboardFlushState.asBits(
+      ////  ScoreboardFlushState.IDLE.position
+      ////)
+      myBufPushCondMost
       && (
         //!myPopValidVec.andR
         !myFullPopValidVec.andR
       )
     )
     myOooRdBuf.io.push.payload := up(pId)//.myRegPcVec.head
-    //myOooRdBuf.io.push.splitOp.scoreboardOpCanBeOooIssued.last
-    //  .allowOverride
-    //myOooRdBuf.io.push.splitOp.scoreboardOpCanBeOooIssued.last := {
-    //  // RaW hazards should prevent OoO scheduling
-    //  //RegNextWhen(
-    //  //  upPayload(1).gprIdx
-    //  //)
-    //  val temp = Vec.fill(cfg.regFileCfg.modRdPortCnt)(
-    //    Bool()
-    //  )
-    //  val myPayload = up(pId)
-
-    //  for (idx <- 0 until cfg.regFileCfg.modRdPortCnt) {
-    //    val rPrevWrGprIdx = (
-    //      RegNextWhen(
-    //        myPayload.gprIdxVec.last,
-    //        cond=(
-    //          myOooRdBuf.io.push.fire//cId.up.isFiring,
-    //          && myOooRdBuf.io.push.splitOp.scoreboardOpCanBeOooIssued.last
-    //        ),
-    //      )
-    //      init(0x0)
-    //    )
-    //    val myMainCond = (
-    //      myPayload.gprIdxVec(idx)
-    //      === rPrevWrGprIdx
-    //    )
-    //    temp(idx) := (
-    //      if (cfg.myHaveZeroReg) (
-    //        !myMainCond
-    //        || (
-    //          RegNextWhen(
-    //            !myPayload.gprIsNonZeroVec.last.last,
-    //            cond=myOooRdBuf.io.push.fire,//cId.up.isFiring,
-    //            init=False
-    //          )
-    //        )
-    //      ) else (
-    //        !myMainCond
-    //      )
-    //    )
-    //  }
-    //  (
-    //    myPayload.splitOp.scoreboardOpCanBeOooIssued.last
-    //    && temp.andR
-    //  )
-    //}
 
     //myOooRdBuf.io.pop.foreach(item => item.ready := False)
-    //val myTempOooRdBufPopVec = Vec.fill(myOooRdBufWindow)(
-    //  Stream(cloneOf(myOooRdBuf.io.pop.head.payload))
-    //)
 
     for (kdx <- 0 until myOooRdBufExtraSize) {
       myTempOooRdBufPopVec(kdx) := myTempOooRdBufPopVec(kdx).getZero
@@ -2897,34 +2858,16 @@ case class SnowHousePipeStageScoreboardCheck(
       }
 
       for (jdx <- 0 until cfg.regFileCfg.modRdPortCnt) {
-        switch (
-          //upPayload(1).gprIdxVec(jdx)
-          //myOooRdBuf.io.pop(kdx).valid
-          //## 
-          //myOooRdBuf.io.pop(kdx).gprIdxVec(jdx)
-          myTempOooRdBufPopVec(kdx).gprIdxVec(jdx)
-        ) {
+        switch (myTempOooRdBufPopVec(kdx).gprIdxVec(jdx)) {
           for (idx <- 0 until cfg.numGprs) {
-            is (
-              //(1 << log2Up(cfg.numGprs))
-              //| 
-              idx
-            ) {
+            is (idx) {
               if (myKdx == 0) {
                 myOooNonFwdRaWHazardCheckVec(myKdx)(jdx) := (
                   rMyNonFwdGprTagVec(idx).haveRaWHazard
-                  || (
-                    //idx === myOooRdBuf.io.pop(2).gprIdxVec.last
-                    //myOooRdBuf.io.pop(2).writesGprIdxVec(idx)
-                    myTempOooRdBufPopVec(2).writesGprIdxVec(idx)
-                  )
+                  || myTempOooRdBufPopVec(2).writesGprIdxVec(idx)
                 )
                 myOooFwdRaWHazardCheckVec(myKdx)(jdx) := (
                   rMyFwdGprTagVec(idx).haveRaWHazard
-                  //|| (
-                  //  idx
-                  //  === myOooRdBuf.io.pop(2).gprIdxVec.last
-                  //)
                 )
               } else if (myKdx == 1) {
                 myOooNonFwdRaWHazardCheckVec(myKdx)(jdx) := (
@@ -2938,10 +2881,6 @@ case class SnowHousePipeStageScoreboardCheck(
               }
             }
           }
-          //default {
-          //  myOooNonFwdRaWHazardCheckVec(myKdx)(jdx) := False
-          //  myOooFwdRaWHazardCheckVec(myKdx)(jdx) := False
-          //}
         }
       }
     }
@@ -3094,8 +3033,9 @@ case class SnowHousePipeStageScoreboardCheck(
     )
 
     switch (
-      rScoreboardFlushState.asBits(ScoreboardFlushState.IDLE.position)
-      ## up.isValid
+      //rScoreboardFlushState.asBits(ScoreboardFlushState.IDLE.position)
+      //## 
+      up.isValid
       ## myInFlushCondMain(
         someUpPayload0=up(pId),
         idx=3,
@@ -3103,7 +3043,10 @@ case class SnowHousePipeStageScoreboardCheck(
       ## myPopValidVec.asBits
       ## myOooOkayCond
     ) {
-      is (M"01001-") {
+      is (
+        //M"01001-"
+        M"1001-"
+      ) {
         doPopHead(doUpIsFiring=true)
 
         when (
@@ -3117,7 +3060,10 @@ case class SnowHousePipeStageScoreboardCheck(
           )
         }
       }
-      is (M"01010-") {
+      is (
+        //M"01010-"
+        M"1010-"
+      ) {
         doPopLast(doUpIsFiring=true)
 
         when (
@@ -3131,7 +3077,10 @@ case class SnowHousePipeStageScoreboardCheck(
           )
         }
       }
-      is (M"010111") {
+      is (
+        //M"010111"
+        M"10111"
+      ) {
         switch (
           (
             //myOooOkayCond
@@ -3159,44 +3108,65 @@ case class SnowHousePipeStageScoreboardCheck(
         myOooIssueCnt.payload := rPingPongBlockCnt.payload
         //--------
       }
-      is (M"010110") {
+      is (
+        //M"010110"
+        M"10110"
+      ) {
         doPopLast(doUpIsFiring=true)
       }
-      is (M"01101-") {
+      is (
+        //M"01101-"
+        M"1101-"
+      ) {
         cScoreboardCheck.duplicateIt()
         doPopHead(doUpIsFiring=false)
       }
-      is (M"01110-") {
+      is (
+        //M"01110-"
+        M"1110-"
+      ) {
         cScoreboardCheck.duplicateIt()
         doPopLast(doUpIsFiring=false)
       }
-      is (M"01111-") {
+      is (
+        //M"01111-"
+        M"1111-"
+      ) {
         cScoreboardCheck.duplicateIt()
         // Let's just schedule in-order here, as we have an upcoming
         // pipeline flush anyway.
         doPopLast(doUpIsFiring=false)
       }
-      is (M"01100-") {
+      is (
+        //M"01100-"
+        M"1100-"
+      ) {
         upPayload(0) := up(pId)
         upPayload(1) := upPayload(0)
         // okay, now we can go to the next state!
-        rScoreboardFlushState := ScoreboardFlushState.FLUSH
+        if (rScoreboardFlushState != null) {
+          rScoreboardFlushState := ScoreboardFlushState.FLUSH
+        }
       }
-      is (M"11----") {
-        rPingPongBlockState := True
-        rPingPongBlockCnt.payload := (
-          cfg.optScoreboardOooIssueWindow.get - 1
-        )
-        upPayload(0) := up(pId)
-        upPayload(1) := upPayload(0)
-      }
+      //is (
+      //  //M"11----"
+      //  M"1----"
+      //) {
+      //  rPingPongBlockState := True
+      //  rPingPongBlockCnt.payload := (
+      //    cfg.optScoreboardOooIssueWindow.get - 1
+      //  )
+      //  upPayload(0) := up(pId)
+      //  upPayload(1) := upPayload(0)
+      //}
       default {
       }
     }
 
     when (
-      rScoreboardFlushState.asBits(ScoreboardFlushState.IDLE.position)
-      && (
+      //rScoreboardFlushState.asBits(ScoreboardFlushState.IDLE.position)
+      //&& 
+      (
         myNonFwdHazardCheckVec.orR
         || myFwdHazardCheckVec.orR
         || myReducedFwdTagAllocVec.asBits.andR
@@ -3212,57 +3182,57 @@ case class SnowHousePipeStageScoreboardCheck(
       )
     }
 
-    when (
-      rScoreboardFlushState.asBits(ScoreboardFlushState.FLUSH.position)
-      && !myInFlushCond(3)
-    ) {
-      doSendBubbleMainMost(
-        myPsIdBubble=Some(myNonFwdHazardCheckVec.orR),
-        myPsIdOtherBubble=Some(True),
-        myPsIdFwdBubble=Some(myFwdHazardCheckVec.orR),
-        myInFlushCond=None
-      )
-    }
+    //when (
+    //  rScoreboardFlushState.asBits(ScoreboardFlushState.FLUSH.position)
+    //  && !myInFlushCond(3)
+    //) {
+    //  doSendBubbleMainMost(
+    //    myPsIdBubble=Some(myNonFwdHazardCheckVec.orR),
+    //    myPsIdOtherBubble=Some(True),
+    //    myPsIdFwdBubble=Some(myFwdHazardCheckVec.orR),
+    //    myInFlushCond=None
+    //  )
+    //}
 
-    switch (rScoreboardFlushState) {
-      is (ScoreboardFlushState.IDLE) {
-        //when (
-        //  myNonFwdHazardCheckVec.orR
-        //  || myFwdHazardCheckVec.orR
-        //  || myReducedFwdTagAllocVec.asBits.andR
-        //  || myReducedNonFwdTagAllocVec.asBits.andR
-        //  || myInFlushCond(2)
-        //) {
-        //  doSendBubbleMainMost(
-        //    myPsIdBubble=Some(myNonFwdHazardCheckVec.orR),
-        //    myPsIdOtherBubble=Some(True),
-        //    myPsIdFwdBubble=Some(myFwdHazardCheckVec.orR),
-        //    myInFlushCond=Some(myInFlushCond(2))//None
-        //  )
-        //}
-      }
-      is (ScoreboardFlushState.FLUSH) {
-        // This uses the same logic as for the in-order scheduling!
-        when (
-          !myInFlushCond(3)
-          && !myReducedFwdTagAllocVec.asBits.orR
-          && !myReducedNonFwdTagAllocVec.asBits.orR
-        ) {
-          rScoreboardFlushState := ScoreboardFlushState.IDLE
-        }
-        //when (!myInFlushCond(3)) {
-        //  doSendBubbleMainMost(
-        //    myPsIdBubble=Some(myNonFwdHazardCheckVec.orR),
-        //    myPsIdOtherBubble=Some(True),
-        //    myPsIdFwdBubble=Some(myFwdHazardCheckVec.orR),
-        //    myInFlushCond=None
-        //  )
-        //}
-        upPayload(1).instrCnt.myPsIdInFlushBubble.foreach(item => {
-          item := myInFlushCond(3)
-        })
-      }
-    }
+    //switch (rScoreboardFlushState) {
+    //  is (ScoreboardFlushState.IDLE) {
+    //    //when (
+    //    //  myNonFwdHazardCheckVec.orR
+    //    //  || myFwdHazardCheckVec.orR
+    //    //  || myReducedFwdTagAllocVec.asBits.andR
+    //    //  || myReducedNonFwdTagAllocVec.asBits.andR
+    //    //  || myInFlushCond(2)
+    //    //) {
+    //    //  doSendBubbleMainMost(
+    //    //    myPsIdBubble=Some(myNonFwdHazardCheckVec.orR),
+    //    //    myPsIdOtherBubble=Some(True),
+    //    //    myPsIdFwdBubble=Some(myFwdHazardCheckVec.orR),
+    //    //    myInFlushCond=Some(myInFlushCond(2))//None
+    //    //  )
+    //    //}
+    //  }
+    //  is (ScoreboardFlushState.FLUSH) {
+    //    // This uses the same logic as for the in-order scheduling!
+    //    when (
+    //      !myInFlushCond(3)
+    //      && !myReducedFwdTagAllocVec.asBits.orR
+    //      && !myReducedNonFwdTagAllocVec.asBits.orR
+    //    ) {
+    //      rScoreboardFlushState := ScoreboardFlushState.IDLE
+    //    }
+    //    //when (!myInFlushCond(3)) {
+    //    //  doSendBubbleMainMost(
+    //    //    myPsIdBubble=Some(myNonFwdHazardCheckVec.orR),
+    //    //    myPsIdOtherBubble=Some(True),
+    //    //    myPsIdFwdBubble=Some(myFwdHazardCheckVec.orR),
+    //    //    myInFlushCond=None
+    //    //  )
+    //    //}
+    //    upPayload(1).instrCnt.myPsIdInFlushBubble.foreach(item => {
+    //      item := myInFlushCond(3)
+    //    })
+    //  }
+    //}
   }
 
   def myInFlushCond(
