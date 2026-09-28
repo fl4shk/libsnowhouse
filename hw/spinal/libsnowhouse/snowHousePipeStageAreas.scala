@@ -2826,6 +2826,7 @@ case class SnowHousePipeStageScoreboardCheck(
         //!myPopValidVec.andR
         !myFullPopValidVec.andR
       )
+      && myOooRdBuf.io.push.ready
     )
     myOooRdBuf.io.push.payload := up(pId)//.myRegPcVec.head
 
@@ -2840,6 +2841,9 @@ case class SnowHousePipeStageScoreboardCheck(
       myTempOooRdBufPopVec(kdx) << myOooRdBuf.io.pop(kdx)
 
       val myKdx = kdx - myOooRdBufExtraSize
+      println(
+        s"debug: kdx:${kdx} myKdx:${myKdx}"
+      )
       if (myKdx == 0) {
         myPopValidVec(myKdx) := (
           //RegNext(
