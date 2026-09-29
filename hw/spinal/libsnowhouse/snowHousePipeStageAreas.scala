@@ -2793,7 +2793,10 @@ case class SnowHousePipeStageScoreboardCheck(
       if (idx == 1) {
         val myTempHazardPop3 = (
           Mux(
-            pop(3).fire,
+            (
+              pop(3).fire
+              || !pop(3).valid
+            ),
             False,
             (
               (
@@ -2813,7 +2816,10 @@ case class SnowHousePipeStageScoreboardCheck(
         )
         val myTempHazardPop4 = (
           Mux(
-            pop(4).fire,
+            (
+              pop(4).fire
+              || !pop(4).valid
+            ),
             False,
             (
               (
