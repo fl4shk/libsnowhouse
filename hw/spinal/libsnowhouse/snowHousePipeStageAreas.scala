@@ -12968,9 +12968,9 @@ case class SnowHousePipeStageExecute(
       } else { // if (!cfg.optScoreboard)
         outp.gprIdxVec := outp.gprIdxVec.getZero
       }
-      outp.myExt(0).rdMemWord.foreach(item => {
-        item := 0x0
-      })
+      //outp.myExt(0).rdMemWord.foreach(item => {
+      //  item := 0x0
+      //})
       outp.myExt(0).modMemWord := 0x0
 
       outp.myExt.foreach(item => {
