@@ -2977,8 +2977,8 @@ case class SnowHousePipeStageScoreboardCheck(
       upPayload(1) := upPayload(0)
       myTempOooRdBufPopVec(3).ready := (
         if (doUpIsFiring) (
-          //up.isFiring
-          up.isReady
+          up.isFiring
+          //up.isReady
         ) else (
           down.isFiring
         )
@@ -2993,8 +2993,8 @@ case class SnowHousePipeStageScoreboardCheck(
       myTempOooRdBufPopVec(3).ready := False
       myTempOooRdBufPopVec(4).ready := (
         if (doUpIsFiring) (
-          //up.isFiring
-          up.isReady
+          up.isFiring
+          //up.isReady
         ) else (
           down.isFiring
         )
@@ -3061,6 +3061,42 @@ case class SnowHousePipeStageScoreboardCheck(
       && rPingPongBlockState
     )
 
+    when (
+      //up.isValid
+      //&& 
+      (
+        (
+          myPopValidVec(0) && myOooOkayCond
+        )
+        || (
+          //myPopValidVec(0)
+          //&& 
+          !myPopValidVec(1)
+        )
+      )
+    ) {
+      doPopHead(doUpIsFiring=true)
+    } otherwise {
+      doPopLast(doUpIsFiring=true)
+    }
+    //switch (
+    //  myPopValidVec.asBits
+    //  ## myOooOkayCond
+    //) {
+    //  is (M"01-") {
+    //    doPopHead(doUpIsFiring=true)
+    //  }
+    //  is (M"10-") {
+    //    doPopLast(doUpIsFiring=true)
+    //  }
+    //  is (M"111") {
+    //    doPopHead(doUpIsFiring=true)
+    //  }
+    //  is (M"110") {
+    //    doPopLast(doUpIsFiring=true)
+    //  }
+    //}
+
     switch (
       //rScoreboardFlushState.asBits(ScoreboardFlushState.IDLE.position)
       //## 
@@ -3077,7 +3113,7 @@ case class SnowHousePipeStageScoreboardCheck(
         //M"1001-"
         M"101-"
       ) {
-        doPopHead(doUpIsFiring=true)
+        //doPopHead(doUpIsFiring=true)
 
         when (
           //up.isFiring
@@ -3095,7 +3131,7 @@ case class SnowHousePipeStageScoreboardCheck(
         //M"1010-"
         M"110-"
       ) {
-        doPopLast(doUpIsFiring=true)
+        //doPopLast(doUpIsFiring=true)
 
         when (
           //up.isFiring
@@ -3131,7 +3167,7 @@ case class SnowHousePipeStageScoreboardCheck(
           default {
           }
         }
-        doPopHead(doUpIsFiring=true)
+        //doPopHead(doUpIsFiring=true)
 
         def myOooIssueCnt = (
           upPayload(1).instrCnt.scoreboardCheckPayload.myOooIssueCnt
@@ -3145,7 +3181,7 @@ case class SnowHousePipeStageScoreboardCheck(
         //M"10110"
         M"1110"
       ) {
-        doPopLast(doUpIsFiring=true)
+        //doPopLast(doUpIsFiring=true)
       }
       //is (
       //  //M"01101-"
