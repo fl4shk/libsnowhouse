@@ -3088,8 +3088,22 @@ case class SnowHousePipeStageScoreboardCheck(
             && !myOooNonFwdRaWHazardCheckVec.head.orR
           )
           && (
-            myBufPop(4).splitOp.scoreboardOpCanBeOooIssued.last//andR
-            && myBufPop(3).splitOp.scoreboardOpCanBeOooIssued.last//andR
+            //myBufPop(4).splitOp.scoreboardOpCanBeOooIssued.last//andR
+            //&& myBufPop(3).splitOp.scoreboardOpCanBeOooIssued.last//andR
+            RegNext(
+              (
+                myBufPop(4).splitOp.scoreboardOpCanBeOooIssued.last
+                && !myBufPop(4).fire
+              ),
+              init=False
+            )
+            && RegNext(
+              (
+                myBufPop(3).splitOp.scoreboardOpCanBeOooIssued.last
+                && !myBufPop(3).fire
+              ),
+              init=False
+            )
           )
           //&& myPopValidVec.head
           //&& myPopValidVec.andR
@@ -3109,12 +3123,13 @@ case class SnowHousePipeStageScoreboardCheck(
       (
         (
           myPopValidVec(0) && myOooOkayCond
+          && myPopValidVec(1)
         )
-        || (
-          //myPopValidVec(0)
-          //&& 
-          !myPopValidVec(1)
-        )
+        //|| (
+        //  //myPopValidVec(0)
+        //  //&& 
+        //  !myPopValidVec(1)
+        //)
       )
     ) {
       doPopHead(doUpIsFiring=true)
