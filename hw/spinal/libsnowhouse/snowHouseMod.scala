@@ -2421,11 +2421,11 @@ private[libsnowhouse] case class SnowHouseForFmax(
   //  psWb.io.commit.myRegFileWrPulsePayload
   //)
   if (cfg.optScoreboard) {
-    psPreFwd.io.myRegFileWrPulse << (
+    psPreFwd.io.myRegFileWrPulse <-< (
       //psWb.io.commitEtc.myScoreboardFwdRegFileWrPulse
       psWb.io.commitEtc.myRegFileWrPulse
     )
-    psEx.io.myRegFileWrPulse << (
+    psEx.io.myRegFileWrPulse <-< (
       //psWb.io.commitEtc.myScoreboardFwdRegFileWrPulse
       psWb.io.commitEtc.myRegFileWrPulse
     )
