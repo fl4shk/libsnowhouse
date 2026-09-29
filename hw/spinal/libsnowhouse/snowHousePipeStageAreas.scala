@@ -3142,7 +3142,7 @@ case class SnowHousePipeStageScoreboardCheck(
           && myPopValidVec(1)
           //&& !myBufPop.last.fire
           //&& !myBufPop(3).ready
-          && !myBufPop(4).ready
+          //&& !myBufPop(4).ready
         ),
         init=False
       )
