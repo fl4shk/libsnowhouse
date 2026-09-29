@@ -2789,7 +2789,8 @@ case class SnowHousePipeStageScoreboardCheck(
       //  } otherwise {
       //  }
       //}
-      if (idx == 2) {
+
+      if (idx == 1) {
         val myTempHazardPop3 = (
           Mux(
             pop(3).fire,
