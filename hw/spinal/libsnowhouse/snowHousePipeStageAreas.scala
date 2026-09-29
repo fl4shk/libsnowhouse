@@ -3141,7 +3141,7 @@ case class SnowHousePipeStageScoreboardCheck(
           myPopValidVec(0) && myOooOkayCond
           && myPopValidVec(1)
           //&& !myBufPop.last.fire
-          && !myBufPop(3).ready
+          //&& !myBufPop(3).ready
           && !myBufPop(4).ready
         ),
         init=False
@@ -3155,6 +3155,10 @@ case class SnowHousePipeStageScoreboardCheck(
         myPopValidVec(0)
         && myPopValidVec(1)
         && rPastOooOkayCond
+        && (
+          myBufPop(4).splitOp.scoreboardOpCanBeOooIssued.last//andR
+          && myBufPop(3).splitOp.scoreboardOpCanBeOooIssued.last//andR
+        )
         //|| (
         //  //myPopValidVec(0)
         //  //&& 
@@ -3167,10 +3171,10 @@ case class SnowHousePipeStageScoreboardCheck(
       doPopLast(doUpIsFiring=true)
     }
 
-    when (
-      up.isFiring
-    ) {
-    }
+    //when (
+    //  up.isFiring
+    //) {
+    //}
     //switch (
     //  myPopValidVec.asBits
     //  ## myOooOkayCond
