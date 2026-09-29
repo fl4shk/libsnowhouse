@@ -3062,17 +3062,17 @@ case class SnowHousePipeStageScoreboardCheck(
     }
 
     //val rPingPongBlockState = Reg(Bool(), init=False)
-    val rPingPongBlockCnt = {
-      val temp = Reg(
-        cloneOf(
-          upPayload(1).instrCnt.scoreboardCheckPayload.myOooIssueCnt
-        )
-      )
-      temp.valid.init(temp.valid.getZero)
-      temp.payload.init(cfg.optScoreboardOooIssueWindow.get - 1)
-      temp
-    }
-    def rPingPongBlockState = rPingPongBlockCnt.valid
+    //val rPingPongBlockCnt = {
+    //  val temp = Reg(
+    //    cloneOf(
+    //      upPayload(1).instrCnt.scoreboardCheckPayload.myOooIssueCnt
+    //    )
+    //  )
+    //  temp.valid.init(temp.valid.getZero)
+    //  temp.payload.init(cfg.optScoreboardOooIssueWindow.get - 1)
+    //  temp
+    //}
+    //def rPingPongBlockState = rPingPongBlockCnt.valid
     //val rPingPongBlockCnt = (
     //  
     //)
@@ -3132,7 +3132,7 @@ case class SnowHousePipeStageScoreboardCheck(
 
     val myOooOkayCond = (
       myOooOkayCondMost
-      && rPingPongBlockState
+      //&& rPingPongBlockState
     )
 
     val rPastOooOkayCond = (
