@@ -1655,13 +1655,6 @@ case class SnowHousePipeStageInstrDecode(
   //    init=upPayload(1).instrCnt.any.getZero,
   //  )
   //)
-  upPayload(1).instrCnt.tick := (
-    RegNextWhen(
-      (!upPayload(1).instrCnt.tick),
-      cond=up.isFiring,
-      init=upPayload(1).instrCnt.tick.getZero,
-    )
-  )
   if (cfg.optScoreboard) {
     upPayload(1).instrCnt.myPsIdInFlushBubble.allowOverride
     upPayload(1).instrCnt.myPsIdInFlushBubble.foreach(item => {
@@ -2381,6 +2374,14 @@ case class SnowHousePipeStageInstrDecode(
       )
     )
   }
+
+  upPayload(1).instrCnt.tick := (
+    RegNextWhen(
+      (!upPayload(1).instrCnt.tick),
+      cond=up.isFiring,
+      init=upPayload(1).instrCnt.tick.getZero,
+    )
+  )
 }
 
 //case class SnowHouseHazardDetectorIo(
@@ -2826,6 +2827,15 @@ case class SnowHousePipeStageScoreboardCheck(
     )
 
     val myBufPushStm = cloneOf(myOooRdBuf.io.push)
+    //val myTestFifo = StreamFifo(
+    //  dataType=SnowHousePipePayload(cfg=cfg),
+    //  depth=8,
+    //  latency=2,
+    //  forFMax=true
+    //)
+    //myTestFifo.io.push << myBufPushStm
+    //myOooRdBuf.io.push << myTestFifo.io.pop
+
     myOooRdBuf.io.push << (
       myBufPushStm.throwWhen(
         (
@@ -2840,6 +2850,7 @@ case class SnowHousePipeStageScoreboardCheck(
         )
       )
     )
+
     //myOooRdBuf.io.en := (
     //  True
     //  ////myBufPushCondMost
