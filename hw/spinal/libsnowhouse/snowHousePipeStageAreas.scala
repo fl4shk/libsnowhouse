@@ -2840,24 +2840,24 @@ case class SnowHousePipeStageScoreboardCheck(
         )
       )
     )
-    myOooRdBuf.io.en := (
-      True
-      ////myBufPushCondMost
+    //myOooRdBuf.io.en := (
+    //  True
+    //  ////myBufPushCondMost
 
-      //up.isValid
-      //&& (
-      //  !myPopValidVec.andR
-      //  //!myFullPopValidVec.andR
-      //)
-      //&& down.isReady
-      ////up.isValid
-      ////&& !myInFlushCondMain(
-      ////  someUpPayload0=up(pId),
-      ////  idx=2,
-      ////)
-      ////&& down.isReady
-      ////&& myBufPushStm.ready
-    )
+    //  //up.isValid
+    //  //&& (
+    //  //  !myPopValidVec.andR
+    //  //  //!myFullPopValidVec.andR
+    //  //)
+    //  //&& down.isReady
+    //  ////up.isValid
+    //  ////&& !myInFlushCondMain(
+    //  ////  someUpPayload0=up(pId),
+    //  ////  idx=2,
+    //  ////)
+    //  ////&& down.isReady
+    //  ////&& myBufPushStm.ready
+    //)
       
     //myOooRdBuf.io.push.valid 
     myBufPushStm.valid := (
