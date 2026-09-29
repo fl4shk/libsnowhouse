@@ -2808,8 +2808,8 @@ case class SnowHousePipeStageScoreboardCheck(
                 & outp.writesGprIdxVec
               ).orR
               || (
-                pop(3).writesGprIdxVec
-                & outp.readsGprIdxVec
+                pop(4).readsGprIdxVec
+                & outp.writesGprIdxVec
               ).orR
             )
           )
@@ -2831,8 +2831,8 @@ case class SnowHousePipeStageScoreboardCheck(
                 & outp.writesGprIdxVec
               ).orR
               || (
-                pop(4).writesGprIdxVec
-                & outp.readsGprIdxVec
+                pop(4).readsGprIdxVec
+                & outp.writesGprIdxVec
               ).orR
             )
           )
