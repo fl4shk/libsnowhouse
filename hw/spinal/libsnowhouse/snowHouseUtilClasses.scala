@@ -822,8 +822,8 @@ case class SnowHouseConfig(
             //&& optScoreboardOooIssueWindow == None
           ) (
             //6
-            4
-            //2
+            //4
+            2
             //3
             //1
             //2
