@@ -2791,6 +2791,13 @@ case class SnowHousePipeStageScoreboardCheck(
       //}
 
       if (idx == 1) {
+        def myGprRange = (
+          if (cfg.myHaveZeroReg) (
+            cfg.numGprs - 1 downto 1
+          ) else (
+            cfg.numGprs - 1 downto 0
+          )
+        )
         val myTempHazardPop3 = (
           Mux(
             (
@@ -2800,16 +2807,16 @@ case class SnowHousePipeStageScoreboardCheck(
             False,
             (
               (
-                pop(3).writesGprIdxVec
-                & outp.readsGprIdxVec
+                pop(3).writesGprIdxVec.asBits(myGprRange)
+                & outp.readsGprIdxVec.asBits(myGprRange)
               ).orR
               || (
-                pop(3).writesGprIdxVec
-                & outp.writesGprIdxVec
+                pop(3).writesGprIdxVec.asBits(myGprRange)
+                & outp.writesGprIdxVec.asBits(myGprRange)
               ).orR
               || (
-                pop(4).readsGprIdxVec
-                & outp.writesGprIdxVec
+                pop(4).readsGprIdxVec.asBits(myGprRange)
+                & outp.writesGprIdxVec.asBits(myGprRange)
               ).orR
             )
           )
@@ -2823,16 +2830,16 @@ case class SnowHousePipeStageScoreboardCheck(
             False,
             (
               (
-                pop(4).writesGprIdxVec
-                & outp.readsGprIdxVec
+                pop(4).writesGprIdxVec.asBits(myGprRange)
+                & outp.readsGprIdxVec.asBits(myGprRange)
               ).orR
               || (
-                pop(4).writesGprIdxVec
-                & outp.writesGprIdxVec
+                pop(4).writesGprIdxVec.asBits(myGprRange)
+                & outp.writesGprIdxVec.asBits(myGprRange)
               ).orR
               || (
-                pop(4).readsGprIdxVec
-                & outp.writesGprIdxVec
+                pop(4).readsGprIdxVec.asBits(myGprRange)
+                & outp.writesGprIdxVec.asBits(myGprRange)
               ).orR
             )
           )
