@@ -1660,6 +1660,7 @@ case class SnowHouseInstrCnt(
     Bool()
   )
 
+  val tick = Bool()
   val any = UInt(cfg.instrCntWidth bits)
   val fwd = UInt(cfg.instrCntWidth bits)
   val jmp = UInt(cfg.instrCntWidth bits)

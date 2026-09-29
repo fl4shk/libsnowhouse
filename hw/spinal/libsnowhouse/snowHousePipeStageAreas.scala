@@ -1648,6 +1648,20 @@ case class SnowHousePipeStageInstrDecode(
   when (psExSetPc.valid) {
     shouldClearExtraDecodeInfo := True
   }
+  //upPayload(1).instrCnt.any := (
+  //  RegNextWhen(
+  //    (upPayload(1).instrCnt.any + 1),
+  //    cond=up.isFiring,
+  //    init=upPayload(1).instrCnt.any.getZero,
+  //  )
+  //)
+  upPayload(1).instrCnt.tick := (
+    RegNextWhen(
+      (!upPayload(1).instrCnt.tick),
+      cond=up.isFiring,
+      init=upPayload(1).instrCnt.tick.getZero,
+    )
+  )
   if (cfg.optScoreboard) {
     upPayload(1).instrCnt.myPsIdInFlushBubble.allowOverride
     upPayload(1).instrCnt.myPsIdInFlushBubble.foreach(item => {
@@ -2812,23 +2826,37 @@ case class SnowHousePipeStageScoreboardCheck(
     )
 
     val myBufPushStm = cloneOf(myOooRdBuf.io.push)
-    myOooRdBuf.io.push << myBufPushStm
-    myOooRdBuf.io.en := (
-      //myBufPushCondMost
-
-      up.isValid
-      && (
-        !myPopValidVec.andR
-        //!myFullPopValidVec.andR
+    myOooRdBuf.io.push << (
+      myBufPushStm.throwWhen(
+        (
+          myBufPushStm.instrCnt.tick
+          === (
+            RegNextWhen(
+              myBufPushStm.instrCnt.tick,
+              cond=myBufPushStm.fire,
+              init=True,
+            )
+          )
+        )
       )
-      && down.isReady
+    )
+    myOooRdBuf.io.en := (
+      True
+      ////myBufPushCondMost
+
       //up.isValid
-      //&& !myInFlushCondMain(
-      //  someUpPayload0=up(pId),
-      //  idx=2,
+      //&& (
+      //  !myPopValidVec.andR
+      //  //!myFullPopValidVec.andR
       //)
       //&& down.isReady
-      //&& myBufPushStm.ready
+      ////up.isValid
+      ////&& !myInFlushCondMain(
+      ////  someUpPayload0=up(pId),
+      ////  idx=2,
+      ////)
+      ////&& down.isReady
+      ////&& myBufPushStm.ready
     )
       
     //myOooRdBuf.io.push.valid 
@@ -2843,10 +2871,10 @@ case class SnowHousePipeStageScoreboardCheck(
       ////  ScoreboardFlushState.IDLE.position
       ////)
       myBufPushCondMost
-      && (
-        //!myPopValidVec.andR
-        !myFullPopValidVec.andR
-      )
+      //&& (
+      //  //!myPopValidVec.andR
+      //  !myFullPopValidVec.andR
+      //)
       //&& myOooRdBuf.io.push.ready
       && myBufPushStm.ready
     )
