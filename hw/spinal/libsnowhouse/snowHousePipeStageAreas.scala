@@ -2818,8 +2818,8 @@ case class SnowHousePipeStageScoreboardCheck(
 
       up.isValid
       && (
-        //!myPopValidVec.andR
-        !myFullPopValidVec.andR
+        !myPopValidVec.andR
+        //!myFullPopValidVec.andR
       )
       && down.isReady
       //up.isValid
