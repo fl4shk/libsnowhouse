@@ -2842,12 +2842,24 @@ case class SnowHousePipeStageScoreboardCheck(
     myOooRdBuf.io.push << (
       myBufPushStm.throwWhen(
         (
-          myBufPushStm.instrCnt.tick
-          === (
+          (
+            myBufPushStm.instrCnt.tick
+            === (
+              RegNextWhen(
+                myBufPushStm.instrCnt.tick,
+                cond=myBufPushStm.fire,
+                init=True,
+              )
+            )
+          )
+          && (
             RegNextWhen(
-              myBufPushStm.instrCnt.tick,
-              cond=myBufPushStm.fire,
-              init=True,
+              True,
+              cond=(
+                //myBufPushStm.fire
+                up.isFiring
+              ),
+              init=False
             )
           )
         )
@@ -2889,8 +2901,8 @@ case class SnowHousePipeStageScoreboardCheck(
       //  //!myPopValidVec.andR
       //  !myFullPopValidVec.andR
       //)
-      //&& myOooRdBuf.io.push.ready
-      && myBufPushStm.ready
+      && myOooRdBuf.io.push.ready
+      //&& myBufPushStm.ready
     )
     //myOooRdBuf.io.push.payload := up(pId)//.myRegPcVec.head
     myBufPushStm.payload := up(pId)//.myRegPcVec.head
@@ -3088,22 +3100,22 @@ case class SnowHousePipeStageScoreboardCheck(
             && !myOooNonFwdRaWHazardCheckVec.head.orR
           )
           && (
-            //myBufPop(4).splitOp.scoreboardOpCanBeOooIssued.last//andR
-            //&& myBufPop(3).splitOp.scoreboardOpCanBeOooIssued.last//andR
-            RegNext(
-              (
-                myBufPop(4).splitOp.scoreboardOpCanBeOooIssued.last
-                && !myBufPop(4).fire
-              ),
-              init=False
-            )
-            && RegNext(
-              (
-                myBufPop(3).splitOp.scoreboardOpCanBeOooIssued.last
-                && !myBufPop(3).fire
-              ),
-              init=False
-            )
+            myBufPop(4).splitOp.scoreboardOpCanBeOooIssued.last//andR
+            && myBufPop(3).splitOp.scoreboardOpCanBeOooIssued.last//andR
+            //RegNext(
+            //  (
+            //    myBufPop(3).splitOp.scoreboardOpCanBeOooIssued.last
+            //    && !myBufPop(3).fire
+            //  ),
+            //  init=False
+            //)
+            //&& RegNext(
+            //  (
+            //    myBufPop(2).splitOp.scoreboardOpCanBeOooIssued.last
+            //    //&& !myBufPop(2).fire
+            //  ),
+            //  init=False
+            //)
           )
           //&& myPopValidVec.head
           //&& myPopValidVec.andR
@@ -3298,6 +3310,9 @@ case class SnowHousePipeStageScoreboardCheck(
         || myReducedFwdTagAllocVec.asBits.andR
         || myReducedNonFwdTagAllocVec.asBits.andR
         //|| myInFlushCond(2)
+        || (
+          !myPopValidVec.asBits.msb
+        )
       )
     ) {
       doSendBubbleMainMost(
