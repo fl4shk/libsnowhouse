@@ -3038,6 +3038,12 @@ case class SnowHousePipeStageScoreboardCheck(
         )
       )
       myTempOooRdBufPopVec(4).ready := False
+
+      def myOooIssueCnt = (
+        upPayload(1).instrCnt.scoreboardCheckPayload.myOooIssueCnt
+      )
+      myOooIssueCnt.valid := True//myOooOkayCond
+      //myOooIssueCnt.payload := rPingPongBlockCnt.payload
     }
     def doPopLast(
       doUpIsFiring: Boolean,
@@ -3129,14 +3135,26 @@ case class SnowHousePipeStageScoreboardCheck(
       && rPingPongBlockState
     )
 
+    val rPastOooOkayCond = (
+      RegNext(
+        (
+          myPopValidVec(0) && myOooOkayCond
+          && myPopValidVec(1)
+          //&& !myBufPop.last.fire
+          && !myBufPop(3).ready
+          && !myBufPop(4).ready
+        ),
+        init=False
+      )
+    )
+
     when (
       //up.isValid
       //&& 
       (
-        (
-          myPopValidVec(0) && myOooOkayCond
-          && myPopValidVec(1)
-        )
+        myPopValidVec(0)
+        && myPopValidVec(1)
+        && rPastOooOkayCond
         //|| (
         //  //myPopValidVec(0)
         //  //&& 
@@ -3147,6 +3165,11 @@ case class SnowHousePipeStageScoreboardCheck(
       doPopHead(doUpIsFiring=true)
     } otherwise {
       doPopLast(doUpIsFiring=true)
+    }
+
+    when (
+      up.isFiring
+    ) {
     }
     //switch (
     //  myPopValidVec.asBits
@@ -3166,140 +3189,140 @@ case class SnowHousePipeStageScoreboardCheck(
     //  }
     //}
 
-    switch (
-      //rScoreboardFlushState.asBits(ScoreboardFlushState.IDLE.position)
-      //## 
-      up.isValid
-      //## myInFlushCondMain(
-      //  someUpPayload0=up(pId),
-      //  idx=3,
-      //)
-      ## myPopValidVec.asBits
-      ## myOooOkayCond
-    ) {
-      is (
-        //M"01001-"
-        //M"1001-"
-        M"101-"
-      ) {
-        //doPopHead(doUpIsFiring=true)
+    //switch (
+    //  //rScoreboardFlushState.asBits(ScoreboardFlushState.IDLE.position)
+    //  //## 
+    //  up.isValid
+    //  //## myInFlushCondMain(
+    //  //  someUpPayload0=up(pId),
+    //  //  idx=3,
+    //  //)
+    //  ## myPopValidVec.asBits
+    //  ## rPastOooOkayCond //myOooOkayCond
+    //) {
+    //  is (
+    //    //M"01001-"
+    //    //M"1001-"
+    //    M"101-"
+    //  ) {
+    //    //doPopHead(doUpIsFiring=true)
 
-        when (
-          //up.isFiring
-          up.isReady
-          && !rPingPongBlockState
-        ) {
-          rPingPongBlockState := True
-          rPingPongBlockCnt.payload := (
-            cfg.optScoreboardOooIssueWindow.get - 1
-          )
-        }
-      }
-      is (
-        //M"01010-"
-        //M"1010-"
-        M"110-"
-      ) {
-        //doPopLast(doUpIsFiring=true)
+    //    when (
+    //      //up.isFiring
+    //      up.isReady
+    //      && !rPingPongBlockState
+    //    ) {
+    //      rPingPongBlockState := True
+    //      rPingPongBlockCnt.payload := (
+    //        cfg.optScoreboardOooIssueWindow.get - 1
+    //      )
+    //    }
+    //  }
+    //  is (
+    //    //M"01010-"
+    //    //M"1010-"
+    //    M"110-"
+    //  ) {
+    //    //doPopLast(doUpIsFiring=true)
 
-        when (
-          //up.isFiring
-          up.isReady
-          && !rPingPongBlockState
-        ) {
-          rPingPongBlockState := True
-          rPingPongBlockCnt.payload := (
-            cfg.optScoreboardOooIssueWindow.get - 1
-          )
-        }
-      }
-      is (
-        //M"010111"
-        //M"10111"
-        M"1111"
-      ) {
-        switch (
-          (
-            //myOooOkayCond
-            //&& 
-            //up.isFiring
-            up.isReady
-          )
-          ## rPingPongBlockCnt.payload.orR
-        ) {
-          is (M"11") {
-            rPingPongBlockCnt.payload := rPingPongBlockCnt.payload - 1
-          }
-          is (M"10") {
-            rPingPongBlockState := False
-          }
-          default {
-          }
-        }
-        //doPopHead(doUpIsFiring=true)
+    //    when (
+    //      //up.isFiring
+    //      up.isReady
+    //      && !rPingPongBlockState
+    //    ) {
+    //      rPingPongBlockState := True
+    //      rPingPongBlockCnt.payload := (
+    //        cfg.optScoreboardOooIssueWindow.get - 1
+    //      )
+    //    }
+    //  }
+    //  is (
+    //    //M"010111"
+    //    //M"10111"
+    //    M"1111"
+    //  ) {
+    //    switch (
+    //      (
+    //        //myOooOkayCond
+    //        //&& 
+    //        //up.isFiring
+    //        up.isReady
+    //      )
+    //      ## rPingPongBlockCnt.payload.orR
+    //    ) {
+    //      is (M"11") {
+    //        rPingPongBlockCnt.payload := rPingPongBlockCnt.payload - 1
+    //      }
+    //      is (M"10") {
+    //        rPingPongBlockState := False
+    //      }
+    //      default {
+    //      }
+    //    }
+    //    //doPopHead(doUpIsFiring=true)
 
-        def myOooIssueCnt = (
-          upPayload(1).instrCnt.scoreboardCheckPayload.myOooIssueCnt
-        )
-        myOooIssueCnt.valid := myOooOkayCond
-        myOooIssueCnt.payload := rPingPongBlockCnt.payload
-        //--------
-      }
-      is (
-        //M"010110"
-        //M"10110"
-        M"1110"
-      ) {
-        //doPopLast(doUpIsFiring=true)
-      }
-      //is (
-      //  //M"01101-"
-      //  M"1101-"
-      //) {
-      //  cScoreboardCheck.duplicateIt()
-      //  doPopHead(doUpIsFiring=false)
-      //}
-      //is (
-      //  //M"01110-"
-      //  M"1110-"
-      //) {
-      //  cScoreboardCheck.duplicateIt()
-      //  doPopLast(doUpIsFiring=false)
-      //}
-      //is (
-      //  //M"01111-"
-      //  M"1111-"
-      //) {
-      //  cScoreboardCheck.duplicateIt()
-      //  // Let's just schedule in-order here, as we have an upcoming
-      //  // pipeline flush anyway.
-      //  doPopLast(doUpIsFiring=false)
-      //}
-      //is (
-      //  //M"01100-"
-      //  M"1100-"
-      //) {
-      //  upPayload(0) := up(pId)
-      //  upPayload(1) := upPayload(0)
-      //  // okay, now we can go to the next state!
-      //  if (rScoreboardFlushState != null) {
-      //    rScoreboardFlushState := ScoreboardFlushState.FLUSH
-      //  }
-      //}
-      //is (
-      //  //M"11----"
-      //  M"1----"
-      //) {
-      //  rPingPongBlockState := True
-      //  rPingPongBlockCnt.payload := (
-      //    cfg.optScoreboardOooIssueWindow.get - 1
-      //  )
-      //  upPayload(0) := up(pId)
-      //  upPayload(1) := upPayload(0)
-      //}
-      default {
-      }
-    }
+    //    def myOooIssueCnt = (
+    //      upPayload(1).instrCnt.scoreboardCheckPayload.myOooIssueCnt
+    //    )
+    //    myOooIssueCnt.valid := myOooOkayCond
+    //    myOooIssueCnt.payload := rPingPongBlockCnt.payload
+    //    //--------
+    //  }
+    //  is (
+    //    //M"010110"
+    //    //M"10110"
+    //    M"1110"
+    //  ) {
+    //    //doPopLast(doUpIsFiring=true)
+    //  }
+    //  //is (
+    //  //  //M"01101-"
+    //  //  M"1101-"
+    //  //) {
+    //  //  cScoreboardCheck.duplicateIt()
+    //  //  doPopHead(doUpIsFiring=false)
+    //  //}
+    //  //is (
+    //  //  //M"01110-"
+    //  //  M"1110-"
+    //  //) {
+    //  //  cScoreboardCheck.duplicateIt()
+    //  //  doPopLast(doUpIsFiring=false)
+    //  //}
+    //  //is (
+    //  //  //M"01111-"
+    //  //  M"1111-"
+    //  //) {
+    //  //  cScoreboardCheck.duplicateIt()
+    //  //  // Let's just schedule in-order here, as we have an upcoming
+    //  //  // pipeline flush anyway.
+    //  //  doPopLast(doUpIsFiring=false)
+    //  //}
+    //  //is (
+    //  //  //M"01100-"
+    //  //  M"1100-"
+    //  //) {
+    //  //  upPayload(0) := up(pId)
+    //  //  upPayload(1) := upPayload(0)
+    //  //  // okay, now we can go to the next state!
+    //  //  if (rScoreboardFlushState != null) {
+    //  //    rScoreboardFlushState := ScoreboardFlushState.FLUSH
+    //  //  }
+    //  //}
+    //  //is (
+    //  //  //M"11----"
+    //  //  M"1----"
+    //  //) {
+    //  //  rPingPongBlockState := True
+    //  //  rPingPongBlockCnt.payload := (
+    //  //    cfg.optScoreboardOooIssueWindow.get - 1
+    //  //  )
+    //  //  upPayload(0) := up(pId)
+    //  //  upPayload(1) := upPayload(0)
+    //  //}
+    //  default {
+    //  }
+    //}
 
     when (
       //rScoreboardFlushState.asBits(ScoreboardFlushState.IDLE.position)
