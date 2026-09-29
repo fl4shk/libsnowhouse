@@ -2774,6 +2774,72 @@ case class SnowHousePipeStageScoreboardCheck(
     //  item.ready := False
     //})
 
+    def myBufOptDataAssignment(
+      outp: SnowHousePipePayload,
+      inp: SnowHousePipePayload,
+      idx: Int,
+      pop: Vec[Stream[SnowHousePipePayload]],
+    ): Unit = {
+      outp := inp
+      //if (idx == 0) {
+      //  //outp
+      //}
+      //if (idx == 0) {
+      //  when (pop.last.valid) {
+      //  } otherwise {
+      //  }
+      //}
+      if (idx == 2) {
+        val myTempHazardPop3 = (
+          Mux(
+            pop(3).fire,
+            False,
+            (
+              (
+                pop(3).writesGprIdxVec
+                & outp.readsGprIdxVec
+              ).orR
+              || (
+                pop(3).writesGprIdxVec
+                & outp.writesGprIdxVec
+              ).orR
+              || (
+                pop(3).writesGprIdxVec
+                & outp.readsGprIdxVec
+              ).orR
+            )
+          )
+        )
+        val myTempHazardPop4 = (
+          Mux(
+            pop(4).fire,
+            False,
+            (
+              (
+                pop(4).writesGprIdxVec
+                & outp.readsGprIdxVec
+              ).orR
+              || (
+                pop(4).writesGprIdxVec
+                & outp.writesGprIdxVec
+              ).orR
+              || (
+                pop(4).writesGprIdxVec
+                & outp.readsGprIdxVec
+              ).orR
+            )
+          )
+        )
+
+        when (
+          myTempHazardPop3
+          || myTempHazardPop4
+        ) {
+          outp.splitOp.scoreboardOpCanBeOooIssued.last := False
+        }
+      }
+    }
+
     val myOooRdBuf = LcvOooRdSlidingBuf(
       cfg=LcvOooRdSlidingBufConfig(
         wordType=(
@@ -2795,15 +2861,12 @@ case class SnowHousePipeStageScoreboardCheck(
             idx: Int,
             pop: Vec[Stream[SnowHousePipePayload]],
           ) => {
-            outp := inp
-            //if (idx == 0) {
-            //  //outp
-            //}
-            if (idx == 0) {
-              when (pop.last.valid) {
-              } otherwise {
-              }
-            }
+            myBufOptDataAssignment(
+              outp,
+              inp,
+              idx,
+              pop
+            )
           }
         )
       )
