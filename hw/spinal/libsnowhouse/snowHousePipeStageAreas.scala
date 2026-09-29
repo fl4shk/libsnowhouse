@@ -3743,7 +3743,7 @@ case class SnowHousePipeStageScoreboardCheck(
   //--------
 
   for (jdx <- 0 until 2) {
-    val myFwdCond = (
+    val myFwdCondMsbMost = (
       (
         up.isFiring
         //down.isFiring
@@ -3751,6 +3751,16 @@ case class SnowHousePipeStageScoreboardCheck(
         //&& !myNonFwdHazardCheckVec.orR
         ////&& !myFwdHazardCheckVec.orR
         && !upPayload(1).splitOp.opIsMemAccess
+      )
+    )
+    val myFwdCond = (
+      (
+        if (!doOooIssue) (
+          myFwdCondMsbMost
+          && !myNonFwdHazardCheckVec.orR
+        ) else (
+          myFwdCondMsbMost
+        )
       )
       ## myLeftGprIdxVec.last
     )
@@ -3799,7 +3809,7 @@ case class SnowHousePipeStageScoreboardCheck(
       }
     }
 
-    val myNonFwdCond = (
+    val myNonFwdCondMsbMost = (
       (
         up.isFiring
         //down.isFiring
@@ -3807,6 +3817,16 @@ case class SnowHousePipeStageScoreboardCheck(
         //&& !myNonFwdHazardCheckVec.orR
         ////&& !myFwdHazardCheckVec.orR
         && upPayload(1).splitOp.opIsMemAccess
+      )
+    )
+    val myNonFwdCond = (
+      (
+        if (!doOooIssue) (
+          myNonFwdCondMsbMost
+          && !myNonFwdHazardCheckVec.orR
+        ) else (
+          myNonFwdCondMsbMost
+        )
       )
       ## myLeftGprIdxVec.last
     )
