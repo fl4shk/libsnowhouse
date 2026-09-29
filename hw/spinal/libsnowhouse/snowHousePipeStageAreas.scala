@@ -2548,7 +2548,10 @@ case class SnowHousePipeStageScoreboardCheck(
         this.fire
       ) else (
         this.fire
-        && this.cnt.msb
+        && RegNext(
+          this.cnt.msb,
+          init=False
+        )
       )
     )
   }
@@ -3775,7 +3778,7 @@ case class SnowHousePipeStageScoreboardCheck(
               rMyFwdGprTagVec(idx).valid := True
               when (!rMyFwdGprTagVec(idx).fire) {
                 rMyFwdGprTagVec(idx).cnt := (
-                  cfg.optForFmaxPsExFwdSize - 2//1//2//3//2//1
+                  cfg.optForFmaxPsExFwdSize - 3//2//1//2//3//2//1
                 )
                 //rMyFwdGprTagVec(idx).tag := myTempFwdTag
               }
