@@ -2307,7 +2307,7 @@ case class SnowHousePipeStageInstrDecode(
         }
       }
     }
-    upPayload(1).splitOp.scoreboardOpCanBeOooIssued.last := (
+    upPayload(1).splitOp.scoreboardOpCanBeOooIssued(1) := (
       //{
       //  // RaW hazards should prevent OoO scheduling
       //  //RegNextWhen(
@@ -2372,6 +2372,9 @@ case class SnowHousePipeStageInstrDecode(
         // this check doesn't need to be done?
         !upPayload(1).splitOp.opIsMemAccess
       )
+    )
+    upPayload(1).splitOp.scoreboardOpCanBeOooIssued.last := (
+      upPayload(1).splitOp.scoreboardOpCanBeOooIssued(1)
     )
   }
 
@@ -2829,7 +2832,8 @@ case class SnowHousePipeStageScoreboardCheck(
             ),
             False,
             (
-              (
+              !pop(4).splitOp.scoreboardOpCanBeOooIssued(1)
+              || (
                 pop(4).writesGprIdxVec.asBits(myGprRange)
                 & inp.readsGprIdxVec.asBits(myGprRange)
               ).orR
@@ -2848,6 +2852,10 @@ case class SnowHousePipeStageScoreboardCheck(
         when (
           myTempHazardPop3
           || myTempHazardPop4
+          //|| (
+          //  pop(4).fire
+          //  !pop(4).splitOp.scoreboardOpCanBeOooIssued.last
+          //)
         ) {
           outp.splitOp.scoreboardOpCanBeOooIssued.last := False
         }
