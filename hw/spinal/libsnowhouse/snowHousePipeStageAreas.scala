@@ -2790,7 +2790,7 @@ case class SnowHousePipeStageScoreboardCheck(
       //  }
       //}
 
-      if (idx == 2) {
+      if (idx == 3) {
         def myGprRange = (
           if (cfg.myHaveZeroReg) (
             cfg.numGprs - 1 downto 1
@@ -2876,10 +2876,10 @@ case class SnowHousePipeStageScoreboardCheck(
             pop: Vec[Stream[SnowHousePipePayload]],
           ) => {
             myBufOptDataAssignment(
-              outp,
-              inp,
-              idx,
-              pop
+              outp=outp,
+              inp=inp,
+              idx=idx,
+              pop=pop
             )
           }
         )
@@ -3182,24 +3182,24 @@ case class SnowHousePipeStageScoreboardCheck(
             !myOooFwdRaWHazardCheckVec.head.orR
             && !myOooNonFwdRaWHazardCheckVec.head.orR
           )
-          && (
-            myBufPop(4).splitOp.scoreboardOpCanBeOooIssued.last//andR
-            && myBufPop(3).splitOp.scoreboardOpCanBeOooIssued.last//andR
-            //RegNext(
-            //  (
-            //    myBufPop(3).splitOp.scoreboardOpCanBeOooIssued.last
-            //    && !myBufPop(3).fire
-            //  ),
-            //  init=False
-            //)
-            //&& RegNext(
-            //  (
-            //    myBufPop(2).splitOp.scoreboardOpCanBeOooIssued.last
-            //    //&& !myBufPop(2).fire
-            //  ),
-            //  init=False
-            //)
-          )
+          //&& (
+          //  myBufPop(4).splitOp.scoreboardOpCanBeOooIssued.last//andR
+          //  && myBufPop(3).splitOp.scoreboardOpCanBeOooIssued.last//andR
+          //  //RegNext(
+          //  //  (
+          //  //    myBufPop(3).splitOp.scoreboardOpCanBeOooIssued.last
+          //  //    && !myBufPop(3).fire
+          //  //  ),
+          //  //  init=False
+          //  //)
+          //  //&& RegNext(
+          //  //  (
+          //  //    myBufPop(2).splitOp.scoreboardOpCanBeOooIssued.last
+          //  //    //&& !myBufPop(2).fire
+          //  //  ),
+          //  //  init=False
+          //  //)
+          //)
           //&& myPopValidVec.head
           //&& myPopValidVec.andR
         ),
