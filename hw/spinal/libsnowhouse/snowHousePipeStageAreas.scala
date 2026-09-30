@@ -2799,78 +2799,50 @@ case class SnowHousePipeStageScoreboardCheck(
           )
         )
         val myTempHazardPop3 = (
-          (
+          Mux(
             (
-              pop(3).writesGprIdxVec.asBits(myGprRange)
-              & inp.readsGprIdxVec.asBits(myGprRange)
-            ).orR
-            || (
-              pop(3).writesGprIdxVec.asBits(myGprRange)
-              & inp.writesGprIdxVec.asBits(myGprRange)
-            ).orR
-            || (
-              pop(4).readsGprIdxVec.asBits(myGprRange)
-              & inp.writesGprIdxVec.asBits(myGprRange)
-            ).orR
+              pop(3).fire
+              || !pop(3).valid
+            ),
+            False,
+            (
+              (
+                pop(3).writesGprIdxVec.asBits(myGprRange)
+                & inp.readsGprIdxVec.asBits(myGprRange)
+              ).orR
+              || (
+                pop(3).writesGprIdxVec.asBits(myGprRange)
+                & inp.writesGprIdxVec.asBits(myGprRange)
+              ).orR
+              || (
+                pop(3).readsGprIdxVec.asBits(myGprRange)
+                & inp.writesGprIdxVec.asBits(myGprRange)
+              ).orR
+            )
           )
-          //Mux(
-          //  (
-          //    pop(3).fire
-          //    || !pop(3).valid
-          //  ),
-          //  False,
-          //  (
-          //    (
-          //      pop(3).writesGprIdxVec.asBits(myGprRange)
-          //      & inp.readsGprIdxVec.asBits(myGprRange)
-          //    ).orR
-          //    || (
-          //      pop(3).writesGprIdxVec.asBits(myGprRange)
-          //      & inp.writesGprIdxVec.asBits(myGprRange)
-          //    ).orR
-          //    || (
-          //      pop(4).readsGprIdxVec.asBits(myGprRange)
-          //      & inp.writesGprIdxVec.asBits(myGprRange)
-          //    ).orR
-          //  )
-          //)
         )
         val myTempHazardPop4 = (
-          (
+          Mux(
             (
-              pop(4).writesGprIdxVec.asBits(myGprRange)
-              & inp.readsGprIdxVec.asBits(myGprRange)
-            ).orR
-            || (
-              pop(4).writesGprIdxVec.asBits(myGprRange)
-              & inp.writesGprIdxVec.asBits(myGprRange)
-            ).orR
-            || (
-              pop(4).readsGprIdxVec.asBits(myGprRange)
-              & inp.writesGprIdxVec.asBits(myGprRange)
-            ).orR
+              pop(4).fire
+              || !pop(4).valid
+            ),
+            False,
+            (
+              (
+                pop(4).writesGprIdxVec.asBits(myGprRange)
+                & inp.readsGprIdxVec.asBits(myGprRange)
+              ).orR
+              || (
+                pop(4).writesGprIdxVec.asBits(myGprRange)
+                & inp.writesGprIdxVec.asBits(myGprRange)
+              ).orR
+              || (
+                pop(4).readsGprIdxVec.asBits(myGprRange)
+                & inp.writesGprIdxVec.asBits(myGprRange)
+              ).orR
+            )
           )
-          //Mux(
-          //  (
-          //    pop(4).fire
-          //    || !pop(4).valid
-          //  ),
-          //  False,
-          //  (
-          //    (
-          //      pop(4).writesGprIdxVec.asBits(myGprRange)
-          //      & inp.readsGprIdxVec.asBits(myGprRange)
-          //    ).orR
-          //    || (
-          //      pop(4).writesGprIdxVec.asBits(myGprRange)
-          //      & inp.writesGprIdxVec.asBits(myGprRange)
-          //    ).orR
-          //    || (
-          //      pop(4).readsGprIdxVec.asBits(myGprRange)
-          //      & inp.writesGprIdxVec.asBits(myGprRange)
-          //    ).orR
-          //  )
-          //)
         )
 
         when (
