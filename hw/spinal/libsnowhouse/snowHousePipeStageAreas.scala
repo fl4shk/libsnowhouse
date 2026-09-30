@@ -2809,7 +2809,8 @@ case class SnowHousePipeStageScoreboardCheck(
             ),
             False,
             (
-              (
+              !pop(3).splitOp.scoreboardOpCanBeOooIssued(1)
+              || (
                 pop(3).writesGprIdxVec.asBits(myGprRange)
                 & inp.readsGprIdxVec.asBits(myGprRange)
               ).orR
