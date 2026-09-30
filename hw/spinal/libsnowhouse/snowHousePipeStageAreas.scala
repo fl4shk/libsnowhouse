@@ -2790,7 +2790,7 @@ case class SnowHousePipeStageScoreboardCheck(
       //  }
       //}
 
-      if (idx == 1) {
+      if (idx == 2) {
         def myGprRange = (
           if (cfg.myHaveZeroReg) (
             cfg.numGprs - 1 downto 1
