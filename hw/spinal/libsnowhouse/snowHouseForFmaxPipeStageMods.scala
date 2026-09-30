@@ -1195,12 +1195,12 @@ case class SnowHouseForFmaxPipeStageScoreboardCheck(
     myScoreboardSavedGprTagVec=(
       io.myScoreboardSavedGprTagVec
     ),
-    myScoreboardReorderBufInFlushEtc=(
-      io.myScoreboardReorderBufInFlushEtc
-    ),
-    myScoreboardReorderBufPsIdCanIssue=(
-      io.myScoreboardReorderBufPsIdCanIssue
-    ),
+    //myScoreboardReorderBufInFlushEtc=(
+    //  io.myScoreboardReorderBufInFlushEtc
+    //),
+    //myScoreboardReorderBufPsIdCanIssue=(
+    //  io.myScoreboardReorderBufPsIdCanIssue
+    //),
   )
 
   cLink.up.driveFrom(io.up)(
@@ -2024,20 +2024,20 @@ case class SnowHouseForFmaxPsWbCommitEtc(
   //    )
   //  )
   //)
-  val scoreboardReorderBufInFlushEtc = (
-    cfg.optScoreboard
-  ) generate (
-    out(
-      Bool()
-    )
-  )
-  val scoreboardReorderBufPsIdCanIssue = (
-    cfg.optScoreboard
-  ) generate (
-    out(
-      Bool()
-    )
-  )
+  //val scoreboardReorderBufInFlushEtc = (
+  //  cfg.optScoreboard
+  //) generate (
+  //  out(
+  //    Bool()
+  //  )
+  //)
+  //val scoreboardReorderBufPsIdCanIssue = (
+  //  cfg.optScoreboard
+  //) generate (
+  //  out(
+  //    Bool()
+  //  )
+  //)
   val scoreboardCommmit = (
     cfg.optScoreboard
   ) generate (

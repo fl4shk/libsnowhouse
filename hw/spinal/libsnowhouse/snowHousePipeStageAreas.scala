@@ -2421,8 +2421,8 @@ case class SnowHousePipeStageScoreboardCheck(
     // erased from psId
     Stream[SnowHouseScoreboardCommitPayload],
   val myScoreboardSavedGprTagVec: UInt,
-  val myScoreboardReorderBufInFlushEtc: Bool,
-  val myScoreboardReorderBufPsIdCanIssue: Bool,
+  //val myScoreboardReorderBufInFlushEtc: Bool,
+  //val myScoreboardReorderBufPsIdCanIssue: Bool,
 ) extends Area {
   def cfg = args.cfg
   def cScoreboardCheck = args.link
