@@ -2808,15 +2808,15 @@ case class SnowHousePipeStageScoreboardCheck(
             (
               (
                 pop(3).writesGprIdxVec.asBits(myGprRange)
-                & outp.readsGprIdxVec.asBits(myGprRange)
+                & inp.readsGprIdxVec.asBits(myGprRange)
               ).orR
               || (
                 pop(3).writesGprIdxVec.asBits(myGprRange)
-                & outp.writesGprIdxVec.asBits(myGprRange)
+                & inp.writesGprIdxVec.asBits(myGprRange)
               ).orR
               || (
                 pop(4).readsGprIdxVec.asBits(myGprRange)
-                & outp.writesGprIdxVec.asBits(myGprRange)
+                & inp.writesGprIdxVec.asBits(myGprRange)
               ).orR
             )
           )
@@ -2831,15 +2831,15 @@ case class SnowHousePipeStageScoreboardCheck(
             (
               (
                 pop(4).writesGprIdxVec.asBits(myGprRange)
-                & outp.readsGprIdxVec.asBits(myGprRange)
+                & inp.readsGprIdxVec.asBits(myGprRange)
               ).orR
               || (
                 pop(4).writesGprIdxVec.asBits(myGprRange)
-                & outp.writesGprIdxVec.asBits(myGprRange)
+                & inp.writesGprIdxVec.asBits(myGprRange)
               ).orR
               || (
                 pop(4).readsGprIdxVec.asBits(myGprRange)
-                & outp.writesGprIdxVec.asBits(myGprRange)
+                & inp.writesGprIdxVec.asBits(myGprRange)
               ).orR
             )
           )
