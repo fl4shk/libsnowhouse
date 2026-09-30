@@ -3233,8 +3233,7 @@ case class SnowHousePipeStageScoreboardCheck(
         init=False
       )
     )
-
-    when (
+    val myRealOooOkayCond = (
       //up.isValid
       //&& 
       (
@@ -3252,7 +3251,9 @@ case class SnowHousePipeStageScoreboardCheck(
         //  !myPopValidVec(1)
         //)
       )
-    ) {
+    )
+
+    when (myRealOooOkayCond) {
       doPopHead(doUpIsFiring=true)
     } otherwise {
       doPopLast(doUpIsFiring=true)
