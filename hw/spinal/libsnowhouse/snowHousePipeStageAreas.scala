@@ -3096,9 +3096,9 @@ case class SnowHousePipeStageScoreboardCheck(
       doUpIsFiring: Boolean,
       myPopIdx: Int,
     ): Unit = {
-      require(
-        myPopIdx < myOooRdBufWindow - 1
-      )
+      //require(
+      //  myPopIdx < myOooRdBufWindow - 1
+      //)
       //upPayload(0) := myOooRdBuf.io.pop(1).payload
       upPayload(0) := myTempOooRdBufPopVec(
         //3
@@ -3145,7 +3145,7 @@ case class SnowHousePipeStageScoreboardCheck(
       //myTempOooRdBufPopVec(3).ready := False
       myTempOooRdBufPopVec.zipWithIndex.foreach{
         case (item, idx) => {
-          if (idx == myOooRdBufWindow - 1) {
+          if (idx == myOooRdBufDepth - 1) {
             item.ready := (
               if (doUpIsFiring) (
                 up.isFiring
@@ -3355,7 +3355,7 @@ case class SnowHousePipeStageScoreboardCheck(
         ) {
           doPopOoo(
             doUpIsFiring=true,
-            myPopIdx=idx,
+            myPopIdx=(idx + myOooRdBufExtraSize),
           )
         }
       }
