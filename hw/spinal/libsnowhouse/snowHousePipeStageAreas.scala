@@ -2943,7 +2943,7 @@ case class SnowHousePipeStageScoreboardCheck(
         )
         for (jdx <- 0 until myTempHazardPopVec.size) {
           myTempHazardPopVec(jdx) := (
-            if (jdx + myOooRdBufExtraSize + 1 != idx) (
+            if (jdx + myOooRdBufExtraSize + 1 > idx) (
               mkTempHazardPop(
                 otherIdx=(jdx + myOooRdBufExtraSize)
               )
@@ -2952,6 +2952,7 @@ case class SnowHousePipeStageScoreboardCheck(
             )
           )
         }
+        outp.splitOp.scoreboardOpCanBeOooIssued.last.allowOverride
         outp.splitOp.scoreboardOpCanBeOooIssued.last := (
           myTempHazardPopVec.orR
         )
