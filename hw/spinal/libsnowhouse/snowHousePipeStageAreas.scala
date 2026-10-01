@@ -2952,9 +2952,12 @@ case class SnowHousePipeStageScoreboardCheck(
             )
           )
         }
-        when (myTempHazardPopVec.orR) {
-          outp.splitOp.scoreboardOpCanBeOooIssued.last := False
-        }
+        outp.splitOp.scoreboardOpCanBeOooIssued.last := (
+          myTempHazardPopVec.orR
+        )
+        //when (myTempHazardPopVec.orR) {
+        //  outp.splitOp.scoreboardOpCanBeOooIssued.last := False
+        //}
       }
     }
 
