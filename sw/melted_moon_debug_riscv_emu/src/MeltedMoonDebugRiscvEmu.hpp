@@ -55,7 +55,7 @@ static constexpr inline u64 zero_extend(u64 val, size_t width) {
 class MeltedMoonDebugRiscvEmu final {
 public:     // constants
      // increment this over time!
-    static constexpr u64 SAVESTATE_VERSION = 0x1ull;
+    static constexpr u64 SAVESTATE_VERSION = 0x2ull;
     
     static constexpr u32 ADDR_PRINT = 0x6000000ul;
     static constexpr u32 ADDR_EXIT = 0x6000004ul;
@@ -101,6 +101,14 @@ public:     // constants
         + (PALETTE_SIZE - 1) * sizeof(u32)
     );
     static constexpr u32 ADDR_FB_PAGE = 0x4000400ul;
+
+    static constexpr u32 ADDR_TCM_START = 0x8000000ul;
+    static constexpr u32 ADDR_TCM_END = (
+        ADDR_TCM_START
+        + (
+            (SCREENWIDTH * FULL_SCREENHEIGHT - 1) //* sizeof(u16)
+        )
+    );
 
     // 64 MiB of main RAM, plus the palette
     // for this emulator, we just dynamically allocate the
@@ -589,6 +597,7 @@ private:        // variables
     std::unique_ptr<u8[]> _mem;
     std::unique_ptr<u8[]> _fb_0_mem;
     std::unique_ptr<u8[]> _fb_1_mem;
+    std::unique_ptr<u8[]> _tcm;
     //snowhousecpu_dasm_info_t _dasm;
     u32 _instr_start_pc = 0u;
     u32 _pc = 0u;

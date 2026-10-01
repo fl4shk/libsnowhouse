@@ -8,7 +8,8 @@ MeltedMoonDebugRiscvEmu::MeltedMoonDebugRiscvEmu(
     _do_extra_print_start_pc(s_do_extra_print_start_pc),
     _mem(new u8[MEM_SIZE]),
     _fb_0_mem(new u8[SCREENWIDTH * FULL_SCREENHEIGHT]),
-    _fb_1_mem(new u8[SCREENWIDTH * FULL_SCREENHEIGHT]) {
+    _fb_1_mem(new u8[SCREENWIDTH * FULL_SCREENHEIGHT]),
+    _tcm(new u8[SCREENWIDTH * FULL_SCREENHEIGHT]) {
     //--------
     memset(_mem.get(), 0, sizeof(u8) * MEM_SIZE);
     if (
@@ -1518,7 +1519,7 @@ void MeltedMoonDebugRiscvEmu::_bus_write(
         );
     }
 
-    const u32 temp_addr = addr & ~0x8000000;
+    const u32 temp_addr = addr & ~0x10000000;
     //if ((addr & ~0b11u) == (0x8554u & ~0b11u)) {
     //    std::printf(
     //        "DEBUG NOTE: found it! pc:%x  \n",
@@ -1615,17 +1616,19 @@ void MeltedMoonDebugRiscvEmu::_bus_write(
         } else if (temp_addr == ADDR_IDIV64_INP_RIGHT_HI) {
             _mmio_idiv64_inp_right &= u64(u32(i32(-1l)));
             _mmio_idiv64_inp_right |= (u64(data) << 32u);
-        } else if (temp_addr > MEM_SIZE) {
-            std::fprintf(
-                stderr,
-                "MeltedMoonDebugRiscvEmu::_bus_write(): "
-                "invalid bus write: "
-                "pc:%x data:%x temp_addr:%x byte_count:%lu\n",
-                _pc, data, temp_addr, byte_count
-            );
-            std::exit(1);
-        } else {
-            if ((addr & 0x8000000) != 0x0u) {
+        } 
+        //else if (temp_addr > MEM_SIZE) {
+        //    std::fprintf(
+        //        stderr,
+        //        "MeltedMoonDebugRiscvEmu::_bus_write(): "
+        //        "invalid bus write: "
+        //        "pc:%x data:%x temp_addr:%x byte_count:%lu\n",
+        //        _pc, data, temp_addr, byte_count
+        //    );
+        //    std::exit(1);
+        //} 
+        else {
+            if ((addr & 0x10000000) != 0x0u) {
                 //if (
                 //    //(temp_addr & 0x3u) == (ADDR_FB_END & 0x3u)
                 //    ////&& byte_count == sizeof(u8)//sizeof(u16)
@@ -1733,13 +1736,21 @@ void MeltedMoonDebugRiscvEmu::_bus_write(
                     }
                     memcpy(&_mem[temp_addr], &data, byte_count);
                     _my_exec_one_instr_ret.pal = &_mem[ADDR_PAL_START];
+                } else if (
+                    temp_addr >= ADDR_TCM_START
+                    && temp_addr <= ADDR_TCM_END
+                ) {
+                    memcpy(
+                        &_tcm[temp_addr - ADDR_TCM_START],
+                        &data, byte_count
+                    );
                 } else {
                     std::fprintf(
                         stderr,
                         "MeltedMoonDebugRiscvEmu::_bus_write(): "
                         "invalid bus write: "
-                        "pc:%x data:%x temp_addr:%x byte_count:%lu\n",
-                        _pc, data, temp_addr, byte_count
+                        "pc:%x data:%x addr:%x temp_addr:%x byte_count:%lu\n",
+                        _pc, data, addr, temp_addr, byte_count
                     );
                     std::exit(1);
                 }
@@ -1767,7 +1778,7 @@ u32 MeltedMoonDebugRiscvEmu::_bus_read(
     //    : 0u
     //);
     u32 ret = 0; 
-    const u32 temp_addr = addr & ~0x8000000;
+    const u32 temp_addr = addr & ~0x10000000;
 
     //if ((addr & ~0b11u) == (0x8554u & ~0b11u)) {
     //    std::printf(
@@ -1858,6 +1869,13 @@ u32 MeltedMoonDebugRiscvEmu::_bus_read(
                     % i64(_mmio_idiv64_inp_right)
                 );
                 ret = u32(_mmio_idiv64_outp_rema >> 32ul);
+            } else if (
+                temp_addr >= ADDR_TCM_START
+                && temp_addr <= ADDR_TCM_END
+            ) {
+                memcpy(
+                    &ret, &_tcm[temp_addr - ADDR_TCM_START], byte_count
+                );
             } else {
                 std::fprintf(
                     stderr,
@@ -1869,7 +1887,7 @@ u32 MeltedMoonDebugRiscvEmu::_bus_read(
                 std::exit(1);
             }
         } else {
-            //if ((addr & 0x8000000) != 0x0u) {
+            //if ((addr & 0x10000000) != 0x0u) {
             //    if (
             //        //(temp_addr & 0x3u) == (ADDR_FB_END & 0x3u)
             //        ////&& byte_count == sizeof(u8)//sizeof(u16)
@@ -1912,7 +1930,7 @@ u32 MeltedMoonDebugRiscvEmu::_bus_read(
             //        _my_exec_one_instr_ret.which_fb = true;
             //    }
             //}
-            if ((addr & 0x8000000) != 0x0u) {
+            if ((addr & 0x10000000) != 0x0u) {
                 if (
                     temp_addr >= ADDR_FB_0_START
                     && temp_addr <= ADDR_FB_0_END
@@ -1941,35 +1959,35 @@ u32 MeltedMoonDebugRiscvEmu::_bus_read(
                         );
                     }
                 } 
-                //else if (
-                //    temp_addr >= ADDR_FB_1_START
-                //    && temp_addr <= ADDR_FB_1_END
-                //) {
-                //    //memcpy(
-                //    //    &_fb_1_mem[temp_addr - ADDR_FB_1_START],
-                //    //    &data,
-                //    //    byte_count
-                //    //);
-                //    //memcpy(&ret, &_mem[temp_addr], byte_count);
-                //    //memcpy(
-                //    //    &ret,
-                //    //    &_fb_1_mem[temp_addr - ADDR_FB_1_START],
-                //    //    byte_count
-                //    //);
-                //    if ((u32(_mem[ADDR_FB_PAGE]) & 0b1u)) {
-                //        memcpy(
-                //            &ret,
-                //            &_fb_0_mem[temp_addr - ADDR_FB_1_START],
-                //            byte_count
-                //        );
-                //    } else {
-                //        memcpy(
-                //            &ret,
-                //            &_fb_1_mem[temp_addr - ADDR_FB_1_START],
-                //            byte_count
-                //        );
-                //    }
-                //}
+                else if (
+                    temp_addr >= ADDR_FB_1_START
+                    && temp_addr <= ADDR_FB_1_END
+                ) {
+                    //memcpy(
+                    //    &_fb_1_mem[temp_addr - ADDR_FB_1_START],
+                    //    &data,
+                    //    byte_count
+                    //);
+                    //memcpy(&ret, &_mem[temp_addr], byte_count);
+                    //memcpy(
+                    //    &ret,
+                    //    &_fb_1_mem[temp_addr - ADDR_FB_1_START],
+                    //    byte_count
+                    //);
+                    if ((u32(_mem[ADDR_FB_PAGE]) & 0b1u)) {
+                        memcpy(
+                            &ret,
+                            &_fb_0_mem[temp_addr - ADDR_FB_1_START],
+                            byte_count
+                        );
+                    } else {
+                        memcpy(
+                            &ret,
+                            &_fb_1_mem[temp_addr - ADDR_FB_1_START],
+                            byte_count
+                        );
+                    }
+                }
                 else if (
                     temp_addr >= ADDR_PAL_START
                     && temp_addr <= ADDR_PAL_END
@@ -2116,6 +2134,11 @@ void MeltedMoonDebugRiscvEmu::write_savestate(
                 sizeof(u8), SCREENWIDTH * FULL_SCREENHEIGHT, 
                 f
             );
+            std::fwrite(
+                _tcm.get(),
+                sizeof(u8), SCREENWIDTH * FULL_SCREENHEIGHT, 
+                f
+            );
         }
         //--------
         {
@@ -2238,6 +2261,11 @@ void MeltedMoonDebugRiscvEmu::read_savestate(
             );
             std::fread(
                 _fb_1_mem.get(),
+                sizeof(u8), SCREENWIDTH * FULL_SCREENHEIGHT, 
+                f
+            );
+            std::fread(
+                _tcm.get(),
                 sizeof(u8), SCREENWIDTH * FULL_SCREENHEIGHT, 
                 f
             );
