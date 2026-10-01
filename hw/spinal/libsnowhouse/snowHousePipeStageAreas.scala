@@ -2927,7 +2927,7 @@ case class SnowHousePipeStageScoreboardCheck(
           )
         )
       )
-      if (idx == myOooRdBufExtraSize) {
+      if (idx >= myOooRdBufExtraSize) {
         // the reason we don't check for `idx >= myOooRdBufExtraSize` is
         // because the register index comparisons
         // between the instructions within the buffer *won't change* as
@@ -2943,13 +2943,13 @@ case class SnowHousePipeStageScoreboardCheck(
         )
         for (jdx <- 0 until myTempHazardPopVec.size) {
           myTempHazardPopVec(jdx) := (
-            //if (jdx + myOooRdBufExtraSize != idx) (
+            if (jdx + myOooRdBufExtraSize + 1 != idx) (
               mkTempHazardPop(
                 otherIdx=(jdx + myOooRdBufExtraSize)
               )
-            //) else (
-            //  False
-            //)
+            ) else (
+              False
+            )
           )
         }
         when (myTempHazardPopVec.orR) {
