@@ -233,8 +233,9 @@ case class SnowHousePsExSetPcTakenPayload(
   val myPsExSetPcValid = Bool()
   val srcRegPc = UInt(cfg.mainAddrWidth bits)
 }
+
 case class SnowHousePsExSetPcPayload(
-  cfg: SnowHouseConfig
+  cfg: SnowHouseConfig,
 ) extends Bundle {
   //val valid1 = Bool()
   //val extValid = Bool()
@@ -265,11 +266,17 @@ case class SnowHousePsExSetPcPayload(
   ) generate (
     UInt(cfg.optScoreboardReorderBufWidth bits)
   )
+  val myOooIssueChkptIdx = (
+    cfg.optScoreboardOooIssueWindow != None
+  ) generate (
+    UInt(log2Up(cfg.optScoreboardOooIssueMaxNumBranches) bits)
+  )
+
   //val btbWrEn = (
   //  Bool()
   //)
-
 }
+
 //object SnowHouseShouldIgnoreInstrState
 //extends SpinalEnum(defaultEncoding=binaryOneHot) {
 //  val
@@ -1638,15 +1645,26 @@ case class SnowHousePipeStageInstrDecode(
     upPayload(1) := upPayload(0)
   }
 
-  val shouldClearExtraDecodeInfo = Bool()
-  shouldClearExtraDecodeInfo := (
+  val stickyExSetPc = cloneOf(psExSetPc)
+
+  //val shouldClearExtraDecodeInfo = Bool()
+  //shouldClearExtraDecodeInfo := (
+  //  RegNext(
+  //    shouldClearExtraDecodeInfo,
+  //    init=shouldClearExtraDecodeInfo.getZero
+  //  )
+  //)
+  def shouldClearExtraDecodeInfo = stickyExSetPc.valid
+  stickyExSetPc := (
     RegNext(
-      shouldClearExtraDecodeInfo,
-      init=shouldClearExtraDecodeInfo.getZero
+      stickyExSetPc,
+      init=stickyExSetPc.getZero
     )
   )
   when (psExSetPc.valid) {
     shouldClearExtraDecodeInfo := True
+    //stickyExSetPc.valid := True
+    stickyExSetPc.payload := psExSetPc.payload
   }
   //upPayload(1).instrCnt.any := (
   //  RegNextWhen(
@@ -2285,7 +2303,9 @@ case class SnowHousePipeStageInstrDecode(
       myTempOpMayNeedHazardCheck
     )
   }
-  if (cfg.optScoreboardOooIssueWindow != None) {
+  val myOooIssueArea = (
+    cfg.optScoreboardOooIssueWindow != None
+  ) generate new Area {
     upPayload(1).readsGprIdxVec.foreach(item => {
       item := False
     })
@@ -2357,6 +2377,12 @@ case class SnowHousePipeStageInstrDecode(
           cond=cId.up.isFiring,
           init=False,
         )
+        //History(
+        //  that=(
+        //    !upPayload(1).splitOp.haveAnyJmpBrOp()
+        //    && !shouldClearExtraDecodeInfo
+        //  )
+        //)
       )
       && (
         // Force branches/jumps/calls/returns, etc. to be in-order
@@ -2373,9 +2399,77 @@ case class SnowHousePipeStageInstrDecode(
         !upPayload(1).splitOp.opIsMemAccess
       )
     )
+
     upPayload(1).splitOp.scoreboardOpCanBeOooIssued.last := (
       upPayload(1).splitOp.scoreboardOpCanBeOooIssued(1)
     )
+    //upPayload(1).myOooIssueCnt.payload
+
+    val rOooIssueChkptBufIdx = (
+      Reg(UInt(log2Up(cfg.optScoreboardOooIssueMaxNumBranches) bits))
+      init(0x0)
+    )
+    val myOooIssueChkptBuf = (
+      Mem(
+        wordType=UInt(cfg.optScoreboardReorderBufWidth bits),
+        wordCount=cfg.optScoreboardOooIssueMaxNumBranches,
+      )
+      .initBigInt(Array.fill(cfg.optScoreboardOooIssueMaxNumBranches)(
+        BigInt(0)
+      ))
+    )
+    val myChkptWriteCond = (
+      upPayload(1).splitOp.haveAnyJmpBrOp()
+      && !shouldClearExtraDecodeInfo
+      && cId.up.isFiring
+    )
+    myOooIssueChkptBuf.write(
+      address=(
+        rOooIssueChkptBufIdx //+ 1
+      ),
+      data=(
+        upPayload(1).reorderBufIdx
+      ),
+      enable=myChkptWriteCond,
+    )
+    upPayload(1).myOooIssueChkptIdx := rOooIssueChkptBufIdx
+    when (myChkptWriteCond) {
+      rOooIssueChkptBufIdx := rOooIssueChkptBufIdx + 1
+    }
+
+    //val myHistReorderBufIdx = (
+    //  History(
+    //    that=upPayload(1).reorderBufIdx,
+    //    length=8,
+    //    when=(
+    //      cId.up.isFiring,
+    //    ),
+    //    init=upPayload(1).reorderBufIdx
+    //  )
+    //)
+    when (
+      //myChkptWriteCond
+      shouldClearExtraDecodeInfo
+    ) {
+      upPayload(1).reorderBufIdx := (
+        myOooIssueChkptBuf.readAsync(
+          address=stickyExSetPc.myOooIssueChkptIdx
+        ) //+ 1
+      )
+    } otherwise {
+      upPayload(1).reorderBufIdx := (
+        RegNextWhen(
+          (upPayload(1).reorderBufIdx + 1),
+          cond=(
+            //!shouldClearExtraDecodeInfo
+            //&& 
+            cId.up.isFiring
+          ),
+          init=upPayload(1).reorderBufIdx.getZero,
+        )
+      )
+    }
+    //upPayload(1).reorderBufIdx
   }
 
   upPayload(1).instrCnt.tick := (
@@ -2842,12 +2936,20 @@ case class SnowHousePipeStageScoreboardCheck(
         // This is something I was able to verify mentally.
         // You only get a new instruction from earlier in the buffer
         // (the "extra size" section), 
-        val myTempHazardPopVec = Vec.fill(myOooRdBufWindow)(
+        val myTempHazardPopVec = Vec.fill(
+          myOooRdBufWindow
+        )(
           Bool()
         )
         for (jdx <- 0 until myTempHazardPopVec.size) {
-          myTempHazardPopVec(jdx) := mkTempHazardPop(
-            otherIdx=(jdx + myOooRdBufExtraSize)
+          myTempHazardPopVec(jdx) := (
+            //if (jdx + myOooRdBufExtraSize != idx) (
+              mkTempHazardPop(
+                otherIdx=(jdx + myOooRdBufExtraSize)
+              )
+            //) else (
+            //  False
+            //)
           )
         }
         when (myTempHazardPopVec.orR) {
@@ -3092,6 +3194,15 @@ case class SnowHousePipeStageScoreboardCheck(
       )
     )
 
+    //val rSavedPoppedOoo = Reg(Bool(), init=False)
+    val rSavedPopIdx = (
+      Reg(UInt(log2Up(myOooRdBufWindow + 1) bits))
+      init(
+        //0x0
+        myOooRdBufWindow - 1
+      )
+    )
+
     def doPopOoo(
       doUpIsFiring: Boolean,
       myPopIdx: Int,
@@ -3121,6 +3232,18 @@ case class SnowHousePipeStageScoreboardCheck(
           }
         }
       }
+
+      when (
+        if (doUpIsFiring) (
+          up.isFiring
+        ) else (
+          down.isFiring
+        )
+      ) {
+        rSavedPopIdx := myPopIdx - myOooRdBufExtraSize
+      }
+
+
       //myTempOooRdBufPopVec(3).ready := (
       //  if (doUpIsFiring) (
       //    up.isFiring
@@ -3134,8 +3257,15 @@ case class SnowHousePipeStageScoreboardCheck(
       def myOooIssueCnt = (
         upPayload(1).instrCnt.scoreboardCheckPayload.myOooIssueCnt
       )
-      myOooIssueCnt.valid := True//myOooOkayCond
+      //when (
+      //  rSavedPopIdx =/= myPopIdx - myOooRdBufExtraSize //+ 1
+      //) {
+      //  myOooIssueCnt.valid := (
+      //    True//myOooOkayCond
+      //  )
+      //}
       //myOooIssueCnt.payload := rPingPongBlockCnt.payload
+
     }
     def doPopLast(
       doUpIsFiring: Boolean,
@@ -3159,6 +3289,26 @@ case class SnowHousePipeStageScoreboardCheck(
           }
         }
       }
+
+      //when (
+      //  if (doUpIsFiring) (
+      //    up.isFiring
+      //  ) else (
+      //    down.isFiring
+      //  )
+      //) {
+      //  rSavedPopIdx := myOooRdBufWindow - 1
+      //}
+
+      def myOooIssueCnt = (
+        upPayload(1).instrCnt.scoreboardCheckPayload.myOooIssueCnt
+      )
+      //when (
+      //  rSavedPopIdx =/= myOooRdBufWindow - 1
+      //) {
+      //  myOooIssueCnt.valid := True
+      //}
+
       //myTempOooRdBufPopVec.last.ready := (
       //  if (doUpIsFiring) (
       //    up.isFiring
@@ -3340,8 +3490,10 @@ case class SnowHousePipeStageScoreboardCheck(
           && myBufPop(
             idx + myOooRdBufExtraSize
           ).splitOp.scoreboardOpCanBeOooIssued.last
+          && myPopValidVec.last
         ) else (
           myPopValidVec(idx)
+          && myDispatchOkayCondMostVec(idx)
         )
       )
     }
@@ -3350,7 +3502,7 @@ case class SnowHousePipeStageScoreboardCheck(
         val size = myOooRdBufWindow
         is (
           MaskedLiteral(
-            "0" * (size - idx - 1) + "1" + ("-" * idx)
+            "-" * (size - idx - 1) + "1" + ("0" * idx)
           )
         ) {
           doPopOoo(
@@ -3374,8 +3526,9 @@ case class SnowHousePipeStageScoreboardCheck(
       //rScoreboardFlushState.asBits(ScoreboardFlushState.IDLE.position)
       //&& 
       (
-        myNonFwdHazardCheckVec.orR
-        || myFwdHazardCheckVec.orR
+        //myNonFwdHazardCheckVec.orR
+        //|| myFwdHazardCheckVec.orR
+        !myRealDispatchOkayCondVec.asBits.orR
         || myReducedFwdTagAllocVec.asBits.andR
         || myReducedNonFwdTagAllocVec.asBits.andR
         //|| myInFlushCond(2)
@@ -11878,6 +12031,25 @@ case class SnowHousePipeStageExecute(
       init=setOutpModMemWord.io.psExSetPc.taken.payload.getZero
     )
   )
+  if (psExSetPc.myOooIssueChkptIdx != null) {
+    //psExSetPc.myOooIssueChkptIdx := (
+    //  RegNext(
+    //    setOutpModMemWord.io.psExSetPc.myOooIssueChkptIdx,
+    //    //init=setOutpModMemWord.io.psExSetPc.myOooIssueChkptIdx.getZero
+    //  )
+    //)
+    psExSetPc.myOooIssueChkptIdx := (
+      RegNextWhen(
+        RegNext(
+          outp.myOooIssueChkptIdx,
+          //cond=cMid0Front.up.isFiring,
+          init=outp.myOooIssueChkptIdx.getZero,
+        ),
+        cond=setOutpModMemWord.io.psExSetPc.fire,
+        init=outp.myOooIssueChkptIdx.getZero,
+      )
+    )
+  }
   for (idx <- 0 until cfg.lowerMyFanoutMain) {
     when (nextPsExSetPcValid(idx)) {
       myShouldIgnoreInstr(idx) := True
@@ -12751,16 +12923,16 @@ case class SnowHousePipeStageExecute(
       cfg.optScoreboard
     ) generate new Area {
       //myTempReorderBufIdx := myNonBubbleTag
-      myTempReorderBufIdx := (
-        //myNonBubbleTag
-        (
-          RegNext(
-            myTempReorderBufIdx.asSInt
-            //init=myTempReorderBufIdx.getZero
-          )
-          init(-1)
-        ).asUInt
-      )
+      //myTempReorderBufIdx := (
+      //  //myNonBubbleTag
+      //  (
+      //    RegNext(
+      //      myTempReorderBufIdx.asSInt
+      //      //init=myTempReorderBufIdx.getZero
+      //    )
+      //    init(-1)
+      //  ).asUInt
+      //)
       val myTempCond = (
         cLink.up.isFiring
         && !myShouldIgnoreInstr.last
@@ -12769,9 +12941,20 @@ case class SnowHousePipeStageExecute(
         && !outp.instrCnt.myPsIdFwdBubble(0)
         && !outp.instrCnt.myPsIdOtherBubble(0)
       )
+
       val myInOrderIssueArea = (
         cfg.optScoreboardOooIssueWindow == None
       ) generate new Area {
+        myTempReorderBufIdx := (
+          //myNonBubbleTag
+          (
+            RegNext(
+              myTempReorderBufIdx.asSInt
+              //init=myTempReorderBufIdx.getZero
+            )
+            init(-1)
+          ).asUInt
+        )
         when (myTempCond) {
           myTempReorderBufIdx := (
             RegNext(myTempReorderBufIdx) + 1
@@ -12784,145 +12967,366 @@ case class SnowHousePipeStageExecute(
       //) generate new Area {
       //}
 
-      val myOooIssueArea = (
-        cfg.optScoreboardOooIssueWindow != None
-      ) generate new Area {
-        
-        //val rHaveOooIssueState = Reg(Bool(), init=False) 
-        //val rPrevHadOooIssueState = Reg(Bool(), init=False)
-        //val rSavedOooIssueCntThing = (
-        //  Reg(UInt(myTempOooIssueCnt.payload.asBits.getWidth + 1 bits))
-        //  //init(0x0)
-        //)
-        //val rSavedReorderBufIdxVec = (
-        //  Vec.fill(2)(
-        //    Reg(cloneOf(myTempReorderBufIdx))
-        //    //init(0x0)
-        //  )
-        //)
+      //val myOooIssueArea = (
+      //  cfg.optScoreboardOooIssueWindow != None
+      //) generate new Area {
+      //  val rSavedPc = (
+      //    RegNextWhen(
+      //      outp.myRegPcVec.head,
+      //      cond=myTempCond,
+      //      init=outp.myRegPcVec.head.getZero
+      //    )
+      //  )
+      //  //val rPrevInstrWasIssuedOoo = (
+      //  //  Reg(Bool(), init=False)
+      //  //)
 
-        // Since we *don't* schedule branches OoO,
-        // Let's try just subtracting the program counters of the two
-        // instructions to get an amount to increment by!
-        // 
-        // This a little bit of a hack!
-        val rSavedPcVec = (
-          //--------
-          Vec(
-            (
-              RegNextWhen(
-                outp.myRegPcVec.head,
-                cond=(
-                  myTempCond
-                  && !myTempOooIssueCnt.fire
-                ),
-              )
-              init(0x0)
-            ),
-            (
-              RegNextWhen(
-                outp.myRegPcVec.head,
-                cond=(
-                  myTempCond
-                  //&& myTempOooIssueCnt.fire
-                ),
-              )
-              init(0x0)
-            ),
-            (
-              RegNextWhen(
-                outp.myRegPcVec.head, //+ cfg.instrSizeBytes,
-                cond=(
-                  myTempCond
-                  && myTempOooIssueCnt.fire
-                ),
-              )
-              init(0x0)
-            ),
-          )
-          //--------
-        )
-        val rPrevInstrWasIssuedOoo = (
-          Reg(Bool(), init=False)
-        )
+      //  //val myOooPcSliceRange = (
+      //  //)
+      //  //val tempSubVec = rSavedPcVec.map(item => (
+      //  //  (outp.myRegPcVec.head.asSInt - item.asSInt)(
+      //  //    myTempReorderBufIdx.high + log2Up(cfg.instrSizeBytes)
+      //  //    downto log2Up(cfg.instrSizeBytes)
+      //  //  )
+      //  //))
+      //  val tempSub = (
+      //    (outp.myRegPcVec.head.asSInt - rSavedPc.asSInt)(
+      //      myTempReorderBufIdx.high + log2Up(cfg.instrSizeBytes)
+      //      downto log2Up(cfg.instrSizeBytes)
+      //    )
+      //  )
 
-        //val myOooPcSliceRange = (
-        //)
-        val tempSubVec = rSavedPcVec.map(item => (
-          (outp.myRegPcVec.head.asSInt - item.asSInt)(
-            myTempReorderBufIdx.high + log2Up(cfg.instrSizeBytes)
-            downto log2Up(cfg.instrSizeBytes)
-          )
-        ))
+      //  switch (
+      //    myTempCond
+      //    ## myTempOooIssueCnt.fire
+      //  ) {
+      //    is (M"11") {
+      //      //rPrevInstrWasIssuedOoo := True
+      //      myTempReorderBufIdx := (
+      //        (
+      //          RegNext(myTempReorderBufIdx.asSInt)
+      //          + tempSub
+      //        ).asUInt
+      //      )
+      //    }
+      //    is (M"10") {
+      //      //rPrevInstrWasIssuedOoo := False
+      //      myTempReorderBufIdx := (
+      //        RegNext(myTempReorderBufIdx) + 1
+      //      )
+      //    }
+      //    default {
+      //    }
+      //  }
 
-        switch (
-          myTempCond
-          ## myTempOooIssueCnt.fire
-        ) {
-          is (M"11") {
-            rPrevInstrWasIssuedOoo := True
-          }
-          is (M"10") {
-            rPrevInstrWasIssuedOoo := False
-          }
-          default {
-          }
-        }
+      //  //switch (
+      //  //  myTempCond
+      //  //  ## rPrevInstrWasIssuedOoo
+      //  //) {
+      //  //  is (M"10") {
+      //  //    myTempReorderBufIdx := (
+      //  //      RegNext(myTempReorderBufIdx) + 1
+      //  //    )
+      //  //  }
+      //  //  is (M"11") {
+      //  //    myTempReorderBufIdx := (
+      //  //      (
+      //  //        RegNext(myTempReorderBufIdx.asSInt)
+      //  //        + tempSub
+      //  //      ).asUInt
+      //  //    )
+      //  //  }
+      //  //  default {
+      //  //  }
+      //  //}
+      //  ////when (rPrevInstrWasIssuedOoo) {
+      //  ////} otherwise {
+      //  ////  myTempReorderBufIdx := (
+      //  ////    RegNext(myTempReorderBufIdx) + 1
+      //  ////  )
+      //  ////}
+      //}
 
-        switch (
-          myTempCond
-          ## (
-            myTempOooIssueCnt.fire
-            && !rPrevInstrWasIssuedOoo
-          )
-          ## (
-            !myTempOooIssueCnt.fire
-            && rPrevInstrWasIssuedOoo
-          )
-          ## (
-            RegNextWhen(
-              (
-                !myTempOooIssueCnt.fire
-                && rPrevInstrWasIssuedOoo
-              ),
-              cond=myTempCond,
-              init=False
-            )
-          )
-        ) {
-          is (M"110-") {
-            myTempReorderBufIdx := (
-              (
-                RegNext(myTempReorderBufIdx.asSInt)
-                + tempSubVec.head
-              ).asUInt
-            )
-          }
-          is (M"1-1-") {
-            myTempReorderBufIdx := (
-              (
-                RegNext(myTempReorderBufIdx.asSInt)
-                + tempSubVec.last
-              ).asUInt
-            )
-          }
-          is (M"1001") {
-            myTempReorderBufIdx := (
-              (
-                RegNext(myTempReorderBufIdx.asSInt)
-                + tempSubVec(1)
-              ).asUInt
-            )
-          }
-          is (M"1000") {
-            myTempReorderBufIdx := (
-              RegNext(myTempReorderBufIdx) + 1
-            )
-          }
-          default {
-          }
-        }
-      }
+      //val myOooIssueArea = (
+      //  cfg.optScoreboardOooIssueWindow != None
+      //) generate new Area {
+      //  
+      //  //val rHaveOooIssueState = Reg(Bool(), init=False) 
+      //  //val rPrevHadOooIssueState = Reg(Bool(), init=False)
+      //  //val rSavedOooIssueCntThing = (
+      //  //  Reg(UInt(myTempOooIssueCnt.payload.asBits.getWidth + 1 bits))
+      //  //  //init(0x0)
+      //  //)
+      //  //val rSavedReorderBufIdxVec = (
+      //  //  Vec.fill(2)(
+      //  //    Reg(cloneOf(myTempReorderBufIdx))
+      //  //    //init(0x0)
+      //  //  )
+      //  //)
+
+      //  // Since we *don't* schedule branches OoO,
+      //  // Let's try just subtracting the program counters of the two
+      //  // instructions to get an amount to increment by!
+      //  // 
+      //  // This a little bit of a hack!
+      //  val rSavedPcVec = (
+      //    //--------
+      //    Vec(
+      //      (
+      //        RegNextWhen(
+      //          outp.myRegPcVec.head,
+      //          cond=(
+      //            myTempCond
+      //            && !myTempOooIssueCnt.fire
+      //          ),
+      //        )
+      //        init(0x0)
+      //      ),
+      //      (
+      //        RegNextWhen(
+      //          outp.myRegPcVec.head,
+      //          cond=(
+      //            myTempCond
+      //            //&& myTempOooIssueCnt.fire
+      //          ),
+      //        )
+      //        init(0x0)
+      //      ),
+      //      (
+      //        RegNextWhen(
+      //          outp.myRegPcVec.head, //+ cfg.instrSizeBytes,
+      //          cond=(
+      //            myTempCond
+      //            && myTempOooIssueCnt.fire
+      //          ),
+      //        )
+      //        init(0x0)
+      //      ),
+      //    )
+      //    //--------
+      //  )
+      //  val rPrevInstrWasIssuedOoo = (
+      //    Reg(Bool(), init=False)
+      //  )
+
+      //  //val myOooPcSliceRange = (
+      //  //)
+      //  val tempSubVec = rSavedPcVec.map(item => (
+      //    (outp.myRegPcVec.head.asSInt - item.asSInt)(
+      //      myTempReorderBufIdx.high + log2Up(cfg.instrSizeBytes)
+      //      downto log2Up(cfg.instrSizeBytes)
+      //    )
+      //  ))
+
+      //  switch (
+      //    myTempCond
+      //    ## myTempOooIssueCnt.fire
+      //  ) {
+      //    is (M"11") {
+      //      rPrevInstrWasIssuedOoo := True
+      //    }
+      //    is (M"10") {
+      //      rPrevInstrWasIssuedOoo := False
+      //    }
+      //    default {
+      //    }
+      //  }
+
+      //  switch (
+      //    myTempCond
+      //    ## (
+      //      myTempOooIssueCnt.fire
+      //      && !rPrevInstrWasIssuedOoo
+      //    )
+      //    ## (
+      //      !myTempOooIssueCnt.fire
+      //      && rPrevInstrWasIssuedOoo
+      //    )
+      //    ## (
+      //      RegNextWhen(
+      //        (
+      //          !myTempOooIssueCnt.fire
+      //          && rPrevInstrWasIssuedOoo
+      //        ),
+      //        cond=myTempCond,
+      //        init=False
+      //      )
+      //    )
+      //  ) {
+      //    is (M"110-") {
+      //      myTempReorderBufIdx := (
+      //        (
+      //          RegNext(myTempReorderBufIdx.asSInt)
+      //          + tempSubVec.head
+      //        ).asUInt
+      //      )
+      //    }
+      //    is (M"1-1-") {
+      //      myTempReorderBufIdx := (
+      //        (
+      //          RegNext(myTempReorderBufIdx.asSInt)
+      //          + tempSubVec.last
+      //        ).asUInt
+      //      )
+      //    }
+      //    is (M"1001") {
+      //      myTempReorderBufIdx := (
+      //        (
+      //          RegNext(myTempReorderBufIdx.asSInt)
+      //          + tempSubVec(1)
+      //        ).asUInt
+      //      )
+      //    }
+      //    is (M"1000") {
+      //      myTempReorderBufIdx := (
+      //        RegNext(myTempReorderBufIdx) + 1
+      //      )
+      //    }
+      //    default {
+      //    }
+      //  }
+      //}
+
+      //val myOldOooIssueArea = (
+      //  (cfg.optScoreboardOooIssueWindow != None)
+      //  && false
+      //) generate new Area {
+      //  
+      //  //val rHaveOooIssueState = Reg(Bool(), init=False) 
+      //  //val rPrevHadOooIssueState = Reg(Bool(), init=False)
+      //  //val rSavedOooIssueCntThing = (
+      //  //  Reg(UInt(myTempOooIssueCnt.payload.asBits.getWidth + 1 bits))
+      //  //  //init(0x0)
+      //  //)
+      //  //val rSavedReorderBufIdxVec = (
+      //  //  Vec.fill(2)(
+      //  //    Reg(cloneOf(myTempReorderBufIdx))
+      //  //    //init(0x0)
+      //  //  )
+      //  //)
+
+      //  // Since we *don't* schedule branches OoO,
+      //  // Let's try just subtracting the program counters of the two
+      //  // instructions to get an amount to increment by!
+      //  // 
+      //  // This a little bit of a hack!
+      //  val rSavedPcVec = (
+      //    //--------
+      //    Vec(
+      //      (
+      //        RegNextWhen(
+      //          outp.myRegPcVec.head,
+      //          cond=(
+      //            myTempCond
+      //            && !myTempOooIssueCnt.fire
+      //          ),
+      //        )
+      //        init(0x0)
+      //      ),
+      //      (
+      //        RegNextWhen(
+      //          outp.myRegPcVec.head,
+      //          cond=(
+      //            myTempCond
+      //            //&& myTempOooIssueCnt.fire
+      //          ),
+      //        )
+      //        init(0x0)
+      //      ),
+      //      (
+      //        RegNextWhen(
+      //          outp.myRegPcVec.head, //+ cfg.instrSizeBytes,
+      //          cond=(
+      //            myTempCond
+      //            && myTempOooIssueCnt.fire
+      //          ),
+      //        )
+      //        init(0x0)
+      //      ),
+      //    )
+      //    //--------
+      //  )
+      //  val rPrevInstrWasIssuedOoo = (
+      //    Reg(Bool(), init=False)
+      //  )
+
+      //  //val myOooPcSliceRange = (
+      //  //)
+      //  val tempSubVec = rSavedPcVec.map(item => (
+      //    (outp.myRegPcVec.head.asSInt - item.asSInt)(
+      //      myTempReorderBufIdx.high + log2Up(cfg.instrSizeBytes)
+      //      downto log2Up(cfg.instrSizeBytes)
+      //    )
+      //  ))
+
+      //  switch (
+      //    myTempCond
+      //    ## myTempOooIssueCnt.fire
+      //  ) {
+      //    is (M"11") {
+      //      rPrevInstrWasIssuedOoo := True
+      //    }
+      //    is (M"10") {
+      //      rPrevInstrWasIssuedOoo := False
+      //    }
+      //    default {
+      //    }
+      //  }
+
+      //  switch (
+      //    myTempCond
+      //    ## (
+      //      myTempOooIssueCnt.fire
+      //      && !rPrevInstrWasIssuedOoo
+      //    )
+      //    ## (
+      //      !myTempOooIssueCnt.fire
+      //      && rPrevInstrWasIssuedOoo
+      //    )
+      //    ## (
+      //      RegNextWhen(
+      //        (
+      //          !myTempOooIssueCnt.fire
+      //          && rPrevInstrWasIssuedOoo
+      //        ),
+      //        cond=myTempCond,
+      //        init=False
+      //      )
+      //    )
+      //  ) {
+      //    is (M"110-") {
+      //      myTempReorderBufIdx := (
+      //        (
+      //          RegNext(myTempReorderBufIdx.asSInt)
+      //          + tempSubVec.head
+      //        ).asUInt
+      //      )
+      //    }
+      //    is (M"1-1-") {
+      //      myTempReorderBufIdx := (
+      //        (
+      //          RegNext(myTempReorderBufIdx.asSInt)
+      //          + tempSubVec.last
+      //        ).asUInt
+      //      )
+      //    }
+      //    is (M"1001") {
+      //      myTempReorderBufIdx := (
+      //        (
+      //          RegNext(myTempReorderBufIdx.asSInt)
+      //          + tempSubVec(1)
+      //        ).asUInt
+      //      )
+      //    }
+      //    is (M"1000") {
+      //      myTempReorderBufIdx := (
+      //        RegNext(myTempReorderBufIdx) + 1
+      //      )
+      //    }
+      //    default {
+      //    }
+      //  }
+      //}
 
       myNonBubbleTag := (
         (

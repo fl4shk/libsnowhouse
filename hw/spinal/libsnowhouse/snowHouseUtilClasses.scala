@@ -1228,6 +1228,11 @@ case class SnowHouseConfig(
     //)
     log2Up(16)
   )
+
+  val optScoreboardOooIssueMaxNumBranches = (
+    1 << optScoreboardReorderBufWidth
+  )
+
   //val optScoreboardReorderBufArrSize = (
   //  4
   //  //1
@@ -1652,6 +1657,9 @@ case class SnowHouseInstrCnt(
   ) generate (
     SnowHouseScoreboardCheckPayload(cfg=cfg)
   )
+  def myOooIssueChkptIdx = scoreboardCheckPayload.myOooIssueChkptIdx
+  def myOooIssueCnt = scoreboardCheckPayload.myOooIssueCnt
+  def reorderBufIdx = scoreboardCheckPayload.reorderBufIdx
   //def scoreboardTag = scoreboardCheckPayload.tag
   //def scoreboardCheckCntOverflow = scoreboardCheckPayload.cntOverflow
   val myScoreboardOpMayNeedHazardCheck = (
@@ -2117,6 +2125,10 @@ case class SnowHousePipePayloadNonExt(
   )
   val outpDecodeExt = SnowHouseDecodeExt(cfg=cfg) //simPublic()
   val instrCnt = SnowHouseInstrCnt(cfg=cfg) //simPublic()
+  def myOooIssueChkptIdx = instrCnt.myOooIssueChkptIdx
+  def myOooIssueCnt = instrCnt.myOooIssueCnt
+  def reorderBufIdx = instrCnt.reorderBufIdx
+
   //val opCnt = UInt(cfg.instrCntWidth bits)
   def opCnt = instrCnt.any
   val op = UInt(log2Up(cfg.opInfoMap.size) bits) //simPublic()
@@ -2378,6 +2390,10 @@ case class SnowHousePipePayload(
   def inpDecodeExt = nonExt.inpDecodeExt
   def outpDecodeExt = nonExt.outpDecodeExt
   def instrCnt = nonExt.instrCnt
+  def myOooIssueChkptIdx = nonExt.myOooIssueChkptIdx
+  def myOooIssueCnt = nonExt.myOooIssueCnt
+  def reorderBufIdx = nonExt.reorderBufIdx
+
   def opCnt = nonExt.opCnt
   def op = nonExt.op
   def splitOp = nonExt.splitOp

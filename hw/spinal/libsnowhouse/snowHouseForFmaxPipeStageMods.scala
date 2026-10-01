@@ -125,6 +125,13 @@ case class SnowHouseScoreboardCheckPayload(
   //val cntOverflow = Bool()
 
   // reorder buffer index
+
+  val myOooIssueChkptIdx = (
+    cfg.optScoreboardOooIssueWindow != None
+  ) generate (
+    UInt(log2Up(cfg.optScoreboardOooIssueMaxNumBranches) bits)
+  )
+
   val myOooIssueCnt = (
     cfg.optScoreboardOooIssueWindow != None
   ) generate (
