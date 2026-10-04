@@ -9,7 +9,7 @@ MeltedMoonDebugRiscvEmu::MeltedMoonDebugRiscvEmu(
     _mem(new u8[MEM_SIZE]),
     _fb_0_mem(new u8[SCREENWIDTH * FULL_SCREENHEIGHT]),
     _fb_1_mem(new u8[SCREENWIDTH * FULL_SCREENHEIGHT]),
-    _tcm(new u8[SCREENWIDTH * FULL_SCREENHEIGHT]) {
+    _tcm(new u8[ADDR_TCM_END - ADDR_TCM_START]) {
     //--------
     memset(_mem.get(), 0, sizeof(u8) * MEM_SIZE);
     if (
@@ -2202,7 +2202,7 @@ void MeltedMoonDebugRiscvEmu::write_savestate(
             );
             std::fwrite(
                 _tcm.get(),
-                sizeof(u8), SCREENWIDTH * FULL_SCREENHEIGHT, 
+                sizeof(u8), ADDR_TCM_END - ADDR_TCM_START, 
                 f
             );
         }
@@ -2332,7 +2332,7 @@ void MeltedMoonDebugRiscvEmu::read_savestate(
             );
             std::fread(
                 _tcm.get(),
-                sizeof(u8), SCREENWIDTH * FULL_SCREENHEIGHT, 
+                sizeof(u8), ADDR_TCM_END - ADDR_TCM_START, 
                 f
             );
         }

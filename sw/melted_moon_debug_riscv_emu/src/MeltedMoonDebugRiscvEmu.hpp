@@ -55,7 +55,7 @@ static constexpr inline u64 zero_extend(u64 val, size_t width) {
 class MeltedMoonDebugRiscvEmu final {
 public:     // constants
      // increment this over time!
-    static constexpr u64 SAVESTATE_VERSION = 0x2ull;
+    static constexpr u64 SAVESTATE_VERSION = 0x3ull;
     
     static constexpr u32 ADDR_PRINT = 0x6000000ul;
     static constexpr u32 ADDR_EXIT = 0x6000004ul;
@@ -105,9 +105,11 @@ public:     // constants
     static constexpr u32 ADDR_TCM_START = 0x8000000ul;
     static constexpr u32 ADDR_TCM_END = (
         ADDR_TCM_START
-        + (
-            (SCREENWIDTH * FULL_SCREENHEIGHT - 1) //* sizeof(u16)
-        )
+        //+ (
+        //    (SCREENWIDTH * FULL_SCREENHEIGHT - 1) //* sizeof(u16)
+        //)
+        //+ (128u * 1024u)
+        + (256u * 1024u)
     );
 
     // 64 MiB of main RAM, plus the palette

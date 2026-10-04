@@ -49,7 +49,26 @@ static MeltedMoonDebugRiscvEmu emu;
 //    return emu.my_dasm_rd32_func(buf, offset);
 //}
 
+auto my_gettimeofday(Uint32 interval, void* tp_void_ptr) -> Uint32 {
+    SDL_Event event;
+    SDL_zero(event);
+    event.type = SDL_USEREVENT;
+    event.user.code = 1;
+
+    gettimeofday((struct timeval*)tp_void_ptr, nullptr);
+
+    return interval;
+}
+
+
 int main(int argc, char** argv) {
+    if (SDL_Init(SDL_INIT_EVERYTHING) < 0) {
+        std::fprintf(
+            stderr,
+            "Eek! `SDL_Init()` error!\n"
+        );
+        std::exit(1);
+    }
     if (argc == 2) {
         emu = MeltedMoonDebugRiscvEmu(argv[1]);
     } else if (argc == 3) {
@@ -113,38 +132,40 @@ int main(int argc, char** argv) {
 
     SDL_AddTimer(
         Uint32(1u), // interval (ms)
-        [](Uint32 interval, void* tp_void_ptr) -> Uint32 {
-            gettimeofday((struct timeval*)tp_void_ptr, nullptr);
-            return interval;
-        },
+        &my_gettimeofday,
         &tp
     );
-    auto temp_func = [](
-        Uint32 interval, void* do_exit_void_ptr
-    ) -> Uint32 {
-        SDL_Event e;
-        while (SDL_PollEvent(&e) != 0) {
-            if (e.type == SDL_QUIT) {
-                printf("Exiting...\n");
-                *(bool*)do_exit_void_ptr = true;
-                break;
-            }
-            //else if (
-            //    liborangepower::sdl::handle_key_events(
-            //        e,
-            //        _key_status_umap, 
-            //        ksm_perf_total_backup
-            //    )
-            //) {
-            //}
-        }
-        return interval;
-    };
-    SDL_AddTimer(
-        Uint32(100), // interval (ms)
-        temp_func,
-        &do_exit
-    );
+    //auto temp_func = [](
+    //    Uint32 interval, void* do_exit_void_ptr
+    //) -> Uint32 {
+    //    SDL_Event e;
+    //    while (SDL_PollEvent(&e) != 0) {
+    //        if (e.type == SDL_USEREVENT) {
+    //            gettimeofday(&tp, nullptr);
+    //            break;
+    //        } else if (e.type == SDL_QUIT) {
+    //            printf("Exiting...\n");
+    //            *(bool*)do_exit_void_ptr = true;
+    //            break;
+    //        }
+    //        //else if (
+    //        //    liborangepower::sdl::handle_key_events(
+    //        //        e,
+    //        //        _key_status_umap, 
+    //        //        ksm_perf_total_backup
+    //        //    )
+    //        //) {
+    //        //}
+    //    }
+    //    return interval;
+    //};
+    //SDL_AddTimer(
+    //    Uint32(100), // interval (ms)
+    //    temp_func,
+    //    &do_exit
+    //);
+    static constexpr size_t num_instrs_per_poll = 100000u;
+    size_t poll_cnt = 0;
 
     while (!do_exit) {
         //u16 temp_fb_data;
@@ -162,6 +183,23 @@ int main(int argc, char** argv) {
 
         //gettimeofday(&tp, nullptr);
         //gettimeofday(&tp, nullptr);
+
+        ++poll_cnt;
+        if (poll_cnt > num_instrs_per_poll) {
+            poll_cnt = 0;
+            SDL_Event e;
+            while (SDL_PollEvent(&e) != 0) {
+                if (e.type == SDL_USEREVENT) {
+                    gettimeofday(&tp, nullptr);
+                    break;
+                } else if (e.type == SDL_QUIT) {
+                    printf("Exiting...\n");
+                    //*(bool*)do_exit_void_ptr = true;
+                    do_exit = true;
+                    break;
+                }
+            }
+        }
 
         if (auto fb_start = exec_temp.sw_wrote_to_fb_end; fb_start) {
             //printout(
