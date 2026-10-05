@@ -1189,7 +1189,7 @@ auto MeltedMoonDebugRiscvEmu::exec_one_instr(
             break;
         case Rv32RType::Op::FixedIdivRdRs1Rs2.f7: {
             _write_gpr_rd(
-                i32((i64(i32(inp_rs1)) << 16ul) / i64(inp_rs2))
+                i32((i64(i32(inp_rs1)) << 16ul) / i64(i32(inp_rs2)))
             );
         }
             break;
