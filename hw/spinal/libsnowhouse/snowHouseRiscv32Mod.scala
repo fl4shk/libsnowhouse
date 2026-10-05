@@ -2539,6 +2539,37 @@ case class SnowHouseRiscv32Divmod(
                   }
                 }
               }
+              case Rv32RType.MyFixedIdiv => {
+                is (kindIdx) {
+                  if (!needBusRvalid) {
+                    val tempArea = doItFunc(
+                      opInfo,
+                      busIdx,
+                      cpuIo.multiCycleBusVec(busIdx)
+                    )
+                  } else {
+                    when (
+                      rose(
+                        RegNext(
+                          next=(
+                            cpuIo.multiCycleBusVec(busIdx).nextValid
+                          ),
+                          init=False,
+                        )
+                      )
+                    ) {
+                      if (setKind) {
+                        rKind := DivmodKind.FIXED_IDIV
+                      }
+                      val tempArea = doItFunc(
+                        opInfo,
+                        busIdx,
+                        cpuIo.multiCycleBusVec(busIdx)
+                      )
+                    }
+                  }
+                }
+              }
               //case MultiCycleOpKind.Udivw => {
               //  is (kindIdx) {
               //    if (!needBusRvalid) {
