@@ -55,7 +55,7 @@ static constexpr inline u64 zero_extend(u64 val, size_t width) {
 class MeltedMoonDebugRiscvEmu final {
 public:     // constants
      // increment this over time!
-    static constexpr u64 SAVESTATE_VERSION = 0x4ull;
+    static constexpr u64 SAVESTATE_VERSION = 0x5ull;
     
     static constexpr u32 ADDR_PRINT = 0x6000000ul;
     static constexpr u32 ADDR_EXIT = 0x6000004ul;
@@ -81,13 +81,13 @@ public:     // constants
     static constexpr u32 ADDR_IDIV64_OUTP_REMA_LO = 0x6000028ul;
     static constexpr u32 ADDR_IDIV64_OUTP_REMA_HI = 0x600002cul;
 
-    static constexpr u32 ADDR_IMUL_FIXED_INP_LEFT = 0x6000030ul;
-    static constexpr u32 ADDR_IMUL_FIXED_INP_RIGHT = 0x6000034ul;
-    static constexpr u32 ADDR_IMUL_FIXED_OUTP_PROD = 0x6000030ul;
+    //static constexpr u32 ADDR_IMUL_FIXED_INP_LEFT = 0x6000030ul;
+    //static constexpr u32 ADDR_IMUL_FIXED_INP_RIGHT = 0x6000034ul;
+    //static constexpr u32 ADDR_IMUL_FIXED_OUTP_PROD = 0x6000030ul;
 
-    static constexpr u32 ADDR_IDIV_FIXED_INP_LEFT = 0x6000038ul;
-    static constexpr u32 ADDR_IDIV_FIXED_INP_RIGHT = 0x600003cul;
-    static constexpr u32 ADDR_IDIV_FIXED_OUTP_QUOT = 0x6000038ul;
+    //static constexpr u32 ADDR_IDIV_FIXED_INP_LEFT = 0x6000038ul;
+    //static constexpr u32 ADDR_IDIV_FIXED_INP_RIGHT = 0x600003cul;
+    //static constexpr u32 ADDR_IDIV_FIXED_OUTP_QUOT = 0x6000038ul;
 
     static constexpr u32 ADDR_FB_0_START = 0x0000000ul;
     static constexpr u32 ADDR_FB_0_END = (
@@ -281,8 +281,14 @@ public:     // types
                 //--------
                 // "Zicond" extension
                 CzeroEqzRdRs1Rs2 = {.op=0x33, .f3=0x5, .f7=0x7},
-                CzeroNezRdRs1Rs2 = {.op=0x33, .f3=0x7, .f7=0x7};
+                CzeroNezRdRs1Rs2 = {.op=0x33, .f3=0x7, .f7=0x7},
                 //--------
+                // Fixed Point Arithmetic Custom Extension
+                // rd = i32((i64(i32(rs1)) * i64(i32(rs2))) >> 16u)
+                FixedImulRdRs1Rs2 = {.op=0x0b, .f3=0x0, .f7=0x0},
+
+                // rd = i32((i64(i32(rs1)) << 16) / i64(rs2))
+                FixedIdivRdRs1Rs2 = {.op=0x0b, .f3=0x0, .f7=0x1};
             //--------
         };
     };
@@ -622,13 +628,13 @@ private:        // variables
     u64 _mmio_idiv64_outp_quot = 0x0ul;
     u64 _mmio_idiv64_outp_rema = 0x0ul;
 
-    u32 _mmio_imul_fixed_inp_left = 0x0u;
-    u32 _mmio_imul_fixed_inp_right = 0x0u;
-    u64 _mmio_imul_fixed_outp_prod = 0x0u;
+    //u32 _mmio_imul_fixed_inp_left = 0x0u;
+    //u32 _mmio_imul_fixed_inp_right = 0x0u;
+    //u64 _mmio_imul_fixed_outp_prod = 0x0u;
 
-    u32 _mmio_idiv_fixed_inp_left = 0x0u;
-    u32 _mmio_idiv_fixed_inp_right = 0x0u;
-    u64 _mmio_idiv_fixed_outp_quot = 0x0u;
+    //u32 _mmio_idiv_fixed_inp_left = 0x0u;
+    //u32 _mmio_idiv_fixed_inp_right = 0x0u;
+    //u64 _mmio_idiv_fixed_outp_quot = 0x0u;
 
     //u32 _have_doom_dbg = false;
 

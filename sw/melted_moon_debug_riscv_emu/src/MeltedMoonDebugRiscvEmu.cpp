@@ -236,6 +236,7 @@ std::optional<std::string> MeltedMoonDebugRiscvEmu::disasm_one_instr(
                 //bad_instr();
                 return std::nullopt;
             }
+                break;
             }
         }
             break;
@@ -256,6 +257,7 @@ std::optional<std::string> MeltedMoonDebugRiscvEmu::disasm_one_instr(
                 break;
             }
         }
+            break;
         //------
         case Rv32RType::Op::MulRdRs1Rs2.f7: {
             switch (temp_enc_instr_r.funct3) {
@@ -329,6 +331,29 @@ std::optional<std::string> MeltedMoonDebugRiscvEmu::disasm_one_instr(
         );
     }
         break;
+    case Rv32RType::Op::FixedImulRdRs1Rs2.op: {
+        std::string instr_name;
+        switch (temp_enc_instr_r.funct7) {
+        case Rv32RType::Op::FixedImulRdRs1Rs2.f7: {
+            instr_name = "fixed_imul";
+        }
+            break;
+        case Rv32RType::Op::FixedIdivRdRs1Rs2.f7: {
+            instr_name = "fixed_idiv";
+        }
+            break;
+        default: {
+            return std::nullopt;
+        }
+            break;
+        }
+        return sconcat(
+            std::move(instr_name), " ",
+            GPR_NAMES_ARR[temp_enc_instr_r.rd], ", ",
+            GPR_NAMES_ARR[temp_enc_instr_r.rs1], ", ",
+            GPR_NAMES_ARR[temp_enc_instr_r.rs2]
+        );
+    }
     case Rv32IType::Op::AddiRdRs1Imm.op: {
         Rv32IType::EncInstr temp_enc_instr_i;
         std::memcpy(&temp_enc_instr_i, &temp_enc_instr_r, sizeof(u32));
@@ -1150,6 +1175,34 @@ auto MeltedMoonDebugRiscvEmu::exec_one_instr(
         }
     }
         break;
+    case Rv32RType::Op::FixedImulRdRs1Rs2.op: {
+        _my_exec_one_instr_ret.rd = _enc_instr_r.rd;
+        _my_exec_one_instr_ret.rs1 = _enc_instr_r.rs1;
+        _my_exec_one_instr_ret.rs2 = _enc_instr_r.rs2;
+
+        switch (temp_enc_instr_r.funct7) {
+        case Rv32RType::Op::FixedImulRdRs1Rs2.f7: {
+            _write_gpr_rd(
+                i32((i64(i32(inp_rs1)) * i64(i32(inp_rs2))) >> 16ul)
+            );
+        }
+            break;
+        case Rv32RType::Op::FixedIdivRdRs1Rs2.f7: {
+            _write_gpr_rd(
+                i32((i64(i32(inp_rs1)) << 16ul) / i64(inp_rs2))
+            );
+        }
+            break;
+        default: {
+            printf(
+                "other R-type eek!\n"
+            );
+            bad_instr();
+        }
+            break;
+        }
+    }
+        break;
     case Rv32IType::Op::AddiRdRs1Imm.op: {
         _my_exec_one_instr_ret.rd = _enc_instr_r.rd;
         _my_exec_one_instr_ret.rs1 = _enc_instr_r.rs1;
@@ -1635,14 +1688,6 @@ void MeltedMoonDebugRiscvEmu::_bus_write(
         } else if (temp_addr == ADDR_IDIV64_INP_RIGHT_HI) {
             _mmio_idiv64_inp_right &= u64(u32(i32(-1l)));
             _mmio_idiv64_inp_right |= (u64(data) << 32u);
-        } else if (temp_addr == ADDR_IMUL_FIXED_INP_LEFT) {
-            _mmio_imul_fixed_inp_left = u32(data);
-        } else if (temp_addr == ADDR_IMUL_FIXED_INP_RIGHT) {
-            _mmio_imul_fixed_inp_right = u32(data);
-        } else if (temp_addr == ADDR_IDIV_FIXED_INP_LEFT) {
-            _mmio_idiv_fixed_inp_left = u32(data);
-        } else if (temp_addr == ADDR_IDIV_FIXED_INP_RIGHT) {
-            _mmio_idiv_fixed_inp_right = u32(data);
         }
         //else if (temp_addr > MEM_SIZE) {
         //    std::fprintf(
@@ -1928,22 +1973,6 @@ u32 MeltedMoonDebugRiscvEmu::_bus_read(
                     % i64(_mmio_idiv64_inp_right)
                 );
                 ret = u32(_mmio_idiv64_outp_rema >> 32ul);
-            } else if (temp_addr == ADDR_IMUL_FIXED_OUTP_PROD) {
-                _mmio_imul_fixed_outp_prod = (
-                    i64(i64(
-                        i64(i64(i32(_mmio_imul_fixed_inp_left)))
-                        * i64(i32(_mmio_imul_fixed_inp_right))
-                    ) >> 16ul)
-                );
-                ret = i32(_mmio_imul_fixed_outp_prod);
-            } else if (temp_addr == ADDR_IDIV_FIXED_OUTP_QUOT) {
-                _mmio_idiv_fixed_outp_quot = (
-                    i64(
-                        i64(i64(i32(_mmio_idiv_fixed_inp_left)) << 16ul)
-                        / i64(i32(_mmio_idiv_fixed_inp_right))
-                    )
-                );
-                ret = i32(_mmio_idiv_fixed_outp_quot);
             } else if (
                 temp_addr >= ADDR_TCM_START
                 && temp_addr <= ADDR_TCM_END
