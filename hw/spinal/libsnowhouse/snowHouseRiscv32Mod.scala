@@ -2322,7 +2322,7 @@ case class SnowHouseRiscv32Divmod(
 
   val divmodFixed = LongDivMultiCycle(
     mainWidth=48,
-    denomWidth=32,
+    denomWidth=48,
     chunkWidth=2,
     signedReset=1
   )
@@ -2648,7 +2648,9 @@ case class SnowHouseRiscv32Divmod(
     rSavedSrcVec(0),
     U"16'h0000",
   ).asUInt
-  divmodFixed.io.inp.denom := rSavedSrcVec(1)
+  divmodFixed.io.inp.denom := rSavedSrcVec(1).asSInt.resize(
+    divmodFixed.io.inp.denom.getWidth
+  ).asUInt
 
   val rSavedQuot = (
     Vec.fill(5)(
