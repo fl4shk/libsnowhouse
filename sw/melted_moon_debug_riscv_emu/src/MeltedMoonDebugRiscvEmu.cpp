@@ -1635,7 +1635,15 @@ void MeltedMoonDebugRiscvEmu::_bus_write(
         } else if (temp_addr == ADDR_IDIV64_INP_RIGHT_HI) {
             _mmio_idiv64_inp_right &= u64(u32(i32(-1l)));
             _mmio_idiv64_inp_right |= (u64(data) << 32u);
-        } 
+        } else if (temp_addr == ADDR_IMUL_FIXED_INP_LEFT) {
+            _mmio_imul_fixed_inp_left = u32(data);
+        } else if (temp_addr == ADDR_IMUL_FIXED_INP_RIGHT) {
+            _mmio_imul_fixed_inp_right = u32(data);
+        } else if (temp_addr == ADDR_IDIV_FIXED_INP_LEFT) {
+            _mmio_idiv_fixed_inp_left = u32(data);
+        } else if (temp_addr == ADDR_IDIV_FIXED_INP_RIGHT) {
+            _mmio_idiv_fixed_inp_right = u32(data);
+        }
         //else if (temp_addr > MEM_SIZE) {
         //    std::fprintf(
         //        stderr,
@@ -1920,6 +1928,22 @@ u32 MeltedMoonDebugRiscvEmu::_bus_read(
                     % i64(_mmio_idiv64_inp_right)
                 );
                 ret = u32(_mmio_idiv64_outp_rema >> 32ul);
+            } else if (temp_addr == ADDR_IMUL_FIXED_OUTP_PROD) {
+                _mmio_imul_fixed_outp_prod = (
+                    i64(i64(
+                        i64(i64(i32(_mmio_imul_fixed_inp_left)))
+                        * i64(i32(_mmio_imul_fixed_inp_right))
+                    ) >> 16ul)
+                );
+                ret = i32(_mmio_imul_fixed_outp_prod);
+            } else if (temp_addr == ADDR_IDIV_FIXED_OUTP_QUOT) {
+                _mmio_idiv_fixed_outp_quot = (
+                    i64(
+                        i64(i64(i32(_mmio_idiv_fixed_inp_left)) << 16ul)
+                        / i64(i32(_mmio_idiv_fixed_inp_right))
+                    )
+                );
+                ret = i32(_mmio_idiv_fixed_outp_quot);
             } else if (
                 temp_addr >= ADDR_TCM_START
                 && temp_addr <= ADDR_TCM_END
