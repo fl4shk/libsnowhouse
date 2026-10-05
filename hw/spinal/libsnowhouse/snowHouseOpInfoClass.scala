@@ -744,7 +744,7 @@ object OpInfo {
   //  ret
   //}
 }
-sealed trait OpSelect
+trait OpSelect
 object OpSelect {
   // This is to guarantee we `match` properly and have the Scala compiler
   // definitely check that we covered every kind
@@ -790,7 +790,7 @@ case class OpKindValidArgs(
   //  !(this eq that) 
   //)
 }
-sealed trait OpKindBase {
+trait OpKindBase {
   //def minNumDsts: Int
   //def maxNumDsts: Int
   //def minNumSrcs: Int
@@ -854,7 +854,7 @@ sealed trait OpKindBase {
   )
 }
 //--------
-sealed trait CpyOpKind extends OpKindBase
+trait CpyOpKind extends OpKindBase
 object CpyOpKind {
   //--------
   case object Cpy extends CpyOpKind {
@@ -1352,7 +1352,7 @@ case class InstrResult(
     main(width - 1 downto 0) =/= 0
   )
 }
-sealed trait AluOpKind extends OpKindBase {
+trait AluOpKind extends OpKindBase {
   def binopFunc(
     cfg: SnowHouseConfig,
     left: UInt,
@@ -2315,7 +2315,7 @@ object AluOpKind {
   //--------
   //--------
 }
-sealed trait AluShiftOpKind extends OpKindBase {
+trait AluShiftOpKind extends OpKindBase {
   def binopFunc(
     cfg: SnowHouseConfig,
     left: UInt,
@@ -2506,7 +2506,7 @@ object AluShiftOpKind {
     }
   }
 }
-sealed trait MultiCycleOpGroup
+trait MultiCycleOpGroup
 object MultiCycleOpGroup {
   case object AluLike extends MultiCycleOpGroup 
   case object AluShiftLike extends MultiCycleOpGroup
@@ -2518,7 +2518,7 @@ object MultiCycleOpGroup {
   case object Custom extends MultiCycleOpGroup
 }
 
-sealed trait MultiCycleOpKind extends OpKindBase {
+trait MultiCycleOpKind extends OpKindBase {
   def group: MultiCycleOpGroup
   def isMultiCycleFastOp: Boolean
 }
@@ -3299,7 +3299,7 @@ object MultiCycleOpKind {
 
 // Load-type instructions evaluated within both the EX and MEM pipeline
 // stages
-//sealed trait LoadOpKind extends OpKindBase
+//trait LoadOpKind extends OpKindBase
 //object LoadOpKind {
 //  //--------
 //  case object LdU8 extends LoadOpKind {
@@ -3523,7 +3523,7 @@ object MultiCycleOpKind {
 
 //// Store-type instructions evaluated within both the EX and MEM pipeline
 //// stages
-//sealed trait StoreOpKind extends OpKindBase
+//trait StoreOpKind extends OpKindBase
 //object StoreOpKind {
 //  //--------
 //  case object St8 extends StoreOpKind {
@@ -3623,7 +3623,7 @@ object MultiCycleOpKind {
 
 // various kinds of conditions (most well known for conditional branches,
 // but also potentially useful for conditional moves)
-sealed trait CondKind {
+trait CondKind {
   //def minNumSrcs: Int
   //def maxNumSrcs: Int
   //def numDsts: Int

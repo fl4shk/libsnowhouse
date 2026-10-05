@@ -120,6 +120,54 @@ object Rv32RType {
     val CzeroEqzRdRs1Rs2 = OpFields(op=0x33, f3=0x5, f7=0x7)
     val CzeroNezRdRs1Rs2 = OpFields(op=0x33, f3=0x7, f7=0x7)
     //--------
+    // Fixed Point Arithmetic Custom Extension
+    // rd = i32((i64(i32(rs1)) * i64(i32(rs2))) >> 16u)
+    val FixedImulRdRs1Rs2 = OpFields(op=0x0b, f3=0x0, f7=0x0)
+
+    // rd = i32((i64(i32(rs1)) << 16) / i64(rs2))
+    val FixedIdivRdRs1Rs2 = OpFields(op=0x0b, f3=0x0, f7=0x1)
+  }
+  case object MyFixedImul extends MultiCycleOpKind {
+    private val _validArgsSet = LinkedHashSet[
+      OpKindValidArgs
+    ](
+      OpKindValidArgs(
+        dst=Array[HashSet[DstKind]](
+          HashSet(DstKind.Gpr)
+        ),
+        src=Array[HashSet[SrcKind]](
+          HashSet(SrcKind.Gpr),
+          HashSet(SrcKind.Gpr),
+        ),
+        cond=HashSet[CondKind](
+          CondKind.Always
+        )
+      )
+    )
+    def validArgsSet = _validArgsSet
+    def group = MultiCycleOpGroup.Mul
+    def isMultiCycleFastOp: Boolean = false
+  }
+  case object MyFixedIdiv extends MultiCycleOpKind {
+    private val _validArgsSet = LinkedHashSet[
+      OpKindValidArgs
+    ](
+      OpKindValidArgs(
+        dst=Array[HashSet[DstKind]](
+          HashSet(DstKind.Gpr)
+        ),
+        src=Array[HashSet[SrcKind]](
+          HashSet(SrcKind.Gpr),
+          HashSet(SrcKind.Gpr),
+        ),
+        cond=HashSet[CondKind](
+          CondKind.Always
+        )
+      )
+    )
+    def validArgsSet = _validArgsSet
+    def group = MultiCycleOpGroup.DivMod
+    def isMultiCycleFastOp: Boolean = false
   }
 
 }
@@ -547,6 +595,29 @@ object Riscv32OpInfoMap {
         AluOpKind.CzeroNez
         //AluOpKind.LcvAlu(LcvAluDel1InpOpEnum.ADD)
       ),
+    )
+  )
+
+  // Fixed Point Arithmetic Custom Extension
+  // rd = i32((i64(i32(rs1)) * i64(i32(rs2))) >> 16u)
+  //FixedImulRdRs1Rs2 = {.op=0x0b, .f3=0x0, .f7=0x0};
+
+  // rd = i32((i64(i32(rs1)) << 16) / i64(rs2))
+  //FixedIdivRdRs1Rs2 = {.op=0x0b, .f3=0x0, .f7=0x1};
+
+  opInfoMap += (
+    Rv32RType.Op.FixedImulRdRs1Rs2 -> OpInfo.mkMultiCycle(
+      dstArr=Array[DstKind](DstKind.Gpr),
+      srcArr=Array[SrcKind](SrcKind.Gpr, SrcKind.Gpr),
+      multiCycleOp=Rv32RType.MyFixedImul,
+    )
+  )
+
+  opInfoMap += (
+    Rv32RType.Op.FixedIdivRdRs1Rs2 -> OpInfo.mkMultiCycle(
+      dstArr=Array[DstKind](DstKind.Gpr),
+      srcArr=Array[SrcKind](SrcKind.Gpr, SrcKind.Gpr),
+      multiCycleOp=Rv32RType.MyFixedIdiv,
     )
   )
   //--------
@@ -1650,6 +1721,13 @@ object SnowHouseRiscv32PipeStageInstrDecode {
           }
         }
       }
+      is (FixedImulRdRs1Rs2.op) {
+        when (!encInstrR.last.funct7(0)) {
+          setOp(FixedImulRdRs1Rs2, encInstrR.last)
+        } otherwise {
+          setOp(FixedIdivRdRs1Rs2, encInstrR.last)
+        }
+      }
       is (AddiRdRs1Imm.op) {
         setImm(encInstr=encInstrI.last)
         upPayload.gprIdxVec(1) := 0x0
@@ -2235,12 +2313,22 @@ case class SnowHouseRiscv32Divmod(
 ) extends Area {
   def cfg = cpuIo.cfg
   //def cfg = bridge.cfg
-  val divmod = LongDivMultiCycle(
+  val divmod32 = LongDivMultiCycle(
     mainWidth=cfg.mainWidth,
     denomWidth=cfg.mainWidth,
     chunkWidth=1,//2,//1,//2,//3,//4,//2,//1,//2,
     signedReset=0x0,
   )
+
+  val divmodFixed = LongDivMultiCycle(
+    mainWidth=48,
+    denomWidth=32,
+    chunkWidth=2,
+    signedReset=1
+  )
+
+  divmodFixed.io.inp.signed := True
+
   object DivmodState
   extends SpinalEnum(defaultEncoding=binaryOneHot) {
     val
@@ -2254,13 +2342,15 @@ case class SnowHouseRiscv32Divmod(
       = newElement()
   }
   val rState = Reg(DivmodState()) init(DivmodState.IDLE)
+
   object DivmodKind
   extends SpinalEnum(defaultEncoding=binarySequential) {
     val
       UDIV,
       SDIV,
       UMOD,
-      SMOD
+      SMOD,
+      FIXED_IDIV
       //UDIVW,
       //SDIVW
       = newElement()
@@ -2522,8 +2612,15 @@ case class SnowHouseRiscv32Divmod(
     Reg(UInt(cfg.mainWidth bits))
     init(0x0)
   )
+
+  divmodFixed.io.inp.numer := Cat(
+    rSavedSrcVec(0),
+    U"16'h0000",
+  ).asUInt
+  divmodFixed.io.inp.denom := rSavedSrcVec(1)
+
   val rSavedQuot = (
-    Vec.fill(4)(
+    Vec.fill(5)(
       Reg(UInt(cfg.mainWidth bits))
       init(0x0)
     )
@@ -2536,7 +2633,7 @@ case class SnowHouseRiscv32Divmod(
   )
   val rSavedResult = (
     Vec.fill(3)(
-      Vec.fill(4)(
+      Vec.fill(5)(
         Reg(UInt(cfg.mainWidth bits))
         init(0x0)
       )
@@ -2563,7 +2660,8 @@ case class SnowHouseRiscv32Divmod(
     setKind=false,
     needBusRvalid=false,
   )
-  divmod.io.inp.valid := False
+  divmod32.io.inp.valid := False
+  divmodFixed.io.inp.valid := False
   //divmod.io.inp.numer := (
   //  RegNext(
   //    next=divmod.io.inp.numer,
@@ -2583,93 +2681,128 @@ case class SnowHouseRiscv32Divmod(
   //  )
   //)
   for (idx <- 0 until 4) {
-    when (divmod.io.outp.ready) {
-      rSavedQuot(idx) := divmod.io.outp.quot
-      rSavedRema(idx) := divmod.io.outp.rema
+    when (divmod32.io.outp.ready) {
+      rSavedQuot(idx) := divmod32.io.outp.quot
+      rSavedRema(idx) := divmod32.io.outp.rema
     }
-    when (!rKind.asBits(1)) {
-      //rSavedResult(0).foreach(result => result := rSavedQuot)
-      rSavedResult(0)(idx) := rSavedQuot(idx)
-    } otherwise {
-      //rSavedResult(0).foreach(result => result := rSavedRema)
-      rSavedResult(0)(idx) := rSavedRema(idx)
+    switch (
+      rKind.asBits(2 downto 1)
+    ) {
+      is (B"00") {
+        rSavedResult(0)(idx) := rSavedQuot(idx)
+      }
+      is (B"01") {
+        rSavedResult(0)(idx) := rSavedRema(idx)
+      }
     }
+    //when (!rKind.asBits(1)) {
+    //  //rSavedResult(0).foreach(result => result := rSavedQuot)
+    //  rSavedResult(0)(idx) := rSavedQuot(idx)
+    //} otherwise {
+    //  //rSavedResult(0).foreach(result => result := rSavedRema)
+    //  rSavedResult(0)(idx) := rSavedRema(idx)
+    //}
   }
+
+  when (divmodFixed.io.outp.ready) {
+    rSavedQuot(4) := divmodFixed.io.outp.quot(rSavedQuot(4).bitsRange)
+  }
+  when (rKind.asBits(2)) {
+    rSavedResult(0)(4) := rSavedQuot(4)
+  }
+
   rSavedResult(1) := rSavedResult(0)
   rSavedResult(2) := rSavedResult(1)
-  switch (
-    //rKind.asBits(2 downto 1)
-    rKind//.asBits
-  ) {
-    is (DivmodKind.UDIV) {
-      divmod.io.inp.numer := (
-        rSavedSrcVec(0).resize(divmod.io.inp.numer.getWidth)
-      )
-      divmod.io.inp.denom := (
-        rSavedSrcVec(1).resize(divmod.io.inp.denom.getWidth)
-      )
-    }
-    is (DivmodKind.SDIV) {
-      divmod.io.inp.numer := (
-        rSavedSrcVec(0).asSInt.resize(divmod.io.inp.numer.getWidth).asUInt
-      )
-      divmod.io.inp.denom := (
-        rSavedSrcVec(1).asSInt.resize(divmod.io.inp.denom.getWidth).asUInt
-      )
-    }
-    is (DivmodKind.UMOD) {
-      divmod.io.inp.numer := (
-        rSavedSrcVec(0).resize(divmod.io.inp.numer.getWidth)
-      )
-      divmod.io.inp.denom := (
-        rSavedSrcVec(1).resize(divmod.io.inp.denom.getWidth)
-      )
-    }
-    is (DivmodKind.SMOD)  {
-      divmod.io.inp.numer := (
-        rSavedSrcVec(0).asSInt.resize(divmod.io.inp.numer.getWidth).asUInt
-      )
-      divmod.io.inp.denom := (
-        rSavedSrcVec(1).asSInt.resize(divmod.io.inp.denom.getWidth).asUInt
-      )
-    }
-    //is (DivmodKind.UDIVW) {
-    //  divmod.io.inp.numer := (
-    //    //Cat(rSavedSrcVec(2), rSavedSrcVec(0)).asUInt
-    //    Cat(rSavedSrcVec(0), rSavedSrcVec(3)).asUInt
-    //  )
-    //  divmod.io.inp.denom := (
-    //    //rSavedSrcVec(1).resize(divmod.io.inp.denom.getWidth)
-    //    Cat(rSavedSrcVec(1), rSavedSrcVec(2)).asUInt
-    //  )
-    //}
-    //is (DivmodKind.SDIVW) {
-    //  divmod.io.inp.numer := (
-    //    //Cat(rSavedSrcVec(2), rSavedSrcVec(0)).asUInt
-    //    Cat(rSavedSrcVec(0), rSavedSrcVec(3)).asUInt
-    //  )
-    //  divmod.io.inp.denom := (
-    //    //rSavedSrcVec(1).asSInt.resize(divmod.io.inp.denom.getWidth).asUInt
 
-    //    Cat(rSavedSrcVec(1), rSavedSrcVec(2)).asUInt
-    //  )
-    //}
-    //is () {
-    //  // udiv, sdiv, umod, smod
-    //  divmod.io.inp.numer := rSavedSrcVec(0)
-    //  divmod.io.inp.denom := rSavedSrcVec(1)
-    //}
-    //is (B"01") {
-    //  // umod/smod
-    //}
-    //is (B"10") {
-    //}
-    //is (B"11") {
-    //}
-  }
+  divmod32.io.inp.numer := (
+    rSavedSrcVec(0).resize(divmod32.io.inp.numer.getWidth)
+  )
+  divmod32.io.inp.denom := (
+    rSavedSrcVec(1).resize(divmod32.io.inp.denom.getWidth)
+  )
+  //switch (
+  //  //rKind.asBits(2 downto 1)
+  //  rKind//.asBits
+  //) {
+  //  is (DivmodKind.UDIV) {
+  //    divmod32.io.inp.numer := (
+  //      rSavedSrcVec(0).resize(divmod32.io.inp.numer.getWidth)
+  //    )
+  //    divmod32.io.inp.denom := (
+  //      rSavedSrcVec(1).resize(divmod32.io.inp.denom.getWidth)
+  //    )
+  //  }
+  //  is (DivmodKind.SDIV) {
+  //    divmod32.io.inp.numer := (
+  //      rSavedSrcVec(0).asSInt.resize(
+  //        divmod32.io.inp.numer.getWidth
+  //      ).asUInt
+  //    )
+  //    divmod32.io.inp.denom := (
+  //      rSavedSrcVec(1).asSInt.resize(
+  //        divmod32.io.inp.denom.getWidth
+  //      ).asUInt
+  //    )
+  //  }
+  //  is (DivmodKind.UMOD) {
+  //    divmod32.io.inp.numer := (
+  //      rSavedSrcVec(0).resize(divmod32.io.inp.numer.getWidth)
+  //    )
+  //    divmod32.io.inp.denom := (
+  //      rSavedSrcVec(1).resize(divmod32.io.inp.denom.getWidth)
+  //    )
+  //  }
+  //  is (DivmodKind.SMOD)  {
+  //    divmod32.io.inp.numer := (
+  //      rSavedSrcVec(0).asSInt.resize(
+  //        divmod32.io.inp.numer.getWidth
+  //      ).asUInt
+  //    )
+  //    divmod32.io.inp.denom := (
+  //      rSavedSrcVec(1).asSInt.resize(
+  //        divmod32.io.inp.denom.getWidth
+  //      ).asUInt
+  //    )
+  //  }
+  //  is (DivmodKind.FIXED_IDIV) {
+  //  }
+  //  //is (DivmodKind.UDIVW) {
+  //  //  divmod.io.inp.numer := (
+  //  //    //Cat(rSavedSrcVec(2), rSavedSrcVec(0)).asUInt
+  //  //    Cat(rSavedSrcVec(0), rSavedSrcVec(3)).asUInt
+  //  //  )
+  //  //  divmod.io.inp.denom := (
+  //  //    //rSavedSrcVec(1).resize(divmod.io.inp.denom.getWidth)
+  //  //    Cat(rSavedSrcVec(1), rSavedSrcVec(2)).asUInt
+  //  //  )
+  //  //}
+  //  //is (DivmodKind.SDIVW) {
+  //  //  divmod.io.inp.numer := (
+  //  //    //Cat(rSavedSrcVec(2), rSavedSrcVec(0)).asUInt
+  //  //    Cat(rSavedSrcVec(0), rSavedSrcVec(3)).asUInt
+  //  //  )
+  //  //  divmod.io.inp.denom := (
+  //  //    //rSavedSrcVec(1).asSInt.resize(divmod.io.inp.denom.getWidth).asUInt
+
+  //  //    Cat(rSavedSrcVec(1), rSavedSrcVec(2)).asUInt
+  //  //  )
+  //  //}
+  //  //is () {
+  //  //  // udiv, sdiv, umod, smod
+  //  //  divmod.io.inp.numer := rSavedSrcVec(0)
+  //  //  divmod.io.inp.denom := rSavedSrcVec(1)
+  //  //}
+  //  //is (B"01") {
+  //  //  // umod/smod
+  //  //}
+  //  //is (B"10") {
+  //  //}
+  //  //is (B"11") {
+  //  //}
+  //}
   //divmod.io.inp.numer := rSavedSrcVec(0)
   //divmod.io.inp.denom := rSavedSrcVec(1)
-  divmod.io.inp.signed := rKind.asBits(0)
+  divmod32.io.inp.signed := rKind.asBits(0)
   //switch (rKind) {
   for (
     ((group, innerMap), busIdx)
@@ -2762,6 +2895,16 @@ case class SnowHouseRiscv32Divmod(
                   dstVec(1) := rSavedResult.last(1)(31 downto 0)
 
                 //}
+              }
+            }
+            case Rv32RType.MyFixedIdiv => {
+              is (kindIdx) {
+                val stallIo = (
+                  cpuIo.multiCycleBusVec(busIdx)
+                )
+                def dstVec = stallIo.recvData.dstVec
+                //stallIo.ready := True
+                dstVec(0) := rSavedResult.last(4)(dstVec(0).bitsRange)
               }
             }
             case _ => {
@@ -2865,7 +3008,9 @@ case class SnowHouseRiscv32Divmod(
       //)
       //--------
       // BEGIN: FMAX debugging
-      divmod.io.inp.valid := True
+      //divmod32.io.inp.valid := True
+      divmod32.io.inp.valid := !rKind.asBits(2)
+      divmodFixed.io.inp.valid := rKind.asBits(2)
       // END: FMAX debugging
       //--------
       rState := DivmodState.RUNNING
@@ -2883,7 +3028,14 @@ case class SnowHouseRiscv32Divmod(
       when (
         //--------
         // BEGIN: FMAX debugging
-        divmod.io.outp.ready
+        (
+          !rKind.asBits(2)
+          && divmod32.io.outp.ready
+        )
+        || (
+          rKind.asBits(2)
+          && divmodFixed.io.outp.ready
+        )
         // END: FMAX debugging
         //--------
         //True
@@ -3249,6 +3401,7 @@ case class SnowHouseRiscv32Mul(
   val fullProductNumPipeStages = 3
 
   def myFullProductOutpRangeHi = 63 downto 32
+  def myFullProductOutpRangeFixed = 47 downto 16
   val myHistValidMulhu = History[Bool](
     that=(
       RegNext(
@@ -3298,7 +3451,7 @@ case class SnowHouseRiscv32Mul(
       RegNext(
         (
           multiCycleBus.nextValid
-          && multiCycleBus.sendData.kind.andR
+          && multiCycleBus.sendData.kind === 0x3
         ),
       )
     ),
@@ -3324,21 +3477,52 @@ case class SnowHouseRiscv32Mul(
     ),
     length=fullProductNumPipeStages,
   )
+
+  val myHistValidFixedImul = History[Bool](
+    that=(
+      RegNext(
+        (
+          multiCycleBus.nextValid
+          && multiCycleBus.sendData.kind === 0x4
+        ),
+      )
+    ),
+    length=fullProductNumPipeStages,
+    init=False
+  )
+
+  val myHistFixedImul = History[SInt](
+    that=(
+      RegNext(
+        srcVec(0).asSInt
+        * srcVec(1).asSInt
+      )(myFullProductOutpRangeFixed)
+    ),
+    length=fullProductNumPipeStages,
+  )
+
+
+
   switch (
     myHistValidMulhu.last
     ## myHistValidMulh.last
     ## myHistValidMulhsu.last
+    ## myHistValidFixedImul.last
   ) {
-    is (M"1--") {
+    is (M"1---") {
       dstVec(0) := myHistMulhu.last
       multiCycleBus.ready := True
     }
-    is (M"01-") {
+    is (M"01--") {
       dstVec(0) := myHistMulh.last.asUInt
       multiCycleBus.ready := True
     }
-    is (M"001") {
+    is (M"001-") {
       dstVec(0) := myHistMulhsu.last
+      multiCycleBus.ready := True
+    }
+    is (M"0001") {
+      dstVec(0) := myHistFixedImul.last.asUInt
       multiCycleBus.ready := True
     }
     default {
