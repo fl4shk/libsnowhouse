@@ -597,29 +597,6 @@ object Riscv32OpInfoMap {
       ),
     )
   )
-
-  // Fixed Point Arithmetic Custom Extension
-  // rd = i32((i64(i32(rs1)) * i64(i32(rs2))) >> 16u)
-  //FixedImulRdRs1Rs2 = {.op=0x0b, .f3=0x0, .f7=0x0};
-
-  // rd = i32((i64(i32(rs1)) << 16) / i64(rs2))
-  //FixedIdivRdRs1Rs2 = {.op=0x0b, .f3=0x0, .f7=0x1};
-
-  opInfoMap += (
-    Rv32RType.Op.FixedImulRdRs1Rs2 -> OpInfo.mkMultiCycle(
-      dstArr=Array[DstKind](DstKind.Gpr),
-      srcArr=Array[SrcKind](SrcKind.Gpr, SrcKind.Gpr),
-      multiCycleOp=Rv32RType.MyFixedImul,
-    )
-  )
-
-  opInfoMap += (
-    Rv32RType.Op.FixedIdivRdRs1Rs2 -> OpInfo.mkMultiCycle(
-      dstArr=Array[DstKind](DstKind.Gpr),
-      srcArr=Array[SrcKind](SrcKind.Gpr, SrcKind.Gpr),
-      multiCycleOp=Rv32RType.MyFixedIdiv,
-    )
-  )
   //--------
 
   opInfoMap += (
@@ -970,6 +947,29 @@ object Riscv32OpInfoMap {
       multiCycleOp=(
         MultiCycleOpKind.AddRaPcImm
       )
+    )
+  )
+
+  // Fixed Point Arithmetic Custom Extension
+  // rd = i32((i64(i32(rs1)) * i64(i32(rs2))) >> 16u)
+  //FixedImulRdRs1Rs2 = {.op=0x0b, .f3=0x0, .f7=0x0};
+
+  // rd = i32((i64(i32(rs1)) << 16) / i64(rs2))
+  //FixedIdivRdRs1Rs2 = {.op=0x0b, .f3=0x0, .f7=0x1};
+
+  opInfoMap += (
+    Rv32RType.Op.FixedImulRdRs1Rs2 -> OpInfo.mkMultiCycle(
+      dstArr=Array[DstKind](DstKind.Gpr),
+      srcArr=Array[SrcKind](SrcKind.Gpr, SrcKind.Gpr),
+      multiCycleOp=Rv32RType.MyFixedImul,
+    )
+  )
+
+  opInfoMap += (
+    Rv32RType.Op.FixedIdivRdRs1Rs2 -> OpInfo.mkMultiCycle(
+      dstArr=Array[DstKind](DstKind.Gpr),
+      srcArr=Array[SrcKind](SrcKind.Gpr, SrcKind.Gpr),
+      multiCycleOp=Rv32RType.MyFixedIdiv,
     )
   )
 }
@@ -2323,7 +2323,7 @@ case class SnowHouseRiscv32Divmod(
   val divmodFixed = LongDivMultiCycle(
     mainWidth=48,
     denomWidth=48,
-    chunkWidth=2,
+    chunkWidth=4,//2,
     signedReset=1
   )
 
