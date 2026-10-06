@@ -3974,6 +3974,9 @@ case class SnowHouseRiscv32MultiCycleInstrArea(
       cpuIo.multiCycleBusVec
     )
   )
+  println(
+    s"DEBUG: multiCycleBusVec.size:${multiCycleBusVec.size}"
+  )
   val shift32/*shiftSlt32*/ = (
     //SnowHouseRiscv32Shift32(cpuIo=cpuIo)
     //SnowHouseRiscv32ShiftSlt32LowLatency(cpuIo=cpuIo)

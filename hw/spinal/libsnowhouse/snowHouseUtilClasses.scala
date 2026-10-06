@@ -1471,6 +1471,11 @@ case class SnowHouseConfig(
         //  + s"opInfo(${opInfo}), instructionIndex:${idx}"
         //)
         if (!multiCycleOpInfoMap.contains(opInfo.multiCycleOp.get.group)) {
+          //println(
+          //  s"DEBUG: !multiCycleOpInfoMap.contains("
+          //  + s"${opInfo.multiCycleOp.get.group}"
+          //  + s")"
+          //)
           multiCycleOpInfoMap += (
             (opInfo.multiCycleOp.get.group
             -> LinkedHashMap[Int, OpInfo]())
@@ -1545,7 +1550,7 @@ case class SnowHouseConfig(
   val havePsWbMultiCycleStall = (
     //optForFmax
     //false
-    optForFmax
+    optScoreboard
     && multiCycleOpInfoMap.size > 0
     //&& havePsExStall
     && optForFmaxCfg.get.optScoreboardMultiCycleOpIsNonFwd

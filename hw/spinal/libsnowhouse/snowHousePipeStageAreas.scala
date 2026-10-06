@@ -11445,6 +11445,20 @@ case class SnowHousePipeStageExecute(
       }
     }
   }
+  if (cfg.havePsWbMultiCycleStall) {
+    for (
+      (multiCycleH2dBus, busIdx) <- multiCycleH2dBusVec.view.zipWithIndex
+    ) {
+      for (idx <- 0 until multiCycleH2dBus.srcVec.size) {
+        multiCycleH2dBus.srcVec(idx) := (
+          RegNext(
+            next=multiCycleH2dBus.srcVec(idx),
+            init=multiCycleH2dBus.srcVec(idx).getZero,
+          )
+        )
+      }
+    }
+  }
   if (cfg.myHaveZeroReg) {
     for ((gprIdx, idx) <- outp.gprIdxVec.view.zipWithIndex) {
       for (jdx <- 0 until outp.gprIsNonZeroVec(idx).size) {
@@ -12595,7 +12609,8 @@ case class SnowHousePipeStageExecute(
             )
             if (multiCycleBus.sendData.srcVec.size > 1) {
               for (
-                multiCycleIdx <- 1 until multiCycleBus.sendData.srcVec.size
+                multiCycleIdx <- 1
+                until multiCycleBus.sendData.srcVec.size
               ) {
                 if (multiCycleIdx < opInfo.srcArr.size) {
                   multiCycleBus.sendData.srcVec(multiCycleIdx) := (
@@ -12606,6 +12621,151 @@ case class SnowHousePipeStageExecute(
                       ),
                     )
                     init(0x0)
+                  )
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+
+  val myHavePsWbStallArea = (
+    cfg.havePsWbMultiCycleStall
+  ) generate new Area {
+    //for (myPsExStallHost <- psExStallHostArr.view) {
+    //  if (
+    //    myPsExStallHost.stallIo.get.sendData.kind != null
+    //    && myPsExStallHost.stallIo.get.sendData.kind.getWidth > 0
+    //  ) {
+    //    myPsExStallHost.stallIo.get.sendData.kind := (
+    //      outp.splitOp.multiCycleOpKind.resize(
+    //        myPsExStallHost.stallIo.get.sendData.kind.getWidth
+    //      )
+    //    )
+    //  }
+    //}
+
+    val rHaveDoneMultiCycleOp = Reg(Bool(), init=False)
+    multiCycleH2dBusVec.foreach(item => {
+      item.valid := False
+      if (
+        item.kind != null
+        && item.kind.getWidth > 0
+      ) {
+        item.kind := item.kind.getZero
+      }
+    })
+
+    val myAnyValidCond = (
+      cLink.up.isValid
+      && setOutpModMemWord.io.opIsAnyMultiCycle
+      && !myShouldIgnoreInstr(2)
+      && myTempDownIsReady
+      && !rHaveDoneMultiCycleOp
+      //&& myTempDownIsReadyMost
+    )
+    switch (
+      myAnyValidCond
+      ## Vec[Bool](multiCycleH2dBusVec.map(_.ready)).asBits.orR
+    ) {
+      is (M"10") {
+        cLink.duplicateIt()
+        //cLink.down(args.currPayload).setAsBubbleMain(Some(True))
+        //setOutpModMemWord.io.instrCnt.setAsPsIdBubbleMain()
+        cLink.down(args.currPayload).setAsBubbleMain(
+          //Some(True)
+          None
+        )
+        cLink.down(args.currPayload).instrCnt
+        .myPsExMultiCycleBubble.foreach(
+          item => {
+            item := True
+          }
+        )
+        setOutpModMemWord.io.instrCnt.setAsPsIdBubbleMain()
+      }
+      is (M"11") {
+        rHaveDoneMultiCycleOp := True
+      }
+      default {
+      }
+    }
+    when (cLink.up.isFiring) {
+      rHaveDoneMultiCycleOp := False
+    }
+
+    for (
+      ((group, innerMap), groupIdx)
+      <- cfg.multiCycleOpInfoMap.view.zipWithIndex
+    ) {
+      switch (
+        //RegNext(setOutpModMemWord.io.splitOp.multiCycleOpKind)
+        //init(0x0)
+        (
+          //!rHaveDoneMultiCycleOp
+          //&& 
+          myAnyValidCond
+        )
+        ## (
+          setOutpModMemWord.io.splitOp.multiCycleOpKind
+        )
+      ) {
+        for (((_, opInfo), kindIdx) <- innerMap.view.zipWithIndex) {
+          is (
+            (
+              1 << setOutpModMemWord.io.splitOp.multiCycleOpKind.getWidth
+            )
+            | kindIdx
+          ) {
+            def multiCycleH2dBus = multiCycleH2dBusVec(groupIdx)
+            //multiCycleH2dBus.valid := True
+
+            multiCycleH2dBus.valid := True
+            //when (
+            //  //multiCycleH2dBus.valid
+            //  //&& 
+            //  !multiCycleH2dBus.ready
+            //) {
+            //}
+            if (
+              multiCycleH2dBus.kind != null
+              && multiCycleH2dBus.kind.getWidth > 0
+            ) {
+              multiCycleH2dBus.kind := (
+                outp.splitOp.multiCycleOpKind.resize(
+                  multiCycleH2dBus.kind.getWidth
+                )
+              )
+            }
+            multiCycleH2dBus.srcVec.foreach(src => {
+              src.allowOverride
+            })
+            multiCycleH2dBus.srcVec(0) := (
+              //RegNext(
+                setOutpModMemWord.io.selRdMemWord(
+                  opInfo=opInfo,
+                  idx=0,
+                ).resize(
+                  multiCycleH2dBus.srcVec(0).getWidth
+                ),
+              //)
+              //init(0x0)
+            )
+            if (multiCycleH2dBus.srcVec.size > 1) {
+              for (
+                multiCycleIdx <- 1 until multiCycleH2dBus.srcVec.size
+              ) {
+                if (multiCycleIdx < opInfo.srcArr.size) {
+                  multiCycleH2dBus.srcVec(multiCycleIdx) := (
+                    //RegNext(
+                      setOutpModMemWord.io.selRdMemWord(
+                        opInfo=opInfo,
+                        idx=multiCycleIdx,
+                      ),
+                    //)
+                    //init(0x0)
                   )
                 }
               }

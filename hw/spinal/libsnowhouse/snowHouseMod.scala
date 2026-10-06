@@ -2490,8 +2490,8 @@ private[libsnowhouse] case class SnowHouseForFmax(
   }
   if (cfg.havePsWbMultiCycleStall) {
     for (idx <- 0 until cfg.multiCycleOpInfoMap.view.size) {
-      io.multiCycleH2dBusVec(idx) << psEx.io.multiCycleH2dBusVec(idx)
-      psWb.io.multiCycleD2hBusVec(idx) << io.multiCycleD2hBusVec(idx)
+      io.multiCycleH2dBusVec(idx) <> psEx.io.multiCycleH2dBusVec(idx)
+      psWb.io.multiCycleD2hBusVec(idx) <> io.multiCycleD2hBusVec(idx)
     }
   }
   if (io.dbgInfo != null) {
