@@ -2302,7 +2302,22 @@ case class SnowHousePipeStageInstrDecode(
     upPayload(1).instrCnt.myScoreboardOpMayNeedHazardCheck := (
       myTempOpMayNeedHazardCheck
     )
+    upPayload(1).splitOp.opIsNonFwd := (
+      if (cfg.havePsWbMultiCycleStall) (
+        upPayload(1).splitOp.opIsMemAccess
+      ) else (
+        upPayload(1).splitOp.opIsMultiCycle
+        || upPayload(1).splitOp.opIsMemAccess
+      )
+    )
+  } else {
+    upPayload(1).splitOp.opIsNonFwd := (
+      upPayload(1).splitOp.opIsMemAccess
+    )
   }
+  upPayload(1).inpDecodeExt.foreach(item => {
+    item.opIsNonFwd := upPayload(1).splitOp.opIsNonFwd
+  })
   val myOooIssueArea = (
     cfg.optScoreboardOooIssueWindow != None
   ) generate new Area {
@@ -2928,14 +2943,6 @@ case class SnowHousePipeStageScoreboardCheck(
         )
       )
       if (idx >= myOooRdBufExtraSize) {
-        // the reason we don't check for `idx >= myOooRdBufExtraSize` is
-        // because the register index comparisons
-        // between the instructions within the buffer *won't change* as
-        // the instructions *within the issue window*
-        // are shifted to later slots within the buffer.
-        // This is something I was able to verify mentally.
-        // You only get a new instruction from earlier in the buffer
-        // (the "extra size" section), 
         val myTempHazardPopVec = Vec.fill(
           myOooRdBufWindow
         )(
@@ -3717,7 +3724,10 @@ case class SnowHousePipeStageScoreboardCheck(
     (
       up.isFiring
       && !myInFlushCond(0)
-      && upPayload(1).splitOp.opIsMemAccess
+      && (
+        //upPayload(1).splitOp.opIsMemAccess
+        upPayload(1).splitOp.opIsNonFwd
+      )
     )
     //## Bitscan(
     //  //~rNonFwdTagAllocVec.asBits.asUInt
@@ -3753,7 +3763,10 @@ case class SnowHousePipeStageScoreboardCheck(
     (
       up.isFiring
       && !myInFlushCond(1)
-      && !upPayload(1).splitOp.opIsMemAccess
+      && (
+        //!upPayload(1).splitOp.opIsMemAccess
+        !upPayload(1).splitOp.opIsNonFwd
+      )
     )
     //## Bitscan(
     //  //~rFwdTagAllocVec.asBits.asUInt
@@ -4009,7 +4022,10 @@ case class SnowHousePipeStageScoreboardCheck(
         && !myInFlushCond(0)//shouldClearExtraDecodeInfo
         //&& !myNonFwdHazardCheckVec.orR
         ////&& !myFwdHazardCheckVec.orR
-        && !upPayload(1).splitOp.opIsMemAccess
+        && (
+          //!upPayload(1).splitOp.opIsMemAccess
+          !upPayload(1).splitOp.opIsNonFwd
+        )
       )
     )
     val myFwdCond = (
@@ -4075,7 +4091,10 @@ case class SnowHousePipeStageScoreboardCheck(
         && !myInFlushCond(1)//shouldClearExtraDecodeInfo
         //&& !myNonFwdHazardCheckVec.orR
         ////&& !myFwdHazardCheckVec.orR
-        && upPayload(1).splitOp.opIsMemAccess
+        && (
+          //upPayload(1).splitOp.opIsMemAccess
+          upPayload(1).splitOp.opIsNonFwd
+        )
       )
     )
     val myNonFwdCond = (
@@ -4129,8 +4148,9 @@ case class SnowHousePipeStageScoreboardCheck(
     }
   }
 
-  down(pScoreboardCheck).splitOp.scoreboardOpIsNonFwd := (
-    upPayload(1).splitOp.opIsMemAccess
+  down(pScoreboardCheck).splitOp.opIsNonFwd := (
+    //upPayload(1).splitOp.opIsMemAccess
+    upPayload(1).splitOp.opIsNonFwd
   )
 }
 
@@ -4578,7 +4598,8 @@ case class SnowHousePipeStagePreFwd(
     val myTempSaveOutpCond = (
       myTempSaveOutpCondMost
       && (
-        !outp.inpDecodeExt.last.opIsMemAccess.head
+        //!outp.inpDecodeExt.last.opIsMemAccess.head
+        !outp.inpDecodeExt.last.opIsNonFwd
         //|| outp.instrCnt.myPsIdFwdBubble.head
         && !outp.instrCnt.myPsIdFwdBubble.head
       )
@@ -4600,7 +4621,8 @@ case class SnowHousePipeStagePreFwd(
       rSavedMostRecentGprWriteWasMemAccess(
         outp.gprIdxVec.last
       ) := (
-        outp.splitOp.opIsMemAccess
+        //outp.splitOp.opIsMemAccess
+        outp.splitOp.opIsNonFwd
       )
     }
 
@@ -10342,7 +10364,8 @@ case class SnowHousePipeStageExecute(
       //&& outp.gprIsNonZeroVec.last.last
       && !outp.instrCnt.myPsIdBubble.last
       && (
-        !outp.inpDecodeExt.last.opIsMemAccess.head
+        //!outp.inpDecodeExt.last.opIsMemAccess.head
+        !outp.inpDecodeExt.last.opIsNonFwd
         //|| outp.instrCnt.myPsIdFwdBubble.head
         && !outp.instrCnt.myPsIdFwdBubble.head
       )
@@ -12413,6 +12436,7 @@ case class SnowHousePipeStageExecute(
     //setOutpModMemWord.io.splitOp.opIsMultiCycle := False
     setOutpModMemWord.io.splitOp.opIsMultiCycle := False
     setOutpModMemWord.io.splitOp.opIsMemAccess := False
+    setOutpModMemWord.io.splitOp.opIsNonFwd := False
     setOutpModMemWord.io.splitOp.jmpBrOpIsEq := False
     setOutpModMemWord.io.splitOp.jmpBrOpIsNe := False
     setOutpModMemWord.io.splitOp.setJmpBrAlwaysEqNeOpToDefault()
@@ -13536,7 +13560,7 @@ case class SnowHousePipeStageExecute(
       }
       when (
         myNonBubbleIncrCondMain(2)
-        && outp.splitOp.scoreboardOpIsNonFwd
+        && outp.splitOp.opIsNonFwd
       ) {
         myNonBubbleNonFwdTag := (
           RegNext(myNonBubbleNonFwdTag) + 1
@@ -13544,7 +13568,7 @@ case class SnowHousePipeStageExecute(
       }
       when (
         myNonBubbleIncrCondMain(3)
-        && !outp.splitOp.scoreboardOpIsNonFwd
+        && !outp.splitOp.opIsNonFwd
       ) {
         myNonBubbleFwdTag := (
           RegNext(myNonBubbleFwdTag) + 1
@@ -13583,8 +13607,8 @@ case class SnowHousePipeStageExecute(
         myUpdateRegPcSetItCnt=false,
       )
       if (cfg.optScoreboard) {
-        outp.splitOp.scoreboardOpIsNonFwd := (
-          inp.splitOp.scoreboardOpIsNonFwd
+        outp.splitOp.opIsNonFwd := (
+          inp.splitOp.opIsNonFwd
         )
       } else { // if (!cfg.optScoreboard)
         outp.gprIdxVec := outp.gprIdxVec.getZero

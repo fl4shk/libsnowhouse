@@ -1841,6 +1841,7 @@ case class SnowHouseDecodeExt(
   )(
     Bool()
   )
+  val opIsNonFwd = Bool()
   //--------
 }
 case class SnowHouseGprIdxToMemAddrIdxMapElem(
@@ -1895,11 +1896,12 @@ case class SnowHouseSplitOp(
   //)
   val opIsMultiCycle = Bool()
   val opIsMemAccess = Bool()
-  val scoreboardOpIsNonFwd = (
-    cfg.optScoreboard
-  ) generate (
-    Bool()
-  )
+  //val scoreboardCheckScoreboardOpIsNonFwd = (
+  //  cfg.optScoreboard
+  //) generate (
+  //  Bool()
+  //)
+  val opIsNonFwd = Bool()
   val scoreboardOpCanBeOooIssued = (
     cfg.optScoreboardOooIssueWindow != None
   ) generate (

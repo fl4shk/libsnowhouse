@@ -3931,7 +3931,7 @@ case class SnowHouseForFmaxPipeStageWriteBack(
       myNonFwdWbPayload(0).myExt
     )
     myNonFwdWbFifo.io.push.payload.scoreboardOpIsNonFwd := (
-      myNonFwdWbPayload(0).splitOp.scoreboardOpIsNonFwd
+      myNonFwdWbPayload(0).splitOp.opIsNonFwd
     )
 
     myFwdWbFifo.io.push.valid := (
@@ -3954,7 +3954,7 @@ case class SnowHouseForFmaxPipeStageWriteBack(
       myFwdWbPayload(0).outpDecodeExt
     )
     myFwdWbFifo.io.push.payload.scoreboardOpIsNonFwd := (
-      myFwdWbPayload(0).splitOp.scoreboardOpIsNonFwd
+      myFwdWbPayload(0).splitOp.opIsNonFwd
     )
     if (io.dbgInfo != null) {
       myFwdWbFifo.io.push.payload.laggingRegPc := (
@@ -4128,7 +4128,7 @@ case class SnowHouseForFmaxPipeStageWriteBack(
       myNonFwdWbPayload(1).outpDecodeExt := (
         myNonFwdWbFifo.io.pop.payload.outpDecodeExt
       )
-      myNonFwdWbPayload(1).splitOp.scoreboardOpIsNonFwd := (
+      myNonFwdWbPayload(1).splitOp.opIsNonFwd := (
         myNonFwdWbFifo.io.pop.payload.scoreboardOpIsNonFwd
       )
       if (io.dbgInfo != null) {
@@ -4166,7 +4166,7 @@ case class SnowHouseForFmaxPipeStageWriteBack(
       myFwdWbPayload(1).outpDecodeExt := (
         myFwdWbFifo.io.pop.payload.outpDecodeExt
       )
-      myFwdWbPayload(1).splitOp.scoreboardOpIsNonFwd := (
+      myFwdWbPayload(1).splitOp.opIsNonFwd := (
         myFwdWbFifo.io.pop.payload.scoreboardOpIsNonFwd
       )
       if (io.dbgInfo != null) {
@@ -4945,7 +4945,7 @@ case class SnowHouseForFmaxPipeStageWriteBack(
     )
     io.commitEtc.scoreboardBubbleRetire.opIsFwd := (
       //!io.up.splitOp.opIsMemAccess
-      !io.up.splitOp.scoreboardOpIsNonFwd
+      !io.up.splitOp.opIsNonFwd
       && (
         io.up.instrCnt.shouldIgnoreInstr.last
         || !io.up.gprIsZeroVec.last.last
@@ -4954,7 +4954,7 @@ case class SnowHouseForFmaxPipeStageWriteBack(
       //!io.up.instrCnt.scoreboard
     )
     io.commitEtc.scoreboardBubbleRetire.myNonFwdValid := (
-      io.up.splitOp.scoreboardOpIsNonFwd
+      io.up.splitOp.opIsNonFwd
       && !io.up.instrCnt.myPsIdBubble(1)
       && !io.up.instrCnt.myPsIdFwdBubble(1)
     )
@@ -5319,7 +5319,7 @@ case class SnowHouseForFmaxPipeStageWriteBack(
               someMyWbPayload(1).instrCnt.shouldIgnoreInstr.last
               || someMyWbPayload(1).gprIsZeroVec.last.last
             )
-            && someMyWbPayload(1).splitOp.scoreboardOpIsNonFwd
+            && someMyWbPayload(1).splitOp.opIsNonFwd
             //&& !someMyWbPayload(1).instrCnt.myPsIdBubble.head
             //&& myNonFwdWbValid
             && (
