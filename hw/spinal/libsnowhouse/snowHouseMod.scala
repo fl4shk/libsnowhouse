@@ -2707,7 +2707,7 @@ case class SnowHouseMcDualBusToMcBusBridge(
     when (!rState) {
       myD2hBus.valid := False
       when (myH2dBus.valid) {
-        stallIo.nextValid := True
+        //stallIo.nextValid := True
         stallIo.sendData := myH2dBus.payload
         myH2dBus.ready := True
         rState := True
