@@ -3545,24 +3545,28 @@ case class SnowHouseRiscv32Mul(
 
 
   switch (
-    myHistValidMulhu.last
+    RegNext(
+      multiCycleBus.nextValid,
+      init=False,
+    )
+    ## myHistValidMulhu.last
     ## myHistValidMulh.last
     ## myHistValidMulhsu.last
     ## myHistValidFixedImul.last
   ) {
-    is (M"1---") {
+    is (M"11---") {
       dstVec(0) := myHistMulhu.last
       multiCycleBus.ready := True
     }
-    is (M"01--") {
+    is (M"101--") {
       dstVec(0) := myHistMulh.last.asUInt
       multiCycleBus.ready := True
     }
-    is (M"001-") {
+    is (M"1001-") {
       dstVec(0) := myHistMulhsu.last
       multiCycleBus.ready := True
     }
-    is (M"0001") {
+    is (M"10001") {
       dstVec(0) := myHistFixedImul.last.asUInt
       multiCycleBus.ready := True
     }
