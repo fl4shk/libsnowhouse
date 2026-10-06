@@ -2482,8 +2482,10 @@ private[libsnowhouse] case class SnowHouseForFmax(
   io.lcvDbus.h2dBus << psEx.io.myLcvDbusH2dStm
   psWb.io.myLcvDbusD2hStm << io.lcvDbus.d2hBus
 
-  for (idx <- 0 until io.multiCycleBusVec.size) {
-    io.multiCycleBusVec(idx) <> psEx.io.multiCycleBusVec(idx)
+  if (cfg.havePsExStall) {
+    for (idx <- 0 until io.multiCycleBusVec.size) {
+      io.multiCycleBusVec(idx) <> psEx.io.multiCycleBusVec(idx)
+    }
   }
   if (io.dbgInfo != null) {
     io.dbgInfo := psWb.io.dbgInfo

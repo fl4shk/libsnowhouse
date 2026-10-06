@@ -658,12 +658,16 @@ case class SnowHouseForFmaxConfig(
     //false
     //true
     Some(
-      4
-      //8
+      //4
+      8
       //1
       //2
     )
   ),
+  optScoreboardMultiCycleOpIsNonFwd: Boolean=(
+    true
+    //false
+  )
   //optMaxNumScoreboardInstrs: Option[Int]=Some(
   //  //2
   //  //1
@@ -1533,11 +1537,18 @@ case class SnowHouseConfig(
     //!optForFmax
     //&& 
     multiCycleOpInfoMap.size > 0
+    && (
+      !optForFmax
+      || !optForFmaxCfg.get.optScoreboardMultiCycleOpIsNonFwd
+    )
   )
   val havePsWbMultiCycleStall = (
     //optForFmax
-    //&& multiCycleOpInfoMap.size > 0
-    false
+    //false
+    optForFmax
+    && multiCycleOpInfoMap.size > 0
+    //&& havePsExStall
+    && optForFmaxCfg.get.optScoreboardMultiCycleOpIsNonFwd
   )
   val havePsMemStall = (
     memAccOpInfoMap.size > 0
