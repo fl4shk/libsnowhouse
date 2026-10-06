@@ -1841,6 +1841,7 @@ case class SnowHouseDecodeExt(
   )(
     Bool()
   )
+  //val opIsFwd = Bool()
   val opIsNonFwd = Bool()
   //--------
 }

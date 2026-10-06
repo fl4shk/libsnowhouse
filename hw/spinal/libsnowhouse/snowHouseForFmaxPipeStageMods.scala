@@ -3723,7 +3723,7 @@ case class SnowHouseForFmaxPipeStageWriteBack(
   ) extends Bundle {
     val instrCnt = SnowHouseInstrCnt(cfg=cfg)
     val outpDecodeExt = SnowHouseDecodeExt(cfg=cfg)
-    val scoreboardOpIsNonFwd = Bool()
+    val opIsNonFwd = Bool()
 
     val encInstr = (
       io.dbgInfo != null
@@ -3888,7 +3888,8 @@ case class SnowHouseForFmaxPipeStageWriteBack(
 
     myNonFwdWbFifo.io.push.valid := (
       cLink.up.isValid
-      && myNonFwdWbPayload(0).outpDecodeExt.opIsMemAccess.head
+      //&& myNonFwdWbPayload(0).outpDecodeExt.opIsMemAccess.head
+      && myNonFwdWbPayload(0).outpDecodeExt.opIsNonFwd
       //&& !myNonFwdWbPayload(0).instrCnt.shouldIgnoreInstr.head
       //&& !myNonFwdWbPayload(0).instrCnt.myPsIdBubble.head
       //&& !myNonFwdWbPayload(0).instrCnt.myPsIdFwdBubble.head
@@ -3930,13 +3931,14 @@ case class SnowHouseForFmaxPipeStageWriteBack(
     myNonFwdWbFifo.io.push.payload.myExt := (
       myNonFwdWbPayload(0).myExt
     )
-    myNonFwdWbFifo.io.push.payload.scoreboardOpIsNonFwd := (
+    myNonFwdWbFifo.io.push.payload.opIsNonFwd := (
       myNonFwdWbPayload(0).splitOp.opIsNonFwd
     )
 
     myFwdWbFifo.io.push.valid := (
       cLink.up.isValid
-      && !myFwdWbPayload(0).outpDecodeExt.opIsMemAccess.last
+      //&& !myFwdWbPayload(0).outpDecodeExt.opIsMemAccess.last
+      && !myFwdWbPayload(0).outpDecodeExt.opIsNonFwd
       //&& !myFwdWbPayload(0).instrCnt.shouldIgnoreInstr.last
       //&& !myFwdWbPayload(0).instrCnt.myPsIdBubble.last
       //&& !myFwdWbPayload(0).instrCnt.myPsIdFwdBubble.last
@@ -3953,7 +3955,7 @@ case class SnowHouseForFmaxPipeStageWriteBack(
     myFwdWbFifo.io.push.payload.outpDecodeExt := (
       myFwdWbPayload(0).outpDecodeExt
     )
-    myFwdWbFifo.io.push.payload.scoreboardOpIsNonFwd := (
+    myFwdWbFifo.io.push.payload.opIsNonFwd := (
       myFwdWbPayload(0).splitOp.opIsNonFwd
     )
     if (io.dbgInfo != null) {
@@ -4042,6 +4044,17 @@ case class SnowHouseForFmaxPipeStageWriteBack(
     rSeenMyD2hBusFire := True
   }
 
+  val rSeenMultiCycleD2hBusFire = (
+    cfg.havePsWbMultiCycleStall
+  ) generate (
+    Reg(Bool(), init=False)
+  )
+  when (
+    Vec(io.multiCycleD2hBusVec.map(_.fire)).orR
+  ) {
+    rSeenMultiCycleD2hBusFire := True
+  }
+
   //val myNonFwdShouldIgnoreInstr = (
   //  cfg.optScoreboard
   //) generate (
@@ -4060,12 +4073,22 @@ case class SnowHouseForFmaxPipeStageWriteBack(
   //  //&& !myNonFwdWbFifo.io.pop.payload.instrCnt.myPsIdBubble.head
   //)
 
-  val stickyMyD2hBusFire = (
+  val stickyAnyD2hBusFire = (
     if (cfg.optScoreboard) (
-      myD2hBus.fire
-      //myD2hBus.valid
-      || rSeenMyD2hBusFire
-      //|| myNonFwdShouldIgnoreInstr
+      if (cfg.havePsWbMultiCycleStall) (
+        myD2hBus.fire
+        || rSeenMyD2hBusFire
+        || (
+          // TODO (maybe!):
+          // we may want to remove this (and change other WB logic)
+          // for fmax reasons?
+          Vec(io.multiCycleD2hBusVec.map(_.fire)).orR 
+        )
+        || rSeenMultiCycleD2hBusFire
+      ) else (
+        myD2hBus.fire
+        || rSeenMyD2hBusFire
+      )
     ) else (
       // TODO: determine whether this works!
       myD2hBus.fire
@@ -4076,6 +4099,7 @@ case class SnowHouseForFmaxPipeStageWriteBack(
     myNonFwdWbFifo.io.pop.fire
   ) {
     rSeenMyD2hBusFire := False
+    rSeenMultiCycleD2hBusFire := False
   }
 
   val stickyMemMmw = (
@@ -4086,6 +4110,17 @@ case class SnowHouseForFmaxPipeStageWriteBack(
 
   val stickyMemMmwValid = (
     cfg.optScoreboard
+  ) generate (
+    Bool()
+  )
+
+  val stickyMultiCycleMmw = (
+    cfg.havePsWbMultiCycleStall
+  ) generate (
+    UInt(cfg.mainWidth bits)
+  )
+  val stickyMultiCycleMmwValid = (
+    cfg.havePsWbMultiCycleStall
   ) generate (
     Bool()
   )
@@ -4113,6 +4148,20 @@ case class SnowHouseForFmaxPipeStageWriteBack(
         init=stickyMemMmwValid.getZero
       )
     )
+    if (cfg.havePsWbMultiCycleStall) {
+      stickyMultiCycleMmw := (
+        RegNext(
+          stickyMultiCycleMmw,
+          init=stickyMultiCycleMmw.getZero
+        )
+      )
+      stickyMultiCycleMmwValid := (
+        RegNext(
+          stickyMultiCycleMmwValid,
+          init=stickyMultiCycleMmwValid.getZero
+        )
+      )
+    }
 
     //when (myD2hBus.fire) {
     //  rSeenMyD2hBusFire := True
@@ -4129,7 +4178,7 @@ case class SnowHouseForFmaxPipeStageWriteBack(
         myNonFwdWbFifo.io.pop.payload.outpDecodeExt
       )
       myNonFwdWbPayload(1).splitOp.opIsNonFwd := (
-        myNonFwdWbFifo.io.pop.payload.scoreboardOpIsNonFwd
+        myNonFwdWbFifo.io.pop.payload.opIsNonFwd
       )
       if (io.dbgInfo != null) {
         myNonFwdWbPayload(1).laggingRegPc := (
@@ -4167,7 +4216,7 @@ case class SnowHouseForFmaxPipeStageWriteBack(
         myFwdWbFifo.io.pop.payload.outpDecodeExt
       )
       myFwdWbPayload(1).splitOp.opIsNonFwd := (
-        myFwdWbFifo.io.pop.payload.scoreboardOpIsNonFwd
+        myFwdWbFifo.io.pop.payload.opIsNonFwd
       )
       if (io.dbgInfo != null) {
         myFwdWbPayload(1).laggingRegPc := (
@@ -4268,54 +4317,7 @@ case class SnowHouseForFmaxPipeStageWriteBack(
       myD2hBus.ready := True
     }
 
-    if (cfg.optScoreboard) {
-      //when (
-      //  myNonFwdWbValid
-      //  && myNonFwdWbPayload(1).outpDecodeExt.opIsMemAccess.last
-      //  && (
-      //    !stickyMyD2hBusFire //!myD2hBus.valid
-      //  )
-      //) {
-      //  cLink.duplicateIt()
-      //}
-    } else { // if (!cfg.optScoreboard)
-      //when (
-      //  (
-      //    if (cfg.optScoreboard) (
-      //      // TODO: maybe try `isValid` later (for fmax)?
-      //      //cLink.up.isValid
-      //      //&& !rCurrWbPayloadOuterIdx.lsb
-      //      //RegNext(
-      //      //  !myNonFwdWbValid,
-      //      //  init=False
-      //      //)
-      //      //!rose(myNonFwdWbValid)
-      //      //&& !myFwdWbValid
-      //      myNonFwdWbValid
-      //      && (
-      //        cLink.up.isValid
-      //        && RegNext(myNonFwdWbValid, init=False)
-      //        && myWbPayloadVec.head(0).outpDecodeExt.opIsMemAccess.last
-      //      )
-      //      && !rMemCommitFire
-      //    ) else (
-      //      cLink.up.isValid
-      //      && !myD2hBus.valid
-      //      && myNonFwdWbPayload(1).outpDecodeExt.opIsMemAccess.last
-      //    )
-      //  )
-      //  //cLink.up.isValid
-      //  //&& myNonFwdWbPayload(1).outpDecodeExt.opIsMemAccess.last
-      //  //&& !myD2hBus.valid
-      //) {
-      //  if (cfg.optScoreboard) {
-      //    //rCurrWbPayloadOuterIdx.lsb := True
-      //    cLink.duplicateIt()
-      //  } else {
-      //    cLink.duplicateIt()
-      //  }
-      //}
-
+    if (!cfg.optScoreboard) {
       when (
         cLink.up.isValid
         && myNonFwdWbPayload(1).outpDecodeExt.opIsMemAccess.last
@@ -4323,23 +4325,6 @@ case class SnowHouseForFmaxPipeStageWriteBack(
       ) {
         cLink.duplicateIt()
       }
-    }
-    if (cfg.optScoreboard) {
-      //when (
-      //  (
-      //    //cLink.up.isValid
-      //    //|| 
-      //    rCurrWbPayloadOuterIdx.lsb
-      //  )
-      //  && myNonFwdWbPayload(1).outpDecodeExt.opIsMemAccess.last
-      //  && (
-      //    // this is checking for `myD2hBus.fire`
-      //    myD2hBus.valid
-      //  )
-      //) {
-      //  //rCurrWbPayloadOuterIdx.lsb := False
-      //  cLink.duplicateIt()
-      //}
     }
     switch (
       (
@@ -4370,19 +4355,6 @@ case class SnowHouseForFmaxPipeStageWriteBack(
       // 32-bit `cfg.mainWidth` CPU. More work will be needed later.
       //--------
       val myDecodeExt = myNonFwdWbPayload(1).outpDecodeExt
-      //val mapElem = myNonFwdWbPayload(1).gprIdxToMemAddrIdxMap(0)
-      //val myCurrExt = (
-      //  if (!mapElem.haveHowToSetIdx) (
-      //    myNonFwdWbPayload(1).myExt(
-      //      0
-      //    )
-      //  ) else (
-      //    myNonFwdWbPayload(1).myExt(
-      //      mapElem.howToSetIdx
-      //    )
-      //  )
-      //)
-      //val myCurrExt = myNonFwdWbPayload(1).myExt(0)
       val myCurrMmw = (
         if (cfg.optScoreboard) (
           stickyMemMmw
@@ -4439,34 +4411,16 @@ case class SnowHouseForFmaxPipeStageWriteBack(
     when (
       (
         if (cfg.optScoreboard) (
-          //cLink.up.isValid
-          //|| 
-          myNonFwdWbValid //rCurrWbPayloadOuterIdx.lsb
+          myNonFwdWbValid
         ) else (
           cLink.up.isValid
         )
       )
-      //&& !myNonFwdWbPayload(1).outpDecodeExt.memAccessKind.asBits(1)
       && (
-        //myD2hBus.valid
         myD2hBus.fire
-        //stickyMyD2hBusFire
       )
     ) {
       val myDecodeExt = myNonFwdWbPayload(1).outpDecodeExt
-      //val mapElem = myNonFwdWbPayload(1).gprIdxToMemAddrIdxMap(0)
-      //val myCurrExt = (
-      //  if (!mapElem.haveHowToSetIdx) (
-      //    myNonFwdWbPayload(1).myExt(
-      //      0
-      //    )
-      //  ) else (
-      //    myNonFwdWbPayload(1).myExt(
-      //      mapElem.howToSetIdx
-      //    )
-      //  )
-      //)
-      //val myCurrExt = myNonFwdWbPayload(1).myExt(0)
       val myCurrMmwValid = (
         if (cfg.optScoreboard) (
           stickyMemMmwValid
@@ -4474,20 +4428,6 @@ case class SnowHouseForFmaxPipeStageWriteBack(
           myNonFwdWbPayload(1).myExt(0).modMemWordValid.last
         )
       )
-      //myCurrExt.modMemWord := myDbus.recvData.word
-      //myCurrExt.modMemWord := myD2hBus.data
-      //myCurrExt.modMemWordValid.foreach(current => {
-      //  current := (
-      //    // TODO: support more destination GPRs
-      //    //!myNonFwdWbPayload.gprIsZeroVec(0)
-      //    True
-      //  )
-      //})
-      //for (idx <- 0 until cfg.regFileCfg.modMemWordValidSize) {
-      //  myCurrExt.modMemWordValid(idx) := (
-      //    !myNonFwdWbPayload(1).gprIsZeroVec.last(idx)
-      //  )
-      //}
       myCurrMmwValid := (
         if (cfg.optScoreboard) (
           !myNonFwdWbPayload(1).gprIsZeroVec.last.last
@@ -4497,6 +4437,57 @@ case class SnowHouseForFmaxPipeStageWriteBack(
           !myNonFwdWbPayload(1).gprIsZeroVec.last.last
         )
       )
+    }
+  }
+
+  val myMultiCycleD2hBusArea = (
+    cfg.havePsWbMultiCycleStall
+  ) generate new Area {
+    io.multiCycleD2hBusVec.foreach(item => {
+      item.ready := False
+    })
+    
+    for (
+      ((group, innerMap), groupIdx)
+      <- cfg.multiCycleOpInfoMap.view.zipWithIndex
+    ) {
+      switch (
+        //RegNext(setOutpModMemWord.io.splitOp.multiCycleOpKind)
+        //init(0x0)
+        (
+          //!rHaveDoneMultiCycleOp
+          //&& 
+          //myAnyValidCond
+          myNonFwdWbValid
+          && myNonFwdWbPayload(1).outpDecodeExt.opIsAnyMultiCycle
+        )
+        ## (
+          myNonFwdWbPayload(1).splitOp.multiCycleOpKind
+        )
+      ) {
+        for (((_, opInfo), kindIdx) <- innerMap.view.zipWithIndex) {
+          is (
+            (
+              1 << myNonFwdWbPayload(1).splitOp.multiCycleOpKind.getWidth
+            )
+            | kindIdx
+          ) {
+            def multiCycleD2hBus = io.multiCycleD2hBusVec(groupIdx)
+            multiCycleD2hBus.ready := True
+            stickyMultiCycleMmw := (
+              multiCycleD2hBus.dstVec.head
+            )
+            stickyMultiCycleMmwValid := (
+              multiCycleD2hBus.valid
+              && !myNonFwdWbPayload(1).gprIsZeroVec.last.last
+              && (
+                !myNonFwdWbPayload(1)
+                .instrCnt.myPsExMultiCycleBubble.last
+              )
+            )
+          }
+        }
+      }
     }
   }
 
@@ -5240,7 +5231,10 @@ case class SnowHouseForFmaxPipeStageWriteBack(
       //&& !someMyWbPayload(1).instrCnt.shouldIgnoreInstr.last
       && {
         if (cfg.optScoreboard && isNonFwd) {
-          stickyMemMmwValid
+          (
+            stickyMemMmwValid
+            || stickyMultiCycleMmwValid
+          )
         } else {
           val myDecodeExt = someMyWbPayload(1).outpDecodeExt
           val mapElem = someMyWbPayload(1).gprIdxToMemAddrIdxMap(0)
@@ -5269,7 +5263,11 @@ case class SnowHouseForFmaxPipeStageWriteBack(
       )
       someCommitStm.regFileWrite.data := {
         if (cfg.optScoreboard && isNonFwd) {
-          stickyMemMmw
+          Mux[UInt](
+            stickyMemMmwValid,
+            stickyMemMmw,
+            stickyMultiCycleMmw,
+          )
         } else {
           val myDecodeExt = someMyWbPayload(1).outpDecodeExt
           val mapElem = someMyWbPayload(1).gprIdxToMemAddrIdxMap(0)
@@ -5383,79 +5381,14 @@ case class SnowHouseForFmaxPipeStageWriteBack(
       someCommitStm.valid := (
         (
           if (isNonFwd) (
-            (
-              //myD2hBus.fire
-              //|| (
-              //  cLink.up.isFiring
-              //  && myNonFwdWbValid
-              //  //&& !myFwdWbValid
-              //  //&& someMyWbPayload(1).outpDecodeExt.opIsMemAccess(0)
-              //)
-              //True
-              //!myNonFwdWbPayload(1).instrCnt.myPsIdBubble.last
-              //True
-              //!myNonFwdWbPayload(1).instrCnt.myPsIdBubble.last
-              myNonFwdWbValid
-              && stickyMyD2hBusFire
-              //&& (
-              //  someMyShouldIgnoreInstrState
-              //)
-              //&& (
-              //  !myFwdWbValid
-              //  || !myFwdWbPayload(1).instrCnt.shouldIgnoreInstr.last
-              //  || !myScoreboardWbFifoArea.rMyShouldIgnoreInstrState
-              //)
-              //&& (
-              //  !myFwdWbValid
-              //  || !someMyWbPayload(1).instrCnt.shouldIgnoreInstr.last
-              //)
-            )
+            myNonFwdWbValid
+            && stickyAnyD2hBusFire
           ) else (
-            //cLink.up.isFiring
-            //&& 
-            //cLink.up.isValid
-            //&& 
             myFwdWbValid
             && myScoreboardStallPassCheckArea.rAllowFwdCommit
-            //&& !myScoreboardStallPassCheckArea.rNonFwdStallPassCnt.msb
-            //&& (
-            //  
-            //  my
-            //)
-            //&& (
-            //  !myNonFwdWbValid
-            //  || stickyMyD2hBusFire
-            //  || !someMyWbPayload(1).instrCnt.shouldIgnoreInstr.last
-            //  || myScoreboardWbFifoArea.rMyShouldIgnoreInstrState
-            //)
-
-            //|| (
-            //  myFwdWbFifo.io.pop.valid
-            //  && myFwdWbFifo.io.pop.instrCnt.shouldIgnoreInstr.last
-            //)
-            //|| myFwdWbPayload(1).instrCnt.shouldIgnoreInstr.last
-            //&& rInstrMayPassCnt.orR
-            //&& !myFwdWbPayload(1).instrCnt.myPsIdBubble.last
           )
         )
       )
-
-      //if (isNonFwd) {
-      //  someCommitStm.opIsFwd
-      //} else {
-      //}
-
-      //someCommitStm.commit.tag := (
-      //  someMyWbPayload(1).instrCnt.scoreboardTag
-      //)
-      //someCommitStm.commit.myGprIdx := (
-      //  someMyWbPayload(1).gprIdxVec.last
-      //)
-      //someCommitStm.commit.isBubbleEtc := (
-      //  if (isNonFwd) (
-      //  ) else (
-      //  )
-      //)
 
       if (isNonFwd) {
         myNonFwdWbFifo.io.pop.ready := someCommitStm.fire
@@ -5463,9 +5396,6 @@ case class SnowHouseForFmaxPipeStageWriteBack(
         myFwdWbFifo.io.pop.ready := someCommitStm.fire
       }
     } else { // if (!cfg.optScoreboard)
-      //someCommitStm.valid := (
-      //  myWbPayloadVec.head(1).myExt(0).modMemWordValid.head
-      //)
     }
   }
 

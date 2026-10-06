@@ -5990,6 +5990,8 @@ case class SnowHousePipeStageExecuteSetOutpModMemWordIo(
   //  UInt(log2Up(cfg.multiCycleOpInfoMap.size) bits)
   //)
   //def opIs = decodeExt.opIs
+  //def opIsFwd = outpDecodeExt.opIsFwd
+  def opIsNonFwd = outpDecodeExt.opIsNonFwd
   def opIsMemAccess = outpDecodeExt.opIsMemAccess
   //def opIsCpyNonJmpAlu = decodeExt.opIsCpyNonJmpAlu
   //def opIsAluShift = outpDecodeExt.opIsAluShift
@@ -6969,6 +6971,7 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
   io.dbusHostPayload.subKindIsLtWordWidth.allowOverride
   io.dbusHostPayload.myLcvDbusByteSize.allowOverride
   //io.opIs := 0x0
+  io.opIsNonFwd := io.splitOp.opIsNonFwd
   io.opIsMemAccess.foreach(current => {
     current := (
       //False
@@ -9979,6 +9982,7 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
     if (io.haveRetIraState) {
       nextHadRetIra := io.rHadRetIra
     }
+    io.opIsNonFwd := False
     io.opIsMemAccess.foreach(item => {
       item := False
     })
