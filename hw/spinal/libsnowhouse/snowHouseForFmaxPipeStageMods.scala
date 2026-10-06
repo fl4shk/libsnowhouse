@@ -4483,30 +4483,30 @@ case class SnowHouseForFmaxPipeStageWriteBack(
       stickyMemMmwValid := False
     }
     
-    for (
-      ((group, innerMap), groupIdx)
-      <- cfg.multiCycleOpInfoMap.view.zipWithIndex
+    switch (
+      //RegNext(setOutpModMemWord.io.splitOp.multiCycleOpKind)
+      //init(0x0)
+      (
+        //!rHaveDoneMultiCycleOp
+        //&& 
+        //myAnyValidCond
+        myNonFwdWbValid
+        && myNonFwdWbPayload(1).outpDecodeExt.opIsAnyMultiCycle
+      )
+      ## (
+        myNonFwdWbPayload(1).splitOp.multiCycleOpGroup
+      )
     ) {
-      switch (
-        //RegNext(setOutpModMemWord.io.splitOp.multiCycleOpKind)
-        //init(0x0)
-        (
-          //!rHaveDoneMultiCycleOp
-          //&& 
-          //myAnyValidCond
-          myNonFwdWbValid
-          && myNonFwdWbPayload(1).outpDecodeExt.opIsAnyMultiCycle
-        )
-        ## (
-          myNonFwdWbPayload(1).splitOp.multiCycleOpKind
-        )
+      for (
+        ((group, innerMap), groupIdx)
+        <- cfg.multiCycleOpInfoMap.view.zipWithIndex
       ) {
-        for (((_, opInfo), kindIdx) <- innerMap.view.zipWithIndex) {
+        //for (((_, opInfo), kindIdx) <- innerMap.view.zipWithIndex) {
           is (
             (
               1 << myNonFwdWbPayload(1).splitOp.multiCycleOpKind.getWidth
             )
-            | kindIdx
+            | groupIdx
           ) {
             def multiCycleD2hBus = io.multiCycleD2hBusVec(groupIdx)
             multiCycleD2hBus.ready := True
@@ -4522,7 +4522,7 @@ case class SnowHouseForFmaxPipeStageWriteBack(
               )
             )
           }
-        }
+        //}
       }
     }
   }
