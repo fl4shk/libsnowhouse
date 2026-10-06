@@ -1951,6 +1951,7 @@ private[libsnowhouse] case class SnowHouseNotForFmax
       )
     ),
     multiCycleBusVec=io.multiCycleBusVec,
+    multiCycleH2dBusVec=null,
     idsIraIrq=io.idsIraIrq,
     forFmaxRegFileWrPulseArr=null,
   )
@@ -2483,8 +2484,14 @@ private[libsnowhouse] case class SnowHouseForFmax(
   psWb.io.myLcvDbusD2hStm << io.lcvDbus.d2hBus
 
   if (cfg.havePsExStall) {
-    for (idx <- 0 until io.multiCycleBusVec.size) {
+    for (idx <- 0 until cfg.multiCycleOpInfoMap.view.size) {
       io.multiCycleBusVec(idx) <> psEx.io.multiCycleBusVec(idx)
+    }
+  }
+  if (cfg.havePsWbMultiCycleStall) {
+    for (idx <- 0 until cfg.multiCycleOpInfoMap.view.size) {
+      io.multiCycleH2dBusVec(idx) << psEx.io.multiCycleH2dBusVec(idx)
+      psWb.io.multiCycleD2hBusVec(idx) << io.multiCycleD2hBusVec(idx)
     }
   }
   if (io.dbgInfo != null) {

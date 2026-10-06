@@ -1868,6 +1868,8 @@ case class SnowHouseForFmaxPipeStageExecuteIo(
     ))
   )
   val multiCycleBusVec = (
+    cfg.havePsExStall
+  ) generate (
     Vec[LcvStallIo[
       MultiCycleHostPayload,
       MultiCycleDevPayload,
@@ -1910,10 +1912,43 @@ case class SnowHouseForFmaxPipeStageExecuteIo(
       tempArr
     }
   )
-  for (idx <- 0 until multiCycleBusVec.size) {
-    master(
-      multiCycleBusVec(idx)
-    )
+  val multiCycleH2dBusVec = (
+    cfg.havePsWbMultiCycleStall
+  ) generate (
+    Vec[Stream[
+      MultiCycleHostPayload
+    ]]{
+      val tempArr = ArrayBuffer[
+        Stream[
+          MultiCycleHostPayload
+        ]
+      ]()
+      for (
+        (group, _) <- cfg.multiCycleOpInfoMap.view
+      ) {
+        tempArr += Stream(
+          MultiCycleHostPayload(
+            cfg=cfg,
+            group=group,
+          )
+        )
+      }
+      tempArr
+    }
+  )
+  if (cfg.havePsExStall) {
+    for (idx <- 0 until multiCycleBusVec.size) {
+      master(
+        multiCycleBusVec(idx)
+      )
+    }
+  }
+  if (cfg.havePsWbMultiCycleStall) {
+    for (idx <- 0 until multiCycleH2dBusVec.size) {
+      master(
+        multiCycleH2dBusVec(idx)
+      )
+    }
   }
   //val myModMemWord = (
   //  out(SInt(cfg.mainWidth bits))
@@ -1979,6 +2014,7 @@ case class SnowHouseForFmaxPipeStageExecute(
     psWbToEarlierStallRequest=io.psWbToEarlierStallRequest,
     myLcvDbusH2dStm=io.myLcvDbusH2dStm,
     multiCycleBusVec=io.multiCycleBusVec,
+    multiCycleH2dBusVec=io.multiCycleH2dBusVec,
     idsIraIrq=io.idsIraIrq,
     //pcChangeState=null,
     //shouldIgnoreInstr=null,
@@ -3574,6 +3610,36 @@ case class SnowHouseForFmaxPipeStageWriteBackIo(
       UInt(cfg.numGprs bits)
     )
   )
+  //--------
+  val multiCycleD2hBusVec = (
+    cfg.havePsWbMultiCycleStall
+  ) generate (
+    Vec[Stream[
+      MultiCycleDevPayload
+    ]]{
+      val tempArr = ArrayBuffer[
+        Stream[
+          MultiCycleDevPayload
+        ]
+      ]()
+      for (
+        (group, _) <- cfg.multiCycleOpInfoMap.view
+      ) {
+        tempArr += Stream(
+          MultiCycleDevPayload(
+            cfg=cfg,
+            group=group,
+          )
+        )
+      }
+      tempArr
+    }
+  )
+  if (cfg.havePsWbMultiCycleStall) {
+    for (idx <- 0 until multiCycleD2hBusVec.size) {
+      slave(multiCycleD2hBusVec(idx))
+    }
+  }
   //--------
 }
 case class SnowHouseForFmaxPipeStageWriteBack(

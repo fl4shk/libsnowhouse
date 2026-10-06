@@ -10104,6 +10104,9 @@ case class SnowHousePipeStageExecute(
     MultiCycleHostPayload,
     MultiCycleDevPayload,
   ]],
+  multiCycleH2dBusVec: Vec[Stream[
+    MultiCycleHostPayload
+  ]],
   idsIraIrq: LcvStallIo[Bool, Bool],
   forFmaxRegFileWrPulseArr: Seq[
     Flow[

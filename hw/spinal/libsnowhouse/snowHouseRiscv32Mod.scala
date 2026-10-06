@@ -3957,6 +3957,16 @@ case class SnowHouseRiscv32MultiCycleInstrArea(
   ) generate (
     SnowHouseMcDualBusToMcBusBridge(cfg=cfg)
   )
+  if (myBridge != null) {
+    for (idx <- 0 until cfg.multiCycleOpInfoMap.view.size) {
+      myBridge.io.multiCycleH2dBusVec(idx) << (
+        cpuIo.multiCycleH2dBusVec(idx)
+      )
+      cpuIo.multiCycleD2hBusVec(idx) << (
+        myBridge.io.multiCycleD2hBusVec(idx)
+      )
+    }
+  }
   val multiCycleBusVec = (
     if (myBridge != null) (
       myBridge.io.multiCycleBusVec
