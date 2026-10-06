@@ -1,7 +1,8 @@
 # Lib Snow House
 
 1. This is a SpinalHDL library that primarily exists for developing
-  RISC (or RISC-like) CPUs with strictly-in-order pipeline structures.
+  RISC (or RISC-like) CPUs with either out-of-order or strictly-in-order
+  pipeline structures.
 2. The primary inputs to this library for creating a new CPU are as
   follows:
   * A data structure indicating the kinds of instructions that your CPU
