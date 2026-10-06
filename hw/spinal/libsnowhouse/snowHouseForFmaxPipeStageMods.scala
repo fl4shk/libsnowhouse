@@ -3887,20 +3887,28 @@ case class SnowHouseForFmaxPipeStageWriteBack(
     //  rMyShouldIgnoreInstrState := False
     //}
 
-    myNonFwdWbFifo.io.push.valid := (
-      cLink.up.isValid
-      //&& myNonFwdWbPayload(0).outpDecodeExt.opIsMemAccess.head
-      && myNonFwdWbPayload(0).outpDecodeExt.opIsNonFwd
-      //&& !myNonFwdWbPayload(0).instrCnt.shouldIgnoreInstr.head
-      //&& !myNonFwdWbPayload(0).instrCnt.myPsIdBubble.head
-      //&& !myNonFwdWbPayload(0).instrCnt.myPsIdFwdBubble.head
-      && !myNonFwdWbPayload(0).instrCnt.myScoreboardNonFwdPsWbBubbleMost
-      && (
-        !myNonFwdWbPayload(0).instrCnt.myPsIdOtherBubble.head
-        || myNonFwdWbPayload(0).instrCnt.myPsIdFwdBubble.head
+    myNonFwdWbFifo.io.push.valid := {
+      val temp = (
+        cLink.up.isValid
+        //&& myNonFwdWbPayload(0).outpDecodeExt.opIsMemAccess.head
+        && myNonFwdWbPayload(0).outpDecodeExt.opIsNonFwd
+        //&& !myNonFwdWbPayload(0).instrCnt.shouldIgnoreInstr.head
+        //&& !myNonFwdWbPayload(0).instrCnt.myPsIdBubble.head
+        //&& !myNonFwdWbPayload(0).instrCnt.myPsIdFwdBubble.head
+        && !myNonFwdWbPayload(0).instrCnt.myScoreboardNonFwdPsWbBubbleMost
+        && (
+          !myNonFwdWbPayload(0).instrCnt.myPsIdOtherBubble.head
+          || myNonFwdWbPayload(0).instrCnt.myPsIdFwdBubble.head
+        )
+        && !myNonFwdWbPayload(0).instrCnt.myPsExMemAccessBubble.head
       )
-      && !myNonFwdWbPayload(0).instrCnt.myPsExMemAccessBubble.head
-    )
+      if (cfg.havePsWbMultiCycleStall) (
+        temp
+        && !myNonFwdWbPayload(0).instrCnt.myPsExMultiCycleBubble.head
+      ) else (
+        temp
+      )
+    }
 
     myNonFwdWbFifo.io.push.payload.instrCnt := (
       myNonFwdWbPayload(0).instrCnt
@@ -3936,20 +3944,27 @@ case class SnowHouseForFmaxPipeStageWriteBack(
       myNonFwdWbPayload(0).splitOp.opIsNonFwd
     )
 
-    myFwdWbFifo.io.push.valid := (
-      cLink.up.isValid
-      //&& !myFwdWbPayload(0).outpDecodeExt.opIsMemAccess.last
-      && !myFwdWbPayload(0).outpDecodeExt.opIsNonFwd
-      //&& !myFwdWbPayload(0).instrCnt.shouldIgnoreInstr.last
-      //&& !myFwdWbPayload(0).instrCnt.myPsIdBubble.last
-      //&& !myFwdWbPayload(0).instrCnt.myPsIdFwdBubble.last
-      && !myFwdWbPayload(0).instrCnt.myScoreboardFwdPsWbBubbleMost
-      && (
-        !myFwdWbPayload(0).instrCnt.myPsIdOtherBubble.last
-        || myFwdWbPayload(0).instrCnt.myPsIdFwdBubble.last
+    myFwdWbFifo.io.push.valid := {
+      val temp = (
+        cLink.up.isValid
+        //&& !myFwdWbPayload(0).outpDecodeExt.opIsMemAccess.last
+        && !myFwdWbPayload(0).outpDecodeExt.opIsNonFwd
+        //&& !myFwdWbPayload(0).instrCnt.shouldIgnoreInstr.last
+        //&& !myFwdWbPayload(0).instrCnt.myPsIdBubble.last
+        //&& !myFwdWbPayload(0).instrCnt.myPsIdFwdBubble.last
+        && !myFwdWbPayload(0).instrCnt.myScoreboardFwdPsWbBubbleMost
+        && (
+          !myFwdWbPayload(0).instrCnt.myPsIdOtherBubble.last
+          || myFwdWbPayload(0).instrCnt.myPsIdFwdBubble.last
+        )
       )
-      && !myFwdWbPayload(0).instrCnt.myPsExMultiCycleBubble.last
-    )
+      if (cfg.havePsWbMultiCycleStall) (
+        temp
+        && !myFwdWbPayload(0).instrCnt.myPsExMultiCycleBubble.last
+      ) else (
+        temp
+      )
+    }
     myFwdWbFifo.io.push.payload.instrCnt := (
       myFwdWbPayload(0).instrCnt
     )
