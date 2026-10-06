@@ -3723,6 +3723,7 @@ case class SnowHouseForFmaxPipeStageWriteBack(
   ) extends Bundle {
     val instrCnt = SnowHouseInstrCnt(cfg=cfg)
     val outpDecodeExt = SnowHouseDecodeExt(cfg=cfg)
+    val opIsMemAccess = Bool()
     val opIsNonFwd = Bool()
 
     val encInstr = (
@@ -4411,7 +4412,12 @@ case class SnowHouseForFmaxPipeStageWriteBack(
     when (
       (
         if (cfg.optScoreboard) (
-          myNonFwdWbValid
+          //if (cfg.havePsWbMultiCycleStall) (
+            myNonFwdWbValid
+          //  && myNonFwdWbPayload(1).outpDecodeExt.opIsMemAccess.head
+          //) else (
+          //  myNonFwdWbValid
+          //)
         ) else (
           cLink.up.isValid
         )
@@ -4438,6 +4444,15 @@ case class SnowHouseForFmaxPipeStageWriteBack(
         )
       )
     }
+
+    if (cfg.havePsWbMultiCycleStall) {
+      when (
+        myNonFwdWbValid
+        && myNonFwdWbPayload(1).outpDecodeExt.opIsMemAccess.head
+      ) {
+        stickyMultiCycleMmwValid := False
+      }
+    }
   }
 
   val myMultiCycleD2hBusArea = (
@@ -4446,6 +4461,12 @@ case class SnowHouseForFmaxPipeStageWriteBack(
     io.multiCycleD2hBusVec.foreach(item => {
       item.ready := False
     })
+    when (
+      myNonFwdWbValid
+      && myNonFwdWbPayload(1).outpDecodeExt.opIsAnyMultiCycle
+    ) {
+      stickyMemMmwValid := False
+    }
     
     for (
       ((group, innerMap), groupIdx)

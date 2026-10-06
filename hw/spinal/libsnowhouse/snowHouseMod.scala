@@ -2671,8 +2671,15 @@ case class SnowHouseMcDualBusToMcBusBridge(
   )(
     Reg(Bool(), init=False)
   )
+
+  val rSeenStallIoFireVec = Vec.fill(
+    cfg.multiCycleOpInfoMap.view.size
+  )(
+    Reg(Bool(), init=False)
+  )
   for (idx <- 0 until cfg.multiCycleOpInfoMap.view.size) {
     def rState = rStateVec(idx)
+    def rSeenStallIoFire = rSeenStallIoFireVec(idx)
     def myH2dBus = io.multiCycleH2dBusVec(idx)
     def myD2hBus = io.multiCycleD2hBusVec(idx)
     def stallIo = io.multiCycleBusVec(idx)
@@ -2705,14 +2712,19 @@ case class SnowHouseMcDualBusToMcBusBridge(
         myH2dBus.ready := True
         rState := True
       }
+      rSeenStallIoFire := False
     } otherwise {
-      stallIo.nextValid := True
-      when (stallIo.ready) {
+      stallIo.nextValid := !rSeenStallIoFire
+      when (
+        RegNext(stallIo.nextValid)
+        && stallIo.ready
+      ) {
+        rSeenStallIoFire := True
         myD2hBus.payload := stallIo.recvData
         myD2hBus.valid := True
       }
       when (myD2hBus.fire) {
-        rState := True
+        rState := False
       }
     }
   }

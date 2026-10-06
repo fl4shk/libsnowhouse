@@ -2304,10 +2304,10 @@ case class SnowHousePipeStageInstrDecode(
     )
     upPayload(1).splitOp.opIsNonFwd := (
       if (cfg.havePsWbMultiCycleStall) (
-        upPayload(1).splitOp.opIsMemAccess
-      ) else (
         upPayload(1).splitOp.opIsMultiCycle
         || upPayload(1).splitOp.opIsMemAccess
+      ) else (
+        upPayload(1).splitOp.opIsMemAccess
       )
     )
   } else {
@@ -4148,10 +4148,10 @@ case class SnowHousePipeStageScoreboardCheck(
     }
   }
 
-  down(pScoreboardCheck).splitOp.opIsNonFwd := (
-    //upPayload(1).splitOp.opIsMemAccess
-    upPayload(1).splitOp.opIsNonFwd
-  )
+  //down(pScoreboardCheck).splitOp.opIsNonFwd := (
+  //  //upPayload(1).splitOp.opIsMemAccess
+  //  upPayload(1).splitOp.opIsNonFwd
+  //)
 }
 
 object Bitscan {
@@ -12750,7 +12750,10 @@ case class SnowHousePipeStageExecute(
             def multiCycleH2dBus = multiCycleH2dBusVec(groupIdx)
             //multiCycleH2dBus.valid := True
 
-            multiCycleH2dBus.valid := True
+            multiCycleH2dBus.valid := (
+              //True
+              setOutpModMemWord.io.opIsMultiCycle(groupIdx)
+            )
             //when (
             //  //multiCycleH2dBus.valid
             //  //&& 
