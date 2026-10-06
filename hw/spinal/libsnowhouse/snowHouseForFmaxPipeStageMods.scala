@@ -4504,7 +4504,8 @@ case class SnowHouseForFmaxPipeStageWriteBack(
         //for (((_, opInfo), kindIdx) <- innerMap.view.zipWithIndex) {
           is (
             (
-              1 << myNonFwdWbPayload(1).splitOp.multiCycleOpKind.getWidth
+              //1 << myNonFwdWbPayload(1).splitOp.multiCycleOpKind.getWidth
+              1 << myNonFwdWbPayload(1).splitOp.multiCycleOpGroup.getWidth
             )
             | groupIdx
           ) {

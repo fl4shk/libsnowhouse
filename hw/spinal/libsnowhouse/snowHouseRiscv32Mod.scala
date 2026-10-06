@@ -3542,8 +3542,6 @@ case class SnowHouseRiscv32Mul(
     length=fullProductNumPipeStages,
   )
 
-
-
   switch (
     RegNext(
       multiCycleBus.nextValid,
