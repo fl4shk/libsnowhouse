@@ -2704,6 +2704,7 @@ case class SnowHouseMcDualBusToMcBusBridge(
         init=stallIo.sendData.getZero
       )
     )
+
     when (!rState) {
       myD2hBus.valid := False
       when (myH2dBus.valid) {
@@ -2716,9 +2717,13 @@ case class SnowHouseMcDualBusToMcBusBridge(
     } otherwise {
       stallIo.nextValid := !rSeenStallIoFire
       when (
-        RegNext(stallIo.nextValid)
+        RegNext(
+          stallIo.nextValid,
+          init=False
+        )
         && stallIo.ready
       ) {
+        //stallIo.nextValid := False
         rSeenStallIoFire := True
         myD2hBus.payload := stallIo.recvData
         myD2hBus.valid := True
