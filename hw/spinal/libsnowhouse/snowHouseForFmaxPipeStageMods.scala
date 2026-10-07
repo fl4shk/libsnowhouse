@@ -3966,9 +3966,9 @@ case class SnowHouseForFmaxPipeStageWriteBack(
       )
       if (cfg.havePsWbMultiCycleStall) (
         temp
-        && !myFwdWbPayload(0).instrCnt.myPsExMultiCycleBubble.last
       ) else (
         temp
+        && !myFwdWbPayload(0).instrCnt.myPsExMultiCycleBubble.last
       )
     }
     myFwdWbFifo.io.push.payload.instrCnt := (
@@ -4522,7 +4522,8 @@ case class SnowHouseForFmaxPipeStageWriteBack(
               //1 << myNonFwdWbPayload(1).splitOp.multiCycleOpKind.getWidth
               1 << myNonFwdWbPayload(1).splitOp.multiCycleOpGroup.getWidth
             )
-            | groupIdx
+            | (1 << groupIdx)
+            // TODO: implement one-hot `groupIdx`
           ) {
             def multiCycleD2hBus = io.multiCycleD2hBusVec(groupIdx)
             multiCycleD2hBus.ready := True
