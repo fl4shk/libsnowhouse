@@ -3549,9 +3549,12 @@ case class SnowHouseRiscv32Mul(
   )
 
   switch (
-    RegNext(
-      multiCycleBus.nextValid,
-      init=False,
+    (
+      RegNext(
+        multiCycleBus.nextValid,
+        init=False,
+      )
+      && !multiCycleBus.ready
     )
     ## myHistValidMulhu.last
     ## myHistValidMulh.last
