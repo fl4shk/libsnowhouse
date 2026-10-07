@@ -4006,10 +4006,10 @@ case class SnowHouseRiscv32MultiCycleInstrArea(
   )
   if (myBridge != null) {
     for (idx <- 0 until cfg.multiCycleOpInfoMap.view.size) {
-      myBridge.io.multiCycleH2dBusVec(idx) << (
+      myBridge.io.multiCycleH2dBusVec(idx) <-/< (
         cpuIo.multiCycleH2dBusVec(idx)
       )
-      cpuIo.multiCycleD2hBusVec(idx) << (
+      cpuIo.multiCycleD2hBusVec(idx) <-/< (
         myBridge.io.multiCycleD2hBusVec(idx)
       )
     }
