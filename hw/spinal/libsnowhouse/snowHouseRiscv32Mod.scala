@@ -2331,7 +2331,7 @@ case class SnowHouseRiscv32Divmod(
   val divmodFixed = LongDivMultiCycle(
     mainWidth=48,
     denomWidth=48,
-    chunkWidth=4,//2,
+    chunkWidth=3,//4,//2,
     signedReset=1
   )
 
