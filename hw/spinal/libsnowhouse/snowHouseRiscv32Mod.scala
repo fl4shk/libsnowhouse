@@ -3449,18 +3449,28 @@ case class SnowHouseRiscv32Mul(
 
   def myFullProductOutpRangeHi = 63 downto 32
   def myFullProductOutpRangeFixed = 47 downto 16
-  val myHistValidMulhu = History[Bool](
-    that=(
-      RegNext(
-        (
-          multiCycleBus.nextValid
-          && multiCycleBus.sendData.kind === 0x1
-        ),
+
+  val rValidMulhu = (
+    RegNext(
+      (
+        multiCycleBus.nextValid
+        && multiCycleBus.sendData.kind === 0x1
       )
-    ),
-    length=fullProductNumPipeStages,
-    init=False
+    )
   )
+
+  //val myHistValidMulhu = History[Bool](
+  //  that=(
+  //    RegNext(
+  //      (
+  //        multiCycleBus.nextValid
+  //        && multiCycleBus.sendData.kind === 0x1
+  //      ),
+  //    )
+  //  ),
+  //  length=fullProductNumPipeStages,
+  //  init=False
+  //)
   val myHistMulhu = History[UInt](
     that=(
       RegNext(
@@ -3471,18 +3481,26 @@ case class SnowHouseRiscv32Mul(
   )
 
 
-  val myHistValidMulh = History[Bool](
-    that=(
-      RegNext(
-        (
-          multiCycleBus.nextValid
-          && multiCycleBus.sendData.kind === 0x2
-        ),
+  val rValidMulh = (
+    RegNext(
+      (
+        multiCycleBus.nextValid
+        && multiCycleBus.sendData.kind === 0x2
       )
-    ),
-    length=fullProductNumPipeStages,
-    init=False
+    )
   )
+  //val myHistValidMulh = History[Bool](
+  //  that=(
+  //    RegNext(
+  //      (
+  //        multiCycleBus.nextValid
+  //        && multiCycleBus.sendData.kind === 0x2
+  //      ),
+  //    )
+  //  ),
+  //  length=fullProductNumPipeStages,
+  //  init=False
+  //)
   val myHistMulh = History[SInt](
     that=(
       RegNext(
@@ -3493,18 +3511,27 @@ case class SnowHouseRiscv32Mul(
     length=fullProductNumPipeStages,
   )
 
-  val myHistValidMulhsu = History[Bool](
-    that=(
-      RegNext(
-        (
-          multiCycleBus.nextValid
-          && multiCycleBus.sendData.kind === 0x3
-        ),
+  val rValidMulhsu = (
+    RegNext(
+      (
+        multiCycleBus.nextValid
+        && multiCycleBus.sendData.kind === 0x3
       )
-    ),
-    length=fullProductNumPipeStages,
-    init=False
+    )
   )
+
+  //val myHistValidMulhsu = History[Bool](
+  //  that=(
+  //    RegNext(
+  //      (
+  //        multiCycleBus.nextValid
+  //        && multiCycleBus.sendData.kind === 0x3
+  //      ),
+  //    )
+  //  ),
+  //  length=fullProductNumPipeStages,
+  //  init=False
+  //)
   val myHistMulhsu = History[UInt](
     that=(
       RegNext(
@@ -3525,17 +3552,24 @@ case class SnowHouseRiscv32Mul(
     length=fullProductNumPipeStages,
   )
 
-  val myHistValidFixedImul = History[Bool](
-    that=(
-      RegNext(
-        (
-          multiCycleBus.nextValid
-          && multiCycleBus.sendData.kind === 0x4
-        ),
-      )
-    ),
-    length=fullProductNumPipeStages,
-    init=False
+  //val myHistValidFixedImul = History[Bool](
+  //  that=(
+  //    RegNext(
+  //      (
+  //        multiCycleBus.nextValid
+  //        && multiCycleBus.sendData.kind === 0x4
+  //      ),
+  //    )
+  //  ),
+  //  length=fullProductNumPipeStages,
+  //  init=False
+  //)
+
+  val rValidFixedImul = (
+    RegNext(
+      multiCycleBus.nextValid
+      && multiCycleBus.sendData.kind === 0x4
+    )
   )
 
   val myHistFixedImul = History[SInt](
@@ -3549,31 +3583,32 @@ case class SnowHouseRiscv32Mul(
   )
 
   switch (
-    (
-      RegNext(
-        multiCycleBus.nextValid,
-        init=False,
-      )
-      && !multiCycleBus.ready
-    )
-    ## myHistValidMulhu.last
-    ## myHistValidMulh.last
-    ## myHistValidMulhsu.last
-    ## myHistValidFixedImul.last
+    //(
+    //  RegNext(
+    //    multiCycleBus.nextValid,
+    //    init=False,
+    //  )
+    //  && !multiCycleBus.ready
+    //)
+    //## 
+    rValidMulhu//myHistValidMulhu.last
+    ## rValidMulh//myHistValidMulh.last
+    ## rValidMulhsu//myHistValidMulhsu.last
+    ## rValidFixedImul//myHistValidFixedImul.last
   ) {
-    is (M"11---") {
+    is (M"1---") {
       dstVec(0) := myHistMulhu.last
       multiCycleBus.ready := True
     }
-    is (M"101--") {
+    is (M"01--") {
       dstVec(0) := myHistMulh.last.asUInt
       multiCycleBus.ready := True
     }
-    is (M"1001-") {
+    is (M"001-") {
       dstVec(0) := myHistMulhsu.last
       multiCycleBus.ready := True
     }
-    is (M"10001") {
+    is (M"0001") {
       dstVec(0) := myHistFixedImul.last.asUInt
       multiCycleBus.ready := True
     }
