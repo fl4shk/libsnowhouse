@@ -937,16 +937,16 @@ object Riscv32OpInfoMap {
     )
   )
   opInfoMap += (
-    Rv32UType.Op.AuipcRdImm31Downto12 -> OpInfo.mkMultiCycle(
+    Rv32UType.Op.AuipcRdImm31Downto12 -> OpInfo.mkAlu/*mkMultiCycle*/(
       dstArr=Array[DstKind](DstKind.Gpr),
       srcArr=Array[SrcKind](SrcKind.Pc, SrcKind.Imm(/*Some(true)*/)),
-      //aluOp=(
-      //  AluOpKind.Add
-      //  //AluOpKind.LcvAlu(LcvAluDel1InpOpEnum.ADD)
-      //),
-      multiCycleOp=(
-        MultiCycleOpKind.AddRaPcImm
-      )
+      aluOp=(
+        AluOpKind.Add
+        //AluOpKind.LcvAlu(LcvAluDel1InpOpEnum.ADD)
+      ),
+      //multiCycleOp=(
+      //  MultiCycleOpKind.AddRaPcImm
+      //)
     )
   )
 

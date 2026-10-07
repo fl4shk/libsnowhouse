@@ -391,7 +391,7 @@ case class SnowHouseSubConfig(
       isIcache=true,
     )
   )
-  def myLcvBusSrcWidth = 5//4//5//2//5//2
+  def myLcvBusSrcWidth = 6//5//4//5//2//5//2
   val lcvIbusMainCfg = (
     LcvBusMainConfig(
       dataWidth=(
@@ -2018,9 +2018,15 @@ case class SnowHouseSplitOp(
     //  (1 << nonMultiCycleOp.getWidth) - 1
     //)
     if (!cfg.allAluOpsUseLcvAluDel1) {
-      cpyCpyuiAluNonShiftOp := (
+      println(
+        s"setToDefault(): ${cpyCpyuiAluNonShiftOp.getWidth}"
+      )
+      val temp = (
         //(1 << cpyCpyuiAluNonShiftOp.getWidth) - 1
-        1 << (cpyCpyuiAluNonShiftOp.getWidth - 1)
+        1.toLong << (cpyCpyuiAluNonShiftOp.getWidth.toLong - 1.toLong)
+      )
+      cpyCpyuiAluNonShiftOp := (
+        temp
       )
     } else {
       cpyCpyuiOp := (
