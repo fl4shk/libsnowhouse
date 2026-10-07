@@ -3450,22 +3450,23 @@ case class SnowHouseRiscv32Mul(
   def myFullProductOutpRangeHi = 63 downto 32
   def myFullProductOutpRangeFixed = 47 downto 16
 
-  val rValidMulhu = (
-    RegNext(
-      (
-        multiCycleBus.nextValid
-        && multiCycleBus.sendData.kind === 0x1
-      )
-    )
-  )
+  //val rValidMulhu = Reg(Bool(), init=False)
+  //when (
+  //  multiCycleBus.nextValid
+  //  && multiCycleBus.sendData.kind === 0x1
+  //) {
+  //  rValidMulhu := False
+  //}
 
   val myHistValidMulhu = History[Bool](
     that=(
       RegNext(
-        (
-          multiCycleBus.nextValid
-          && multiCycleBus.sendData.kind === 0x1
-        ),
+        rose(
+          (
+            multiCycleBus.nextValid
+            && multiCycleBus.sendData.kind === 0x1
+          )
+        )
       )
     ),
     length=fullProductNumPipeStages,
@@ -3481,18 +3482,18 @@ case class SnowHouseRiscv32Mul(
   )
 
 
-  val rValidMulh = (
-    RegNext(
-      (
-        multiCycleBus.nextValid
-        && multiCycleBus.sendData.kind === 0x2
-      )
-    )
-  )
+  //val rValidMulh = (
+  //  RegNext(
+  //    (
+  //      multiCycleBus.nextValid
+  //      && multiCycleBus.sendData.kind === 0x2
+  //    )
+  //  )
+  //)
   val myHistValidMulh = History[Bool](
     that=(
       RegNext(
-        (
+        rose(
           multiCycleBus.nextValid
           && multiCycleBus.sendData.kind === 0x2
         ),
@@ -3511,19 +3512,19 @@ case class SnowHouseRiscv32Mul(
     length=fullProductNumPipeStages,
   )
 
-  val rValidMulhsu = (
-    RegNext(
-      (
-        multiCycleBus.nextValid
-        && multiCycleBus.sendData.kind === 0x3
-      )
-    )
-  )
+  //val rValidMulhsu = (
+  //  RegNext(
+  //    (
+  //      multiCycleBus.nextValid
+  //      && multiCycleBus.sendData.kind === 0x3
+  //    )
+  //  )
+  //)
 
   val myHistValidMulhsu = History[Bool](
     that=(
       RegNext(
-        (
+        rose(
           multiCycleBus.nextValid
           && multiCycleBus.sendData.kind === 0x3
         ),
@@ -3555,7 +3556,7 @@ case class SnowHouseRiscv32Mul(
   val myHistValidFixedImul = History[Bool](
     that=(
       RegNext(
-        (
+        rose(
           multiCycleBus.nextValid
           && multiCycleBus.sendData.kind === 0x4
         ),
@@ -3565,12 +3566,12 @@ case class SnowHouseRiscv32Mul(
     init=False
   )
 
-  val rValidFixedImul = (
-    RegNext(
-      multiCycleBus.nextValid
-      && multiCycleBus.sendData.kind === 0x4
-    )
-  )
+  //val rValidFixedImul = (
+  //  RegNext(
+  //    multiCycleBus.nextValid
+  //    && multiCycleBus.sendData.kind === 0x4
+  //  )
+  //)
 
   val myHistFixedImul = History[SInt](
     that=(
@@ -3591,10 +3592,10 @@ case class SnowHouseRiscv32Mul(
     //  && !multiCycleBus.ready
     //)
     //## 
-    (rValidMulhu && myHistValidMulhu.last)
-    ## (rValidMulh && myHistValidMulh.last)
-    ## (rValidMulhsu && myHistValidMulhsu.last)
-    ## (rValidFixedImul && myHistValidFixedImul.last)
+    myHistValidMulhu.last
+    ## myHistValidMulh.last
+    ## myHistValidMulhsu.last
+    ## myHistValidFixedImul.last
   ) {
     is (M"1---") {
       dstVec(0) := myHistMulhu.last
@@ -3614,10 +3615,6 @@ case class SnowHouseRiscv32Mul(
     }
     default {
     }
-  }
-
-  when (multiCycleBus.ready) {
-    multiCycleBus.ready := False
   }
 
   //switch (rState) {
