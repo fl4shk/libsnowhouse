@@ -1478,7 +1478,7 @@ object AluOpKind {
       val tempLeft = Cat(False, Cat(left)(width - 1 downto 0)).asUInt
       val tempRight = Cat(False, Cat(right)(width - 1 downto 0)).asUInt
       //val tempCarryIn = Cat(U(s"${width}'d0"), True).asUInt
-      tempSum := tempLeft + tempRight //+ tempCarryIn
+      tempSum := tempLeft.resize(width) + tempRight.resize(width) //+ tempCarryIn
       ret.main := tempSum.resized
       ret.leftMsb := left.msb
       ret.rightMsb := right.msb
