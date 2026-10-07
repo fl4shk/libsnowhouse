@@ -3616,6 +3616,10 @@ case class SnowHouseRiscv32Mul(
     }
   }
 
+  when (multiCycleBus.ready) {
+    multiCycleBus.ready := False
+  }
+
   //switch (rState) {
   //  is (State.IDLE_OR_MUL) {
   //    switch (
