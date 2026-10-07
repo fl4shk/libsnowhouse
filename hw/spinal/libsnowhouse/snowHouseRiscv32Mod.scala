@@ -3399,7 +3399,7 @@ case class SnowHouseRiscv32Mul(
 
   def srcVec = multiCycleBus.sendData.srcVec
   def dstVec = multiCycleBus.recvData.dstVec
-  multiCycleBus.ready := False
+  //multiCycleBus.ready := False
 
   //object State
   //extends SpinalEnum(defaultEncoding=binaryOneHot) {
@@ -3419,12 +3419,17 @@ case class SnowHouseRiscv32Mul(
   //  Reg(State())
   //  init(State.IDLE_OR_MUL)
   //)
-  dstVec(0) := (
-    RegNext(
-      dstVec(0),
-      init=dstVec(0).getZero
-    )
-  )
+  //dstVec(0) := (
+  //  RegNext(
+  //    dstVec(0),
+  //    init=dstVec(0).getZero
+  //  )
+  //)
+
+  //val rReady = Reg(Bool(), init=False)
+  multiCycleBus.ready.setAsReg() init(False)
+  multiCycleBus.ready := False
+  dstVec(0).setAsReg() init(dstVec(0).getZero)
 
   when (
     RegNext(multiCycleBus.nextValid, init=False)
@@ -3432,7 +3437,8 @@ case class SnowHouseRiscv32Mul(
     && RegNext(!multiCycleBus.sendData.kind.orR)
   ) {
     dstVec(0) := (
-      RegNext(
+      //RegNext
+      (
         srcVec(0) * srcVec(1)
       ).resize(dstVec(0).getWidth)
     )
