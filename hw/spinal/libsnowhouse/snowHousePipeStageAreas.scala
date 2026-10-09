@@ -1010,21 +1010,22 @@ case class SnowHousePipeStageInstrFetch(
   val nextSrc = cloneOf(myH2dPushStm.src)
   val rSrc = (
     RegNext(
-      nextSrc,
-      init=nextSrc.getZero,
+      nextSrc.asSInt,
+      //init=nextSrc.getZero,
     )
+    init(-2)
   )
   val tempSrcRnw = (
     RegNextWhen(
-      next=rSrc.asSInt,
+      next=rSrc,
       cond=myH2dPushStm.fire,
     )
     init(-2)
   )
-  nextSrc := rSrc
-  myH2dPushStm.src := rSrc
+  nextSrc := rSrc.asUInt
+  myH2dPushStm.src := rSrc.asUInt
   when (myH2dPushStm.fire) {
-    nextSrc := rSrc + 1
+    nextSrc := rSrc.asUInt + 1
   } otherwise {
     myH2dPushStm.src := tempSrcRnw.asUInt
   }
