@@ -1149,7 +1149,11 @@ case class SnowHousePipeStageInstrFetch(
   myBusH2dValid := (
     //rIbusTempRamInitCnt.msb
     //True
-    !ClockDomain.current.isResetActive
+    //!ClockDomain.current.isResetActive
+    RegNext(
+      True,
+      init=False
+    )
   )
   val myIbusRegPcInfo = MyIbusRegPcInfo(cfg=cfg)
   def myD2hPopStm = lcvIbus.d2hBus
