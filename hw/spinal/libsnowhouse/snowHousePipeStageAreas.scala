@@ -1148,7 +1148,8 @@ case class SnowHousePipeStageInstrFetch(
   // (such as FL4SHK's own `LcvBusMemSlowUnlessBurst` module)
   myBusH2dValid := (
     //rIbusTempRamInitCnt.msb
-    True
+    //True
+    !ClockDomain.current.isResetActive
   )
   val myIbusRegPcInfo = MyIbusRegPcInfo(cfg=cfg)
   def myD2hPopStm = lcvIbus.d2hBus
