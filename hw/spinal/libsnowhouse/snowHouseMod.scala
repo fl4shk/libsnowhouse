@@ -2239,6 +2239,23 @@ private[libsnowhouse] case class SnowHouseForFmax(
     psPreFwd.io.up <-/< psId.io.down
   }
   psId.io.up << psIf.io.down
+
+  //val myPsIfDownFifo = (
+  //  // tiny FIFO to allow "capturing" the output of `psIf` for the purposes
+  //  // of solving the issue of `lcvIbus` sometimes not driving
+  //  // `psIf.io.down.valid`
+
+  //  StreamFifo(
+  //    dataType=cloneOf(psIf.io.down.payload),
+  //    depth=2,
+  //    latency=2,
+  //    forFMax=true,
+  //  )
+  //)
+
+  //myPsIfDownFifo.io.push << psIf.io.down
+  //psId.io.up << myPsIfDownFifo.io.pop 
+
   //psPreFwd.io.up << psId.io.down
   //psEx.io.up << psPreFwd.io.down
 

@@ -1071,69 +1071,110 @@ case class SnowHousePipeStageInstrFetch(
       MyIbusRegPcInfo(cfg=cfg)
     )
   }
-  val myIbusTempRam = {
-    val depth = 1 << cfg.subCfg.myLcvBusSrcWidth
-    //val initBigtInt = Array(
+
+  def myIbusTempRamDepth = (
+    //1 << (cfg.subCfg.myLcvBusSrcWidth + 2)
+    1 << cfg.subCfg.myLcvBusSrcWidth
+  )
+
+  val rH2dTempRamIdx = (
+    Reg(UInt(log2Up(myIbusTempRamDepth) bits))
+    init(0x0)
+  )
+  val rD2hTempRamIdx = (
+    Reg(UInt(log2Up(myIbusTempRamDepth) bits))
+    init(0x8)
+  )
+
+  def myIbusTempRamSetWordFunc(
+    outp: MyIbusTempPayload,
+    inp: MyIbusTempPayload,
+    word: MyIbusTempPayload,
+    //upIsFiring: Bool,
+    //myExternalInpCond: Bool,
+    //wrPulseVec: Vec[Flow[
+    //  PipeSimpleDualPortMemDrivePayload[MyIbusTempPayload]
+    //]],
+  ): Unit = {
+    outp.psIfRegPcSetItCnt := word.psIfRegPcSetItCnt
+    outp.myIbusRegPcInfo := word.myIbusRegPcInfo
+    outp.instr.allowOverride
+    outp.instr := inp.instr
+  }
+
+  val myIbusTempRamEtc = {
+    val depth = myIbusTempRamDepth
+
+    //val initBigInt = Array(
     //  Array.fill(depth)(
     //    BigInt(0)
     //  ).toSeq
     //).toSeq
-    def mySetWordFunc(
-      outp: MyIbusTempPayload,
-      inp: MyIbusTempPayload,
-      word: MyIbusTempPayload,
-      upIsFiring: Bool,
-      myExternalInpCond: Bool,
-      wrPulseVec: Vec[Flow[
-        PipeSimpleDualPortMemDrivePayload[MyIbusTempPayload]
-      ]],
-    ): Unit = {
-      outp.psIfRegPcSetItCnt := word.psIfRegPcSetItCnt
-      outp.myIbusRegPcInfo := word.myIbusRegPcInfo
-      outp.instr.allowOverride
-      outp.instr := inp.instr
-    }
-    val ramCfg = WrPulseRdPipeRamConfig(
-      modType=(
-        MyIbusTempPayload(hasInstr=true)
-      ),
-      wordType=MyIbusTempPayload(hasInstr=false),
-      wordCount=depth,
-      //pipeName="pipeStageIf",
-      setWordFunc=mySetWordFunc,
-      optRdLatency=(
-        //1
-        2
-        //3
-        //4
-      ),
-      optWrHistLength=(
-        //1
-        2
-        //3
-        //4
-      ),
-      initBigInt=(
-        //Some(initBigInt)
-        Some({
-          val myArr = new ArrayBuffer[ArrayBuffer[BigInt]]()
-          myArr += new ArrayBuffer[BigInt]()
-          for (idx <- 0 until depth) {
-            myArr.last += BigInt(0)
-          }
-          myArr
-        })
-      ),
-      arrRamStyleAltera=(
-        //"no_rw_check, M10K",//"MLAB",//"M10K"
-        "no_rw_check, MLAB",//"MLAB",//"M10K"
-      ),
-      arrRamStyleXilinx=(
-        //"block"
-        "distributed"
-      ),
+
+    //def mySetWordFunc(
+    //  outp: MyIbusTempPayload,
+    //  inp: MyIbusTempPayload,
+    //  word: MyIbusTempPayload,
+    //  upIsFiring: Bool,
+    //  myExternalInpCond: Bool,
+    //  wrPulseVec: Vec[Flow[
+    //    PipeSimpleDualPortMemDrivePayload[MyIbusTempPayload]
+    //  ]],
+    //): Unit = {
+    //  outp.psIfRegPcSetItCnt := word.psIfRegPcSetItCnt
+    //  outp.myIbusRegPcInfo := word.myIbusRegPcInfo
+    //  outp.instr.allowOverride
+    //  outp.instr := inp.instr
+    //}
+    //val ramCfg = WrPulseRdPipeRamConfig(
+    //  modType=(
+    //    MyIbusTempPayload(hasInstr=true)
+    //  ),
+    //  wordType=MyIbusTempPayload(hasInstr=false),
+    //  wordCount=depth,
+    //  //pipeName="pipeStageIf",
+    //  setWordFunc=mySetWordFunc,
+    //  optRdLatency=(
+    //    //1
+    //    2
+    //    //3
+    //    //4
+    //  ),
+    //  optWrHistLength=(
+    //    //1
+    //    2
+    //    //3
+    //    //4
+    //  ),
+    //  initBigInt=(
+    //    //Some(initBigInt)
+    //    Some({
+    //      val myArr = new ArrayBuffer[ArrayBuffer[BigInt]]()
+    //      myArr += new ArrayBuffer[BigInt]()
+    //      for (idx <- 0 until depth) {
+    //        myArr.last += BigInt(0)
+    //      }
+    //      myArr
+    //    })
+    //  ),
+    //  arrRamStyleAltera=(
+    //    //"no_rw_check, M10K",//"MLAB",//"M10K"
+    //    "no_rw_check, MLAB",//"MLAB",//"M10K"
+    //  ),
+    //  arrRamStyleXilinx=(
+    //    //"block"
+    //    "distributed"
+    //  ),
+    //)
+    //WrPulseRdPipeRam(cfg=ramCfg)
+
+
+    StreamFifo(
+      dataType=MyIbusTempPayload(hasInstr=false),
+      depth=depth,
+      latency=2,
+      forFMax=true,
     )
-    WrPulseRdPipeRam(cfg=ramCfg)
   }
 
   val rIbusTempRamInitCnt = {
@@ -1156,18 +1197,44 @@ case class SnowHousePipeStageInstrFetch(
     //)
     False
   )
+  val rSeenFirstBusH2dFire = Reg(Bool(), init=False)
   when (
     RegNext(
       True,
       init=False
     )
+    //&& (
+    //  rH2dTempRamIdx =/= rD2hTempRamIdx
+    //)
   ) {
     myBusH2dValid := True
   }
+
+  //when (
+  //  myH2dPushStm.fire
+  //) {
+  //  rH2dTempRamIdx := rH2dTempRamIdx + 1
+  //}
+
   val myIbusRegPcInfo = MyIbusRegPcInfo(cfg=cfg)
   def myD2hPopStm = lcvIbus.d2hBus
+
+  val myIbusTempFork = StreamFork(
+    input=myH2dPushStm,
+    portCount=2,
+    synchronous=true,
+  )
+
+  val myIbusTempJoin = StreamJoin(
+    myD2hPopStm,
+    myIbusTempRamEtc.io.pop
+  )
   //when (rIbusTempRamInitCnt.msb) {
-    cIf.up.driveFrom(myIbusTempRam.io.rdDataPipe)(
+    cIf.up.driveFrom(
+      //myIbusTempRamEtc.io.rdDataPipe
+      //myIbusTempRamEtc.io.pop
+      myIbusTempJoin
+    )(
       con=(node, payload) => {
         node(pIf) := node(pIf).getZero
         node(pIf).encInstr.payload.allowOverride
@@ -1178,30 +1245,45 @@ case class SnowHousePipeStageInstrFetch(
         node(pIf).branchPredictTkn.allowOverride
         node(pIf).branchTgtBufElem.allowOverride
 
-        node(pIf).encInstr.payload := payload.instr
-        node(pIf).psIfRegPcSetItCnt := payload.psIfRegPcSetItCnt
-        node(pIf).regPc := payload.myIbusRegPcInfo.regPc
+        node(pIf).encInstr.payload := payload._1.data.resize(
+          node(pIf).encInstr.payload.getWidth 
+        ) //payload.instr
+        node(pIf).psIfRegPcSetItCnt := payload._2.psIfRegPcSetItCnt
+        node(pIf).regPc := payload._2.myIbusRegPcInfo.regPc
         node(pIf).myRegPcVec.foreach(item => {
-          item := payload.myIbusRegPcInfo.regPc
+          item := payload._2.myIbusRegPcInfo.regPc
         })
         node(pIf).branchPredictTkn := (
-          payload.myIbusRegPcInfo.branchPredictTkn
+          payload._2.myIbusRegPcInfo.branchPredictTkn
           //True
         )
         node(pIf).branchTgtBufElem := (
-          payload.myIbusRegPcInfo.branchTgtBufElem
+          payload._2.myIbusRegPcInfo.branchTgtBufElem
         )
       }
     )
 
-    myIbusTempRam.io.wrPulse.valid := myH2dPushStm.fire
-    myIbusTempRam.io.wrPulse.addr := myH2dPushStm.src //+ 1
-    myIbusTempRam.io.wrPulse.data.psIfRegPcSetItCnt := (
-      myRegPcSetItCnt
+    //myIbusTempRamEtc.io.wrPulse.valid := myH2dPushStm.fire
+    //myIbusTempRamEtc.io.wrPulse.addr := myH2dPushStm.src //+ 1
+    //myIbusTempRamEtc.io.wrPulse.data.psIfRegPcSetItCnt := (
+    //  myRegPcSetItCnt
+    //)
+    //myIbusTempRamEtc.io.wrPulse.data.myIbusRegPcInfo := (
+    //  myIbusRegPcInfo
+    //)
+    myIbusTempFork.head.translateInto(
+      myIbusTempRamEtc.io.push
+    )(
+      dataAssignment=(outp, inp) => {
+        outp.psIfRegPcSetItCnt := (
+          myRegPcSetItCnt
+        )
+        outp.myIbusRegPcInfo := (
+          myIbusRegPcInfo
+        )
+      }
     )
-    myIbusTempRam.io.wrPulse.data.myIbusRegPcInfo := (
-      myIbusRegPcInfo
-    )
+
   //} otherwise {
   //  cIf.up.valid := False
   //  cIf.up(pIf) := cIf.up(pIf).getZero
@@ -1216,16 +1298,18 @@ case class SnowHousePipeStageInstrFetch(
 
   //  rIbusTempRamInitCnt := rIbusTempRamInitCnt + 1
   //}
-  lcvIbus.h2dBus << myH2dPushStm
-  myD2hPopStm.translateInto(myIbusTempRam.io.rdAddrPipe)(
-    dataAssignment=(outp, inp) => {
-      outp := outp.getZero
-      outp.data.instr.allowOverride
-      outp.data.instr := inp.data.resize(outp.data.instr.getWidth)
-      outp.addr.allowOverride
-      outp.addr := inp.src
-    }
-  )
+  //lcvIbus.h2dBus << myH2dPushStm
+  lcvIbus.h2dBus << myIbusTempFork.last
+
+  //myD2hPopStm.translateInto(myIbusTempRamEtc.io.rdAddrPipe)(
+  //  dataAssignment=(outp, inp) => {
+  //    outp := outp.getZero
+  //    outp.data.instr.allowOverride
+  //    outp.data.instr := inp.data.resize(outp.data.instr.getWidth)
+  //    outp.addr.allowOverride
+  //    outp.addr := inp.src
+  //  }
+  //)
 
   val stickyExSetPc = {
     val temp = (
