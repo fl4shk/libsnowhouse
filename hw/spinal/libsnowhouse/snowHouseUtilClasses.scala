@@ -331,7 +331,10 @@ case class SnowHouseSubConfig(
   icacheLineAttrsMemRamStyleAltera: String="no_rw_check, MLAB",
   icacheLineAttrsMemRamStyleXilinx: String="auto",
   icacheBusD2hFifoLatency: Int=0,
-  icachePrefetchNumLinesAhead: Option[Int]=Some(16),
+  icachePrefetchNumLinesAhead: Option[Int]=(
+    //Some(16)
+    None
+  ),
   //--------
   haveDcache: Boolean=true,
   dcacheDepthWords: Int=(
@@ -348,7 +351,10 @@ case class SnowHouseSubConfig(
   dcacheLineAttrsMemRamStyleAltera: String="no_rw_check, MLAB",
   dcacheLineAttrsMemRamStyleXilinx: String="auto",
   dcacheBusD2hFifoLatency: Int=0,
-  dcachePrefetchNumLinesAhead: Option[Int]=Some(2),
+  dcachePrefetchNumLinesAhead: Option[Int]=(
+    //Some(2)
+    None
+  ),
   //--------
   totalNumBusHosts: Int=2,
   optCacheBusSrcWidth: Option[Int]=None,

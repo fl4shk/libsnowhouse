@@ -1944,7 +1944,8 @@ case class SnowHouseRiscv32Config(
     0
   ),
   icachePrefetchNumLinesAhead: Option[Int]=(
-    Some(2),
+    //Some(2),
+    None
   ),
   dcacheLineWordMemRamStyleAltera: String=(
     "no_rw_check, M10K"
@@ -1964,7 +1965,8 @@ case class SnowHouseRiscv32Config(
     0
   ),
   dcachePrefetchNumLinesAhead: Option[Int]=(
-    Some(2),
+    //Some(2),
+    None
   ),
   branchTgtBufSizeLog2: Int=(
     //log2Up(128)
