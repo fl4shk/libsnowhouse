@@ -448,6 +448,16 @@ case class SnowHouseSubConfig(
       prefetchNumLinesAhead=(
         icachePrefetchNumLinesAhead
       ),
+      dbg=(
+        icachePrefetchNumLinesAhead match {
+          case Some(_) => (
+            true
+          )
+          case None => (
+            false
+          )
+        }
+      )
     )
   )
   val dcacheCfg = (
@@ -502,6 +512,16 @@ case class SnowHouseSubConfig(
       prefetchNumLinesAhead=(
         dcachePrefetchNumLinesAhead
       ),
+      dbg=(
+        dcachePrefetchNumLinesAhead match {
+          case Some(_) => (
+            true
+          )
+          case None => (
+            false
+          )
+        }
+      )
     )
   )
   val cacheBusSrcWidth = (
