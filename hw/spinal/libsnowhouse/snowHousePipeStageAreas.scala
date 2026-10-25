@@ -3070,9 +3070,9 @@ case class SnowHousePipeStageScoreboardCheck(
                 (
                   !(
                     pop(otherIdx).splitOp.opIsMemAccess
-                    && pop(
-                      otherIdx //+ kdx
-                    ).splitOp.scoreboardOpCanBeOooIssued(1)
+                    //&& pop(
+                    //  otherIdx //+ kdx
+                    //).splitOp.scoreboardOpCanBeOooIssued(1)
                     && pop(otherIdx + kdx).splitOp.opIsMemAccess
                     && (
                       (
