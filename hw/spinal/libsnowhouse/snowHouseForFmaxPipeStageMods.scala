@@ -4822,10 +4822,12 @@ case class SnowHouseForFmaxPipeStageWriteBack(
       //  SnowHouseForFmaxPsWbReorderBufPayload(cfg=cfg)
       //)
       val myTempNonFwdStm = cloneOf(myNonFwdCommitFrontStm)
-      myTempNonFwdStm <-< myNonFwdCommitFrontStm
+      //myTempNonFwdStm <-< myNonFwdCommitFrontStm
+      myTempNonFwdStm << myNonFwdCommitFrontStm
 
       val myTempFwdStm = cloneOf(myFwdCommitFrontStm)
-      myTempFwdStm <-< myFwdCommitFrontStm
+      //myTempFwdStm <-< myFwdCommitFrontStm
+      myTempFwdStm << myFwdCommitFrontStm
       StreamArbiterFactory.lowerFirst.noLock.on(
         //myCommitFrontStmVec.last
         Vec(
@@ -5163,7 +5165,10 @@ case class SnowHouseForFmaxPipeStageWriteBack(
   if (cfg.optScoreboard) {
     for (idx <- 0 until myCommitTrueFinalOutpStmVec.size) {
       if (idx == 0) {
-        myCommitTrueFinalOutpStmVec(idx) <-< (
+        //myCommitTrueFinalOutpStmVec(idx) <-< (
+        //  myCommitAlmostFinalBackOutpStm
+        //)
+        myCommitTrueFinalOutpStmVec(idx) << (
           myCommitAlmostFinalBackOutpStm
         )
       } else {
