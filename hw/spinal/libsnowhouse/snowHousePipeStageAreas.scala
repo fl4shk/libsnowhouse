@@ -3059,30 +3059,35 @@ case class SnowHousePipeStageScoreboardCheck(
 
           for (kdx <- 0 until tempSize) {
             myMemAccessCheckVec(kdx) := (
-              !pop(otherIdx).fire
-              && pop(otherIdx).valid
-              && pop(otherIdx).splitOp.opIsMemAccess
-
-              && !pop(otherIdx + kdx).fire
-              && pop(otherIdx + kdx).valid
-              && pop(otherIdx + kdx).splitOp.opIsMemAccess
-
-              && (
+              Mux(
                 (
-                  pop(
-                    otherIdx
-                  ).inpDecodeExt.last.memAccessKind.asBits(1)
-                  && !pop(
-                    otherIdx + kdx
-                  ).inpDecodeExt.last.memAccessKind.asBits(1)
-                )
-                || (
-                  !pop(
-                    otherIdx
-                  ).inpDecodeExt.last.memAccessKind.asBits(1)
-                  && pop(
-                    otherIdx + kdx
-                  ).inpDecodeExt.last.memAccessKind.asBits(1)
+                  pop(otherIdx).fire
+                  || !pop(otherIdx).valid
+                  || pop(otherIdx + kdx).fire
+                  || !pop(otherIdx + kdx).valid
+                ),
+                False,
+                (
+                  pop(otherIdx).splitOp.opIsMemAccess
+                  && pop(otherIdx + kdx).splitOp.opIsMemAccess
+                  && (
+                    (
+                      pop(
+                        otherIdx
+                      ).inpDecodeExt.last.memAccessKind.asBits(1)
+                      && !pop(
+                        otherIdx + kdx
+                      ).inpDecodeExt.last.memAccessKind.asBits(1)
+                    )
+                    || (
+                      !pop(
+                        otherIdx
+                      ).inpDecodeExt.last.memAccessKind.asBits(1)
+                      && pop(
+                        otherIdx + kdx
+                      ).inpDecodeExt.last.memAccessKind.asBits(1)
+                    )
+                  )
                 )
               )
             )
