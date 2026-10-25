@@ -3083,14 +3083,14 @@ case class SnowHousePipeStageScoreboardCheck(
                           otherIdx + kdx
                         ).inpDecodeExt.last.memAccessKind.asBits(1)
                       )
-                      || (
-                        !pop(
-                          otherIdx
-                        ).inpDecodeExt.last.memAccessKind.asBits(1)
-                        && pop(
-                          otherIdx + kdx
-                        ).inpDecodeExt.last.memAccessKind.asBits(1)
-                      )
+                      //|| (
+                      //  !pop(
+                      //    otherIdx
+                      //  ).inpDecodeExt.last.memAccessKind.asBits(1)
+                      //  && pop(
+                      //    otherIdx + kdx
+                      //  ).inpDecodeExt.last.memAccessKind.asBits(1)
+                      //)
                     )
                   )
                 )
