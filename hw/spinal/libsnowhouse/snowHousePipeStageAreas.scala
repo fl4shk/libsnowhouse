@@ -3068,24 +3068,29 @@ case class SnowHousePipeStageScoreboardCheck(
                 ),
                 False,
                 (
-                  pop(otherIdx).splitOp.opIsMemAccess
-                  && pop(otherIdx + kdx).splitOp.opIsMemAccess
-                  && (
-                    (
-                      pop(
-                        otherIdx
-                      ).inpDecodeExt.last.memAccessKind.asBits(1)
-                      && !pop(
-                        otherIdx + kdx
-                      ).inpDecodeExt.last.memAccessKind.asBits(1)
-                    )
-                    || (
-                      !pop(
-                        otherIdx
-                      ).inpDecodeExt.last.memAccessKind.asBits(1)
-                      && pop(
-                        otherIdx + kdx
-                      ).inpDecodeExt.last.memAccessKind.asBits(1)
+                  !(
+                    pop(otherIdx).splitOp.opIsMemAccess
+                    && pop(
+                      otherIdx + kdx
+                    ).splitOp.scoreboardOpCanBeOooIssued(1)
+                    && pop(otherIdx + kdx).splitOp.opIsMemAccess
+                    && (
+                      (
+                        pop(
+                          otherIdx
+                        ).inpDecodeExt.last.memAccessKind.asBits(1)
+                        && !pop(
+                          otherIdx + kdx
+                        ).inpDecodeExt.last.memAccessKind.asBits(1)
+                      )
+                      || (
+                        !pop(
+                          otherIdx
+                        ).inpDecodeExt.last.memAccessKind.asBits(1)
+                        && pop(
+                          otherIdx + kdx
+                        ).inpDecodeExt.last.memAccessKind.asBits(1)
+                      )
                     )
                   )
                 )
