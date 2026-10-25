@@ -3051,32 +3051,45 @@ case class SnowHousePipeStageScoreboardCheck(
         if (tempSize == 0) (
           myMux
         ) else {
-          val myStoreBeforeLoadCheckVec = Vec.fill(
+          val myMemAccessCheckVec = Vec.fill(
             tempSize
           )(
             Bool()
           )
 
           for (kdx <- 0 until tempSize) {
-            myStoreBeforeLoadCheckVec(kdx) := (
-              pop(
-                otherIdx
-              ).splitOp.opIsMemAccess
-              && !pop(
-                otherIdx
-              ).inpDecodeExt.last.memAccessKind.asBits(1)
+            myMemAccessCheckVec(kdx) := (
+              !pop(otherIdx).fire
+              && pop(otherIdx).valid
+              && pop(otherIdx).splitOp.opIsMemAccess
 
-              && pop(
-                otherIdx + kdx
-              ).splitOp.opIsMemAccess
-              && pop(
-                otherIdx + kdx
-              ).inpDecodeExt.last.memAccessKind.asBits(1)
+              && !pop(otherIdx + kdx).fire
+              && pop(otherIdx + kdx).valid
+              && pop(otherIdx + kdx).splitOp.opIsMemAccess
+
+              && (
+                (
+                  pop(
+                    otherIdx
+                  ).inpDecodeExt.last.memAccessKind.asBits(1)
+                  && !pop(
+                    otherIdx + kdx
+                  ).inpDecodeExt.last.memAccessKind.asBits(1)
+                )
+                || (
+                  !pop(
+                    otherIdx
+                  ).inpDecodeExt.last.memAccessKind.asBits(1)
+                  && pop(
+                    otherIdx + kdx
+                  ).inpDecodeExt.last.memAccessKind.asBits(1)
+                )
+              )
             )
           }
 
           (
-            myStoreBeforeLoadCheckVec.sFindFirst(_ === True)._1
+            myMemAccessCheckVec.sFindFirst(_ === True)._1
             || myMux
           )
         }
