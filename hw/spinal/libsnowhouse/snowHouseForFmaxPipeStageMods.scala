@@ -4849,8 +4849,8 @@ case class SnowHouseForFmaxPipeStageWriteBack(
     cfg.optScoreboard
   ) generate (
     //SnowHouseForFmaxPsWbReorderBuf(cfg=cfg)
-    LcvSimpleReorderBuf(
-      cfg=LcvSimpleReorderBufConfig(
+    LcvLowLatencyReorderBuf(
+      cfg=LcvLowLatencyReorderBufConfig(
         wordType=SnowHouseForFmaxPsWbReorderBufPayload(cfg=cfg),
         reorderBufIdxWidth=(
           cfg.optScoreboardReorderBufWidth
