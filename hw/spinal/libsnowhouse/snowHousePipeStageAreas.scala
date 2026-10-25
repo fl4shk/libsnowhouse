@@ -2504,14 +2504,14 @@ case class SnowHousePipeStageInstrDecode(
         // scheduling OoO branches!
         !upPayload(1).splitOp.haveAnyJmpBrOp()
       )
-      && (
-        // force memory instructions to be in-order (i.e., for MMIO)
-        // perhaps this should actually be an optional thing to check
-        // for?
-        // For some kinds of (probably just embedded) systems, perhaps
-        // this check doesn't need to be done?
-        !upPayload(1).splitOp.opIsMemAccess
-      )
+      //&& (
+      //  // force memory instructions to be in-order (i.e., for MMIO)
+      //  // perhaps this should actually be an optional thing to check
+      //  // for?
+      //  // For some kinds of (probably just embedded) systems, perhaps
+      //  // this check doesn't need to be done?
+      //  !upPayload(1).splitOp.opIsMemAccess
+      //)
     )
 
     upPayload(1).splitOp.scoreboardOpCanBeOooIssued.last := (
