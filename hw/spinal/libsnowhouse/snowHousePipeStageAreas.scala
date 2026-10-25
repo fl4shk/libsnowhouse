@@ -3017,30 +3017,70 @@ case class SnowHousePipeStageScoreboardCheck(
       )
       def mkTempHazardPop(
         otherIdx: Int
-      ) = (
-        Mux(
-          (
-            pop(otherIdx).fire
-            || !pop(otherIdx).valid
-          ),
-          False,
-          (
-            !pop(otherIdx).splitOp.scoreboardOpCanBeOooIssued(1)
-            || (
-              pop(otherIdx).writesGprIdxVec.asBits(myGprRange)
-              & inp.readsGprIdxVec.asBits(myGprRange)
-            ).orR
-            || (
-              pop(otherIdx).writesGprIdxVec.asBits(myGprRange)
-              & inp.writesGprIdxVec.asBits(myGprRange)
-            ).orR
-            || (
-              pop(otherIdx).readsGprIdxVec.asBits(myGprRange)
-              & inp.writesGprIdxVec.asBits(myGprRange)
-            ).orR
+      ) = {
+        //val jdx = otherIdx - myOooRdBufExtraSize
+        val tempSize = myOooRdBufDepth - otherIdx - 1
+        val myMux = (
+          Mux(
+            (
+              (
+                pop(otherIdx).fire
+                || !pop(otherIdx).valid
+              )
+            ),
+            False,
+            (
+              !pop(otherIdx).splitOp.scoreboardOpCanBeOooIssued(1)
+              || (
+                pop(otherIdx).writesGprIdxVec.asBits(myGprRange)
+                & inp.readsGprIdxVec.asBits(myGprRange)
+              ).orR
+              || (
+                pop(otherIdx).writesGprIdxVec.asBits(myGprRange)
+                & inp.writesGprIdxVec.asBits(myGprRange)
+              ).orR
+              || (
+                pop(otherIdx).readsGprIdxVec.asBits(myGprRange)
+                & inp.writesGprIdxVec.asBits(myGprRange)
+              ).orR
+            )
           )
+
         )
-      )
+
+        if (tempSize == 0) (
+          myMux
+        ) else {
+          val myStoreBeforeLoadCheckVec = Vec.fill(
+            tempSize
+          )(
+            Bool()
+          )
+
+          for (kdx <- 0 until tempSize) {
+            myStoreBeforeLoadCheckVec(kdx) := (
+              pop(
+                otherIdx
+              ).splitOp.opIsMemAccess
+              && !pop(
+                otherIdx
+              ).inpDecodeExt.last.memAccessKind.asBits(1)
+
+              && pop(
+                otherIdx + kdx
+              ).splitOp.opIsMemAccess
+              && pop(
+                otherIdx + kdx
+              ).inpDecodeExt.last.memAccessKind.asBits(1)
+            )
+          }
+
+          (
+            myStoreBeforeLoadCheckVec.sFindFirst(_ === True)._1
+            || myMux
+          )
+        }
+      }
       if (idx >= myOooRdBufExtraSize) {
         val myTempHazardPopVec = Vec.fill(
           myOooRdBufWindow
