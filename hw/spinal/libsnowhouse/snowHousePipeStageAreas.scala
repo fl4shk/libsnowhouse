@@ -671,16 +671,18 @@ case class SnowHouseBranchTgtBufSingle(
 
   )
   val myResultValidCmpEqRight = (
-    Cat(
-      io.inpRegPc(
-        //2
-        //0
-        SnowHouseBranchPredictorKind._predictorInpRegPcIdxCmpEq
-      )(cfg.mySrcRegPcCmpEqRangeHi),
-      io.inpRegPc(
-        SnowHouseBranchPredictorKind._predictorInpRegPcIdxCmpEq
-      )(cfg.mySrcRegPcCmpEqRangeLo),
-    ).asUInt
+    RegNext(
+      Cat(
+        io.inpRegPc(
+          //2
+          //0
+          SnowHouseBranchPredictorKind._predictorInpRegPcIdxCmpEq
+        )(cfg.mySrcRegPcCmpEqRangeHi),
+        io.inpRegPc(
+          SnowHouseBranchPredictorKind._predictorInpRegPcIdxCmpEq
+        )(cfg.mySrcRegPcCmpEqRangeLo),
+      ).asUInt
+    )
   )
   io.result.valid := (
     myRdBtbElem.fire
@@ -727,13 +729,14 @@ case class SnowHouseBranchTgtBufSingle(
     tgtValidBuf(rTgtBufWrAddr.head) := True
   }
   switch (
-    (
-      rTgtBufWrEn.head
-      && rTgtBufWrAddr.head === rTgtBufWrAddr.last
-    )
+    //(
+    //  rTgtBufWrEn.head
+    //  && rTgtBufWrAddr.head === rTgtBufWrAddr.last
+    //)
+    ////## 
+    ////rTgtBufWrEn.head
     //## 
-    //rTgtBufWrEn.head
-    ## rTgtBufWrEn.last
+    rTgtBufWrEn.last
     ## RegNext(
       io.psExSetPc.taken.myPsExSetPcValid,
       init=False
@@ -751,8 +754,8 @@ case class SnowHouseBranchTgtBufSingle(
     //}
     is (
       //M"010"
-      //M"10"
-      M"010"
+      M"10"
+      //M"010"
     ) {
       when (tgtBrKindBuf(rTgtBufWrAddr.last).orR) {
         tgtBrKindBuf(rTgtBufWrAddr.last) := (
@@ -781,8 +784,8 @@ case class SnowHouseBranchTgtBufSingle(
     }
     is (
       //M"011"
-      //M"11"
-      M"011"
+      M"11"
+      //M"011"
     ) {
       when ((~tgtBrKindBuf(rTgtBufWrAddr.last)).orR) {
         tgtBrKindBuf(rTgtBufWrAddr.last) := (
@@ -809,11 +812,11 @@ case class SnowHouseBranchTgtBufSingle(
         //)
       }
     }
-    is (
-      M"1--"
-    ) {
-      tgtBrKindBuf(rTgtBufWrAddr.last).lsb := False // even it out
-    }
+    //is (
+    //  M"1--"
+    //) {
+    //  tgtBrKindBuf(rTgtBufWrAddr.last).lsb := False // even it out
+    //}
     default {
     }
   }
