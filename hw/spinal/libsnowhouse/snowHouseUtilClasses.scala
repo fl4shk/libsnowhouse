@@ -573,6 +573,12 @@ sealed trait SnowHouseBranchPredictorKind {
   )
   private[libsnowhouse] def _branchPredictIsGshare: Boolean
   //private[libsnowhouse] def _branchTgtBufNumRdAddrs: Int = 2
+  private[libsnowhouse] def _branchTgtBufAddrRange(
+    instrSizeBytes: Long
+  ): Range = (
+    _branchTgtBufSizeLog2 - 1 + log2Up(instrSizeBytes) //+ 1
+    downto log2Up(instrSizeBytes) //+ 1
+  )
 }
 object SnowHouseBranchPredictorKind {
   private[libsnowhouse] def _predictorInpRegPcSize: Int = (
@@ -2166,6 +2172,14 @@ case class SnowHousePipePayloadNonExt(
   val branchTgtBufElem = Vec.fill(2)(
     BranchTgtBufElem(cfg=cfg)
   )
+  val branchPredictGshareSrcRegPc = (
+    cfg.haveBranchPredictor
+    && cfg.optBranchPredictorKind.get._branchPredictIsGshare
+  ) generate (
+    UInt(
+      log2Up(cfg.optBranchPredictorKind.get._branchTgtBufSize) bits
+    )
+  )
   val btbElemBranchKind = (
     cfg.haveBranchPredictor
   ) generate (
@@ -2443,6 +2457,7 @@ case class SnowHousePipePayload(
   )
   def encInstr = nonExt.encInstr
   def branchTgtBufElem = nonExt.branchTgtBufElem
+  def branchPredictGshareSrcRegPc = nonExt.branchPredictGshareSrcRegPc
   def btbElemBranchKind = nonExt.btbElemBranchKind
   def inpDecodeExt = nonExt.inpDecodeExt
   def outpDecodeExt = nonExt.outpDecodeExt

@@ -214,6 +214,13 @@ case class BranchTgtBufElem(
     //cfg.mainWidth bits
     cfg.mainAddrWidth bits
   )
+  //val gshareHist = (
+  //  cfg.optBranchPredictorKind.get._branchPredictIsGshare
+  //) generate (
+  //  UInt(
+  //    log2Up(cfg.optBranchPredictorKind.get._branchTgtBufSize) bits
+  //  )
+  //)
   //val dbgEncInstr = UInt(cfg.instrMainWidth bits)
 }
 case class BranchTgtBufElemWithBrKind(
@@ -232,6 +239,15 @@ case class SnowHousePsExSetPcTakenPayload(
 ) extends Bundle {
   val myPsExSetPcValid = Bool()
   val srcRegPc = UInt(cfg.mainAddrWidth bits)
+
+  val gshareSrcRegPc = (
+    cfg.optBranchPredictorKind.get._branchPredictIsGshare
+  ) generate (
+    UInt(
+      log2Up(cfg.optBranchPredictorKind.get._branchTgtBufSize) bits
+    )
+  )
+
 }
 
 case class SnowHousePsExSetPcPayload(
@@ -301,6 +317,14 @@ case class SnowHouseBranchTgtBufResult(
   // whether or not we're predicting the branch is taken
   //val predictTkn = Bool()
   val rdBtbElem = BranchTgtBufElem(cfg=cfg)
+
+  val gshareSrcRegPc = (
+    cfg.optBranchPredictorKind.get._branchPredictIsGshare
+  ) generate (
+    UInt(
+      log2Up(cfg.optBranchPredictorKind.get._branchTgtBufSize) bits
+    )
+  )
 }
 case class SnowHouseBranchTgtBufIo(
   cfg: SnowHouseConfig,
@@ -372,17 +396,24 @@ case class SnowHouseBranchTgtBufSingle(
   def myDstRegPcWidth = (
     cfg.mainAddrWidth - log2Up(cfg.instrSizeBytes)
   )
-  def myTgtBufAddrRange: Range = (
-    tgtBufRdAddr(0).high + log2Up(cfg.instrSizeBytes) + 1
-    downto log2Up(cfg.instrSizeBytes) + 1
+
+  def myTgtBufAddrRange = (
+    cfg.optBranchPredictorKind.get._branchTgtBufAddrRange(
+      instrSizeBytes=cfg.instrSizeBytes
+    )
   )
+  //def myTgtBufAddrRange: Range = (
+  //  tgtBufRdAddr(0).high + log2Up(cfg.instrSizeBytes) + 1
+  //  downto log2Up(cfg.instrSizeBytes) + 1
+  //)
 
   val rGshareHist = (
     haveGshare
   ) generate (
     Reg(
       //UInt(cfg.mainAddrWidth bits)
-      cloneOf(io.inpRegPc(0)(myTgtBufAddrRange))
+      //cloneOf(io.inpRegPc(0)(myTgtBufAddrRange))
+      UInt(log2Up(branchTgtBufSize) bits)
     )
     init(0x0)
   )
@@ -553,6 +584,12 @@ case class SnowHouseBranchTgtBufSingle(
   //--------
   tgtDstRegPcBuf.io.ramIo.rdEn := io.upIsReady
   io.result.rdBtbElem := myRdBtbElem
+  if (io.result.gshareSrcRegPc != null) {
+    io.result.gshareSrcRegPc := (
+      io.inpRegPc(0)(myTgtBufAddrRange)
+      ^ rGshareHist
+    )
+  }
   val wrBtbElem = BranchTgtBufElem(cfg=cfg)
   val otherWrBtbElemWithBrKind = BranchTgtBufElemWithBrKind(cfg=cfg)
   //val otherWrBranchKind = (
@@ -572,7 +609,13 @@ case class SnowHouseBranchTgtBufSingle(
       ),
       (
         RegNext(
-          io.psExSetPc.taken.srcRegPc(myTgtBufAddrRange),
+          if (haveGshare) (
+            //io.psExSetPc.taken.srcRegPc(myTgtBufAddrRange)
+            //^ io.psExSetPc.taken.gshareHist
+            io.psExSetPc.taken.gshareSrcRegPc
+          ) else (
+            io.psExSetPc.taken.srcRegPc(myTgtBufAddrRange),
+          )
         )
         init(0x0)
       )
@@ -720,9 +763,18 @@ case class SnowHouseBranchTgtBufSingle(
             rGshareHist(
               rGshareHist.high - 1 downto 0
             ),
-            False
+            False,
           ).asUInt
         )
+        //io.result.gshareSrcRegPc := (
+        //  io.inpRegPc(0)(myTgtBufAddrRange)
+        //  ^ Cat(
+        //    rGshareHist(
+        //      rGshareHist.high - 1 downto 0
+        //    ),
+        //    False,
+        //  ).asUInt
+        //)
       }
     }
     is (
@@ -740,9 +792,18 @@ case class SnowHouseBranchTgtBufSingle(
             rGshareHist(
               rGshareHist.high - 1 downto 0
             ),
-            True
+            True,
           ).asUInt
         )
+        //io.result.gshareSrcRegPc := (
+        //  io.inpRegPc(0)(myTgtBufAddrRange)
+        //  ^ Cat(
+        //    rGshareHist(
+        //      rGshareHist.high - 1 downto 0
+        //    ),
+        //    True,
+        //  ).asUInt
+        //)
       }
     }
     default {
@@ -786,6 +847,11 @@ case class SnowHouseBranchTgtBuf(
   val branchTgtBufNumWays = (
     cfg.optBranchPredictorKind.get._branchTgtBufNumWays
   )
+  val branchTgtBufAddrRange = (
+    cfg.optBranchPredictorKind.get._branchTgtBufAddrRange(
+      instrSizeBytes=cfg.instrSizeBytes
+    )
+  )
 
   require(
     branchTgtBufNumWays > 0
@@ -808,10 +874,11 @@ case class SnowHouseBranchTgtBuf(
     //  log2Up(branchTgtBufSize) - 1 + log2Up(cfg.instrSizeBytes)
     //  downto log2Up(cfg.instrSizeBytes)
     //)
-    def myTgtBufAddrRange: Range = (
-      log2Up(branchTgtBufSize) - 1 + log2Up(cfg.instrSizeBytes) + 1
-      downto log2Up(cfg.instrSizeBytes) + 1
-    )
+    //def myTgtBufAddrRange: Range = (
+    //  log2Up(branchTgtBufSize) - 1 + log2Up(cfg.instrSizeBytes) //+ 1
+    //  downto log2Up(cfg.instrSizeBytes) //+ 1
+    //)
+    val myTgtBufAddrRange = branchTgtBufAddrRange
 
     val rTgtBufWrEn = (
       Reg(Bool(), init=False)
@@ -942,24 +1009,31 @@ case class SnowHouseBranchTgtBuf(
     io.result.valid := myResultValidVec.orR
     io.result.nextRegPc := 0x0
     io.result.rdBtbElem := io.result.rdBtbElem.getZero
+    if (io.result.gshareSrcRegPc != null) {
+      io.result.gshareSrcRegPc := io.result.gshareSrcRegPc.getZero
+    }
 
     //val myResultFindFirst = myResultVec.sFindFirst(item => item.valid)
     //io.result.payload := myResultFindFirst._2
     
 
     switch (myResultValidVec.asBits) {
-      for (idx <- 1 until (1 << myResultValidVec.size)) {
+      for (idx <- 1 until myResultValidVec.size) {
         is (idx) {
           println(
             s"idx:${idx} log2Thing:${log2Up(idx + 1) - 1}"
           )
           val myBtb = btbArr(
             //log2Up(idx)
-            log2Up(idx + 1) - 1
+            //log2Up(idx + 1) - 1
+            idx
           )
           //io.result.payload := btbArr(1 << log2Up(idx)).io.result.payload
           io.result.nextRegPc := myBtb.io.result.nextRegPc
           io.result.rdBtbElem := myBtb.io.result.rdBtbElem
+          if (io.result.gshareSrcRegPc != null) {
+            io.result.gshareSrcRegPc := myBtb.io.result.gshareSrcRegPc
+          }
         }
       }
     }
@@ -1017,6 +1091,14 @@ private[libsnowhouse] case class MyIbusRegPcInfo(
   ) generate (
     Vec.fill(2)(
       BranchTgtBufElem(cfg=cfg)
+    )
+  )
+  val gshareSrcRegPc = (
+    cfg.haveBranchPredictor
+    && cfg.optBranchPredictorKind.get._branchPredictIsGshare
+  ) generate (
+    UInt(
+      log2Up(cfg.optBranchPredictorKind.get._branchTgtBufSize) bits
     )
   )
 }
@@ -1302,6 +1384,15 @@ case class SnowHousePipeStageInstrFetch(
         node(pIf).branchTgtBufElem := (
           payload._2.myIbusRegPcInfo.branchTgtBufElem
         )
+        if (
+          cfg.haveBranchPredictor
+          && cfg.optBranchPredictorKind.get._branchPredictIsGshare
+        ) {
+          node(pIf).branchPredictGshareSrcRegPc.allowOverride
+          node(pIf).branchPredictGshareSrcRegPc := (
+            payload._2.myIbusRegPcInfo.gshareSrcRegPc
+          )
+        }
       }
     )
 
@@ -1533,6 +1624,8 @@ case class SnowHousePipeStageInstrFetch(
       val tempNextRegPc = temp
       myIbusRegPcInfo.regPc := tempNextRegPc//.asUInt
       if (cfg.haveBranchPredictor) {
+        // TODO: determine if this is even correct?
+        // Looks like it *might* be?
         myIbusRegPcInfo.branchPredictTkn := False
       }
       myBusAddr := tempNextRegPc.resize(myBusAddr.getWidth)//.asUInt
@@ -1554,6 +1647,11 @@ case class SnowHousePipeStageInstrFetch(
               branchTgtBuf.io.result.rdBtbElem
             )
           })
+          if (myIbusRegPcInfo.gshareSrcRegPc != null) {
+            myIbusRegPcInfo.gshareSrcRegPc := (
+              branchTgtBuf.io.result.gshareSrcRegPc
+            )
+          }
         } else {
           val temp = (
             Cat(
@@ -7200,6 +7298,11 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
       init=io.myRegPcVec(2).getZero,
     )
   )
+  if (io.psExSetPc.taken.gshareSrcRegPc != null) {
+    io.psExSetPc.taken.gshareSrcRegPc := (
+      io.psExSetPc.taken.gshareSrcRegPc.getZero
+    )
+  }
   //io.psExSetPc.taken.reallyTaken
   //io.psExSetPc
   // END: new code for branches/jumps
@@ -12201,6 +12304,20 @@ case class SnowHousePipeStageExecute(
       init=setOutpModMemWord.io.psExSetPc.taken.payload.getZero
     )
   )
+
+  if (psExSetPc.taken.gshareSrcRegPc != null) {
+    psExSetPc.taken.gshareSrcRegPc.allowOverride
+    psExSetPc.taken.gshareSrcRegPc := (
+      RegNextWhen(
+        RegNext(
+          outp.branchPredictGshareSrcRegPc,
+          init=outp.branchPredictGshareSrcRegPc.getZero,
+        ),
+        cond=setOutpModMemWord.io.psExSetPc.fire,
+        init=outp.branchPredictGshareSrcRegPc.getZero,
+      )
+    )
+  }
   if (psExSetPc.myOooIssueChkptIdx != null) {
     //psExSetPc.myOooIssueChkptIdx := (
     //  RegNext(
