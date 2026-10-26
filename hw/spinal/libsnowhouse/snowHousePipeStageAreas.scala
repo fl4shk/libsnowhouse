@@ -12341,27 +12341,27 @@ case class SnowHousePipeStageExecute(
     )
   )
   psExSetPc.taken.alwaysTaken := (
-    //RegNextWhen(
+    RegNextWhen(
       RegNext(
         outp.splitOp.jmpBrOpIsAlwaysTaken,
         init=outp.splitOp.jmpBrOpIsAlwaysTaken.getZero,
       ),
-    //  cond=setOutpModMemWord.io.psExSetPc.fire,
-    //  init=outp.splitOp.jmpBrOpIsAlwaysTaken.getZero,
-    //)
+      cond=setOutpModMemWord.io.psExSetPc.taken.fire,
+      init=outp.splitOp.jmpBrOpIsAlwaysTaken.getZero,
+    )
   )
 
   if (psExSetPc.taken.gshareSrcRegPc != null) {
     psExSetPc.taken.gshareSrcRegPc.allowOverride
     psExSetPc.taken.gshareSrcRegPc := (
-      //RegNextWhen(
+      RegNextWhen(
         RegNext(
           outp.branchPredictGshareSrcRegPc,
           init=outp.branchPredictGshareSrcRegPc.getZero,
         ),
-      //  cond=setOutpModMemWord.io.psExSetPc.fire,
-      //  init=outp.branchPredictGshareSrcRegPc.getZero,
-      //)
+        cond=setOutpModMemWord.io.psExSetPc.taken.fire,
+        init=outp.branchPredictGshareSrcRegPc.getZero,
+      )
     )
   }
   if (psExSetPc.myOooIssueChkptIdx != null) {
