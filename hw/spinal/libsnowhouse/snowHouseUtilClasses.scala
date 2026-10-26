@@ -576,8 +576,8 @@ sealed trait SnowHouseBranchPredictorKind {
   private[libsnowhouse] def _branchTgtBufAddrRange(
     instrSizeBytes: Long
   ): Range = (
-    _branchTgtBufSizeLog2 - 1 + log2Up(instrSizeBytes) //+ 1
-    downto log2Up(instrSizeBytes) //+ 1
+    _branchTgtBufSizeLog2 - 1 + log2Up(instrSizeBytes) + 1
+    downto log2Up(instrSizeBytes) + 1
   )
 }
 object SnowHouseBranchPredictorKind {
