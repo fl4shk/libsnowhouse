@@ -727,12 +727,13 @@ case class SnowHouseBranchTgtBufSingle(
     tgtValidBuf(rTgtBufWrAddr.head) := True
   }
   switch (
-    //(
-    //  rTgtBufWrEn.head
-    //  //&& rTgtBufWrAddr.head === rTgtBufWrAddr.last
-    //)
+    (
+      rTgtBufWrEn.head
+      && rTgtBufWrAddr.head === rTgtBufWrAddr.last
+    )
     //## 
-    rTgtBufWrEn.last
+    //rTgtBufWrEn.head
+    ## rTgtBufWrEn.last
     ## RegNext(
       io.psExSetPc.taken.myPsExSetPcValid,
       init=False
@@ -750,7 +751,8 @@ case class SnowHouseBranchTgtBufSingle(
     //}
     is (
       //M"010"
-      M"10"
+      //M"10"
+      M"010"
     ) {
       when (tgtBrKindBuf(rTgtBufWrAddr.last).orR) {
         tgtBrKindBuf(rTgtBufWrAddr.last) := (
@@ -779,7 +781,8 @@ case class SnowHouseBranchTgtBufSingle(
     }
     is (
       //M"011"
-      M"11"
+      //M"11"
+      M"011"
     ) {
       when ((~tgtBrKindBuf(rTgtBufWrAddr.last)).orR) {
         tgtBrKindBuf(rTgtBufWrAddr.last) := (
@@ -805,6 +808,11 @@ case class SnowHouseBranchTgtBufSingle(
         //  ).asUInt
         //)
       }
+    }
+    is (
+      M"1--"
+    ) {
+      tgtBrKindBuf(rTgtBufWrAddr.last).lsb := False // even it out
     }
     default {
     }
