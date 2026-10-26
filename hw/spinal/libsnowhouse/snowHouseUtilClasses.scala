@@ -1972,6 +1972,7 @@ case class SnowHouseSplitOp(
   )
   val jmpBrOpIsEq = Bool()
   val jmpBrOpIsNe = Bool()
+  val jmpBrOpIsAlwaysTaken = Bool()
 
   val jmpBrAlwaysEqNeOp = /*Flow*/(
     UInt(log2Up(cfg.jmpBrAlwaysEqNeOpInfoMap.size + 1) bits)
@@ -2083,6 +2084,7 @@ case class SnowHouseSplitOp(
     opIsMemAccess := False
     jmpBrOpIsEq := False
     jmpBrOpIsNe := False
+    jmpBrOpIsAlwaysTaken := False
     setJmpBrAlwaysEqNeOpToDefault()
     setJmpBrOtherOpToDefault()
     havePredictableJmpBr := False

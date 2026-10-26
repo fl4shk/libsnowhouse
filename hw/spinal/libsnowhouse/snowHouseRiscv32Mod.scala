@@ -1289,10 +1289,16 @@ object SnowHouseRiscv32PipeStageInstrDecode {
             SnowHousePsExSetNextPcKind.PcPlusImm
           )
         } else if (tempHaveJal) {
+          mySplitOp.jmpBrOpIsAlwaysTaken := (
+            True
+          )
           mySplitOp.exSetNextPcKind := (
             SnowHousePsExSetNextPcKind.PcPlusImm
           )
         } else if (tempHaveJalr) {
+          mySplitOp.jmpBrOpIsAlwaysTaken := (
+            True
+          )
           mySplitOp.exSetNextPcKind := (
             SnowHousePsExSetNextPcKind.RdMemWordPlusImm
           )
@@ -1978,7 +1984,8 @@ case class SnowHouseRiscv32Config(
     1
   ),
   branchPredictIsGshare: Boolean=(
-    true
+    //true
+    false
   )
 ) {
   //--------

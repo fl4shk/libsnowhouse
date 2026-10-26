@@ -234,11 +234,15 @@ case class BranchTgtBufElemWithBrKind(
   )
   val btbElem = BranchTgtBufElem(cfg=cfg)
 }
+
+
 case class SnowHousePsExSetPcTakenPayload(
   cfg: SnowHouseConfig
 ) extends Bundle {
   val myPsExSetPcValid = Bool()
   val srcRegPc = UInt(cfg.mainAddrWidth bits)
+
+  val alwaysTaken = Bool()
 
   val gshareSrcRegPc = (
     cfg.optBranchPredictorKind.get._branchPredictIsGshare
@@ -573,7 +577,6 @@ case class SnowHouseBranchTgtBufSingle(
     )
   )
   //--------
-
   tgtDstRegPcBuf.io.ramIo.rdAddr := (
     tgtBufRdAddr(
       SnowHouseBranchPredictorKind._branchTgtBufRdAddrIdx1
@@ -689,13 +692,13 @@ case class SnowHouseBranchTgtBufSingle(
     //init(0x0)
   )
 
-  val myResultValidNonSrc = (
+  val myResultValidNonSrcCmpEq = (
     myRdBtbElem.fire
     && myRdBrKind(1)
   )
 
   io.result.valid := (
-    myResultValidNonSrc
+    myResultValidNonSrcCmpEq
     && (
       if (!cfg.targetAltera) (
         myResultValidCmpEqLeft
@@ -749,6 +752,10 @@ case class SnowHouseBranchTgtBufSingle(
       io.psExSetPc.taken.myPsExSetPcValid,
       init=False
     )
+    ## RegNext(
+      io.psExSetPc.taken.alwaysTaken,
+      init=False
+    )
     //## RegNext(
     //  io.psExSetPc.take
     //)
@@ -762,7 +769,8 @@ case class SnowHouseBranchTgtBufSingle(
     //}
     is (
       //M"010"
-      M"10"
+      //M"10"
+      M"100"
     ) {
       when (tgtBrKindBuf(rTgtBufWrAddr.last).orR) {
         tgtBrKindBuf(rTgtBufWrAddr.last) := (
@@ -791,7 +799,8 @@ case class SnowHouseBranchTgtBufSingle(
     }
     is (
       //M"011"
-      M"11"
+      //M"11"
+      M"110"
     ) {
       when ((~tgtBrKindBuf(rTgtBufWrAddr.last)).orR) {
         tgtBrKindBuf(rTgtBufWrAddr.last) := (
@@ -817,6 +826,16 @@ case class SnowHouseBranchTgtBufSingle(
         //  ).asUInt
         //)
       }
+    }
+    is (M"1-1") {
+      // always taken means we can probably just switch to "weakly taken"
+      tgtBrKindBuf(rTgtBufWrAddr.last) := (
+        //U(
+        //  tgtBrKindBuf(rTgtBufWrAddr.last).getWidth bits,
+        //  default -> True
+        //)
+        U"10"
+      )
     }
     default {
     }
@@ -7314,6 +7333,7 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
       init=io.myRegPcVec(2).getZero,
     )
   )
+  io.psExSetPc.taken.alwaysTaken := False
   if (io.psExSetPc.taken.gshareSrcRegPc != null) {
     io.psExSetPc.taken.gshareSrcRegPc := (
       io.psExSetPc.taken.gshareSrcRegPc.getZero
@@ -12318,6 +12338,16 @@ case class SnowHousePipeStageExecute(
     RegNext(
       setOutpModMemWord.io.psExSetPc.taken.payload,
       init=setOutpModMemWord.io.psExSetPc.taken.payload.getZero
+    )
+  )
+  psExSetPc.taken.alwaysTaken := (
+    RegNextWhen(
+      RegNext(
+        outp.splitOp.jmpBrOpIsAlwaysTaken,
+        init=outp.splitOp.jmpBrOpIsAlwaysTaken.getZero,
+      ),
+      cond=setOutpModMemWord.io.psExSetPc.fire,
+      init=outp.splitOp.jmpBrOpIsAlwaysTaken.getZero,
     )
   )
 
