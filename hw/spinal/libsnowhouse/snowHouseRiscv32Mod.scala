@@ -1974,7 +1974,8 @@ case class SnowHouseRiscv32Config(
     //log2Up(32)
   ),
   branchTgtBufNumWays: Int=(
-    2
+    //2
+    1
   ),
   branchPredictIsGshare: Boolean=(
     true
