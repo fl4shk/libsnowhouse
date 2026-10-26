@@ -663,6 +663,9 @@ case class SnowHouseBranchTgtBufSingle(
   wrBtbElem.valid.allowOverride
   wrBtbElem.valid := True
 
+  val branchTgtBufNumWays = (
+    cfg.optBranchPredictorKind.get._branchTgtBufNumWays
+  )
   val myResultValidCmpEqLeft = (
     Cat(
       myRdBtbElem.srcRegPc(cfg.mySrcRegPcCmpEqRangeHi),
@@ -671,7 +674,7 @@ case class SnowHouseBranchTgtBufSingle(
 
   )
   val myResultValidCmpEqRight = (
-    RegNext(
+    //RegNext(
       Cat(
         io.inpRegPc(
           //2
@@ -682,11 +685,17 @@ case class SnowHouseBranchTgtBufSingle(
           SnowHouseBranchPredictorKind._predictorInpRegPcIdxCmpEq
         )(cfg.mySrcRegPcCmpEqRangeLo),
       ).asUInt
-    )
+    //)
+    //init(0x0)
   )
-  io.result.valid := (
+
+  val myResultValidNonSrc = (
     myRdBtbElem.fire
     && myRdBrKind(1)
+  )
+
+  io.result.valid := (
+    myResultValidNonSrc
     && (
       if (!cfg.targetAltera) (
         myResultValidCmpEqLeft
@@ -728,13 +737,12 @@ case class SnowHouseBranchTgtBufSingle(
   when (rTgtBufWrEn.head) {
     tgtValidBuf(rTgtBufWrAddr.head) := True
   }
+
   switch (
     //(
     //  rTgtBufWrEn.head
-    //  && rTgtBufWrAddr.head === rTgtBufWrAddr.last
+    //  //&& rTgtBufWrAddr.head === rTgtBufWrAddr.last
     //)
-    ////## 
-    ////rTgtBufWrEn.head
     //## 
     rTgtBufWrEn.last
     ## RegNext(
@@ -755,7 +763,6 @@ case class SnowHouseBranchTgtBufSingle(
     is (
       //M"010"
       M"10"
-      //M"010"
     ) {
       when (tgtBrKindBuf(rTgtBufWrAddr.last).orR) {
         tgtBrKindBuf(rTgtBufWrAddr.last) := (
@@ -785,7 +792,6 @@ case class SnowHouseBranchTgtBufSingle(
     is (
       //M"011"
       M"11"
-      //M"011"
     ) {
       when ((~tgtBrKindBuf(rTgtBufWrAddr.last)).orR) {
         tgtBrKindBuf(rTgtBufWrAddr.last) := (
@@ -812,11 +818,6 @@ case class SnowHouseBranchTgtBufSingle(
         //)
       }
     }
-    //is (
-    //  M"1--"
-    //) {
-    //  tgtBrKindBuf(rTgtBufWrAddr.last).lsb := False // even it out
-    //}
     default {
     }
   }
