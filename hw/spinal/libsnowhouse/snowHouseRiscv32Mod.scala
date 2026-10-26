@@ -1973,9 +1973,12 @@ case class SnowHouseRiscv32Config(
     log2Up(64)
     //log2Up(32)
   ),
-  branchTgtBufNumWays: Int = (
+  branchTgtBufNumWays: Int=(
     2
   ),
+  branchPredictIsGshare: Boolean=(
+    true
+  )
 ) {
   //--------
   val instrMainWidth = (
@@ -2169,6 +2172,9 @@ case class SnowHouseRiscv32Config(
         ),
         branchTgtBufNumWays=(
           branchTgtBufNumWays
+        ),
+        branchPredictIsGshare=(
+          branchPredictIsGshare
         ),
       )
     ),

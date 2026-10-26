@@ -3640,11 +3640,14 @@ case class SnowHouseCpuConfig(
     //log2Up(128)
     //log2Up(32)
   ),
-  branchTgtBufNumWays: Int = (
+  branchTgtBufNumWays: Int=(
     //4
     //3
     //2
     1
+  ),
+  branchPredictIsGshare: Boolean=(
+    true
   ),
 ) {
   //--------
@@ -3874,6 +3877,9 @@ case class SnowHouseCpuConfig(
         branchTgtBufNumWays=(
           branchTgtBufNumWays
         ),
+        branchPredictIsGshare=(
+          branchPredictIsGshare
+        )
       )
     ),
     //supportPre=(

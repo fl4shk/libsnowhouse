@@ -571,6 +571,7 @@ sealed trait SnowHouseBranchPredictorKind {
   private[libsnowhouse] def _branchTgtBufSize: Int = (
     1 << _branchTgtBufSizeLog2
   )
+  private[libsnowhouse] def _branchPredictIsGshare: Boolean
   //private[libsnowhouse] def _branchTgtBufNumRdAddrs: Int = 2
 }
 object SnowHouseBranchPredictorKind {
@@ -618,6 +619,7 @@ object SnowHouseBranchPredictorKind {
   case class SatCnt2Bit(
     val branchTgtBufSizeLog2: Int,
     val branchTgtBufNumWays: Int,
+    val branchPredictIsGshare: Boolean,
   ) extends SnowHouseBranchPredictorKind {
     def _branchKindEnumWidth: Int = (
       SatCnt2BitEnum().asBits.getWidth
@@ -627,6 +629,9 @@ object SnowHouseBranchPredictorKind {
     )
     def _branchTgtBufNumWays: Int = (
       branchTgtBufNumWays
+    )
+    def _branchPredictIsGshare: Boolean = (
+      branchPredictIsGshare
     )
   }
   //object FwdNotTknBakTknEnum

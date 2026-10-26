@@ -354,9 +354,14 @@ case class SnowHouseBranchTgtBufSingle(
   val branchTgtBufSize = (
     cfg.optBranchPredictorKind.get._branchTgtBufSize
   )
+  val haveGshare = (
+    cfg.optBranchPredictorKind.get._branchPredictIsGshare
+  )
   require(
     branchTgtBufSize > 0
   )
+
+
   val tgtBufRdAddr = (
     Vec.fill(
       SnowHouseBranchPredictorKind._branchTgtBufRdAddrSize
@@ -370,6 +375,16 @@ case class SnowHouseBranchTgtBufSingle(
   def myTgtBufAddrRange: Range = (
     tgtBufRdAddr(0).high + log2Up(cfg.instrSizeBytes) + 1
     downto log2Up(cfg.instrSizeBytes) + 1
+  )
+
+  val rGshareHist = (
+    haveGshare
+  ) generate (
+    Reg(
+      //UInt(cfg.mainAddrWidth bits)
+      cloneOf(io.inpRegPc(0)(myTgtBufAddrRange))
+    )
+    init(0x0)
   )
   println(
     s"myDstRegPcWidth:${myDstRegPcWidth} "
@@ -468,7 +483,14 @@ case class SnowHouseBranchTgtBufSingle(
   myRdBrKind := Mux(
     io.upIsReady,
     tgtBrKindBuf(
-      tgtBufRdAddr(SnowHouseBranchPredictorKind._branchTgtBufRdAddrIdx0)
+      if (haveGshare) (
+        io.inpRegPc(0)(myTgtBufAddrRange) //- 1//- 2 //- 1 //- 2//- 3
+        ^ rGshareHist
+      ) else (
+        tgtBufRdAddr(
+          SnowHouseBranchPredictorKind._branchTgtBufRdAddrIdx0
+        )
+      )
     ),
     RegNext(
       myRdBrKind,
@@ -692,6 +714,16 @@ case class SnowHouseBranchTgtBufSingle(
           tgtBrKindBuf(rTgtBufWrAddr.last) - 1
         )
       }
+      if (haveGshare) {
+        rGshareHist := (
+          Cat(
+            rGshareHist(
+              rGshareHist.high - 1 downto 0
+            ),
+            False
+          ).asUInt
+        )
+      }
     }
     is (
       //M"011"
@@ -700,6 +732,16 @@ case class SnowHouseBranchTgtBufSingle(
       when ((~tgtBrKindBuf(rTgtBufWrAddr.last)).orR) {
         tgtBrKindBuf(rTgtBufWrAddr.last) := (
           tgtBrKindBuf(rTgtBufWrAddr.last) + 1
+        )
+      }
+      if (haveGshare) {
+        rGshareHist := (
+          Cat(
+            rGshareHist(
+              rGshareHist.high - 1 downto 0
+            ),
+            True
+          ).asUInt
         )
       }
     }
