@@ -1098,17 +1098,23 @@ case class SnowHouseBranchTgtBuf(
     //val myResultVec = Vec.fill(btbArr.size)(
     //  cloneOf(io.result)
     //)
+    val myResultValidVec = Vec.fill(btbArr.size)(
+      Bool()
+    )
     val myHaveBranchVec = Vec.fill(btbArr.size)(
       Bool()
     )
     for (idx <- 0 until btbArr.size) {
       //myResultVec(idx) := btbArr(idx).io.result
+      myResultValidVec(idx) := (
+        btbArr(idx).io.result.fire
+      )
       myHaveBranchVec(idx) := (
         //btbArr(idx).io.result.fire
         btbArr(idx).io.result.haveBranch
       )
     }
-    io.result.valid := LcvOrR(myHaveBranchVec)//myResultValidVec.orR//LcvOrR(myResultValidVec)
+    io.result.valid := LcvOrR(myResultValidVec) //LcvOrR(myHaveBranchVec)//myResultValidVec.orR//LcvOrR(myResultValidVec)
     io.result.nextRegPc := 0x0
     io.result.rdBtbElem := io.result.rdBtbElem.getZero
     if (io.result.gshareSrcRegPc != null) {
