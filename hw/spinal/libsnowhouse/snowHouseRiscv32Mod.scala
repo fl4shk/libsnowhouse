@@ -1980,8 +1980,9 @@ case class SnowHouseRiscv32Config(
     //log2Up(32)
   ),
   branchTgtBufNumWays: Int=(
+    4
     //2
-    1
+    //1
   ),
   branchPredictIsGshare: Boolean=(
     //true
