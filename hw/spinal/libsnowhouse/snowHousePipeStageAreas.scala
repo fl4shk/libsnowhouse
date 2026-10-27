@@ -1071,14 +1071,14 @@ case class SnowHouseBranchTgtBuf(
     //  default {
     //  }
     //}
-    val myResultVec = Vec.fill(btbArr.size)(
-      cloneOf(io.result)
-    )
+    //val myResultVec = Vec.fill(btbArr.size)(
+    //  cloneOf(io.result)
+    //)
     val myResultValidVec = Vec.fill(btbArr.size)(
       Bool()
     )
     for (idx <- 0 until btbArr.size) {
-      myResultVec(idx) := btbArr(idx).io.result
+      //myResultVec(idx) := btbArr(idx).io.result
       myResultValidVec(idx) := btbArr(idx).io.result.fire
     }
     io.result.valid := myResultValidVec.orR
@@ -1093,11 +1093,23 @@ case class SnowHouseBranchTgtBuf(
     
 
     switch (myResultValidVec.asBits) {
-      for (idx <- 1 until myResultValidVec.size) {
-        is (idx) {
-          println(
-            s"idx:${idx} log2Thing:${log2Up(idx + 1) - 1}"
+      for (idx <- 0 until myResultValidVec.size) {
+        val size = myResultValidVec.size
+        val myStr = (
+          "-" * (size - idx - 1) + "1" + ("0" * idx)
+        )
+        is (
+          //idx
+          MaskedLiteral(
+            myStr
           )
+        ) {
+          println(
+            s"idx:${idx} myStr:${myStr}"
+          )
+          //println(
+          //  s"idx:${idx} log2Thing:${log2Up(idx + 1) - 1}"
+          //)
           val myBtb = btbArr(
             //log2Up(idx)
             //log2Up(idx + 1) - 1
