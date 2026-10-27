@@ -1976,8 +1976,9 @@ case class SnowHouseRiscv32Config(
   ),
   branchTgtBufSizeLog2: Int=(
     //log2Up(128)
-    log2Up(64)
+    //log2Up(64)
     //log2Up(32)
+    log2Up(8)
   ),
   branchTgtBufNumWays: Int=(
     4

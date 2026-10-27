@@ -341,6 +341,8 @@ case class SnowHouseBranchTgtBufResult(
   val valid = Bool()
   def fire = valid
 
+  val haveBranch = Bool()
+
   val nextRegPc = UInt(
     //cfg.mainWidth bits
     cfg.mainAddrWidth bits
@@ -722,13 +724,8 @@ case class SnowHouseBranchTgtBufSingle(
     //init(0x0)
   )
 
-  val myResultValidNonSrcCmpEq = (
+  val myHaveBranch = (
     myRdBtbElem.fire
-    && myRdBrKind(1)
-  )
-
-  io.result.valid := (
-    myResultValidNonSrcCmpEq
     && (
       if (!cfg.targetAltera) (
         myResultValidCmpEqLeft
@@ -742,6 +739,19 @@ case class SnowHouseBranchTgtBufSingle(
       )
     )
   )
+  //val myResultValidNonSrcCmpEq = (
+  //  myResultValidNonBrKind
+  //  && myRdBrKind(1)
+  //)
+
+
+  io.result.valid := (
+    //myResultValidNonSrcCmpEq
+    myHaveBranch
+    && myRdBrKind(1)
+  )
+  io.result.haveBranch := myHaveBranch
+
   val tempNextRegPc = (
     myRdBtbElem.dstRegPc
   )
@@ -1011,21 +1021,35 @@ case class SnowHouseBranchTgtBuf(
     //  Reg(UInt(log2Up(btbArr.size) bits))
     //  init(0x0)
     //)
-    val tgtFifoIdxBuf = Mem(
-      initialContent=Array.fill(branchTgtBufSize)(
-        U(s"${log2Up(btbArr.size)}'d0")
-      ),
+    val tgtFifoIdxBufArr = Array.fill(2)(
+      Mem(
+        initialContent=Array.fill(branchTgtBufSize)(
+          U(s"${log2Up(btbArr.size)}'d0")
+        ),
+      )
     )
 
-    val tempTgtFifoFifoReadSync = tgtFifoIdxBuf.readSync(
-      address=rTgtBufWrAddr,
-      enable=rTgtBufWrEn,
+    val tempTgtFifoFifoReadSync = (
+      tgtFifoIdxBufArr.head.readSync(
+        address=rTgtBufWrAddr,
+        enable=rTgtBufWrEn,
+      ),
     )
-    tgtFifoIdxBuf.write(
-      data=RegNext(tempTgtFifoFifoReadSync) + 1,
-      address=RegNext(RegNext(rTgtBufWrAddr)),
-      enable=RegNext(RegNext(rTgtBufWrEn, init=False), init=False),
+    val tempTgtFifoFifoReadAsync = (
+      tgtFifoIdxBufArr.last.readAsync(
+        address=io.inpRegPc(0)(myTgtBufAddrRange),
+        //enable=rTgtBufWrEn,
+      )
     )
+
+    tgtFifoIdxBufArr.foreach(item => {
+      item.write(
+        data=RegNext(tempTgtFifoFifoReadSync) + 1,
+        address=RegNext(RegNext(rTgtBufWrAddr)),
+        enable=RegNext(RegNext(rTgtBufWrEn, init=False), init=False),
+      )
+    })
+
     switch (
       RegNext(RegNext(rTgtBufWrEn, init=False), init=False)
       ## RegNext(tempTgtFifoFifoReadSync)
@@ -1074,14 +1098,17 @@ case class SnowHouseBranchTgtBuf(
     //val myResultVec = Vec.fill(btbArr.size)(
     //  cloneOf(io.result)
     //)
-    val myResultValidVec = Vec.fill(btbArr.size)(
+    val myHaveBranchVec = Vec.fill(btbArr.size)(
       Bool()
     )
     for (idx <- 0 until btbArr.size) {
       //myResultVec(idx) := btbArr(idx).io.result
-      myResultValidVec(idx) := btbArr(idx).io.result.fire
+      myHaveBranchVec(idx) := (
+        //btbArr(idx).io.result.fire
+        btbArr(idx).io.result.haveBranch
+      )
     }
-    io.result.valid := myResultValidVec.orR
+    io.result.valid := LcvOrR(myHaveBranchVec)//myResultValidVec.orR//LcvOrR(myResultValidVec)
     io.result.nextRegPc := 0x0
     io.result.rdBtbElem := io.result.rdBtbElem.getZero
     if (io.result.gshareSrcRegPc != null) {
@@ -1090,11 +1117,10 @@ case class SnowHouseBranchTgtBuf(
 
     //val myResultFindFirst = myResultVec.sFindFirst(item => item.valid)
     //io.result.payload := myResultFindFirst._2
-    
 
-    switch (myResultValidVec.asBits) {
-      for (idx <- 0 until myResultValidVec.size) {
-        val size = myResultValidVec.size
+    switch (myHaveBranchVec.asBits) {
+      for (idx <- 0 until myHaveBranchVec.size) {
+        val size = myHaveBranchVec.size
         val myStr = (
           "-" * (size - idx - 1) + "1" + ("0" * idx)
         )
@@ -1104,15 +1130,18 @@ case class SnowHouseBranchTgtBuf(
             myStr
           )
         ) {
-          println(
-            s"idx:${idx} myStr:${myStr}"
-          )
           //println(
-          //  s"idx:${idx} log2Thing:${log2Up(idx + 1) - 1}"
+          //  s"idx:${idx} myStr:${myStr}"
           //)
+          println(
+            s"idxEtc:${(idx, (idx + 1) % size)} "
+            + s"myStr:${myStr} "
+            + s"log2Thing:${log2Up(idx + 1) - 1}"
+          )
           val myBtb = btbArr(
             //log2Up(idx)
             //log2Up(idx + 1) - 1
+            //(idx + 1) % size
             idx
           )
           //io.result.payload := btbArr(1 << log2Up(idx)).io.result.payload
@@ -1123,6 +1152,10 @@ case class SnowHouseBranchTgtBuf(
           }
         }
       }
+      //default {
+      //  //io.result.rdBtbElem.wayIdx := 1
+      //  io.result.rdBtbElem
+      //}
     }
 
     //switch (
