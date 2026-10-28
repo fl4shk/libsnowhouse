@@ -1058,11 +1058,12 @@ case class SnowHouseBranchTgtBuf(
         is (
           btbArr.size
           | (
-            if (idx == 0) (
-              btbArr.size - 1
-            ) else (
-              idx -1
-            )
+            idx
+            //if (idx == 0) (
+            //  btbArr.size - 1
+            //) else (
+            //  idx -1
+            //)
           )
         ) {
           btbArr(idx).io.psExSetPc := (
