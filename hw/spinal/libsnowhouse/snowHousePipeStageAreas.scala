@@ -792,10 +792,10 @@ case class SnowHouseBranchTgtBufSingle(
       io.psExSetPc.taken.myPsExSetPcValid,
       init=False
     )
-    ## RegNext(
-      io.psExSetPc.taken.alwaysTaken,
-      init=False
-    )
+    //## RegNext(
+    //  io.psExSetPc.taken.alwaysTaken,
+    //  init=False
+    //)
     //## RegNext(
     //  io.psExSetPc.take
     //)
@@ -809,8 +809,8 @@ case class SnowHouseBranchTgtBufSingle(
     //}
     is (
       //M"010"
-      //M"10"
-      M"100"
+      M"10"
+      //M"100"
     ) {
       when (tgtBrKindBuf(rTgtBufWrAddr.last).orR) {
         tgtBrKindBuf(rTgtBufWrAddr.last) := (
@@ -839,8 +839,8 @@ case class SnowHouseBranchTgtBufSingle(
     }
     is (
       //M"011"
-      //M"11"
-      M"110"
+      M"11"
+      //M"110"
     ) {
       when ((~tgtBrKindBuf(rTgtBufWrAddr.last)).orR) {
         tgtBrKindBuf(rTgtBufWrAddr.last) := (
@@ -867,16 +867,16 @@ case class SnowHouseBranchTgtBufSingle(
         //)
       }
     }
-    is (M"1-1") {
-      // always taken means we can probably just switch to "weakly taken"
-      tgtBrKindBuf(rTgtBufWrAddr.last) := (
-        //U(
-        //  tgtBrKindBuf(rTgtBufWrAddr.last).getWidth bits,
-        //  default -> True
-        //)
-        U"10"
-      )
-    }
+    //is (M"1-1") {
+    //  // always taken means we can probably just switch to "weakly taken"
+    //  tgtBrKindBuf(rTgtBufWrAddr.last) := (
+    //    //U(
+    //    //  tgtBrKindBuf(rTgtBufWrAddr.last).getWidth bits,
+    //    //  default -> True
+    //    //)
+    //    U"10"
+    //  )
+    //}
     default {
     }
   }
