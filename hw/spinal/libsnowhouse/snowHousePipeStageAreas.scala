@@ -1057,7 +1057,13 @@ case class SnowHouseBranchTgtBuf(
       for (idx <- 0 until btbArr.size) {
         is (
           btbArr.size
-          | idx
+          | (
+            if (idx == 0) (
+              btbArr.size - 1
+            ) else (
+              idx -1
+            )
+          )
         ) {
           btbArr(idx).io.psExSetPc := (
             RegNext(RegNext(RegNext(io.psExSetPc)))
