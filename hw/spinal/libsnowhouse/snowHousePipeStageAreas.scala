@@ -416,10 +416,19 @@ case class SnowHouseBranchTgtBufSingle(
   val haveGshare = (
     cfg.optBranchPredictorKind.get._branchPredictIsGshare
   )
+  val branchTgtBufNumWays = (
+    cfg.optBranchPredictorKind.get._branchTgtBufNumWays
+  )
   require(
     branchTgtBufSize > 0
   )
-
+  require(
+    branchTgtBufNumWays > 0
+  )
+  require(
+    !haveGshare,
+    "not yet implemented"
+  )
 
   val tgtBufRdAddr = (
     Vec.fill(
@@ -442,23 +451,68 @@ case class SnowHouseBranchTgtBufSingle(
   //  downto log2Up(cfg.instrSizeBytes) + 1
   //)
 
-  val rGshareHist = (
-    haveGshare
-  ) generate (
-    Reg(
-      //UInt(cfg.mainAddrWidth bits)
-      //cloneOf(io.inpRegPc(0)(myTgtBufAddrRange))
-      UInt(log2Up(branchTgtBufSize) bits)
-    )
-    init(0x0)
-  )
+  //val tgtGshareHistRamCfg = (
+  //  haveGshare
+  //) generate (
+  //  RamSimpleDualPortConfig(
+  //    wordType=UInt(log2Up(branchTgtBufSize) bits),
+  //    depth=branchTgtBufSize,
+  //    initBigInt=(
+  //      Some(Array.fill(branchTgtBufSize)(BigInt(0)))
+  //    ),
+  //    arrRamStyleAltera=(
+  //      //"no_rw_check, logic"
+  //      "no_rw_check, MLAB"
+  //      //"MLAB"
+  //    ),
+  //    arrRamStyleXilinx=(
+  //      "auto"
+  //      //"block"
+  //      //"distributed"
+  //    ),
+  //    doAsyncRead=true,
+  //  )
+  //)
+
+  //val tgtGshareHistRamArr = (
+  //  haveGshare
+  //) generate (
+  //  Array.fill(2)(
+  //    RamSimpleDualPort(cfg=tgtGshareHistRamCfg)
+  //  )
+  //  
+  //  //Reg(
+  //  //  //UInt(cfg.mainAddrWidth bits)
+  //  //  //cloneOf(io.inpRegPc(0)(myTgtBufAddrRange))
+  //  //  UInt(log2Up(branchTgtBufSize) bits)
+  //  //)
+  //  //init(0x0)
+  //)
+
+  //tgtGshareHistRamArr.foreach(item => {
+  //  //--------
+  //  item.io.ramIo.wrAddr.allowOverride
+  //  item.io.ramIo.wrData.allowOverride
+  //  item.io.ramIo.wrEn.allowOverride
+
+  //  item.io.ramIo.rdAddr.allowOverride
+  //  item.io.ramIo.rdEn.allowOverride
+  //  //--------
+  //  item.io.ramIo.wrAddr := 0x0
+  //  item.io.ramIo.wrData := 0x0
+  //  item.io.ramIo.wrEn := False
+
+  //  item.io.ramIo.rdAddr := 0x0
+  //  item.io.ramIo.rdEn := False
+  //  //--------
+  //})
+
   println(
     s"myDstRegPcWidth:${myDstRegPcWidth} "
     + s"mySrcRegPcWidth:${cfg.mySrcRegPcWidth} "
     + s"mySrcRegPcRange:${cfg.mySrcRegPcRange} "
     + s"myTgtBufAddrRange:${myTgtBufAddrRange}"
   )
-
   //--------
   val tgtSrcRegPcBufCfg = RamSimpleDualPortConfig(
     wordType=UInt(cfg.mySrcRegPcCmpEqWidth bits),
@@ -549,14 +603,15 @@ case class SnowHouseBranchTgtBufSingle(
   myRdBrKind := Mux(
     io.upIsReady,
     tgtBrKindBuf(
-      if (haveGshare) (
-        io.inpRegPc(0)(myTgtBufAddrRange) //- 1//- 2 //- 1 //- 2//- 3
-        ^ rGshareHist
-      ) else (
+      //if (haveGshare) (
+      //  io.inpRegPc(0)(myTgtBufAddrRange) //- 1//- 2 //- 1 //- 2//- 3
+      //  //^ rGshareHist
+      //  ^ tgtGshareHistRamArr.head.io.ramIo.rdData
+      //) else (
         tgtBufRdAddr(
           SnowHouseBranchPredictorKind._branchTgtBufRdAddrIdx0
         )
-      )
+      //)
     ),
     RegNext(
       myRdBrKind,
@@ -619,12 +674,13 @@ case class SnowHouseBranchTgtBufSingle(
   //--------
   tgtDstRegPcBuf.io.ramIo.rdEn := io.upIsReady
   io.result.rdBtbElem := myRdBtbElem
-  if (io.result.gshareSrcRegPc != null) {
-    io.result.gshareSrcRegPc := (
-      io.inpRegPc(0)(myTgtBufAddrRange)
-      ^ rGshareHist
-    )
-  }
+  //if (io.result.gshareSrcRegPc != null) {
+  //  io.result.gshareSrcRegPc := (
+  //    io.inpRegPc(0)(myTgtBufAddrRange)
+  //    //^ rGshareHist
+  //    ^ tgtGshareHistRamArr.head.io.ramIo.rdData
+  //  )
+  //}
   val wrBtbElem = BranchTgtBufElem(cfg=cfg)
   val otherWrBtbElemWithBrKind = BranchTgtBufElemWithBrKind(cfg=cfg)
   //val otherWrBranchKind = (
@@ -698,9 +754,6 @@ case class SnowHouseBranchTgtBufSingle(
   wrBtbElem.valid.allowOverride
   wrBtbElem.valid := True
 
-  val branchTgtBufNumWays = (
-    cfg.optBranchPredictorKind.get._branchTgtBufNumWays
-  )
   val myResultValidCmpEqLeft = (
     Cat(
       myRdBtbElem.srcRegPc(cfg.mySrcRegPcCmpEqRangeHi),
@@ -817,25 +870,25 @@ case class SnowHouseBranchTgtBufSingle(
           tgtBrKindBuf(rTgtBufWrAddr.last) - 1
         )
       }
-      if (haveGshare) {
-        rGshareHist := (
-          Cat(
-            rGshareHist(
-              rGshareHist.high - 1 downto 0
-            ),
-            False,
-          ).asUInt
-        )
-        //io.result.gshareSrcRegPc := (
-        //  io.inpRegPc(0)(myTgtBufAddrRange)
-        //  ^ Cat(
-        //    rGshareHist(
-        //      rGshareHist.high - 1 downto 0
-        //    ),
-        //    False,
-        //  ).asUInt
-        //)
-      }
+      //if (haveGshare) {
+      //  rGshareHist := (
+      //    Cat(
+      //      rGshareHist(
+      //        rGshareHist.high - 1 downto 0
+      //      ),
+      //      False,
+      //    ).asUInt
+      //  )
+      //  //io.result.gshareSrcRegPc := (
+      //  //  io.inpRegPc(0)(myTgtBufAddrRange)
+      //  //  ^ Cat(
+      //  //    rGshareHist(
+      //  //      rGshareHist.high - 1 downto 0
+      //  //    ),
+      //  //    False,
+      //  //  ).asUInt
+      //  //)
+      //}
     }
     is (
       //M"011"
@@ -847,25 +900,25 @@ case class SnowHouseBranchTgtBufSingle(
           tgtBrKindBuf(rTgtBufWrAddr.last) + 1
         )
       }
-      if (haveGshare) {
-        rGshareHist := (
-          Cat(
-            rGshareHist(
-              rGshareHist.high - 1 downto 0
-            ),
-            True,
-          ).asUInt
-        )
-        //io.result.gshareSrcRegPc := (
-        //  io.inpRegPc(0)(myTgtBufAddrRange)
-        //  ^ Cat(
-        //    rGshareHist(
-        //      rGshareHist.high - 1 downto 0
-        //    ),
-        //    True,
-        //  ).asUInt
-        //)
-      }
+      //if (haveGshare) {
+      //  rGshareHist := (
+      //    Cat(
+      //      rGshareHist(
+      //        rGshareHist.high - 1 downto 0
+      //      ),
+      //      True,
+      //    ).asUInt
+      //  )
+      //  //io.result.gshareSrcRegPc := (
+      //  //  io.inpRegPc(0)(myTgtBufAddrRange)
+      //  //  ^ Cat(
+      //  //    rGshareHist(
+      //  //      rGshareHist.high - 1 downto 0
+      //  //    ),
+      //  //    True,
+      //  //  ).asUInt
+      //  //)
+      //}
     }
     //is (M"1-1") {
     //  // always taken means we can probably just switch to "weakly taken"
@@ -1178,6 +1231,489 @@ case class SnowHouseBranchTgtBuf(
   }
 
 }
+
+//case class SnowHouseBranchTgtBuf(
+//  //psIf: SnowHousePipeStageInstrFetch,
+//  cfg: SnowHouseConfig
+//) extends Component {
+//  val io = SnowHouseBranchTgtBufIo(cfg=cfg)
+//
+//  val branchTgtBufSize = (
+//    cfg.optBranchPredictorKind.get._branchTgtBufSize
+//  )
+//  val branchTgtBufNumWays = (
+//    cfg.optBranchPredictorKind.get._branchTgtBufNumWays
+//  )
+//  val branchTgtBufAddrRange = (
+//    cfg.optBranchPredictorKind.get._branchTgtBufAddrRange(
+//      instrSizeBytes=cfg.instrSizeBytes
+//    )
+//  )
+//  val haveGshare = (
+//    cfg.optBranchPredictorKind.get._branchPredictIsGshare
+//  )
+//  require(
+//    !haveGshare,
+//    "not yet implemented"
+//  )
+//
+//  require(
+//    branchTgtBufSize > 0
+//  )
+//  require(
+//    branchTgtBufNumWays > 0
+//  )
+//
+//  val tgtBufRdAddr = (
+//    Vec.fill(
+//      SnowHouseBranchPredictorKind._branchTgtBufRdAddrSize
+//    )(
+//      UInt(log2Up(branchTgtBufSize) bits)
+//    )
+//  )
+//  def myDstRegPcWidth = (
+//    cfg.mainAddrWidth - log2Up(cfg.instrSizeBytes)
+//  )
+//
+//  def myTgtBufAddrRange = (
+//    cfg.optBranchPredictorKind.get._branchTgtBufAddrRange(
+//      instrSizeBytes=cfg.instrSizeBytes
+//    )
+//  )
+//  //def myTgtBufAddrRange: Range = (
+//  //  tgtBufRdAddr(0).high + log2Up(cfg.instrSizeBytes) + 1
+//  //  downto log2Up(cfg.instrSizeBytes) + 1
+//  //)
+//
+//  //val rGshareHist = (
+//  //  haveGshare
+//  //) generate (
+//  //  Reg(
+//  //    //UInt(cfg.mainAddrWidth bits)
+//  //    //cloneOf(io.inpRegPc(0)(myTgtBufAddrRange))
+//  //    UInt(log2Up(branchTgtBufSize) bits)
+//  //  )
+//  //  init(0x0)
+//  //)
+//  println(
+//    s"myDstRegPcWidth:${myDstRegPcWidth} "
+//    + s"mySrcRegPcWidth:${cfg.mySrcRegPcWidth} "
+//    + s"mySrcRegPcRange:${cfg.mySrcRegPcRange} "
+//    + s"myTgtBufAddrRange:${myTgtBufAddrRange}"
+//  )
+//
+//  //--------
+//  val tgtSrcRegPcBufCfg = RamSimpleDualPortConfig(
+//    wordType=(
+//      UInt(cfg.mySrcRegPcCmpEqWidth bits)
+//    ),
+//    depth=branchTgtBufSize,
+//    initBigInt=(
+//      Some(Array.fill(branchTgtBufSize)(BigInt(0)))
+//    ),
+//    arrRamStyleAltera=(
+//      //"no_rw_check, logic"
+//      "no_rw_check, MLAB"
+//      //"MLAB"
+//    ),
+//    arrRamStyleXilinx=(
+//      "auto"
+//      //"block"
+//      //"distributed"
+//    ),
+//    doAsyncRead=true,
+//  )
+//
+//  val tgtSrcRegPcBuf = (
+//    RamSimpleDualPort(cfg=tgtSrcRegPcBufCfg)
+//  )
+//  //--------
+//  // BEGIN: old `tgtValidBuf`
+//  //val tgtValidBuf = {
+//  //  val temp = Vec.fill(branchTgtBufSize)(
+//  //    Reg(Bool(), init=False)
+//  //  )
+//  //  temp
+//  //}
+//  // END: old `tgtValidBuf`
+//  //--------
+//  val tgtDstRegPcBufCfg = RamSimpleDualPortConfig(
+//    wordType=UInt(
+//      (
+//        if (!cfg.useLcvDataBus) (
+//          myDstRegPcWidth
+//        ) else (
+//          myDstRegPcWidth //+ 1
+//        )
+//      )
+//      bits
+//    ),
+//    depth=branchTgtBufSize,
+//    initBigInt=(
+//      Some(Array.fill(branchTgtBufSize)(BigInt(0)))
+//    ),
+//    arrRamStyleAltera=(
+//      //"no_rw_check, logic"
+//      "no_rw_check, MLAB"
+//      //"MLAB"
+//    ),
+//    arrRamStyleXilinx=(
+//      ////"auto"
+//      ////"distributed"
+//      ////"block"
+//      //if (!cfg.targetAltera) (
+//      //  //"auto"
+//        "distributed"
+//      //) else (
+//      //  "no_rw_check, logic"
+//      //  //"no_rw_check, MLAB"
+//      //  //"MLAB"
+//      //)
+//    ),
+//    doAsyncRead=true,
+//  )
+//  val tgtDstRegPcBuf = RamSimpleDualPort(cfg=tgtDstRegPcBufCfg)
+//  for (idx <- 0 until tgtBufRdAddr.size) {
+//    tgtBufRdAddr(idx) := (
+//      io.inpRegPc(idx)(myTgtBufAddrRange) //- 1//- 2 //- 1 //- 2//- 3
+//    )
+//  }
+//  val myRdBtbElem = BranchTgtBufElem(cfg=cfg)
+//  val myRdSrcRegPcAndValid = Flow(UInt(
+//    cfg.mySrcRegPcCmpEqWidth bits
+//  ))
+//  //--------
+//  // BEGIN: old `tgtBrKindBuf`
+//  //val tgtBrKindBuf = (
+//  //  Vec.fill(branchTgtBufSize)(
+//  //    Reg(UInt(cfg.optBranchPredictorKind.get._branchKindEnumWidth bits))
+//  //    init(0x1) // init to "weakly not taken"
+//  //  )
+//  //)
+//  // END: old `tgtBrKindBuf`
+//  //--------
+//
+//  val myRdBrKind = (
+//    UInt(cfg.optBranchPredictorKind.get._branchKindEnumWidth bits)
+//  )
+//  //--------
+//  // BEGIN: old `tgtBrKindBuf`
+//  //myRdBrKind := Mux(
+//  //  io.upIsReady,
+//  //  tgtBrKindBuf(
+//  //    //if (haveGshare) (
+//  //    //  io.inpRegPc(0)(myTgtBufAddrRange) //- 1//- 2 //- 1 //- 2//- 3
+//  //    //  ^ rGshareHist
+//  //    //) else (
+//  //      tgtBufRdAddr(
+//  //        SnowHouseBranchPredictorKind._branchTgtBufRdAddrIdx0
+//  //      )
+//  //    //)
+//  //  ),
+//  //  RegNext(
+//  //    myRdBrKind,
+//  //    init=myRdBrKind.getZero
+//  //  )
+//  //)
+//  // END: old `tgtBrKindBuf`
+//  //--------
+//  // BEGIN: old `tgtValidBuf`
+//  //myRdSrcRegPcAndValid.valid := Mux(
+//  //  io.upIsReady,
+//  //  tgtValidBuf(
+//  //    tgtBufRdAddr(SnowHouseBranchPredictorKind._branchTgtBufRdAddrIdx0)
+//  //  ),
+//  //  RegNext(
+//  //    myRdSrcRegPcAndValid.valid,
+//  //    init=False
+//  //  )
+//  //)
+//  // END: old `tgtValidBuf`
+//  myRdSrcRegPcAndValid.payload := (
+//    tgtSrcRegPcBuf.io.ramIo.rdData
+//  )
+//  //--------
+//
+//  myRdBtbElem.srcRegPc := (
+//    Cat(
+//      myRdSrcRegPcAndValid.payload(
+//        myRdSrcRegPcAndValid.payload.high downto 1
+//      ),
+//      tgtBufRdAddr(0),
+//      myRdSrcRegPcAndValid.payload(0),
+//      U(s"${log2Up(cfg.instrSizeBytes)}'d0"),
+//    ).asUInt
+//  )
+//
+//  myRdBtbElem.valid := myRdSrcRegPcAndValid.valid
+//  //myRdBtbElem.wayIdx := wayIdx
+//
+//  myRdBtbElem.dstRegPc.assignFromBits(
+//    Cat(
+//      tgtDstRegPcBuf.io.ramIo.rdData,
+//      //myRdDstRegPcAndValid.payload,
+//      U(s"${log2Up(cfg.instrSizeBytes)}'d0"),
+//    )
+//  )
+//
+//  myRdBtbElem.dontPredict := False
+//  //--------
+//  tgtSrcRegPcBuf.io.ramIo.rdAddr := (
+//    tgtBufRdAddr(
+//      SnowHouseBranchPredictorKind._branchTgtBufRdAddrIdx0
+//    )
+//  )
+//  //--------
+//  tgtDstRegPcBuf.io.ramIo.rdAddr := (
+//    tgtBufRdAddr(
+//      SnowHouseBranchPredictorKind._branchTgtBufRdAddrIdx1
+//    )
+//  )
+//  //--------
+//  tgtSrcRegPcBuf.io.ramIo.rdEn := io.upIsReady
+//  //--------
+//  tgtDstRegPcBuf.io.ramIo.rdEn := io.upIsReady
+//  io.result.rdBtbElem := myRdBtbElem
+//
+//  //if (io.result.gshareSrcRegPc != null) {
+//  //  io.result.gshareSrcRegPc := (
+//  //    io.inpRegPc(0)(myTgtBufAddrRange)
+//  //    ^ rGshareHist
+//  //  )
+//  //}
+//
+//  val wrBtbElem = BranchTgtBufElem(cfg=cfg)
+//  val otherWrBtbElemWithBrKind = BranchTgtBufElemWithBrKind(cfg=cfg)
+//  //val otherWrBranchKind = (
+//  //  SnowHouseBranchPredictorKind.SatCnt2BitEnum()
+//  //)
+//  //otherWrBranchKind.assignFromBits(
+//  //  otherWrBtbElemWithBrKind.branchKind
+//  //)
+//
+//  val rTgtBufWrAddr = (
+//    Vec[UInt](
+//      (
+//        RegNext(
+//          io.psExSetPc.branchTgtBufElem.srcRegPc(myTgtBufAddrRange)
+//        )
+//        init(0x0)
+//      ),
+//      (
+//        RegNext(
+//          //if (haveGshare) (
+//          //  //io.psExSetPc.taken.srcRegPc(myTgtBufAddrRange)
+//          //  //^ io.psExSetPc.taken.gshareHist
+//          //  io.psExSetPc.taken.gshareSrcRegPc
+//          //) else (
+//            io.psExSetPc.taken.srcRegPc(myTgtBufAddrRange),
+//          //)
+//        )
+//        init(0x0)
+//      )
+//    )
+//  )
+//  //nextTgtBufWrAddr := rTgtBufWrAddr
+//
+//  val rTgtBufWrEn = Vec.fill(branchTgtBufNumWays)(
+//    Vec.fill(2)(
+//      Reg(Bool(), init=False)
+//    )
+//  )
+//
+//  rTgtBufWrEn.zipWithIndex.foreach{
+//    case (item, wayIdx) => {
+//      item.head := (
+//        (
+//          io.psExSetPc.valid
+//          && io.psExSetPc.branchTgtBufElem.fire
+//          && (
+//            !otherWrBtbElemWithBrKind.btbElem.dontPredict
+//          )
+//          //&& (
+//          //  otherWrBranchKind
+//          //  === SnowHouseBranchPredictorKind.FwdNotTknBakTknEnum.BAK
+//          //)
+//        )
+//      )
+//
+//      item.last := (
+//        io.psExSetPc.taken.fire(wayIdx)
+//        && (
+//          !otherWrBtbElemWithBrKind.btbElem.dontPredict
+//        )
+//        //io.psExSetPc.brKindValid
+//        //&& (
+//        //  //otherWrBranchKind.asBits(1)
+//        //  otherWrBranchKind.asBits.asUInt
+//        //  =/= tgtBrKindBuf(nextTgtBufWrAddr)
+//        //)
+//      )
+//    }
+//  }
+//
+//  otherWrBtbElemWithBrKind := io.psExSetPc.btbElemWithBrKind
+//  wrBtbElem := (
+//    RegNext(
+//      next=otherWrBtbElemWithBrKind.btbElem,
+//      init=otherWrBtbElemWithBrKind.btbElem.getZero,
+//    )
+//  )
+//
+//  wrBtbElem.valid.allowOverride
+//  wrBtbElem.valid := True
+//
+//  val myResultValidCmpEqLeft = (
+//    Cat(
+//      myRdBtbElem.srcRegPc(cfg.mySrcRegPcCmpEqRangeHi),
+//      myRdBtbElem.srcRegPc(cfg.mySrcRegPcCmpEqRangeLo),
+//    ).asUInt
+//
+//  )
+//  val myResultValidCmpEqRight = (
+//    //RegNext(
+//      Cat(
+//        io.inpRegPc(
+//          //2
+//          //0
+//          SnowHouseBranchPredictorKind._predictorInpRegPcIdxCmpEq
+//        )(cfg.mySrcRegPcCmpEqRangeHi),
+//        io.inpRegPc(
+//          SnowHouseBranchPredictorKind._predictorInpRegPcIdxCmpEq
+//        )(cfg.mySrcRegPcCmpEqRangeLo),
+//      ).asUInt
+//    //)
+//    //init(0x0)
+//  )
+//
+//  val myHaveBranch = (
+//    myRdBtbElem.fire
+//    && (
+//      if (!cfg.targetAltera) (
+//        myResultValidCmpEqLeft
+//        === myResultValidCmpEqRight
+//      ) else (
+//        LcvFastCmpEq(
+//          left=myResultValidCmpEqLeft,
+//          right=myResultValidCmpEqRight,
+//          cmpEqIo=null,
+//        )._1
+//      )
+//    )
+//  )
+//  //val myResultValidNonSrcCmpEq = (
+//  //  myResultValidNonBrKind
+//  //  && myRdBrKind(1)
+//  //)
+//
+//  io.result.valid := (
+//    //myResultValidNonSrcCmpEq
+//    myHaveBranch
+//    && myRdBrKind(1)
+//  )
+//  io.result.haveBranch := myHaveBranch
+//
+//  val tempNextRegPc = (
+//    myRdBtbElem.dstRegPc
+//  )
+//  io.result.nextRegPc := (
+//    tempNextRegPc
+//  )
+//  //--------
+//  tgtSrcRegPcBuf.io.ramIo.wrAddr := rTgtBufWrAddr.head
+//  //--------
+//  tgtDstRegPcBuf.io.ramIo.wrAddr := rTgtBufWrAddr.head
+//
+//  val myWrSrcRegPcAndValid = (
+//    Flow(
+//      UInt(cfg.mySrcRegPcCmpEqWidth bits)
+//    )
+//  )
+//
+//  myWrSrcRegPcAndValid.payload := (
+//    Cat(
+//      wrBtbElem.srcRegPc(cfg.mySrcRegPcCmpEqRangeHi),
+//      wrBtbElem.srcRegPc(cfg.mySrcRegPcCmpEqRangeLo),
+//    ).asUInt
+//  )
+//  myWrSrcRegPcAndValid.valid := True
+//  //--------
+//  // BEGIN: old `tgtValidBuf`
+//  //when (rTgtBufWrEn.head) {
+//  //  tgtValidBuf(rTgtBufWrAddr.head) := True
+//  //}
+//  // END: old `tgtValidBuf`
+//
+//  // BEGIN: old `tgtBrKindBuf`
+//  //switch (
+//  //  rTgtBufWrEn.last
+//  //  ## RegNext(
+//  //    io.psExSetPc.taken.myPsExSetPcValid,
+//  //    init=False
+//  //  )
+//  //) {
+//  //  is (
+//  //    //M"010"
+//  //    M"10"
+//  //    //M"100"
+//  //  ) {
+//  //    when (tgtBrKindBuf(rTgtBufWrAddr.last).orR) {
+//  //      tgtBrKindBuf(rTgtBufWrAddr.last) := (
+//  //        tgtBrKindBuf(rTgtBufWrAddr.last) - 1
+//  //      )
+//  //    }
+//  //  }
+//  //  is (
+//  //    //M"011"
+//  //    M"11"
+//  //    //M"110"
+//  //  ) {
+//  //    when ((~tgtBrKindBuf(rTgtBufWrAddr.last)).orR) {
+//  //      tgtBrKindBuf(rTgtBufWrAddr.last) := (
+//  //        tgtBrKindBuf(rTgtBufWrAddr.last) + 1
+//  //      )
+//  //    }
+//  //  }
+//  //  //is (M"1-1") {
+//  //  //  // always taken means we can probably just switch to "weakly taken"
+//  //  //  tgtBrKindBuf(rTgtBufWrAddr.last) := (
+//  //  //    //U(
+//  //  //    //  tgtBrKindBuf(rTgtBufWrAddr.last).getWidth bits,
+//  //  //    //  default -> True
+//  //  //    //)
+//  //  //    U"10"
+//  //  //  )
+//  //  //}
+//  //  default {
+//  //  }
+//  //}
+//  // END: old `tgtBrKindBuf`
+//
+//  tgtSrcRegPcBuf.io.ramIo.wrData := (
+//    myWrSrcRegPcAndValid.payload
+//  )
+//  //--------
+//  def myTempDstRegPc = (
+//    wrBtbElem.dstRegPc(
+//      wrBtbElem.dstRegPc.high
+//      downto log2Up(cfg.instrSizeBytes)
+//    )
+//  )
+//  tgtDstRegPcBuf.io.ramIo.wrData := (
+//    if (!cfg.useLcvDataBus) (
+//      myTempDstRegPc
+//    ) else (
+//      Cat(
+//        myTempDstRegPc,
+//      ).asUInt
+//    )
+//  )
+//  //--------
+//  tgtSrcRegPcBuf.io.ramIo.wrEn := rTgtBufWrEn.head
+//  //--------
+//  tgtDstRegPcBuf.io.ramIo.wrEn := rTgtBufWrEn.head
+//  //--------
+//}
 
 private[libsnowhouse] case class SnowHouseBusToLcvBusBridgeIo(
   cfg: SnowHouseConfig,
@@ -2796,29 +3332,59 @@ case class SnowHousePipeStageInstrDecode(
       Reg(UInt(log2Up(cfg.optScoreboardOooIssueMaxNumBranches) bits))
       init(0x0)
     )
-    val myOooIssueChkptBuf = (
-      Mem(
+    val myOooIssueChkptBufCfg = (
+      RamSimpleDualPortConfig(
         wordType=UInt(cfg.optScoreboardReorderBufWidth bits),
-        wordCount=cfg.optScoreboardOooIssueMaxNumBranches,
+        depth=cfg.optScoreboardOooIssueMaxNumBranches,
+        initBigInt=Some(
+          Array.fill(cfg.optScoreboardOooIssueMaxNumBranches)(
+            BigInt(0)
+          )
+        ),
+        arrRamStyleAltera=(
+          //"no_rw_check, logic"
+          "no_rw_check, MLAB"
+          //"MLAB"
+        ),
+        arrRamStyleXilinx=(
+          "auto"
+          //"block"
+          //"distributed"
+        ),
+        doAsyncRead=true,
       )
-      .initBigInt(Array.fill(cfg.optScoreboardOooIssueMaxNumBranches)(
-        BigInt(0)
-      ))
+    )
+    //val myOooIssueChkptBuf = (
+    //  Mem(
+    //    wordType=UInt(cfg.optScoreboardReorderBufWidth bits),
+    //    wordCount=cfg.optScoreboardOooIssueMaxNumBranches,
+    //  )
+    //  .initBigInt(Array.fill(cfg.optScoreboardOooIssueMaxNumBranches)(
+    //    BigInt(0)
+    //  ))
+    //)
+    val myOooIssueChkptBuf = (
+      RamSimpleDualPort(cfg=myOooIssueChkptBufCfg)
     )
     val myChkptWriteCond = (
       upPayload(1).splitOp.haveAnyJmpBrOp()
       && !shouldClearExtraDecodeInfo
       && cId.up.isFiring
     )
-    myOooIssueChkptBuf.write(
-      address=(
-        rOooIssueChkptBufIdx //+ 1
-      ),
-      data=(
-        upPayload(1).reorderBufIdx
-      ),
-      enable=myChkptWriteCond,
-    )
+    //myOooIssueChkptBuf.write(
+    //  address=(
+    //    rOooIssueChkptBufIdx //+ 1
+    //  ),
+    //  data=(
+    //    upPayload(1).reorderBufIdx
+    //  ),
+    //  enable=myChkptWriteCond,
+    //)
+
+    myOooIssueChkptBuf.io.ramIo.wrData := upPayload(1).reorderBufIdx
+    myOooIssueChkptBuf.io.ramIo.wrAddr := rOooIssueChkptBufIdx
+    myOooIssueChkptBuf.io.ramIo.wrEn := myChkptWriteCond
+
     upPayload(1).myOooIssueChkptIdx := rOooIssueChkptBufIdx
     when (myChkptWriteCond) {
       rOooIssueChkptBufIdx := rOooIssueChkptBufIdx + 1
@@ -2834,14 +3400,21 @@ case class SnowHousePipeStageInstrDecode(
     //    init=upPayload(1).reorderBufIdx
     //  )
     //)
+    myOooIssueChkptBuf.io.ramIo.rdEn := (
+      shouldClearExtraDecodeInfo
+    )
+    myOooIssueChkptBuf.io.ramIo.rdAddr := (
+      stickyExSetPc.myOooIssueChkptIdx
+    )
     when (
       //myChkptWriteCond
       shouldClearExtraDecodeInfo
     ) {
       upPayload(1).reorderBufIdx := (
-        myOooIssueChkptBuf.readAsync(
-          address=stickyExSetPc.myOooIssueChkptIdx
-        ) //+ 1
+        //myOooIssueChkptBuf.readAsync(
+        //  address=stickyExSetPc.myOooIssueChkptIdx
+        //) //+ 1
+        myOooIssueChkptBuf.io.ramIo.rdData
       )
     } otherwise {
       upPayload(1).reorderBufIdx := (
