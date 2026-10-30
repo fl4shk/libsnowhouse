@@ -3332,6 +3332,7 @@ case class SnowHousePipeStageInstrDecode(
       Reg(UInt(log2Up(cfg.optScoreboardOooIssueMaxNumBranches) bits))
       init(0x0)
     )
+
     val myOooIssueChkptBufCfg = (
       RamSimpleDualPortConfig(
         wordType=UInt(cfg.optScoreboardReorderBufWidth bits),
@@ -3866,6 +3867,22 @@ case class SnowHousePipeStageScoreboardCheck(
       ) = {
         //val jdx = otherIdx - myOooRdBufExtraSize
         val tempSize = myOooRdBufDepth - otherIdx - 1
+        val tempCond = (
+          (
+            LcvOrR(
+              pop(otherIdx).writesGprIdxVec.asBits(myGprRange)
+              & inp.readsGprIdxVec.asBits(myGprRange)
+            )//.orR
+            || LcvOrR(
+              pop(otherIdx).writesGprIdxVec.asBits(myGprRange)
+              & inp.writesGprIdxVec.asBits(myGprRange)
+            )//.orR
+            || LcvOrR(
+              pop(otherIdx).readsGprIdxVec.asBits(myGprRange)
+              & inp.writesGprIdxVec.asBits(myGprRange)
+            )//.orR
+          )
+        )
         val myMux = (
           Mux(
             (
@@ -3876,76 +3893,79 @@ case class SnowHousePipeStageScoreboardCheck(
             ),
             False,
             (
-              //!pop(otherIdx).splitOp.scoreboardOpCanBeOooIssued(1)
-              //|| 
-              //pop(otherIdx).splitOp
-              //&& 
-              pop(otherIdx).inpDecodeExt.last.opIsNonFwd
-              && (
-                LcvOrR(
-                  pop(otherIdx).writesGprIdxVec.asBits(myGprRange)
-                  & inp.readsGprIdxVec.asBits(myGprRange)
-                )//.orR
-                || LcvOrR(
-                  pop(otherIdx).writesGprIdxVec.asBits(myGprRange)
-                  & inp.writesGprIdxVec.asBits(myGprRange)
-                )//.orR
-                || LcvOrR(
-                  pop(otherIdx).readsGprIdxVec.asBits(myGprRange)
-                  & inp.writesGprIdxVec.asBits(myGprRange)
-                )//.orR
-              )
-            )
-          )
-
-        )
-
-        if (tempSize == 0) (
-          myMux
-        ) else {
-          val myMemAccessCheckVec = Vec.fill(
-            tempSize
-          )(
-            Bool()
-          )
-
-          for (kdx <- 0 until tempSize) {
-            myMemAccessCheckVec(kdx) := (
-              Mux(
-                (
-                  pop(otherIdx).fire
-                  || !pop(otherIdx).valid
-                  || pop(otherIdx + kdx).fire
-                  || !pop(otherIdx + kdx).valid
-                ),
-                False,
-                (
-                  //pop(otherIdx).splitOp.opIsMemAccess
-                  //&& pop(otherIdx + kdx).splitOp.opIsMemAccess
-                  //&& 
-                  pop(
-                    otherIdx
-                  ).inpDecodeExt.last.opIsMemAccess.head
+              if (tempSize == 0) (
+                tempCond
+              ) else (
+                tempCond
+                || (
+                  pop(otherIdx).inpDecodeExt.last.opIsMemAccess.head
                   && (
                     (
                       pop(
                         otherIdx
                       ).inpDecodeExt.last.memAccessKind.asBits(1)
-                      && !pop(
-                        otherIdx + kdx
-                      ).inpDecodeExt.last.memAccessKind.asBits(1)
+                      && !inp.inpDecodeExt.last.memAccessKind.asBits(1)
                     )
                   )
                 )
               )
+              //!pop(otherIdx).splitOp.scoreboardOpCanBeOooIssued(1)
+              //|| 
+              //pop(otherIdx).splitOp
+              //&& 
+              //pop(otherIdx).inpDecodeExt.last.opIsNonFwd
+              //&& 
             )
-          }
-
-          (
-            !myMemAccessCheckVec.sFindFirst(_ === True)._1
-            || myMux
           )
-        }
+        )
+
+        //if (tempSize == 0) (
+          myMux
+        //) else {
+        //  val myMemAccessCheckVec = Vec.fill(
+        //    tempSize
+        //  )(
+        //    Bool()
+        //  )
+
+        //  //for (kdx <- 0 until tempSize) {
+        //  //  myMemAccessCheckVec(kdx) := (
+        //  //    Mux(
+        //  //      (
+        //  //        pop(otherIdx).fire
+        //  //        || !pop(otherIdx).valid
+        //  //        || pop(otherIdx + kdx).fire
+        //  //        || !pop(otherIdx + kdx).valid
+        //  //      ),
+        //  //      False,
+        //  //      (
+        //  //        //pop(otherIdx).splitOp.opIsMemAccess
+        //  //        //&& pop(otherIdx + kdx).splitOp.opIsMemAccess
+        //  //        //&& 
+        //  //        pop(
+        //  //          otherIdx
+        //  //        ).inpDecodeExt.last.opIsMemAccess.head
+        //  //        && (
+        //  //          (
+        //  //            pop(
+        //  //              otherIdx
+        //  //            ).inpDecodeExt.last.memAccessKind.asBits(1)
+        //  //            && !pop(
+        //  //              otherIdx + kdx
+        //  //            ).inpDecodeExt.last.memAccessKind.asBits(1)
+        //  //          )
+        //  //        )
+        //  //      )
+        //  //    )
+        //  //  )
+        //  //}
+
+        //  (
+        //    //!myMemAccessCheckVec.sFindFirst(_ === True)._1
+        //    //|| 
+        //    myMux
+        //  )
+        //}
       }
       if (idx >= myOooRdBufExtraSize) {
         val myTempHazardPopVec = Vec.fill(
