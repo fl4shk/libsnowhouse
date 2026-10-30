@@ -3296,15 +3296,16 @@ case class SnowHousePipeStageInstrDecode(
 
         //!upPayload(1).splitOp.haveAnyJmpBrOp()
         //&& 
-        !shouldClearExtraDecodeInfo
-        //&& RegNextWhen(
-        //  (
-        //    !upPayload(1).splitOp.haveAnyJmpBrOp()
-        //    && !shouldClearExtraDecodeInfo
-        //  ),
-        //  cond=cId.up.isFiring,
-        //  init=False,
-        //)
+        //!shouldClearExtraDecodeInfo
+        //&& 
+        RegNextWhen(
+          (
+            !upPayload(1).splitOp.haveAnyJmpBrOp()
+            && !shouldClearExtraDecodeInfo
+          ),
+          cond=cId.up.isFiring,
+          init=False,
+        )
         //!LcvOrR(
         //  History(
         //    that=(
