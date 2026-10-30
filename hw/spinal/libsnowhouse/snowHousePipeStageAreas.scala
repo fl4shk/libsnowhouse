@@ -2569,6 +2569,7 @@ case class SnowHousePipeStageInstrDecode(
       init=stickyExSetPc.getZero
     )
   )
+
   when (psExSetPc.valid) {
     shouldClearExtraDecodeInfo := True
     //stickyExSetPc.valid := True
@@ -3292,20 +3293,29 @@ case class SnowHousePipeStageInstrDecode(
       && (
         // looks like maybe an instruction that's the destination of a
         // branch needs to *also* NOT be scheduled OoO
-        RegNextWhen(
-          (
-            !upPayload(1).splitOp.haveAnyJmpBrOp()
-            && !shouldClearExtraDecodeInfo
-          ),
-          cond=cId.up.isFiring,
-          init=False,
-        )
-        //History(
-        //  that=(
-        //    !upPayload(1).splitOp.haveAnyJmpBrOp()
-        //    && !shouldClearExtraDecodeInfo
-        //  )
+
+        //!shouldClearExtraDecodeInfo
+        //&& RegNextWhen(
+        //  (
+        //    //!upPayload(1).splitOp.haveAnyJmpBrOp()
+        //    //&& 
+        //    !shouldClearExtraDecodeInfo
+        //  ),
+        //  cond=cId.up.isFiring,
+        //  init=False,
         //)
+        LcvOrR(
+          History(
+            that=(
+              //!upPayload(1).splitOp.haveAnyJmpBrOp()
+              //&& !shouldClearExtraDecodeInfo
+              !shouldClearExtraDecodeInfo
+            ),
+            when=cId.up.isFiring,
+            length=cfg.optScoreboardOooIssueWindow.get,
+            init=False
+          ).asBits.asUInt
+        )
       )
       && (
         // Force branches/jumps/calls/returns, etc. to be in-order
@@ -3868,6 +3878,10 @@ case class SnowHousePipeStageScoreboardCheck(
         //val jdx = otherIdx - myOooRdBufExtraSize
         val tempSize = myOooRdBufDepth - otherIdx - 1
         val tempCond = (
+          //(
+          //  !pop(otherIdx).inpDecodeExt.last.opIsNonFwd
+          //)
+          //|| 
           (
             LcvOrR(
               pop(otherIdx).writesGprIdxVec.asBits(myGprRange)
@@ -3897,16 +3911,18 @@ case class SnowHousePipeStageScoreboardCheck(
                 tempCond
               ) else (
                 tempCond
-                || (
-                  pop(otherIdx).inpDecodeExt.last.opIsMemAccess.head
-                  && (
-                    (
-                      pop(
-                        otherIdx
-                      ).inpDecodeExt.last.memAccessKind.asBits(1)
-                      && !inp.inpDecodeExt.last.memAccessKind.asBits(1)
-                    )
+                && (
+                  !pop(otherIdx).splitOp.opIsMemAccess
+                  || !inp.splitOp.opIsMemAccess
+                  || !(
+                    pop(
+                      otherIdx
+                    ).inpDecodeExt.last.memAccessKind.asBits(1)
+                    && !inp.inpDecodeExt.last.memAccessKind.asBits(1)
                   )
+                  //|| !(
+                  //  !inp.inpDecodeExt.last.memAccessKind.asBits(1)
+                  //)
                 )
               )
               //!pop(otherIdx).splitOp.scoreboardOpCanBeOooIssued(1)

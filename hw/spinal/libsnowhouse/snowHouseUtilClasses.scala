@@ -1275,10 +1275,13 @@ case class SnowHouseConfig(
     //  )
     //)
     log2Up(16)
+    //log2Up(32)
   )
 
   val optScoreboardOooIssueMaxNumBranches = (
     1 << optScoreboardReorderBufWidth
+    //log2Up(32)
+    //32
     //1 << log2Up(8)
   )
 
