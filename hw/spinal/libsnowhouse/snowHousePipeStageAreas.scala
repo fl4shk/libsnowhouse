@@ -3914,9 +3914,9 @@ case class SnowHousePipeStageScoreboardCheck(
                 ),
                 False,
                 (
-                  !pop(otherIdx).splitOp.opIsMemAccess
-                  || !pop(otherIdx + kdx).splitOp.opIsMemAccess
-                  || (
+                  pop(otherIdx).splitOp.opIsMemAccess
+                  && pop(otherIdx + kdx).splitOp.opIsMemAccess
+                  && (
                     (
                       pop(
                         otherIdx
@@ -3930,6 +3930,7 @@ case class SnowHousePipeStageScoreboardCheck(
               )
             )
           }
+
           (
             !myMemAccessCheckVec.sFindFirst(_ === True)._1
             || myMux
