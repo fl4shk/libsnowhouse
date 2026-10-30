@@ -3876,19 +3876,25 @@ case class SnowHousePipeStageScoreboardCheck(
             ),
             False,
             (
-              !pop(otherIdx).splitOp.scoreboardOpCanBeOooIssued(1)
-              || (
-                pop(otherIdx).writesGprIdxVec.asBits(myGprRange)
-                & inp.readsGprIdxVec.asBits(myGprRange)
-              ).orR
-              || (
-                pop(otherIdx).writesGprIdxVec.asBits(myGprRange)
-                & inp.writesGprIdxVec.asBits(myGprRange)
-              ).orR
-              || (
-                pop(otherIdx).readsGprIdxVec.asBits(myGprRange)
-                & inp.writesGprIdxVec.asBits(myGprRange)
-              ).orR
+              //!pop(otherIdx).splitOp.scoreboardOpCanBeOooIssued(1)
+              //|| 
+              //pop(otherIdx).splitOp
+              //&& 
+              pop(otherIdx).inpDecodeExt.last.opIsNonFwd
+              && (
+                LcvOrR(
+                  pop(otherIdx).writesGprIdxVec.asBits(myGprRange)
+                  & inp.readsGprIdxVec.asBits(myGprRange)
+                )//.orR
+                || LcvOrR(
+                  pop(otherIdx).writesGprIdxVec.asBits(myGprRange)
+                  & inp.writesGprIdxVec.asBits(myGprRange)
+                )//.orR
+                || LcvOrR(
+                  pop(otherIdx).readsGprIdxVec.asBits(myGprRange)
+                  & inp.writesGprIdxVec.asBits(myGprRange)
+                )//.orR
+              )
             )
           )
 
@@ -3914,8 +3920,12 @@ case class SnowHousePipeStageScoreboardCheck(
                 ),
                 False,
                 (
-                  pop(otherIdx).splitOp.opIsMemAccess
-                  && pop(otherIdx + kdx).splitOp.opIsMemAccess
+                  //pop(otherIdx).splitOp.opIsMemAccess
+                  //&& pop(otherIdx + kdx).splitOp.opIsMemAccess
+                  //&& 
+                  pop(
+                    otherIdx
+                  ).inpDecodeExt.last.opIsMemAccess.head
                   && (
                     (
                       pop(
@@ -3956,7 +3966,8 @@ case class SnowHousePipeStageScoreboardCheck(
         }
         outp.splitOp.scoreboardOpCanBeOooIssued.last.allowOverride
         outp.splitOp.scoreboardOpCanBeOooIssued.last := (
-          !myTempHazardPopVec.orR
+          outp.splitOp.scoreboardOpCanBeOooIssued(1)
+          && !LcvOrR(myTempHazardPopVec)//.orR
           //myTempHazardPopVec.andR
         )
         //when (myTempHazardPopVec.orR) {
