@@ -1274,8 +1274,8 @@ case class SnowHouseConfig(
     //    //32
     //  )
     //)
-    log2Up(16)
-    //log2Up(32)
+    //log2Up(16)
+    log2Up(32)
     //log2Up(64)
   )
 
