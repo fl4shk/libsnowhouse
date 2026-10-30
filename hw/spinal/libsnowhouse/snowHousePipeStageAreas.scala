@@ -3920,7 +3920,7 @@ case class SnowHousePipeStageScoreboardCheck(
                 tempCond
               ) else (
                 tempCond
-                && (
+                || (
                   !pop(otherIdx).splitOp.opIsMemAccess
                   || !inp.splitOp.opIsMemAccess
                   || !(
