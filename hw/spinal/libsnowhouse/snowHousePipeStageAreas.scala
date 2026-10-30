@@ -3294,28 +3294,30 @@ case class SnowHousePipeStageInstrDecode(
         // looks like maybe an instruction that's the destination of a
         // branch needs to *also* NOT be scheduled OoO
 
-        //!shouldClearExtraDecodeInfo
-        //&& RegNextWhen(
-        //  (
-        //    //!upPayload(1).splitOp.haveAnyJmpBrOp()
-        //    //&& 
-        //    !shouldClearExtraDecodeInfo
-        //  ),
-        //  cond=cId.up.isFiring,
-        //  init=False,
-        //)
-        LcvOrR(
-          History(
-            that=(
-              //!upPayload(1).splitOp.haveAnyJmpBrOp()
-              //&& !shouldClearExtraDecodeInfo
-              !shouldClearExtraDecodeInfo
-            ),
-            when=cId.up.isFiring,
-            length=cfg.optScoreboardOooIssueWindow.get,
-            init=False
-          ).asBits.asUInt
+        !upPayload(1).splitOp.haveAnyJmpBrOp()
+        && !shouldClearExtraDecodeInfo
+        && RegNextWhen(
+          (
+            !upPayload(1).splitOp.haveAnyJmpBrOp()
+            && !shouldClearExtraDecodeInfo
+          ),
+          cond=cId.up.isFiring,
+          init=False,
         )
+        //!LcvOrR(
+        //  History(
+        //    that=(
+        //      //!upPayload(1).splitOp.haveAnyJmpBrOp()
+        //      //&& !shouldClearExtraDecodeInfo
+        //      upPayload(1).splitOp.haveAnyJmpBrOp()
+        //      || shouldClearExtraDecodeInfo
+        //      //|| shouldClearExtraDecodeInfo
+        //    ),
+        //    when=cId.up.isFiring,
+        //    length=cfg.optScoreboardOooIssueWindow.get,
+        //    init=False
+        //  ).asBits.asUInt
+        //)
       )
       && (
         // Force branches/jumps/calls/returns, etc. to be in-order
@@ -3425,7 +3427,7 @@ case class SnowHousePipeStageInstrDecode(
         //myOooIssueChkptBuf.readAsync(
         //  address=stickyExSetPc.myOooIssueChkptIdx
         //) //+ 1
-        myOooIssueChkptBuf.io.ramIo.rdData
+        myOooIssueChkptBuf.io.ramIo.rdData //- 1
       )
     } otherwise {
       upPayload(1).reorderBufIdx := (

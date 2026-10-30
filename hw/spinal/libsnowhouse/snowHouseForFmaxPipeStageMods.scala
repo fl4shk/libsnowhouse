@@ -4849,6 +4849,7 @@ case class SnowHouseForFmaxPipeStageWriteBack(
     cfg.optScoreboard
   ) generate (
     //SnowHouseForFmaxPsWbReorderBuf(cfg=cfg)
+
     LcvLowLatencyReorderBuf(
       cfg=LcvLowLatencyReorderBufConfig(
         wordType=SnowHouseForFmaxPsWbReorderBufPayload(cfg=cfg),
@@ -4857,6 +4858,14 @@ case class SnowHouseForFmaxPipeStageWriteBack(
         ),
       )
     )
+    //LcvLowLatencyReorderBuf(
+    //  cfg=LcvLowLatencyReorderBufConfig(
+    //    wordType=SnowHouseForFmaxPsWbReorderBufPayload(cfg=cfg),
+    //    reorderBufIdxWidth=(
+    //      cfg.optScoreboardReorderBufWidth
+    //    ),
+    //  )
+    //)
   )
   //val myCommitFinalInpStm = (
   //  if (cfg.optScoreboard) (
