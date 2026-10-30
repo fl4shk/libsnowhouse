@@ -3294,16 +3294,17 @@ case class SnowHousePipeStageInstrDecode(
         // looks like maybe an instruction that's the destination of a
         // branch needs to *also* NOT be scheduled OoO
 
-        !upPayload(1).splitOp.haveAnyJmpBrOp()
-        && !shouldClearExtraDecodeInfo
-        && RegNextWhen(
-          (
-            !upPayload(1).splitOp.haveAnyJmpBrOp()
-            && !shouldClearExtraDecodeInfo
-          ),
-          cond=cId.up.isFiring,
-          init=False,
-        )
+        //!upPayload(1).splitOp.haveAnyJmpBrOp()
+        //&& 
+        !shouldClearExtraDecodeInfo
+        //&& RegNextWhen(
+        //  (
+        //    !upPayload(1).splitOp.haveAnyJmpBrOp()
+        //    && !shouldClearExtraDecodeInfo
+        //  ),
+        //  cond=cId.up.isFiring,
+        //  init=False,
+        //)
         //!LcvOrR(
         //  History(
         //    that=(
@@ -3314,7 +3315,11 @@ case class SnowHousePipeStageInstrDecode(
         //      //|| shouldClearExtraDecodeInfo
         //    ),
         //    when=cId.up.isFiring,
-        //    length=cfg.optScoreboardOooIssueWindow.get,
+        //    length=(
+        //      //cfg.optScoreboardOooIssueWindow.get
+        //      //5
+        //      6
+        //    ),
         //    init=False
         //  ).asBits.asUInt
         //)
@@ -3884,7 +3889,8 @@ case class SnowHousePipeStageScoreboardCheck(
           //  !pop(otherIdx).inpDecodeExt.last.opIsNonFwd
           //)
           //|| 
-          (
+          !pop(otherIdx).splitOp.scoreboardOpCanBeOooIssued(1)
+          || (
             LcvOrR(
               pop(otherIdx).writesGprIdxVec.asBits(myGprRange)
               & inp.readsGprIdxVec.asBits(myGprRange)
