@@ -701,6 +701,15 @@ case class SnowHouseForFmaxConfig(
       //2
     )
   ),
+  optScoreboardNumExtraFwdHistStages: Int=(
+    //6
+    4
+    //2
+    //3
+    //1
+    //2
+    //0
+  ),
   optScoreboardMultiCycleOpIsNonFwd: Boolean=(
     true
     //false
@@ -734,6 +743,9 @@ case class SnowHouseForFmaxConfig(
       //)
     }
   }
+  require(
+    optScoreboardNumExtraFwdHistStages >= 0
+  )
 }
 case class SnowHouseConfig(
   haveZeroReg: Option[Int],
@@ -862,13 +874,7 @@ case class SnowHouseConfig(
             optScoreboard
             //&& optScoreboardOooIssueWindow == None
           ) (
-            //6
-            4
-            //2
-            //3
-            //1
-            //2
-            //0
+            myForFmaxCfg.optScoreboardNumExtraFwdHistStages
           ) else (
             0
           )
