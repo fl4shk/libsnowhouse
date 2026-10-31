@@ -1275,8 +1275,21 @@ case class SnowHouseConfig(
     //  )
     //)
     //log2Up(16)
-    log2Up(32)
+    //log2Up(32)
     //log2Up(64)
+    optScoreboardOooIssueWindow match {
+      case Some(myOooIssueWindow) => {
+        (
+          log2Up(myOooIssueWindow) + 1
+        ).max(
+          //log2Up(16)
+          log2Up(64)
+        )
+      }
+      case None => {
+        log2Up(16)
+      }
+    }
   )
 
   val optScoreboardOooIssueMaxNumBranches = (

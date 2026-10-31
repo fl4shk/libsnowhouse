@@ -3227,9 +3227,83 @@ case class SnowHousePipeStageInstrDecode(
   upPayload(1).inpDecodeExt.foreach(item => {
     item.opIsNonFwd := upPayload(1).splitOp.opIsNonFwd
   })
+
+  //object MyOooIssueState
+  //extends SpinalEnum(defaultEncoding=binaryOneHot) {
+  //  val
+  //    IDLE,
+  //    FLUSH,
+  //    WAIT_UNTIL_BRANCH_FINISHED
+  //    = newElement();
+  //}
   val myOooIssueArea = (
     cfg.optScoreboardOooIssueWindow != None
   ) generate new Area {
+    //def doOooIssueSendBubbleMainMost(
+    //  myPsIdBubble: Option[Bool]=Some(True),
+    //  myPsIdOtherBubble: Option[Bool]=None,
+    //  myPsIdFwdBubble: Option[Bool]=None,
+    //  myInFlushCond: Option[Bool]=None,
+    //): Unit = {
+    //  require(cfg.useLcvDataBus)
+    //  cId.duplicateIt()
+
+    //  down(pId).setAsBubbleMain(
+    //    myPsIdBubble=myPsIdBubble,
+    //  )
+    //  if (myPsIdOtherBubble != None) {
+    //    down(pId).instrCnt.myPsIdOtherBubble.foreach(item => {
+    //      item := myPsIdOtherBubble.get
+    //    })
+    //  }
+    //  if (myPsIdFwdBubble != None) {
+    //    down(pId).instrCnt.myPsIdFwdBubble.foreach(item => {
+    //      item := myPsIdFwdBubble.get
+    //    })
+    //  }
+
+    //  if (
+    //    cfg.optScoreboard
+    //    && myInFlushCond != None
+    //  ) {
+    //    down(pId).instrCnt.myPsIdInFlushBubble.foreach(item => {
+    //      item := myInFlushCond.get
+    //    })
+    //    down(pId).instrCnt.scoreboardCheckPayload.fwdTag := 0x0
+    //    down(pId).instrCnt.scoreboardCheckPayload.nonFwdTag := 0x0
+    //  }
+    //}
+
+    //val myOooIssueWindow = cfg.optScoreboardOooIssueWindow.get
+    //val rMyOooIssueState = (
+    //  Reg(MyOooIssueState())
+    //  init(MyOooIssueState.IDLE)
+    //)
+    //val rFlushCnt = (
+    //  Reg(SInt(log2Up(myOooIssueWindow) + 1 bits))
+    //  init(-1)
+    //)
+
+    //switch (rMyOooIssueState) {
+    //  is (MyOooIssueState.IDLE) {
+    //    rFlushCnt := myOooIssueWindow - 1
+    //  }
+    //  is (MyOooIssueState.FLUSH) {
+    //    doOooIssueSendBubbleMainMost()
+    //    when (
+    //      down.isFiring
+    //      && !rFlushCnt.msb
+    //    ) {
+    //      rFlushCnt := rFlushCnt - 1
+    //    }
+    //    when (rFlushCnt.msb) {
+    //      rMyOooIssueState := MyOooIssueState.WAIT_UNTIL_BRANCH_FINISHED
+    //    }
+    //  }
+    //  is (MyOooIssueState.WAIT_UNTIL_BRANCH_FINISHED) {
+    //  }
+    //}
+
     upPayload(1).readsGprIdxVec.foreach(item => {
       item := False
     })
@@ -3251,45 +3325,12 @@ case class SnowHousePipeStageInstrDecode(
         }
       }
     }
+
     upPayload(1).splitOp.scoreboardOpCanBeOooIssued(1) := (
-      //{
-      //  // RaW hazards should prevent OoO scheduling
-      //  //RegNextWhen(
-      //  //  upPayload(1).gprIdx
-      //  //)
-      //  val temp = Vec.fill(cfg.regFileCfg.modRdPortCnt)(
-      //    Bool()
-      //  )
-      //  for (idx <- 0 until cfg.regFileCfg.modRdPortCnt) {
-      //    val rPrevWrGprIdx = (
-      //      RegNextWhen(
-      //        upPayload(1).gprIdxVec.last,
-      //        cond=cId.up.isFiring,
-      //      )
-      //      init(0x0)
-      //    )
-      //    val myMainCond = (
-      //      upPayload(1).gprIdxVec(idx)
-      //      === rPrevWrGprIdx
-      //    )
-      //    temp(idx) := (
-      //      if (cfg.myHaveZeroReg) (
-      //        !myMainCond
-      //        || (
-      //          RegNextWhen(
-      //            !upPayload(1).gprIsNonZeroVec.last.last,
-      //            cond=cId.up.isFiring,
-      //            init=False
-      //          )
-      //        )
-      //      ) else (
-      //        !myMainCond
-      //      )
-      //    )
-      //  }
-      //  temp.andR
-      //}
       upPayload(1).splitOp.scoreboardOpCanBeOooIssued.head
+      && (
+        !shouldClearExtraDecodeInfo
+      )
       && (
         // looks like maybe an instruction that's the destination of a
         // branch needs to *also* NOT be scheduled OoO
@@ -3425,6 +3466,7 @@ case class SnowHousePipeStageInstrDecode(
     myOooIssueChkptBuf.io.ramIo.rdAddr := (
       stickyExSetPc.myOooIssueChkptIdx
     )
+
     when (
       //myChkptWriteCond
       shouldClearExtraDecodeInfo
@@ -3889,9 +3931,9 @@ case class SnowHousePipeStageScoreboardCheck(
           //(
           //  !pop(otherIdx).inpDecodeExt.last.opIsNonFwd
           //)
-          //|| 
-          !pop(otherIdx).splitOp.scoreboardOpCanBeOooIssued(1)
-          || (
+          //pop(otherIdx).splitOp.scoreboardOpCanBeOooIssued(1)
+          //&& 
+          (
             LcvOrR(
               pop(otherIdx).writesGprIdxVec.asBits(myGprRange)
               & inp.readsGprIdxVec.asBits(myGprRange)
@@ -3921,9 +3963,9 @@ case class SnowHousePipeStageScoreboardCheck(
               ) else (
                 tempCond
                 || (
-                  !pop(otherIdx).splitOp.opIsMemAccess
-                  || !inp.splitOp.opIsMemAccess
-                  || !(
+                  pop(otherIdx).splitOp.opIsMemAccess
+                  && inp.splitOp.opIsMemAccess
+                  && (
                     pop(
                       otherIdx
                     ).inpDecodeExt.last.memAccessKind.asBits(1)
@@ -3944,53 +3986,74 @@ case class SnowHousePipeStageScoreboardCheck(
           )
         )
 
-        //if (tempSize == 0) (
+        if (tempSize == 0) (
           myMux
-        //) else {
-        //  val myMemAccessCheckVec = Vec.fill(
-        //    tempSize
-        //  )(
-        //    Bool()
-        //  )
+        ) else {
+          //val myMemAccessCheckVec = Vec.fill(
+          //  tempSize
+          //)(
+          //  Bool()
+          //)
+          val myOooIssueCheckVec = Vec.fill(
+            tempSize
+          )(
+            Bool()
+          )
 
-        //  //for (kdx <- 0 until tempSize) {
-        //  //  myMemAccessCheckVec(kdx) := (
-        //  //    Mux(
-        //  //      (
-        //  //        pop(otherIdx).fire
-        //  //        || !pop(otherIdx).valid
-        //  //        || pop(otherIdx + kdx).fire
-        //  //        || !pop(otherIdx + kdx).valid
-        //  //      ),
-        //  //      False,
-        //  //      (
-        //  //        //pop(otherIdx).splitOp.opIsMemAccess
-        //  //        //&& pop(otherIdx + kdx).splitOp.opIsMemAccess
-        //  //        //&& 
-        //  //        pop(
-        //  //          otherIdx
-        //  //        ).inpDecodeExt.last.opIsMemAccess.head
-        //  //        && (
-        //  //          (
-        //  //            pop(
-        //  //              otherIdx
-        //  //            ).inpDecodeExt.last.memAccessKind.asBits(1)
-        //  //            && !pop(
-        //  //              otherIdx + kdx
-        //  //            ).inpDecodeExt.last.memAccessKind.asBits(1)
-        //  //          )
-        //  //        )
-        //  //      )
-        //  //    )
-        //  //  )
-        //  //}
+          for (kdx <- 0 until tempSize) {
+            myOooIssueCheckVec(kdx) := (
+              Mux(
+                (
+                  //pop(otherIdx).fire
+                  //|| !pop(otherIdx).valid
+                  pop(otherIdx + kdx).fire
+                  || !pop(otherIdx + kdx).valid
+                ),
+                False,
+                (
+                  !pop(
+                    otherIdx + kdx
+                  ).splitOp.scoreboardOpCanBeOooIssued(1)
+                ),
+              )
+            )
+            //myMemAccessCheckVec(kdx) := (
+            //  Mux(
+            //    (
+            //      pop(otherIdx).fire
+            //      || !pop(otherIdx).valid
+            //      || pop(otherIdx + kdx).fire
+            //      || !pop(otherIdx + kdx).valid
+            //    ),
+            //    False,
+            //    (
+            //      //pop(otherIdx).splitOp.opIsMemAccess
+            //      //&& pop(otherIdx + kdx).splitOp.opIsMemAccess
+            //      //&& 
+            //      pop(
+            //        otherIdx
+            //      ).inpDecodeExt.last.opIsMemAccess.head
+            //      && (
+            //        (
+            //          pop(
+            //            otherIdx
+            //          ).inpDecodeExt.last.memAccessKind.asBits(1)
+            //          && !pop(
+            //            otherIdx + kdx
+            //          ).inpDecodeExt.last.memAccessKind.asBits(1)
+            //        )
+            //      )
+            //    )
+            //  )
+            //)
+          }
 
-        //  (
-        //    //!myMemAccessCheckVec.sFindFirst(_ === True)._1
-        //    //|| 
-        //    myMux
-        //  )
-        //}
+          (
+            //!myMemAccessCheckVec.sFindFirst(_ === True)._1
+            !myOooIssueCheckVec.sFindFirst(_ === True)._1
+            || myMux
+          )
+        }
       }
       if (idx >= myOooRdBufExtraSize) {
         val myTempHazardPopVec = Vec.fill(
@@ -4425,8 +4488,8 @@ case class SnowHousePipeStageScoreboardCheck(
         //  || myOooNonFwdRaWHazardCheckVec.last.orR
         //)
         (
-          !myOooFwdRaWHazardCheckVec(idx).orR
-          && !myOooNonFwdRaWHazardCheckVec(idx).orR
+          !LcvOrR(myOooFwdRaWHazardCheckVec(idx))//.orR
+          && !LcvOrR(myOooNonFwdRaWHazardCheckVec(idx))//.orR
         )
 
         //(
@@ -4494,52 +4557,22 @@ case class SnowHousePipeStageScoreboardCheck(
     //  //&& rPingPongBlockState
     //)
 
-    val rPastMainDispatchOkayCondVec = (
-      Vec.fill(myOooRdBufWindow - 1)(
-        Reg(Bool(), init=False)
-      )
-    )
-
-    for (idx <- 0 until myOooRdBufWindow - 1) {
-      rPastMainDispatchOkayCondVec(idx) := (
-        myPopValidVec(idx)
-        && myDispatchOkayCondMostVec(idx)
-        && myPopValidVec.last
-      )
-    }
-
-    //val rPastOooOkayCond = (
-    //  RegNext(
-    //    (
-    //      myPopValidVec(0) && myOooOkayCond
-    //      && myPopValidVec.last
-    //      //&& !myBufPop.last.fire
-    //      //&& !myBufPop(3).ready
-    //      //&& !myBufPop(4).ready
-    //    ),
-    //    init=False
+    //--------
+    //val rPastMainDispatchOkayCondVec = (
+    //  Vec.fill(myOooRdBufWindow - 1)(
+    //    Reg(Bool(), init=False)
     //  )
     //)
 
-    //val myRealOooOkayCond = (
-    //  //up.isValid
-    //  //&& 
-    //  (
-    //    myPopValidVec(0)
-    //    && myPopValidVec.last
-    //    && rPastOooOkayCond
-    //    && (
-    //      //myBufPop(4).splitOp.scoreboardOpCanBeOooIssued.last//andR
-    //      //&& 
-    //      myBufPop(3).splitOp.scoreboardOpCanBeOooIssued.last//andR
-    //    )
-    //    //|| (
-    //    //  //myPopValidVec(0)
-    //    //  //&& 
-    //    //  !myPopValidVec(1)
-    //    //)
+    //for (idx <- 0 until myOooRdBufWindow - 1) {
+    //  rPastMainDispatchOkayCondVec(idx) := (
+    //    myPopValidVec(idx)
+    //    && myDispatchOkayCondMostVec(idx)
+    //    //&& myPopValidVec.last
     //  )
-    //)
+    //}
+
+
     val myRealDispatchOkayCondVec = (
       Vec.fill(myOooRdBufWindow)(
         Bool()
@@ -4549,17 +4582,19 @@ case class SnowHousePipeStageScoreboardCheck(
       myRealDispatchOkayCondVec(idx) := (
         if (idx < myOooRdBufWindow - 1) (
           myPopValidVec(idx)
-          && rPastMainDispatchOkayCondVec(idx)
+          //&& rPastMainDispatchOkayCondVec(idx)
+          && myDispatchOkayCondMostVec(idx)
           && myBufPop(
             idx + myOooRdBufExtraSize
           ).splitOp.scoreboardOpCanBeOooIssued.last
-          && myPopValidVec.last
+          //&& myPopValidVec.last
         ) else (
           myPopValidVec(idx)
           && myDispatchOkayCondMostVec(idx)
         )
       )
     }
+
     switch (myRealDispatchOkayCondVec.asBits) {
       for (idx <- 0 until myOooRdBufWindow - 1) {
         val size = myOooRdBufWindow
