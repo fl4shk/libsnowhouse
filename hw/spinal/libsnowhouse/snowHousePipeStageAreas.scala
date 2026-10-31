@@ -4656,12 +4656,30 @@ case class SnowHousePipeStageScoreboardCheck(
       )
     }
 
-    switch (myRealDispatchOkayCondVec.asBits) {
+    switch (myRealDispatchOkayCondVec.reverse.asBits) {
       for (idx <- 0 until myOooRdBufWindow - 1) {
         val size = myOooRdBufWindow
+// >>> for idx in range(8):
+// ...     print(("0" * idx) + "1" + ("-" * (8 - idx - 1)))
+// ...     
+// 1-------
+// 01------
+// 001-----
+// 0001----
+// 00001---
+// 000001--
+// 0000001-
+// 00000001
+        val tempCaseStr = (
+          //"-" * (size - idx - 1) + "1" + ("0" * idx)
+
+          // now try preferring to schedule older instructions.
+          // Not sure if this is correct!
+          ("0" * idx) + "1" + ("-" * (size - idx - 1))
+        )
         is (
           MaskedLiteral(
-            "-" * (size - idx - 1) + "1" + ("0" * idx)
+            tempCaseStr
           )
         ) {
           doPopOoo(
