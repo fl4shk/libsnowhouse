@@ -4002,15 +4002,15 @@ case class SnowHousePipeStageScoreboardCheck(
           //  Bool()
           //)
           val myOooIssueCheckVec = Vec.fill(
-            //tempSize
-            myOooRdBufWindow //- 1
+            tempSize
+            //myOooRdBufWindow //- 1
           )(
             Bool()
           )
 
           for (
-            //kdx <- 0 until tempSize
-            kdx <- 0 until myOooRdBufWindow //- 1
+            kdx <- 0 until tempSize
+            //kdx <- 0 until myOooRdBufWindow //- 1
           ) {
             //val tempIdx: Int = (
             //  if (
@@ -4038,19 +4038,19 @@ case class SnowHousePipeStageScoreboardCheck(
                   //pop(otherIdx).fire
                   //|| !pop(otherIdx).valid
                   pop(
-                    //otherIdx + kdx
-                    kdx + myOooRdBufExtraSize
+                    otherIdx + kdx
+                    //kdx + myOooRdBufExtraSize
                   ).fire
                   || !pop(
-                    //otherIdx + kdx
-                    kdx + myOooRdBufExtraSize
+                    otherIdx + kdx
+                    //kdx + myOooRdBufExtraSize
                   ).valid
                 ),
                 False,
                 (
-                  !pop(
-                    //otherIdx + kdx
-                    kdx + myOooRdBufExtraSize
+                  pop(
+                    otherIdx + kdx
+                    //kdx + myOooRdBufExtraSize
                   ).splitOp.scoreboardOpCanBeOooIssued(1)
                 ),
               )
@@ -4089,9 +4089,15 @@ case class SnowHousePipeStageScoreboardCheck(
 
           (
             //!myMemAccessCheckVec.sFindFirst(_ === True)._1
-            myOooIssueCheckVec.sFindFirst(_ === True)._1
-            //!LcvOrR(myOooIssueCheckVec)
-            || myMux
+            //!(
+            //  !myOooIssueCheckVec.sFindFirst(_ === False)._1
+            //  //!LcvOrR(myOooIssueCheckVec)
+            //  && myMux
+            //)
+            (
+              myOooIssueCheckVec.sFindFirst(_ === False)._1
+              || myMux
+            )
           )
         }
       }
@@ -4382,13 +4388,13 @@ case class SnowHousePipeStageScoreboardCheck(
     )
 
     //val rSavedPoppedOoo = Reg(Bool(), init=False)
-    val rSavedPopIdx = (
-      Reg(UInt(log2Up(myOooRdBufWindow + 1) bits))
-      init(
-        //0x0
-        myOooRdBufWindow - 1
-      )
-    )
+    //val rSavedPopIdx = (
+    //  Reg(UInt(log2Up(myOooRdBufWindow + 1) bits))
+    //  init(
+    //    //0x0
+    //    myOooRdBufWindow - 1
+    //  )
+    //)
 
     def doPopOoo(
       doUpIsFiring: Boolean,
@@ -4420,15 +4426,15 @@ case class SnowHousePipeStageScoreboardCheck(
         }
       }
 
-      when (
-        if (doUpIsFiring) (
-          up.isFiring
-        ) else (
-          down.isFiring
-        )
-      ) {
-        rSavedPopIdx := myPopIdx - myOooRdBufExtraSize
-      }
+      //when (
+      //  if (doUpIsFiring) (
+      //    up.isFiring
+      //  ) else (
+      //    down.isFiring
+      //  )
+      //) {
+      //  rSavedPopIdx := myPopIdx - myOooRdBufExtraSize
+      //}
 
 
       //myTempOooRdBufPopVec(3).ready := (
@@ -4656,9 +4662,10 @@ case class SnowHousePipeStageScoreboardCheck(
       )
     }
 
-    switch (myRealDispatchOkayCondVec.reverse.asBits) {
-      for (idx <- 0 until myOooRdBufWindow - 1) {
+    switch (myRealDispatchOkayCondVec.asBits) {
+      for (idx <- 0 until myOooRdBufWindow) {
         val size = myOooRdBufWindow
+        val tempIdx = size - idx - 1
 // >>> for idx in range(8):
 // ...     print(("0" * idx) + "1" + ("-" * (8 - idx - 1)))
 // ...     
@@ -4675,7 +4682,7 @@ case class SnowHousePipeStageScoreboardCheck(
 
           // now try preferring to schedule older instructions.
           // Not sure if this is correct!
-          ("0" * idx) + "1" + ("-" * (size - idx - 1))
+          ("0" * tempIdx) + "1" + ("-" * (size - tempIdx - 1))
         )
         is (
           MaskedLiteral(
@@ -4684,7 +4691,10 @@ case class SnowHousePipeStageScoreboardCheck(
         ) {
           doPopOoo(
             doUpIsFiring=true,
-            myPopIdx=(idx + myOooRdBufExtraSize),
+            myPopIdx=(
+              //tempIdx + myOooRdBufExtraSize
+              idx + myOooRdBufExtraSize
+            ),
           )
         }
       }
@@ -4703,13 +4713,14 @@ case class SnowHousePipeStageScoreboardCheck(
       //rScoreboardFlushState.asBits(ScoreboardFlushState.IDLE.position)
       //&& 
       (
-        //myNonFwdHazardCheckVec.orR
-        //|| myFwdHazardCheckVec.orR
+        //LcvOrR(myNonFwdHazardCheckVec)//.orR
+        //|| LcvOrR(myFwdHazardCheckVec)//.orR
         //--------
         //!myRealDispatchOkayCondVec.asBits.orR
         //|| myReducedFwdTagAllocVec.asBits.andR
         //|| myReducedNonFwdTagAllocVec.asBits.andR
         //--------
+        //|| 
         !LcvOrR(myRealDispatchOkayCondVec.asBits)//.orR
         || LcvAndR(myReducedFwdTagAllocVec.asBits)//.andR
         || LcvAndR(myReducedNonFwdTagAllocVec.asBits)//.andR
