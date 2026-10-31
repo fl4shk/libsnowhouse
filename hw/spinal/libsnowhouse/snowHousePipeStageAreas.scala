@@ -2583,9 +2583,9 @@ case class SnowHousePipeStageInstrDecode(
   //  )
   //)
   if (cfg.optScoreboard) {
-    upPayload(1).instrCnt.myPsIdInFlushBubble.allowOverride
+    //upPayload(1).instrCnt.myPsIdInFlushBubble.allowOverride
     upPayload(1).instrCnt.myPsIdInFlushBubble.foreach(item => {
-      shouldClearExtraDecodeInfo
+      item := shouldClearExtraDecodeInfo
     })
   }
   //--------
@@ -3564,9 +3564,16 @@ case class SnowHousePipeStageScoreboardCheck(
     myPsIdOtherBubble: Option[Bool]=None,
     myPsIdFwdBubble: Option[Bool]=None,
     myInFlushCond: Option[Bool]=None,
+    //myDuplicateItCond: Bool=True,
   ): Unit = {
     require(cfg.useLcvDataBus)
-    cScoreboardCheck.duplicateIt()
+
+    //when (myDuplicateItCond) {
+      cScoreboardCheck.duplicateIt()
+    //} otherwise {
+    //  //cScoreboardCheck.throwIt()
+    //}
+
     //upPayload(1).setAsBubbleMain(Some(True))
 
     //down(pScoreboardCheck) := upPayload(1)
@@ -3995,28 +4002,60 @@ case class SnowHousePipeStageScoreboardCheck(
           //  Bool()
           //)
           val myOooIssueCheckVec = Vec.fill(
-            tempSize
+            //tempSize
+            myOooRdBufWindow //- 1
           )(
             Bool()
           )
 
-          for (kdx <- 0 until tempSize) {
-            myOooIssueCheckVec(kdx) := (
+          for (
+            //kdx <- 0 until tempSize
+            kdx <- 0 until myOooRdBufWindow //- 1
+          ) {
+            //val tempIdx: Int = (
+            //  if (
+            //    //kdx >= myOooRdBufExtraSize
+            //    //kdx >= tempSize
+            //    kdx >= otherIdx - myOooRdBufExtraSize
+            //  ) (
+            //    kdx - 1
+            //  ) else (
+            //    kdx
+            //  )
+            //)
+
+            //if (kdx < otherIdx) {
+            //} else if (kdx == otherIdx) {
+            //} else {
+            //}
+
+            myOooIssueCheckVec(
+              //tempIdx
+              kdx
+            ) := (
               Mux(
                 (
                   //pop(otherIdx).fire
                   //|| !pop(otherIdx).valid
-                  pop(otherIdx + kdx).fire
-                  || !pop(otherIdx + kdx).valid
+                  pop(
+                    //otherIdx + kdx
+                    kdx + myOooRdBufExtraSize
+                  ).fire
+                  || !pop(
+                    //otherIdx + kdx
+                    kdx + myOooRdBufExtraSize
+                  ).valid
                 ),
                 False,
                 (
                   !pop(
-                    otherIdx + kdx
+                    //otherIdx + kdx
+                    kdx + myOooRdBufExtraSize
                   ).splitOp.scoreboardOpCanBeOooIssued(1)
                 ),
               )
             )
+
             //myMemAccessCheckVec(kdx) := (
             //  Mux(
             //    (
@@ -4050,7 +4089,8 @@ case class SnowHousePipeStageScoreboardCheck(
 
           (
             //!myMemAccessCheckVec.sFindFirst(_ === True)._1
-            !myOooIssueCheckVec.sFindFirst(_ === True)._1
+            myOooIssueCheckVec.sFindFirst(_ === True)._1
+            //!LcvOrR(myOooIssueCheckVec)
             || myMux
           )
         }
@@ -4129,12 +4169,20 @@ case class SnowHousePipeStageScoreboardCheck(
     //)
     val myBufPushCondMost = (
       up.isValid
-      && !myInFlushCondMain(
-        someUpPayload0=up(pId),
-        idx=2,
-      )
+      //&& !myInFlushCondMain(
+      //  someUpPayload0=up(pId),
+      //  idx=2,
+      //)
       && down.isReady
+      // TODO: see if we can remove (or at least modify) this check for
+      // `down.isReady` so that we can potentially fill the instr buffer
+      // even during stalls
     )
+
+    //when (
+    //) {
+    //  cScoreboardCheck.throwIt()
+    //}
 
     val myBufPushStm = cloneOf(myOooRdBuf.io.push)
     //val myTestFifo = StreamFifo(
@@ -4147,6 +4195,7 @@ case class SnowHousePipeStageScoreboardCheck(
     //myOooRdBuf.io.push << myTestFifo.io.pop
 
     myOooRdBuf.io.push << (
+      //myBufPushStm
       myBufPushStm.throwWhen(
         (
           (
@@ -4158,6 +4207,18 @@ case class SnowHousePipeStageScoreboardCheck(
                 init=True,
               )
             )
+            //up(pId).instrCnt.tick
+            //=== (
+            //  RegNextWhen(
+            //    up(pId).instrCnt.tick,
+            //    cond=(
+            //      //up.isFiring
+            //      up.isValid
+            //      && down.isReady
+            //    ),
+            //    init=True,
+            //  )
+            //)
           )
           && (
             RegNextWhen(
@@ -4626,22 +4687,42 @@ case class SnowHousePipeStageScoreboardCheck(
       (
         //myNonFwdHazardCheckVec.orR
         //|| myFwdHazardCheckVec.orR
-        !myRealDispatchOkayCondVec.asBits.orR
-        || myReducedFwdTagAllocVec.asBits.andR
-        || myReducedNonFwdTagAllocVec.asBits.andR
+        //--------
+        //!myRealDispatchOkayCondVec.asBits.orR
+        //|| myReducedFwdTagAllocVec.asBits.andR
+        //|| myReducedNonFwdTagAllocVec.asBits.andR
+        //--------
+        !LcvOrR(myRealDispatchOkayCondVec.asBits)//.orR
+        || LcvAndR(myReducedFwdTagAllocVec.asBits)//.andR
+        || LcvAndR(myReducedNonFwdTagAllocVec.asBits)//.andR
         //|| myInFlushCond(2)
+        //--------
         || (
-          !myPopValidVec.asBits.msb
+          //!myPopValidVec.asBits.msb
           //!myRealDispatchOkayCondVec.asBits.orR
           //!myPopValidVec.asBits.orR
+          !LcvOrR(myPopValidVec.asBits.asUInt)
         )
+        //--------
       )
     ) {
       doSendBubbleMainMost(
         myPsIdBubble=Some(myNonFwdHazardCheckVec.orR),
         myPsIdOtherBubble=Some(True),
         myPsIdFwdBubble=Some(myFwdHazardCheckVec.orR),
-        myInFlushCond=None//Some(myInFlushCond(2))//None
+        myInFlushCond=None,//Some(myInFlushCond(2))//None
+        //myDuplicateItCond=(
+        //  True
+        //  //(
+        //  //  myBufPushCondMost
+        //  //  //up.isValid
+        //  //  //&& myInFlushCondMain(
+        //  //  //  someUpPayload0=up(pId),
+        //  //  //  idx=2
+        //  //  //)
+        //  //  //&& down.isReady
+        //  //)
+        //)
       )
     }
 
