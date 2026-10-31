@@ -3976,7 +3976,7 @@ case class SnowHousePipeStageScoreboardCheck(
                     pop(
                       otherIdx
                     ).inpDecodeExt.last.memAccessKind.asBits(1)
-                    && !inp.inpDecodeExt.last.memAccessKind.asBits(1)
+                    =/= inp.inpDecodeExt.last.memAccessKind.asBits(1)
                   )
                   //|| !(
                   //  !inp.inpDecodeExt.last.memAccessKind.asBits(1)
