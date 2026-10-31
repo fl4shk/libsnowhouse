@@ -4120,8 +4120,9 @@ case class SnowHousePipeStageScoreboardCheck(
         }
         outp.splitOp.scoreboardOpCanBeOooIssued.last.allowOverride
         outp.splitOp.scoreboardOpCanBeOooIssued.last := (
-          outp.splitOp.scoreboardOpCanBeOooIssued(1)
-          && !LcvOrR(myTempHazardPopVec)//.orR
+          //outp.splitOp.scoreboardOpCanBeOooIssued(1)
+          //&& 
+          !LcvOrR(myTempHazardPopVec)//.orR
           //myTempHazardPopVec.andR
         )
         //when (myTempHazardPopVec.orR) {
