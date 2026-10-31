@@ -1282,8 +1282,8 @@ case class SnowHouseConfig(
         (
           log2Up(myOooIssueWindow) + 1
         ).max(
-          //log2Up(16)
-          log2Up(64)
+          log2Up(16)
+          //log2Up(64)
         )
       }
       case None => {
