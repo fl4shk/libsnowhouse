@@ -4089,7 +4089,7 @@ case class SnowHousePipeStageScoreboardCheck(
                 ),
                 False,
                 (
-                  if (kdx >= otherIdx) (
+                  if (kdx + myOooRdBufExtraSize >= otherIdx) (
                     pop(
                       //otherIdx + kdx
                       kdx + myOooRdBufExtraSize
