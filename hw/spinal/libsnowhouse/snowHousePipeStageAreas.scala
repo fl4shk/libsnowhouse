@@ -3326,6 +3326,47 @@ case class SnowHousePipeStageInstrDecode(
       }
     }
 
+    upPayload(1).splitOp.scoreboardOpCanBeOooIssued(2) := (
+      upPayload(1).splitOp.scoreboardOpCanBeOooIssued.head
+      && (
+        !shouldClearExtraDecodeInfo
+      )
+      //&& (
+      //  // looks like maybe an instruction that's the destination of a
+      //  // branch needs to *also* NOT be scheduled OoO
+
+      //  //!upPayload(1).splitOp.haveAnyJmpBrOp()
+      //  //&& 
+      //  //!shouldClearExtraDecodeInfo
+      //  //&& 
+      //  //RegNextWhen(
+      //  //  (
+      //  //    !upPayload(1).splitOp.haveAnyJmpBrOp()
+      //  //    && !shouldClearExtraDecodeInfo
+      //  //  ),
+      //  //  cond=cId.up.isFiring,
+      //  //  init=False,
+      //  //)
+      //  //!LcvOrR(
+      //  //  History(
+      //  //    that=(
+      //  //      //!upPayload(1).splitOp.haveAnyJmpBrOp()
+      //  //      //&& !shouldClearExtraDecodeInfo
+      //  //      upPayload(1).splitOp.haveAnyJmpBrOp()
+      //  //      || shouldClearExtraDecodeInfo
+      //  //      //|| shouldClearExtraDecodeInfo
+      //  //    ),
+      //  //    when=cId.up.isFiring,
+      //  //    length=(
+      //  //      //cfg.optScoreboardOooIssueWindow.get
+      //  //      //5
+      //  //      6
+      //  //    ),
+      //  //    init=False
+      //  //  ).asBits.asUInt
+      //  //)
+      //  )
+    )
     upPayload(1).splitOp.scoreboardOpCanBeOooIssued(1) := (
       upPayload(1).splitOp.scoreboardOpCanBeOooIssued.head
       && (
@@ -4002,15 +4043,15 @@ case class SnowHousePipeStageScoreboardCheck(
           //  Bool()
           //)
           val myOooIssueCheckVec = Vec.fill(
-            tempSize
-            //myOooRdBufWindow //- 1
+            //tempSize
+            myOooRdBufWindow //- 1
           )(
             Bool()
           )
 
           for (
-            kdx <- 0 until tempSize
-            //kdx <- 0 until myOooRdBufWindow //- 1
+            //kdx <- 0 until tempSize
+            kdx <- 0 until myOooRdBufWindow //- 1
           ) {
             //val tempIdx: Int = (
             //  if (
@@ -4038,20 +4079,31 @@ case class SnowHousePipeStageScoreboardCheck(
                   //pop(otherIdx).fire
                   //|| !pop(otherIdx).valid
                   pop(
-                    otherIdx + kdx
-                    //kdx + myOooRdBufExtraSize
+                    //otherIdx + kdx
+                    kdx + myOooRdBufExtraSize
                   ).fire
                   || !pop(
-                    otherIdx + kdx
-                    //kdx + myOooRdBufExtraSize
+                    //otherIdx + kdx
+                    kdx + myOooRdBufExtraSize
                   ).valid
                 ),
                 False,
                 (
-                  pop(
-                    otherIdx + kdx
-                    //kdx + myOooRdBufExtraSize
-                  ).splitOp.scoreboardOpCanBeOooIssued(1)
+                  if (kdx >= otherIdx) (
+                    pop(
+                      //otherIdx + kdx
+                      kdx + myOooRdBufExtraSize
+                    ).splitOp.scoreboardOpCanBeOooIssued(1)
+                    && pop(
+                      //otherIdx + kdx
+                      kdx + myOooRdBufExtraSize
+                    ).splitOp.scoreboardOpCanBeOooIssued(2)
+                  ) else (
+                    pop(
+                      //otherIdx + kdx
+                      kdx + myOooRdBufExtraSize
+                    ).splitOp.scoreboardOpCanBeOooIssued(2)
+                  )
                 ),
               )
             )
