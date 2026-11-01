@@ -292,12 +292,21 @@ case class SnowHousePsExSetPcPayload(
   val btbElemWithBrKind = BranchTgtBufElemWithBrKind(cfg=cfg)
   def branchTgtBufElem = btbElemWithBrKind.btbElem
   def branchKind = btbElemWithBrKind.branchKind
+
+  val btbUpdateValid = Bool()
+
   //val brKindValid = Bool()
   //val taken = Flow(Bool())
   //val taken = Vec.fill(
   //  cfg.optBranchPredictorKind.get._branchTgtBufNumWays
   //)(
   //  Flow(SnowHousePsExSetPcTakenPayload(cfg=cfg))
+  //)
+
+  //val origBtbElemSrcRegPc = Vec.fill(
+  //  cfg.optBranchPredictorKind.get._branchTgtBufNumWays
+  //)(
+  //  UInt(cfg.mainAddrWidth bits)
   //)
 
   //val taken = (
@@ -341,6 +350,8 @@ case class SnowHouseBranchTgtBufResult(
   val valid = Bool()
   def fire = valid
 
+  //val btbUpdateValid = Bool()
+
   val haveBranch = Bool()
 
   val nextRegPc = UInt(
@@ -351,6 +362,12 @@ case class SnowHouseBranchTgtBufResult(
   // whether or not we're predicting the branch is taken
   //val predictTkn = Bool()
   val rdBtbElem = BranchTgtBufElem(cfg=cfg)
+
+  val origBtbElemSrcRegPc = Vec.fill(
+    cfg.optBranchPredictorKind.get._branchTgtBufNumWays
+  )(
+    Flow(UInt(cfg.mainAddrWidth bits))
+  )
 
   val gshareSrcRegPc = (
     cfg.optBranchPredictorKind.get._branchPredictIsGshare
@@ -1009,6 +1026,7 @@ case class SnowHouseBranchTgtBuf(
     //  log2Up(branchTgtBufSize) - 1 + log2Up(cfg.instrSizeBytes) //+ 1
     //  downto log2Up(cfg.instrSizeBytes) //+ 1
     //)
+
     val myTgtBufAddrRange = branchTgtBufAddrRange
 
     val rTgtBufWrEn = (
@@ -1016,7 +1034,33 @@ case class SnowHouseBranchTgtBuf(
     )
 
     rTgtBufWrEn := (
-      io.psExSetPc.valid
+      io.psExSetPc.fire
+      && io.psExSetPc.btbUpdateValid
+      //&& io.psExSetPc.btbFire
+
+      //&& (
+      //  //--------
+      //  //// This isn't a complete implementation of associativity
+      //  //Cat(
+      //  //  io.psExSetPc.origBtbElemSrcRegPc(cfg.mySrcRegPcCmpEqRangeHi),
+      //  //  io.psExSetPc.origBtbElemSrcRegPc(cfg.mySrcRegPcCmpEqRangeLo),
+      //  //).asUInt
+      //  //=/= Cat(
+      //  //  io.psExSetPc.taken.srcRegPc(cfg.mySrcRegPcCmpEqRangeHi),
+      //  //  io.psExSetPc.taken.srcRegPc(cfg.mySrcRegPcCmpEqRangeLo),
+      //  //).asUInt
+      //  //--------
+      //  //!io.psExSetPc.origBtbElemSrcRegPc.sFindFirst(item => (
+      //  //  item === io.psExSetPc.taken.srcRegPc
+      //  //))._1
+      //  // However, *this* is a complete implementation of associativity!
+      //  !LcvOrR(Vec(
+      //    io.psExSetPc.origBtbElemSrcRegPc.map{item => (
+      //      item === io.psExSetPc.taken.srcRegPc
+      //    )}
+      //  ))
+      //)
+
       && io.psExSetPc.branchTgtBufElem.fire
       && (
         !io.psExSetPc.btbElemWithBrKind.btbElem.dontPredict
@@ -1177,6 +1221,9 @@ case class SnowHouseBranchTgtBuf(
     io.result.valid := LcvOrR(myResultValidVec) //LcvOrR(myHaveBranchVec)//myResultValidVec.orR//LcvOrR(myResultValidVec)
     io.result.nextRegPc := 0x0
     io.result.rdBtbElem := io.result.rdBtbElem.getZero
+
+    io.result.haveBranch := LcvOrR(myHaveBranchVec)
+
     if (io.result.gshareSrcRegPc != null) {
       io.result.gshareSrcRegPc := io.result.gshareSrcRegPc.getZero
     }
@@ -1762,6 +1809,11 @@ private[libsnowhouse] case class MyIbusRegPcInfo(
       BranchTgtBufElem(cfg=cfg)
     )
   )
+  val btbUpdateValid = (
+    cfg.haveBranchPredictor
+  ) generate (
+    Bool()
+  )
   val gshareSrcRegPc = (
     cfg.haveBranchPredictor
     && cfg.optBranchPredictorKind.get._branchPredictIsGshare
@@ -2037,6 +2089,7 @@ case class SnowHousePipeStageInstrFetch(
         node(pIf).myRegPcVec.allowOverride
         node(pIf).branchPredictTkn.allowOverride
         node(pIf).branchTgtBufElem.allowOverride
+        node(pIf).btbUpdateValid.allowOverride
 
         node(pIf).encInstr.payload := payload._1.data.resize(
           node(pIf).encInstr.payload.getWidth 
@@ -2052,6 +2105,9 @@ case class SnowHousePipeStageInstrFetch(
         )
         node(pIf).branchTgtBufElem := (
           payload._2.myIbusRegPcInfo.branchTgtBufElem
+        )
+        node(pIf).btbUpdateValid := (
+          payload._2.myIbusRegPcInfo.btbUpdateValid
         )
         if (
           cfg.haveBranchPredictor
@@ -2310,6 +2366,9 @@ case class SnowHousePipeStageInstrFetch(
           myIbusRegPcInfo.branchPredictTkn.allowOverride
           myIbusRegPcInfo.branchPredictTkn := (
             myRawPredictCond
+          )
+          myIbusRegPcInfo.btbUpdateValid := (
+            !branchTgtBuf.io.result.haveBranch
           )
           myIbusRegPcInfo.branchTgtBufElem.foreach(item => {
             item := (
@@ -4462,6 +4521,7 @@ case class SnowHousePipeStageScoreboardCheck(
         myPopIdx
       ).payload
       upPayload(1) := upPayload(0)
+
       myTempOooRdBufPopVec.zipWithIndex.foreach{
         case (item, idx) => {
           if (idx == myPopIdx) {
@@ -13263,7 +13323,17 @@ case class SnowHousePipeStageExecute(
       init=setOutpModMemWord.io.psExSetPc.taken.getZero
     )
   )
-
+  psExSetPc.btbUpdateValid := (
+    RegNextWhen(
+      RegNext(
+        outp.btbUpdateValid,
+        //cond=cMid0Front.up.isFiring,
+        init=outp.btbUpdateValid.getZero,
+      ),
+      cond=nextPsExSetPcValid(0),
+      init=outp.btbUpdateValid.getZero,
+    )
+  )
 
   psExSetPc.taken.valid := (
     RegNext(
@@ -13283,7 +13353,7 @@ case class SnowHousePipeStageExecute(
         outp.splitOp.jmpBrOpIsAlwaysTaken,
         init=outp.splitOp.jmpBrOpIsAlwaysTaken.getZero,
       ),
-      cond=setOutpModMemWord.io.psExSetPc.taken.fire.orR,
+      cond=LcvOrR(setOutpModMemWord.io.psExSetPc.taken.fire),
       init=outp.splitOp.jmpBrOpIsAlwaysTaken.getZero,
     )
   )
@@ -13296,7 +13366,7 @@ case class SnowHousePipeStageExecute(
           outp.branchPredictGshareSrcRegPc,
           init=outp.branchPredictGshareSrcRegPc.getZero,
         ),
-        cond=setOutpModMemWord.io.psExSetPc.taken.fire.orR,
+        cond=LcvOrR(setOutpModMemWord.io.psExSetPc.taken.fire),
         init=outp.branchPredictGshareSrcRegPc.getZero,
       )
     )

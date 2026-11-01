@@ -1304,6 +1304,19 @@ case class SnowHouseConfig(
   //  //1
   //)
   val optScoreboardNumTagsPerKind = (
+    //optScoreboardOooIssueWindow match {
+    //  case Some(myOooIssueWindow) => {
+    //    (
+    //      log2Up(myOooIssueWindow) + 1
+    //    ).max(
+    //      log2Up(16)
+    //      //log2Up(64)
+    //    )
+    //  }
+    //  case None => {
+    //    log2Up(16)
+    //  }
+    //}
     12
   )
   val optScoreboardTagWidth = (
@@ -2387,6 +2400,16 @@ case class SnowHousePipePayloadNonExt(
       UInt(cfg.mainAddrWidth bits)
     )
   )
+  val btbUpdateValid = (
+    Bool()
+  )
+
+  //val origBtbElemSrcRegPc = Vec.fill(
+  //  cfg.optBranchPredictorKind.get._branchTgtBufNumWays
+  //)(
+  //  Flow(UInt(cfg.mainAddrWidth bits))
+  //)
+
   //def laggingRegPc = (
   //  myRegPcVec(0)
   //)
@@ -2514,6 +2537,8 @@ case class SnowHousePipePayload(
   def psExSetOutpModMemWordIo = nonExt.psExSetOutpModMemWordIo
   def regPc = nonExt.regPc
   def myRegPcVec = nonExt.myRegPcVec
+  //def origBtbElemSrcRegPc = nonExt.origBtbElemSrcRegPc
+  def btbUpdateValid = nonExt.btbUpdateValid
   def laggingRegPc = nonExt.myRegPcVec.head
   def laggingRegPcPlus1InstrSize = nonExt.laggingRegPcPlus1InstrSize
   def myHistRegPcSize = (
