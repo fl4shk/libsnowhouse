@@ -4149,7 +4149,7 @@ case class SnowHousePipeStageScoreboardCheck(
                 False,
                 (
                   if (kdx + myOooRdBufExtraSize >= otherIdx) (
-                    pop(
+                    !pop(
                       //otherIdx + kdx
                       kdx + myOooRdBufExtraSize
                     ).splitOp.scoreboardOpCanBeOooIssued(1)
