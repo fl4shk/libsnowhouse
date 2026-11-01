@@ -4153,15 +4153,16 @@ case class SnowHousePipeStageScoreboardCheck(
                       //otherIdx + kdx
                       kdx + myOooRdBufExtraSize
                     ).splitOp.scoreboardOpCanBeOooIssued(1)
-                    && pop(
-                      //otherIdx + kdx
-                      kdx + myOooRdBufExtraSize
-                    ).splitOp.scoreboardOpCanBeOooIssued(2)
+                    //&& pop(
+                    //  //otherIdx + kdx
+                    //  kdx + myOooRdBufExtraSize
+                    //).splitOp.scoreboardOpCanBeOooIssued(2)
                   ) else (
-                    pop(
-                      //otherIdx + kdx
-                      kdx + myOooRdBufExtraSize
-                    ).splitOp.scoreboardOpCanBeOooIssued(2)
+                    False
+                    //pop(
+                    //  //otherIdx + kdx
+                    //  kdx + myOooRdBufExtraSize
+                    //).splitOp.scoreboardOpCanBeOooIssued(2)
                   )
                 ),
               )
