@@ -4146,10 +4146,10 @@ case class SnowHousePipeStageScoreboardCheck(
                     kdx + myOooRdBufExtraSize
                   ).valid
                 ),
-                False,
+                True,//False,
                 (
                   if (kdx + myOooRdBufExtraSize >= otherIdx) (
-                    !pop(
+                    pop(
                       //otherIdx + kdx
                       kdx + myOooRdBufExtraSize
                     ).splitOp.scoreboardOpCanBeOooIssued(1)
@@ -4158,7 +4158,8 @@ case class SnowHousePipeStageScoreboardCheck(
                     //  kdx + myOooRdBufExtraSize
                     //).splitOp.scoreboardOpCanBeOooIssued(2)
                   ) else (
-                    False
+                    True
+                    //False
                     //pop(
                     //  //otherIdx + kdx
                     //  kdx + myOooRdBufExtraSize
