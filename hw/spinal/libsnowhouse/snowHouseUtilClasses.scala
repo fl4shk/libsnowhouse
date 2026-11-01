@@ -1967,7 +1967,7 @@ case class SnowHouseSplitOp(
   val scoreboardOpCanBeOooIssued = (
     cfg.optScoreboardOooIssueWindow != None
   ) generate (
-    Vec.fill(3)(
+    Vec.fill(4)(
       Bool()
     )
   )
