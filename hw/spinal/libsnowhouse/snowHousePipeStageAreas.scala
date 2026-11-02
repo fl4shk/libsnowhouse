@@ -4223,8 +4223,15 @@ case class SnowHousePipeStageScoreboardCheck(
         for (jdx <- 0 until myTempHazardPopVec.size) {
           myTempHazardPopVec(jdx) := {
             if (jdx + myOooRdBufExtraSize >= idx) {
+              val otherIdx = (jdx + myOooRdBufExtraSize)
+              //println(
+              //  s"jdx:${jdx} "
+              //  + s"+ myOooRdBufExtraSize:${myOooRdBufExtraSize} "
+              //  + s">= idx:${idx};       "
+              //  + s"otherIdx:${otherIdx}"
+              //)
               mkTempHazardPop(
-                otherIdx=(jdx + myOooRdBufExtraSize)
+                otherIdx=otherIdx
               )
             } else {
               False
