@@ -4214,22 +4214,22 @@ case class SnowHousePipeStageScoreboardCheck(
           )
         }
       }
-      if (idx >= myOooRdBufExtraSize) {
+      if (idx >= myOooRdBufExtraSize - 1) {
         val myTempHazardPopVec = Vec.fill(
           myOooRdBufWindow
         )(
           Bool()
         )
         for (jdx <- 0 until myTempHazardPopVec.size) {
-          myTempHazardPopVec(jdx) := (
-            if (jdx + myOooRdBufExtraSize + 1 > idx) (
+          myTempHazardPopVec(jdx) := {
+            if (jdx + myOooRdBufExtraSize >= idx) {
               mkTempHazardPop(
                 otherIdx=(jdx + myOooRdBufExtraSize)
               )
-            ) else (
+            } else {
               False
-            )
-          )
+            }
+          }
         }
         outp.splitOp.scoreboardOpCanBeOooIssued.last.allowOverride
         outp.splitOp.scoreboardOpCanBeOooIssued.last := (
