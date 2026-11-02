@@ -4111,6 +4111,7 @@ case class SnowHousePipeStageScoreboardCheck(
           for (
             //kdx <- 0 until tempSize
             kdx <- 0 until myOooRdBufWindow //- 1
+            //kdx <- 1 until myOooRdBufWindow + 1 //- 1
           ) {
             //val tempIdx: Int = (
             //  if (
@@ -4132,6 +4133,7 @@ case class SnowHousePipeStageScoreboardCheck(
             myOooIssueCheckVec(
               //tempIdx
               kdx
+              //kdx - 1
             ) := (
               Mux(
                 (
@@ -4148,7 +4150,10 @@ case class SnowHousePipeStageScoreboardCheck(
                 ),
                 True,//False,
                 (
-                  if (kdx + myOooRdBufExtraSize >= otherIdx) (
+                  if (
+                    //kdx - 1 + myOooRdBufExtraSize >= otherIdx
+                    kdx + myOooRdBufExtraSize >= otherIdx
+                  ) (
                     pop(
                       //otherIdx + kdx
                       kdx + myOooRdBufExtraSize
@@ -4214,20 +4219,20 @@ case class SnowHousePipeStageScoreboardCheck(
           )
         }
       }
-      if (idx >= myOooRdBufExtraSize - 1) {
+      if (idx >= myOooRdBufExtraSize) {
         val myTempHazardPopVec = Vec.fill(
-          myOooRdBufWindow
+          myOooRdBufWindow + 1
         )(
           Bool()
         )
         for (jdx <- 0 until myTempHazardPopVec.size) {
           myTempHazardPopVec(jdx) := {
-            if (jdx + myOooRdBufExtraSize >= idx) {
+            if (jdx + myOooRdBufExtraSize + 1 > idx) {
               val otherIdx = (jdx + myOooRdBufExtraSize)
               //println(
               //  s"jdx:${jdx} "
-              //  + s"+ myOooRdBufExtraSize:${myOooRdBufExtraSize} "
-              //  + s">= idx:${idx};       "
+              //  + s"+ myOooRdBufExtraSize:${myOooRdBufExtraSize} + 1 "
+              //  + s"> idx:${idx};       "
               //  + s"otherIdx:${otherIdx}"
               //)
               mkTempHazardPop(
