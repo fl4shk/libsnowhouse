@@ -8345,7 +8345,7 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
       ),
       init=False
     )
-    && io.upIsValid
+    || !io.upIsValid
   ) {
     myHadBranchLastInstr := False
   }
