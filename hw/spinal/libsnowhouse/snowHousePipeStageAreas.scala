@@ -6925,14 +6925,26 @@ case class SnowHousePipeStagePreFwd(
     //!stable(outp.instrCnt.tick)
     //&& 
     (
-      outp.instrCnt.scoreboardCheckPayload.reorderBufIdx
-      =/= (
-        RegNextWhen(
-          outp.instrCnt.scoreboardCheckPayload.reorderBufIdx,
-          cond=upIsFiring,
+      (
+        outp.instrCnt.reorderBufIdx
+        =/= (
+          RegNextWhen(
+            outp.instrCnt.reorderBufIdx,
+            cond=upIsFiring,
+          )
+          init(0x0)
         )
-        init(0x0)
       )
+      //|| (
+      //  outp.instrCnt.myOooIssueChkptIdx
+      //  =/= (
+      //    RegNextWhen(
+      //      outp.instrCnt.myOooIssueChkptIdx,
+      //      cond=upIsFiring,
+      //    )
+      //    init(0x0)
+      //  )
+      //)
     )
     //outp.instrCnt.tick
   )
@@ -15346,6 +15358,7 @@ case class SnowHousePipeStageExecute(
   setOutpModMemWord.io.instrCnt.changedInstr := (
     outp.instrCnt.changedInstr
     && cLink.up.isValid
+    && cLink.down.isReady
   )
   //val myReorderBufIdx = (
   //  cloneOf(
