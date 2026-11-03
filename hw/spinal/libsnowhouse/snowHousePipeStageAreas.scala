@@ -6873,23 +6873,23 @@ case class SnowHousePipeStagePreFwd(
     init=True
   )
 
-  when (
-    //upIsFiring
-    //&& 
-    (
-      !upIsValid
-      //|| outp.instrCnt.myPsIdBubble.last
-      //|| outp.instrCnt.myPsIdOtherBubble.last
-      //|| outp.instrCnt.myPsIdFwdBubble.last
-      //|| outp.instrCnt.myPsIdInFlushBubble.last
-    )
-  ) {
-    outp.instrCnt.tick := (
-      RegNext(
-        outp.instrCnt.tick
-      )
-    )
-  }
+  //when (
+  //  //upIsFiring
+  //  //&& 
+  //  (
+  //    !upIsValid
+  //    //|| outp.instrCnt.myPsIdBubble.last
+  //    //|| outp.instrCnt.myPsIdOtherBubble.last
+  //    //|| outp.instrCnt.myPsIdFwdBubble.last
+  //    //|| outp.instrCnt.myPsIdInFlushBubble.last
+  //  )
+  //) {
+  //  outp.instrCnt.tick := (
+  //    RegNext(
+  //      outp.instrCnt.tick
+  //    )
+  //  )
+  //}
 }
 
 //private[libsnowhouse] object PcChangeState
