@@ -6832,10 +6832,12 @@ case class SnowHousePipeStagePreFwd(
     !outp.instrCnt.tick,
     cond=(
       upIsFiring
-      && !outp.instrCnt.myPsIdBubble.last
-      && !outp.instrCnt.myPsIdOtherBubble.last
-      && !outp.instrCnt.myPsIdFwdBubble.last
-      && !outp.instrCnt.myPsIdInFlushBubble.last
+
+      //&& !outp.instrCnt.myPsIdBubble.last
+      //&& !outp.instrCnt.myPsIdOtherBubble.last
+      //&& !outp.instrCnt.myPsIdFwdBubble.last
+      //&& !outp.instrCnt.myPsIdInFlushBubble.last
+
       //&& (
       //  (
       //    outp.instrCnt.scoreboardCheckPayload.reorderBufIdx
