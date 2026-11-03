@@ -13510,21 +13510,44 @@ case class SnowHousePipeStageExecute(
     //  init=False
     //)
   )
-  val stickyNextPsExSetPcValid = Vec.fill(cfg.lowerMyFanoutMain)(
-    Bool()
-  )
+  //val stickyNextPsExSetPcValid = Vec.fill(cfg.lowerMyFanoutMain)(
+  //  Bool()
+  //)
   val nextPsExSetPcValid = Vec.fill(cfg.lowerMyFanoutMain)(
     Bool()
   )
   for (idx <- 0 until cfg.lowerMyFanoutMain) {
-    stickyNextPsExSetPcValid(idx) := (
-      RegNext(
-        stickyNextPsExSetPcValid(idx),
-        init=False
-      )
-    )
+    //stickyNextPsExSetPcValid(idx) := (
+    //  RegNext(
+    //    stickyNextPsExSetPcValid(idx),
+    //    init=False
+    //  )
+    //)
 
-    when (
+    //when (
+    //  setOutpModMemWord.io.psExSetPc.valid
+    //  && RegNext(
+    //    next=(
+    //      !myShouldIgnoreInstr(0)
+    //      //&& cMid0Front.up.isFiring
+    //    ),
+    //    init=False
+    //  )
+    //  //rose(
+    //  //  setOutpModMemWord.io.psExSetPc.valid
+    //  //  && RegNext(
+    //  //    !myShouldIgnoreInstr(0),
+    //  //    init=False
+    //  //  )
+    //  //  //&& cMid0Front.up.isFiring
+    //  //  && cMid0Front.up.isValid
+    //  //  && cMid0Front.down.isReady
+    //  //),
+    //) {
+    //  stickyNextPsExSetPcValid(idx) := True
+    //}
+
+    nextPsExSetPcValid(idx) := (
       setOutpModMemWord.io.psExSetPc.valid
       && RegNext(
         next=(
@@ -13533,65 +13556,50 @@ case class SnowHousePipeStageExecute(
         ),
         init=False
       )
-      //rose(
-      //  setOutpModMemWord.io.psExSetPc.valid
-      //  && RegNext(
-      //    !myShouldIgnoreInstr(0),
-      //    init=False
+      //stickyNextPsExSetPcValid(idx)
+      //&& (
+      //  (
+      //    // TODO: temporary use of `reorderBufIdx` (for testing!)!
+      //    outp.instrCnt.tick//reorderBufIdx
+      //    =/= (
+      //      RegNextWhen(
+      //        outp.instrCnt.tick,//reorderBufIdx.asSInt,
+      //        cond=(
+      //          cLink.up.isFiring
+      //          //&& !myShouldIgnoreInstr(idx)
+      //        )
+      //      )
+      //      init(
+      //        //-1
+      //        False
+      //      )
+      //    )//.asUInt
       //  )
-      //  //&& cMid0Front.up.isFiring
-      //  && cMid0Front.up.isValid
-      //  && cMid0Front.down.isReady
-      //),
-    ) {
-      stickyNextPsExSetPcValid(idx) := True
-    }
-
-    nextPsExSetPcValid(idx) := (
-      stickyNextPsExSetPcValid(idx)
-      && (
-        (
-          // TODO: temporary use of `reorderBufIdx` (for testing!)!
-          outp.instrCnt.tick//reorderBufIdx
-          =/= (
-            RegNextWhen(
-              outp.instrCnt.tick,//reorderBufIdx.asSInt,
-              cond=(
-                cLink.up.isFiring
-                //&& !myShouldIgnoreInstr(idx)
-              )
-            )
-            init(
-              //-1
-              False
-            )
-          )//.asUInt
-        )
-        || (
-          RegNextWhen(
-            False,
-            cond=(
-              cLink.up.isFiring
-              //&& !myShouldIgnoreInstr(idx)
-            ),
-            init=True
-          )
-        )
-      )
+      //  || (
+      //    RegNextWhen(
+      //      False,
+      //      cond=(
+      //        cLink.up.isFiring
+      //        //&& !myShouldIgnoreInstr(idx)
+      //      ),
+      //      init=True
+      //    )
+      //  )
+      //)
     )
 
-    when (
-      RegNext(
-        (
-          nextPsExSetPcValid(idx)
-          //|| cLink.up.isFiring
-        ),
-        init=False
-      )
-      //|| !cLink.up.isValid
-    ) {
-      stickyNextPsExSetPcValid(idx) := False
-    }
+    //when (
+    //  RegNext(
+    //    (
+    //      nextPsExSetPcValid(idx)
+    //      //|| cLink.up.isFiring
+    //    ),
+    //    init=False
+    //  )
+    //  //|| !cLink.up.isValid
+    //) {
+    //  stickyNextPsExSetPcValid(idx) := False
+    //}
   }
 
   //psExSetPc.valid := (
@@ -13684,8 +13692,8 @@ case class SnowHousePipeStageExecute(
   }
   for (idx <- 0 until cfg.lowerMyFanoutMain) {
     when (
-      //nextPsExSetPcValid(idx)
-      stickyNextPsExSetPcValid(idx)
+      nextPsExSetPcValid(idx)
+      //stickyNextPsExSetPcValid(idx)
     ) {
       myShouldIgnoreInstr(idx) := True
     }
