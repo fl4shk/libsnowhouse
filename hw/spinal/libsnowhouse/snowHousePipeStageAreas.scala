@@ -3684,7 +3684,7 @@ case class SnowHousePipeStageScoreboardCheck(
       //myUpdateGprIsOrIsntZero=myUpdateGprIsOrIsntZero
       //myPsIdReorderBufForceValid=myPsIdReorderBufForceValid,
     )
-    down(pScoreboardCheck).instrCnt.changedInstr := False
+    down(pScoreboardCheck).instrCnt.tick := False
     if (myPsIdOtherBubble != None) {
       down(pScoreboardCheck).instrCnt.myPsIdOtherBubble.foreach(item => {
         item := myPsIdOtherBubble.get
@@ -4578,7 +4578,7 @@ case class SnowHousePipeStageScoreboardCheck(
       ).payload
       upPayload(1) := upPayload(0)
 
-      upPayload(1).instrCnt.changedInstr := (
+      upPayload(1).instrCnt.tick := (
         if (doUpIsFiring) (
           up.isFiring
         ) else (
@@ -4643,7 +4643,7 @@ case class SnowHousePipeStageScoreboardCheck(
       upPayload(0) := myTempOooRdBufPopVec.last.payload
       upPayload(1) := upPayload(0)
 
-      upPayload(1).instrCnt.changedInstr := (
+      upPayload(1).instrCnt.tick := (
         if (doUpIsFiring) (
           up.isFiring
         ) else (
@@ -6914,6 +6914,28 @@ case class SnowHousePipeStagePreFwd(
   //    )
   //  )
   //}
+  outp.instrCnt.changedInstr := (
+    //rose(outp.instrCnt.tick)
+    //|| fell(outp.instrCnt.tick)
+    ////fell(outp.instrCnt.tick)
+    //|| (
+    //  stable(outp.instrCnt.tick)
+    //  && outp.instrCnt.tick
+    //)
+    //!stable(outp.instrCnt.tick)
+    //&& 
+    (
+      outp.instrCnt.scoreboardCheckPayload.reorderBufIdx
+      =/= (
+        RegNextWhen(
+          outp.instrCnt.scoreboardCheckPayload.reorderBufIdx,
+          cond=upIsFiring,
+        )
+        init(0x0)
+      )
+    )
+    //outp.instrCnt.tick
+  )
 }
 
 //private[libsnowhouse] object PcChangeState
@@ -15323,6 +15345,7 @@ case class SnowHousePipeStageExecute(
   setOutpModMemWord.io.instrCnt.changedInstr.allowOverride
   setOutpModMemWord.io.instrCnt.changedInstr := (
     outp.instrCnt.changedInstr
+    && cLink.up.isValid
   )
   //val myReorderBufIdx = (
   //  cloneOf(
