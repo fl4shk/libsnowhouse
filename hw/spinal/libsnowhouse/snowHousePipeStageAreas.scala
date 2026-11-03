@@ -8222,23 +8222,23 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
     //)
     (
       io.upIsValid
-      //&& (
-      //  (
-      //    io.instrCnt.tick
-      //    =/= RegNextWhen(
-      //      io.instrCnt.tick,
-      //      cond=io.upIsFiring,
-      //      init=True
-      //    )
-      //  )
-      //  || (
-      //    RegNextWhen(
-      //      False,
-      //      cond=io.upIsFiring,
-      //      init=True
-      //    )
-      //  )
-      //)
+      && (
+        (
+          io.instrCnt.tick
+          =/= RegNextWhen(
+            io.instrCnt.tick,
+            cond=io.upIsFiring,
+            init=True
+          )
+        )
+        || (
+          RegNextWhen(
+            False,
+            cond=io.upIsFiring,
+            init=True
+          )
+        )
+      )
     )
     //|| (
     //  !io.upIsValid
