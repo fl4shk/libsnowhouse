@@ -8439,6 +8439,7 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
   )
   val tempBranchMispredictNotTaken = (
     myHadBranchLastInstr
+    && changedInstr
     && myTempBranchMispredictNotTakenMost.orR
   )
   //val stickyBranchMispredictCond = Bool()
@@ -8465,6 +8466,7 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
   val myBranchMispredictCond = (
     (
       myHadBranchLastInstr
+      && changedInstr
       && (
         myTempBranchMispredictTakenMost.orR
         || myTempBranchMispredictNotTakenMost.orR
@@ -8550,6 +8552,7 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
     )
   ) := (
     myHadBranchLastInstr
+    && changedInstr
     //&& io.upIsFiring
     && RegNext(
       io.upIsFiring,
