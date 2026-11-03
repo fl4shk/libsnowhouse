@@ -3684,6 +3684,7 @@ case class SnowHousePipeStageScoreboardCheck(
       //myUpdateGprIsOrIsntZero=myUpdateGprIsOrIsntZero
       //myPsIdReorderBufForceValid=myPsIdReorderBufForceValid,
     )
+    down(pScoreboardCheck).instrCnt.changedInstr := False
     if (myPsIdOtherBubble != None) {
       down(pScoreboardCheck).instrCnt.myPsIdOtherBubble.foreach(item => {
         item := myPsIdOtherBubble.get
@@ -4577,6 +4578,14 @@ case class SnowHousePipeStageScoreboardCheck(
       ).payload
       upPayload(1) := upPayload(0)
 
+      upPayload(1).instrCnt.changedInstr := (
+        if (doUpIsFiring) (
+          up.isFiring
+        ) else (
+          down.isFiring
+        )
+      )
+
       myTempOooRdBufPopVec.zipWithIndex.foreach{
         case (item, idx) => {
           if (idx == myPopIdx) {
@@ -4633,7 +4642,17 @@ case class SnowHousePipeStageScoreboardCheck(
     ): Unit = {
       upPayload(0) := myTempOooRdBufPopVec.last.payload
       upPayload(1) := upPayload(0)
+
+      upPayload(1).instrCnt.changedInstr := (
+        if (doUpIsFiring) (
+          up.isFiring
+        ) else (
+          down.isFiring
+        )
+      )
+
       //myTempOooRdBufPopVec(3).ready := False
+
       myTempOooRdBufPopVec.zipWithIndex.foreach{
         case (item, idx) => {
           if (idx == myOooRdBufDepth - 1) {
@@ -6828,68 +6847,73 @@ case class SnowHousePipeStagePreFwd(
     }
   }
 
-  outp.instrCnt.tick := RegNextWhen(
-    !outp.instrCnt.tick,
-    cond=(
-      upIsFiring
+  //outp.instrCnt.tick := RegNextWhen(
+  //  !outp.instrCnt.tick,
+  //  cond=(
+  //    upIsFiring
 
-      && !outp.instrCnt.myPsIdBubble.last
-      && !outp.instrCnt.myPsIdOtherBubble.last
-      && !outp.instrCnt.myPsIdFwdBubble.last
-      && !outp.instrCnt.myPsIdInFlushBubble.last
+  //    //&& !rose(outp.instrCnt.myPsIdBubble.last)
+  //    //&& !rose(outp.instrCnt.myPsIdOtherBubble.last)
+  //    //&& !rose(outp.instrCnt.myPsIdFwdBubble.last)
+  //    //&& !rose(outp.instrCnt.myPsIdInFlushBubble.last)
 
-      //&& (
-      //  (
-      //    outp.instrCnt.scoreboardCheckPayload.reorderBufIdx
-      //    =/= (
-      //      RegNextWhen(
-      //        outp.instrCnt.scoreboardCheckPayload.reorderBufIdx,
-      //        cond=upIsFiring,
-      //      )
-      //      init(0x0)
-      //    )
-      //  )
-      //  || (
-      //    RegNextWhen(
-      //      False,
-      //      cond=(
-      //        outp.instrCnt.scoreboardCheckPayload.reorderBufIdx
-      //        =/= (
-      //          RegNextWhen(
-      //            outp.instrCnt.scoreboardCheckPayload.reorderBufIdx,
-      //            cond=upIsFiring,
-      //          )
-      //          init(0x0)
-      //        )
-      //      ),
-      //      init=True
-      //    )
-      //  )
-      //  //|| (
-      //  //  outp.regPcSetItCnt(1).lsb
-      //  //)
-      //)
-    ),
-    init=True
-  )
+  //    && (
+  //      (
+  //        outp.instrCnt.scoreboardCheckPayload.reorderBufIdx
+  //        =/= (
+  //          RegNextWhen(
+  //            outp.instrCnt.scoreboardCheckPayload.reorderBufIdx,
+  //            cond=upIsFiring,
+  //          )
+  //          init(0x0)
+  //        )
+  //      )
+  //      || (
+  //        RegNextWhen(
+  //          False,
+  //          cond=upIsFiring,
+  //          init=True,
+  //        )
+  //        //RegNextWhen(
+  //        //  False,
+  //        //  cond=(
+  //        //    outp.instrCnt.scoreboardCheckPayload.reorderBufIdx
+  //        //    =/= (
+  //        //      RegNextWhen(
+  //        //        outp.instrCnt.scoreboardCheckPayload.reorderBufIdx,
+  //        //        cond=upIsFiring,
+  //        //      )
+  //        //      init(0x0)
+  //        //    )
+  //        //  ),
+  //        //  init=True
+  //        //)
+  //      )
+  //      //|| (
+  //      //  outp.regPcSetItCnt(1).lsb
+  //      //)
+  //    )
+  //  ),
+  //  init=True
+  //)
 
-  when (
-    //upIsFiring
-    //&& 
-    (
-      !upIsValid
-      || outp.instrCnt.myPsIdBubble.last
-      || outp.instrCnt.myPsIdOtherBubble.last
-      || outp.instrCnt.myPsIdFwdBubble.last
-      || outp.instrCnt.myPsIdInFlushBubble.last
-    )
-  ) {
-    outp.instrCnt.tick := (
-      RegNext(
-        outp.instrCnt.tick
-      )
-    )
-  }
+  //when (
+  //  //upIsFiring
+  //  //&& 
+  //  (
+  //    !upIsValid
+  //    //|| outp.instrCnt.myPsIdBubble.last
+  //    //|| outp.instrCnt.myPsIdOtherBubble.last
+  //    //|| outp.instrCnt.myPsIdFwdBubble.last
+  //    //|| outp.instrCnt.myPsIdInFlushBubble.last
+  //  )
+  //) {
+  //  outp.instrCnt.tick := (
+  //    RegNext(
+  //      outp.instrCnt.tick
+  //    )
+  //  )
+  //}
 }
 
 //private[libsnowhouse] object PcChangeState
@@ -6924,6 +6948,9 @@ case class SnowHousePipeStageExecuteSetOutpModMemWordIo(
   val instrCnt = setAsInp(
     SnowHouseInstrCnt(cfg=cfg)
   )
+  //val changedInstr = setAsOutp(
+  //  Bool()
+  //)
   val multiCycleBusRecvDataVec = (
     cfg.havePsExStall
   ) generate (
@@ -8215,23 +8242,25 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
   // END: old code for branches/jumps
   //--------
   // BEGIN: new code for branches/jumps
-  val changedInstr = (
-    (
-      io.instrCnt.tick
-      =/= RegNextWhen(
-        io.instrCnt.tick,
-        cond=io.upIsFiring,
-        init=True
-      )
-    )
-    || (
-      RegNextWhen(
-        False,
-        cond=io.upIsFiring,
-        init=True
-      )
-    )
-  )
+
+  //io.changedInstr := (
+  //  (
+  //    io.instrCnt.tick
+  //    =/= RegNextWhen(
+  //      io.instrCnt.tick,
+  //      cond=io.upIsFiring,
+  //      init=True
+  //    )
+  //  )
+  //  || (
+  //    RegNextWhen(
+  //      False,
+  //      cond=io.upIsFiring,
+  //      init=True
+  //    )
+  //  )
+  //)
+
   when (
     ////RegNext(
     ////  io.upIsFiring,
@@ -8253,7 +8282,7 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
     RegNext(
       (
         myPsExSetPcValid
-        && changedInstr
+        && io.instrCnt.changedInstr
         && io.upIsFiring
       ),
       init=False
@@ -8352,7 +8381,7 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
     RegNext(
       (
         myHadBranchLastInstr
-        && changedInstr
+        && io.instrCnt.changedInstr
         && io.upIsFiring
       ),
       init=False
@@ -8402,7 +8431,8 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
           //  cmpEqIo=null,
           //)._1
         )
-        && io.upIsValid
+        //&& io.upIsValid
+        && io.instrCnt.changedInstr
       )
     )
   )
@@ -8433,13 +8463,14 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
           //  cmpEqIo=null,
           //)._1
         )
-        && io.upIsValid
+        //&& io.upIsValid
+        && io.instrCnt.changedInstr
       ),
     )
   )
   val tempBranchMispredictNotTaken = (
     myHadBranchLastInstr
-    && changedInstr
+    //&& changedInstr
     && myTempBranchMispredictNotTakenMost.orR
   )
   //val stickyBranchMispredictCond = Bool()
@@ -8466,7 +8497,7 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
   val myBranchMispredictCond = (
     (
       myHadBranchLastInstr
-      && changedInstr
+      //&& changedInstr
       && (
         myTempBranchMispredictTakenMost.orR
         || myTempBranchMispredictNotTakenMost.orR
@@ -8523,6 +8554,7 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
   io.psExSetPc.valid := (
     rose(
       myBranchMispredictCond
+      //&& io.changedInstr
     )
     //&& (
     //  RegNextWhen(
@@ -8552,7 +8584,7 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
     )
   ) := (
     myHadBranchLastInstr
-    && changedInstr
+    //&& changedInstr
     //&& io.upIsFiring
     && RegNext(
       io.upIsFiring,
@@ -15285,8 +15317,13 @@ case class SnowHousePipeStageExecute(
   }
   //when (!myTempDownIsReady) {
   //}
-  setOutpModMemWord.io.instrCnt.tick.allowOverride
-  setOutpModMemWord.io.instrCnt.tick := outp.instrCnt.tick
+  //setOutpModMemWord.io.instrCnt.tick.allowOverride
+  //setOutpModMemWord.io.instrCnt.tick := outp.instrCnt.tick
+
+  setOutpModMemWord.io.instrCnt.changedInstr.allowOverride
+  setOutpModMemWord.io.instrCnt.changedInstr := (
+    outp.instrCnt.changedInstr
+  )
   //val myReorderBufIdx = (
   //  cloneOf(
   //    outp.instrCnt.scoreboardCheckPayload.reorderBufIdx

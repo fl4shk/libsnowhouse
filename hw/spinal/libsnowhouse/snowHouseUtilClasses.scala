@@ -1760,6 +1760,7 @@ case class SnowHouseInstrCnt(
   )
 
   val tick = Bool()
+  val changedInstr = Bool()
   val any = UInt(cfg.instrCntWidth bits)
   val fwd = UInt(cfg.instrCntWidth bits)
   val jmp = UInt(cfg.instrCntWidth bits)
@@ -2686,6 +2687,7 @@ case class SnowHousePipePayload(
     if (myPsIdBubble != None) {
       instrCnt.setAsPsIdBubbleMain(somePsIdBubble=myPsIdBubble.get)
     }
+    //instrCnt.changedInstr := False
     //if (myPsIdReorderBufForceValid != None) {
     //  instrCnt.myPsIdReorderBufForceValid.foreach(item => {
     //    item := (
