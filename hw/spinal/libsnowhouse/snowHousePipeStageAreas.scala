@@ -13674,7 +13674,10 @@ case class SnowHousePipeStageExecute(
     )
   }
   for (idx <- 0 until cfg.lowerMyFanoutMain) {
-    when (nextPsExSetPcValid(idx)) {
+    when (
+      //nextPsExSetPcValid(idx)
+      stickyNextPsExSetPcValid(idx)
+    ) {
       myShouldIgnoreInstr(idx) := True
     }
     when (
