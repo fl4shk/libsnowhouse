@@ -8238,8 +8238,10 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
     //  init=False
     //)
     (
-      io.upIsValid
-      && changedInstr
+      //io.upIsValid
+      //&& 
+      changedInstr
+      || !io.upIsValid
     )
     //|| (
     //  !io.upIsValid
@@ -8347,7 +8349,7 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
     //  init=False
     //)
     changedInstr
-    //|| !io.upIsValid
+    || !io.upIsValid
   ) {
     myHadBranchLastInstr := False
   }
