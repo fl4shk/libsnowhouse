@@ -6876,10 +6876,10 @@ case class SnowHousePipeStagePreFwd(
     //&& 
     (
       !upIsValid
-      || outp.instrCnt.myPsIdBubble.last
-      || outp.instrCnt.myPsIdOtherBubble.last
-      || outp.instrCnt.myPsIdFwdBubble.last
-      || outp.instrCnt.myPsIdInFlushBubble.last
+      //|| outp.instrCnt.myPsIdBubble.last
+      //|| outp.instrCnt.myPsIdOtherBubble.last
+      //|| outp.instrCnt.myPsIdFwdBubble.last
+      //|| outp.instrCnt.myPsIdInFlushBubble.last
     )
   ) {
     outp.instrCnt.tick := (
