@@ -8215,6 +8215,23 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
   // END: old code for branches/jumps
   //--------
   // BEGIN: new code for branches/jumps
+  val changedInstr = (
+    (
+      io.instrCnt.tick
+      =/= RegNextWhen(
+        io.instrCnt.tick,
+        cond=io.upIsFiring,
+        init=True
+      )
+    )
+    || (
+      RegNextWhen(
+        False,
+        cond=io.upIsFiring,
+        init=True
+      )
+    )
+  )
   when (
     //RegNext(
     //  io.upIsFiring,
@@ -8222,23 +8239,7 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
     //)
     (
       io.upIsValid
-      && (
-        (
-          io.instrCnt.tick
-          =/= RegNextWhen(
-            io.instrCnt.tick,
-            cond=io.upIsFiring,
-            init=True
-          )
-        )
-        || (
-          RegNextWhen(
-            False,
-            cond=io.upIsFiring,
-            init=True
-          )
-        )
-      )
+      && changedInstr
     )
     //|| (
     //  !io.upIsValid
@@ -8338,14 +8339,15 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
   )
 
   when (
-    RegNext(
-      (
-        myHadBranchLastInstr
-        //&& io.upIsFiring
-      ),
-      init=False
-    )
-    || !io.upIsValid
+    //RegNext(
+    //  (
+    //    myHadBranchLastInstr
+    //    //&& io.upIsFiring
+    //  ),
+    //  init=False
+    //)
+    changedInstr
+    //|| !io.upIsValid
   ) {
     myHadBranchLastInstr := False
   }
