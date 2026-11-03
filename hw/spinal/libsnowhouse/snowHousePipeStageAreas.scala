@@ -8490,6 +8490,7 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
           (
             io.myRegPcVec(1)
             =/= io.mySavedRegPcPlusInstrSize.last
+            //=/= rMyTempDstRegPc.payload(1)
           )
           //!LcvFastCmpEq(
           //  left=io.laggingRegPc,
@@ -14027,6 +14028,7 @@ case class SnowHousePipeStageExecute(
   //setOutpModMemWord.io.splitOp.kind.allowOverride
   setOutpModMemWord.io.splitOp.allowOverride
   setOutpModMemWord.io.splitOp.jmpBrAlwaysEqNeOp.allowOverride
+
   setOutpModMemWord.io.splitOp := (
     RegNext(
       next=setOutpModMemWord.io.splitOp,
@@ -14127,6 +14129,10 @@ case class SnowHousePipeStageExecute(
     setOutpModMemWord.io.splitOp.jmpBrOpIsNe := False
     setOutpModMemWord.io.splitOp.setJmpBrAlwaysEqNeOpToDefault()
     setOutpModMemWord.io.splitOp.setJmpBrOtherOpToDefault()
+    setOutpModMemWord.io.splitOp.exSetNextPcKind := (
+      SnowHousePsExSetNextPcKind.Dont
+    )
+
   }
   psExSetPc.nextPc := (
     RegNextWhen(
@@ -15358,7 +15364,7 @@ case class SnowHousePipeStageExecute(
   setOutpModMemWord.io.instrCnt.changedInstr := (
     outp.instrCnt.changedInstr
     && cLink.up.isValid
-    && cLink.down.isReady
+    //&& cLink.down.isReady
   )
   //val myReorderBufIdx = (
   //  cloneOf(
