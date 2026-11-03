@@ -6833,10 +6833,10 @@ case class SnowHousePipeStagePreFwd(
     cond=(
       upIsFiring
 
-      //&& !outp.instrCnt.myPsIdBubble.last
-      //&& !outp.instrCnt.myPsIdOtherBubble.last
-      //&& !outp.instrCnt.myPsIdFwdBubble.last
-      //&& !outp.instrCnt.myPsIdInFlushBubble.last
+      && !outp.instrCnt.myPsIdBubble.last
+      && !outp.instrCnt.myPsIdOtherBubble.last
+      && !outp.instrCnt.myPsIdFwdBubble.last
+      && !outp.instrCnt.myPsIdInFlushBubble.last
 
       //&& (
       //  (
@@ -6878,10 +6878,10 @@ case class SnowHousePipeStagePreFwd(
     //&& 
     (
       !upIsValid
-      //|| outp.instrCnt.myPsIdBubble.last
-      //|| outp.instrCnt.myPsIdOtherBubble.last
-      //|| outp.instrCnt.myPsIdFwdBubble.last
-      //|| outp.instrCnt.myPsIdInFlushBubble.last
+      || outp.instrCnt.myPsIdBubble.last
+      || outp.instrCnt.myPsIdOtherBubble.last
+      || outp.instrCnt.myPsIdFwdBubble.last
+      || outp.instrCnt.myPsIdInFlushBubble.last
     )
   ) {
     outp.instrCnt.tick := (
@@ -8253,6 +8253,7 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
     RegNext(
       (
         myPsExSetPcValid
+        && changedInstr
         && io.upIsFiring
       ),
       init=False
@@ -8351,6 +8352,7 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
     RegNext(
       (
         myHadBranchLastInstr
+        && changedInstr
         && io.upIsFiring
       ),
       init=False
