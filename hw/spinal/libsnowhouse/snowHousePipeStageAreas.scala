@@ -8233,23 +8233,30 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
     )
   )
   when (
-    //RegNext(
-    //  io.upIsFiring,
-    //  init=False
+    ////RegNext(
+    ////  io.upIsFiring,
+    ////  init=False
+    ////)
+    //(
+    //  //io.upIsValid
+    //  //&& 
+    //  changedInstr
+    //  || !io.upIsValid
     //)
-    (
-      //io.upIsValid
-      //&& 
-      changedInstr
-      || !io.upIsValid
+    ////|| (
+    ////  !io.upIsValid
+    ////  && RegNext(
+    ////    myPsExSetPcValid,
+    ////    init=False
+    ////  )
+    ////)
+    RegNext(
+      (
+        myPsExSetPcValid
+        && io.upIsFiring
+      ),
+      init=False
     )
-    //|| (
-    //  !io.upIsValid
-    //  && RegNext(
-    //    myPsExSetPcValid,
-    //    init=False
-    //  )
-    //)
   ) {
     myPsExSetPcValid := False
   }
@@ -8341,15 +8348,15 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
   )
 
   when (
-    //RegNext(
-    //  (
-    //    myHadBranchLastInstr
-    //    //&& io.upIsFiring
-    //  ),
-    //  init=False
-    //)
-    changedInstr
-    || !io.upIsValid
+    RegNext(
+      (
+        myHadBranchLastInstr
+        && io.upIsFiring
+      ),
+      init=False
+    )
+    //changedInstr
+    //|| !io.upIsValid
   ) {
     myHadBranchLastInstr := False
   }
