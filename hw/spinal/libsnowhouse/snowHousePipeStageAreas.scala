@@ -2157,6 +2157,7 @@ case class SnowHousePipeStageInstrFetch(
   //  rIbusTempRamInitCnt := rIbusTempRamInitCnt + 1
   //}
   //lcvIbus.h2dBus << myH2dPushStm
+
   lcvIbus.h2dBus << myIbusTempFork.last
 
   //myD2hPopStm.translateInto(myIbusTempRamEtc.io.rdAddrPipe)(
@@ -4012,6 +4013,9 @@ case class SnowHousePipeStageScoreboardCheck(
       pop: Vec[Stream[SnowHousePipePayload]],
     ): Unit = {
       outp := inp
+      //println(
+      //  s"NOTE: pop.size:${pop.size}"
+      //)
 
       //if (idx == 0) {
       //  //outp
@@ -4033,7 +4037,7 @@ case class SnowHousePipeStageScoreboardCheck(
         otherIdx: Int
       ) = {
         //val jdx = otherIdx - myOooRdBufExtraSize
-        val tempSize = myOooRdBufDepth - otherIdx - 1
+        val tempSize = myOooRdBufDepth - otherIdx //- 1
         val tempCond = (
           //(
           //  !pop(otherIdx).inpDecodeExt.last.opIsNonFwd
@@ -4055,6 +4059,9 @@ case class SnowHousePipeStageScoreboardCheck(
             )//.orR
           )
         )
+        //println(
+        //  s"mkTempHazardPop(otherIdx:${otherIdx}) tempSize:${tempSize}"
+        //)
         val myMux = (
           Mux(
             (
@@ -4103,14 +4110,14 @@ case class SnowHousePipeStageScoreboardCheck(
           //)
           val myOooIssueCheckVec = Vec.fill(
             //tempSize
-            myOooRdBufWindow //- 1
+            myOooRdBufWindow + 1 //- 1
           )(
             Bool()
           )
 
           for (
             //kdx <- 0 until tempSize
-            kdx <- 0 until myOooRdBufWindow //- 1
+            kdx <- 0 until myOooRdBufWindow + 1 //- 1
             //kdx <- 1 until myOooRdBufWindow + 1 //- 1
           ) {
             //val tempIdx: Int = (
@@ -4134,7 +4141,17 @@ case class SnowHousePipeStageScoreboardCheck(
               //tempIdx
               kdx
               //kdx - 1
-            ) := (
+            ) := {
+              
+              //if (kdx + myOooRdBufExtraSize >= otherIdx) {
+                //println(
+                //  s"DEBUG: "
+                //  + s"kdx:${kdx} + "
+                //  + s"myOooRdBufExtraSize:${myOooRdBufExtraSize} "
+                //  + s" == ${kdx + myOooRdBufExtraSize};     "
+                //  + s"otherIdx:${otherIdx}"
+                //)
+              //}
               Mux(
                 (
                   //pop(otherIdx).fire
@@ -4172,7 +4189,7 @@ case class SnowHousePipeStageScoreboardCheck(
                   )
                 ),
               )
-            )
+            }
 
             //myMemAccessCheckVec(kdx) := (
             //  Mux(
@@ -4227,8 +4244,15 @@ case class SnowHousePipeStageScoreboardCheck(
         )
         for (jdx <- 0 until myTempHazardPopVec.size) {
           myTempHazardPopVec(jdx) := {
-            if (jdx + myOooRdBufExtraSize + 1 > idx) {
-              val otherIdx = (jdx + myOooRdBufExtraSize)
+            val otherIdx = jdx + myOooRdBufExtraSize
+            if (
+              //jdx + myOooRdBufExtraSize + 1 >= idx
+              //&& jdx < pop.size
+              otherIdx >= idx && otherIdx < pop.size
+            ) {
+              //println(
+              //  s"main loop: otherIdx:${otherIdx}: main cond"
+              //)
               //println(
               //  s"jdx:${jdx} "
               //  + s"+ myOooRdBufExtraSize:${myOooRdBufExtraSize} + 1 "
@@ -4239,6 +4263,9 @@ case class SnowHousePipeStageScoreboardCheck(
                 otherIdx=otherIdx
               )
             } else {
+              //println(
+              //  s"main loop: otherIdx:${otherIdx}: force False"
+              //)
               False
             }
           }
@@ -4331,38 +4358,52 @@ case class SnowHousePipeStageScoreboardCheck(
       myBufPushStm.throwWhen(
         (
           (
-            myBufPushStm.instrCnt.tick
-            === (
-              RegNextWhen(
-                myBufPushStm.instrCnt.tick,
-                cond=myBufPushStm.fire,
-                init=True,
+            (
+              (
+                myBufPushStm.instrCnt.tick
+                === (
+                  RegNextWhen(
+                    myBufPushStm.instrCnt.tick,
+                    cond=myBufPushStm.fire,
+                    init=False,
+                  )
+                )
               )
+              //up(pId).instrCnt.tick
+              //=== (
+              //  RegNextWhen(
+              //    up(pId).instrCnt.tick,
+              //    cond=(
+              //      //up.isFiring
+              //      up.isValid
+              //      && down.isReady
+              //    ),
+              //    init=True,
+              //  )
+              //)
             )
-            //up(pId).instrCnt.tick
-            //=== (
-            //  RegNextWhen(
-            //    up(pId).instrCnt.tick,
-            //    cond=(
-            //      //up.isFiring
-            //      up.isValid
-            //      && down.isReady
-            //    ),
-            //    init=True,
-            //  )
-            //)
-          )
-          && (
-            RegNextWhen(
-              True,
-              cond=(
-                //myBufPushStm.fire
-                up.isFiring
-              ),
-              init=False
+            && (
+              RegNextWhen(
+                True,
+                cond=(
+                  //myBufPushStm.fire
+                  up.isFiring
+                ),
+                init=False
+              )
             )
           )
         )
+        //|| (
+        //  myBufPushStm.instrCnt.reorderBufIdx
+        //  === (
+        //    RegNextWhen(
+        //      myBufPushStm.instrCnt.reorderBufIdx,
+        //      cond=myBufPushStm.fire,
+        //      init=myBufPushStm.instrCnt.reorderBufIdx.getZero,
+        //    )
+        //  )
+        //)
       )
     )
 
@@ -4779,7 +4820,7 @@ case class SnowHousePipeStageScoreboardCheck(
           //&& rPastMainDispatchOkayCondVec(idx)
           && myDispatchOkayCondMostVec(idx)
           && myBufPop(
-            idx + myOooRdBufExtraSize
+            idx + myOooRdBufExtraSize //+ 1
           ).splitOp.scoreboardOpCanBeOooIssued.last
           //&& myPopValidVec.last
         ) else (
@@ -6786,6 +6827,67 @@ case class SnowHousePipeStagePreFwd(
       //}
     }
   }
+
+  outp.instrCnt.tick := RegNextWhen(
+    !outp.instrCnt.tick,
+    cond=(
+      upIsFiring
+      && !outp.instrCnt.myPsIdBubble.last
+      && !outp.instrCnt.myPsIdOtherBubble.last
+      && !outp.instrCnt.myPsIdFwdBubble.last
+      && !outp.instrCnt.myPsIdInFlushBubble.last
+      //&& (
+      //  (
+      //    outp.instrCnt.scoreboardCheckPayload.reorderBufIdx
+      //    =/= (
+      //      RegNextWhen(
+      //        outp.instrCnt.scoreboardCheckPayload.reorderBufIdx,
+      //        cond=upIsFiring,
+      //      )
+      //      init(0x0)
+      //    )
+      //  )
+      //  || (
+      //    RegNextWhen(
+      //      False,
+      //      cond=(
+      //        outp.instrCnt.scoreboardCheckPayload.reorderBufIdx
+      //        =/= (
+      //          RegNextWhen(
+      //            outp.instrCnt.scoreboardCheckPayload.reorderBufIdx,
+      //            cond=upIsFiring,
+      //          )
+      //          init(0x0)
+      //        )
+      //      ),
+      //      init=True
+      //    )
+      //  )
+      //  //|| (
+      //  //  outp.regPcSetItCnt(1).lsb
+      //  //)
+      //)
+    ),
+    init=True
+  )
+
+  when (
+    //upIsFiring
+    //&& 
+    (
+      !upIsValid
+      || outp.instrCnt.myPsIdBubble.last
+      || outp.instrCnt.myPsIdOtherBubble.last
+      || outp.instrCnt.myPsIdFwdBubble.last
+      || outp.instrCnt.myPsIdInFlushBubble.last
+    )
+  ) {
+    outp.instrCnt.tick := (
+      RegNext(
+        outp.instrCnt.tick
+      )
+    )
+  }
 }
 
 //private[libsnowhouse] object PcChangeState
@@ -8112,9 +8214,27 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
   //--------
   // BEGIN: new code for branches/jumps
   when (
-    RegNext(
-      io.upIsFiring,
-      init=False
+    //RegNext(
+    //  io.upIsFiring,
+    //  init=False
+    //)
+    io.upIsValid
+    && (
+      (
+        io.instrCnt.tick
+        =/= RegNextWhen(
+          io.instrCnt.tick,
+          cond=io.upIsFiring,
+          init=True
+        )
+      )
+      || (
+        RegNextWhen(
+          False,
+          cond=io.upIsFiring,
+          init=True
+        )
+      )
     )
   ) {
     myPsExSetPcValid := False
@@ -8172,32 +8292,61 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
   //    )
   //  )
   //)
+  //val stickyMyHadBranchLastInstr = Bool()
+
   val myHadBranchLastInstr = (
-    //RegNextWhen(
-    //  (
-    //    (
-    //      (
-    //        io.splitOp.exSetNextPcKind
-    //        === SnowHousePsExSetNextPcKind.PcPlusImm
-    //      )
-    //      || (
-    //        io.splitOp.exSetNextPcKind
-    //        === SnowHousePsExSetNextPcKind.RdMemWord
-    //      )
-    //      || (
-    //        io.splitOp.exSetNextPcKind
-    //        === SnowHousePsExSetNextPcKind.RdMemWordPlusImm
-    //      )
-    //    )
-    //    && (
-    //      !io.shouldIgnoreInstr(0)
-    //    )
-    //  ),
-    //  cond=io.upIsFiring,
-    //  init=False
-    //)
-    rMyTempDstRegPc.fire
+    ////RegNextWhen(
+    ////  (
+    ////    (
+    ////      (
+    ////        io.splitOp.exSetNextPcKind
+    ////        === SnowHousePsExSetNextPcKind.PcPlusImm
+    ////      )
+    ////      || (
+    ////        io.splitOp.exSetNextPcKind
+    ////        === SnowHousePsExSetNextPcKind.RdMemWord
+    ////      )
+    ////      || (
+    ////        io.splitOp.exSetNextPcKind
+    ////        === SnowHousePsExSetNextPcKind.RdMemWordPlusImm
+    ////      )
+    ////    )
+    ////    && (
+    ////      !io.shouldIgnoreInstr(0)
+    ////    )
+    ////  ),
+    ////  cond=io.upIsFiring,
+    ////  init=False
+    ////)
+    //rMyTempDstRegPc.fire
+    Bool()
   )
+
+  myHadBranchLastInstr := (
+    RegNext(myHadBranchLastInstr, init=False)
+  )
+
+  when (
+    RegNext(
+      (
+        myHadBranchLastInstr
+        //&& io.upIsFiring
+      ),
+      init=False
+    )
+    && io.upIsValid
+  ) {
+    myHadBranchLastInstr := False
+  }
+
+  when (
+    rMyTempDstRegPc.fire
+  ) {
+    myHadBranchLastInstr := True
+  }
+
+
+
   val myTempBranchMispredictTakenMost = (
     Vec[Bool](
       //rose
@@ -8229,6 +8378,7 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
           //  cmpEqIo=null,
           //)._1
         )
+        && io.upIsValid
       )
     )
   )
@@ -8259,6 +8409,7 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
           //  cmpEqIo=null,
           //)._1
         )
+        && io.upIsValid
       ),
     )
   )
@@ -8266,12 +8417,62 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
     myHadBranchLastInstr
     && myTempBranchMispredictNotTakenMost.orR
   )
+  //val stickyBranchMispredictCond = Bool()
+  //stickyBranchMispredictCond := (
+  //  RegNext(
+  //    stickyBranchMispredictCond,
+  //    init=False
+  //  )
+  //)
+  //when (
+  //  (
+  //    myHadBranchLastInstr
+  //    && (
+  //      myTempBranchMispredictTakenMost.orR
+  //      || myTempBranchMispredictNotTakenMost.orR
+  //    )
+  //  )
+  //) {
+  //  stickyBranchMispredictCond := True
+  //} otherwise {
+  //  stickyBranchMispredictCond := False
+  //}
+
   val myBranchMispredictCond = (
-    myHadBranchLastInstr
-    && (
-      myTempBranchMispredictTakenMost.orR
-      || myTempBranchMispredictNotTakenMost.orR
+    (
+      myHadBranchLastInstr
+      && (
+        myTempBranchMispredictTakenMost.orR
+        || myTempBranchMispredictNotTakenMost.orR
+      )
     )
+    //&& (
+    //)
+    //stickyBranchMispredictCond
+    //&& (
+    //  (
+    //    //io.instrCnt.tick
+    //    //=/= RegNextWhen(
+    //    //  io.instrCnt.tick,
+    //    //  cond=io.upIsFiring,
+    //    //  init=True
+    //    //)
+    //    io.instrCnt.reorderBufIdx
+    //    =/= RegNextWhen(
+    //      io.instrCnt.reorderBufIdx,
+    //      cond=io.upIsFiring,
+    //      //init=io.instrCnt.reorderBufIdx.getZero
+    //    )
+    //  )
+    //  || (
+    //    RegNextWhen(
+    //      False,
+    //      cond=io.upIsFiring,
+    //      init=True
+    //    )
+    //  )
+    //)
+
     //&& io.upIsValid
     //&& io.upIsFiring
     //&& (
@@ -8282,6 +8483,16 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
     //  =/= io.laggingRegPc
     //)
   )
+
+  //when (
+  //  RegNext(
+  //    myBranchMispredictCond,
+  //    init=False
+  //  )
+  //) {
+  //  stickyBranchMispredictCond := False
+  //}
+
   //io.psExSetPc.allowOverride
   io.psExSetPc.valid := (
     rose(
@@ -10792,8 +11003,6 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
         io.splitOp.exSetNextPcKind
       )
     ) {
-      //is (SnowHousePsExSetNextPcKind.PcPlusImm) {
-      //}
       is (SnowHousePsExSetNextPcKind.Dont) {
         if (mySwitchArgIsRnw) {
           io.psExSetPc.branchKind := (
@@ -13290,11 +13499,21 @@ case class SnowHousePipeStageExecute(
     //  init=False
     //)
   )
+  val stickyNextPsExSetPcValid = Vec.fill(cfg.lowerMyFanoutMain)(
+    Bool()
+  )
   val nextPsExSetPcValid = Vec.fill(cfg.lowerMyFanoutMain)(
     Bool()
   )
   for (idx <- 0 until cfg.lowerMyFanoutMain) {
-    nextPsExSetPcValid(idx) := (
+    stickyNextPsExSetPcValid(idx) := (
+      RegNext(
+        stickyNextPsExSetPcValid(idx),
+        init=False
+      )
+    )
+
+    when (
       setOutpModMemWord.io.psExSetPc.valid
       && RegNext(
         next=(
@@ -13313,7 +13532,55 @@ case class SnowHousePipeStageExecute(
       //  && cMid0Front.up.isValid
       //  && cMid0Front.down.isReady
       //),
+    ) {
+      stickyNextPsExSetPcValid(idx) := True
+    }
+
+    nextPsExSetPcValid(idx) := (
+      stickyNextPsExSetPcValid(idx)
+      && (
+        (
+          // TODO: temporary use of `reorderBufIdx` (for testing!)!
+          outp.instrCnt.tick//reorderBufIdx
+          =/= (
+            RegNextWhen(
+              outp.instrCnt.tick,//reorderBufIdx.asSInt,
+              cond=(
+                cLink.up.isFiring
+                //&& !myShouldIgnoreInstr(idx)
+              )
+            )
+            init(
+              //-1
+              False
+            )
+          )//.asUInt
+        )
+        || (
+          RegNextWhen(
+            False,
+            cond=(
+              cLink.up.isFiring
+              //&& !myShouldIgnoreInstr(idx)
+            ),
+            init=True
+          )
+        )
+      )
     )
+
+    when (
+      RegNext(
+        (
+          nextPsExSetPcValid(idx)
+          //|| cLink.up.isFiring
+        ),
+        init=False
+      )
+      //|| !cLink.up.isValid
+    ) {
+      stickyNextPsExSetPcValid(idx) := False
+    }
   }
 
   //psExSetPc.valid := (
@@ -14979,6 +15246,35 @@ case class SnowHousePipeStageExecute(
     })
   }
   //when (!myTempDownIsReady) {
+  //}
+  setOutpModMemWord.io.instrCnt.tick.allowOverride
+  setOutpModMemWord.io.instrCnt.tick := outp.instrCnt.tick
+  //val myReorderBufIdx = (
+  //  cloneOf(
+  //    outp.instrCnt.scoreboardCheckPayload.reorderBufIdx
+  //  )
+  //)
+  //setOutpModMemWord.io.instrCnt.reorderBufIdx
+  //  .allowOverride
+  //setOutpModMemWord.io.instrCnt.reorderBufIdx := (
+  //  myReorderBufIdx
+  //)
+  ////myReorderBufIdx := (
+  ////  outp.instrCnt.reorderBufIdx
+  ////)
+  //myReorderBufIdx := RegNext(
+  //  myReorderBufIdx,
+  //  init=myReorderBufIdx.getZero
+  //)
+  //when (cLink.up.isValid) {
+  //  myReorderBufIdx := (
+  //    outp.instrCnt.reorderBufIdx
+  //  )
+  //}
+  //when (!cLink.up.isValid) {
+  //  myReorderBufIdx := (
+  //    RegNext(myReorderBufIdx)
+  //  )
   //}
 }
 
