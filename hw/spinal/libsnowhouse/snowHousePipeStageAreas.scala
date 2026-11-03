@@ -8220,24 +8220,33 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
     //  io.upIsFiring,
     //  init=False
     //)
-    io.upIsValid
-    && (
-      (
-        io.instrCnt.tick
-        =/= RegNextWhen(
-          io.instrCnt.tick,
-          cond=io.upIsFiring,
-          init=True
-        )
-      )
-      || (
-        RegNextWhen(
-          False,
-          cond=io.upIsFiring,
-          init=True
-        )
-      )
+    (
+      io.upIsValid
+      //&& (
+      //  (
+      //    io.instrCnt.tick
+      //    =/= RegNextWhen(
+      //      io.instrCnt.tick,
+      //      cond=io.upIsFiring,
+      //      init=True
+      //    )
+      //  )
+      //  || (
+      //    RegNextWhen(
+      //      False,
+      //      cond=io.upIsFiring,
+      //      init=True
+      //    )
+      //  )
+      //)
     )
+    //|| (
+    //  !io.upIsValid
+    //  && RegNext(
+    //    myPsExSetPcValid,
+    //    init=False
+    //  )
+    //)
   ) {
     myPsExSetPcValid := False
   }
