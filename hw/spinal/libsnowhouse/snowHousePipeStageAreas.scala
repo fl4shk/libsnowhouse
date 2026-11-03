@@ -14132,7 +14132,6 @@ case class SnowHousePipeStageExecute(
     setOutpModMemWord.io.splitOp.exSetNextPcKind := (
       SnowHousePsExSetNextPcKind.Dont
     )
-
   }
   psExSetPc.nextPc := (
     RegNextWhen(
