@@ -8441,7 +8441,10 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
         myPsExSetPcValid
         =/= RegNextWhen(
           io.branchPredictTkn,
-          cond=io.upIsFiring,
+          cond=(
+            io.upIsFiring
+            && io.instrCnt.changedInstr
+          ),
           init=False
         )
         //!LcvFastCmpEq(
@@ -8477,7 +8480,10 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
         !myPsExSetPcValid
         && RegNextWhen(
           io.branchPredictTkn,
-          cond=io.upIsFiring,
+          cond=(
+            io.upIsFiring
+            && io.instrCnt.changedInstr
+          ),
           init=False
         )
       ),
@@ -8614,15 +8620,21 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
   io.psExSetPc.taken.valid(
     RegNextWhen(
       io.btbWayIdx,
-      cond=io.upIsFiring,
+      cond=(
+        io.upIsFiring
+        && io.instrCnt.changedInstr
+      ),
       init=io.btbWayIdx.getZero,
     )
   ) := (
     myHadBranchLastInstr
-    //&& changedInstr
+    //&& io.instrCnt.changedInstr
     //&& io.upIsFiring
     && RegNext(
-      io.upIsFiring,
+      (
+        io.upIsFiring
+        && io.instrCnt.changedInstr
+      ),
       init=False
     )
     //&& (
@@ -15363,7 +15375,7 @@ case class SnowHousePipeStageExecute(
   setOutpModMemWord.io.instrCnt.changedInstr := (
     outp.instrCnt.changedInstr
     && cLink.up.isValid
-    //&& cLink.down.isReady
+    && cLink.down.isReady
   )
   //val myReorderBufIdx = (
   //  cloneOf(
