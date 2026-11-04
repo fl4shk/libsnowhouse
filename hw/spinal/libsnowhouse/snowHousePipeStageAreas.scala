@@ -6930,7 +6930,13 @@ case class SnowHousePipeStagePreFwd(
         =/= (
           RegNextWhen(
             outp.instrCnt.reorderBufIdx,
-            cond=upIsFiring,
+            cond=(
+              upIsFiring
+              && !outp.instrCnt.myPsIdBubble.last
+              && !outp.instrCnt.myPsIdOtherBubble.last
+              && !outp.instrCnt.myPsIdFwdBubble.last
+              && !outp.instrCnt.myPsIdInFlushBubble.last
+            ),
           )
           init(0x0)
         )
