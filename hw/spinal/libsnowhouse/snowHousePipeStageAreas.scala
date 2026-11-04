@@ -13755,9 +13755,13 @@ case class SnowHousePipeStageExecute(
   )
   psExSetPc.btbUpdateValid := (
     RegNextWhen(
-      RegNext(
+      RegNextWhen(
         outp.btbUpdateValid,
         //cond=cMid0Front.up.isFiring,
+        cond=(
+          cLink.up.isFiring
+          && outp.instrCnt.changedInstr
+        ),
         init=outp.btbUpdateValid.getZero,
       ),
       cond=nextPsExSetPcValid(0),
@@ -13779,8 +13783,12 @@ case class SnowHousePipeStageExecute(
   //)
   psExSetPc.taken.alwaysTaken := (
     RegNextWhen(
-      RegNext(
+      RegNextWhen(
         outp.splitOp.jmpBrOpIsAlwaysTaken,
+        cond=(
+          cLink.up.isFiring
+          && outp.instrCnt.changedInstr
+        ),
         init=outp.splitOp.jmpBrOpIsAlwaysTaken.getZero,
       ),
       cond=LcvOrR(setOutpModMemWord.io.psExSetPc.taken.fire),
@@ -13792,8 +13800,12 @@ case class SnowHousePipeStageExecute(
     psExSetPc.taken.gshareSrcRegPc.allowOverride
     psExSetPc.taken.gshareSrcRegPc := (
       RegNextWhen(
-        RegNext(
+        RegNextWhen(
           outp.branchPredictGshareSrcRegPc,
+          cond=(
+            cLink.up.isFiring
+            && outp.instrCnt.changedInstr
+          ),
           init=outp.branchPredictGshareSrcRegPc.getZero,
         ),
         cond=LcvOrR(setOutpModMemWord.io.psExSetPc.taken.fire),
@@ -13810,9 +13822,12 @@ case class SnowHousePipeStageExecute(
     //)
     psExSetPc.myOooIssueChkptIdx := (
       RegNextWhen(
-        RegNext(
+        RegNextWhen(
           outp.myOooIssueChkptIdx,
-          //cond=cMid0Front.up.isFiring,
+          cond=(
+            cLink.up.isFiring
+            && outp.instrCnt.changedInstr
+          ),
           init=outp.myOooIssueChkptIdx.getZero,
         ),
         cond=setOutpModMemWord.io.psExSetPc.fire,
