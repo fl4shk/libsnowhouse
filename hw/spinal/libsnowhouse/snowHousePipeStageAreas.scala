@@ -14248,9 +14248,13 @@ case class SnowHousePipeStageExecute(
   psExSetPc.branchTgtBufElem.srcRegPc.allowOverride
   psExSetPc.branchTgtBufElem.srcRegPc := (
     RegNextWhen(
-      RegNext(
+      RegNextWhen(
         outp.laggingRegPc,
         //cond=cMid0Front.up.isFiring,
+        cond=(
+          cLink.up.isFiring
+          && outp.instrCnt.changedInstr
+        ),
         init=outp.laggingRegPc.getZero,
       ),
       cond=setOutpModMemWord.io.psExSetPc.fire,
@@ -15425,7 +15429,8 @@ case class SnowHousePipeStageExecute(
   setOutpModMemWord.io.instrCnt.changedInstr := (
     outp.instrCnt.changedInstr
     && cLink.up.isValid
-    && cLink.down.isReady
+    //&& cLink.down.isReady
+    && myTempDownIsReadyMost
   )
   //val myReorderBufIdx = (
   //  cloneOf(
