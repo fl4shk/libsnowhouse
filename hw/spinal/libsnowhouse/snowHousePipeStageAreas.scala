@@ -15410,7 +15410,7 @@ case class SnowHousePipeStageExecute(
   setOutpModMemWord.io.instrCnt.changedInstr := (
     outp.instrCnt.changedInstr
     && cLink.up.isValid
-    && cLink.down.isReady
+    //&& cLink.down.isReady
   )
   //val myReorderBufIdx = (
   //  cloneOf(
