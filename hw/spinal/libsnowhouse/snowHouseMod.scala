@@ -2233,7 +2233,8 @@ private[libsnowhouse] case class SnowHouseForFmax(
     //  psScoreboardReadGprs.io.readGprs
     //)
     //psPreFwd.io.up << psScoreboardReadGprs.io.down
-    psScoreboardCheck.io.up <-/< psId.io.down
+    //psScoreboardCheck.io.up <-/< psId.io.down
+    psScoreboardCheck.io.up << psId.io.down
     psPreFwd.io.up << psScoreboardCheck.io.down
   } else {
     psPreFwd.io.up <-/< psId.io.down
@@ -2439,11 +2440,19 @@ private[libsnowhouse] case class SnowHouseForFmax(
   //  psWb.io.commit.myRegFileWrPulsePayload
   //)
   if (cfg.optScoreboard) {
-    psPreFwd.io.myRegFileWrPulse <-< (
+    //psPreFwd.io.myRegFileWrPulse <-< (
+    //  //psWb.io.commitEtc.myScoreboardFwdRegFileWrPulse
+    //  psWb.io.commitEtc.myRegFileWrPulse
+    //)
+    //psEx.io.myRegFileWrPulse <-< (
+    //  //psWb.io.commitEtc.myScoreboardFwdRegFileWrPulse
+    //  psWb.io.commitEtc.myRegFileWrPulse
+    //)
+    psPreFwd.io.myRegFileWrPulse << (
       //psWb.io.commitEtc.myScoreboardFwdRegFileWrPulse
       psWb.io.commitEtc.myRegFileWrPulse
     )
-    psEx.io.myRegFileWrPulse <-< (
+    psEx.io.myRegFileWrPulse << (
       //psWb.io.commitEtc.myScoreboardFwdRegFileWrPulse
       psWb.io.commitEtc.myRegFileWrPulse
     )
@@ -2462,10 +2471,16 @@ private[libsnowhouse] case class SnowHouseForFmax(
     //psScoreboardCheck.io.myScoreboardCommit << (
     //  psWb.io.commitEtc.scoreboardTag
     //)
-    psScoreboardCheck.io.myScoreboardCommit <-< (
+    //psScoreboardCheck.io.myScoreboardCommit <-< (
+    //  psWb.io.commitEtc.scoreboardCommmit
+    //)
+    //psScoreboardCheck.io.myScoreboardBubbleRetire <-< (
+    //  psWb.io.commitEtc.scoreboardBubbleRetire
+    //)
+    psScoreboardCheck.io.myScoreboardCommit << (
       psWb.io.commitEtc.scoreboardCommmit
     )
-    psScoreboardCheck.io.myScoreboardBubbleRetire <-< (
+    psScoreboardCheck.io.myScoreboardBubbleRetire << (
       psWb.io.commitEtc.scoreboardBubbleRetire
     )
     //psScoreboardCheck.io.myScoreboardReorderBufInFlushEtc <> (
