@@ -6935,6 +6935,37 @@ case class SnowHousePipeStagePreFwd(
           init(0x0)
         )
       )
+      || (
+        //outp.myRegPcVec.head === 0x0
+        !LcvOrR(outp.myRegPcVec.head)
+        && RegNextWhen(
+          False,
+          cond=(
+            upIsFiring
+            && LcvOrR(outp.myRegPcVec.head)
+          ),
+          init=True,
+        )
+      )
+      //|| (
+      //  RegNextWhen(
+      //    False,
+      //    cond=(
+      //      outp.instrCnt.tick
+      //      //&& (
+      //      //  outp.instrCnt.reorderBufIdx
+      //      //  =/= (
+      //      //    RegNextWhen(
+      //      //      outp.instrCnt.reorderBufIdx,
+      //      //      cond=upIsFiring,
+      //      //    )
+      //      //    init(0x0)
+      //      //  )
+      //      //)
+      //    ),
+      //    init=True
+      //  )
+      //)
       //|| (
       //  outp.instrCnt.myOooIssueChkptIdx
       //  =/= (
@@ -8438,15 +8469,18 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
     Vec[Bool](
       //rose
       (
-        myPsExSetPcValid
-        =/= RegNextWhen(
-          io.branchPredictTkn,
-          cond=(
-            io.upIsFiring
-            && io.instrCnt.changedInstr
-          ),
-          init=False
+        (
+          myPsExSetPcValid
+          =/= RegNextWhen(
+            io.branchPredictTkn,
+            cond=(
+              io.upIsFiring
+              //&& io.instrCnt.changedInstr
+            ),
+            init=False
+          )
         )
+        && io.instrCnt.changedInstr
         //!LcvFastCmpEq(
         //  left=myPsExSetPcValid,
         //  right=RegNext(
@@ -8482,10 +8516,11 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
           io.branchPredictTkn,
           cond=(
             io.upIsFiring
-            && io.instrCnt.changedInstr
+            //&& io.instrCnt.changedInstr
           ),
           init=False
         )
+        && io.instrCnt.changedInstr
       ),
       //rose
       (
