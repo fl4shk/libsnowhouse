@@ -6935,7 +6935,6 @@ case class SnowHousePipeStagePreFwd(
           init(0x0)
         )
       )
-      //|| outp.regPcSetItCnt.last.lsb
       //|| (
       //  outp.instrCnt.myOooIssueChkptIdx
       //  =/= (
@@ -8623,7 +8622,7 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
       io.btbWayIdx,
       cond=(
         io.upIsFiring
-        && io.instrCnt.changedInstr
+        //&& io.instrCnt.changedInstr
       ),
       init=io.btbWayIdx.getZero,
     )
@@ -8634,7 +8633,7 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
     && RegNext(
       (
         io.upIsFiring
-        && io.instrCnt.changedInstr
+        //&& io.instrCnt.changedInstr
       ),
       init=False
     )
