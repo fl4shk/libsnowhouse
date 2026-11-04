@@ -8475,7 +8475,7 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
             io.branchPredictTkn,
             cond=(
               io.upIsFiring
-              //&& io.instrCnt.changedInstr
+              && io.instrCnt.changedInstr
             ),
             init=False
           )
@@ -8516,7 +8516,7 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
           io.branchPredictTkn,
           cond=(
             io.upIsFiring
-            //&& io.instrCnt.changedInstr
+            && io.instrCnt.changedInstr
           ),
           init=False
         )
