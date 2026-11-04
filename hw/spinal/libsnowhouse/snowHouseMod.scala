@@ -2406,7 +2406,8 @@ private[libsnowhouse] case class SnowHouseForFmax(
       //  }
       //} else { // if (!cfg.optScoreboard)
         if (idx == 0) {
-          myPostExPreWbStmVec(idx) <-< psEx.io.down
+          //myPostExPreWbStmVec(idx) <-< psEx.io.down
+          myPostExPreWbStmVec(idx) << psEx.io.down
         } //else 
         //if (idx + 1 == myPostExPreWbStmVec.size) {
         //  psWb.io.up <-< myPostExPreWbStmVec(idx)
