@@ -6935,6 +6935,7 @@ case class SnowHousePipeStagePreFwd(
           init(0x0)
         )
       )
+      //|| outp.regPcSetItCnt.last.lsb
       //|| (
       //  outp.instrCnt.myOooIssueChkptIdx
       //  =/= (
