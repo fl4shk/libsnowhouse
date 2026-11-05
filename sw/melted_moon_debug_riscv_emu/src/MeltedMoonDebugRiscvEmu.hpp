@@ -55,31 +55,31 @@ static constexpr inline u64 zero_extend(u64 val, size_t width) {
 class MeltedMoonDebugRiscvEmu final {
 public:     // constants
      // increment this over time!
-    static constexpr u64 SAVESTATE_VERSION = 0x8ull;
+    static constexpr u64 SAVESTATE_VERSION = 0x5ull;
     
-    static constexpr u32 ADDR_PRINT = 0xe000000ul;
-    static constexpr u32 ADDR_EXIT = 0xe000004ul;
-    static constexpr u32 ADDR_TIMER_USEC_LO = 0xe000000ul;
-    static constexpr u32 ADDR_TIMER_USEC_HI = 0xe000004ul;
-    static constexpr u32 ADDR_TIMER_SEC_LO = 0xe000008ul;
-    static constexpr u32 ADDR_TIMER_SEC_HI = 0xe00000cul;
-    static constexpr u32 ADDR_UDIV64_INP_LEFT_LO = 0xe000010ul;
-    static constexpr u32 ADDR_UDIV64_INP_LEFT_HI = 0xe000014ul;
-    static constexpr u32 ADDR_UDIV64_INP_RIGHT_LO = 0xe000018ul;
-    static constexpr u32 ADDR_UDIV64_INP_RIGHT_HI = 0xe00001cul;
-    static constexpr u32 ADDR_UDIV64_OUTP_QUOT_LO = 0xe000010ul;
-    static constexpr u32 ADDR_UDIV64_OUTP_QUOT_HI = 0xe000014ul;
-    static constexpr u32 ADDR_UDIV64_OUTP_REMA_LO = 0xe000018ul;
-    static constexpr u32 ADDR_UDIV64_OUTP_REMA_HI = 0xe00001cul;
+    static constexpr u32 ADDR_PRINT = 0x6000000ul;
+    static constexpr u32 ADDR_EXIT = 0x6000004ul;
+    static constexpr u32 ADDR_TIMER_USEC_LO = 0x6000000ul;
+    static constexpr u32 ADDR_TIMER_USEC_HI = 0x6000004ul;
+    static constexpr u32 ADDR_TIMER_SEC_LO = 0x6000008ul;
+    static constexpr u32 ADDR_TIMER_SEC_HI = 0x600000cul;
+    static constexpr u32 ADDR_UDIV64_INP_LEFT_LO = 0x6000010ul;
+    static constexpr u32 ADDR_UDIV64_INP_LEFT_HI = 0x6000014ul;
+    static constexpr u32 ADDR_UDIV64_INP_RIGHT_LO = 0x6000018ul;
+    static constexpr u32 ADDR_UDIV64_INP_RIGHT_HI = 0x600001cul;
+    static constexpr u32 ADDR_UDIV64_OUTP_QUOT_LO = 0x6000010ul;
+    static constexpr u32 ADDR_UDIV64_OUTP_QUOT_HI = 0x6000014ul;
+    static constexpr u32 ADDR_UDIV64_OUTP_REMA_LO = 0x6000018ul;
+    static constexpr u32 ADDR_UDIV64_OUTP_REMA_HI = 0x600001cul;
 
-    static constexpr u32 ADDR_IDIV64_INP_LEFT_LO = 0xe000020ul;
-    static constexpr u32 ADDR_IDIV64_INP_LEFT_HI = 0xe000024ul;
-    static constexpr u32 ADDR_IDIV64_INP_RIGHT_LO = 0xe000028ul;
-    static constexpr u32 ADDR_IDIV64_INP_RIGHT_HI = 0xe00002cul;
-    static constexpr u32 ADDR_IDIV64_OUTP_QUOT_LO = 0xe000020ul;
-    static constexpr u32 ADDR_IDIV64_OUTP_QUOT_HI = 0xe000024ul;
-    static constexpr u32 ADDR_IDIV64_OUTP_REMA_LO = 0xe000028ul;
-    static constexpr u32 ADDR_IDIV64_OUTP_REMA_HI = 0xe00002cul;
+    static constexpr u32 ADDR_IDIV64_INP_LEFT_LO = 0x6000020ul;
+    static constexpr u32 ADDR_IDIV64_INP_LEFT_HI = 0x6000024ul;
+    static constexpr u32 ADDR_IDIV64_INP_RIGHT_LO = 0x6000028ul;
+    static constexpr u32 ADDR_IDIV64_INP_RIGHT_HI = 0x600002cul;
+    static constexpr u32 ADDR_IDIV64_OUTP_QUOT_LO = 0x6000020ul;
+    static constexpr u32 ADDR_IDIV64_OUTP_QUOT_HI = 0x6000024ul;
+    static constexpr u32 ADDR_IDIV64_OUTP_REMA_LO = 0x6000028ul;
+    static constexpr u32 ADDR_IDIV64_OUTP_REMA_HI = 0x600002cul;
 
     //static constexpr u32 ADDR_IMUL_FIXED_INP_LEFT = 0x6000030ul;
     //static constexpr u32 ADDR_IMUL_FIXED_INP_RIGHT = 0x6000034ul;
@@ -89,28 +89,28 @@ public:     // constants
     //static constexpr u32 ADDR_IDIV_FIXED_INP_RIGHT = 0x600003cul;
     //static constexpr u32 ADDR_IDIV_FIXED_OUTP_QUOT = 0x6000038ul;
 
-    static constexpr u32 ADDR_FB_0_START = 0x8000000ul;
+    static constexpr u32 ADDR_FB_0_START = 0x0000000ul;
     static constexpr u32 ADDR_FB_0_END = (
         ADDR_FB_0_START
         + (
             (SCREENWIDTH * FULL_SCREENHEIGHT - 1) //* sizeof(u16)
         )
     );
-    static constexpr u32 ADDR_FB_1_START = 0xa000000ul;
+    static constexpr u32 ADDR_FB_1_START = 0x2000000ul;
     static constexpr u32 ADDR_FB_1_END = (
         ADDR_FB_1_START
         + (
             (SCREENWIDTH * FULL_SCREENHEIGHT - 1) //* sizeof(u16)
         )
     );
-    static constexpr u32 ADDR_PAL_START = 0xc000000ul;
+    static constexpr u32 ADDR_PAL_START = 0x4000000ul;
     static constexpr u32 ADDR_PAL_END = (
         ADDR_PAL_START
         + (PALETTE_SIZE - 1) * sizeof(u32)
     );
-    static constexpr u32 ADDR_FB_PAGE = 0xc000400ul;
+    static constexpr u32 ADDR_FB_PAGE = 0x4000400ul;
 
-    static constexpr u32 ADDR_TCM_START = 0x2000000ul;
+    static constexpr u32 ADDR_TCM_START = 0x8000000ul;
     static constexpr u32 ADDR_TCM_END = (
         ADDR_TCM_START
         //+ (
@@ -123,12 +123,8 @@ public:     // constants
     // 64 MiB of main RAM, plus the palette
     // for this emulator, we just dynamically allocate the
     // (admittedly tiny) memory for the palette along with the main memory
-    static constexpr size_t MAIN_MEM_SIZE = (
-        64ull * 1024ull * 1024ull
-        //32ull * 1024ull * 1024ull
-    );
     static constexpr size_t MEM_SIZE = (
-        MAIN_MEM_SIZE
+        64ull * 1024ull * 1024ull
         + (PALETTE_SIZE * sizeof(u32))
     );
 
@@ -631,8 +627,6 @@ private:        // variables
     u64 _mmio_idiv64_inp_right = 0x0ul;
     u64 _mmio_idiv64_outp_quot = 0x0ul;
     u64 _mmio_idiv64_outp_rema = 0x0ul;
-
-    u32 _mmio_fb_page = 0x0ul;
 
     //u32 _mmio_imul_fixed_inp_left = 0x0u;
     //u32 _mmio_imul_fixed_inp_right = 0x0u;

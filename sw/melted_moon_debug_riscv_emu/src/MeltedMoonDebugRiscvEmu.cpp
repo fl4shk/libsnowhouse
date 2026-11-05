@@ -1572,7 +1572,7 @@ void MeltedMoonDebugRiscvEmu::_bus_write(
         );
     }
 
-    const u32 temp_addr = addr; //& ~0x10000000;
+    const u32 temp_addr = addr & ~0x10000000;
     //if ((addr & ~0b11u) == (0x8554u & ~0b11u)) {
     //    std::printf(
     //        "DEBUG NOTE: found it! pc:%x  \n",
@@ -1700,10 +1700,7 @@ void MeltedMoonDebugRiscvEmu::_bus_write(
         //    std::exit(1);
         //} 
         else {
-            if (
-                //(addr & 0x10000000) != 0x0u
-                addr >= MEM_SIZE
-            ) {
+            if ((addr & 0x10000000) != 0x0u) {
                 //if (
                 //    //(temp_addr & 0x3u) == (ADDR_FB_END & 0x3u)
                 //    ////&& byte_count == sizeof(u8)//sizeof(u16)
@@ -1799,9 +1796,7 @@ void MeltedMoonDebugRiscvEmu::_bus_write(
                     temp_addr >= ADDR_PAL_START
                     && temp_addr <= ADDR_PAL_END
                 ) {
-                    inner_do_write(&_mem[
-                        temp_addr - ADDR_PAL_START + MAIN_MEM_SIZE
-                    ]);
+                    inner_do_write(&_mem[temp_addr]);
                     //memcpy(&_mem[temp_addr], &data, byte_count);
                 } else if (
                     temp_addr == ADDR_FB_PAGE
@@ -1819,16 +1814,8 @@ void MeltedMoonDebugRiscvEmu::_bus_write(
                         );
                     }
                     //memcpy(&_mem[temp_addr], &data, byte_count);
-                    inner_do_write(
-                        //&_mem[temp_addr]
-                        //&_tcm[ADDR_TCM_END]
-                        (u8*)&_mmio_fb_page
-                    );
-                    _my_exec_one_instr_ret.pal = &_mem[
-                        //ADDR_PAL_START
-                        //temp_addr - ADDR_PAL_START + MAIN_MEM_SIZE
-                        MAIN_MEM_SIZE
-                    ];
+                    inner_do_write(&_mem[temp_addr]);
+                    _my_exec_one_instr_ret.pal = &_mem[ADDR_PAL_START];
                 } else if (
                     temp_addr >= ADDR_TCM_START
                     && temp_addr <= ADDR_TCM_END
@@ -1873,7 +1860,7 @@ u32 MeltedMoonDebugRiscvEmu::_bus_read(
     //    : 0u
     //);
     u32 ret = 0; 
-    const u32 temp_addr = addr; //& ~0x10000000;
+    const u32 temp_addr = addr & ~0x10000000;
 
     //if ((addr & ~0b11u) == (0x8554u & ~0b11u)) {
     //    std::printf(
@@ -1921,7 +1908,7 @@ u32 MeltedMoonDebugRiscvEmu::_bus_read(
         || byte_count == sizeof(u16)
         || byte_count == sizeof(u32)
     ) {
-        if (temp_addr >= MEM_SIZE) {
+        if (temp_addr > MEM_SIZE) {
             if (temp_addr == ADDR_TIMER_USEC_LO) {
                 _my_exec_one_instr_ret.sw_read_from_tp = true;
                 i32 temp_usec = i32(_tp->tv_usec);
@@ -2063,11 +2050,7 @@ u32 MeltedMoonDebugRiscvEmu::_bus_read(
                     //    &_fb_0_mem[temp_addr - ADDR_FB_0_START],
                     //    byte_count
                     //);
-                    if (!(u32(
-                        //_mem[ADDR_FB_PAGE]
-                        //_tcm[ADDR_TCM_END]
-                        _mmio_fb_page
-                    ) & 0b1u)) {
+                    if (!(u32(_mem[ADDR_FB_PAGE]) & 0b1u)) {
                         //memcpy(
                         //    &ret,
                         //    &_fb_0_mem[temp_addr - ADDR_FB_0_START],
@@ -2102,13 +2085,7 @@ u32 MeltedMoonDebugRiscvEmu::_bus_read(
                     //    &_fb_1_mem[temp_addr - ADDR_FB_1_START],
                     //    byte_count
                     //);
-                    if ((u32(
-                        //_mem[
-                        //    ADDR_FB_PAGE
-                        //]
-                        //_tcm[ADDR_TCM_END]
-                        _mmio_fb_page
-                    ) & 0b1u)) {
+                    if ((u32(_mem[ADDR_FB_PAGE]) & 0b1u)) {
                         //memcpy(
                         //    &ret,
                         //    &_fb_0_mem[temp_addr - ADDR_FB_1_START],
@@ -2134,9 +2111,7 @@ u32 MeltedMoonDebugRiscvEmu::_bus_read(
                 ) {
                     //memcpy(&_mem[temp_addr], &data, byte_count);
                     //memcpy(&ret, &_mem[temp_addr], byte_count);
-                    inner_do_read(&_mem[
-                        temp_addr - ADDR_PAL_START + MAIN_MEM_SIZE
-                    ]);
+                    inner_do_read(&_mem[temp_addr]);
                 } else {
                     std::fprintf(
                         stderr,
