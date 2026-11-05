@@ -5215,8 +5215,11 @@ case class SnowHouseForFmaxPipeStageWriteBack(
     val myReorderBufSize = (
       1 << cfg.optScoreboardReorderBufWidth
     )
+    val mySubtractAmount = (
+      myReorderBufSize - 10 //6
+    )
     val myStallPassMaxOccupancy = (
-      myReorderBufSize - 6//8//4//8
+      myReorderBufSize - mySubtractAmount//6//8//4//8
     )
 
     val rAllowFwdCommit = (
