@@ -1572,7 +1572,7 @@ void MeltedMoonDebugRiscvEmu::_bus_write(
         );
     }
 
-    const u32 temp_addr = addr & ~0x10000000;
+    const u32 temp_addr = addr; //& ~0x10000000;
     //if ((addr & ~0b11u) == (0x8554u & ~0b11u)) {
     //    std::printf(
     //        "DEBUG NOTE: found it! pc:%x  \n",
@@ -1700,7 +1700,10 @@ void MeltedMoonDebugRiscvEmu::_bus_write(
         //    std::exit(1);
         //} 
         else {
-            if ((addr & 0x10000000) != 0x0u) {
+            if (
+                //(addr & 0x10000000) != 0x0u
+                addr >= MEM_SIZE
+            ) {
                 //if (
                 //    //(temp_addr & 0x3u) == (ADDR_FB_END & 0x3u)
                 //    ////&& byte_count == sizeof(u8)//sizeof(u16)
@@ -1860,7 +1863,7 @@ u32 MeltedMoonDebugRiscvEmu::_bus_read(
     //    : 0u
     //);
     u32 ret = 0; 
-    const u32 temp_addr = addr & ~0x10000000;
+    const u32 temp_addr = addr; //& ~0x10000000;
 
     //if ((addr & ~0b11u) == (0x8554u & ~0b11u)) {
     //    std::printf(
@@ -1908,7 +1911,7 @@ u32 MeltedMoonDebugRiscvEmu::_bus_read(
         || byte_count == sizeof(u16)
         || byte_count == sizeof(u32)
     ) {
-        if (temp_addr > MEM_SIZE) {
+        if (temp_addr >= MEM_SIZE) {
             if (temp_addr == ADDR_TIMER_USEC_LO) {
                 _my_exec_one_instr_ret.sw_read_from_tp = true;
                 i32 temp_usec = i32(_tp->tv_usec);
