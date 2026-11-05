@@ -1826,7 +1826,8 @@ void MeltedMoonDebugRiscvEmu::_bus_write(
                     );
                     _my_exec_one_instr_ret.pal = &_mem[
                         //ADDR_PAL_START
-                        temp_addr - ADDR_PAL_START + MAIN_MEM_SIZE
+                        //temp_addr - ADDR_PAL_START + MAIN_MEM_SIZE
+                        MAIN_MEM_SIZE
                     ];
                 } else if (
                     temp_addr >= ADDR_TCM_START
