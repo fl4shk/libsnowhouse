@@ -2406,8 +2406,8 @@ private[libsnowhouse] case class SnowHouseForFmax(
       //  }
       //} else { // if (!cfg.optScoreboard)
         if (idx == 0) {
-          //myPostExPreWbStmVec(idx) <-< psEx.io.down
-          myPostExPreWbStmVec(idx) << psEx.io.down
+          myPostExPreWbStmVec(idx) <-< psEx.io.down
+          //myPostExPreWbStmVec(idx) << psEx.io.down
         } //else 
         //if (idx + 1 == myPostExPreWbStmVec.size) {
         //  psWb.io.up <-< myPostExPreWbStmVec(idx)
@@ -2429,8 +2429,8 @@ private[libsnowhouse] case class SnowHouseForFmax(
     //)
     //item.io.wrPulse := psWb.io.myRegFileWrPulse
     //item.io.wrPulse := psWb.io.commitEtc.myRegFileWrPulse
-    //item.io.wrPulse <-< psWb.io.commitEtc.myRegFileWrPulse
-    item.io.wrPulse << psWb.io.commitEtc.myRegFileWrPulse
+    item.io.wrPulse <-< psWb.io.commitEtc.myRegFileWrPulse
+    //item.io.wrPulse << psWb.io.commitEtc.myRegFileWrPulse
 
     //item.io.wrPulse.valid := psWb.io.commit.fire
     //item.io.wrPulse.payload := (
@@ -2442,22 +2442,22 @@ private[libsnowhouse] case class SnowHouseForFmax(
   //  psWb.io.commit.myRegFileWrPulsePayload
   //)
   if (cfg.optScoreboard) {
-    //psPreFwd.io.myRegFileWrPulse <-< (
-    //  //psWb.io.commitEtc.myScoreboardFwdRegFileWrPulse
-    //  psWb.io.commitEtc.myRegFileWrPulse
-    //)
-    //psEx.io.myRegFileWrPulse <-< (
-    //  //psWb.io.commitEtc.myScoreboardFwdRegFileWrPulse
-    //  psWb.io.commitEtc.myRegFileWrPulse
-    //)
-    psPreFwd.io.myRegFileWrPulse << (
+    psPreFwd.io.myRegFileWrPulse <-< (
       //psWb.io.commitEtc.myScoreboardFwdRegFileWrPulse
       psWb.io.commitEtc.myRegFileWrPulse
     )
-    psEx.io.myRegFileWrPulse << (
+    psEx.io.myRegFileWrPulse <-< (
       //psWb.io.commitEtc.myScoreboardFwdRegFileWrPulse
       psWb.io.commitEtc.myRegFileWrPulse
     )
+    //psPreFwd.io.myRegFileWrPulse << (
+    //  //psWb.io.commitEtc.myScoreboardFwdRegFileWrPulse
+    //  psWb.io.commitEtc.myRegFileWrPulse
+    //)
+    //psEx.io.myRegFileWrPulse << (
+    //  //psWb.io.commitEtc.myScoreboardFwdRegFileWrPulse
+    //  psWb.io.commitEtc.myRegFileWrPulse
+    //)
     psWb.io.myScoreboardSavedGprTagVec <> (
       psScoreboardCheck.io.myScoreboardSavedGprTagVec
     )
