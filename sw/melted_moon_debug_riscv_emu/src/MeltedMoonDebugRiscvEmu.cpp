@@ -1819,7 +1819,10 @@ void MeltedMoonDebugRiscvEmu::_bus_write(
                         );
                     }
                     //memcpy(&_mem[temp_addr], &data, byte_count);
-                    inner_do_write(&_mem[temp_addr]);
+                    inner_do_write(
+                        //&_mem[temp_addr]
+                        &_tcm[ADDR_TCM_END]
+                    );
                     _my_exec_one_instr_ret.pal = &_mem[
                         //ADDR_PAL_START
                         temp_addr - ADDR_PAL_START + MAIN_MEM_SIZE
@@ -2058,7 +2061,10 @@ u32 MeltedMoonDebugRiscvEmu::_bus_read(
                     //    &_fb_0_mem[temp_addr - ADDR_FB_0_START],
                     //    byte_count
                     //);
-                    if (!(u32(_mem[ADDR_FB_PAGE]) & 0b1u)) {
+                    if (!(u32(
+                        //_mem[ADDR_FB_PAGE]
+                        _tcm[ADDR_TCM_END]
+                    ) & 0b1u)) {
                         //memcpy(
                         //    &ret,
                         //    &_fb_0_mem[temp_addr - ADDR_FB_0_START],
@@ -2093,7 +2099,12 @@ u32 MeltedMoonDebugRiscvEmu::_bus_read(
                     //    &_fb_1_mem[temp_addr - ADDR_FB_1_START],
                     //    byte_count
                     //);
-                    if ((u32(_mem[ADDR_FB_PAGE]) & 0b1u)) {
+                    if ((u32(
+                        //_mem[
+                        //    ADDR_FB_PAGE
+                        //]
+                        _tcm[ADDR_TCM_END]
+                    ) & 0b1u)) {
                         //memcpy(
                         //    &ret,
                         //    &_fb_0_mem[temp_addr - ADDR_FB_1_START],
