@@ -123,9 +123,12 @@ public:     // constants
     // 64 MiB of main RAM, plus the palette
     // for this emulator, we just dynamically allocate the
     // (admittedly tiny) memory for the palette along with the main memory
-    static constexpr size_t MEM_SIZE = (
+    static constexpr size_t MAIN_MEM_SIZE = (
         //64ull * 1024ull * 1024ull
         32ull * 1024ull * 1024ull
+    );
+    static constexpr size_t MEM_SIZE = (
+        MAIN_MEM_SIZE
         + (PALETTE_SIZE * sizeof(u32))
     );
 

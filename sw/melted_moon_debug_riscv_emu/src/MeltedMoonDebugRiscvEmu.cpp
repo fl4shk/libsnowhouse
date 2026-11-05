@@ -1799,7 +1799,9 @@ void MeltedMoonDebugRiscvEmu::_bus_write(
                     temp_addr >= ADDR_PAL_START
                     && temp_addr <= ADDR_PAL_END
                 ) {
-                    inner_do_write(&_mem[temp_addr]);
+                    inner_do_write(&_mem[
+                        temp_addr - ADDR_PAL_START + MAIN_MEM_SIZE
+                    ]);
                     //memcpy(&_mem[temp_addr], &data, byte_count);
                 } else if (
                     temp_addr == ADDR_FB_PAGE
@@ -1818,7 +1820,10 @@ void MeltedMoonDebugRiscvEmu::_bus_write(
                     }
                     //memcpy(&_mem[temp_addr], &data, byte_count);
                     inner_do_write(&_mem[temp_addr]);
-                    _my_exec_one_instr_ret.pal = &_mem[ADDR_PAL_START];
+                    _my_exec_one_instr_ret.pal = &_mem[
+                        //ADDR_PAL_START
+                        temp_addr - ADDR_PAL_START + MAIN_MEM_SIZE
+                    ];
                 } else if (
                     temp_addr >= ADDR_TCM_START
                     && temp_addr <= ADDR_TCM_END
@@ -2114,7 +2119,9 @@ u32 MeltedMoonDebugRiscvEmu::_bus_read(
                 ) {
                     //memcpy(&_mem[temp_addr], &data, byte_count);
                     //memcpy(&ret, &_mem[temp_addr], byte_count);
-                    inner_do_read(&_mem[temp_addr]);
+                    inner_do_read(&_mem[
+                        temp_addr - ADDR_PAL_START + MAIN_MEM_SIZE
+                    ]);
                 } else {
                     std::fprintf(
                         stderr,
