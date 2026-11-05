@@ -55,7 +55,7 @@ static constexpr inline u64 zero_extend(u64 val, size_t width) {
 class MeltedMoonDebugRiscvEmu final {
 public:     // constants
      // increment this over time!
-    static constexpr u64 SAVESTATE_VERSION = 0x6ull;
+    static constexpr u64 SAVESTATE_VERSION = 0x7ull;
     
     static constexpr u32 ADDR_PRINT = 0xe000000ul;
     static constexpr u32 ADDR_EXIT = 0xe000004ul;
@@ -124,8 +124,8 @@ public:     // constants
     // for this emulator, we just dynamically allocate the
     // (admittedly tiny) memory for the palette along with the main memory
     static constexpr size_t MAIN_MEM_SIZE = (
-        //64ull * 1024ull * 1024ull
-        32ull * 1024ull * 1024ull
+        64ull * 1024ull * 1024ull
+        //32ull * 1024ull * 1024ull
     );
     static constexpr size_t MEM_SIZE = (
         MAIN_MEM_SIZE
@@ -631,6 +631,8 @@ private:        // variables
     u64 _mmio_idiv64_inp_right = 0x0ul;
     u64 _mmio_idiv64_outp_quot = 0x0ul;
     u64 _mmio_idiv64_outp_rema = 0x0ul;
+
+    u32 _mmio_fb_page = 0x0;
 
     //u32 _mmio_imul_fixed_inp_left = 0x0u;
     //u32 _mmio_imul_fixed_inp_right = 0x0u;

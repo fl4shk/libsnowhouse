@@ -1821,7 +1821,8 @@ void MeltedMoonDebugRiscvEmu::_bus_write(
                     //memcpy(&_mem[temp_addr], &data, byte_count);
                     inner_do_write(
                         //&_mem[temp_addr]
-                        &_tcm[ADDR_TCM_END]
+                        //&_tcm[ADDR_TCM_END]
+                        (u8*)&_mmio_fb_page
                     );
                     _my_exec_one_instr_ret.pal = &_mem[
                         //ADDR_PAL_START
@@ -2063,7 +2064,8 @@ u32 MeltedMoonDebugRiscvEmu::_bus_read(
                     //);
                     if (!(u32(
                         //_mem[ADDR_FB_PAGE]
-                        _tcm[ADDR_TCM_END]
+                        //_tcm[ADDR_TCM_END]
+                        _mmio_fb_page
                     ) & 0b1u)) {
                         //memcpy(
                         //    &ret,
@@ -2103,7 +2105,8 @@ u32 MeltedMoonDebugRiscvEmu::_bus_read(
                         //_mem[
                         //    ADDR_FB_PAGE
                         //]
-                        _tcm[ADDR_TCM_END]
+                        //_tcm[ADDR_TCM_END]
+                        _mmio_fb_page
                     ) & 0b1u)) {
                         //memcpy(
                         //    &ret,
