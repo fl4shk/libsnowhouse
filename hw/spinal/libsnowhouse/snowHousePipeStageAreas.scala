@@ -4195,21 +4195,21 @@ case class SnowHousePipeStageScoreboardCheck(
               )//.orR
             )
 
-            //if (!cfg.optRegRename) (
-            //  temp
-            //  || LcvOrR(
-            //    pop(otherIdx).writesGprIdxVec.asBits(myGprRange)
-            //    & inp.writesGprIdxVec.asBits(myGprRange)
-            //  )//.orR
-            //  || LcvOrR(
-            //    pop(otherIdx).readsGprIdxVec.asBits(myGprRange)
-            //    & inp.writesGprIdxVec.asBits(myGprRange)
-            //  )//.orR
-            //) else ( // if (cfg.optRegRename)
+            if (!cfg.optRegRename) (
+              temp
+              || LcvOrR(
+                pop(otherIdx).writesGprIdxVec.asBits(myGprRange)
+                & inp.writesGprIdxVec.asBits(myGprRange)
+              )//.orR
+              || LcvOrR(
+                pop(otherIdx).readsGprIdxVec.asBits(myGprRange)
+                & inp.writesGprIdxVec.asBits(myGprRange)
+              )//.orR
+            ) else ( // if (cfg.optRegRename)
               // register renaming eliminates WaW and WaR hazards!
               temp
               //True
-            //)
+            )
           }
         )
         //println(
@@ -5021,11 +5021,11 @@ case class SnowHousePipeStageScoreboardCheck(
 // 0000001-
 // 00000001
         val tempCaseStr = (
-          "-" * (size - idx - 1) + "1" + ("0" * idx)
+          //"-" * (size - idx - 1) + "1" + ("0" * idx)
 
           // now try preferring to schedule newer instructions.
           // Not sure if this is correct!
-          //("0" * tempIdx) + "1" + ("-" * (size - tempIdx - 1))
+          ("0" * tempIdx) + "1" + ("-" * (size - tempIdx - 1))
         )
         is (
           MaskedLiteral(
