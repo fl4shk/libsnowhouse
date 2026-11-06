@@ -717,7 +717,11 @@ case class SnowHouseForFmaxConfig(
   optScoreboardMultiCycleOpIsNonFwd: Boolean=(
     true
     //false
-  )
+  ),
+  //optRegRename: Boolean=(
+  //  true
+  //  //false
+  //)
   //optMaxNumScoreboardInstrs: Option[Int]=Some(
   //  //2
   //  //1
@@ -764,6 +768,7 @@ case class SnowHouseForFmaxConfig(
       }
     }
   )
+
   val optRegRename = (
     optNumPhysRegsMult != None
   )
@@ -1305,7 +1310,10 @@ case class SnowHouseConfig(
     numForkJoin=/*2*/1,
   )
   regFileCfg.linkArr = None
-  def numArchGprs = shRegFileCfg.wordCountArr.sum
+  def numArchGprs = (
+    //shRegFileCfg.wordCountArr.sum
+    regFileCfg.wordCountSum / numPhysRegsMult
+  )
   def numGprs = regFileCfg.wordCountSum
 
   val optScoreboardReorderBufWidth = (

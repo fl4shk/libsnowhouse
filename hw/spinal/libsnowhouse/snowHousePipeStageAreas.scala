@@ -3497,10 +3497,13 @@ case class SnowHousePipeStageInstrDecode(
       RamSdpPipeConfig(
         wordType=UInt(cfg.optScoreboardReorderBufWidth bits),
         depth=cfg.optScoreboardOooIssueMaxNumBranches,
-        initBigInt=Some(
-          Array.fill(cfg.optScoreboardOooIssueMaxNumBranches)(
-            BigInt(0)
-          )
+        initBigInt=(
+          //Some(
+          //  Array.fill(cfg.optScoreboardOooIssueMaxNumBranches)(
+          //    BigInt(0)
+          //  )
+          //)
+          None
         ),
         arrRamStyleAltera=(
           //"no_rw_check, logic"
@@ -3628,11 +3631,11 @@ case class SnowHousePipeStageInstrDecode(
 case class SnowHousePipeStageRegRename(
   val args: SnowHousePipeStageArgs,
   val psExSetPc: Flow[SnowHousePsExSetPcPayload],
-  val myScoreboardCommitStm: Stream[SnowHouseScoreboardCommitPayload],
-  val myScoreboardBubbleRetireStm:
+  val myScoreboardCommit: Flow[SnowHouseScoreboardCommitPayload],
+  val myScoreboardBubbleRetire:
     // needed because bubbles still need to have tagging info
     // erased from psId
-    Stream[SnowHouseScoreboardCommitPayload],
+    Flow[SnowHouseScoreboardCommitPayload],
 ) extends Area {
   def cfg = args.cfg
   def cRegRename = args.link
@@ -3708,13 +3711,20 @@ case class SnowHousePipeStageRegRename(
     SnowHousePipePayload(cfg=cfg)
   )
   //upPayload(0) := up(pId)
-  upPayload(0) := RegNext(upPayload(0), init=upPayload(0).getZero)
+  //upPayload(0) := RegNext(upPayload(0), init=upPayload(0).getZero)
   upPayload(1) := RegNext(upPayload(1), init=upPayload(1).getZero)
   upPayload(1).allowOverride
-
   upPayload(0) := up(pId)
+
   when (up.isValid) {
     upPayload(1) := upPayload(0)
+    for (idx <- 0 until cfg.maxNumGprsPerInstr) {
+      upPayload(1).archGprIdxVec(idx) := (
+        upPayload(0).gprIdxVec(idx).resize(
+          upPayload(1).archGprIdxVec(idx).getWidth
+        )
+      )
+    }
   }
 
   val stickyExSetPc = cloneOf(psExSetPc)
@@ -3727,16 +3737,224 @@ case class SnowHousePipeStageRegRename(
     )
   )
 
-  when (psExSetPc.valid) {
+  when (psExSetPc.fire) {
     myShouldIgnoreInstr := True
     //stickyExSetPc.valid := True
     stickyExSetPc.payload := psExSetPc.payload
   }
 
-  val rFreeList = (
-    
+  when (upPayload(1).regPcSetItCnt(0).lsb) {
+    myShouldIgnoreInstr := False
+  }
+
+  val rOooIssueChkptBufIdxVec = (
+    Vec.fill(cfg.numArchGprs)(
+      Reg(UInt(log2Up(cfg.optScoreboardOooIssueMaxNumBranches) bits))
+      init(0x0)
+    )
   )
 
+  //val myRegAliasTblCfg = (
+  //  RamSimpleDualPortConfig(
+  //    wordType=(
+  //      //UInt(cfg.optScoreboardReorderBufWidth bits)
+  //      UInt(log2Up(cfg.numGprs) bits)
+  //    ),
+  //    depth=(
+  //      //cfg.optScoreboardOooIssueMaxNumBranches
+  //      cfg.numArchGprs
+  //    ),
+  //    initBigInt=(
+  //      Some({
+  //        //Array.fill(cfg.optScoreboardOooIssueMaxNumBranches)(
+  //        //  BigInt(0)
+  //        //)
+  //        val temp = new ArrayBuffer[BigInt]()
+  //        for (archIdx <- 0 until cfg.numArchGprs) {
+  //          temp += BigInt(archIdx)
+  //        }
+  //        temp
+  //      })
+  //    ),
+  //    arrRamStyleAltera=(
+  //      //"no_rw_check, logic"
+  //      "no_rw_check, MLAB"
+  //      //"MLAB"
+  //    ),
+  //    arrRamStyleXilinx=(
+  //      "auto"
+  //      //"block"
+  //      //"distributed"
+  //    ),
+  //    doAsyncRead=(
+  //      true
+  //      //false
+  //    ),
+  //  )
+  //)
+
+  //val myRegAliasTbl = (
+  //  RamSimpleDualPort(cfg=myRegAliasTblCfg)
+  //)
+
+  //val rFreeList = Vec.fill(log2Up(cfg.numGprs)
+
+  val myRegAliasTbl = (
+    Mem(
+      wordType=(
+        UInt(log2Up(cfg.numGprs) bits)
+      ),
+      wordCount=cfg.numArchGprs
+    )
+    .initBigInt({
+      val temp = new ArrayBuffer[BigInt]()
+      for (archIdx <- 0 until cfg.numArchGprs) {
+        temp += BigInt(archIdx)
+      }
+      temp
+    })
+  )
+
+  val myOooIssueChkptBufCfg = (
+    RamSdpPipeConfig(
+      wordType=(
+        //Vec.fill(cfg.numArchGprs)(
+          UInt(log2Up(cfg.numGprs) bits)
+        //)
+      ),
+      depth=cfg.optScoreboardOooIssueMaxNumBranches,
+      initBigInt=(
+        //Some(
+        //  Array.fill(cfg.optScoreboardOooIssueMaxNumBranches)(
+        //    BigInt(0)
+        //  )
+        //)
+        None
+      ),
+      arrRamStyleAltera=(
+        //"no_rw_check, logic"
+        //"no_rw_check, MLAB"
+        "no_rw_check, M10K"
+        //"MLAB"
+      ),
+      arrRamStyleXilinx=(
+        "auto"
+        //"block"
+        //"distributed"
+      ),
+      //doAsyncRead=(
+      //  //true
+      //  false
+      //),
+    )
+  )
+
+  //val myOooIssueChkptBuf = (
+  //  Mem(
+  //    wordType=UInt(cfg.optScoreboardReorderBufWidth bits),
+  //    wordCount=cfg.optScoreboardOooIssueMaxNumBranches,
+  //  )
+  //  .initBigInt(Array.fill(cfg.optScoreboardOooIssueMaxNumBranches)(
+  //    BigInt(0)
+  //  ))
+  //)
+
+  val myOooIssueChkptBufArr = (
+    //Array.fill(cfg.maxNumGprsPerInstr - 1)(
+      Array.fill(cfg.numArchGprs)(
+        //RamSimpleDualPort(cfg=myOooIssueChkptBufCfg)
+        RamSdpPipe(cfg=myOooIssueChkptBufCfg)
+      )
+    //)
+  )
+
+  val myChkptWriteCond = (
+    upPayload(1).splitOp.haveAnyJmpBrOp()
+    && !myShouldIgnoreInstr
+    && cRegRename.up.isFiring
+  )
+
+  val rStickyMyOooIssueChkptIdxVec = Vec.fill(cfg.numArchGprs)(
+    RegNext(
+      stickyExSetPc.myOooIssueChkptIdx
+    )
+  )
+
+  when (
+    //cRegRename.up.isFiring
+    //&& 
+    !myShouldIgnoreInstr
+  ) {
+    //for (idx <- 0 until cfg.maxNumGprsPerInstr) {
+    //  if (idx < cfg.maxNumGprsPerInstr - 1) {
+    //    // the source registers
+    //    upPayload(1).gprIdxVec(idx) := (
+    //      myRegAliasTbl.readAsync(
+    //        address=upPayload(1).archGprIdxVec(idx)
+    //      )
+    //    )
+    //  } else {
+    //    // the destination register
+    //    upPayload(1).gprIdxVec(idx) := (
+    //      //myRegAliasTbl.readAsync(
+    //      //  address=upPayload(1).archGprIdxVec(idx)
+    //      //)
+    //    )
+    //  }
+    //}
+  }
+
+  //myRegAliasTbl.write(
+  //  address=upPayload(1).archGprIdxVec.last,
+  //  data=(
+  //    upPayload(1)
+  //  )
+  //)
+
+  for (archIdx <- 0 until cfg.numArchGprs) {
+    val item = myOooIssueChkptBufArr(archIdx)
+    if (
+      cfg.haveZeroReg == None
+      || archIdx != cfg.haveZeroReg.get
+    ) {
+      when (myChkptWriteCond) {
+        rOooIssueChkptBufIdxVec(archIdx) := (
+          rOooIssueChkptBufIdxVec(archIdx) + 1
+        )
+      }
+      //item.io.wrData := upPayload(1).reorderBufIdx
+      val myAddr = (
+        U(s"${log2Up(cfg.numArchGprs)}'d${archIdx}")
+      )
+      item.io.wrData := myRegAliasTbl.readAsync(
+        address=(
+          myAddr
+        )
+      )
+      item.io.wrAddr := rOooIssueChkptBufIdxVec(archIdx)
+      item.io.wrEn := myChkptWriteCond
+
+      //upPayload(1).myOooIssueChkptIdx := rOooIssueChkptBufIdx
+
+      item.io.rdEn := myShouldIgnoreInstr
+
+      item.io.rdAddr := rStickyMyOooIssueChkptIdxVec(archIdx)
+
+      myRegAliasTbl.write(
+        address=myAddr,
+        data=item.io.rdData,
+        enable=myShouldIgnoreInstr,
+      )
+    } else {
+      item.io.wrData := item.io.wrData.getZero
+      item.io.wrAddr := 0x0
+      item.io.wrEn := False
+      item.io.rdAddr := 0x0
+      item.io.rdEn := False
+    }
+  }
+
+  up(pRegRename) := upPayload(1)
 }
 
 case class SnowHousePipeStageScoreboardCheck(
@@ -4486,7 +4704,7 @@ case class SnowHousePipeStageScoreboardCheck(
       //  someUpPayload0=up(pId),
       //  idx=2,
       //)
-      && down.isReady
+      //&& down.isReady
       // TODO: see if we can remove (or at least modify) this check for
       // `down.isReady` so that we can potentially fill the instr buffer
       // even during stalls

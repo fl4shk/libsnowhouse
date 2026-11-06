@@ -1069,7 +1069,7 @@ case class SnowHouseForFmaxPipeStageRegRenameIo(
   val myScoreboardCommit = (
     cfg.optScoreboard
   ) generate (
-    slave(Stream(
+    slave(Flow(
       //UInt(cfg.optScoreboardTagWidth bits)
       SnowHouseScoreboardCommitPayload(cfg=cfg)
     ))
@@ -1077,7 +1077,7 @@ case class SnowHouseForFmaxPipeStageRegRenameIo(
   val myScoreboardBubbleRetire = (
     cfg.optScoreboard
   ) generate (
-    slave(Stream(
+    slave(Flow(
       //UInt(cfg.optScoreboardTagWidth bits)
       SnowHouseScoreboardCommitPayload(cfg=cfg)
     ))
@@ -1139,10 +1139,10 @@ case class SnowHouseForFmaxPipeStageRegRename(
       regFile=null,
     ),
     psExSetPc=io.psExSetPc,
-    myScoreboardCommitStm=(
+    myScoreboardCommit=(
       io.myScoreboardCommit
     ),
-    myScoreboardBubbleRetireStm=(
+    myScoreboardBubbleRetire=(
       io.myScoreboardBubbleRetire
     ),
   )
