@@ -710,6 +710,10 @@ case class SnowHouseForFmaxConfig(
     //2
     //0
   ),
+  optScoreboardNumPhysRegsMult: Option[Int]=(
+    //Some(2)
+    None
+  ),
   optScoreboardMultiCycleOpIsNonFwd: Boolean=(
     true
     //false
@@ -745,6 +749,23 @@ case class SnowHouseForFmaxConfig(
   }
   require(
     optScoreboardNumExtraFwdHistStages >= 0
+  )
+
+  val optNumPhysRegsMult = (
+    optScoreboardNumPhysRegsMult match {
+      case Some(myNumPhysRegsMult) => {
+        require(
+          myNumPhysRegsMult > 0
+        )
+        Some(myNumPhysRegsMult)
+      }
+      case None => {
+        None
+      }
+    }
+  )
+  val optRegRename = (
+    optNumPhysRegsMult != None
   )
 }
 case class SnowHouseConfig(
@@ -818,6 +839,30 @@ case class SnowHouseConfig(
   optFormal: Boolean=false,
 ) {
   val optForFmax = (optForFmaxCfg != None)
+
+  val numPhysRegsMult = (
+    optForFmaxCfg match {
+      case Some(myForFmaxCfg) => {
+        myForFmaxCfg.optNumPhysRegsMult match {
+          case Some(myNumPhysRegsMult) => {
+            myNumPhysRegsMult
+          }
+          case None => {
+            1
+          }
+        }
+      }
+      case None => {
+        //None
+        1
+      }
+    }
+  )
+  val optRegRename = (
+    optForFmax
+    && optForFmaxCfg.get.optRegRename
+  )
+
   val optScoreboard = (
     optForFmaxCfg match {
       case Some(myForFmaxCfg) => (
@@ -1193,7 +1238,11 @@ case class SnowHouseConfig(
     //    item => item * 4//3//2
     //  )
     //) else (
-      shRegFileCfg.wordCountArr
+      shRegFileCfg.wordCountArr.map{
+        item => {
+          item * numPhysRegsMult
+        }
+      }
     //)
   )
   def regFileModRdPortCnt = shRegFileCfg.modRdPortCnt

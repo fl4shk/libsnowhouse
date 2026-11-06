@@ -3625,6 +3625,16 @@ case class SnowHousePipeStageInstrDecode(
 //  val io = SnowHouseHazardDetectorIo(cfg=cfg)
 //  //--------
 //}
+case class SnowHousePipeStageRegRename(
+  val args: SnowHousePipeStageArgs,
+  val psExSetPc: Flow[SnowHousePsExSetPcPayload],
+  val myScoreboardCommitStm: Stream[SnowHouseScoreboardCommitPayload],
+  val myScoreboardBubbleRetireStm:
+    // needed because bubbles still need to have tagging info
+    // erased from psId
+    Stream[SnowHouseScoreboardCommitPayload],
+) extends Area {
+}
 
 case class SnowHousePipeStageScoreboardCheck(
   val args: SnowHousePipeStageArgs,
@@ -3634,6 +3644,7 @@ case class SnowHousePipeStageScoreboardCheck(
   //val shouldIgnoreInstr: Bool,
   //val doDecodeFunc: (SnowHousePipeStageInstrDecode) => Area,
   //val psIdFoundBubble: Bool,
+  val psExSetPc: Flow[SnowHousePsExSetPcPayload],
   val myScoreboardCommitStm: Stream[SnowHouseScoreboardCommitPayload],
   val myScoreboardBubbleRetireStm:
     // needed because bubbles still need to have tagging info
@@ -3649,6 +3660,9 @@ case class SnowHousePipeStageScoreboardCheck(
   def up = cScoreboardCheck.up
   def pId = args.prevPayload
   def pScoreboardCheck = args.currPayload
+
+
+  val rMyPsExSetPcState = Reg(Bool(), init=False)
 
   require(
     cfg.optScoreboard
@@ -3753,6 +3767,32 @@ case class SnowHousePipeStageScoreboardCheck(
   upPayload(0) := RegNext(upPayload(0), init=upPayload(0).getZero)
   upPayload(1) := RegNext(upPayload(1), init=upPayload(1).getZero)
   upPayload(1).allowOverride
+
+  when (!rMyPsExSetPcState) {
+    when (psExSetPc.fire) {
+      rMyPsExSetPcState := True
+    } 
+  } otherwise {
+    when (
+      up.isFiring
+      //&& outp.regPcSetItCnt(0).lsb
+      //&& up(pId).regPcSetItCnt(0).lsb
+      && upPayload(1).regPcSetItCnt(0).lsb
+    ) {
+      rMyPsExSetPcState := False
+    }
+  }
+  val myShouldIgnoreInstr = (
+    (
+      (
+        psExSetPc.fire
+        || (
+          rMyPsExSetPcState
+          && !upPayload(1).regPcSetItCnt(0).lsb
+        )
+      )
+    )
+  )
 
   case class MyGprTagInfo(
     isNonFwd: Boolean
@@ -4045,20 +4085,28 @@ case class SnowHousePipeStageScoreboardCheck(
           //)
           //pop(otherIdx).splitOp.scoreboardOpCanBeOooIssued(1)
           //&& 
-          (
-            LcvOrR(
-              pop(otherIdx).writesGprIdxVec.asBits(myGprRange)
-              & inp.readsGprIdxVec.asBits(myGprRange)
-            )//.orR
-            || LcvOrR(
-              pop(otherIdx).writesGprIdxVec.asBits(myGprRange)
-              & inp.writesGprIdxVec.asBits(myGprRange)
-            )//.orR
-            || LcvOrR(
-              pop(otherIdx).readsGprIdxVec.asBits(myGprRange)
-              & inp.writesGprIdxVec.asBits(myGprRange)
-            )//.orR
-          )
+          {
+            val temp = (
+              LcvOrR(
+                pop(otherIdx).writesGprIdxVec.asBits(myGprRange)
+                & inp.readsGprIdxVec.asBits(myGprRange)
+              )//.orR
+            )
+            if (!cfg.optRegRename) (
+              temp
+              || LcvOrR(
+                pop(otherIdx).writesGprIdxVec.asBits(myGprRange)
+                & inp.writesGprIdxVec.asBits(myGprRange)
+              )//.orR
+              || LcvOrR(
+                pop(otherIdx).readsGprIdxVec.asBits(myGprRange)
+                & inp.writesGprIdxVec.asBits(myGprRange)
+              )//.orR
+            ) else ( // if (cfg.optRegRename)
+              // register renaming eliminates WaW and WaR hazards!
+              temp
+            )
+          }
         )
         //println(
         //  s"mkTempHazardPop(otherIdx:${otherIdx}) tempSize:${tempSize}"
@@ -5111,6 +5159,7 @@ case class SnowHousePipeStageScoreboardCheck(
         //upPayload(1).splitOp.opIsMemAccess
         upPayload(1).splitOp.opIsNonFwd
       )
+      && !myShouldIgnoreInstr
     )
     //## Bitscan(
     //  //~rNonFwdTagAllocVec.asBits.asUInt
@@ -5150,6 +5199,7 @@ case class SnowHousePipeStageScoreboardCheck(
         //!upPayload(1).splitOp.opIsMemAccess
         !upPayload(1).splitOp.opIsNonFwd
       )
+      && !myShouldIgnoreInstr
     )
     //## Bitscan(
     //  //~rFwdTagAllocVec.asBits.asUInt
@@ -5409,6 +5459,7 @@ case class SnowHousePipeStageScoreboardCheck(
           //!upPayload(1).splitOp.opIsMemAccess
           !upPayload(1).splitOp.opIsNonFwd
         )
+        && !myShouldIgnoreInstr
       )
     )
     val myFwdCond = (
@@ -5478,6 +5529,7 @@ case class SnowHousePipeStageScoreboardCheck(
           //upPayload(1).splitOp.opIsMemAccess
           upPayload(1).splitOp.opIsNonFwd
         )
+        && !myShouldIgnoreInstr
       )
     )
     val myNonFwdCond = (

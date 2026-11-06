@@ -1045,6 +1045,127 @@ case class SnowHouseForFmaxPipeStageInstrDecode(
   //--------
 }
 
+
+case class SnowHouseForFmaxPipeStageRegRenameIo(
+  cfg: SnowHouseConfig,
+) extends Bundle {
+  val up = (
+    slave(Stream(
+      SnowHousePipePayload(cfg=cfg)
+    ))
+  )
+  val down = (
+    master(Stream(
+      SnowHousePipePayload(cfg=cfg)
+    ))
+  )
+  //--------
+  val psExSetPc = (
+    slave(Flow(
+      SnowHousePsExSetPcPayload(cfg=cfg)
+    ))
+  )
+  //--------
+  val myScoreboardCommit = (
+    cfg.optScoreboard
+  ) generate (
+    slave(Stream(
+      //UInt(cfg.optScoreboardTagWidth bits)
+      SnowHouseScoreboardCommitPayload(cfg=cfg)
+    ))
+  )
+  val myScoreboardBubbleRetire = (
+    cfg.optScoreboard
+  ) generate (
+    slave(Stream(
+      //UInt(cfg.optScoreboardTagWidth bits)
+      SnowHouseScoreboardCommitPayload(cfg=cfg)
+    ))
+  )
+}
+
+case class SnowHouseForFmaxPipeStageRegRename(
+  cfg: SnowHouseConfig
+) extends Component {
+  //--------
+  val io = SnowHouseForFmaxPipeStageRegRenameIo(cfg=cfg)
+  //def up = io.up
+  //def down = io.down
+  //--------
+  val linkArr = PipeHelper.mkLinkArr()
+
+  //def opInfoMap = cfg.opInfoMap
+
+  val pRegRenameInp = Payload(SnowHousePipePayload(cfg=cfg))
+  val pRegRenameOutp = Payload(SnowHousePipePayload(cfg=cfg))
+  val cLink = CtrlLink()
+  val sLink = StageLink(
+    up=cLink.down,
+    down={
+      val temp = Node()
+      temp.setName("sLink_down")
+      temp
+    }
+  )
+  val s2mLink = S2MLink(
+    up=sLink.down,
+    down={
+      val temp = Node()
+      temp.setName("s2mLink_down")
+      temp
+    }
+  )
+  linkArr += cLink
+  linkArr += sLink
+  linkArr += s2mLink
+
+  val innerPsRegRename = SnowHousePipeStageRegRename(
+    SnowHousePipeStageArgs(
+      cfg=cfg,
+      io=null,
+      link=cLink,
+      prevPayload=pRegRenameInp,
+      currPayload=(
+        pRegRenameOutp
+        //regFile.io.frontPayload
+      ),
+      myDbusIo=(
+        //if (!cfg.useLcvDataBus) (
+        //  myDbusIo
+        //) else (
+          null.asInstanceOf[SnowHouseDbusIo]
+        //)
+      ),
+      regFile=null,
+    ),
+    psExSetPc=io.psExSetPc,
+    myScoreboardCommitStm=(
+      io.myScoreboardCommit
+    ),
+    myScoreboardBubbleRetireStm=(
+      io.myScoreboardBubbleRetire
+    ),
+  )
+
+  cLink.up.driveFrom(io.up)(
+    con=(node, inp) => {
+      node(pRegRenameInp) := inp
+    }
+  )
+
+
+  s2mLink.down.driveTo(
+    io.down
+  )(
+    con=(outp, node) => {
+      outp := node(pRegRenameOutp)
+    }
+  )
+
+  Builder(linkArr)
+  //--------
+}
+
 case class SnowHouseForFmaxPipeStageScoreboardCheckIo(
   cfg: SnowHouseConfig
 ) extends Bundle {
@@ -1193,6 +1314,9 @@ case class SnowHouseForFmaxPipeStageScoreboardCheck(
     //shouldIgnoreInstr=null,
     //doDecodeFunc=cfg.doScoreboardCheckFunc,
     //psIdFoundBubble=psIdFoundBubble,
+    psExSetPc=(
+      io.psExSetPc
+    ),
     myScoreboardCommitStm=(
       io.myScoreboardCommit
     ),
