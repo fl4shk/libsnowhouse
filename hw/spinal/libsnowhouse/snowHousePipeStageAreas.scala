@@ -3560,15 +3560,6 @@ case class SnowHousePipeStageInstrDecode(
       && !myShouldIgnoreInstr
       && cId.up.isFiring
     )
-    //myOooIssueChkptBuf.write(
-    //  address=(
-    //    rOooIssueChkptBufIdx //+ 1
-    //  ),
-    //  data=(
-    //    upPayload(1).reorderBufIdx
-    //  ),
-    //  enable=myChkptWriteCond,
-    //)
 
     myOooIssueChkptBuf.io.wrData := upPayload(1).reorderBufIdx
     myOooIssueChkptBuf.io.wrAddr := rOooIssueChkptBufIdx
@@ -3579,16 +3570,6 @@ case class SnowHousePipeStageInstrDecode(
       rOooIssueChkptBufIdx := rOooIssueChkptBufIdx + 1
     }
 
-    //val myHistReorderBufIdx = (
-    //  History(
-    //    that=upPayload(1).reorderBufIdx,
-    //    length=8,
-    //    when=(
-    //      cId.up.isFiring,
-    //    ),
-    //    init=upPayload(1).reorderBufIdx
-    //  )
-    //)
     myOooIssueChkptBuf.io.rdEn := (
       myShouldIgnoreInstr
     )
@@ -3596,14 +3577,8 @@ case class SnowHousePipeStageInstrDecode(
       stickyExSetPc.myOooIssueChkptIdx
     )
 
-    when (
-      //myChkptWriteCond
-      myShouldIgnoreInstr
-    ) {
+    when (myShouldIgnoreInstr) {
       upPayload(1).reorderBufIdx := (
-        //myOooIssueChkptBuf.readAsync(
-        //  address=stickyExSetPc.myOooIssueChkptIdx
-        //) //+ 1
         myOooIssueChkptBuf.io.rdData //- 1
       )
     } otherwise {
@@ -3611,15 +3586,12 @@ case class SnowHousePipeStageInstrDecode(
         RegNextWhen(
           (upPayload(1).reorderBufIdx + 1),
           cond=(
-            //!shouldClearExtraDecodeInfo
-            //&& 
             cId.up.isFiring
           ),
           init=upPayload(1).reorderBufIdx.getZero,
         )
       )
     }
-    //upPayload(1).reorderBufIdx
   }
 
   upPayload(1).instrCnt.tick := (
@@ -5029,7 +5001,10 @@ case class SnowHousePipeStageScoreboardCheck(
       )
     }
 
-    switch (myRealDispatchOkayCondVec.asBits) {
+    switch (
+      //Bitscan(~myRealDispatchOkayCondVec.asBits.asUInt)
+      myRealDispatchOkayCondVec.asBits.asUInt
+    ) {
       for (idx <- 0 until myOooRdBufWindow) {
         val size = myOooRdBufWindow
         val tempIdx = size - idx - 1
@@ -5047,7 +5022,7 @@ case class SnowHousePipeStageScoreboardCheck(
         val tempCaseStr = (
           //"-" * (size - idx - 1) + "1" + ("0" * idx)
 
-          // now try preferring to schedule older instructions.
+          // now try preferring to schedule newer instructions.
           // Not sure if this is correct!
           ("0" * tempIdx) + "1" + ("-" * (size - tempIdx - 1))
         )
