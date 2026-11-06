@@ -3494,7 +3494,7 @@ case class SnowHousePipeStageInstrDecode(
     )
 
     val myOooIssueChkptBufCfg = (
-      RamSimpleDualPortConfig(
+      RamSdpPipeConfig(
         wordType=UInt(cfg.optScoreboardReorderBufWidth bits),
         depth=cfg.optScoreboardOooIssueMaxNumBranches,
         initBigInt=Some(
@@ -3504,7 +3504,8 @@ case class SnowHousePipeStageInstrDecode(
         ),
         arrRamStyleAltera=(
           //"no_rw_check, logic"
-          "no_rw_check, MLAB"
+          //"no_rw_check, MLAB"
+          "no_rw_check, M10K"
           //"MLAB"
         ),
         arrRamStyleXilinx=(
@@ -3512,11 +3513,34 @@ case class SnowHousePipeStageInstrDecode(
           //"block"
           //"distributed"
         ),
-        doAsyncRead=(
-          //true
-          false
-        ),
+        //doAsyncRead=(
+        //  //true
+        //  false
+        //),
       )
+      //RamSimpleDualPortConfig(
+      //  wordType=UInt(cfg.optScoreboardReorderBufWidth bits),
+      //  depth=cfg.optScoreboardOooIssueMaxNumBranches,
+      //  initBigInt=Some(
+      //    Array.fill(cfg.optScoreboardOooIssueMaxNumBranches)(
+      //      BigInt(0)
+      //    )
+      //  ),
+      //  arrRamStyleAltera=(
+      //    //"no_rw_check, logic"
+      //    "no_rw_check, MLAB"
+      //    //"MLAB"
+      //  ),
+      //  arrRamStyleXilinx=(
+      //    "auto"
+      //    //"block"
+      //    //"distributed"
+      //  ),
+      //  doAsyncRead=(
+      //    //true
+      //    false
+      //  ),
+      //)
     )
     //val myOooIssueChkptBuf = (
     //  Mem(
@@ -3528,7 +3552,8 @@ case class SnowHousePipeStageInstrDecode(
     //  ))
     //)
     val myOooIssueChkptBuf = (
-      RamSimpleDualPort(cfg=myOooIssueChkptBufCfg)
+      //RamSimpleDualPort(cfg=myOooIssueChkptBufCfg)
+      RamSdpPipe(cfg=myOooIssueChkptBufCfg)
     )
     val myChkptWriteCond = (
       upPayload(1).splitOp.haveAnyJmpBrOp()
@@ -3545,9 +3570,9 @@ case class SnowHousePipeStageInstrDecode(
     //  enable=myChkptWriteCond,
     //)
 
-    myOooIssueChkptBuf.io.ramIo.wrData := upPayload(1).reorderBufIdx
-    myOooIssueChkptBuf.io.ramIo.wrAddr := rOooIssueChkptBufIdx
-    myOooIssueChkptBuf.io.ramIo.wrEn := myChkptWriteCond
+    myOooIssueChkptBuf.io.wrData := upPayload(1).reorderBufIdx
+    myOooIssueChkptBuf.io.wrAddr := rOooIssueChkptBufIdx
+    myOooIssueChkptBuf.io.wrEn := myChkptWriteCond
 
     upPayload(1).myOooIssueChkptIdx := rOooIssueChkptBufIdx
     when (myChkptWriteCond) {
@@ -3564,10 +3589,10 @@ case class SnowHousePipeStageInstrDecode(
     //    init=upPayload(1).reorderBufIdx
     //  )
     //)
-    myOooIssueChkptBuf.io.ramIo.rdEn := (
+    myOooIssueChkptBuf.io.rdEn := (
       myShouldIgnoreInstr
     )
-    myOooIssueChkptBuf.io.ramIo.rdAddr := (
+    myOooIssueChkptBuf.io.rdAddr := (
       stickyExSetPc.myOooIssueChkptIdx
     )
 
@@ -3579,7 +3604,7 @@ case class SnowHousePipeStageInstrDecode(
         //myOooIssueChkptBuf.readAsync(
         //  address=stickyExSetPc.myOooIssueChkptIdx
         //) //+ 1
-        myOooIssueChkptBuf.io.ramIo.rdData //- 1
+        myOooIssueChkptBuf.io.rdData //- 1
       )
     } otherwise {
       upPayload(1).reorderBufIdx := (
