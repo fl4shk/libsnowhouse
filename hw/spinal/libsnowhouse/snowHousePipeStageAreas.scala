@@ -2622,7 +2622,7 @@ case class SnowHousePipeStageInstrDecode(
   //    init=shouldClearExtraDecodeInfo.getZero
   //  )
   //)
-  def shouldClearExtraDecodeInfo = stickyExSetPc.valid
+  def myShouldIgnoreInstr = stickyExSetPc.valid
   stickyExSetPc := (
     RegNext(
       stickyExSetPc,
@@ -2631,7 +2631,7 @@ case class SnowHousePipeStageInstrDecode(
   )
 
   when (psExSetPc.valid) {
-    shouldClearExtraDecodeInfo := True
+    myShouldIgnoreInstr := True
     //stickyExSetPc.valid := True
     stickyExSetPc.payload := psExSetPc.payload
   }
@@ -2672,7 +2672,7 @@ case class SnowHousePipeStageInstrDecode(
     )
   )
   when (shouldFinishJump) {
-    shouldClearExtraDecodeInfo := False
+    myShouldIgnoreInstr := False
   }
 
   for (idx <- 0 until upPayload(1).regPcSetItCnt.size) {
@@ -3189,7 +3189,7 @@ case class SnowHousePipeStageInstrDecode(
                 //&& upPayload(1).myDoHaveHazardAddrCheckVec(idx)
                 && upPayload(1).myDoHaveHazardAddrCheckVec.orR
               )
-              && !shouldClearExtraDecodeInfo
+              && !myShouldIgnoreInstr
             ) {
               doSendBubbleMainMost()
               when (down.isFiring) {
@@ -3389,7 +3389,7 @@ case class SnowHousePipeStageInstrDecode(
     upPayload(1).splitOp.scoreboardOpCanBeOooIssued(2) := (
       upPayload(1).splitOp.scoreboardOpCanBeOooIssued.head
       && (
-        !shouldClearExtraDecodeInfo
+        !myShouldIgnoreInstr
       )
       //&& (
       //  // looks like maybe an instruction that's the destination of a
@@ -3430,7 +3430,7 @@ case class SnowHousePipeStageInstrDecode(
     upPayload(1).splitOp.scoreboardOpCanBeOooIssued(1) := (
       upPayload(1).splitOp.scoreboardOpCanBeOooIssued.head
       && (
-        !shouldClearExtraDecodeInfo
+        !myShouldIgnoreInstr
       )
       && (
         // looks like maybe an instruction that's the destination of a
@@ -3443,7 +3443,7 @@ case class SnowHousePipeStageInstrDecode(
         RegNextWhen(
           (
             !upPayload(1).splitOp.haveAnyJmpBrOp()
-            && !shouldClearExtraDecodeInfo
+            && !myShouldIgnoreInstr
           ),
           cond=cId.up.isFiring,
           init=False,
@@ -3512,7 +3512,10 @@ case class SnowHousePipeStageInstrDecode(
           //"block"
           //"distributed"
         ),
-        doAsyncRead=true,
+        doAsyncRead=(
+          //true
+          false
+        ),
       )
     )
     //val myOooIssueChkptBuf = (
@@ -3529,7 +3532,7 @@ case class SnowHousePipeStageInstrDecode(
     )
     val myChkptWriteCond = (
       upPayload(1).splitOp.haveAnyJmpBrOp()
-      && !shouldClearExtraDecodeInfo
+      && !myShouldIgnoreInstr
       && cId.up.isFiring
     )
     //myOooIssueChkptBuf.write(
@@ -3562,7 +3565,7 @@ case class SnowHousePipeStageInstrDecode(
     //  )
     //)
     myOooIssueChkptBuf.io.ramIo.rdEn := (
-      shouldClearExtraDecodeInfo
+      myShouldIgnoreInstr
     )
     myOooIssueChkptBuf.io.ramIo.rdAddr := (
       stickyExSetPc.myOooIssueChkptIdx
@@ -3570,7 +3573,7 @@ case class SnowHousePipeStageInstrDecode(
 
     when (
       //myChkptWriteCond
-      shouldClearExtraDecodeInfo
+      myShouldIgnoreInstr
     ) {
       upPayload(1).reorderBufIdx := (
         //myOooIssueChkptBuf.readAsync(
@@ -3634,6 +3637,109 @@ case class SnowHousePipeStageRegRename(
     // erased from psId
     Stream[SnowHouseScoreboardCommitPayload],
 ) extends Area {
+  def cfg = args.cfg
+  def cRegRename = args.link
+  def down = cRegRename.down
+  def up = cRegRename.up
+  def pId = args.prevPayload
+  def pRegRename = args.currPayload
+
+  require(
+    cfg.optScoreboard
+  )
+
+  require(
+    cfg.optRegRename
+  )
+
+  def doSendBubbleMainMost(
+    myPsIdBubble: Option[Bool]=Some(True),
+    //myUpdateGprIsOrIsntZero: Boolean=true,
+    //myPsIdReorderBufForceValid: Option[Bool]=None,
+    myPsIdOtherBubble: Option[Bool]=None,
+    myPsIdFwdBubble: Option[Bool]=None,
+    myInFlushCond: Option[Bool]=None,
+    //myDuplicateItCond: Bool=True,
+  ): Unit = {
+    require(cfg.useLcvDataBus)
+
+    //when (myDuplicateItCond) {
+      cRegRename.duplicateIt()
+    //} otherwise {
+    //  //cRegRename.throwIt()
+    //}
+
+    //upPayload(1).setAsBubbleMain(Some(True))
+
+    //down(pRegRename) := upPayload(1)
+    down(pRegRename).setAsBubbleMain(
+      //Some(True)
+      myPsIdBubble=myPsIdBubble,
+      //myUpdateGprIsOrIsntZero=myUpdateGprIsOrIsntZero
+      //myPsIdReorderBufForceValid=myPsIdReorderBufForceValid,
+    )
+    down(pRegRename).instrCnt.tick := False
+    if (myPsIdOtherBubble != None) {
+      down(pRegRename).instrCnt.myPsIdOtherBubble.foreach(item => {
+        item := myPsIdOtherBubble.get
+      })
+    }
+    if (myPsIdFwdBubble != None) {
+      down(pRegRename).instrCnt.myPsIdFwdBubble.foreach(item => {
+        item := myPsIdFwdBubble.get
+      })
+    }
+    if (
+      cfg.optScoreboard
+      && myInFlushCond != None
+    ) {
+      down(
+        pRegRename
+      ).instrCnt.myPsIdInFlushBubble.foreach(item => {
+        item := myInFlushCond.get
+      })
+      down(
+        pRegRename
+      ).instrCnt.scoreboardCheckPayload.fwdTag := 0x0
+      down(
+        pRegRename
+      ).instrCnt.scoreboardCheckPayload.nonFwdTag := 0x0
+    }
+  }
+
+  val upPayload = Vec.fill(2)(
+    SnowHousePipePayload(cfg=cfg)
+  )
+  //upPayload(0) := up(pId)
+  upPayload(0) := RegNext(upPayload(0), init=upPayload(0).getZero)
+  upPayload(1) := RegNext(upPayload(1), init=upPayload(1).getZero)
+  upPayload(1).allowOverride
+
+  upPayload(0) := up(pId)
+  when (up.isValid) {
+    upPayload(1) := upPayload(0)
+  }
+
+  val stickyExSetPc = cloneOf(psExSetPc)
+
+  def myShouldIgnoreInstr = stickyExSetPc.valid
+  stickyExSetPc := (
+    RegNext(
+      stickyExSetPc,
+      init=stickyExSetPc.getZero
+    )
+  )
+
+  when (psExSetPc.valid) {
+    myShouldIgnoreInstr := True
+    //stickyExSetPc.valid := True
+    stickyExSetPc.payload := psExSetPc.payload
+  }
+
+  val rFreeList = (
+    
+  )
+
 }
 
 case class SnowHousePipeStageScoreboardCheck(
@@ -3658,11 +3764,8 @@ case class SnowHousePipeStageScoreboardCheck(
   def cScoreboardCheck = args.link
   def down = cScoreboardCheck.down
   def up = cScoreboardCheck.up
-  def pId = args.prevPayload
+  def pPrev = args.prevPayload
   def pScoreboardCheck = args.currPayload
-
-
-  val rMyPsExSetPcState = Reg(Bool(), init=False)
 
   require(
     cfg.optScoreboard
@@ -3735,6 +3838,8 @@ case class SnowHousePipeStageScoreboardCheck(
       //}
     }
   }
+
+  val rMyPsExSetPcState = Reg(Bool(), init=False)
 
   object ScoreboardFlushState
   extends SpinalEnum(defaultEncoding=binaryOneHot) {
@@ -3933,7 +4038,7 @@ case class SnowHousePipeStageScoreboardCheck(
     !doOooIssue
   ) generate new Area {
     when (up.isValid) {
-      upPayload(0) := up(pId)
+      upPayload(0) := up(pPrev)
       upPayload(1) := upPayload(0)
     }
     switch (rScoreboardFlushState) {
@@ -4105,6 +4210,7 @@ case class SnowHousePipeStageScoreboardCheck(
             ) else ( // if (cfg.optRegRename)
               // register renaming eliminates WaW and WaR hazards!
               temp
+              //True
             )
           }
         )
@@ -4123,6 +4229,7 @@ case class SnowHousePipeStageScoreboardCheck(
             (
               if (tempSize == 0) (
                 tempCond
+                //True
               ) else (
                 tempCond
                 || (
@@ -4475,7 +4582,7 @@ case class SnowHousePipeStageScoreboardCheck(
       //&& myBufPushStm.ready
     )
     //myOooRdBuf.io.push.payload := up(pId)//.myRegPcVec.head
-    myBufPushStm.payload := up(pId)//.myRegPcVec.head
+    myBufPushStm.payload := up(pPrev)//.myRegPcVec.head
 
     //myOooRdBuf.io.pop.foreach(item => item.ready := False)
 

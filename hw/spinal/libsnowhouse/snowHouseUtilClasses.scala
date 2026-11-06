@@ -1305,6 +1305,7 @@ case class SnowHouseConfig(
     numForkJoin=/*2*/1,
   )
   regFileCfg.linkArr = None
+  def numArchGprs = shRegFileCfg.wordCountArr.sum
   def numGprs = regFileCfg.wordCountSum
 
   val optScoreboardReorderBufWidth = (
@@ -2344,6 +2345,15 @@ case class SnowHousePipePayloadNonExt(
   //    UInt(cfg.mainWidth bits)
   //  //)
   //)
+
+  val archGprIdxVec = (
+    cfg.optRegRename
+  ) generate (
+    Vec.fill(cfg.maxNumGprsPerInstr)(
+      UInt(log2Up(cfg.numArchGprs) bits)
+    )
+  )
+
   // `gprIdxVec` is to be driven by the class derived from
   // `SnowHousePipeStageInstrDecode`
   val gprIdxVec = Vec.fill(cfg.maxNumGprsPerInstr)(
@@ -2576,6 +2586,8 @@ case class SnowHousePipePayload(
   def aluInpBIsImm = nonExt.aluInpBIsImm
   def aluOp = nonExt.aluOp
   //def aluModMemWordValid = nonExt.aluModMemWordValid
+
+  def archGprIdxVec = nonExt.archGprIdxVec
   def gprIdxVec = nonExt.gprIdxVec
   def readsGprIdxVec = nonExt.readsGprIdxVec
   def writesGprIdxVec = nonExt.writesGprIdxVec

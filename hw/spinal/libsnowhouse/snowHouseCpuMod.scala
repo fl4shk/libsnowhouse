@@ -2649,7 +2649,7 @@ object SnowHouseCpuPipeStageInstrDecode {
     //  ).asUInt
     //  myCat
     //}
-    when (psId.shouldClearExtraDecodeInfo) {
+    when (psId.myShouldIgnoreInstr) {
       rPrevPreImm.foreach(item => {
         item := item.getZero
       })

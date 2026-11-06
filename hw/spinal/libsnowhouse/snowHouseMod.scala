@@ -2206,12 +2206,16 @@ private[libsnowhouse] case class SnowHouseForFmax(
   //) generate (
   //  SnowHouseForFmaxPipeStageScoreboardReadGprs(cfg=cfg)
   //)
+  val psRegRename = (
+    cfg.optRegRename
+  ) generate (
+    SnowHouseForFmaxPipeStageRegRename(cfg=cfg)
+  )
+
   val psScoreboardCheck = (
     cfg.optScoreboard
   ) generate (
-    SnowHouseForFmaxPipeStageScoreboardCheck(
-      cfg=cfg
-    )
+    SnowHouseForFmaxPipeStageScoreboardCheck(cfg=cfg)
   )
   val psPreFwd = SnowHouseForFmaxPipeStagePreFwd(cfg=cfg)
   val psEx = SnowHouseForFmaxPipeStageExecute(cfg=cfg)
@@ -2234,7 +2238,12 @@ private[libsnowhouse] case class SnowHouseForFmax(
     //)
     //psPreFwd.io.up << psScoreboardReadGprs.io.down
     //psScoreboardCheck.io.up <-/< psId.io.down
-    psScoreboardCheck.io.up << psId.io.down
+    if (cfg.optRegRename) {
+      psRegRename.io.up << psId.io.down
+      psScoreboardCheck.io.up << psRegRename.io.down
+    } else {
+      psScoreboardCheck.io.up << psId.io.down
+    }
     psPreFwd.io.up << psScoreboardCheck.io.down
   } else {
     psPreFwd.io.up <-/< psId.io.down
@@ -2469,6 +2478,14 @@ private[libsnowhouse] case class SnowHouseForFmax(
       psWb.io.commitEtc.myRegFileWrPulse
     )
   }
+  if (cfg.optRegRename) {
+    psRegRename.io.myScoreboardCommit <-< (
+      psWb.io.commitEtc.scoreboardCommmit
+    )
+    psRegRename.io.myScoreboardBubbleRetire <-< (
+      psWb.io.commitEtc.scoreboardBubbleRetire
+    )
+  }
   if (cfg.optScoreboard) {
     //psScoreboardCheck.io.myScoreboardCommit << (
     //  psWb.io.commitEtc.scoreboardTag
@@ -2500,7 +2517,13 @@ private[libsnowhouse] case class SnowHouseForFmax(
 
   psIf.io.psExSetPc << psExSetPc
   psId.io.psExSetPc << psExSetPc
-  psScoreboardCheck.io.psExSetPc << psExSetPc
+
+  if (cfg.optRegRename) {
+    psRegRename.io.psExSetPc << psExSetPc
+  }
+  if (cfg.optScoreboard) {
+    psScoreboardCheck.io.psExSetPc << psExSetPc
+  }
 
   //if (cfg.optScoreboard) {
   //  psScoreboardCheck.io.myBranchMispredictEtc := psExSetPc.fire
