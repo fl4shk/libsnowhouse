@@ -4194,21 +4194,21 @@ case class SnowHousePipeStageScoreboardCheck(
                 & inp.readsGprIdxVec.asBits(myGprRange)
               )//.orR
             )
-            if (!cfg.optRegRename) (
-              temp
-              || LcvOrR(
-                pop(otherIdx).writesGprIdxVec.asBits(myGprRange)
-                & inp.writesGprIdxVec.asBits(myGprRange)
-              )//.orR
-              || LcvOrR(
-                pop(otherIdx).readsGprIdxVec.asBits(myGprRange)
-                & inp.writesGprIdxVec.asBits(myGprRange)
-              )//.orR
-            ) else ( // if (cfg.optRegRename)
+            //if (!cfg.optRegRename) (
+            //  temp
+            //  || LcvOrR(
+            //    pop(otherIdx).writesGprIdxVec.asBits(myGprRange)
+            //    & inp.writesGprIdxVec.asBits(myGprRange)
+            //  )//.orR
+            //  || LcvOrR(
+            //    pop(otherIdx).readsGprIdxVec.asBits(myGprRange)
+            //    & inp.writesGprIdxVec.asBits(myGprRange)
+            //  )//.orR
+            //) else ( // if (cfg.optRegRename)
               // register renaming eliminates WaW and WaR hazards!
               temp
               //True
-            )
+            //)
           }
         )
         //println(
