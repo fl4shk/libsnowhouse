@@ -2393,13 +2393,20 @@ private[libsnowhouse] case class SnowHouseForFmax(
           require(
             cfg.optRegRename
           )
-          outp.addr := (
-            (
-              inp.data.renamedGprIdxVec(
-                idx - cfg.regFileCfg.modRdPortCnt
-              ) - cfg.numGprs
-            ).resize(outp.addr.getWidth)
-          )
+          val tempIdx = idx - cfg.regFileCfg.modRdPortCnt
+
+          when (
+            outp.data.renamedGprIdxVec(tempIdx)
+            >= cfg.numGprs
+          ) {
+            outp.addr := inp.data.gprIdxVec(tempIdx)
+          } otherwise {
+            outp.addr := (
+              (
+                inp.data.renamedGprIdxVec(tempIdx) - cfg.numGprs
+              ).resize(outp.addr.getWidth)
+            )
+          }
         }
       }
     )

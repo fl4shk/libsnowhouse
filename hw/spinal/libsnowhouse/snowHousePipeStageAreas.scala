@@ -6002,7 +6002,6 @@ case class SnowHousePipeStageScoreboardCheck(
     }
   }
 
-
   //down(pScoreboardCheck).splitOp.opIsNonFwd := (
   //  //upPayload(1).splitOp.opIsMemAccess
   //  upPayload(1).splitOp.opIsNonFwd
