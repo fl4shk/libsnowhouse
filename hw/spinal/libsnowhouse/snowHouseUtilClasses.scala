@@ -1394,11 +1394,13 @@ case class SnowHouseConfig(
     //shRegFileCfg.wordCountArr.sum
     //regFileCfg.wordCountSum / numPhysRegsMult
     //optScoreboardNumTagsPerKind * 2
+
     if (optRegRename) (
-      (
-        1 << (optScoreboardTagWidth + 1)
-      )
-      + numGprs
+      //(
+      //  1 << (optScoreboardTagWidth + 1)
+      //)
+      //+ numGprs
+      numGprs * 2
     ) else (
       numGprs
     )

@@ -4221,6 +4221,15 @@ case class SnowHousePipeStageScoreboardCheck(
     }
   }
 
+  val rRegRenameAllocVec = (
+    cfg.optRegRename
+  ) generate (
+    Vec.fill(cfg.numRenamedGprs)(
+      Reg(Bool(), init=False)
+    )
+  )
+
+
   //val rNonFwdTagAllocWakeUpVec = (
   //  Vec.fill(
   //    //1 << myTempNonFwdTag.getWidth
@@ -4823,8 +4832,11 @@ case class SnowHousePipeStageScoreboardCheck(
       && myOooRdBuf.io.push.ready
       //&& myBufPushStm.ready
     )
+
     //myOooRdBuf.io.push.payload := up(pId)//.myRegPcVec.head
     myBufPushStm.payload := up(pPrev)//.myRegPcVec.head
+
+    myBufPushStm.renamedGprIdxVec.allowOverride
 
     //myOooRdBuf.io.pop.foreach(item => item.ready := False)
 
@@ -5860,15 +5872,16 @@ case class SnowHousePipeStageScoreboardCheck(
                 //)
                 myTempFwdTag
               )
-              if (cfg.optRegRename) {
-                upPayload(1).renamedGprIdxVec.last := (
-                  Cat(
-                    False,
-                    myTempFwdTag,
-                  ).asUInt
-                  + cfg.numGprs
-                )
-              }
+
+              //if (cfg.optRegRename) {
+              //  upPayload(1).renamedGprIdxVec.last := (
+              //    Cat(
+              //      False,
+              //      myTempFwdTag,
+              //    ).asUInt
+              //    + cfg.numGprs
+              //  )
+              //}
             }
           }
         }
@@ -5934,15 +5947,15 @@ case class SnowHousePipeStageScoreboardCheck(
                 myTempNonFwdTag
               )
 
-              if (cfg.optRegRename) {
-                upPayload(1).renamedGprIdxVec.last := (
-                  Cat(
-                    True,
-                    myTempNonFwdTag,
-                  ).asUInt
-                  + cfg.numGprs
-                )
-              }
+              //if (cfg.optRegRename) {
+              //  upPayload(1).renamedGprIdxVec.last := (
+              //    Cat(
+              //      True,
+              //      myTempNonFwdTag,
+              //    ).asUInt
+              //    + cfg.numGprs
+              //  )
+              //}
             }
           }
         }
@@ -5953,53 +5966,53 @@ case class SnowHousePipeStageScoreboardCheck(
       }
     }
 
-    if (
-      cfg.optRegRename
-      && jdx == 1
-    ) {
-      for (kdx <- 0 until cfg.regFileCfg.modRdPortCnt) {
-        switch (
-          myLeftGprIdxVec(kdx)
-        ) {
-          for (idx <- 0 until cfg.numGprs) {
-            if (
-              !cfg.myHaveZeroReg
-              || idx != 0
-            ) {
-              is (idx) {
-                switch (
-                  rMyNonFwdGprTagVec(idx).fire
-                  ## rMyFwdGprTagVec(idx).fire
-                ) {
-                  is (M"1-") {
-                    upPayload(1).renamedGprIdxVec(kdx) := (
-                      Cat(
-                        True,
-                        rMyNonFwdGprTagVec(idx).tag
-                      ).asUInt
-                      + cfg.numGprs
-                    )
-                  }
-                  is (M"01") {
-                    upPayload(1).renamedGprIdxVec(kdx) := (
-                      Cat(
-                        False,
-                        rMyFwdGprTagVec(idx).tag
-                      ).asUInt
-                      + cfg.numGprs
-                    )
-                  }
-                }
-              }
-            }
-          }
-          if (cfg.myHaveZeroReg) {
-            default {
-            }
-          }
-        }
-      }
-    }
+    //if (
+    //  cfg.optRegRename
+    //  && jdx == 1
+    //) {
+    //  for (kdx <- 0 until cfg.regFileCfg.modRdPortCnt) {
+    //    switch (
+    //      myLeftGprIdxVec(kdx)
+    //    ) {
+    //      for (idx <- 0 until cfg.numGprs) {
+    //        if (
+    //          !cfg.myHaveZeroReg
+    //          || idx != 0
+    //        ) {
+    //          is (idx) {
+    //            switch (
+    //              rMyNonFwdGprTagVec(idx).fire
+    //              ## rMyFwdGprTagVec(idx).fire
+    //            ) {
+    //              is (M"1-") {
+    //                upPayload(1).renamedGprIdxVec(kdx) := (
+    //                  Cat(
+    //                    True,
+    //                    rMyNonFwdGprTagVec(idx).tag
+    //                  ).asUInt
+    //                  + cfg.numGprs
+    //                )
+    //              }
+    //              is (M"01") {
+    //                upPayload(1).renamedGprIdxVec(kdx) := (
+    //                  Cat(
+    //                    False,
+    //                    rMyFwdGprTagVec(idx).tag
+    //                  ).asUInt
+    //                  + cfg.numGprs
+    //                )
+    //              }
+    //            }
+    //          }
+    //        }
+    //      }
+    //      if (cfg.myHaveZeroReg) {
+    //        default {
+    //        }
+    //      }
+    //    }
+    //  }
+    //}
   }
 
   //down(pScoreboardCheck).splitOp.opIsNonFwd := (
@@ -12895,28 +12908,28 @@ case class SnowHousePipeStageExecute(
         (
           myHistRegFileWrPulse(0).fire
           && (
-            myHistRegFileWrPulse(0).addr
-            //myHistRegFileWrPulse(0).data(1)
-            === outp.gprIdxVec(jdx)
-            //=== outp.renamedGprIdxVec(jdx)
+            //myHistRegFileWrPulse(0).addr
+            myHistRegFileWrPulse(0).data(1)
+            //=== outp.gprIdxVec(jdx)
+            === outp.renamedGprIdxVec(jdx)
           )
         )
         ## (
           myHistRegFileWrPulse(1).fire
           && (
-            myHistRegFileWrPulse(1).addr
-            //myHistRegFileWrPulse(1).data(1)
-            === outp.gprIdxVec(jdx)
-            //=== outp.renamedGprIdxVec(jdx)
+            //myHistRegFileWrPulse(1).addr
+            myHistRegFileWrPulse(1).data(1)
+            //=== outp.gprIdxVec(jdx)
+            === outp.renamedGprIdxVec(jdx)
           )
         )
         ## (
           myHistRegFileWrPulse(2).fire
           && (
-            myHistRegFileWrPulse(2).addr
-            //myHistRegFileWrPulse(2).data(1)
-            === outp.gprIdxVec(jdx)
-            //=== outp.renamedGprIdxVec(jdx)
+            //myHistRegFileWrPulse(2).addr
+            myHistRegFileWrPulse(2).data(1)
+            //=== outp.gprIdxVec(jdx)
+            === outp.renamedGprIdxVec(jdx)
           )
         )
         ## outp.forFmaxFwdIdx(jdx)

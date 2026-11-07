@@ -2275,34 +2275,15 @@ private[libsnowhouse] case class SnowHouseForFmax(
     SnowHousePipePayload,
     UInt,
   ]]()
-  for (
-    tempIdx <- 0 until {
-      val temp = cfg.regFileCfg.modRdPortCnt
-      if (cfg.optRegRename) (
-        temp * 2
-      ) else (
-        temp
-      )
-    }
-  ) {
-    val idx = (
-      if (cfg.optRegRename) (
-        //tempIdx >> 1
-        if (tempIdx < cfg.regFileModRdPortCnt) (
-          tempIdx
-        ) else (
-          tempIdx - cfg.regFileCfg.modRdPortCnt
-        )
-      ) else (
-        tempIdx
-      )
-    )
-
+  for (idx <- 0 until cfg.regFileCfg.modRdPortCnt) {
     myRegFile += WrPulseRdPipeRam(
       cfg=WrPulseRdPipeRamConfig(
         modType=SnowHousePipePayload(cfg=cfg),
         wordType=UInt(cfg.mainWidth bits),
-        wordCount=cfg.regFileCfg.wordCountArr(0),
+        wordCount=(
+          //cfg.regFileCfg.wordCountArr(0)
+          cfg.numRenamedGprs
+        ),
         setWordFunc=(
           outp: SnowHousePipePayload,
           inp: SnowHousePipePayload,
@@ -2355,7 +2336,10 @@ private[libsnowhouse] case class SnowHouseForFmax(
         ),
         initBigInt=Some({
           val myArr = new ArrayBuffer[BigInt]()
-          myArr ++= Array.fill(cfg.regFileCfg.wordCountArr(0))(BigInt(0))
+          myArr ++= Array.fill(
+            //cfg.regFileCfg.wordCountArr(0)
+            cfg.numRenamedGprs
+          )(BigInt(0))
           Array(myArr.toSeq)
         }),
         arrRamStyleAltera=cfg.regFileCfg.memRamStyleAltera,
@@ -2390,29 +2374,13 @@ private[libsnowhouse] case class SnowHouseForFmax(
     )(
       dataAssignment=(outp, inp) => {
         outp.data := inp.data
-        if (
-          idx < cfg.regFileCfg.modRdPortCnt
-        ) {
-          outp.addr := inp.data.gprIdxVec(idx)
-        } else {
-          require(
-            cfg.optRegRename
+        outp.addr := (
+          if (cfg.optRegRename) (
+            inp.data.renamedGprIdxVec(idx)
+          ) else (
+            inp.data.gprIdxVec(idx)
           )
-          val tempIdx = idx - cfg.regFileCfg.modRdPortCnt
-
-          when (
-            outp.data.renamedGprIdxVec(tempIdx)
-            >= cfg.numGprs
-          ) {
-            outp.addr := inp.data.gprIdxVec(tempIdx)
-          } otherwise {
-            outp.addr := (
-              (
-                inp.data.renamedGprIdxVec(tempIdx) - cfg.numGprs
-              ).resize(outp.addr.getWidth)
-            )
-          }
-        }
+        )
       }
     )
   }
@@ -2428,15 +2396,7 @@ private[libsnowhouse] case class SnowHouseForFmax(
     dataAssignment=(outp, inp) => {
       outp := inp.head
       outp.myExt(0).rdMemWord.allowOverride
-      for (tempIdx <- 0 until inp.size) {
-        val idx = (
-          if (tempIdx < cfg.regFileCfg.modRdPortCnt) (
-            tempIdx
-          ) else {
-            require(cfg.optRegRename)
-            (tempIdx - cfg.regFileCfg.modRdPortCnt)
-          }
-        )
+      for (idx <- 0 until inp.size) {
         outp.myExt(0).rdMemWord(idx) := (
           inp(idx).myExt(0).rdMemWord(idx)
         )
@@ -2493,54 +2453,43 @@ private[libsnowhouse] case class SnowHouseForFmax(
     psWb.io.up << psEx.io.down
   }
 
-  myRegFile.view.zipWithIndex.foreach{
-    case (item, idx) => {
-      //item.io.wrPulse.valid := False
-      //item.io.wrPulse.payload := (
-      //  item.io.wrPulse.payload.getZero
-      //)
-      //item.io.wrPulse := psWb.io.myRegFileWrPulse
-      //item.io.wrPulse := psWb.io.commitEtc.myRegFileWrPulse
+  myRegFile.foreach(item => {
+    //item.io.wrPulse.valid := False
+    //item.io.wrPulse.payload := (
+    //  item.io.wrPulse.payload.getZero
+    //)
+    //item.io.wrPulse := psWb.io.myRegFileWrPulse
+    //item.io.wrPulse := psWb.io.commitEtc.myRegFileWrPulse
 
-      //item.io.wrPulse <-< psWb.io.commitEtc.myRegFileWrPulse
-      if (idx < cfg.regFileCfg.modRdPortCnt) {
-        item.io.wrPulse.addr := (
-          RegNext(
-            psWb.io.commitEtc.myRegFileWrPulse.addr
-          )
-        )
-      } else {
-        require(
-          cfg.optRegRename
-        )
-        item.io.wrPulse.addr := (
-          RegNext(
-            (
-              psWb.io.commitEtc.myRegFileWrPulse.data(1) - cfg.numGprs
-            ).resize(item.io.wrPulse.addr.getWidth)
-          )
-        )
-      }
-
-      item.io.wrPulse.data := (
-        RegNext(
-          psWb.io.commitEtc.myRegFileWrPulse.data(0)
+    //item.io.wrPulse <-< psWb.io.commitEtc.myRegFileWrPulse
+    item.io.wrPulse.addr := (
+      RegNext(
+        if (cfg.optRegRename) (
+          psWb.io.commitEtc.myRegFileWrPulse.data(1)
+        ) else (
+          psWb.io.commitEtc.myRegFileWrPulse.addr
         )
       )
-      item.io.wrPulse.valid := (
-        RegNext(
-          psWb.io.commitEtc.myRegFileWrPulse.fire,
-          init=False
-        )
-        )
-      //item.io.wrPulse << psWb.io.commitEtc.myRegFileWrPulse
+    )
+    item.io.wrPulse.data := (
+      RegNext(
+        psWb.io.commitEtc.myRegFileWrPulse.data(0)
+      )
+    )
+    item.io.wrPulse.valid := (
+      RegNext(
+        psWb.io.commitEtc.myRegFileWrPulse.fire,
+        init=False
+      )
+    )
 
-      //item.io.wrPulse.valid := psWb.io.commit.fire
-      //item.io.wrPulse.payload := (
-      //  psWb.io.commit.myRegFileWrPulsePayload
-      //)
-    }
-  }
+    //item.io.wrPulse << psWb.io.commitEtc.myRegFileWrPulse
+
+    //item.io.wrPulse.valid := psWb.io.commit.fire
+    //item.io.wrPulse.payload := (
+    //  psWb.io.commit.myRegFileWrPulsePayload
+    //)
+  })
   //psEx.io.myRegFileWrPulse.valid := psWb.io.commit.fire
   //psEx.io.myRegFileWrPulse.payload := (
   //  psWb.io.commit.myRegFileWrPulsePayload
