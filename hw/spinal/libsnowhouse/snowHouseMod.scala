@@ -2287,7 +2287,12 @@ private[libsnowhouse] case class SnowHouseForFmax(
   ) {
     val idx = (
       if (cfg.optRegRename) (
-        tempIdx >> 1
+        //tempIdx >> 1
+        if (tempIdx < cfg.regFileModRdPortCnt) (
+          tempIdx
+        ) else (
+          tempIdx - cfg.regFileCfg.modRdPortCnt
+        )
       ) else (
         tempIdx
       )
