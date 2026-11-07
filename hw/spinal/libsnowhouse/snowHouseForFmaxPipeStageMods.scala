@@ -4974,22 +4974,22 @@ case class SnowHouseForFmaxPipeStageWriteBack(
   ) generate (
     //SnowHouseForFmaxPsWbReorderBuf(cfg=cfg)
 
-    //LcvLowLatencyReorderBuf(
-    //  cfg=LcvLowLatencyReorderBufConfig(
-    //    wordType=SnowHouseForFmaxPsWbReorderBufPayload(cfg=cfg),
-    //    reorderBufIdxWidth=(
-    //      cfg.optScoreboardReorderBufWidth
-    //    ),
-    //  )
-    //)
-    LcvSimpleReorderBuf(
-      cfg=LcvSimpleReorderBufConfig(
+    LcvLowLatencyReorderBuf(
+      cfg=LcvLowLatencyReorderBufConfig(
         wordType=SnowHouseForFmaxPsWbReorderBufPayload(cfg=cfg),
         reorderBufIdxWidth=(
           cfg.optScoreboardReorderBufWidth
         ),
       )
     )
+    //LcvSimpleReorderBuf(
+    //  cfg=LcvSimpleReorderBufConfig(
+    //    wordType=SnowHouseForFmaxPsWbReorderBufPayload(cfg=cfg),
+    //    reorderBufIdxWidth=(
+    //      cfg.optScoreboardReorderBufWidth
+    //    ),
+    //  )
+    //)
     //LcvLowLatencyReorderBuf(
     //  cfg=LcvLowLatencyReorderBufConfig(
     //    wordType=SnowHouseForFmaxPsWbReorderBufPayload(cfg=cfg),
