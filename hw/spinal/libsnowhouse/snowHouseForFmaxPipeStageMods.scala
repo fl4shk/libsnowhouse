@@ -197,7 +197,7 @@ case class SnowHouseScoreboardCommitPayload(
   //val tag = UInt(cfg.optScoreboardTagWidth bits)
   //val myGprIdx = Flow(UInt(log2Up(cfg.numGprs) bits))
   val gprIdxVec = Vec.fill(cfg.maxNumGprsPerInstr)(
-    UInt(log2Up(cfg.numGprs) bits)
+    UInt(log2Up(cfg.numRenamedGprs) bits)
   )
   val myFwdValid = Bool()
   val myNonFwdValid = Bool()
@@ -3901,7 +3901,7 @@ case class SnowHouseForFmaxPipeStageWriteBack(
         1
       )
     )(
-      UInt(log2Up(cfg.numGprs) bits)
+      UInt(log2Up(cfg.numRenamedGprs) bits)
     ) //simPublic()
 
     val gprIsZeroVec = Vec.fill(
@@ -5552,7 +5552,8 @@ case class SnowHouseForFmaxPipeStageWriteBack(
           someCommitStm.commit.myFwdValid := True
         }
         someCommitStm.commit.gprIdxVec := (
-          someMyWbPayload(1).gprIdxVec
+          //someMyWbPayload(1).gprIdxVec
+          someMyWbPayload(1).renamedGprIdxVec
         )
       }
     } otherwise {
@@ -5565,7 +5566,8 @@ case class SnowHouseForFmaxPipeStageWriteBack(
 
       if (cfg.optScoreboard) {
         someCommitStm.commit.gprIdxVec := (
-          someMyWbPayload(1).gprIdxVec
+          //someMyWbPayload(1).gprIdxVec
+          someMyWbPayload(1).renamedGprIdxVec
         )
         if (isNonFwd) {
           someCommitStm.commit.myFwdValid := False
