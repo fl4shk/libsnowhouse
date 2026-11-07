@@ -1314,10 +1314,6 @@ case class SnowHouseConfig(
     numForkJoin=/*2*/1,
   )
   regFileCfg.linkArr = None
-  def numArchGprs = (
-    //shRegFileCfg.wordCountArr.sum
-    regFileCfg.wordCountSum / numPhysRegsMult
-  )
   def numGprs = regFileCfg.wordCountSum
 
   val optScoreboardReorderBufWidth = (
@@ -1392,6 +1388,17 @@ case class SnowHouseConfig(
     log2Up(optScoreboardNumTagsPerKind)
     //log2Up(numGprs) - 1
     //3
+  )
+
+  def numRenamedGprs = (
+    //shRegFileCfg.wordCountArr.sum
+    //regFileCfg.wordCountSum / numPhysRegsMult
+    //optScoreboardNumTagsPerKind * 2
+    if (optRegRename) (
+      1 << (optScoreboardTagWidth + 1)
+    ) else (
+      numGprs
+    )
   )
 
   //--------
@@ -2362,11 +2369,12 @@ case class SnowHousePipePayloadNonExt(
   //  //)
   //)
 
-  val archGprIdxVec = (
-    cfg.optRegRename
+  val renamedGprIdxVec = (
+    //cfg.optRegRename
+    true
   ) generate (
     Vec.fill(cfg.maxNumGprsPerInstr)(
-      UInt(log2Up(cfg.numArchGprs) bits)
+      UInt(log2Up(cfg.numRenamedGprs) bits)
     )
   )
 
@@ -2603,7 +2611,7 @@ case class SnowHousePipePayload(
   def aluOp = nonExt.aluOp
   //def aluModMemWordValid = nonExt.aluModMemWordValid
 
-  def archGprIdxVec = nonExt.archGprIdxVec
+  def renamedGprIdxVec = nonExt.renamedGprIdxVec
   def gprIdxVec = nonExt.gprIdxVec
   def readsGprIdxVec = nonExt.readsGprIdxVec
   def writesGprIdxVec = nonExt.writesGprIdxVec

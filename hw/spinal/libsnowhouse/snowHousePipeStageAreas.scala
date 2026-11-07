@@ -3604,6 +3604,13 @@ case class SnowHousePipeStageInstrDecode(
       init=upPayload(1).instrCnt.tick.getZero,
     )
   )
+  //if (!cfg.optRegRename) {
+    for (idx <- 0 until cfg.maxNumGprsPerInstr) {
+      upPayload(1).renamedGprIdxVec(idx) := (
+        upPayload(1).gprIdxVec(idx)
+      )
+    }
+  //}
 }
 
 //case class SnowHouseHazardDetectorIo(
@@ -4163,7 +4170,7 @@ case class SnowHousePipeStageScoreboardCheck(
   val rMyNonFwdGprTagVec = {
     //Reg(UInt(cfg.numGprs bits))
     //init(0x0)
-    val temp = Vec.fill(cfg.numGprs)(
+    val temp = Vec.fill(cfg.numRenamedGprs)(
       //Reg(Bool(), init=False)
       Reg(MyGprTagInfo(isNonFwd=true))
     )
@@ -4174,7 +4181,7 @@ case class SnowHousePipeStageScoreboardCheck(
   val rMyFwdGprTagVec = {
     //Reg(UInt(cfg.numGprs bits))
     //init(0x0)
-    val temp = Vec.fill(cfg.numGprs)(
+    val temp = Vec.fill(cfg.numRenamedGprs)(
       //Reg(Bool(), init=False)
       Reg(MyGprTagInfo(isNonFwd=false))
     )
@@ -4194,8 +4201,8 @@ case class SnowHousePipeStageScoreboardCheck(
   )
 
   for (jdx <- 0 until cfg.regFileCfg.modRdPortCnt) {
-    switch (upPayload(1).gprIdxVec(jdx)) {
-      for (idx <- 0 until cfg.numGprs) {
+    switch (upPayload(1).renamedGprIdxVec(jdx)) {
+      for (idx <- 0 until cfg.numRenamedGprs) {
         is (idx) {
           myNonFwdHazardCheckVec(jdx) := (
             //rMyNonFwdGprTagVec(idx).fire
@@ -4406,9 +4413,9 @@ case class SnowHousePipeStageScoreboardCheck(
 
       def myGprRange = (
         if (cfg.myHaveZeroReg) (
-          cfg.numGprs - 1 downto 1
+          cfg.numRenamedGprs - 1 downto 1
         ) else (
-          cfg.numGprs - 1 downto 0
+          cfg.numRenamedGprs - 1 downto 0
         )
       )
       def mkTempHazardPop(
@@ -4854,8 +4861,8 @@ case class SnowHousePipeStageScoreboardCheck(
       //}
 
       for (jdx <- 0 until cfg.regFileCfg.modRdPortCnt) {
-        switch (myTempOooRdBufPopVec(kdx).gprIdxVec(jdx)) {
-          for (idx <- 0 until cfg.numGprs) {
+        switch (myTempOooRdBufPopVec(kdx).renamedGprIdxVec(jdx)) {
+          for (idx <- 0 until cfg.numRenamedGprs) {
             is (idx) {
               myOooNonFwdRaWHazardCheckVec(myKdx)(jdx) := (
                 rMyNonFwdGprTagVec(idx).haveRaWHazard
@@ -5449,14 +5456,14 @@ case class SnowHousePipeStageScoreboardCheck(
     //cfg.regFileCfg.modRdPortCnt
     cfg.maxNumGprsPerInstr
   )(
-    UInt(log2Up(cfg.numGprs) bits)
+    UInt(log2Up(cfg.numRenamedGprs) bits)
   )
 
   for (
     //idx <- 0 until cfg.regFileCfg.modRdPortCnt
     idx <- 0 until cfg.maxNumGprsPerInstr
   ) {
-    myLeftGprIdxVec(idx) := upPayload(1).gprIdxVec(idx)
+    myLeftGprIdxVec(idx) := upPayload(1).renamedGprIdxVec(idx)
     //myRightGprIdxVec(idx) := myScoreboardCommitStm.gprIdxVec(idx)
   }
 
@@ -5586,7 +5593,7 @@ case class SnowHousePipeStageScoreboardCheck(
   //val rFwdWakeUpVec = Vec.fill(cfg.numGprs)(
   //  Reg(Bool(), init=False)
   //)
-  for (idx <- 0 until cfg.numGprs) {
+  for (idx <- 0 until cfg.numRenamedGprs) {
     when (
       //up.isFiring
       down.isFiring
@@ -5827,13 +5834,13 @@ case class SnowHousePipeStageScoreboardCheck(
         myFwdCond
       )
     ) {
-      for (idx <- 0 until cfg.numGprs) {
+      for (idx <- 0 until cfg.numRenamedGprs) {
         if (
           !cfg.myHaveZeroReg
           || idx != 0
         ) {
           is (
-            (1 << log2Up(cfg.numGprs))
+            (1 << log2Up(cfg.numRenamedGprs))
             | idx
           ) {
             if (jdx == 0) {
@@ -5897,13 +5904,13 @@ case class SnowHousePipeStageScoreboardCheck(
         myNonFwdCond
       )
     ) {
-      for (idx <- 0 until cfg.numGprs) {
+      for (idx <- 0 until cfg.numRenamedGprs) {
         if (
           !cfg.myHaveZeroReg
           || idx != 0
         ) {
           is (
-            (1 << log2Up(cfg.numGprs))
+            (1 << log2Up(cfg.numRenamedGprs))
             | idx
           ) {
             if (jdx == 0) {
@@ -6036,7 +6043,7 @@ case class SnowHousePipeStagePreFwd(
   forFmaxRegFileWrPulseArr: Seq[
     Flow[
       PipeSimpleDualPortMemDrivePayload[
-        UInt
+        Vec[UInt]
       ]
     ]
   ],
@@ -6269,7 +6276,10 @@ case class SnowHousePipeStagePreFwd(
   ) extends Bundle {
     val valid = Bool()
     //val data = UInt(cfg.mainWidth bits)
-    val addr = UInt(log2Up(cfg.regFileCfg.wordCountArr(0)) bits)
+    val addr = UInt(log2Up(
+      //cfg.regFileCfg.wordCountArr(0)
+      cfg.numRenamedGprs
+    ) bits)
     //val isLoadEtc = Bool() // TODO: atomics that read from the bus/mem
     //val memAccessForceToZero = Bool()
     val branchMispredictEtcForceToZero = Bool()
@@ -6402,7 +6412,7 @@ case class SnowHousePipeStagePreFwd(
 
 
     val rSavedMostRecentGprWriteWasMemAccess = {
-      val temp = Reg(UInt(cfg.numGprs bits))
+      val temp = Reg(UInt(cfg.numRenamedGprs bits))
       temp.init(temp.getZero)
       temp
     }
@@ -6439,7 +6449,7 @@ case class SnowHousePipeStagePreFwd(
       )
     ) {
       rSavedMostRecentGprWriteWasMemAccess(
-        outp.gprIdxVec.last
+        outp.renamedGprIdxVec.last
       ) := (
         //outp.splitOp.opIsMemAccess
         outp.splitOp.opIsNonFwd
@@ -6662,7 +6672,7 @@ case class SnowHousePipeStagePreFwd(
         //&& !outp.instrCnt.myPsIdBubble.last
       )
       //temp.data := outp.myExt(0).modMemWord //ram.io.wrData
-      temp.addr := outp.gprIdxVec.last
+      temp.addr := outp.renamedGprIdxVec.last
 
       //val myTempMemAccessForcetoZero = (
       //  outp.splitOp.opIsMemAccess
@@ -6932,7 +6942,7 @@ case class SnowHousePipeStagePreFwd(
         //  === myHistFwdInfo(idx + 1).addr
         //)
         rSavedMostRecentGprWriteWasMemAccess(
-          outp.gprIdxVec(jdx)
+          outp.renamedGprIdxVec(jdx)
         )
         //False
       )
@@ -6955,12 +6965,12 @@ case class SnowHousePipeStagePreFwd(
           && (
             if (cfg.optScoreboard) (
               (
-                outp.gprIdxVec(jdx)
+                outp.renamedGprIdxVec(jdx)
                 === myHistFwdInfo(idx + 1).addr
               )
               //&& !myHistFwdInfo(idx + 1).opIsMemAccess
             ) else (
-              outp.gprIdxVec(jdx)
+              outp.renamedGprIdxVec(jdx)
               === myHistFwdInfo(idx + 1).addr
             )
           )
@@ -12274,7 +12284,7 @@ case class SnowHousePipeStageExecute(
   forFmaxRegFileWrPulseArr: Seq[
     Flow[
       PipeSimpleDualPortMemDrivePayload[
-        UInt
+        Vec[UInt]
       ]
     ]
   ],
@@ -12816,22 +12826,28 @@ case class SnowHousePipeStageExecute(
         (
           myHistRegFileWrPulse(0).fire
           && (
-            myHistRegFileWrPulse(0).addr
-            === outp.gprIdxVec(jdx)
+            //myHistRegFileWrPulse(0).addr
+            myHistRegFileWrPulse(0).data(1)
+            //=== outp.gprIdxVec(jdx)
+            === outp.renamedGprIdxVec(jdx)
           )
         )
         ## (
           myHistRegFileWrPulse(1).fire
           && (
-            myHistRegFileWrPulse(1).addr
-            === outp.gprIdxVec(jdx)
+            //myHistRegFileWrPulse(1).addr
+            myHistRegFileWrPulse(1).data(1)
+            //=== outp.gprIdxVec(jdx)
+            === outp.renamedGprIdxVec(jdx)
           )
         )
         ## (
           myHistRegFileWrPulse(2).fire
           && (
-            myHistRegFileWrPulse(2).addr
-            === outp.gprIdxVec(jdx)
+            //myHistRegFileWrPulse(2).addr
+            myHistRegFileWrPulse(2).data(1)
+            //=== outp.gprIdxVec(jdx)
+            === outp.renamedGprIdxVec(jdx)
           )
         )
         ## outp.forFmaxFwdIdx(jdx)
@@ -12848,7 +12864,7 @@ case class SnowHousePipeStageExecute(
               )
             ) {
               outp.myExt(0).rdMemWord(jdx) := (
-                myHistRegFileWrPulse(0).data
+                myHistRegFileWrPulse(0).data(0)
                 //forFmaxRegFileWrPulseArr(0).data
                 //stickyFwdRegFileWrPulseVec(jdx).payload
               )
@@ -12862,7 +12878,7 @@ case class SnowHousePipeStageExecute(
               )
             ) {
               outp.myExt(0).rdMemWord(jdx) := (
-                myHistRegFileWrPulse(1).data
+                myHistRegFileWrPulse(1).data(0)
                 //RegNextWhen(
                 //  forFmaxRegFileWrPulseArr(0).data,
                 //  cond=(
@@ -12881,7 +12897,7 @@ case class SnowHousePipeStageExecute(
               )
             ) {
               outp.myExt(0).rdMemWord(jdx) := (
-                myHistRegFileWrPulse(2).data
+                myHistRegFileWrPulse(2).data(0)
                 //RegNextWhen(
                 //  forFmaxRegFileWrPulseArr(0).data,
                 //  cond=(

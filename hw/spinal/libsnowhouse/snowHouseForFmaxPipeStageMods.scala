@@ -1856,7 +1856,10 @@ case class SnowHouseForFmaxPipeStagePreFwdIo(
   val myRegFileWrPulse = (
     slave(Flow(
       PipeSimpleDualPortMemDrivePayload(
-        dataType=UInt(cfg.mainWidth bits),
+        dataType=Vec(
+          UInt(cfg.mainWidth bits),
+          UInt(log2Up(cfg.numRenamedGprs) bits),
+        ),
         wordCount=cfg.regFileCfg.wordCountArr(0),
       )
     ))
@@ -1961,7 +1964,10 @@ case class SnowHouseForFmaxPipeStageExecuteIo(
   val myRegFileWrPulse = (
     slave(Flow(
       PipeSimpleDualPortMemDrivePayload(
-        dataType=UInt(cfg.mainWidth bits),
+        dataType=Vec(
+          UInt(cfg.mainWidth bits),
+          UInt(log2Up(cfg.numRenamedGprs) bits),
+        ),
         wordCount=cfg.regFileCfg.wordCountArr(0),
       )
     ))
@@ -2173,7 +2179,10 @@ case class SnowHouseForFmaxPsWbCommitEtc(
     master(
       Flow(
         PipeSimpleDualPortMemDrivePayload(
-          dataType=UInt(cfg.mainWidth bits),
+          dataType=Vec(
+            UInt(cfg.mainWidth bits),
+            UInt(log2Up(cfg.numRenamedGprs) bits),
+          ),
           wordCount=cfg.regFileCfg.wordCountArr(0),
         )
       )
@@ -2247,7 +2256,10 @@ case class SnowHouseForFmaxPsWbReorderBufPayloadMost(
     //  io.commitEtc.myRegFileWrPulse.payload
     //)
     PipeSimpleDualPortMemDrivePayload(
-      dataType=UInt(cfg.mainWidth bits),
+      dataType=Vec(
+        UInt(cfg.mainWidth bits),
+        UInt(log2Up(cfg.numRenamedGprs) bits),
+      ),
       wordCount=cfg.regFileCfg.wordCountArr(0),
     )
   )
@@ -3881,6 +3893,17 @@ case class SnowHouseForFmaxPipeStageWriteBack(
     )(
       UInt(log2Up(cfg.numGprs) bits)
     ) //simPublic()
+
+    val renamedGprIdxVec = Vec.fill(
+      if (io.dbgInfo != null) (
+        cfg.maxNumGprsPerInstr
+      ) else (
+        1
+      )
+    )(
+      UInt(log2Up(cfg.numGprs) bits)
+    ) //simPublic()
+
     val gprIsZeroVec = Vec.fill(
       //if (io.dbgInfo != null) (
       //  cfg.maxNumGprsPerInstr
@@ -3944,41 +3967,42 @@ case class SnowHouseForFmaxPipeStageWriteBack(
   val myNonFwdWbValid = myNonFwdWbFifo.io.pop.valid
   val myFwdWbValid = myFwdWbFifo.io.pop.valid
 
-  def mkScoreboardRdGprIdxVec(
-    someMyWbPayload: SnowHousePipePayload,
-  ) = {
-    require(
-      cfg.optScoreboard
-    )
-    val ret = (
-      Vec.fill(cfg.regFileCfg.modRdPortCnt)(
-        UInt(log2Up(cfg.numGprs) bits)
-      )
-    )
-    for (idx <- 0 until cfg.regFileCfg.modRdPortCnt) {
-      ret(idx) := someMyWbPayload.gprIdxVec(idx)
-    }
-    ret
-  }
+  //def mkScoreboardRdGprIdxVec(
+  //  someMyWbPayload: SnowHousePipePayload,
+  //) = {
+  //  require(
+  //    cfg.optScoreboard
+  //  )
+  //  val ret = (
+  //    Vec.fill(cfg.regFileCfg.modRdPortCnt)(
+  //      UInt(log2Up(cfg.numGprs) bits)
+  //    )
+  //  )
+  //  for (idx <- 0 until cfg.regFileCfg.modRdPortCnt) {
+  //    ret(idx) := someMyWbPayload.gprIdxVec(idx)
+  //  }
+  //  ret
+  //}
 
-  def mkScoreboardGprTagOrReduce(
-    someMyWbPayload: SnowHousePipePayload
-  ): Bool = {
-    require(
-      cfg.optScoreboard
-    )
+  //def mkScoreboardGprTagOrReduce(
+  //  someMyWbPayload: SnowHousePipePayload
+  //): Bool = {
+  //  require(
+  //    cfg.optScoreboard
+  //  )
 
-    val temp = mkScoreboardRdGprIdxVec(someMyWbPayload)
-    Vec(temp.map(item => {
-      io.myScoreboardSavedGprTagVec(item)
-    })).orR
+  //  val temp = mkScoreboardRdGprIdxVec(someMyWbPayload)
+  //  Vec(temp.map(item => {
+  //    io.myScoreboardSavedGprTagVec(item)
+  //  })).orR
 
-    //val ret = (
-    //  Vec.fill(cfg.regFileCfg.modRdPortCnt)(
-    //    Bool()
-    //  )
-    //)
-  }
+  //  //val ret = (
+  //  //  Vec.fill(cfg.regFileCfg.modRdPortCnt)(
+  //  //    Bool()
+  //  //  )
+  //  //)
+  //}
+
   //val rMyScoreboardShouldIgnoreInstrState = (
   //  cfg.optScoreboard
   //) generate (
@@ -4056,11 +4080,18 @@ case class SnowHouseForFmaxPipeStageWriteBack(
       myNonFwdWbFifo.io.push.payload.gprIdxVec := (
         myNonFwdWbPayload(0).gprIdxVec
       )
+      myNonFwdWbFifo.io.push.payload.renamedGprIdxVec := (
+        myNonFwdWbPayload(0).renamedGprIdxVec
+      )
     } else {
       myNonFwdWbFifo.io.push.payload.gprIdxVec.last := (
         myNonFwdWbPayload(0).gprIdxVec.last
       )
+      myNonFwdWbFifo.io.push.payload.renamedGprIdxVec.last := (
+        myNonFwdWbPayload(0).renamedGprIdxVec.last
+      )
     }
+
     myNonFwdWbFifo.io.push.payload.gprIsZeroVec.last.last := (
       myNonFwdWbPayload(0).gprIsZeroVec.last.last
     )
@@ -4120,9 +4151,15 @@ case class SnowHouseForFmaxPipeStageWriteBack(
       myFwdWbFifo.io.push.payload.gprIdxVec := (
         myFwdWbPayload(0).gprIdxVec
       )
+      myFwdWbFifo.io.push.payload.renamedGprIdxVec := (
+        myFwdWbPayload(0).renamedGprIdxVec
+      )
     } else {
       myFwdWbFifo.io.push.payload.gprIdxVec.last := (
         myFwdWbPayload(0).gprIdxVec.last
+      )
+      myFwdWbFifo.io.push.payload.renamedGprIdxVec.last := (
+        myFwdWbPayload(0).renamedGprIdxVec.last
       )
     }
     myFwdWbFifo.io.push.payload.gprIsZeroVec.last.last := (
@@ -4345,9 +4382,15 @@ case class SnowHouseForFmaxPipeStageWriteBack(
         myNonFwdWbPayload(1).gprIdxVec := (
           myNonFwdWbFifo.io.pop.payload.gprIdxVec
         )
+        myNonFwdWbPayload(1).renamedGprIdxVec := (
+          myNonFwdWbFifo.io.pop.payload.renamedGprIdxVec
+        )
       } else {
         myNonFwdWbPayload(1).gprIdxVec.last := (
           myNonFwdWbFifo.io.pop.payload.gprIdxVec.last
+        )
+        myNonFwdWbPayload(1).renamedGprIdxVec.last := (
+          myNonFwdWbFifo.io.pop.payload.renamedGprIdxVec.last
         )
       }
       myNonFwdWbPayload(1).gprIsZeroVec.last.last := (
@@ -4386,9 +4429,15 @@ case class SnowHouseForFmaxPipeStageWriteBack(
         myFwdWbPayload(1).gprIdxVec := (
           myFwdWbFifo.io.pop.payload.gprIdxVec
         )
+        myFwdWbPayload(1).renamedGprIdxVec := (
+          myFwdWbFifo.io.pop.payload.renamedGprIdxVec
+        )
       } else {
         myFwdWbPayload(1).gprIdxVec.last := (
           myFwdWbFifo.io.pop.payload.gprIdxVec.last
+        )
+        myFwdWbPayload(1).renamedGprIdxVec.last := (
+          myFwdWbFifo.io.pop.payload.renamedGprIdxVec.last
         )
       }
       myFwdWbPayload(1).gprIsZeroVec.last.last := (
@@ -5152,7 +5201,8 @@ case class SnowHouseForFmaxPipeStageWriteBack(
       io.up.instrCnt.scoreboardCheckPayload.nonFwdTag
     )
     io.commitEtc.scoreboardBubbleRetire.gprIdxVec.last := (
-      io.up.gprIdxVec.last
+      //io.up.gprIdxVec.last
+      io.up.renamedGprIdxVec.last
     )
     //when (
     //) {
@@ -5463,7 +5513,7 @@ case class SnowHouseForFmaxPipeStageWriteBack(
       someCommitStm.regFileWrite.addr := (
         someMyWbPayload(1).gprIdxVec.last
       )
-      someCommitStm.regFileWrite.data := {
+      someCommitStm.regFileWrite.data(0) := {
         if (cfg.optScoreboard && isNonFwd) {
           Mux[UInt](
             stickyMemMmwValid,
@@ -5489,6 +5539,10 @@ case class SnowHouseForFmaxPipeStageWriteBack(
           myCurrExt.modMemWord
         }
       }
+      someCommitStm.regFileWrite.data(1) := (
+        someMyWbPayload(1).renamedGprIdxVec.last
+      )
+
       if (cfg.optScoreboard) {
         if (isNonFwd) {
           someCommitStm.commit.myNonFwdValid := True
@@ -5506,7 +5560,8 @@ case class SnowHouseForFmaxPipeStageWriteBack(
         someCommitStm.valid := False
       }
       someCommitStm.regFileWrite.addr := 0x0
-      someCommitStm.regFileWrite.data := 0x0
+      someCommitStm.regFileWrite.data(0) := 0x0
+      someCommitStm.regFileWrite.data(1) := 0x0
 
       if (cfg.optScoreboard) {
         someCommitStm.commit.gprIdxVec := (
@@ -5768,7 +5823,7 @@ case class SnowHouseForFmaxPipeStageWriteBack(
       myDbgCommitBackStm.fire
     ) {
       io.dbgInfo.regFileWriteData := (
-        myDbgCommitBackStm.regFileWrite.data
+        myDbgCommitBackStm.regFileWrite.data(0)
       )
       io.dbgInfo.regFileWriteAddr := (
         myDbgCommitBackStm.regFileWrite.addr

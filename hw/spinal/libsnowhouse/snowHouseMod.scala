@@ -2448,7 +2448,25 @@ private[libsnowhouse] case class SnowHouseForFmax(
     //)
     //item.io.wrPulse := psWb.io.myRegFileWrPulse
     //item.io.wrPulse := psWb.io.commitEtc.myRegFileWrPulse
-    item.io.wrPulse <-< psWb.io.commitEtc.myRegFileWrPulse
+
+    //item.io.wrPulse <-< psWb.io.commitEtc.myRegFileWrPulse
+    item.io.wrPulse.addr := (
+      RegNext(
+        psWb.io.commitEtc.myRegFileWrPulse.addr
+      )
+    )
+    item.io.wrPulse.data := (
+      RegNext(
+        psWb.io.commitEtc.myRegFileWrPulse.data(0)
+      )
+    )
+    item.io.wrPulse.valid := (
+      RegNext(
+        psWb.io.commitEtc.myRegFileWrPulse.fire,
+        init=False
+      )
+    )
+
     //item.io.wrPulse << psWb.io.commitEtc.myRegFileWrPulse
 
     //item.io.wrPulse.valid := psWb.io.commit.fire
