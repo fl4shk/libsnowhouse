@@ -12895,28 +12895,28 @@ case class SnowHousePipeStageExecute(
         (
           myHistRegFileWrPulse(0).fire
           && (
-            //myHistRegFileWrPulse(0).addr
-            myHistRegFileWrPulse(0).data(1)
-            //=== outp.gprIdxVec(jdx)
-            === outp.renamedGprIdxVec(jdx)
+            myHistRegFileWrPulse(0).addr
+            //myHistRegFileWrPulse(0).data(1)
+            === outp.gprIdxVec(jdx)
+            //=== outp.renamedGprIdxVec(jdx)
           )
         )
         ## (
           myHistRegFileWrPulse(1).fire
           && (
-            //myHistRegFileWrPulse(1).addr
-            myHistRegFileWrPulse(1).data(1)
-            //=== outp.gprIdxVec(jdx)
-            === outp.renamedGprIdxVec(jdx)
+            myHistRegFileWrPulse(1).addr
+            //myHistRegFileWrPulse(1).data(1)
+            === outp.gprIdxVec(jdx)
+            //=== outp.renamedGprIdxVec(jdx)
           )
         )
         ## (
           myHistRegFileWrPulse(2).fire
           && (
-            //myHistRegFileWrPulse(2).addr
-            myHistRegFileWrPulse(2).data(1)
-            //=== outp.gprIdxVec(jdx)
-            === outp.renamedGprIdxVec(jdx)
+            myHistRegFileWrPulse(2).addr
+            //myHistRegFileWrPulse(2).data(1)
+            === outp.gprIdxVec(jdx)
+            //=== outp.renamedGprIdxVec(jdx)
           )
         )
         ## outp.forFmaxFwdIdx(jdx)
