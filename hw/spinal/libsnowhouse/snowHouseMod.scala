@@ -2275,7 +2275,24 @@ private[libsnowhouse] case class SnowHouseForFmax(
     SnowHousePipePayload,
     UInt,
   ]]()
-  for (idx <- 0 until cfg.regFileCfg.modRdPortCnt) {
+  for (
+    tempIdx <- 0 until {
+      val temp = cfg.regFileCfg.modRdPortCnt
+      if (cfg.optRegRename) (
+        temp * 2
+      ) else (
+        temp
+      )
+    }
+  ) {
+    val idx = (
+      if (cfg.optRegRename) (
+        tempIdx >> 1
+      ) else (
+        tempIdx
+      )
+    )
+
     myRegFile += WrPulseRdPipeRam(
       cfg=WrPulseRdPipeRamConfig(
         modType=SnowHousePipePayload(cfg=cfg),
@@ -2368,7 +2385,22 @@ private[libsnowhouse] case class SnowHouseForFmax(
     )(
       dataAssignment=(outp, inp) => {
         outp.data := inp.data
-        outp.addr := inp.data.gprIdxVec(idx)
+        if (
+          idx < cfg.regFileCfg.modRdPortCnt
+        ) {
+          outp.addr := inp.data.gprIdxVec(idx)
+        } else {
+          require(
+            cfg.optRegRename
+          )
+          outp.addr := (
+            (
+              inp.data.renamedGprIdxVec(
+                idx - cfg.regFileCfg.modRdPortCnt
+              ) - cfg.numGprs
+            ).resize(outp.addr.getWidth)
+          )
+        }
       }
     )
   }
@@ -2384,7 +2416,15 @@ private[libsnowhouse] case class SnowHouseForFmax(
     dataAssignment=(outp, inp) => {
       outp := inp.head
       outp.myExt(0).rdMemWord.allowOverride
-      for (idx <- 0 until inp.size) {
+      for (tempIdx <- 0 until inp.size) {
+        val idx = (
+          if (tempIdx < cfg.regFileCfg.modRdPortCnt) (
+            tempIdx
+          ) else {
+            require(cfg.optRegRename)
+            (tempIdx - cfg.regFileCfg.modRdPortCnt)
+          }
+        )
         outp.myExt(0).rdMemWord(idx) := (
           inp(idx).myExt(0).rdMemWord(idx)
         )
@@ -2441,39 +2481,54 @@ private[libsnowhouse] case class SnowHouseForFmax(
     psWb.io.up << psEx.io.down
   }
 
-  myRegFile.foreach(item => {
-    //item.io.wrPulse.valid := False
-    //item.io.wrPulse.payload := (
-    //  item.io.wrPulse.payload.getZero
-    //)
-    //item.io.wrPulse := psWb.io.myRegFileWrPulse
-    //item.io.wrPulse := psWb.io.commitEtc.myRegFileWrPulse
+  myRegFile.view.zipWithIndex.foreach{
+    case (item, idx) => {
+      //item.io.wrPulse.valid := False
+      //item.io.wrPulse.payload := (
+      //  item.io.wrPulse.payload.getZero
+      //)
+      //item.io.wrPulse := psWb.io.myRegFileWrPulse
+      //item.io.wrPulse := psWb.io.commitEtc.myRegFileWrPulse
 
-    //item.io.wrPulse <-< psWb.io.commitEtc.myRegFileWrPulse
-    item.io.wrPulse.addr := (
-      RegNext(
-        psWb.io.commitEtc.myRegFileWrPulse.addr
-      )
-    )
-    item.io.wrPulse.data := (
-      RegNext(
-        psWb.io.commitEtc.myRegFileWrPulse.data(0)
-      )
-    )
-    item.io.wrPulse.valid := (
-      RegNext(
-        psWb.io.commitEtc.myRegFileWrPulse.fire,
-        init=False
-      )
-    )
+      //item.io.wrPulse <-< psWb.io.commitEtc.myRegFileWrPulse
+      if (idx < cfg.regFileCfg.modRdPortCnt) {
+        item.io.wrPulse.addr := (
+          RegNext(
+            psWb.io.commitEtc.myRegFileWrPulse.addr
+          )
+        )
+      } else {
+        require(
+          cfg.optRegRename
+        )
+        item.io.wrPulse.addr := (
+          RegNext(
+            (
+              psWb.io.commitEtc.myRegFileWrPulse.data(1) - cfg.numGprs
+            ).resize(item.io.wrPulse.addr.getWidth)
+          )
+        )
+      }
 
-    //item.io.wrPulse << psWb.io.commitEtc.myRegFileWrPulse
+      item.io.wrPulse.data := (
+        RegNext(
+          psWb.io.commitEtc.myRegFileWrPulse.data(0)
+        )
+      )
+      item.io.wrPulse.valid := (
+        RegNext(
+          psWb.io.commitEtc.myRegFileWrPulse.fire,
+          init=False
+        )
+        )
+      //item.io.wrPulse << psWb.io.commitEtc.myRegFileWrPulse
 
-    //item.io.wrPulse.valid := psWb.io.commit.fire
-    //item.io.wrPulse.payload := (
-    //  psWb.io.commit.myRegFileWrPulsePayload
-    //)
-  })
+      //item.io.wrPulse.valid := psWb.io.commit.fire
+      //item.io.wrPulse.payload := (
+      //  psWb.io.commit.myRegFileWrPulsePayload
+      //)
+    }
+  }
   //psEx.io.myRegFileWrPulse.valid := psWb.io.commit.fire
   //psEx.io.myRegFileWrPulse.payload := (
   //  psWb.io.commit.myRegFileWrPulsePayload
