@@ -703,25 +703,26 @@ case class SnowHouseForFmaxConfig(
   ),
   optScoreboardNumExtraFwdHistStages: Int=(
     //6
-    4
+    2
+    //4
     //2
     //3
     //1
     //2
     //0
   ),
-  optScoreboardNumPhysRegsMult: Option[Int]=(
-    //Some(2)
-    None
-  ),
+  //optScoreboardNumPhysRegsMult: Option[Int]=(
+  //  Some(2)
+  //  //None
+  //),
   optScoreboardMultiCycleOpIsNonFwd: Boolean=(
     true
     //false
   ),
-  //optRegRename: Boolean=(
-  //  true
-  //  //false
-  //)
+  optRegRename: Boolean=(
+    true
+    //false
+  )
   //optMaxNumScoreboardInstrs: Option[Int]=Some(
   //  //2
   //  //1
@@ -755,23 +756,23 @@ case class SnowHouseForFmaxConfig(
     optScoreboardNumExtraFwdHistStages >= 0
   )
 
-  val optNumPhysRegsMult = (
-    optScoreboardNumPhysRegsMult match {
-      case Some(myNumPhysRegsMult) => {
-        require(
-          myNumPhysRegsMult > 0
-        )
-        Some(myNumPhysRegsMult)
-      }
-      case None => {
-        None
-      }
-    }
-  )
+  //val optNumPhysRegsMult = (
+  //  optScoreboardNumPhysRegsMult match {
+  //    case Some(myNumPhysRegsMult) => {
+  //      require(
+  //        myNumPhysRegsMult > 0
+  //      )
+  //      Some(myNumPhysRegsMult)
+  //    }
+  //    case None => {
+  //      None
+  //    }
+  //  }
+  //)
 
-  val optRegRename = (
-    optNumPhysRegsMult != None
-  )
+  //val optRegRename = (
+  //  optNumPhysRegsMult != None
+  //)
 }
 case class SnowHouseConfig(
   haveZeroReg: Option[Int],
@@ -846,22 +847,23 @@ case class SnowHouseConfig(
   val optForFmax = (optForFmaxCfg != None)
 
   val numPhysRegsMult = (
-    optForFmaxCfg match {
-      case Some(myForFmaxCfg) => {
-        myForFmaxCfg.optNumPhysRegsMult match {
-          case Some(myNumPhysRegsMult) => {
-            myNumPhysRegsMult
-          }
-          case None => {
-            1
-          }
-        }
-      }
-      case None => {
-        //None
-        1
-      }
-    }
+    1
+    //optForFmaxCfg match {
+    //  case Some(myForFmaxCfg) => {
+    //    myForFmaxCfg.optNumPhysRegsMult match {
+    //      case Some(myNumPhysRegsMult) => {
+    //        myNumPhysRegsMult
+    //      }
+    //      case None => {
+    //        1
+    //      }
+    //    }
+    //  }
+    //  case None => {
+    //    //None
+    //    1
+    //  }
+    //}
   )
   val optRegRename = (
     optForFmax
@@ -1155,6 +1157,8 @@ case class SnowHouseConfig(
     }
   )
   val myHaveZeroReg = (
+    //!optRegRename
+    //&& 
     myZeroRegIdx >= 0
   )
   val myHaveAluFlags: Boolean = {
@@ -1340,12 +1344,16 @@ case class SnowHouseConfig(
         (
           log2Up(myOooIssueWindow) + 1
         ).max(
-          log2Up(16)
+          log2Up(
+            //16
+            numGprs
+          )
           //log2Up(64)
         )
       }
       case None => {
-        log2Up(16)
+        //log2Up(16)
+        log2Up(numGprs)
       }
     }
   )

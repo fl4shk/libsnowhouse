@@ -1998,7 +1998,9 @@ case class SnowHouseRiscv32Config(
     32
     //16
   )
-  val numGprs = Riscv32Op.numGprs //+ 1
+  val numGprs = (
+    Riscv32Op.numGprs //+ 1
+  )
   val modRdPortCnt = (
     //3
     2
@@ -4507,7 +4509,7 @@ object SnowHouseRiscv32WithDuplDualRamSim extends App {
         + s"\n"
       )
       val mySavedGprArr = new ArrayBuffer[Long]()
-      for (idx <- 0 until cfg.numGprs) {
+      for (idx <- 0 until cfg.numGprs * 2) {
         mySavedGprArr += 0.toLong
       }
 

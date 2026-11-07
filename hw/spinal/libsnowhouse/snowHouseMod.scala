@@ -2206,11 +2206,11 @@ private[libsnowhouse] case class SnowHouseForFmax(
   //) generate (
   //  SnowHouseForFmaxPipeStageScoreboardReadGprs(cfg=cfg)
   //)
-  val psRegRename = (
-    cfg.optRegRename
-  ) generate (
-    SnowHouseForFmaxPipeStageRegRename(cfg=cfg)
-  )
+  //val psRegRename = (
+  //  cfg.optRegRename
+  //) generate (
+  //  SnowHouseForFmaxPipeStageRegRename(cfg=cfg)
+  //)
 
   val psScoreboardCheck = (
     cfg.optScoreboard
@@ -2238,12 +2238,13 @@ private[libsnowhouse] case class SnowHouseForFmax(
     //)
     //psPreFwd.io.up << psScoreboardReadGprs.io.down
     //psScoreboardCheck.io.up <-/< psId.io.down
-    if (cfg.optRegRename) {
-      psRegRename.io.up << psId.io.down
-      psScoreboardCheck.io.up << psRegRename.io.down
-    } else {
+
+    //if (cfg.optRegRename) {
+    //  //psRegRename.io.up << psId.io.down
+    //  //psScoreboardCheck.io.up << psRegRename.io.down
+    //} else {
       psScoreboardCheck.io.up << psId.io.down
-    }
+    //}
     psPreFwd.io.up << psScoreboardCheck.io.down
   } else {
     psPreFwd.io.up <-/< psId.io.down
@@ -2312,6 +2313,15 @@ private[libsnowhouse] case class SnowHouseForFmax(
           //  && outp.gprIdxVec(idx) === wrPulse.addr
           //) {
           //  stickyWrPulse
+          //}
+
+          //if (
+          //  cfg.haveZeroReg != None
+          //  && cfg.optRegRename
+          //) {
+          //  when (outp.gprIsZeroVec.last(idx)) {
+          //    outp.myExt(0).rdMemWord(idx) := 0x0
+          //  }
           //}
         },
         optRdLatency=(
@@ -2478,30 +2488,30 @@ private[libsnowhouse] case class SnowHouseForFmax(
       psWb.io.commitEtc.myRegFileWrPulse
     )
   }
-  if (cfg.optRegRename) {
-    psRegRename.io.myScoreboardCommit.valid := (
-      RegNext(
-        psWb.io.commitEtc.scoreboardCommmit.fire,
-        init=False
-      )
-    )
-    psRegRename.io.myScoreboardCommit.payload := (
-      RegNext(
-        psWb.io.commitEtc.scoreboardCommmit.payload,
-      )
-    )
-    psRegRename.io.myScoreboardBubbleRetire.valid := (
-      RegNext(
-        psWb.io.commitEtc.scoreboardBubbleRetire.fire,
-        init=False
-      )
-    )
-    psRegRename.io.myScoreboardBubbleRetire.payload := (
-      RegNext(
-        psWb.io.commitEtc.scoreboardBubbleRetire.payload,
-      )
-    )
-  }
+  //if (cfg.optRegRename) {
+  //  psRegRename.io.myScoreboardCommit.valid := (
+  //    RegNext(
+  //      psWb.io.commitEtc.scoreboardCommmit.fire,
+  //      init=False
+  //    )
+  //  )
+  //  psRegRename.io.myScoreboardCommit.payload := (
+  //    RegNext(
+  //      psWb.io.commitEtc.scoreboardCommmit.payload,
+  //    )
+  //  )
+  //  psRegRename.io.myScoreboardBubbleRetire.valid := (
+  //    RegNext(
+  //      psWb.io.commitEtc.scoreboardBubbleRetire.fire,
+  //      init=False
+  //    )
+  //  )
+  //  psRegRename.io.myScoreboardBubbleRetire.payload := (
+  //    RegNext(
+  //      psWb.io.commitEtc.scoreboardBubbleRetire.payload,
+  //    )
+  //  )
+  //}
   if (cfg.optScoreboard) {
     //psScoreboardCheck.io.myScoreboardCommit << (
     //  psWb.io.commitEtc.scoreboardTag
@@ -2534,9 +2544,9 @@ private[libsnowhouse] case class SnowHouseForFmax(
   psIf.io.psExSetPc << psExSetPc
   psId.io.psExSetPc << psExSetPc
 
-  if (cfg.optRegRename) {
-    psRegRename.io.psExSetPc << psExSetPc
-  }
+  //if (cfg.optRegRename) {
+  //  psRegRename.io.psExSetPc << psExSetPc
+  //}
   if (cfg.optScoreboard) {
     psScoreboardCheck.io.psExSetPc << psExSetPc
   }
