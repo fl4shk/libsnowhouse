@@ -1345,15 +1345,15 @@ case class SnowHouseConfig(
           log2Up(myOooIssueWindow) + 1
         ).max(
           log2Up(
-            //16
-            numGprs
+            16
+            //numGprs
           )
           //log2Up(64)
         )
       }
       case None => {
-        //log2Up(16)
-        log2Up(numGprs)
+        log2Up(16)
+        //log2Up(numGprs)
       }
     }
   )
