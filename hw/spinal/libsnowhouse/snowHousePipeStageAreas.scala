@@ -323,8 +323,14 @@ case class SnowHousePsExSetPcPayload(
   ) generate (
     UInt(cfg.optScoreboardReorderBufWidth bits)
   )
-  val myOooIssueChkptIdx = (
+  val myReorderBufIdxChkptIdx = (
     cfg.optScoreboardOooIssueWindow != None
+  ) generate (
+    UInt(log2Up(cfg.optScoreboardOooIssueMaxNumBranches) bits)
+  )
+  val myRegRenameChkptIdx = (
+    cfg.optScoreboardOooIssueWindow != None
+    && cfg.optRegRename
   ) generate (
     UInt(log2Up(cfg.optScoreboardOooIssueMaxNumBranches) bits)
   )
@@ -3572,7 +3578,7 @@ case class SnowHousePipeStageInstrDecode(
     myOooIssueChkptBuf.io.wrAddr := rOooIssueChkptBufIdx
     myOooIssueChkptBuf.io.wrEn := myChkptWriteCond
 
-    upPayload(1).myOooIssueChkptIdx := rOooIssueChkptBufIdx
+    upPayload(1).myReorderBufIdxChkptIdx := rOooIssueChkptBufIdx
     when (myChkptWriteCond) {
       rOooIssueChkptBufIdx := rOooIssueChkptBufIdx + 1
     }
@@ -3581,7 +3587,7 @@ case class SnowHousePipeStageInstrDecode(
       myShouldIgnoreInstr
     )
     myOooIssueChkptBuf.io.rdAddr := (
-      stickyExSetPc.myOooIssueChkptIdx
+      stickyExSetPc.myReorderBufIdxChkptIdx
     )
 
     when (myShouldIgnoreInstr) {
@@ -3691,33 +3697,34 @@ case class SnowHousePipeStageRegRename(
       //myUpdateGprIsOrIsntZero=myUpdateGprIsOrIsntZero
       //myPsIdReorderBufForceValid=myPsIdReorderBufForceValid,
     )
-    down(pRegRename).instrCnt.tick := False
-    if (myPsIdOtherBubble != None) {
-      down(pRegRename).instrCnt.myPsIdOtherBubble.foreach(item => {
-        item := myPsIdOtherBubble.get
-      })
-    }
-    if (myPsIdFwdBubble != None) {
-      down(pRegRename).instrCnt.myPsIdFwdBubble.foreach(item => {
-        item := myPsIdFwdBubble.get
-      })
-    }
-    if (
-      cfg.optScoreboard
-      && myInFlushCond != None
-    ) {
-      down(
-        pRegRename
-      ).instrCnt.myPsIdInFlushBubble.foreach(item => {
-        item := myInFlushCond.get
-      })
-      down(
-        pRegRename
-      ).instrCnt.scoreboardCheckPayload.fwdTag := 0x0
-      down(
-        pRegRename
-      ).instrCnt.scoreboardCheckPayload.nonFwdTag := 0x0
-    }
+
+    //down(pRegRename).instrCnt.tick := False
+    //if (myPsIdOtherBubble != None) {
+    //  down(pRegRename).instrCnt.myPsIdOtherBubble.foreach(item => {
+    //    item := myPsIdOtherBubble.get
+    //  })
+    //}
+    //if (myPsIdFwdBubble != None) {
+    //  down(pRegRename).instrCnt.myPsIdFwdBubble.foreach(item => {
+    //    item := myPsIdFwdBubble.get
+    //  })
+    //}
+    //if (
+    //  cfg.optScoreboard
+    //  && myInFlushCond != None
+    //) {
+    //  down(
+    //    pRegRename
+    //  ).instrCnt.myPsIdInFlushBubble.foreach(item => {
+    //    item := myInFlushCond.get
+    //  })
+    //  down(
+    //    pRegRename
+    //  ).instrCnt.scoreboardCheckPayload.fwdTag := 0x0
+    //  down(
+    //    pRegRename
+    //  ).instrCnt.scoreboardCheckPayload.nonFwdTag := 0x0
+    //}
   }
 
   val upPayload = Vec.fill(2)(
@@ -3742,7 +3749,10 @@ case class SnowHousePipeStageRegRename(
 
   val stickyExSetPc = cloneOf(psExSetPc)
 
-  def myShouldIgnoreInstr = stickyExSetPc.valid
+  def myShouldIgnoreInstr = (
+    stickyExSetPc.valid
+    || upPayload(1).instrCnt.myPsIdOtherBubble.last
+  )
   stickyExSetPc := (
     RegNext(
       stickyExSetPc,
@@ -3751,13 +3761,14 @@ case class SnowHousePipeStageRegRename(
   )
 
   when (psExSetPc.fire) {
-    myShouldIgnoreInstr := True
-    //stickyExSetPc.valid := True
+    //myShouldIgnoreInstr := True
+    stickyExSetPc.valid := True
     stickyExSetPc.payload := psExSetPc.payload
   }
 
   when (upPayload(1).regPcSetItCnt(0).lsb) {
-    myShouldIgnoreInstr := False
+    //myShouldIgnoreInstr := False
+    stickyExSetPc.valid := False
   }
 
   val rOooIssueChkptBufIdxVec = (
@@ -3809,13 +3820,32 @@ case class SnowHousePipeStageRegRename(
   //val myRegAliasTbl = (
   //  RamSimpleDualPort(cfg=myRegAliasTblCfg)
   //)
+  val tempFreeListInitStr = (
+    (
+      "1" * (cfg.numRenamedGprs - cfg.numGprs)
+    )
+    + (
+      "0" * cfg.numGprs
+    )
+  )
+
+  val tempFreeListInit = (
+    //((BigInt(1) << cfg.numGprs) - BigInt(1))
+    U(s"${cfg.numRenamedGprs}'b${tempFreeListInitStr}")
+  )
+  println(
+    s"DEBUG NOTE: tempFreeListInit:${tempFreeListInit}"
+  )
 
   val rFreeList = (
     //Reg(UInt(cfg.numRenamedGprs bits))
     //init(0x0)
-    Vec.fill(cfg.numRenamedGprs)(
-      Reg(Bool(), init=True)
-    )
+
+    //Vec.fill(cfg.numRenamedGprs)(
+    //  Reg(Bool(), init=True)
+    //)
+    Reg(UInt(cfg.numRenamedGprs bits))
+    init(tempFreeListInit)
   )
   val myOtherFreeList = (
     Vec.fill(cfg.numRenamedGprs)(
@@ -3855,19 +3885,30 @@ case class SnowHousePipeStageRegRename(
       wordType=(
         //Vec.fill(cfg.numGprs)(
           //UInt(log2Up(cfg.numRenamedGprs) bits)
-          Vec.fill(cfg.numRenamedGprs)(
-            Bool()
-          )
+          //Vec.fill(cfg.numRenamedGprs)(
+          //  Bool()
+          //)
+          UInt(cfg.numRenamedGprs bits)
         //)
       ),
       depth=cfg.optScoreboardOooIssueMaxNumBranches,
       initBigInt=(
-        //Some(
-        //  Array.fill(cfg.optScoreboardOooIssueMaxNumBranches)(
-        //    BigInt(0)
-        //  )
-        //)
         None
+        //Some({
+        //  Array.fill(cfg.optScoreboardOooIssueMaxNumBranches)(
+        //    BigInt(
+        //      //0xcafe
+        //    )
+        //  )
+        //})
+        //None
+      ),
+      init=(
+        Some(
+          Array.fill(cfg.optScoreboardOooIssueMaxNumBranches)(
+            tempFreeListInit
+          ).toSeq
+        )
       ),
       arrRamStyleAltera=(
         //"no_rw_check, logic"
@@ -3887,7 +3928,9 @@ case class SnowHousePipeStageRegRename(
     )
   )
 
-  val myRatChkptBufCfg = (
+  def mkMyRatChkptBufCfg(
+    gprIdx: Int
+  ) = (
     RamSdpPipeConfig(
       wordType=(
         //Vec.fill(cfg.numGprs)(
@@ -3896,12 +3939,15 @@ case class SnowHousePipeStageRegRename(
       ),
       depth=cfg.optScoreboardOooIssueMaxNumBranches,
       initBigInt=(
-        //Some(
-        //  Array.fill(cfg.optScoreboardOooIssueMaxNumBranches)(
-        //    BigInt(0)
-        //  )
-        //)
-        None
+        Some({
+          Array.fill(cfg.optScoreboardOooIssueMaxNumBranches)(
+            BigInt(
+              //0x0
+              gprIdx
+            )
+          )
+        })
+        //None
       ),
       arrRamStyleAltera=(
         //"no_rw_check, logic"
@@ -3935,14 +3981,23 @@ case class SnowHousePipeStageRegRename(
     RamSdpPipe(cfg=myFreeListChkptBufCfg)
   )
 
-  val myRatChkptBufArr = (
+  val myRatChkptBufArr = {
     //Array.fill(cfg.maxNumGprsPerInstr - 1)(
-      Array.fill(cfg.numGprs)(
-        //RamSimpleDualPort(cfg=myOooIssueChkptBufCfg)
-        RamSdpPipe(cfg=myRatChkptBufCfg)
-      )
+      //Array.fill(cfg.numGprs)(
+      //  //RamSimpleDualPort(cfg=myOooIssueChkptBufCfg)
+      //  RamSdpPipe(cfg=myRatChkptBufCfg)
+      //)
     //)
-  )
+    val temp = new ArrayBuffer[RamSdpPipe[UInt]]()
+
+    for (gprIdx <- 0 until cfg.numGprs) {
+      temp += RamSdpPipe(
+        cfg=mkMyRatChkptBufCfg(gprIdx=gprIdx)
+      )
+    }
+
+    temp
+  }
 
   val myChkptWriteCond = (
     upPayload(1).splitOp.haveAnyJmpBrOp()
@@ -3952,7 +4007,7 @@ case class SnowHousePipeStageRegRename(
 
   val rStickyMyOooIssueChkptIdxVec = Vec.fill(cfg.numGprs)(
     RegNext(
-      stickyExSetPc.myOooIssueChkptIdx
+      stickyExSetPc.myRegRenameChkptIdx
     )
   )
   // I think we're guaranteed not to run out of free list slots?
@@ -4025,26 +4080,97 @@ case class SnowHousePipeStageRegRename(
     rFreeList(myNextRenamedRegIdx) := False
   }
 
+  val stickyMyScoreboardCommit = (
+    Flow(cloneOf(myScoreboardCommit.payload))
+  )
+  stickyMyScoreboardCommit := (
+    RegNext(
+      stickyMyScoreboardCommit,
+      init=stickyMyScoreboardCommit.getZero,
+    )
+  )
+
   when (
-    myScoreboardCommit.fire
+    RegNext(
+      (
+        //cRegRename.up.isFiring
+        //&& !myShouldIgnoreInstr
+        //&& upPayload(1).gprIsNonZeroVec.last.last
+
+        stickyMyScoreboardCommit.fire
+        && LcvOrR(stickyMyScoreboardCommit.regRenameFreeListIdx)
+      ),
+      init=False
+    )
   ) {
+    stickyMyScoreboardCommit.valid := False
+
     rFreeList(
-      myScoreboardCommit.regRenameFreeListIdx
+      stickyMyScoreboardCommit.regRenameFreeListIdx
     ) := (
       True
     )
   }
 
-  myFreeListChkptBuf.io.wrData := rFreeList
-  myFreeListChkptBuf.io.wrAddr := rOooIssueChkptBufIdxVec.last
-  myFreeListChkptBuf.io.wrEn := myChkptWriteCond
-  myFreeListChkptBuf.io.rdEn := myShouldIgnoreInstr
-  myFreeListChkptBuf.io.rdAddr := (
-    rStickyMyOooIssueChkptIdxVec.last
-  )
-  when (myShouldIgnoreInstr) {
-    rFreeList.assignFromBits(myFreeListChkptBuf.io.rdData.asBits)
+  when (
+    myScoreboardCommit.fire
+  ) {
+    stickyMyScoreboardCommit.valid := True
+    stickyMyScoreboardCommit.payload := myScoreboardCommit.payload
+    //rFreeList(
+    //  myScoreboardCommit.regRenameFreeListIdx
+    //) := (
+    //  True
+    //)
   }
+
+  when (
+    RegNext(
+      (
+        myScoreboardBubbleRetire.regRenameUpdateValid
+        && LcvOrR(myScoreboardBubbleRetire.gprIdxVec.last)
+      ),
+      init=False
+    )
+  ) {
+    rFreeList(
+      myScoreboardBubbleRetire.gprIdxVec.last
+    ) := (
+      False
+    )
+  }
+  when (
+    RegNext(
+      (
+        myScoreboardBubbleRetire.regRenameUpdateValid
+        && LcvOrR(myScoreboardBubbleRetire.regRenameFreeListIdx)
+      ),
+      init=False
+    )
+  ) {
+    rFreeList(
+      myScoreboardBubbleRetire.regRenameFreeListIdx
+    ) := (
+      True
+    )
+  }
+
+  //myFreeListChkptBuf.io.wrData := rFreeList
+  //myFreeListChkptBuf.io.wrAddr := rOooIssueChkptBufIdxVec.last
+  //myFreeListChkptBuf.io.wrEn := myChkptWriteCond
+  //myFreeListChkptBuf.io.rdEn := stickyExSetPc.valid//myShouldIgnoreInstr
+  //myFreeListChkptBuf.io.rdAddr := (
+  //  rStickyMyOooIssueChkptIdxVec.last
+  //)
+  //upPayload(1).myRegRenameChkptIdx := rOooIssueChkptBufIdxVec.last
+
+  //when (
+  //  //myShouldIgnoreInstr
+  //  stickyExSetPc.valid
+  //) {
+  //  //rFreeList.assignFromBits(myFreeListChkptBuf.io.rdData.asBits)
+  //  rFreeList := myFreeListChkptBuf.io.rdData
+  //}
 
   for (gprIdx <- 0 until cfg.numGprs) {
     val item = myRatChkptBufArr(gprIdx)
@@ -4069,15 +4195,17 @@ case class SnowHousePipeStageRegRename(
       item.io.wrAddr := rOooIssueChkptBufIdxVec(gprIdx)
       item.io.wrEn := myChkptWriteCond
 
-      //upPayload(1).myOooIssueChkptIdx := rOooIssueChkptBufIdx
 
-      item.io.rdEn := myShouldIgnoreInstr
+      item.io.rdEn := stickyExSetPc.valid//myShouldIgnoreInstr
       item.io.rdAddr := rStickyMyOooIssueChkptIdxVec(gprIdx)
 
       myRegAliasTbl.write(
         address=myAddr,
         data=item.io.rdData,
-        enable=myShouldIgnoreInstr,
+        enable=(
+          stickyExSetPc.valid
+          //myShouldIgnoreInstr
+        ),
       )
 
     } else {
@@ -4089,7 +4217,14 @@ case class SnowHousePipeStageRegRename(
     }
   }
 
-  up(pRegRename) := upPayload(1)
+  down(pRegRename).allowOverride
+  down(pRegRename) := upPayload(1)
+
+  when (!myFreeListFindFirst._1) {
+    doSendBubbleMainMost(
+      myPsIdBubble=None
+    )
+  }
 }
 
 case class SnowHousePipeStageScoreboardCheck(
@@ -7441,10 +7576,10 @@ case class SnowHousePipeStagePreFwd(
       //  )
       //)
       //|| (
-      //  outp.instrCnt.myOooIssueChkptIdx
+      //  outp.instrCnt.myReorderBufIdxChkptIdx
       //  =/= (
       //    RegNextWhen(
-      //      outp.instrCnt.myOooIssueChkptIdx,
+      //      outp.instrCnt.myReorderBufIdxChkptIdx,
       //      cond=upIsFiring,
       //    )
       //    init(0x0)
@@ -14421,25 +14556,47 @@ case class SnowHousePipeStageExecute(
       )
     )
   }
-  if (psExSetPc.myOooIssueChkptIdx != null) {
-    //psExSetPc.myOooIssueChkptIdx := (
+  if (psExSetPc.myReorderBufIdxChkptIdx != null) {
+    //psExSetPc.myReorderBufIdxChkptIdx := (
     //  RegNext(
-    //    setOutpModMemWord.io.psExSetPc.myOooIssueChkptIdx,
-    //    //init=setOutpModMemWord.io.psExSetPc.myOooIssueChkptIdx.getZero
+    //    setOutpModMemWord.io.psExSetPc.myReorderBufIdxChkptIdx,
+    //    //init=setOutpModMemWord.io.psExSetPc.myReorderBufIdxChkptIdx.getZero
     //  )
     //)
-    psExSetPc.myOooIssueChkptIdx := (
+    psExSetPc.myReorderBufIdxChkptIdx := (
       RegNextWhen(
         RegNextWhen(
-          outp.myOooIssueChkptIdx,
+          outp.myReorderBufIdxChkptIdx,
           cond=(
             cLink.up.isFiring
             && outp.instrCnt.changedInstr
           ),
-          init=outp.myOooIssueChkptIdx.getZero,
+          init=outp.myReorderBufIdxChkptIdx.getZero,
         ),
         cond=setOutpModMemWord.io.psExSetPc.fire,
-        init=outp.myOooIssueChkptIdx.getZero,
+        init=outp.myReorderBufIdxChkptIdx.getZero,
+      )
+    )
+  }
+  if (psExSetPc.myRegRenameChkptIdx != null) {
+    //psExSetPc.myRegRenameChkptIdx := (
+    //  RegNext(
+    //    setOutpModMemWord.io.psExSetPc.myRegRenameChkptIdx,
+    //    //init=setOutpModMemWord.io.psExSetPc.myRegRenameChkptIdx.getZero
+    //  )
+    //)
+    psExSetPc.myRegRenameChkptIdx := (
+      RegNextWhen(
+        RegNextWhen(
+          outp.myRegRenameChkptIdx,
+          cond=(
+            cLink.up.isFiring
+            && outp.instrCnt.changedInstr
+          ),
+          init=outp.myRegRenameChkptIdx.getZero,
+        ),
+        cond=setOutpModMemWord.io.psExSetPc.fire,
+        init=outp.myRegRenameChkptIdx.getZero,
       )
     )
   }

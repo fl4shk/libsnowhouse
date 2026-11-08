@@ -126,8 +126,14 @@ case class SnowHouseScoreboardCheckPayload(
 
   // reorder buffer index
 
-  val myOooIssueChkptIdx = (
+  val myReorderBufIdxChkptIdx = (
     cfg.optScoreboardOooIssueWindow != None
+  ) generate (
+    UInt(log2Up(cfg.optScoreboardOooIssueMaxNumBranches) bits)
+  )
+  val myRegRenameChkptIdx = (
+    cfg.optScoreboardOooIssueWindow != None
+    && cfg.optRegRename
   ) generate (
     UInt(log2Up(cfg.optScoreboardOooIssueMaxNumBranches) bits)
   )
@@ -204,7 +210,14 @@ case class SnowHouseScoreboardCommitPayload(
       ) bits
     )
   )
+  val regRenameUpdateValid = (
+    cfg.optRegRename
+  ) generate (
+    Bool()
+  )
   val regRenameFreeListIdx = (
+    cfg.optRegRename
+  ) generate (
     UInt(log2Up(cfg.numRenamedGprs) bits)
   )
   val myFwdValid = Bool()
@@ -5195,7 +5208,7 @@ case class SnowHouseForFmaxPipeStageWriteBack(
         io.up.instrCnt.scoreboardCheckPayload.reorderBufIdx
       )
     }
-    
+
     io.commitEtc.scoreboardBubbleRetire.valid := (
       io.up.fire
       && (
@@ -5243,9 +5256,20 @@ case class SnowHouseForFmaxPipeStageWriteBack(
       //io.up.gprIdxVec.last
       io.up.renamedGprIdxVec.last
     )
-    io.commitEtc.scoreboardBubbleRetire.regRenameFreeListIdx := (
-      io.up.regRenameFreeListIdx
-    )
+
+    if (cfg.optRegRename) {
+      io.commitEtc.scoreboardBubbleRetire.regRenameUpdateValid := (
+        io.up.fire
+        && (
+          //io.up.instrCnt.myScoreboardPsWbBubbleMost(1)
+          io.up.instrCnt.myPsIdBubble.last
+        )
+      )
+    
+      io.commitEtc.scoreboardBubbleRetire.regRenameFreeListIdx := (
+        io.up.regRenameFreeListIdx
+      )
+    }
     //when (
     //) {
     //  io.commitEtc.scoreboardBubbleRetire.opIsFwd := (
@@ -5474,6 +5498,7 @@ case class SnowHouseForFmaxPipeStageWriteBack(
           //|| myInstrCnt.myPsIdInFlushBubble(0)
           myInstrCnt.myPsIdFwdBubble(0)
           || myInstrCnt.myPsIdOtherBubble(0)
+          || !myInstrCnt.changedInstr
         )
       }
     } else {
@@ -5599,6 +5624,9 @@ case class SnowHouseForFmaxPipeStageWriteBack(
           someMyWbPayload(1).renamedGprIdxVec
         )
         if (cfg.optRegRename) {
+          someCommitStm.commit.regRenameUpdateValid := (
+            False
+          )
           someCommitStm.commit.regRenameFreeListIdx := (
             someMyWbPayload(1).regRenameFreeListIdx
           )
@@ -5638,6 +5666,9 @@ case class SnowHouseForFmaxPipeStageWriteBack(
           someCommitStm.commit.myFwdValid := haveNewNonBubbleFwdTag
         }
         if (cfg.optRegRename) {
+          someCommitStm.commit.regRenameUpdateValid := (
+            False
+          )
           someCommitStm.commit.regRenameFreeListIdx := (
             someMyWbPayload(1).regRenameFreeListIdx
           )

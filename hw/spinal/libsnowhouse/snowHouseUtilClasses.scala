@@ -1844,7 +1844,13 @@ case class SnowHouseInstrCnt(
   ) generate (
     SnowHouseScoreboardCheckPayload(cfg=cfg)
   )
-  def myOooIssueChkptIdx = scoreboardCheckPayload.myOooIssueChkptIdx
+
+  def myReorderBufIdxChkptIdx = (
+    scoreboardCheckPayload.myReorderBufIdxChkptIdx
+  )
+  def myRegRenameChkptIdx = (
+    scoreboardCheckPayload.myRegRenameChkptIdx
+  )
   def myOooIssueCnt = scoreboardCheckPayload.myOooIssueCnt
   def reorderBufIdx = scoreboardCheckPayload.reorderBufIdx
   //def scoreboardTag = scoreboardCheckPayload.tag
@@ -2340,7 +2346,8 @@ case class SnowHousePipePayloadNonExt(
   )
   val outpDecodeExt = SnowHouseDecodeExt(cfg=cfg) //simPublic()
   val instrCnt = SnowHouseInstrCnt(cfg=cfg) //simPublic()
-  def myOooIssueChkptIdx = instrCnt.myOooIssueChkptIdx
+  def myReorderBufIdxChkptIdx = instrCnt.myReorderBufIdxChkptIdx
+  def myRegRenameChkptIdx = instrCnt.myRegRenameChkptIdx
   def myOooIssueCnt = instrCnt.myOooIssueCnt
   def reorderBufIdx = instrCnt.reorderBufIdx
 
@@ -2633,7 +2640,8 @@ case class SnowHousePipePayload(
   def inpDecodeExt = nonExt.inpDecodeExt
   def outpDecodeExt = nonExt.outpDecodeExt
   def instrCnt = nonExt.instrCnt
-  def myOooIssueChkptIdx = nonExt.myOooIssueChkptIdx
+  def myReorderBufIdxChkptIdx = nonExt.myReorderBufIdxChkptIdx
+  def myRegRenameChkptIdx = nonExt.myRegRenameChkptIdx
   def myOooIssueCnt = nonExt.myOooIssueCnt
   def reorderBufIdx = nonExt.reorderBufIdx
 
