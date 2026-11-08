@@ -204,6 +204,9 @@ case class SnowHouseScoreboardCommitPayload(
       ) bits
     )
   )
+  val regRenameFreeListIdx = (
+    UInt(log2Up(cfg.numRenamedGprs) bits)
+  )
   val myFwdValid = Bool()
   val myNonFwdValid = Bool()
   val nonFwdTag = UInt(cfg.optScoreboardTagWidth bits)
@@ -1051,125 +1054,125 @@ case class SnowHouseForFmaxPipeStageInstrDecode(
 }
 
 
-//case class SnowHouseForFmaxPipeStageRegRenameIo(
-//  cfg: SnowHouseConfig,
-//) extends Bundle {
-//  val up = (
-//    slave(Stream(
-//      SnowHousePipePayload(cfg=cfg)
-//    ))
-//  )
-//  val down = (
-//    master(Stream(
-//      SnowHousePipePayload(cfg=cfg)
-//    ))
-//  )
-//  //--------
-//  val psExSetPc = (
-//    slave(Flow(
-//      SnowHousePsExSetPcPayload(cfg=cfg)
-//    ))
-//  )
-//  //--------
-//  val myScoreboardCommit = (
-//    cfg.optScoreboard
-//  ) generate (
-//    slave(Flow(
-//      //UInt(cfg.optScoreboardTagWidth bits)
-//      SnowHouseScoreboardCommitPayload(cfg=cfg)
-//    ))
-//  )
-//  val myScoreboardBubbleRetire = (
-//    cfg.optScoreboard
-//  ) generate (
-//    slave(Flow(
-//      //UInt(cfg.optScoreboardTagWidth bits)
-//      SnowHouseScoreboardCommitPayload(cfg=cfg)
-//    ))
-//  )
-//}
-//
-//case class SnowHouseForFmaxPipeStageRegRename(
-//  cfg: SnowHouseConfig
-//) extends Component {
-//  //--------
-//  val io = SnowHouseForFmaxPipeStageRegRenameIo(cfg=cfg)
-//  //def up = io.up
-//  //def down = io.down
-//  //--------
-//  val linkArr = PipeHelper.mkLinkArr()
-//
-//  //def opInfoMap = cfg.opInfoMap
-//
-//  val pRegRenameInp = Payload(SnowHousePipePayload(cfg=cfg))
-//  val pRegRenameOutp = Payload(SnowHousePipePayload(cfg=cfg))
-//  val cLink = CtrlLink()
-//  val sLink = StageLink(
-//    up=cLink.down,
-//    down={
-//      val temp = Node()
-//      temp.setName("sLink_down")
-//      temp
-//    }
-//  )
-//  val s2mLink = S2MLink(
-//    up=sLink.down,
-//    down={
-//      val temp = Node()
-//      temp.setName("s2mLink_down")
-//      temp
-//    }
-//  )
-//  linkArr += cLink
-//  linkArr += sLink
-//  linkArr += s2mLink
-//
-//  val innerPsRegRename = SnowHousePipeStageRegRename(
-//    SnowHousePipeStageArgs(
-//      cfg=cfg,
-//      io=null,
-//      link=cLink,
-//      prevPayload=pRegRenameInp,
-//      currPayload=(
-//        pRegRenameOutp
-//        //regFile.io.frontPayload
-//      ),
-//      myDbusIo=(
-//        //if (!cfg.useLcvDataBus) (
-//        //  myDbusIo
-//        //) else (
-//          null.asInstanceOf[SnowHouseDbusIo]
-//        //)
-//      ),
-//      regFile=null,
-//    ),
-//    psExSetPc=io.psExSetPc,
-//    myScoreboardCommit=(
-//      io.myScoreboardCommit
-//    ),
-//    myScoreboardBubbleRetire=(
-//      io.myScoreboardBubbleRetire
-//    ),
-//  )
-//
-//  cLink.up.driveFrom(io.up)(
-//    con=(node, inp) => {
-//      node(pRegRenameInp) := inp
-//    }
-//  )
-//
-//
-//  s2mLink.down.driveTo(
-//    io.down
-//  )(
-//    con=(outp, node) => {
-//      outp := node(pRegRenameOutp)
-//    }
-//  )
-//
-//  Builder(linkArr)
-//  //--------
-//}
+case class SnowHouseForFmaxPipeStageRegRenameIo(
+  cfg: SnowHouseConfig,
+) extends Bundle {
+  val up = (
+    slave(Stream(
+      SnowHousePipePayload(cfg=cfg)
+    ))
+  )
+  val down = (
+    master(Stream(
+      SnowHousePipePayload(cfg=cfg)
+    ))
+  )
+  //--------
+  val psExSetPc = (
+    slave(Flow(
+      SnowHousePsExSetPcPayload(cfg=cfg)
+    ))
+  )
+  //--------
+  val myScoreboardCommit = (
+    cfg.optScoreboard
+  ) generate (
+    slave(Flow(
+      //UInt(cfg.optScoreboardTagWidth bits)
+      SnowHouseScoreboardCommitPayload(cfg=cfg)
+    ))
+  )
+  val myScoreboardBubbleRetire = (
+    cfg.optScoreboard
+  ) generate (
+    slave(Flow(
+      //UInt(cfg.optScoreboardTagWidth bits)
+      SnowHouseScoreboardCommitPayload(cfg=cfg)
+    ))
+  )
+}
+
+case class SnowHouseForFmaxPipeStageRegRename(
+  cfg: SnowHouseConfig
+) extends Component {
+  //--------
+  val io = SnowHouseForFmaxPipeStageRegRenameIo(cfg=cfg)
+  //def up = io.up
+  //def down = io.down
+  //--------
+  val linkArr = PipeHelper.mkLinkArr()
+
+  //def opInfoMap = cfg.opInfoMap
+
+  val pRegRenameInp = Payload(SnowHousePipePayload(cfg=cfg))
+  val pRegRenameOutp = Payload(SnowHousePipePayload(cfg=cfg))
+  val cLink = CtrlLink()
+  val sLink = StageLink(
+    up=cLink.down,
+    down={
+      val temp = Node()
+      temp.setName("sLink_down")
+      temp
+    }
+  )
+  val s2mLink = S2MLink(
+    up=sLink.down,
+    down={
+      val temp = Node()
+      temp.setName("s2mLink_down")
+      temp
+    }
+  )
+  linkArr += cLink
+  linkArr += sLink
+  linkArr += s2mLink
+
+  val innerPsRegRename = SnowHousePipeStageRegRename(
+    SnowHousePipeStageArgs(
+      cfg=cfg,
+      io=null,
+      link=cLink,
+      prevPayload=pRegRenameInp,
+      currPayload=(
+        pRegRenameOutp
+        //regFile.io.frontPayload
+      ),
+      myDbusIo=(
+        //if (!cfg.useLcvDataBus) (
+        //  myDbusIo
+        //) else (
+          null.asInstanceOf[SnowHouseDbusIo]
+        //)
+      ),
+      regFile=null,
+    ),
+    psExSetPc=io.psExSetPc,
+    myScoreboardCommit=(
+      io.myScoreboardCommit
+    ),
+    myScoreboardBubbleRetire=(
+      io.myScoreboardBubbleRetire
+    ),
+  )
+
+  cLink.up.driveFrom(io.up)(
+    con=(node, inp) => {
+      node(pRegRenameInp) := inp
+    }
+  )
+
+
+  s2mLink.down.driveTo(
+    io.down
+  )(
+    con=(outp, node) => {
+      outp := node(pRegRenameOutp)
+    }
+  )
+
+  Builder(linkArr)
+  //--------
+}
 
 case class SnowHouseForFmaxPipeStageScoreboardCheckIo(
   cfg: SnowHouseConfig
@@ -2265,7 +2268,9 @@ case class SnowHouseForFmaxPsWbReorderBufPayloadMost(
         UInt(cfg.mainWidth bits),
         UInt(log2Up(cfg.numRenamedGprs) bits),
       ),
-      wordCount=cfg.regFileCfg.wordCountArr(0),
+      wordCount=(
+        cfg.regFileCfg.wordCountArr(0)
+      ),
     )
   )
   //val myWbPayload = (
@@ -3909,6 +3914,12 @@ case class SnowHouseForFmaxPipeStageWriteBack(
       UInt(log2Up(cfg.numRenamedGprs) bits)
     ) //simPublic()
 
+    val regRenameFreeListIdx = (
+      cfg.optRegRename
+    ) generate (
+      UInt(log2Up(cfg.numRenamedGprs) bits)
+    )
+
     val gprIsZeroVec = Vec.fill(
       //if (io.dbgInfo != null) (
       //  cfg.maxNumGprsPerInstr
@@ -4097,6 +4108,12 @@ case class SnowHouseForFmaxPipeStageWriteBack(
       )
     }
 
+    if (cfg.optRegRename) {
+      myNonFwdWbFifo.io.push.payload.regRenameFreeListIdx := (
+        myNonFwdWbPayload(0).regRenameFreeListIdx
+      )
+    }
+
     myNonFwdWbFifo.io.push.payload.gprIsZeroVec.last.last := (
       myNonFwdWbPayload(0).gprIsZeroVec.last.last
     )
@@ -4167,6 +4184,13 @@ case class SnowHouseForFmaxPipeStageWriteBack(
         myFwdWbPayload(0).renamedGprIdxVec.last
       )
     }
+
+    if (cfg.optRegRename) {
+      myFwdWbFifo.io.push.payload.regRenameFreeListIdx := (
+        myFwdWbPayload(0).regRenameFreeListIdx
+      )
+    }
+
     myFwdWbFifo.io.push.payload.gprIsZeroVec.last.last := (
       myFwdWbPayload(0).gprIsZeroVec.last.last
     )
@@ -4398,6 +4422,11 @@ case class SnowHouseForFmaxPipeStageWriteBack(
           myNonFwdWbFifo.io.pop.payload.renamedGprIdxVec.last
         )
       }
+      if (cfg.optRegRename) {
+        myNonFwdWbPayload(1).regRenameFreeListIdx := (
+          myNonFwdWbFifo.io.pop.payload.regRenameFreeListIdx
+        )
+      }
       myNonFwdWbPayload(1).gprIsZeroVec.last.last := (
         myNonFwdWbFifo.io.pop.payload.gprIsZeroVec.last.last
       )
@@ -4443,6 +4472,11 @@ case class SnowHouseForFmaxPipeStageWriteBack(
         )
         myFwdWbPayload(1).renamedGprIdxVec.last := (
           myFwdWbFifo.io.pop.payload.renamedGprIdxVec.last
+        )
+      }
+      if (cfg.optRegRename) {
+        myFwdWbPayload(1).regRenameFreeListIdx := (
+          myFwdWbFifo.io.pop.payload.regRenameFreeListIdx
         )
       }
       myFwdWbPayload(1).gprIsZeroVec.last.last := (
@@ -5209,6 +5243,9 @@ case class SnowHouseForFmaxPipeStageWriteBack(
       //io.up.gprIdxVec.last
       io.up.renamedGprIdxVec.last
     )
+    io.commitEtc.scoreboardBubbleRetire.regRenameFreeListIdx := (
+      io.up.regRenameFreeListIdx
+    )
     //when (
     //) {
     //  io.commitEtc.scoreboardBubbleRetire.opIsFwd := (
@@ -5516,7 +5553,7 @@ case class SnowHouseForFmaxPipeStageWriteBack(
         someCommitStm.valid := True
       }
       someCommitStm.regFileWrite.addr := (
-        someMyWbPayload(1).gprIdxVec.last
+        someMyWbPayload(1).renamedGprIdxVec.last
       )
       someCommitStm.regFileWrite.data(0) := {
         if (cfg.optScoreboard && isNonFwd) {
@@ -5545,7 +5582,8 @@ case class SnowHouseForFmaxPipeStageWriteBack(
         }
       }
       someCommitStm.regFileWrite.data(1) := (
-        someMyWbPayload(1).renamedGprIdxVec.last
+        //someMyWbPayload(1).renamedGprIdxVec.last
+        someMyWbPayload(1).gprIdxVec.last.resized
       )
 
       if (cfg.optScoreboard) {
@@ -5560,6 +5598,11 @@ case class SnowHouseForFmaxPipeStageWriteBack(
           //someMyWbPayload(1).gprIdxVec
           someMyWbPayload(1).renamedGprIdxVec
         )
+        if (cfg.optRegRename) {
+          someCommitStm.commit.regRenameFreeListIdx := (
+            someMyWbPayload(1).regRenameFreeListIdx
+          )
+        }
       }
     } otherwise {
       if (!cfg.optScoreboard) {
@@ -5593,6 +5636,11 @@ case class SnowHouseForFmaxPipeStageWriteBack(
         } else {
           someCommitStm.commit.myNonFwdValid := False
           someCommitStm.commit.myFwdValid := haveNewNonBubbleFwdTag
+        }
+        if (cfg.optRegRename) {
+          someCommitStm.commit.regRenameFreeListIdx := (
+            someMyWbPayload(1).regRenameFreeListIdx
+          )
         }
       }
 
@@ -5833,7 +5881,8 @@ case class SnowHouseForFmaxPipeStageWriteBack(
         myDbgCommitBackStm.regFileWrite.data(0)
       )
       io.dbgInfo.regFileWriteAddr := (
-        myDbgCommitBackStm.regFileWrite.addr
+        //myDbgCommitBackStm.regFileWrite.addr
+        myDbgCommitBackStm.regFileWrite.data(1)
       )
       io.dbgInfo.regFileWriteEnable := (
         if (cfg.optScoreboard) (
