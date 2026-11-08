@@ -4036,11 +4036,11 @@ case class SnowHousePipeStageRegRename(
   }
 
   myFreeListChkptBuf.io.wrData := rFreeList
-  myFreeListChkptBuf.io.wrAddr := rOooIssueChkptBufIdxVec.head
+  myFreeListChkptBuf.io.wrAddr := rOooIssueChkptBufIdxVec.last
   myFreeListChkptBuf.io.wrEn := myChkptWriteCond
   myFreeListChkptBuf.io.rdEn := myShouldIgnoreInstr
   myFreeListChkptBuf.io.rdAddr := (
-    rStickyMyOooIssueChkptIdxVec.head
+    rStickyMyOooIssueChkptIdxVec.last
   )
   when (myShouldIgnoreInstr) {
     rFreeList.assignFromBits(myFreeListChkptBuf.io.rdData.asBits)
