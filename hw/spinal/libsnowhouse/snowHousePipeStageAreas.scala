@@ -3751,7 +3751,7 @@ case class SnowHousePipeStageRegRename(
 
   def myShouldIgnoreInstr = (
     stickyExSetPc.valid
-    || upPayload(1).instrCnt.myPsIdOtherBubble.last
+    //|| upPayload(1).instrCnt.myPsIdOtherBubble.last
   )
   stickyExSetPc := (
     RegNext(
@@ -3864,21 +3864,32 @@ case class SnowHousePipeStageRegRename(
     }
   }
 
-  val myRegAliasTbl = (
-    Mem(
-      wordType=(
-        UInt(log2Up(cfg.numRenamedGprs) bits)
-      ),
-      wordCount=cfg.numGprs
+  //val myRegAliasTbl = {
+  //  val mem = Mem(
+  //    wordType=(
+  //      UInt(log2Up(cfg.numRenamedGprs) bits)
+  //    ),
+  //    wordCount=cfg.numGprs
+  //  )
+  //  mem.initBigInt({
+  //    val temp = new ArrayBuffer[BigInt]()
+  //    for (archIdx <- 0 until cfg.numGprs) {
+  //      temp += BigInt(archIdx)
+  //    }
+  //    temp
+  //  })
+  //  mem
+  //}
+
+  val rRegAliasTbl = {
+    val tbl = Vec.fill(cfg.numGprs)(
+      Reg(UInt(log2Up(cfg.numRenamedGprs) bits))
     )
-    .initBigInt({
-      val temp = new ArrayBuffer[BigInt]()
-      for (archIdx <- 0 until cfg.numGprs) {
-        temp += BigInt(archIdx)
-      }
-      temp
-    })
-  )
+    for (gprIdx <- 0 until cfg.numGprs) {
+      tbl(gprIdx).init(gprIdx)
+    }
+    tbl
+  }
 
   val myFreeListChkptBufCfg = (
     RamSdpPipeConfig(
@@ -4034,9 +4045,10 @@ case class SnowHousePipeStageRegRename(
       if (idx < cfg.maxNumGprsPerInstr - 1) {
         // the source registers
         upPayload(1).renamedGprIdxVec(idx) := (
-          myRegAliasTbl.readAsync(
-            address=upPayload(1).gprIdxVec(idx)
-          )
+          //myRegAliasTbl.readAsync(
+          //  address=upPayload(1).gprIdxVec(idx)
+          //)
+          rRegAliasTbl(upPayload(1).gprIdxVec(idx))
         )
       } else {
         // the destination register
@@ -4050,127 +4062,180 @@ case class SnowHousePipeStageRegRename(
           ////)
         )
         upPayload(1).regRenameFreeListIdx := (
-          myRegAliasTbl.readAsync(
-            address=upPayload(1).gprIdxVec(idx)
+          //myRegAliasTbl.readAsync(
+          //  address=upPayload(1).gprIdxVec(idx)
+          //)
+          rRegAliasTbl(
+            upPayload(1).gprIdxVec(idx)
           )
         )
       }
     }
   }
 
-  myRegAliasTbl.write(
-    address=upPayload(1).gprIdxVec.last,
-    data=(
-      //upPayload(1).reorderBufIdx.resize(log2Up(cfg.numRenamedGprs))
-      //myFreeListFindFirst._2
-      myNextRenamedRegIdx
-    ),
-    enable=(
-      cRegRename.up.isFiring
-      && !myShouldIgnoreInstr
-      && upPayload(1).gprIsNonZeroVec.last.last
-    )
-  )
+  //myRegAliasTbl.write(
+  //  address=upPayload(1).gprIdxVec.last,
+  //  data=(
+  //    //upPayload(1).reorderBufIdx.resize(log2Up(cfg.numRenamedGprs))
+  //    //myFreeListFindFirst._2
+  //    myNextRenamedRegIdx
+  //  ),
+  //  enable=(
+  //    cRegRename.up.isFiring
+  //    && !myShouldIgnoreInstr
+  //    && upPayload(1).gprIsNonZeroVec.last.last
+  //  )
+  //)
 
-  when (
+  val myClearCond = (
     cRegRename.up.isFiring
     && !myShouldIgnoreInstr
     && upPayload(1).gprIsNonZeroVec.last.last
+  )
+
+  when (
+    myClearCond
+  ) {
+    rRegAliasTbl(upPayload(1).gprIdxVec.last) := (
+      myNextRenamedRegIdx
+    )
+  }
+
+  when (
+    //cRegRename.up.isFiring
+    //&& !myShouldIgnoreInstr
+    //&& upPayload(1).gprIsNonZeroVec.last.last
+    myClearCond
   ) {
     rFreeList(myNextRenamedRegIdx) := False
   }
 
-  val stickyMyScoreboardCommit = (
-    Flow(cloneOf(myScoreboardCommit.payload))
-  )
-  stickyMyScoreboardCommit := (
-    RegNext(
-      stickyMyScoreboardCommit,
-      init=stickyMyScoreboardCommit.getZero,
-    )
+  //val stickyMyScoreboardCommit = (
+  //  Flow(cloneOf(myScoreboardCommit.payload))
+  //)
+  //stickyMyScoreboardCommit := (
+  //  RegNext(
+  //    stickyMyScoreboardCommit,
+  //    init=stickyMyScoreboardCommit.getZero,
+  //  )
+  //)
+
+  val mySetCond = (
+    myScoreboardCommit.fire
+    && LcvOrR(myScoreboardCommit.regRenameFreeListIdx)
   )
 
   when (
-    RegNext(
-      (
-        //cRegRename.up.isFiring
-        //&& !myShouldIgnoreInstr
-        //&& upPayload(1).gprIsNonZeroVec.last.last
-
-        stickyMyScoreboardCommit.fire
-        && LcvOrR(stickyMyScoreboardCommit.regRenameFreeListIdx)
-      ),
-      init=False
-    )
+    mySetCond
   ) {
-    stickyMyScoreboardCommit.valid := False
-
     rFreeList(
-      stickyMyScoreboardCommit.regRenameFreeListIdx
+      myScoreboardCommit.regRenameFreeListIdx
     ) := (
       True
     )
   }
 
-  when (
-    myScoreboardCommit.fire
-  ) {
-    stickyMyScoreboardCommit.valid := True
-    stickyMyScoreboardCommit.payload := myScoreboardCommit.payload
-    //rFreeList(
-    //  myScoreboardCommit.regRenameFreeListIdx
-    //) := (
-    //  True
-    //)
-  }
+  //when (
+  //  RegNext(
+  //    (
+  //      //cRegRename.up.isFiring
+  //      //&& !myShouldIgnoreInstr
+  //      //&& upPayload(1).gprIsNonZeroVec.last.last
 
-  when (
-    RegNext(
-      (
-        myScoreboardBubbleRetire.regRenameUpdateValid
-        && LcvOrR(myScoreboardBubbleRetire.gprIdxVec.last)
-      ),
-      init=False
-    )
-  ) {
-    rFreeList(
-      myScoreboardBubbleRetire.gprIdxVec.last
+  //      stickyMyScoreboardCommit.fire
+  //      && LcvOrR(stickyMyScoreboardCommit.regRenameFreeListIdx)
+  //    ),
+  //    init=False
+  //  )
+  //) {
+  //  stickyMyScoreboardCommit.valid := False
+
+  //  rFreeList(
+  //    RegNext(
+  //      stickyMyScoreboardCommit.regRenameFreeListIdx
+  //    )
+  //  ) := (
+  //    True
+  //  )
+  //}
+
+  //when (
+  //  myScoreboardCommit.fire
+  //) {
+  //  stickyMyScoreboardCommit.valid := True
+  //  stickyMyScoreboardCommit.payload := myScoreboardCommit.payload
+  //  //rFreeList(
+  //  //  myScoreboardCommit.regRenameFreeListIdx
+  //  //) := (
+  //  //  True
+  //  //)
+  //}
+
+  //when (
+  //  RegNext(
+  //    (
+  //      myScoreboardBubbleRetire.regRenameUpdateValid
+  //      && LcvOrR(myScoreboardBubbleRetire.gprIdxVec.last)
+  //    ),
+  //    init=False
+  //  )
+  //) {
+  //  rFreeList(
+  //    myScoreboardBubbleRetire.gprIdxVec.last
+  //  ) := (
+  //    False
+  //  )
+  //}
+  //when (
+  //  RegNext(
+  //    (
+  //      myScoreboardBubbleRetire.regRenameUpdateValid
+  //      && LcvOrR(myScoreboardBubbleRetire.regRenameFreeListIdx)
+  //    ),
+  //    init=False
+  //  )
+  //) {
+  //  rFreeList(
+  //    myScoreboardBubbleRetire.regRenameFreeListIdx
+  //  ) := (
+  //    True
+  //  )
+  //}
+
+  myFreeListChkptBuf.io.wrData := rFreeList
+  when (myClearCond) {
+    myFreeListChkptBuf.io.wrData(
+      upPayload(1).gprIdxVec.last
     ) := (
       False
     )
   }
-  when (
-    RegNext(
-      (
-        myScoreboardBubbleRetire.regRenameUpdateValid
-        && LcvOrR(myScoreboardBubbleRetire.regRenameFreeListIdx)
-      ),
-      init=False
-    )
-  ) {
-    rFreeList(
-      myScoreboardBubbleRetire.regRenameFreeListIdx
+  when (mySetCond) {
+    myFreeListChkptBuf.io.wrData(
+      myScoreboardCommit.regRenameFreeListIdx
     ) := (
       True
     )
   }
+  myFreeListChkptBuf.io.wrAddr := rOooIssueChkptBufIdxVec.last
+  myFreeListChkptBuf.io.wrEn := myChkptWriteCond
+  myFreeListChkptBuf.io.rdEn := stickyExSetPc.valid//myShouldIgnoreInstr
+  myFreeListChkptBuf.io.rdAddr := (
+    rStickyMyOooIssueChkptIdxVec.last
+  )
 
-  //myFreeListChkptBuf.io.wrData := rFreeList
-  //myFreeListChkptBuf.io.wrAddr := rOooIssueChkptBufIdxVec.last
-  //myFreeListChkptBuf.io.wrEn := myChkptWriteCond
-  //myFreeListChkptBuf.io.rdEn := stickyExSetPc.valid//myShouldIgnoreInstr
-  //myFreeListChkptBuf.io.rdAddr := (
-  //  rStickyMyOooIssueChkptIdxVec.last
-  //)
-  //upPayload(1).myRegRenameChkptIdx := rOooIssueChkptBufIdxVec.last
+  when (
+    //myShouldIgnoreInstr
+    stickyExSetPc.valid
+  ) {
+    //rFreeList.assignFromBits(myFreeListChkptBuf.io.rdData.asBits)
+    rFreeList := myFreeListChkptBuf.io.rdData
+  }
 
-  //when (
-  //  //myShouldIgnoreInstr
-  //  stickyExSetPc.valid
-  //) {
-  //  //rFreeList.assignFromBits(myFreeListChkptBuf.io.rdData.asBits)
-  //  rFreeList := myFreeListChkptBuf.io.rdData
-  //}
+  upPayload(1).myRegRenameChkptIdx := (
+    rOooIssueChkptBufIdxVec.last //+ 1
+  )
+
 
   for (gprIdx <- 0 until cfg.numGprs) {
     val item = myRatChkptBufArr(gprIdx)
@@ -4183,31 +4248,53 @@ case class SnowHousePipeStageRegRename(
           rOooIssueChkptBufIdxVec(gprIdx) + 1
         )
       }
+
+      //when (stickyExSetPc.valid) {
+      //  rOooIssueChkptBufIdxVec(gprIdx) := (
+      //    rStickyMyOooIssueChkptIdxVec(gprIdx)
+      //  )
+      //}
+
       //item.io.wrData := upPayload(1).reorderBufIdx
       val myAddr = (
         U(s"${log2Up(cfg.numGprs)}'d${gprIdx}")
       )
-      item.io.wrData := myRegAliasTbl.readAsync(
-        address=(
-          myAddr
-        )
-      )
+      //item.io.wrData := myRegAliasTbl.readAsync(
+      //  address=(
+      //    myAddr
+      //  )
+      //)
+      item.io.wrData := rRegAliasTbl(myAddr)
+
       item.io.wrAddr := rOooIssueChkptBufIdxVec(gprIdx)
       item.io.wrEn := myChkptWriteCond
-
 
       item.io.rdEn := stickyExSetPc.valid//myShouldIgnoreInstr
       item.io.rdAddr := rStickyMyOooIssueChkptIdxVec(gprIdx)
 
-      myRegAliasTbl.write(
-        address=myAddr,
-        data=item.io.rdData,
-        enable=(
-          stickyExSetPc.valid
-          //myShouldIgnoreInstr
-        ),
-      )
+      //myRegAliasTbl.write(
+      //  address=myAddr,
+      //  data=item.io.rdData,
+      //  enable=(
+      //    stickyExSetPc.valid
+      //    //myShouldIgnoreInstr
+      //  ),
+      //)
+      when (
+        stickyExSetPc.valid
+        //myShouldIgnoreInstr
+      ) {
+        rRegAliasTbl(myAddr) := (
+          item.io.rdData
+        )
+      }
 
+      //myRegAliasTbl.write(
+      //  address=myAddr,
+      //  data=item.io.rdData,
+      //  enable=(
+      //  ),
+      //)
     } else {
       item.io.wrData := item.io.wrData.getZero
       item.io.wrAddr := 0x0
@@ -4220,9 +4307,22 @@ case class SnowHousePipeStageRegRename(
   down(pRegRename).allowOverride
   down(pRegRename) := upPayload(1)
 
-  when (!myFreeListFindFirst._1) {
+  when (
+    //!myShouldIgnoreInstr
+    //&& 
+    !myFreeListFindFirst._1
+  ) {
     doSendBubbleMainMost(
       myPsIdBubble=None
+    )
+    upPayload(1).instrCnt.tick := (
+      RegNextWhen(
+        (upPayload(1).instrCnt.tick),
+        cond=(
+          up.isFiring
+        ),
+        init=upPayload(1).instrCnt.tick.getZero,
+      )
     )
   }
 }
@@ -4273,6 +4373,7 @@ case class SnowHousePipeStageScoreboardCheck(
 
 
   def doSendBubbleMainMost(
+    myDuplicateItCond: Boolean,
     //myPsIdGprIdxBubble: Option[UInt],
     myPsIdBubble: Option[Bool]=Some(True),
     //myUpdateGprIsOrIsntZero: Boolean=true,
@@ -4280,13 +4381,13 @@ case class SnowHousePipeStageScoreboardCheck(
     myPsIdOtherBubble: Option[Bool]=None,
     myPsIdFwdBubble: Option[Bool]=None,
     myInFlushCond: Option[Bool]=None,
-    //myDuplicateItCond: Bool=True,
   ): Unit = {
     require(cfg.useLcvDataBus)
 
-    //when (myDuplicateItCond) {
+    if (myDuplicateItCond) {
       cScoreboardCheck.duplicateIt()
-    //} otherwise {
+    }
+    //otherwise {
     //  //cScoreboardCheck.throwIt()
     //}
 
@@ -4557,6 +4658,7 @@ case class SnowHousePipeStageScoreboardCheck(
           || myInFlushCond(2)
         ) {
           doSendBubbleMainMost(
+            myDuplicateItCond=true,
             myPsIdBubble=Some(myNonFwdHazardCheckVec.orR),
             myPsIdOtherBubble=Some(True),
             myPsIdFwdBubble=Some(myFwdHazardCheckVec.orR),
@@ -4577,6 +4679,7 @@ case class SnowHousePipeStageScoreboardCheck(
         }
         when (!myInFlushCond(3)) {
           doSendBubbleMainMost(
+            myDuplicateItCond=true,
             myPsIdBubble=Some(myNonFwdHazardCheckVec.orR),
             myPsIdOtherBubble=Some(True),
             myPsIdFwdBubble=Some(myFwdHazardCheckVec.orR),
@@ -4999,6 +5102,7 @@ case class SnowHousePipeStageScoreboardCheck(
       // TODO: see if we can remove (or at least modify) this check for
       // `down.isReady` so that we can potentially fill the instr buffer
       // even during stalls
+      //&& !up(pPrev).instrCnt.myPsIdBubble.last
     )
 
     //when (
@@ -5015,48 +5119,59 @@ case class SnowHousePipeStageScoreboardCheck(
     //)
     //myTestFifo.io.push << myBufPushStm
     //myOooRdBuf.io.push << myTestFifo.io.pop
+    val myThrowItCond = (
+      (
+        (
+          (
+            (
+              myBufPushStm.instrCnt.tick
+              === (
+                //RegNextWhen(
+                //  myBufPushStm.instrCnt.tick,
+                //  cond=myBufPushStm.fire,
+                //  init=False,
+                //)
+                RegNextWhen(
+                  myOooRdBuf.io.push.instrCnt.tick,
+                  cond=myOooRdBuf.io.push.fire,
+                  init=False,
+                )
+              )
+            )
+            //up(pId).instrCnt.tick
+            //=== (
+            //  RegNextWhen(
+            //    up(pId).instrCnt.tick,
+            //    cond=(
+            //      //up.isFiring
+            //      up.isValid
+            //      && down.isReady
+            //    ),
+            //    init=True,
+            //  )
+            //)
+          )
+          && (
+            RegNextWhen(
+              True,
+              cond=(
+                //myBufPushStm.fire
+                up.isFiring
+              ),
+              init=False
+            )
+          )
+        )
+        //|| (
+        //  myBufPushStm.instrCnt.myPsIdBubble.last
+        //)
+      )
+    )
 
     myOooRdBuf.io.push << (
       //myBufPushStm
       myBufPushStm.throwWhen(
-        (
-          (
-            (
-              (
-                myBufPushStm.instrCnt.tick
-                === (
-                  RegNextWhen(
-                    myBufPushStm.instrCnt.tick,
-                    cond=myBufPushStm.fire,
-                    init=False,
-                  )
-                )
-              )
-              //up(pId).instrCnt.tick
-              //=== (
-              //  RegNextWhen(
-              //    up(pId).instrCnt.tick,
-              //    cond=(
-              //      //up.isFiring
-              //      up.isValid
-              //      && down.isReady
-              //    ),
-              //    init=True,
-              //  )
-              //)
-            )
-            && (
-              RegNextWhen(
-                True,
-                cond=(
-                  //myBufPushStm.fire
-                  up.isFiring
-                ),
-                init=False
-              )
-            )
-          )
-        )
+        myThrowItCond
         //|| (
         //  myBufPushStm.instrCnt.reorderBufIdx
         //  === (
@@ -5562,17 +5677,8 @@ case class SnowHousePipeStageScoreboardCheck(
     //  doPopLast(doUpIsFiring=true)
     //}
 
-    when (
-      //rScoreboardFlushState.asBits(ScoreboardFlushState.IDLE.position)
-      //&& 
+    val myOtherFlushCondMost = (
       (
-        //LcvOrR(myNonFwdHazardCheckVec)//.orR
-        //|| LcvOrR(myFwdHazardCheckVec)//.orR
-        //--------
-        //!myRealDispatchOkayCondVec.asBits.orR
-        //|| myReducedFwdTagAllocVec.asBits.andR
-        //|| myReducedNonFwdTagAllocVec.asBits.andR
-        //--------
         //|| 
         !LcvOrR(myRealDispatchOkayCondVec.asBits)//.orR
         || LcvAndR(myReducedFwdTagAllocVec.asBits)//.andR
@@ -5585,11 +5691,38 @@ case class SnowHousePipeStageScoreboardCheck(
           //!myPopValidVec.asBits.orR
           !LcvOrR(myPopValidVec.asBits.asUInt)
         )
+      )
+    )
+
+    when (
+      //rScoreboardFlushState.asBits(ScoreboardFlushState.IDLE.position)
+      //&& 
+      (
+        //LcvOrR(myNonFwdHazardCheckVec)//.orR
+        //|| LcvOrR(myFwdHazardCheckVec)//.orR
         //--------
+        //!myRealDispatchOkayCondVec.asBits.orR
+        //|| myReducedFwdTagAllocVec.asBits.andR
+        //|| myReducedNonFwdTagAllocVec.asBits.andR
+        //--------
+        myOtherFlushCondMost
+        //--------
+      )
+      //&& !(
+      //  !LcvOrR(myPopValidVec)
+      //  && myThrowItCond
+      //)
+      //&& !myThrowItCond
+      && !(
+        !LcvOrR(myPopValidVec)
+        && myThrowItCond
       )
     ) {
       doSendBubbleMainMost(
-        myPsIdBubble=Some(myNonFwdHazardCheckVec.orR),
+        myDuplicateItCond=false,
+        myPsIdBubble=Some(
+          myNonFwdHazardCheckVec.orR
+        ),
         myPsIdOtherBubble=Some(True),
         myPsIdFwdBubble=Some(myFwdHazardCheckVec.orR),
         myInFlushCond=None,//Some(myInFlushCond(2))//None
@@ -5606,6 +5739,66 @@ case class SnowHousePipeStageScoreboardCheck(
         //  //)
         //)
       )
+    }
+
+    when (
+      myOtherFlushCondMost
+      && !(
+        !LcvOrR(myPopValidVec)
+        && myThrowItCond
+      )
+      //&& !(
+      //  !LcvOrR(myPopValidVec)
+      //  && myThrowItCond
+      //)
+      //&& !(
+      //  (
+      //    (
+      //      myBufPushStm.instrCnt.tick
+      //      === (
+      //        RegNextWhen(
+      //          myBufPushStm.instrCnt.tick,
+      //          cond=myBufPushStm.fire,
+      //          init=False,
+      //        )
+      //      )
+      //    )
+      //    //up(pId).instrCnt.tick
+      //    //=== (
+      //    //  RegNextWhen(
+      //    //    up(pId).instrCnt.tick,
+      //    //    cond=(
+      //    //      //up.isFiring
+      //    //      up.isValid
+      //    //      && down.isReady
+      //    //    ),
+      //    //    init=True,
+      //    //  )
+      //    //)
+      //  )
+      //  && (
+      //    RegNextWhen(
+      //      True,
+      //      cond=(
+      //        //myBufPushStm.fire
+      //        up.isFiring
+      //      ),
+      //      init=False
+      //    )
+      //  )
+      //)
+    ) {
+      cScoreboardCheck.duplicateIt()
+    }
+
+    when (
+      //!myOtherFlushCondMost
+      //&& !LcvOrR(myPopValidVec)
+      //&& myThrowItCond
+      !LcvOrR(myPopValidVec)
+      && myThrowItCond
+    ) {
+      cScoreboardCheck.throwIt()
     }
 
     //when (
