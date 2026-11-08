@@ -3837,15 +3837,17 @@ case class SnowHousePipeStageRegRename(
     s"DEBUG NOTE: tempFreeListInit:${tempFreeListInit}"
   )
 
-  val rFreeList = (
+  val rFreeListVec = (
     //Reg(UInt(cfg.numRenamedGprs bits))
     //init(0x0)
 
     //Vec.fill(cfg.numRenamedGprs)(
     //  Reg(Bool(), init=True)
     //)
-    Reg(UInt(cfg.numRenamedGprs bits))
-    init(tempFreeListInit)
+    Vec.fill(2)(
+      Reg(UInt(cfg.numRenamedGprs bits))
+      init(tempFreeListInit)
+    )
   )
   val myOtherFreeList = (
     Vec.fill(cfg.numRenamedGprs)(
@@ -3858,7 +3860,7 @@ case class SnowHousePipeStageRegRename(
       !cfg.myHaveZeroReg
       || idx != 0
     ) {
-      myOtherFreeList(idx) := rFreeList(idx)
+      myOtherFreeList(idx) := rFreeListVec.head(idx)
     } else {
       myOtherFreeList(idx) := False
     }
@@ -4099,6 +4101,17 @@ case class SnowHousePipeStageRegRename(
     rRegAliasTbl(upPayload(1).gprIdxVec.last) := (
       myNextRenamedRegIdx
     )
+    rFreeListVec.last(
+      myNextRenamedRegIdx
+    ) := False
+
+    rFreeListVec.last(
+      rRegAliasTbl(
+        upPayload(1).gprIdxVec.last
+      )
+    ) := (
+      True
+    )
   }
 
   when (
@@ -4107,7 +4120,7 @@ case class SnowHousePipeStageRegRename(
     //&& upPayload(1).gprIsNonZeroVec.last.last
     myClearCond
   ) {
-    rFreeList(myNextRenamedRegIdx) := False
+    rFreeListVec.head(myNextRenamedRegIdx) := False
   }
 
   //val stickyMyScoreboardCommit = (
@@ -4123,12 +4136,13 @@ case class SnowHousePipeStageRegRename(
   val mySetCond = (
     myScoreboardCommit.fire
     && LcvOrR(myScoreboardCommit.regRenameFreeListIdx)
+    && !myShouldIgnoreInstr
   )
 
   when (
     mySetCond
   ) {
-    rFreeList(
+    rFreeListVec.head(
       myScoreboardCommit.regRenameFreeListIdx
     ) := (
       True
@@ -4202,10 +4216,11 @@ case class SnowHousePipeStageRegRename(
   //  )
   //}
 
-  myFreeListChkptBuf.io.wrData := rFreeList
+  myFreeListChkptBuf.io.wrData := rFreeListVec.last
   when (myClearCond) {
     myFreeListChkptBuf.io.wrData(
-      upPayload(1).gprIdxVec.last
+      //upPayload(1).gprIdxVec.last
+      myNextRenamedRegIdx
     ) := (
       False
     )
@@ -4229,7 +4244,8 @@ case class SnowHousePipeStageRegRename(
     stickyExSetPc.valid
   ) {
     //rFreeList.assignFromBits(myFreeListChkptBuf.io.rdData.asBits)
-    rFreeList := myFreeListChkptBuf.io.rdData
+    rFreeListVec.head := myFreeListChkptBuf.io.rdData
+    rFreeListVec.last := myFreeListChkptBuf.io.rdData
   }
 
   upPayload(1).myRegRenameChkptIdx := (
