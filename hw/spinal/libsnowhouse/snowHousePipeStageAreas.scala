@@ -4328,24 +4328,24 @@ case class SnowHousePipeStageRegRename(
   down(pRegRename).allowOverride
   down(pRegRename) := upPayload(1)
 
-  when (
-    //!myShouldIgnoreInstr
-    //&& 
-    !myFreeListFindFirst._1
-  ) {
-    doSendBubbleMainMost(
-      myPsIdBubble=None
-    )
-    upPayload(1).instrCnt.tick := (
-      RegNextWhen(
-        (upPayload(1).instrCnt.tick),
-        cond=(
-          up.isFiring
-        ),
-        init=upPayload(1).instrCnt.tick.getZero,
-      )
-    )
-  }
+  //when (
+  //  //!myShouldIgnoreInstr
+  //  //&& 
+  //  !myFreeListFindFirst._1
+  //) {
+  //  doSendBubbleMainMost(
+  //    myPsIdBubble=None
+  //  )
+  //  upPayload(1).instrCnt.tick := (
+  //    RegNextWhen(
+  //      (upPayload(1).instrCnt.tick),
+  //      cond=(
+  //        up.isFiring
+  //      ),
+  //      init=upPayload(1).instrCnt.tick.getZero,
+  //    )
+  //  )
+  //}
 }
 
 case class SnowHousePipeStageScoreboardCheck(
