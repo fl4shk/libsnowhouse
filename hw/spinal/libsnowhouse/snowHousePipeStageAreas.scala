@@ -4728,12 +4728,6 @@ case class SnowHousePipeStageScoreboardCheck(
     )
   )
 
-  val rMyInFlightReorderBufIdxVec = (
-    Vec.fill(1 << cfg.optScoreboardReorderBufWidth)(
-      Reg(Bool(), init=False)
-    )
-  )
-
 
   //val rNonFwdTagAllocWakeUpVec = (
   //  Vec.fill(
@@ -4953,6 +4947,10 @@ case class SnowHousePipeStageScoreboardCheck(
                 pop(otherIdx).writesGprIdxVec.asBits(myGprRange)
                 & inp.readsGprIdxVec.asBits(myGprRange)
               )//.orR
+              || (
+                pop(otherIdx).reorderBufIdx
+                === inp.reorderBufIdx
+              )
             )
 
             if (!cfg.optRegRename) (
@@ -5521,14 +5519,6 @@ case class SnowHousePipeStageScoreboardCheck(
         )
       )
 
-      when (myNodeIsFiring) {
-        rMyInFlightReorderBufIdxVec(
-          upPayload(1).reorderBufIdx
-        ) := (
-          True
-        )
-      }
-
       //upPayload(1).instrCnt.tick := (
       //  
       //)
@@ -5793,37 +5783,20 @@ case class SnowHousePipeStageScoreboardCheck(
     )
     for (idx <- 0 until myOooRdBufWindow) {
       myRealDispatchOkayCondVec(idx) := (
-        (
-          if (idx < myOooRdBufWindow - 1) (
-            myPopValidVec(idx)
-            //&& rPastMainDispatchOkayCondVec(idx)
-            && myDispatchOkayCondMostVec(idx)
-            && myBufPop(
-              idx + myOooRdBufExtraSize //+ 1
-            ).splitOp.scoreboardOpCanBeOooIssued.last
-            //&& myPopValidVec.last
-          ) else (
-            myPopValidVec(idx)
-            && myDispatchOkayCondMostVec(idx)
-          )
-        )
-        && (
-          !rMyInFlightReorderBufIdxVec(
-            myBufPop(
-              idx + myOooRdBufExtraSize
-            ).instrCnt.reorderBufIdx
-          )
+        if (idx < myOooRdBufWindow - 1) (
+          myPopValidVec(idx)
+          //&& rPastMainDispatchOkayCondVec(idx)
+          && myDispatchOkayCondMostVec(idx)
+          && myBufPop(
+            idx + myOooRdBufExtraSize //+ 1
+          ).splitOp.scoreboardOpCanBeOooIssued.last
+          //&& myPopValidVec.last
+        ) else (
+          myPopValidVec(idx)
+          && myDispatchOkayCondMostVec(idx)
         )
       )
     }
-
-    //when (
-    //  down.isFiring
-    //) {
-    //  rMyInFlightReorderBufIdxVec(
-    //    upPayload(1).reorderBu
-    //  )
-    //}
 
     //case class MyReorderBufFlushInfoPayload(
     //) extends Bundle {
@@ -6372,26 +6345,6 @@ case class SnowHousePipeStageScoreboardCheck(
   //val rFwdWakeUpVec = Vec.fill(cfg.numRenamedGprs)(
   //  Reg(Bool(), init=False)
   //)
-
-  when (
-    myScoreboardCommitStm.fire
-  ) {
-    rMyInFlightReorderBufIdxVec(
-      myScoreboardCommitStm.reorderBufIdx
-    ) := (
-      False
-    )
-  }
-  when (
-    myScoreboardBubbleRetireStm.fire
-  ) {
-    rMyInFlightReorderBufIdxVec(
-      myScoreboardBubbleRetireStm.reorderBufIdx
-    ) := (
-      False
-    )
-  }
-
   for (idx <- 0 until cfg.numRenamedGprs) {
     when (
       //up.isFiring
