@@ -4973,53 +4973,74 @@ case class SnowHousePipeStageScoreboardCheck(
         //println(
         //  s"mkTempHazardPop(otherIdx:${otherIdx}) tempSize:${tempSize}"
         //)
-        val myMux = (
-          Mux(
-            (
+        val myMuxVec = Vec[Bool](
+          (
+            Mux(
               (
-                pop(otherIdx).fire
-                || !pop(otherIdx).valid
-              )
-            ),
-            False,
-            (
+                (
+                  pop(otherIdx).fire
+                  || !pop(otherIdx).valid
+                )
+              ),
+              False,
               (
-                if (tempSize == 0) (
-                  tempCond
-                  //True
-                ) else (
-                  tempCond
-                  || (
-                    pop(otherIdx).splitOp.opIsMemAccess
-                    && inp.splitOp.opIsMemAccess
-                    && (
-                      pop(
-                        otherIdx
-                      ).inpDecodeExt.last.memAccessKind.asBits(1)
-                      =/= inp.inpDecodeExt.last.memAccessKind.asBits(1)
+                (
+                  if (tempSize == 0) (
+                    tempCond
+                    //True
+                  ) else (
+                    (
+                      tempCond
+                      || (
+                        pop(otherIdx).splitOp.opIsMemAccess
+                        && inp.splitOp.opIsMemAccess
+                        && (
+                          pop(
+                            otherIdx
+                          ).inpDecodeExt.last.memAccessKind.asBits(1)
+                          =/= inp.inpDecodeExt.last.memAccessKind.asBits(1)
+                        )
+                        //|| !(
+                        //  !inp.inpDecodeExt.last.memAccessKind.asBits(1)
+                        //)
+                      )
                     )
-                    //|| !(
-                    //  !inp.inpDecodeExt.last.memAccessKind.asBits(1)
+                    //|| (
+                    //  pop(otherIdx).reorderBufIdx
+                    //  === inp.reorderBufIdx
                     //)
                   )
-                  || (
-                    pop(otherIdx).reorderBufIdx
-                    === inp.reorderBufIdx
-                  )
                 )
+                //!pop(otherIdx).splitOp.scoreboardOpCanBeOooIssued(1)
+                //|| 
+                //pop(otherIdx).splitOp
+                //&& 
+                //pop(otherIdx).inpDecodeExt.last.opIsNonFwd
+                //&& 
               )
-              //!pop(otherIdx).splitOp.scoreboardOpCanBeOooIssued(1)
-              //|| 
-              //pop(otherIdx).splitOp
-              //&& 
-              //pop(otherIdx).inpDecodeExt.last.opIsNonFwd
-              //&& 
+            )
+          ),
+          (
+            Mux(
+              (
+                (
+                  pop(otherIdx).fire
+                  || !pop(otherIdx).valid
+                )
+              ),
+              False,
+              (
+                pop(otherIdx).reorderBufIdx
+                === inp.reorderBufIdx
+              )
             )
           )
         )
 
         if (tempSize == 0) (
-          myMux
+          myMuxVec.head
+          //&& !myMuxVec.last
+          //|| myMuxVec.last
         ) else {
           //val myMemAccessCheckVec = Vec.fill(
           //  tempSize
@@ -5149,7 +5170,11 @@ case class SnowHousePipeStageScoreboardCheck(
             //)
             (
               myOooIssueCheckVec.sFindFirst(_ === False)._1
-              || myMux
+              || (
+                //myMux
+                myMuxVec.head
+                && !myMuxVec.last
+              )
             )
           )
         }
