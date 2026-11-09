@@ -5150,8 +5150,8 @@ case class SnowHousePipeStageScoreboardCheck(
                 RegNextWhen(
                   myBufPushStm.instrCnt.tick,
                   cond=(
-                    //myBufPushStm.fire
-                    myOooRdBuf.io.push.fire
+                    myBufPushStm.fire
+                    //myOooRdBuf.io.push.fire
                   ),
                   init=(
                     //False
@@ -13363,13 +13363,26 @@ case class SnowHousePipeStageExecute(
             temp
           )
         }
-        ## (
-          rSavedRegFileWrPulseVec(jdx).fire
-          //&& (
-          //  rSavedRegFileWrPulseVec(jdx).addr
-          //  === outp.renamedGprIdxVec(jdx)
-          //)
-        )
+        ## {
+          val temp = (
+            rSavedRegFileWrPulseVec(jdx).fire
+            && (
+              rSavedRegFileWrPulseVec(jdx).addr
+              === outp.renamedGprIdxVec(jdx)
+            )
+          )
+          if (cfg.optRegRename) (
+            temp
+            && (
+              (
+                rSavedRegFileWrPulseVec(jdx).data(1)
+                === outp.gprIdxVec(jdx)
+              )
+            )
+          ) else (
+            temp
+          )
+        }
         //## (
         //  myHistRegFileWrPulse(1).fire
         //  && (
