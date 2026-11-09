@@ -2433,14 +2433,14 @@ case class SnowHousePipePayloadNonExt(
   val readsGprIdxVec = (
     cfg.optScoreboardOooIssueWindow != None
   ) generate (
-    Vec.fill(cfg.numGprs)(
+    Vec.fill(cfg.numRenamedGprs)(
       Bool()
     )
   )
   val writesGprIdxVec = (
     cfg.optScoreboardOooIssueWindow != None
   ) generate (
-    Vec.fill(cfg.numGprs)(
+    Vec.fill(cfg.numRenamedGprs)(
       Bool()
     )
   )
