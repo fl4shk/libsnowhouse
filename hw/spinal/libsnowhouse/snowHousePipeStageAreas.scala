@@ -4849,7 +4849,7 @@ case class SnowHousePipeStageScoreboardCheck(
       //4
       //5
       //8
-      myOooRdBufWindow //+ 3
+      myOooRdBufWindow + 1 //+ 3
     )
     val myOooRdBufExtraSize = (
       myOooRdBufDepth - myOooRdBufWindow
@@ -5039,7 +5039,7 @@ case class SnowHousePipeStageScoreboardCheck(
 
         if (tempSize == 0) (
           myMuxVec.head
-          && !myMuxVec.last
+          //&& !myMuxVec.last
           //&& !myMuxVec.last
           //|| myMuxVec.last
         ) else {
