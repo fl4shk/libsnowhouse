@@ -4442,7 +4442,7 @@ case class SnowHousePipeStageRegRename(
   }
 
   when (
-    !myFreeListFindFirst._1
+    myFreeListFindFirst._1
     && !myShouldIgnoreInstr
   ) {
     upPayload(1).readsGprIdxVec.foreach(item => {
