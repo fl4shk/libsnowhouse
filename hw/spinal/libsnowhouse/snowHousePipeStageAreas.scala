@@ -5002,12 +5002,10 @@ case class SnowHousePipeStageScoreboardCheck(
                     //  !inp.inpDecodeExt.last.memAccessKind.asBits(1)
                     //)
                   )
-                )
-              )
-              && (
-                (
-                  pop(otherIdx).reorderBufIdx
-                  =/= inp.reorderBufIdx
+                  || (
+                    pop(otherIdx).reorderBufIdx
+                    === inp.reorderBufIdx
+                  )
                 )
               )
               //!pop(otherIdx).splitOp.scoreboardOpCanBeOooIssued(1)
