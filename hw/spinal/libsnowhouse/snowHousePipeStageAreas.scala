@@ -3590,7 +3590,9 @@ case class SnowHousePipeStageInstrDecode(
       stickyExSetPc.myReorderBufIdxChkptIdx
     )
 
-    when (myShouldIgnoreInstr) {
+    when (
+      myShouldIgnoreInstr
+    ) {
       upPayload(1).reorderBufIdx := (
         myOooIssueChkptBuf.io.rdData //- 1
       )
@@ -3612,6 +3614,7 @@ case class SnowHousePipeStageInstrDecode(
   //    (!upPayload(1).instrCnt.tick),
   //    cond=(
   //      up.isFiring
+  //      //&& !myShouldIgnoreInstr
   //    ),
   //    init=upPayload(1).instrCnt.tick.getZero,
   //  )
@@ -3622,9 +3625,50 @@ case class SnowHousePipeStageInstrDecode(
       init=False
     )
   )
+  val myHistShouldIgnoreInstr = (
+    History(
+      that=myShouldIgnoreInstr,
+      length=3,
+      init=False,
+    )
+  )
+
+  when (
+    (
+      myHistShouldIgnoreInstr(0)
+      || myHistShouldIgnoreInstr(1)
+    )
+    && !myHistShouldIgnoreInstr(2)
+  ) {
+    cId.throwIt()
+  }
+
   when (
     up.isFiring
-    && !myShouldIgnoreInstr
+    && (
+      !myShouldIgnoreInstr
+      || (
+        LcvAndR(
+          myHistShouldIgnoreInstr
+        )
+        //LcvAndR
+        //LcvAndR(
+        //  History(
+        //    that=myShouldIgnoreInstr,
+        //    length=3,
+        //    init=False,
+        //  )
+        //)
+        //&& 
+        //(
+        //  History(
+        //    that=rose(myShouldIgnoreInstr),
+        //    length=3,
+        //    init=False,
+        //  ).last
+        //)
+      )
+    )
   ) {
     upPayload(1).instrCnt.tick := (
       RegNext(
