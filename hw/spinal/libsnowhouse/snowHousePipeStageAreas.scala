@@ -5765,8 +5765,32 @@ case class SnowHousePipeStageScoreboardCheck(
       )
     }
 
+    //case class MyReorderBufFlushInfoPayload(
+    //) extends Bundle {
+    //  val savedReorderBufIdx = (
+    //    UInt(cfg.optScoreboardReorderBufWidth bits)
+    //  )
+    //  val flushReorderBufIdx = (
+    //    UInt(cfg.optScoreboardReorderBufWidth bits)
+    //  )
+    //}
+
+    //val rReorderBufFlushInfo = {
+    //  //Reg(Bool(), init=False)
+    //  val temp = Reg(Flow(MyReorderBufFlushInfoPayload()))
+    //  temp.init(temp.getZero)
+    //  temp
+    //}
+
     switch (
       //Bitscan(~myRealDispatchOkayCondVec.asBits.asUInt)
+      //(
+      //  rReorderBufFlushInfo.fire
+      //  && LcvOrR(myPopValidVec)
+      //)
+      //rReorderBufFlushInfo.fire
+      //## LcvOrR(myPopValidVec)
+      //## 
       myRealDispatchOkayCondVec.asBits.asUInt
     ) {
       for (idx <- 0 until myOooRdBufWindow) {
@@ -5784,10 +5808,12 @@ case class SnowHousePipeStageScoreboardCheck(
 // 0000001-
 // 00000001
         val tempCaseStr = (
-          //"-" * (size - idx - 1) + "1" + ("0" * idx)
+          //"0" + ("-" * (size - idx - 1)) + "1" + ("0" * idx)
 
           // now try preferring to schedule newer instructions.
           // Not sure if this is correct!
+          //"0" + "-"
+          //+ 
           ("0" * tempIdx) + "1" + ("-" * (size - tempIdx - 1))
         )
         is (
@@ -5795,6 +5821,7 @@ case class SnowHousePipeStageScoreboardCheck(
             tempCaseStr
           )
         ) {
+          //rReorderBufFlushInfo.valid := False
           doPopOoo(
             doUpIsFiring=true,
             myPopIdx=(
@@ -5804,10 +5831,58 @@ case class SnowHousePipeStageScoreboardCheck(
           )
         }
       }
+
+      //is (
+      //  MaskedLiteral(
+      //    "0" + "1" + ("0" * myRealDispatchOkayCondVec.size)
+      //  )
+      //) {
+      //  //doPopLast(doUpIsFiring=true)
+      //  rReorderBufFlushInfo.valid := (
+      //    //True
+      //    RegNextWhen(
+      //      True,
+      //      cond=up.isFiring,
+      //      init=False
+      //    )
+      //  )
+      //  val tempReorderBufIdxVec = Vec(
+      //    (
+      //      RegNextWhen(
+      //        (upPayload(1).instrCnt.reorderBufIdx),
+      //        cond=(
+      //          up.isFiring
+      //        )
+      //      )
+      //      init(0x0)
+      //    ),
+      //    (
+      //      RegNextWhen(
+      //        (upPayload(1).instrCnt.reorderBufIdx + 1),
+      //        cond=(
+      //          up.isFiring
+      //        )
+      //      )
+      //      init(0x0)
+      //    ),
+      //  )
+      //  rReorderBufFlushInfo.savedReorderBufIdx := (
+      //    tempReorderBufIdxVec.head
+      //  )
+      //  rReorderBufFlushInfo.flushReorderBufIdx := (
+      //    tempReorderBufIdxVec.last
+      //  )
+      //}
+
       default {
-        doPopLast(doUpIsFiring=true)
       }
     }
+    //when (
+    //  rReorderBufFlushInfo.fire
+    //  && LcvOrR(myRealDispatchOkayCondVec)
+    //) {
+    //  rReorderBufFlushInfo.valid := False
+    //}
 
     //when (myRealOooOkayCond) {
     //  doPopOoo(doUpIsFiring=true)
@@ -5818,6 +5893,7 @@ case class SnowHousePipeStageScoreboardCheck(
     val myOtherFlushCondMost = (
       Vec[Bool](
         (
+          //rReorderBufFlushInfo.fire
           //|| 
           !LcvOrR(myRealDispatchOkayCondVec.asBits)//.orR
           || LcvAndR(myReducedFwdTagAllocVec.asBits)//.andR
@@ -5837,6 +5913,29 @@ case class SnowHousePipeStageScoreboardCheck(
         //)
       )
     )
+
+    //switch (
+    //  rReorderBufFlushInfo.fire
+    //  ## (
+    //    rReorderBufFlushInfo.flushReorderBufIdx
+    //    === rReorderBufFlushInfo.savedReorderBufIdx
+    //  )
+    //  ## down.isFiring
+    //) {
+    //  is (M"101") {
+    //    rReorderBufFlushInfo.flushReorderBufIdx := (
+    //      rReorderBufFlushInfo.flushReorderBufIdx + 1
+    //    )
+    //    down(pScoreboardCheck).instrCnt.reorderBufIdx := (
+    //      rReorderBufFlushInfo.flushReorderBufIdx
+    //    )
+    //  }
+    //  is (M"11-") {
+    //    rReorderBufFlushInfo.valid := False
+    //  }
+    //  default {
+    //  }
+    //}
 
     when (
       //rScoreboardFlushState.asBits(ScoreboardFlushState.IDLE.position)
@@ -5868,16 +5967,20 @@ case class SnowHousePipeStageScoreboardCheck(
         myDuplicateItCond=false,
         myPsIdBubble=Some(
           myNonFwdHazardCheckVec.orR
-          && myOtherFlushCondMost.last
+          //&& !rReorderBufFlushInfo.fire
+          //&& myOtherFlushCondMost.last
         ),
         myPsIdOtherBubble=Some(
           //True
           //&& 
-          myOtherFlushCondMost.last
+          //myOtherFlushCondMost.last
+          True
+          //!rReorderBufFlushInfo.fire
         ),
         myPsIdFwdBubble=Some(
           myFwdHazardCheckVec.orR
-          && myOtherFlushCondMost.last
+          //&& !rReorderBufFlushInfo.fire
+          //&& myOtherFlushCondMost.last
         ),
         myInFlushCond=None,//Some(myInFlushCond(2))//None
         //myDuplicateItCond=(
