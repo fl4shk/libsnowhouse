@@ -5458,6 +5458,7 @@ case class SnowHouseForFmaxPipeStageWriteBack(
   }
   val myScoreboardStallPassCheckArea = (
     cfg.optScoreboard
+    && !cfg.optRegRename
   ) generate new Area {
     val myReorderBufSize = (
       1 << cfg.optScoreboardReorderBufWidth
@@ -5727,8 +5728,12 @@ case class SnowHouseForFmaxPipeStageWriteBack(
             myNonFwdWbValid
             && stickyAnyD2hBusFire
           ) else (
-            myFwdWbValid
-            && myScoreboardStallPassCheckArea.rAllowFwdCommit
+            if (!cfg.optRegRename) (
+              myFwdWbValid
+              && myScoreboardStallPassCheckArea.rAllowFwdCommit
+            ) else (
+              myFwdWbValid
+            )
           )
         )
       )
