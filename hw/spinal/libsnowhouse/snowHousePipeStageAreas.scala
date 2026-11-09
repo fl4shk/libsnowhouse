@@ -5765,6 +5765,7 @@ case class SnowHousePipeStageScoreboardCheck(
 
     when (
       myOtherFlushCondMost
+      && !myThrowItCond
       //&& !(
       //  !LcvOrR(myPopValidVec)
       //  && myThrowItCond
