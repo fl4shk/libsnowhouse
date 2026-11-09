@@ -744,7 +744,7 @@ case class SnowHouseBranchTgtBufSingle(
   rTgtBufWrEn.head := (
     (
       io.psExSetPc.valid
-      && io.psExSetPc.branchTgtBufElem.fire
+      //&& io.psExSetPc.branchTgtBufElem.fire
       && (
         !otherWrBtbElemWithBrKind.btbElem.dontPredict
       )
@@ -1067,7 +1067,7 @@ case class SnowHouseBranchTgtBuf(
       //  ))
       //)
 
-      && io.psExSetPc.branchTgtBufElem.fire
+      //&& io.psExSetPc.branchTgtBufElem.fire
       && (
         !io.psExSetPc.btbElemWithBrKind.btbElem.dontPredict
       )
@@ -4328,24 +4328,24 @@ case class SnowHousePipeStageRegRename(
   down(pRegRename).allowOverride
   down(pRegRename) := upPayload(1)
 
-  //when (
-  //  //!myShouldIgnoreInstr
-  //  //&& 
-  //  !myFreeListFindFirst._1
-  //) {
-  //  doSendBubbleMainMost(
-  //    myPsIdBubble=None
-  //  )
-  //  upPayload(1).instrCnt.tick := (
-  //    RegNextWhen(
-  //      (upPayload(1).instrCnt.tick),
-  //      cond=(
-  //        up.isFiring
-  //      ),
-  //      init=upPayload(1).instrCnt.tick.getZero,
-  //    )
-  //  )
-  //}
+  when (
+    //!myShouldIgnoreInstr
+    //&& 
+    !myFreeListFindFirst._1
+  ) {
+    doSendBubbleMainMost(
+      myPsIdBubble=None
+    )
+    upPayload(1).instrCnt.tick := (
+      RegNextWhen(
+        (upPayload(1).instrCnt.tick),
+        cond=(
+          up.isFiring
+        ),
+        init=upPayload(1).instrCnt.tick.getZero,
+      )
+    )
+  }
 }
 
 case class SnowHousePipeStageScoreboardCheck(
@@ -5147,19 +5147,25 @@ case class SnowHousePipeStageScoreboardCheck(
             (
               myBufPushStm.instrCnt.tick
               === (
-                //RegNextWhen(
-                //  myBufPushStm.instrCnt.tick,
-                //  cond=myBufPushStm.fire,
-                //  init=False,
-                //)
                 RegNextWhen(
-                  myOooRdBuf.io.push.instrCnt.tick,
-                  cond=myOooRdBuf.io.push.fire,
+                  myBufPushStm.instrCnt.tick,
+                  cond=(
+                    //myBufPushStm.fire
+                    myOooRdBuf.io.push.fire
+                  ),
                   init=(
                     //False
                     True
                   ),
                 )
+                //RegNextWhen(
+                //  myOooRdBuf.io.push.instrCnt.tick,
+                //  cond=myOooRdBuf.io.push.fire,
+                //  init=(
+                //    //False
+                //    True
+                //  ),
+                //)
               )
             )
             //up(pId).instrCnt.tick
