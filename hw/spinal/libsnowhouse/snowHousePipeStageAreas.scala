@@ -5039,6 +5039,7 @@ case class SnowHousePipeStageScoreboardCheck(
 
         if (tempSize == 0) (
           myMuxVec.head
+          && !myMuxVec.last
           //&& !myMuxVec.last
           //|| myMuxVec.last
         ) else {
@@ -5169,12 +5170,14 @@ case class SnowHousePipeStageScoreboardCheck(
             //  && myMux
             //)
             (
-              myOooIssueCheckVec.sFindFirst(_ === False)._1
-              || (
-                //myMux
-                myMuxVec.head
-                && !myMuxVec.last
+              (
+                myOooIssueCheckVec.sFindFirst(_ === False)._1
+                || (
+                  //myMux
+                  myMuxVec.head
+                )
               )
+              && !myMuxVec.last
             )
           )
         }
