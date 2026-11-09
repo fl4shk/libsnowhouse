@@ -4281,6 +4281,11 @@ case class SnowHousePipeStageRegRename(
       //  )
       //)
       item.io.wrData := rRegAliasTbl(myAddr)
+      when (
+        upPayload(1).gprIdxVec.last === gprIdx
+      ) {
+        item.io.wrData := myNextRenamedRegIdx
+      }
 
       item.io.wrAddr := rOooIssueChkptBufIdxVec(gprIdx)
       item.io.wrEn := myChkptWriteCond
