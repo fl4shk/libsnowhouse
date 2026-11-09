@@ -3607,13 +3607,33 @@ case class SnowHousePipeStageInstrDecode(
     }
   }
 
+  //upPayload(1).instrCnt.tick := (
+  //  RegNextWhen(
+  //    (!upPayload(1).instrCnt.tick),
+  //    cond=(
+  //      up.isFiring
+  //    ),
+  //    init=upPayload(1).instrCnt.tick.getZero,
+  //  )
+  //)
   upPayload(1).instrCnt.tick := (
-    RegNextWhen(
-      (!upPayload(1).instrCnt.tick),
-      cond=up.isFiring,
-      init=upPayload(1).instrCnt.tick.getZero,
+    RegNext(
+      upPayload(1).instrCnt.tick,
+      init=False
     )
   )
+  when (
+    up.isFiring
+    && !myShouldIgnoreInstr
+  ) {
+    upPayload(1).instrCnt.tick := (
+      RegNext(
+        !upPayload(1).instrCnt.tick,
+        init=False
+      )
+    )
+  }
+
   //if (!cfg.optRegRename) {
     for (idx <- 0 until cfg.maxNumGprsPerInstr) {
       upPayload(1).renamedGprIdxVec(idx) := (
