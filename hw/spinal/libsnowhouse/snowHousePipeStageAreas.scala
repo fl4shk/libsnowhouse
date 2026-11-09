@@ -13239,13 +13239,24 @@ case class SnowHousePipeStageExecute(
 
       def myHistRegFileWrPulse = myHistRegFileWrPulseVec(jdx)
 
-      val myFindFirst = myHistRegFileWrPulse.sFindFirst(item => (
-        item.fire
-        && (
-          item.addr
-          === outp.renamedGprIdxVec(jdx)
+      val myFindFirst = myHistRegFileWrPulse.sFindFirst(item => {
+        val temp = (
+          item.fire
+          && (
+            item.addr
+            === outp.renamedGprIdxVec(jdx)
+          )
         )
-      ))
+        if (cfg.optRegRename) (
+          temp
+          && (
+            item.data(1)
+            === outp.gprIdxVec(jdx)
+          )
+        ) else (
+          temp
+        )
+      })
 
       when (
         //outp.instrCnt.myNonPsIdBubbleEtc
