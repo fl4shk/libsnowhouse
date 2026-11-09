@@ -5734,10 +5734,11 @@ case class SnowHousePipeStageScoreboardCheck(
       //  && myThrowItCond
       //)
       //&& !myThrowItCond
-      && !(
-        !LcvOrR(myPopValidVec)
-        && myThrowItCond
-      )
+
+      //&& !(
+      //  !LcvOrR(myPopValidVec)
+      //  && myThrowItCond
+      //)
     ) {
       doSendBubbleMainMost(
         myDuplicateItCond=false,
@@ -5764,10 +5765,10 @@ case class SnowHousePipeStageScoreboardCheck(
 
     when (
       myOtherFlushCondMost
-      && !(
-        !LcvOrR(myPopValidVec)
-        && myThrowItCond
-      )
+      //&& !(
+      //  !LcvOrR(myPopValidVec)
+      //  && myThrowItCond
+      //)
       //&& !(
       //  !LcvOrR(myPopValidVec)
       //  && myThrowItCond
@@ -5812,15 +5813,15 @@ case class SnowHousePipeStageScoreboardCheck(
       cScoreboardCheck.duplicateIt()
     }
 
-    when (
-      //!myOtherFlushCondMost
-      //&& !LcvOrR(myPopValidVec)
-      //&& myThrowItCond
-      !LcvOrR(myPopValidVec)
-      && myThrowItCond
-    ) {
-      cScoreboardCheck.throwIt()
-    }
+    //when (
+    //  //!myOtherFlushCondMost
+    //  //&& !LcvOrR(myPopValidVec)
+    //  //&& myThrowItCond
+    //  !LcvOrR(myPopValidVec)
+    //  && myThrowItCond
+    //) {
+    //  cScoreboardCheck.throwIt()
+    //}
 
     //when (
     //  rScoreboardFlushState.asBits(ScoreboardFlushState.FLUSH.position)
