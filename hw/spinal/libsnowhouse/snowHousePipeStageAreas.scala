@@ -13343,21 +13343,32 @@ case class SnowHousePipeStageExecute(
         //    ) === outp.gprIdxVec(jdx)
         //  )
         //)
-        (
-          myHistRegFileWrPulse(0).fire
-          && (
-            myHistRegFileWrPulse(0).addr
-            //myHistRegFileWrPulse(0).data(1)
-            //=== outp.gprIdxVec(jdx)
-            === outp.renamedGprIdxVec(jdx)
+        {
+          val temp = (
+            myHistRegFileWrPulse(0).fire
+            && (
+              myHistRegFileWrPulse(0).addr
+              //myHistRegFileWrPulse(0).data(1)
+              //=== outp.gprIdxVec(jdx)
+              === outp.renamedGprIdxVec(jdx)
+            )
           )
-        )
+          if (cfg.optRegRename) (
+            temp
+            && (
+              myHistRegFileWrPulse(0).data(1)
+              === outp.gprIdxVec(jdx)
+            )
+          ) else (
+            temp
+          )
+        }
         ## (
           rSavedRegFileWrPulseVec(jdx).fire
-          && (
-            rSavedRegFileWrPulseVec(jdx).addr
-            === outp.renamedGprIdxVec(jdx)
-          )
+          //&& (
+          //  rSavedRegFileWrPulseVec(jdx).addr
+          //  === outp.renamedGprIdxVec(jdx)
+          //)
         )
         //## (
         //  myHistRegFileWrPulse(1).fire
