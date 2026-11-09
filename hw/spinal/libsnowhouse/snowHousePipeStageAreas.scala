@@ -5155,7 +5155,10 @@ case class SnowHousePipeStageScoreboardCheck(
                 RegNextWhen(
                   myOooRdBuf.io.push.instrCnt.tick,
                   cond=myOooRdBuf.io.push.fire,
-                  init=False,
+                  init=(
+                    //False
+                    True
+                  ),
                 )
               )
             )
@@ -5172,16 +5175,16 @@ case class SnowHousePipeStageScoreboardCheck(
             //  )
             //)
           )
-          && (
-            RegNextWhen(
-              True,
-              cond=(
-                //myBufPushStm.fire
-                up.isFiring
-              ),
-              init=False
-            )
-          )
+          //&& (
+          //  RegNextWhen(
+          //    True,
+          //    cond=(
+          //      //myBufPushStm.fire
+          //      up.isFiring
+          //    ),
+          //    init=False
+          //  )
+          //)
         )
         //|| (
         //  myBufPushStm.instrCnt.myPsIdBubble.last
@@ -5377,7 +5380,7 @@ case class SnowHousePipeStageScoreboardCheck(
       ).payload
       upPayload(1) := upPayload(0)
 
-      upPayload(1).instrCnt.tick := (
+      val myNodeIsFiring = (
         if (doUpIsFiring) (
           up.isFiring
         ) else (
@@ -5385,16 +5388,21 @@ case class SnowHousePipeStageScoreboardCheck(
         )
       )
 
+      //upPayload(1).instrCnt.tick := (
+      //  
+      //)
+
       myTempOooRdBufPopVec.zipWithIndex.foreach{
         case (item, idx) => {
           if (idx == myPopIdx) {
             item.ready := (
-              if (doUpIsFiring) (
-                up.isFiring
-                //up.isReady
-              ) else (
-                down.isFiring
-              )
+              myNodeIsFiring
+              //if (doUpIsFiring) (
+              //  up.isFiring
+              //  //up.isReady
+              //) else (
+              //  down.isFiring
+              //)
             )
           } else {
             item.ready := False
@@ -5442,12 +5450,22 @@ case class SnowHousePipeStageScoreboardCheck(
       upPayload(0) := myTempOooRdBufPopVec.last.payload
       upPayload(1) := upPayload(0)
 
-      upPayload(1).instrCnt.tick := (
+
+      val myNodeIsFiring = (
         if (doUpIsFiring) (
           up.isFiring
         ) else (
           down.isFiring
         )
+      )
+
+      upPayload(1).instrCnt.tick := (
+        //if (doUpIsFiring) (
+        //  up.isFiring
+        //) else (
+        //  down.isFiring
+        //)
+        myNodeIsFiring
       )
 
       //myTempOooRdBufPopVec(3).ready := False
@@ -5456,12 +5474,13 @@ case class SnowHousePipeStageScoreboardCheck(
         case (item, idx) => {
           if (idx == myOooRdBufDepth - 1) {
             item.ready := (
-              if (doUpIsFiring) (
-                up.isFiring
-                //up.isReady
-              ) else (
-                down.isFiring
-              )
+              myNodeIsFiring
+              //if (doUpIsFiring) (
+              //  up.isFiring
+              //  //up.isReady
+              //) else (
+              //  down.isFiring
+              //)
             )
           } else {
             item.ready := False
@@ -5667,11 +5686,11 @@ case class SnowHousePipeStageScoreboardCheck(
 // 0000001-
 // 00000001
         val tempCaseStr = (
-          //"-" * (size - idx - 1) + "1" + ("0" * idx)
+          "-" * (size - idx - 1) + "1" + ("0" * idx)
 
           // now try preferring to schedule newer instructions.
           // Not sure if this is correct!
-          ("0" * tempIdx) + "1" + ("-" * (size - tempIdx - 1))
+          //("0" * tempIdx) + "1" + ("-" * (size - tempIdx - 1))
         )
         is (
           MaskedLiteral(
@@ -5699,19 +5718,25 @@ case class SnowHousePipeStageScoreboardCheck(
     //}
 
     val myOtherFlushCondMost = (
-      (
-        //|| 
-        !LcvOrR(myRealDispatchOkayCondVec.asBits)//.orR
-        || LcvAndR(myReducedFwdTagAllocVec.asBits)//.andR
-        || LcvAndR(myReducedNonFwdTagAllocVec.asBits)//.andR
-        //|| myInFlushCond(2)
-        //--------
-        || (
-          //!myPopValidVec.asBits.msb
-          //!myRealDispatchOkayCondVec.asBits.orR
-          //!myPopValidVec.asBits.orR
-          !LcvOrR(myPopValidVec.asBits.asUInt)
-        )
+      Vec[Bool](
+        (
+          //|| 
+          !LcvOrR(myRealDispatchOkayCondVec.asBits)//.orR
+          || LcvAndR(myReducedFwdTagAllocVec.asBits)//.andR
+          || LcvAndR(myReducedNonFwdTagAllocVec.asBits)//.andR
+          //|| myInFlushCond(2)
+          //--------
+          || (
+            //!myPopValidVec.asBits.msb
+            //!myRealDispatchOkayCondVec.asBits.orR
+            //!myPopValidVec.asBits.orR
+            !LcvOrR(myPopValidVec.asBits.asUInt)
+          )
+        ),
+        //(
+        //  !LcvOrR(myPopValidVec)
+        //  && !myThrowItCond
+        //)
       )
     )
 
@@ -5726,7 +5751,8 @@ case class SnowHousePipeStageScoreboardCheck(
         //|| myReducedFwdTagAllocVec.asBits.andR
         //|| myReducedNonFwdTagAllocVec.asBits.andR
         //--------
-        myOtherFlushCondMost
+        //myOtherFlushCondMost.andR
+        myOtherFlushCondMost.head
         //--------
       )
       //&& !(
@@ -5744,9 +5770,17 @@ case class SnowHousePipeStageScoreboardCheck(
         myDuplicateItCond=false,
         myPsIdBubble=Some(
           myNonFwdHazardCheckVec.orR
+          && myOtherFlushCondMost.last
         ),
-        myPsIdOtherBubble=Some(True),
-        myPsIdFwdBubble=Some(myFwdHazardCheckVec.orR),
+        myPsIdOtherBubble=Some(
+          //True
+          //&& 
+          myOtherFlushCondMost.last
+        ),
+        myPsIdFwdBubble=Some(
+          myFwdHazardCheckVec.orR
+          && myOtherFlushCondMost.last
+        ),
         myInFlushCond=None,//Some(myInFlushCond(2))//None
         //myDuplicateItCond=(
         //  True
@@ -5764,8 +5798,8 @@ case class SnowHousePipeStageScoreboardCheck(
     }
 
     when (
-      myOtherFlushCondMost
-      && !myThrowItCond
+      //myOtherFlushCondMost.andR
+      myOtherFlushCondMost.head
       //&& !(
       //  !LcvOrR(myPopValidVec)
       //  && myThrowItCond
@@ -7727,6 +7761,7 @@ case class SnowHousePipeStagePreFwd(
       )
     )
   )
+
   outp.instrCnt.changedInstr := (
     //rose(outp.instrCnt.tick)
     //|| fell(outp.instrCnt.tick)
