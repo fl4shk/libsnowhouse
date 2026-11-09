@@ -225,6 +225,8 @@ case class SnowHouseScoreboardCommitPayload(
   val nonFwdTag = UInt(cfg.optScoreboardTagWidth bits)
   val fwdTag = UInt(cfg.optScoreboardTagWidth bits)
   val opIsFwd = Bool()
+  val reorderBufIdx = UInt(cfg.optScoreboardReorderBufWidth bits)
+
   //val reorderBufInFlush = Bool()
   //val tag = UInt(cfg.optForFmaxCfg.get.myScoreboardTagWidth bits)
   //val isBubbleEtc = Bool()
@@ -5270,6 +5272,10 @@ case class SnowHouseForFmaxPipeStageWriteBack(
         io.up.regRenameFreeListIdx
       )
     }
+    io.commitEtc.scoreboardBubbleRetire.reorderBufIdx := (
+      //0x0
+      io.up.reorderBufIdx
+    )
     //when (
     //) {
     //  io.commitEtc.scoreboardBubbleRetire.opIsFwd := (
@@ -5623,6 +5629,9 @@ case class SnowHouseForFmaxPipeStageWriteBack(
           //someMyWbPayload(1).gprIdxVec
           someMyWbPayload(1).renamedGprIdxVec
         )
+        someCommitStm.commit.reorderBufIdx := (
+          someMyWbPayload(1).instrCnt.reorderBufIdx
+        )
         if (cfg.optRegRename) {
           someCommitStm.commit.regRenameUpdateValid := (
             False
@@ -5644,6 +5653,9 @@ case class SnowHouseForFmaxPipeStageWriteBack(
         someCommitStm.commit.gprIdxVec := (
           //someMyWbPayload(1).gprIdxVec
           someMyWbPayload(1).renamedGprIdxVec
+        )
+        someCommitStm.commit.reorderBufIdx := (
+          someMyWbPayload(1).instrCnt.reorderBufIdx
         )
         if (isNonFwd) {
           someCommitStm.commit.myFwdValid := False
