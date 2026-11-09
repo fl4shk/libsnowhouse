@@ -5154,8 +5154,8 @@ case class SnowHousePipeStageScoreboardCheck(
                     //myOooRdBuf.io.push.fire
                   ),
                   init=(
-                    //False
-                    True
+                    False
+                    //True
                   ),
                 )
                 //RegNextWhen(
@@ -5181,16 +5181,16 @@ case class SnowHousePipeStageScoreboardCheck(
             //  )
             //)
           )
-          //&& (
-          //  RegNextWhen(
-          //    True,
-          //    cond=(
-          //      //myBufPushStm.fire
-          //      up.isFiring
-          //    ),
-          //    init=False
-          //  )
-          //)
+          && (
+            RegNextWhen(
+              True,
+              cond=(
+                //myBufPushStm.fire
+                up.isFiring
+              ),
+              init=False
+            )
+          )
         )
         //|| (
         //  myBufPushStm.instrCnt.myPsIdBubble.last
