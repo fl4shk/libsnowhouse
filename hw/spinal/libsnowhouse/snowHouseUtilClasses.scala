@@ -1877,6 +1877,9 @@ case class SnowHouseInstrCnt(
   val fwdCanDoItInfo = Vec.fill(cfg.lowerMyFanoutMain)(
     Bool()
   )
+  val myPsRegRenameBubble = Vec.fill(cfg.lowerMyFanoutMain)(
+    Bool()
+  )
   val myPsIdBubble = Vec.fill(cfg.lowerMyFanoutMain)(
     Bool()
   )

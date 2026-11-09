@@ -205,9 +205,21 @@ case class SnowHouseScoreboardCommitPayload(
   val gprIdxVec = Vec.fill(cfg.maxNumGprsPerInstr)(
     UInt(
       log2Up(
-        //cfg.numGprs
-        cfg.numRenamedGprs
+        cfg.numGprs
+        //cfg.numRenamedGprs
       ) bits
+    )
+  )
+  val renamedGprIdxVec = (
+    cfg.optRegRename
+  ) generate (
+    Vec.fill(cfg.maxNumGprsPerInstr)(
+      UInt(
+        log2Up(
+          //cfg.numGprs
+          cfg.numRenamedGprs
+        ) bits
+      )
     )
   )
   val regRenameUpdateValid = (
@@ -5253,6 +5265,10 @@ case class SnowHouseForFmaxPipeStageWriteBack(
       io.up.instrCnt.scoreboardCheckPayload.nonFwdTag
     )
     io.commitEtc.scoreboardBubbleRetire.gprIdxVec.last := (
+      io.up.gprIdxVec.last
+      //io.up.renamedGprIdxVec.last
+    )
+    io.commitEtc.scoreboardBubbleRetire.renamedGprIdxVec.last := (
       //io.up.gprIdxVec.last
       io.up.renamedGprIdxVec.last
     )
@@ -5262,7 +5278,9 @@ case class SnowHouseForFmaxPipeStageWriteBack(
         io.up.fire
         && (
           //io.up.instrCnt.myScoreboardPsWbBubbleMost(1)
-          io.up.instrCnt.myPsIdBubble.last
+          //!io.up.instrCnt.myPsIdBubble.last
+          io.up.instrCnt.shouldIgnoreInstr.last
+          && !io.up.instrCnt.myPsRegRenameBubble.last
         )
       )
     
@@ -5619,7 +5637,15 @@ case class SnowHouseForFmaxPipeStageWriteBack(
           someCommitStm.commit.myNonFwdValid := False
           someCommitStm.commit.myFwdValid := True
         }
+        //someCommitStm.commit.gprIdxVec := (
+        //  //someMyWbPayload(1).gprIdxVec
+        //  someMyWbPayload(1).renamedGprIdxVec
+        //)
         someCommitStm.commit.gprIdxVec := (
+          someMyWbPayload(1).gprIdxVec
+          //someMyWbPayload(1).renamedGprIdxVec
+        )
+        someCommitStm.commit.renamedGprIdxVec := (
           //someMyWbPayload(1).gprIdxVec
           someMyWbPayload(1).renamedGprIdxVec
         )
@@ -5642,6 +5668,10 @@ case class SnowHouseForFmaxPipeStageWriteBack(
 
       if (cfg.optScoreboard) {
         someCommitStm.commit.gprIdxVec := (
+          someMyWbPayload(1).gprIdxVec
+          //someMyWbPayload(1).renamedGprIdxVec
+        )
+        someCommitStm.commit.renamedGprIdxVec := (
           //someMyWbPayload(1).gprIdxVec
           someMyWbPayload(1).renamedGprIdxVec
         )
