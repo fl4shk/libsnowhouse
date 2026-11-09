@@ -4947,26 +4947,26 @@ case class SnowHousePipeStageScoreboardCheck(
                 pop(otherIdx).writesGprIdxVec.asBits(myGprRange)
                 & inp.readsGprIdxVec.asBits(myGprRange)
               )//.orR
-              || (
-                pop(otherIdx).reorderBufIdx
-                === inp.reorderBufIdx
-              )
             )
 
-            if (!cfg.optRegRename) (
-              temp
-              || LcvOrR(
-                pop(otherIdx).writesGprIdxVec.asBits(myGprRange)
-                & inp.writesGprIdxVec.asBits(myGprRange)
-              )//.orR
-              || LcvOrR(
-                pop(otherIdx).readsGprIdxVec.asBits(myGprRange)
-                & inp.writesGprIdxVec.asBits(myGprRange)
-              )//.orR
-            ) else ( // if (cfg.optRegRename)
-              // register renaming eliminates WaW and WaR hazards!
-              temp
-              //True
+            (
+              (
+                if (!cfg.optRegRename) (
+                  temp
+                  || LcvOrR(
+                    pop(otherIdx).writesGprIdxVec.asBits(myGprRange)
+                    & inp.writesGprIdxVec.asBits(myGprRange)
+                  )//.orR
+                  || LcvOrR(
+                    pop(otherIdx).readsGprIdxVec.asBits(myGprRange)
+                    & inp.writesGprIdxVec.asBits(myGprRange)
+                  )//.orR
+                ) else ( // if (cfg.optRegRename)
+                  // register renaming eliminates WaW and WaR hazards!
+                  temp
+                  //True
+                )
+              )
             )
           }
         )
@@ -4983,23 +4983,31 @@ case class SnowHousePipeStageScoreboardCheck(
             ),
             False,
             (
-              if (tempSize == 0) (
-                tempCond
-                //True
-              ) else (
-                tempCond
-                || (
-                  pop(otherIdx).splitOp.opIsMemAccess
-                  && inp.splitOp.opIsMemAccess
-                  && (
-                    pop(
-                      otherIdx
-                    ).inpDecodeExt.last.memAccessKind.asBits(1)
-                    =/= inp.inpDecodeExt.last.memAccessKind.asBits(1)
+              (
+                if (tempSize == 0) (
+                  tempCond
+                  //True
+                ) else (
+                  tempCond
+                  || (
+                    pop(otherIdx).splitOp.opIsMemAccess
+                    && inp.splitOp.opIsMemAccess
+                    && (
+                      pop(
+                        otherIdx
+                      ).inpDecodeExt.last.memAccessKind.asBits(1)
+                      =/= inp.inpDecodeExt.last.memAccessKind.asBits(1)
+                    )
+                    //|| !(
+                    //  !inp.inpDecodeExt.last.memAccessKind.asBits(1)
+                    //)
                   )
-                  //|| !(
-                  //  !inp.inpDecodeExt.last.memAccessKind.asBits(1)
-                  //)
+                )
+              )
+              && (
+                (
+                  pop(otherIdx).reorderBufIdx
+                  =/= inp.reorderBufIdx
                 )
               )
               //!pop(otherIdx).splitOp.scoreboardOpCanBeOooIssued(1)
