@@ -5958,14 +5958,14 @@ case class SnowHouseForFmaxPipeStageWriteBack(
                 )
               )
             )
-            || (
-              !myDbgHaveNewNonBubbleTag
-              //!Mux(
-              //  !myDbgCommitBackStm.commit.opIsFwd,
-              //  myDbgHaveNewNonFwdTag,
-              //  myDbgHaveNewFwdTag,
-              //)
-            )
+            //|| (
+            //  !myDbgHaveNewNonBubbleTag
+            //  //!Mux(
+            //  //  !myDbgCommitBackStm.commit.opIsFwd,
+            //  //  myDbgHaveNewNonFwdTag,
+            //  //  myDbgHaveNewFwdTag,
+            //  //)
+            //)
           )
         ) else (
           myDbgCommitBackStm.myWbPayload
@@ -5988,7 +5988,7 @@ case class SnowHouseForFmaxPipeStageWriteBack(
                 )
               )
             )
-            || !myDbgHaveNewNonBubbleTag
+            //|| !myDbgHaveNewNonBubbleTag
           )
         } else {
           myDbgCommitBackStm
