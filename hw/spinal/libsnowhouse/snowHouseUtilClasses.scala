@@ -1373,7 +1373,7 @@ case class SnowHouseConfig(
       case Some(myOooIssueWindow) => {
         //log2Up(8)
         (
-          log2Up(myOooIssueWindow) + 1//2//1//2//1
+          log2Up(myOooIssueWindow) + 2//1//2//1//2//1
         ).max(
           log2Up(
             32
