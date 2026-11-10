@@ -1376,8 +1376,8 @@ case class SnowHouseConfig(
           log2Up(myOooIssueWindow) + 1//2//1//2//1
         ).max(
           log2Up(
-            //32
-            16
+            32
+            //16
             //64
             //numGprs
           )
