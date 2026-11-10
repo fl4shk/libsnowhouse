@@ -4969,6 +4969,10 @@ case class SnowHousePipeStageScoreboardCheck(
                 pop(otherIdx).writesGprIdxVec.asBits(myGprRange)
                 & inp.readsGprIdxVec.asBits(myGprRange)
               )//.orR
+              || LcvOrR(
+                pop(otherIdx).readsGprIdxVec.asBits(myGprRange)
+                & inp.readsGprIdxVec.asBits(myGprRange)
+              )//.orR
             )
 
             (
