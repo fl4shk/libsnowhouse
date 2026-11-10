@@ -4995,51 +4995,84 @@ case class SnowHousePipeStageScoreboardCheck(
         //println(
         //  s"mkTempHazardPop(otherIdx:${otherIdx}) tempSize:${tempSize}"
         //)
-        val myMuxVec = Vec[Bool](
+        val myCondVec = Vec[Bool](
           (
-            Mux(
-              (
+            (
+              Mux(
                 (
-                  pop(otherIdx).fire
-                  || !pop(otherIdx).valid
-                )
-              ),
-              False,
-              (
-                (
-                  if (tempSize == 0) (
-                    tempCond
-                    //True
-                  ) else (
-                    (
-                      tempCond
-                      || (
-                        pop(otherIdx).splitOp.opIsMemAccess
-                        && inp.splitOp.opIsMemAccess
-                        && (
-                          pop(
-                            otherIdx
-                          ).inpDecodeExt.last.memAccessKind.asBits(1)
-                          =/= inp.inpDecodeExt.last.memAccessKind.asBits(1)
-                        )
-                        //|| !(
-                        //  !inp.inpDecodeExt.last.memAccessKind.asBits(1)
-                        //)
-                      )
-                    )
-                    //|| (
-                    //  pop(otherIdx).reorderBufIdx
-                    //  === inp.reorderBufIdx
-                    //)
+                  (
+                    pop(otherIdx).fire
+                    || !pop(otherIdx).valid
                   )
+                ),
+                False,
+                (
+                  (
+                    if (tempSize == 0) (
+                      tempCond
+                      //True
+                    ) else (
+                      (
+                        tempCond
+                        || (
+                          pop(otherIdx).splitOp.opIsMemAccess
+                          && inp.splitOp.opIsMemAccess
+                          && (
+                            pop(
+                              otherIdx
+                            ).inpDecodeExt.last.memAccessKind.asBits(1)
+                            =/= inp.inpDecodeExt.last.memAccessKind.asBits(1)
+                          )
+                          //|| !(
+                          //  !inp.inpDecodeExt.last.memAccessKind.asBits(1)
+                          //)
+                        )
+                      )
+                      //|| (
+                      //  pop(otherIdx).reorderBufIdx
+                      //  === inp.reorderBufIdx
+                      //)
+                    )
+                  )
+
+
+                  //!pop(otherIdx).splitOp.scoreboardOpCanBeOooIssued(1)
+                  //|| 
+                  //pop(otherIdx).splitOp
+                  //&& 
+                  //pop(otherIdx).inpDecodeExt.last.opIsNonFwd
+                  //&& 
                 )
-                //!pop(otherIdx).splitOp.scoreboardOpCanBeOooIssued(1)
-                //|| 
-                //pop(otherIdx).splitOp
-                //&& 
-                //pop(otherIdx).inpDecodeExt.last.opIsNonFwd
-                //&& 
               )
+            )
+            || (
+              (
+                !inp.splitOp.scoreboardOpCanBeOooIssued(1)
+                //&& (
+                //  !LcvOrR(
+                //    myOooNonFwdRaWHazardCheckVec(
+                //      idx - myOooRdBufExtraSize
+                //    )
+                //  )
+                //  && !LcvOrR(
+                //    myOooFwdRaWHazardCheckVec(
+                //      idx - myOooRdBufExtraSize
+                //    )
+                //  )
+                //)
+              )
+              //&& (
+              //  !LcvOrR(
+              //    myOooNonFwdRaWHazardCheckVec(
+              //      otherIdx - 1 - myOooRdBufExtraSize
+              //    )
+              //  )
+              //  && !LcvOrR(
+              //    myOooFwdRaWHazardCheckVec(
+              //      otherIdx - 1 - myOooRdBufExtraSize
+              //    )
+              //  )
+              //)
             )
           ),
           //(
@@ -5066,7 +5099,7 @@ case class SnowHousePipeStageScoreboardCheck(
         )
 
         if (tempSize == 0) (
-          myMuxVec.head
+          myCondVec.head
           //&& !myMuxVec.last
           //&& !myMuxVec.last
           //|| myMuxVec.last
@@ -5163,9 +5196,6 @@ case class SnowHousePipeStageScoreboardCheck(
                       //).splitOp.scoreboardOpCanBeOooIssued(2)
                     )
                   )
-                  && (
-                    inp.splitOp.scoreboardOpCanBeOooIssued(1)
-                  )
                 ),
               )
             }
@@ -5213,7 +5243,7 @@ case class SnowHousePipeStageScoreboardCheck(
                 myOooIssueCheckVec.sFindFirst(_ === False)._1
                 || (
                   //myMux
-                  myMuxVec.head
+                  myCondVec.head
                 )
               )
               //&& !myMuxVec.last
@@ -5351,10 +5381,10 @@ case class SnowHousePipeStageScoreboardCheck(
           (
             (
               (
-                myBufPushStm.instrCnt.tick
+                myBufPushStm.instrCnt.reorderBufIdx
                 === (
                   RegNextWhen(
-                    myBufPushStm.instrCnt.tick,
+                    myBufPushStm.instrCnt.reorderBufIdx,
                     //myOooRdBuf.io.push.instrCnt.tick,
                     cond=(
                       //myBufPushStm.fire
@@ -5366,8 +5396,8 @@ case class SnowHousePipeStageScoreboardCheck(
                     //),
                   )
                   init(
-                    //0x2
-                    False
+                    0x2
+                    //False
                   )
                   //RegNextWhen(
                   //  myOooRdBuf.io.push.instrCnt.tick,
@@ -5851,40 +5881,49 @@ case class SnowHousePipeStageScoreboardCheck(
     //doPopLast(doUpIsFiring=true)
     //--------
     val myBufPop = myTempOooRdBufPopVec
+
     val myDispatchOkayCondMostVec = (
       Vec.fill(myOooRdBufWindow)(
-        Bool()
+        Vec.fill(cfg.regFileCfg.modRdPortCnt)(
+          Bool()
+        )
       )
     )
-    for (idx <- 0 until myOooRdBufWindow) {
-      myDispatchOkayCondMostVec(idx) := {
-        //(
-        //  myOooFwdRaWHazardCheckVec.last.orR
-        //  || myOooNonFwdRaWHazardCheckVec.last.orR
-        //)
-        (
-          !LcvOrR(myOooFwdRaWHazardCheckVec(idx))//.orR
-          && !LcvOrR(myOooNonFwdRaWHazardCheckVec(idx))//.orR
-        )
+    for (jdx <- 0 until myOooRdBufWindow) {
+      for (idx <- 0 until cfg.regFileCfg.modRdPortCnt) {
+        myDispatchOkayCondMostVec(jdx)(idx) := {
+          //(
+          //  myOooFwdRaWHazardCheckVec.last.orR
+          //  || myOooNonFwdRaWHazardCheckVec.last.orR
+          //)
+          (
+            //!LcvOrR(myOooFwdRaWHazardCheckVec(idx))//.orR
+            //&& !LcvOrR(myOooNonFwdRaWHazardCheckVec(idx))//.orR
+            //!LcvOrR(myOooFwdRaWHazardCheckVec(idx))//.orR
+            //&& !LcvOrR(myOooNonFwdRaWHazardCheckVec(idx))//.orR
+            !myOooFwdRaWHazardCheckVec(jdx)(idx)
+            && !myOooNonFwdRaWHazardCheckVec(jdx)(idx)
+          )
 
-        //(
-        //  myOooFwdRaWHazardCheckVec.last.orR
-        //  || myOooNonFwdRaWHazardCheckVec.last.orR
-        //)
+          //(
+          //  myOooFwdRaWHazardCheckVec.last.orR
+          //  || myOooNonFwdRaWHazardCheckVec.last.orR
+          //)
 
-        //&& 
-        //(
-        //  !myOooFwdRaWHazardCheckVec(idx).orR
-        //  && !myOooNonFwdRaWHazardCheckVec(idx).orR
-        //)
-        //myOooFwdRaWHazardCheckVec.zipWithIndex.map{
-        //  case (item, jdx) => {
-        //    if (jdx == idx) (
-        //      !myOooFwdRaWHazardCheckVec(jdx).orR
-        //    ) else (
-        //    )
-        //  }
-        //}.andR
+          //&& 
+          //(
+          //  !myOooFwdRaWHazardCheckVec(idx).orR
+          //  && !myOooNonFwdRaWHazardCheckVec(idx).orR
+          //)
+          //myOooFwdRaWHazardCheckVec.zipWithIndex.map{
+          //  case (item, jdx) => {
+          //    if (jdx == idx) (
+          //      !myOooFwdRaWHazardCheckVec(jdx).orR
+          //    ) else (
+          //    )
+          //  }
+          //}.andR
+        }
       }
     }
 
@@ -5958,35 +5997,144 @@ case class SnowHousePipeStageScoreboardCheck(
         Bool()
       )
     )
+
     for (idx <- 0 until myOooRdBufWindow) {
-      myRealDispatchOkayCondVec(idx) := (
-        (
+      //val myTempVec = Vec.fill(myOooRdBufWindow - idx)(
+      //  Vec.fill(cfg.regFileCfg.modRdPortCnt)(
+      //    Bool()
+      //  )
+      //)
+
+      //for (kdx <- 0 until cfg.regFileCfg.modRdPortCnt) {
+      //  for (jdx <- idx until myOooRdBufWindow) {
+      //    if (idx < myOooRdBufWindow - 1) {
+      //      val myTempGprIdxVec = (
+      //        Vec.fill(myOooRdBufWindow - idx - 1)(
+      //          UInt(log2Up(cfg.numRenamedGprs) bits)
+      //        )
+      //      )
+      //      val myJdx = jdx - idx
+
+      //      myTempVec(myJdx)(kdx) := (
+      //        myDispatchOkayCondMostVec(kdx)(jdx)
+      //        //(
+      //        //  //myBufPop(
+      //        //  //  jdx + myOooRdBufExtraSize
+      //        //  //).renamedGprIdxVec(kdx)
+      //        //  //=== myBufPop(
+      //        //  //)
+      //        //)
+      //      )
+      //    } else {
+      //      //myToFindFirstVec(kdx)
+      //    }
+      //  }
+      //}
+
+      //val myTempGprIdxVec = (
+      //  Vec.fill(myOooRdBufWindow - idx)(
+      //    UInt(log2Up(cfg.numRenamedGprs) bits)
+      //  )
+      //)
+
+      //val myTempGprIdxCmpEqVec = (
+      //  Vec.fill(myOooRdBufWindow - idx)(
+      //    Bool()
+      //  )
+      //)
+
+
+      //for (jdx <- idx until myOooRdBufWindow) {
+      //  if 
+      //}
+
+      //val myFindFirst = myBufP
+
+      if (idx < myOooRdBufWindow - 1) {
+        //val myTempVec = Vec.fill(
+        //  myOooRdBufWindow - idx - 1
+        //)(
+        //  Vec.fill(cfg.regFileCfg.modRdPortCnt)(
+        //    Bool()
+        //  )
+        //)
+        //for (jdx <- idx + 1 until myOooRdBufWindow) {
+        //  for (kdx <- 0 until cfg.regFileCfg.modRdPortCnt) {
+        //    myTempVec(jdx - (idx + 1))(kdx) := (
+        //      !myDispatchOkayCondMostVec(jdx)(kdx)
+        //      && (
+        //        (
+        //          myBufPop(jdx + myOooRdBufExtraSize).readsGprIdxVec(
+        //            myBufPop(idx + myOooRdBufExtraSize).renamedGprIdxVec(
+        //              kdx
+        //            )
+        //          )
+        //          //|| 
+        //          //myBufPop(
+        //          //  jdx + myOooRdBufExtraSize
+        //          //).writesGprIdxVec(
+        //          //  myBufPop(idx + myOooRdBufExtraSize).renamedGprIdxVec(
+        //          //    kdx
+        //          //  )
+        //          //)
+        //        )
+        //        && (
+        //          myBufPop(jdx + myOooRdBufExtraSize).valid
+        //        )
+        //        //&& !(
+        //        //  myBufPop(idx + myOooRdBufExtraSize).fire
+        //        //  || !myBufPop(idx + myOooRdBufExtraSize).valid
+        //        //)
+        //      )
+        //    )
+        //  }
+        //}
+
+        myRealDispatchOkayCondVec(idx) := (
           (
-            if (idx < myOooRdBufWindow - 1) (
-              myPopValidVec(idx)
-              //&& rPastMainDispatchOkayCondVec(idx)
-              && myDispatchOkayCondMostVec(idx)
-              && myBufPop(
-                idx + myOooRdBufExtraSize //+ 1
-              ).splitOp.scoreboardOpCanBeOooIssued.last
-              //&& myPopValidVec.last
-            ) else (
-              myPopValidVec(idx)
-              && myDispatchOkayCondMostVec(idx)
+            myPopValidVec(idx)
+            //&& rPastMainDispatchOkayCondVec(idx)
+            && (
+              LcvAndR(myDispatchOkayCondMostVec(idx))
+              //!myFindFirst._1
+              //LcvOrR(myTempVec(idx))
             )
+            //&& (
+            //  !myTempVec.sFindFirst(item => {
+            //    LcvOrR(item)
+            //  })._1
+            //)
+            && myBufPop(
+              idx + myOooRdBufExtraSize
+            ).splitOp.scoreboardOpCanBeOooIssued.last
+            //&& myPopValidVec.last
+            && !rMyInFlightReorderBufIdxVec(
+              myBufPop(
+                idx + myOooRdBufExtraSize
+              ).reorderBufIdx
+            )
+          )
+          //&& (
+          //  myDispatchReorderBufIdxOkayCondVec(
+          //    idx
+          //  )
+          //)
+        )
+      } else {
+        myRealDispatchOkayCondVec(idx) := (
+          myPopValidVec(idx)
+          && (
+            LcvAndR(myDispatchOkayCondMostVec(idx))
           )
           && !rMyInFlightReorderBufIdxVec(
             myBufPop(
-              idx + myOooRdBufExtraSize //+ 1
+              idx + myOooRdBufExtraSize
             ).reorderBufIdx
           )
         )
-        //&& (
-        //  myDispatchReorderBufIdxOkayCondVec(
-        //    idx
-        //  )
-        //)
-      )
+        //&& myDispatchOkayCondMostVec(idx)
+        //&& !myFindFirst._1
+      }
     }
 
     //case class MyReorderBufFlushInfoPayload(
