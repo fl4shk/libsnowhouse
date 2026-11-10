@@ -5147,6 +5147,12 @@ case class SnowHousePipeStageScoreboardCheck(
                     //  //otherIdx + kdx
                     //  kdx + myOooRdBufExtraSize
                     //).splitOp.scoreboardOpCanBeOooIssued(2)
+                    && (
+                      pop(
+                        kdx + myOooRdBufExtraSize
+                      ).reorderBufIdx
+                      =/= inp.reorderBufIdx
+                    )
                   ) else (
                     True
                     //False
@@ -5340,10 +5346,10 @@ case class SnowHousePipeStageScoreboardCheck(
           (
             (
               (
-                myBufPushStm.instrCnt.reorderBufIdx
+                myBufPushStm.instrCnt.tick
                 === (
                   RegNextWhen(
-                    myBufPushStm.instrCnt.reorderBufIdx,
+                    myBufPushStm.instrCnt.tick,
                     //myOooRdBuf.io.push.instrCnt.tick,
                     cond=(
                       //myBufPushStm.fire
@@ -5354,7 +5360,10 @@ case class SnowHousePipeStageScoreboardCheck(
                     //  //True
                     //),
                   )
-                  init(0x2)
+                  init(
+                    //0x2
+                    False
+                  )
                   //RegNextWhen(
                   //  myOooRdBuf.io.push.instrCnt.tick,
                   //  cond=myOooRdBuf.io.push.fire,
@@ -5404,11 +5413,13 @@ case class SnowHousePipeStageScoreboardCheck(
     )
 
     when (
-      myOooRdBuf.io.push.fire
-      && !myBufPushStm.instrCnt.myPsIdBubble.last
+      //myOooRdBuf.io.push.fire
+      //&& !myBufPushStm.instrCnt.myPsIdBubble.last
+      up.isFiring
     ) {
       rMyInFlightReorderBufIdxVec(
-        myBufPushStm.reorderBufIdx
+        //myBufPushStm.reorderBufIdx
+        upPayload(1).reorderBufIdx
       ) := (
         True
       )
@@ -5459,16 +5470,16 @@ case class SnowHousePipeStageScoreboardCheck(
       //  rMyInFlightReorderBufIdxVec(
       //    myBufPushStm.reorderBufIdx
       //  )
-      //  && (
-      //    RegNextWhen(
-      //      True,
-      //      cond=(
-      //        //myBufPushStm.fire
-      //        up.isFiring
-      //      ),
-      //      init=False
-      //    )
-      //  )
+      //  //&& (
+      //  //  RegNextWhen(
+      //  //    True,
+      //  //    cond=(
+      //  //      //myBufPushStm.fire
+      //  //      up.isFiring
+      //  //    ),
+      //  //    init=False
+      //  //  )
+      //  //)
       //  //&& (
       //  //  !myBufPushStm.instrCnt.myPsIdBubble.head
       //  //)
@@ -5931,6 +5942,11 @@ case class SnowHousePipeStageScoreboardCheck(
     //  )
     //}
 
+    //val myDispatchReorderBufIdxOkayCondVec = (
+    //  Vec.fill(myOooRdBufWindow)(
+    //    Bool()
+    //  )
+    //)
 
     val myRealDispatchOkayCondVec = (
       Vec.fill(myOooRdBufWindow)(
@@ -5940,23 +5956,30 @@ case class SnowHousePipeStageScoreboardCheck(
     for (idx <- 0 until myOooRdBufWindow) {
       myRealDispatchOkayCondVec(idx) := (
         (
-          if (idx < myOooRdBufWindow - 1) (
-            myPopValidVec(idx)
-            //&& rPastMainDispatchOkayCondVec(idx)
-            && myDispatchOkayCondMostVec(idx)
-            && myBufPop(
+          (
+            if (idx < myOooRdBufWindow - 1) (
+              myPopValidVec(idx)
+              //&& rPastMainDispatchOkayCondVec(idx)
+              && myDispatchOkayCondMostVec(idx)
+              && myBufPop(
+                idx + myOooRdBufExtraSize //+ 1
+              ).splitOp.scoreboardOpCanBeOooIssued.last
+              //&& myPopValidVec.last
+            ) else (
+              myPopValidVec(idx)
+              && myDispatchOkayCondMostVec(idx)
+            )
+          )
+          && !rMyInFlightReorderBufIdxVec(
+            myBufPop(
               idx + myOooRdBufExtraSize //+ 1
-            ).splitOp.scoreboardOpCanBeOooIssued.last
-            //&& myPopValidVec.last
-          ) else (
-            myPopValidVec(idx)
-            && myDispatchOkayCondMostVec(idx)
+            ).reorderBufIdx
           )
         )
-        //&& !rMyInFlightReorderBufIdxVec(
-        //  myBufPop(
-        //    idx + myOooRdBufExtraSize //+ 1
-        //  ).reorderBufIdx
+        //&& (
+        //  myDispatchReorderBufIdxOkayCondVec(
+        //    idx
+        //  )
         //)
       )
     }

@@ -1371,13 +1371,14 @@ case class SnowHouseConfig(
     //log2Up(64)
     optScoreboardOooIssueWindow match {
       case Some(myOooIssueWindow) => {
+        //log2Up(8)
         (
-          log2Up(myOooIssueWindow) + 2//1//2//1
+          log2Up(myOooIssueWindow) + 1//2//1//2//1
         ).max(
           log2Up(
             //32
-            //16
-            64
+            16
+            //64
             //numGprs
           )
           //log2Up(64)
