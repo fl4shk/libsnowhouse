@@ -5225,7 +5225,7 @@ case class SnowHousePipeStageScoreboardCheck(
             if (
               //jdx + myOooRdBufExtraSize + 1 >= idx
               //&& jdx < pop.size
-              otherIdx > idx && otherIdx < pop.size
+              otherIdx >= idx && otherIdx < pop.size
             ) {
               //println(
               //  s"main loop: otherIdx:${otherIdx}: main cond"
