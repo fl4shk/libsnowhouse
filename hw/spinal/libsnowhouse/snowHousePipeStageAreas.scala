@@ -5213,7 +5213,7 @@ case class SnowHousePipeStageScoreboardCheck(
           )
         }
       }
-      if (idx >= myOooRdBufExtraSize) {
+      if (idx >= myOooRdBufExtraSize - 1) {
         val myTempHazardPopVec = Vec.fill(
           myOooRdBufWindow + 1
         )(
@@ -5225,7 +5225,7 @@ case class SnowHousePipeStageScoreboardCheck(
             if (
               //jdx + myOooRdBufExtraSize + 1 >= idx
               //&& jdx < pop.size
-              otherIdx >= idx && otherIdx < pop.size
+              otherIdx > idx && otherIdx < pop.size
             ) {
               //println(
               //  s"main loop: otherIdx:${otherIdx}: main cond"
