@@ -2237,7 +2237,7 @@ case class SnowHouseForFmaxPsWbCommitEtc(
   //    Bool()
   //  )
   //)
-  val scoreboardCommmit = (
+  val scoreboardCommit = (
     cfg.optScoreboard
   ) generate (
     master(
@@ -5448,7 +5448,7 @@ case class SnowHouseForFmaxPipeStageWriteBack(
       //myCommitForkStm.last
       myCommitTrueFinalOutpStmVec.last
     )
-    .translateInto(io.commitEtc.scoreboardCommmit)(
+    .translateInto(io.commitEtc.scoreboardCommit)(
       dataAssignment=(outp, inp) => {
         outp := inp.commit
       }
