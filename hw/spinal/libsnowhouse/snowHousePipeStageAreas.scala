@@ -4888,9 +4888,9 @@ case class SnowHousePipeStageScoreboardCheck(
       pop: Vec[Stream[SnowHousePipePayload]],
     ): Unit = {
       outp := inp
-      //println(
-      //  s"NOTE: pop.size:${pop.size}"
-      //)
+      println(
+        s"NOTE: pop.size:${pop.size}"
+      )
 
       //if (idx == 0) {
       //  //outp
@@ -4952,9 +4952,11 @@ case class SnowHousePipeStageScoreboardCheck(
             )
           }
         )
-        //println(
-        //  s"mkTempHazardPop(otherIdx:${otherIdx}) tempSize:${tempSize}"
-        //)
+        println(
+          s"mkTempHazardPop(otherIdx:${otherIdx}) "
+          + s"idx:${idx} "
+          + s"tempSize:${tempSize}"
+        )
         val myCondVec = Vec[Bool](
           (
             (
@@ -4974,19 +4976,6 @@ case class SnowHousePipeStageScoreboardCheck(
                     ) else (
                       (
                         tempCond
-                        || (
-                          pop(otherIdx).splitOp.opIsMemAccess
-                          && inp.splitOp.opIsMemAccess
-                          && (
-                            pop(
-                              otherIdx
-                            ).inpDecodeExt.last.memAccessKind.asBits(1)
-                            =/= inp.inpDecodeExt.last.memAccessKind.asBits(1)
-                          )
-                          //|| !(
-                          //  !inp.inpDecodeExt.last.memAccessKind.asBits(1)
-                          //)
-                        )
                       )
                       //|| (
                       //  pop(otherIdx).reorderBufIdx
@@ -5146,6 +5135,19 @@ case class SnowHousePipeStageScoreboardCheck(
                           kdx + myOooRdBufExtraSize
                         ).reorderBufIdx
                         =/= inp.reorderBufIdx
+                      )
+                      && (
+                        !pop(otherIdx).splitOp.opIsMemAccess
+                        || !inp.splitOp.opIsMemAccess
+                        || (
+                          pop(
+                            otherIdx
+                          ).inpDecodeExt.last.memAccessKind.asBits(1)
+                          === inp.inpDecodeExt.last.memAccessKind.asBits(1)
+                        )
+                        //|| !(
+                        //  !inp.inpDecodeExt.last.memAccessKind.asBits(1)
+                        //)
                       )
                     ) else (
                       True
