@@ -5047,12 +5047,12 @@ case class SnowHousePipeStageScoreboardCheck(
           //)
         )
 
-        if (tempSize == 0) (
-          myCondVec.head
-          //&& !myMuxVec.last
-          //&& !myMuxVec.last
-          //|| myMuxVec.last
-        ) else {
+        //if (tempSize == 0) (
+        //  myCondVec.head
+        //  //&& !myMuxVec.last
+        //  //&& !myMuxVec.last
+        //  //|| myMuxVec.last
+        //) else {
           //val myMemAccessCheckVec = Vec.fill(
           //  tempSize
           //)(
@@ -5211,7 +5211,7 @@ case class SnowHousePipeStageScoreboardCheck(
               //&& !myMuxVec.last
             )
           )
-        }
+        //}
       }
       if (idx >= myOooRdBufExtraSize - 1) {
         val myTempHazardPopVec = Vec.fill(
@@ -5227,9 +5227,9 @@ case class SnowHousePipeStageScoreboardCheck(
               //&& jdx < pop.size
               otherIdx > idx && otherIdx < pop.size
             ) {
-              //println(
-              //  s"main loop: otherIdx:${otherIdx}: main cond"
-              //)
+              println(
+                s"main loop: otherIdx:${otherIdx}: main cond"
+              )
               //println(
               //  s"jdx:${jdx} "
               //  + s"+ myOooRdBufExtraSize:${myOooRdBufExtraSize} + 1 "
@@ -5240,9 +5240,9 @@ case class SnowHousePipeStageScoreboardCheck(
                 otherIdx=otherIdx
               )
             } else {
-              //println(
-              //  s"main loop: otherIdx:${otherIdx}: force False"
-              //)
+              println(
+                s"main loop: otherIdx:${otherIdx}: force False"
+              )
               False
             }
           }
