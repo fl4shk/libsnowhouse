@@ -4888,9 +4888,9 @@ case class SnowHousePipeStageScoreboardCheck(
       pop: Vec[Stream[SnowHousePipePayload]],
     ): Unit = {
       outp := inp
-      println(
-        s"NOTE: pop.size:${pop.size}"
-      )
+      //println(
+      //  s"NOTE: pop.size:${pop.size}"
+      //)
 
       //if (idx == 0) {
       //  //outp
@@ -4952,11 +4952,11 @@ case class SnowHousePipeStageScoreboardCheck(
             )
           }
         )
-        println(
-          s"mkTempHazardPop(otherIdx:${otherIdx}) "
-          + s"idx:${idx} "
-          + s"tempSize:${tempSize}"
-        )
+        //println(
+        //  s"mkTempHazardPop(otherIdx:${otherIdx}) "
+        //  + s"idx:${idx} "
+        //  + s"tempSize:${tempSize}"
+        //)
         val myCondVec = Vec[Bool](
           (
             (
@@ -5227,9 +5227,9 @@ case class SnowHousePipeStageScoreboardCheck(
               //&& jdx < pop.size
               otherIdx > idx && otherIdx < pop.size
             ) {
-              println(
-                s"main loop: otherIdx:${otherIdx}: main cond"
-              )
+              //println(
+              //  s"main loop: otherIdx:${otherIdx}: main cond"
+              //)
               //println(
               //  s"jdx:${jdx} "
               //  + s"+ myOooRdBufExtraSize:${myOooRdBufExtraSize} + 1 "
@@ -5240,9 +5240,9 @@ case class SnowHousePipeStageScoreboardCheck(
                 otherIdx=otherIdx
               )
             } else {
-              println(
-                s"main loop: otherIdx:${otherIdx}: force False"
-              )
+              //println(
+              //  s"main loop: otherIdx:${otherIdx}: force False"
+              //)
               False
             }
           }
