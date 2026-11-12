@@ -5512,7 +5512,7 @@ case class SnowHousePipeStageScoreboardCheck(
                 //&& !myBufPushStm.instrCnt.myPsIdBubble.last
                 && !myBufPushStm.instrCnt.myPsIdOtherBubble.last
               )
-              || myBufPushStm.instrCnt.myPsIdBubble.last
+              //|| myBufPushStm.instrCnt.myPsIdBubble.last
             )
             //up(pId).instrCnt.tick
             //=== (
@@ -6483,6 +6483,7 @@ case class SnowHousePipeStageScoreboardCheck(
         //--------
         //myOtherFlushCondMost.andR
         myOtherFlushCondMost.head
+        //&& !LcvOrR(myRealDispatchOkayCondVec.asBits)
         //--------
       )
       //&& !(
@@ -6531,9 +6532,23 @@ case class SnowHousePipeStageScoreboardCheck(
       )
     }
 
+    val myDuplOrThrowFindFirst = (
+      myBufPop.sFindFirst(item => (
+        item.valid
+        && item.instrCnt.myPsIdBubble.last
+      ))
+    )
+
     when (
       //myOtherFlushCondMost.andR
       myOtherFlushCondMost.head
+      && (
+        !myDuplOrThrowFindFirst._1
+        //!LcvOrR(myRealDispatchOkayCondVec.asBits)//.orR
+        //&& !(
+        //  
+        //)
+      )
       //&& !(
       //  !LcvOrR(myPopValidVec)
       //  && myThrowItCond
@@ -6580,6 +6595,12 @@ case class SnowHousePipeStageScoreboardCheck(
       //)
     ) {
       cScoreboardCheck.duplicateIt()
+    }
+    when (
+      myOtherFlushCondMost.head
+      && myDuplOrThrowFindFirst._1
+    ) {
+      cScoreboardCheck.throwIt()
     }
 
     //when (

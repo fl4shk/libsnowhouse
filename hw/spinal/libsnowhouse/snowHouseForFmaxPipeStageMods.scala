@@ -5417,9 +5417,10 @@ case class SnowHouseForFmaxPipeStageWriteBack(
       //myCommitBackStm
       // END: old early commit stuff
       //--------
-      myCommitBackStm.throwWhen(
-        myCommitBackStm.bubble
-      )
+      //myCommitBackStm.throwWhen(
+      //  myCommitBackStm.bubble
+      //)
+      myCommitBackStm
     )
     //val myTempCommitStm = (
     //  cloneOf(myCommitBackStm)
@@ -5483,6 +5484,7 @@ case class SnowHouseForFmaxPipeStageWriteBack(
       if (cfg.optRegRename) {
         myTempCommitFork(idx).throwWhen(
           myTempCommitFork(idx).innerReorderBufIdx =/= idx
+          || myTempCommitFork(idx).bubble
         ).translateInto(myReorderBufArr(idx).io.push)(
           dataAssignment=(outp, inp) => {
             outp.myWord := inp
@@ -5493,7 +5495,9 @@ case class SnowHouseForFmaxPipeStageWriteBack(
           }
         )
       } else {
-        myTempCommitStm.translateInto(myReorderBufArr(idx).io.push)(
+        myTempCommitStm.throwWhen(
+          myTempCommitStm.bubble
+        ).translateInto(myReorderBufArr(idx).io.push)(
           dataAssignment=(outp, inp) => {
             outp.myWord := inp
             outp.reorderBufIdx := inp.reorderBufIdx
