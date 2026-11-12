@@ -6598,15 +6598,29 @@ case class SnowHousePipeStageScoreboardCheck(
       cScoreboardCheck.duplicateIt()
     }
 
-    when (
-      myOtherFlushCondMost.head
-      && (
-        LcvOrR(myPopValidVec)
-        && myDuplOrThrowFindFirst._1
+    switch (
+      (
+        myOtherFlushCondMost.head
+        && (
+          LcvOrR(myPopValidVec)
+          && myDuplOrThrowFindFirst._1
+        )
+      )
+      ## (
+        myDuplOrThrowFindFirst._2
       )
     ) {
-      myBufPop(myDuplOrThrowFindFirst._2).ready := True
-      cScoreboardCheck.throwIt()
+      for (idx <- 0 until (1 << myDuplOrThrowFindFirst._2.getWidth)) {
+        is (
+          (1 << myDuplOrThrowFindFirst._2.getWidth)
+          | idx
+        ) {
+          myBufPop(idx).ready := True
+          cScoreboardCheck.throwIt()
+        }
+      }
+      default {
+      }
     }
 
     //when (
