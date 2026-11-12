@@ -6490,6 +6490,7 @@ case class SnowHousePipeStageScoreboardCheck(
         //--------
         //myOtherFlushCondMost.andR
         myOtherFlushCondMost.head
+        //&& LcvAndR(myPopValidVec)
         //&& !LcvOrR(myRealDispatchOkayCondVec.asBits)
         //&& !(
         //  //LcvOrR(myPopValidVec)
@@ -6551,7 +6552,8 @@ case class SnowHousePipeStageScoreboardCheck(
     when (
       //myOtherFlushCondMost.andR
       myOtherFlushCondMost.head
-      && LcvOrR(myPopValidVec)
+      //&& LcvOrR(myPopValidVec)
+      //&& LcvAndR(myPopValidVec)
       //&& !(
       //  //LcvOrR(myPopValidVec)
       //  //&& myDuplOrThrowFindFirst._1
@@ -6610,6 +6612,15 @@ case class SnowHousePipeStageScoreboardCheck(
       cScoreboardCheck.duplicateIt()
     }
 
+    when (
+      up.isValid
+      && myOtherFlushCondMost.head
+      && !LcvOrR(myPopValidVec)
+    ) {
+      //cScoreboardCheck.terminateIt()
+      cScoreboardCheck.haltIt()
+    }
+
     //switch (
     //  (
     //    myOtherFlushCondMost.head
@@ -6639,6 +6650,7 @@ case class SnowHousePipeStageScoreboardCheck(
     //  default {
     //  }
     //}
+
     when (
       up.isValid
       && myOtherFlushCondMost.head
