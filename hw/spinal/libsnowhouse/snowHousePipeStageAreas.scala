@@ -6470,6 +6470,14 @@ case class SnowHousePipeStageScoreboardCheck(
     //  }
     //}
 
+    val myDuplOrThrowFindFirst = (
+      myBufPop.sFindFirst(item => (
+        item.valid
+        && item.instrCnt.myPsIdBubble.last
+      ))
+    )
+
+
     when (
       //rScoreboardFlushState.asBits(ScoreboardFlushState.IDLE.position)
       //&& 
@@ -6484,6 +6492,15 @@ case class SnowHousePipeStageScoreboardCheck(
         //myOtherFlushCondMost.andR
         myOtherFlushCondMost.head
         //&& !LcvOrR(myRealDispatchOkayCondVec.asBits)
+        && !(
+          //LcvOrR(myPopValidVec)
+          myDuplOrThrowFindFirst._1
+          && myBufPop(myDuplOrThrowFindFirst._2).valid
+          //!LcvOrR(myRealDispatchOkayCondVec.asBits)//.orR
+          //&& !(
+          //  
+          //)
+        )
         //--------
       )
       //&& !(
@@ -6532,23 +6549,18 @@ case class SnowHousePipeStageScoreboardCheck(
       )
     }
 
-    val myDuplOrThrowFindFirst = (
-      myBufPop.sFindFirst(item => (
-        item.valid
-        && item.instrCnt.myPsIdBubble.last
-      ))
-    )
-
     when (
       //myOtherFlushCondMost.andR
       myOtherFlushCondMost.head
       && !(
-        LcvOrR(myPopValidVec)
-        && myDuplOrThrowFindFirst._1
-        //!LcvOrR(myRealDispatchOkayCondVec.asBits)//.orR
-        //&& !(
-        //  
-        //)
+        //LcvOrR(myPopValidVec)
+        //&& myDuplOrThrowFindFirst._1
+        ////!LcvOrR(myRealDispatchOkayCondVec.asBits)//.orR
+        ////&& !(
+        ////  
+        ////)
+        myDuplOrThrowFindFirst._1
+        && myBufPop(myDuplOrThrowFindFirst._2).valid
       )
       //&& !(
       //  !LcvOrR(myPopValidVec)
@@ -6602,8 +6614,10 @@ case class SnowHousePipeStageScoreboardCheck(
       (
         myOtherFlushCondMost.head
         && (
-          LcvOrR(myPopValidVec)
-          && myDuplOrThrowFindFirst._1
+          //LcvOrR(myPopValidVec)
+          //&& myDuplOrThrowFindFirst._1
+          myDuplOrThrowFindFirst._1
+          && myBufPop(myDuplOrThrowFindFirst._2).valid
         )
       )
       ## (
