@@ -4524,7 +4524,7 @@ case class SnowHousePipeStageRegRename(
   when (
     myShouldIgnoreInstr
   ) {
-    down(pRegRename).instrCnt.myPsIdBubble.foreach(item => {
+    down(pRegRename).instrCnt.myPsIdOtherBubble.foreach(item => {
       item := True
     })
   }
@@ -5480,35 +5480,38 @@ case class SnowHousePipeStageScoreboardCheck(
           (
             (
               (
-                myBufPushStm.instrCnt.reorderBufIdx
-                === (
-                  RegNextWhen(
-                    myBufPushStm.instrCnt.reorderBufIdx,
-                    //myOooRdBuf.io.push.instrCnt.tick,
-                    cond=(
-                      //myBufPushStm.fire
-                      myOooRdBuf.io.push.fire
-                    ),
-                    //init=(
-                    //  False
-                    //  //True
-                    //),
+                (
+                  myBufPushStm.instrCnt.reorderBufIdx
+                  === (
+                    RegNextWhen(
+                      myBufPushStm.instrCnt.reorderBufIdx,
+                      //myOooRdBuf.io.push.instrCnt.tick,
+                      cond=(
+                        //myBufPushStm.fire
+                        myOooRdBuf.io.push.fire
+                      ),
+                      //init=(
+                      //  False
+                      //  //True
+                      //),
+                    )
+                    init(
+                      0x2
+                      //False
+                    )
+                    //RegNextWhen(
+                    //  myOooRdBuf.io.push.instrCnt.tick,
+                    //  cond=myOooRdBuf.io.push.fire,
+                    //  init=(
+                    //    //False
+                    //    True
+                    //  ),
+                    //)
                   )
-                  init(
-                    0x2
-                    //False
-                  )
-                  //RegNextWhen(
-                  //  myOooRdBuf.io.push.instrCnt.tick,
-                  //  cond=myOooRdBuf.io.push.fire,
-                  //  init=(
-                  //    //False
-                  //    True
-                  //  ),
-                  //)
                 )
+                //&& !myBufPushStm.instrCnt.myPsIdBubble.last
+                && !myBufPushStm.instrCnt.myPsIdOtherBubble.last
               )
-              //&& !myBufPushStm.instrCnt.myPsIdBubble.last
               || myBufPushStm.instrCnt.myPsIdBubble.last
             )
             //up(pId).instrCnt.tick
@@ -5823,6 +5826,10 @@ case class SnowHousePipeStageScoreboardCheck(
       upPayload(1).instrCnt.myPsIdBubble.foreach(item => {
         item := False
       })
+      upPayload(1).instrCnt.myPsIdOtherBubble.allowOverride
+      upPayload(1).instrCnt.myPsIdOtherBubble.foreach(item => {
+        item := False
+      })
 
       val myNodeIsFiring = (
         if (doUpIsFiring) (
@@ -5895,6 +5902,10 @@ case class SnowHousePipeStageScoreboardCheck(
       upPayload(1) := upPayload(0)
       upPayload(1).instrCnt.myPsIdBubble.allowOverride
       upPayload(1).instrCnt.myPsIdBubble.foreach(item => {
+        item := False
+      })
+      upPayload(1).instrCnt.myPsIdOtherBubble.allowOverride
+      upPayload(1).instrCnt.myPsIdOtherBubble.foreach(item => {
         item := False
       })
 
