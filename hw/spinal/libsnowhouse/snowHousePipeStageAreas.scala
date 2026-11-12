@@ -6615,7 +6615,13 @@ case class SnowHousePipeStageScoreboardCheck(
     when (
       up.isValid
       && myOtherFlushCondMost.head
-      && !LcvOrR(myPopValidVec)
+      && (
+        !LcvOrR(myPopValidVec)
+        || (
+          myThrowItCond
+          && LcvAndR(myPopValidVec)
+        )
+      )
     ) {
       cScoreboardCheck.throwIt()
       //cScoreboardCheck.terminateIt()
@@ -6652,14 +6658,14 @@ case class SnowHousePipeStageScoreboardCheck(
     //  }
     //}
 
-    when (
-      up.isValid
-      && myOtherFlushCondMost.head
-      && myThrowItCond
-      && LcvAndR(myPopValidVec)
-    ) {
-      cScoreboardCheck.throwIt()
-    }
+    //when (
+    //  up.isValid
+    //  && myOtherFlushCondMost.head
+    //  && myThrowItCond
+    //  && LcvAndR(myPopValidVec)
+    //) {
+    //  cScoreboardCheck.throwIt()
+    //}
 
 
     //when (

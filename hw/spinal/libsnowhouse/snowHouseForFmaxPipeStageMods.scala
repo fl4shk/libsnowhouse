@@ -5119,6 +5119,61 @@ case class SnowHouseForFmaxPipeStageWriteBack(
     //}
     // END: old early commit stuff
   }
+
+  val myTempNonFwdStm = (
+    cfg.optScoreboard
+  ) generate (
+    cloneOf(myNonFwdCommitFrontStm)
+  )
+
+  val myTempNonFwdFork = (
+    cfg.optScoreboard
+  ) generate (
+    //cloneOf(myNonFwdCommitFrontStm)
+    StreamFork(
+      input=(
+        //myNonFwdCommitFrontStm
+        myTempNonFwdStm
+      ),
+      portCount=2,
+      synchronous=(
+        //true
+        false
+      ),
+    )
+  )
+
+  val myTempFwdStm = (
+    cfg.optScoreboard
+  ) generate (
+    cloneOf(myFwdCommitFrontStm)
+  )
+
+  val myTempFwdFork = (
+    cfg.optScoreboard
+  ) generate (
+    //cloneOf(myFwdCommitFrontStm)
+    StreamFork(
+      input=(
+        //myFwdCommitFrontStm
+        myTempFwdStm
+      ),
+      portCount=2,
+      synchronous=(
+        //true
+        false
+      ),
+    )
+  )
+
+  if (cfg.optScoreboard) {
+    //myTempNonFwdStm <-< myNonFwdCommitFrontStm
+    myTempNonFwdStm << myNonFwdCommitFrontStm
+
+    //myTempFwdStm <-< myFwdCommitFrontStm
+    myTempFwdStm << myFwdCommitFrontStm
+  }
+
   val myCommitBackStm = (
     if (cfg.optScoreboard) {
       //--------
@@ -5144,27 +5199,34 @@ case class SnowHouseForFmaxPipeStageWriteBack(
       //Stream(
       //  SnowHouseForFmaxPsWbReorderBufPayload(cfg=cfg)
       //)
-      val myTempNonFwdStm = cloneOf(myNonFwdCommitFrontStm)
-      //myTempNonFwdStm <-< myNonFwdCommitFrontStm
-      myTempNonFwdStm << myNonFwdCommitFrontStm
-
-      val myTempFwdStm = cloneOf(myFwdCommitFrontStm)
-      //myTempFwdStm <-< myFwdCommitFrontStm
-      myTempFwdStm << myFwdCommitFrontStm
-      StreamArbiterFactory.lowerFirst.noLock.on(
-        //myCommitFrontStmVec.last
-        Vec(
-          //myCommitFrontStmVec.last.head,
-          myTempNonFwdStm,
-          myTempFwdStm
-          //myFwdCommitFrontFork.head,
+      Vec(
+        StreamArbiterFactory.lowerFirst.noLock.on(
+          //myCommitFrontStmVec.last
+          Vec(
+            //myCommitFrontStmVec.last.head,
+            myTempNonFwdFork.head,
+            myTempFwdFork.head
+            //myFwdCommitFrontFork.head,
+          )
+          //Vec(myCommitFrontStmVec.last.reverse)
+        ),
+        StreamArbiterFactory.lowerFirst.noLock.on(
+          //myCommitFrontStmVec.last
+          Vec(
+            //myCommitFrontStmVec.last.head,
+            myTempNonFwdFork.last,
+            myTempFwdFork.last
+            //myFwdCommitFrontFork.head,
+          )
+          //Vec(myCommitFrontStmVec.last.reverse)
         )
-        //Vec(myCommitFrontStmVec.last.reverse)
       )
       //--------
     } else {
-      Stream(
-        SnowHouseForFmaxPsWbReorderBufPayload(cfg=cfg)
+      Vec(
+        Stream(
+          SnowHouseForFmaxPsWbReorderBufPayload(cfg=cfg)
+        )
       )
     }
   )
@@ -5190,7 +5252,7 @@ case class SnowHouseForFmaxPipeStageWriteBack(
       //    wordType=SnowHouseForFmaxPsWbReorderBufPayload(cfg=cfg),
       //    reorderBufIdxWidth=(
       //      //cfg.optScoreboardReorderBufWidth
-      //      cfg.optScoreboardReorderBufWidth
+      //      cfg.optScoreboardOuterReorderBufWidth
       //    ),
       //  )
       //)
@@ -5263,7 +5325,8 @@ case class SnowHouseForFmaxPipeStageWriteBack(
       // END: old early commit stuff
       //--------
     ) else (
-      Vec(myCommitBackStm)
+      //Vec(myCommitBackStm)
+      myCommitBackStm
     )
   )
   val myCommitTrueFinalOutpStmVec = (
@@ -5420,8 +5483,13 @@ case class SnowHouseForFmaxPipeStageWriteBack(
       //myCommitBackStm.throwWhen(
       //  myCommitBackStm.bubble
       //)
-      myCommitBackStm
+      cloneOf(myCommitBackStm)
     )
+    myTempCommitStm.zipWithIndex.foreach{
+      case (item, idx) => {
+        item << myCommitBackStm(idx)
+      }
+    }
     //val myTempCommitStm = (
     //  cloneOf(myCommitBackStm)
     //)
@@ -5470,21 +5538,21 @@ case class SnowHouseForFmaxPipeStageWriteBack(
     //  myTempCommitStm
     //}
     // END: old early commit stuff
-    val myTempCommitFork = (
-      cfg.optRegRename
-    ) generate (
-      StreamFork(
-        input=myTempCommitStm,
-        portCount=cfg.numPhysRegsMult,
-        synchronous=true,
-      )
-    )
+    //val myTempCommitFork = (
+    //  cfg.optRegRename
+    //) generate (
+    //  StreamFork(
+    //    input=myTempCommitStm,
+    //    portCount=cfg.numPhysRegsMult,
+    //    synchronous=true,
+    //  )
+    //)
 
     for (idx <- 0 until cfg.numPhysRegsMult) {
       if (cfg.optRegRename) {
-        myTempCommitFork(idx).throwWhen(
-          myTempCommitFork(idx).innerReorderBufIdx =/= idx
-          || myTempCommitFork(idx).bubble
+        myTempCommitStm(idx).throwWhen(
+          myTempCommitStm(idx).innerReorderBufIdx =/= idx
+          || myTempCommitStm(idx).bubble
         ).translateInto(myReorderBufArr(idx).io.push)(
           dataAssignment=(outp, inp) => {
             outp.myWord := inp
@@ -5495,8 +5563,8 @@ case class SnowHouseForFmaxPipeStageWriteBack(
           }
         )
       } else {
-        myTempCommitStm.throwWhen(
-          myTempCommitStm.bubble
+        myTempCommitStm.head.throwWhen(
+          myTempCommitStm.head.bubble
         ).translateInto(myReorderBufArr(idx).io.push)(
           dataAssignment=(outp, inp) => {
             outp.myWord := inp
