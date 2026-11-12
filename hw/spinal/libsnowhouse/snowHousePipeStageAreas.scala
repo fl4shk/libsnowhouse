@@ -5512,7 +5512,7 @@ case class SnowHousePipeStageScoreboardCheck(
                 //&& !myBufPushStm.instrCnt.myPsIdBubble.last
                 && !myBufPushStm.instrCnt.myPsIdOtherBubble.last
               )
-              //|| myBufPushStm.instrCnt.myPsIdBubble.last
+              || myBufPushStm.instrCnt.myPsIdBubble.last
             )
             //up(pId).instrCnt.tick
             //=== (
@@ -6470,12 +6470,12 @@ case class SnowHousePipeStageScoreboardCheck(
     //  }
     //}
 
-    val myDuplOrThrowFindFirst = (
-      myBufPop.sFindFirst(item => (
-        item.valid
-        && item.instrCnt.myPsIdBubble.last
-      ))
-    )
+    //val myDuplOrThrowFindFirst = (
+    //  myBufPop.sFindFirst(item => (
+    //    item.valid
+    //    && item.instrCnt.myPsIdBubble.last
+    //  ))
+    //)
 
 
     when (
@@ -6492,15 +6492,15 @@ case class SnowHousePipeStageScoreboardCheck(
         //myOtherFlushCondMost.andR
         myOtherFlushCondMost.head
         //&& !LcvOrR(myRealDispatchOkayCondVec.asBits)
-        && !(
-          //LcvOrR(myPopValidVec)
-          myDuplOrThrowFindFirst._1
-          && myBufPop(myDuplOrThrowFindFirst._2).valid
-          //!LcvOrR(myRealDispatchOkayCondVec.asBits)//.orR
-          //&& !(
-          //  
-          //)
-        )
+        //&& !(
+        //  //LcvOrR(myPopValidVec)
+        //  myDuplOrThrowFindFirst._1
+        //  && myBufPop(myDuplOrThrowFindFirst._2).valid
+        //  //!LcvOrR(myRealDispatchOkayCondVec.asBits)//.orR
+        //  //&& !(
+        //  //  
+        //  //)
+        //)
         //--------
       )
       //&& !(
@@ -6552,16 +6552,16 @@ case class SnowHousePipeStageScoreboardCheck(
     when (
       //myOtherFlushCondMost.andR
       myOtherFlushCondMost.head
-      && !(
-        //LcvOrR(myPopValidVec)
-        //&& myDuplOrThrowFindFirst._1
-        ////!LcvOrR(myRealDispatchOkayCondVec.asBits)//.orR
-        ////&& !(
-        ////  
-        ////)
-        myDuplOrThrowFindFirst._1
-        && myBufPop(myDuplOrThrowFindFirst._2).valid
-      )
+      //&& !(
+      //  //LcvOrR(myPopValidVec)
+      //  //&& myDuplOrThrowFindFirst._1
+      //  ////!LcvOrR(myRealDispatchOkayCondVec.asBits)//.orR
+      //  ////&& !(
+      //  ////  
+      //  ////)
+      //  myDuplOrThrowFindFirst._1
+      //  && myBufPop(myDuplOrThrowFindFirst._2).valid
+      //)
       //&& !(
       //  !LcvOrR(myPopValidVec)
       //  && myThrowItCond
@@ -6610,34 +6610,44 @@ case class SnowHousePipeStageScoreboardCheck(
       cScoreboardCheck.duplicateIt()
     }
 
-    switch (
-      (
-        myOtherFlushCondMost.head
-        && (
-          //LcvOrR(myPopValidVec)
-          //&& myDuplOrThrowFindFirst._1
-          myDuplOrThrowFindFirst._1
-          && myBufPop(myDuplOrThrowFindFirst._2).valid
-        )
-      )
-      ## (
-        myDuplOrThrowFindFirst._2
-      )
+    //switch (
+    //  (
+    //    myOtherFlushCondMost.head
+    //    && (
+    //      //LcvOrR(myPopValidVec)
+    //      //&& myDuplOrThrowFindFirst._1
+    //      //myDuplOrThrowFindFirst._1
+    //      LcvAndR(myPopValidVec)
+    //      && myBufPop(myDuplOrThrowFindFirst._2).valid
+    //    )
+    //  )
+    //  ## (
+    //    myDuplOrThrowFindFirst._2
+    //  )
+    //) {
+    //  for (idx <- 0 until (1 << myDuplOrThrowFindFirst._2.getWidth)) {
+    //    if (idx < myBufPop.size) {
+    //      is (
+    //        (1 << myDuplOrThrowFindFirst._2.getWidth)
+    //        | idx
+    //      ) {
+    //        myBufPop(idx).ready := True
+    //        cScoreboardCheck.throwIt()
+    //      }
+    //    }
+    //  }
+    //  default {
+    //  }
+    //}
+    when (
+      up.isValid
+      && myOtherFlushCondMost.head
+      && myThrowItCond
+      && LcvAndR(myPopValidVec)
     ) {
-      for (idx <- 0 until (1 << myDuplOrThrowFindFirst._2.getWidth)) {
-        if (idx < myBufPop.size) {
-          is (
-            (1 << myDuplOrThrowFindFirst._2.getWidth)
-            | idx
-          ) {
-            myBufPop(idx).ready := True
-            cScoreboardCheck.throwIt()
-          }
-        }
-      }
-      default {
-      }
+      cScoreboardCheck.throwIt()
     }
+
 
     //when (
     //  //!myOtherFlushCondMost
