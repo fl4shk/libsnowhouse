@@ -6617,7 +6617,8 @@ case class SnowHousePipeStageScoreboardCheck(
       && myOtherFlushCondMost.head
       && !LcvOrR(myPopValidVec)
     ) {
-      cScoreboardCheck.terminateIt()
+      cScoreboardCheck.throwIt()
+      //cScoreboardCheck.terminateIt()
       //cScoreboardCheck.haltIt()
     }
 
