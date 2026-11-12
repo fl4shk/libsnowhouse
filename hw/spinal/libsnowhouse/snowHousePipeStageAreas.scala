@@ -6477,7 +6477,6 @@ case class SnowHousePipeStageScoreboardCheck(
     //  ))
     //)
 
-
     when (
       //rScoreboardFlushState.asBits(ScoreboardFlushState.IDLE.position)
       //&& 
@@ -6552,6 +6551,7 @@ case class SnowHousePipeStageScoreboardCheck(
     when (
       //myOtherFlushCondMost.andR
       myOtherFlushCondMost.head
+      && LcvOrR(myPopValidVec)
       //&& !(
       //  //LcvOrR(myPopValidVec)
       //  //&& myDuplOrThrowFindFirst._1
@@ -6643,7 +6643,7 @@ case class SnowHousePipeStageScoreboardCheck(
       up.isValid
       && myOtherFlushCondMost.head
       && myThrowItCond
-      //&& LcvAndR(myPopValidVec)
+      && LcvAndR(myPopValidVec)
     ) {
       cScoreboardCheck.throwIt()
     }
