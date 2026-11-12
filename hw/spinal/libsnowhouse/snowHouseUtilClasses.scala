@@ -1391,6 +1391,22 @@ case class SnowHouseConfig(
       }
     }
   )
+  def optScoreboardInnerReorderBufWidth = (
+    log2Up(numPhysRegsMult)
+  )
+  def optScoreboardOuterReorderBufWidth = (
+    log2Up(
+      (1 << optScoreboardReorderBufWidth) / numPhysRegsMult
+    )
+  )
+  def optScoreboardInnerReorderBufDepth = (
+    1 << log2Up(numPhysRegsMult)
+  )
+  def optScoreboardOuterReorderBufDepth = (
+    1 << log2Up(
+      (1 << optScoreboardReorderBufWidth) / numPhysRegsMult
+    )
+  )
 
   val optScoreboardOooIssueMaxNumBranches = (
     1 << optScoreboardReorderBufWidth
@@ -1857,6 +1873,9 @@ case class SnowHouseInstrCnt(
   )
   def myOooIssueCnt = scoreboardCheckPayload.myOooIssueCnt
   def reorderBufIdx = scoreboardCheckPayload.reorderBufIdx
+  def outerReorderBufIdx = scoreboardCheckPayload.outerReorderBufIdx
+  def innerReorderBufIdx = scoreboardCheckPayload.innerReorderBufIdx
+
   //def scoreboardTag = scoreboardCheckPayload.tag
   //def scoreboardCheckCntOverflow = scoreboardCheckPayload.cntOverflow
   val myScoreboardOpMayNeedHazardCheck = (
@@ -2354,6 +2373,8 @@ case class SnowHousePipePayloadNonExt(
   def myRegRenameChkptIdx = instrCnt.myRegRenameChkptIdx
   def myOooIssueCnt = instrCnt.myOooIssueCnt
   def reorderBufIdx = instrCnt.reorderBufIdx
+  def outerReorderBufIdx = instrCnt.outerReorderBufIdx
+  def innerReorderBufIdx = instrCnt.innerReorderBufIdx
 
   //val opCnt = UInt(cfg.instrCntWidth bits)
   def opCnt = instrCnt.any
@@ -2648,6 +2669,8 @@ case class SnowHousePipePayload(
   def myRegRenameChkptIdx = nonExt.myRegRenameChkptIdx
   def myOooIssueCnt = nonExt.myOooIssueCnt
   def reorderBufIdx = nonExt.reorderBufIdx
+  def outerReorderBufIdx = nonExt.outerReorderBufIdx
+  def innerReorderBufIdx = nonExt.innerReorderBufIdx
 
   def opCnt = nonExt.opCnt
   def op = nonExt.op

@@ -7676,26 +7676,30 @@ case class SnowHouseCpuWithoutRamIo(
     || cfg.exposeRegFileWriteEnableToIo
     || cfg.dbgExposeExtrasAtRegFileWrite
   ) generate (
-    out(SnowHouseDebugInfo(cfg=cfg.shCfg))
+    out(
+      Vec.fill(cfg.shCfg.numPhysRegsMult)(
+        SnowHouseDebugInfo(cfg=cfg.shCfg)
+      )
+    )
   )
-  def regFileWriteData = (
-    dbgInfo.regFileWriteData
-  )
-  def regFileWriteAddr = (
-    dbgInfo.regFileWriteAddr
-  )
-  def regFileWriteEnable = (
-    dbgInfo.regFileWriteEnable
-  )
-  def laggingRegPcAtRegFileWrite = (
-    dbgInfo.laggingRegPcAtRegFileWrite
-  )
-  def shouldIgnoreInstrAtRegFileWrite = (
-    dbgInfo.shouldIgnoreInstrAtRegFileWrite
-  )
-  def encInstrAtRegFileWrite = (
-    dbgInfo.encInstrAtRegFileWrite
-  )
+  //def regFileWriteData = (
+  //  dbgInfo.regFileWriteData
+  //)
+  //def regFileWriteAddr = (
+  //  dbgInfo.regFileWriteAddr
+  //)
+  //def regFileWriteEnable = (
+  //  dbgInfo.regFileWriteEnable
+  //)
+  //def laggingRegPcAtRegFileWrite = (
+  //  dbgInfo.laggingRegPcAtRegFileWrite
+  //)
+  //def shouldIgnoreInstrAtRegFileWrite = (
+  //  dbgInfo.shouldIgnoreInstrAtRegFileWrite
+  //)
+  //def encInstrAtRegFileWrite = (
+  //  dbgInfo.encInstrAtRegFileWrite
+  //)
 }
 case class SnowHouseCpuWithoutRam(
   program: SnowHouseCpuProgram,
@@ -7776,26 +7780,30 @@ case class SnowHouseCpuWithDualRamIo(
     || cfg.exposeRegFileWriteEnableToIo
     || cfg.dbgExposeExtrasAtRegFileWrite
   ) generate (
-    out(SnowHouseDebugInfo(cfg=cfg.shCfg))
+    out(
+      Vec.fill(cfg.shCfg.numPhysRegsMult)(
+        SnowHouseDebugInfo(cfg=cfg.shCfg)
+      )
+    )
   )
-  def regFileWriteData = (
-    dbgInfo.regFileWriteData
-  )
-  def regFileWriteAddr = (
-    dbgInfo.regFileWriteAddr
-  )
-  def regFileWriteEnable = (
-    dbgInfo.regFileWriteEnable
-  )
-  def laggingRegPcAtRegFileWrite = (
-    dbgInfo.laggingRegPcAtRegFileWrite
-  )
-  def shouldIgnoreInstrAtRegFileWrite = (
-    dbgInfo.shouldIgnoreInstrAtRegFileWrite
-  )
-  def encInstrAtRegFileWrite = (
-    dbgInfo.encInstrAtRegFileWrite
-  )
+  //def regFileWriteData = (
+  //  dbgInfo.regFileWriteData
+  //)
+  //def regFileWriteAddr = (
+  //  dbgInfo.regFileWriteAddr
+  //)
+  //def regFileWriteEnable = (
+  //  dbgInfo.regFileWriteEnable
+  //)
+  //def laggingRegPcAtRegFileWrite = (
+  //  dbgInfo.laggingRegPcAtRegFileWrite
+  //)
+  //def shouldIgnoreInstrAtRegFileWrite = (
+  //  dbgInfo.shouldIgnoreInstrAtRegFileWrite
+  //)
+  //def encInstrAtRegFileWrite = (
+  //  dbgInfo.encInstrAtRegFileWrite
+  //)
 }
 case class SnowHouseCpuWithDualRam(
   program: SnowHouseCpuProgram,
@@ -8122,34 +8130,48 @@ object SnowHouseCpuWithDualRamSim extends App {
         }
 
         dut.clockDomain.forkStimulus(10)
+        var dbgInfoIdx: Int = 0
         for (i <- 0 until numClkCycles) {
           dut.clockDomain.waitSampling()
-          val myRegFileWriteEnable = dut.io.regFileWriteEnable.toBoolean
-          val myRegFileWriteAddr = dut.io.regFileWriteAddr.toLong
-          val myRegFileWriteData = dut.io.regFileWriteData.toLong
-          val myLaggingRegPc = dut.io.laggingRegPcAtRegFileWrite.toLong
+          for (
+            //dbgInfo <- dut.io.dbgInfo.view
+            idx <- 0 until dut.io.dbgInfo.view.size
+          ) {
+            val dbgInfo = dut.io.dbgInfo.view(dbgInfoIdx)
+            val myCommitEnable = (
+              !dbgInfo.shouldIgnoreInstrAtRegFileWrite.toBoolean
+              && !dbgInfo.myPsIdBubbleAtRegFileWrite.toBoolean
+            )
+            val myRegFileWriteEnable = dbgInfo.regFileWriteEnable.toBoolean
+            val myRegFileWriteAddr = dbgInfo.regFileWriteAddr.toLong
+            val myRegFileWriteData = dbgInfo.regFileWriteData.toLong
+            val myLaggingRegPc = dbgInfo.laggingRegPcAtRegFileWrite.toLong
 
-          if (myRegFileWriteEnable) {
-            if (
-              myRegFileWriteData
-              != mySavedGprArr(myRegFileWriteAddr.toInt)
-            ) {
-              pw.write(
-                //s"pc:${myLaggingRegPc} "
-                s""
-                + s"addr:${myRegFileWriteAddr} "
-                + s"data:${myRegFileWriteData}\n"
-              )
-              mySavedGprArr(myRegFileWriteAddr.toInt) = myRegFileWriteData
-              //for (idx <- 0 until mySavedGprArr.size) {
-              //  tempStr += s"r${idx}=${mySavedGprArr(idx)}"
-              //  if (idx + 1 < mySavedGprArr.size) {
-              //    tempStr += " "
-              //  } else {
-              //    tempStr += "\n\n"
-              //  }
-              //}
-              //pw.write(tempStr)
+            if (myRegFileWriteEnable) {
+              if (
+                myRegFileWriteData
+                != mySavedGprArr(myRegFileWriteAddr.toInt)
+              ) {
+                pw.write(
+                  //s"pc:${myLaggingRegPc} "
+                  s""
+                  + s"addr:${myRegFileWriteAddr} "
+                  + s"data:${myRegFileWriteData}\n"
+                )
+                mySavedGprArr(myRegFileWriteAddr.toInt) = myRegFileWriteData
+                //for (idx <- 0 until mySavedGprArr.size) {
+                //  tempStr += s"r${idx}=${mySavedGprArr(idx)}"
+                //  if (idx + 1 < mySavedGprArr.size) {
+                //    tempStr += " "
+                //  } else {
+                //    tempStr += "\n\n"
+                //  }
+                //}
+                //pw.write(tempStr)
+              }
+            }
+            if (myCommitEnable) {
+              dbgInfoIdx = (dbgInfoIdx + 1) % dut.io.dbgInfo.view.size
             }
           }
           //if (!grabRegFileOutputs) {
@@ -8186,21 +8208,30 @@ case class SnowHouseCpuWithSharedRamIo(
       recvPayloadType=None,
     ))
   )
-  val regFileWriteData = (
+  val dbgInfo = (
     cfg.exposeRegFileWriteDataToIo
   ) generate (
-    out(UInt(cfg.shCfg.mainWidth bits))
+    out(
+      Vec.fill(cfg.shCfg.numPhysRegsMult)(
+        SnowHouseDebugInfo(cfg=cfg.shCfg)
+      )
+    )
   )
-  val regFileWriteAddr = (
-    cfg.exposeRegFileWriteAddrToIo
-  ) generate (
-    out(UInt(log2Up(cfg.shCfg.regFileCfg.wordCountArr(0)) bits))
-  )
-  val regFileWriteEnable = (
-    cfg.exposeRegFileWriteEnableToIo
-  ) generate (
-    out(Bool())
-  )
+  //val regFileWriteData = (
+  //  cfg.exposeRegFileWriteDataToIo
+  //) generate (
+  //  out(UInt(cfg.shCfg.mainWidth bits))
+  //)
+  //val regFileWriteAddr = (
+  //  cfg.exposeRegFileWriteAddrToIo
+  //) generate (
+  //  out(UInt(log2Up(cfg.shCfg.regFileCfg.wordCountArr(0)) bits))
+  //)
+  //val regFileWriteEnable = (
+  //  cfg.exposeRegFileWriteEnableToIo
+  //) generate (
+  //  out(Bool())
+  //)
 }
 case class SnowHouseCpuWithSharedRam(
   program: SnowHouseCpuProgram,
@@ -8259,15 +8290,16 @@ case class SnowHouseCpuWithSharedRam(
   )
   cpu.io.lcvIbus <> sharedRam.io.lcvIbus
   cpu.io.lcvDbus <> sharedRam.io.lcvDbus
-  if (cfg.exposeRegFileWriteDataToIo) {
-    cpu.io.regFileWriteData <> io.regFileWriteData
-  }
-  if (cfg.exposeRegFileWriteAddrToIo) {
-    cpu.io.regFileWriteAddr <> io.regFileWriteAddr
-  }
-  if (cfg.exposeRegFileWriteEnableToIo) {
-    cpu.io.regFileWriteEnable <> io.regFileWriteEnable
-  }
+  cpu.io.dbgInfo <> io.dbgInfo
+  //if (cfg.exposeRegFileWriteDataToIo) {
+  //  cpu.io.regFileWriteData <> io.regFileWriteData
+  //}
+  //if (cfg.exposeRegFileWriteAddrToIo) {
+  //  cpu.io.regFileWriteAddr <> io.regFileWriteAddr
+  //}
+  //if (cfg.exposeRegFileWriteEnableToIo) {
+  //  cpu.io.regFileWriteEnable <> io.regFileWriteEnable
+  //}
   ////for ((multiCycleBus, idx) <- cpu.io.multiCycleBusVec.view.zipWithIndex) {
   ////  if (idx != 0) {
   ////    multiCycleBus.ready := True
@@ -8489,31 +8521,46 @@ object SnowHouseCpuWithSharedRamSim extends App {
           mySavedGprArr += 0.toLong
         }
 
+        var dbgInfoIdx: Int = 0
         dut.clockDomain.forkStimulus(10)
         for (i <- 0 until numClkCycles) {
           dut.clockDomain.waitSampling()
-          val myRegFileWriteEnable = dut.io.regFileWriteEnable.toBoolean
-          val myRegFileWriteAddr = dut.io.regFileWriteAddr.toLong
-          val myRegFileWriteData = dut.io.regFileWriteData.toLong
+          for (
+            //dbgInfo <- dut.io.dbgInfo.view
+            idx <- 0 until dut.io.dbgInfo.view.size
+          ) {
+            val dbgInfo = dut.io.dbgInfo.view(dbgInfoIdx)
+            val myCommitEnable = (
+              !dbgInfo.shouldIgnoreInstrAtRegFileWrite.toBoolean
+              && !dbgInfo.myPsIdBubbleAtRegFileWrite.toBoolean
+            )
+            val myRegFileWriteEnable = dbgInfo.regFileWriteEnable.toBoolean
+            val myRegFileWriteAddr = dbgInfo.regFileWriteAddr.toLong
+            val myRegFileWriteData = dbgInfo.regFileWriteData.toLong
+            val myLaggingRegPc = dbgInfo.laggingRegPcAtRegFileWrite.toLong
 
-          if (myRegFileWriteEnable) {
-            if (
-              myRegFileWriteData
-              != mySavedGprArr(myRegFileWriteAddr.toInt)
-            ) {
-              pw.write(
-                s"addr:${myRegFileWriteAddr} data:${myRegFileWriteData}\n"
-              )
-              mySavedGprArr(myRegFileWriteAddr.toInt) = myRegFileWriteData
-              //for (idx <- 0 until mySavedGprArr.size) {
-              //  tempStr += s"r${idx}=${mySavedGprArr(idx)}"
-              //  if (idx + 1 < mySavedGprArr.size) {
-              //    tempStr += " "
-              //  } else {
-              //    tempStr += "\n\n"
-              //  }
-              //}
-              //pw.write(tempStr)
+            if (myRegFileWriteEnable) {
+              if (
+                myRegFileWriteData
+                != mySavedGprArr(myRegFileWriteAddr.toInt)
+              ) {
+                pw.write(
+                  s"addr:${myRegFileWriteAddr} data:${myRegFileWriteData}\n"
+                )
+                mySavedGprArr(myRegFileWriteAddr.toInt) = myRegFileWriteData
+                //for (idx <- 0 until mySavedGprArr.size) {
+                //  tempStr += s"r${idx}=${mySavedGprArr(idx)}"
+                //  if (idx + 1 < mySavedGprArr.size) {
+                //    tempStr += " "
+                //  } else {
+                //    tempStr += "\n\n"
+                //  }
+                //}
+                //pw.write(tempStr)
+              }
+            }
+            if (myCommitEnable) {
+              dbgInfoIdx = (dbgInfoIdx + 1) % dut.io.dbgInfo.view.size
             }
           }
           //if (!grabRegFileOutputs) {

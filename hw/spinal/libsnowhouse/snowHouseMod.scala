@@ -1242,7 +1242,10 @@ case class SnowHouseDebugInfo(
   val regFileWriteAddr = (
     cfg.exposeRegFileWriteAddrToIo
   ) generate (
-    UInt(log2Up(cfg.regFileCfg.wordCountArr(0)) bits)
+    UInt(log2Up(
+      //cfg.regFileCfg.wordCountArr(0)
+      cfg.numGprs
+    ) bits)
   )
   val regFileWriteEnable = (
     cfg.exposeRegFileWriteEnableToIo
@@ -1330,38 +1333,43 @@ case class SnowHouseIo(
     || cfg.exposeRegFileWriteEnableToIo
     || cfg.dbgExposeExtrasAtRegFileWrite
   ) generate (
-    out(SnowHouseDebugInfo(cfg=cfg))
+    out(
+      Vec.fill(cfg.numPhysRegsMult)(
+        SnowHouseDebugInfo(cfg=cfg)
+      )
+    )
   )
-  def regFileWriteData = (
-    dbgInfo.regFileWriteData
-  )
-  def regFileWriteAddr = (
-    dbgInfo.regFileWriteAddr
-  )
-  def regFileWriteEnable = (
-    dbgInfo.regFileWriteEnable
-  )
-  def laggingRegPcAtRegFileWrite = (
-    dbgInfo.laggingRegPcAtRegFileWrite
-  )
-  def shouldIgnoreInstrAtRegFileWrite = (
-    dbgInfo.shouldIgnoreInstrAtRegFileWrite
-  )
-  def myPsIdBubbleAtRegFileWrite = (
-    dbgInfo.myPsIdBubbleAtRegFileWrite
-  )
-  def encInstrAtRegFileWrite = (
-    dbgInfo.encInstrAtRegFileWrite
-  )
-  def immAtRegFileWrite = (
-    dbgInfo.immAtRegFileWrite
-  )
-  def rdMemWordAtRegFileWrite = (
-    dbgInfo.rdMemWordAtRegFileWrite
-  )
-  def gprIdxVecAtRegFileWrite = (
-    dbgInfo.gprIdxVecAtRegFileWrite
-  )
+
+  //def regFileWriteData = (
+  //  dbgInfo.regFileWriteData
+  //)
+  //def regFileWriteAddr = (
+  //  dbgInfo.regFileWriteAddr
+  //)
+  //def regFileWriteEnable = (
+  //  dbgInfo.regFileWriteEnable
+  //)
+  //def laggingRegPcAtRegFileWrite = (
+  //  dbgInfo.laggingRegPcAtRegFileWrite
+  //)
+  //def shouldIgnoreInstrAtRegFileWrite = (
+  //  dbgInfo.shouldIgnoreInstrAtRegFileWrite
+  //)
+  //def myPsIdBubbleAtRegFileWrite = (
+  //  dbgInfo.myPsIdBubbleAtRegFileWrite
+  //)
+  //def encInstrAtRegFileWrite = (
+  //  dbgInfo.encInstrAtRegFileWrite
+  //)
+  //def immAtRegFileWrite = (
+  //  dbgInfo.immAtRegFileWrite
+  //)
+  //def rdMemWordAtRegFileWrite = (
+  //  dbgInfo.rdMemWordAtRegFileWrite
+  //)
+  //def gprIdxVecAtRegFileWrite = (
+  //  dbgInfo.gprIdxVecAtRegFileWrite
+  //)
 
   // instruction bus
   val ibus = (
@@ -2108,32 +2116,32 @@ private[libsnowhouse] case class SnowHouseNotForFmax
       !cfg.exposeRegFileWriteAddrToIo
       && !cfg.exposeRegFileWriteEnableToIo
     ) {
-      io.regFileWriteData := (
+      io.dbgInfo.head.regFileWriteData := (
         regFile.io.back(regFile.io.modBackPayload).myExt(0).modMemWord
       )
     } else {
-      io.regFileWriteData := (
+      io.dbgInfo.head.regFileWriteData := (
         regFile.mod.back.myWriteData(0)(0)(0)
       )
     }
   }
   if (cfg.exposeRegFileWriteAddrToIo) {
-    io.regFileWriteAddr := (
+    io.dbgInfo.head.regFileWriteAddr := (
       regFile.mod.back.myWriteAddr(0)(0)(0)
     )
   }
   if (cfg.exposeRegFileWriteEnableToIo) {
-    io.regFileWriteEnable := (
+    io.dbgInfo.head.regFileWriteEnable := (
       regFile.mod.back.myWriteEnable(0)
     )
   }
   if (cfg.dbgExposeExtrasAtRegFileWrite) {
-    io.laggingRegPcAtRegFileWrite := (
+    io.dbgInfo.head.laggingRegPcAtRegFileWrite := (
       regFile.cBackArea.tempUpMod(2).laggingRegPc.resize(
-        io.laggingRegPcAtRegFileWrite.getWidth
+        io.dbgInfo.head.laggingRegPcAtRegFileWrite.getWidth
       )
     )
-    io.shouldIgnoreInstrAtRegFileWrite := (
+    io.dbgInfo.head.shouldIgnoreInstrAtRegFileWrite := (
       regFile.cBackArea.tempUpMod(2).instrCnt.shouldIgnoreInstr.last
       || psWbToEarlierStallRequest
       //|| (
@@ -2141,13 +2149,13 @@ private[libsnowhouse] case class SnowHouseNotForFmax
       //  .dbgUnfinishedMultiCycleOp.last
       //)
     )
-    io.myPsIdBubbleAtRegFileWrite := (
+    io.dbgInfo.head.myPsIdBubbleAtRegFileWrite := (
       regFile.cBackArea.tempUpMod(2).instrCnt.myPsIdBubble.last
     )
-    io.encInstrAtRegFileWrite := (
+    io.dbgInfo.head.encInstrAtRegFileWrite := (
       regFile.cBackArea.tempUpMod(2).encInstr.payload
     )
-    io.immAtRegFileWrite := (
+    io.dbgInfo.head.immAtRegFileWrite := (
       regFile.cBackArea.tempUpMod(2).imm(0)
     )
     //io.dbusAddrAtRegFileWrite := (
@@ -2156,11 +2164,11 @@ private[libsnowhouse] case class SnowHouseNotForFmax
     //)
     for (idx <- 0 until cfg.maxNumGprsPerInstr) {
       if (idx + 1 != cfg.maxNumGprsPerInstr) {
-        io.rdMemWordAtRegFileWrite(idx) := (
+        io.dbgInfo.head.rdMemWordAtRegFileWrite(idx) := (
           regFile.cBackArea.tempUpMod(2).myExt(0).rdMemWord(idx)
         )
       }
-      io.gprIdxVecAtRegFileWrite(idx) := (
+      io.dbgInfo.head.gprIdxVecAtRegFileWrite(idx) := (
         regFile.cBackArea.tempUpMod(2).gprIdxVec(idx)
       )
     }
@@ -2488,7 +2496,7 @@ private[libsnowhouse] case class SnowHouseForFmax(
 
   myRegFile.zipWithIndex.foreach{
     case (item, idx) => {
-      //val tempIdx = idx / cfg.numPhysRegsMult
+      val tempIdx = idx / cfg.numPhysRegsMult
       //item.io.wrPulse.valid := False
       //item.io.wrPulse.payload := (
       //  item.io.wrPulse.payload.getZero
@@ -2499,33 +2507,43 @@ private[libsnowhouse] case class SnowHouseForFmax(
       //item.io.wrPulse <-< psWb.io.commitEtc.myRegFileWrPulse
       item.io.wrPulse.addr := (
         RegNext(
-          psWb.io.commitEtc.myRegFileWrPulse.addr(
-            psWb.io.commitEtc.myRegFileWrPulse.addr.high
-            downto log2Up(cfg.numPhysRegsMult)
-          )
+          psWb.io.commitEtc.myRegFileWrPulse(
+            //idx
+            tempIdx
+          ).addr
+          //psWb.io.commitEtc.myRegFileWrPulse(idx).addr(
+          //  psWb.io.commitEtc.myRegFileWrPulse(idx).addr.high
+          //  downto log2Up(cfg.numPhysRegsMult)
+          //)
         )
       )
       item.io.wrPulse.data := (
         RegNext(
-          psWb.io.commitEtc.myRegFileWrPulse.data(0)
+          psWb.io.commitEtc.myRegFileWrPulse(
+            //idx
+            tempIdx
+          ).data(0)
         )
       )
       item.io.wrPulse.valid := (
         RegNext(
           (
-            if (cfg.optRegRename) (
-              psWb.io.commitEtc.myRegFileWrPulse.fire
-              && (
-                psWb.io.commitEtc.myRegFileWrPulse.addr(
-                  log2Up(cfg.numPhysRegsMult) - 1
-                  downto 0
-                ) === (
-                  idx % cfg.numPhysRegsMult
-                )
-              )
-            ) else (
-              psWb.io.commitEtc.myRegFileWrPulse.fire
-            )
+            //if (cfg.optRegRename) (
+            //  psWb.io.commitEtc.myRegFileWrPulse.fire
+            //  && (
+            //    psWb.io.commitEtc.myRegFileWrPulse.addr(
+            //      log2Up(cfg.numPhysRegsMult) - 1
+            //      downto 0
+            //    ) === (
+            //      idx % cfg.numPhysRegsMult
+            //    )
+            //  )
+            //) else (
+              psWb.io.commitEtc.myRegFileWrPulse(
+                //idx
+                tempIdx
+              ).fire
+            //)
           ),
           init=False
         )
@@ -2544,67 +2562,77 @@ private[libsnowhouse] case class SnowHouseForFmax(
   //  psWb.io.commit.myRegFileWrPulsePayload
   //)
   if (cfg.optScoreboard) {
-    psPreFwd.io.myRegFileWrPulse <-< (
-      //psWb.io.commitEtc.myScoreboardFwdRegFileWrPulse
-      psWb.io.commitEtc.myRegFileWrPulse
-    )
-    psEx.io.myRegFileWrPulse <-< (
-      //psWb.io.commitEtc.myScoreboardFwdRegFileWrPulse
-      psWb.io.commitEtc.myRegFileWrPulse
-    )
-    //psPreFwd.io.myRegFileWrPulse << (
-    //  //psWb.io.commitEtc.myScoreboardFwdRegFileWrPulse
-    //  psWb.io.commitEtc.myRegFileWrPulse
-    //)
-    //psEx.io.myRegFileWrPulse << (
-    //  //psWb.io.commitEtc.myScoreboardFwdRegFileWrPulse
-    //  psWb.io.commitEtc.myRegFileWrPulse
-    //)
-    psWb.io.myScoreboardSavedGprTagVec <> (
-      psScoreboardCheck.io.myScoreboardSavedGprTagVec
-    )
+    for (idx <- 0 until cfg.numPhysRegsMult) {
+      psPreFwd.io.myRegFileWrPulse(idx) <-< (
+        //psWb.io.commitEtc.myScoreboardFwdRegFileWrPulse
+        psWb.io.commitEtc.myRegFileWrPulse(idx)
+      )
+      psEx.io.myRegFileWrPulse(idx) <-< (
+        //psWb.io.commitEtc.myScoreboardFwdRegFileWrPulse
+        psWb.io.commitEtc.myRegFileWrPulse(idx)
+      )
+      //psPreFwd.io.myRegFileWrPulse << (
+      //  //psWb.io.commitEtc.myScoreboardFwdRegFileWrPulse
+      //  psWb.io.commitEtc.myRegFileWrPulse
+      //)
+      //psEx.io.myRegFileWrPulse << (
+      //  //psWb.io.commitEtc.myScoreboardFwdRegFileWrPulse
+      //  psWb.io.commitEtc.myRegFileWrPulse
+      //)
+      if (idx == 0) {
+        psWb.io.myScoreboardSavedGprTagVec <> (
+          psScoreboardCheck.io.myScoreboardSavedGprTagVec
+        )
+      }
+    }
   } else {
-    psPreFwd.io.myRegFileWrPulse << (
-      psWb.io.commitEtc.myRegFileWrPulse
-    )
-    psEx.io.myRegFileWrPulse << (
-      psWb.io.commitEtc.myRegFileWrPulse
-    )
+    for (idx <- 0 until cfg.numPhysRegsMult) {
+      psPreFwd.io.myRegFileWrPulse(idx) << (
+        psWb.io.commitEtc.myRegFileWrPulse(idx)
+      )
+      psEx.io.myRegFileWrPulse(idx) << (
+        psWb.io.commitEtc.myRegFileWrPulse(idx)
+      )
+    }
   }
   if (cfg.optRegRename) {
-    psRegRename.io.myScoreboardCommit.valid := (
-      RegNext(
-        psWb.io.commitEtc.scoreboardCommit.fire,
-        init=False
+    for (idx <- 0 until cfg.numPhysRegsMult) {
+      psRegRename.io.myScoreboardCommit(idx).valid := (
+        RegNext(
+          psWb.io.commitEtc.scoreboardCommit(idx).fire,
+          init=False
+        )
       )
-    )
-    psRegRename.io.myScoreboardCommit.payload := (
-      RegNext(
-        psWb.io.commitEtc.scoreboardCommit.payload,
+      psRegRename.io.myScoreboardCommit(idx).payload := (
+        RegNext(
+          psWb.io.commitEtc.scoreboardCommit(idx).payload,
+        )
       )
-    )
-    psRegRename.io.myScoreboardBubbleRetire.valid := (
-      RegNext(
-        psWb.io.commitEtc.scoreboardBubbleRetire.fire,
-        init=False
+      psRegRename.io.myScoreboardBubbleRetire(idx).valid := (
+        RegNext(
+          psWb.io.commitEtc.scoreboardBubbleRetire(idx).fire,
+          init=False
+        )
       )
-    )
-    psRegRename.io.myScoreboardBubbleRetire.payload := (
-      RegNext(
-        psWb.io.commitEtc.scoreboardBubbleRetire.payload,
+      psRegRename.io.myScoreboardBubbleRetire(idx).payload := (
+        RegNext(
+          psWb.io.commitEtc.scoreboardBubbleRetire(idx).payload,
+        )
       )
-    )
+    }
   }
   if (cfg.optScoreboard) {
     //psScoreboardCheck.io.myScoreboardCommit << (
     //  psWb.io.commitEtc.scoreboardTag
     //)
-    psScoreboardCheck.io.myScoreboardCommit <-< (
-      psWb.io.commitEtc.scoreboardCommit
-    )
-    psScoreboardCheck.io.myScoreboardBubbleRetire <-< (
-      psWb.io.commitEtc.scoreboardBubbleRetire
-    )
+    for (idx <- 0 until cfg.numPhysRegsMult) {
+      psScoreboardCheck.io.myScoreboardCommit(idx) <-< (
+        psWb.io.commitEtc.scoreboardCommit(idx)
+      )
+      psScoreboardCheck.io.myScoreboardBubbleRetire(idx) <-< (
+        psWb.io.commitEtc.scoreboardBubbleRetire(idx)
+      )
+    }
     //psScoreboardCheck.io.myScoreboardCommit << (
     //  psWb.io.commitEtc.scoreboardCommit
     //)
