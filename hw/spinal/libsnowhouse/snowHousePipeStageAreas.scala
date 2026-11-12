@@ -5508,7 +5508,8 @@ case class SnowHousePipeStageScoreboardCheck(
                   //)
                 )
               )
-              && !myBufPushStm.instrCnt.myPsIdBubble.last
+              //&& !myBufPushStm.instrCnt.myPsIdBubble.last
+              || myBufPushStm.instrCnt.myPsIdBubble.last
             )
             //up(pId).instrCnt.tick
             //=== (
