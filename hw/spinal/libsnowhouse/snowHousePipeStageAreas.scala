@@ -6611,12 +6611,14 @@ case class SnowHousePipeStageScoreboardCheck(
       )
     ) {
       for (idx <- 0 until (1 << myDuplOrThrowFindFirst._2.getWidth)) {
-        is (
-          (1 << myDuplOrThrowFindFirst._2.getWidth)
-          | idx
-        ) {
-          myBufPop(idx).ready := True
-          cScoreboardCheck.throwIt()
+        if (idx < myBufPop.size) {
+          is (
+            (1 << myDuplOrThrowFindFirst._2.getWidth)
+            | idx
+          ) {
+            myBufPop(idx).ready := True
+            cScoreboardCheck.throwIt()
+          }
         }
       }
       default {
