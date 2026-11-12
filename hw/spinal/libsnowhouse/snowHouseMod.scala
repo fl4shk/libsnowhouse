@@ -2496,7 +2496,7 @@ private[libsnowhouse] case class SnowHouseForFmax(
 
   myRegFile.zipWithIndex.foreach{
     case (item, idx) => {
-      val tempIdx = idx / cfg.numPhysRegsMult
+      val tempIdx = idx % cfg.numPhysRegsMult
       //item.io.wrPulse.valid := False
       //item.io.wrPulse.payload := (
       //  item.io.wrPulse.payload.getZero
