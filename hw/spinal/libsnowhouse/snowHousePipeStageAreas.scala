@@ -6643,7 +6643,7 @@ case class SnowHousePipeStageScoreboardCheck(
       up.isValid
       && myOtherFlushCondMost.head
       && myThrowItCond
-      && LcvAndR(myPopValidVec)
+      //&& LcvAndR(myPopValidVec)
     ) {
       cScoreboardCheck.throwIt()
     }
