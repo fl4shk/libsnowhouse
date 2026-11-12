@@ -6543,7 +6543,8 @@ case class SnowHousePipeStageScoreboardCheck(
       //myOtherFlushCondMost.andR
       myOtherFlushCondMost.head
       && (
-        !myDuplOrThrowFindFirst._1
+        LcvOrR(myPopValidVec)
+        && !myDuplOrThrowFindFirst._1
         //!LcvOrR(myRealDispatchOkayCondVec.asBits)//.orR
         //&& !(
         //  
@@ -6596,10 +6597,15 @@ case class SnowHousePipeStageScoreboardCheck(
     ) {
       cScoreboardCheck.duplicateIt()
     }
+
     when (
       myOtherFlushCondMost.head
-      && myDuplOrThrowFindFirst._1
+      && (
+        LcvOrR(myPopValidVec)
+        && myDuplOrThrowFindFirst._1
+      )
     ) {
+      myBufPop(myDuplOrThrowFindFirst._2).ready := True
       cScoreboardCheck.throwIt()
     }
 
