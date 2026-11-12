@@ -3928,16 +3928,25 @@ case class SnowHousePipeStageRegRename(
       )
     )
     for (prfIdx <- 0 until cfg.numPhysRegsMult) {
-      temp(prfIdx).foreach(item => {
-        if (prfIdx == 0) {
-          item.init(
-            //False
-            True
-          )
-        } else {
-          item.init(True)
+      temp(prfIdx).view.zipWithIndex.foreach{
+        case (item, idx) => {
+          if (
+            !cfg.myHaveZeroReg
+            || idx != 0
+          ) {
+            if (prfIdx == 0) {
+              item.init(
+                //False
+                True
+              )
+            } else {
+              item.init(True)
+            }
+          } else {
+            item.init(False)
+          }
         }
-      })
+      }
     }
     temp
 
@@ -3984,9 +3993,18 @@ case class SnowHousePipeStageRegRename(
   //}
   for (prfIdx <- 0 until cfg.numPhysRegsMult) {
     for (idx <- 0 until cfg.numGprs) {
-      myOtherFreeList(prfIdx)(idx) := (
-        rFreeList(prfIdx)(idx)
-      )
+      if (
+        !cfg.myHaveZeroReg
+        || idx != 0
+      ) {
+        myOtherFreeList(prfIdx)(idx) := (
+          rFreeList(prfIdx)(idx)
+        )
+      } else {
+        myOtherFreeList(prfIdx)(idx) := (
+          False
+        )
+      }
     }
   }
 
