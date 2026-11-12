@@ -6542,9 +6542,9 @@ case class SnowHousePipeStageScoreboardCheck(
     when (
       //myOtherFlushCondMost.andR
       myOtherFlushCondMost.head
-      && (
+      && !(
         LcvOrR(myPopValidVec)
-        && !myDuplOrThrowFindFirst._1
+        && myDuplOrThrowFindFirst._1
         //!LcvOrR(myRealDispatchOkayCondVec.asBits)//.orR
         //&& !(
         //  
