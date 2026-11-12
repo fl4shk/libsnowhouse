@@ -6179,7 +6179,8 @@ case class SnowHouseForFmaxPipeStageWriteBack(
         dbgInfo.regFileWriteEnable := (
           if (cfg.optScoreboard) (
             (
-              myDbgCommitBackStm(zdx).regFileWrite.addr.orR //=/= 0x0
+              //myDbgCommitBackStm(zdx).regFileWrite.addr.orR //=/= 0x0
+              myDbgCommitBackStm(zdx).regFileWrite.data(1).orR //=/= 0x0
             )
             && (
               myDbgCommitBackStm(zdx).fire
