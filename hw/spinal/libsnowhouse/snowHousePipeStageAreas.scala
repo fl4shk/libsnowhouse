@@ -4821,17 +4821,17 @@ case class SnowHousePipeStageScoreboardCheck(
       rMyPsExSetPcState := False
     }
   }
-  val myShouldIgnoreInstr = (
-    (
-      (
-        psExSetPc.fire
-        || (
-          rMyPsExSetPcState
-          && !upPayload(1).regPcSetItCnt(0).lsb
-        )
-      )
-    )
-  )
+  //val myShouldIgnoreInstr = (
+  //  (
+  //    (
+  //      psExSetPc.fire
+  //      || (
+  //        rMyPsExSetPcState
+  //        && !upPayload(1).regPcSetItCnt(0).lsb
+  //      )
+  //    )
+  //  )
+  //)
 
   case class MyGprTagInfo(
     isNonFwd: Boolean
@@ -4924,7 +4924,15 @@ case class SnowHousePipeStageScoreboardCheck(
   }
 
 
-  //val rNonFwdTagAllocWakeUpVec = (
+  ////val rNonFwdTagAllocWakeUpVec = (
+  ////  Vec.fill(
+  ////    //1 << myTempNonFwdTag.getWidth
+  ////    cfg.optScoreboardNumTagsPerKind
+  ////  )(
+  ////    Reg(Bool(), init=False)
+  ////  )
+  ////)
+  //val rNonFwdTagAllocVec = (
   //  Vec.fill(
   //    //1 << myTempNonFwdTag.getWidth
   //    cfg.optScoreboardNumTagsPerKind
@@ -4932,49 +4940,41 @@ case class SnowHousePipeStageScoreboardCheck(
   //    Reg(Bool(), init=False)
   //  )
   //)
-  val rNonFwdTagAllocVec = (
-    Vec.fill(
-      //1 << myTempNonFwdTag.getWidth
-      cfg.optScoreboardNumTagsPerKind
-    )(
-      Reg(Bool(), init=False)
-    )
-  )
-  //val rFwdTagAllocWakeUpVec = (
+  ////val rFwdTagAllocWakeUpVec = (
+  ////  Vec.fill(
+  ////    //1 << myTempNonFwdTag.getWidth
+  ////    cfg.optScoreboardNumTagsPerKind
+  ////  )(
+  ////    Reg(Bool(), init=False)
+  ////  )
+  ////)
+  //val rFwdTagAllocVec = (
   //  Vec.fill(
-  //    //1 << myTempNonFwdTag.getWidth
+  //    //1 << myTempFwdTag.getWidth
   //    cfg.optScoreboardNumTagsPerKind
   //  )(
   //    Reg(Bool(), init=False)
   //  )
   //)
-  val rFwdTagAllocVec = (
-    Vec.fill(
-      //1 << myTempFwdTag.getWidth
-      cfg.optScoreboardNumTagsPerKind
-    )(
-      Reg(Bool(), init=False)
-    )
-  )
 
-  val myReducedNonFwdTagAllocVec = (
-    Vec.fill(rNonFwdTagAllocVec.size - 1)(
-      Bool()
-    )
-  )
-  val myReducedFwdTagAllocVec = (
-    Vec.fill(rFwdTagAllocVec.size - 1)(
-      Bool()
-    )
-  )
+  //val myReducedNonFwdTagAllocVec = (
+  //  Vec.fill(rNonFwdTagAllocVec.size - 1)(
+  //    Bool()
+  //  )
+  //)
+  //val myReducedFwdTagAllocVec = (
+  //  Vec.fill(rFwdTagAllocVec.size - 1)(
+  //    Bool()
+  //  )
+  //)
 
-  for (
-    //idx <- 0 until 1 << myTempNonFwdTag.getWidth) - 1
-    idx <- 0 until cfg.optScoreboardNumTagsPerKind - 1
-  ) {
-    myReducedNonFwdTagAllocVec(idx) := rNonFwdTagAllocVec(idx + 1)
-    myReducedFwdTagAllocVec(idx) := rFwdTagAllocVec(idx + 1)
-  }
+  //for (
+  //  //idx <- 0 until 1 << myTempNonFwdTag.getWidth) - 1
+  //  idx <- 0 until cfg.optScoreboardNumTagsPerKind - 1
+  //) {
+  //  myReducedNonFwdTagAllocVec(idx) := rNonFwdTagAllocVec(idx + 1)
+  //  myReducedFwdTagAllocVec(idx) := rFwdTagAllocVec(idx + 1)
+  //}
 
   down(pScoreboardCheck) := upPayload(1)
 
@@ -4990,8 +4990,8 @@ case class SnowHousePipeStageScoreboardCheck(
         when (
           myNonFwdHazardCheckVec.orR
           || myFwdHazardCheckVec.orR
-          || myReducedFwdTagAllocVec.asBits.andR
-          || myReducedNonFwdTagAllocVec.asBits.andR
+          //|| myReducedFwdTagAllocVec.asBits.andR
+          //|| myReducedNonFwdTagAllocVec.asBits.andR
           || myInFlushCond(2)
         ) {
           doSendBubbleMainMost(
@@ -5009,8 +5009,8 @@ case class SnowHousePipeStageScoreboardCheck(
       is (ScoreboardFlushState.FLUSH) {
         when (
           !myInFlushCond(3)
-          && !myReducedFwdTagAllocVec.asBits.orR
-          && !myReducedNonFwdTagAllocVec.asBits.orR
+          //&& !myReducedFwdTagAllocVec.asBits.orR
+          //&& !myReducedNonFwdTagAllocVec.asBits.orR
         ) {
           rScoreboardFlushState := ScoreboardFlushState.IDLE
         }
@@ -6460,8 +6460,8 @@ case class SnowHousePipeStageScoreboardCheck(
 
             !LcvOrR(myRealDispatchOkayCondVec.asBits)//.orR
           )
-          || LcvAndR(myReducedFwdTagAllocVec.asBits)//.andR
-          || LcvAndR(myReducedNonFwdTagAllocVec.asBits)//.andR
+          //|| LcvAndR(myReducedFwdTagAllocVec.asBits)//.andR
+          //|| LcvAndR(myReducedNonFwdTagAllocVec.asBits)//.andR
           //|| myInFlushCond(2)
           //--------
           || (
@@ -6871,99 +6871,111 @@ case class SnowHousePipeStageScoreboardCheck(
 // 6 -0111111
 // 7 01111111
 
+  //--------
+  //switch (
+  //  (
+  //    up.isFiring
+  //    && !myInFlushCond(0)
+  //    && (
+  //      //upPayload(1).splitOp.opIsMemAccess
+  //      upPayload(1).splitOp.opIsNonFwd
+  //    )
+  //    //&& !myShouldIgnoreInstr
+  //  )
+  //  //## Bitscan(
+  //  //  //~rNonFwdTagAllocVec.asBits.asUInt
+  //  //  ~myReducedNonFwdTagAllocVec.asBits.asUInt
+  //  //)
+  //  ## myReducedNonFwdTagAllocVec.asBits.asUInt
+  //) {
+  //  val size = myReducedNonFwdTagAllocVec.size
+  //  for (idx <- 0 until size) {
+  //    is (MaskedLiteral(
+  //      "1"
+  //      + ("-" * (size - idx - 1) + "0" + ("1" * idx))
+  //      //--------
+  //      // BEGIN: old `Bitscan(~x)` free list search
+  //      //"1"
+  //      //+ ("-" * (size - idx - 1) + "1" + ("0" * idx))
+  //      //--------
+  //    )) {
+  //      // fast-ish (regarding fmax) search to implement the free list
+  //      // search
+  //      myTempNonFwdTag := idx + 1
+  //      rNonFwdTagAllocVec(idx + 1) := True
+  //    }
+  //  }
+  //  default {
+  //    myTempNonFwdTag := 0x0
+  //  }
+  //}
 
-  switch (
-    (
-      up.isFiring
-      && !myInFlushCond(0)
-      && (
-        //upPayload(1).splitOp.opIsMemAccess
-        upPayload(1).splitOp.opIsNonFwd
-      )
-      && !myShouldIgnoreInstr
-    )
-    //## Bitscan(
-    //  //~rNonFwdTagAllocVec.asBits.asUInt
-    //  ~myReducedNonFwdTagAllocVec.asBits.asUInt
-    //)
-    ## myReducedNonFwdTagAllocVec.asBits.asUInt
-  ) {
-    val size = myReducedNonFwdTagAllocVec.size
-    for (idx <- 0 until size) {
-      is (MaskedLiteral(
-        "1"
-        + ("-" * (size - idx - 1) + "0" + ("1" * idx))
-        //--------
-        // BEGIN: old `Bitscan(~x)` free list search
-        //"1"
-        //+ ("-" * (size - idx - 1) + "1" + ("0" * idx))
-        //--------
-      )) {
-        // fast-ish (regarding fmax) search to implement the free list
-        // search
-        myTempNonFwdTag := idx + 1
-        rNonFwdTagAllocVec(idx + 1) := True
-      }
-    }
-    default {
-      myTempNonFwdTag := 0x0
-    }
-  }
+  //switch (
+  //  //io.issue.ready
+  //  (
+  //    up.isFiring
+  //    && !myInFlushCond(1)
+  //    && (
+  //      //!upPayload(1).splitOp.opIsMemAccess
+  //      !upPayload(1).splitOp.opIsNonFwd
+  //    )
+  //    //&& !myShouldIgnoreInstr
+  //  )
+  //  //## Bitscan(
+  //  //  //~rFwdTagAllocVec.asBits.asUInt
+  //  //  ~myReducedFwdTagAllocVec.asBits.asUInt
+  //  //)
+  //  ## myReducedFwdTagAllocVec.asBits.asUInt
+  //) {
+  //  val size = myReducedFwdTagAllocVec.size
+  //  for (idx <- 0 until size) {
+  //    is (MaskedLiteral(
+  //      //--------
+  //      "1"
+  //      + ("-" * (size - idx - 1) + "0" + ("1" * idx))
+  //      //--------
+  //      // BEGIN: old `Bitscan(~x)` free list search
+  //      //"1"
+  //      //+ ("-" * (size - idx - 1) + "1" + ("0" * idx))
+  //      //--------
+  //    )) {
+  //      // fast-ish (regarding fmax) search to implement the free list
+  //      // search
+  //      myTempFwdTag := idx + 1
+  //      rFwdTagAllocVec(idx + 1) := True
+  //    }
+  //  }
+  //  default {
+  //    myTempFwdTag := 0x0
+  //  }
+  //}
 
+  ////val rNonFwdWakeUpVec = Vec.fill(cfg.numRenamedGprs)(
+  ////  Reg(Bool(), init=False)
+  ////)
+  ////val rFwdWakeUpVec = Vec.fill(cfg.numRenamedGprs)(
+  ////  Reg(Bool(), init=False)
+  ////)
 
-  switch (
-    //io.issue.ready
-    (
-      up.isFiring
-      && !myInFlushCond(1)
-      && (
-        //!upPayload(1).splitOp.opIsMemAccess
-        !upPayload(1).splitOp.opIsNonFwd
-      )
-      && !myShouldIgnoreInstr
-    )
-    //## Bitscan(
-    //  //~rFwdTagAllocVec.asBits.asUInt
-    //  ~myReducedFwdTagAllocVec.asBits.asUInt
-    //)
-    ## myReducedFwdTagAllocVec.asBits.asUInt
-  ) {
-    val size = myReducedFwdTagAllocVec.size
-    for (idx <- 0 until size) {
-      is (MaskedLiteral(
-        //--------
-        "1"
-        + ("-" * (size - idx - 1) + "0" + ("1" * idx))
-        //--------
-        // BEGIN: old `Bitscan(~x)` free list search
-        //"1"
-        //+ ("-" * (size - idx - 1) + "1" + ("0" * idx))
-        //--------
-      )) {
-        // fast-ish (regarding fmax) search to implement the free list
-        // search
-        myTempFwdTag := idx + 1
-        rFwdTagAllocVec(idx + 1) := True
-      }
-    }
-    default {
-      myTempFwdTag := 0x0
-    }
-  }
+  ////val rNonFwdWakeUpVec = Vec.fill(cfg.numRenamedGprs)(
+  ////  Reg(Bool(), init=False)
+  ////)
+  ////val rFwdWakeUpVec = Vec.fill(cfg.numRenamedGprs)(
+  ////  Reg(Bool(), init=False)
+  ////)
+  //--------
+  //when (
+  //  !myInFlushCond(1)
+  //) {
+  //}
+  myTempFwdTag := (
+    upPayload(1).reorderBufIdx.resize(myTempFwdTag.getWidth)
+  )
+  myTempNonFwdTag := (
+    upPayload(1).reorderBufIdx.resize(myTempNonFwdTag.getWidth)
+  )
+  //--------
 
-  //val rNonFwdWakeUpVec = Vec.fill(cfg.numRenamedGprs)(
-  //  Reg(Bool(), init=False)
-  //)
-  //val rFwdWakeUpVec = Vec.fill(cfg.numRenamedGprs)(
-  //  Reg(Bool(), init=False)
-  //)
-
-  //val rNonFwdWakeUpVec = Vec.fill(cfg.numRenamedGprs)(
-  //  Reg(Bool(), init=False)
-  //)
-  //val rFwdWakeUpVec = Vec.fill(cfg.numRenamedGprs)(
-  //  Reg(Bool(), init=False)
-  //)
   for (prfIdx <- 0 until cfg.numPhysRegsMult) {
     for (idx <- 0 until cfg.numGprs) {
       when (
@@ -7056,132 +7068,132 @@ case class SnowHousePipeStageScoreboardCheck(
       //}
     }
     //--------
-    switch (
-      RegNext(
-        (
-          myScoreboardCommitStm(prfIdx).fire
-          && myScoreboardCommitStm(prfIdx).opIsFwd
-          //&& myScoreboardCommitStm(prfIdx).myFwdValid
-        ),
-        init=False
-      )
-      ## RegNext(
-        myScoreboardCommitStm(prfIdx).fwdTag
-      )
-    ) {
-      for (
-        //idx <- 0 until (1 << myScoreboardCommitStm(prfIdx).fwdTag.getWidth)
-        idx <- 0 until cfg.optScoreboardNumTagsPerKind
-      ) {
-        is (
-          (1 << myScoreboardCommitStm(prfIdx).fwdTag.getWidth)
-          | idx
-        ) {
-          // needed because the tag stored in `rMyFwdGprTagVec` gets
-          // overwritten sometimes by a "can-be-forwarded-from"
-          // instruction writing to the same register!
-          rFwdTagAllocVec(idx) := False
-          //rFwdTagAllocWakeUpVec(idx) := True
-        }
-      }
-      default {
-      }
-    }
-    switch (
-      RegNext(
-        (
-          myScoreboardBubbleRetireStm(prfIdx).fire
-          && myScoreboardBubbleRetireStm(prfIdx).opIsFwd
-          //&& myScoreboardBubbleRetireStm(prfIdx).myFwdValid
-        ),
-        init=False
-      )
-      ## RegNext(
-        myScoreboardBubbleRetireStm(prfIdx).fwdTag
-      )
-    ) {
-      for (
-        //idx <- 0 until (1 << myScoreboardBubbleRetireStm(prfIdx).fwdTag.getWidth)
-        idx <- 0 until cfg.optScoreboardNumTagsPerKind
-      ) {
-        is (
-          (1 << myScoreboardBubbleRetireStm(prfIdx).fwdTag.getWidth)
-          | idx
-        ) {
-          // Bubbles being retired means we need to clear our tag
-          // allocations used for those bubbles!
-          rFwdTagAllocVec(idx) := False
-          //rFwdTagAllocWakeUpVec(idx) := True
-        }
-      }
-      default {
-      }
-    }
-    //for (idx <- 0 until rFwdTagAllocVec.size) {
-    //  when (rFwdTagAllocWakeUpVec(idx)) {
-    //    rFwdTagAllocWakeUpVec(idx) := False
-    //    rFwdTagAllocVec(idx) := False
+    //switch (
+    //  RegNext(
+    //    (
+    //      myScoreboardCommitStm(prfIdx).fire
+    //      && myScoreboardCommitStm(prfIdx).opIsFwd
+    //      //&& myScoreboardCommitStm(prfIdx).myFwdValid
+    //    ),
+    //    init=False
+    //  )
+    //  ## RegNext(
+    //    myScoreboardCommitStm(prfIdx).fwdTag
+    //  )
+    //) {
+    //  for (
+    //    //idx <- 0 until (1 << myScoreboardCommitStm(prfIdx).fwdTag.getWidth)
+    //    idx <- 0 until cfg.optScoreboardNumTagsPerKind
+    //  ) {
+    //    is (
+    //      (1 << myScoreboardCommitStm(prfIdx).fwdTag.getWidth)
+    //      | idx
+    //    ) {
+    //      // needed because the tag stored in `rMyFwdGprTagVec` gets
+    //      // overwritten sometimes by a "can-be-forwarded-from"
+    //      // instruction writing to the same register!
+    //      rFwdTagAllocVec(idx) := False
+    //      //rFwdTagAllocWakeUpVec(idx) := True
+    //    }
+    //  }
+    //  default {
     //  }
     //}
-    //--------
-    switch (
-      RegNext(
-        (
-          myScoreboardCommitStm(prfIdx).fire
-          //&& myScoreboardCommitStm(prfIdx).opIsFwd
-          && myScoreboardCommitStm(prfIdx).myNonFwdValid
-        ),
-        init=False
-      )
-      ## RegNext(
-        myScoreboardCommitStm(prfIdx).nonFwdTag
-      )
-    ) {
-      for (
-        //idx <- 0 until (1 << myScoreboardCommitStm(prfIdx).nonFwdTag.getWidth)
-        idx <- 0 until cfg.optScoreboardNumTagsPerKind
-      ) {
-        is (
-          (1 << myScoreboardCommitStm(prfIdx).nonFwdTag.getWidth)
-          | idx
-        ) {
-          rNonFwdTagAllocVec(idx) := False
-          //rNonFwdTagAllocWakeUpVec(idx) := True
-        }
-      }
-      default {
-      }
-    }
-    switch (
-      RegNext(
-        (
-          myScoreboardBubbleRetireStm(prfIdx).fire
-          //&& myScoreboardBubbleRetireStm(prfIdx).opIsFwd
-          && myScoreboardBubbleRetireStm(prfIdx).myNonFwdValid
-        ),
-        init=False
-      )
-      ## RegNext(
-        myScoreboardBubbleRetireStm(prfIdx).nonFwdTag
-      )
-    ) {
-      for (
-        //idx <- 0 until (1 << myScoreboardBubbleRetireStm(prfIdx).nonFwdTag.getWidth)
-        idx <- 0 until cfg.optScoreboardNumTagsPerKind
-      ) {
-        is (
-          (1 << myScoreboardBubbleRetireStm(prfIdx).nonFwdTag.getWidth)
-          | idx
-        ) {
-          // Bubbles being retired means we need to clear our tag
-          // allocations used for those bubbles!
-          rNonFwdTagAllocVec(idx) := False
-          //rNonFwdTagAllocWakeUpVec(idx) := True
-        }
-      }
-      default {
-      }
-    }
+    //switch (
+    //  RegNext(
+    //    (
+    //      myScoreboardBubbleRetireStm(prfIdx).fire
+    //      && myScoreboardBubbleRetireStm(prfIdx).opIsFwd
+    //      //&& myScoreboardBubbleRetireStm(prfIdx).myFwdValid
+    //    ),
+    //    init=False
+    //  )
+    //  ## RegNext(
+    //    myScoreboardBubbleRetireStm(prfIdx).fwdTag
+    //  )
+    //) {
+    //  for (
+    //    //idx <- 0 until (1 << myScoreboardBubbleRetireStm(prfIdx).fwdTag.getWidth)
+    //    idx <- 0 until cfg.optScoreboardNumTagsPerKind
+    //  ) {
+    //    is (
+    //      (1 << myScoreboardBubbleRetireStm(prfIdx).fwdTag.getWidth)
+    //      | idx
+    //    ) {
+    //      // Bubbles being retired means we need to clear our tag
+    //      // allocations used for those bubbles!
+    //      rFwdTagAllocVec(idx) := False
+    //      //rFwdTagAllocWakeUpVec(idx) := True
+    //    }
+    //  }
+    //  default {
+    //  }
+    //}
+    ////for (idx <- 0 until rFwdTagAllocVec.size) {
+    ////  when (rFwdTagAllocWakeUpVec(idx)) {
+    ////    rFwdTagAllocWakeUpVec(idx) := False
+    ////    rFwdTagAllocVec(idx) := False
+    ////  }
+    ////}
+    ////--------
+    //switch (
+    //  RegNext(
+    //    (
+    //      myScoreboardCommitStm(prfIdx).fire
+    //      //&& myScoreboardCommitStm(prfIdx).opIsFwd
+    //      && myScoreboardCommitStm(prfIdx).myNonFwdValid
+    //    ),
+    //    init=False
+    //  )
+    //  ## RegNext(
+    //    myScoreboardCommitStm(prfIdx).nonFwdTag
+    //  )
+    //) {
+    //  for (
+    //    //idx <- 0 until (1 << myScoreboardCommitStm(prfIdx).nonFwdTag.getWidth)
+    //    idx <- 0 until cfg.optScoreboardNumTagsPerKind
+    //  ) {
+    //    is (
+    //      (1 << myScoreboardCommitStm(prfIdx).nonFwdTag.getWidth)
+    //      | idx
+    //    ) {
+    //      rNonFwdTagAllocVec(idx) := False
+    //      //rNonFwdTagAllocWakeUpVec(idx) := True
+    //    }
+    //  }
+    //  default {
+    //  }
+    //}
+    //switch (
+    //  RegNext(
+    //    (
+    //      myScoreboardBubbleRetireStm(prfIdx).fire
+    //      //&& myScoreboardBubbleRetireStm(prfIdx).opIsFwd
+    //      && myScoreboardBubbleRetireStm(prfIdx).myNonFwdValid
+    //    ),
+    //    init=False
+    //  )
+    //  ## RegNext(
+    //    myScoreboardBubbleRetireStm(prfIdx).nonFwdTag
+    //  )
+    //) {
+    //  for (
+    //    //idx <- 0 until (1 << myScoreboardBubbleRetireStm(prfIdx).nonFwdTag.getWidth)
+    //    idx <- 0 until cfg.optScoreboardNumTagsPerKind
+    //  ) {
+    //    is (
+    //      (1 << myScoreboardBubbleRetireStm(prfIdx).nonFwdTag.getWidth)
+    //      | idx
+    //    ) {
+    //      // Bubbles being retired means we need to clear our tag
+    //      // allocations used for those bubbles!
+    //      rNonFwdTagAllocVec(idx) := False
+    //      //rNonFwdTagAllocWakeUpVec(idx) := True
+    //    }
+    //  }
+    //  default {
+    //  }
+    //}
   }
   //for (idx <- 0 until rNonFwdTagAllocVec.size) {
   //  when (rNonFwdTagAllocWakeUpVec(idx)) {
@@ -7203,7 +7215,7 @@ case class SnowHousePipeStageScoreboardCheck(
           //!upPayload(1).splitOp.opIsMemAccess
           !upPayload(1).splitOp.opIsNonFwd
         )
-        && !myShouldIgnoreInstr
+        //&& !myShouldIgnoreInstr
       )
     )
     val myFwdCond = (
@@ -7286,7 +7298,7 @@ case class SnowHousePipeStageScoreboardCheck(
           //upPayload(1).splitOp.opIsMemAccess
           upPayload(1).splitOp.opIsNonFwd
         )
-        && !myShouldIgnoreInstr
+        //&& !myShouldIgnoreInstr
       )
     )
     val myNonFwdCond = (

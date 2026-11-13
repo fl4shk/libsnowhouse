@@ -4376,7 +4376,7 @@ case class SnowHouseForFmaxPipeStageWriteBack(
     Reg(Bool(), init=False)
   )
   when (
-    Vec(io.multiCycleD2hBusVec.map(_.fire)).orR
+    LcvOrR(Vec(io.multiCycleD2hBusVec.map(_.fire)))//.orR
   ) {
     rSeenMultiCycleD2hBusFire := True
   }
@@ -4408,7 +4408,7 @@ case class SnowHouseForFmaxPipeStageWriteBack(
           // TODO (maybe!):
           // we may want to remove this (and change other WB logic)
           // for fmax reasons?
-          Vec(io.multiCycleD2hBusVec.map(_.fire)).orR 
+          LcvOrR(Vec(io.multiCycleD2hBusVec.map(_.fire)))//.orR 
         )
         || rSeenMultiCycleD2hBusFire
       ) else (
@@ -6252,7 +6252,7 @@ case class SnowHouseForFmaxPipeStageWriteBack(
           if (cfg.optScoreboard) (
             (
               //myDbgCommitBackStm(zdx).regFileWrite.addr.orR //=/= 0x0
-              myDbgCommitBackStm(zdx).regFileWrite.data(1).orR //=/= 0x0
+              LcvOrR(myDbgCommitBackStm(zdx).regFileWrite.data(1))//.orR //=/= 0x0
             )
             && (
               myDbgCommitBackStm(zdx).fire
@@ -6275,8 +6275,8 @@ case class SnowHouseForFmaxPipeStageWriteBack(
                 || (
                   !myDbgCommitBackStm(zdx).fire
                   || (
-                    !myDbgCommitBackStm(zdx).commit.nonFwdTag.orR
-                    && !myDbgCommitBackStm(zdx).commit.fwdTag.orR
+                    !LcvOrR(myDbgCommitBackStm(zdx).commit.nonFwdTag)//.orR
+                    && !LcvOrR(myDbgCommitBackStm(zdx).commit.fwdTag)//.orR
                   )
                 )
               )
@@ -6305,8 +6305,8 @@ case class SnowHouseForFmaxPipeStageWriteBack(
                 || (
                   !myDbgCommitBackStm(zdx).fire
                   || (
-                    !myDbgCommitBackStm(zdx).commit.nonFwdTag.orR
-                    && !myDbgCommitBackStm(zdx).commit.fwdTag.orR
+                    !LcvOrR(myDbgCommitBackStm(zdx).commit.nonFwdTag)//.orR
+                    && !LcvOrR(myDbgCommitBackStm(zdx).commit.fwdTag)//.orR
                   )
                 )
               )
@@ -6317,7 +6317,10 @@ case class SnowHouseForFmaxPipeStageWriteBack(
             .myWbPayload.instrCnt.myPsIdBubble.last
           }
         )
-        when (myDbgCommitBackStm(zdx).myWbPayload.encInstr.payload.orR) {
+        when (
+          LcvOrR(myDbgCommitBackStm(zdx).myWbPayload.encInstr.payload)
+          //.orR
+        ) {
           dbgInfo.encInstrAtRegFileWrite := (
             myDbgCommitBackStm(zdx).myWbPayload.encInstr.payload
           )

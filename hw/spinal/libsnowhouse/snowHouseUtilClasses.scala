@@ -1374,27 +1374,31 @@ case class SnowHouseConfig(
     //log2Up(16)
     //log2Up(32)
     //log2Up(64)
-    optScoreboardOooIssueWindow match {
-      case Some(myOooIssueWindow) => {
-        //log2Up(8)
-        (
-          log2Up(myOooIssueWindow) + 2//1//2//1//2//1
-        ).max(
-          log2Up(
-            32
-            //16
-            //64
-            //numGprs
-          )
-          //log2Up(64)
-        )
+    (
+      optScoreboardOooIssueWindow match {
+          case Some(myOooIssueWindow) => {
+            //log2Up(8)
+            //(
+            //  log2Up(myOooIssueWindow) + 2//1//2//1//2//1
+            //).max(
+            //  log2Up(
+            //    32
+            //    //16
+            //    //64
+            //    //numGprs
+            //  )
+            //  //log2Up(64)
+            //)
+            //log2Up(32 * numPhysRegsMult)
+            log2Up(16 * numPhysRegsMult)
+          }
+          case None => {
+            //log2Up(32)
+            log2Up(16 * numPhysRegsMult)
+            //log2Up(numGprs)
+          }
       }
-      case None => {
-        //log2Up(32)
-        log2Up(16)
-        //log2Up(numGprs)
-      }
-    }
+    ) //+ log2Up(numPhysRegsMult)
   )
   def optScoreboardInnerReorderBufWidth = (
     log2Up(numPhysRegsMult)
@@ -1424,6 +1428,7 @@ case class SnowHouseConfig(
   //  4
   //  //1
   //)
+
   val optScoreboardNumTagsPerKind = (
     //optScoreboardOooIssueWindow match {
     //  case Some(myOooIssueWindow) => {
@@ -1438,7 +1443,10 @@ case class SnowHouseConfig(
     //    log2Up(16)
     //  }
     //}
-    12
+    //12
+    1 << (
+      optScoreboardReorderBufWidth / numPhysRegsMult
+    )
   )
   val optScoreboardTagWidth = (
     //6
