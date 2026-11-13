@@ -1959,7 +1959,7 @@ case class SnowHouseInstrCnt(
   ) = (
     shouldIgnoreInstr(idx)
     || myPsIdBubble(idx)
-    || myPsIdFwdBubble(idx)
+    //|| myPsIdFwdBubble(idx)
   )
   def myScoreboardNonFwdPsWbBubbleMost = (
     myScoreboardPsWbBubbleMost(
@@ -2456,20 +2456,14 @@ case class SnowHousePipePayloadNonExt(
   val readsGprIdxVec = (
     cfg.optScoreboardOooIssueWindow != None
   ) generate (
-    Vec.fill(
-      //cfg.numRenamedGprs
-      cfg.numGprs
-    )(
+    Vec.fill(cfg.numRenamedGprs)(
       Bool()
     )
   )
   val writesGprIdxVec = (
     cfg.optScoreboardOooIssueWindow != None
   ) generate (
-    Vec.fill(
-      //cfg.numRenamedGprs
-      cfg.numGprs
-    )(
+    Vec.fill(cfg.numRenamedGprs)(
       Bool()
     )
   )

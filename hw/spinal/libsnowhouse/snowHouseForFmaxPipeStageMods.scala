@@ -1165,25 +1165,25 @@ case class SnowHouseForFmaxPipeStageRegRename(
   val pRegRenameInp = Payload(SnowHousePipePayload(cfg=cfg))
   val pRegRenameOutp = Payload(SnowHousePipePayload(cfg=cfg))
   val cLink = CtrlLink()
-  //val sLink = StageLink(
-  //  up=cLink.down,
-  //  down={
-  //    val temp = Node()
-  //    temp.setName("sLink_down")
-  //    temp
-  //  }
-  //)
-  //val s2mLink = S2MLink(
-  //  up=sLink.down,
-  //  down={
-  //    val temp = Node()
-  //    temp.setName("s2mLink_down")
-  //    temp
-  //  }
-  //)
+  val sLink = StageLink(
+    up=cLink.down,
+    down={
+      val temp = Node()
+      temp.setName("sLink_down")
+      temp
+    }
+  )
+  val s2mLink = S2MLink(
+    up=sLink.down,
+    down={
+      val temp = Node()
+      temp.setName("s2mLink_down")
+      temp
+    }
+  )
   linkArr += cLink
-  //linkArr += sLink
-  //linkArr += s2mLink
+  linkArr += sLink
+  linkArr += s2mLink
 
   val innerPsRegRename = SnowHousePipeStageRegRename(
     SnowHousePipeStageArgs(
@@ -1220,10 +1220,7 @@ case class SnowHouseForFmaxPipeStageRegRename(
   )
 
 
-  (
-    //s2mLink
-    cLink
-  ).down.driveTo(
+  s2mLink.down.driveTo(
     io.down
   )(
     con=(outp, node) => {
@@ -1348,25 +1345,25 @@ case class SnowHouseForFmaxPipeStageScoreboardCheck(
   val pScoreboardCheckInp = Payload(SnowHousePipePayload(cfg=cfg))
   val pScoreboardCheckOutp = Payload(SnowHousePipePayload(cfg=cfg))
   val cLink = CtrlLink()
-  val sLink = StageLink(
-    up=cLink.down,
-    down={
-      val temp = Node()
-      temp.setName("sLink_down")
-      temp
-    }
-  )
-  val s2mLink = S2MLink(
-    up=sLink.down,
-    down={
-      val temp = Node()
-      temp.setName("s2mLink_down")
-      temp
-    }
-  )
+  //val sLink = StageLink(
+  //  up=cLink.down,
+  //  down={
+  //    val temp = Node()
+  //    temp.setName("sLink_down")
+  //    temp
+  //  }
+  //)
+  //val s2mLink = S2MLink(
+  //  up=sLink.down,
+  //  down={
+  //    val temp = Node()
+  //    temp.setName("s2mLink_down")
+  //    temp
+  //  }
+  //)
   linkArr += cLink
-  linkArr += sLink
-  linkArr += s2mLink
+  //linkArr += sLink
+  //linkArr += s2mLink
 
   val innerPsScoreboardCheck = SnowHousePipeStageScoreboardCheck(
     SnowHousePipeStageArgs(
@@ -1420,7 +1417,10 @@ case class SnowHouseForFmaxPipeStageScoreboardCheck(
   )
 
 
-  s2mLink.down.driveTo(
+  (
+    //s2mLink
+    cLink
+  ).down.driveTo(
     io.down
   )(
     con=(outp, node) => {
@@ -5383,10 +5383,7 @@ case class SnowHouseForFmaxPipeStageWriteBack(
           //if (prfIdx == 0) (
             io.up.fire
             && (
-              (
-                io.up.instrCnt.myScoreboardPsWbBubbleMost(1)
-                //|| io.up.instrCnt.myPsIdFwdBubble(1)
-              )
+              io.up.instrCnt.myScoreboardPsWbBubbleMost(1)
               //io.up.instrCnt.shouldIgnoreInstr(1)
               && !io.up.instrCnt.myPsIdInFlushBubble(1)
               //|| io.up.instrCnt.myPsIdFwdBubble(1)
