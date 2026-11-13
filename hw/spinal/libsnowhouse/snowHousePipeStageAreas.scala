@@ -4582,17 +4582,20 @@ case class SnowHousePipeStageRegRename(
   }
 
   when (
-    !myTempFindFirstAtAll(
-      upPayload(1).innerReorderBufIdx
-    )
-    || (
-      rMyInFlightReorderBufIdxVec(
-        upPayload(1).outerReorderBufIdx
-      )(
+    (
+      !myTempFindFirstAtAll(
         upPayload(1).innerReorderBufIdx
       )
-      //&& !myShouldIgnoreInstr
+      || (
+        rMyInFlightReorderBufIdxVec(
+          upPayload(1).outerReorderBufIdx
+        )(
+          upPayload(1).innerReorderBufIdx
+        )
+        //&& !myShouldIgnoreInstr
+      )
     )
+    && !myShouldIgnoreInstr
     //|| myShouldIgnoreInstr
   ) {
     doSendBubbleMainMost(
@@ -5617,9 +5620,11 @@ case class SnowHousePipeStageScoreboardCheck(
                   )
                 )
                 //&& !myBufPushStm.instrCnt.myPsIdBubble.last
-                && !myBufPushStm.instrCnt.myPsIdOtherBubble.last
+                //&& !myBufPushStm.instrCnt.myPsIdOtherBubble.last
+                || myBufPushStm.instrCnt.myPsIdBubble.last
               )
-              || myBufPushStm.instrCnt.myPsIdBubble.last
+              && !myBufPushStm.instrCnt.myPsIdOtherBubble.last
+              //|| myBufPushStm.instrCnt.myPsIdBubble.last
             )
             //up(pId).instrCnt.tick
             //=== (
@@ -5656,7 +5661,6 @@ case class SnowHousePipeStageScoreboardCheck(
         //)
       )
     )
-
 
     myOooRdBuf.io.push << (
       //myBufPushStm
@@ -6674,26 +6678,32 @@ case class SnowHousePipeStageScoreboardCheck(
     //}
 
     //--------
-    //when (
-    //  up.isValid
-    //  && (
-    //    (
-    //      myOtherFlushCondMost.head
-    //      && !LcvAndR(myPopValidVec)
-    //    )
-    //    || (
-    //      !LcvOrR(myPopValidVec)
-    //      || (
-    //        myThrowItCond
-    //        && LcvAndR(myPopValidVec)
-    //      )
-    //    )
-    //  )
-    //) {
-    //  cScoreboardCheck.throwIt()
-    //  //cScoreboardCheck.terminateIt()
-    //  //cScoreboardCheck.haltIt()
-    //}
+    when (
+      up.isValid
+      && (
+        //(
+        //  myOtherFlushCondMost.head
+        //  //&& !LcvAndR(myPopValidVec)
+        //  && !LcvOrR(myPopValidVec)
+        //)
+        //|| 
+        (
+          //!LcvOrR(myPopValidVec)
+          //|| 
+          (
+            myThrowItCond
+            && LcvAndR(myPopValidVec)
+          )
+        )
+      )
+    ) {
+      cScoreboardCheck.throwIt()
+      //cScoreboardCheck.ignoreReadyNow()
+      //cScoreboardCheck.forgetOneNow()
+      //cScoreboardCheck.throwIt()
+      //cScoreboardCheck.terminateIt()
+      //cScoreboardCheck.haltIt()
+    }
     //--------
 
     //switch (
