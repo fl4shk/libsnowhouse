@@ -6972,27 +6972,32 @@ case class SnowHousePipeStageScoreboardCheck(
       }
 
       when (
-        rMyFwdGprTagVec(prfIdx)(idx).fire
-        && (
+        RegNext(
           (
-            myScoreboardCommitStm(prfIdx).fire
-            && myScoreboardCommitStm(prfIdx).opIsFwd
-            && myScoreboardCommitStm(prfIdx).myFwdValid
+            rMyFwdGprTagVec(prfIdx)(idx).fire
             && (
-              rMyFwdGprTagVec(prfIdx)(idx).tag
-              === myScoreboardCommitStm(prfIdx).fwdTag
+              (
+                myScoreboardCommitStm(prfIdx).fire
+                && myScoreboardCommitStm(prfIdx).opIsFwd
+                && myScoreboardCommitStm(prfIdx).myFwdValid
+                && (
+                  rMyFwdGprTagVec(prfIdx)(idx).tag
+                  === myScoreboardCommitStm(prfIdx).fwdTag
+                )
+              )
+              || (
+                myScoreboardBubbleRetireStm(prfIdx).fire
+                && myScoreboardBubbleRetireStm(prfIdx).opIsFwd
+                && (
+                  rMyFwdGprTagVec(prfIdx)(idx).tag
+                  === myScoreboardBubbleRetireStm(prfIdx).fwdTag
+                )
+              )
             )
-          )
-          || (
-            myScoreboardBubbleRetireStm(prfIdx).fire
-            && myScoreboardBubbleRetireStm(prfIdx).opIsFwd
-            && (
-              rMyFwdGprTagVec(prfIdx)(idx).tag
-              === myScoreboardBubbleRetireStm(prfIdx).fwdTag
-            )
-          )
+            //&& !rMyFwdGprTagVec(idx).wakeUp
+          ),
+          init=False
         )
-        //&& !rMyFwdGprTagVec(idx).wakeUp
       ) {
         //rFwdTagAllocVec(myScoreboardCommitStm(prfIdx).fwdTag) := False
         rMyFwdGprTagVec(prfIdx)(idx).valid := False
@@ -7008,26 +7013,30 @@ case class SnowHousePipeStageScoreboardCheck(
       //  rMyFwdGprTagVec(idx).valid := False
       //}
       when (
-        rMyNonFwdGprTagVec(prfIdx)(idx).fire
-        && (
+        RegNext(
           (
-            myScoreboardCommitStm(prfIdx).fire
-            && myScoreboardCommitStm(prfIdx).myNonFwdValid
+            rMyNonFwdGprTagVec(prfIdx)(idx).fire
             && (
-              rMyNonFwdGprTagVec(prfIdx)(idx).tag
-              === myScoreboardCommitStm(prfIdx).nonFwdTag
+              (
+                myScoreboardCommitStm(prfIdx).fire
+                && myScoreboardCommitStm(prfIdx).myNonFwdValid
+                && (
+                  rMyNonFwdGprTagVec(prfIdx)(idx).tag
+                  === myScoreboardCommitStm(prfIdx).nonFwdTag
+                )
+              )
+              || (
+                myScoreboardBubbleRetireStm(prfIdx).fire
+                && myScoreboardBubbleRetireStm(prfIdx).myNonFwdValid
+                && (
+                  rMyNonFwdGprTagVec(prfIdx)(idx).tag
+                  === myScoreboardBubbleRetireStm(prfIdx).nonFwdTag
+                )
+              )
             )
-          )
-          || (
-            myScoreboardBubbleRetireStm(prfIdx).fire
-            && myScoreboardBubbleRetireStm(prfIdx).myNonFwdValid
-            && (
-              rMyNonFwdGprTagVec(prfIdx)(idx).tag
-              === myScoreboardBubbleRetireStm(prfIdx).nonFwdTag
-            )
-          )
+          ),
+          init=False
         )
-        //&& !rMyNonFwdGprTagVec(idx).wakeUp
       ) {
         ////rNonFwdTagAllocVec(myScoreboardCommitStm(prfIdx).fwdTag) := False
         rMyNonFwdGprTagVec(prfIdx)(idx).valid := False
@@ -7042,12 +7051,15 @@ case class SnowHousePipeStageScoreboardCheck(
     }
     //--------
     switch (
-      (
-        myScoreboardCommitStm(prfIdx).fire
-        && myScoreboardCommitStm(prfIdx).opIsFwd
-        //&& myScoreboardCommitStm(prfIdx).myFwdValid
+      RegNext(
+        (
+          myScoreboardCommitStm(prfIdx).fire
+          && myScoreboardCommitStm(prfIdx).opIsFwd
+          //&& myScoreboardCommitStm(prfIdx).myFwdValid
+        ),
+        init=False
       )
-      ## (
+      ## RegNext(
         myScoreboardCommitStm(prfIdx).fwdTag
       )
     ) {
@@ -7070,12 +7082,15 @@ case class SnowHousePipeStageScoreboardCheck(
       }
     }
     switch (
-      (
-        myScoreboardBubbleRetireStm(prfIdx).fire
-        && myScoreboardBubbleRetireStm(prfIdx).opIsFwd
-        //&& myScoreboardBubbleRetireStm(prfIdx).myFwdValid
+      RegNext(
+        (
+          myScoreboardBubbleRetireStm(prfIdx).fire
+          && myScoreboardBubbleRetireStm(prfIdx).opIsFwd
+          //&& myScoreboardBubbleRetireStm(prfIdx).myFwdValid
+        ),
+        init=False
       )
-      ## (
+      ## RegNext(
         myScoreboardBubbleRetireStm(prfIdx).fwdTag
       )
     ) {
@@ -7104,12 +7119,15 @@ case class SnowHousePipeStageScoreboardCheck(
     //}
     //--------
     switch (
-      (
-        myScoreboardCommitStm(prfIdx).fire
-        //&& myScoreboardCommitStm(prfIdx).opIsFwd
-        && myScoreboardCommitStm(prfIdx).myNonFwdValid
+      RegNext(
+        (
+          myScoreboardCommitStm(prfIdx).fire
+          //&& myScoreboardCommitStm(prfIdx).opIsFwd
+          && myScoreboardCommitStm(prfIdx).myNonFwdValid
+        ),
+        init=False
       )
-      ## (
+      ## RegNext(
         myScoreboardCommitStm(prfIdx).nonFwdTag
       )
     ) {
@@ -7129,12 +7147,15 @@ case class SnowHousePipeStageScoreboardCheck(
       }
     }
     switch (
-      (
-        myScoreboardBubbleRetireStm(prfIdx).fire
-        //&& myScoreboardBubbleRetireStm(prfIdx).opIsFwd
-        && myScoreboardBubbleRetireStm(prfIdx).myNonFwdValid
+      RegNext(
+        (
+          myScoreboardBubbleRetireStm(prfIdx).fire
+          //&& myScoreboardBubbleRetireStm(prfIdx).opIsFwd
+          && myScoreboardBubbleRetireStm(prfIdx).myNonFwdValid
+        ),
+        init=False
       )
-      ## (
+      ## RegNext(
         myScoreboardBubbleRetireStm(prfIdx).nonFwdTag
       )
     ) {
