@@ -4296,12 +4296,12 @@ case class SnowHousePipeStageRegRename(
       Vec(myScoreboardCommit.map{item => (
         item.fire
         && LcvOrR(item.regRenameFreeListIdx)
-        //&& !myShouldIgnoreInstr
+        && !myShouldIgnoreInstr
       )}),
       Vec(myScoreboardBubbleRetire.map{item => (
         item.fire
         && LcvOrR(item.regRenameFreeListIdx)
-        //&& !myShouldIgnoreInstr
+        && !myShouldIgnoreInstr
       )})
     )
   )
