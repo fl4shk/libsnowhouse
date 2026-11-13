@@ -5583,64 +5583,33 @@ case class SnowHousePipeStageScoreboardCheck(
     //myTestFifo.io.push << myBufPushStm
     //myOooRdBuf.io.push << myTestFifo.io.pop
 
+    val myReorderBufIdxThrowItCond = (
+      (
+        myBufPushStm.instrCnt.reorderBufIdx
+        === (
+          RegNextWhen(
+            myBufPushStm.instrCnt.reorderBufIdx,
+            cond=(
+              myOooRdBuf.io.push.fire
+            ),
+          )
+          init(0x2)
+        )
+      )
+    )
+
     val myThrowItCond = (
-      //False
       (
         (
           (
             (
               (
-                (
-                  myBufPushStm.instrCnt.reorderBufIdx
-                  === (
-                    RegNextWhen(
-                      myBufPushStm.instrCnt.reorderBufIdx,
-                      //myOooRdBuf.io.push.instrCnt.tick,
-                      cond=(
-                        //myBufPushStm.fire
-                        myOooRdBuf.io.push.fire
-                      ),
-                      //init=(
-                      //  False
-                      //  //True
-                      //),
-                    )
-                    init(
-                      0x2
-                      //False
-                    )
-                    //RegNextWhen(
-                    //  myOooRdBuf.io.push.instrCnt.tick,
-                    //  cond=myOooRdBuf.io.push.fire,
-                    //  init=(
-                    //    //False
-                    //    True
-                    //  ),
-                    //)
-                  )
-                )
-                //&& !myBufPushStm.instrCnt.myPsIdBubble.last
-                //&& !myBufPushStm.instrCnt.myPsIdOtherBubble.last
+                myReorderBufIdxThrowItCond
                 || myBufPushStm.instrCnt.myPsIdBubble.last
               )
               && !myBufPushStm.instrCnt.myPsIdOtherBubble.last
               //|| myBufPushStm.instrCnt.myPsIdBubble.last
             )
-            //up(pId).instrCnt.tick
-            //=== (
-            //  RegNextWhen(
-            //    up(pId).instrCnt.tick,
-            //    cond=(
-            //      //up.isFiring
-            //      up.isValid
-            //      && down.isReady
-            //    ),
-            //    init=True,
-            //  )
-            //)
-            //|| rMyInFlightReorderBufIdxVec(
-            //  myBufPushStm.reorderBufIdx
-            //)
           )
           && (
             RegNextWhen(
@@ -5653,12 +5622,6 @@ case class SnowHousePipeStageScoreboardCheck(
             )
           )
         )
-        //|| (
-        //  myBufPushStm.instrCnt.myPsIdBubble.last
-        //)
-        //&& (
-        //  !myBufPushStm.instrCnt.myPsIdBubble.last
-        //)
       )
     )
 
@@ -6507,7 +6470,11 @@ case class SnowHousePipeStageScoreboardCheck(
           !LcvOrR(myPopValidVec)
           || 
           (
-            myThrowItCond
+            (
+              myThrowItCond
+              //myReorderBufIdxThrowItCond
+              && !myBufPushStm.instrCnt.myPsIdBubble.last
+            )
             && LcvAndR(myPopValidVec)
           )
         )
