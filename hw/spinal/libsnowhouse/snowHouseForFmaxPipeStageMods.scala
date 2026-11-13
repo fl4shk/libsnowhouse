@@ -5839,7 +5839,7 @@ case class SnowHouseForFmaxPipeStageWriteBack(
       someCommitStm.commit.fwdTag := myHistFwdTag(0)
       someCommitStm.commit.opIsFwd := False
     } else {
-      someCommitStm.commit.nonFwdTag := 0x0
+      someCommitStm.commit.nonFwdTag := myHistNonFwdTag(0)//0x0
       someCommitStm.commit.fwdTag := myHistFwdTag(0)
       someCommitStm.commit.opIsFwd := True
     }

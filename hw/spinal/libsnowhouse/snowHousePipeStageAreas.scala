@@ -4756,12 +4756,12 @@ case class SnowHousePipeStageScoreboardCheck(
         item := myInFlushCond.get
       })
       //when (!myInFlushCond.get) {
-        down(
-          pScoreboardCheck
-        ).instrCnt.scoreboardCheckPayload.fwdTag := 0x0
-        down(
-          pScoreboardCheck
-        ).instrCnt.scoreboardCheckPayload.nonFwdTag := 0x0
+      //  down(
+      //    pScoreboardCheck
+      //  ).instrCnt.scoreboardCheckPayload.fwdTag := 0x0
+      //  down(
+      //    pScoreboardCheck
+      //  ).instrCnt.scoreboardCheckPayload.nonFwdTag := 0x0
       //} otherwise {
       //  down(pScoreboardCheck).instrCnt.scoreboardCheckPayload.fwdTag := (
       //    upPayload(1).instrCnt.scoreboardCheckPayload.fwdTag
@@ -6811,18 +6811,18 @@ case class SnowHousePipeStageScoreboardCheck(
     upPayload(1).instrCnt.scoreboardCheckPayload.fwdTag
   )
 
-  myTempNonFwdTag := (
-    RegNext(
-      myTempNonFwdTag,
-      init=myTempNonFwdTag.getZero
-    )
-  )
-  myTempFwdTag := (
-    RegNext(
-      myTempFwdTag,
-      init=myTempFwdTag.getZero
-    )
-  )
+  //myTempNonFwdTag := (
+  //  RegNext(
+  //    myTempNonFwdTag,
+  //    init=myTempNonFwdTag.getZero
+  //  )
+  //)
+  //myTempFwdTag := (
+  //  RegNext(
+  //    myTempFwdTag,
+  //    init=myTempFwdTag.getZero
+  //  )
+  //)
 
   val myLeftGprIdxVec = Vec.fill(
     //cfg.regFileCfg.modRdPortCnt
