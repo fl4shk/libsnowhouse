@@ -4960,7 +4960,7 @@ case class SnowHousePipeStageScoreboardCheck(
       //4
       //5
       //8
-      myOooRdBufWindow + 1 //+ 3
+      myOooRdBufWindow + 3//1 //+ 3
     )
     val myOooRdBufExtraSize = (
       myOooRdBufDepth - myOooRdBufWindow
