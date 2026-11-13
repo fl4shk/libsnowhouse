@@ -4608,6 +4608,7 @@ case class SnowHousePipeStageRegRename(
     //  )
     //)
   }
+
   when (
     myShouldIgnoreInstr
   ) {
