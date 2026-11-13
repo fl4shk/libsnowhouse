@@ -5061,15 +5061,17 @@ case class SnowHousePipeStageScoreboardCheck(
           //pop(otherIdx).splitOp.scoreboardOpCanBeOooIssued(1)
           //&& 
           {
+            val myHazardDetectIdx = (
+              (otherIdx - myOooRdBufExtraSize)
+              % cfg.optScoreboardOooIssueHazardDetectSize
+            )
             val temp = (
               LcvOrR(
                 pop(otherIdx).writesGprIdxVec(
-                  (otherIdx - myOooRdBufExtraSize)
-                  % cfg.optScoreboardOooIssueHazardDetectSize
+                  myHazardDetectIdx
                 ).asBits(myGprRange)
                 & inp.readsGprIdxVec(
-                  (otherIdx - myOooRdBufExtraSize)
-                  % cfg.optScoreboardOooIssueHazardDetectSize
+                  myHazardDetectIdx
                 ).asBits(myGprRange)
               )//.orR
 
@@ -5085,22 +5087,18 @@ case class SnowHousePipeStageScoreboardCheck(
                   temp
                   || LcvOrR(
                     pop(otherIdx).writesGprIdxVec(
-                      (otherIdx - myOooRdBufExtraSize)
-                      % cfg.optScoreboardOooIssueHazardDetectSize
+                      myHazardDetectIdx
                     ).asBits(myGprRange)
                     & inp.writesGprIdxVec(
-                      (otherIdx - myOooRdBufExtraSize)
-                      % cfg.optScoreboardOooIssueHazardDetectSize
+                      myHazardDetectIdx
                     ).asBits(myGprRange)
                   )//.orR
                   || LcvOrR(
                     pop(otherIdx).readsGprIdxVec(
-                      (otherIdx - myOooRdBufExtraSize)
-                      % cfg.optScoreboardOooIssueHazardDetectSize
+                      myHazardDetectIdx
                     ).asBits(myGprRange)
                     & inp.writesGprIdxVec(
-                      (otherIdx - myOooRdBufExtraSize)
-                      % cfg.optScoreboardOooIssueHazardDetectSize
+                      myHazardDetectIdx
                     ).asBits(myGprRange)
                   )//.orR
                 ) else ( // if (cfg.optRegRename)
