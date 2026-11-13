@@ -5064,10 +5064,12 @@ case class SnowHousePipeStageScoreboardCheck(
             val temp = (
               LcvOrR(
                 pop(otherIdx).writesGprIdxVec(
-                  otherIdx - myOooRdBufExtraSize
+                  (otherIdx - myOooRdBufExtraSize)
+                  % cfg.optScoreboardOooIssueHazardDetectSize
                 ).asBits(myGprRange)
                 & inp.readsGprIdxVec(
-                  otherIdx - myOooRdBufExtraSize
+                  (otherIdx - myOooRdBufExtraSize)
+                  % cfg.optScoreboardOooIssueHazardDetectSize
                 ).asBits(myGprRange)
               )//.orR
 
@@ -5083,18 +5085,22 @@ case class SnowHousePipeStageScoreboardCheck(
                   temp
                   || LcvOrR(
                     pop(otherIdx).writesGprIdxVec(
-                      otherIdx - myOooRdBufExtraSize
+                      (otherIdx - myOooRdBufExtraSize)
+                      % cfg.optScoreboardOooIssueHazardDetectSize
                     ).asBits(myGprRange)
                     & inp.writesGprIdxVec(
-                      otherIdx - myOooRdBufExtraSize
+                      (otherIdx - myOooRdBufExtraSize)
+                      % cfg.optScoreboardOooIssueHazardDetectSize
                     ).asBits(myGprRange)
                   )//.orR
                   || LcvOrR(
                     pop(otherIdx).readsGprIdxVec(
-                      otherIdx - myOooRdBufExtraSize
+                      (otherIdx - myOooRdBufExtraSize)
+                      % cfg.optScoreboardOooIssueHazardDetectSize
                     ).asBits(myGprRange)
                     & inp.writesGprIdxVec(
-                      otherIdx - myOooRdBufExtraSize
+                      (otherIdx - myOooRdBufExtraSize)
+                      % cfg.optScoreboardOooIssueHazardDetectSize
                     ).asBits(myGprRange)
                   )//.orR
                 ) else ( // if (cfg.optRegRename)
