@@ -6274,10 +6274,10 @@ case class SnowHouseForFmaxPipeStageWriteBack(
                 .instrCnt.shouldIgnoreInstr.last
                 || (
                   !myDbgCommitBackStm(zdx).fire
-                  || (
-                    !LcvOrR(myDbgCommitBackStm(zdx).commit.nonFwdTag)//.orR
-                    && !LcvOrR(myDbgCommitBackStm(zdx).commit.fwdTag)//.orR
-                  )
+                  //|| (
+                  //  !LcvOrR(myDbgCommitBackStm(zdx).commit.nonFwdTag)//.orR
+                  //  && !LcvOrR(myDbgCommitBackStm(zdx).commit.fwdTag)//.orR
+                  //)
                 )
               )
               //|| (
@@ -6304,10 +6304,10 @@ case class SnowHouseForFmaxPipeStageWriteBack(
                 myInstrCnt.myPsIdBubble.last
                 || (
                   !myDbgCommitBackStm(zdx).fire
-                  || (
-                    !LcvOrR(myDbgCommitBackStm(zdx).commit.nonFwdTag)//.orR
-                    && !LcvOrR(myDbgCommitBackStm(zdx).commit.fwdTag)//.orR
-                  )
+                  //|| (
+                  //  !LcvOrR(myDbgCommitBackStm(zdx).commit.nonFwdTag)//.orR
+                  //  && !LcvOrR(myDbgCommitBackStm(zdx).commit.fwdTag)//.orR
+                  //)
                 )
               )
               //|| !myDbgHaveNewNonBubbleTag
