@@ -888,7 +888,10 @@ case class SnowHouseBranchTgtBufSingle(
       M"10"
       //M"100"
     ) {
-      when (tgtBrKindBuf(rTgtBufWrAddr.last).orR) {
+      when (
+        //tgtBrKindBuf(rTgtBufWrAddr.last).orR
+        LcvOrR(tgtBrKindBuf(rTgtBufWrAddr.last))
+      ) {
         tgtBrKindBuf(rTgtBufWrAddr.last) := (
           tgtBrKindBuf(rTgtBufWrAddr.last) - 1
         )
@@ -918,7 +921,9 @@ case class SnowHouseBranchTgtBufSingle(
       M"11"
       //M"110"
     ) {
-      when ((~tgtBrKindBuf(rTgtBufWrAddr.last)).orR) {
+      when (
+        LcvOrR(~tgtBrKindBuf(rTgtBufWrAddr.last))//.orR
+      ) {
         tgtBrKindBuf(rTgtBufWrAddr.last) := (
           tgtBrKindBuf(rTgtBufWrAddr.last) + 1
         )
@@ -3197,7 +3202,7 @@ case class SnowHousePipeStageInstrDecode(
               (
                 myHistCondAnyBubble(idx + 1)
                 //&& upPayload(1).myDoHaveHazardAddrCheckVec(idx)
-                && upPayload(1).myDoHaveHazardAddrCheckVec.orR
+                && LcvOrR(upPayload(1).myDoHaveHazardAddrCheckVec)//.orR
               )
               && !myShouldIgnoreInstr
             ) {
@@ -4988,17 +4993,21 @@ case class SnowHousePipeStageScoreboardCheck(
     switch (rScoreboardFlushState) {
       is (ScoreboardFlushState.IDLE) {
         when (
-          myNonFwdHazardCheckVec.orR
-          || myFwdHazardCheckVec.orR
+          LcvOrR(myNonFwdHazardCheckVec)//.orR
+          || LcvOrR(myFwdHazardCheckVec)//.orR
           //|| myReducedFwdTagAllocVec.asBits.andR
           //|| myReducedNonFwdTagAllocVec.asBits.andR
           || myInFlushCond(2)
         ) {
           doSendBubbleMainMost(
             myDuplicateItCond=true,
-            myPsIdBubble=Some(myNonFwdHazardCheckVec.orR),
+            myPsIdBubble=Some(
+              LcvOrR(myNonFwdHazardCheckVec)//.orR
+            ),
             myPsIdOtherBubble=Some(True),
-            myPsIdFwdBubble=Some(myFwdHazardCheckVec.orR),
+            myPsIdFwdBubble=Some(
+              LcvOrR(myFwdHazardCheckVec)//.orR
+            ),
             myInFlushCond=Some(myInFlushCond(2))//None
           )
         }
@@ -5017,9 +5026,13 @@ case class SnowHousePipeStageScoreboardCheck(
         when (!myInFlushCond(3)) {
           doSendBubbleMainMost(
             myDuplicateItCond=true,
-            myPsIdBubble=Some(myNonFwdHazardCheckVec.orR),
+            myPsIdBubble=Some(
+              LcvOrR(myNonFwdHazardCheckVec)//.orR
+            ),
             myPsIdOtherBubble=Some(True),
-            myPsIdFwdBubble=Some(myFwdHazardCheckVec.orR),
+            myPsIdFwdBubble=Some(
+              LcvOrR(myFwdHazardCheckVec)//.orR
+            ),
             myInFlushCond=None
           )
         }
@@ -6548,7 +6561,7 @@ case class SnowHousePipeStageScoreboardCheck(
       doSendBubbleMainMost(
         myDuplicateItCond=false,
         myPsIdBubble=Some(
-          myNonFwdHazardCheckVec.orR
+          LcvOrR(myNonFwdHazardCheckVec)//.orR
           //&& !rReorderBufFlushInfo.fire
           //&& myOtherFlushCondMost.last
         ),
@@ -6560,7 +6573,7 @@ case class SnowHousePipeStageScoreboardCheck(
           //!rReorderBufFlushInfo.fire
         ),
         myPsIdFwdBubble=Some(
-          myFwdHazardCheckVec.orR
+          LcvOrR(myFwdHazardCheckVec)//.orR
           //&& !rReorderBufFlushInfo.fire
           //&& myOtherFlushCondMost.last
         ),
@@ -7223,7 +7236,7 @@ case class SnowHousePipeStageScoreboardCheck(
       (
         if (!doOooIssue) (
           myFwdCondMsbMost
-          && !myNonFwdHazardCheckVec.orR
+          && !LcvOrR(myNonFwdHazardCheckVec)//.orR
         ) else (
           myFwdCondMsbMost
         )
@@ -7306,7 +7319,7 @@ case class SnowHousePipeStageScoreboardCheck(
       (
         if (!doOooIssue) (
           myNonFwdCondMsbMost
-          && !myNonFwdHazardCheckVec.orR
+          && !LcvOrR(myNonFwdHazardCheckVec)//.orR
         ) else (
           myNonFwdCondMsbMost
         )
@@ -7363,54 +7376,6 @@ case class SnowHousePipeStageScoreboardCheck(
         }
       }
     }
-
-    //if (
-    //  cfg.optRegRename
-    //  && jdx == 1
-    //) {
-    //  for (kdx <- 0 until cfg.regFileCfg.modRdPortCnt) {
-    //    switch (
-    //      myLeftGprIdxVec(kdx)
-    //    ) {
-    //      for (idx <- 0 until cfg.numRenamedGprs) {
-    //        if (
-    //          !cfg.myHaveZeroReg
-    //          || idx != 0
-    //        ) {
-    //          is (idx) {
-    //            switch (
-    //              rMyNonFwdGprTagVec(idx).fire
-    //              ## rMyFwdGprTagVec(idx).fire
-    //            ) {
-    //              is (M"1-") {
-    //                upPayload(1).renamedGprIdxVec(kdx) := (
-    //                  Cat(
-    //                    True,
-    //                    rMyNonFwdGprTagVec(idx).tag
-    //                  ).asUInt
-    //                  + cfg.numRenamedGprs
-    //                )
-    //              }
-    //              is (M"01") {
-    //                upPayload(1).renamedGprIdxVec(kdx) := (
-    //                  Cat(
-    //                    False,
-    //                    rMyFwdGprTagVec(idx).tag
-    //                  ).asUInt
-    //                  + cfg.numRenamedGprs
-    //                )
-    //              }
-    //            }
-    //          }
-    //        }
-    //      }
-    //      if (cfg.myHaveZeroReg) {
-    //        default {
-    //        }
-    //      }
-    //    }
-    //  }
-    //}
   }
 
   //down(pScoreboardCheck).splitOp.opIsNonFwd := (
@@ -10110,7 +10075,7 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
     myPsExSetPcValid := False
   }
   when (
-    myPsExSetPcValidToOrReduce.orR
+    LcvOrR(myPsExSetPcValidToOrReduce)//.orR
   ) {
     myPsExSetPcValid := True
   }
@@ -10301,7 +10266,7 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
   val tempBranchMispredictNotTaken = (
     myHadBranchLastInstr
     //&& changedInstr
-    && myTempBranchMispredictNotTakenMost.orR
+    && LcvOrR(myTempBranchMispredictNotTakenMost)//.orR
   )
   //val stickyBranchMispredictCond = Bool()
   //stickyBranchMispredictCond := (
@@ -10329,8 +10294,8 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
       myHadBranchLastInstr
       //&& changedInstr
       && (
-        myTempBranchMispredictTakenMost.orR
-        || myTempBranchMispredictNotTakenMost.orR
+        LcvOrR(myTempBranchMispredictTakenMost)//.orR
+        || LcvOrR(myTempBranchMispredictNotTakenMost)//.orR
       )
     )
     //&& (
@@ -14950,7 +14915,8 @@ case class SnowHousePipeStageExecute(
   val tempTakeIrqCond = (
     cfg.irqCfg != None
   ) generate (
-    /*LcvFastAndR*/(
+    /*LcvFastAndR*/
+    LcvAndR(
       Vec[Bool](
         //cMid0Front.up.isValid,
         ////RegNextWhen(
@@ -14963,7 +14929,7 @@ case class SnowHousePipeStageExecute(
         ////!shouldIgnoreInstr
         //!myShouldIgnoreInstr(0)
         ////cMid0Front.up.isFiring,
-      ).asBits.asUInt.andR
+      ).asBits.asUInt//.andR
     )
   )
   val rHadIrqReady = (
@@ -16599,7 +16565,7 @@ case class SnowHousePipeStageExecute(
     )
     switch (
       myAnyValidCond
-      ## Vec[Bool](multiCycleH2dBusVec.map(_.ready)).asBits.orR
+      ## LcvOrR(Vec[Bool](multiCycleH2dBusVec.map(_.ready)).asBits)//.orR
     ) {
       is (M"10") {
         cLink.duplicateIt()
@@ -16800,7 +16766,7 @@ case class SnowHousePipeStageExecute(
               /*RegNext*/(
                 Vec[Bool](
                   (
-                    Vec[Bool](
+                    LcvAndR(Vec[Bool](
                       //!rSavedStall.head/*(idx)*/,
                       /*RegNext*/(doCheckHazard).head/*(idx)*/,
                       /*RegNext*/(myDoHaveHazard).head/*(idx)*/,
@@ -16810,14 +16776,16 @@ case class SnowHousePipeStageExecute(
                       ),
                       //psMemStallHost.ready,
                       myDbus.ready,
-                    ).asBits.asUInt.andR
+                    ).asBits.asUInt)//.andR
                   ),
                   (
-                    !Vec[Bool](
-                      //!rSavedStall.head/*(idx)*/,
-                      /*RegNext*/(doCheckHazard).head/*(idx)*/,
-                      /*RegNext*/(myDoHaveHazard).head/*(idx)*/,
-                    ).asBits.asUInt.andR
+                    !LcvAndR(
+                      Vec[Bool](
+                        //!rSavedStall.head/*(idx)*/,
+                        /*RegNext*/(doCheckHazard).head/*(idx)*/,
+                        /*RegNext*/(myDoHaveHazard).head/*(idx)*/,
+                      ).asBits.asUInt
+                    )//.andR
                   )
                 ).asBits.asUInt//.orR
               )
@@ -16831,7 +16799,9 @@ case class SnowHousePipeStageExecute(
               ).asBits.asUInt
             )
           )
-          when (toOrReduce.orR) {
+          when (
+            LcvOrR(toOrReduce)//.orR
+          ) {
             rMultiCycleOpState := MultiCycleOpState.Main
             myDoStall(stallKindMem) := False
           }
@@ -16940,7 +16910,7 @@ case class SnowHousePipeStageExecute(
   }
   when (
     //myDoStall.sFindFirst(_ === True)._1
-    myDoStall.asBits.orR
+    LcvOrR(myDoStall.asBits)//.orR
   ) {
     for (ydx <- 0 until cfg.regFileCfg.memArrSize) {
       //outp.myExt(ydx).valid.foreach(current => {
