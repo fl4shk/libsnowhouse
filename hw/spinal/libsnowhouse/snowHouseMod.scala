@@ -2341,8 +2341,8 @@ private[libsnowhouse] case class SnowHouseForFmax(
           //}
         },
         optRdLatency=(
-          2
-          //1
+          //2
+          1
           //0
         ),
         optWrHistLength=(
