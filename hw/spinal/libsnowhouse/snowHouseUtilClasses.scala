@@ -1445,7 +1445,7 @@ case class SnowHouseConfig(
     //}
     //12
     1 << (
-      optScoreboardReorderBufWidth / numPhysRegsMult
+      optScoreboardReorderBufWidth - log2Up(numPhysRegsMult)
     )
   )
   val optScoreboardTagWidth = (

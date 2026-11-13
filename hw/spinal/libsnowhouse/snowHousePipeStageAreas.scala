@@ -4519,7 +4519,7 @@ case class SnowHousePipeStageRegRename(
       //&& !myBufPushStm.instrCnt.myPsIdBubble.last
       up.isFiring
       && upPayload(1).innerReorderBufIdx === prfIdx
-      && !myShouldIgnoreInstr
+      //&& !myShouldIgnoreInstr
     ) {
       rMyInFlightReorderBufIdxVec(
         upPayload(1).outerReorderBufIdx
@@ -4591,7 +4591,7 @@ case class SnowHousePipeStageRegRename(
       )(
         upPayload(1).innerReorderBufIdx
       )
-      && !myShouldIgnoreInstr
+      //&& !myShouldIgnoreInstr
     )
     //|| myShouldIgnoreInstr
   ) {
