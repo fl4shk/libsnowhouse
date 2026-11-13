@@ -7026,10 +7026,12 @@ case class SnowHousePipeStageScoreboardCheck(
   //) {
   //}
   myTempFwdTag := (
-    upPayload(1).reorderBufIdx.resize(myTempFwdTag.getWidth)
+    //upPayload(1).reorderBufIdx.resize(myTempFwdTag.getWidth)
+    upPayload(1).outerReorderBufIdx
   )
   myTempNonFwdTag := (
-    upPayload(1).reorderBufIdx.resize(myTempNonFwdTag.getWidth)
+    //upPayload(1).reorderBufIdx.resize(myTempNonFwdTag.getWidth)
+    upPayload(1).outerReorderBufIdx
   )
   //--------
 
@@ -7059,13 +7061,13 @@ case class SnowHousePipeStageScoreboardCheck(
                   rMyFwdGprTagVec(prfIdx)(idx).tag
                   === myScoreboardCommitStm(prfIdx).fwdTag
                 )
-                && (
-                  myScoreboardCommitStm(prfIdx).gprIdxVec.last(
-                    log2Up(cfg.numRenamedGprs) - 1
-                    downto log2Up(cfg.numPhysRegsMult)
-                  )
-                  === idx
-                )
+                //&& (
+                //  myScoreboardCommitStm(prfIdx).gprIdxVec.last(
+                //    log2Up(cfg.numRenamedGprs) - 1
+                //    downto log2Up(cfg.numPhysRegsMult)
+                //  )
+                //  === idx
+                //)
               )
               || (
                 myScoreboardBubbleRetireStm(prfIdx).fire
@@ -7074,13 +7076,13 @@ case class SnowHousePipeStageScoreboardCheck(
                   rMyFwdGprTagVec(prfIdx)(idx).tag
                   === myScoreboardBubbleRetireStm(prfIdx).fwdTag
                 )
-                && (
-                  myScoreboardBubbleRetireStm(prfIdx).gprIdxVec.last(
-                    log2Up(cfg.numRenamedGprs) - 1
-                    downto log2Up(cfg.numPhysRegsMult)
-                  )
-                  === idx
-                )
+                //&& (
+                //  myScoreboardBubbleRetireStm(prfIdx).gprIdxVec.last(
+                //    log2Up(cfg.numRenamedGprs) - 1
+                //    downto log2Up(cfg.numPhysRegsMult)
+                //  )
+                //  === idx
+                //)
               )
             )
             //&& !rMyFwdGprTagVec(idx).wakeUp
@@ -7113,13 +7115,13 @@ case class SnowHousePipeStageScoreboardCheck(
                   rMyNonFwdGprTagVec(prfIdx)(idx).tag
                   === myScoreboardCommitStm(prfIdx).nonFwdTag
                 )
-                && (
-                  myScoreboardCommitStm(prfIdx).gprIdxVec.last(
-                    log2Up(cfg.numRenamedGprs) - 1
-                    downto log2Up(cfg.numPhysRegsMult)
-                  )
-                  === idx
-                )
+                //&& (
+                //  myScoreboardCommitStm(prfIdx).gprIdxVec.last(
+                //    log2Up(cfg.numRenamedGprs) - 1
+                //    downto log2Up(cfg.numPhysRegsMult)
+                //  )
+                //  === idx
+                //)
               )
               || (
                 myScoreboardBubbleRetireStm(prfIdx).fire
@@ -7128,13 +7130,13 @@ case class SnowHousePipeStageScoreboardCheck(
                   rMyNonFwdGprTagVec(prfIdx)(idx).tag
                   === myScoreboardBubbleRetireStm(prfIdx).nonFwdTag
                 )
-                && (
-                  myScoreboardBubbleRetireStm(prfIdx).gprIdxVec.last(
-                    log2Up(cfg.numRenamedGprs) - 1
-                    downto log2Up(cfg.numPhysRegsMult)
-                  )
-                  === idx
-                )
+                //&& (
+                //  myScoreboardBubbleRetireStm(prfIdx).gprIdxVec.last(
+                //    log2Up(cfg.numRenamedGprs) - 1
+                //    downto log2Up(cfg.numPhysRegsMult)
+                //  )
+                //  === idx
+                //)
               )
             )
           ),
