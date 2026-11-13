@@ -4541,11 +4541,26 @@ case class SnowHousePipeStageRegRename(
     upPayload(1).writesGprIdxVec.foreach(item => {
       item := False
     })
+    //for (jdx <- 0 until cfg.maxNumGprsPerInstr) {
+    //  val gprIdx = upPayload(1).renamedGprIdxVec(jdx)
+    //  switch (gprIdx) {
+    //    val leftLim = (if (cfg.myHaveZeroReg) (1) else (0))
+    //    for (idx <- leftLim until cfg.numRenamedGprs) {
+    //      is (idx) {
+    //        if (jdx < cfg.maxNumGprsPerInstr - 1) {
+    //          upPayload(1).readsGprIdxVec(idx) := True
+    //        } else {
+    //          upPayload(1).writesGprIdxVec(idx) := True
+    //        }
+    //      }
+    //    }
+    //  }
+    //}
     for (jdx <- 0 until cfg.maxNumGprsPerInstr) {
-      val gprIdx = upPayload(1).renamedGprIdxVec(jdx)
+      val gprIdx = upPayload(1).gprIdxVec(jdx)
       switch (gprIdx) {
         val leftLim = (if (cfg.myHaveZeroReg) (1) else (0))
-        for (idx <- leftLim until cfg.numRenamedGprs) {
+        for (idx <- leftLim until cfg.numGprs) {
           is (idx) {
             if (jdx < cfg.maxNumGprsPerInstr - 1) {
               upPayload(1).readsGprIdxVec(idx) := True
@@ -4771,15 +4786,18 @@ case class SnowHousePipeStageScoreboardCheck(
   }
 
   val rMyNonFwdGprTagVec = {
-    //Reg(UInt(cfg.numRenamedGprs bits))
+    //Reg(UInt(cfg.numGprs bits))
     //init(0x0)
-    //val temp = Vec.fill(cfg.numRenamedGprs)(
+    //val temp = Vec.fill(cfg.numGprs)(
     //  //Reg(Bool(), init=False)
     //  Reg(MyGprTagInfo(isNonFwd=true))
     //)
     //temp.foreach(item => item.init(item.getZero))
     //temp
-    val outerTemp = Vec.fill(cfg.numPhysRegsMult)({
+    val outerTemp = Vec.fill(
+      //cfg.numPhysRegsMult
+      1
+    )({
       val temp = Vec.fill(cfg.numGprs)(
         //Reg(Bool(), init=False)
         Reg(MyGprTagInfo(isNonFwd=true))
@@ -4791,15 +4809,18 @@ case class SnowHousePipeStageScoreboardCheck(
   }
 
   val rMyFwdGprTagVec = {
-    //Reg(UInt(cfg.numRenamedGprs bits))
+    //Reg(UInt(cfg.numGprs bits))
     //init(0x0)
-    //val temp = Vec.fill(cfg.numRenamedGprs)(
+    //val temp = Vec.fill(cfg.numGprs)(
     //  //Reg(Bool(), init=False)
     //  Reg(MyGprTagInfo(isNonFwd=false))
     //)
     //temp.foreach(item => item.init(item.getZero))
     //temp
-    val outerTemp = Vec.fill(cfg.numPhysRegsMult)({
+    val outerTemp = Vec.fill(
+      //cfg.numPhysRegsMult
+      1
+    )({
       val temp = Vec.fill(cfg.numGprs)(
         //Reg(Bool(), init=False)
         Reg(MyGprTagInfo(isNonFwd=false))
@@ -4811,11 +4832,14 @@ case class SnowHousePipeStageScoreboardCheck(
   }
 
   for (jdx <- 0 until cfg.regFileCfg.modRdPortCnt) {
-    switch (upPayload(1).renamedGprIdxVec(jdx)) {
-      for (idx <- 0 until cfg.numRenamedGprs) {
+    switch (upPayload(1).gprIdxVec(jdx)) {
+      for (idx <- 0 until cfg.numGprs) {
         is (idx) {
-          val outerIdx = idx % cfg.numPhysRegsMult
-          val innerIdx = idx / cfg.numPhysRegsMult
+          //val outerIdx = idx % cfg.numPhysRegsMult
+          //val innerIdx = idx / cfg.numPhysRegsMult
+          val outerIdx = 0
+          val innerIdx = idx
+
           myNonFwdHazardCheckVec(jdx) := (
             //rMyNonFwdGprTagVec(idx).fire
             rMyNonFwdGprTagVec(outerIdx)(innerIdx).haveRaWHazard
@@ -4831,13 +4855,13 @@ case class SnowHousePipeStageScoreboardCheck(
     }
   }
 
-  val rRegRenameAllocVec = (
-    cfg.optRegRename
-  ) generate (
-    Vec.fill(cfg.numRenamedGprs)(
-      Reg(Bool(), init=False)
-    )
-  )
+  //val rRegRenameAllocVec = (
+  //  cfg.optRegRename
+  //) generate (
+  //  Vec.fill(cfg.numGprs)(
+  //    Reg(Bool(), init=False)
+  //  )
+  //)
 
 
   //val rNonFwdTagAllocWakeUpVec = (
@@ -5036,9 +5060,9 @@ case class SnowHousePipeStageScoreboardCheck(
 
       def myGprRange = (
         if (cfg.myHaveZeroReg) (
-          cfg.numRenamedGprs - 1 downto 1
+          cfg.numGprs - 1 downto 1
         ) else (
-          cfg.numRenamedGprs - 1 downto 0
+          cfg.numGprs - 1 downto 0
         )
       )
       def mkTempHazardPop(
@@ -5708,10 +5732,12 @@ case class SnowHousePipeStageScoreboardCheck(
       //}
 
       for (jdx <- 0 until cfg.regFileCfg.modRdPortCnt) {
-        switch (myTempOooRdBufPopVec(kdx).renamedGprIdxVec(jdx)) {
-          for (idx <- 0 until cfg.numRenamedGprs) {
-            val outerIdx = idx % cfg.numPhysRegsMult
-            val innerIdx = idx / cfg.numPhysRegsMult
+        switch (myTempOooRdBufPopVec(kdx).gprIdxVec(jdx)) {
+          for (idx <- 0 until cfg.numGprs) {
+            //val outerIdx = idx % cfg.numPhysRegsMult
+            //val innerIdx = idx / cfg.numPhysRegsMult
+            val outerIdx = 0
+            val innerIdx = idx
 
             is (idx) {
               myOooNonFwdRaWHazardCheckVec(myKdx)(jdx) := (
@@ -5752,10 +5778,10 @@ case class SnowHousePipeStageScoreboardCheck(
     //  // NOTE:
     //  // we do the two checks for `valid` in the big `switch` statement!  
     //  val temp = (
-    //    //myOooRdBuf.io.pop(1).renamedGprIdxVec.last
-    //    //=== myOooRdBuf.io.pop(2).renamedGprIdxVec.last
-    //    myTempOooRdBufPopVec(3).renamedGprIdxVec.last
-    //    === myTempOooRdBufPopVec(4).renamedGprIdxVec.last
+    //    //myOooRdBuf.io.pop(1).gprIdxVec.last
+    //    //=== myOooRdBuf.io.pop(2).gprIdxVec.last
+    //    myTempOooRdBufPopVec(3).gprIdxVec.last
+    //    === myTempOooRdBufPopVec(4).gprIdxVec.last
     //  )
     //  if (cfg.myHaveZeroReg) (
     //    //temp && myOooRdBuf.io.pop(2).gprIsNonZeroVec.last.last
@@ -5768,12 +5794,12 @@ case class SnowHousePipeStageScoreboardCheck(
     //  // NOTE:
     //  // we do the two checks for `valid` in the big `switch` statement!  
     //  val temp = (
-    //    //myOooRdBuf.io.pop(1).renamedGprIdxVec(idx)
-    //    //=== myOooRdBuf.io.pop(2).renamedGprIdxVec.last
-    //    //myOooRdBuf.io.pop(2).renamedGprIdxVec(idx)
-    //    //=== myOooRdBuf.io.pop(1).renamedGprIdxVec.last
-    //    myTempOooRdBufPopVec(4).renamedGprIdxVec(idx)
-    //    === myTempOooRdBufPopVec(3).renamedGprIdxVec.last
+    //    //myOooRdBuf.io.pop(1).gprIdxVec(idx)
+    //    //=== myOooRdBuf.io.pop(2).gprIdxVec.last
+    //    //myOooRdBuf.io.pop(2).gprIdxVec(idx)
+    //    //=== myOooRdBuf.io.pop(1).gprIdxVec.last
+    //    myTempOooRdBufPopVec(4).gprIdxVec(idx)
+    //    === myTempOooRdBufPopVec(3).gprIdxVec.last
     //  )
     //  myOooWaRHazardCheckVec(idx) := (
     //    if (cfg.myHaveZeroReg) (
@@ -5893,8 +5919,8 @@ case class SnowHousePipeStageScoreboardCheck(
       //  )
       //}
       //myOooIssueCnt.payload := rPingPongBlockCnt.payload
-
     }
+
     def doPopLast(
       doUpIsFiring: Boolean,
     ): Unit = {
@@ -6136,7 +6162,7 @@ case class SnowHousePipeStageScoreboardCheck(
       //    if (idx < myOooRdBufWindow - 1) {
       //      val myTempGprIdxVec = (
       //        Vec.fill(myOooRdBufWindow - idx - 1)(
-      //          UInt(log2Up(cfg.numRenamedGprs) bits)
+      //          UInt(log2Up(cfg.numGprs) bits)
       //        )
       //      )
       //      val myJdx = jdx - idx
@@ -6146,7 +6172,7 @@ case class SnowHousePipeStageScoreboardCheck(
       //        //(
       //        //  //myBufPop(
       //        //  //  jdx + myOooRdBufExtraSize
-      //        //  //).renamedGprIdxVec(kdx)
+      //        //  //).gprIdxVec(kdx)
       //        //  //=== myBufPop(
       //        //  //)
       //        //)
@@ -6159,7 +6185,7 @@ case class SnowHousePipeStageScoreboardCheck(
 
       //val myTempGprIdxVec = (
       //  Vec.fill(myOooRdBufWindow - idx)(
-      //    UInt(log2Up(cfg.numRenamedGprs) bits)
+      //    UInt(log2Up(cfg.numGprs) bits)
       //  )
       //)
 
@@ -6191,7 +6217,7 @@ case class SnowHousePipeStageScoreboardCheck(
         //      && (
         //        (
         //          myBufPop(jdx + myOooRdBufExtraSize).readsGprIdxVec(
-        //            myBufPop(idx + myOooRdBufExtraSize).renamedGprIdxVec(
+        //            myBufPop(idx + myOooRdBufExtraSize).gprIdxVec(
         //              kdx
         //            )
         //          )
@@ -6199,7 +6225,7 @@ case class SnowHousePipeStageScoreboardCheck(
         //          //myBufPop(
         //          //  jdx + myOooRdBufExtraSize
         //          //).writesGprIdxVec(
-        //          //  myBufPop(idx + myOooRdBufExtraSize).renamedGprIdxVec(
+        //          //  myBufPop(idx + myOooRdBufExtraSize).gprIdxVec(
         //          //    kdx
         //          //  )
         //          //)
@@ -6796,15 +6822,15 @@ case class SnowHousePipeStageScoreboardCheck(
     //cfg.regFileCfg.modRdPortCnt
     cfg.maxNumGprsPerInstr
   )(
-    UInt(log2Up(cfg.numRenamedGprs) bits)
+    UInt(log2Up(cfg.numGprs) bits)
   )
 
   for (
     //idx <- 0 until cfg.regFileCfg.modRdPortCnt
     idx <- 0 until cfg.maxNumGprsPerInstr
   ) {
-    myLeftGprIdxVec(idx) := upPayload(1).renamedGprIdxVec(idx)
-    //myRightGprIdxVec(idx) := myScoreboardCommitStm.renamedGprIdxVec(idx)
+    myLeftGprIdxVec(idx) := upPayload(1).gprIdxVec(idx)
+    //myRightGprIdxVec(idx) := myScoreboardCommitStm.gprIdxVec(idx)
   }
 
 
@@ -6920,41 +6946,43 @@ case class SnowHousePipeStageScoreboardCheck(
     }
   }
 
-  //val rNonFwdWakeUpVec = Vec.fill(cfg.numRenamedGprs)(
+  //val rNonFwdWakeUpVec = Vec.fill(cfg.numGprs)(
   //  Reg(Bool(), init=False)
   //)
-  //val rFwdWakeUpVec = Vec.fill(cfg.numRenamedGprs)(
+  //val rFwdWakeUpVec = Vec.fill(cfg.numGprs)(
   //  Reg(Bool(), init=False)
   //)
 
-  //val rNonFwdWakeUpVec = Vec.fill(cfg.numRenamedGprs)(
+  //val rNonFwdWakeUpVec = Vec.fill(cfg.numGprs)(
   //  Reg(Bool(), init=False)
   //)
-  //val rFwdWakeUpVec = Vec.fill(cfg.numRenamedGprs)(
+  //val rFwdWakeUpVec = Vec.fill(cfg.numGprs)(
   //  Reg(Bool(), init=False)
   //)
   for (prfIdx <- 0 until cfg.numPhysRegsMult) {
     for (idx <- 0 until cfg.numGprs) {
+      //val outerIdx = prfIdx
+      val outerIdx = 0
       when (
         //up.isFiring
         down.isFiring
-        && rMyFwdGprTagVec(prfIdx)(idx).fire
-        && !rMyFwdGprTagVec(prfIdx)(idx).cnt.msb
+        && rMyFwdGprTagVec(outerIdx)(idx).fire
+        && !rMyFwdGprTagVec(outerIdx)(idx).cnt.msb
       ) {
-        rMyFwdGprTagVec(prfIdx)(idx).cnt := (
-          rMyFwdGprTagVec(prfIdx)(idx).cnt - 1
+        rMyFwdGprTagVec(outerIdx)(idx).cnt := (
+          rMyFwdGprTagVec(outerIdx)(idx).cnt - 1
         )
       }
 
       when (
-        rMyFwdGprTagVec(prfIdx)(idx).fire
+        rMyFwdGprTagVec(outerIdx)(idx).fire
         && (
           (
             myScoreboardCommitStm(prfIdx).fire
             && myScoreboardCommitStm(prfIdx).opIsFwd
             && myScoreboardCommitStm(prfIdx).myFwdValid
             && (
-              rMyFwdGprTagVec(prfIdx)(idx).tag
+              rMyFwdGprTagVec(outerIdx)(idx).tag
               === myScoreboardCommitStm(prfIdx).fwdTag
             )
           )
@@ -6962,7 +6990,7 @@ case class SnowHousePipeStageScoreboardCheck(
             myScoreboardBubbleRetireStm(prfIdx).fire
             && myScoreboardBubbleRetireStm(prfIdx).opIsFwd
             && (
-              rMyFwdGprTagVec(prfIdx)(idx).tag
+              rMyFwdGprTagVec(outerIdx)(idx).tag
               === myScoreboardBubbleRetireStm(prfIdx).fwdTag
             )
           )
@@ -6970,7 +6998,7 @@ case class SnowHousePipeStageScoreboardCheck(
         //&& !rMyFwdGprTagVec(idx).wakeUp
       ) {
         //rFwdTagAllocVec(myScoreboardCommitStm(prfIdx).fwdTag) := False
-        rMyFwdGprTagVec(prfIdx)(idx).valid := False
+        rMyFwdGprTagVec(outerIdx)(idx).valid := False
         //rMyFwdGprTagVec(idx).cnt := (
         //  cfg.optForFmaxPsExFwdSize - 2
         //)
@@ -6983,13 +7011,13 @@ case class SnowHousePipeStageScoreboardCheck(
       //  rMyFwdGprTagVec(idx).valid := False
       //}
       when (
-        rMyNonFwdGprTagVec(prfIdx)(idx).fire
+        rMyNonFwdGprTagVec(outerIdx)(idx).fire
         && (
           (
             myScoreboardCommitStm(prfIdx).fire
             && myScoreboardCommitStm(prfIdx).myNonFwdValid
             && (
-              rMyNonFwdGprTagVec(prfIdx)(idx).tag
+              rMyNonFwdGprTagVec(outerIdx)(idx).tag
               === myScoreboardCommitStm(prfIdx).nonFwdTag
             )
           )
@@ -6997,7 +7025,7 @@ case class SnowHousePipeStageScoreboardCheck(
             myScoreboardBubbleRetireStm(prfIdx).fire
             && myScoreboardBubbleRetireStm(prfIdx).myNonFwdValid
             && (
-              rMyNonFwdGprTagVec(prfIdx)(idx).tag
+              rMyNonFwdGprTagVec(outerIdx)(idx).tag
               === myScoreboardBubbleRetireStm(prfIdx).nonFwdTag
             )
           )
@@ -7005,7 +7033,7 @@ case class SnowHousePipeStageScoreboardCheck(
         //&& !rMyNonFwdGprTagVec(idx).wakeUp
       ) {
         ////rNonFwdTagAllocVec(myScoreboardCommitStm(prfIdx).fwdTag) := False
-        rMyNonFwdGprTagVec(prfIdx)(idx).valid := False
+        rMyNonFwdGprTagVec(outerIdx)(idx).valid := False
         //rNonFwdWakeUpVec(idx) := True
         //rMyNonFwdGprTagVec(idx).wakeUp := True
       }
@@ -7176,17 +7204,19 @@ case class SnowHousePipeStageScoreboardCheck(
         myFwdCond
       )
     ) {
-      for (idx <- 0 until cfg.numRenamedGprs) {
+      for (idx <- 0 until cfg.numGprs) {
         if (
           !cfg.myHaveZeroReg
           || idx != 0
         ) {
           is (
-            (1 << log2Up(cfg.numRenamedGprs))
+            (1 << log2Up(cfg.numGprs))
             | idx
           ) {
-            val outerIdx = idx % cfg.numPhysRegsMult
-            val innerIdx = idx / cfg.numPhysRegsMult
+            //val outerIdx = idx % cfg.numPhysRegsMult
+            //val innerIdx = idx / cfg.numPhysRegsMult
+            val outerIdx = 0
+            val innerIdx = idx
 
             if (jdx == 0) {
               rMyFwdGprTagVec(outerIdx)(innerIdx).valid := True
@@ -7205,12 +7235,12 @@ case class SnowHousePipeStageScoreboardCheck(
               )
 
               //if (cfg.optRegRename) {
-              //  upPayload(1).renamedGprIdxVec.last := (
+              //  upPayload(1).gprIdxVec.last := (
               //    Cat(
               //      False,
               //      myTempFwdTag,
               //    ).asUInt
-              //    + cfg.numRenamedGprs
+              //    + cfg.numGprs
               //  )
               //}
             }
@@ -7259,17 +7289,19 @@ case class SnowHousePipeStageScoreboardCheck(
         myNonFwdCond
       )
     ) {
-      for (idx <- 0 until cfg.numRenamedGprs) {
+      for (idx <- 0 until cfg.numGprs) {
         if (
           !cfg.myHaveZeroReg
           || idx != 0
         ) {
           is (
-            (1 << log2Up(cfg.numRenamedGprs))
+            (1 << log2Up(cfg.numGprs))
             | idx
           ) {
-            val outerIdx = idx % cfg.numPhysRegsMult
-            val innerIdx = idx / cfg.numPhysRegsMult
+            //val outerIdx = idx % cfg.numPhysRegsMult
+            //val innerIdx = idx / cfg.numPhysRegsMult
+            val outerIdx = 0
+            val innerIdx = idx
             if (jdx == 0) {
               rMyNonFwdGprTagVec(outerIdx)(innerIdx).valid := True
             } else {
@@ -7281,12 +7313,12 @@ case class SnowHousePipeStageScoreboardCheck(
               )
 
               //if (cfg.optRegRename) {
-              //  upPayload(1).renamedGprIdxVec.last := (
+              //  upPayload(1).gprIdxVec.last := (
               //    Cat(
               //      True,
               //      myTempNonFwdTag,
               //    ).asUInt
-              //    + cfg.numRenamedGprs
+              //    + cfg.numGprs
               //  )
               //}
             }
@@ -7307,7 +7339,7 @@ case class SnowHousePipeStageScoreboardCheck(
     //    switch (
     //      myLeftGprIdxVec(kdx)
     //    ) {
-    //      for (idx <- 0 until cfg.numRenamedGprs) {
+    //      for (idx <- 0 until cfg.numGprs) {
     //        if (
     //          !cfg.myHaveZeroReg
     //          || idx != 0
@@ -7318,21 +7350,21 @@ case class SnowHousePipeStageScoreboardCheck(
     //              ## rMyFwdGprTagVec(idx).fire
     //            ) {
     //              is (M"1-") {
-    //                upPayload(1).renamedGprIdxVec(kdx) := (
+    //                upPayload(1).gprIdxVec(kdx) := (
     //                  Cat(
     //                    True,
     //                    rMyNonFwdGprTagVec(idx).tag
     //                  ).asUInt
-    //                  + cfg.numRenamedGprs
+    //                  + cfg.numGprs
     //                )
     //              }
     //              is (M"01") {
-    //                upPayload(1).renamedGprIdxVec(kdx) := (
+    //                upPayload(1).gprIdxVec(kdx) := (
     //                  Cat(
     //                    False,
     //                    rMyFwdGprTagVec(idx).tag
     //                  ).asUInt
-    //                  + cfg.numRenamedGprs
+    //                  + cfg.numGprs
     //                )
     //              }
     //            }
