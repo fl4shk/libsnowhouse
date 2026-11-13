@@ -1959,7 +1959,7 @@ case class SnowHouseInstrCnt(
   ) = (
     shouldIgnoreInstr(idx)
     || myPsIdBubble(idx)
-    //|| myPsIdFwdBubble(idx)
+    || myPsIdFwdBubble(idx)
   )
   def myScoreboardNonFwdPsWbBubbleMost = (
     myScoreboardPsWbBubbleMost(
