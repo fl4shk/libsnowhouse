@@ -6468,17 +6468,16 @@ case class SnowHousePipeStageScoreboardCheck(
         )
         || (
           !LcvOrR(myPopValidVec)
-          || 
-          (
+          || (
             (
               myThrowItCond
               //myReorderBufIdxThrowItCond
-              && !myBufPushStm.instrCnt.myPsIdBubble.last
             )
             && LcvAndR(myPopValidVec)
           )
         )
       )
+      && !myBufPushStm.instrCnt.myPsIdBubble.last
     )
 
     //switch (
