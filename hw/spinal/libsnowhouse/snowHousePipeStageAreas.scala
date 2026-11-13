@@ -6661,6 +6661,13 @@ case class SnowHousePipeStageScoreboardCheck(
 
     //when (
     //  myOtherFlushCondMost.head
+    //  && !LcvOrR(myPopValidVec)
+    //) {
+    //  cScoreboardCheck.terminateIt()
+    //}
+
+    //when (
+    //  myOtherFlushCondMost.head
     //  && !LcvAndR(myPopValidVec)
     //) {
     //  cScoreboardCheck
@@ -6807,14 +6814,14 @@ case class SnowHousePipeStageScoreboardCheck(
     //  upPayload(0).instrCnt.myPsIdInFlushBubble(idx)
     //  //myOooIssueArea.myOooRdBuf
     //}
-    //if (!doOooIssue) (
+    if (doOooIssue) (
+      myOooIssueArea.myOtherFlushCondMost.head
+    ) else (
       myInFlushCondMain(
         someUpPayload0=upPayload(0),
         idx=idx
       )
-    //) else (
-    //  myOooIssueArea.
-    //)
+    )
   )
   def myInFlushCondMain(
     someUpPayload0: SnowHousePipePayload,
