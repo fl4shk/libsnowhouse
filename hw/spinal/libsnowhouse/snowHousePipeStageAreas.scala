@@ -4298,11 +4298,11 @@ case class SnowHousePipeStageRegRename(
         && LcvOrR(item.regRenameFreeListIdx)
         && !myShouldIgnoreInstr
       )}),
-      Vec(myScoreboardBubbleRetire.map{item => (
-        item.fire
-        && LcvOrR(item.regRenameFreeListIdx)
-        && !myShouldIgnoreInstr
-      )})
+      //Vec(myScoreboardBubbleRetire.map{item => (
+      //  item.fire
+      //  && LcvOrR(item.regRenameFreeListIdx)
+      //  && !myShouldIgnoreInstr
+      //)})
     )
   )
 
@@ -4326,29 +4326,29 @@ case class SnowHousePipeStageRegRename(
         True
       )
     }
-    when (
-      RegNext(
-        mySetCondVec.last(prfIdx),
-        init=False
-      )
-    ) {
-      //rFreeListVec.head(
-      //  myScoreboardCommit.regRenameFreeListIdx
-      //) := (
-      //  True
-      //)
-      rFreeList(
-        RegNext(
-          myScoreboardBubbleRetire(prfIdx).innerRegRenameFreeListIdx
-        )
-      )(
-        RegNext(
-          myScoreboardBubbleRetire(prfIdx).outerRegRenameFreeListIdx
-        )
-      ) := (
-        True
-      )
-    }
+    //when (
+    //  RegNext(
+    //    mySetCondVec.last(prfIdx),
+    //    init=False
+    //  )
+    //) {
+    //  //rFreeListVec.head(
+    //  //  myScoreboardCommit.regRenameFreeListIdx
+    //  //) := (
+    //  //  True
+    //  //)
+    //  rFreeList(
+    //    RegNext(
+    //      myScoreboardBubbleRetire(prfIdx).innerRegRenameFreeListIdx
+    //    )
+    //  )(
+    //    RegNext(
+    //      myScoreboardBubbleRetire(prfIdx).outerRegRenameFreeListIdx
+    //    )
+    //  ) := (
+    //    True
+    //  )
+    //}
   }
 
   //myFreeListChkptBuf.io.wrData := (
@@ -7059,6 +7059,13 @@ case class SnowHousePipeStageScoreboardCheck(
                   rMyFwdGprTagVec(prfIdx)(idx).tag
                   === myScoreboardCommitStm(prfIdx).fwdTag
                 )
+                && (
+                  myScoreboardCommitStm(prfIdx).gprIdxVec.last(
+                    log2Up(cfg.numRenamedGprs) - 1
+                    downto log2Up(cfg.numPhysRegsMult)
+                  )
+                  === idx
+                )
               )
               || (
                 myScoreboardBubbleRetireStm(prfIdx).fire
@@ -7066,6 +7073,13 @@ case class SnowHousePipeStageScoreboardCheck(
                 && (
                   rMyFwdGprTagVec(prfIdx)(idx).tag
                   === myScoreboardBubbleRetireStm(prfIdx).fwdTag
+                )
+                && (
+                  myScoreboardBubbleRetireStm(prfIdx).gprIdxVec.last(
+                    log2Up(cfg.numRenamedGprs) - 1
+                    downto log2Up(cfg.numPhysRegsMult)
+                  )
+                  === idx
                 )
               )
             )
@@ -7099,6 +7113,13 @@ case class SnowHousePipeStageScoreboardCheck(
                   rMyNonFwdGprTagVec(prfIdx)(idx).tag
                   === myScoreboardCommitStm(prfIdx).nonFwdTag
                 )
+                && (
+                  myScoreboardCommitStm(prfIdx).gprIdxVec.last(
+                    log2Up(cfg.numRenamedGprs) - 1
+                    downto log2Up(cfg.numPhysRegsMult)
+                  )
+                  === idx
+                )
               )
               || (
                 myScoreboardBubbleRetireStm(prfIdx).fire
@@ -7106,6 +7127,13 @@ case class SnowHousePipeStageScoreboardCheck(
                 && (
                   rMyNonFwdGprTagVec(prfIdx)(idx).tag
                   === myScoreboardBubbleRetireStm(prfIdx).nonFwdTag
+                )
+                && (
+                  myScoreboardBubbleRetireStm(prfIdx).gprIdxVec.last(
+                    log2Up(cfg.numRenamedGprs) - 1
+                    downto log2Up(cfg.numPhysRegsMult)
+                  )
+                  === idx
                 )
               )
             )
