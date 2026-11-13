@@ -6583,6 +6583,7 @@ case class SnowHousePipeStageScoreboardCheck(
     when (
       //myOtherFlushCondMost.andR
       myOtherFlushCondMost.head
+      && LcvAndR(myPopValidVec)
       //&& LcvOrR(myPopValidVec)
       //&& LcvAndR(myPopValidVec)
       //&& !(
