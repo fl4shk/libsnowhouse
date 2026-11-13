@@ -4498,10 +4498,93 @@ case class SnowHousePipeStageRegRename(
   //  )
   //}
 
+  val rMyInFlightReorderBufIdxVec = (
+    Vec.fill(cfg.optScoreboardOuterReorderBufDepth)(
+      Vec.fill(
+        cfg.optScoreboardInnerReorderBufDepth
+      )(
+        Reg(Bool(), init=False)
+      )
+    )
+  )
+
+  for (prfIdx <- 0 until cfg.numPhysRegsMult) {
+    when (
+      //myOooRdBuf.io.push.fire
+      //&& !myBufPushStm.instrCnt.myPsIdBubble.last
+      up.isFiring
+      && upPayload(1).innerReorderBufIdx === prfIdx
+    ) {
+      rMyInFlightReorderBufIdxVec(
+        upPayload(1).outerReorderBufIdx
+      )(
+        //myBufPushStm.reorderBufIdx
+        //upPayload(1).reorderBufIdx
+        prfIdx
+      ) := (
+        True
+      )
+    }
+
+    when (
+      RegNext(
+        (
+          myScoreboardCommit(prfIdx).fire
+          && (
+            myScoreboardCommit(prfIdx).opIsFwd
+            || myScoreboardCommit(prfIdx).myNonFwdValid
+          )
+        ),
+        init=False
+      )
+    ) {
+      rMyInFlightReorderBufIdxVec(
+        RegNext(myScoreboardCommit(prfIdx).outerReorderBufIdx)
+      )(
+        //RegNext(
+        //prfIdx
+        //)
+        RegNext(myScoreboardCommit(prfIdx).innerReorderBufIdx)
+      ) := (
+        False
+      )
+    }
+
+    when (
+      RegNext(
+        (
+          myScoreboardBubbleRetire(prfIdx).fire
+          && (
+            myScoreboardBubbleRetire(prfIdx).opIsFwd
+            || myScoreboardBubbleRetire(prfIdx).myNonFwdValid
+          )
+        ),
+        init=False
+      )
+    ) {
+      rMyInFlightReorderBufIdxVec(
+        RegNext(myScoreboardBubbleRetire(prfIdx).outerReorderBufIdx)
+      )(
+        //RegNext(
+        //prfIdx
+        RegNext(myScoreboardBubbleRetire(prfIdx).innerReorderBufIdx)
+        //)
+      ) := (
+        False
+      )
+    }
+  }
 
   when (
     !myTempFindFirstAtAll(
       upPayload(1).innerReorderBufIdx
+    )
+    || (
+      rMyInFlightReorderBufIdxVec(
+        upPayload(1).outerReorderBufIdx
+      )(
+        upPayload(1).innerReorderBufIdx
+      )
     )
     //|| myShouldIgnoreInstr
   ) {
@@ -4838,14 +4921,6 @@ case class SnowHousePipeStageScoreboardCheck(
       }
     }
   }
-
-  val rRegRenameAllocVec = (
-    cfg.optRegRename
-  ) generate (
-    Vec.fill(cfg.numRenamedGprs)(
-      Reg(Bool(), init=False)
-    )
-  )
 
 
   //val rNonFwdTagAllocWakeUpVec = (
@@ -5488,15 +5563,6 @@ case class SnowHousePipeStageScoreboardCheck(
     //)
     //myTestFifo.io.push << myBufPushStm
     //myOooRdBuf.io.push << myTestFifo.io.pop
-    val rMyInFlightReorderBufIdxVec = (
-      Vec.fill(cfg.optScoreboardOuterReorderBufDepth)(
-        Vec.fill(
-          cfg.optScoreboardInnerReorderBufDepth
-        )(
-          Reg(Bool(), init=False)
-        )
-      )
-    )
 
     val myThrowItCond = (
       //False
@@ -5575,68 +5641,6 @@ case class SnowHousePipeStageScoreboardCheck(
       )
     )
 
-    for (prfIdx <- 0 until cfg.numPhysRegsMult) {
-      when (
-        //myOooRdBuf.io.push.fire
-        //&& !myBufPushStm.instrCnt.myPsIdBubble.last
-        up.isFiring
-        && upPayload(1).innerReorderBufIdx === prfIdx
-      ) {
-        rMyInFlightReorderBufIdxVec(
-          upPayload(1).outerReorderBufIdx
-        )(
-          //myBufPushStm.reorderBufIdx
-          //upPayload(1).reorderBufIdx
-          prfIdx
-        ) := (
-          True
-        )
-      }
-
-      when (
-        //RegNext(
-          myScoreboardCommitStm(prfIdx).fire
-          && (
-            myScoreboardCommitStm(prfIdx).opIsFwd
-            || myScoreboardCommitStm(prfIdx).myNonFwdValid
-          )
-        //  init=False
-        //)
-      ) {
-        rMyInFlightReorderBufIdxVec(
-          myScoreboardCommitStm(prfIdx).outerReorderBufIdx
-        )(
-          //RegNext(
-          //prfIdx
-          //)
-          myScoreboardCommitStm(prfIdx).innerReorderBufIdx
-        ) := (
-          False
-        )
-      }
-
-      when (
-        //RegNext(
-          myScoreboardBubbleRetireStm(prfIdx).fire
-          && (
-            myScoreboardBubbleRetireStm(prfIdx).opIsFwd
-            || myScoreboardBubbleRetireStm(prfIdx).myNonFwdValid
-          )
-        //  init=False
-        //)
-      ) {
-        rMyInFlightReorderBufIdxVec(
-          myScoreboardBubbleRetireStm(prfIdx).outerReorderBufIdx
-        )(
-          //RegNext(
-          //prfIdx
-          myScoreboardBubbleRetireStm(prfIdx).innerReorderBufIdx
-          //)
-        ) := (
-          False
-        )
-      }
-    }
 
     myOooRdBuf.io.push << (
       //myBufPushStm
@@ -5811,19 +5815,19 @@ case class SnowHousePipeStageScoreboardCheck(
     //  )
     //}
 
-    val myTempInFlushCondVec = (
-      //myOooRdBuf.io.pop
-      myTempOooRdBufPopVec.map(
-        outerItem => (
-          Vec(
-            outerItem.instrCnt.myPsIdInFlushBubble.map(item => (
-              outerItem.valid
-              && item
-            ))
-          )
-        )
-      )
-    )
+    //val myTempInFlushCondVec = (
+    //  //myOooRdBuf.io.pop
+    //  myTempOooRdBufPopVec.map(
+    //    outerItem => (
+    //      Vec(
+    //        outerItem.instrCnt.myPsIdInFlushBubble.map(item => (
+    //          outerItem.valid
+    //          && item
+    //        ))
+    //      )
+    //    )
+    //  )
+    //)
 
     //val rSavedPoppedOoo = Reg(Bool(), init=False)
     //val rSavedPopIdx = (
@@ -6259,28 +6263,29 @@ case class SnowHousePipeStageScoreboardCheck(
               idx + myOooRdBufExtraSize
             ).splitOp.scoreboardOpCanBeOooIssued.last
             //&& myPopValidVec.last
-            && !rMyInFlightReorderBufIdxVec(
-              //myBufPop(
-              //  idx + myOooRdBufExtraSize
-              //).reorderBufIdx
-              myBufPop(
-                idx + myOooRdBufExtraSize
-              ).outerReorderBufIdx
-            )(
-              myBufPop(
-                idx + myOooRdBufExtraSize
-              ).innerReorderBufIdx
-            )
+
+            //&& !rMyInFlightReorderBufIdxVec(
+            //  //myBufPop(
+            //  //  idx + myOooRdBufExtraSize
+            //  //).reorderBufIdx
+            //  myBufPop(
+            //    idx + myOooRdBufExtraSize
+            //  ).outerReorderBufIdx
+            //)(
+            //  myBufPop(
+            //    idx + myOooRdBufExtraSize
+            //  ).innerReorderBufIdx
+            //)
             //&& !myShouldIgnoreInstr
-            && !(
-              psExSetPc.fire
-              || (
-                rMyPsExSetPcState
-                && !myBufPop(
-                  idx + myOooRdBufExtraSize
-                ).regPcSetItCnt(0).lsb
-              )
-            )
+            //&& !(
+            //  psExSetPc.fire
+            //  || (
+            //    rMyPsExSetPcState
+            //    && !myBufPop(
+            //      idx + myOooRdBufExtraSize
+            //    ).regPcSetItCnt(0).lsb
+            //  )
+            //)
           )
           //&& (
           //  myDispatchReorderBufIdxOkayCondVec(
@@ -6294,18 +6299,18 @@ case class SnowHousePipeStageScoreboardCheck(
           && (
             LcvAndR(myDispatchOkayCondMostVec(idx))
           )
-          && !rMyInFlightReorderBufIdxVec(
-            //myBufPop(
-            //  idx + myOooRdBufExtraSize
-            //).reorderBufIdx
-            myBufPop(
-              idx + myOooRdBufExtraSize
-            ).outerReorderBufIdx
-          )(
-            myBufPop(
-              idx + myOooRdBufExtraSize
-            ).innerReorderBufIdx
-          )
+          //&& !rMyInFlightReorderBufIdxVec(
+          //  //myBufPop(
+          //  //  idx + myOooRdBufExtraSize
+          //  //).reorderBufIdx
+          //  myBufPop(
+          //    idx + myOooRdBufExtraSize
+          //  ).outerReorderBufIdx
+          //)(
+          //  myBufPop(
+          //    idx + myOooRdBufExtraSize
+          //  ).innerReorderBufIdx
+          //)
         )
         //&& myDispatchOkayCondMostVec(idx)
         //&& !myFindFirst._1
