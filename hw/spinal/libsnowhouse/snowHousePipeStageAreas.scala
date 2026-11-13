@@ -4279,7 +4279,9 @@ case class SnowHousePipeStageRegRename(
     //)
   }
 
-  when (myClearCond) {
+  when (
+    myClearCond
+  ) {
     //rFreeListVec.head(myNextRenamedRegIdx) := False
     //rFreeList(myNextRenamedRegIdx) := False
     rFreeList(upPayload(1).innerReorderBufIdx)(
@@ -4287,15 +4289,27 @@ case class SnowHousePipeStageRegRename(
     ) := False
   }
 
-  val mySetCond = Vec(myScoreboardCommit.map{item => (
-    item.fire
-    && LcvOrR(item.regRenameFreeListIdx)
-    && !myShouldIgnoreInstr
-  )})
+  val mySetCondVec = (
+    Vec(
+      Vec(myScoreboardCommit.map{item => (
+        item.fire
+        && LcvOrR(item.regRenameFreeListIdx)
+        //&& !myShouldIgnoreInstr
+      )}),
+      Vec(myScoreboardBubbleRetire.map{item => (
+        item.fire
+        && LcvOrR(item.regRenameFreeListIdx)
+        //&& !myShouldIgnoreInstr
+      )})
+    )
+  )
 
   for (prfIdx <- 0 until cfg.numPhysRegsMult) {
     when (
-      mySetCond(prfIdx)
+      RegNext(
+        mySetCondVec.head(prfIdx),
+        init=False
+      )
     ) {
       //rFreeListVec.head(
       //  myScoreboardCommit.regRenameFreeListIdx
@@ -4303,9 +4317,32 @@ case class SnowHousePipeStageRegRename(
       //  True
       //)
       rFreeList(
-        myScoreboardCommit(prfIdx).innerRegRenameFreeListIdx
+        RegNext(myScoreboardCommit(prfIdx).innerRegRenameFreeListIdx)
       )(
-        myScoreboardCommit(prfIdx).outerRegRenameFreeListIdx
+        RegNext(myScoreboardCommit(prfIdx).outerRegRenameFreeListIdx)
+      ) := (
+        True
+      )
+    }
+    when (
+      RegNext(
+        mySetCondVec.last(prfIdx),
+        init=False
+      )
+    ) {
+      //rFreeListVec.head(
+      //  myScoreboardCommit.regRenameFreeListIdx
+      //) := (
+      //  True
+      //)
+      rFreeList(
+        RegNext(
+          myScoreboardBubbleRetire(prfIdx).innerRegRenameFreeListIdx
+        )
+      )(
+        RegNext(
+          myScoreboardBubbleRetire(prfIdx).outerRegRenameFreeListIdx
+        )
       ) := (
         True
       )
