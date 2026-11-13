@@ -4286,7 +4286,9 @@ case class SnowHousePipeStageRegRename(
     //rFreeList(myNextRenamedRegIdx) := False
     rFreeList(upPayload(1).innerReorderBufIdx)(
       myTempNextRenamedRegIdx
-    ) := False
+    ) := (
+      False
+    )
   }
 
   val mySetCondVec = (
