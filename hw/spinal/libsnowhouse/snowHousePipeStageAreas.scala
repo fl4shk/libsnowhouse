@@ -3376,10 +3376,10 @@ case class SnowHousePipeStageInstrDecode(
 
     if (!cfg.optRegRename) {
       upPayload(1).readsGprIdxVec.foreach(item => {
-        item := False
+        item := item.getZero
       })
       upPayload(1).writesGprIdxVec.foreach(item => {
-        item := False
+        item := item.getZero
       })
       for (jdx <- 0 until cfg.maxNumGprsPerInstr) {
         val gprIdx = upPayload(1).gprIdxVec(jdx)
@@ -3388,9 +3388,13 @@ case class SnowHousePipeStageInstrDecode(
           for (idx <- leftLim until cfg.numGprs) {
             is (idx) {
               if (jdx < cfg.maxNumGprsPerInstr - 1) {
-                upPayload(1).readsGprIdxVec(idx) := True
+                upPayload(1).readsGprIdxVec.foreach(item => {
+                  item(idx) := True
+                })
               } else {
-                upPayload(1).writesGprIdxVec(idx) := True
+                upPayload(1).writesGprIdxVec.foreach(item => {
+                  item(idx) := True
+                })
               }
             }
           }
@@ -4536,10 +4540,10 @@ case class SnowHousePipeStageRegRename(
     && !myShouldIgnoreInstr
   ) {
     upPayload(1).readsGprIdxVec.foreach(item => {
-      item := False
+      item := item.getZero
     })
     upPayload(1).writesGprIdxVec.foreach(item => {
-      item := False
+      item := item.getZero
     })
     for (jdx <- 0 until cfg.maxNumGprsPerInstr) {
       val gprIdx = upPayload(1).renamedGprIdxVec(jdx)
@@ -4548,9 +4552,13 @@ case class SnowHousePipeStageRegRename(
         for (idx <- leftLim until cfg.numRenamedGprs) {
           is (idx) {
             if (jdx < cfg.maxNumGprsPerInstr - 1) {
-              upPayload(1).readsGprIdxVec(idx) := True
+              upPayload(1).readsGprIdxVec.foreach(item => {
+                item(idx) := True
+              })
             } else {
-              upPayload(1).writesGprIdxVec(idx) := True
+              upPayload(1).writesGprIdxVec.foreach(item => {
+                item(idx) := True
+              })
             }
           }
         }
@@ -5055,9 +5063,14 @@ case class SnowHousePipeStageScoreboardCheck(
           {
             val temp = (
               LcvOrR(
-                pop(otherIdx).writesGprIdxVec.asBits(myGprRange)
-                & inp.readsGprIdxVec.asBits(myGprRange)
+                pop(otherIdx).writesGprIdxVec(
+                  otherIdx - myOooRdBufExtraSize
+                ).asBits(myGprRange)
+                & inp.readsGprIdxVec(
+                  otherIdx - myOooRdBufExtraSize
+                ).asBits(myGprRange)
               )//.orR
+
               //|| LcvOrR(
               //  pop(otherIdx).readsGprIdxVec.asBits(myGprRange)
               //  & inp.readsGprIdxVec.asBits(myGprRange)
@@ -5069,12 +5082,20 @@ case class SnowHousePipeStageScoreboardCheck(
                 if (!cfg.optRegRename) (
                   temp
                   || LcvOrR(
-                    pop(otherIdx).writesGprIdxVec.asBits(myGprRange)
-                    & inp.writesGprIdxVec.asBits(myGprRange)
+                    pop(otherIdx).writesGprIdxVec(
+                      otherIdx - myOooRdBufExtraSize
+                    ).asBits(myGprRange)
+                    & inp.writesGprIdxVec(
+                      otherIdx - myOooRdBufExtraSize
+                    ).asBits(myGprRange)
                   )//.orR
                   || LcvOrR(
-                    pop(otherIdx).readsGprIdxVec.asBits(myGprRange)
-                    & inp.writesGprIdxVec.asBits(myGprRange)
+                    pop(otherIdx).readsGprIdxVec(
+                      otherIdx - myOooRdBufExtraSize
+                    ).asBits(myGprRange)
+                    & inp.writesGprIdxVec(
+                      otherIdx - myOooRdBufExtraSize
+                    ).asBits(myGprRange)
                   )//.orR
                 ) else ( // if (cfg.optRegRename)
                   // register renaming eliminates WaW and WaR hazards!
