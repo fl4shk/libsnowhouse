@@ -6496,6 +6496,23 @@ case class SnowHousePipeStageScoreboardCheck(
         //)
       )
     )
+    val myOtherThrowItCond = (
+      (
+        (
+          myOtherFlushCondMost.head
+          && !LcvAndR(myPopValidVec)
+          //&& !LcvOrR(myPopValidVec)
+        )
+        || (
+          !LcvOrR(myPopValidVec)
+          || 
+          (
+            myThrowItCond
+            && LcvAndR(myPopValidVec)
+          )
+        )
+      )
+    )
 
     //switch (
     //  rReorderBufFlushInfo.fire
@@ -6602,7 +6619,9 @@ case class SnowHousePipeStageScoreboardCheck(
     when (
       //myOtherFlushCondMost.andR
       myOtherFlushCondMost.head
-      && LcvAndR(myPopValidVec)
+      //&& LcvAndR(myPopValidVec)
+      && LcvOrR(myPopValidVec)
+
       //&& LcvOrR(myPopValidVec)
       //&& LcvAndR(myPopValidVec)
       //&& !(
@@ -6680,22 +6699,7 @@ case class SnowHousePipeStageScoreboardCheck(
     //--------
     when (
       up.isValid
-      && (
-        //(
-        //  myOtherFlushCondMost.head
-        //  //&& !LcvAndR(myPopValidVec)
-        //  && !LcvOrR(myPopValidVec)
-        //)
-        //|| 
-        (
-          //!LcvOrR(myPopValidVec)
-          //|| 
-          (
-            myThrowItCond
-            && LcvAndR(myPopValidVec)
-          )
-        )
-      )
+      && myOtherThrowItCond
     ) {
       cScoreboardCheck.throwIt()
       //cScoreboardCheck.ignoreReadyNow()
@@ -6825,7 +6829,8 @@ case class SnowHousePipeStageScoreboardCheck(
     //  //myOooIssueArea.myOooRdBuf
     //}
     if (doOooIssue) (
-      myOooIssueArea.myOtherFlushCondMost.head
+      //myOooIssueArea.myOtherFlushCondMost.head
+      myOooIssueArea.myOtherThrowItCond
     ) else (
       myInFlushCondMain(
         someUpPayload0=upPayload(0),
