@@ -6335,11 +6335,11 @@ case class SnowHousePipeStageScoreboardCheck(
       //}
       //myOooIssueCnt.payload := rPingPongBlockCnt.payload
 
-      updateGprTagVecEtc(
-        somePayload=myTempOooRdBufPopVec(
-          myPopIdx
-        )
-      )
+      //updateGprTagVecEtc(
+      //  somePayload=myTempOooRdBufPopVec(
+      //    myPopIdx
+      //  )
+      //)
     }
 
     switch (
@@ -6713,6 +6713,10 @@ case class SnowHousePipeStageScoreboardCheck(
     //    })
     //  }
     //}
+
+    updateGprTagVecEtc(
+      somePayload=upPayload(1)
+    )
   }
 
   def myInFlushCond(
