@@ -4454,6 +4454,7 @@ case class SnowHousePipeStageRegRename(
     rMyInFlightReorderBufIdxVec(
       upPayload(1).reorderBufIdx
     )
+    && !myShouldIgnoreInstr
   ) {
     doSendBubbleMainMost(
       myPsIdBubble=(
@@ -4464,27 +4465,28 @@ case class SnowHousePipeStageRegRename(
     )
   }
 
-  when (
-    !myFreeListFindFirst._1
-    //|| myShouldIgnoreInstr
-  ) {
-    down(pRegRename).instrCnt.myPsIdBubble.foreach(item => {
-      item := True
-    })
-    //upPayload(1).instrCnt.tick := (
-    //  RegNextWhen(
-    //    (upPayload(1).instrCnt.tick),
-    //    cond=(
-    //      up.isFiring
-    //    ),
-    //    init=upPayload(1).instrCnt.tick.getZero,
-    //  )
-    //)
-  }
+  //when (
+  //  !myFreeListFindFirst._1
+  //  //|| myShouldIgnoreInstr
+  //) {
+  //  down(pRegRename).instrCnt.myPsIdBubble.foreach(item => {
+  //    item := True
+  //  })
+  //  //upPayload(1).instrCnt.tick := (
+  //  //  RegNextWhen(
+  //  //    (upPayload(1).instrCnt.tick),
+  //  //    cond=(
+  //  //      up.isFiring
+  //  //    ),
+  //  //    init=upPayload(1).instrCnt.tick.getZero,
+  //  //  )
+  //  //)
+  //}
 
   when (
-    myFreeListFindFirst._1
-    && !myShouldIgnoreInstr
+    //myFreeListFindFirst._1
+    //&& 
+    !myShouldIgnoreInstr
   ) {
     upPayload(1).readsGprIdxVec.foreach(item => {
       item.foreach(_ := False)
@@ -5436,8 +5438,9 @@ case class SnowHousePipeStageScoreboardCheck(
                 //|| myBufPushStm.instrCnt.myPsIdBubble.last
               )
               //&& !myBufPushStm.instrCnt.myPsIdOtherBubble.last
-              && !myBufPushStm.instrCnt.myPsIdBubble.last
+              //&& !myBufPushStm.instrCnt.myPsIdBubble.last
               //|| myBufPushStm.instrCnt.myPsIdBubble.last
+              || myBufPushStm.instrCnt.myPsIdBubble.last
             )
           )
           && (
