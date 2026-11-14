@@ -5644,7 +5644,8 @@ case class SnowHousePipeStageScoreboardCheck(
             (
               (
                 myReorderBufIdxThrowItCond
-                || myBufPushStm.instrCnt.myPsIdBubble.last
+                //|| myBufPushStm.instrCnt.myPsIdBubble.last
+                && !myBufPushStm.instrCnt.myPsIdBubble.last
               )
               && !myBufPushStm.instrCnt.myPsIdOtherBubble.last
               //|| myBufPushStm.instrCnt.myPsIdBubble.last
