@@ -7055,18 +7055,13 @@ case class SnowHousePipeStageScoreboardCheck(
       ## myLeftGprIdxVec.last
     )
     switch (
-      //if (jdx == 0) (
-      //  myFwdCond
-      //) else (
-      //  //RegNext(
-      //    //RegNext(myFwdCond, init=myFwdCond.getZero)
-      //  //  init=False
-      //  //)
-      //  myFwdCond
-      //)
-      if (cfg.optRegRename) (
-        RegNext(myFwdCond, init=myFwdCond.getZero)
+      if (jdx == 0) (
+        myFwdCond
       ) else (
+        //RegNext(
+          //RegNext(myFwdCond, init=myFwdCond.getZero)
+        //  init=False
+        //)
         myFwdCond
       )
     ) {
@@ -7092,11 +7087,7 @@ case class SnowHousePipeStageScoreboardCheck(
                 //RegNext(
                 //  RegNext(myTempFwdTag, init=myTempFwdTag.getZero)
                 //)
-                if (cfg.optRegRename) (
-                  RegNext(myTempFwdTag)
-                ) else (
-                  myTempFwdTag
-                )
+                myTempFwdTag
               )
 
               //if (cfg.optRegRename) {
@@ -7145,17 +7136,12 @@ case class SnowHousePipeStageScoreboardCheck(
     )
 
     switch (
-      //if (jdx == 0) (
-      //  myNonFwdCond
-      //) else (
-      //  //RegNext(
-      //  //  RegNext(myNonFwdCond, init=myNonFwdCond.getZero)
-      //  //)
-      //  myNonFwdCond
-      //)
-      if (cfg.optRegRename) (
-        RegNext(myNonFwdCond, init=myNonFwdCond.getZero)
+      if (jdx == 0) (
+        myNonFwdCond
       ) else (
+        //RegNext(
+        //  RegNext(myNonFwdCond, init=myNonFwdCond.getZero)
+        //)
         myNonFwdCond
       )
     ) {
@@ -7175,11 +7161,7 @@ case class SnowHousePipeStageScoreboardCheck(
                 //RegNext(
                 //  RegNext(myTempNonFwdTag, init=myTempNonFwdTag.getZero)
                 //)
-                if (cfg.optRegRename) (
-                  RegNext(myTempNonFwdTag)
-                ) else (
-                  myTempNonFwdTag
-                )
+                myTempNonFwdTag
               )
 
               //if (cfg.optRegRename) {
