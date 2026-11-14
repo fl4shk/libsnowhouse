@@ -3842,6 +3842,12 @@ case class SnowHousePipeStageRegRename(
     stickyExSetPc.valid := False
   }
 
+  val rMyInFlightReorderBufIdxVec = (
+    Vec.fill(1 << cfg.optScoreboardReorderBufWidth)(
+      Reg(Bool(), init=False)
+    )
+  )
+
   val rOooIssueChkptBufIdxVec = (
     Vec.fill(cfg.numGprs)(
       Reg(UInt(log2Up(cfg.optScoreboardOooIssueMaxNumBranches) bits))
@@ -4228,6 +4234,46 @@ case class SnowHousePipeStageRegRename(
     )
   }
 
+  //switch (
+  //  up.isFiring
+  //  ## upPayload(1).reorderBufIdx
+  //) {
+  //  for (idx <- 0 until rMyInFlightReorderBufIdxVec.size) {
+  //    is (
+  //      rMyInFlightReorderBufIdxVec.size
+  //      | idx
+  //    ) {
+  //      rMyInFlightReorderBufIdxVec(idx) := True
+  //    }
+  //  }
+  //}
+
+  for (idx <- 0 until rMyInFlightReorderBufIdxVec.size) {
+    when (
+      up.isFiring
+      && upPayload(1).reorderBufIdx === idx
+    ) {
+      rMyInFlightReorderBufIdxVec(idx) := (
+        True
+      )
+    }
+    when (
+      rMyInFlightReorderBufIdxVec(idx)
+      && (
+        (
+          myScoreboardCommit.fire
+          && myScoreboardCommit.reorderBufIdx === idx
+        )
+        || (
+          myScoreboardBubbleRetire.fire
+          && myScoreboardBubbleRetire.reorderBufIdx === idx
+        )
+      )
+    ) {
+      rMyInFlightReorderBufIdxVec(idx) := False
+    }
+  }
+
   //myFreeListChkptBuf.io.wrData := (
   //  //rFreeListVec.last
   //  rFreeList.asBits.asUInt
@@ -4403,7 +4449,19 @@ case class SnowHousePipeStageRegRename(
   //    )
   //  )
   //}
-
+  when (
+    rMyInFlightReorderBufIdxVec(
+      upPayload(1).reorderBufIdx
+    )
+  ) {
+    doSendBubbleMainMost(
+      myPsIdBubble=(
+        //None
+        //Some(myShouldIgnoreInstr)
+        Some(True)
+      )
+    )
+  }
 
   when (
     !myFreeListFindFirst._1
@@ -5675,86 +5733,86 @@ case class SnowHousePipeStageScoreboardCheck(
       //myOooIssueCnt.payload := rPingPongBlockCnt.payload
 
     }
-    def doPopLast(
-      doUpIsFiring: Boolean,
-    ): Unit = {
-      upPayload(0) := myTempOooRdBufPopVec.last.payload
-      upPayload(1) := upPayload(0)
-      upPayload(1).instrCnt.myPsIdBubble.allowOverride
-      upPayload(1).instrCnt.myPsIdBubble.foreach(item => {
-        item := False
-      })
-      upPayload(1).instrCnt.myPsIdOtherBubble.allowOverride
-      upPayload(1).instrCnt.myPsIdOtherBubble.foreach(item => {
-        item := False
-      })
+    //def doPopLast(
+    //  doUpIsFiring: Boolean,
+    //): Unit = {
+    //  upPayload(0) := myTempOooRdBufPopVec.last.payload
+    //  upPayload(1) := upPayload(0)
+    //  upPayload(1).instrCnt.myPsIdBubble.allowOverride
+    //  upPayload(1).instrCnt.myPsIdBubble.foreach(item => {
+    //    item := False
+    //  })
+    //  upPayload(1).instrCnt.myPsIdOtherBubble.allowOverride
+    //  upPayload(1).instrCnt.myPsIdOtherBubble.foreach(item => {
+    //    item := False
+    //  })
 
 
-      val myNodeIsFiring = (
-        if (doUpIsFiring) (
-          up.isFiring
-        ) else (
-          down.isFiring
-        )
-      )
+    //  val myNodeIsFiring = (
+    //    if (doUpIsFiring) (
+    //      up.isFiring
+    //    ) else (
+    //      down.isFiring
+    //    )
+    //  )
 
-      upPayload(1).instrCnt.tick := (
-        //if (doUpIsFiring) (
-        //  up.isFiring
-        //) else (
-        //  down.isFiring
-        //)
-        myNodeIsFiring
-      )
+    //  upPayload(1).instrCnt.tick := (
+    //    //if (doUpIsFiring) (
+    //    //  up.isFiring
+    //    //) else (
+    //    //  down.isFiring
+    //    //)
+    //    myNodeIsFiring
+    //  )
 
-      //myTempOooRdBufPopVec(3).ready := False
+    //  //myTempOooRdBufPopVec(3).ready := False
 
-      myTempOooRdBufPopVec.zipWithIndex.foreach{
-        case (item, idx) => {
-          if (idx == myOooRdBufDepth - 1) {
-            item.ready := (
-              myNodeIsFiring
-              //if (doUpIsFiring) (
-              //  up.isFiring
-              //  //up.isReady
-              //) else (
-              //  down.isFiring
-              //)
-            )
-          } else {
-            item.ready := False
-          }
-        }
-      }
+    //  myTempOooRdBufPopVec.zipWithIndex.foreach{
+    //    case (item, idx) => {
+    //      if (idx == myOooRdBufDepth - 1) {
+    //        item.ready := (
+    //          myNodeIsFiring
+    //          //if (doUpIsFiring) (
+    //          //  up.isFiring
+    //          //  //up.isReady
+    //          //) else (
+    //          //  down.isFiring
+    //          //)
+    //        )
+    //      } else {
+    //        item.ready := False
+    //      }
+    //    }
+    //  }
 
-      //when (
-      //  if (doUpIsFiring) (
-      //    up.isFiring
-      //  ) else (
-      //    down.isFiring
-      //  )
-      //) {
-      //  rSavedPopIdx := myOooRdBufWindow - 1
-      //}
+    //  //when (
+    //  //  if (doUpIsFiring) (
+    //  //    up.isFiring
+    //  //  ) else (
+    //  //    down.isFiring
+    //  //  )
+    //  //) {
+    //  //  rSavedPopIdx := myOooRdBufWindow - 1
+    //  //}
 
-      def myOooIssueCnt = (
-        upPayload(1).instrCnt.scoreboardCheckPayload.myOooIssueCnt
-      )
-      //when (
-      //  rSavedPopIdx =/= myOooRdBufWindow - 1
-      //) {
-      //  myOooIssueCnt.valid := True
-      //}
+    //  def myOooIssueCnt = (
+    //    upPayload(1).instrCnt.scoreboardCheckPayload.myOooIssueCnt
+    //  )
+    //  //when (
+    //  //  rSavedPopIdx =/= myOooRdBufWindow - 1
+    //  //) {
+    //  //  myOooIssueCnt.valid := True
+    //  //}
 
-      //myTempOooRdBufPopVec.last.ready := (
-      //  if (doUpIsFiring) (
-      //    up.isFiring
-      //    //up.isReady
-      //  ) else (
-      //    down.isFiring
-      //  )
-      //)
-    }
+    //  //myTempOooRdBufPopVec.last.ready := (
+    //  //  if (doUpIsFiring) (
+    //  //    up.isFiring
+    //  //    //up.isReady
+    //  //  ) else (
+    //  //    down.isFiring
+    //  //  )
+    //  //)
+    //}
 
     //val rPingPongBlockState = Reg(Bool(), init=False)
     //val rPingPongBlockCnt = {
