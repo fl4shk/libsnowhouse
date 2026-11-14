@@ -14068,44 +14068,44 @@ case class SnowHousePipeStageExecute(
             temp
           )
         }
-        ## {
-          val temp = (
-            rSavedRegFileWrPulseVec(jdx).fire
-            && (
-              rSavedRegFileWrPulseVec(jdx).addr
-              === outp.renamedGprIdxVec(jdx)
-            )
-          )
-          if (cfg.optRegRename) (
-            temp
-            //&& (
-            //  (
-            //    rSavedRegFileWrPulseVec(jdx).data(1)
-            //    === outp.gprIdxVec(jdx)
-            //  )
-            //)
-          ) else (
-            temp
-          )
-        }
-        //## (
-        //  myHistRegFileWrPulse(1).fire
-        //  && (
-        //    myHistRegFileWrPulse(1).addr
-        //    //myHistRegFileWrPulse(1).data(1)
-        //    //=== outp.gprIdxVec(jdx)
-        //    === outp.renamedGprIdxVec(jdx)
+        //## {
+        //  val temp = (
+        //    rSavedRegFileWrPulseVec(jdx).fire
+        //    && (
+        //      rSavedRegFileWrPulseVec(jdx).addr
+        //      === outp.renamedGprIdxVec(jdx)
+        //    )
         //  )
-        //)
-        //## (
-        //  myHistRegFileWrPulse(2).fire
-        //  && (
-        //    myHistRegFileWrPulse(2).addr
-        //    //myHistRegFileWrPulse(2).data(1)
-        //    //=== outp.gprIdxVec(jdx)
-        //    === outp.renamedGprIdxVec(jdx)
+        //  if (cfg.optRegRename) (
+        //    temp
+        //    //&& (
+        //    //  (
+        //    //    rSavedRegFileWrPulseVec(jdx).data(1)
+        //    //    === outp.gprIdxVec(jdx)
+        //    //  )
+        //    //)
+        //  ) else (
+        //    temp
         //  )
-        //)
+        //}
+        ## (
+          myHistRegFileWrPulse(1).fire
+          && (
+            myHistRegFileWrPulse(1).addr
+            //myHistRegFileWrPulse(1).data(1)
+            //=== outp.gprIdxVec(jdx)
+            === outp.renamedGprIdxVec(jdx)
+          )
+        )
+        ## (
+          myHistRegFileWrPulse(2).fire
+          && (
+            myHistRegFileWrPulse(2).addr
+            //myHistRegFileWrPulse(2).data(1)
+            //=== outp.gprIdxVec(jdx)
+            === outp.renamedGprIdxVec(jdx)
+          )
+        )
         ## outp.forFmaxFwdIdx(jdx)
       ) {
         for (idx <- 0 until cfg.optForFmaxPsExFwdSize) {
@@ -14113,7 +14113,7 @@ case class SnowHousePipeStageExecute(
           if (idx == 0) {
             is (
               MaskedLiteral(
-                "1-" + ToBinaryStrZeroPadded(
+                "1--" + ToBinaryStrZeroPadded(
                   x=0,
                   width=width
                 )
@@ -14127,15 +14127,15 @@ case class SnowHousePipeStageExecute(
             }
             is (
               MaskedLiteral(
-                "01" + ToBinaryStrZeroPadded(
+                "01-" + ToBinaryStrZeroPadded(
                   x=0,
                   width=width
                 )
               )
             ) {
               outp.myExt(0).rdMemWord(jdx) := (
-                //myHistRegFileWrPulse(1).data(0)
-                rSavedRegFileWrPulseVec(jdx).data(0)
+                myHistRegFileWrPulse(1).data(0)
+                //rSavedRegFileWrPulseVec(jdx).data(0)
                 //RegNextWhen(
                 //  forFmaxRegFileWrPulseArr(0).data,
                 //  cond=(
@@ -14145,28 +14145,28 @@ case class SnowHousePipeStageExecute(
                 //)
               )
             }
-            //is (
-            //  MaskedLiteral(
-            //    "001" + ToBinaryStrZeroPadded(
-            //      x=0,
-            //      width=width
-            //    )
-            //  )
-            //) {
-            //  outp.myExt(0).rdMemWord(jdx) := (
-            //    myHistRegFileWrPulse(2).data(0)
-            //    //RegNextWhen(
-            //    //  forFmaxRegFileWrPulseArr(0).data,
-            //    //  cond=(
-            //    //    forFmaxRegFileWrPulseArr(0).fire
-            //    //  ),
-            //    //  init=forFmaxRegFileWrPulseArr(0).data.getZero
-            //    //)
-            //  )
-            //}
             is (
               MaskedLiteral(
-                "00" + ToBinaryStrZeroPadded(
+                "001" + ToBinaryStrZeroPadded(
+                  x=0,
+                  width=width
+                )
+              )
+            ) {
+              outp.myExt(0).rdMemWord(jdx) := (
+                myHistRegFileWrPulse(2).data(0)
+                //RegNextWhen(
+                //  forFmaxRegFileWrPulseArr(0).data,
+                //  cond=(
+                //    forFmaxRegFileWrPulseArr(0).fire
+                //  ),
+                //  init=forFmaxRegFileWrPulseArr(0).data.getZero
+                //)
+              )
+            }
+            is (
+              MaskedLiteral(
+                "000" + ToBinaryStrZeroPadded(
                   x=0,
                   width=width
                 )
@@ -14179,7 +14179,7 @@ case class SnowHousePipeStageExecute(
           } else {
             is (
               MaskedLiteral(
-                "--" + ToBinaryStrZeroPadded(
+                "---" + ToBinaryStrZeroPadded(
                   x=idx,
                   width=width
                 )
