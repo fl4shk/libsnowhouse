@@ -899,6 +899,11 @@ case class SnowHouseConfig(
       case None => None
     }
   )
+
+  val optScoreboardOooIssueHazardDetectSize = (
+    4
+  )
+
   val numMultiCommit = (
     if (optScoreboard) (
       2
@@ -1417,7 +1422,10 @@ case class SnowHouseConfig(
     //    log2Up(16)
     //  }
     //}
-    12
+    //12
+    1 << (
+      optScoreboardReorderBufWidth //- log2Up(numPhysRegsMult)
+    )
   )
   val optScoreboardTagWidth = (
     //6
@@ -2435,15 +2443,26 @@ case class SnowHousePipePayloadNonExt(
   val readsGprIdxVec = (
     cfg.optScoreboardOooIssueWindow != None
   ) generate (
-    Vec.fill(cfg.numRenamedGprs)(
-      Bool()
+    Vec.fill(
+      //cfg.optScoreboardOooIssueWindow.get + 1
+      cfg.optScoreboardOooIssueHazardDetectSize
+    )(
+      Vec.fill(cfg.numRenamedGprs)(
+        Bool()
+      )
     )
   )
   val writesGprIdxVec = (
     cfg.optScoreboardOooIssueWindow != None
   ) generate (
-    Vec.fill(cfg.numRenamedGprs)(
-      Bool()
+    Vec.fill(
+      //cfg.optScoreboardOooIssueWindow.get + 1
+      //2
+      cfg.optScoreboardOooIssueHazardDetectSize
+    )(
+      Vec.fill(cfg.numRenamedGprs)(
+        Bool()
+      )
     )
   )
   val myOooWaWHazardCheck = (

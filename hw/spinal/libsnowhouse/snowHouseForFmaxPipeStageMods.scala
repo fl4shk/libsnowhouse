@@ -5952,10 +5952,10 @@ case class SnowHouseForFmaxPipeStageWriteBack(
               .instrCnt.shouldIgnoreInstr.last
               || (
                 !myDbgCommitBackStm.fire
-                || (
-                  !myDbgCommitBackStm.commit.nonFwdTag.orR
-                  && !myDbgCommitBackStm.commit.fwdTag.orR
-                )
+                //|| (
+                //  !myDbgCommitBackStm.commit.nonFwdTag.orR
+                //  && !myDbgCommitBackStm.commit.fwdTag.orR
+                //)
               )
             )
             //|| (
@@ -5982,10 +5982,10 @@ case class SnowHouseForFmaxPipeStageWriteBack(
               myInstrCnt.myPsIdBubble.last
               || (
                 !myDbgCommitBackStm.fire
-                || (
-                  !myDbgCommitBackStm.commit.nonFwdTag.orR
-                  && !myDbgCommitBackStm.commit.fwdTag.orR
-                )
+                //|| (
+                //  !myDbgCommitBackStm.commit.nonFwdTag.orR
+                //  && !myDbgCommitBackStm.commit.fwdTag.orR
+                //)
               )
             )
             //|| !myDbgHaveNewNonBubbleTag
