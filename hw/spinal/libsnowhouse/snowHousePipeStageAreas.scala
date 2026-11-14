@@ -4407,7 +4407,7 @@ case class SnowHousePipeStageRegRename(
 
   when (
     !myFreeListFindFirst._1
-    || myShouldIgnoreInstr
+    //|| myShouldIgnoreInstr
   ) {
     down(pRegRename).instrCnt.myPsIdBubble.foreach(item => {
       item := True
@@ -5374,9 +5374,10 @@ case class SnowHousePipeStageScoreboardCheck(
             (
               (
                 myReorderBufIdxThrowItCond
-                || myBufPushStm.instrCnt.myPsIdBubble.last
+                //|| myBufPushStm.instrCnt.myPsIdBubble.last
               )
-              && !myBufPushStm.instrCnt.myPsIdOtherBubble.last
+              //&& !myBufPushStm.instrCnt.myPsIdOtherBubble.last
+              && !myBufPushStm.instrCnt.myPsIdBubble.last
               //|| myBufPushStm.instrCnt.myPsIdBubble.last
             )
           )
@@ -6430,18 +6431,18 @@ case class SnowHousePipeStageScoreboardCheck(
     //}
 
     //--------
-    when (
-      up.isValid
-      && myOtherThrowItCond
-      //&& !myBufPushStm.instrCnt.myPsIdBubble.head
-    ) {
-      cScoreboardCheck.throwIt()
-      //cScoreboardCheck.ignoreReadyNow()
-      //cScoreboardCheck.forgetOneNow()
-      //cScoreboardCheck.throwIt()
-      //cScoreboardCheck.terminateIt()
-      //cScoreboardCheck.haltIt()
-    }
+    //when (
+    //  up.isValid
+    //  && myOtherThrowItCond
+    //  //&& !myBufPushStm.instrCnt.myPsIdBubble.head
+    //) {
+    //  cScoreboardCheck.throwIt()
+    //  //cScoreboardCheck.ignoreReadyNow()
+    //  //cScoreboardCheck.forgetOneNow()
+    //  //cScoreboardCheck.throwIt()
+    //  //cScoreboardCheck.terminateIt()
+    //  //cScoreboardCheck.haltIt()
+    //}
     //when (
     //  up.isValid
     //  && myOtherThrowItCond
