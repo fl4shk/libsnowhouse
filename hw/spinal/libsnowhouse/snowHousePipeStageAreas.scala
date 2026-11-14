@@ -6570,8 +6570,8 @@ case class SnowHousePipeStageScoreboardCheck(
     //  //myOooIssueArea.myOooRdBuf
     //}
     if (doOooIssue) (
-      //myOooIssueArea.myOtherFlushCondMost.head
-      myOooIssueArea.myOtherThrowItCond
+      myOooIssueArea.myOtherFlushCondMost.head
+      //myOooIssueArea.myOtherThrowItCond
     ) else (
       myInFlushCondMain(
         someUpPayload0=upPayload(0),
