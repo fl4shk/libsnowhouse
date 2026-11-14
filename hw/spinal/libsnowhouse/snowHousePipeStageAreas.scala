@@ -4449,6 +4449,7 @@ case class SnowHousePipeStageRegRename(
   //    )
   //  )
   //}
+
   when (
     rMyInFlightReorderBufIdxVec(
       upPayload(1).reorderBufIdx
