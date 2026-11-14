@@ -5644,8 +5644,7 @@ case class SnowHousePipeStageScoreboardCheck(
             (
               (
                 myReorderBufIdxThrowItCond
-                //|| myBufPushStm.instrCnt.myPsIdBubble.last
-                && !myBufPushStm.instrCnt.myPsIdBubble.last
+                || myBufPushStm.instrCnt.myPsIdBubble.last
               )
               && !myBufPushStm.instrCnt.myPsIdOtherBubble.last
               //|| myBufPushStm.instrCnt.myPsIdBubble.last
@@ -6706,14 +6705,21 @@ case class SnowHousePipeStageScoreboardCheck(
     when (
       up.isValid
       && myOtherThrowItCond
+      //&& !myBufPushStm.instrCnt.myPsIdBubble.head
     ) {
-      cScoreboardCheck.throwIt()
+      cScoreboardCheck.throwIt(usingReady=true)
       //cScoreboardCheck.ignoreReadyNow()
       //cScoreboardCheck.forgetOneNow()
       //cScoreboardCheck.throwIt()
       //cScoreboardCheck.terminateIt()
       //cScoreboardCheck.haltIt()
     }
+    //when (
+    //  up.isValid
+    //  && myOtherThrowItCond
+    //  && myBufPushStm.instrCnt.myPsIdBubble(1)
+    //) {
+    //}
     //--------
 
     //switch (
