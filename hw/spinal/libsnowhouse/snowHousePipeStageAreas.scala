@@ -6502,7 +6502,7 @@ case class SnowHousePipeStageScoreboardCheck(
       (
         (
           myOtherFlushCondMost.head
-          && !LcvAndR(myPopValidVec)
+          && LcvAndR(myPopValidVec)
           //&& !LcvOrR(myPopValidVec)
         )
         || (
@@ -6707,7 +6707,7 @@ case class SnowHousePipeStageScoreboardCheck(
       && myOtherThrowItCond
       //&& !myBufPushStm.instrCnt.myPsIdBubble.head
     ) {
-      cScoreboardCheck.throwIt(usingReady=true)
+      cScoreboardCheck.throwIt()
       //cScoreboardCheck.ignoreReadyNow()
       //cScoreboardCheck.forgetOneNow()
       //cScoreboardCheck.throwIt()
