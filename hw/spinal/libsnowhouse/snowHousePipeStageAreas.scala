@@ -4555,7 +4555,9 @@ case class SnowHousePipeStageScoreboardCheck(
   )(
     Bool()
   )
-
+  val myOtherFlushCondMost = Vec.fill(1)(
+    Bool()
+  )
 
   def doSendBubbleMainMost(
     myDuplicateItCond: Boolean,
@@ -4667,31 +4669,34 @@ case class SnowHousePipeStageScoreboardCheck(
   upPayload(1) := RegNext(upPayload(1), init=upPayload(1).getZero)
   upPayload(1).allowOverride
 
-  when (!rMyPsExSetPcState) {
-    when (psExSetPc.fire) {
-      rMyPsExSetPcState := True
-    } 
-  } otherwise {
-    when (
-      up.isFiring
-      //&& outp.regPcSetItCnt(0).lsb
-      //&& up(pId).regPcSetItCnt(0).lsb
-      && upPayload(1).regPcSetItCnt(0).lsb
-    ) {
-      rMyPsExSetPcState := False
-    }
-  }
-  val myShouldIgnoreInstr = (
-    (
-      (
-        psExSetPc.fire
-        || (
-          rMyPsExSetPcState
-          && !upPayload(1).regPcSetItCnt(0).lsb
-        )
-      )
-    )
-  )
+  //when (!rMyPsExSetPcState) {
+  //  when (psExSetPc.fire) {
+  //    rMyPsExSetPcState := True
+  //  } 
+  //} otherwise {
+  //  when (
+  //    up.isFiring
+  //    //&& outp.regPcSetItCnt(0).lsb
+  //    //&& up(pId).regPcSetItCnt(0).lsb
+  //    && upPayload(1).regPcSetItCnt(0).lsb
+  //  ) {
+  //    rMyPsExSetPcState := False
+  //  }
+  //}
+  //def myShouldIgnoreInstr(
+  //  somePayload: SnowHousePipePayload,
+  //) = (
+  //  (
+  //    (
+  //      psExSetPc.fire
+  //      || (
+  //        rMyPsExSetPcState
+  //        //&& !upPayload(1).regPcSetItCnt(0).lsb
+  //        && !somePayload.regPcSetItCnt(0).lsb
+  //      )
+  //    )
+  //  )
+  //)
 
   case class MyGprTagInfo(
     isNonFwd: Boolean
@@ -4761,6 +4766,88 @@ case class SnowHousePipeStageScoreboardCheck(
         }
       }
     }
+  }
+
+  for (idx <- 0 until cfg.numRenamedGprs) {
+    when (
+      //up.isFiring
+      down.isFiring
+      && rMyFwdGprTagVec(idx).fire
+      && !rMyFwdGprTagVec(idx).cnt.msb
+    ) {
+      rMyFwdGprTagVec(idx).cnt := (
+        rMyFwdGprTagVec(idx).cnt - 1
+      )
+    }
+
+    when (
+      rMyFwdGprTagVec(idx).fire
+      && (
+        (
+          myScoreboardCommitStm.fire
+          && myScoreboardCommitStm.opIsFwd
+          && myScoreboardCommitStm.myFwdValid
+          && (
+            rMyFwdGprTagVec(idx).tag
+            === myScoreboardCommitStm.fwdTag
+          )
+        )
+        || (
+          myScoreboardBubbleRetireStm.fire
+          && myScoreboardBubbleRetireStm.opIsFwd
+          && (
+            rMyFwdGprTagVec(idx).tag
+            === myScoreboardBubbleRetireStm.fwdTag
+          )
+        )
+      )
+      //&& !rMyFwdGprTagVec(idx).wakeUp
+    ) {
+      //rFwdTagAllocVec(myScoreboardCommitStm.fwdTag) := False
+      rMyFwdGprTagVec(idx).valid := False
+      //rMyFwdGprTagVec(idx).cnt := (
+      //  cfg.optForFmaxPsExFwdSize - 2
+      //)
+      //rFwdWakeUpVec(idx) := True
+      //rMyFwdGprTagVec(idx).wakeUp := True
+    }
+
+    //when (rMyFwdGprTagVec(idx).wakeUp) {
+    //  rMyFwdGprTagVec(idx).wakeUp := False
+    //  rMyFwdGprTagVec(idx).valid := False
+    //}
+    when (
+      rMyNonFwdGprTagVec(idx).fire
+      && (
+        (
+          myScoreboardCommitStm.fire
+          && myScoreboardCommitStm.myNonFwdValid
+          && (
+            rMyNonFwdGprTagVec(idx).tag
+            === myScoreboardCommitStm.nonFwdTag
+          )
+        )
+        || (
+          myScoreboardBubbleRetireStm.fire
+          && myScoreboardBubbleRetireStm.myNonFwdValid
+          && (
+            rMyNonFwdGprTagVec(idx).tag
+            === myScoreboardBubbleRetireStm.nonFwdTag
+          )
+        )
+      )
+      //&& !rMyNonFwdGprTagVec(idx).wakeUp
+    ) {
+      ////rNonFwdTagAllocVec(myScoreboardCommitStm.fwdTag) := False
+      rMyNonFwdGprTagVec(idx).valid := False
+      //rNonFwdWakeUpVec(idx) := True
+      //rMyNonFwdGprTagVec(idx).wakeUp := True
+    }
+
+    //when (rMyNonFwdGprTagVec(idx).wakeUp) {
+    //  rMyNonFwdGprTagVec(idx).wakeUp := False
+    //  rMyNonFwdGprTagVec(idx).valid := False
+    //}
   }
 
   //val rRegRenameAllocVec = (
@@ -4876,6 +4963,10 @@ case class SnowHousePipeStageScoreboardCheck(
         })
       }
     }
+
+    updateGprTagVecEtc(
+      somePayload=upPayload(1)
+    )
   }
 
   val myOooIssueArea = (
@@ -5651,92 +5742,6 @@ case class SnowHousePipeStageScoreboardCheck(
     //  )
     //)
 
-    def doPopOoo(
-      doUpIsFiring: Boolean,
-      myPopIdx: Int,
-    ): Unit = {
-      //require(
-      //  myPopIdx < myOooRdBufWindow - 1
-      //)
-      //upPayload(0) := myOooRdBuf.io.pop(1).payload
-      upPayload(0) := myTempOooRdBufPopVec(
-        //3
-        myPopIdx
-      ).payload
-      upPayload(1) := upPayload(0)
-      upPayload(1).instrCnt.myPsIdBubble.allowOverride
-      upPayload(1).instrCnt.myPsIdBubble.foreach(item => {
-        item := False
-      })
-      upPayload(1).instrCnt.myPsIdOtherBubble.allowOverride
-      upPayload(1).instrCnt.myPsIdOtherBubble.foreach(item => {
-        item := False
-      })
-
-      val myNodeIsFiring = (
-        if (doUpIsFiring) (
-          up.isFiring
-        ) else (
-          down.isFiring
-        )
-      )
-
-      //upPayload(1).instrCnt.tick := (
-      //  
-      //)
-
-      myTempOooRdBufPopVec.zipWithIndex.foreach{
-        case (item, idx) => {
-          if (idx == myPopIdx) {
-            item.ready := (
-              myNodeIsFiring
-              //if (doUpIsFiring) (
-              //  up.isFiring
-              //  //up.isReady
-              //) else (
-              //  down.isFiring
-              //)
-            )
-          } else {
-            item.ready := False
-          }
-        }
-      }
-
-      //when (
-      //  if (doUpIsFiring) (
-      //    up.isFiring
-      //  ) else (
-      //    down.isFiring
-      //  )
-      //) {
-      //  rSavedPopIdx := myPopIdx - myOooRdBufExtraSize
-      //}
-
-
-      //myTempOooRdBufPopVec(3).ready := (
-      //  if (doUpIsFiring) (
-      //    up.isFiring
-      //    //up.isReady
-      //  ) else (
-      //    down.isFiring
-      //  )
-      //)
-      //myTempOooRdBufPopVec(4).ready := False
-
-      def myOooIssueCnt = (
-        upPayload(1).instrCnt.scoreboardCheckPayload.myOooIssueCnt
-      )
-      //when (
-      //  rSavedPopIdx =/= myPopIdx - myOooRdBufExtraSize //+ 1
-      //) {
-      //  myOooIssueCnt.valid := (
-      //    True//myOooOkayCond
-      //  )
-      //}
-      //myOooIssueCnt.payload := rPingPongBlockCnt.payload
-
-    }
     //def doPopLast(
     //  doUpIsFiring: Boolean,
     //): Unit = {
@@ -6147,6 +6152,196 @@ case class SnowHousePipeStageScoreboardCheck(
     //  temp
     //}
 
+    //when (
+    //  rReorderBufFlushInfo.fire
+    //  && LcvOrR(myRealDispatchOkayCondVec)
+    //) {
+    //  rReorderBufFlushInfo.valid := False
+    //}
+
+    //when (myRealOooOkayCond) {
+    //  doPopOoo(doUpIsFiring=true)
+    //} otherwise {
+    //  doPopLast(doUpIsFiring=true)
+    //}
+
+    myOtherFlushCondMost := (
+      Vec[Bool](
+        (
+          //rReorderBufFlushInfo.fire
+          //|| 
+
+          (
+            //(
+            //  myBufPushStm.valid
+            //  && rMyInFlightReorderBufIdxVec(
+            //    myBufPushStm.reorderBufIdx
+            //  )
+            //)
+
+            !LcvOrR(myRealDispatchOkayCondVec.asBits)//.orR
+          )
+          //|| LcvAndR(myReducedFwdTagAllocVec.asBits)//.andR
+          //|| LcvAndR(myReducedNonFwdTagAllocVec.asBits)//.andR
+          //|| myInFlushCond(2)
+          //--------
+          || (
+            //!myPopValidVec.asBits.msb
+            //!myRealDispatchOkayCondVec.asBits.orR
+            //!myPopValidVec.asBits.orR
+            !LcvOrR(myPopValidVec.asBits.asUInt)
+          )
+        ),
+        //(
+        //  !LcvOrR(myPopValidVec)
+        //  && !myThrowItCond
+        //)
+      )
+    )
+
+    val myOtherThrowItCond = (
+      (
+        (
+          myOtherFlushCondMost.head
+          && LcvAndR(myPopValidVec)
+          //&& !LcvOrR(myPopValidVec)
+        )
+        || (
+          !LcvOrR(myPopValidVec)
+          || (
+            (
+              myThrowItCond
+              //myReorderBufIdxThrowItCond
+            )
+            && LcvAndR(myPopValidVec)
+          )
+        )
+      )
+      && !myBufPushStm.instrCnt.myPsIdBubble.last
+    )
+
+    //switch (
+    //  rReorderBufFlushInfo.fire
+    //  ## (
+    //    rReorderBufFlushInfo.flushReorderBufIdx
+    //    === rReorderBufFlushInfo.savedReorderBufIdx
+    //  )
+    //  ## down.isFiring
+    //) {
+    //  is (M"101") {
+    //    rReorderBufFlushInfo.flushReorderBufIdx := (
+    //      rReorderBufFlushInfo.flushReorderBufIdx + 1
+    //    )
+    //    down(pScoreboardCheck).instrCnt.reorderBufIdx := (
+    //      rReorderBufFlushInfo.flushReorderBufIdx
+    //    )
+    //  }
+    //  is (M"11-") {
+    //    rReorderBufFlushInfo.valid := False
+    //  }
+    //  default {
+    //  }
+    //}
+
+    //val myDuplOrThrowFindFirst = (
+    //  myBufPop.sFindFirst(item => (
+    //    item.valid
+    //    && item.instrCnt.myPsIdBubble.last
+    //  ))
+    //)
+
+    def doPopOoo(
+      doUpIsFiring: Boolean,
+      myPopIdx: Int,
+    ): Unit = {
+      //require(
+      //  myPopIdx < myOooRdBufWindow - 1
+      //)
+      //upPayload(0) := myOooRdBuf.io.pop(1).payload
+      upPayload(0) := myTempOooRdBufPopVec(
+        //3
+        myPopIdx
+      ).payload
+      upPayload(1) := upPayload(0)
+      upPayload(1).instrCnt.myPsIdBubble.allowOverride
+      upPayload(1).instrCnt.myPsIdBubble.foreach(item => {
+        item := False
+      })
+      upPayload(1).instrCnt.myPsIdOtherBubble.allowOverride
+      upPayload(1).instrCnt.myPsIdOtherBubble.foreach(item => {
+        item := False
+      })
+
+      val myNodeIsFiring = (
+        if (doUpIsFiring) (
+          up.isFiring
+        ) else (
+          down.isFiring
+        )
+      )
+
+      //upPayload(1).instrCnt.tick := (
+      //  
+      //)
+
+      myTempOooRdBufPopVec.zipWithIndex.foreach{
+        case (item, idx) => {
+          if (idx == myPopIdx) {
+            item.ready := (
+              myNodeIsFiring
+              //if (doUpIsFiring) (
+              //  up.isFiring
+              //  //up.isReady
+              //) else (
+              //  down.isFiring
+              //)
+            )
+          } else {
+            item.ready := False
+          }
+        }
+      }
+
+      //when (
+      //  if (doUpIsFiring) (
+      //    up.isFiring
+      //  ) else (
+      //    down.isFiring
+      //  )
+      //) {
+      //  rSavedPopIdx := myPopIdx - myOooRdBufExtraSize
+      //}
+
+
+      //myTempOooRdBufPopVec(3).ready := (
+      //  if (doUpIsFiring) (
+      //    up.isFiring
+      //    //up.isReady
+      //  ) else (
+      //    down.isFiring
+      //  )
+      //)
+      //myTempOooRdBufPopVec(4).ready := False
+
+      def myOooIssueCnt = (
+        upPayload(1).instrCnt.scoreboardCheckPayload.myOooIssueCnt
+      )
+      //when (
+      //  rSavedPopIdx =/= myPopIdx - myOooRdBufExtraSize //+ 1
+      //) {
+      //  myOooIssueCnt.valid := (
+      //    True//myOooOkayCond
+      //  )
+      //}
+      //myOooIssueCnt.payload := rPingPongBlockCnt.payload
+
+      updateGprTagVecEtc(
+        somePayload=myTempOooRdBufPopVec(
+          myPopIdx
+        )
+      )
+    }
+
     switch (
       //Bitscan(~myRealDispatchOkayCondVec.asBits.asUInt)
       //(
@@ -6243,102 +6438,6 @@ case class SnowHousePipeStageScoreboardCheck(
         //doPopLast(doUpIsFiring=true)
       }
     }
-    //when (
-    //  rReorderBufFlushInfo.fire
-    //  && LcvOrR(myRealDispatchOkayCondVec)
-    //) {
-    //  rReorderBufFlushInfo.valid := False
-    //}
-
-    //when (myRealOooOkayCond) {
-    //  doPopOoo(doUpIsFiring=true)
-    //} otherwise {
-    //  doPopLast(doUpIsFiring=true)
-    //}
-
-    val myOtherFlushCondMost = (
-      Vec[Bool](
-        (
-          //rReorderBufFlushInfo.fire
-          //|| 
-
-          (
-            //(
-            //  myBufPushStm.valid
-            //  && rMyInFlightReorderBufIdxVec(
-            //    myBufPushStm.reorderBufIdx
-            //  )
-            //)
-
-            !LcvOrR(myRealDispatchOkayCondVec.asBits)//.orR
-          )
-          //|| LcvAndR(myReducedFwdTagAllocVec.asBits)//.andR
-          //|| LcvAndR(myReducedNonFwdTagAllocVec.asBits)//.andR
-          //|| myInFlushCond(2)
-          //--------
-          || (
-            //!myPopValidVec.asBits.msb
-            //!myRealDispatchOkayCondVec.asBits.orR
-            //!myPopValidVec.asBits.orR
-            !LcvOrR(myPopValidVec.asBits.asUInt)
-          )
-        ),
-        //(
-        //  !LcvOrR(myPopValidVec)
-        //  && !myThrowItCond
-        //)
-      )
-    )
-    val myOtherThrowItCond = (
-      (
-        (
-          myOtherFlushCondMost.head
-          && LcvAndR(myPopValidVec)
-          //&& !LcvOrR(myPopValidVec)
-        )
-        || (
-          !LcvOrR(myPopValidVec)
-          || (
-            (
-              myThrowItCond
-              //myReorderBufIdxThrowItCond
-            )
-            && LcvAndR(myPopValidVec)
-          )
-        )
-      )
-      && !myBufPushStm.instrCnt.myPsIdBubble.last
-    )
-
-    //switch (
-    //  rReorderBufFlushInfo.fire
-    //  ## (
-    //    rReorderBufFlushInfo.flushReorderBufIdx
-    //    === rReorderBufFlushInfo.savedReorderBufIdx
-    //  )
-    //  ## down.isFiring
-    //) {
-    //  is (M"101") {
-    //    rReorderBufFlushInfo.flushReorderBufIdx := (
-    //      rReorderBufFlushInfo.flushReorderBufIdx + 1
-    //    )
-    //    down(pScoreboardCheck).instrCnt.reorderBufIdx := (
-    //      rReorderBufFlushInfo.flushReorderBufIdx
-    //    )
-    //  }
-    //  is (M"11-") {
-    //    rReorderBufFlushInfo.valid := False
-    //  }
-    //  default {
-    //  }
-    //}
-
-    //val myDuplOrThrowFindFirst = (
-    //  myBufPop.sFindFirst(item => (
-    //    item.valid
-    //    && item.instrCnt.myPsIdBubble.last
-    //  ))
-    //)
 
     when (
       //rScoreboardFlushState.asBits(ScoreboardFlushState.IDLE.position)
@@ -6632,7 +6731,7 @@ case class SnowHousePipeStageScoreboardCheck(
     //  //myOooIssueArea.myOooRdBuf
     //}
     if (doOooIssue) (
-      myOooIssueArea.myOtherFlushCondMost.head
+      myOtherFlushCondMost.head
       //myOooIssueArea.myOtherThrowItCond
     ) else (
       myInFlushCondMain(
@@ -6641,6 +6740,222 @@ case class SnowHousePipeStageScoreboardCheck(
       )
     )
   )
+
+  def updateGprTagVecEtc(
+    somePayload: SnowHousePipePayload
+  ): Unit = {
+    for (jdx <- 0 until 2) {
+      val myFwdCondMsbMost = (
+        (
+          up.isFiring
+          //down.isFiring
+          && !myInFlushCond(0)//shouldClearExtraDecodeInfo
+          //&& !myNonFwdHazardCheckVec.orR
+          ////&& !myFwdHazardCheckVec.orR
+          && (
+            //!somePayload.splitOp.opIsMemAccess
+            !somePayload.splitOp.opIsNonFwd
+          )
+          //&& !myShouldIgnoreInstr
+        )
+      )
+      val myFwdCond = (
+        (
+          if (!doOooIssue) (
+            myFwdCondMsbMost
+            && !myNonFwdHazardCheckVec.orR
+          ) else (
+            myFwdCondMsbMost
+          )
+        )
+        ## (
+          //myLeftGprIdxVec.last
+          somePayload.renamedGprIdxVec.last
+        )
+      )
+      switch (
+        if (jdx == 0) (
+          myFwdCond
+        ) else (
+          //RegNext(
+            //RegNext(myFwdCond, init=myFwdCond.getZero)
+          //  init=False
+          //)
+          myFwdCond
+        )
+      ) {
+        for (idx <- 0 until cfg.numRenamedGprs) {
+          if (
+            !cfg.myHaveZeroReg
+            || idx != 0
+          ) {
+            is (
+              (1 << log2Up(cfg.numRenamedGprs))
+              | idx
+            ) {
+              if (jdx == 0) {
+                rMyFwdGprTagVec(idx).valid := True
+                when (!rMyFwdGprTagVec(idx).fire) {
+                  rMyFwdGprTagVec(idx).cnt := (
+                    cfg.optForFmaxPsExFwdSize - 3//2//1//2//3//2//1
+                  )
+                  //rMyFwdGprTagVec(idx).tag := myTempFwdTag
+                }
+              } else {
+                rMyFwdGprTagVec(idx).tag := (
+                  //RegNext(
+                  //  RegNext(myTempFwdTag, init=myTempFwdTag.getZero)
+                  //)
+                  //myTempFwdTag
+                  somePayload.reorderBufIdx
+                )
+
+                //if (cfg.optRegRename) {
+                //  somePayload.renamedGprIdxVec.last := (
+                //    Cat(
+                //      False,
+                //      myTempFwdTag,
+                //    ).asUInt
+                //    + cfg.numRenamedGprs
+                //  )
+                //}
+              }
+            }
+          }
+        }
+        if (cfg.myHaveZeroReg) {
+          default {
+          }
+        }
+      }
+
+      val myNonFwdCondMsbMost = (
+        (
+          up.isFiring
+          //down.isFiring
+          && !myInFlushCond(1)//shouldClearExtraDecodeInfo
+          //&& !myNonFwdHazardCheckVec.orR
+          ////&& !myFwdHazardCheckVec.orR
+          && (
+            //somePayload.splitOp.opIsMemAccess
+            somePayload.splitOp.opIsNonFwd
+          )
+          //&& !myShouldIgnoreInstr
+        )
+      )
+      val myNonFwdCond = (
+        (
+          if (!doOooIssue) (
+            myNonFwdCondMsbMost
+            && !myNonFwdHazardCheckVec.orR
+          ) else (
+            myNonFwdCondMsbMost
+          )
+        )
+        ## (
+          //myLeftGprIdxVec.last
+          somePayload.renamedGprIdxVec.last
+        )
+      )
+
+      switch (
+        if (jdx == 0) (
+          myNonFwdCond
+        ) else (
+          //RegNext(
+          //  RegNext(myNonFwdCond, init=myNonFwdCond.getZero)
+          //)
+          myNonFwdCond
+        )
+      ) {
+        for (idx <- 0 until cfg.numRenamedGprs) {
+          if (
+            !cfg.myHaveZeroReg
+            || idx != 0
+          ) {
+            is (
+              (1 << log2Up(cfg.numRenamedGprs))
+              | idx
+            ) {
+              if (jdx == 0) {
+                rMyNonFwdGprTagVec(idx).valid := True
+              } else {
+                rMyNonFwdGprTagVec(idx).tag := (
+                  //RegNext(
+                  //  RegNext(myTempNonFwdTag, init=myTempNonFwdTag.getZero)
+                  //)
+                  //myTempNonFwdTag
+                  somePayload.reorderBufIdx
+                )
+
+                //if (cfg.optRegRename) {
+                //  somePayload.renamedGprIdxVec.last := (
+                //    Cat(
+                //      True,
+                //      myTempNonFwdTag,
+                //    ).asUInt
+                //    + cfg.numRenamedGprs
+                //  )
+                //}
+              }
+            }
+          }
+        }
+        if (cfg.myHaveZeroReg) {
+          default {
+          }
+        }
+      }
+
+      //if (
+      //  cfg.optRegRename
+      //  && jdx == 1
+      //) {
+      //  for (kdx <- 0 until cfg.regFileCfg.modRdPortCnt) {
+      //    switch (
+      //      myLeftGprIdxVec(kdx)
+      //    ) {
+      //      for (idx <- 0 until cfg.numRenamedGprs) {
+      //        if (
+      //          !cfg.myHaveZeroReg
+      //          || idx != 0
+      //        ) {
+      //          is (idx) {
+      //            switch (
+      //              rMyNonFwdGprTagVec(idx).fire
+      //              ## rMyFwdGprTagVec(idx).fire
+      //            ) {
+      //              is (M"1-") {
+      //                somePayload.renamedGprIdxVec(kdx) := (
+      //                  Cat(
+      //                    True,
+      //                    rMyNonFwdGprTagVec(idx).tag
+      //                  ).asUInt
+      //                  + cfg.numRenamedGprs
+      //                )
+      //              }
+      //              is (M"01") {
+      //                somePayload.renamedGprIdxVec(kdx) := (
+      //                  Cat(
+      //                    False,
+      //                    rMyFwdGprTagVec(idx).tag
+      //                  ).asUInt
+      //                  + cfg.numRenamedGprs
+      //                )
+      //              }
+      //            }
+      //          }
+      //        }
+      //      }
+      //      if (cfg.myHaveZeroReg) {
+      //        default {
+      //        }
+      //      }
+      //    }
+      //  }
+      //}
+    }
+  }
   def myInFlushCondMain(
     someUpPayload0: SnowHousePipePayload,
     idx: Int
@@ -6824,97 +7139,88 @@ case class SnowHousePipeStageScoreboardCheck(
   //val rFwdWakeUpVec = Vec.fill(cfg.numRenamedGprs)(
   //  Reg(Bool(), init=False)
   //)
-  for (idx <- 0 until cfg.numRenamedGprs) {
-    when (
-      //up.isFiring
-      down.isFiring
-      && rMyFwdGprTagVec(idx).fire
-      && !rMyFwdGprTagVec(idx).cnt.msb
-    ) {
-      rMyFwdGprTagVec(idx).cnt := (
-        rMyFwdGprTagVec(idx).cnt - 1
-      )
-    }
+  //for (idx <- 0 until cfg.numRenamedGprs) {
+  //  when (
+  //    //up.isFiring
+  //    down.isFiring
+  //    && rMyFwdGprTagVec(idx).fire
+  //    && !rMyFwdGprTagVec(idx).cnt.msb
+  //  ) {
+  //    rMyFwdGprTagVec(idx).cnt := (
+  //      rMyFwdGprTagVec(idx).cnt - 1
+  //    )
+  //  }
 
-    when (
-      RegNext(
-        (
-          rMyFwdGprTagVec(idx).fire
-          && (
-            (
-              myScoreboardCommitStm.fire
-              && myScoreboardCommitStm.opIsFwd
-              && myScoreboardCommitStm.myFwdValid
-              && (
-                rMyFwdGprTagVec(idx).tag
-                === myScoreboardCommitStm.fwdTag
-              )
-            )
-            || (
-              myScoreboardBubbleRetireStm.fire
-              && myScoreboardBubbleRetireStm.opIsFwd
-              && (
-                rMyFwdGprTagVec(idx).tag
-                === myScoreboardBubbleRetireStm.fwdTag
-              )
-            )
-          )
-          //&& !rMyFwdGprTagVec(idx).wakeUp
-        ),
-        init=False
-      )
-    ) {
-      //rFwdTagAllocVec(myScoreboardCommitStm.fwdTag) := False
-      rMyFwdGprTagVec(idx).valid := False
-      //rMyFwdGprTagVec(idx).cnt := (
-      //  cfg.optForFmaxPsExFwdSize - 2
-      //)
-      //rFwdWakeUpVec(idx) := True
-      //rMyFwdGprTagVec(idx).wakeUp := True
-    }
+  //  when (
+  //    rMyFwdGprTagVec(idx).fire
+  //    && (
+  //      (
+  //        myScoreboardCommitStm.fire
+  //        && myScoreboardCommitStm.opIsFwd
+  //        && myScoreboardCommitStm.myFwdValid
+  //        && (
+  //          rMyFwdGprTagVec(idx).tag
+  //          === myScoreboardCommitStm.fwdTag
+  //        )
+  //      )
+  //      || (
+  //        myScoreboardBubbleRetireStm.fire
+  //        && myScoreboardBubbleRetireStm.opIsFwd
+  //        && (
+  //          rMyFwdGprTagVec(idx).tag
+  //          === myScoreboardBubbleRetireStm.fwdTag
+  //        )
+  //      )
+  //    )
+  //    //&& !rMyFwdGprTagVec(idx).wakeUp
+  //  ) {
+  //    //rFwdTagAllocVec(myScoreboardCommitStm.fwdTag) := False
+  //    rMyFwdGprTagVec(idx).valid := False
+  //    //rMyFwdGprTagVec(idx).cnt := (
+  //    //  cfg.optForFmaxPsExFwdSize - 2
+  //    //)
+  //    //rFwdWakeUpVec(idx) := True
+  //    //rMyFwdGprTagVec(idx).wakeUp := True
+  //  }
 
-    //when (rMyFwdGprTagVec(idx).wakeUp) {
-    //  rMyFwdGprTagVec(idx).wakeUp := False
-    //  rMyFwdGprTagVec(idx).valid := False
-    //}
-    when (
-      RegNext(
-        (
-          rMyNonFwdGprTagVec(idx).fire
-          && (
-            (
-              myScoreboardCommitStm.fire
-              && myScoreboardCommitStm.myNonFwdValid
-              && (
-                rMyNonFwdGprTagVec(idx).tag
-                === myScoreboardCommitStm.nonFwdTag
-              )
-            )
-            || (
-              myScoreboardBubbleRetireStm.fire
-              && myScoreboardBubbleRetireStm.myNonFwdValid
-              && (
-                rMyNonFwdGprTagVec(idx).tag
-                === myScoreboardBubbleRetireStm.nonFwdTag
-              )
-            )
-          )
-          //&& !rMyNonFwdGprTagVec(idx).wakeUp
-        ),
-        init=False
-      )
-    ) {
-      ////rNonFwdTagAllocVec(myScoreboardCommitStm.fwdTag) := False
-      rMyNonFwdGprTagVec(idx).valid := False
-      //rNonFwdWakeUpVec(idx) := True
-      //rMyNonFwdGprTagVec(idx).wakeUp := True
-    }
+  //  //when (rMyFwdGprTagVec(idx).wakeUp) {
+  //  //  rMyFwdGprTagVec(idx).wakeUp := False
+  //  //  rMyFwdGprTagVec(idx).valid := False
+  //  //}
+  //  when (
+  //    rMyNonFwdGprTagVec(idx).fire
+  //    && (
+  //      (
+  //        myScoreboardCommitStm.fire
+  //        && myScoreboardCommitStm.myNonFwdValid
+  //        && (
+  //          rMyNonFwdGprTagVec(idx).tag
+  //          === myScoreboardCommitStm.nonFwdTag
+  //        )
+  //      )
+  //      || (
+  //        myScoreboardBubbleRetireStm.fire
+  //        && myScoreboardBubbleRetireStm.myNonFwdValid
+  //        && (
+  //          rMyNonFwdGprTagVec(idx).tag
+  //          === myScoreboardBubbleRetireStm.nonFwdTag
+  //        )
+  //      )
+  //    )
+  //    //&& !rMyNonFwdGprTagVec(idx).wakeUp
+  //  ) {
+  //    ////rNonFwdTagAllocVec(myScoreboardCommitStm.fwdTag) := False
+  //    rMyNonFwdGprTagVec(idx).valid := False
+  //    //rNonFwdWakeUpVec(idx) := True
+  //    //rMyNonFwdGprTagVec(idx).wakeUp := True
+  //  }
 
-    //when (rMyNonFwdGprTagVec(idx).wakeUp) {
-    //  rMyNonFwdGprTagVec(idx).wakeUp := False
-    //  rMyNonFwdGprTagVec(idx).valid := False
-    //}
-  }
+  //  //when (rMyNonFwdGprTagVec(idx).wakeUp) {
+  //  //  rMyNonFwdGprTagVec(idx).wakeUp := False
+  //  //  rMyNonFwdGprTagVec(idx).valid := False
+  //  //}
+  //}
+
   //--------
   //switch (
   //  (
@@ -7038,209 +7344,209 @@ case class SnowHousePipeStageScoreboardCheck(
   //}
   //--------
 
-  for (jdx <- 0 until 2) {
-    val myFwdCondMsbMost = (
-      (
-        up.isFiring
-        //down.isFiring
-        && !myInFlushCond(0)//shouldClearExtraDecodeInfo
-        //&& !myNonFwdHazardCheckVec.orR
-        ////&& !myFwdHazardCheckVec.orR
-        && (
-          //!upPayload(1).splitOp.opIsMemAccess
-          !upPayload(1).splitOp.opIsNonFwd
-        )
-        && !myShouldIgnoreInstr
-      )
-    )
-    val myFwdCond = (
-      (
-        if (!doOooIssue) (
-          myFwdCondMsbMost
-          && !myNonFwdHazardCheckVec.orR
-        ) else (
-          myFwdCondMsbMost
-        )
-      )
-      ## myLeftGprIdxVec.last
-    )
-    switch (
-      if (jdx == 0) (
-        myFwdCond
-      ) else (
-        //RegNext(
-          //RegNext(myFwdCond, init=myFwdCond.getZero)
-        //  init=False
-        //)
-        myFwdCond
-      )
-    ) {
-      for (idx <- 0 until cfg.numRenamedGprs) {
-        if (
-          !cfg.myHaveZeroReg
-          || idx != 0
-        ) {
-          is (
-            (1 << log2Up(cfg.numRenamedGprs))
-            | idx
-          ) {
-            if (jdx == 0) {
-              rMyFwdGprTagVec(idx).valid := True
-              when (!rMyFwdGprTagVec(idx).fire) {
-                rMyFwdGprTagVec(idx).cnt := (
-                  cfg.optForFmaxPsExFwdSize - 3//2//1//2//3//2//1
-                )
-                //rMyFwdGprTagVec(idx).tag := myTempFwdTag
-              }
-            } else {
-              rMyFwdGprTagVec(idx).tag := (
-                //RegNext(
-                //  RegNext(myTempFwdTag, init=myTempFwdTag.getZero)
-                //)
-                myTempFwdTag
-              )
+  //for (jdx <- 0 until 2) {
+  //  val myFwdCondMsbMost = (
+  //    (
+  //      up.isFiring
+  //      //down.isFiring
+  //      && !myInFlushCond(0)//shouldClearExtraDecodeInfo
+  //      //&& !myNonFwdHazardCheckVec.orR
+  //      ////&& !myFwdHazardCheckVec.orR
+  //      && (
+  //        //!upPayload(1).splitOp.opIsMemAccess
+  //        !upPayload(1).splitOp.opIsNonFwd
+  //      )
+  //      && !myShouldIgnoreInstr
+  //    )
+  //  )
+  //  val myFwdCond = (
+  //    (
+  //      if (!doOooIssue) (
+  //        myFwdCondMsbMost
+  //        && !myNonFwdHazardCheckVec.orR
+  //      ) else (
+  //        myFwdCondMsbMost
+  //      )
+  //    )
+  //    ## myLeftGprIdxVec.last
+  //  )
+  //  switch (
+  //    if (jdx == 0) (
+  //      myFwdCond
+  //    ) else (
+  //      //RegNext(
+  //        //RegNext(myFwdCond, init=myFwdCond.getZero)
+  //      //  init=False
+  //      //)
+  //      myFwdCond
+  //    )
+  //  ) {
+  //    for (idx <- 0 until cfg.numRenamedGprs) {
+  //      if (
+  //        !cfg.myHaveZeroReg
+  //        || idx != 0
+  //      ) {
+  //        is (
+  //          (1 << log2Up(cfg.numRenamedGprs))
+  //          | idx
+  //        ) {
+  //          if (jdx == 0) {
+  //            rMyFwdGprTagVec(idx).valid := True
+  //            when (!rMyFwdGprTagVec(idx).fire) {
+  //              rMyFwdGprTagVec(idx).cnt := (
+  //                cfg.optForFmaxPsExFwdSize - 3//2//1//2//3//2//1
+  //              )
+  //              //rMyFwdGprTagVec(idx).tag := myTempFwdTag
+  //            }
+  //          } else {
+  //            rMyFwdGprTagVec(idx).tag := (
+  //              //RegNext(
+  //              //  RegNext(myTempFwdTag, init=myTempFwdTag.getZero)
+  //              //)
+  //              myTempFwdTag
+  //            )
 
-              //if (cfg.optRegRename) {
-              //  upPayload(1).renamedGprIdxVec.last := (
-              //    Cat(
-              //      False,
-              //      myTempFwdTag,
-              //    ).asUInt
-              //    + cfg.numRenamedGprs
-              //  )
-              //}
-            }
-          }
-        }
-      }
-      if (cfg.myHaveZeroReg) {
-        default {
-        }
-      }
-    }
+  //            //if (cfg.optRegRename) {
+  //            //  upPayload(1).renamedGprIdxVec.last := (
+  //            //    Cat(
+  //            //      False,
+  //            //      myTempFwdTag,
+  //            //    ).asUInt
+  //            //    + cfg.numRenamedGprs
+  //            //  )
+  //            //}
+  //          }
+  //        }
+  //      }
+  //    }
+  //    if (cfg.myHaveZeroReg) {
+  //      default {
+  //      }
+  //    }
+  //  }
 
-    val myNonFwdCondMsbMost = (
-      (
-        up.isFiring
-        //down.isFiring
-        && !myInFlushCond(1)//shouldClearExtraDecodeInfo
-        //&& !myNonFwdHazardCheckVec.orR
-        ////&& !myFwdHazardCheckVec.orR
-        && (
-          //upPayload(1).splitOp.opIsMemAccess
-          upPayload(1).splitOp.opIsNonFwd
-        )
-        && !myShouldIgnoreInstr
-      )
-    )
-    val myNonFwdCond = (
-      (
-        if (!doOooIssue) (
-          myNonFwdCondMsbMost
-          && !myNonFwdHazardCheckVec.orR
-        ) else (
-          myNonFwdCondMsbMost
-        )
-      )
-      ## myLeftGprIdxVec.last
-    )
+  //  val myNonFwdCondMsbMost = (
+  //    (
+  //      up.isFiring
+  //      //down.isFiring
+  //      && !myInFlushCond(1)//shouldClearExtraDecodeInfo
+  //      //&& !myNonFwdHazardCheckVec.orR
+  //      ////&& !myFwdHazardCheckVec.orR
+  //      && (
+  //        //upPayload(1).splitOp.opIsMemAccess
+  //        upPayload(1).splitOp.opIsNonFwd
+  //      )
+  //      && !myShouldIgnoreInstr
+  //    )
+  //  )
+  //  val myNonFwdCond = (
+  //    (
+  //      if (!doOooIssue) (
+  //        myNonFwdCondMsbMost
+  //        && !myNonFwdHazardCheckVec.orR
+  //      ) else (
+  //        myNonFwdCondMsbMost
+  //      )
+  //    )
+  //    ## myLeftGprIdxVec.last
+  //  )
 
-    switch (
-      if (jdx == 0) (
-        myNonFwdCond
-      ) else (
-        //RegNext(
-        //  RegNext(myNonFwdCond, init=myNonFwdCond.getZero)
-        //)
-        myNonFwdCond
-      )
-    ) {
-      for (idx <- 0 until cfg.numRenamedGprs) {
-        if (
-          !cfg.myHaveZeroReg
-          || idx != 0
-        ) {
-          is (
-            (1 << log2Up(cfg.numRenamedGprs))
-            | idx
-          ) {
-            if (jdx == 0) {
-              rMyNonFwdGprTagVec(idx).valid := True
-            } else {
-              rMyNonFwdGprTagVec(idx).tag := (
-                //RegNext(
-                //  RegNext(myTempNonFwdTag, init=myTempNonFwdTag.getZero)
-                //)
-                myTempNonFwdTag
-              )
+  //  switch (
+  //    if (jdx == 0) (
+  //      myNonFwdCond
+  //    ) else (
+  //      //RegNext(
+  //      //  RegNext(myNonFwdCond, init=myNonFwdCond.getZero)
+  //      //)
+  //      myNonFwdCond
+  //    )
+  //  ) {
+  //    for (idx <- 0 until cfg.numRenamedGprs) {
+  //      if (
+  //        !cfg.myHaveZeroReg
+  //        || idx != 0
+  //      ) {
+  //        is (
+  //          (1 << log2Up(cfg.numRenamedGprs))
+  //          | idx
+  //        ) {
+  //          if (jdx == 0) {
+  //            rMyNonFwdGprTagVec(idx).valid := True
+  //          } else {
+  //            rMyNonFwdGprTagVec(idx).tag := (
+  //              //RegNext(
+  //              //  RegNext(myTempNonFwdTag, init=myTempNonFwdTag.getZero)
+  //              //)
+  //              myTempNonFwdTag
+  //            )
 
-              //if (cfg.optRegRename) {
-              //  upPayload(1).renamedGprIdxVec.last := (
-              //    Cat(
-              //      True,
-              //      myTempNonFwdTag,
-              //    ).asUInt
-              //    + cfg.numRenamedGprs
-              //  )
-              //}
-            }
-          }
-        }
-      }
-      if (cfg.myHaveZeroReg) {
-        default {
-        }
-      }
-    }
+  //            //if (cfg.optRegRename) {
+  //            //  upPayload(1).renamedGprIdxVec.last := (
+  //            //    Cat(
+  //            //      True,
+  //            //      myTempNonFwdTag,
+  //            //    ).asUInt
+  //            //    + cfg.numRenamedGprs
+  //            //  )
+  //            //}
+  //          }
+  //        }
+  //      }
+  //    }
+  //    if (cfg.myHaveZeroReg) {
+  //      default {
+  //      }
+  //    }
+  //  }
 
-    //if (
-    //  cfg.optRegRename
-    //  && jdx == 1
-    //) {
-    //  for (kdx <- 0 until cfg.regFileCfg.modRdPortCnt) {
-    //    switch (
-    //      myLeftGprIdxVec(kdx)
-    //    ) {
-    //      for (idx <- 0 until cfg.numRenamedGprs) {
-    //        if (
-    //          !cfg.myHaveZeroReg
-    //          || idx != 0
-    //        ) {
-    //          is (idx) {
-    //            switch (
-    //              rMyNonFwdGprTagVec(idx).fire
-    //              ## rMyFwdGprTagVec(idx).fire
-    //            ) {
-    //              is (M"1-") {
-    //                upPayload(1).renamedGprIdxVec(kdx) := (
-    //                  Cat(
-    //                    True,
-    //                    rMyNonFwdGprTagVec(idx).tag
-    //                  ).asUInt
-    //                  + cfg.numRenamedGprs
-    //                )
-    //              }
-    //              is (M"01") {
-    //                upPayload(1).renamedGprIdxVec(kdx) := (
-    //                  Cat(
-    //                    False,
-    //                    rMyFwdGprTagVec(idx).tag
-    //                  ).asUInt
-    //                  + cfg.numRenamedGprs
-    //                )
-    //              }
-    //            }
-    //          }
-    //        }
-    //      }
-    //      if (cfg.myHaveZeroReg) {
-    //        default {
-    //        }
-    //      }
-    //    }
-    //  }
-    //}
-  }
+  //  //if (
+  //  //  cfg.optRegRename
+  //  //  && jdx == 1
+  //  //) {
+  //  //  for (kdx <- 0 until cfg.regFileCfg.modRdPortCnt) {
+  //  //    switch (
+  //  //      myLeftGprIdxVec(kdx)
+  //  //    ) {
+  //  //      for (idx <- 0 until cfg.numRenamedGprs) {
+  //  //        if (
+  //  //          !cfg.myHaveZeroReg
+  //  //          || idx != 0
+  //  //        ) {
+  //  //          is (idx) {
+  //  //            switch (
+  //  //              rMyNonFwdGprTagVec(idx).fire
+  //  //              ## rMyFwdGprTagVec(idx).fire
+  //  //            ) {
+  //  //              is (M"1-") {
+  //  //                upPayload(1).renamedGprIdxVec(kdx) := (
+  //  //                  Cat(
+  //  //                    True,
+  //  //                    rMyNonFwdGprTagVec(idx).tag
+  //  //                  ).asUInt
+  //  //                  + cfg.numRenamedGprs
+  //  //                )
+  //  //              }
+  //  //              is (M"01") {
+  //  //                upPayload(1).renamedGprIdxVec(kdx) := (
+  //  //                  Cat(
+  //  //                    False,
+  //  //                    rMyFwdGprTagVec(idx).tag
+  //  //                  ).asUInt
+  //  //                  + cfg.numRenamedGprs
+  //  //                )
+  //  //              }
+  //  //            }
+  //  //          }
+  //  //        }
+  //  //      }
+  //  //      if (cfg.myHaveZeroReg) {
+  //  //        default {
+  //  //        }
+  //  //      }
+  //  //    }
+  //  //  }
+  //  //}
+  //}
 
   //down(pScoreboardCheck).splitOp.opIsNonFwd := (
   //  //upPayload(1).splitOp.opIsMemAccess
