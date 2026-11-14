@@ -6449,7 +6449,7 @@ case class SnowHousePipeStageScoreboardCheck(
       //}
 
       default {
-        doPopLast(doUpIsFiring=true)
+        //doPopLast(doUpIsFiring=true)
       }
     }
     //when (
