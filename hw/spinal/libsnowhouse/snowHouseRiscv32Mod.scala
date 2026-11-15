@@ -1951,7 +1951,8 @@ case class SnowHouseRiscv32Config(
   ),
   icachePrefetchNumLinesAhead: Option[Int]=(
     //Some(2),
-    None
+    Some(1),
+    //None
   ),
   dcacheLineWordMemRamStyleAltera: String=(
     "no_rw_check, M10K"
