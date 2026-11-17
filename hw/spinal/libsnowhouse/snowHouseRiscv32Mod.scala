@@ -1950,8 +1950,9 @@ case class SnowHouseRiscv32Config(
     0
   ),
   icachePrefetchNumLinesAhead: Option[Int]=(
+    Some(4)
     //Some(2),
-    Some(1),
+    //Some(1),
     //None
   ),
   dcacheLineWordMemRamStyleAltera: String=(
