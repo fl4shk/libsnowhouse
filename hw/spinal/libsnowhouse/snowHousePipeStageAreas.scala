@@ -658,12 +658,19 @@ case class SnowHouseBranchTgtBufSingle(
   //--------
 
   myRdBtbElem.srcRegPc := (
+    //Cat(
+    //  myRdSrcRegPcAndValid.payload(
+    //    myRdSrcRegPcAndValid.payload.high downto 1
+    //  ),
+    //  tgtBufRdAddr(0),
+    //  myRdSrcRegPcAndValid.payload(0),
+    //  U(s"${log2Up(cfg.instrSizeBytes)}'d0"),
+    //).asUInt
     Cat(
       myRdSrcRegPcAndValid.payload(
-        myRdSrcRegPcAndValid.payload.high downto 1
+        myRdSrcRegPcAndValid.payload.high downto 0
       ),
       tgtBufRdAddr(0),
-      myRdSrcRegPcAndValid.payload(0),
       U(s"${log2Up(cfg.instrSizeBytes)}'d0"),
     ).asUInt
   )
