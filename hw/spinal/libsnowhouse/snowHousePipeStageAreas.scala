@@ -802,18 +802,18 @@ case class SnowHouseBranchTgtBufSingle(
 
   val myHaveBranch = (
     myRdBtbElem.fire
-    && (
-      if (!cfg.targetAltera) (
-        myResultValidCmpEqLeft
-        === myResultValidCmpEqRight
-      ) else (
-        LcvFastCmpEq(
-          left=myResultValidCmpEqLeft,
-          right=myResultValidCmpEqRight,
-          cmpEqIo=null,
-        )._1
-      )
-    )
+    //&& (
+    //  if (!cfg.targetAltera) (
+    //    myResultValidCmpEqLeft
+    //    === myResultValidCmpEqRight
+    //  ) else (
+    //    LcvFastCmpEq(
+    //      left=myResultValidCmpEqLeft,
+    //      right=myResultValidCmpEqRight,
+    //      cmpEqIo=null,
+    //    )._1
+    //  )
+    //)
   )
   //val myResultValidNonSrcCmpEq = (
   //  myResultValidNonBrKind
