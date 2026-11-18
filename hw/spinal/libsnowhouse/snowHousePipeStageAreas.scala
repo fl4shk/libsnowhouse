@@ -4457,8 +4457,11 @@ case class SnowHousePipeStageRegRename(
   //}
 
   when (
-    rMyInFlightReorderBufIdxVec(
-      upPayload(1).reorderBufIdx
+    (
+      !myFreeListFindFirst._1
+      || rMyInFlightReorderBufIdxVec(
+        upPayload(1).reorderBufIdx
+      )
     )
     && !myShouldIgnoreInstr
   ) {
@@ -6988,12 +6991,21 @@ case class SnowHousePipeStageScoreboardCheck(
     upPayload(1).instrCnt.scoreboardCheckPayload.fwdTag
   )
 
-  myTempFwdTag := (
-    upPayload(1).reorderBufIdx
-  )
-  myTempNonFwdTag := (
-    upPayload(1).reorderBufIdx
-  )
+  //if (doOooIssue) {
+  //  myTempFwdTag := (
+  //    upPayload(1).reorderBufIdx
+  //  )
+  //  myTempNonFwdTag := (
+  //    upPayload(1).reorderBufIdx
+  //  )
+  //} else {
+    myTempFwdTag := (
+      upPayload(1).reorderBufIdx
+    )
+    myTempNonFwdTag := (
+      upPayload(1).reorderBufIdx
+    )
+  //}
 
   //myTempNonFwdTag := (
   //  RegNext(
