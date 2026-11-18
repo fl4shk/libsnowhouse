@@ -1382,11 +1382,17 @@ case class SnowHouseConfig(
         //(
         //  log2Up(myOooIssueWindow) + 2//1//2//1//2//1
         //).max(
-          log2Up(
-            32
-            //16
-            //64
-            //numGprs
+          if (optRegRename) (
+            log2Up(
+              numRenamedGprs
+            )
+          ) else (
+            log2Up(
+              32
+              //16
+              //64
+              //numGprs
+            )
           )
           //log2Up(64)
         //)

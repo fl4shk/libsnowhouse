@@ -1289,7 +1289,6 @@ case class SnowHouseBranchTgtBuf(
     //) {
     //}
   }
-
 }
 
 //case class SnowHouseBranchTgtBuf(
