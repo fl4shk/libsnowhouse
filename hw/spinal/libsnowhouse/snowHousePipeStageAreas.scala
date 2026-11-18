@@ -3727,7 +3727,7 @@ case class SnowHousePipeStageInstrDecode(
 case class SnowHousePipeStageRegRename(
   val args: SnowHousePipeStageArgs,
   val psExSetPc: Flow[SnowHousePsExSetPcPayload],
-  val myScoreboardCommit: Flow[SnowHouseScoreboardCommitPayload],
+  val myRegRenameCommit: Stream[SnowHouseScoreboardCommitPayload],
   val myScoreboardBubbleRetire:
     // needed because bubbles still need to have tagging info
     // erased from psId
@@ -3747,6 +3747,7 @@ case class SnowHousePipeStageRegRename(
   require(
     cfg.optRegRename
   )
+  myRegRenameCommit.ready := True
 
   def doSendBubbleMainMost(
     myPsIdBubble: Option[Bool]=Some(True),
@@ -4220,8 +4221,8 @@ case class SnowHousePipeStageRegRename(
   }
 
   val mySetCond = (
-    myScoreboardCommit.fire
-    && LcvOrR(myScoreboardCommit.regRenameFreeListIdx)
+    myRegRenameCommit.fire
+    && LcvOrR(myRegRenameCommit.regRenameFreeListIdx)
     && !myShouldIgnoreInstr
   )
 
@@ -4229,12 +4230,12 @@ case class SnowHousePipeStageRegRename(
     mySetCond
   ) {
     //rFreeListVec.head(
-    //  myScoreboardCommit.regRenameFreeListIdx
+    //  myRegRenameCommit.regRenameFreeListIdx
     //) := (
     //  True
     //)
     rFreeList(
-      myScoreboardCommit.regRenameFreeListIdx
+      myRegRenameCommit.regRenameFreeListIdx
     ) := (
       True
     )
@@ -4267,8 +4268,8 @@ case class SnowHousePipeStageRegRename(
       rMyInFlightReorderBufIdxVec(idx)
       && (
         (
-          myScoreboardCommit.fire
-          && myScoreboardCommit.reorderBufIdx === idx
+          myRegRenameCommit.fire
+          && myRegRenameCommit.reorderBufIdx === idx
         )
         || (
           myScoreboardBubbleRetire.fire
@@ -4320,7 +4321,7 @@ case class SnowHousePipeStageRegRename(
 
   ////when (mySetCond) {
   ////  myFreeListChkptBuf.io.wrData(
-  ////    myScoreboardCommit.regRenameFreeListIdx
+  ////    myRegRenameCommit.regRenameFreeListIdx
   ////  ) := (
   ////    True
   ////  )

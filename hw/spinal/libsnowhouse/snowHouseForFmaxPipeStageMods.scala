@@ -1089,10 +1089,10 @@ case class SnowHouseForFmaxPipeStageRegRenameIo(
     ))
   )
   //--------
-  val myScoreboardCommit = (
+  val myRegRenameCommit = (
     cfg.optScoreboard
   ) generate (
-    slave(Flow(
+    slave(Stream(
       //UInt(cfg.optScoreboardTagWidth bits)
       SnowHouseScoreboardCommitPayload(cfg=cfg)
     ))
@@ -1162,8 +1162,8 @@ case class SnowHouseForFmaxPipeStageRegRename(
       regFile=null,
     ),
     psExSetPc=io.psExSetPc,
-    myScoreboardCommit=(
-      io.myScoreboardCommit
+    myRegRenameCommit=(
+      io.myRegRenameCommit
     ),
     myScoreboardBubbleRetire=(
       io.myScoreboardBubbleRetire
@@ -2237,6 +2237,16 @@ case class SnowHouseForFmaxPsWbCommitEtc(
   //    Bool()
   //  )
   //)
+  val regRenameCommit = (
+    cfg.optRegRename
+  ) generate (
+    master(
+      Stream(
+        //UInt(cfg.optScoreboardTagWidth bits)
+        SnowHouseScoreboardCommitPayload(cfg=cfg)
+      )
+    )
+  )
   val scoreboardCommmit = (
     cfg.optScoreboard
   ) generate (
@@ -5077,22 +5087,22 @@ case class SnowHouseForFmaxPipeStageWriteBack(
   ) generate (
     //SnowHouseForFmaxPsWbReorderBuf(cfg=cfg)
 
-    LcvLowLatencyReorderBuf(
-      cfg=LcvLowLatencyReorderBufConfig(
-        wordType=SnowHouseForFmaxPsWbReorderBufPayload(cfg=cfg),
-        reorderBufIdxWidth=(
-          cfg.optScoreboardReorderBufWidth
-        ),
-      )
-    )
-    //LcvSimpleReorderBuf(
-    //  cfg=LcvSimpleReorderBufConfig(
+    //LcvLowLatencyReorderBuf(
+    //  cfg=LcvLowLatencyReorderBufConfig(
     //    wordType=SnowHouseForFmaxPsWbReorderBufPayload(cfg=cfg),
     //    reorderBufIdxWidth=(
     //      cfg.optScoreboardReorderBufWidth
     //    ),
     //  )
     //)
+    LcvSimpleReorderBuf(
+      cfg=LcvSimpleReorderBufConfig(
+        wordType=SnowHouseForFmaxPsWbReorderBufPayload(cfg=cfg),
+        reorderBufIdxWidth=(
+          cfg.optScoreboardReorderBufWidth
+        ),
+      )
+    )
     //LcvLowLatencyReorderBuf(
     //  cfg=LcvLowLatencyReorderBufConfig(
     //    wordType=SnowHouseForFmaxPsWbReorderBufPayload(cfg=cfg),
@@ -5149,6 +5159,7 @@ case class SnowHouseForFmaxPipeStageWriteBack(
     //)
     // END: old early commit stuff
   }
+
   val myCommitAlmostFinalBackOutpStm = (
     if (cfg.optScoreboard) (
       //--------
@@ -5346,7 +5357,36 @@ case class SnowHouseForFmaxPipeStageWriteBack(
     //  myTempCommitStm
     //}
     // END: old early commit stuff
-    myTempCommitStm.translateInto(myReorderBuf.io.push)(
+    val myPrfFork = (
+      cfg.optRegRename
+    ) generate (
+      StreamFork(
+        input=myTempCommitStm,
+        portCount=2,
+        synchronous=true,
+      )
+    )
+
+    if (cfg.optRegRename) {
+      //io.commitEtc.scoreboardCommmit << myPrfFork.head
+      myPrfFork.head.translateInto(
+        io.commitEtc.scoreboardCommmit
+      )(
+        dataAssignment=(outp, inp) => {
+          outp := inp.commit
+        }
+      )
+    }
+
+    (
+      if (cfg.optRegRename) (
+        myPrfFork.last
+      ) else (
+        myTempCommitStm
+      )
+    ).translateInto(
+      myReorderBuf.io.push
+    )(
       dataAssignment=(outp, inp) => {
         outp.myWord := inp
         outp.reorderBufIdx := inp.reorderBufIdx
@@ -5407,7 +5447,8 @@ case class SnowHouseForFmaxPipeStageWriteBack(
   io.commitEtc.myRegFileWrPulse.valid := (
     if (cfg.optScoreboard) (
       //myCommitBackStm.fire
-      myCommitAlmostFinalBackOutpStm.valid//fire//valid
+      //myCommitAlmostFinalBackOutpStm.valid//fire//valid
+      myReorderBuf.io.push.valid
       //myCommitTrueFinalOutpStmVec.last.fire//valid
     ) else (
       //myCommitBackStm.valid
@@ -5419,7 +5460,8 @@ case class SnowHouseForFmaxPipeStageWriteBack(
     //myCommitAlmostFinalOutpStm.regFileWrite
     if (cfg.optScoreboard) (
       //myCommitTrueFinalOutpStmVec.last.regFileWrite
-      myCommitAlmostFinalBackOutpStm.regFileWrite
+      //myCommitAlmostFinalBackOutpStm.regFileWrite
+      myReorderBuf.io.push.myWord.regFileWrite
     ) else (
       myCommitAlmostFinalBackOutpStm.regFileWrite
     )
@@ -5428,12 +5470,12 @@ case class SnowHouseForFmaxPipeStageWriteBack(
   if (cfg.optScoreboard) {
     for (idx <- 0 until myCommitTrueFinalOutpStmVec.size) {
       if (idx == 0) {
-        //myCommitTrueFinalOutpStmVec(idx) <-< (
-        //  myCommitAlmostFinalBackOutpStm
-        //)
-        myCommitTrueFinalOutpStmVec(idx) << (
+        myCommitTrueFinalOutpStmVec(idx) <-< (
           myCommitAlmostFinalBackOutpStm
         )
+        //myCommitTrueFinalOutpStmVec(idx) << (
+        //  myCommitAlmostFinalBackOutpStm
+        //)
       } else {
         myCommitTrueFinalOutpStmVec(idx) <-< (
           myCommitTrueFinalOutpStmVec(idx - 1)
@@ -5448,7 +5490,10 @@ case class SnowHouseForFmaxPipeStageWriteBack(
       //myCommitForkStm.last
       myCommitTrueFinalOutpStmVec.last
     )
-    .translateInto(io.commitEtc.scoreboardCommmit)(
+    .translateInto(
+      //io.commitEtc.scoreboardCommmit
+      io.commitEtc.regRenameCommit
+    )(
       dataAssignment=(outp, inp) => {
         outp := inp.commit
       }

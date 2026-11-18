@@ -2520,16 +2520,21 @@ private[libsnowhouse] case class SnowHouseForFmax(
     )
   }
   if (cfg.optRegRename) {
-    psRegRename.io.myScoreboardCommit.valid := (
-      RegNext(
-        psWb.io.commitEtc.scoreboardCommmit.fire,
-        init=False
-      )
-    )
-    psRegRename.io.myScoreboardCommit.payload := (
-      RegNext(
-        psWb.io.commitEtc.scoreboardCommmit.payload,
-      )
+    //psRegRename.io.myRegRenameCommit.valid := (
+    //  RegNext(
+    //    //psWb.io.commitEtc.scoreboardCommmit.fire,
+    //    psWb.io.commitEtc.regRenameCommit.fire,
+    //    init=False
+    //  )
+    //)
+    //psRegRename.io.myRegRenameCommit.payload := (
+    //  RegNext(
+    //    //psWb.io.commitEtc.scoreboardCommmit.payload,
+    //    psWb.io.commitEtc.regRenameCommit.payload,
+    //  )
+    //)
+    psRegRename.io.myRegRenameCommit <-< (
+      psWb.io.commitEtc.regRenameCommit
     )
     psRegRename.io.myScoreboardBubbleRetire.valid := (
       RegNext(
