@@ -1123,8 +1123,10 @@ case class SnowHouseConfig(
     downto mainAddrWidth - mySrcRegPcCmpEqWidth + 1
   )
   def mySrcRegPcCmpEqRangeLo = (
-    log2Up(instrSizeBytes)
-    downto log2Up(instrSizeBytes)
+    //log2Up(instrSizeBytes)
+    //downto log2Up(instrSizeBytes)
+    mainAddrWidth - mySrcRegPcCmpEqWidth
+    downto mainAddrWidth - mySrcRegPcCmpEqWidth
   )
   println(
     s"mySrcRegPcWidth:${mySrcRegPcWidth} "
