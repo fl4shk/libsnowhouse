@@ -4477,18 +4477,56 @@ case class SnowHousePipeStageRegRename(
   //}
 
   val rSeenFlushCommit = Reg(Bool(), init=False)
+  //val myHistRegRenameCom
+  //val myHistBranchReorderBufIdx = (
+  //  History(
+  //    that=upPayload(1).reorderBufIdx,
+  //    length=cfg.
+  //  )
+  //)
+
+  val myHistRegRenameCommitReorderBufIdx = (
+    History(
+      that={
+        //val temp = Flow(cloneOf(myRegRenameCommit.reorderBufIdx))
+        //temp.payload := myRegRenameCommit.reorderBufIdx
+        //temp.valid := True
+        //temp
+        myRegRenameCommit.reorderBufIdx
+      },
+      length=5, // not sure if this is correct, but let's try it!
+      when=(
+        myRegRenameCommit.fire
+        && myRegRenameCommit.haveAnyJmpBrOp
+      ),
+      init={
+        //Flow(cloneOf(myRegRenameCommit.reorderBufIdx)).getZero
+        myRegRenameCommit.reorderBufIdx.getZero
+      }
+    )
+  )
 
   when (
     (
-      stickyExSetPc.valid
-      || upPayload(1).regPcSetItCnt(0).lsb
-    )
-    && (
-      myRegRenameCommit.fire
-      && (
-        myRegRenameCommit.reorderBufIdx
-        === stickyExSetPc.reorderBufIdx
+      (
+        stickyExSetPc.valid
+        || upPayload(1).regPcSetItCnt(0).lsb
       )
+      && (
+        RegNext(
+          myHistRegRenameCommitReorderBufIdx.sFindFirst(item => (
+            item === stickyExSetPc.reorderBufIdx
+          ))._1,
+          init=False
+        )
+      )
+      //&& (
+      //  myRegRenameCommit.fire
+      //  && (
+      //    myRegRenameCommit.reorderBufIdx
+      //    === stickyExSetPc.reorderBufIdx
+      //  )
+      //)
     )
   ) {
     rSeenFlushCommit := True
