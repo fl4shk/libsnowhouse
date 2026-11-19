@@ -5069,8 +5069,8 @@ case class SnowHousePipeStageScoreboardCheck(
 
     updateGprTagVecEtc(
       somePayload=upPayload(1),
-      someFwdTag=upPayload(1).reorderBufIdx,
-      someNonFwdTag=upPayload(1).reorderBufIdx,
+      //someFwdTag=upPayload(1).reorderBufIdx,
+      //someNonFwdTag=upPayload(1).reorderBufIdx,
     )
   }
 
@@ -6821,12 +6821,26 @@ case class SnowHousePipeStageScoreboardCheck(
 
     updateGprTagVecEtc(
       somePayload=upPayload(1),
-      someFwdTag=(
-        upPayload(1).reorderBufIdx
-      ),
-      someNonFwdTag=(
-        upPayload(1).reorderBufIdx
-      ),
+      //someFwdTag=(
+      //  upPayload(1).reorderBufIdx
+      //  //RegNextWhen(
+      //  //  myOooRdBuf.io.push.reorderBufIdx,
+      //  //  cond=myOooRdBuf.io.push.fire,
+      //  //  init=(
+      //  //    (myOooRdBuf.io.push.reorderBufIdx.getZero.asSInt - 1).asUInt
+      //  //  ),
+      //  //)
+      //),
+      //someNonFwdTag=(
+      //  upPayload(1).reorderBufIdx
+      //  //RegNextWhen(
+      //  //  myOooRdBuf.io.push.reorderBufIdx,
+      //  //  cond=myOooRdBuf.io.push.fire,
+      //  //  init=(
+      //  //    (myOooRdBuf.io.push.reorderBufIdx.getZero.asSInt - 1).asUInt
+      //  //  ),
+      //  //)
+      //),
     )
   }
 
@@ -6858,8 +6872,8 @@ case class SnowHousePipeStageScoreboardCheck(
 
   def updateGprTagVecEtc(
     somePayload: SnowHousePipePayload,
-    someFwdTag: UInt,
-    someNonFwdTag: UInt,
+    //someFwdTag: UInt,
+    //someNonFwdTag: UInt,
   ): Unit = {
     for (jdx <- 0 until 2) {
       val myFwdCondMsbMost = (
@@ -6898,7 +6912,10 @@ case class SnowHousePipeStageScoreboardCheck(
             //RegNext(myFwdCond, init=myFwdCond.getZero)
           //  init=False
           //)
-          myFwdCond
+          RegNext(
+            myFwdCond,
+            init=myFwdCond.getZero
+          )
         )
       ) {
         for (idx <- 0 until cfg.numRenamedGprs) {
@@ -6924,8 +6941,8 @@ case class SnowHousePipeStageScoreboardCheck(
                   //  RegNext(myTempFwdTag, init=myTempFwdTag.getZero)
                   //)
                   //myTempFwdTag
-                  //somePayload.reorderBufIdx
-                  someFwdTag
+                  RegNext(somePayload.reorderBufIdx)
+                  //someFwdTag
                 )
 
                 //if (cfg.optRegRename) {
@@ -6983,7 +7000,10 @@ case class SnowHousePipeStageScoreboardCheck(
           //RegNext(
           //  RegNext(myNonFwdCond, init=myNonFwdCond.getZero)
           //)
-          myNonFwdCond
+          RegNext(
+            myNonFwdCond,
+            init=myNonFwdCond.getZero
+          )
         )
       ) {
         for (idx <- 0 until cfg.numRenamedGprs) {
@@ -7003,8 +7023,8 @@ case class SnowHousePipeStageScoreboardCheck(
                   //  RegNext(myTempNonFwdTag, init=myTempNonFwdTag.getZero)
                   //)
                   //myTempNonFwdTag
-                  //somePayload.reorderBufIdx
-                  someNonFwdTag
+                  RegNext(somePayload.reorderBufIdx)
+                  //someNonFwdTag
                 )
 
                 //if (cfg.optRegRename) {
@@ -7771,7 +7791,6 @@ object ToBinaryStrZeroPadded {
       ("0" * (width - temp.size)) + temp
     )
   }
-
 }
 
 case class SnowHousePipeStagePreFwd(
