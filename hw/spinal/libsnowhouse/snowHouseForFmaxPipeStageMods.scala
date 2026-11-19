@@ -4169,7 +4169,7 @@ case class SnowHouseForFmaxPipeStageWriteBack(
       myNonFwdWbPayload(0).splitOp.multiCycleOpGroup
     )
     myNonFwdWbFifo.io.push.haveAnyJmpBrOp := (
-      myNonFwdWbPayload(0).splitOp.haveAnyJmpBrOp
+      myNonFwdWbPayload(0).splitOp.haveAnyJmpBrOp()
     )
 
     myFwdWbFifo.io.push.valid := {
@@ -4206,7 +4206,7 @@ case class SnowHouseForFmaxPipeStageWriteBack(
       myFwdWbPayload(0).splitOp.multiCycleOpGroup
     )
     myFwdWbFifo.io.push.haveAnyJmpBrOp := (
-      myFwdWbPayload(0).splitOp.haveAnyJmpBrOp
+      myFwdWbPayload(0).splitOp.haveAnyJmpBrOp()
     )
     if (io.dbgInfo != null) {
       myFwdWbFifo.io.push.payload.laggingRegPc := (
@@ -4446,8 +4446,12 @@ case class SnowHouseForFmaxPipeStageWriteBack(
       myNonFwdWbPayload(1).splitOp.multiCycleOpGroup := (
         myNonFwdWbFifo.io.pop.payload.multiCycleOpGroup
       )
-      myNonFwdWbPayload(1).splitOp.haveAnyJmpBrOp := (
-        myNonFwdWbFifo.io.pop.payload.haveAnyJmpBrOp
+      myNonFwdWbPayload(1).splitOp.exSetNextPcKind := (
+        Mux(
+          myNonFwdWbFifo.io.pop.payload.haveAnyJmpBrOp,
+          SnowHousePsExSetNextPcKind.PcPlusImm,
+          SnowHousePsExSetNextPcKind.Dont
+        )
       )
       if (io.dbgInfo != null) {
         myNonFwdWbPayload(1).laggingRegPc := (
@@ -4501,8 +4505,12 @@ case class SnowHouseForFmaxPipeStageWriteBack(
       myFwdWbPayload(1).splitOp.multiCycleOpGroup := (
         myFwdWbFifo.io.pop.payload.multiCycleOpGroup
       )
-      myFwdWbPayload(1).splitOp.haveAnyJmpBrOp := (
-        myFwdWbFifo.io.pop.payload.haveAnyJmpBrOp
+      myFwdWbPayload(1).splitOp.exSetNextPcKind := (
+        Mux(
+          myFwdWbFifo.io.pop.payload.haveAnyJmpBrOp,
+          SnowHousePsExSetNextPcKind.PcPlusImm,
+          SnowHousePsExSetNextPcKind.Dont
+        )
       )
       if (io.dbgInfo != null) {
         myFwdWbPayload(1).laggingRegPc := (
