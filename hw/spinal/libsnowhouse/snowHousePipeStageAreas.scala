@@ -2034,6 +2034,8 @@ case class SnowHousePipeStageInstrFetch(
     )
   }
 
+  myIbusTempRamEtc.io.flush := psExSetPc.fire
+
   val rIbusTempRamInitCnt = {
     val temp = Reg(UInt((cfg.subCfg.myLcvBusSrcWidth + 2) bits))
     temp.init(temp.getZero)
