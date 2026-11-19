@@ -4507,26 +4507,28 @@ case class SnowHousePipeStageRegRename(
   )
 
   when (
-    (
+    RegNext(
       (
-        stickyExSetPc.valid
-        || upPayload(1).regPcSetItCnt(0).lsb
-      )
-      && (
-        RegNext(
-          myHistRegRenameCommitReorderBufIdx.sFindFirst(item => (
-            item === stickyExSetPc.reorderBufIdx
-          ))._1,
-          init=False
+        (
+          stickyExSetPc.valid
+          || upPayload(1).regPcSetItCnt(0).lsb
         )
-      )
-      //&& (
-      //  myRegRenameCommit.fire
-      //  && (
-      //    myRegRenameCommit.reorderBufIdx
-      //    === stickyExSetPc.reorderBufIdx
-      //  )
-      //)
+        && (
+          (
+            myHistRegRenameCommitReorderBufIdx.sFindFirst(item => (
+              item === stickyExSetPc.reorderBufIdx
+            ))._1,
+          )
+        )
+        //&& (
+        //  myRegRenameCommit.fire
+        //  && (
+        //    myRegRenameCommit.reorderBufIdx
+        //    === stickyExSetPc.reorderBufIdx
+        //  )
+        //)
+      ),
+      init=False
     )
   ) {
     rSeenFlushCommit := True
