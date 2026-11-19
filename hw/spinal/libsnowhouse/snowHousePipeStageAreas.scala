@@ -3728,6 +3728,7 @@ case class SnowHousePipeStageRegRename(
   val args: SnowHousePipeStageArgs,
   val psExSetPc: Flow[SnowHousePsExSetPcPayload],
   val myRegRenameCommit: Stream[SnowHouseScoreboardCommitPayload],
+  val myScoreboardCommit: Flow[SnowHouseScoreboardCommitPayload],
   val myScoreboardBubbleRetire:
     // needed because bubbles still need to have tagging info
     // erased from psId
@@ -3831,10 +3832,19 @@ case class SnowHousePipeStageRegRename(
     stickyExSetPc.valid
     //|| upPayload(1).instrCnt.myPsIdOtherBubble.last
   )
+
   stickyExSetPc := (
     RegNext(
       stickyExSetPc,
       init=stickyExSetPc.getZero
+    )
+  )
+
+  val postBranchMispredictBubble = Bool()
+  postBranchMispredictBubble := (
+    RegNext(
+      postBranchMispredictBubble,
+      init=postBranchMispredictBubble.getZero
     )
   )
 
@@ -3844,10 +3854,19 @@ case class SnowHousePipeStageRegRename(
     stickyExSetPc.payload := psExSetPc.payload
   }
 
-  when (upPayload(1).regPcSetItCnt(0).lsb) {
+  when (
+    upPayload(1).regPcSetItCnt(0).lsb
+  ) {
     //myShouldIgnoreInstr := False
     stickyExSetPc.valid := False
   }
+
+  //when (
+  //  upPayload(1).regPcSetItCnt
+  //  myRegRenameCommit.fire
+  //  && myRegRenameCommit
+  //) {
+  //}
 
   val rMyInFlightReorderBufIdxVec = (
     Vec.fill(1 << cfg.optScoreboardReorderBufWidth)(
@@ -4457,14 +4476,48 @@ case class SnowHousePipeStageRegRename(
   //  )
   //}
 
+  val rSeenFlushCommit = Reg(Bool(), init=False)
+
   when (
     (
-      !myFreeListFindFirst._1
-      || rMyInFlightReorderBufIdxVec(
-        upPayload(1).reorderBufIdx
+      stickyExSetPc.valid
+      || upPayload(1).regPcSetItCnt(0).lsb
+    )
+    && (
+      myRegRenameCommit.fire
+      && (
+        myRegRenameCommit.reorderBufIdx
+        === stickyExSetPc.reorderBufIdx
       )
     )
-    && !myShouldIgnoreInstr
+  ) {
+    rSeenFlushCommit := True
+  }
+  when (
+    cRegRename.up.isFiring
+    && upPayload(1).regPcSetItCnt(0).lsb
+  ) {
+    rSeenFlushCommit := False
+  }
+
+  when (
+    (
+      (
+        !myFreeListFindFirst._1
+        || rMyInFlightReorderBufIdxVec(
+          upPayload(1).reorderBufIdx
+        )
+      )
+      && !myShouldIgnoreInstr
+    )
+    || (
+      (
+        //stickyExSetPc.valid
+        //|| 
+        upPayload(1).regPcSetItCnt(0).lsb
+      )
+      && !rSeenFlushCommit
+    )
   ) {
     doSendBubbleMainMost(
       myPsIdBubble=(
@@ -16418,12 +16471,25 @@ case class SnowHousePipeStageExecute(
   if (cfg.optScoreboard) {
     psExSetPc.reorderBufIdx.allowOverride
     psExSetPc.reorderBufIdx := (
+      //RegNextWhen(
+      //  setOutpModMemWord.io.psExSetPc.reorderBufIdx,
+      //  cond=setOutpModMemWord.io.psExSetPc.fire,
+      //  init=(
+      //    setOutpModMemWord.io.psExSetPc.reorderBufIdx.getZero
+      //  ),
+      //)
       RegNextWhen(
-        setOutpModMemWord.io.psExSetPc.reorderBufIdx,
-        cond=setOutpModMemWord.io.psExSetPc.fire,
-        init=(
-          setOutpModMemWord.io.psExSetPc.reorderBufIdx.getZero
+        RegNextWhen(
+          outp.reorderBufIdx,
+          //cond=cMid0Front.up.isFiring,
+          cond=(
+            cLink.up.isFiring
+            && outp.instrCnt.changedInstr
+          ),
+          init=outp.reorderBufIdx.getZero,
         ),
+        cond=setOutpModMemWord.io.psExSetPc.fire,
+        init=outp.reorderBufIdx.getZero,
       )
     )
   }
