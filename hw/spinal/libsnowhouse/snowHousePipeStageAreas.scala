@@ -5068,7 +5068,9 @@ case class SnowHousePipeStageScoreboardCheck(
     }
 
     updateGprTagVecEtc(
-      somePayload=upPayload(1)
+      somePayload=upPayload(1),
+      someFwdTag=upPayload(1).reorderBufIdx,
+      someNonFwdTag=upPayload(1).reorderBufIdx,
     )
   }
 
@@ -6818,7 +6820,13 @@ case class SnowHousePipeStageScoreboardCheck(
     //}
 
     updateGprTagVecEtc(
-      somePayload=upPayload(1)
+      somePayload=upPayload(1),
+      someFwdTag=(
+        upPayload(1).reorderBufIdx
+      ),
+      someNonFwdTag=(
+        upPayload(1).reorderBufIdx
+      ),
     )
   }
 
@@ -6849,7 +6857,9 @@ case class SnowHousePipeStageScoreboardCheck(
   )
 
   def updateGprTagVecEtc(
-    somePayload: SnowHousePipePayload
+    somePayload: SnowHousePipePayload,
+    someFwdTag: UInt,
+    someNonFwdTag: UInt,
   ): Unit = {
     for (jdx <- 0 until 2) {
       val myFwdCondMsbMost = (
@@ -6914,7 +6924,8 @@ case class SnowHousePipeStageScoreboardCheck(
                   //  RegNext(myTempFwdTag, init=myTempFwdTag.getZero)
                   //)
                   //myTempFwdTag
-                  somePayload.reorderBufIdx
+                  //somePayload.reorderBufIdx
+                  someFwdTag
                 )
 
                 //if (cfg.optRegRename) {
@@ -6992,7 +7003,8 @@ case class SnowHousePipeStageScoreboardCheck(
                   //  RegNext(myTempNonFwdTag, init=myTempNonFwdTag.getZero)
                   //)
                   //myTempNonFwdTag
-                  somePayload.reorderBufIdx
+                  //somePayload.reorderBufIdx
+                  someNonFwdTag
                 )
 
                 //if (cfg.optRegRename) {

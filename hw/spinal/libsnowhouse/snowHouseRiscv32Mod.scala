@@ -1973,8 +1973,8 @@ case class SnowHouseRiscv32Config(
     0
   ),
   dcachePrefetchNumLinesAhead: Option[Int]=(
-    Some(2),
-    //None
+    //Some(2),
+    None
   ),
   branchTgtBufSizeLog2: Int=(
     //log2Up(128)
