@@ -4507,8 +4507,8 @@ case class SnowHousePipeStageRegRename(
   )
 
   when (
-    RegNext(
-      (
+    //RegNext(
+    //  (
         (
           stickyExSetPc.valid
           || upPayload(1).regPcSetItCnt(0).lsb
@@ -4527,9 +4527,9 @@ case class SnowHousePipeStageRegRename(
         //    === stickyExSetPc.reorderBufIdx
         //  )
         //)
-      ),
-      init=False
-    )
+    //  ),
+    //  init=False
+    //)
   ) {
     rSeenFlushCommit := True
   }
