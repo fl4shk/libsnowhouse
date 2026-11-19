@@ -3912,6 +3912,7 @@ case class SnowHouseForFmaxPipeStageWriteBack(
     val outpDecodeExt = SnowHouseDecodeExt(cfg=cfg)
     val opIsMemAccess = Bool()
     val opIsNonFwd = Bool()
+    val haveAnyJmpBrOp = Bool()
     val multiCycleOpGroup = /*Flow*/(
       UInt(/*log2Up*/(cfg.multiCycleOpInfoMap.size) bits)
     )
@@ -4167,6 +4168,9 @@ case class SnowHouseForFmaxPipeStageWriteBack(
     myNonFwdWbFifo.io.push.multiCycleOpGroup := (
       myNonFwdWbPayload(0).splitOp.multiCycleOpGroup
     )
+    myNonFwdWbFifo.io.push.haveAnyJmpBrOp := (
+      myNonFwdWbPayload(0).splitOp.haveAnyJmpBrOp
+    )
 
     myFwdWbFifo.io.push.valid := {
       val temp = (
@@ -4200,6 +4204,9 @@ case class SnowHouseForFmaxPipeStageWriteBack(
     )
     myFwdWbFifo.io.push.multiCycleOpGroup := (
       myFwdWbPayload(0).splitOp.multiCycleOpGroup
+    )
+    myFwdWbFifo.io.push.haveAnyJmpBrOp := (
+      myFwdWbPayload(0).splitOp.haveAnyJmpBrOp
     )
     if (io.dbgInfo != null) {
       myFwdWbFifo.io.push.payload.laggingRegPc := (
@@ -4439,6 +4446,9 @@ case class SnowHouseForFmaxPipeStageWriteBack(
       myNonFwdWbPayload(1).splitOp.multiCycleOpGroup := (
         myNonFwdWbFifo.io.pop.payload.multiCycleOpGroup
       )
+      myNonFwdWbPayload(1).splitOp.haveAnyJmpBrOp := (
+        myNonFwdWbFifo.io.pop.payload.haveAnyJmpBrOp
+      )
       if (io.dbgInfo != null) {
         myNonFwdWbPayload(1).laggingRegPc := (
           myNonFwdWbFifo.io.pop.payload.laggingRegPc
@@ -4490,6 +4500,9 @@ case class SnowHouseForFmaxPipeStageWriteBack(
       )
       myFwdWbPayload(1).splitOp.multiCycleOpGroup := (
         myFwdWbFifo.io.pop.payload.multiCycleOpGroup
+      )
+      myFwdWbPayload(1).splitOp.haveAnyJmpBrOp := (
+        myFwdWbFifo.io.pop.payload.haveAnyJmpBrOp
       )
       if (io.dbgInfo != null) {
         myFwdWbPayload(1).laggingRegPc := (
