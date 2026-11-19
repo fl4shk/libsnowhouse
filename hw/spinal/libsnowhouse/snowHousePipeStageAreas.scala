@@ -1931,18 +1931,17 @@ case class SnowHousePipeStageInstrFetch(
 
   def myIbusTempRamDepth = (
     //1 << (cfg.subCfg.myLcvBusSrcWidth + 2)
-    //1 << cfg.subCfg.myLcvBusSrcWidth
-    8
+    1 << cfg.subCfg.myLcvBusSrcWidth
   )
 
-  //val rH2dTempRamIdx = (
-  //  Reg(UInt(log2Up(myIbusTempRamDepth) bits))
-  //  init(0x0)
-  //)
-  //val rD2hTempRamIdx = (
-  //  Reg(UInt(log2Up(myIbusTempRamDepth) bits))
-  //  init(0x8)
-  //)
+  val rH2dTempRamIdx = (
+    Reg(UInt(log2Up(myIbusTempRamDepth) bits))
+    init(0x0)
+  )
+  val rD2hTempRamIdx = (
+    Reg(UInt(log2Up(myIbusTempRamDepth) bits))
+    init(0x8)
+  )
 
   def myIbusTempRamSetWordFunc(
     outp: MyIbusTempPayload,
