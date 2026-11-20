@@ -4906,25 +4906,36 @@ case class SnowHousePipeStageScoreboardCheck(
     }
 
     when (
-      rMyFwdGprTagVec(idx).fire
-      && (
+      RegNext(
         (
-          myScoreboardCommitStm.fire
-          && myScoreboardCommitStm.opIsFwd
-          && myScoreboardCommitStm.myFwdValid
+          rMyFwdGprTagVec(idx).fire
           && (
-            rMyFwdGprTagVec(idx).tag
-            === myScoreboardCommitStm.fwdTag
+            (
+              myScoreboardCommitStm.fire
+              && myScoreboardCommitStm.opIsFwd
+              && myScoreboardCommitStm.myFwdValid
+              && (
+                rMyFwdGprTagVec(idx).tag
+                === myScoreboardCommitStm.fwdTag
+              )
+              && (
+                myScoreboardCommitStm.gprIdxVec.last === idx
+              )
+            )
+            || (
+              myScoreboardBubbleRetireStm.fire
+              && myScoreboardBubbleRetireStm.opIsFwd
+              && (
+                rMyFwdGprTagVec(idx).tag
+                === myScoreboardBubbleRetireStm.fwdTag
+              )
+              && (
+                myScoreboardBubbleRetireStm.gprIdxVec.last === idx
+              )
+            )
           )
-        )
-        || (
-          myScoreboardBubbleRetireStm.fire
-          && myScoreboardBubbleRetireStm.opIsFwd
-          && (
-            rMyFwdGprTagVec(idx).tag
-            === myScoreboardBubbleRetireStm.fwdTag
-          )
-        )
+        ),
+        init=False
       )
       //&& !rMyFwdGprTagVec(idx).wakeUp
     ) {
@@ -4942,24 +4953,35 @@ case class SnowHousePipeStageScoreboardCheck(
     //  rMyFwdGprTagVec(idx).valid := False
     //}
     when (
-      rMyNonFwdGprTagVec(idx).fire
-      && (
+      RegNext(
         (
-          myScoreboardCommitStm.fire
-          && myScoreboardCommitStm.myNonFwdValid
+          rMyNonFwdGprTagVec(idx).fire
           && (
-            rMyNonFwdGprTagVec(idx).tag
-            === myScoreboardCommitStm.nonFwdTag
+            (
+              myScoreboardCommitStm.fire
+              && myScoreboardCommitStm.myNonFwdValid
+              && (
+                rMyNonFwdGprTagVec(idx).tag
+                === myScoreboardCommitStm.nonFwdTag
+              )
+              && (
+                myScoreboardCommitStm.gprIdxVec.last === idx
+              )
+            )
+            || (
+              myScoreboardBubbleRetireStm.fire
+              && myScoreboardBubbleRetireStm.myNonFwdValid
+              && (
+                rMyNonFwdGprTagVec(idx).tag
+                === myScoreboardBubbleRetireStm.nonFwdTag
+              )
+              && (
+                myScoreboardBubbleRetireStm.gprIdxVec.last === idx
+              )
+            )
           )
-        )
-        || (
-          myScoreboardBubbleRetireStm.fire
-          && myScoreboardBubbleRetireStm.myNonFwdValid
-          && (
-            rMyNonFwdGprTagVec(idx).tag
-            === myScoreboardBubbleRetireStm.nonFwdTag
-          )
-        )
+        ),
+        init=False
       )
       //&& !rMyNonFwdGprTagVec(idx).wakeUp
     ) {
