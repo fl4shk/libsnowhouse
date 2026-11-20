@@ -2033,8 +2033,8 @@ case class SnowHousePipeStageInstrFetch(
       depth=depth,
       latency=(
         //2
-        //0
-        1
+        0
+        //1
       ),
       forFMax=true,
     )
@@ -2089,8 +2089,8 @@ case class SnowHousePipeStageInstrFetch(
       depth=myIbusTempRamDepth,
       latency=(
         //2
-        //0
-        1
+        0
+        //1
       ),
       forFMax=true,
     )
