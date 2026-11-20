@@ -2031,7 +2031,11 @@ case class SnowHousePipeStageInstrFetch(
     StreamFifo(
       dataType=MyIbusTempPayload(hasInstr=false),
       depth=depth,
-      latency=2,
+      latency=(
+        //2
+        //0
+        1
+      ),
       forFMax=true,
     )
   }
@@ -2083,7 +2087,11 @@ case class SnowHousePipeStageInstrFetch(
     StreamFifo(
       dataType=cloneOf(lcvIbus.d2hBus.payload),
       depth=myIbusTempRamDepth,
-      latency=2,
+      latency=(
+        //2
+        //0
+        1
+      ),
       forFMax=true,
     )
   )
