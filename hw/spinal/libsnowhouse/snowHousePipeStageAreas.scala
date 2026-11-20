@@ -4230,6 +4230,27 @@ case class SnowHousePipeStageRegRename(
   //  )
   //)
 
+  val mySetCond = (
+    myRegRenameCommit.fire
+    && LcvOrR(myRegRenameCommit.regRenameFreeListIdx)
+    && !myShouldIgnoreInstr
+  )
+
+  when (
+    mySetCond
+  ) {
+    //rFreeListVec.head(
+    //  myRegRenameCommit.regRenameFreeListIdx
+    //) := (
+    //  True
+    //)
+    rFreeList(
+      myRegRenameCommit.regRenameFreeListIdx
+    ) := (
+      True
+    )
+  }
+
   val myClearCond = (
     cRegRename.up.isFiring
     && !myShouldIgnoreInstr
@@ -4259,27 +4280,6 @@ case class SnowHousePipeStageRegRename(
   when (myClearCond) {
     //rFreeListVec.head(myNextRenamedRegIdx) := False
     rFreeList(myNextRenamedRegIdx) := False
-  }
-
-  val mySetCond = (
-    myRegRenameCommit.fire
-    && LcvOrR(myRegRenameCommit.regRenameFreeListIdx)
-    && !myShouldIgnoreInstr
-  )
-
-  when (
-    mySetCond
-  ) {
-    //rFreeListVec.head(
-    //  myRegRenameCommit.regRenameFreeListIdx
-    //) := (
-    //  True
-    //)
-    rFreeList(
-      myRegRenameCommit.regRenameFreeListIdx
-    ) := (
-      True
-    )
   }
 
   //switch (
