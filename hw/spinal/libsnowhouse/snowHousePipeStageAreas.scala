@@ -4906,7 +4906,7 @@ case class SnowHousePipeStageScoreboardCheck(
     }
 
     when (
-      RegNext(
+      //RegNext(
         (
           rMyFwdGprTagVec(idx).fire
           && (
@@ -4918,9 +4918,9 @@ case class SnowHousePipeStageScoreboardCheck(
                 rMyFwdGprTagVec(idx).tag
                 === myScoreboardCommitStm.fwdTag
               )
-              && (
-                myScoreboardCommitStm.gprIdxVec.last === idx
-              )
+              //&& (
+              //  myScoreboardCommitStm.gprIdxVec.last === idx
+              //)
             )
             || (
               myScoreboardBubbleRetireStm.fire
@@ -4929,14 +4929,14 @@ case class SnowHousePipeStageScoreboardCheck(
                 rMyFwdGprTagVec(idx).tag
                 === myScoreboardBubbleRetireStm.fwdTag
               )
-              && (
-                myScoreboardBubbleRetireStm.gprIdxVec.last === idx
-              )
+              //&& (
+              //  myScoreboardBubbleRetireStm.gprIdxVec.last === idx
+              //)
             )
           )
         ),
-        init=False
-      )
+      //  init=False
+      //)
       //&& !rMyFwdGprTagVec(idx).wakeUp
     ) {
       //rFwdTagAllocVec(myScoreboardCommitStm.fwdTag) := False
@@ -4953,7 +4953,7 @@ case class SnowHousePipeStageScoreboardCheck(
     //  rMyFwdGprTagVec(idx).valid := False
     //}
     when (
-      RegNext(
+      //RegNext(
         (
           rMyNonFwdGprTagVec(idx).fire
           && (
@@ -4964,9 +4964,9 @@ case class SnowHousePipeStageScoreboardCheck(
                 rMyNonFwdGprTagVec(idx).tag
                 === myScoreboardCommitStm.nonFwdTag
               )
-              && (
-                myScoreboardCommitStm.gprIdxVec.last === idx
-              )
+              //&& (
+              //  myScoreboardCommitStm.gprIdxVec.last === idx
+              //)
             )
             || (
               myScoreboardBubbleRetireStm.fire
@@ -4975,14 +4975,14 @@ case class SnowHousePipeStageScoreboardCheck(
                 rMyNonFwdGprTagVec(idx).tag
                 === myScoreboardBubbleRetireStm.nonFwdTag
               )
-              && (
-                myScoreboardBubbleRetireStm.gprIdxVec.last === idx
-              )
+              //&& (
+              //  myScoreboardBubbleRetireStm.gprIdxVec.last === idx
+              //)
             )
           )
         ),
-        init=False
-      )
+      //  init=False
+      //)
       //&& !rMyNonFwdGprTagVec(idx).wakeUp
     ) {
       ////rNonFwdTagAllocVec(myScoreboardCommitStm.fwdTag) := False
@@ -6956,10 +6956,10 @@ case class SnowHousePipeStageScoreboardCheck(
             //RegNext(myFwdCond, init=myFwdCond.getZero)
           //  init=False
           //)
-          RegNext(
+          //RegNext(
             myFwdCond,
-            init=myFwdCond.getZero
-          )
+          //  init=myFwdCond.getZero
+          //)
         )
       ) {
         for (idx <- 0 until cfg.numRenamedGprs) {
@@ -6985,7 +6985,8 @@ case class SnowHousePipeStageScoreboardCheck(
                   //  RegNext(myTempFwdTag, init=myTempFwdTag.getZero)
                   //)
                   //myTempFwdTag
-                  RegNext(somePayload.reorderBufIdx)
+                  //RegNext(somePayload.reorderBufIdx)
+                  somePayload.reorderBufIdx
                   //someFwdTag
                 )
 
@@ -7044,10 +7045,10 @@ case class SnowHousePipeStageScoreboardCheck(
           //RegNext(
           //  RegNext(myNonFwdCond, init=myNonFwdCond.getZero)
           //)
-          RegNext(
+          //RegNext(
             myNonFwdCond,
-            init=myNonFwdCond.getZero
-          )
+          //  init=myNonFwdCond.getZero
+          //)
         )
       ) {
         for (idx <- 0 until cfg.numRenamedGprs) {
@@ -7067,7 +7068,9 @@ case class SnowHousePipeStageScoreboardCheck(
                   //  RegNext(myTempNonFwdTag, init=myTempNonFwdTag.getZero)
                   //)
                   //myTempNonFwdTag
-                  RegNext(somePayload.reorderBufIdx)
+                  //RegNext(
+                    somePayload.reorderBufIdx
+                  //)
                   //someNonFwdTag
                 )
 
