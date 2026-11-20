@@ -1931,8 +1931,8 @@ case class SnowHousePipeStageInstrFetch(
 
   def myIbusTempRamDepth = (
     //1 << (cfg.subCfg.myLcvBusSrcWidth + 2)
-    //1 << cfg.subCfg.myLcvBusSrcWidth
-    128
+    1 << cfg.subCfg.myLcvBusSrcWidth
+    //128
     //8
   )
 
@@ -2078,7 +2078,17 @@ case class SnowHousePipeStageInstrFetch(
   //}
 
   val myIbusRegPcInfo = MyIbusRegPcInfo(cfg=cfg)
-  def myD2hPopStm = lcvIbus.d2hBus
+  //val myD2hPopStm = lcvIbus.d2hBus
+  val myIbusTempFifo = (
+    StreamFifo(
+      dataType=cloneOf(lcvIbus.d2hBus.payload),
+      depth=myIbusTempRamDepth,
+      latency=2,
+      forFMax=true,
+    )
+  )
+  def myD2hPopStm = myIbusTempFifo.io.pop
+  myIbusTempFifo.io.push << lcvIbus.d2hBus
 
   val myIbusTempFork = StreamFork(
     input=myH2dPushStm,
