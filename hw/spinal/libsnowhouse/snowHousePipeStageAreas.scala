@@ -1931,7 +1931,8 @@ case class SnowHousePipeStageInstrFetch(
 
   def myIbusTempRamDepth = (
     //1 << (cfg.subCfg.myLcvBusSrcWidth + 2)
-    1 << cfg.subCfg.myLcvBusSrcWidth
+    //1 << cfg.subCfg.myLcvBusSrcWidth
+    128
     //8
   )
 
@@ -4775,34 +4776,34 @@ case class SnowHousePipeStageScoreboardCheck(
   upPayload(1) := RegNext(upPayload(1), init=upPayload(1).getZero)
   upPayload(1).allowOverride
 
-  //when (!rMyPsExSetPcState) {
-  //  when (psExSetPc.fire) {
-  //    rMyPsExSetPcState := True
-  //  } 
-  //} otherwise {
-  //  when (
-  //    up.isFiring
-  //    //&& outp.regPcSetItCnt(0).lsb
-  //    //&& up(pId).regPcSetItCnt(0).lsb
-  //    && upPayload(1).regPcSetItCnt(0).lsb
-  //  ) {
-  //    rMyPsExSetPcState := False
-  //  }
-  //}
-  //def myShouldIgnoreInstr(
-  //  somePayload: SnowHousePipePayload,
-  //) = (
-  //  (
-  //    (
-  //      psExSetPc.fire
-  //      || (
-  //        rMyPsExSetPcState
-  //        //&& !upPayload(1).regPcSetItCnt(0).lsb
-  //        && !somePayload.regPcSetItCnt(0).lsb
-  //      )
-  //    )
-  //  )
-  //)
+  when (!rMyPsExSetPcState) {
+    when (psExSetPc.fire) {
+      rMyPsExSetPcState := True
+    } 
+  } otherwise {
+    when (
+      up.isFiring
+      //&& outp.regPcSetItCnt(0).lsb
+      //&& up(pId).regPcSetItCnt(0).lsb
+      && upPayload(1).regPcSetItCnt(0).lsb
+    ) {
+      rMyPsExSetPcState := False
+    }
+  }
+  def myShouldIgnoreInstr(
+    somePayload: SnowHousePipePayload,
+  ) = (
+    (
+      (
+        psExSetPc.fire
+        || (
+          rMyPsExSetPcState
+          //&& !upPayload(1).regPcSetItCnt(0).lsb
+          && !somePayload.regPcSetItCnt(0).lsb
+        )
+      )
+    )
+  )
 
   case class MyGprTagInfo(
     isNonFwd: Boolean
