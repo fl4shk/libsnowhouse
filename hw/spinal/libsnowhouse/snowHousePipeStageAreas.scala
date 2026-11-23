@@ -4531,7 +4531,8 @@ case class SnowHousePipeStageRegRename(
   when (
     //RegNext(
     //  (
-        (
+        up.isValid
+        && (
           stickyExSetPc.valid
           || upPayload(1).regPcSetItCnt(0).lsb
         )
@@ -4539,7 +4540,7 @@ case class SnowHousePipeStageRegRename(
           (
             myHistRegRenameCommitReorderBufIdx.sFindFirst(item => (
               item === stickyExSetPc.reorderBufIdx
-            ))._1,
+            ))._1
           )
         )
         //&& (
