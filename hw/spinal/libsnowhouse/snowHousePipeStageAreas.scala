@@ -7142,17 +7142,18 @@ case class SnowHousePipeStageScoreboardCheck(
       //  }
       //}
     }
-    when (
-      up.isValid
-      && myShouldIgnoreInstr(
-        somePayload=up(pPrev)
-      )
-    ) {
-      for (idx <- 0 until cfg.numRenamedGprs) {
-        rMyFwdGprTagVec(idx).valid := False
-        rMyNonFwdGprTagVec(idx).valid := False
-      }
-    }
+
+    //when (
+    //  up.isValid
+    //  && myShouldIgnoreInstr(
+    //    somePayload=up(pPrev)
+    //  )
+    //) {
+    //  for (idx <- 0 until cfg.numRenamedGprs) {
+    //    rMyFwdGprTagVec(idx).valid := False
+    //    rMyNonFwdGprTagVec(idx).valid := False
+    //  }
+    //}
   }
   def myInFlushCondMain(
     someUpPayload0: SnowHousePipePayload,
