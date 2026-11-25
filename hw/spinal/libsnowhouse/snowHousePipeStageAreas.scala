@@ -293,6 +293,10 @@ case class SnowHousePsExSetPcPayload(
   def branchTgtBufElem = btbElemWithBrKind.btbElem
   def branchKind = btbElemWithBrKind.branchKind
 
+  //val branchWritesGpr = (
+  //  Bool()
+  //)
+
   val btbUpdateValid = Bool()
 
   //val brKindValid = Bool()
@@ -16034,6 +16038,22 @@ case class SnowHousePipeStageExecute(
       init=outp.btbUpdateValid.getZero,
     )
   )
+
+  //psExSetPc.branchWritesGpr := (
+  //  RegNextWhen(
+  //    RegNextWhen(
+  //      //cond=cMid0Front.up.isFiring,
+  //      outp.gprIsNonZeroVec.last.last,
+  //      cond=(
+  //        cLink.up.isFiring
+  //        && outp.instrCnt.changedInstr
+  //      ),
+  //      init=outp.gprIsNonZeroVec.last.last.getZero,
+  //    ),
+  //    cond=nextPsExSetPcValid(0),
+  //    init=outp.gprIsNonZeroVec.last.last.getZero,
+  //  )
+  //)
 
   psExSetPc.taken.valid := (
     RegNext(
