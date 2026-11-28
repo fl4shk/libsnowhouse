@@ -4368,7 +4368,10 @@ case class SnowHouseForFmaxPipeStageWriteBack(
   val stickyMemMmw = (
     cfg.optScoreboard
   ) generate (
-    UInt(cfg.mainWidth bits)
+    UInt(
+      //cfg.mainWidth bits
+      cfg.mainDataWidth bits
+    )
   )
 
   val stickyMemMmwValid = (
@@ -5673,7 +5676,7 @@ case class SnowHouseForFmaxPipeStageWriteBack(
         if (cfg.optScoreboard && isNonFwd) {
           Mux[UInt](
             stickyMemMmwValid,
-            stickyMemMmw,
+            stickyMemMmw.resize(cfg.mainWidth),
             stickyMultiCycleMmw,
           )
         } else {

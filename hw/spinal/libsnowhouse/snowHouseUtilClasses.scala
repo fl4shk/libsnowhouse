@@ -360,6 +360,10 @@ case class SnowHouseSubConfig(
   optCacheBusSrcWidth: Option[Int]=None,
   //--------
 ) {
+  val mainDataWidth = (
+    64.max(shRegFileCfg.mainWidth)
+  )
+
   val mainAddrWidth = (
     optMainAddrWidth match {
       case Some(mainAddrWidth) => {
@@ -402,7 +406,8 @@ case class SnowHouseSubConfig(
     LcvBusMainConfig(
       dataWidth=(
         //instrMainWidth
-        shRegFileCfg.mainWidth
+        //shRegFileCfg.mainWidth
+        mainDataWidth
       ),
       addrWidth=shRegFileCfg.mainWidth,
       //allowBurst=false,
@@ -481,7 +486,10 @@ case class SnowHouseSubConfig(
   )
   val lcvDbusMainCfg = (
     LcvBusMainConfig(
-      dataWidth=shRegFileCfg.mainWidth,
+      dataWidth=(
+        //shRegFileCfg.mainWidth
+        mainDataWidth
+      ),
       addrWidth=shRegFileCfg.mainWidth,
       //allowBurst=false,
       burstKind=LcvBusBurstKind.NoBurst,
@@ -1259,6 +1267,7 @@ case class SnowHouseConfig(
       optFormalJustHost=optFormal,
     )
   }
+  def mainDataWidth = subCfg.mainDataWidth
   def mainWidth = shRegFileCfg.mainWidth
   val regFileWordCountArr = (
     //if (optScoreboardOooIssueWindow != None) (

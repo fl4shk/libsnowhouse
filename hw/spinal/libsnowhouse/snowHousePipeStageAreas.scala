@@ -11193,7 +11193,10 @@ case class SnowHousePipeStageExecuteSetOutpModMemWord(
   //io.psExSetPc.nextPc := (
   //  io.regPcPlusImm 
   //)
-  io.dbusHostPayload.data := io.rdMemWord(1) //selRdMemWord(0)
+  io.dbusHostPayload.data := (
+    io.rdMemWord(1).resize(io.dbusHostPayload.data.getWidth)
+    //selRdMemWord(0)
+  )
   if (cfg.allMainLdstUseGprPlusImm) {
     //println(
     //  "NOTICE: we do have cfg.allMainLdstUseGprPlusImm"

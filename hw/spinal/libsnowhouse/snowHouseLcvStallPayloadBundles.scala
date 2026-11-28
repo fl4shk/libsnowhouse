@@ -193,7 +193,10 @@ case class BusHostNonSrcPayload(
   //)
   val addr = UInt(cfg.mainWidth bits)
   val data = (!isIbus) generate (
-    UInt(cfg.mainWidth bits)
+    UInt(
+      //cfg.mainWidth bits
+      cfg.mainDataWidth bits
+    )
   )
   val accKind = (!isIbus) generate (
     SnowHouseMemAccessKind()
