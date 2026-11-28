@@ -400,7 +400,7 @@ case class SnowHouseInstrDataDualRam(
           LcvBusConfig(
             mainCfg=(
               cfg.subCfg.lcvIbusEtcCfg.mainCfg
-              .mkCopyWithAllowingBurst()
+              .mkCopyWithAllowingBurst(burstKind=LcvBusBurstKind.Linear)
               .mkCopyWithoutByteEn(None)
             ),
             cacheCfg=Some(cfg.subCfg.lcvIbusEtcCfg.loBusCacheCfg),

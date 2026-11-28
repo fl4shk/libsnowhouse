@@ -53,7 +53,9 @@ case class SnowHouseCpuFramebufferDemoConfig(
     busCfg=(
       //myDbusCfg
       LcvBusConfig(
-        mainCfg=myDbusCfg.mainCfg.mkCopyWithAllowingBurst(),
+        mainCfg=myDbusCfg.mainCfg.mkCopyWithAllowingBurst(
+          burstKind=LcvBusBurstKind.Linear,
+        ),
         cacheCfg=myDbusCfg.cacheCfg,
       )
     ),

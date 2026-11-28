@@ -405,7 +405,8 @@ case class SnowHouseSubConfig(
         shRegFileCfg.mainWidth
       ),
       addrWidth=shRegFileCfg.mainWidth,
-      allowBurst=false,
+      //allowBurst=false,
+      burstKind=LcvBusBurstKind.NoBurst,
       burstAlwaysMaxSize=false,
       srcWidth=(
         //if (haveIcache) (
@@ -482,7 +483,8 @@ case class SnowHouseSubConfig(
     LcvBusMainConfig(
       dataWidth=shRegFileCfg.mainWidth,
       addrWidth=shRegFileCfg.mainWidth,
-      allowBurst=false,
+      //allowBurst=false,
+      burstKind=LcvBusBurstKind.NoBurst,
       burstAlwaysMaxSize=false,
       srcWidth=myLcvBusSrcWidth,
       haveByteEn=false,
