@@ -2906,3 +2906,47 @@ object SnowHouseRam32InitFromBin {
     tempArr
   }
 }
+
+object SnowHouseRam64InitFromBin {
+  def apply(
+    filename: String,
+  ) = {
+    var tempArr = new ArrayBuffer[BigInt]()
+    val bis = new BufferedInputStream(new FileInputStream(filename))
+    val myArr = new ArrayBuffer[Long]()
+    Iterator.continually(bis.read())
+      .takeWhile(_ != -1)
+      .foreach(
+        b => {
+          myArr += b.toLong
+          if (myArr.size == 8) {
+            val toAdd = (
+              ((myArr(0) & 0xff).toLong << 0)
+              | ((myArr(1) & 0xff).toLong << 8)
+              | ((myArr(2) & 0xff).toLong << 16)
+              | ((myArr(3) & 0xff).toLong << 24)
+              | ((myArr(4) & 0xff).toLong << 32)
+              | ((myArr(5) & 0xff).toLong << 40)
+              | ((myArr(6) & 0xff).toLong << 48)
+              | ((myArr(7) & 0xff).toLong << 56)
+            )
+            tempArr += BigInt(toAdd.toLong)
+            myArr.clear() 
+          }
+        }
+      )
+    bis.close
+
+    if (myArr.size == 4) {
+      val toAdd = (
+        ((myArr(0) & 0xff) << 0)
+        | ((myArr(1) & 0xff) << 8)
+        | ((myArr(2) & 0xff) << 16)
+        | ((myArr(3) & 0xff) << 24)
+      )
+      tempArr += BigInt(toAdd.toInt)
+    }
+
+    tempArr
+  }
+}

@@ -4127,7 +4127,10 @@ case class SnowHouseRiscv32WithDuplDualRam(
   val io = SnowHouseRiscv32WithDuplDualRamIo(cfg=cfg)
 
   val cpu = SnowHouseRiscv32WithoutRam(cfg=cfg)
-  val program = SnowHouseRam32InitFromBin(
+  //val program = SnowHouseRam32InitFromBin(
+  //  filename=cfg.programStr
+  //)
+  val program = SnowHouseRam64InitFromBin(
     filename=cfg.programStr
   )
 
@@ -4136,6 +4139,7 @@ case class SnowHouseRiscv32WithDuplDualRam(
     val depth = myMemDepth
     val tempArr = new ArrayBuffer[BigInt]()
     tempArr ++= program.view
+
     while (tempArr.size < depth) {
       tempArr += BigInt(0)
     }
@@ -4279,7 +4283,7 @@ case class SnowHouseRiscv32WithSharedRam(
   val io = SnowHouseRiscv32WithSharedRamIo(cfg=cfg)
 
   val cpu = SnowHouseRiscv32WithoutRam(cfg=cfg)
-  val program = SnowHouseRam32InitFromBin(
+  val program = SnowHouseRam64InitFromBin(
     filename=cfg.programStr
   )
 
@@ -4288,6 +4292,7 @@ case class SnowHouseRiscv32WithSharedRam(
     val depth = myMemDepth
     val tempArr = new ArrayBuffer[BigInt]()
     tempArr ++= program.view
+
     while (tempArr.size < depth) {
       tempArr += BigInt(0)
     }
